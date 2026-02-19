@@ -202,11 +202,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnLastPage = elById('btnLastPage');
     if (btnLastPage) btnLastPage.addEventListener('click', () => goToPage(totalPages));
     
-    // Event listeners para ordenamiento en headers
-    const headerCellsSortable = document.querySelectorAll('.table-header-cell-cartera.sortable');
+    // Event listeners para ordenamiento en headers (estilo Contador)
+    const headerCellsSortable = document.querySelectorAll('.table-header-cell.sortable');
     headerCellsSortable.forEach(cell => {
-        cell.addEventListener('click', function() {
+        cell.addEventListener('click', function(e) {
+            if (e.target.closest('.btn-filter-column')) return;
+
             const sortType = this.getAttribute('data-sort');
+            if (!sortType) return;
+
             if (currentSort === sortType) {
                 currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
             } else {
@@ -231,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function updateSortIndicators() {
-    const sortableCells = document.querySelectorAll('.table-header-cell-cartera.sortable');
+    const sortableCells = document.querySelectorAll('.table-header-cell.sortable');
     sortableCells.forEach(cell => {
         cell.classList.remove('sort-asc', 'sort-desc');
         if (cell.getAttribute('data-sort') === currentSort) {
@@ -378,9 +382,11 @@ function renderizarTabla(pedidos) {
     
     pedidos.forEach(pedido => {
         const row = document.createElement('div');
-        row.className = 'table-row-cartera';
+        row.className = 'table-row';
         row.setAttribute('data-orden-id', pedido.id);
-        row.setAttribute('data-numero', pedido.numero);
+        row.setAttribute('data-numero', pedido.numero_pedido || pedido.numero || '');
+        row.setAttribute('data-cliente', pedido.cliente_nombre || pedido.cliente || '');
+        row.setAttribute('data-fecha', pedido.created_at ? new Date(pedido.created_at).toLocaleDateString('es-CO') : '');
         
         const fechaFormato = new Date(pedido.created_at).toLocaleDateString('es-CO');
         
@@ -415,18 +421,18 @@ function renderizarTabla(pedidos) {
         
         row.innerHTML = `
             <!-- Acciones -->
-            <div class="table-cell-cartera" style="flex: 0 0 180px; display: flex; gap: 8px; align-items: center; justify-content: center; padding: 0 12px; border-right: 6px solid #e5e7eb; box-sizing: border-box; margin-right: 8px;">
+            <div class="table-cell acciones-column" style="flex: 0 0 180px; justify-content: center; position: relative; display: flex; gap: 0.5rem;">
                 ${botonesHTML}
             </div>
-            
+
             <!-- Cliente -->
-            <div class="table-cell-cartera" style="flex: 0 0 310px; display: flex; align-items: center; padding: 0 14px 0 32px; box-sizing: border-box;">
-                <span style="font-size: 0.95rem;">${pedido.cliente_nombre || 'N/A'}</span>
+            <div class="table-cell" style="flex: 0 0 310px;">
+                <span>${pedido.cliente_nombre || 'N/A'}</span>
             </div>
-            
+
             <!-- Fecha -->
-            <div class="table-cell-cartera" style="flex: 0 0 150px; display: flex; align-items: center; padding: 0 10px; box-sizing: border-box;">
-                <span style="font-size: 0.95rem;">${fechaFormato}</span>
+            <div class="table-cell" style="flex: 0 0 150px; justify-content: center;">
+                <span>${fechaFormato}</span>
             </div>
         `;
         tablaPedidosBody.appendChild(row);

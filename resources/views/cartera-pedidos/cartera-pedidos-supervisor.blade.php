@@ -472,88 +472,78 @@
     <!-- CONTENEDOR DE NOTIFICACIONES -->
     <div id="notificacionesContainer"></div>
 
-    <!-- TOOLBAR DE FILTROS -->
-    <div class="cartera-toolbar">
-        <input 
-            type="text" 
-            id="searchInput" 
-            placeholder=" Buscar por cliente, número de pedido..." 
-            style="flex: 1; min-width: 250px; max-width: 600px;"
-        />
-        <button 
-            id="btnActualizar" 
-            onclick="cargarPedidos()" 
-            style="padding: 10px 16px; border: none; border-radius: 6px; background: #3b82f6; color: white; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; font-size: 0.95rem;"
-            title="Actualizar tabla"
-        >
-            <span class="material-symbols-rounded" style="font-size: 1.2rem;">refresh</span>
-            Actualizar
-        </button>
-    </div>
-
     <!-- TABLA DE PEDIDOS -->
-    <div class="table-container-cartera">
-        <div class="table-scroll-container-cartera">
-            <!-- ENCABEZADOS CON FILTROS -->
-            <div class="table-head">
-                <div class="table-header-row">
-                    <div class="table-header-cell-cartera" style="flex: 0 0 180px; justify-content: center; border-right: 6px solid rgba(255,255,255,0.4); box-sizing: border-box; padding: 0 12px;">
-                        <span>Acciones</span>
+    <div class="table-container">
+        <div class="modern-table-wrapper">
+            <div class="table-head" id="tableHead">
+                <div style="display: flex; align-items: center; width: 100%; gap: 12px; padding: 14px 12px;">
+                    @php
+                        $columns = [
+                            ['key' => 'acciones', 'label' => 'Acciones', 'flex' => '0 0 180px', 'justify' => 'flex-start'],
+                            ['key' => 'cliente', 'label' => 'Cliente', 'flex' => '0 0 310px', 'justify' => 'center'],
+                            ['key' => 'fecha', 'label' => 'Fecha', 'flex' => '0 0 150px', 'justify' => 'center'],
+                        ];
+                    @endphp
+
+                    @foreach($columns as $column)
+                        <div class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}{{ $column['key'] !== 'acciones' ? ' sortable' : '' }}" style="flex: {{ $column['flex'] }}; justify-content: {{ $column['justify'] }};" @if($column['key'] !== 'acciones') data-sort="{{ $column['key'] }}" @endif>
+                            <div class="th-wrapper" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; width: 100%;">
+                                <span class="header-text">{{ $column['label'] }}</span>
+                                @if($column['key'] === 'cliente')
+                                    <button type="button" class="btn-filter-column" title="Filtrar Cliente" onclick="abrirModalFiltro('cliente', event)">
+                                        <span class="material-symbols-rounded">filter_alt</span>
+                                        <div class="filter-badge"></div>
+                                    </button>
+                                @endif
+                                @if($column['key'] === 'fecha')
+                                    <button type="button" class="btn-filter-column" title="Filtrar Fecha" onclick="abrirModalFiltro('fecha', event)">
+                                        <span class="material-symbols-rounded">filter_alt</span>
+                                        <div class="filter-badge"></div>
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="table-scroll-container">
+                <div class="modern-table">
+                    <div class="table-body" id="tablaPedidosBody">
+                        <!-- Pedidos aquí -->
                     </div>
-                    <div class="table-header-cell-cartera sortable" style="flex: 0 0 310px; padding: 0 14px 0 32px; box-sizing: border-box;" data-sort="cliente">
-                        <span>Cliente</span>
-                        <span class="filter-icon" title="Filtrar cliente" onclick="abrirModalFiltro('cliente', event)">
-                            <span class="material-symbols-rounded" style="font-size: 1.1rem;">filter_alt</span>
-                        </span>
+
+                    <div id="emptyState" class="empty-state-cartera" style="display: none;">
+                        <span class="material-symbols-rounded">shopping_cart</span>
+                        <p>No hay pedidos pendientes de cartera</p>
                     </div>
-                    <div class="table-header-cell-cartera sortable" style="flex: 0 0 150px; padding: 0 10px; box-sizing: border-box;" data-sort="fecha">
-                        <span>Fecha</span>
-                        <span class="filter-icon" title="Filtrar fecha" onclick="abrirModalFiltro('fecha', event)">
-                            <span class="material-symbols-rounded" style="font-size: 1.1rem;">filter_alt</span>
-                        </span>
+
+                    <div id="loadingState" class="loading-state-cartera" style="display: none;">
+                        <div class="spinner"></div>
+                        <span>Cargando pedidos...</span>
                     </div>
                 </div>
             </div>
 
-            <!-- CUERPO DE LA TABLA -->
-            <div class="modern-table-cartera">
-                <div class="table-body-cartera" id="tablaPedidosBody">
-                    <!-- Pedidos aquí -->
-                </div>
-
-                <!-- ESTADO VACÍO -->
-                <div id="emptyState" class="empty-state-cartera" style="display: none;">
-                    <span class="material-symbols-rounded">shopping_cart</span>
-                    <p>No hay pedidos pendientes de cartera</p>
-                </div>
-
-                <!-- ESTADO DE CARGA -->
-                <div id="loadingState" class="loading-state-cartera" style="display: none;">
-                    <div class="spinner"></div>
-                    <span>Cargando pedidos...</span>
-                </div>
+            <div class="table-pagination" id="paginationContainer" style="display: none;">
+                <button class="pagination-btn" id="btnFirstPage" title="Primera página">
+                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">first_page</span>
+                </button>
+                <button class="pagination-btn" id="btnPrevPage" title="Página anterior">
+                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">chevron_left</span>
+                </button>
+                <span class="pagination-info">
+                    <span class="material-symbols-rounded" style="font-size: 1rem; vertical-align: middle; margin-right: 4px;">article</span>
+                    Pág. <span id="currentPage">1</span> de <span id="totalPages">1</span>
+                    (<span id="showingFrom">0</span>-<span id="showingTo">0</span> de <span id="totalRecords">0</span>)
+                </span>
+                <button class="pagination-btn" id="btnNextPage" title="Próxima página">
+                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">chevron_right</span>
+                </button>
+                <button class="pagination-btn" id="btnLastPage" title="Última página">
+                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">last_page</span>
+                </button>
             </div>
-        </div>
-
-        <!-- PAGINACIÓN -->
-        <div class="pagination-container" id="paginationContainer" style="display: none;">
-            <button class="pagination-btn" id="btnFirstPage" title="Primera página">
-                <span class="material-symbols-rounded" style="font-size: 1.2rem;">first_page</span>
-            </button>
-            <button class="pagination-btn" id="btnPrevPage" title="Página anterior">
-                <span class="material-symbols-rounded" style="font-size: 1.2rem;">chevron_left</span>
-            </button>
-            <span class="pagination-info">
-                <span class="material-symbols-rounded" style="font-size: 1rem; vertical-align: middle; margin-right: 4px;">article</span>
-                Pág. <span id="currentPage">1</span> de <span id="totalPages">1</span> 
-                (<span id="showingFrom">0</span>-<span id="showingTo">0</span> de <span id="totalRecords">0</span>)
-            </span>
-            <button class="pagination-btn" id="btnNextPage" title="Próxima página">
-                <span class="material-symbols-rounded" style="font-size: 1.2rem;">chevron_right</span>
-            </button>
-            <button class="pagination-btn" id="btnLastPage" title="Última página">
-                <span class="material-symbols-rounded" style="font-size: 1.2rem;">last_page</span>
-            </button>
         </div>
     </div>
 </div>

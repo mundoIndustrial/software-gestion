@@ -1,12 +1,36 @@
 // Script para manejar búsqueda desde el header en las nuevas vistas
 let filtrosColumnasActivas = {};
 
+function elementoVisible(el) {
+    if (!el) return false;
+    const style = window.getComputedStyle(el);
+    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
+    const rect = el.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+}
+
+function obtenerScopeActivo() {
+    const secciones = Array.from(document.querySelectorAll('.section-content'));
+    const seccionActiva = secciones.find(s => s.classList.contains('active') && elementoVisible(s))
+        || secciones.find(s => elementoVisible(s));
+
+    if (seccionActiva) return seccionActiva;
+
+    const body = document.querySelector('.page-content') || document.body;
+    return body;
+}
+
+function obtenerRowsActivas() {
+    const scope = obtenerScopeActivo();
+    return scope.querySelectorAll('.table-row');
+}
+
 /**
  * Obtener valores únicos de una columna en la tabla
  */
 function obtenerValoresColumna(columna) {
     const valores = [];
-    const rows = document.querySelectorAll('.table-row');
+    const rows = obtenerRowsActivas();
     rows.forEach(row => {
         const valor = row.dataset[columna];
         if (valor && !valores.includes(valor)) {
@@ -137,7 +161,7 @@ function filtrarOpcionesModal(input, columna) {
  */
 function aplicarBusquedaYFiltros() {
     const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
-    const rows = document.querySelectorAll('.table-row');
+    const rows = obtenerRowsActivas();
     let hayFiltrosActivos = false;
 
     rows.forEach(row => {
@@ -145,11 +169,12 @@ function aplicarBusquedaYFiltros() {
 
         // Búsqueda general
         if (searchTerm) {
-            const numero = row.dataset.numero?.toLowerCase() || '';
-            const cliente = row.dataset.cliente?.toLowerCase() || '';
-            const asesora = row.dataset.asesora?.toLowerCase() || '';
-            
-            mostrar = numero.includes(searchTerm) || cliente.includes(searchTerm) || asesora.includes(searchTerm);
+            const datasetValues = Object.values(row.dataset || {})
+                .map(v => (v ?? '').toString().toLowerCase())
+                .join(' ');
+
+            const textoVisible = (row.textContent || '').toLowerCase();
+            mostrar = datasetValues.includes(searchTerm) || textoVisible.includes(searchTerm);
         }
 
         // Filtros por columna
@@ -192,6 +217,15 @@ function limpiarTodosFiltros() {
     document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
     aplicarBusquedaYFiltros();
 }
+
+// Si el input no tiene inline handler en alguna vista, lo conectamos igual
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('searchInput');
+    if (input && !input.dataset.listenerBound) {
+        input.addEventListener('input', aplicarBusquedaYFiltros);
+        input.dataset.listenerBound = '1';
+    }
+});
 
 // Estilos CSS para los modales de filtro
 const style = document.createElement('style');

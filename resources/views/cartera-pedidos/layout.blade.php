@@ -34,6 +34,10 @@
            CORRECCIÓN DE LAYOUT PARA CARTERA
            Sobreescribir CSS de asesores que interfiere
         ======================================== */
+
+        :root {
+            --primary: rgba(7, 83, 177, 1);
+        }
         
         /* Resetear main-content para cartera */
         .main-content {
@@ -117,77 +121,350 @@
             background: var(--bg-primary);
         }
 
-        /* Estilos específicos para tabla de cartera */
-        .table-container-cartera {
+        /* Alias de estilos (tabla estilo Contador) para el módulo Cartera */
+        .table-container {
+            padding: 0;
+            background: transparent;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .modern-table-wrapper {
             background: white;
-            border-radius: 8px;
-            box-shadow: var(--shadow-md);
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             overflow: hidden;
-            margin: 0 auto;
-            max-width: 1000px;
+            border: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 100%;
+            position: relative;
+        }
+
+        .table-scroll-container {
+            overflow: auto;
+            flex: 1;
+            width: 100%;
+            scrollbar-width: thin;
+            scrollbar-color: #1e5ba8 #f9fafb;
+            position: relative;
+            z-index: 1;
+            min-height: 390px;
+            max-height: 390px;
+        }
+
+        .table-scroll-container::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .table-scroll-container::-webkit-scrollbar-track {
+            background: #f9fafb;
+            border-radius: 4px;
+        }
+
+        .table-scroll-container::-webkit-scrollbar-thumb {
+            background: #1e5ba8;
+            border-radius: 4px;
+        }
+
+        .table-scroll-container::-webkit-scrollbar-thumb:hover {
+            background: #1e40af;
+        }
+
+        .modern-table {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            font-size: 0.875rem;
+            min-width: 900px;
+        }
+
+        .table-body {
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 12px;
             width: 100%;
         }
 
-        /* Estilos para filas y celdas de tabla */
-        .table-row-cartera {
+        .table-row {
+            transition: all 0.2s ease;
+            height: 70px;
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
             display: flex;
             align-items: center;
-            gap: 0;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 0.95rem;
-            min-height: 60px;
-            padding: 8px 4px;
-            transition: background-color 0.2s ease;
+            gap: 12px;
+            padding: 0 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            overflow: visible;
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            min-width: 900px;
+            flex-shrink: 0;
         }
 
-        .table-row-cartera:hover {
-            background-color: var(--bg-hover);
+        .table-row:hover {
+            background: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
         }
 
-        .table-cell-cartera {
+        .table-cell {
+            padding: 14px 8px;
+            border-right: none;
+            position: relative;
+            vertical-align: middle;
+            height: 100%;
             display: flex;
             align-items: center;
+            min-width: 100px;
+            overflow: visible;
+            flex: 0 0 auto;
+            white-space: nowrap;
+        }
+
+        .table-cell span {
+            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            white-space: nowrap;
+            color: #1f2937;
+        }
+
+        .table-pagination {
+            display: flex !important;
+            justify-content: center;
+            align-items: center;
+            padding: 16px 24px;
+            background: #f9fafb !important;
+            border-top: 1px solid #e5e7eb;
+            flex-wrap: wrap;
+            gap: 8px;
+            position: relative !important;
+            z-index: 10 !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            border-radius: 0 0 16px 16px;
+        }
+
+        /* Estilos específicos para tabla de cartera */
+        .table-container-cartera {
             padding: 0;
+            background: transparent;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .table-scroll-container-cartera {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 100%;
+            position: relative;
+        }
+
+        .table-scroll-container-cartera {
+            overflow: auto;
+            flex: 1;
+            width: 100%;
+            scrollbar-width: thin;
+            scrollbar-color: #1e5ba8 #f9fafb;
+            position: relative;
+            z-index: 1;
+            min-height: 390px;
+            max-height: 390px;
+        }
+
+        .table-scroll-container-cartera::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .table-scroll-container-cartera::-webkit-scrollbar-track {
+            background: #f9fafb;
+            border-radius: 4px;
+        }
+
+        .table-scroll-container-cartera::-webkit-scrollbar-thumb {
+            background: #1e5ba8;
+            border-radius: 4px;
+        }
+
+        .table-scroll-container-cartera::-webkit-scrollbar-thumb:hover {
+            background: #1e40af;
+        }
+
+        .modern-table-cartera {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            font-size: 0.875rem;
+            min-width: 900px;
         }
 
         /* Estilos para encabezados */
         .table-head {
-            background: var(--primary-color) !important;
-            border-bottom: 2px solid var(--accent-color) !important;
-            padding: 0 !important;
             position: sticky !important;
             top: 0 !important;
-            z-index: 10 !important;
+            z-index: 20 !important;
+            background: linear-gradient(135deg, var(--primary) 0%, #2b7ec9 100%) !important;
+            border-radius: 16px 16px 0 0 !important;
             display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            padding: 0 20px !important;
+            height: 70px !important;
             width: 100% !important;
+            flex-shrink: 0 !important;
+            will-change: transform;
         }
 
         .table-header-row {
             display: flex !important;
             align-items: center !important;
             width: 100% !important;
-            gap: 0 !important;
-            padding: 14px 8px !important;
-            background: var(--primary-color) !important;
+            gap: 12px !important;
+            padding: 0 !important;
+            background: transparent !important;
+            height: 100% !important;
         }
 
         .table-header-cell-cartera {
+            background: transparent !important;
+            color: #ffffff !important;
+            padding: 0 12px !important;
+            border: none !important;
+            position: relative !important;
+            font-weight: 600 !important;
+            font-size: 12px !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.4px !important;
+            white-space: nowrap !important;
             display: flex !important;
             align-items: center !important;
-            gap: 8px !important;
-            font-weight: 600 !important;
-            color: white !important;
-            cursor: pointer !important;
-            transition: all 0.2s !important;
+            justify-content: flex-start !important;
+            height: 100% !important;
             user-select: none !important;
             box-sizing: border-box !important;
+            cursor: pointer !important;
         }
 
         .table-header-cell-cartera:hover {
-            opacity: 0.8;
+            opacity: 0.9;
+        }
+
+        .table-body-cartera {
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 12px;
+            width: 100%;
+        }
+
+        /* Estilos para filas y celdas de tabla */
+        .table-row-cartera {
+            transition: all 0.2s ease;
+            height: 70px;
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            overflow: visible;
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            min-width: 900px;
+            flex-shrink: 0;
+        }
+
+        .table-row-cartera:hover {
+            background: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .table-cell-cartera {
+            padding: 14px 8px;
+            border-right: none;
+            position: relative;
+            vertical-align: middle;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            min-width: 100px;
+            overflow: visible;
+            flex: 0 0 auto;
+            white-space: nowrap;
+        }
+
+        .table-cell-cartera span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #1f2937;
+        }
+
+        .pagination-container {
+            display: flex !important;
+            justify-content: center;
+            align-items: center;
+            padding: 16px 24px;
+            background: #f9fafb !important;
+            border-top: 1px solid #e5e7eb;
+            flex-wrap: wrap;
+            gap: 8px;
+            position: relative !important;
+            z-index: 10 !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            border-radius: 0 0 16px 16px;
+        }
+
+        .pagination-btn {
+            background: rgba(30, 91, 168, 0.2);
+            border: 1px solid rgba(30, 91, 168, 0.4);
+            color: #1e5ba8;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: #1e5ba8;
+            border-color: #1e5ba8;
+            color: #ffffff;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
         }
 
         .nav-left {
@@ -203,6 +480,50 @@
             justify-content: flex-end;
             align-items: center;
             gap: 1rem;
+        }
+
+        .nav-search {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 0 1 auto;
+        }
+
+        .search-container {
+            position: relative;
+            width: 300px;
+        }
+
+        .nav-search .search-input {
+            width: 100%;
+            padding: 8px 12px 8px 32px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            color: #1f2937;
+        }
+
+        .nav-search .search-input:focus {
+            outline: none;
+            background: #ffffff !important;
+            border-color: #1e5ba8 !important;
+            box-shadow: 0 0 0 3px rgba(30, 91, 168, 0.1);
+        }
+
+        .nav-search .search-input::placeholder {
+            color: #9ca3af;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+            font-size: 0.85rem;
+            pointer-events: none;
         }
 
         /* Estilos para notificaciones */
@@ -501,6 +822,20 @@
                 </div>
             </div>
 
+            @if(request()->is('cartera/*'))
+            <div class="nav-search">
+                <div class="search-container">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="Buscar por número, cliente o ID..." 
+                        class="search-input"
+                    >
+                    <i class="fas fa-search search-icon"></i>
+                </div>
+            </div>
+            @endif
+
             <div class="nav-right">
                 <!-- Perfil de Usuario -->
                 <div class="user-dropdown">
@@ -602,6 +937,68 @@
         } else {
             // Si el DOM ya está listo (script cargó tarde)
             inicializarControles();
+        }
+
+        // Búsqueda contextual en header para vistas de Cartera
+        function elementoVisible(el) {
+            if (!el) return false;
+            const style = window.getComputedStyle(el);
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
+            const rect = el.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+        }
+
+        function obtenerScopeActivo() {
+            const body = document.querySelector('.content-area') || document.body;
+            return body;
+        }
+
+        function obtenerRowsActivasCartera() {
+            const scope = obtenerScopeActivo();
+            const rows = scope.querySelectorAll('.table-row, .table-row-cartera');
+            return rows;
+        }
+
+        function aplicarBusquedaCarteraLocal() {
+            const input = document.getElementById('searchInput');
+            const term = (input?.value || '').toLowerCase().trim();
+            const rows = obtenerRowsActivasCartera();
+
+            rows.forEach(row => {
+                if (!term) {
+                    row.style.display = '';
+                    return;
+                }
+
+                const datasetValues = Object.values(row.dataset || {})
+                    .map(v => (v ?? '').toString().toLowerCase())
+                    .join(' ');
+                const textoVisible = (row.textContent || '').toLowerCase();
+                const mostrar = datasetValues.includes(term) || textoVisible.includes(term);
+                row.style.display = mostrar ? '' : 'none';
+            });
+        }
+
+        function inicializarBusquedaHeaderCartera() {
+            const input = document.getElementById('searchInput');
+            if (!input) return;
+
+            const path = window.location.pathname || '';
+            const esPedidos = path.includes('/cartera/pedidos');
+
+            // En /cartera/pedidos la búsqueda ya está conectada a la API en app.js
+            if (esPedidos) return;
+
+            if (!input.dataset.listenerBoundCartera) {
+                input.addEventListener('input', aplicarBusquedaCarteraLocal);
+                input.dataset.listenerBoundCartera = '1';
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', inicializarBusquedaHeaderCartera);
+        } else {
+            inicializarBusquedaHeaderCartera();
         }
     </script>
 
