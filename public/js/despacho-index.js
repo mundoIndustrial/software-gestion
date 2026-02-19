@@ -107,7 +107,7 @@
             const isDespachoPage = window.location.pathname.includes('/despacho');
             const url = isDespachoPage 
                 ? '/despacho/observaciones/resumen'
-                : '/pedidos/observaciones-despacho/resumen';
+                : '/asesores/pedidos/observaciones-despacho/resumen';
                 
             console.log(`[DEBUG] Refrescando badges desde: ${url}`);
 
@@ -152,7 +152,7 @@
             const isDespachoPage = window.location.pathname.includes('/despacho');
             const url = isDespachoPage 
                 ? `/despacho/${pedidoId}/observaciones/marcar-vistas`
-                : `/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`;
+                : `/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`;
                 
             console.log(`[DEBUG] Marcando notificaciones como vistas en: ${url}`);
             
@@ -188,7 +188,7 @@
         const isDespachoPage = window.location.pathname.includes('/despacho');
         const url = isDespachoPage 
             ? `/despacho/${pedidoId}/observaciones`
-            : `/pedidos/${pedidoId}/observaciones-despacho`;
+            : `/asesores/pedidos/${pedidoId}/observaciones-despacho`;
             
         console.log(`[DEBUG] Obteniendo observaciones desde: ${url}`);
         
