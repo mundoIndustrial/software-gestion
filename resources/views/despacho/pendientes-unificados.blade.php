@@ -582,7 +582,7 @@ async function cargarPedidos() {
         const params = new URLSearchParams();
         if (searchActual) params.append('search', searchActual);
         
-        const response = await fetch(`/despacho/api/todos-pedidos?${params}`);
+        const response = await fetch(`/despacho/api/pendientes-todos?${params}`);
         const data = await response.json();
         
         if (data.success) {

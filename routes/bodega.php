@@ -52,6 +52,10 @@ Route::middleware(['auth', 'bodega-access'])->prefix('gestion-bodega')->name('ge
     Route::get('/pedidos-anulados', [PedidosController::class, 'anulados'])
         ->name('pedidos-anulados');
 
+    // Pedidos Entregados
+    Route::get('/pedidos-entregados', [PedidosController::class, 'entregados'])
+        ->name('pedidos-entregados');
+
     // Pendiente Costura
     Route::get('/pendiente-costura', [PedidosController::class, 'pendienteCostura'])
         ->name('pendientes-costura');

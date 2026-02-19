@@ -267,6 +267,85 @@ class DespachoEstadoService
     }
 
     /**
+     * Cambiar estado del pedido a "Pendiente" si ya no hay items entregados
+     * 
+     * @param int $pedidoId
+     * @return bool True si se cambió el estado, false si no
+     */
+    public function cambiarEstadoAPendienteSiCorresponde(int $pedidoId): bool
+    {
+        try {
+            // Verificar si el pedido tiene items entregados
+            $despachos = DesparChoParcialesModel::where('pedido_id', $pedidoId)
+                ->activo()
+                ->get();
+
+            if ($despachos->isEmpty()) {
+                Log::info('Pedido sin despachos registrados, no se cambia estado', [
+                    'pedido_id' => $pedidoId
+                ]);
+                return false;
+            }
+
+            // Verificar si hay items entregados
+            $despachosEntregados = $despachos->where('entregado', true);
+            
+            if ($despachosEntregados->count() > 0) {
+                Log::info('Pedido todavía tiene items entregados, no se cambia estado', [
+                    'pedido_id' => $pedidoId,
+                    'items_entregados' => $despachosEntregados->count()
+                ]);
+                return false;
+            }
+
+            // Obtener el pedido
+            $pedido = PedidoProduccion::find($pedidoId);
+            if (!$pedido) {
+                Log::warning('Pedido no encontrado para cambio de estado', [
+                    'pedido_id' => $pedidoId
+                ]);
+                return false;
+            }
+
+            // Verificar que el estado actual no sea ya "Pendiente"
+            if ($pedido->estado === 'Pendiente') {
+                Log::info('Pedido ya está en estado Pendiente', [
+                    'pedido_id' => $pedidoId,
+                    'numero_pedido' => $pedido->numero_pedido
+                ]);
+                return false;
+            }
+
+            // NOTA: Permitir cambiar de "Entregado" a "Pendiente" según requerimiento
+            // El usuario quiere poder deshacer el estado "Entregado"
+
+            // Cambiar estado a "Pendiente"
+            $estadoAnterior = $pedido->estado;
+            $pedido->estado = 'Pendiente';
+            $pedido->save();
+
+            Log::info('Estado del pedido cambiado a Pendiente automáticamente', [
+                'pedido_id' => $pedidoId,
+                'numero_pedido' => $pedido->numero_pedido,
+                'estado_anterior' => $estadoAnterior,
+                'estado_nuevo' => 'Pendiente',
+                'fecha_cambio' => now()->toDateTimeString()
+            ]);
+
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error('Error al cambiar estado del pedido a Pendiente', [
+                'pedido_id' => $pedidoId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return false;
+        }
+    }
+
+    /**
      * Determinar el estado de entrega de un pedido
      * 
      * @param int $pedidoId

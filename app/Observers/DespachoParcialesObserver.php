@@ -62,10 +62,16 @@ class DespachoParcialesObserver
             ]);
 
             // Usar el servicio para verificar y cambiar estado si corresponde
-            $cambiado = $this->despachoEstadoService->cambiarEstadoAEntregadoSiCorresponde($pedidoId);
+            $cambiadoAEntregado = $this->despachoEstadoService->cambiarEstadoAEntregadoSiCorresponde($pedidoId);
+            $cambiadoAPendiente = $this->despachoEstadoService->cambiarEstadoAPendienteSiCorresponde($pedidoId);
 
-            if ($cambiado) {
+            if ($cambiadoAEntregado) {
                 Log::info('Pedido marcado como Entregado automáticamente por Observer', [
+                    'pedido_id' => $pedidoId,
+                    'evento' => 'DespachoParcialesObserver'
+                ]);
+            } elseif ($cambiadoAPendiente) {
+                Log::info('Pedido marcado como Pendiente automáticamente por Observer', [
                     'pedido_id' => $pedidoId,
                     'evento' => 'DespachoParcialesObserver'
                 ]);

@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class BodegaPedidoService
 {
@@ -103,6 +104,96 @@ class BodegaPedidoService
         }
 
         return $this->procesarVistaLista($paginacion, $pedidosFiltradosPorRol);
+    }
+
+    /**
+     * Obtener pedidos entregados paginados
+     */
+    public function obtenerPedidosEntregadosPaginados(Request $request): array
+    {
+        $usuario = auth()->user();
+        $rolesDelUsuario = $usuario->getRoleNames()->toArray();
+
+        // Determinar configuración según rol
+        $areasPermitidas = $this->roleService->obtenerAreasPermitidas($rolesDelUsuario);
+
+        // Obtener números de pedidos que tienen items con estado 'Entregado'
+        $numerosConEntregados = DB::table('bodega_detalles_talla')
+            ->where('estado_bodega', 'Entregado')
+            ->pluck('numero_pedido')
+            ->filter(fn($n) => !empty($n))
+            ->unique()
+            ->values();
+        
+        \Log::info('[BodegaPedidoService] Pedidos con items entregados encontrados', [
+            'total' => $numerosConEntregados->count(),
+            'numeros' => $numerosConEntregados->toArray()
+        ]);
+
+        // Cargar recibos por número de pedido que tengan items entregados
+        $todosLosPedidos = ReciboPrenda::with(['asesor'])
+            ->whereIn('numero_pedido', $numerosConEntregados)
+            ->orderBy('numero_pedido', 'asc')
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        // Filtrar por áreas según rol
+        $pedidosFiltradosPorRol = $this->filtrarPedidosPorArea($todosLosPedidos, $areasPermitidas);
+
+        // Paginar
+        $paginacion = $this->paginarPedidos($pedidosFiltradosPorRol, $request);
+
+        // Procesar datos para vista de lista con cálculo de estados
+        $pedidosPorPagina = [];
+        $pedidosAgrupados = $pedidosFiltradosPorRol->groupBy('numero_pedido');
+
+        foreach ($pedidosAgrupados as $numeroPedido => $pedidosDelNumero) {
+            $primerPedido = $pedidosDelNumero->first();
+            $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+            
+            // Verificar si hay items pendientes en bodega
+            $tieneItemsPendientes = BodegaDetallesTalla::where('numero_pedido', $numeroPedido)
+                ->where('estado_bodega', 'Pendiente')
+                ->exists();
+            
+            // Verificar si todos los items están entregados
+            $totalItems = BodegaDetallesTalla::where('numero_pedido', $numeroPedido)
+                ->where('estado_bodega', '!=', 'Anulado')
+                ->count();
+            
+            $itemsEntregados = BodegaDetallesTalla::where('numero_pedido', $numeroPedido)
+                ->where('estado_bodega', 'Entregado')
+                ->count();
+            
+            $todosEntregados = $totalItems > 0 && $totalItems === $itemsEntregados;
+            
+            $pedidosPorPagina[] = [
+                'id' => $primerPedido->id,
+                'numero_pedido' => $numeroPedido,
+                'cliente' => $primerPedido->cliente ?? 'N/A',
+                'asesor' => $primerPedido->asesor?->nombre ?? $primerPedido->asesor?->name ?? 'N/A',
+                'estado' => $pedidoProduccion?->estado ?? $primerPedido->estado,
+                'fecha_pedido' => $primerPedido->created_at ?? $primerPedido->fecha_pedido,
+                'cantidad_items' => $pedidosDelNumero->count(),
+                'viewed_at' => $pedidoProduccion?->viewed_at,
+                'tiene_pendientes' => $tieneItemsPendientes,
+                'todos_entregados' => $todosEntregados,
+            ];
+
+        }
+
+        // Procesar datos para vista
+        if ($request->query('view') === 'details') {
+            return $this->procesarVistaDetallada($paginacion, $rolesDelUsuario, $areasPermitidas);
+        }
+
+        return [
+            'view_type' => 'list',
+            'pedidos_por_pagina' => $pedidosPorPagina,
+            'total_pedidos' => count($pedidosPorPagina),
+            'pagina_actual' => $paginacion['pagina_actual'],
+            'por_pagina' => $paginacion['por_pagina'],
+        ];
     }
 
     /**
@@ -232,7 +323,7 @@ class BodegaPedidoService
 
     private function obtenerEstadosPermitidos(): array
     {
-        return ['ENTREGADO', 'EN EJECUCIÓN', 'NO INICIADO', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'];
+        return ['Pendiente', 'EN EJECUCIÓN', 'NO INICIADO', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'];
     }
 
     private function filtrarPedidosPorArea(Collection $pedidos, array $areasPermitidas): Collection
@@ -624,6 +715,7 @@ class BodegaPedidoService
             'numero_pedido' => $recibo->numero_pedido,
             'pedido_produccion_id' => $pedidoProduccion?->id,
             'recibo_prenda_id' => $recibo->id,
+            'prenda_id' => $prendaEnriquecida['id'] ?? null,
             'asesor' => $asesor,
             'empresa' => $empresa,
             'descripcion' => $prendaEnriquecida,
@@ -670,6 +762,7 @@ class BodegaPedidoService
             'numero_pedido' => $recibo->numero_pedido,
             'pedido_produccion_id' => $pedidoProduccion?->id,
             'recibo_prenda_id' => $recibo->id,
+            'prenda_id' => $prendaEnriquecida['id'] ?? null,
             'asesor' => $asesor,
             'empresa' => $empresa,
             'descripcion' => $prendaEnriquecida,
@@ -696,6 +789,27 @@ class BodegaPedidoService
         // Para EPPs, usar el MD5 exacto como está guardado en la base de datos (sin prefijo)
         $eppId = md5($recibo->numero_pedido . '|' . $eppNombre . '|' . $eppCantidad);
         
+        // El pedido_epp_id ya viene en los datos enriquecidos, no hay que buscarlo
+        $pedidoEppId = $eppEnriquecido['pedido_epp_id'] ?? null;
+        
+        \Log::info('[crearItemEpp] Datos EPP para búsqueda:', [
+            'pedido_produccion_id' => $pedidoProduccion?->id,
+            'epp_enriquecido_id' => $eppEnriquecido['id'] ?? 'null',
+            'epp_nombre' => $eppNombre,
+            'epp_cantidad' => $eppCantidad,
+            'pedido_epp_id_directo' => $pedidoEppId,
+            'epp_enriquecido_completo' => $eppEnriquecido
+        ]);
+        
+        // Ya no necesitamos buscar en BD, el ID viene directamente
+        \Log::info('[crearItemEpp] Resultado búsqueda pedido_epp:', [
+            'pedido_epp_encontrado' => $pedidoEppId ? $pedidoEppId : 'null',
+            'pedido_epp_datos' => $pedidoEppId ? [
+                'id' => $pedidoEppId,
+                'usado_directamente_desde' => 'epp_enriquecido.pedido_epp_id'
+            ] : 'null'
+        ]);
+        
         // Obtener datos de bodega
         $bodegaData = $this->obtenerDatosBodega($recibo->numero_pedido, $eppId, $eppNombre, $eppCantidad, $rolesDelUsuario);
         
@@ -719,12 +833,34 @@ class BodegaPedidoService
             'bodega_estado' => $bodegaData['estado'] ?? 'null'
         ]);
         
+        \Log::info('[crearItemEpp] Datos generados para vista:', [
+            'id' => $recibo->id,
+            'tipo' => 'epp',
+            'numero_pedido' => $recibo->numero_pedido,
+            'pedido_produccion_id' => $pedidoProduccion?->id,
+            'recibo_prenda_id' => $recibo->id,
+            'pedido_epp_id' => $pedidoEppId,
+            'asesor' => $asesor,
+            'empresa' => $empresa,
+            'descripcion' => $eppEnriquecido,
+            'talla' => $eppId,
+            'cantidad' => $bodegaData['cantidad'] ?? $eppCantidad,
+            'cantidad_total' => $eppCantidad,
+            'estado_bodega' => $bodegaData['estado'],
+            'area' => $bodegaData['area'],
+            'pedido_epp_usado' => $pedidoEppId ? [
+                'id' => $pedidoEppId,
+                'fuente' => 'epp_enriquecido.pedido_epp_id (directo)'
+            ] : null
+        ]);
+        
         return [
             'id' => $recibo->id,
             'tipo' => 'epp',
             'numero_pedido' => $recibo->numero_pedido,
             'pedido_produccion_id' => $pedidoProduccion?->id,
             'recibo_prenda_id' => $recibo->id,
+            'pedido_epp_id' => $pedidoEppId,
             'asesor' => $asesor,
             'empresa' => $empresa,
             'descripcion' => $eppEnriquecido,
@@ -865,111 +1001,197 @@ class BodegaPedidoService
 
     private function guardarDatosBasicos(array $validatedData, $pedido, $usuario, array $rolesDelUsuario)
     {
-        $areaInput = $validatedData['area'] ?? null;
-        $areaInput = is_string($areaInput) ? trim($areaInput) : $areaInput;
-
-        $areaExistente = null;
-        if (empty($areaInput)) {
-            $areaExistente = BodegaDetallesTalla::where('pedido_produccion_id', $pedido->id)
-                ->where('numero_pedido', $validatedData['numero_pedido'])
-                ->where('talla', $validatedData['talla'])
-                ->when(isset($validatedData['prenda_nombre']), fn($q) => $q->where('prenda_nombre', $validatedData['prenda_nombre']))
-                ->when(isset($validatedData['cantidad']), fn($q) => $q->where('cantidad', $validatedData['cantidad']))
-                ->value('area');
-        }
-
-        $areaFinal = $areaInput ?: $areaExistente;
-
-        $datosBasicos = [
-            'pedido_produccion_id' => $pedido->id,
-            'recibo_prenda_id' => $validatedData['recibo_prenda_id'] ?? null,
-            'prenda_nombre' => $validatedData['prenda_nombre'] ?? null,
-            'asesor' => $validatedData['asesor'] ?? null,
-            'empresa' => $validatedData['empresa'] ?? null,
-            'cantidad' => $validatedData['cantidad'] ?? 0,
-            'pendientes' => $validatedData['pendientes'] ?? null,
-            'observaciones_bodega' => $validatedData['observaciones_bodega'] ?? null,
-            'fecha_entrega' => $validatedData['fecha_entrega'] ?? null,
-            'fecha_pedido' => $validatedData['fecha_pedido'] ?? null,
-            'usuario_bodega_id' => $usuario->id,
-            'usuario_bodega_nombre' => $usuario->name,
-        ];
-        
-        // Guardar área si viene (o si podemos inferirla) para todos los roles
-        if (!empty($areaFinal)) {
-            $datosBasicos['area'] = $areaFinal;
-        }
-
-        // Guardar estado general SOLO si viene en el request.
-        // En vistas de pendientes (Costura/EPP) no debemos tocar estado_bodega.
-        $estadoBodegaGuardado = null;
-        if (array_key_exists('estado_bodega', $validatedData) && $validatedData['estado_bodega'] !== null) {
-            $datosBasicos['estado_bodega'] = $validatedData['estado_bodega'] ?: 'Pendiente';
-            $estadoBodegaGuardado = $datosBasicos['estado_bodega'];
-        }
-
-        // Guardar estado específico según el área
-        if (array_key_exists('estado', $validatedData) && $validatedData['estado'] !== null) {
-            // Siempre guardar en estado_bodega (campo general)
-            $datosBasicos['estado_bodega'] = $validatedData['estado'];
-            $estadoBodegaGuardado = $datosBasicos['estado_bodega'];
+        try {
+            // Preparar datos básicos para guardar
+            $datosBasicos = [
+                'pedido_produccion_id' => $pedido->id,
+                'recibo_prenda_id' => $validatedData['recibo_prenda_id'] ?? null,
+                'prenda_id' => $validatedData['prenda_id'] ?? null,
+                'pedido_epp_id' => $validatedData['pedido_epp_id'] ?? null,
+                'prenda_nombre' => $validatedData['prenda_nombre'] ?? null,
+                'asesor' => $validatedData['asesor'] ?? null,
+                'empresa' => $validatedData['empresa'] ?? null,
+                'cantidad' => $validatedData['cantidad'] ?? 0,
+                'pendientes' => $validatedData['pendientes'] ?? null,
+                'observaciones_bodega' => $validatedData['observaciones_bodega'] ?? null,
+                'fecha_entrega' => $validatedData['fecha_entrega'] ?? null,
+                'fecha_pedido' => $validatedData['fecha_pedido'] ?? null,
+                'usuario_bodega_id' => $usuario->id,
+                'usuario_bodega_nombre' => $usuario->name,
+            ];
             
-            // También guardar en el campo específico según el área
+            // Log para verificar que $datosBasicos está definida
+            \Log::info('[DEBUG] $datosBasicos definida correctamente', [
+                'datosBasicos_existe' => isset($datosBasicos),
+                'datosBasicos_count' => count($datosBasicos),
+                'linea' => __LINE__
+            ]);
+            
+            // Procesar área
+            $areaInput = $validatedData['area'] ?? null;
+            $areaInput = is_string($areaInput) ? trim($areaInput) : $areaInput;
+            
+            if (empty($areaInput)) {
+                $areaExistente = BodegaDetallesTalla::where('pedido_produccion_id', $pedido->id)
+                    ->where('numero_pedido', $validatedData['numero_pedido'])
+                    ->where('talla', $validatedData['talla'])
+                    ->when(isset($validatedData['prenda_nombre']), fn($q) => $q->where('prenda_nombre', $validatedData['prenda_nombre']))
+                    ->when(isset($validatedData['cantidad']), fn($q) => $q->where('cantidad', $validatedData['cantidad']))
+                    ->value('area');
+                $areaFinal = $areaExistente;
+            } else {
+                $areaFinal = $areaInput;
+            }
+            
             if (!empty($areaFinal)) {
-                if ($areaFinal === 'Costura') {
-                    $datosBasicos['costura_estado'] = $validatedData['estado'];
-                } elseif ($areaFinal === 'EPP') {
-                    $datosBasicos['epp_estado'] = $validatedData['estado'];
+                $datosBasicos['area'] = $areaFinal;
+            }
+
+            // Procesar estados
+            $estadoBodegaGuardado = null;
+            
+            if (array_key_exists('estado_bodega', $validatedData) && $validatedData['estado_bodega'] !== null) {
+                $datosBasicos['estado_bodega'] = $validatedData['estado_bodega'] ?: 'Pendiente';
+                $estadoBodegaGuardado = $datosBasicos['estado_bodega'];
+            }
+            
+            if (array_key_exists('estado', $validatedData) && $validatedData['estado'] !== null) {
+                $datosBasicos['estado_bodega'] = $validatedData['estado'];
+                $estadoBodegaGuardado = $datosBasicos['estado_bodega'];
+                
+                if (!empty($areaFinal)) {
+                    if ($areaFinal === 'Costura') {
+                        $datosBasicos['costura_estado'] = $validatedData['estado'];
+                    } elseif ($areaFinal === 'EPP') {
+                        $datosBasicos['epp_estado'] = $validatedData['estado'];
+                    }
                 }
             }
-        }
-        
-        // Mantener compatibilidad con campos específicos si llegan directamente
-        if (array_key_exists('costura_estado', $validatedData)) {
-            $datosBasicos['costura_estado'] = $validatedData['costura_estado'];
-            // También actualizar el estado general si viene costura_estado
-            if (!array_key_exists('estado', $validatedData)) {
-                $datosBasicos['estado_bodega'] = $validatedData['costura_estado'];
-                $estadoBodegaGuardado = $datosBasicos['estado_bodega'];
+            
+            if (array_key_exists('costura_estado', $validatedData)) {
+                $datosBasicos['costura_estado'] = $validatedData['costura_estado'];
+                if (!array_key_exists('estado', $validatedData)) {
+                    $datosBasicos['estado_bodega'] = $validatedData['costura_estado'];
+                    $estadoBodegaGuardado = $datosBasicos['estado_bodega'];
+                }
             }
-        }
-        if (array_key_exists('epp_estado', $validatedData)) {
-            $datosBasicos['epp_estado'] = $validatedData['epp_estado'];
-            // También actualizar el estado general si viene epp_estado
-            if (!array_key_exists('estado', $validatedData)) {
-                $datosBasicos['estado_bodega'] = $validatedData['epp_estado'];
-                $estadoBodegaGuardado = $datosBasicos['estado_bodega'];
+            
+            if (array_key_exists('epp_estado', $validatedData)) {
+                $datosBasicos['epp_estado'] = $validatedData['epp_estado'];
+                if (!array_key_exists('estado', $validatedData)) {
+                    $datosBasicos['estado_bodega'] = $validatedData['epp_estado'];
+                    $estadoBodegaGuardado = $datosBasicos['estado_bodega'];
+                }
             }
-        }
-        
-        // Guardar el item en bodega_detalles_talla
-        $detalleGuardado = BodegaDetallesTalla::updateOrCreate(
-            [
+            
+            // Log para ver qué datos se van a guardar
+            \Log::info('[guardarDatosBasicos] Datos a guardar:', [
+                'validatedData' => $validatedData,
+                'datosBasicos' => $datosBasicos,
+                'pedido_id' => $pedido->id,
+                'prenda_id' => $datosBasicos['prenda_id'] ?? 'NO_INCLUIDO',
+                'pedido_epp_id' => $datosBasicos['pedido_epp_id'] ?? 'NO_INCLUIDO'
+            ]);
+            
+            // Buscar el registro existente
+            $query = BodegaDetallesTalla::where([
                 'pedido_produccion_id' => $pedido->id,
                 'numero_pedido' => $validatedData['numero_pedido'],
                 'talla' => $validatedData['talla'],
                 'prenda_nombre' => $validatedData['prenda_nombre'] ?? null,
                 'cantidad' => $validatedData['cantidad'] ?? 0,
-            ],
-            $datosBasicos
-        );
-        
-        // SINCRONIZACIÓN AUTOMÁTICA: Si se guardó con estado 'Entregado', registrar la entrega
-        if ($estadoBodegaGuardado === 'Entregado') {
-            $this->registrarEntregaPrenda([
-                'prenda_nombre' => $validatedData['prenda_nombre'] ?? '',
-                'talla' => $validatedData['talla'],
-                'cantidad' => $validatedData['cantidad'] ?? 0,
-                'observaciones_entrega' => 'Entregado desde bodega'
-            ], $pedido->id);
+            ]);
+            
+            \Log::info('[guardarDatosBasicos] Búsqueda de registro:', [
+                'condiciones' => [
+                    'pedido_produccion_id' => $pedido->id,
+                    'numero_pedido' => $validatedData['numero_pedido'],
+                    'talla' => $validatedData['talla'],
+                    'prenda_nombre' => $validatedData['prenda_nombre'] ?? null,
+                    'cantidad' => $validatedData['cantidad'] ?? 0,
+                ],
+                'sql_generada' => $query->toSql(),
+                'encontrados' => $query->count(),
+                'registros_existentes' => $query->get(['id', 'prenda_id', 'pedido_epp_id', 'area'])->toArray()
+            ]);
+            
+            // Priorizar registro con IDs correctos
+            $registros = $query->get();
+            $detalleExistente = null;
+            
+            if ($registros->count() > 0) {
+                $detalleExistente = $registros->first(function($registro) use ($datosBasicos) {
+                    if ($datosBasicos['prenda_id'] && $registro->prenda_id == $datosBasicos['prenda_id']) {
+                        return true;
+                    }
+                    if ($datosBasicos['pedido_epp_id'] && $registro->pedido_epp_id == $datosBasicos['pedido_epp_id']) {
+                        return true;
+                    }
+                    return $registro->prenda_id || $registro->pedido_epp_id;
+                });
+                
+                if (!$detalleExistente) {
+                    $detalleExistente = $registros->first();
+                }
+            }
+            
+            // Si no existe, crearlo
+            if (!$detalleExistente) {
+                $detalleExistente = new BodegaDetallesTalla();
+                $detalleExistente->pedido_produccion_id = $pedido->id;
+                $detalleExistente->numero_pedido = $validatedData['numero_pedido'];
+                $detalleExistente->talla = $validatedData['talla'];
+                $detalleExistente->prenda_nombre = $validatedData['prenda_nombre'] ?? null;
+                $detalleExistente->cantidad = $validatedData['cantidad'] ?? 0;
+            }
+            
+            // Actualizar todos los campos
+            $detalleExistente->fill($datosBasicos);
+            $detalleExistente->prenda_id = $datosBasicos['prenda_id'] ?? null;
+            $detalleExistente->pedido_epp_id = $datosBasicos['pedido_epp_id'] ?? null;
+            $detalleExistente->area = $datosBasicos['area'] ?? null;
+            
+            $detalleExistente->save();
+            $detalleGuardado = $detalleExistente;
+            
+            // Log para ver qué se guardó realmente
+            \Log::info('[guardarDatosBasicos] Registro guardado en BD:', [
+                'detalle_id' => $detalleGuardado->id,
+                'prenda_id_guardado' => $detalleGuardado->prenda_id,
+                'pedido_epp_id_guardado' => $detalleGuardado->pedido_epp_id,
+                'area_guardada' => $detalleGuardado->area,
+                'es_nuevo' => $detalleGuardado->wasRecentlyCreated,
+                'cambios' => $detalleGuardado->getChanges(),
+                'datos_basicos_enviados' => $datosBasicos,
+                'area_enviada' => $datosBasicos['area'] ?? 'NO_ENVIADA'
+            ]);
+            
+            // SINCRONIZACIÓN AUTOMÁTICA
+            if ($estadoBodegaGuardado === 'Entregado') {
+                $this->registrarEntregaPrenda([
+                    'prenda_nombre' => $validatedData['prenda_nombre'] ?? '',
+                    'talla' => $validatedData['talla'],
+                    'cantidad' => $validatedData['cantidad'] ?? 0,
+                    'observaciones_entrega' => 'Entregado desde bodega'
+                ], $pedido->id);
+                
+                $this->sincronizarEstadoPedido($pedido->id, 'Entregado');
+            } elseif ($estadoBodegaGuardado === 'Pendiente') {
+                // Si se guarda con estado 'Pendiente', sincronizar el pedido a 'Pendiente'
+                $this->sincronizarEstadoPedido($pedido->id, 'Pendiente');
+            }
+            
+            return $detalleGuardado;
+            
+        } catch (\Throwable $e) {
+            \Log::error('[ERROR] Error en guardarDatosBasicos:', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
         }
-        
-        // SINCRONIZACIÓN AUTOMÁTICA: Si se guardó con estado 'Entregado', actualizar el estado del pedido
-        if ($estadoBodegaGuardado === 'Entregado') {
-            $this->sincronizarEstadoPedido($pedido->id, 'Entregado');
-        }
-        
-        return $detalleGuardado;
     }
     
     /**

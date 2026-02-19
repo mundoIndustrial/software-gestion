@@ -1349,6 +1349,8 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
     
     // Obtener PRENDA_NOMBRE desde el select
     const prendaNombre = estadoSelect.getAttribute('data-prenda-nombre') || '';
+    const prendaId = estadoSelect.getAttribute('data-prenda-id') || null;
+    const pedidoEppId = estadoSelect.getAttribute('data-pedido-epp-id') || null;
     
     const lastUpdatedAt = new Date().toISOString();
 
@@ -1368,6 +1370,8 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
         numero_pedido: numeroPedido,
         talla: talla,
         prenda_nombre: prendaNombre || null,
+        prenda_id: prendaId,
+        pedido_epp_id: pedidoEppId,
         asesor: asesor || null,
         empresa: empresa || null,
         cantidad: cantidad || null,

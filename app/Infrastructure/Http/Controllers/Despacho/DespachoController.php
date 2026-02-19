@@ -41,6 +41,8 @@ class DespachoController extends Controller
         
         $query = PedidoProduccion::query()
             ->whereIn('estado', ['Pendiente', 'Entregado', 'En Ejecución', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'])
+            ->whereNotNull('numero_pedido') // Excluir pedidos sin número de pedido
+            ->where('numero_pedido', '!=', '') // Excluir números de pedido vacíos
             ->orderByDesc('created_at');
         
         if ($search) {
@@ -211,6 +213,11 @@ class DespachoController extends Controller
      */
     public function marcarEntregado(Request $request, PedidoProduccion $pedido): JsonResponse
     {
+        \Log::info('[DespachoController] marcarEntregado llamado', [
+            'pedido_id' => $pedido->id,
+            'request_data' => $request->all(),
+        ]);
+        
         try {
             $validated = $request->validate([
                 'tipo_item' => 'required|string|in:prenda,epp',
@@ -225,14 +232,42 @@ class DespachoController extends Controller
                     $q->where('talla_id', $validated['talla_id']);
                 })
                 ->first();
+            
+            \Log::info('[DespachoController] Búsqueda de despacho', [
+                'pedido_id' => $pedido->id,
+                'tipo_item' => $validated['tipo_item'],
+                'item_id' => $validated['item_id'],
+                'talla_id' => $validated['talla_id'],
+                'despacho_encontrado' => $despacho ? 'SI' : 'NO',
+                'despacho_id' => $despacho?->id,
+            ]);
 
+            // Si no existe, crearlo automáticamente
             if (!$despacho) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Ítem no encontrado',
-                ], 404);
+                \Log::info('[DespachoController] Creando registro de despacho automáticamente', [
+                    'pedido_id' => $pedido->id,
+                    'tipo_item' => $validated['tipo_item'],
+                    'item_id' => $validated['item_id'],
+                    'talla_id' => $validated['talla_id'],
+                ]);
+                
+                $despacho = DesparChoParcialesModel::create([
+                    'pedido_id' => $pedido->id,
+                    'tipo_item' => $validated['tipo_item'],
+                    'item_id' => $validated['item_id'],
+                    'talla_id' => $validated['talla_id'] ?? null,
+                    'pendiente_inicial' => 1, // Valor por defecto
+                    'entregado' => false,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                
+                \Log::info('[DespachoController] Registro de despacho creado', [
+                    'despacho_id' => $despacho->id,
+                ]);
             }
 
+            // Marcar como entregado
             $despacho->update([
                 'entregado' => true,
                 'fecha_entrega' => now(),
@@ -241,6 +276,7 @@ class DespachoController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Ítem marcado como entregado',
+                'despacho_id' => $despacho->id,
             ]);
         } catch (\Exception $e) {
             Log::error('Error al marcar como entregado', [
@@ -297,6 +333,11 @@ class DespachoController extends Controller
      */
     public function deshacerEntregado(Request $request, PedidoProduccion $pedido): JsonResponse
     {
+        \Log::info('[DespachoController] deshacerEntregado llamado', [
+            'pedido_id' => $pedido->id,
+            'request_data' => $request->all(),
+        ]);
+        
         try {
             $validated = $request->validate([
                 'tipo_item' => 'required|string|in:prenda,epp',
@@ -311,17 +352,41 @@ class DespachoController extends Controller
                     $q->where('talla_id', $validated['talla_id']);
                 })
                 ->first();
+            
+            \Log::info('[DespachoController] Búsqueda para deshacer', [
+                'pedido_id' => $pedido->id,
+                'tipo_item' => $validated['tipo_item'],
+                'item_id' => $validated['item_id'],
+                'talla_id' => $validated['talla_id'],
+                'despacho_encontrado' => $despacho ? 'SI' : 'NO',
+                'despacho_id' => $despacho?->id,
+                'entregado_actual' => $despacho?->entregado,
+            ]);
 
             if (!$despacho) {
+                \Log::warning('[DespachoController] Ítem no encontrado para deshacer', [
+                    'pedido_id' => $pedido->id,
+                    'tipo_item' => $validated['tipo_item'],
+                    'item_id' => $validated['item_id'],
+                    'talla_id' => $validated['talla_id'],
+                ]);
+                
                 return response()->json([
                     'success' => false,
                     'message' => 'Ítem no encontrado',
                 ], 404);
             }
 
+            // Actualizar a no entregado
             $despacho->update([
                 'entregado' => false,
                 'fecha_entrega' => null,
+            ]);
+            
+            \Log::info('[DespachoController] Despacho actualizado a no entregado', [
+                'despacho_id' => $despacho->id,
+                'entregado_nuevo' => $despacho->entregado,
+                'fecha_entrega_nueva' => $despacho->fecha_entrega,
             ]);
 
             return response()->json([
@@ -354,6 +419,18 @@ class DespachoController extends Controller
         return view('despacho.pendientes-unificados', [
             'search' => $search,
             'tipo' => $tipo
+        ]);
+    }
+
+    /**
+     * Vista de pedidos entregados
+     */
+    public function entregados(Request $request)
+    {
+        $search = $request->query('search', '');
+        
+        return view('despacho.entregados', [
+            'search' => $search
         ]);
     }
 
@@ -668,30 +745,59 @@ class DespachoController extends Controller
      */
     public function obtenerPendientesUnificados(Request $request)
     {
+        \Log::info('[DEBUG] obtenerPendientesUnificados llamado - INICIO ABSOLUTO');
+        
         try {
             $search = $request->query('search', '');
             $tipo = $request->query('tipo', 'todos');
+            
+            \Log::info('[DEBUG] obtenerPendientesUnificados iniciado', [
+                'search' => $search,
+                'tipo' => $tipo
+            ]);
             
             $pendientes = collect();
             
             // Obtener pendientes de costura
             if ($tipo === 'todos' || $tipo === 'costura') {
+                \Log::info('[DEBUG] Obteniendo pendientes de costura');
                 $costuraResponse = $this->obtenerPendientesCostura($request);
-                if ($costuraResponse->getData()->success) {
-                    $pendientes = $pendientes->merge($costuraResponse->getData()->data);
+                $costuraData = $costuraResponse->getData();
+                \Log::info('[DEBUG] Respuesta costura:', [
+                    'success' => $costuraData->success ?? 'NO_DATA',
+                    'data_count' => $costuraData->data ? count($costuraData->data) : 0
+                ]);
+                
+                if ($costuraData->success) {
+                    $pendientes = $pendientes->merge($costuraData->data);
+                    \Log::info('[DEBUG] Pendientes costura agregados, total: ' . $pendientes->count());
                 }
             }
             
             // Obtener pendientes de EPP
             if ($tipo === 'todos' || $tipo === 'epp') {
+                \Log::info('[DEBUG] Obteniendo pendientes de EPP');
                 $eppResponse = $this->obtenerPendientesEpp($request);
-                if ($eppResponse->getData()->success) {
-                    $pendientes = $pendientes->merge($eppResponse->getData()->data);
+                $eppData = $eppResponse->getData();
+                \Log::info('[DEBUG] Respuesta EPP:', [
+                    'success' => $eppData->success ?? 'NO_DATA',
+                    'data_count' => $eppData->data ? count($eppData->data) : 0
+                ]);
+                
+                if ($eppData->success) {
+                    $pendientes = $pendientes->merge($eppData->data);
+                    \Log::info('[DEBUG] Pendientes EPP agregados, total: ' . $pendientes->count());
                 }
             }
             
             // Ordenar por fecha de creación
             $pendientes = $pendientes->sortByDesc('fecha_creacion')->values();
+            
+            \Log::info('[DEBUG] Pendientes finales:', [
+                'total' => $pendientes->count(),
+                'costura_count' => $pendientes->where('tipo', 'costura')->count(),
+                'epp_count' => $pendientes->where('tipo', 'epp')->count()
+            ]);
             
             return response()->json([
                 'success' => true,
@@ -701,10 +807,17 @@ class DespachoController extends Controller
                 'epp_count' => $pendientes->where('tipo', 'epp')->count()
             ]);
         } catch (\Exception $e) {
+            \Log::error('[ERROR] Error en obtenerPendientesUnificados:', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener pendientes unificados: ' . $e->getMessage()
-            ], 500);
+            ]);
         }
     }
 
@@ -713,30 +826,23 @@ class DespachoController extends Controller
      */
     public function obtenerTodosLosPedidos(Request $request)
     {
+        // ...
+    }
+
+    /**
+     * API para obtener pedidos entregados
+     */
+    public function obtenerEntregados(Request $request)
+    {
         try {
             $search = $request->query('search', '');
             
-            // Obtener IDs de pedidos que están COMPLETAMENTE entregados en bodega
-            // Considera tanto prendas de Costura como EPPs
-            $pedidosCompletamenteEntregados = \DB::table('bodega_detalles_talla')
-                ->select('pedido_produccion_id')
-                ->selectRaw('COUNT(*) as total_items')
-                ->selectRaw('SUM(CASE WHEN estado_bodega = \'Entregado\' THEN 1 ELSE 0 END) as entregados')
-                ->where(function($query) {
-                    $query->where('area', 'Costura')
-                          ->orWhere('area', 'EPP');
-                })
-                ->groupBy('pedido_produccion_id')
-                ->havingRaw('total_items = entregados') // Solo si TODOS los items están entregados
-                ->pluck('pedido_produccion_id')
-                ->toArray();
-            
+            // Obtener pedidos con estado "Entregado"
             $query = PedidoProduccion::query()
-                ->whereIn('estado', ['Pendiente', 'Entregado', 'En Ejecución', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'])
-                ->whereNotIn('id', $pedidosCompletamenteEntregados) // Excluir completamente entregados
+                ->where('estado', 'Entregado')
                 ->whereNotNull('numero_pedido')
                 ->where('numero_pedido', '!=', '')
-                ->orderByDesc('created_at');
+                ->orderByDesc('updated_at'); // Ordenar por fecha de actualización (cuando se marcaron como entregados)
             
             if ($search) {
                 $query->where(function ($q) use ($search) {
@@ -747,24 +853,33 @@ class DespachoController extends Controller
             
             $pedidos = $query->get();
             
-            // Agregar estado de entrega a cada pedido
+            // Agregar información adicional a cada pedido
             $pedidos->transform(function ($pedido) {
-                $pedido->estado_entrega = $this->despachoEstadoService->obtenerEstadoEntrega($pedido->id);
-                $pedido->fecha_creacion = $pedido->created_at ? $pedido->created_at->format('d/m/Y H:i') : '—';
+                $pedido->fecha_entrega = $pedido->updated_at ? $pedido->updated_at->format('d/m/Y H:i') : '—';
+                $pedido->fecha_creacion = $pedido->created_at ? $pedido->created_at->format('d/m/Y') : '—';
                 return $pedido;
             });
             
             return response()->json([
                 'success' => true,
-                'data' => $pedidos,
-                'total' => $pedidos->count(),
-                'excluidos_completamente' => count($pedidosCompletamenteEntregados)
+                'data' => $pedidos->map(function ($pedido) {
+                    return [
+                        'id' => $pedido->id,
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'cliente' => $pedido->cliente,
+                        'estado' => $pedido->estado,
+                        'fecha_entrega' => $pedido->fecha_entrega,
+                        'fecha_creacion' => $pedido->fecha_creacion
+                    ];
+                }),
+                'total' => $pedidos->count()
             ]);
+            
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener pedidos: ' . $e->getMessage()
-            ], 500);
+                'message' => 'Error al obtener pedidos entregados: ' . $e->getMessage()
+            ]);
         }
     }
 

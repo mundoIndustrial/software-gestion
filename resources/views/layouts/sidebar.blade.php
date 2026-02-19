@@ -133,6 +133,16 @@
           <span class="menu-label">Pendiente EPP</span>
         </a>
       </li>
+      @if(auth()->user()->hasRole('bodeguero'))
+      <li class="menu-item">
+        <a href="{{ route('gestion-bodega.pedidos-entregados') }}"
+           class="menu-link {{ request()->routeIs('gestion-bodega.pedidos-entregados') ? 'active' : '' }}"
+           aria-label="Pedidos Entregados">
+          <span class="material-symbols-rounded" aria-hidden="true">task_alt</span>
+          <span class="menu-label">Entregados</span>
+        </a>
+      </li>
+      @endif
       </ul>
     </div>
 

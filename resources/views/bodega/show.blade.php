@@ -266,6 +266,8 @@
                                                 data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
                                                 data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}"
                                                 data-prenda-nombre="{{ $item['descripcion']['nombre_prenda'] ?? $item['descripcion']['nombre'] ?? '' }}"
+                                                data-prenda-id="{{ $item['prenda_id'] ?? '' }}"
+                                                data-pedido-epp-id="{{ $item['pedido_epp_id'] ?? '' }}"
                                                 data-cantidad="{{ $item['cantidad_total'] }}"
                                                 data-original-estado="{{ $item['estado_bodega'] ?? '' }}"
                                                 @if($esReadOnly ?? false) disabled @endif

@@ -294,6 +294,44 @@
     </div>
 </div>
 
+<!-- Modal de Confirmación para Deshacer Entregado -->
+<div id="modalDeshacerEntregado" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-9999" style="z-index: 9999;">
+    <div class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4">
+        <!-- Header -->
+        <div class="bg-orange-500 px-6 py-4 border-b border-orange-600">
+            <h2 class="text-lg font-semibold text-white flex items-center">
+                <span class="mr-2">↶</span>
+                Deshacer Entregado
+            </h2>
+        </div>
+        
+        <!-- Content -->
+        <div class="p-6">
+            <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="text-orange-500 text-xl">⚠️</span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium text-slate-900 mb-1">¿Deshacer marcado como entregado?</h3>
+                    <p class="text-slate-600 text-sm">El ítem volverá a estado "Pendiente" y el pedido cambiará a "Pendiente" si todos los ítems están pendientes.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
+            <button onclick="cerrarModalDeshacerEntregado()" 
+                    class="px-4 py-2 text-slate-700 hover:text-slate-900 font-medium border border-slate-300 hover:border-slate-400 rounded transition-colors">
+                Cancelar
+            </button>
+            <button id="btnConfirmarDeshacer" 
+                    class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded transition-colors">
+                Sí, deshacer entregado
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- JavaScript para despacho -->
 <script>
 console.log('✅ Script de despacho cargado correctamente');
@@ -308,12 +346,16 @@ async function marcarEntregado(button) {
     const tallaId = fila.dataset.tallaId ? parseInt(fila.dataset.tallaId) : null;
     const genero = fila.dataset.genero || null;
     
+    // Mostrar la URL para debugging
+    const url = '{{ route("despacho.marcar-entregado", $pedido->id) }}';
+    console.log('🔍 URL de marcarEntregado:', url);
+    
     // Deshabilitar el botón mientras se procesa
     button.disabled = true;
     button.textContent = '⏳ Guardando...';
     
     try {
-        const response = await fetch('{{ route("despacho.marcar-entregado", $pedido->id) }}', {
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -363,10 +405,52 @@ async function deshacerEntregado(button) {
     const itemId = parseInt(fila.dataset.id);
     const tallaId = fila.dataset.tallaId ? parseInt(fila.dataset.tallaId) : null;
     
-    // Confirmar con el usuario
-    if (!confirm('¿Estás seguro de deshacer el marcado como entregado?')) {
-        return;
-    }
+    // Guardar referencia al botón y datos para usarlos después
+    window.deshacerEntregadoData = {
+        button: button,
+        fila: fila,
+        tipo: tipo,
+        itemId: itemId,
+        tallaId: tallaId
+    };
+    
+    // Mostrar modal de confirmación
+    abrirModalDeshacerEntregado();
+}
+
+/**
+ * Abrir modal de confirmación para deshacer entregado
+ */
+function abrirModalDeshacerEntregado() {
+    const modal = document.getElementById('modalDeshacerEntregado');
+    modal.classList.remove('hidden');
+    
+    // Configurar el botón de confirmación
+    const btnConfirmar = document.getElementById('btnConfirmarDeshacer');
+    btnConfirmar.onclick = confirmarDeshacerEntregado;
+}
+
+/**
+ * Cerrar modal de confirmación para deshacer entregado
+ */
+function cerrarModalDeshacerEntregado() {
+    const modal = document.getElementById('modalDeshacerEntregado');
+    modal.classList.add('hidden');
+    
+    // Limpiar datos guardados
+    window.deshacerEntregadoData = null;
+}
+
+/**
+ * Confirmar y ejecutar el deshacer entregado
+ */
+async function confirmarDeshacerEntregado() {
+    if (!window.deshacerEntregadoData) return;
+    
+    const { button, fila, tipo, itemId, tallaId } = window.deshacerEntregadoData;
+    
+    // Cerrar modal
+    cerrarModalDeshacerEntregado();
     
     // Deshabilitar el botón mientras se procesa
     button.disabled = true;
@@ -405,14 +489,19 @@ async function deshacerEntregado(button) {
             button.classList.remove('bg-green-500', 'hover:bg-green-600');
             button.classList.add('bg-orange-500', 'hover:bg-orange-600');
             button.onclick = function() { deshacerEntregado(this); };
+            
+            // Mostrar error con una alerta simple (podemos mejorarlo después)
             alert('Error al deshacer marcado como entregado: ' + data.message);
         }
     } catch (error) {
         console.error('Error al deshacer marcado como entregado:', error);
+        
+        // Restaurar botón a estado entregado
         button.innerHTML = '✓ Entregado <span class="ml-1 text-xs">(↶)</span>';
         button.classList.remove('bg-green-500', 'hover:bg-green-600');
         button.classList.add('bg-orange-500', 'hover:bg-orange-600');
         button.onclick = function() { deshacerEntregado(this); };
+        
         alert('Error al deshacer marcado como entregado. Por favor, intenta de nuevo.');
     } finally {
         button.disabled = false;

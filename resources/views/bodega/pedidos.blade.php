@@ -409,12 +409,17 @@
                                             </select>
 
                                             <!-- SELECTOR ESTADO -->
+                                            {{-- Debug simple --}}
+                                            {!! \Log::info('[BLADE] pedido_epp_id: ' . ($item['pedido_epp_id'] ?? 'NO_EXISTE')) !!}
+                                            
                                             <select
                                                 class="estado-select w-full px-2 py-1.5 border-2 border-slate-400 bg-white text-slate-900 text-[13px] font-bold uppercase tracking-wide hover:bg-slate-50 transition rounded-lg cursor-pointer"
                                                 style="font-family: 'Poppins', sans-serif; min-height: 35px; font-size: 13px; line-height: 1.4; background-color: white; color: #0f172a !important;"
                                                 data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                 data-talla="{{ $item['talla'] }}"
                                                 data-prenda-nombre="{{ $item['prenda_nombre_actual'] ?? '' }}"
+                                                data-prenda-id="{{ $item['prenda_id'] ?? '' }}"
+                                                data-pedido-epp-id="{{ $item['pedido_epp_id'] ?? '' }}"
                                                 data-cantidad="{{ $item['cantidad_total'] ?? 0 }}"
                                                 data-original-estado="{{ $item['estado_bodega'] ?? '' }}"
                                                 @if($esReadOnly ?? false) disabled @endif

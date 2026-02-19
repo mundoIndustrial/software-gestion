@@ -102,6 +102,10 @@ Route::prefix('despacho')
         Route::get('/pendientes', [DespachoController::class, 'pendientesUnificados'])
             ->name('despacho.pendientes');
 
+        // Vista de pedidos entregados
+        Route::get('/entregados', [DespachoController::class, 'entregados'])
+            ->name('despacho.entregados');
+
         // API para obtener pendientes de costura
         Route::get('/api/pendientes-costura', [DespachoController::class, 'obtenerPendientesCostura'])
             ->name('despacho.api.pendientes-costura');
@@ -117,6 +121,20 @@ Route::prefix('despacho')
         // API para obtener todos los pedidos con estados solicitados
         Route::get('/api/todos-pedidos', [DespachoController::class, 'obtenerTodosLosPedidos'])
             ->name('despacho.api.todos-pedidos');
+
+        // API para obtener pedidos entregados
+        Route::get('/api/entregados', [DespachoController::class, 'obtenerEntregados'])
+            ->name('despacho.api.entregados');
+
+        // API de test para verificar JSON
+        Route::get('/api/test', function() {
+            return response()->json([
+                'success' => true,
+                'message' => 'Test JSON working',
+                'data' => ['test' => 'value'],
+                'timestamp' => now()->toDateTimeString()
+            ]);
+        });
 
         // Mostrar detalles de pedido pendiente (unificado)
         Route::get('/pendientes/{id}', [DespachoController::class, 'showPendienteUnificado'])

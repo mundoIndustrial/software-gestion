@@ -124,6 +124,46 @@ class PedidosController extends Controller
     }
 
     /**
+     * Mostrar lista de pedidos entregados
+     */
+    public function entregados(Request $request)
+    {
+        try {
+            // Usar el método específico para pedidos entregados
+            $datos = $this->bodegaPedidoService->obtenerPedidosEntregadosPaginados($request);
+
+            if ($datos['view_type'] === 'details') {
+                $usuario = auth()->user();
+                $rolesDelUsuario = $usuario->getRoleNames()->toArray();
+                $esReadOnly = $this->roleService->esReadOnly($rolesDelUsuario);
+
+                $viewName = $esReadOnly ? 'bodega.pedidos-readonly' : 'bodega.pedidos';
+
+                return view($viewName, [
+                    'pedidosAgrupados' => $datos['pedidos_agrupados'] ?? [],
+                    'asesores' => $datos['asesores'] ?? [],
+                    'paginacion' => $datos['pagination']['paginacion_obj'] ?? null,
+                    'totalPedidos' => $datos['pagination']['total_pedidos'] ?? 0,
+                    'datosBodega' => $datos['datos_bodega'] ?? collect(),
+                    'notasBodega' => $datos['notas_bodega'] ?? collect(),
+                    'esReadOnly' => $esReadOnly,
+                ]);
+            }
+
+            return view('bodega.index-list', [
+                'pedidosPorPagina' => $datos['pedidos_por_pagina'] ?? [],
+                'totalPedidos' => $datos['total_pedidos'] ?? 0,
+                'paginaActual' => $datos['pagina_actual'] ?? 1,
+                'porPagina' => $datos['por_pagina'] ?? 20,
+                'search' => $request->query('search', ''),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en PedidosController@entregados: ' . $e->getMessage());
+            return back()->with('error', 'Error al cargar los pedidos entregados: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Mostrar detalles de un pedido específico (solo EPP Pendiente)
      */
     public function showPendienteEpp(Request $request, $pedidoId)
@@ -1112,6 +1152,14 @@ class PedidosController extends Controller
      */
     public function guardarDetallesTalla(Request $request): JsonResponse
     {
+        \Log::info('[GUARDAR DETALLES TALLA] Método llamado', [
+            'numero_pedido' => $request->get('numero_pedido'),
+            'talla' => $request->get('talla'),
+            'prenda_id' => $request->get('prenda_id'),
+            'pedido_epp_id' => $request->get('pedido_epp_id'),
+            'all_data' => $request->all()
+        ]);
+        
         // Validar que el usuario no sea de solo lectura
         $rolesDelUsuario = auth()->user()->getRoleNames()->toArray();
         if ($this->roleService->esReadOnly($rolesDelUsuario)) {
@@ -1126,6 +1174,8 @@ class PedidosController extends Controller
                 'numero_pedido' => 'required|string',
                 'talla' => 'required|string',
                 'prenda_nombre' => 'nullable|string',
+                'prenda_id' => 'nullable|integer',
+                'pedido_epp_id' => 'nullable|integer',
                 'asesor' => 'nullable|string',
                 'empresa' => 'nullable|string',
                 'cantidad' => 'nullable|integer',
@@ -1165,6 +1215,11 @@ class PedidosController extends Controller
      */
     public function guardarPedidoCompleto(Request $request): JsonResponse
     {
+        \Log::info('[GUARDAR PEDIDO COMPLETO] Método llamado', [
+            'numero_pedido' => $request->get('numero_pedido'),
+            'detalles_count' => count($request->get('detalles', []))
+        ]);
+        
         // Validar que el usuario no sea de solo lectura
         $rolesDelUsuario = auth()->user()->getRoleNames()->toArray();
         if ($this->roleService->esReadOnly($rolesDelUsuario)) {
@@ -1183,6 +1238,8 @@ class PedidosController extends Controller
                 'detalles.*.empresa' => 'nullable|string',  // Guardar empresa
                 'detalles.*.cantidad' => 'nullable|integer',  // Guardar cantidad
                 'detalles.*.prenda_nombre' => 'nullable|string',  // Guardar nombre de la prenda
+                'detalles.*.prenda_id' => 'nullable|integer',  // Guardar ID de la prenda
+                'detalles.*.pedido_epp_id' => 'nullable|integer',  // Guardar ID del EPP
                 'detalles.*.pendientes' => 'nullable|string',
                 'detalles.*.observaciones_bodega' => 'nullable|string',
                 'detalles.*.fecha_entrega' => 'nullable|date',
@@ -1204,6 +1261,17 @@ class PedidosController extends Controller
             $camposAuditar = ['asesor', 'empresa', 'cantidad', 'prenda_nombre', 'pendientes', 'observaciones_bodega', 'fecha_entrega', 'area', 'estado_bodega'];
             
             foreach ($validated['detalles'] as $detalle) {
+                // Log para depurar qué datos llegan
+                \Log::info('[GUARDAR DETALLES] Datos recibidos:', [
+                    'numero_pedido' => $validated['numero_pedido'],
+                    'detalle_completo' => $detalle,
+                    'prenda_id' => $detalle['prenda_id'] ?? 'null',
+                    'pedido_epp_id' => $detalle['pedido_epp_id'] ?? 'null',
+                    'prenda_nombre' => $detalle['prenda_nombre'] ?? 'null',
+                    'talla' => $detalle['talla'] ?? 'null',
+                    'cantidad' => $detalle['cantidad'] ?? 'null'
+                ]);
+                
                 // La talla puede ser:
                 // - Talla real para prendas (S, M, L, etc)
                 // - Hash único para EPPs (md5 de nombre+cantidad)
@@ -1231,6 +1299,9 @@ class PedidosController extends Controller
                         'cantidad' => $cantidad,
                     ],
                     [
+                        'recibo_prenda_id' => $detalle['recibo_prenda_id'] ?? null,
+                        'prenda_id' => $detalle['prenda_id'] ?? null,
+                        'pedido_epp_id' => $detalle['pedido_epp_id'] ?? null,
                         'asesor' => $detalle['asesor'] ?? null,  // Guardar asesor
                         'empresa' => $detalle['empresa'] ?? null,  // Guardar empresa
                         'pendientes' => $detalle['pendientes'] ?? null,
@@ -1242,6 +1313,18 @@ class PedidosController extends Controller
                         'usuario_bodega_nombre' => $usuario->name,
                     ]
                 );
+                
+                // Log para verificar qué se guardó
+                \Log::info('[GUARDAR DETALLES] Registro guardado:', [
+                    'detalle_id' => $detalleGuardado->id,
+                    'prenda_id_guardado' => $detalleGuardado->prenda_id,
+                    'pedido_epp_id_guardado' => $detalleGuardado->pedido_epp_id,
+                    'prenda_nombre_guardado' => $detalleGuardado->prenda_nombre,
+                    'talla_guardada' => $detalleGuardado->talla,
+                    'cantidad_guardada' => $detalleGuardado->cantidad,
+                    'es_nuevo' => $detalleGuardado->wasRecentlyCreated,
+                    'cambios' => $detalleGuardado->getChanges()
+                ]);
 
                 // Registrar cambios en auditoría
                 foreach ($camposAuditar as $campo) {
