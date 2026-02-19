@@ -117,18 +117,34 @@ class DragDropManager {
                 return; // No interceptar, dejar que el navegador maneje el pegado
             }
             
-            // 🔴 CRÍTICO: Soportar AMBOS modales (creación nueva Y edición)
-            let preview = document.getElementById('nueva-prenda-foto-preview');
-            let modal = document.getElementById('modal-agregar-prenda-nueva');
+            // 🔴 CRÍTICO: Soportar AMBOS modales (creación nueva Y edición) Y EPP
+            // Primero verificar si estamos en el área EPP antes que nada
+            let contenedorEPP = document.getElementById('contenedorFotosEPP');
+            let modalEPP = document.getElementById('modalAgregarEPP');
             
-            // Si no está en modal de creación nueva, buscar en modal de edición
-            if (!modal || !preview) {
+            let preview = null;
+            let modal = null;
+            
+            // Si estamos en el área EPP, usar modal EPP
+            if (contenedorEPP && modalEPP) {
+                preview = contenedorEPP;
+                modal = modalEPP;
+                UIHelperService.log('DragDropManager', '🎯 Priorizando modal EPP (área EPP detectada)');
+            }
+            // Si no, buscar modales de prendas
+            else {
                 preview = document.getElementById('nueva-prenda-foto-preview');
-                modal = document.getElementById('modal-editar-prenda');
+                modal = document.getElementById('modal-agregar-prenda-nueva');
                 
-                // Si tampoco está en modal de edición, intentar con selector genérico
-                if (!modal) {
-                    modal = document.querySelector('[id*="modal"][id*="prenda"]');
+                // Si no está en modal de creación nueva, buscar en modal de edición
+                if (!modal || !preview) {
+                    preview = document.getElementById('nueva-prenda-foto-preview');
+                    modal = document.getElementById('modal-editar-prenda');
+                    
+                    // Si tampoco está en modal de edición, intentar con selector genérico
+                    if (!modal) {
+                        modal = document.querySelector('[id*="modal"][id*="prenda"]');
+                    }
                 }
             }
             
@@ -236,18 +252,11 @@ class DragDropManager {
                         // Detectar el área activa
                         if (elementoAnalizado) {
                             // Obtener referencias a los elementos
-                            const previewPrenda = document.getElementById('nueva-prenda-foto-preview');
                             const dropZoneTela = document.getElementById('nueva-prenda-tela-drop-zone');
                             const previewTela = document.getElementById('nueva-prenda-tela-preview');
                             
-                            // Verificar si está en el área de prendas (directamente o como hijo)
-                            if (previewPrenda && (previewPrenda.contains(elementoAnalizado) || previewPrenda === elementoAnalizado)) {
-                                handlerCorrecto = 'prendas';
-                                funcionManejo = window.manejarImagenesPrenda;
-                                UIHelperService.log('DragDropManager', '🎯 Detectado área de prendas');
-                            }
                             // Verificar si está en el área de telas (directamente, como hijo, o usando closest)
-                            else if ((dropZoneTela && (dropZoneTela.contains(elementoAnalizado) || dropZoneTela === elementoAnalizado)) ||
+                            if ((dropZoneTela && (dropZoneTela.contains(elementoAnalizado) || dropZoneTela === elementoAnalizado)) ||
                                      (previewTela && (previewTela.contains(elementoAnalizado) || previewTela === elementoAnalizado)) ||
                                      (elementoAnalizado.closest && elementoAnalizado.closest('[data-zona="tela"]'))) {
                                 handlerCorrecto = 'telas';
@@ -330,6 +339,23 @@ class DragDropManager {
                                     funcionManejo = (input) => window.manejarImagenProceso(input, numeroProceso);
                                     UIHelperService.log('DragDropManager', `🎯 Detectado área de proceso ${numeroProceso}`);
                                 }
+                            }
+                        }
+                        
+                        // Verificar si está en el área de EPP (independientemente del modal detectado)
+                        const contenedorEPP = document.getElementById('contenedorFotosEPP');
+                        if (contenedorEPP && (contenedorEPP.contains(elementoAnalizado) || contenedorEPP === elementoAnalizado || elementoAnalizado.closest('[data-zona="epp"]'))) {
+                            handlerCorrecto = 'EPP';
+                            funcionManejo = window.manejarSubidaFotosEPP;
+                            UIHelperService.log('DragDropManager', '🎯 Detectado área de EPP');
+                        }
+                        // Verificar si está en el área de prendas
+                        else if (modal && modal.id === 'modal-agregar-prenda-nueva') {
+                            const previewPrenda = document.getElementById('nueva-prenda-foto-preview');
+                            if (previewPrenda && (previewPrenda.contains(elementoAnalizado) || previewPrenda === elementoAnalizado)) {
+                                handlerCorrecto = 'prendas';
+                                funcionManejo = window.manejarImagenesPrenda;
+                                UIHelperService.log('DragDropManager', '🎯 Detectado área de prendas');
                             }
                         }
                         

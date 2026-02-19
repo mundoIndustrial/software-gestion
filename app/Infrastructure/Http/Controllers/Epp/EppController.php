@@ -1119,4 +1119,298 @@ class EppController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * GET /api/pedido-epp/{pedidoEppId}/imagenes
+     * 
+     * Obtener todas las imágenes de un EPP específico en un pedido
+     */
+    public function obtenerImagenes($pedidoEppId): JsonResponse
+    {
+        try {
+            \Log::info("[EppController] Obteniendo imágenes del pedido EPP: {$pedidoEppId}");
+            
+            // Buscar el pedido_epp
+            $pedidoEpp = \App\Models\PedidoEpp::find($pedidoEppId);
+            
+            if (!$pedidoEpp) {
+                \Log::warning("[EppController] Pedido EPP no encontrado: {$pedidoEppId}");
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pedido EPP no encontrado',
+                    'data' => []
+                ], 404);
+            }
+            
+            // Obtener imágenes del pedido_epp
+            $imagenes = \App\Models\PedidoEppImagen::where('pedido_epp_id', $pedidoEppId)
+                ->orderBy('orden')
+                ->get();
+            
+            \Log::info("[EppController] Imágenes encontradas: {$imagenes->count()}");
+            
+            // Formatear las imágenes para el frontend
+            $imagenesFormateadas = $imagenes->map(function ($imagen) {
+                // Asegurar que ruta_web siempre incluya /storage/
+                $rutaWeb = $imagen->ruta_web;
+                if ($rutaWeb && !str_starts_with($rutaWeb, '/storage/')) {
+                    $rutaWeb = '/storage/' . ltrim($rutaWeb, '/');
+                }
+                
+                return [
+                    'id' => $imagen->id,
+                    'pedido_epp_id' => $imagen->pedido_epp_id,
+                    'ruta_original' => $imagen->ruta_original,
+                    'ruta_web' => $rutaWeb,
+                    'principal' => $imagen->principal,
+                    'orden' => $imagen->orden,
+                    'nombre' => basename($imagen->ruta_original),
+                    'created_at' => $imagen->created_at,
+                    'updated_at' => $imagen->updated_at
+                ];
+            });
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Imágenes obtenidas correctamente',
+                'data' => $imagenesFormateadas
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error("[EppController] Error obteniendo imágenes del pedido EPP: {$pedidoEppId}", [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener las imágenes: ' . $e->getMessage(),
+                'data' => []
+            ], 500);
+        }
+    }
+
+    /**
+     * POST /api/pedido-epp/{pedidoEppId}/imagenes
+     * 
+     * Agregar nuevas imágenes a un EPP específico en un pedido
+     */
+    public function agregarImagenes(Request $request, $pedidoEppId): JsonResponse
+    {
+        try {
+            \Log::info("[EppController] Agregando imágenes al pedido EPP: {$pedidoEppId}");
+            
+            // Debug completo del request
+            \Log::info("[EppController] Request data:", [
+                'has_files' => $request->hasFile('imagenes'),
+                'all_files' => $request->allFiles(),
+                'request_method' => $request->method(),
+                'content_type' => $request->header('Content-Type'),
+                'request_input' => $request->all()
+            ]);
+            
+            // Validar que el pedido EPP exista
+            $pedidoEpp = \App\Models\PedidoEpp::find($pedidoEppId);
+            
+            if (!$pedidoEpp) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pedido EPP no encontrado'
+                ], 404);
+            }
+            
+            // Debug del pedidoEpp y su relación
+            \Log::info("[EppController] PedidoEPP encontrado:", [
+                'pedido_epp_id' => $pedidoEpp->id,
+                'pedido_id' => $pedidoEpp->pedido_id,
+                'epp_id' => $pedidoEpp->epp_id,
+                'cantidad' => $pedidoEpp->cantidad,
+                'pedido_relationship' => $pedidoEpp->pedido ? [
+                    'id' => $pedidoEpp->pedido->id,
+                    'numero_pedido' => $pedidoEpp->pedido->numero_pedido
+                ] : 'null'
+            ]);
+            
+            // Determinar la ruta de guardado usando el ID del pedido correcto
+            $pedidoId = $pedidoEpp->pedido_id;
+            \Log::info("[EppController] Guardando imagen para pedido ID: {$pedidoId}");
+            
+            // Si no hay pedido_id, intentar obtenerlo de la relación
+            if (!$pedidoId && $pedidoEpp->pedido) {
+                $pedidoId = $pedidoEpp->pedido->id;
+                \Log::info("[EppController] Pedido ID obtenido de relación: {$pedidoId}");
+            }
+            
+            if (!$pedidoId) {
+                \Log::error("[EppController] No se pudo determinar el ID del pedido para el EPP {$pedidoEppId}");
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pudo determinar el pedido asociado al EPP'
+                ], 400);
+            }
+            
+            // Validar que se hayan enviado archivos - intentar diferentes nombres
+            $imagenes = null;
+            if ($request->hasFile('imagenes')) {
+                $imagenes = $request->file('imagenes');
+                \Log::info("[EppController] Archivos recibidos con 'imagenes': " . (is_array($imagenes) ? count($imagenes) : 1));
+            } elseif ($request->hasFile('imagenes[]')) {
+                $imagenes = $request->file('imagenes[]');
+                \Log::info("[EppController] Archivos recibidos con 'imagenes[]': " . (is_array($imagenes) ? count($imagenes) : 1));
+            } else {
+                \Log::warning("[EppController] No se encontraron archivos en el request");
+                \Log::info("[EppController] Keys en request:", array_keys($request->all()));
+                \Log::info("[EppController] Files en request:", array_keys($request->allFiles()));
+            }
+            
+            if (!$imagenes || (is_array($imagenes) && empty($imagenes))) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se han enviado imágenes',
+                    'debug' => [
+                        'has_files' => $request->hasFile('imagenes'),
+                        'has_files_array' => $request->hasFile('imagenes[]'),
+                        'all_files_keys' => array_keys($request->allFiles()),
+                        'request_keys' => array_keys($request->all())
+                    ]
+                ], 400);
+            }
+            
+            // Asegurar que $imagenes sea un array
+            if (!is_array($imagenes)) {
+                $imagenes = [$imagenes];
+            }
+            
+            $imagenesGuardadas = [];
+            
+            foreach ($imagenes as $index => $imagen) {
+                if ($imagen->isValid()) {
+                    // Generar nombre único
+                    $timestamp = time();
+                    $randomSuffix = substr(md5(uniqid()), 0, 8);
+                    $nombreOriginal = $imagen->getClientOriginalName();
+                    $nombreLimpio = preg_replace('/[^a-zA-Z0-9.-]/', '_', $nombreOriginal);
+                    $nombreArchivo = "{$timestamp}_{$randomSuffix}_{$nombreLimpio}";
+                    
+                    // Determinar la ruta de guardado usando el ID del pedido correcto
+                    $pedidoId = $pedidoEpp->pedido_id;
+                    \Log::info("[EppController] Guardando imagen para pedido ID: {$pedidoId}");
+                    
+                    $rutaStorage = "pedidos/{$pedidoId}/epp";
+                    $rutaCompleta = "{$rutaStorage}/{$nombreArchivo}";
+                    $rutaWeb = "/storage/{$rutaCompleta}";
+                    
+                    \Log::info("[EppController] Rutas generadas:", [
+                        'pedido_id' => $pedidoId,
+                        'ruta_storage' => $rutaStorage,
+                        'ruta_completa' => $rutaCompleta,
+                        'ruta_web' => $rutaWeb
+                    ]);
+                    
+                    // Guardar el archivo
+                    $imagen->storeAs($rutaStorage, $nombreArchivo, 'public');
+                    
+                    // Verificar que el archivo se guardó correctamente
+                    $rutaArchivoCompleta = storage_path("app/public/{$rutaCompleta}");
+                    if (file_exists($rutaArchivoCompleta)) {
+                        \Log::info("[EppController] Archivo guardado exitosamente: {$rutaArchivoCompleta}");
+                    } else {
+                        \Log::error("[EppController] Error: Archivo no se guardó: {$rutaArchivoCompleta}");
+                    }
+                    
+                    // Obtener el siguiente orden
+                    $ultimoOrden = \App\Models\PedidoEppImagen::where('pedido_epp_id', $pedidoEppId)
+                        ->max('orden') ?? 0;
+                    
+                    // Guardar en la base de datos
+                    $pedidoEppImagen = \App\Models\PedidoEppImagen::create([
+                        'pedido_epp_id' => $pedidoEppId,
+                        'ruta_original' => $nombreArchivo,
+                        'ruta_web' => $rutaWeb,
+                        'principal' => 0,
+                        'orden' => $ultimoOrden + 1
+                    ]);
+                    
+                    $imagenesGuardadas[] = [
+                        'id' => $pedidoEppImagen->id,
+                        'ruta_original' => $nombreArchivo,
+                        'ruta_web' => $rutaWeb,
+                        'principal' => 0,
+                        'orden' => $pedidoEppImagen->orden,
+                        'nombre' => $nombreOriginal
+                    ];
+                    
+                    \Log::info("[EppController] Imagen guardada: {$nombreArchivo}");
+                }
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => count($imagenesGuardadas) . ' imágenes agregadas correctamente',
+                'data' => $imagenesGuardadas
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error("[EppController] Error agregando imágenes al pedido EPP: {$pedidoEppId}", [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al agregar las imágenes: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * DELETE /api/pedido-epp/imagenes/{imagenId}
+     * 
+     * Eliminar una imagen específica de un EPP en un pedido
+     */
+    public function eliminarImagenPedidoEpp($imagenId): JsonResponse
+    {
+        try {
+            \Log::info("[EppController] Eliminando imagen de pedido EPP: {$imagenId}");
+            
+            // Buscar la imagen
+            $imagen = \App\Models\PedidoEppImagen::find($imagenId);
+            
+            if (!$imagen) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Imagen no encontrada'
+                ], 404);
+            }
+            
+            // Eliminar el archivo físico
+            $rutaArchivo = str_replace('/storage/', '', $imagen->ruta_web);
+            if (Storage::disk('public')->exists($rutaArchivo)) {
+                Storage::disk('public')->delete($rutaArchivo);
+                \Log::info("[EppController] Archivo físico eliminado: {$rutaArchivo}");
+            }
+            
+            // Eliminar el registro de la base de datos
+            $imagen->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Imagen eliminada correctamente'
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error("[EppController] Error eliminando imagen de pedido EPP: {$imagenId}", [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar la imagen: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

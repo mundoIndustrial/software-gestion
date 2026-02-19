@@ -501,6 +501,10 @@ class InvoiceRenderer {
                         if (!epp.imagen && epp.imagenes && Array.isArray(epp.imagenes) && epp.imagenes.length > 0) {
                             epp.imagen = epp.imagenes[0];
                         }
+                        
+                        // Generar HTML para las imágenes del EPP
+                        const imagenesHTML = this.renderizarImagenesEPP(epp.imagenes || []);
+                        
                         return `
                         <div style="background: white; border: 1px solid #d1d5db; border-left: 4px solid #6b7280; padding: 8px; border-radius: 4px; margin-bottom: 8px; page-break-inside: avoid;">
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start;">
@@ -513,6 +517,15 @@ class InvoiceRenderer {
                                     <div style="font-weight: 600; color: #374151; font-size: 11px;"><strong>${epp.cantidad || 0}</strong></div>
                                 </div>
                             </div>
+                            
+                            <!-- Imágenes del EPP -->
+                            ${imagenesHTML ? `
+                                <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                                    <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">Imágenes</div>
+                                    ${imagenesHTML}
+                                </div>
+                            ` : ''}
+                            
                             ${epp.observaciones ? `
                                 <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
                                     <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 2px; font-weight: 600;">Observaciones</div>
@@ -526,6 +539,154 @@ class InvoiceRenderer {
             `;
         }
         return '';
+    }
+
+    /**
+     * Renderiza las imágenes de un EPP
+     */
+    renderizarImagenesEPP(imagenes) {
+        if (!imagenes || imagenes.length === 0) {
+            return '';
+        }
+
+        return `
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px;">
+                ${imagenes.map((imagen, index) => {
+                    let imgUrl = '';
+                    let imgTitle = imagen.nombre || `Imagen ${index + 1}`;
+                    
+                    // Determinar la URL de la imagen según el formato
+                    if (typeof imagen === 'string') {
+                        imgUrl = imagen;
+                    } else if (imagen.ruta_web) {
+                        // URL del servidor (formato preferido) - asegurar que incluya /storage/
+                        imgUrl = imagen.ruta_web.startsWith('/') ? imagen.ruta_web : `/storage/${imagen.ruta_web}`;
+                        imgTitle = imagen.nombre || imgTitle;
+                    } else if (imagen.url) {
+                        imgUrl = imagen.url.startsWith('/') ? imagen.url : `/storage/${imagen.url}`;
+                        imgTitle = imagen.nombre || imgTitle;
+                    } else if (imagen.base64) {
+                        // Base64 (fallback)
+                        imgUrl = imagen.base64;
+                        imgTitle = imagen.nombre || imgTitle;
+                    } else if (imagen.previewUrl) {
+                        // Preview URL temporal (fallback)
+                        imgUrl = imagen.previewUrl;
+                        imgTitle = imagen.nombre || imgTitle;
+                    }
+                    
+                    // Asegurar que siempre incluya /storage/ para URLs relativas
+                    if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('/') && !imgUrl.startsWith('data:')) {
+                        imgUrl = '/storage/' + imgUrl.replace(/^\/+/, '');
+                    }
+                    
+                    if (!imgUrl) {
+                        return '';
+                    }
+                    
+                    return `
+                        <div style="position: relative; border-radius: 3px; overflow: hidden; background: #f9fafb; border: 1px solid #e5e7eb; aspect-ratio: 1; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" 
+                             onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)'; this.querySelector('.hover-overlay').style.opacity='1';"
+                             onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'; this.querySelector('.hover-overlay').style.opacity='0';"
+                             onclick="window.invoiceRenderer.abrirModalImagen('${imgUrl}', '${imgTitle.replace(/'/g, "\\'")}')"
+                             title="Click para ver imagen completa">
+                            <img src="${imgUrl}" 
+                                 alt="${imgTitle}" 
+                                 style="width: 100%; height: 100%; object-fit: cover; display: block;"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                 title="${imgTitle}">
+                            <div style="display: none; align-items: center; justify-content: center; width: 100%; height: 100%; background: #f3f4f6; color: #6b7280; font-size: 10px; text-align: center; padding: 4px;">
+                                Sin imagen
+                            </div>
+                            <!-- Overlay de hover -->
+                            <div class="hover-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; pointer-events: none;">
+                                <div style="color: white; font-size: 18px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🔍</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+
+    /**
+     * Abre un modal para mostrar una imagen a tamaño completo
+     */
+    abrirModalImagen(imgUrl, imgTitle) {
+        // Crear modal si no existe
+        let modal = document.getElementById('modal-imagen-epp');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'modal-imagen-epp';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                cursor: pointer;
+                padding: 20px;
+                box-sizing: border-box;
+            `;
+            
+            modal.innerHTML = `
+                <div style="position: relative; width: 95%; height: 95%; max-width: 1200px; max-height: 800px; background: white; border-radius: 12px; overflow: hidden; cursor: default; box-shadow: 0 20px 60px rgba(0,0,0,0.3);" onclick="event.stopPropagation()">
+                    <div style="position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.8); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; z-index: 10; transition: background 0.2s;" 
+                         onmouseover="this.style.background='rgba(0,0,0,0.9)'" 
+                         onmouseout="this.style.background='rgba(0,0,0,0.8)'"
+                         onclick="document.getElementById('modal-imagen-epp').remove()">
+                        ✕
+                    </div>
+                    <div style="display: flex; flex-direction: column; height: 100%; background: #f8f9fa;">
+                        <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 10px; overflow: hidden; position: relative;">
+                            <img id="modal-imagen-epp-img" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px;" alt="${imgTitle}">
+                        </div>
+                        <div style="background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.6)); color: white; padding: 15px; text-align: center; position: relative;">
+                            <div id="modal-imagen-epp-title" style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">${imgTitle}</div>
+                            <div style="font-size: 14px; opacity: 0.9;">Click fuera o presiona ESC para cerrar</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Evento para cerrar al hacer clic fuera
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+            
+            // Evento para cerrar con ESC
+            document.addEventListener('keydown', function escHandler(e) {
+                if (e.key === 'Escape') {
+                    modal.remove();
+                    document.removeEventListener('keydown', escHandler);
+                }
+            });
+        }
+        
+        // Actualizar imagen y título
+        const img = document.getElementById('modal-imagen-epp-img');
+        const title = document.getElementById('modal-imagen-epp-title');
+        
+        if (img) {
+            img.src = imgUrl;
+            img.alt = imgTitle;
+        }
+        
+        if (title) {
+            title.textContent = imgTitle;
+        }
+        
+        // Mostrar modal
+        modal.style.display = 'flex';
     }
 }
 

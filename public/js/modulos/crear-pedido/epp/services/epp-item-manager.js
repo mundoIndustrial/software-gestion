@@ -190,12 +190,31 @@ class EppItemManager {
                 
                 // Agregar nuevas imágenes
                 datos.imagenes.forEach((img, idx) => {
-                    // Soportar múltiples formatos de imagen (BD, stateManager local)
-                    const imgUrl = typeof img === 'string' ? img : (img.url || img.ruta_web || img.preview || '');
+                    // Soportar múltiples formatos de imagen
+                    // PRIORIZAR URLs DEL SERVIDOR
+                    let imgUrl = '';
+                    let imgAlt = 'Imagen';
+                    
+                    if (typeof img === 'string') {
+                        imgUrl = img;
+                    } else if (img.url || img.ruta_web) {
+                        // PRIORIDAD 1: URLs del servidor (persistentes)
+                        imgUrl = img.url || img.ruta_web;
+                        imgAlt = img.nombre || 'Imagen';
+                    } else if (img.previewUrl) {
+                        // PRIORIDAD 2: URL blob (solo para vista previa temporal)
+                        imgUrl = img.previewUrl;
+                        imgAlt = img.nombre || 'Imagen';
+                    } else if (img.base64) {
+                        // PRIORIDAD 3: Base64 (fallback si no hay URL del servidor)
+                        imgUrl = img.base64;
+                        imgAlt = img.nombre || 'Imagen';
+                    }
+                    
                     if (imgUrl && !imgUrl.includes('placeholder')) {
                         const imgDiv = document.createElement('div');
                         imgDiv.style.cssText = 'border-radius: 4px; overflow: hidden; background: #f3f4f6; border: 1px solid #e5e7eb; aspect-ratio: 1;';
-                        imgDiv.innerHTML = `<img src="${imgUrl}" alt="Imagen" style="width: 100%; height: 100%; object-fit: cover;">`;
+                        imgDiv.innerHTML = `<img src="${imgUrl}" alt="${imgAlt}" style="width: 100%; height: 100%; object-fit: cover;" title="${imgAlt}">`;
                         gridDiv.appendChild(imgDiv);
                         console.log('[EppItemManager] 📷 Imagen agregada:', idx + 1, 'URL:', imgUrl.substring(0, 50) + '...');
                     }
@@ -227,11 +246,45 @@ class EppItemManager {
             <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #bfdbfe;">
                 <p style="margin: 0 0 0.75rem 0; font-size: 0.8rem; font-weight: 600; color: #0066cc; text-transform: uppercase; letter-spacing: 0.5px;">Imágenes</p>
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 0.5rem;">
-                    ${imagenes.map(img => `
-                        <div style="position: relative; border-radius: 4px; overflow: hidden; background: #f3f4f6; border: 1px solid #e5e7eb; aspect-ratio: 1;">
-                            <img src="${img.preview || img.url || img}" alt="${nombre}" style="width: 100%; height: 100%; object-fit: cover; display: block;">
-                        </div>
-                    `).join('')}
+                    ${imagenes.map(img => {
+                        // Soportar múltiples formatos de imagen
+                        // PRIORIZAR URLs DEL SERVIDOR con fallback a previewUrl
+                        let imgUrl = '';
+                        let imgAlt = nombre;
+                        
+                        if (typeof img === 'string') {
+                            imgUrl = img;
+                        } else if (img.previewUrl) {
+                            // PRIORIDAD 1: URL blob (funciona siempre)
+                            imgUrl = img.previewUrl;
+                            imgAlt = img.nombre || nombre;
+                        } else if (img.url || img.ruta_web) {
+                            // PRIORIDAD 2: URLs del servidor (si existen y funcionan)
+                            // TEMPORAL: Como las URLs simuladas no funcionan, usar previewUrl
+                            if (img.previewUrl) {
+                                imgUrl = img.previewUrl;
+                                imgAlt = img.nombre || nombre;
+                            } else {
+                                imgUrl = img.url || img.ruta_web;
+                                imgAlt = img.nombre || nombre;
+                            }
+                        } else if (img.base64) {
+                            // PRIORIDAD 3: Base64 (fallback)
+                            imgUrl = img.base64;
+                            imgAlt = img.nombre || nombre;
+                        }
+                        
+                        // Solo renderizar si tenemos una URL válida
+                        if (imgUrl && !imgUrl.includes('placeholder')) {
+                            return `
+                                <div style="position: relative; border-radius: 4px; overflow: hidden; background: #f3f4f6; border: 1px solid #e5e7eb; aspect-ratio: 1;">
+                                    <img src="${imgUrl}" alt="${imgAlt}" style="width: 100%; height: 100%; object-fit: cover; display: block;" title="${imgAlt}"
+                                         onerror="console.warn('Imagen no cargada, usando fallback'); this.src='${img.previewUrl || ''}';">
+                                </div>
+                            `;
+                        }
+                        return '';
+                    }).filter(html => html !== '').join('')}
                 </div>
             </div>
         `;

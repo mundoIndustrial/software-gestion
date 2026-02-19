@@ -131,20 +131,39 @@ class ItemAPIService {
             console.log('[validarPedido]  Prendas:', pedidoData.prendas?.length || 0);
             console.log('[validarPedido]  EPPs:', pedidoData.epps?.length || 0);
             
-            //  PASO 0: Registrar todos los archivos File con sus UIDs ANTES de serializar
+            // PASO 0: Registrar todos los archivos File con sus UIDs ANTES de serializar
             console.debug('[validarPedido] 🗂️ Registrando archivos File en fileRegistry...');
             this.registrarArchivosEnGlobal(pedidoData);
             
-            // PASO 1: Serializar JSON directamente (ya viene bien formado desde recolectarDatosPedido)
-            const jsonString = JSON.stringify(pedidoData);
+            // PASO 1: Preparar datos para envío (JSON limpio + FormData para imágenes)
+            console.debug('[validarPedido] 📦 Preparando datos para envío...');
+            let datosParaEnvio;
+            
+            // Verificar si existe la función prepararDatosParaEnvio (nuestro sistema EPP)
+            if (typeof window.prepararDatosParaEnvio === 'function') {
+                datosParaEnvio = window.prepararDatosParaEnvio([pedidoData]);
+                console.debug('[validarPedido] 📸 Usando prepararDatosParaEnvio para EPPs');
+            } else {
+                // Fallback para prendas (sin imágenes)
+                datosParaEnvio = {
+                    jsonData: [pedidoData],
+                    formData: new FormData()
+                };
+                console.debug('[validarPedido] 📦 Fallback para prendas sin imágenes');
+            }
+            
+            // PASO 2: Serializar JSON limpio
+            const jsonString = JSON.stringify(datosParaEnvio.jsonData[0]);
             console.debug(`[validarPedido] JSON serializado: ${jsonString.length} bytes`);
             console.log('[validarPedido] JSON String que se enviará:', jsonString);
             
-            // PASO 2: Enviar en FormData con campo "pedido"
-            const formData = new FormData();
+            // PASO 3: Enviar en FormData con campo "pedido" + archivos de imágenes
+            const formData = datosParaEnvio.formData;
             formData.append('pedido', jsonString);
             
             console.debug('[validarPedido] 📤 Enviando a /validar con FormData...');
+            console.debug('[validarPedido] 📤 Archivos en FormData:', formData.getAll('files').length);
+            
             const respuesta = await this.realizarPeticion(`${this.baseUrl}/validar`, {
                 method: 'POST',
                 body: formData

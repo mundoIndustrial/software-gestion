@@ -523,6 +523,18 @@ Route::middleware('api')->post('pedidos/{pedidoId}/epp/agregar', [\App\Infrastru
 Route::middleware('api')->delete('pedidos/{pedidoId}/epp/{eppId}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'eliminar'])
     ->name('pedidos.epp.eliminar');
 
+// Gestión de imágenes de EPP en pedidos
+Route::middleware('api')->prefix('pedido-epp')->name('pedido-epp.imagenes.')->group(function () {
+    Route::get('{pedidoEppId}/imagenes', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'obtenerImagenes'])
+        ->name('obtener');
+    
+    Route::post('{pedidoEppId}/imagenes', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'agregarImagenes'])
+        ->name('agregar');
+    
+    Route::delete('imagenes/{imagenId}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'eliminarImagenPedidoEpp'])
+        ->name('eliminar');
+});
+
 Route::middleware(['web'])->get('pedidos/{pedidoId}/epp/{pedidoEppId}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'obtenerEppDelPedidoPorId'])
     ->name('pedidos.epp.obtener-por-id');
 

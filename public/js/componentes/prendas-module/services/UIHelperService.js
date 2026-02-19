@@ -185,7 +185,49 @@ class UIHelperService {
         if (!modal) return false;
         
         const style = window.getComputedStyle(modal);
-        return style.display !== 'none' && style.visibility !== 'hidden';
+        
+        // Verificar métodos comunes de visibilidad
+        const isVisibleByDisplay = style.display !== 'none';
+        const isVisibleByVisibility = style.visibility !== 'hidden';
+        const isVisibleByOpacity = parseFloat(style.opacity) > 0;
+        
+        // Verificar si tiene clases que indican visibilidad (Bootstrap, Tailwind, etc.)
+        const hasVisibleClass = (
+            modal.classList.contains('show') ||           // Bootstrap
+            modal.classList.contains('visible') ||       // Genérico
+            modal.classList.contains('block') ||         // Tailwind/Display
+            modal.classList.contains('flex') ||          // Tailwind/Display
+            modal.classList.contains('grid') ||          // Tailwind/Display
+            !modal.classList.contains('hidden') &&       // Tailwind
+            !modal.classList.contains('invisible')       // Tailwind
+        );
+        
+        // Verificar transformaciones que ocultan el modal
+        const hasHiddenTransform = style.transform.includes('scale(0)') || 
+                                  style.transform.includes('translateY(-100%)') ||
+                                  style.transform.includes('translateX(-100%)');
+        
+        // Verificar posición z-index (modales suelen tener z-index alto)
+        const hasModalZIndex = parseInt(style.zIndex) > 1000;
+        
+        // El modal está visible si cumple la mayoría de las condiciones
+        const isVisible = isVisibleByDisplay && 
+                         isVisibleByVisibility && 
+                         (isVisibleByOpacity || hasVisibleClass) && 
+                         !hasHiddenTransform;
+        
+        // Log para debugging
+        console.log(`[UIHelperService] isModalVisible para ${modal.id}:`, {
+            isVisibleByDisplay,
+            isVisibleByVisibility,
+            isVisibleByOpacity,
+            hasVisibleClass,
+            hasHiddenTransform,
+            hasModalZIndex,
+            finalResult: isVisible
+        });
+        
+        return isVisible;
     }
 
     /**

@@ -215,7 +215,7 @@
 
 <!-- Modal para editar EPP (formulario simple) -->
 <div id="modal-editar-epp-form" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999999; align-items: center; justify-content: center;">
-    <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+    <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
         <h3 style="margin: 0 0 1.5rem 0; color: #1f2937; font-size: 1.3rem;">Editar EPP</h3>
         
         <div style="margin-bottom: 1.5rem; position: relative;">
@@ -226,7 +226,30 @@
         
         <div style="margin-bottom: 1.5rem;">
             <label for="modalEppNombre" style="display: block; color: #374151; font-weight: 600; margin-bottom: 0.5rem;">EPP Seleccionado:</label>
-            <input type="text" id="modalEppNombre" disabled style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; background: #f3f4f6; color: #6b7280;">
+            <input type="text" id="modalEppNombre" disabled="" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; background: #f3f4f6; color: #6b7280;">
+        </div>
+        
+        <!-- Sección de imágenes -->
+        <div style="margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <label style="color: #374151; font-weight: 600;">Imágenes:</label>
+                <button type="button" onclick="abrirSelectorImagenesEPP()" 
+                        style="background: #3b82f6; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: background 0.2s;"
+                        onmouseover="this.style.background='#2563eb'" 
+                        onmouseout="this.style.background='#3b82f6'">
+                    📷 Agregar Imágenes
+                </button>
+            </div>
+            
+            <!-- Galería de imágenes existentes -->
+            <div id="galeriaImagenesEPP" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 0.75rem; min-height: 100px; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 6px; background: #f9fafb;">
+                <div style="grid-column: 1 / -1; text-align: center; color: #6b7280; font-size: 0.9rem; display: flex; align-items: center; justify-content: center;">
+                    No hay imágenes agregadas
+                </div>
+            </div>
+            
+            <!-- Input oculto para selección de archivos -->
+            <input type="file" id="inputImagenesEPP" multiple accept="image/*" style="display: none;">
         </div>
         
         <div style="margin-bottom: 1.5rem;">
@@ -245,6 +268,30 @@
             </button>
             <button onclick="guardarCambiosEPP()" style="background: #10b981; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
                 Guardar Cambios
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para seleccionar imágenes -->
+<div id="modal-selector-imagenes-epp" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 999999; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <h3 style="margin: 0 0 1.5rem 0; color: #1f2937; font-size: 1.3rem;">Seleccionar Imágenes</h3>
+        
+        <div style="border: 2px dashed #d1d5db; border-radius: 8px; padding: 2rem; text-align: center; margin-bottom: 1.5rem;">
+            <div style="color: #6b7280; font-size: 1rem; margin-bottom: 1rem;">📷</div>
+            <p style="color: #6b7280; margin: 0;">Haz clic aquí o arrastra imágenes</p>
+            <input type="file" id="inputImagenesSelector" multiple accept="image/*" style="display: none;">
+        </div>
+        
+        <div id="vistaPreviaImagenes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; max-height: 200px; overflow-y: auto;"></div>
+        
+        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+            <button onclick="cerrarModalSelectorImagenes()" style="background: #e5e7eb; color: #374151; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s;">
+                Cancelar
+            </button>
+            <button onclick="confirmarSeleccionImagenes()" style="background: #3b82f6; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
+                Agregar Seleccionadas
             </button>
         </div>
     </div>
@@ -466,6 +513,105 @@
         const cambios = window.cambiosEppPendientes;
         
         try {
+            // Procesar eliminaciones de imágenes primero
+            if (cambios.imagenesAEliminar && cambios.imagenesAEliminar.length > 0) {
+                console.log('🗑️ [Modal Novedad] Procesando eliminación de imágenes:', cambios.imagenesAEliminar);
+                
+                for (const imagen of cambios.imagenesAEliminar) {
+                    try {
+                        console.log(`🗑️ Eliminando imagen: ${imagen.id} - ${imagen.nombre || imagen.ruta_original}`);
+                        
+                        const response = await fetch(`/api/pedido-epp/imagenes/${imagen.id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            }
+                        });
+                        
+                        if (!response.ok) {
+                            const error = await response.json();
+                            console.warn(`⚠️ No se pudo eliminar imagen ${imagen.id}:`, error.message);
+                        } else {
+                            console.log(`✅ Imagen ${imagen.id} eliminada correctamente`);
+                        }
+                    } catch (error) {
+                        console.error(`❌ Error eliminando imagen ${imagen.id}:`, error);
+                    }
+                }
+            }
+            
+            // Procesar agregaciones de nuevas imágenes
+            if (cambios.imagenesAAgregar && cambios.imagenesAAgregar.length > 0) {
+                console.log('📸 [Modal Novedad] Procesando agregación de imágenes:', cambios.imagenesAAgregar);
+                
+                const formData = new FormData();
+                let archivosAgregados = 0;
+                
+                cambios.imagenesAAgregar.forEach((imagen, index) => {
+                    if (imagen.file) {
+                        console.log(`📸 Agregando archivo ${index}:`, {
+                            nombre: imagen.nombre,
+                            size: imagen.size,
+                            type: imagen.type,
+                            file: imagen.file
+                        });
+                        
+                        // Laravel espera 'imagenes[]' para recibir un array de archivos
+                        formData.append('imagenes[]', imagen.file);
+                        
+                        // Agregar metadatos como JSON string
+                        formData.append(`metadatos[${index}]`, JSON.stringify({
+                            nombre: imagen.nombre,
+                            size: imagen.size,
+                            type: imagen.type
+                        }));
+                        archivosAgregados++;
+                    } else {
+                        console.warn(`⚠️ Imagen ${index} no tiene archivo:`, imagen);
+                    }
+                });
+                
+                console.log('📸 FormData creado:', {
+                    archivosCount: archivosAgregados,
+                    formDataEntries: Array.from(formData.entries())
+                });
+                
+                try {
+                    const response = await fetch(`/api/pedido-epp/${cambios.eppData.pedido_epp_id}/imagenes`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            // No Content-Type para FormData, el navegador lo establece automáticamente
+                        },
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        const error = await response.json();
+                        console.warn(`⚠️ No se pudieron agregar imágenes:`, error.message);
+                    } else {
+                        const resultado = await response.json();
+                        console.log(`✅ Imágenes agregadas:`, resultado);
+                        
+                        // Actualizar la lista de imágenes existentes con las nuevas
+                        if (resultado.data && Array.isArray(resultado.data)) {
+                            resultado.data.forEach(nuevaImagen => {
+                                imagenesEPPActuales.push({
+                                    id: nuevaImagen.id,
+                                    ruta_original: nuevaImagen.ruta_original,
+                                    ruta_web: nuevaImagen.ruta_web,
+                                    nombre: nuevaImagen.nombre,
+                                    principal: nuevaImagen.principal,
+                                    orden: nuevaImagen.orden
+                                });
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('❌ Error agregando imágenes:', error);
+                }
+            }
+            
             const pedidoId = window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido;
             const pedidoEppId = cambios.eppData.pedido_epp_id;
             
@@ -475,7 +621,9 @@
                 cantidad: cambios.cantidad,
                 observaciones: cambios.observaciones,
                 eppId: cambios.eppId,
-                novedad
+                novedad,
+                imagenesEliminadas: cambios.imagenesAEliminar?.length || 0,
+                imagenesAgregadas: cambios.imagenesAAgregar?.length || 0
             });
             
             const response = await fetch(`/api/pedidos/${pedidoId}/epp/${pedidoEppId}`, {
@@ -550,9 +698,292 @@
         }
     }
     
+    // Funciones para manejo de imágenes de EPP
+    let imagenesEPPActuales = [];
+    let imagenesAEliminar = [];
+    let imagenesAAgregar = [];
+    
+    function abrirSelectorImagenesEPP() {
+        document.getElementById('modal-selector-imagenes-epp').style.display = 'flex';
+        document.getElementById('vistaPreviaImagenes').innerHTML = '';
+        
+        // Configurar drag and drop
+        const dropZone = document.querySelector('#modal-selector-imagenes-epp > div > div[style*="border: 2px dashed"]');
+        const fileInput = document.getElementById('inputImagenesSelector');
+        
+        dropZone.onclick = () => fileInput.click();
+        
+        dropZone.ondragover = (e) => {
+            e.preventDefault();
+            dropZone.style.background = '#f0f9ff';
+            dropZone.style.borderColor = '#3b82f6';
+        };
+        
+        dropZone.ondragleave = () => {
+            dropZone.style.background = '';
+            dropZone.style.borderColor = '#d1d5db';
+        };
+        
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.style.background = '';
+            dropZone.style.borderColor = '#d1d5db';
+            manejarSeleccionArchivos(e.dataTransfer.files);
+        };
+        
+        fileInput.onchange = (e) => {
+            manejarSeleccionArchivos(e.target.files);
+        };
+    }
+    
+    function cerrarModalSelectorImagenes() {
+        document.getElementById('modal-selector-imagenes-epp').style.display = 'none';
+        document.getElementById('vistaPreviaImagenes').innerHTML = '';
+        document.getElementById('inputImagenesSelector').value = '';
+        
+        // Limpiar array temporal para liberar memoria
+        if (window.imagenesTemporales) {
+            window.imagenesTemporales = [];
+        }
+    }
+    
+    function manejarSeleccionArchivos(archivos) {
+        const vistaPrevia = document.getElementById('vistaPreviaImagenes');
+        vistaPrevia.innerHTML = '';
+        
+        Array.from(archivos).forEach((archivo, index) => {
+            if (archivo.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'position: relative; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb;';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" style="width: 100%; height: 100px; object-fit: cover;">
+                        <div style="position: absolute; top: 5px; right: 5px; background: rgba(239, 68, 68, 0.9); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px;" onclick="this.parentElement.remove()">×</div>
+                        <div style="padding: 8px; background: white; font-size: 12px; color: #6b7280; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${archivo.name}</div>
+                    `;
+                    
+                    // Guardar referencia directa al archivo, no en JSON
+                    div.dataset.archivoIndex = index;
+                    
+                    // Guardar el archivo en un array separado para evitar JSON.stringify
+                    if (!window.imagenesTemporales) {
+                        window.imagenesTemporales = [];
+                    }
+                    window.imagenesTemporales[index] = {
+                        nombre: archivo.name,
+                        size: archivo.size,
+                        type: archivo.type,
+                        preview: e.target.result,
+                        file: archivo // ← Archivo real guardado directamente
+                    };
+                    
+                    vistaPrevia.appendChild(div);
+                };
+                reader.readAsDataURL(archivo);
+            }
+        });
+    }
+    
+    function confirmarSeleccionImagenes() {
+        const elementos = document.querySelectorAll('#vistaPreviaImagenes > div');
+        
+        // Limpiar array de imágenes a agregar
+        imagenesAAgregar = [];
+        
+        elementos.forEach(el => {
+            const index = el.dataset.archivoIndex;
+            if (index !== undefined && window.imagenesTemporales && window.imagenesTemporales[index]) {
+                // Guardar el archivo real para poder enviarlo al backend
+                imagenesAAgregar.push(window.imagenesTemporales[index]);
+            }
+        });
+        
+        console.log('📸 [confirmarSeleccionImagenes] Imágenes para agregar:', imagenesAAgregar);
+        actualizarGaleriaImagenes();
+        cerrarModalSelectorImagenes();
+    }
+    
+    function actualizarGaleriaImagenes() {
+        const galeria = document.getElementById('galeriaImagenesEPP');
+        
+        if (imagenesEPPActuales.length === 0 && imagenesAAgregar.length === 0) {
+            galeria.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; color: #6b7280; font-size: 0.9rem; display: flex; align-items: center; justify-content: center;">
+                    No hay imágenes agregadas
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        
+        // Imágenes existentes
+        imagenesEPPActuales.forEach((imagen, index) => {
+            // Construir URL asegurando que siempre incluya /storage/
+            let imgUrl = imagen.ruta_web || imagen.url || `/storage/${imagen.ruta_original}`;
+            
+            // Si no empieza con /storage/, agregarlo
+            if (imgUrl && !imgUrl.startsWith('/storage/')) {
+                imgUrl = '/storage/' + imgUrl.replace(/^\/+/, '');
+            }
+            
+            console.log(`[actualizarGaleriaImagenes] Imagen ${index}:`, {
+                id: imagen.id,
+                ruta_web: imagen.ruta_web,
+                url: imagen.url,
+                ruta_original: imagen.ruta_original,
+                imgUrl_final: imgUrl
+            });
+            html += `
+                <div style="position: relative; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; aspect-ratio: 1;">
+                    <img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover;" onclick="window.invoiceRenderer.abrirModalImagen('${imgUrl}', '${imagen.nombre || 'Imagen ' + (index + 1)}')">
+                    <div style="position: absolute; top: 5px; right: 5px; background: rgba(239, 68, 68, 0.9); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px;" onclick="eliminarImagenEPP('${imagen.id}', ${index})">×</div>
+                </div>
+            `;
+        });
+        
+        // Nuevas imágenes
+        imagenesAAgregar.forEach((imagen, index) => {
+            html += `
+                <div style="position: relative; border-radius: 8px; overflow: hidden; border: 1px solid #10b981; aspect-ratio: 1;">
+                    <img src="${imagen.preview}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <div style="position: absolute; top: 5px; right: 5px; background: rgba(239, 68, 68, 0.9); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px;" onclick="eliminarImagenNuevaEPP(${index})">×</div>
+                    <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(16, 185, 129, 0.9); color: white; padding: 4px; font-size: 10px; text-align: center;">NUEVA</div>
+                </div>
+            `;
+        });
+        
+        galeria.innerHTML = html;
+    }
+    
+    function eliminarImagenEPP(imagenId, index) {
+        const imagen = imagenesEPPActuales[index];
+        imagenesAEliminar.push(imagen);
+        imagenesEPPActuales.splice(index, 1);
+        actualizarGaleriaImagenes();
+    }
+    
+    function eliminarImagenNuevaEPP(index) {
+        imagenesAAgregar.splice(index, 1);
+        actualizarGaleriaImagenes();
+    }
+    
+    async function cargarImagenesEPP(pedidoEppId) {
+        try {
+            const response = await fetch(`/api/pedido-epp/${pedidoEppId}/imagenes`);
+            const resultado = await response.json();
+            imagenesEPPActuales = resultado.data || [];
+            actualizarGaleriaImagenes();
+        } catch (error) {
+            console.error('Error cargando imágenes del EPP:', error);
+            imagenesEPPActuales = [];
+            actualizarGaleriaImagenes();
+        }
+    }
+    
+    // Modificar la función abrirModalEditarEppForm para cargar imágenes
+    function abrirModalEditarEppFormConImagenes(eppData) {
+        console.log('[Modal Editar EPP] Abriendo formulario con datos:', eppData);
+        
+        const modal = document.getElementById('modal-editar-epp-form');
+        if (!modal) {
+            console.error(' Modal no encontrado en el DOM');
+            return;
+        }
+        
+        // Resetear variables de imágenes
+        imagenesEPPActuales = [];
+        imagenesAEliminar = [];
+        imagenesAAgregar = [];
+        
+        // Llenar los campos
+        document.getElementById('modalEppNombre').value = eppData.nombre_completo || eppData.nombre || '';
+        document.getElementById('buscadorEppEdicion').value = '';
+        document.getElementById('cantidadEPP').value = eppData.cantidad || 1;
+        document.getElementById('observacionesEPP').value = eppData.observaciones || '';
+        document.getElementById('resultadosBuscadorEppEdicion').style.display = 'none';
+        
+        // Guardar datos en variable global
+        window.eppEnEdicionActual = eppData;
+        
+        // Cargar imágenes existentes
+        if (eppData.pedido_epp_id) {
+            cargarImagenesEPP(eppData.pedido_epp_id);
+        } else {
+            actualizarGaleriaImagenes();
+        }
+        
+        // Mostrar modal
+        modal.style.display = 'flex';
+        
+        // Inicializar el buscador
+        setTimeout(() => {
+            inicializarBuscadorEpp();
+        }, 100);
+    }
+    
+    // Modificar guardarCambiosEPP para incluir imágenes
+    async function guardarCambiosEPPConImagenes() {
+        const eppData = window.eppEnEdicionActual;
+        if (!eppData) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No hay datos del EPP',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                customClass: { container: 'swal-toast-container' }
+            });
+            return;
+        }
+        
+        const cantidad = parseInt(document.getElementById('cantidadEPP').value);
+        const observaciones = document.getElementById('observacionesEPP').value;
+        const eppId = eppData.epp_id;
+        
+        if (cantidad < 1) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'La cantidad debe ser mayor a 0',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                customClass: { container: 'swal-toast-container' }
+            });
+            return;
+        }
+        
+        // Guardar los datos para usarlos después en confirmarNovedad
+        window.cambiosEppPendientes = {
+            eppData,
+            cantidad,
+            observaciones,
+            eppId,
+            imagenesAEliminar,
+            imagenesAAgregar
+        };
+        
+        // Mostrar modal para registrar la novedad
+        document.getElementById('modal-novedad-epp').style.display = 'flex';
+        document.getElementById('noveladaEPP').value = '';
+        document.getElementById('noveladaEPP').focus();
+    }
+    
     // Exponer funciones globalmente
-    window.abrirModalEditarEppForm = abrirModalEditarEppForm;
+    window.abrirModalEditarEppForm = abrirModalEditarEppFormConImagenes;
     window.cerrarModalEditarEppForm = cerrarModalEditarEppForm;
-    window.guardarCambiosEPP = guardarCambiosEPP;
+    window.guardarCambiosEPP = guardarCambiosEPPConImagenes;
+    window.abrirSelectorImagenesEPP = abrirSelectorImagenesEPP;
+    window.cerrarModalSelectorImagenes = cerrarModalSelectorImagenes;
+    window.confirmarSeleccionImagenes = confirmarSeleccionImagenes;
+    window.eliminarImagenEPP = eliminarImagenEPP;
+    window.eliminarImagenNuevaEPP = eliminarImagenNuevaEPP;
 </script>
 
