@@ -320,6 +320,6 @@ document.addEventListener('click', function(event) {
 <script src="{{ asset('js/contador/tabla-cotizaciones.js') }}"></script>
 
 <!-- Script de Real-time -->
-<script src="{{ asset('js/realtime-cotizaciones-simple.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/realtime-cotizaciones.js') }}?v={{ time() }}"></script>
 
 @endsection

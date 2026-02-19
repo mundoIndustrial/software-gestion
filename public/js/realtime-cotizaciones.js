@@ -3,66 +3,89 @@
  * Handles status changes and new quotations in real-time
  */
 
+console.log('[REALTIME-COT] 📍 LÍNEA 5: Inicio del archivo');
+
 // Log inmediato para verificar que el archivo se carga
+console.log('[REALTIME-COT] 📍 LÍNEA 7: Antes de alert');
+alert('🚀 REALTIME-COTIZACIONES.JS CARGADO');
+console.log('[REALTIME-COT] 📍 LÍNEA 9: Después de alert');
 console.log('[REALTIME-COT] === ARCHIVO CARGADO ===');
 
+console.log('[REALTIME-COT] 📍 LÍNEA 12: Antes de protección contra cargas múltiples');
 // Protección contra cargas múltiples
 if (window.realtimeCotizacionesLoaded) {
+    console.log('[REALTIME-COT] 📍 LÍNEA 14: Archivo ya fue cargado');
     console.warn('[REALTIME-COT] ⚠️  El archivo ya fue cargado, evitando duplicación');
     // No usar return aquí, simplemente salir del bloque
 } else {
+    console.log('[REALTIME-COT] 📍 LÍNEA 17: Entrando al bloque else');
     window.realtimeCotizacionesLoaded = true;
+    console.log('[REALTIME-COT] 📍 LÍNEA 19: Bandera de carga establecida');
 
     // Sistema de retry para esperar a que Echo esté disponible
+    console.log('[REALTIME-COT] 📍 LÍNEA 22: Declarando variables de retry');
     let echoCheckAttempts = 0;
     const MAX_ATTEMPTS = 50; // 5 segundos máximo (100ms * 50)
+    console.log('[REALTIME-COT] 📍 LÍNEA 25: Variables declaradas');
 
+    console.log('[REALTIME-COT] 📍 LÍNEA 27: Antes de declarar checkAndInitialize');
     function checkAndInitialize() {
+        console.log('[REALTIME-COT] 📍 LÍNEA 29: Entrando a checkAndInitialize');
         echoCheckAttempts++;
-        console.log(`[REALTIME-COT] Intento ${echoCheckAttempts}/${MAX_ATTEMPTS} - Verificando Echo...`);
-        console.log('[REALTIME-COT] window.Echo disponible:', typeof window.Echo);
-        console.log('[REALTIME-COT] window.Echo existe:', !!window.Echo);
-        console.log('[REALTIME-COT] window.waitForEcho disponible:', typeof window.waitForEcho);
-        console.log('[REALTIME-COT] window.Echo completo:', window.Echo);
+        console.log(`[REALTIME-COT] 📍 LÍNEA 31: Intento ${echoCheckAttempts}/${MAX_ATTEMPTS} - Verificando Echo...`);
+        console.log('[REALTIME-COT] 📍 LÍNEA 32: window.Echo disponible:', typeof window.Echo);
+        console.log('[REALTIME-COT] 📍 LÍNEA 33: window.Echo existe:', !!window.Echo);
+        console.log('[REALTIME-COT] 📍 LÍNEA 34: window.waitForEcho disponible:', typeof window.waitForEcho);
+        console.log('[REALTIME-COT] 📍 LÍNEA 35: window.Echo completo:', window.Echo);
 
+        console.log('[REALTIME-COT] 📍 LÍNEA 37: Antes de verificar Echo disponible');
         // Si Echo está disponible, inicializar
         if (typeof window.Echo !== 'undefined' && window.Echo) {
-            console.log('[REALTIME-COT] ✅ Echo encontrado, inicializando...');
-            console.log('[REALTIME-COT] Tipo de Echo:', typeof window.Echo);
-            console.log('[REALTIME-COT] Echo tiene channel:', typeof window.Echo?.channel);
+            console.log('[REALTIME-COT] 📍 LÍNEA 39: Echo encontrado, inicializando...');
+            console.log('[REALTIME-COT] 📍 LÍNEA 40: Tipo de Echo:', typeof window.Echo);
+            console.log('[REALTIME-COT] 📍 LÍNEA 41: Echo tiene channel:', typeof window.Echo?.channel);
+            console.log('[REALTIME-COT] 📍 LÍNEA 42: Antes de llamar a initializeRealtimeCotizaciones');
             initializeRealtimeCotizaciones();
+            console.log('[REALTIME-COT] 📍 LÍNEA 44: Después de llamar a initializeRealtimeCotizaciones');
             return;
         }
 
+        console.log('[REALTIME-COT] 📍 LÍNEA 47: Echo no disponible, verificando waitForEcho');
         // Si tenemos waitForEcho, usarlo
         if (typeof window.waitForEcho === 'function') {
-            console.log('[REALTIME-COT] Usando window.waitForEcho...');
+            console.log('[REALTIME-COT] 📍 LÍNEA 50: Usando window.waitForEcho...');
             window.waitForEcho(initializeRealtimeCotizaciones);
             return;
         }
 
+        console.log('[REALTIME-COT] 📍 LÍNEA 56: Verificando si debe reintentar');
         // Si no está disponible y no hemos llegado al máximo, reintentar
         if (echoCheckAttempts < MAX_ATTEMPTS) {
-            console.log('[REALTIME-COT] Echo no disponible, reintentando en 100ms...');
+            console.log('[REALTIME-COT] 📍 LÍNEA 58: Echo no disponible, reintentando en 100ms...');
             setTimeout(checkAndInitialize, 100);
         } else {
-            console.error('[REALTIME-COT] ❌ Echo no disponible después de varios intentos');
+            console.log('[REALTIME-COT] 📍 LÍNEA 61: ❌ Echo no disponible después de varios intentos');
         }
     }
 
+    console.log('[REALTIME-COT] 📍 LÍNEA 65: Antes de verificar readyState');
     // Inicializar cuando el DOM esté listo
     if (document.readyState === 'loading') {
+        console.log('[REALTIME-COT] 📍 LÍNEA 67: DOM cargando, agregando event listener');
         document.addEventListener('DOMContentLoaded', checkAndInitialize);
     } else {
+        console.log('[REALTIME-COT] 📍 LÍNEA 71: DOM ya listo, llamando directamente');
         checkAndInitialize();
     }
 
     function initializeRealtimeCotizaciones() {
+        console.log('[REALTIME-COT] 📍 LÍNEA 82: Entrando a initializeRealtimeCotizaciones');
         console.log('[REALTIME-COT] === INICIALIZANDO SISTEMA REALTIME ===');
         console.log('[REALTIME-COT] Echo está disponible:', typeof window.Echo);
 
         // Cache temporal para evitar procesar el mismo evento dos veces
         // (suele pasar por estar suscritos a cotizaciones + cotizaciones.contador)
+        console.log('[REALTIME-COT] 📍 LÍNEA 88: Creando Map para eventos procesados');
         const processedEstadoEventKeys = new Map();
         const PROCESSED_EVENT_TTL_MS = 4000;
 
