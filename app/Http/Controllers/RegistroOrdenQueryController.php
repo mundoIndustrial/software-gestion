@@ -1487,10 +1487,35 @@ class RegistroOrdenQueryController extends Controller
                 'pedido_numero' => $pedido
             ]);
             
-            // Convertir numero_pedido a ID si es necesario
-            $pedidoModel = \App\Models\PedidoProduccion::where('numero_pedido', $pedido)->first();
-            if (!$pedidoModel) {
-                $pedidoModel = \App\Models\PedidoProduccion::where('id', $pedido)->first();
+            // Manejo especial para 'sin-numero'
+            if ($pedido === 'sin-numero') {
+                // Buscar pedidos que no tienen numero_pedido (es nulo o vacío)
+                $pedidoModel = \App\Models\PedidoProduccion::whereNull('numero_pedido')
+                    ->orWhere('numero_pedido', '')
+                    ->orderBy('id', 'desc')
+                    ->first();
+                
+                \Log::info(' [getRecibosDatos] Buscando pedido sin número', [
+                    'encontrado' => $pedidoModel ? $pedidoModel->id : null
+                ]);
+            } else {
+                // Si es numérico, buscar primero por ID (más eficiente)
+                if (is_numeric($pedido)) {
+                    $pedidoModel = \App\Models\PedidoProduccion::where('id', $pedido)->first();
+                    \Log::info(' [getRecibosDatos] Buscando por ID numérico', [
+                        'id' => $pedido,
+                        'encontrado' => $pedidoModel ? true : false
+                    ]);
+                }
+                
+                // Si no encuentra por ID, intentar por numero_pedido
+                if (!$pedidoModel) {
+                    $pedidoModel = \App\Models\PedidoProduccion::where('numero_pedido', $pedido)->first();
+                    \Log::info(' [getRecibosDatos] Buscando por numero_pedido', [
+                        'numero_pedido' => $pedido,
+                        'encontrado' => $pedidoModel ? true : false
+                    ]);
+                }
             }
             
             if (!$pedidoModel) {
@@ -1516,6 +1541,16 @@ class RegistroOrdenQueryController extends Controller
             
             // Extraer datos de la estructura de respuesta
             $datos = $responseData['data'] ?? $responseData;
+            
+            \Log::info(' [getRecibosDatos] ESTRUCTURA COMPLETA DE RESPUESTA', [
+                'numero_pedido' => $pedido,
+                'pedido_id' => $pedidoId,
+                'datos_completos' => $datos,
+                'cliente' => $datos['cliente'] ?? 'N/A',
+                'numero_pedido_en_datos' => $datos['numero_pedido'] ?? 'NO ENCONTRADO',
+                'numero_en_datos' => $datos['numero'] ?? 'NO ENCONTRADO',
+                'total_prendas' => isset($datos['prendas']) ? count($datos['prendas']) : 0
+            ]);
             
             \Log::info(' [getRecibosDatos] Datos obtenidos de PedidoController', [
                 'numero_pedido' => $pedido,
@@ -1617,6 +1652,7 @@ class RegistroOrdenQueryController extends Controller
                         'observaciones' => $proceso->observaciones,
                         'codigo_referencia' => $proceso->codigo_referencia,
                         'dias_duracion' => $proceso->dias_duracion,
+                        'esta_activo' => $proceso->estado_proceso === 'Pendiente',
                     ];
                 }
                 
