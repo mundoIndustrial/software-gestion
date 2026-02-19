@@ -1815,9 +1815,22 @@
                 try {
                     // Usar EchoInstance que es la instancia real, no el constructor
                     const echoInstance = window.EchoInstance || window.Echo;
-                    echoInstance.channel('supervisor-pedidos')
-                        .listen('OrdenUpdated', (data) => {
-                            console.log('[Realtime Supervisor] 📨 Evento OrdenUpdated recibido:', data);
+                    console.log('[Realtime Supervisor] 🔧 EchoInstance disponible:', !!echoInstance);
+                    console.log('[Realtime Supervisor] 🔧 Tipo de EchoInstance:', typeof echoInstance);
+                    
+                    const channel = echoInstance.channel('supervisor-pedidos');
+                    console.log('[Realtime Supervisor] 📡 Canal creado:', channel);
+                    
+                    channel.subscribed(() => {
+                        console.log('[Realtime Supervisor] ✅ Suscripción exitosa al canal supervisor-pedidos');
+                    });
+                    
+                    channel.error((error) => {
+                        console.error('[Realtime Supervisor] ❌ Error en suscripción al canal:', error);
+                    });
+                    
+                    channel.listen('OrdenUpdated', (data) => {
+                        console.log('[Realtime Supervisor] 📨 Evento OrdenUpdated recibido:', data);
                             
                             if (!data.orden) {
                                 console.warn('[Realtime Supervisor]  Evento sin datos de orden');
@@ -1857,12 +1870,6 @@
                             if (typeof actualizarContadorPendientes === 'function') {
                                 actualizarContadorPendientes();
                             }
-                        })
-                        .on('pusher:subscription_succeeded', () => {
-                            console.log('[Realtime Supervisor]  Subscripción exitosa al canal supervisor-pedidos');
-                        })
-                        .on('pusher:subscription_error', (error) => {
-                            console.error('[Realtime Supervisor]  Error en subscripción:', error);
                         });
                     
                     console.log('[Realtime Supervisor]  Sistema de tiempo real inicializado correctamente');

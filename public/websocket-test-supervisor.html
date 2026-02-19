@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test WebSocket Supervisor-Pedidos</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test WebSocket - Supervisor-Pedidos</h1>
+    
+    <div>
+        <button onclick="simularEvento()">📡 Simular Evento OrdenUpdated</button>
+        <button onclick="verificarConexion()">🔍 Verificar Conexión</button>
+        <button onclick="limpiarLogs()">🧹 Limpiar Logs</button>
+    </div>
+    
+    <div id="logs"></div>
+
+    <!-- Meta tags para Reverb (simulados) -->
+    <meta name="user-id" content="93">
+    <meta name="reverb-key" content="mundo-industrial-key">
+    <meta name="reverb-app-id" content="mundo-industrial">
+    <meta name="reverb-host" content="sistemamundoindustrial.online">
+    <meta name="reverb-port" content="8080">
+    <meta name="reverb-scheme" content="https">
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.0.0/dist/web/pusher.min.js"></script>
+    <script>
+        let logs = [];
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            logs.push({ message, type, timestamp });
+            renderLogs();
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function renderLogs() {
+            const logsDiv = document.getElementById('logs');
+            logsDiv.innerHTML = logs.map(log => 
+                `<div class="log ${log.type}">
+                    <strong>[${log.timestamp}]</strong> ${log.message}
+                </div>`
+            ).join('');
+        }
+        
+        function limpiarLogs() {
+            logs = [];
+            renderLogs();
+        }
+        
+        function verificarConexion() {
+            log('🔍 Verificando conexión WebSocket...', 'info');
+            
+            if (typeof window.Echo !== 'undefined') {
+                log('✅ Echo disponible', 'success');
+                log(`📡 Echo type: ${typeof window.Echo}`, 'info');
+                
+                if (typeof window.EchoInstance !== 'undefined') {
+                    log('✅ EchoInstance disponible', 'success');
+                } else {
+                    log('❌ EchoInstance no disponible', 'error');
+                }
+            } else {
+                log('❌ Echo no disponible', 'error');
+            }
+        }
+        
+        function simularEvento() {
+            log('📡 Simulando evento OrdenUpdated...', 'info');
+            
+            // Datos de prueba
+            const testData = {
+                orden: {
+                    id: 12345,
+                    numero_pedido: 'TEST-001',
+                    cliente: 'Cliente Test',
+                    estado: 'Aprobado',
+                    novedades: 'Test desde supervisor-pedidos'
+                },
+                action: 'created',
+                changedFields: ['estado']
+            };
+            
+            // Simular recepción del evento
+            if (typeof window.procesarEventoOrdenUpdated === 'function') {
+                window.procesarEventoOrdenUpdated(testData);
+                log('✅ Evento procesado', 'success');
+            } else {
+                // Procesar directamente
+                log('📨 Evento simulado recibido:', 'info');
+                log(`📋 Datos: ${JSON.stringify(testData, null, 2)}`, 'info');
+                
+                // Simular actualización de UI
+                log('🔄 Simulando actualización de UI...', 'info');
+                log('✅ UI actualizada (simulado)', 'success');
+            }
+        }
+        
+        // Inicializar Echo si está disponible
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Página cargada', 'info');
+            
+            // Esperar a que Echo esté disponible
+            if (typeof window.waitForEcho === 'function') {
+                log('⏳ Esperando a Echo...', 'info');
+                window.waitForEcho(() => {
+                    inicializarWebSocket();
+                });
+            } else {
+                log('⚠️ waitForEcho no disponible', 'error');
+            }
+        });
+        
+        function inicializarWebSocket() {
+            log('🔧 Inicializando WebSocket...', 'info');
+            
+            try {
+                const echoInstance = window.EchoInstance || window.Echo;
+                log(`📡 Usando EchoInstance: ${!!window.EchoInstance}`, 'info');
+                
+                const channel = echoInstance.channel('supervisor-pedidos');
+                log('📡 Canal supervisor-pedidos creado', 'success');
+                
+                channel.subscribed(() => {
+                    log('✅ Suscripción exitosa a supervisor-pedidos', 'success');
+                });
+                
+                channel.error((error) => {
+                    log(`❌ Error en suscripción: ${error}`, 'error');
+                });
+                
+                channel.listen('OrdenUpdated', (data) => {
+                    log('📨 Evento OrdenUpdated recibido:', 'success');
+                    log(`📋 Datos: ${JSON.stringify(data, null, 2)}`, 'info');
+                });
+                
+                log('🎯 WebSocket configurado correctamente', 'success');
+                
+            } catch (error) {
+                log(`❌ Error inicializando WebSocket: ${error.message}`, 'error');
+            }
+        }
+        
+        // Exponer función para procesar eventos
+        window.procesarEventoOrdenUpdated = function(data) {
+            log('📨 Procesando evento OrdenUpdated', 'info');
+            log(`📋 Pedido: ${data.orden?.numero_pedido}`, 'info');
+            log(`🔄 Acción: ${data.action}`, 'info');
+            log('✅ Evento procesado', 'success');
+        };
+    </script>
+    
+    <!-- Cargar Echo desde el sistema principal -->
+    <script src="/resources/js/app.js"></script>
+</body>
+</html>

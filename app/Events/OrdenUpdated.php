@@ -31,10 +31,19 @@ class OrdenUpdated implements ShouldBroadcastNow
      */
     public function broadcastOn()
     {
-        return [
+        // Canal para supervisor-pedidos y otros sistemas
+        $channels = [
             new Channel('supervisor-pedidos'),
             new Channel('ordenes'),
         ];
+        
+        \Log::info('[OrdenUpdated] Canales de broadcast', [
+            'action' => $this->action,
+            'canales' => array_map(fn($ch) => $ch->name, $channels),
+            'total_canales' => count($channels)
+        ]);
+        
+        return $channels;
     }
 
     /**
