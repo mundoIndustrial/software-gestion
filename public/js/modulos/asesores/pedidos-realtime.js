@@ -145,6 +145,20 @@ class PedidosRealtimeRefresh {
                         console.error(' [PedidosRealtime] Error en canal despacho.pedidos:', error);
                     });
 
+                // Canal para supervisor-pedidos (eventos de aprobación/rechazo)
+                window.EchoInstance.channel('supervisor-pedidos')
+                    .listen('OrdenUpdated', (data) => {
+                        if (this.debug) console.log('📨 [PedidosRealtime] OrdenUpdated recibido (cartera):', data?.orden?.id);
+                        
+                        // Cuando se aprueba/rechaza un pedido, recargar la lista
+                        if (typeof window.cargarPedidos === 'function') {
+                            window.cargarPedidos();
+                        }
+                    })
+                    .error((error) => {
+                        console.error(' [PedidosRealtime] Error en canal supervisor-pedidos:', error);
+                    });
+
                 this.usingWebSockets = true;
                 if (this.debug) console.log(' [PedidosRealtime] WebSockets activo para cartera/pedidos - SIN POLLING');
                 return;
