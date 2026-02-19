@@ -263,6 +263,9 @@
 <!-- Vite App Bundle -->
 @vite(['resources/js/app.js'])
 
+<!-- Modal de Imágenes -->
+<script src="{{ asset('js/ImageModal.js') }}"></script>
+
 <!-- Scripts específicos -->
 @if(request()->is(['despacho/*']))
 <!-- Scripts de Invoice comentados para usar estilo bodega

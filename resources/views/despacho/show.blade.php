@@ -3,9 +3,6 @@
 @section('title', "Despacho - Pedido {$pedido->numero_pedido}")
 
 @push('scripts')
-<!-- Modal de Imágenes -->
-<script src="{{ asset('js/ImageModal.js') }}"></script>
-
 <script>
 // Conexión WebSocket para actualizaciones en tiempo real
 let socket = null;

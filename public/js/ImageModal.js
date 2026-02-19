@@ -3,6 +3,12 @@
  * Permite ver imágenes en un modal centrado con zoom y navegación
  */
 
+// Evitar carga múltiple del script
+if (typeof window.ImageModalLoaded !== 'undefined') {
+    console.log('[ImageModal] Script ya cargado, omitiendo...');
+} else {
+    window.ImageModalLoaded = true;
+
 class ImageModal {
     constructor() {
         this.init();
@@ -139,3 +145,5 @@ class ImageModal {
 document.addEventListener('DOMContentLoaded', () => {
     new ImageModal();
 });
+
+} // Cierre del bloque if de carga múltiple
