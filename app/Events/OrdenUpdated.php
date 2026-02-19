@@ -70,7 +70,7 @@ class OrdenUpdated implements ShouldBroadcastNow
         // Asegurar que el objeto orden tenga el atributo correcto para el frontend
         $ordenData = $this->orden instanceof \Illuminate\Database\Eloquent\Model 
             ? $this->orden->toArray() 
-            : $this->orden;
+            : (is_array($this->orden) ? $this->orden : (array) $this->orden);
         
         // Añadir ambos campos para compatibilidad
         if (!isset($ordenData['pedido']) && isset($ordenData['numero_pedido'])) {
