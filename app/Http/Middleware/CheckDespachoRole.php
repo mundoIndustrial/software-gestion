@@ -36,18 +36,26 @@ class CheckDespachoRole
             ? $user->roles_ids 
             : json_decode($user->roles_ids ?? '[]', true);
         
-        // Obtener ID del rol Despacho
+        // Obtener IDs de los roles permitidos
         $despachoRoleId = \App\Models\Role::where('name', 'Despacho')->first()?->id;
+        $asesorRoleId = \App\Models\Role::where('name', 'asesor')->first()?->id;
         
         \Log::info('[CheckDespachoRole] Verificación de rol', [
             'despacho_role_id' => $despachoRoleId,
+            'asesor_role_id' => $asesorRoleId,
             'user_has_despacho_role' => $despachoRoleId && in_array($despachoRoleId, $rolesIds),
+            'user_has_asesor_role' => $asesorRoleId && in_array($asesorRoleId, $rolesIds),
         ]);
         
-        if (!$despachoRoleId || !in_array($despachoRoleId, $rolesIds)) {
+        // Permitir acceso si tiene rol Despacho O rol asesor
+        $hasAccess = ($despachoRoleId && in_array($despachoRoleId, $rolesIds)) || 
+                    ($asesorRoleId && in_array($asesorRoleId, $rolesIds));
+        
+        if (!$hasAccess) {
             \Log::warning('[CheckDespachoRole] Acceso denegado', [
                 'user_id' => $user->id,
                 'despacho_role_id' => $despachoRoleId,
+                'asesor_role_id' => $asesorRoleId,
                 'user_roles' => $rolesIds,
             ]);
             return abort(403, 'No tienes permiso para acceder al módulo de despacho');
