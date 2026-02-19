@@ -112,8 +112,12 @@ function initializeEcho() {
     const hostname = window.location.hostname;
     const isProduction = hostname !== 'localhost' && hostname !== '127.0.0.1' && hostname.includes('.');
     
-    // En producción con dominio, usar HTTPS automáticamente
-    const forceTLS = isProduction && wsPort === 443;
+    // En producción, usar proxy de Nginx (puerto 443/80) en lugar de conexión directa
+    // En desarrollo, usar conexión directa al puerto de Reverb
+    let useProxy = isProduction;
+    let wsPortFinal = useProxy ? (window.location.protocol === 'https:' ? 443 : 80) : wsPort;
+    let wsHostFinal = useProxy ? window.location.hostname : wsHost;
+    let forceTLSFinal = useProxy ? (window.location.protocol === 'https:') : forceTLS;
 
     try {
         // Debug: Verificar estado antes de crear instancia
@@ -121,14 +125,24 @@ function initializeEcho() {
         console.log('[DEBUG] window.EchoConstructor es:', window.EchoConstructor);
         console.log('[DEBUG] typeof window.EchoConstructor:', typeof window.EchoConstructor);
         
+        // Debug: Verificar configuración final
+        console.log('[DEBUG] Configuración WebSocket:', {
+            'isProduction': isProduction,
+            'useProxy': useProxy,
+            'wsHostFinal': wsHostFinal,
+            'wsPortFinal': wsPortFinal,
+            'forceTLSFinal': forceTLSFinal,
+            'location.protocol': window.location.protocol
+        });
+        
         // WebSockets habilitados para Reverb (Supervisor Pedidos en tiempo real)
         const echoInstance = new window.EchoConstructor({
             broadcaster: 'reverb',
             key: import.meta.env.VITE_REVERB_APP_KEY || 'mundo-industrial-key',
-            wsHost,
-            wsPort,
-            wssPort: wsPort,
-            forceTLS,
+            wsHost: wsHostFinal,
+            wsPort: wsPortFinal,
+            wssPort: wsPortFinal,
+            forceTLS: forceTLSFinal,
             enabledTransports: ['ws', 'wss'], //  Habilitar WebSockets
             disableStats: true,
             authEndpoint: '/broadcasting/auth',
