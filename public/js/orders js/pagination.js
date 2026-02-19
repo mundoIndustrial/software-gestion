@@ -39,9 +39,6 @@ function _initializeControls() {
     if (typeof initializeStatusDropdowns === 'function') {
         initializeStatusDropdowns();
     }
-    if (typeof initializeAreaDropdowns === 'function') {
-        initializeAreaDropdowns();
-    }
     if (typeof initializeDiaEntregaDropdowns === 'function') {
         initializeDiaEntregaDropdowns();
     }

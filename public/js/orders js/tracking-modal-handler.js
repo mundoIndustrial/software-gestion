@@ -78,7 +78,10 @@
 
   // Función para abrir el modal de agregar proceso
   function openAddProcesoModal() {
+    console.log('[openAddProcesoModal] Abriendo modal de agregar proceso');
     const modal = document.getElementById('addProcesoModal');
+    console.log('[openAddProcesoModal] Modal encontrado:', !!modal);
+    
     if (modal) {
       modal.classList.add('show');
       modal.style.setProperty('display', 'flex', 'important');
@@ -86,8 +89,12 @@
       modal.style.setProperty('opacity', '1', 'important');
       modal.style.setProperty('z-index', '9999', 'important');
       
+      console.log('[openAddProcesoModal] Modal configurado y mostrado');
+      
       // Asegurar que los botones de cerrar funcionen
       setupAddProcesoModalListeners();
+    } else {
+      console.error('[openAddProcesoModal] No se encontró el modal addProcesoModal');
     }
   }
 
@@ -169,6 +176,11 @@
 
   // Actualizar información del pedido en el modal y selector
   function updateOrderInfo(orderData) {
+    console.log('[updateOrderInfo] Datos recibidos:', orderData);
+    console.log('[updateOrderInfo] numero_pedido:', orderData.numero_pedido);
+    console.log('[updateOrderInfo] cliente:', orderData.cliente);
+    console.log('[updateOrderInfo] estado:', orderData.estado);
+    
     // Actualizar modal principal
     document.getElementById('trackingOrderNumber').textContent = orderData.numero_pedido || '-';
     document.getElementById('trackingOrderClient').textContent = orderData.cliente || '-';
@@ -178,9 +190,26 @@
     document.getElementById('trackingTotalDays').textContent = orderData.total_dias || '0';
 
     // Actualizar selector de prendas
-    document.getElementById('selectorOrderNumber').textContent = orderData.numero_pedido || '-';
-    document.getElementById('selectorOrderClient').textContent = orderData.cliente || '-';
-    document.getElementById('selectorOrderStatus').textContent = orderData.estado || '-';
+    const selectorOrderNumber = document.getElementById('selectorOrderNumber');
+    const selectorOrderClient = document.getElementById('selectorOrderClient');
+    const selectorOrderStatus = document.getElementById('selectorOrderStatus');
+    
+    console.log('[updateOrderInfo] Elementos encontrados:', {
+      selectorOrderNumber: !!selectorOrderNumber,
+      selectorOrderClient: !!selectorOrderClient,
+      selectorOrderStatus: !!selectorOrderStatus
+    });
+    
+    if (selectorOrderNumber) {
+      selectorOrderNumber.textContent = orderData.numero_pedido || '-';
+      console.log('[updateOrderInfo] selectorOrderNumber actualizado a:', orderData.numero_pedido || '-');
+    }
+    if (selectorOrderClient) {
+      selectorOrderClient.textContent = orderData.cliente || '-';
+    }
+    if (selectorOrderStatus) {
+      selectorOrderStatus.textContent = orderData.estado || '-';
+    }
   }
 
   // Cargar prendas con seguimiento
@@ -482,6 +511,7 @@
     if (!container) return;
 
     console.log('[renderPrendaTrackingTimeline] Renderizando timeline para prenda:', prenda);
+    console.log('[renderPrendaTrackingTimeline] Seguimientos por área en prenda:', prenda.seguimientos_por_area);
 
     // Botón de volver (eliminado - ya está en el header)
     container.innerHTML = '';
@@ -538,6 +568,277 @@
     container.appendChild(noSeguimiento);
   }
 
+  // Manejar eliminación de proceso
+  window.handleEliminarProceso = async function(procesoId, areaName, event) {
+    // Detener propagación para evitar que se cierre el modal
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    // Mostrar modal de confirmación
+    showConfirmDeleteModal(procesoId, areaName);
+  };
+
+  // Mostrar modal de confirmación para eliminar
+  function showConfirmDeleteModal(procesoId, areaName) {
+    console.log('[showConfirmDeleteModal] Mostrando confirmación para eliminar:', { procesoId, areaName });
+    
+    const modal = document.getElementById('confirmDeleteModal');
+    const processNameSpan = document.getElementById('deleteProcessName');
+    
+    if (modal && processNameSpan) {
+      // Establecer el nombre del proceso
+      processNameSpan.textContent = areaName;
+      
+      // Mostrar el modal
+      modal.classList.add('show');
+      modal.style.setProperty('display', 'flex', 'important');
+      modal.style.setProperty('visibility', 'visible', 'important');
+      modal.style.setProperty('opacity', '1', 'important');
+      
+      // Guardar el ID del proceso a eliminar
+      window.processToDelete = { id: procesoId, name: areaName };
+      
+      // Configurar listeners
+      setupConfirmDeleteModalListeners();
+      
+      console.log('[showConfirmDeleteModal] Modal de confirmación mostrado');
+    } else {
+      console.error('[showConfirmDeleteModal] No se encontró el modal o el span del nombre');
+    }
+  }
+
+  // Configurar listeners del modal de confirmación
+  function setupConfirmDeleteModalListeners() {
+    // Botón cancelar
+    const btnCancel = document.getElementById('btnCancelDelete');
+    if (btnCancel) {
+      btnCancel.onclick = closeConfirmDeleteModal;
+    }
+    
+    // Botón cerrar (X)
+    const btnClose = document.getElementById('closeConfirmDeleteModal');
+    if (btnClose) {
+      btnClose.onclick = closeConfirmDeleteModal;
+    }
+    
+    // Botón confirmar eliminar
+    const btnConfirm = document.getElementById('btnConfirmDelete');
+    if (btnConfirm) {
+      btnConfirm.onclick = executeDeleteProcess;
+    }
+    
+    // Cerrar al hacer clic en el overlay
+    const overlay = document.querySelector('.confirm-delete-overlay');
+    if (overlay) {
+      overlay.onclick = closeConfirmDeleteModal;
+    }
+  }
+
+  // Cerrar modal de confirmación
+  function closeConfirmDeleteModal() {
+    const modal = document.getElementById('confirmDeleteModal');
+    if (modal) {
+      modal.classList.remove('show');
+      modal.style.display = 'none';
+      window.processToDelete = null;
+    }
+  }
+
+  // Ejecutar la eliminación del proceso
+  async function executeDeleteProcess() {
+    if (!window.processToDelete) return;
+    
+    const { id: procesoId, name: areaName } = window.processToDelete;
+    
+    try {
+      console.log('[executeDeleteProcess] Eliminando proceso:', { procesoId, areaName });
+
+      const response = await fetch('/seguimiento-proceso/' + procesoId, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar proceso');
+      }
+
+      const result = await response.json();
+      console.log('[executeDeleteProcess] Proceso eliminado:', result);
+
+      // Cerrar modal de confirmación
+      closeConfirmDeleteModal();
+
+      // Recargar seguimientos de la prenda
+      console.log('[executeDeleteProcess] Recargando seguimientos para orden:', currentOrderData.id);
+      await loadPrendasWithTracking(currentOrderData.id);
+      
+      console.log('[executeDeleteProcess] Seguimientos recargados, currentPrendaData:', currentPrendaData);
+      
+      // Actualizar vista actual
+      if (currentPrendaData) {
+        console.log('[executeDeleteProcess] Actualizando timeline con currentPrendaData:', currentPrendaData);
+        renderPrendaTrackingTimeline(currentPrendaData);
+      } else {
+        console.log('[executeDeleteProcess] No hay currentPrendaData, intentando obtener del DOM');
+        // Si no hay currentPrendaData, intentar obtener la primera prenda del DOM
+        const prendaCards = document.querySelectorAll('.prenda-card');
+        if (prendaCards.length > 0) {
+          const firstCard = prendaCards[0];
+          const prendaData = {
+            id: parseInt(firstCard.dataset.prendaId),
+            nombre_prenda: firstCard.querySelector('.prenda-name')?.textContent,
+          };
+          console.log('[executeDeleteProcess] Usando prendaData del DOM:', prendaData);
+          renderPrendaTrackingTimeline(prendaData);
+        }
+      }
+
+      // Mostrar mensaje de éxito
+      showSuccess('Proceso eliminado correctamente');
+
+    } catch (error) {
+      console.error('[executeDeleteProcess] Error:', error);
+      showError('Error al eliminar proceso: ' + error.message);
+      closeConfirmDeleteModal();
+    }
+  }
+
+  // Manejar edición de proceso
+  window.handleEditarProceso = function(procesoId, areaName, processData, event) {
+    // Detener propagación para evitar que se cierre el modal
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    console.log('[handleEditarProceso] Editando proceso:', { procesoId, areaName, processData });
+    
+    // Verificar si los elementos del formulario existen
+    const procesoArea = document.getElementById('procesoArea');
+    const procesoEstado = document.getElementById('procesoEstado');
+    const procesoFechaInicio = document.getElementById('procesoFechaInicio');
+    const procesoEncargado = document.getElementById('procesoEncargado');
+    const procesoObservaciones = document.getElementById('procesoObservaciones');
+    
+    console.log('[handleEditarProceso] Elementos del formulario:', {
+      procesoArea: !!procesoArea,
+      procesoEstado: !!procesoEstado,
+      procesoFechaInicio: !!procesoFechaInicio,
+      procesoEncargado: !!procesoEncargado,
+      procesoObservaciones: !!procesoObservaciones
+    });
+    
+    // Llenar el formulario con los datos actuales
+    if (procesoArea) procesoArea.value = processData.area || areaName;
+    if (procesoEstado) procesoEstado.value = processData.estado || 'Pendiente';
+    if (procesoFechaInicio) {
+      // Formatear la fecha para el input date (YYYY-MM-DD)
+      const fechaInicio = processData.fecha_inicio;
+      if (fechaInicio) {
+        const date = new Date(fechaInicio);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        procesoFechaInicio.value = `${year}-${month}-${day}`;
+      }
+    }
+    if (procesoEncargado) procesoEncargado.value = processData.encargado || '';
+    if (procesoObservaciones) procesoObservaciones.value = processData.observaciones || '';
+    
+    // Guardar el ID del proceso que se está editando
+    window.editingProcessId = procesoId;
+    
+    // Cambiar el texto del botón a "Actualizar"
+    const btnConfirmar = document.getElementById('btnConfirmAddProceso');
+    if (btnConfirmar) {
+      btnConfirmar.textContent = 'Actualizar Proceso';
+      btnConfirmar.onclick = function() { handleActualizarProceso(procesoId); };
+    }
+    
+    // Abrir el modal de agregar/editar proceso
+    openAddProcesoModal();
+    
+    console.log('[handleEditarProceso] Modal de agregar/editar proceso abierto');
+  };
+
+  // Manejar actualización de proceso
+  window.handleActualizarProceso = async function(procesoId) {
+    try {
+      const area = document.getElementById('procesoArea').value;
+      const estado = document.getElementById('procesoEstado').value;
+      const fechaInicio = document.getElementById('procesoFechaInicio').value;
+      const encargado = document.getElementById('procesoEncargado').value;
+      const observaciones = document.getElementById('procesoObservaciones').value;
+
+      console.log('[handleActualizarProceso] Actualizando proceso:', {
+        procesoId, area, estado, fechaInicio, encargado, observaciones
+      });
+
+      const response = await fetch('/seguimiento-proceso/' + procesoId, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        },
+        body: JSON.stringify({
+          area: area,
+          estado: estado,
+          fecha_inicio: fechaInicio || null,
+          encargado: encargado,
+          observaciones: observaciones
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar proceso');
+      }
+
+      const result = await response.json();
+      console.log('[handleActualizarProceso] Proceso actualizado:', result);
+
+      // Limpiar formulario y resetear botón
+      limpiarFormularioProceso();
+      resetFormButton();
+
+      // Recargar seguimientos de la prenda
+      await loadPrendasWithTracking(currentOrderData.id);
+      
+      // Actualizar vista actual
+      if (currentPrendaData) {
+        renderPrendaTrackingTimeline(currentPrendaData);
+      }
+
+      // Mostrar mensaje de éxito
+      showSuccess('Proceso actualizado correctamente');
+
+    } catch (error) {
+      console.error('[handleActualizarProceso] Error:', error);
+      showError('Error al actualizar proceso: ' + error.message);
+    }
+  };
+
+  // Limpiar formulario de proceso
+  function limpiarFormularioProceso() {
+    document.getElementById('procesoArea').value = '';
+    document.getElementById('procesoEstado').value = 'Pendiente';
+    document.getElementById('procesoFechaInicio').value = '';
+    document.getElementById('procesoEncargado').value = '';
+    document.getElementById('procesoObservaciones').value = '';
+  }
+
+  // Resetear botón del formulario a su estado original
+  function resetFormButton() {
+    const btnConfirmar = document.getElementById('btnConfirmAddProceso');
+    if (btnConfirmar) {
+      btnConfirmar.textContent = 'Agregar Proceso';
+      btnConfirmar.onclick = handleAgregarProceso;
+    }
+    window.editingProcessId = null;
+  }
+
   // Crear tarjeta de área/proceso
   function createAreaCard(area, data) {
     const card = document.createElement('div');
@@ -549,6 +850,20 @@
       <div class="tracking-area-name">
         ${iconSvg}
         ${area}
+        <div class="tracking-action-buttons">
+          ${data.id ? `
+          <button class="tracking-edit-btn" onclick="handleEditarProceso(${data.id}, '${area}', ${JSON.stringify(data).replace(/"/g, '&quot;')}, event)" title="Editar proceso">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </button>
+          <button class="tracking-delete-btn" onclick="handleEliminarProceso(${data.id}, '${area}', event)" title="Eliminar proceso">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"/>
+            </svg>
+          </button>
+          ` : ''}
+        </div>
       </div>
       <div class="tracking-area-details">
         <div class="tracking-detail-row">
@@ -765,7 +1080,7 @@
       limpiarFormularioProceso();
 
       // Recargar seguimientos de la prenda
-      await loadPrendasWithTracking(currentOrderData.pedido.id);
+      await loadPrendasWithTracking(currentOrderData.id);
       
       // Actualizar vista actual
       if (currentPrendaData) {
@@ -786,6 +1101,7 @@
   function limpiarFormularioProceso() {
     document.getElementById('procesoArea').value = '';
     document.getElementById('procesoEstado').value = 'Pendiente';
+    document.getElementById('procesoFechaInicio').value = '';
     document.getElementById('procesoEncargado').value = '';
     document.getElementById('procesoObservaciones').value = '';
   }

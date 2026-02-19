@@ -279,12 +279,21 @@
                 </div>
                 <div class="add-proceso-form-row">
                     <div class="add-proceso-form-group">
+                        <label for="procesoFechaInicio">Fecha de Inicio:</label>
+                        <input type="date" id="procesoFechaInicio" class="add-proceso-input">
+                    </div>
+                    <div class="add-proceso-form-group">
                         <label for="procesoEncargado">Encargado:</label>
                         <input type="text" id="procesoEncargado" class="add-proceso-input" placeholder="Nombre del encargado">
                     </div>
+                </div>
+                <div class="add-proceso-form-row">
                     <div class="add-proceso-form-group">
                         <label for="procesoObservaciones">Observaciones:</label>
                         <input type="text" id="procesoObservaciones" class="add-proceso-input" placeholder="Observaciones (opcional)">
+                    </div>
+                    <div class="add-proceso-form-group">
+                        <!-- Espacio vacío para balance -->
                     </div>
                 </div>
             </div>
@@ -298,6 +307,44 @@
                     <path d="M5 13l4 4L19 7"></path>
                 </svg>
                 Agregar Proceso
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación para Eliminar -->
+<div id="confirmDeleteModal" class="confirm-delete-modal" style="display: none !important;">
+    <div class="confirm-delete-overlay"></div>
+    <div class="confirm-delete-content">
+        <!-- Header -->
+        <div class="confirm-delete-header">
+            <h3>Confirmar Eliminación</h3>
+            <button class="confirm-delete-close" id="closeConfirmDeleteModal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Body -->
+        <div class="confirm-delete-body">
+            <div class="confirm-delete-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
+                    <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"/>
+                </svg>
+            </div>
+            <p>¿Estás seguro de eliminar el proceso "<span id="deleteProcessName"></span>"?</p>
+            <p class="confirm-delete-warning">Esta acción no se puede deshacer.</p>
+        </div>
+        
+        <!-- Footer -->
+        <div class="confirm-delete-footer">
+            <button type="button" id="btnCancelDelete" class="confirm-delete-btn-secondary">Cancelar</button>
+            <button type="button" id="btnConfirmDelete" class="confirm-delete-btn-danger">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"/>
+                </svg>
+                Eliminar Proceso
             </button>
         </div>
     </div>
@@ -2361,5 +2408,166 @@ html[data-theme="light"] .tracking-info-value {
     .tracking-total-days-value {
         font-size: 24px;
     }
+}
+
+/* Modal de Confirmación para Eliminar */
+.confirm-delete-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.confirm-delete-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.confirm-delete-content {
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    max-width: 400px;
+    width: 90%;
+    max-height: 90vh;
+    overflow: hidden;
+    animation: confirmDeleteSlideIn 0.3s ease-out;
+}
+
+@keyframes confirmDeleteSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.confirm-delete-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.confirm-delete-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.confirm-delete-close {
+    background: none;
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #6b7280;
+    transition: all 0.2s ease;
+}
+
+.confirm-delete-close:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.confirm-delete-body {
+    padding: 24px;
+    text-align: center;
+}
+
+.confirm-delete-icon {
+    margin: 0 auto 16px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fef2f2;
+    border-radius: 50%;
+}
+
+.confirm-delete-body p {
+    margin: 0 0 8px;
+    font-size: 16px;
+    color: #374151;
+}
+
+.confirm-delete-warning {
+    font-size: 14px !important;
+    color: #ef4444 !important;
+    font-weight: 500;
+}
+
+.confirm-delete-footer {
+    display: flex;
+    gap: 12px;
+    padding: 20px 24px;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.confirm-delete-btn-secondary {
+    flex: 1;
+    padding: 10px 16px;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.confirm-delete-btn-secondary:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+}
+
+.confirm-delete-btn-danger {
+    flex: 1;
+    padding: 10px 16px;
+    background: #ef4444;
+    border: 1px solid #ef4444;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.confirm-delete-btn-danger:hover {
+    background: #dc2626;
+    border-color: #dc2626;
+}
+
+.confirm-delete-btn-danger svg {
+    width: 16px;
+    height: 16px;
 }
 </style>

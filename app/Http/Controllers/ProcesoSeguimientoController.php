@@ -148,6 +148,77 @@ class ProcesoSeguimientoController extends Controller
     }
 
     /**
+     * Actualizar un proceso completamente
+     */
+    public function actualizar(Request $request, $id): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'area' => 'required|string|max:100',
+            'estado' => 'required|in:Pendiente,En Progreso,Completado,Pausado',
+            'fecha_inicio' => 'nullable|date',
+            'encargado' => 'nullable|string|max:255',
+            'observaciones' => 'nullable|string|max:1000'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $proceso = ProcesoPrenda::findOrFail($id);
+            
+            $proceso->proceso = $request->area;
+            $proceso->estado_proceso = $request->estado;
+            
+            // Actualizar fecha de inicio si se proporciona
+            if ($request->has('fecha_inicio') && $request->fecha_inicio) {
+                $proceso->fecha_inicio = $request->fecha_inicio;
+            }
+            
+            $proceso->encargado = $request->encargado;
+            $proceso->observaciones = $request->observaciones;
+
+            // Si se completa, registrar fecha de fin
+            if ($request->estado === 'Completado' && !$proceso->fecha_fin) {
+                $proceso->fecha_fin = now();
+                
+                // Calcular días de duración
+                if ($proceso->fecha_inicio) {
+                    $dias = $proceso->fecha_inicio->diffInDays(now());
+                    $proceso->dias_duracion = $dias > 0 ? $dias . ' días' : 'Menos de 1 día';
+                }
+            }
+
+            $proceso->save();
+
+            \Log::info('[ProcesoSeguimientoController] Proceso actualizado', [
+                'proceso_id' => $id,
+                'area' => $request->area,
+                'estado' => $request->estado,
+                'encargado' => $request->encargado
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Proceso actualizado correctamente',
+                'data' => $proceso
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al actualizar proceso: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el proceso'
+            ], 500);
+        }
+    }
+
+    /**
      * Actualizar el estado de un proceso
      */
     public function actualizarEstado(Request $request, $id): JsonResponse
