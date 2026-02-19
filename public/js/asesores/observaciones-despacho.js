@@ -554,7 +554,7 @@
             const pedidoId = row.getAttribute('data-pedido-id');
             if (!pedidoId) return;
 
-            window.Echo.channel(`pedido.${pedidoId}`)
+            window.EchoInstance.channel(`pedido.${pedidoId}`)
                 .listen('.observacion.despacho', (e) => {
                     console.log(`[Asesores] Evento en pedido ${pedidoId}:`, e);
 
