@@ -1,25 +1,38 @@
 #!/bin/bash
-# Script para iniciar servicios en VPS
 
-echo "Iniciando servicios para VPS..."
+echo "======================================="
+echo "   Iniciando servicios Mundo Industrial"
+echo "======================================="
 
-# 1. Limpiar cache
-php artisan config:clear
-php artisan cache:clear
+# 1️⃣ Matar procesos anteriores (evita duplicados)
+echo "Deteniendo procesos anteriores..."
+pkill -f "reverb:start"
+pkill -f "queue:work"
 
-# 2. Iniciar Reverb en background
-nohup php artisan reverb:start > reverb.log 2>&1 &
-echo "Reverb iniciado en background (PID: $!)"
+sleep 2
 
-# 3. Iniciar Queue Worker para eventos
-nohup php artisan queue:work --tries=3 --sleep=1 > queue.log 2>&1 &
-echo "Queue Worker iniciado en background (PID: $!)"
+# 2️⃣ Limpiar cache correctamente
+echo "Limpiando cache..."
+php artisan optimize:clear
 
-# 4. Iniciar servidor Laravel (opcional, si usas Nginx/Apache)
-# nohup php artisan serve --host=0.0.0.0 --port=8000 > laravel.log 2>&1 &
-# echo "Laravel Server iniciado en background (PID: $!)"
+# 3️⃣ Iniciar Reverb en puerto 8081
+echo "Iniciando Reverb en puerto 8081..."
+nohup php artisan reverb:start --host=0.0.0.0 --port=8081 \
+> storage/logs/reverb.log 2>&1 &
 
-echo "Servicios iniciados. Revisa los logs:"
-echo "  - Reverb: tail -f reverb.log"
-echo "  - Queue:  tail -f queue.log"
-echo "  - Laravel: tail -f storage/logs/laravel.log"
+echo "Reverb iniciado (PID: $!)"
+
+# 4️⃣ Iniciar Queue Worker
+echo "Iniciando Queue Worker..."
+nohup php artisan queue:work --tries=3 --sleep=1 --timeout=90 \
+> storage/logs/queue.log 2>&1 &
+
+echo "Queue Worker iniciado (PID: $!)"
+
+echo ""
+echo "✅ Servicios iniciados correctamente."
+echo ""
+echo "Logs disponibles en:"
+echo "  tail -f storage/logs/reverb.log"
+echo "  tail -f storage/logs/queue.log"
+echo ""
