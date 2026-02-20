@@ -28,7 +28,7 @@
                     <span class="tracking-prendas-info-value" id="selectorOrderClient">-</span>
                 </div>
                 <div class="tracking-prendas-info-item">
-                    <span class="tracking-prendas-info-label">Estado:</span>
+                    <span class="tracking-prendas-info-label">Estado del Pedido:</span>
                     <span class="tracking-prendas-info-value" id="selectorOrderStatus">-</span>
                 </div>
                 <div class="tracking-prendas-info-item">
@@ -162,7 +162,7 @@
                             </svg>
                         </div>
                         <div class="tracking-info-content">
-                            <span class="tracking-info-label">Estado</span>
+                            <span class="tracking-info-label">Estado del Pedido</span>
                             <span class="tracking-info-value" id="trackingOrderStatus">No iniciado</span>
                         </div>
                     </div>
@@ -229,7 +229,7 @@
             </div>
 
             <!-- Lista de Prendas -->
-            <div class="tracking-prendas-section" style="display: none;">
+            <div class="tracking-prendas-section" style="display: none; margin: 0; padding: 0;">
                 <div id="trackingPrendasContainer" class="tracking-prendas-container">
                     <!-- Se llenará dinámicamente con JavaScript -->
                 </div>
@@ -1641,7 +1641,6 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 24px;
     background: #f8fafc;
 }
 

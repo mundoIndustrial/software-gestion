@@ -187,7 +187,7 @@ function initializeOrdenesRealtimeListeners() {
 
 
 
-    if (!window.Echo) {
+    if (!window.EchoInstance) {
 
         setTimeout(initializeOrdenesRealtimeListeners, 500);
         return;
@@ -196,7 +196,7 @@ function initializeOrdenesRealtimeListeners() {
 
 
     // Canal de Órdenes
-    const ordenesChannel = window.Echo.channel('ordenes');
+    const ordenesChannel = window.EchoInstance.channel('ordenes');
 
     ordenesChannel.subscribed(() => {
 

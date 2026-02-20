@@ -194,7 +194,7 @@
                                 <!-- Día de entrega (Dropdown) -->
                                 <div class="table-cell" style="flex: 0 0 auto;">
                                     <div class="cell-content">
-                                        <select class="dia-entrega-dropdown" data-orden-id="{{ $orden->id }}">
+                                        <select class="dia-entrega-dropdown" data-orden-id="{{ $orden->numero_pedido }}">
                                             <option value="">Seleccionar</option>
                                             @foreach(\App\Models\PedidoProduccion::DIAS_ENTREGA as $dia)
                                                 <option value="{{ $dia }}" {{ $orden->dia_de_entrega == $dia ? 'selected' : '' }}>{{ $dia }} días</option>

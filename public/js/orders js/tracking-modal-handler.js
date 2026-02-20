@@ -1007,7 +1007,7 @@ const trackingTableStyles = `
     
     document.getElementById('trackingOrderNumber').textContent = orderData.numero_pedido || '-';
     document.getElementById('trackingOrderClient').textContent = orderData.cliente || '-';
-    document.getElementById('trackingOrderStatus').textContent = orderData.estado || '-';
+    document.getElementById('trackingOrderStatus').textContent = (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
     document.getElementById('trackingOrderDate').textContent = formatDate(orderData.fecha_creacion || orderData.fecha_de_creacion_de_orden || orderData.created_at) || '-';
     document.getElementById('trackingEstimatedDate').textContent = formatDate(orderData.fecha_estimada_entrega) || '-';
     document.getElementById('trackingTotalDays').textContent = orderData.total_dias || '0';
@@ -1052,7 +1052,7 @@ const trackingTableStyles = `
       selectorOrderClient.textContent = orderData.cliente || '-';
     }
     if (selectorOrderStatus) {
-      selectorOrderStatus.textContent = orderData.estado || '-';
+      selectorOrderStatus.textContent = (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
     }
     if (selectorOrderStartDate) {
       // Actualizar fecha de inicio
@@ -1148,7 +1148,7 @@ const trackingTableStyles = `
       trackingOrderClient.textContent = orderData.cliente || '-';
     }
     if (trackingOrderStatus) {
-      trackingOrderStatus.textContent = orderData.estado || '-';
+      trackingOrderStatus.textContent = (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
     }
     if (trackingOrderRecibo) {
       // Obtener el número de recibo más reciente de todo el pedido
@@ -1747,10 +1747,42 @@ const trackingTableStyles = `
   function renderSeguimientosPorArea(prenda, container) {
     const seguimientosPorArea = prenda.seguimientos_por_area || {};
     if (Object.keys(seguimientosPorArea).length > 0) {
+      // Crear header con título y mover el botón "Agregar Área"
+      const headerContainer = document.createElement('div');
+      headerContainer.style.display = 'flex';
+      headerContainer.style.justifyContent = 'space-between';
+      headerContainer.style.alignItems = 'center';
+      headerContainer.style.marginTop = '0px';
+      headerContainer.style.marginBottom = '16px';
+      
       const seguimientosTitle = document.createElement('h4');
       seguimientosTitle.textContent = 'Seguimiento por Áreas/Procesos';
-      seguimientosTitle.style.marginTop = '24px';
-      container.appendChild(seguimientosTitle);
+      seguimientosTitle.style.margin = '0';
+      seguimientosTitle.style.fontSize = '20px';
+      seguimientosTitle.style.fontWeight = '700';
+      seguimientosTitle.style.color = '#1f2937';
+      
+      // Mover el botón original al header
+      const originalBtn = document.getElementById('btnOpenAddProcesoModal');
+      const addAreaBtn = originalBtn.cloneNode(true);
+      
+      // Reasignar el event listener al botón clonado
+      addAreaBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof openAddProcesoModal === 'function') {
+          openAddProcesoModal();
+        }
+      });
+      
+      headerContainer.appendChild(seguimientosTitle);
+      headerContainer.appendChild(addAreaBtn);
+      container.appendChild(headerContainer);
+      
+      // Ocultar el botón original
+      if (originalBtn) {
+        originalBtn.style.display = 'none';
+      }
       
       Object.entries(seguimientosPorArea).forEach(([area, data]) => {
         const areaCard = createAreaCard(area, data);
