@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Infrastructure\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Exceptions\RegistroOrdenPedidoNumberException;
 use Illuminate\Http\Request;
 use App\Models\PedidoProduccion;
@@ -1214,10 +1215,10 @@ class RegistroOrdenController extends Controller
                 
                 return [
                     'id' => $recibo->id,
+                    'consecutivo_actual' => $recibo->consecutivo_actual,
                     'pedido_produccion_id' => $recibo->pedido_produccion_id,
                     'prenda_id' => $recibo->prenda_id,
-                    'consecutivo_actual' => $recibo->consecutivo_actual,
-                    'consecutivo_inicial' => $recibo->consecutivo_inicial,
+                    'tipo_recibo' => $recibo->tipo_recibo,
                     'notas' => $recibo->notas,
                     'created_at' => $recibo->created_at,
                     'updated_at' => $recibo->updated_at,
@@ -1226,6 +1227,8 @@ class RegistroOrdenController extends Controller
                         'cliente' => $pedido->cliente,
                         'estado' => $pedido->estado,
                         'area' => $pedido->area,
+                        'dia_de_entrega' => $pedido->dia_de_entrega,
+                        'fecha_estimada_de_entrega' => $pedido->fecha_estimada_de_entrega ? $pedido->fecha_estimada_de_entrega->format('d/m/Y') : null,
                     ] : null,
                 ];
             });

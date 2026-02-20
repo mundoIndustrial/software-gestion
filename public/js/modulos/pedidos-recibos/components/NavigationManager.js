@@ -28,11 +28,25 @@ export class NavigationManager {
             return;
         }
 
+        // En la vista de recibos-costura, solo permitir navegación entre recibos de COSTURA
+        const esVistaRecibosCostura = window.location.pathname.includes('/recibos-costura');
         const state = modalManager.getState();
-        const procesosActuales = state.procesosActuales;
-        const procesoActualIndice = state.procesoActualIndice;
+        let procesosActuales = state.procesosActuales;
+        
+        if (esVistaRecibosCostura) {
+            // Filtrar solo los recibos de tipo COSTURA
+            procesosActuales = procesosActuales.filter(proceso => {
+                const tipo = String(proceso.tipo || proceso.tipo_proceso || '').toUpperCase();
+                return tipo === 'COSTURA';
+            });
+            
+            console.log('NavigationManager: Filtrando solo COSTURA', {
+                original: state.procesosActuales.length,
+                filtrados: procesosActuales.length
+            });
+        }
 
-        // Mostrar/ocultar según cantidad de procesos
+        // Mostrar/ocultar según cantidad de procesos filtrados
         if (procesosActuales.length <= 1) {
             arrowContainer.style.display = 'none';
 
@@ -42,29 +56,77 @@ export class NavigationManager {
         arrowContainer.style.display = 'flex';
         this._aplicarEstilos(arrowContainer, prevArrow, nextArrow);
 
+        // Encontrar el índice actual en los procesos filtrados
+        const procesoActual = state.procesosActuales[state.procesoActualIndice];
+        const tipoActual = String(procesoActual.tipo || procesoActual.tipo_proceso || '').toUpperCase();
+        let indiceFiltradoActual = -1;
+        
+        if (esVistaRecibosCostura && tipoActual === 'COSTURA') {
+            // Encontrar el índice del proceso actual en la lista filtrada
+            indiceFiltradoActual = procesosActuales.findIndex(p => {
+                const tipo = String(p.tipo || p.tipo_proceso || '').toUpperCase();
+                return tipo === 'COSTURA' && 
+                       (p.id === procesoActual.id || p.consecutivo === procesoActual.consecutivo);
+            });
+        }
+
         // Botón anterior
-        prevArrow.style.display = procesoActualIndice > 0 ? 'flex' : 'none';
+        prevArrow.style.display = indiceFiltradoActual > 0 ? 'flex' : 'none';
         prevArrow.onclick = () => this._irAnterior(
             modalManager, 
             prendaData, 
-            onProcesoCambiado
+            onProcesoCambiado,
+            esVistaRecibosCostura
         );
 
         // Botón siguiente
-        nextArrow.style.display = procesoActualIndice < procesosActuales.length - 1 ? 'flex' : 'none';
+        nextArrow.style.display = indiceFiltradoActual >= 0 && indiceFiltradoActual < procesosActuales.length - 1 ? 'flex' : 'none';
         nextArrow.onclick = () => this._irSiguiente(
             modalManager, 
             prendaData, 
-            onProcesoCambiado
+            onProcesoCambiado,
+            esVistaRecibosCostura
         );
     }
 
     /**
      * Navega al proceso anterior
      */
-    static _irAnterior(modalManager, prendaData, onProcesoCambiado) {
+    static _irAnterior(modalManager, prendaData, onProcesoCambiado, esVistaRecibosCostura = false) {
         const state = modalManager.getState();
-        const nuevoIndice = state.procesoActualIndice - 1;
+        let procesosActuales = state.procesosActuales;
+        
+        // Si estamos en la vista de recibos-costura, usar solo los procesos COSTURA
+        if (esVistaRecibosCostura) {
+            procesosActuales = procesosActuales.filter(proceso => {
+                const tipo = String(proceso.tipo || proceso.tipo_proceso || '').toUpperCase();
+                return tipo === 'COSTURA';
+            });
+        }
+        
+        const procesoActual = state.procesosActuales[state.procesoActualIndice];
+        let nuevoIndice = -1;
+        
+        if (esVistaRecibosCostura) {
+            // Encontrar el índice actual en la lista filtrada
+            const indiceFiltradoActual = procesosActuales.findIndex(p => {
+                const tipo = String(p.tipo || p.tipo_proceso || '').toUpperCase();
+                return tipo === 'COSTURA' && 
+                       (p.id === procesoActual.id || p.consecutivo === procesoActual.consecutivo);
+            });
+            
+            // Navegar al anterior en la lista filtrada
+            if (indiceFiltradoActual > 0) {
+                const procesoAnteriorFiltrado = procesosActuales[indiceFiltradoActual - 1];
+                // Encontrar el índice de este proceso en la lista original
+                nuevoIndice = state.procesosActuales.findIndex(p => 
+                    (p.id === procesoAnteriorFiltrado.id || p.consecutivo === procesoAnteriorFiltrado.consecutivo)
+                );
+            }
+        } else {
+            // Navegación normal
+            nuevoIndice = state.procesoActualIndice - 1;
+        }
 
         if (nuevoIndice >= 0) {
             const nuevoRecibo = state.procesosActuales[nuevoIndice];
@@ -80,13 +142,44 @@ export class NavigationManager {
     /**
      * Navega al proceso siguiente
      */
-    static _irSiguiente(modalManager, prendaData, onProcesoCambiado) {
+    static _irSiguiente(modalManager, prendaData, onProcesoCambiado, esVistaRecibosCostura = false) {
         const state = modalManager.getState();
-        const nuevoIndice = state.procesoActualIndice + 1;
-        const procesosActuales = state.procesosActuales;
+        let procesosActuales = state.procesosActuales;
+        
+        // Si estamos en la vista de recibos-costura, usar solo los procesos COSTURA
+        if (esVistaRecibosCostura) {
+            procesosActuales = procesosActuales.filter(proceso => {
+                const tipo = String(proceso.tipo || proceso.tipo_proceso || '').toUpperCase();
+                return tipo === 'COSTURA';
+            });
+        }
+        
+        const procesoActual = state.procesosActuales[state.procesoActualIndice];
+        let nuevoIndice = -1;
+        
+        if (esVistaRecibosCostura) {
+            // Encontrar el índice actual en la lista filtrada
+            const indiceFiltradoActual = procesosActuales.findIndex(p => {
+                const tipo = String(p.tipo || p.tipo_proceso || '').toUpperCase();
+                return tipo === 'COSTURA' && 
+                       (p.id === procesoActual.id || p.consecutivo === procesoActual.consecutivo);
+            });
+            
+            // Navegar al siguiente en la lista filtrada
+            if (indiceFiltradoActual >= 0 && indiceFiltradoActual < procesosActuales.length - 1) {
+                const procesoSiguienteFiltrado = procesosActuales[indiceFiltradoActual + 1];
+                // Encontrar el índice de este proceso en la lista original
+                nuevoIndice = state.procesosActuales.findIndex(p => 
+                    (p.id === procesoSiguienteFiltrado.id || p.consecutivo === procesoSiguienteFiltrado.consecutivo)
+                );
+            }
+        } else {
+            // Navegación normal
+            nuevoIndice = state.procesoActualIndice + 1;
+        }
 
-        if (nuevoIndice < procesosActuales.length) {
-            const nuevoRecibo = procesosActuales[nuevoIndice];
+        if (nuevoIndice >= 0 && nuevoIndice < state.procesosActuales.length) {
+            const nuevoRecibo = state.procesosActuales[nuevoIndice];
             const tipoRecibo = String(nuevoRecibo.tipo || nuevoRecibo.tipo_proceso || '');
             
             modalManager.setState({ procesoActualIndice: nuevoIndice });
@@ -145,9 +238,46 @@ export class NavigationManager {
 
         const state = modalManager.getState();
         const { procesoActualIndice, procesosActuales } = state;
+        
+        // En la vista de recibos-costura, solo permitir navegación entre recibos de COSTURA
+        const esVistaRecibosCostura = window.location.pathname.includes('/recibos-costura');
+        let procesosFiltrados = procesosActuales;
+        
+        if (esVistaRecibosCostura) {
+            // Filtrar solo los recibos de tipo COSTURA
+            procesosFiltrados = procesosActuales.filter(proceso => {
+                const tipo = String(proceso.tipo || proceso.tipo_proceso || '').toUpperCase();
+                return tipo === 'COSTURA';
+            });
+        }
 
-        prevArrow.style.display = procesoActualIndice > 0 ? 'flex' : 'none';
-        nextArrow.style.display = procesoActualIndice < procesosActuales.length - 1 ? 'flex' : 'none';
+        // Si solo hay un proceso COSTURA o ninguno, ocultar flechas
+        if (procesosFiltrados.length <= 1) {
+            if (arrowContainer) arrowContainer.style.display = 'none';
+            prevArrow.style.display = 'none';
+            nextArrow.style.display = 'none';
+            return;
+        }
+
+        // Mostrar flechas si hay múltiples procesos COSTURA
+        if (arrowContainer) arrowContainer.style.display = 'flex';
+
+        // Encontrar el índice actual en los procesos filtrados
+        const procesoActual = procesosActuales[procesoActualIndice];
+        const tipoActual = String(procesoActual.tipo || procesoActual.tipo_proceso || '').toUpperCase();
+        let indiceFiltradoActual = -1;
+        
+        if (esVistaRecibosCostura && tipoActual === 'COSTURA') {
+            indiceFiltradoActual = procesosFiltrados.findIndex(p => {
+                const tipo = String(p.tipo || p.tipo_proceso || '').toUpperCase();
+                return tipo === 'COSTURA' && 
+                       (p.id === procesoActual.id || p.consecutivo === procesoActual.consecutivo);
+            });
+        }
+
+        // Actualizar visibilidad de las flechas según el índice filtrado
+        prevArrow.style.display = indiceFiltradoActual > 0 ? 'flex' : 'none';
+        nextArrow.style.display = indiceFiltradoActual >= 0 && indiceFiltradoActual < procesosFiltrados.length - 1 ? 'flex' : 'none';
     }
 }
 

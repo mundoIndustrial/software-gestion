@@ -3,8 +3,8 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\RegistroOrdenController;
-use App\Http\Controllers\RegistroOrdenQueryController;
+use App\Infrastructure\Http\Controllers\RegistroOrdenController;
+use App\Infrastructure\Http\Controllers\RegistroOrdenQueryController;
 use App\Http\Controllers\RegistroBodegaController;
 use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\DashboardController;
@@ -1421,6 +1421,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     
     // Rutas con parámetros {pedido} - IMPORTANTE: rutas más específicas PRIMERO
     Route::get('/registros/{id}/recibos-datos', [RegistroOrdenQueryController::class, 'getRecibosDatos'])->name('registros.recibos-datos');
+    Route::get('/registros/{id}/consecutivo-costura', [RegistroOrdenQueryController::class, 'getConsecutivoCostura'])->name('registros.consecutivo-costura');
     Route::get('/registros/{id}/seguimiento-prenda', [RegistroOrdenQueryController::class, 'getSeguimientoPorPrenda'])->name('registros.seguimiento-prenda');
     Route::get('/registros/{pedido}', [RegistroOrdenQueryController::class, 'show'])->name('registros.show');
     Route::get('/registros/{pedido}/images', [RegistroOrdenQueryController::class, 'getOrderImages'])->name('registros.images');

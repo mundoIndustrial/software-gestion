@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Infrastructure\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Constants\AreaOptions;
 use Illuminate\Http\Request;
 use App\Models\PedidoProduccion;
@@ -1573,6 +1574,64 @@ class RegistroOrdenQueryController extends Controller
                 'error' => 'Error al obtener datos de recibos',
                 'pedido' => $pedido,
                 'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Obtener el consecutivo de costura para un pedido
+     */
+    public function getConsecutivoCostura($pedido)
+    {
+        try {
+            \Log::info(' [getConsecutivoCostura] Obteniendo consecutivo de costura para pedido', ['pedido' => $pedido]);
+            
+            // Buscar el consecutivo de costura para el pedido
+            $consecutivo = \DB::table('consecutivos_recibos_pedidos')
+                ->where('pedido_produccion_id', $pedido)
+                ->where('tipo_recibo', 'COSTURA')
+                ->where('activo', 1)
+                ->value('consecutivo_actual');
+            
+            // Obtener la fecha de creación del pedido
+            $fechaCreacion = \DB::table('pedidos_produccion')
+                ->where('id', $pedido)
+                ->value('fecha_de_creacion_de_orden');
+            
+            if ($consecutivo || $fechaCreacion) {
+                \Log::info(' [getConsecutivoCostura] Datos encontrados', [
+                    'pedido' => $pedido, 
+                    'consecutivo' => $consecutivo,
+                    'fecha_creacion' => $fechaCreacion
+                ]);
+                
+                return response()->json([
+                    'success' => true,
+                    'consecutivo' => $consecutivo,
+                    'fecha_creacion' => $fechaCreacion
+                ]);
+            } else {
+                \Log::warning(' [getConsecutivoCostura] No se encontraron datos para el pedido', ['pedido' => $pedido]);
+                
+                return response()->json([
+                    'success' => false,
+                    'consecutivo' => null,
+                    'fecha_creacion' => null,
+                    'message' => 'No se encontraron datos para este pedido'
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error(' [getrecibosCostura] Error al obtener datos del pedido', [
+                'pedido' => $pedido,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'consecutivo' => null,
+                'fecha_creacion' => null,
+                'message' => 'Error al obtener datos del pedido'
             ], 500);
         }
     }

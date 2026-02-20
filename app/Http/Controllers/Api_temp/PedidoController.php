@@ -818,57 +818,14 @@ class PedidoController extends Controller
                 'prenda_id' => $prendaId
             ]);
 
-            // Obtener procesos aprobados de esta prenda
-            $procesosAprobados = \Illuminate\Support\Facades\DB::table('pedidos_procesos_prenda_detalles')
-                ->where('prenda_pedido_id', $prendaId)
-                ->where('estado', 'APROBADO')
-                ->pluck('tipo_proceso_id')
-                ->toArray();
-
-            \Log::info('[PedidoController] Procesos aprobados encontrados', [
-                'pedido_id' => $pedidoId,
-                'prenda_id' => $prendaId,
-                'procesos_aprobados' => $procesosAprobados
-            ]);
-
-            if (empty($procesosAprobados)) {
-                \Log::info('[PedidoController] No hay procesos aprobados para prenda', [
-                    'pedido_id' => $pedidoId,
-                    'prenda_id' => $prendaId
-                ]);
-                return null;
-            }
-
-            // Mapear tipo_proceso_id a tipo_recibo
-            $tipoProcesoARecibo = [
-                1 => 'REFLECTIVO',      // ID 1 = Reflectivo
-                2 => 'ESTAMPADO',       // ID 2 = Estampado
-                3 => 'BORDADO',         // ID 3 = Bordado
-                4 => 'DTF',             // ID 4 = DTF
-                5 => 'SUBLIMADO',       // ID 5 = Sublimado
-                6 => 'COSTURA',         // ID 6 = Costura
-                // Agregar más mapeos según sea necesario
-            ];
-
-            $tiposReciboPermitidos = array_unique(array_map(function($procesoId) use ($tipoProcesoARecibo) {
-                return $tipoProcesoARecibo[$procesoId] ?? null;
-            }, $procesosAprobados));
-
-            $tiposReciboPermitidos = array_filter($tiposReciboPermitidos);
-
-            \Log::info('[PedidoController] Tipos de recibo permitidos', [
-                'pedido_id' => $pedidoId,
-                'prenda_id' => $prendaId,
-                'tipos_recibo' => $tiposReciboPermitidos
-            ]);
-
-            // Obtener consecutivos específicos para esta prenda basados en sus procesos aprobados
+            // Obtener consecutivos para este pedido (incluyendo generales y específicos de prenda)
             $consecutivos = \Illuminate\Support\Facades\DB::table('consecutivos_recibos_pedidos')
                 ->where('pedido_produccion_id', $pedidoId)
-                ->where('prenda_id', $prendaId)  // Solo específicos de esta prenda
                 ->where('activo', 1)
-                ->whereIn('tipo_recibo', $tiposReciboPermitidos)
-                ->orderBy('created_at', 'desc')  // Más reciente primero
+                ->where(function($query) use ($prendaId) {
+                    $query->where('prenda_id', $prendaId)
+                          ->orWhereNull('prenda_id');
+                })
                 ->get();
 
             \Log::info('[PedidoController] Consecutivos encontrados en BD', [
@@ -879,7 +836,7 @@ class PedidoController extends Controller
             ]);
 
             if ($consecutivos->isEmpty()) {
-                \Log::info('[PedidoController] No hay consecutivos para procesos aprobados de la prenda', [
+                \Log::info('[PedidoController] No hay consecutivos para prenda', [
                     'pedido_id' => $pedidoId,
                     'prenda_id' => $prendaId
                 ]);
@@ -893,16 +850,14 @@ class PedidoController extends Controller
                 'BORDADO' => null,
                 'DTF' => null,
                 'SUBLIMADO' => null,
-                'REFLECTIVO' => null
+                'REFLECTIVO' => null,
+                'COSTURA-BODEGA' => null
             ];
 
             foreach ($consecutivos as $consecutivo) {
                 $tipo = $consecutivo->tipo_recibo;
                 if (array_key_exists($tipo, $recibos)) {
-                    // Si ya hay un valor, mantener el más reciente (ya están ordenados por created_at desc)
-                    if ($recibos[$tipo] === null) {
-                        $recibos[$tipo] = $consecutivo->consecutivo_actual;
-                    }
+                    $recibos[$tipo] = $consecutivo->consecutivo_actual;
                 }
             }
 

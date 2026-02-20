@@ -14,18 +14,24 @@
                     <span class="material-symbols-rounded">menu</span>
                 </button>
                 <div class="breadcrumb-section">
-                    <h1 class="page-title">@yield('page-title', 'Dashboard')</h1>
+                    @if(request()->is('recibos-costura'))
+                        <h1 class="page-title">Recibos de Costura</h1>
+                    @else
+                        <h1 class="page-title">@yield('page-title', 'Dashboard')</h1>
+                    @endif
                 </div>
                 
-                <!-- 🆕 Barra de búsqueda (solo en vista de órdenes, bodega y cotizaciones pendientes) -->
+                <!-- 🆕 Barra de búsqueda (solo en vista de órdenes, bodega, cotizaciones pendientes y recibos-costura) -->
                 @php
                     $currentRoute = Route::currentRouteName();
+                    $currentPath = request()->path();
                     $isCotizacionesPendientes = $currentRoute === 'cotizaciones.pendientes';
+                    $isRecibosCostura = $currentPath === 'recibos-costura';
                     $searchInputId = $isCotizacionesPendientes ? 'searchInput' : 'navSearchInput';
-                    $searchPlaceholder = $isCotizacionesPendientes ? 'Buscar por número, cliente o asesora...' : 'Buscar por número o cliente...';
-                    $searchAriaLabel = $isCotizacionesPendientes ? 'Búsqueda de cotizaciones' : 'Búsqueda de órdenes';
+                    $searchPlaceholder = $isRecibosCostura ? 'Buscar recibos por número o cliente...' : ($isCotizacionesPendientes ? 'Buscar por número, cliente o asesora...' : 'Buscar por número o cliente...');
+                    $searchAriaLabel = $isRecibosCostura ? 'Búsqueda de recibos' : ($isCotizacionesPendientes ? 'Búsqueda de cotizaciones' : 'Búsqueda de órdenes');
                 @endphp
-                @if($currentRoute === 'registros.index' || $currentRoute === 'bodega.index' || $currentRoute === 'cotizaciones.pendientes')
+                @if($currentRoute === 'registros.index' || $currentRoute === 'bodega.index' || $currentRoute === 'cotizaciones.pendientes' || $isRecibosCostura)
                 <div class="nav-search-container">
                     <div class="nav-search-wrapper">
                         <span class="material-symbols-rounded search-icon" aria-hidden="true">search</span>

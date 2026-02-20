@@ -1,0 +1,220 @@
+<!-- Tabla de Recibos de Costura -->
+<div class="table-scroll-container">
+    <table class="table table-striped table-hover modern-table">
+        <thead class="table-header">
+            <tr>
+                <th class="acciones-column" style="width: 100px; text-align: center;">Acciones</th>
+                <th style="width: auto;">Estado</th>
+                <th style="width: auto;">Área</th>
+                <th style="width: 120px;">Total de días</th>
+                <th style="width: 120px;">Día de entrega</th>
+                <th style="width: 120px;">N° Recibo</th>
+                <th style="width: 150px;">Cliente</th>
+                <th style="width: auto;">Descripción</th>
+                <th style="width: 100px;">Cantidad</th>
+                <th style="width: 120px;">Novedades</th>
+                <th style="width: 150px;">Fecha de creación</th>
+                <th style="width: 180px;">Fecha estimada entrega</th>
+                <th style="width: 150px;">Encargado orden</th>
+            </tr>
+        </thead>
+        <tbody id="tablaRecibosBody">
+            @if($recibos->count() > 0)
+                @foreach($recibos as $recibo)
+                    <tr class="@if($recibo['pedido_info']['estado'] == 'PENDIENTE_SUPERVISOR') dias-mayor-15 @else dias-5-9 @endif" data-orden-id="{{ $recibo['id'] }}">
+                        <!-- Acciones -->
+                        <td class="acciones-column" style="text-align: center; position: relative;">
+                            <button class="action-view-btn" title="Ver detalles" data-orden-id="{{ $recibo['id'] }}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <div class="action-menu" data-orden-id="{{ $recibo['id'] }}">
+                                <a href="#" class="action-menu-item" data-action="detalle" onclick="verDetallesRecibo({{ $recibo['id'] }})">
+                                    <i class="fas fa-eye"></i>
+                                    <span>Ver Detalles</span>
+                                </a>
+                                <a href="#" class="action-menu-item" data-action="seguimiento" onclick="abrirModalSeguimiento({{ $recibo['pedido_produccion_id'] }})">
+                                    <i class="fas fa-tasks"></i>
+                                    <span>Seguimiento</span>
+                                </a>
+                            </div>
+                        </td>
+                        
+                        <!-- Estado (Badge) -->
+                        <td>
+                            @if($recibo['pedido_info'])
+                                <span class="badge bg-info">
+                                    {{ $recibo['pedido_info']['estado'] }}
+                                </span>
+                            @else
+                                <span class="badge bg-secondary">
+                                    Sin estado
+                                </span>
+                            @endif
+                        </td>
+                        
+                        <!-- Área -->
+                        <td>
+                            @if($recibo['pedido_info'])
+                                <span class="badge bg-secondary">
+                                    {{ $recibo['pedido_info']['area'] }}
+                                </span>
+                            @else
+                                <span class="badge bg-secondary">
+                                    Sin área
+                                </span>
+                            @endif
+                        </td>
+                        
+                        <!-- Día de entrega (Dropdown) -->
+                        <td>
+                            <div class="cell-content">
+                                <select class="dia-entrega-dropdown" data-orden-id="{{ $recibo['pedido_produccion_id'] }}">
+                                    <option value="">Seleccionar</option>
+                                    @foreach(\App\Models\PedidoProduccion::DIAS_ENTREGA as $dia)
+                                        <option value="{{ $dia }}">{{ $dia }} días</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </td>
+                        
+                        <!-- Total de días (No aplica para recibos) -->
+                        <td style="text-align: center;">
+                            <span class="text-muted">-</span>
+                        </td>
+                        
+                        <!-- N° Recibo -->
+                        <td style="text-align: center;">
+                            <span style="font-weight: 600;">{{ $recibo['consecutivo_actual'] }}</span>
+                        </td>
+                        
+                        <!-- Cliente -->
+                        <td style="text-align: center;">
+                            @if($recibo['pedido_info'])
+                                <span>{{ $recibo['pedido_info']['cliente'] }}</span>
+                            @else
+                                <span class="text-muted">N/A</span>
+                            @endif
+                        </td>
+                        
+                        <!-- Descripción (Recibo de Costura) -->
+                        <td>
+                            @php
+                                // Preparar datos completos de prendas para el modal formateado (igual que en orders/index.blade.php)
+                                $prendasParaModal = [];
+                                $cantidadTotal = 0;
+                                if ($recibo['pedido_info']) {
+                                    // Obtener las prendas del pedido usando el mismo endpoint que registros
+                                    $pedido = \App\Models\PedidoProduccion::find($recibo['pedido_produccion_id']);
+                                    if ($pedido && $pedido->prendas && $pedido->prendas->count() > 0) {
+                                        foreach ($pedido->prendas as $prenda) {
+                                            // Calcular cantidad total de tallas para esta prenda
+                                            $cantidadPrenda = 0;
+                                            if ($prenda->tallas && $prenda->tallas->count() > 0) {
+                                                foreach ($prenda->tallas as $talla) {
+                                                    $cantidadPrenda += $talla->cantidad ?? 0;
+                                                }
+                                            }
+                                            $cantidadTotal += $cantidadPrenda;
+                                            
+                                            $prendasParaModal[] = [
+                                                'id' => $prenda->id,
+                                                'nombre' => $prenda->nombre_prenda ?? $prenda->nombre ?? 'Prenda',
+                                                'nombre_prenda' => $prenda->nombre_prenda ?? $prenda->nombre ?? 'Prenda',
+                                                'tela' => $prenda->tela,
+                                                'color' => $prenda->color,
+                                                'manga' => $prenda->manga,
+                                                'descripcion' => $prenda->descripcion,
+                                                'tallas' => $prenda->tallas ?? [],
+                                                'variantes' => $prenda->variantes ?? [],
+                                                'procesos' => $prenda->procesos ?? [],
+                                            ];
+                                        }
+                                    }
+                                }
+                            @endphp
+                            
+                            <div class="table-cell" style="flex: 10;">
+                                <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL] 📌 Click en descripción'); event.stopPropagation(); abrirModalCeldaConFormato('Descripción', {{ json_encode($prendasParaModal) }})">
+                                    <span style="color: #6b7280; font-size: 0.875rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Click para ver completo">
+                                        @php
+                                            // Mostrar el nombre de la primera prenda como en registros
+                                            $nombreMostrar = 'Sin prendas';
+                                            if (!empty($prendasParaModal)) {
+                                                $nombreMostrar = $prendasParaModal[0]['nombre_prenda'] ?? $prendasParaModal[0]['nombre'] ?? 'Prenda';
+                                            }
+                                        @endphp
+                                        {{ $nombreMostrar }} <span style="color: #3b82f6; font-weight: 600;">...</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </td>
+                        
+                        <!-- Cantidad -->
+                        <td>
+                            @if($cantidadTotal > 0)
+                                <span style="font-weight: 600; color: #059669;">{{ $cantidadTotal }}</span>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                        
+                        <!-- Novedades -->
+                        <td>
+                            @php
+                                // Obtener las novedades del pedido asociado (no las notas del recibo)
+                                $novedadesPedido = '';
+                                if ($recibo['pedido_info']) {
+                                    $pedido = \App\Models\PedidoProduccion::find($recibo['pedido_produccion_id']);
+                                    if ($pedido) {
+                                        $novedadesPedido = $pedido->novedades ?? '';
+                                    }
+                                }
+                            @endphp
+                            <div class="table-cell" style="flex: 0 0 120px;">
+                                <div class="cell-content" style="justify-content: flex-start;">
+                                    <button 
+                                        class="btn-edit-novedades"
+                                        data-full-novedades="{{ addslashes($novedadesPedido) }}"
+                                        onclick="event.stopPropagation(); openNovedadesModal('{{ $recibo['pedido_produccion_id'] ?? 'sin-numero' }}', `{{ addslashes($novedadesPedido) }}`)"
+                                        title="Editar novedades"
+                                        type="button">
+                                        @if($novedadesPedido)
+                                            <span class="novedades-text">{{ \Illuminate\Support\Str::limit($novedadesPedido, 50, '...') }}</span>
+                                        @else
+                                            <span class="novedades-text empty">Sin novedades</span>
+                                        @endif
+                                        <span class="material-symbols-rounded">edit</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </td>
+                        
+                        <!-- Fecha de creación -->
+                        <td>
+                            <span>{{ \Carbon\Carbon::parse($recibo['created_at'])->format('d/m/Y') }}</span>
+                        </td>
+                        
+                        <!-- Fecha estimada entrega (No aplica para recibos) -->
+                        <td>
+                            <span class="fecha-estimada-span text-muted">-</span>
+                        </td>
+                        
+                        <!-- Encargado orden (No aplica para recibos) -->
+                        <td>
+                            <span class="text-muted">-</span>
+                        </td>
+                    </tr>
+                @endforeach
+            @else
+                <tr>
+                    <td colspan="13" class="text-center py-4">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            No se encontraron recibos de costura.
+                        </div>
+                    </td>
+                </tr>
+            @endif
+        </tbody>
+    </table>
+</div>
