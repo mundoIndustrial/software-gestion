@@ -32,6 +32,7 @@ class PedidosRealtimeRefresh {
         // Laravel Echo
         this.echoChannel = null;
         this.usingWebSockets = false;
+        this.pedidoMovido = false; // Control para saber si se movió el pedido
         
         // Detección de página
         this.isCarteraPage = window.location.pathname.includes('/cartera/pedidos');
@@ -181,6 +182,9 @@ class PedidosRealtimeRefresh {
                     .listen('.pedido.actualizado', (event) => {
                         if (this.debug) console.log('🔄 [PedidosRealtime] Pedido actualizado recibido (cartera):', event?.pedido?.id);
 
+                        // Mover pedido actualizado a la cima de la tabla
+                        this.moverPedidoAlInicio(event?.pedido?.id);
+                        
                         // Notificación desactivada para evitar mostrar "Pedido #X actualizado"
                         // const numero = event?.pedido?.numero_pedido || '';
                         // const estado = event?.pedido?.estado || '';
@@ -190,7 +194,13 @@ class PedidosRealtimeRefresh {
                         // );
                         
                         if (typeof window.cargarPedidos === 'function') {
-                            window.cargarPedidos();
+                            // Solo recargar si no se pudo mover el pedido
+                            setTimeout(() => {
+                                if (!this.pedidoMovido) {
+                                    window.cargarPedidos();
+                                }
+                                this.pedidoMovido = false;
+                            }, 1000);
                         }
                     })
                     .error((error) => {
@@ -836,6 +846,79 @@ class PedidosRealtimeRefresh {
         // Aquí se agregría lógica para crear una nueva fila con animación
         // Por ahora, se deja para recargar la página si hay nuevos pedidos
         console.log('Nueva fila:', pedido);
+    }
+
+    moverPedidoAlInicio(pedidoId) {
+        if (!pedidoId) return;
+        
+        try {
+            // Buscar todas las filas de pedidos
+            const filas = document.querySelectorAll('[data-pedido-id]');
+            if (filas.length === 0) {
+                console.log('[PedidosRealtime] 📋 No se encontraron filas de pedidos');
+                this.pedidoMovido = false;
+                return;
+            }
+            
+            // Encontrar el contenedor de la tabla
+            const contenedorTabla = filas[0].closest('.table-scroll-container');
+            if (!contenedorTabla) {
+                console.log('[PedidosRealtime] 📋 Contenedor de tabla no encontrado');
+                this.pedidoMovido = false;
+                return;
+            }
+            
+            // Encontrar el header para saber dónde insertar las filas
+            const header = contenedorTabla.querySelector('[style*="grid-template-columns: 200px"]');
+            if (!header) {
+                console.log('[PedidosRealtime] 📋 Header de tabla no encontrado');
+                this.pedidoMovido = false;
+                return;
+            }
+            
+            // Convertir NodeList a array y extraer números de pedido
+            const filasArray = Array.from(filas);
+            const filasConNumero = filasArray.map(fila => {
+                const numeroElement = fila.querySelector('span[style*="font-weight: 600; color: #1e5ba8;"]');
+                const numeroTexto = numeroElement ? numeroElement.textContent.replace('#', '') : '0';
+                const numero = parseInt(numeroTexto) || 0;
+                return { fila, numero, id: fila.getAttribute('data-pedido-id') };
+            });
+            
+            // Ordenar por número de pedido en orden descendente (más nuevo primero)
+            filasConNumero.sort((a, b) => b.numero - a.numero);
+            
+            // Reordenar las filas en el DOM
+            filasConNumero.forEach((item, index) => {
+                // Insertar después del header
+                if (index === 0) {
+                    contenedorTabla.insertBefore(item.fila, header.nextSibling);
+                } else {
+                    // Insertar después de la fila anterior
+                    const filaAnterior = filasConNumero[index - 1].fila;
+                    contenedorTabla.insertBefore(item.fila, filaAnterior.nextSibling);
+                }
+                
+                // Resaltar la fila que se actualizó
+                if (item.id == pedidoId) {
+                    item.fila.style.background = '#fef3c7';
+                    item.fila.style.transition = 'all 0.3s ease';
+                    
+                    // Quitar el resaltado después de la animación
+                    setTimeout(() => {
+                        item.fila.style.background = '';
+                        item.fila.style.transition = 'background-color 0.5s ease-out';
+                    }, 2000);
+                }
+            });
+            
+            this.pedidoMovido = true;
+            console.log('[PedidosRealtime] 📋 Tabla reordenada por número de pedido (descendente)');
+            
+        } catch (error) {
+            console.error('[PedidosRealtime] ❌ Error al reordenar tabla:', error);
+            this.pedidoMovido = false;
+        }
     }
 }
 
