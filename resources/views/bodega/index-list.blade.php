@@ -723,8 +723,14 @@ document.addEventListener('DOMContentLoaded', function() {
             .listen('.pedido.actualizado', function(e) {
                 console.log('[Bodega Realtime] Pedido actualizado:', e);
                 
+                // Verificar si changedFields es un array o un objeto
+                const changedFields = e.changedFields || [];
+                const hasEstadoChange = Array.isArray(changedFields) 
+                    ? changedFields.includes('estado') 
+                    : (changedFields.estado !== undefined);
+                
                 // Si el pedido fue aprobado, recargar la página para mostrarlo
-                if (e.pedido && (e.changedFields.includes('estado') || e.action === 'approved')) {
+                if (e.pedido && (hasEstadoChange || e.action === 'approved')) {
                     console.log('[Bodega Realtime] Pedido aprobado, recargando página...');
                     
                     // Mostrar notificación sutil
