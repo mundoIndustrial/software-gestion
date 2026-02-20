@@ -338,5 +338,60 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Función para abrir modal de novedades específicas de recibo
+function openNovedadesModalRecibo(pedidoId, numeroRecibo, novedadesActuales) {
+    console.log(`[openNovedadesModalRecibo] 📝 Abriendo modal para pedido: ${pedidoId}, recibo: ${numeroRecibo}`);
+    console.log(`[openNovedadesModalRecibo] Novedades actuales:`, novedadesActuales);
+    
+    // Usar el modal existente pero con datos específicos de recibo
+    const modal = document.getElementById('novedadesModal') || document.getElementById('novedadesEditModal');
+    if (!modal) {
+        console.error('[openNovedadesModalRecibo] Modal no encontrado');
+        alert('No se encontró el modal de novedades');
+        return;
+    }
+    
+    // Guardar contexto del recibo en el modal
+    modal.setAttribute('data-pedido-id', pedidoId);
+    modal.setAttribute('data-numero-recibo', numeroRecibo);
+    modal.setAttribute('data-tipo-novedades', 'recibo');
+    
+    // Cargar las novedades actuales en el textarea
+    const textarea = modal.querySelector('#novedadesTexto') || modal.querySelector('#novedadesTextarea');
+    if (textarea) {
+        textarea.value = novedadesActuales || '';
+        textarea.readOnly = false; // Permitir edición para recibos
+    }
+    
+    // Actualizar título del modal
+    const titulo = modal.querySelector('.modal-title');
+    if (titulo) {
+        titulo.textContent = `Novedades - Recibo ${numeroRecibo}`;
+    }
+    
+    // Mostrar botón de guardar de recibos y ocultar otros
+    const btnSaveRecibo = document.getElementById('btnSaveReciboNovedades');
+    const btnSaveEdit = document.getElementById('btnSaveEdit');
+    const btnAddNew = document.getElementById('btnAddNew');
+    const btnEditToggle = document.getElementById('btnEditToggle');
+    
+    if (btnSaveRecibo) btnSaveRecibo.style.display = 'inline-flex';
+    if (btnSaveEdit) btnSaveEdit.style.display = 'none';
+    if (btnAddNew) btnAddNew.style.display = 'none';
+    if (btnEditToggle) btnEditToggle.style.display = 'none';
+    
+    // Mostrar el modal
+    modal.style.display = 'flex';
+    modal.classList.add('show');
+    
+    // Enfocar el textarea
+    if (textarea) {
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        }, 100);
+    }
+}
 </script>
 @endpush

@@ -353,3 +353,88 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+/**
+ * Funciones específicas para Novedades de Recibos
+ */
+
+/**
+ * Guardar novedades de recibo usando la nueva API
+ */
+async function saveNovedadesRecibo(pedidoId, numeroRecibo, novedadesTexto) {
+    try {
+        console.log(`[saveNovedadesRecibo] 📝 Guardando novedades para pedido: ${pedidoId}, recibo: ${numeroRecibo}`);
+        
+        const response = await fetch(`/recibos-novedades/${pedidoId}/${numeroRecibo}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            },
+            body: JSON.stringify({
+                novedades: novedadesTexto,
+                tipo_novedad: 'observacion', // Por defecto, se puede cambiar después
+                prendas_ids: [] // Aplica a todas las prendas del pedido
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            console.log('[saveNovedadesRecibo] ✅ Novedades guardadas:', result);
+            showNotification('Novedades guardadas correctamente', 'success');
+            
+            // Recargar la página para mostrar los cambios
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            console.error('[saveNovedadesRecibo] ❌ Error:', result.message);
+            showNotification('Error al guardar novedades: ' + result.message, 'error');
+        }
+        
+    } catch (error) {
+        console.error('[saveNovedadesRecibo] ❌ Error de red:', error);
+        showNotification('Error de conexión al guardar novedades', 'error');
+    }
+}
+
+/**
+ * Modificar el modal existente para soportar novedades de recibo
+ */
+function setupNovedadesReciboModal() {
+    const modal = document.getElementById('novedadesModal') || document.getElementById('novedadesEditModal');
+    if (!modal) return;
+    
+    // Verificar si ya está configurado para recibos
+    if (modal.hasAttribute('data-recibo-setup')) return;
+    
+    modal.setAttribute('data-recibo-setup', 'true');
+    
+    // Agregar botón de guardar específico para recibos si no existe
+    const saveButton = document.createElement('button');
+    saveButton.id = 'btnSaveReciboNovedades';
+    saveButton.className = 'btn btn-primary';
+    saveButton.textContent = 'Guardar Novedades de Recibo';
+    saveButton.style.display = 'none'; // Se muestra solo cuando es modal de recibo
+    saveButton.onclick = function() {
+        const pedidoId = modal.getAttribute('data-pedido-id');
+        const numeroRecibo = modal.getAttribute('data-numero-recibo');
+        const textarea = modal.querySelector('#novedadesTexto') || modal.querySelector('#novedadesTextarea');
+        
+        if (pedidoId && numeroRecibo && textarea) {
+            saveNovedadesRecibo(pedidoId, numeroRecibo, textarea.value);
+        }
+    };
+    
+    // Agregar el botón al footer del modal
+    const footer = modal.querySelector('.modal-footer') || modal.querySelector('.flex.justify-end');
+    if (footer) {
+        footer.appendChild(saveButton);
+    }
+}
+
+// Configurar el modal cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    setupNovedadesReciboModal();
+});
+

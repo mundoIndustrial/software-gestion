@@ -214,6 +214,16 @@ class PrendaPedido extends Model
     }
 
     /**
+     * Relación: Una prenda tiene muchas novedades de recibo
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function novedadesRecibo()
+    {
+        return $this->hasMany(PrendaPedidoNovedadRecibo::class, 'prenda_pedido_id');
+    }
+
+    /**
      * Obtener el primer color de esta prenda (para compatibilidad con vistas antiguas)
      * Retorna el color del primer registro en prenda_pedido_colores_telas
      */

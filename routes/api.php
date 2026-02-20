@@ -809,3 +809,34 @@ Route::withoutMiddleware(['api'])
     Route::get('{prendaPedidoId}/estado', [App\Http\Controllers\PrendaEntregaController::class, 'obtenerEstado'])
         ->name('estado');
 });
+
+/**
+ * API Routes for Novedades de Recibos
+ * Gestiona las novedades específicas de prendas por recibo
+ */
+Route::withoutMiddleware(['api'])
+    ->middleware(['web', 'auth'])
+    ->prefix('recibos-novedades')
+    ->name('recibos-novedades.')
+    ->group(function () {
+    
+    // Obtener novedades de prendas para un recibo específico
+    Route::get('{pedidoId}/{numeroRecibo}', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'index'])
+        ->name('index');
+    
+    // Obtener texto consolidado de novedades para mostrar en tabla
+    Route::get('{pedidoId}/{numeroRecibo}/consolidado', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'getConsolidado'])
+        ->name('consolidado');
+    
+    // Guardar novedades para prendas de un recibo
+    Route::post('{pedidoId}/{numeroRecibo}', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'store'])
+        ->name('store');
+    
+    // Actualizar una novedad existente
+    Route::put('{novedadId}', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'update'])
+        ->name('update');
+    
+    // Eliminar una novedad
+    Route::delete('{novedadId}', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'destroy'])
+        ->name('destroy');
+});

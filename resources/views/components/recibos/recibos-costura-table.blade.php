@@ -177,12 +177,28 @@
                         <!-- Novedades -->
                         <td>
                             @php
-                                // Obtener las novedades del pedido asociado (no las notas del recibo)
-                                $novedadesPedido = '';
+                                // Obtener las novedades específicas de prendas para este recibo
+                                $novedadesRecibo = [];
+                                $novedadesTexto = '';
                                 if ($recibo['pedido_info']) {
                                     $pedido = \App\Models\PedidoProduccion::find($recibo['pedido_produccion_id']);
-                                    if ($pedido) {
-                                        $novedadesPedido = $pedido->novedades ?? '';
+                                    if ($pedido && $pedido->prendas && $pedido->prendas->count() > 0) {
+                                        foreach ($pedido->prendas as $prenda) {
+                                            // Obtener novedades de esta prenda para este número de recibo
+                                            $novedadesPrenda = $prenda->novedadesRecibo()
+                                                ->where('numero_recibo', $recibo['consecutivo_actual'])
+                                                ->orderBy('creado_en', 'desc')
+                                                ->get();
+                                            
+                                            foreach ($novedadesPrenda as $novedad) {
+                                                $novedadesRecibo[] = $novedad->novedad_texto;
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Concatenar todas las novedades para mostrar
+                                    if (!empty($novedadesRecibo)) {
+                                        $novedadesTexto = implode("\n", $novedadesRecibo);
                                     }
                                 }
                             @endphp
@@ -190,12 +206,14 @@
                                 <div class="cell-content" style="justify-content: flex-start;">
                                     <button 
                                         class="btn-edit-novedades"
-                                        data-full-novedades="{{ addslashes($novedadesPedido) }}"
-                                        onclick="event.stopPropagation(); openNovedadesModal('{{ $recibo['pedido_produccion_id'] ?? 'sin-numero' }}', `{{ addslashes($novedadesPedido) }}`)"
-                                        title="Editar novedades"
+                                        data-full-novedades="{{ addslashes($novedadesTexto) }}"
+                                        data-prenda-id="{{ $recibo['pedido_produccion_id'] ?? '' }}"
+                                        data-numero-recibo="{{ $recibo['consecutivo_actual'] ?? '' }}"
+                                        onclick="event.stopPropagation(); openNovedadesModalRecibo('{{ $recibo['pedido_produccion_id'] ?? 'sin-numero' }}', '{{ $recibo['consecutivo_actual'] ?? 'sin-recibo' }}', `{{ addslashes($novedadesTexto) }}`)"
+                                        title="Editar novedades del recibo"
                                         type="button">
-                                        @if($novedadesPedido)
-                                            <span class="novedades-text">{{ \Illuminate\Support\Str::limit($novedadesPedido, 50, '...') }}</span>
+                                        @if($novedadesTexto)
+                                            <span class="novedades-text">{{ \Illuminate\Support\Str::limit($novedadesTexto, 50, '...') }}</span>
                                         @else
                                             <span class="novedades-text empty">Sin novedades</span>
                                         @endif
