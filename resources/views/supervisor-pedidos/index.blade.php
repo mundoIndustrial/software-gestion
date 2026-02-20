@@ -2001,6 +2001,67 @@
                 }
             }, 100);
         });
+
+        // Ordenar la tabla en orden ascendente al cargar la página
+        function ordenarTablaAscendente() {
+            try {
+                const filas = document.querySelectorAll('[data-pedido-id]');
+                if (filas.length === 0) return;
+
+                const contenedorTabla = filas[0].closest('.table-scroll-container');
+                if (!contenedorTabla) return;
+
+                const header = contenedorTabla.querySelector('[style*="grid-template-columns: 200px"]');
+                if (!header) return;
+
+                // Convertir a array y extraer números
+                const filasArray = Array.from(filas);
+                const filasConNumero = filasArray.map(fila => {
+                    let numeroElement = fila.querySelector('span[style*="font-weight: 600; color: #1e5ba8;"]');
+                    if (!numeroElement) {
+                        numeroElement = fila.querySelector('span[style*="color: #1e5ba8"]');
+                    }
+                    if (!numeroElement) {
+                        const spans = fila.querySelectorAll('span');
+                        for (const span of spans) {
+                            if (span.textContent.includes('#')) {
+                                numeroElement = span;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    const numeroTexto = numeroElement ? numeroElement.textContent.replace('#', '').trim() : '0';
+                    const numero = parseInt(numeroTexto) || 0;
+                    return { fila, numero };
+                });
+
+                // Ordenar en orden ASCENDENTE (más antiguo primero)
+                filasConNumero.sort((a, b) => a.numero - b.numero);
+
+                // Reordenar las filas en el DOM
+                filasConNumero.forEach((item, index) => {
+                    if (index === 0) {
+                        contenedorTabla.insertBefore(item.fila, header.nextSibling);
+                    } else {
+                        const filaAnterior = filasConNumero[index - 1].fila;
+                        contenedorTabla.insertBefore(item.fila, filaAnterior.nextSibling);
+                    }
+                });
+
+                console.log('[Supervisor-Pedidos] 📋 Tabla ordenada en orden ascendente');
+            } catch (error) {
+                console.error('[Supervisor-Pedidos] ❌ Error al ordenar tabla:', error);
+            }
+        }
+
+        // Ejecutar cuando la página esté completamente cargada
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', ordenarTablaAscendente);
+        } else {
+            // Si ya está cargada, ejecutar después de un pequeño delay
+            setTimeout(ordenarTablaAscendente, 500);
+        }
     </script>
 @endpush
 

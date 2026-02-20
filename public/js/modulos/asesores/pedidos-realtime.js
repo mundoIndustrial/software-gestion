@@ -879,14 +879,43 @@ class PedidosRealtimeRefresh {
             // Convertir NodeList a array y extraer números de pedido
             const filasArray = Array.from(filas);
             const filasConNumero = filasArray.map(fila => {
-                const numeroElement = fila.querySelector('span[style*="font-weight: 600; color: #1e5ba8;"]');
-                const numeroTexto = numeroElement ? numeroElement.textContent.replace('#', '') : '0';
+                // Buscar el span con el número de pedido usando varios selectores posibles
+                let numeroElement = fila.querySelector('span[style*="font-weight: 600; color: #1e5ba8;"]');
+                
+                // Si no encuentra con ese estilo, intentar otros selectores
+                if (!numeroElement) {
+                    numeroElement = fila.querySelector('span[style*="color: #1e5ba8"]');
+                }
+                
+                // Último intento: buscar cualquier span que contenga #
+                if (!numeroElement) {
+                    const spans = fila.querySelectorAll('span');
+                    for (const span of spans) {
+                        if (span.textContent.includes('#')) {
+                            numeroElement = span;
+                            break;
+                        }
+                    }
+                }
+                
+                const numeroTexto = numeroElement ? numeroElement.textContent.replace('#', '').trim() : '0';
                 const numero = parseInt(numeroTexto) || 0;
-                return { fila, numero, id: fila.getAttribute('data-pedido-id') };
+                const id = fila.getAttribute('data-pedido-id');
+                
+                console.log('[PedidosRealtime] 📋 Pedido encontrado:', { id, numero, texto: numeroElement?.textContent });
+                
+                return { fila, numero, id };
             });
             
-            // Ordenar por número de pedido en orden descendente (más nuevo primero)
-            filasConNumero.sort((a, b) => b.numero - a.numero);
+            // Ordenar por número de pedido en orden ascendente (más antiguo primero)
+            filasConNumero.sort((a, b) => a.numero - b.numero);
+            
+            console.log('[PedidosRealtime] 📋 Pedidos antes de reordenar:', 
+                filasConNumero.map(item => ({ id: item.id, numero: item.numero }))
+            );
+            console.log('[PedidosRealtime] 📋 Pedidos después de ordenar (ascendente):', 
+                filasConNumero.map(item => ({ id: item.id, numero: item.numero }))
+            );
             
             // Reordenar las filas en el DOM
             filasConNumero.forEach((item, index) => {
@@ -913,7 +942,7 @@ class PedidosRealtimeRefresh {
             });
             
             this.pedidoMovido = true;
-            console.log('[PedidosRealtime] 📋 Tabla reordenada por número de pedido (descendente)');
+            console.log('[PedidosRealtime] 📋 Tabla reordenada por número de pedido (ascendente)');
             
         } catch (error) {
             console.error('[PedidosRealtime] ❌ Error al reordenar tabla:', error);
