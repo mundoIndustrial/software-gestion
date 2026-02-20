@@ -666,21 +666,31 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
         try {
             if ($prenda->procesos && $prenda->procesos->count() > 0) {
                 foreach ($prenda->procesos as $proceso) {
-                    //  CRÍTICO: Si está configurado para filtrar procesos PENDIENTE
-                    // En la vista /registros, solo mostrar procesos APROBADOS
-                    if ($this->filtrarProcesosPendientes) {
+                    $nombreProceso = strtolower($proceso->tipoProceso?->nombre ?? '');
+                    
+                    //  CRÍTICO: Filtrado específico por tipo de proceso
+                    // Procesos que REQUIEREN aprobación para mostrarse: bordado, estampado, dtf, sublimado
+                    $procesosQueRequierenAprobacion = ['bordado', 'estampado', 'dtf', 'sublimado'];
+                    $requiereAprobacion = in_array($nombreProceso, $procesosQueRequierenAprobacion);
+                    
+                    // Si el proceso requiere aprobación y está configurado para filtrar
+                    if ($requiereAprobacion && $this->filtrarProcesosPendientes) {
                         // Solo mostrar procesos con estado APROBADO
                         if ($proceso->estado !== 'APROBADO') {
-                            Log::info('[PROCESOS-FILTRADO] Proceso NO aprobado - Omitiendo (solo APROBADOS en /registros)', [
+                            Log::info('[PROCESOS-FILTRADO] Proceso NO aprobado - Omitiendo (requiere aprobación)', [
                                 'proceso_id' => $proceso->id,
                                 'prenda_id' => $prenda->id,
                                 'tipo_proceso' => $proceso->tipoProceso?->nombre ?? 'N/A',
                                 'estado' => $proceso->estado,
+                                'requiere_aprobacion' => $requiereAprobacion,
                                 'filtrar_pendientes' => $this->filtrarProcesosPendientes
                             ]);
                             continue; // Saltar este proceso
                         }
                     }
+                    
+                    // Los procesos que no requieren aprobación (reflectivo, costura, etc.)
+                    // se muestran siempre sin importar el estado
                     $imagenes = [];
                     
                     // Obtener imágenes del proceso ordenadas

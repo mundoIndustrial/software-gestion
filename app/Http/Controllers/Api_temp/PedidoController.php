@@ -524,10 +524,9 @@ class PedidoController extends Controller
             }
             
             // Usar el ID real del pedido para obtener los detalles
-            // En /registros: filtrar solo procesos APROBADOS (no mostrar PENDIENTE)
-            // En otras vistas (supervisor): mostrar todos
-            $filtrarSoloAprobados = request()->is('registros*');
-            $response = $this->obtenerPedidoUseCase->ejecutar($pedido->id, $filtrarSoloAprobados);
+            // $filtrarSoloAprobados indica si debemos filtrar procesos APROBADOS
+            // Por defecto: mostrar todos los procesos (como en /recibos-costura)
+            $response = $this->obtenerPedidoUseCase->ejecutar($pedido->id, $filtrarProcesosPendientes);
             
             // Convertir a array para modificar
             $responseData = $response->toArray();
