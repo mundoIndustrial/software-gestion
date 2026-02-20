@@ -73,8 +73,17 @@ class PrendaEditorImagenes {
             container.style.cssText = 'position: relative; margin-bottom: 0.5rem;';
             
             const img = document.createElement('img');
-            img.src = imagenesConBlobUrl[0].previewUrl;
-            img.style.cssText = 'max-width: 100%; height: auto; border-radius: 4px;';
+            
+            // 🔴 CRÍTICO: Validar previewUrl antes de asignar
+            if (!imagenesConBlobUrl[0].previewUrl || imagenesConBlobUrl[0].previewUrl === 'undefined' || imagenesConBlobUrl[0].previewUrl === undefined) {
+                console.error('[Imagenes] ❌ previewUrl inválido en carga:', imagenesConBlobUrl[0].previewUrl);
+                img.style.cssText = 'max-width: 100%; height: 200px; border-radius: 4px; background: #f3f4f6; display: flex; align-items: center; justify-content: center;';
+                img.alt = 'Imagen no disponible';
+                img.innerHTML = '<div style="text-align: center; color: #6b7280;">📷<br><small>Imagen no disponible</small></div>';
+            } else {
+                img.src = imagenesConBlobUrl[0].previewUrl;
+                img.style.cssText = 'max-width: 100%; height: auto; border-radius: 4px;';
+            }
             
             container.appendChild(img);
             preview.appendChild(container);
@@ -155,8 +164,17 @@ class PrendaEditorImagenes {
             container.style.cssText = 'position: relative; margin-bottom: 0.5rem;';
             
             const img = document.createElement('img');
-            img.src = imagenes[0].previewUrl;
-            img.style.cssText = 'max-width: 100%; height: auto; border-radius: 4px;';
+            
+            // 🔴 CRÍTICO: Validar previewUrl antes de asignar
+            if (!imagenes[0].previewUrl || imagenes[0].previewUrl === 'undefined' || imagenes[0].previewUrl === undefined) {
+                console.error('[Imagenes] ❌ previewUrl inválido en actualización:', imagenes[0].previewUrl);
+                img.style.cssText = 'max-width: 100%; height: 200px; border-radius: 4px; background: #f3f4f6; display: flex; align-items: center; justify-content: center;';
+                img.alt = 'Imagen no disponible';
+                img.innerHTML = '<div style="text-align: center; color: #6b7280;">📷<br><small>Imagen no disponible</small></div>';
+            } else {
+                img.src = imagenes[0].previewUrl;
+                img.style.cssText = 'max-width: 100%; height: auto; border-radius: 4px;';
+            }
             img.alt = 'Imagen 1';
             
             container.appendChild(img);

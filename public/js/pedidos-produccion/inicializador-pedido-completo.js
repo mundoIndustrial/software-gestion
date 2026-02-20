@@ -102,12 +102,44 @@ window.crearPedidoConBuilderUnificado = async function() {
         });
         
         if (response.success) {
-            // Asegurar que pedido_id sea un número
-            const pedidoId = response.pedido_id && typeof response.pedido_id === 'object' 
-                ? response.pedido_id.id 
-                : response.pedido_id;
+            // 🔴 DIAGNÓSTICO: Verificar estructura de respuesta
+            console.log('[Builder] 🔍 DIAGNÓSTICO de pedido_id:', {
+                valor: response.pedido_id,
+                esUndefined: response.pedido_id === undefined,
+                esNull: response.pedido_id === null,
+                esObject: typeof response.pedido_id === 'object',
+                tieneId: response.pedido_id?.id !== undefined,
+                idValor: response.pedido_id?.id
+            });
             
-            if (!pedidoId) {
+            // Asegurar que pedido_id sea un número
+            let pedidoId;
+            if (response.pedido_id && typeof response.pedido_id === 'object' && response.pedido_id.id !== undefined) {
+                pedidoId = response.pedido_id.id;
+                console.log('[Builder] ✅ Usando pedido_id.id:', pedidoId);
+            } else if (response.pedido_id && typeof response.pedido_id !== 'object') {
+                pedidoId = response.pedido_id;
+                console.log('[Builder] ✅ Usando pedido_id directamente:', pedidoId);
+            } else {
+                console.error('[Builder] ❌ Estructura de pedido_id no válida:', response.pedido_id);
+                console.log('[Builder] 🔍 Buscando otros campos posibles...');
+                
+                // Buscar en otros campos posibles
+                const posiblesIds = ['id', 'pedido_id', 'pedidoId', 'pedido'];
+                for (const campo of posiblesIds) {
+                    if (response[campo] !== undefined) {
+                        pedidoId = response[campo];
+                        console.log(`[Builder] ✅ Encontrado en campo "${campo}":`, pedidoId);
+                        break;
+                    }
+                }
+            }
+            
+            console.log('[Builder] 🎯 pedidoId final:', pedidoId, 'tipo:', typeof pedidoId);
+            
+            if (!pedidoId || pedidoId === undefined || pedidoId === 'undefined') {
+                console.error('[Builder] ❌ No se pudo determinar un ID de pedido válido');
+                console.log('[Builder] 🔍 Response completa para debugging:', JSON.stringify(response, null, 2));
                 throw new Error('No se recibió ID de pedido válido del servidor');
             }
             

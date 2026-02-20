@@ -64,34 +64,55 @@ window.manejarImagenTela = function(input) {
         return;
     }
     
-    console.log('[manejarImagenTela] ✅ Validaciones OK, generando blob URL...');
+    console.log('[manejarImagenTela] ✅ Validaciones OK, procesando imagen...');
     
     try {
-        // ✅ CAMBIO: Usar URL.createObjectURL en lugar de FileReader.readAsDataURL (NO base64)
-        const blobUrl = URL.createObjectURL(file);
-        console.log('[manejarImagenTela] 📸 Blob URL generada:', blobUrl);
-        
-        const imagen = {
-            file: file,
-            previewUrl: blobUrl,
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            fechaCreacion: new Date().toISOString()
-        };
-        
-        window.imagenesTelaModalNueva.push(imagen);
-        console.log('[manejarImagenTela] ✅ Imagen agregada al array. Total:', window.imagenesTelaModalNueva.length);
-        
-        // Actualizar preview
-        console.log('[manejarImagenTela] 🔄 Buscando actualizarPreviewTelaTemporal...');
-        if (typeof window.actualizarPreviewTelaTemporal === 'function') {
-            console.log('[manejarImagenTela] ✅ Función ENCONTRADA, llamando...');
-            window.actualizarPreviewTelaTemporal();
-            console.log('[manejarImagenTela] ✅ Función COMPLETADA');
+        // 🔴 NUEVO: Usar el storage universal de telas
+        if (window.imagenesTelaStorage) {
+            console.log('[manejarImagenTela] � Usando storage universal de telas');
+            
+            window.imagenesTelaStorage.agregarImagen(file)
+                .then(() => {
+                    console.log('[manejarImagenTela] ✅ Imagen agregada al storage universal');
+                    
+                    // Actualizar preview
+                    console.log('[manejarImagenTela] 🔄 Buscando actualizarPreviewTelaTemporal...');
+                    if (typeof window.actualizarPreviewTelaTemporal === 'function') {
+                        console.log('[manejarImagenTela] ✅ Función ENCONTRADA, llamando...');
+                        window.actualizarPreviewTelaTemporal();
+                        console.log('[manejarImagenTela] ✅ Función COMPLETADA');
+                    } else {
+                        console.error('[manejarImagenTela] ❌ actualizarPreviewTelaTemporal NO ES FUNCIÓN');
+                        console.log('[manejarImagenTela] Tipo:', typeof window.actualizarPreviewTelaTemporal);
+                    }
+                })
+                .catch(err => {
+                    console.error('[manejarImagenTela] ❌ Error al agregar imagen al storage:', err);
+                });
         } else {
-            console.error('[manejarImagenTela] ❌ actualizarPreviewTelaTemporal NO ES FUNCIÓN');
-            console.log('[manejarImagenTela] Tipo:', typeof window.actualizarPreviewTelaTemporal);
+            // Fallback al sistema antiguo si el storage no está disponible
+            console.warn('[manejarImagenTela] ⚠️ Storage universal no disponible, usando sistema antiguo');
+            
+            // ✅ CAMBIO: Usar URL.createObjectURL en lugar de FileReader.readAsDataURL (NO base64)
+            const blobUrl = URL.createObjectURL(file);
+            console.log('[manejarImagenTela] 📸 Blob URL generada:', blobUrl);
+            
+            const imagen = {
+                file: file,
+                previewUrl: blobUrl,
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                fechaCreacion: new Date().toISOString()
+            };
+            
+            window.imagenesTelaModalNueva.push(imagen);
+            console.log('[manejarImagenTela] ✅ Imagen agregada al array antiguo. Total:', window.imagenesTelaModalNueva.length);
+            
+            // Actualizar preview
+            if (typeof window.actualizarPreviewTelaTemporal === 'function') {
+                window.actualizarPreviewTelaTemporal();
+            }
         }
         
     } catch (error) {
@@ -322,23 +343,55 @@ window.mostrarGaleriaImagenesTela = function(imagenes, telaIndex, indiceInicial 
 window.eliminarImagenTemporal = function(index) {
     console.log('[eliminarImagenTemporal] 🗑️ Eliminando imagen temporal:', index);
     
-    if (!window.imagenesTelaModalNueva || index < 0 || index >= window.imagenesTelaModalNueva.length) {
-        console.warn('[eliminarImagenTemporal]  Índice inválido:', index);
-        return;
+    // 🔴 NUEVO: Usar storage universal de telas
+    if (window.imagenesTelaStorage) {
+        console.log('[eliminarImagenTemporal] 📦 Usando storage universal de telas');
+        
+        const imagenes = window.imagenesTelaStorage.obtenerImagenes();
+        if (index < 0 || index >= imagenes.length) {
+            console.warn('[eliminarImagenTemporal]  Índice inválido:', index);
+            return;
+        }
+        
+        const imagenEliminada = imagenes[index];
+        console.log('[eliminarImagenTemporal] 📋 Imagen eliminada:', imagenEliminada.nombre);
+        
+        // Eliminar del storage universal
+        const resultado = window.imagenesTelaStorage.eliminarImagen(index);
+        if (resultado) {
+            console.log('[eliminarImagenTemporal] ✅ Imagen eliminada del storage universal');
+            
+            // Actualizar preview
+            if (typeof window.actualizarPreviewTelaTemporal === 'function') {
+                window.actualizarPreviewTelaTemporal();
+            }
+            
+            console.log('[eliminarImagenTemporal]  Imagen eliminada, total restante:', window.imagenesTelaStorage.obtenerImagenes().length);
+        } else {
+            console.error('[eliminarImagenTemporal] ❌ No se pudo eliminar la imagen del storage universal');
+        }
+    } else {
+        // Fallback al sistema antiguo
+        console.warn('[eliminarImagenTemporal] ⚠️ Storage universal no disponible, usando array antiguo');
+        
+        if (!window.imagenesTelaModalNueva || index < 0 || index >= window.imagenesTelaModalNueva.length) {
+            console.warn('[eliminarImagenTemporal]  Índice inválido:', index);
+            return;
+        }
+        
+        const imagenEliminada = window.imagenesTelaModalNueva[index];
+        console.log('[eliminarImagenTemporal] 📋 Imagen eliminada:', imagenEliminada.name);
+        
+        // Eliminar del array
+        window.imagenesTelaModalNueva.splice(index, 1);
+        
+        // Actualizar preview si es necesario
+        if (typeof window.actualizarPreviewTelaTemporal === 'function') {
+            window.actualizarPreviewTelaTemporal();
+        }
+        
+        console.log('[eliminarImagenTemporal]  Imagen eliminada, total restante:', window.imagenesTelaModalNueva.length);
     }
-    
-    const imagenEliminada = window.imagenesTelaModalNueva[index];
-    console.log('[eliminarImagenTemporal] 📋 Imagen eliminada:', imagenEliminada.name);
-    
-    // Eliminar del array
-    window.imagenesTelaModalNueva.splice(index, 1);
-    
-    // Actualizar preview si es necesario
-    if (typeof window.actualizarPreviewTelaTemporal === 'function') {
-        window.actualizarPreviewTelaTemporal();
-    }
-    
-    console.log('[eliminarImagenTemporal]  Imagen eliminada, total restante:', window.imagenesTelaModalNueva.length);
 };
 
 /**
@@ -346,7 +399,6 @@ window.eliminarImagenTemporal = function(index) {
  */
 window.actualizarPreviewTelaTemporal = function() {
     console.log('[actualizarPreviewTelaTemporal] 🚀 INICIADO');
-    console.log('[actualizarPreviewTelaTemporal] window.imagenesTelaModalNueva:', window.imagenesTelaModalNueva);
     
     const preview = document.getElementById('nueva-prenda-tela-preview');
     console.log('[actualizarPreviewTelaTemporal] Preview buscado con ID "nueva-prenda-tela-preview"');
@@ -358,12 +410,18 @@ window.actualizarPreviewTelaTemporal = function() {
         return;
     }
     
-    console.log('[actualizarPreviewTelaTemporal] ✅ Preview elemento:', preview);
-    console.log('[actualizarPreviewTelaTemporal] Preview display:', preview.style.display);
-    console.log('[actualizarPreviewTelaTemporal] Preview parent:', preview.parentElement);
-    
-    const imagenes = window.imagenesTelaModalNueva || [];
-    console.log('[actualizarPreviewTelaTemporal] Imágenes en array:', imagenes.length);
+    // 🔴 NUEVO: Usar storage universal de telas
+    let imagenes = [];
+    if (window.imagenesTelaStorage) {
+        console.log('[actualizarPreviewTelaTemporal] 📦 Usando storage universal de telas');
+        imagenes = window.imagenesTelaStorage.obtenerImagenes();
+        console.log('[actualizarPreviewTelaTemporal] 📸 Imágenes del storage universal:', imagenes.length);
+    } else {
+        // Fallback al sistema antiguo
+        console.warn('[actualizarPreviewTelaTemporal] ⚠️ Storage universal no disponible, usando array antiguo');
+        imagenes = window.imagenesTelaModalNueva || [];
+        console.log('[actualizarPreviewTelaTemporal] 📸 Imágenes del array antiguo:', imagenes.length);
+    }
     
     if (imagenes.length === 0) {
         console.log('[actualizarPreviewTelaTemporal] ⚠️ Sin imágenes, ocultando preview');
@@ -417,14 +475,14 @@ window.actualizarPreviewTelaTemporal = function() {
         btnEliminar.innerHTML = '×';
         btnEliminar.style.cssText = 'position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; background: #ef4444; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 16px; line-height: 1; padding: 0;';
         
-        // 🔑 Agregarclic handler para eliminar
+        // 🔑 Agregar click handler para eliminar
         btnEliminar.onclick = function(e) {
             e.preventDefault();
             e.stopPropagation();
             console.log(`[actualizarPreviewTelaTemporal] 🗑️ Eliminando imagen ${index}`);
-            window.imagenesTelaModalNueva.splice(index, 1);
-            console.log(`[actualizarPreviewTelaTemporal] ✅ Imagen eliminada. Quedan: ${window.imagenesTelaModalNueva.length}`);
-            window.actualizarPreviewTelaTemporal();
+            
+            // 🔴 NUEVO: Usar la función actualizada que maneja ambos sistemas
+            window.eliminarImagenTemporal(index);
         };
         
         container.appendChild(imgElement);

@@ -388,6 +388,45 @@ class DragDropEventHandler {
     }
 
     /**
+     * Filtrar archivos según configuración
+     * @param {DataTransferItemList} items - Items a filtrar
+     * @returns {File[]} Archivos filtrados
+     * @private
+     */
+    _filtrarArchivos(items) {
+        const archivos = [];
+        
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            
+            // Verificar si es una imagen
+            if (this.options.soloImagenes && item.type.startsWith('image/')) {
+                const file = item.getAsFile();
+                if (file) {
+                    archivos.push(file);
+                    
+                    // Limitar al máximo configurado
+                    if (archivos.length >= this.options.maxArchivos) {
+                        break;
+                    }
+                }
+            } else if (!this.options.soloImagenes && item.kind === 'file') {
+                const file = item.getAsFile();
+                if (file) {
+                    archivos.push(file);
+                    
+                    if (archivos.length >= this.options.maxArchivos) {
+                        break;
+                    }
+                }
+            }
+        }
+        
+        UIHelperService.log('DragDropEventHandler', `Archivos filtrados: ${archivos.length} de ${items.length} items`);
+        return archivos;
+    }
+
+    /**
      * Destruir el handler y limpiar recursos
      */
     destruir() {

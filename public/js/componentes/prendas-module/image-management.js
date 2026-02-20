@@ -120,9 +120,21 @@ window.actualizarPreviewPrenda = function() {
         container.style.cssText = 'position: relative; margin-bottom: 0.5rem;';
         
         const img = document.createElement('img');
-        img.src = imagenes[0].previewUrl;
-        img.style.cssText = 'max-width: 100%; height: auto; border-radius: 4px;';
-        console.log('[actualizarPreviewPrenda] 🎬 Src de imagen:', img.src);
+        
+        // 🔴 CRÍTICO: Validar previewUrl antes de asignar
+        if (!imagenes[0].previewUrl || imagenes[0].previewUrl === 'undefined' || imagenes[0].previewUrl === undefined) {
+            console.error('[actualizarPreviewPrenda] ❌ previewUrl inválido:', imagenes[0].previewUrl);
+            console.log('[actualizarPreviewPrenda] 🔍 Datos de imagen:', imagenes[0]);
+            
+            // Usar placeholder o dejar sin src
+            img.style.cssText = 'max-width: 100%; height: 200px; border-radius: 4px; background: #f3f4f6; display: flex; align-items: center; justify-content: center;';
+            img.alt = 'Imagen no disponible';
+            img.innerHTML = '<div style="text-align: center; color: #6b7280;">📷<br><small>Imagen no disponible</small></div>';
+        } else {
+            img.src = imagenes[0].previewUrl;
+            img.style.cssText = 'max-width: 100%; height: auto; border-radius: 4px;';
+            console.log('[actualizarPreviewPrenda] 🎬 Src de imagen:', img.src);
+        }
         
         container.appendChild(img);
         preview.appendChild(container);

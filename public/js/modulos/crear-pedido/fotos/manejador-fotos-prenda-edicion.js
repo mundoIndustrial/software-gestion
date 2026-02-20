@@ -29,9 +29,13 @@ window.manejarArchivosFotosPrenda = function(archivos, prendaIndex) {
     }
     
     Array.from(archivos).forEach((file, index) => {
-
-        window.imagenesPrendaStorage.agregarImagen(file);
-
+        window.imagenesPrendaStorage.agregarImagen(file)
+            .then(() => {
+                console.log(`[manejadorFotosPrendaEdicion] ✅ Imagen ${index + 1} agregada`);
+            })
+            .catch(err => {
+                console.error(`[manejadorFotosPrendaEdicion] ❌ Error agregando imagen ${index + 1}:`, err);
+            });
     });
     
     // Actualizar preview

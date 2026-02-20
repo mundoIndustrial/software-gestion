@@ -489,6 +489,10 @@
     <!-- Modal de Imágenes Genérico -->
     <script src="{{ asset('js/ImageModal.js') }}"></script>
     
+    <!-- Storage Universal y Adaptadores - CARGADO PRIMERO -->
+    <script src="{{ asset('js/componentes/universal-imagenes-storage.js') }}"></script>
+    <script src="{{ asset('js/componentes/storage-adapters.js') }}"></script>
+    
     <!-- Page-specific scripts -->
     @stack('scripts')
     
