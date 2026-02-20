@@ -87,9 +87,8 @@ window.abrirSelectorImagenProceso = function(cuadroIndex) {
     // Abrir el selector de archivos del sistema
     input.click();
     
-    // Limpiar el guard después de que el navegador haya procesado el click
-    // 200ms es suficiente para que se abra el diálogo del sistema
-    setTimeout(() => {
+    // Usar Promise para manejar el cleanup de forma asíncrona proper
+    Promise.resolve().then(() => {
         input._isDialogOpening = false;
-    }, 200);
+    });
 };

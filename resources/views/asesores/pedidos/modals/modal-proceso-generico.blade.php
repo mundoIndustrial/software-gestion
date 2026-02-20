@@ -77,7 +77,7 @@
                                 <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 1</div>
                             </div>
                         </div>
-                        <input type="file" id="proceso-foto-input-1" accept="image/*" style="display: none;" aria-label="Imagen 1 del Proceso" onchange="manejarImagenProcesoConIndice(this, 1)">
+                        <input type="file" id="proceso-foto-input-1" accept="image/*" style="display: none;" aria-label="Imagen 1 del Proceso">
                         
                         <!-- Preview 2 -->
                         <div id="proceso-foto-preview-2" class="foto-preview-proceso" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative; overflow: visible; user-select: none;" tabindex="0">
@@ -86,7 +86,7 @@
                                 <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 2</div>
                             </div>
                         </div>
-                        <input type="file" id="proceso-foto-input-2" accept="image/*" style="display: none;" aria-label="Imagen 2 del Proceso" onchange="manejarImagenProcesoConIndice(this, 2)">
+                        <input type="file" id="proceso-foto-input-2" accept="image/*" style="display: none;" aria-label="Imagen 2 del Proceso">
                         
                         <!-- Preview 3 -->
                         <div id="proceso-foto-preview-3" class="foto-preview-proceso" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative; overflow: visible; user-select: none;" tabindex="0">
@@ -95,7 +95,7 @@
                                 <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 3</div>
                             </div>
                         </div>
-                        <input type="file" id="proceso-foto-input-3" accept="image/*" style="display: none;" aria-label="Imagen 3 del Proceso" onchange="manejarImagenProcesoConIndice(this, 3)">
+                        <input type="file" id="proceso-foto-input-3" accept="image/*" style="display: none;" aria-label="Imagen 3 del Proceso">
                     </div>
                     <p style="margin-top: 0.5rem; font-size: 0.75rem; color: #6b7280;">
                         <i class="fas fa-info-circle"></i> Puedes agregar hasta 3 imágenes para este proceso
@@ -120,26 +120,66 @@
 <x-galeria-modal :id="'proceso-3'" :titulo="'Galería - Proceso 3'" />
 
 <script>
-    // Fallback: si DragDropManager NO está cargado, agregar click handlers manualmente
-    document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(function() {
-            // Solo agregar fallback si ProcesoDragDropHandler no está activo
-            if (!window.DragDropManager || !window.DragDropManager.procesoHandler) {
-                for (let i = 1; i <= 3; i++) {
-                    const preview = document.getElementById('proceso-foto-preview-' + i);
-                    if (preview && !preview._clickFallback) {
-                        preview._clickFallback = true;
-                        preview.addEventListener('click', function() {
-                            if (typeof window.abrirSelectorImagenProceso === 'function') {
-                                window.abrirSelectorImagenProceso(i);
-                            }
-                        });
-                    }
+    // Inicialización proper sin setTimeout - Full Start Approach
+    function inicializarFallbackProcesos() {
+        // Solo agregar fallback si ProcesoDragDropHandler no está activo
+        if (!window.DragDropManager || !window.DragDropManager.procesoHandler) {
+            for (let i = 1; i <= 3; i++) {
+                const preview = document.getElementById('proceso-foto-preview-' + i);
+                const input = document.getElementById('proceso-foto-input-' + i);
+                
+                // Agregar click handler al preview
+                if (preview && !preview._clickFallback) {
+                    preview._clickFallback = true;
+                    preview.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (typeof window.abrirSelectorImagenProceso === 'function') {
+                            window.abrirSelectorImagenProceso(i);
+                        }
+                    });
+                }
+                
+                // Agregar change handler al input
+                if (input && !input._changeFallback) {
+                    input._changeFallback = true;
+                    input.addEventListener('change', function(e) {
+                        if (typeof window.manejarImagenProcesoConIndice === 'function') {
+                            window.manejarImagenProcesoConIndice(this, i);
+                        }
+                    });
                 }
             }
-        }, 500); // Esperar a que DragDropManager se inicialice si existe
+        }
+    }
 
-        // Manejar paste en el panel de fotos
+    // Ejecutar inmediatamente si el DOM ya está listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', inicializarFallbackProcesos);
+    } else {
+        // DOM ya está listo, ejecutar inmediatamente
+        inicializarFallbackProcesos();
+    }
+
+    // También ejecutar cuando el modal se muestra (por si se carga dinámicamente)
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                const modalProceso = document.getElementById('modal-proceso-generico');
+                if (modalProceso && modalProceso.style.display !== 'none') {
+                    inicializarFallbackProcesos();
+                }
+            }
+        });
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    // Manejar paste en el panel de fotos
+    document.addEventListener('DOMContentLoaded', function() {
         const fotoPanelElement = document.querySelector('.foto-panel');
         
         if (fotoPanelElement) {

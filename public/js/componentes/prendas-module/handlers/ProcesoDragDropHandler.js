@@ -121,6 +121,17 @@ class ProcesoDragDropHandler {
             return;
         }
         
+        // Obtener el input para verificar si ya está abriendo diálogo
+        const inputId = `proceso-foto-input-${procesoNumero}`;
+        const inputElement = document.getElementById(inputId);
+        
+        // Guard adicional: evitar doble apertura si el input ya está procesando
+        if (inputElement && inputElement._isDialogOpening) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        
         // Obtener el preview
         const preview = document.getElementById(`proceso-foto-preview-${procesoNumero}`);
         
@@ -149,14 +160,17 @@ class ProcesoDragDropHandler {
         
         // Si no hay imágenes o la galería no está disponible, abrir el selector de archivos
         UIHelperService.log('ProcesoDragDropHandler', `Abriendo selector de archivos para proceso ${procesoNumero}`);
-        const inputId = `proceso-foto-input-${procesoNumero}`;
-        const inputElement = document.getElementById(inputId);
         
         if (inputElement) {
             e.preventDefault();
             e.stopPropagation();
-            // UIHelperService.log('ProcesoDragDropHandler', `Abriendo input ${inputId}`);
-            inputElement.click();
+            // Usar la función global que tiene protección contra doble apertura
+            if (typeof window.abrirSelectorImagenProceso === 'function') {
+                window.abrirSelectorImagenProceso(procesoNumero);
+            } else {
+                // Fallback directo si la función no está disponible
+                inputElement.click();
+            }
         } else {
             UIHelperService.log('ProcesoDragDropHandler', `Input ${inputId} no encontrado`, 'warn');
         }
