@@ -448,29 +448,70 @@ body.dark-theme .pagination-info {
 }
 
 /* ===== TRACKING EDIT BUTTON ===== */
-.tracking-edit-btn {
+/* REGLA ULTRA AGRESIVA - FORZAR COLOR AZUL */
+#trackingTimelineContainer .tracking-area-card .tracking-action-buttons .tracking-edit-btn,
+.tracking-area-card .tracking-action-buttons .tracking-edit-btn,
+.tracking-edit-btn,
+button.tracking-edit-btn,
+button[onclick*="handleEditarProceso"],
+button[class*="tracking-edit-btn"],
+div.tracking-action-buttons > button:first-child {
   position: absolute;
   top: 8px;
   right: 42px;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  transition: var(--transition);
-  opacity: 0.8;
+  background: #3b82f6 !important;
+  background-color: #3b82f6 !important;
+  background-image: none !important;
+  color: white !important;
+  border: none !important;
+  border-color: transparent !important;
+  border-radius: 6px !important;
+  padding: 6px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  transition: var(--transition) !important;
+  opacity: 0.8 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
 }
 
-.tracking-edit-btn:hover {
-  background: #2563eb;
-  opacity: 1;
-  transform: scale(1.05);
+#trackingTimelineContainer .tracking-area-card .tracking-action-buttons .tracking-edit-btn:hover,
+.tracking-area-card .tracking-action-buttons .tracking-edit-btn:hover,
+.tracking-edit-btn:hover,
+button.tracking-edit-btn:hover,
+button[onclick*="handleEditarProceso"]:hover,
+button[class*="tracking-edit-btn"]:hover,
+div.tracking-action-buttons > button:first-child:hover {
+  background: #2563eb !important;
+  background-color: #2563eb !important;
+  background-image: none !important;
+  opacity: 1 !important;
+  transform: scale(1.05) !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* REGLA DE EMERGENCIA - SOBREESCRIBIR TODO */
+body button[onclick*="handleEditarProceso"],
+html body button.tracking-edit-btn,
+html body div.tracking-action-buttons button:first-child {
+  background: #3b82f6 !important;
+  background-color: #3b82f6 !important;
+  color: white !important;
+  border: none !important;
+}
+
+/* ANULAR CUALQUIER ESTADO NARANJA */
+* [style*="#f59e0b"],
+* [style*="f59e0b"],
+* [style*="orange"] {
+  background: #3b82f6 !important;
+  background-color: #3b82f6 !important;
 }
 
 .tracking-edit-btn svg {

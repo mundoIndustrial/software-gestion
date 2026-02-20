@@ -706,8 +706,8 @@
 .tracking-area-name svg {
     width: 22px;
     height: 22px;
-    color: #f59e0b;
-    filter: drop-shadow(0 2px 4px rgba(245, 158, 11, 0.2));
+    color: #3b82f6;
+    filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.2));
 }
 
 .tracking-area-details {
@@ -761,6 +761,55 @@
     font-size: 12px;
     font-weight: 700;
     box-shadow: 0 4px 12px rgba(107, 114, 128, 0.2);
+}
+
+/* Estilos para los botones de acción */
+.tracking-action-buttons {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+}
+
+.tracking-edit-btn,
+.tracking-delete-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.tracking-edit-btn {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.tracking-edit-btn:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.tracking-delete-btn {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.tracking-delete-btn:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.tracking-edit-btn svg,
+.tracking-delete-btn svg {
+    width: 14px;
+    height: 14px;
+    color: white !important;
+    stroke: white !important;
 }
 
 .tracking-total-days-container {
@@ -1275,6 +1324,7 @@
     font-size: 20px;
     font-weight: 700;
     margin: 0;
+    color: white;
 }
 
 .tracking-prendas-selector-close {
@@ -2216,7 +2266,7 @@ html[data-theme="dark"] .tracking-area-name {
 html:not([data-theme="dark"]) .tracking-detail-row,
 html[data-theme="light"] .tracking-detail-row {
     background: #f3f4f6 !important;
-    border-left: 3px solid #f59e0b;
+    border-left: 3px solid #3b82f6;
 }
 
 html:not([data-theme="dark"]) .tracking-detail-label,
