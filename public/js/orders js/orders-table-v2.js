@@ -47,6 +47,18 @@ function initializeStatusDropdowns() {
 }
 
 /**
+ * DELEGACIÓN: Inicializar dropdowns de área
+ * → Usa OrdersDropdownManager.initializeAreaDropdowns()
+ */
+function initializeAreaDropdowns() {
+    if (OrdersDropdownManager && OrdersDropdownManager.initializeAreaDropdowns) {
+        OrdersDropdownManager.initializeAreaDropdowns();
+    } else {
+
+    }
+}
+
+/**
  * DELEGACIÓN: Inicializar dropdowns de día de entrega
  * → Usa DiaEntregaModule.initialize()
  */
@@ -263,6 +275,7 @@ async function recargarTablaPedidos() {
 
         // Reinicializar con módulos
         initializeStatusDropdowns();
+        initializeAreaDropdowns();
         initializeDiaEntregaDropdowns();
         
 
@@ -622,6 +635,12 @@ function updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, 
             estadoDropdown.dataset.value = newValue;
             updateRowColor(orderId, newValue);
         }
+    } else if (field === 'area') {
+        const areaDropdown = row.querySelector('.area-dropdown');
+        if (areaDropdown) {
+            areaDropdown.value = newValue;
+            areaDropdown.dataset.value = newValue;
+        }
     }
 
     // Actualizar campos relacionados
@@ -724,6 +743,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Inicializar con módulos (si están disponibles)
     initializeStatusDropdowns();
+    initializeAreaDropdowns();
     initializeDiaEntregaDropdowns();
     
     //  Sistema de edición de celdas con doble clic (gestionado por modern-table.js)

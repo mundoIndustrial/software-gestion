@@ -14,6 +14,17 @@ const OrdersDropdownManager = {
 
     },
 
+    
+    initializeAreaDropdowns() {
+        document.querySelectorAll('.area-dropdown').forEach(dropdown => {
+            dropdown.setAttribute('data-value', dropdown.value);
+            dropdown.removeEventListener('change', this.handleAreaChange.bind(this));
+            dropdown.addEventListener('change', this.handleAreaChange.bind(this));
+        });
+
+    },
+
+
     handleStatusChange(e) {
         const newStatus = e.target.value;
         e.target.setAttribute('data-value', newStatus);
@@ -22,6 +33,38 @@ const OrdersDropdownManager = {
         
         this.updateWithDebounce('status', orderId, newStatus, e.target.dataset.value, e.target);
     },
+
+    handleAreaChange(e) {
+
+        
+        const dropdown = e.target;
+        const orderId = dropdown.dataset.ordenId || dropdown.dataset.id;
+        const oldValue = dropdown.dataset.value;
+        const newValue = dropdown.value;
+        
+        if (dropdown.dataset.programmaticChange === 'true') {
+
+            dropdown.dataset.programmaticChange = 'false';
+            return;
+        }
+        
+
+
+        
+        if (!orderId) {
+
+            return;
+        }
+        
+
+        
+        dropdown.setAttribute('data-value', newValue);
+        
+
+        this.updateWithDebounce('area', orderId, newValue, oldValue, dropdown);
+
+    },
+
 
     updateWithDebounce(type, orderId, newValue, oldValue, element) {
         const debounceKey = `${type}-${orderId}`;

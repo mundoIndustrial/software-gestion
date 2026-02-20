@@ -135,9 +135,13 @@ const TableManager = {
         
 
         
-        // Inicializar dropdowns de estado
+        // Inicializar dropdowns de estado y área
         if (DropdownManager.initializeStatusDropdowns) {
             DropdownManager.initializeStatusDropdowns();
+        }
+        
+        if (DropdownManager.initializeAreaDropdowns) {
+            DropdownManager.initializeAreaDropdowns();
         }
     },
 

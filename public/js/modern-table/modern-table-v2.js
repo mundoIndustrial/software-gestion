@@ -89,6 +89,7 @@ class ModernTableV2 {
 
         document.addEventListener('change', e => {
             if (e.target.classList.contains('estado-dropdown')) this.updateOrderStatus(e.target);
+            if (e.target.classList.contains('area-dropdown')) this.updateOrderArea(e.target);
         });
 
         document.addEventListener('click', e => {
@@ -269,6 +270,11 @@ class ModernTableV2 {
 
     async updateOrderStatus(dropdown) {
         // Status updates now handled by OrdersDropdownManager in orders-table-v2.js
+
+    }
+
+    async updateOrderArea(dropdown) {
+        // Area updates now handled by OrdersDropdownManager in orders-table-v2.js
 
     }
 

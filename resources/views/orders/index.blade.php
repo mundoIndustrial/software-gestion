@@ -27,6 +27,7 @@
                         $columns = [
                             ['key' => 'acciones', 'label' => 'Acciones', 'flex' => '0 0 100px', 'justify' => 'flex-start'],
                             ['key' => 'estado', 'label' => 'Estado', 'flex' => '0 0 120px', 'justify' => 'center'],
+                            ['key' => 'area', 'label' => 'Área', 'flex' => '0 0 auto; min-width: 180px', 'justify' => 'center'],
                             ['key' => 'dia_entrega', 'label' => 'Día de entrega', 'flex' => '0 0 150px', 'justify' => 'center'],
                             ['key' => 'total_dias', 'label' => 'Total de días', 'flex' => '0 0 120px', 'justify' => 'center'],
                             ['key' => 'pedido', 'label' => 'Pedido', 'flex' => '0 0 120px', 'justify' => 'center'],
@@ -162,13 +163,13 @@
                                     $descripcionConTallas = $descripcionBase;
                                 }
                             @endphp
-                            <div class="table-row" data-orden-id="{{ $orden->id }}">
+                            <div class="table-row" data-orden-id="{{ $orden->numero_pedido ?? 'sin-numero' }}">
                                 <!-- Acciones -->
                                 <div class="table-cell acciones-column" style="flex: 0 0 100px; justify-content: center; position: relative;">
-                                    <button class="action-view-btn" title="Ver detalles" data-orden-id="{{ $orden->id }}">
+                                    <button class="action-view-btn" title="Ver detalles" data-orden-id="{{ $orden->numero_pedido ?? 'sin-numero' }}">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <div class="action-menu" data-orden-id="{{ $orden->id }}">
+                                    <div class="action-menu" data-orden-id="{{ $orden->numero_pedido ?? 'sin-numero' }}">
                                         <a href="#" class="action-menu-item" data-action="detalle">
                                             <i class="fas fa-eye"></i>
                                             <span>Detalle</span>
@@ -183,9 +184,20 @@
                                 <!-- Estado (Dropdown) -->
                                 <div class="table-cell" style="flex: 0 0 auto;">
                                     <div class="cell-content">
-                                        <select class="estado-dropdown estado-{{ str_replace(' ', '-', strtolower(trim($orden->estado ?? 'pendiente'))) }}" data-orden-id="{{ $orden->id }}">
+                                        <select class="estado-dropdown estado-{{ str_replace(' ', '-', strtolower(trim($orden->estado ?? 'pendiente'))) }}" data-orden-id="{{ $orden->numero_pedido ?? 'sin-numero' }}">
                                             @foreach(\App\Models\PedidoProduccion::ESTADOS as $estado)
                                                 <option value="{{ $estado }}" {{ $orden->estado === $estado ? 'selected' : '' }}>{{ $estado }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Área (Dropdown) -->
+                                <div class="table-cell" style="flex: 0 0 auto;">
+                                    <div class="cell-content">
+                                        <select class="area-dropdown" data-orden-id="{{ $orden->numero_pedido ?? 'sin-numero' }}">
+                                            @foreach($areaOptions as $area)
+                                                <option value="{{ $area }}" {{ $orden->area === $area ? 'selected' : '' }}>{{ $area }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -194,7 +206,7 @@
                                 <!-- Día de entrega (Dropdown) -->
                                 <div class="table-cell" style="flex: 0 0 auto;">
                                     <div class="cell-content">
-                                        <select class="dia-entrega-dropdown" data-orden-id="{{ $orden->id }}">
+                                        <select class="dia-entrega-dropdown" data-orden-id="{{ $orden->numero_pedido ?? 'sin-numero' }}">
                                             <option value="">Seleccionar</option>
                                             @foreach(\App\Models\PedidoProduccion::DIAS_ENTREGA as $dia)
                                                 <option value="{{ $dia }}" {{ $orden->dia_de_entrega == $dia ? 'selected' : '' }}>{{ $dia }} días</option>

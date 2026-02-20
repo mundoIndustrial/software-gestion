@@ -141,6 +141,7 @@ const FilterManager = (() => {
                 FilterManager.markActiveFilters();
                 
                 if (typeof initializeStatusDropdowns === 'function') initializeStatusDropdowns();
+                if (typeof initializeAreaDropdowns === 'function') initializeAreaDropdowns();
                 if (typeof actualizarDiasTabla === 'function') actualizarDiasTabla();
                 
                 document.querySelector('.table-container')?.scrollIntoView({ behavior: 'auto', block: 'start' });
