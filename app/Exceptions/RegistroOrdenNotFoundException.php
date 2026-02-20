@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 /**
@@ -17,7 +18,7 @@ class RegistroOrdenNotFoundException extends RegistroOrdenException
     public function __construct(
         string $pedido = '',
         array $context = [],
-        Exception $previous = null
+        ?Exception $previous = null
     ) {
         $context['pedido'] = $pedido;
         

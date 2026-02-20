@@ -4,14 +4,830 @@
  * Funcionalidad completa de seguimiento por prenda con áreas y procesos
  */
 
+// Agregar estilos CSS para tabla estilo TNS
+const trackingTableStyles = `
+.tracking-prenda-table {
+  margin: 8px 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tracking-prenda-table:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.tracking-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 13px;
+}
+
+.tracking-table-header {
+  background: linear-gradient(135deg, #1e40af 0%, #3730a3 100%);
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  text-align: center;
+  padding: 12px 8px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.tracking-table-row:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.tracking-table-row:hover {
+  background-color: #f3f4f6;
+}
+
+.tracking-table-label {
+  padding: 8px 12px;
+  font-weight: 600;
+  color: #374151;
+  border-right: 1px solid #e5e7eb;
+  width: 35%;
+  text-align: left;
+  background-color: #f8fafc;
+}
+
+.tracking-table-value {
+  padding: 8px 12px;
+  color: #1f2937;
+  text-align: left;
+  font-weight: 500;
+}
+
+.tracking-procesos-lista {
+  padding: 8px 12px;
+  background: #fef3c7;
+  border-left: 3px solid #f59e0b;
+}
+
+.tracking-proceso-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid #fde68a;
+}
+
+.tracking-proceso-item:last-child {
+  border-bottom: none;
+}
+
+.proceso-nombre {
+  font-weight: 500;
+  color: #92400e;
+}
+
+.proceso-estado {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 12px;
+  background: #fbbf24;
+  color: #78350f;
+  font-weight: 600;
+}
+
+.tracking-bodega-indicador {
+  padding: 8px 12px;
+  background: #dcfce7;
+  border-left: 3px solid #22c55e;
+  color: #166534;
+  font-weight: 600;
+  font-size: 12px;
+  text-align: center;
+}
+
+.tracking-seguimiento-badge {
+  display: inline-block;
+  margin: 2px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tracking-seguimiento-badge.completado {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.tracking-seguimiento-badge.pendiente {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+/* ===== MODAL Y OVERLAY DE PRENDAS ===== */
+.tracking-prendas-selector-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.tracking-prendas-selector-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.tracking-prendas-selector-content {
+  background: white;
+  border-radius: 12px;
+  max-width: 95vw;
+  max-height: 90vh;
+  width: 1200px;
+  height: auto;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  transform: scale(0.95);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.tracking-prendas-selector-overlay.show .tracking-prendas-selector-content {
+  transform: scale(1);
+}
+
+.tracking-prendas-selector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.tracking-prendas-selector-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 8px;
+  color: white;
+  margin-right: 16px;
+}
+
+.tracking-prendas-selector-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.tracking-prendas-selector-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+  flex: 1;
+}
+
+.tracking-prendas-selector-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #ef4444;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tracking-prendas-selector-close:hover {
+  background: #dc2626;
+  transform: scale(1.1);
+}
+
+.tracking-prendas-selector-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.tracking-prendas-selector-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  min-height: 0; /* Permitir que el contenedor se encoja */
+}
+
+.tracking-prendas-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.tracking-prendas-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tracking-prendas-info-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tracking-prendas-info-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.tracking-prendas-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0; /* Permitir que el contenedor se encoja */
+}
+
+.tracking-prendas-list-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.tracking-prendas-selector-container {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0; /* Permitir que el contenedor se encoja */
+  overflow: hidden;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+/* ===== TABLA DE PRENDAS (ESTILO REPORTE) ===== */
+.prendas-table-container {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0; /* Permitir que el contenedor se encoja */
+}
+
+.prendas-report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 13px;
+  background: white;
+  table-layout: fixed; /* Distribuir columnas uniformemente */
+}
+
+.prendas-report-table thead {
+  background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+  color: white;
+}
+
+.prendas-report-table th {
+  padding: 12px 8px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  vertical-align: middle;
+}
+
+.prendas-report-table th:first-child {
+  text-align: left;
+  width: 25%; /* Prenda - más ancha */
+}
+
+.prendas-report-table th:nth-child(2) {
+  width: 10%; /* Cantidad */
+}
+
+.prendas-report-table th:nth-child(3) {
+  width: 25%; /* Procesos - más ancha */
+}
+
+.prendas-report-table th:nth-child(4) {
+  width: 12%; /* Área */
+}
+
+.prendas-report-table th:nth-child(5) {
+  width: 12%; /* Estado */
+}
+
+.prendas-report-table th:nth-child(6) {
+  width: 16%; /* Acciones - más ancha para el botón */
+  border-right: none;
+}
+
+.prendas-table-row:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.prendas-table-row:hover {
+  background-color: #f3f4f6;
+}
+
+.prendas-table-cell {
+  padding: 12px 8px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
+  text-align: center;
+  word-wrap: break-word;
+  overflow: hidden;
+}
+
+.prendas-table-cell:first-child {
+  text-align: left;
+}
+
+.prendas-name-cell {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.prendas-name {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.bodega-badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 6px;
+  background: #f59e0b;  /* Amarillo */
+  color: #92400e;      /* Texto oscuro para contraste */
+  border-radius: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.procesos-cell {
+  text-align: left;
+}
+
+.procesos-info {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #6b7280;
+}
+
+.estado-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.estado-badge.estado-completado {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.estado-badge.estado-en-ejecución {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+.estado-badge.estado-pendiente {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.estado-badge.estado-sin-procesos {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+.acciones-cell {
+  text-align: center;
+}
+
+.btn-ver-seguimiento {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+  min-width: 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-ver-seguimiento::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-ver-seguimiento:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-ver-seguimiento:hover::before {
+  left: 100%;
+}
+
+.btn-ver-seguimiento:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.btn-ver-seguimiento svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Responsive para pantallas pequeñas */
+@media (max-width: 768px) {
+  .prendas-report-table {
+    font-size: 11px;
+  }
+  
+  .prendas-report-table th {
+    padding: 8px 4px;
+    font-size: 10px;
+  }
+  
+  .prendas-table-cell {
+    padding: 8px 4px;
+  }
+  
+  .prendas-name {
+    font-size: 12px;
+  }
+  
+  .btn-ver-seguimiento {
+    padding: 6px 12px;
+    font-size: 11px;
+    min-width: 70px;
+    gap: 4px;
+  }
+  
+  .btn-ver-seguimiento svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* Responsive para modal y tabla */
+@media (max-width: 1200px) {
+  .tracking-prendas-selector-content {
+    max-width: 98vw;
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .tracking-prendas-selector-overlay {
+    padding: 10px;
+  }
+  
+  .tracking-prendas-selector-content {
+    max-width: 95vw;
+    width: 100%;
+    margin: 0;
+  }
+  
+  .tracking-prendas-selector-header {
+    padding: 16px 20px;
+  }
+  
+  .tracking-prendas-selector-icon {
+    width: 32px;
+    height: 32px;
+    margin-right: 12px;
+  }
+  
+  .tracking-prendas-selector-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .tracking-prendas-selector-title {
+    font-size: 16px;
+  }
+  
+  .tracking-prendas-selector-body {
+    padding: 16px;
+    gap: 16px;
+  }
+  
+  .tracking-prendas-info {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
+    width: 100%;
+  }
+  
+  .tracking-prendas-list {
+    width: 100%;
+    min-height: 0;
+  }
+  
+  .tracking-prendas-selector-container {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+  
+  .prendas-table-container {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+  
+  .prendas-report-table {
+    font-size: 11px;
+  }
+  
+  .prendas-report-table th {
+    padding: 8px 4px;
+    font-size: 10px;
+  }
+  
+  .prendas-table-cell {
+    padding: 8px 4px;
+  }
+  
+  .prendas-name {
+    font-size: 12px;
+  }
+  
+  .btn-ver-seguimiento {
+    padding: 6px 12px;
+    font-size: 11px;
+    min-width: 70px;
+    gap: 4px;
+  }
+  
+  .btn-ver-seguimiento svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@media (max-width: 600px) {
+  .tracking-prendas-selector-overlay {
+    padding: 5px;
+  }
+  
+  .tracking-prendas-selector-content {
+    max-width: 98vw;
+    width: 100%;
+    border-radius: 8px;
+  }
+  
+  .tracking-prendas-selector-header {
+    padding: 12px 16px;
+  }
+  
+  .tracking-prendas-selector-icon {
+    width: 28px;
+    height: 28px;
+    margin-right: 8px;
+  }
+  
+  .tracking-prendas-selector-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .tracking-prendas-selector-title {
+    font-size: 14px;
+  }
+  
+  .tracking-prendas-selector-body {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .tracking-prendas-info {
+    padding: 8px;
+    gap: 8px;
+    width: 100%;
+  }
+  
+  .tracking-prendas-list {
+    width: 100%;
+    min-height: 0;
+  }
+  
+  .tracking-prendas-selector-container {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+  
+  .prendas-table-container {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+  
+  .tracking-prendas-info-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .tracking-prendas-list-title {
+    font-size: 14px;
+    margin: 0 0 12px 0;
+    padding-bottom: 6px;
+  }
+  
+  .prendas-report-table {
+    font-size: 10px;
+  }
+  
+  .prendas-report-table th {
+    padding: 6px 2px;
+    font-size: 9px;
+  }
+  
+  .prendas-table-cell {
+    padding: 6px 2px;
+  }
+  
+  .prendas-name {
+    font-size: 11px;
+  }
+  
+  .btn-ver-seguimiento {
+    padding: 4px 6px;
+    font-size: 10px;
+    min-width: 50px;
+    gap: 2px;
+  }
+  
+  .btn-ver-seguimiento svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+  .prendas-report-table th:first-child {
+    width: 30%;
+  }
+  
+  .prendas-report-table th:nth-child(2) {
+    width: 12%;
+  }
+  
+  .prendas-report-table th:nth-child(3) {
+    width: 20%;
+  }
+  
+  .prendas-report-table th:nth-child(4) {
+    width: 14%;
+  }
+  
+  .prendas-report-table th:nth-child(5) {
+    width: 12%;
+  }
+  
+  .btn-ver-seguimiento {
+    padding: 4px 6px;
+    font-size: 10px;
+    min-width: 50px;
+    gap: 2px;
+  }
+  
+  .btn-ver-seguimiento svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+  
+  .prendas-report-table th:nth-child(2) {
+    width: 12%;
+  }
+  
+  .prendas-report-table th:nth-child(3) {
+    width: 12%;
+  }
+  
+  .prendas-report-table th:nth-child(4) {
+    width: 12%;
+  }
+  
+  .prendas-report-table th:nth-child(5) {
+    width: 17%;
+  }
+  
+  .prendas-report-table th:nth-child(6) {
+    width: 12%;
+  }
+  
+  .prendas-report-table th:nth-child(7) {
+    width: 10%;
+  }
+  
+  .btn-ver-seguimiento {
+    padding: 4px 8px;
+    font-size: 10px;
+    min-width: 60px;
+    gap: 2px;
+  }
+  
+  .btn-ver-seguimiento svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+`;
+
 (function() {
   'use strict';
 
   let currentOrderData = null;
   let currentPrendaData = null;
 
+  // Inyectar estilos CSS para tabla estilo TNS
+  function injectTrackingTableStyles() {
+    if (!document.getElementById('tracking-table-styles')) {
+      const styleElement = document.createElement('style');
+      styleElement.id = 'tracking-table-styles';
+      styleElement.textContent = trackingTableStyles;
+      document.head.appendChild(styleElement);
+    }
+  }
+
   // Inicializar listeners del modal
   function initTrackingModalListeners() {
+    // Inyectar estilos
+    injectTrackingTableStyles();
+    
     // Cerrar modal al hacer clic en el overlay
     const overlay = document.getElementById('trackingModalOverlay');
     if (overlay) {
@@ -182,10 +998,17 @@
     console.log('[updateOrderInfo] estado:', orderData.estado);
     
     // Actualizar modal principal
+    console.log('[updateOrderInfo] Campos de fecha disponibles:', {
+      fecha_creacion: orderData.fecha_creacion,
+      fecha_de_creacion_de_orden: orderData.fecha_de_creacion_de_orden,
+      created_at: orderData.created_at,
+      fecha_estimada_entrega: orderData.fecha_estimada_entrega
+    });
+    
     document.getElementById('trackingOrderNumber').textContent = orderData.numero_pedido || '-';
     document.getElementById('trackingOrderClient').textContent = orderData.cliente || '-';
     document.getElementById('trackingOrderStatus').textContent = orderData.estado || '-';
-    document.getElementById('trackingOrderDate').textContent = formatDate(orderData.fecha_de_creacion_de_orden) || '-';
+    document.getElementById('trackingOrderDate').textContent = formatDate(orderData.fecha_creacion || orderData.fecha_de_creacion_de_orden || orderData.created_at) || '-';
     document.getElementById('trackingEstimatedDate').textContent = formatDate(orderData.fecha_estimada_entrega) || '-';
     document.getElementById('trackingTotalDays').textContent = orderData.total_dias || '0';
 
@@ -193,22 +1016,230 @@
     const selectorOrderNumber = document.getElementById('selectorOrderNumber');
     const selectorOrderClient = document.getElementById('selectorOrderClient');
     const selectorOrderStatus = document.getElementById('selectorOrderStatus');
+    const selectorOrderStartDate = document.getElementById('selectorOrderStartDate');
+    const selectorOrderEstimatedDate = document.getElementById('selectorOrderEstimatedDate');
     
     console.log('[updateOrderInfo] Elementos encontrados:', {
       selectorOrderNumber: !!selectorOrderNumber,
       selectorOrderClient: !!selectorOrderClient,
-      selectorOrderStatus: !!selectorOrderStatus
+      selectorOrderStatus: !!selectorOrderStatus,
+      selectorOrderStartDate: !!selectorOrderStartDate,
+      selectorOrderEstimatedDate: !!selectorOrderEstimatedDate
     });
     
+    // Actualizar información del modal principal
+    const trackingOrderNumber = document.getElementById('trackingOrderNumber');
+    const trackingOrderClient = document.getElementById('trackingOrderClient');
+    const trackingOrderStatus = document.getElementById('trackingOrderStatus');
+    const trackingOrderRecibo = document.getElementById('trackingOrderRecibo');
+    
+    console.log('[updateOrderInfo] Elementos encontrados:', {
+      selectorOrderNumber: !!selectorOrderNumber,
+      selectorOrderClient: !!selectorOrderClient,
+      selectorOrderStatus: !!selectorOrderStatus,
+      selectorOrderEstimatedDate: !!selectorOrderEstimatedDate,
+      trackingOrderNumber: !!trackingOrderNumber,
+      trackingOrderClient: !!trackingOrderClient,
+      trackingOrderStatus: !!trackingOrderStatus,
+      trackingOrderRecibo: !!trackingOrderRecibo
+    });
+    
+    // Actualizar selector
     if (selectorOrderNumber) {
       selectorOrderNumber.textContent = orderData.numero_pedido || '-';
-      console.log('[updateOrderInfo] selectorOrderNumber actualizado a:', orderData.numero_pedido || '-');
     }
     if (selectorOrderClient) {
       selectorOrderClient.textContent = orderData.cliente || '-';
     }
     if (selectorOrderStatus) {
       selectorOrderStatus.textContent = orderData.estado || '-';
+    }
+    if (selectorOrderStartDate) {
+      // Actualizar fecha de inicio
+      let fechaInicio = orderData.fecha_creacion || orderData.fecha_de_creacion_de_orden || orderData.created_at;
+      
+      if (fechaInicio) {
+        // Formatear fecha
+        let fechaFormateada = '';
+        if (typeof fechaInicio === 'string') {
+          try {
+            const date = new Date(fechaInicio);
+            if (!isNaN(date.getTime())) {
+              fechaFormateada = date.toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+              });
+            } else {
+              fechaFormateada = fechaInicio;
+            }
+          } catch (e) {
+            fechaFormateada = fechaInicio;
+          }
+        } else if (fechaInicio instanceof Date) {
+          fechaFormateada = fechaInicio.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          });
+        } else if (fechaInicio && fechaInicio.date) {
+          fechaFormateada = new Date(fechaInicio.date).toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          });
+        }
+        
+        selectorOrderStartDate.textContent = fechaFormateada || '-';
+      } else {
+        selectorOrderStartDate.textContent = '-';
+      }
+    }
+    if (selectorOrderEstimatedDate) {
+      // Actualizar fecha estimada de entrega
+      let fechaEstimada = orderData.fecha_estimada_de_entrega;
+      
+      if (fechaEstimada) {
+        // Formatear fecha datetime
+        let fechaFormateada = '';
+        if (typeof fechaEstimada === 'string') {
+          // Si es string, intentar parsear y formatear
+          try {
+            const date = new Date(fechaEstimada);
+            if (!isNaN(date.getTime())) {
+              fechaFormateada = date.toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+              });
+            } else {
+              fechaFormateada = fechaEstimada;
+            }
+          } catch (e) {
+            fechaFormateada = fechaEstimada;
+          }
+        } else if (fechaEstimada instanceof Date) {
+          // Si es un objeto Date, formatearlo
+          fechaFormateada = fechaEstimada.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          });
+        } else if (fechaEstimada && fechaEstimada.date) {
+          // Si es un objeto Carbon/Laravel
+          fechaFormateada = new Date(fechaEstimada.date).toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          });
+        }
+        
+        selectorOrderEstimatedDate.textContent = fechaFormateada || '-';
+      } else {
+        selectorOrderEstimatedDate.textContent = '-';
+      }
+    }
+    
+    // Actualizar modal principal
+    if (trackingOrderNumber) {
+      trackingOrderNumber.textContent = orderData.numero_pedido || '-';
+    }
+    if (trackingOrderClient) {
+      trackingOrderClient.textContent = orderData.cliente || '-';
+    }
+    if (trackingOrderStatus) {
+      trackingOrderStatus.textContent = orderData.estado || '-';
+    }
+    if (trackingOrderRecibo) {
+      // Obtener el número de recibo más reciente de todo el pedido
+      let ultimoReciboGeneral = '-';
+      
+      console.log('[updateOrderInfo] Buscando recibo en orderData:', {
+        prendas_count: orderData.prendas ? orderData.prendas.length : 0,
+        prendas: orderData.prendas
+      });
+      
+      // Si tenemos datos de prendas con consecutivos, buscar el más reciente
+      if (orderData.prendas && orderData.prendas.length > 0) {
+        let reciboMasReciente = null;
+        let fechaMasReciente = null;
+        let totalRecibosEncontrados = 0;
+        
+        // Buscar entre todas las prendas el recibo más reciente por created_at
+        for (const prenda of orderData.prendas) {
+          console.log('[updateOrderInfo] Analizando prenda:', {
+            prenda_id: prenda.id,
+            prenda_nombre: prenda.nombre_prenda,
+            consecutivos: prenda.consecutivos
+          });
+          
+          // Los consecutivos vienen como objeto, no como array
+          if (prenda.consecutivos && typeof prenda.consecutivos === 'object') {
+            // Convertir el objeto de consecutivos a un array para procesar
+            const recibosArray = [];
+            for (const [tipo, numero] of Object.entries(prenda.consecutivos)) {
+              if (numero !== null && numero !== undefined) {
+                recibosArray.push({
+                  tipo_recibo: tipo,
+                  consecutivo_actual: numero,
+                  activo: 1,
+                  // Como no tenemos created_at, usamos el tipo como criterio
+                  created_at: new Date().toISOString() // Todos tendrán la misma fecha, se ordenará por tipo
+                });
+              }
+            }
+            
+            console.log('[updateOrderInfo] Recibos convertidos a array:', recibosArray);
+            
+            for (const recibo of recibosArray) {
+              console.log('[updateOrderInfo] Analizando recibo:', recibo);
+              totalRecibosEncontrados++;
+              
+              if (recibo.activo === 1) {
+                // Como no tenemos created_at real, usamos el tipo como criterio de ordenamiento
+                // COSTURA-BODEGA > COSTURA > otros (orden alfabético inverso)
+                const prioridadTipo = {
+                  'COSTURA-BODEGA': 3,
+                  'COSTURA': 2,
+                  'ESTAMPADO': 1,
+                  'BORDADO': 1,
+                  'DTF': 1,
+                  'SUBLIMADO': 1,
+                  'REFLECTIVO': 1
+                };
+                
+                const prioridadActual = prioridadTipo[recibo.tipo_recibo] || 0;
+                const prioridadMejor = reciboMasReciente ? (prioridadTipo[reciboMasReciente.tipo_recibo] || 0) : 0;
+                
+                if (!reciboMasReciente || prioridadActual > prioridadMejor) {
+                  reciboMasReciente = recibo;
+                  console.log('[updateOrderInfo] Recibo con mayor prioridad encontrado:', reciboMasReciente);
+                }
+              }
+            }
+          }
+        }
+        
+        console.log('[updateOrderInfo] Resumen de búsqueda:', {
+          total_recibos_encontrados: totalRecibosEncontrados,
+          recibo_mas_reciente: reciboMasReciente
+        });
+        
+        if (reciboMasReciente) {
+          ultimoReciboGeneral = `${reciboMasReciente.tipo_recibo} #${reciboMasReciente.consecutivo_actual}`;
+        }
+      }
+      
+      console.log('[updateOrderInfo] Resultado final para trackingOrderRecibo:', ultimoReciboGeneral);
+      trackingOrderRecibo.textContent = ultimoReciboGeneral;
+    }
+    if (selectorOrderEstimatedDate) {
+      selectorOrderEstimatedDate.style.color = '#1f2937';
+      selectorOrderEstimatedDate.style.fontWeight = '600';
+    } else {
+      selectorOrderEstimatedDate.textContent = 'No definida';
+      selectorOrderEstimatedDate.style.color = '#9ca3af';
+      selectorOrderEstimatedDate.style.fontWeight = '400';
     }
   }
 
@@ -232,12 +1263,12 @@
     }
   }
 
-  // Renderizar prendas en el overlay
+  // Renderizar tabla única de prendas en el overlay
   function renderPrendas(prendas) {
     const container = document.getElementById('trackingPrendasSelectorContainer');
     if (!container) return;
     
-    console.log('[renderPrendas] Renderizando prendas en overlay:', prendas.length);
+    console.log('[renderPrendas] Renderizando tabla de prendas:', prendas.length);
     
     container.innerHTML = '';
     
@@ -250,10 +1281,165 @@
       return;
     }
     
+    // Crear tabla única con todas las prendas
+    const tableHtml = createPrendasTable(prendas);
+    container.innerHTML = tableHtml;
+    
+    // Actualizar fecha estimada de entrega del pedido
+    updateEstimatedDeliveryDate();
+  }
+
+  // Actualizar fecha estimada de entrega del pedido
+  function updateEstimatedDeliveryDate() {
+    const fechaEstimadaElement = document.getElementById('selectorOrderEstimatedDate');
+    if (!fechaEstimadaElement || !currentOrderData) return;
+    
+    // Obtener fecha estimada del pedido (campo correcto)
+    let fechaEstimada = currentOrderData.fecha_estimada_de_entrega;
+    
+    if (fechaEstimada) {
+      // Formatear fecha datetime
+      let fechaFormateada = '';
+      if (typeof fechaEstimada === 'string') {
+        // Si es string, intentar parsear y formatear
+        try {
+          const date = new Date(fechaEstimada);
+          if (!isNaN(date.getTime())) {
+            fechaFormateada = date.toLocaleDateString('es-ES', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric'
+            });
+          } else {
+            fechaFormateada = fechaEstimada;
+          }
+        } catch (e) {
+          fechaFormateada = fechaEstimada;
+        }
+      } else if (fechaEstimada instanceof Date) {
+        // Si es un objeto Date, formatearlo
+        fechaFormateada = fechaEstimada.toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        });
+      } else if (fechaEstimada && fechaEstimada.date) {
+        // Si es un objeto Carbon/Laravel
+        fechaFormateada = new Date(fechaEstimada.date).toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        });
+      }
+      
+      fechaEstimadaElement.textContent = fechaFormateada;
+      fechaEstimadaElement.style.color = '#1f2937';
+      fechaEstimadaElement.style.fontWeight = '600';
+    } else {
+      fechaEstimadaElement.textContent = 'No definida';
+      fechaEstimadaElement.style.color = '#9ca3af';
+      fechaEstimadaElement.style.fontWeight = '400';
+    }
+  }
+
+  // Crear tabla HTML con todas las prendas
+  function createPrendasTable(prendas) {
+    let tableHtml = `
+      <div class="prendas-table-container">
+        <table class="prendas-report-table">
+          <thead>
+            <tr>
+              <th>Prenda</th>
+              <th>Cantidad</th>
+              <th>Procesos</th>
+              <th>Área</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+    
+    // Almacenar las prendas globalmente para acceso desde onclick
+    window.prendasData = prendas;
+    
     prendas.forEach((prenda, index) => {
-      const prendaCard = createPrendaCard(prenda, index);
-      container.appendChild(prendaCard);
+      // Extraer información de la prenda
+      const nombrePrenda = prenda.nombre_prenda || `Prenda ${index + 1}`;
+      const cantidad = prenda.cantidad || 0;
+      const totalProcesos = prenda.total_procesos || 0;
+      
+      // Extraer procesos
+      let procesosInfo = '-';
+      if (prenda.procesos && prenda.procesos.length > 0) {
+        procesosInfo = prenda.procesos.map(p => {
+          const tipoProceso = p.tipo_proceso;
+          const nombre = tipoProceso?.nombre || 'Proceso';
+          const estado = p.estado || 'PENDIENTE';
+          return `${nombre} (${estado})`;
+        }).join(', ');
+      }
+      
+      // Extraer área basada en el proceso más reciente
+      let area = '-';
+      if (prenda.ultimo_proceso_area) {
+        // Si ya viene el área del último proceso, usarla
+        area = prenda.ultimo_proceso_area;
+      } else if (prenda.area && prenda.area.trim() !== '') {
+        // Si tiene área asignada directamente, usarla
+        area = prenda.area;
+      }
+      
+      // Determinar estado general
+      let estadoGeneral = 'Sin procesos';
+      if (prenda.procesos && prenda.procesos.length > 0) {
+        const estados = prenda.procesos.map(p => p.estado || 'PENDIENTE');
+        if (estados.every(e => e === 'COMPLETADO')) {
+          estadoGeneral = 'Completado';
+        } else if (estados.some(e => e === 'EN EJECUCIÓN')) {
+          estadoGeneral = 'En ejecución';
+        } else {
+          estadoGeneral = 'Pendiente';
+        }
+      }
+      
+      // Badge de bodega
+      const bodegaBadge = prenda.de_bodega ? '<span class="bodega-badge">Bodega</span>' : '';
+      
+      tableHtml += `
+        <tr class="prendas-table-row" data-prenda-index="${index}">
+          <td class="prendas-table-cell prendas-name-cell">
+            <div class="prendas-name">${nombrePrenda}</div>
+            ${bodegaBadge}
+          </td>
+          <td class="prendas-table-cell">${cantidad}</td>
+          <td class="prendas-table-cell procesos-cell">
+            <div class="procesos-info">${procesosInfo}</div>
+          </td>
+          <td class="prendas-table-cell">${area}</td>
+          <td class="prendas-table-cell">
+            <span class="estado-badge estado-${estadoGeneral.toLowerCase().replace(' ', '-')}">${estadoGeneral}</span>
+          </td>
+          <td class="prendas-table-cell acciones-cell">
+            <button class="btn-ver-seguimiento" onclick="showPrendaTrackingFromTable(${index})" title="Ver seguimiento detallado">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 11l3 3L22 4"></path>
+                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+              </svg>
+              Ver
+            </button>
+          </td>
+        </tr>
+      `;
     });
+    
+    tableHtml += `
+          </tbody>
+        </table>
+      </div>
+    `;
+    
+    return tableHtml;
   }
 
   // Mostrar selector de prendas (overlay)
@@ -276,14 +1462,14 @@
     }
   };
 
-  // Crear tarjeta de prenda
+  // Crear tabla simple de prenda (estilo TNS)
   function createPrendaCard(prenda, index) {
     const card = document.createElement('div');
-    card.className = 'tracking-prenda-card';
+    card.className = 'tracking-prenda-table';
     
     // Añadir event listener con debug
     card.addEventListener('click', function(e) {
-      console.log('[createPrendaCard] Click en tarjeta de prenda:', prenda);
+      console.log('[createPrendaCard] Click en tabla de prenda:', prenda);
       e.preventDefault();
       e.stopPropagation();
       showPrendaTracking(prenda);
@@ -292,64 +1478,59 @@
     const seguimientosHtml = renderSeguimientosBadges(prenda.seguimientos || {});
     const areasHtml = renderAreasBadges(prenda.seguimientos_por_area || {});
     
-    // Construir HTML de procesos
+    // Construir HTML de procesos en formato de fila
     let procesosHtml = '';
     if (prenda.procesos && prenda.procesos.length > 0) {
-      procesosHtml = '<div class="tracking-prenda-procesos">';
+      procesosHtml = '<tr><td colspan="2"><div class="tracking-procesos-lista">';
       prenda.procesos.forEach(proceso => {
         // Acceder correctamente a los datos del tipo_proceso
         const tipoProceso = proceso.tipo_proceso;
         const procesoNombre = tipoProceso?.nombre || 'Proceso';
-        const procesoIcono = tipoProceso?.icono || 'description';
-        const procesoColor = tipoProceso?.color || '#6b7280';
+        const procesoEstado = proceso.estado || 'PENDIENTE';
         
         console.log('[createPrendaCard] Proceso:', proceso);
         console.log('[createPrendaCard] TipoProceso:', tipoProceso);
         
         procesosHtml += `
-          <div class="tracking-prenda-proceso-item">
-            <div class="tracking-proceso-icon" style="color: ${procesoColor}">
-              ${getIconSvg(procesoIcono)}
-            </div>
-            <div class="tracking-proceso-info">
-              <div class="tracking-proceso-nombre">${procesoNombre}</div>
-              <div class="tracking-proceso-estado">${proceso.estado || 'PENDIENTE'}</div>
-            </div>
+          <div class="tracking-proceso-item">
+            <span class="proceso-nombre">${procesoNombre}</span>
+            <span class="proceso-estado">${procesoEstado}</span>
           </div>
         `;
       });
-      procesosHtml += '</div>';
+      procesosHtml += '</div></td></tr>';
     }
 
     // Badge de bodega si aplica
     let bodegaBadge = '';
     if (prenda.de_bodega) {
-      bodegaBadge = '<div class="tracking-bodega-badge">Se saca de bodega</div>';
+      bodegaBadge = '<tr><td colspan="2"><div class="tracking-bodega-indicador">Se saca de bodega</div></td></tr>';
     }
 
     card.innerHTML = `
-      <div class="tracking-prenda-header">
-        <div class="tracking-prenda-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"></path>
-          </svg>
-        </div>
-        <div class="tracking-prenda-name">${prenda.nombre_prenda || `Prenda ${index + 1}`}</div>
-      </div>
-      <div class="tracking-prenda-details">
-        <div class="tracking-prenda-detail">
-          <span class="tracking-prenda-detail-label">Cantidad:</span>
-          <span class="tracking-prenda-detail-value">${prenda.cantidad || 0}</span>
-        </div>
-        <div class="tracking-prenda-detail">
-          <span class="tracking-prenda-detail-label">Procesos:</span>
-          <span class="tracking-prenda-detail-value">${prenda.total_procesos || 0}</span>
-        </div>
-      </div>
-      ${procesosHtml}
-      ${bodegaBadge}
-      ${seguimientosHtml}
-      ${areasHtml}
+      <table class="tracking-table">
+        <thead>
+          <tr>
+            <th colspan="2" class="tracking-table-header">
+              ${prenda.nombre_prenda || `Prenda ${index + 1}`}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="tracking-table-row">
+            <td class="tracking-table-label">Cantidad:</td>
+            <td class="tracking-table-value">${prenda.cantidad || 0}</td>
+          </tr>
+          <tr class="tracking-table-row">
+            <td class="tracking-table-label">Procesos:</td>
+            <td class="tracking-table-value">${prenda.total_procesos || 0}</td>
+          </tr>
+          ${procesosHtml}
+          ${bodegaBadge}
+          ${seguimientosHtml ? `<tr><td colspan="2">${seguimientosHtml}</td></tr>` : ''}
+          ${areasHtml ? `<tr><td colspan="2">${areasHtml}</td></tr>` : ''}
+        </tbody>
+      </table>
     `;
     
     return card;
@@ -398,6 +1579,29 @@
     badgesHtml += '</div>';
     return badgesHtml;
   }
+
+  // Mostrar seguimiento de una prenda específica desde la tabla
+  window.showPrendaTrackingFromTable = async function(index) {
+    try {
+      console.log('[showPrendaTrackingFromTable] INICIO - Índice:', index);
+      
+      // Obtener la prenda desde el array global
+      const prenda = window.prendasData[index];
+      if (!prenda) {
+        console.error('[showPrendaTrackingFromTable] Prenda no encontrada en índice:', index);
+        return;
+      }
+      
+      console.log('[showPrendaTrackingFromTable] Prenda encontrada:', prenda);
+      
+      // Llamar a la función original con el objeto prenda
+      await showPrendaTracking(prenda);
+      
+    } catch (error) {
+      console.error('[showPrendaTrackingFromTable] Error:', error);
+      showError('Error al cargar seguimiento de la prenda');
+    }
+  };
 
   // Mostrar seguimiento de una prenda específica
   window.showPrendaTracking = async function(prenda) {
@@ -465,7 +1669,19 @@
       
       const nombreElement = document.getElementById('trackingPrendaName');
       if (nombreElement) {
-        nombreElement.textContent = prenda.nombre_prenda || 'Prenda';
+        nombreElement.textContent = prenda.nombre_prenda || `Prenda ${prenda.id}`;
+      }
+      
+      // Actualizar el header del recibo con el número más reciente
+      const reciboHeaderElement = document.getElementById('trackingPrendaReciboHeader');
+      if (reciboHeaderElement) {
+        // Mostrar el número de recibo más reciente
+        const numeroRecibo = prenda.ultimo_recibo_numero;
+        if (numeroRecibo && numeroRecibo !== '-') {
+          reciboHeaderElement.textContent = `Recibo #${numeroRecibo}`;
+        } else {
+          reciboHeaderElement.textContent = 'Sin recibo';
+        }
       }
       
       // Determinar número de recibo desde la tabla consecutivos_recibos_pedidos
@@ -483,7 +1699,6 @@
       }
       
       // Actualizar tanto el subtítulo del header como el del timeline
-      const reciboHeaderElement = document.getElementById('trackingPrendaReciboHeader');
       if (reciboHeaderElement) {
         reciboHeaderElement.textContent = numeroRecibo;
       }
@@ -993,6 +2208,23 @@
     if (!dateString) return null;
     
     try {
+      // Si el formato es d/m/Y, convertirlo a Y-m-d para el constructor Date
+      if (typeof dateString === 'string' && dateString.includes('/')) {
+        const parts = dateString.split('/');
+        if (parts.length === 3) {
+          const [day, month, year] = parts;
+          // Crear fecha en formato Y-m-d
+          const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+          const date = new Date(isoDate);
+          return date.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          });
+        }
+      }
+      
+      // Para formatos estándar (ISO, etc.)
       const date = new Date(dateString);
       return date.toLocaleDateString('es-ES', {
         day: '2-digit',
@@ -1000,6 +2232,7 @@
         year: 'numeric'
       });
     } catch (error) {
+      console.warn('[formatDate] Error formateando fecha:', dateString, error);
       return dateString;
     }
   }
@@ -1079,13 +2312,33 @@
       // Limpiar formulario
       limpiarFormularioProceso();
 
-      // Recargar seguimientos de la prenda
-      await loadPrendasWithTracking(currentOrderData.id);
-      
-      // Actualizar vista actual
-      if (currentPrendaData) {
-        const prendaActualizada = result.prenda || currentPrendaData;
-        renderPrendaTrackingTimeline(prendaActualizada);
+      // Cerrar modal de agregar proceso
+      const modal = document.getElementById('addProcesoModal');
+      if (modal) {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+      }
+
+      // Actualizar datos de la prenda con la respuesta del backend
+      if (result.data && result.data.prenda) {
+        currentPrendaData = result.data.prenda;
+        console.log('[handleAgregarProceso] Prenda actualizada desde backend:', currentPrendaData);
+        
+        // Renderizar timeline con los datos actualizados
+        renderPrendaTrackingTimeline(currentPrendaData);
+      } else {
+        // Si no vienen datos de la prenda, recargar desde el endpoint
+        console.log('[handleAgregarProceso] Recargando datos desde endpoint...');
+        await loadPrendasWithTracking(currentOrderData.id);
+        
+        // Buscar la prenda actualizada en los datos cargados
+        if (window.prendasData && window.prendasData.length > 0) {
+          const prendaActualizada = window.prendasData.find(p => p.id == currentPrendaData.id);
+          if (prendaActualizada) {
+            currentPrendaData = prendaActualizada;
+            renderPrendaTrackingTimeline(currentPrendaData);
+          }
+        }
       }
 
       // Mostrar mensaje de éxito

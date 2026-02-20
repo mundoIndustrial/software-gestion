@@ -51,6 +51,12 @@ class MaterialesRepository
             $query->where('recibido', $filtros['recibido']);
         }
 
+        // Filtro para excluir pedidos sin número de pedido
+        if (isset($filtros['tiene_numero_pedido']) && $filtros['tiene_numero_pedido'] === true) {
+            $query->whereNotNull('numero_pedido')
+                  ->where('numero_pedido', '!=', '');
+        }
+
         if (!empty($filtros['search'])) {
             $query->where(function($q) use ($filtros) {
                 $q->where('nombre_material', 'LIKE', '%' . $filtros['search'] . '%')

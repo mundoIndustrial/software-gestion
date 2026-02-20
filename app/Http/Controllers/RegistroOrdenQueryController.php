@@ -1624,7 +1624,7 @@ class RegistroOrdenQueryController extends Controller
                 
                 // Obtener procesos de seguimiento por área
                 $procesosSeguimiento = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $prenda->id)
-                    ->where('numero_pedido', $pedido)
+                    ->where('numero_pedido', $pedidoModel->numero_pedido)  // Usar el número de pedido correcto
                     ->orderBy('created_at', 'asc')
                     ->get();
                 
@@ -1656,6 +1656,51 @@ class RegistroOrdenQueryController extends Controller
                     ];
                 }
                 
+                // Obtener el área y número de recibo del proceso más reciente
+                $ultimoProcesoArea = '-';
+                $ultimoReciboNumero = '-';
+                if (!empty($procesosSeguimiento)) {
+                    // Ordenar por fecha de creación descendente para obtener el más reciente
+                    $procesosOrdenados = $procesosSeguimiento->sortByDesc('created_at');
+                    $ultimoProceso = $procesosOrdenados->first();
+                    if ($ultimoProceso) {
+                        $ultimoProcesoArea = $ultimoProceso->proceso;
+                        
+                        // Obtener el número de recibo más reciente para esta prenda
+                        \Log::info('[getSeguimientoPorPrenda] Buscando consecutivos para prenda', [
+                            'prenda_id' => $prenda->id,
+                            'pedido_id' => $pedidoId
+                        ]);
+                        
+                        $consecutivosQuery = \App\Models\ConsecutivosRecibosPedidos::where('prenda_id', $prenda->id)
+                            ->where('pedido_produccion_id', $pedidoId)
+                            ->where('activo', 1);
+                        
+                        $consecutivosCount = $consecutivosQuery->count();
+                        \Log::info('[getSeguimientoPorPrenda] Consecutivos encontrados', [
+                            'prenda_id' => $prenda->id,
+                            'pedido_id' => $pedidoId,
+                            'total_encontrados' => $consecutivosCount
+                        ]);
+                        
+                        $ultimoRecibo = $consecutivosQuery->orderBy('created_at', 'desc')->first();
+                        
+                        if ($ultimoRecibo) {
+                            $ultimoReciboNumero = $ultimoRecibo->consecutivo_actual;
+                            \Log::info('[getSeguimientoPorPrenda] Último recibo encontrado', [
+                                'prenda_id' => $prenda->id,
+                                'consecutivo_actual' => $ultimoRecibo->consecutivo_actual,
+                                'tipo_recibo' => $ultimoRecibo->tipo_recibo
+                            ]);
+                        } else {
+                            \Log::warning('[getSeguimientoPorPrenda] No se encontró último recibo', [
+                                'prenda_id' => $prenda->id,
+                                'pedido_id' => $pedidoId
+                            ]);
+                        }
+                    }
+                }
+
                 // Construir array de cantidades por talla
                 $cantidadTalla = [];
                 foreach ($prenda->tallas as $talla) {
@@ -1694,6 +1739,8 @@ class RegistroOrdenQueryController extends Controller
                     'consecutivos' => $consecutivos->toArray(), // Agregar consecutivos para el modal
                     'total_procesos' => $prenda->procesos->count(),
                     'total_variantes' => $prenda->variantes->count(),
+                    'ultimo_proceso_area' => $ultimoProcesoArea, // Área del proceso más reciente
+                    'ultimo_recibo_numero' => $ultimoReciboNumero, // Número de recibo más reciente
                 ];
             }
             

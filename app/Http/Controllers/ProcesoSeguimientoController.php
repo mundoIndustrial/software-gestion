@@ -101,12 +101,28 @@ class ProcesoSeguimientoController extends Controller
             // Cargar relaciones para la respuesta
             $proceso->load(['prenda', 'pedido']);
 
+            // Obtener datos completos de la prenda con seguimientos actualizados
+            $registroController = new \App\Http\Controllers\RegistroOrdenQueryController();
+            $seguimientoResponse = $registroController->getSeguimientoPorPrenda($request->pedido_produccion_id);
+            $seguimientoData = json_decode($seguimientoResponse->getContent(), true);
+            
+            // Buscar la prenda actualizada en los datos de seguimiento
+            $prendaActualizada = null;
+            if (isset($seguimientoData['prendas']) && is_array($seguimientoData['prendas'])) {
+                foreach ($seguimientoData['prendas'] as $prenda) {
+                    if ($prenda['id'] == $request->prenda_id) {
+                        $prendaActualizada = $prenda;
+                        break;
+                    }
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Proceso de seguimiento guardado correctamente',
                 'data' => [
                     'proceso' => $proceso,
-                    'prenda' => $proceso->prenda,
+                    'prenda' => $prendaActualizada,
                     'pedido' => $proceso->pedido
                 ]
             ]);
