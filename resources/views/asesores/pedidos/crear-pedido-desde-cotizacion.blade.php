@@ -114,15 +114,9 @@
                                 <div id="cotizacion_dropdown_editable" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #d1d5db; border-top: none; border-radius: 0 0 8px 8px; max-height: 300px; overflow-y: auto; display: none; z-index: 1000; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
                                 </div>
                             </div>
-                            <!-- Botón para agregar prenda -->
-                            <button type="button" id="btn-agregar-prenda" class="btn btn-primary" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2); white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(59, 130, 246, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(59, 130, 246, 0.2)'">
+                            <button type="button" id="btn-agregar-universal" class="btn btn-primary" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.9rem; transition: all 0.3s; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2); white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(59, 130, 246, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(59, 130, 246, 0.2)'">
                                 <span class="material-symbols-rounded" style="font-size: 1.1rem; margin-right: 0.5rem; vertical-align: middle;">add_circle</span>
-                                Agregar Prenda
-                            </button>
-                            <!-- Botón para agregar EPP -->
-                            <button type="button" id="btn-agregar-epp" class="btn btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2); white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.2)'">
-                                <span class="material-symbols-rounded" style="font-size: 1.1rem; margin-right: 0.5rem; vertical-align: middle;">health_and_safety</span>
-                                Agregar EPP
+                                Agregar
                             </button>
                         </div>
                         <div id="cotizacion_selected_editable" style="margin-top: 0.75rem; padding: 1rem; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-left: 4px solid #0066cc; border-radius: 4px; display: none; box-shadow: 0 2px 4px rgba(0, 102, 204, 0.1);">
@@ -167,6 +161,49 @@
             </a>
         </div>
     </form>
+</div>
+
+<div id="modal-agregar-universal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 12000; align-items: center; justify-content: center; padding: 18px;">
+    <div style="width: 100%; max-width: 820px; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 24px 48px rgba(0,0,0,0.25);">
+        <div style="padding: 1.25rem 1.5rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <div>
+                <div style="font-weight: 800; font-size: 1.1rem;">Agregar ítems al pedido</div>
+                <div id="modal-universal-subtitle" style="opacity: 0.9; font-size: 0.85rem;"></div>
+            </div>
+            <button type="button" id="btn-cerrar-modal-universal" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.35); color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 800;">
+                Cerrar
+            </button>
+        </div>
+
+        <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; gap: 10px;">
+            <button type="button" id="tab-universal-prenda" style="flex: 1; padding: 10px 12px; border-radius: 10px; border: 2px solid #1d4ed8; background: #1d4ed8; color: white; font-weight: 800; cursor: pointer;">
+                Prenda
+            </button>
+            <button type="button" id="tab-universal-epp" style="flex: 1; padding: 10px 12px; border-radius: 10px; border: 2px solid #e5e7eb; background: white; color: #111827; font-weight: 800; cursor: pointer;">
+                EPP
+            </button>
+        </div>
+
+        <div id="panel-universal-prenda" style="padding: 1.5rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                <div style="font-weight: 700; color: #111827;">Seleccionar prenda</div>
+                <button type="button" id="btn-abrir-selector-prendas" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; border: none; padding: 10px 14px; border-radius: 10px; cursor: pointer; font-weight: 800;">
+                    Abrir
+                </button>
+            </div>
+            <div style="margin-top: 10px; color: #6b7280; font-size: 0.9rem;">
+                Se abrirá el selector de prendas y el flujo se mantiene igual.
+            </div>
+        </div>
+
+        <div id="panel-universal-epp" style="padding: 1.5rem; display: none;">
+            <div style="font-weight: 700; color: #111827; margin-bottom: 10px;">Seleccionar EPP</div>
+            <div id="lista-universal-epp" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            <div id="mensaje-universal-epp" style="padding: 1rem; text-align: center; border: 2px dashed #d1d5db; border-radius: 10px; background: #f9fafb; color: #6b7280; display: none;">
+                No hay ítems EPP en esta cotización.
+            </div>
+        </div>
+    </div>
 </div>
 
 @include('asesores.pedidos.modals.modal-seleccionar-prendas')
@@ -463,75 +500,240 @@
         }
         
         // Manejar clic en el botón de agregar prenda
-        const btnAgregarPrenda = document.getElementById('btn-agregar-prenda');
-        if (btnAgregarPrenda) {
-            btnAgregarPrenda.addEventListener('click', function() {
-                console.log('🟢 [btn-agregar-prenda] Clic detectado');
-                
+        const modalUniversal = document.getElementById('modal-agregar-universal');
+        const btnAbrirUniversal = document.getElementById('btn-agregar-universal');
+        const btnCerrarUniversal = document.getElementById('btn-cerrar-modal-universal');
+        const subtitleUniversal = document.getElementById('modal-universal-subtitle');
+        const tabPrenda = document.getElementById('tab-universal-prenda');
+        const tabEpp = document.getElementById('tab-universal-epp');
+        const panelPrenda = document.getElementById('panel-universal-prenda');
+        const panelEpp = document.getElementById('panel-universal-epp');
+        const btnAbrirSelectorPrendas = document.getElementById('btn-abrir-selector-prendas');
+        const listaUniversalEpp = document.getElementById('lista-universal-epp');
+        const msgUniversalEpp = document.getElementById('mensaje-universal-epp');
+
+        function setTabUniversal(tab) {
+            if (!tabPrenda || !tabEpp || !panelPrenda || !panelEpp) return;
+
+            if (tab === 'epp') {
+                tabEpp.style.background = '#059669';
+                tabEpp.style.borderColor = '#059669';
+                tabEpp.style.color = 'white';
+
+                tabPrenda.style.background = 'white';
+                tabPrenda.style.borderColor = '#e5e7eb';
+                tabPrenda.style.color = '#111827';
+
+                panelEpp.style.display = 'block';
+                panelPrenda.style.display = 'none';
+            } else {
+                tabPrenda.style.background = '#1d4ed8';
+                tabPrenda.style.borderColor = '#1d4ed8';
+                tabPrenda.style.color = 'white';
+
+                tabEpp.style.background = 'white';
+                tabEpp.style.borderColor = '#e5e7eb';
+                tabEpp.style.color = '#111827';
+
+                panelPrenda.style.display = 'block';
+                panelEpp.style.display = 'none';
+            }
+        }
+
+        function abrirModalUniversal() {
+            if (!verificarCotizacionSeleccionada()) {
+                mostrarModalCotizacionRequerida();
+                return;
+            }
+            if (!modalUniversal) return;
+
+            const cot = window.cotizacionSeleccionadaActual || window.cotizacionSeleccionada;
+            const numero = cot?.numero_cotizacion || cot?.numero || '';
+            const cliente = cot?.cliente || '';
+            if (subtitleUniversal) {
+                subtitleUniversal.textContent = (numero || cliente) ? `Cotización: ${numero} - ${cliente}` : '';
+            }
+
+            setTabUniversal('prenda');
+
+            modalUniversal.style.display = 'flex';
+        }
+
+        function cerrarModalUniversal() {
+            if (!modalUniversal) return;
+            modalUniversal.style.display = 'none';
+        }
+
+        async function cargarListaEppEnModal() {
+            const cot = window.cotizacionSeleccionadaActual || window.cotizacionSeleccionada;
+            const cotId = cot?.id;
+            if (!cotId) return;
+
+            if (listaUniversalEpp) listaUniversalEpp.innerHTML = '';
+            if (msgUniversalEpp) msgUniversalEpp.style.display = 'none';
+
+            const idsYaAgregados = new Set(
+                (Array.isArray(window.itemsPedido) ? window.itemsPedido : [])
+                    .filter(x => String(x?.tipo || '').toLowerCase() === 'epp')
+                    .map(x => String(x?.id))
+            );
+
+            try {
+                const res = await fetch(`/asesores/pedidos-editable/cotizaciones/${cotId}/epp-items`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.success) {
+                    if (msgUniversalEpp) {
+                        msgUniversalEpp.textContent = data.message || 'No se pudieron cargar los ítems EPP.';
+                        msgUniversalEpp.style.display = 'block';
+                    }
+                    return;
+                }
+
+                const items = Array.isArray(data.items) ? data.items : [];
+                if (items.length === 0) {
+                    if (msgUniversalEpp) {
+                        msgUniversalEpp.textContent = 'No hay ítems EPP en esta cotización.';
+                        msgUniversalEpp.style.display = 'block';
+                    }
+                    return;
+                }
+
+                items.forEach((it) => {
+                    const row = document.createElement('div');
+                    const estaAgregado = idsYaAgregados.has(String(it.id));
+                    row.style.cssText = `display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px; border:2px solid ${estaAgregado ? '#10b981' : '#e5e7eb'}; border-radius:12px; background:${estaAgregado ? '#ecfdf5' : '#fff'};`;
+
+                    const left = document.createElement('div');
+                    left.style.cssText = 'display:flex; flex-direction:column; gap:4px;';
+                    const nombre = document.createElement('div');
+                    nombre.style.cssText = 'font-weight:800; color:#111827;';
+                    nombre.textContent = it.nombre || 'Sin nombre';
+                    const meta = document.createElement('div');
+                    meta.style.cssText = 'font-size:0.85rem; color:#6b7280;';
+                    meta.textContent = `Cantidad: ${it.cantidad || 1}${it.observaciones ? ` | ${it.observaciones}` : ''}`;
+                    left.appendChild(nombre);
+                    left.appendChild(meta);
+
+                    const badge = document.createElement('div');
+                    badge.style.cssText = `margin-top:6px; align-self:flex-start; display:${estaAgregado ? 'inline-flex' : 'none'}; padding:2px 10px; border-radius:999px; font-size:0.75rem; font-weight:900; background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; width:max-content;`;
+                    badge.textContent = 'Agregado';
+                    left.appendChild(badge);
+
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.textContent = estaAgregado ? 'Agregado' : 'Agregar';
+                    btn.disabled = !!estaAgregado;
+                    btn.style.cssText = estaAgregado
+                        ? 'background:#e5e7eb; color:#374151; border:none; padding:10px 14px; border-radius:10px; cursor:not-allowed; font-weight:900; white-space:nowrap;'
+                        : 'background:linear-gradient(135deg,#10b981 0%,#059669 100%); color:white; border:none; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:800; white-space:nowrap;';
+                    btn.addEventListener('click', function () {
+                        if (!window.itemsPedido) window.itemsPedido = [];
+                        const exists = window.itemsPedido.some(x => String(x?.id) === String(it.id));
+                        if (exists) {
+                            if (window.Swal) {
+                                Swal.fire({ icon: 'info', title: 'Ya agregado', text: 'Este EPP ya está en Ítems del Pedido' });
+                            }
+                            return;
+                        }
+
+                        const nuevo = {
+                            id: it.id,
+                            pedidoEppId: it.id,
+                            tipo: 'epp',
+                            nombre: it.nombre,
+                            nombre_epp: it.nombre,
+                            cantidad: it.cantidad || 1,
+                            observaciones: it.observaciones || null,
+                            imagenes: Array.isArray(it.imagenes) ? it.imagenes : [],
+                            valor_unitario: null,
+                            total: null,
+                        };
+                        window.itemsPedido.push(nuevo);
+
+                        const msgSinItems = document.getElementById('mensaje-sin-items');
+                        if (msgSinItems) msgSinItems.style.display = 'none';
+
+                        if (window.eppItemManager && typeof window.eppItemManager.crearItem === 'function') {
+                            window.eppItemManager.crearItem(
+                                nuevo.id,
+                                nuevo.nombre,
+                                null,
+                                nuevo.cantidad,
+                                nuevo.observaciones,
+                                nuevo.imagenes,
+                                nuevo.id,
+                                null,
+                                null
+                            );
+                        }
+
+                        // Ayuda visual en el modal
+                        idsYaAgregados.add(String(it.id));
+                        row.style.borderColor = '#10b981';
+                        row.style.background = '#ecfdf5';
+                        badge.style.display = 'inline-flex';
+                        btn.textContent = 'Agregado';
+                        btn.disabled = true;
+                        btn.style.background = '#e5e7eb';
+                        btn.style.color = '#374151';
+                        btn.style.cursor = 'not-allowed';
+                        btn.style.fontWeight = '900';
+                    });
+
+                    row.appendChild(left);
+                    row.appendChild(btn);
+                    if (listaUniversalEpp) listaUniversalEpp.appendChild(row);
+                });
+            } catch (e) {
+                if (msgUniversalEpp) {
+                    msgUniversalEpp.textContent = 'Error cargando los ítems EPP.';
+                    msgUniversalEpp.style.display = 'block';
+                }
+            }
+        }
+
+        if (btnAbrirUniversal) {
+            btnAbrirUniversal.addEventListener('click', abrirModalUniversal);
+        }
+
+        if (btnCerrarUniversal) {
+            btnCerrarUniversal.addEventListener('click', cerrarModalUniversal);
+        }
+
+        if (modalUniversal) {
+            modalUniversal.addEventListener('click', function (e) {
+                if (e.target === modalUniversal) cerrarModalUniversal();
+            });
+        }
+
+        if (tabPrenda) {
+            tabPrenda.addEventListener('click', function () {
+                setTabUniversal('prenda');
+            });
+        }
+
+        if (tabEpp) {
+            tabEpp.addEventListener('click', async function () {
+                setTabUniversal('epp');
+                await cargarListaEppEnModal();
+            });
+        }
+
+        if (btnAbrirSelectorPrendas) {
+            btnAbrirSelectorPrendas.addEventListener('click', function () {
                 if (!verificarCotizacionSeleccionada()) {
-                    console.log(' [btn-agregar-prenda] No hay cotización seleccionada');
                     mostrarModalCotizacionRequerida();
                     return;
                 }
-                
-                console.log(' [btn-agregar-prenda] Cotización seleccionada, abriendo selector de prendas');
-                if (typeof window.abrirSelectorPrendasCotizacion === 'function') {
-                    // Obtener la cotización seleccionada (usar la variable correcta)
-                    const cotizacionSeleccionada = window.cotizacionSeleccionadaActual || window.cotizacionSeleccionada;
-                    console.log(' [btn-agregar-prenda] Variable cotizacionSeleccionada:', cotizacionSeleccionada);
-                    
-                    if (cotizacionSeleccionada && cotizacionSeleccionada.id) {
-                        console.log(' [btn-agregar-prenda] ID de cotización encontrado:', cotizacionSeleccionada.id);
-                        window.abrirSelectorPrendasCotizacion(cotizacionSeleccionada);
-                    } else {
-                        console.error(' [btn-agregar-prenda] No hay cotización seleccionada o no tiene ID');
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: 'No se ha seleccionado ninguna cotización válida.',
-                            confirmButtonText: 'Aceptar',
-                            confirmButtonColor: '#ef4444'
-                        });
-                    }
-                } else {
-                    console.error(' [btn-agregar-prenda] La función abrirSelectorPrendasCotizacion no está disponible');
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'No se pudo abrir el selector de prendas. Intenta recargar la página.',
-                        confirmButtonText: 'Aceptar',
-                        confirmButtonColor: '#ef4444'
-                    });
+                const cotizacionSeleccionada = window.cotizacionSeleccionadaActual || window.cotizacionSeleccionada;
+                if (cotizacionSeleccionada && cotizacionSeleccionada.id && typeof window.abrirSelectorPrendasCotizacion === 'function') {
+                    cerrarModalUniversal();
+                    window.abrirSelectorPrendasCotizacion(cotizacionSeleccionada);
                 }
             });
-            console.log(' [btn-agregar-prenda] Event listener agregado correctamente');
-        } else {
-            console.warn(' [btn-agregar-prenda] Botón no encontrado');
-        }
-        
-        // Manejar clic en el botón de agregar EPP
-        const btnAgregarEPP = document.getElementById('btn-agregar-epp');
-        if (btnAgregarEPP) {
-            btnAgregarEPP.addEventListener('click', function() {
-                console.log('🟢 [btn-agregar-epp] Clic detectado');
-                
-                console.log(' [btn-agregar-epp] Abriendo modal EPP (no requiere cotización)');
-                if (typeof window.abrirModalAgregarEPP === 'function') {
-                    window.abrirModalAgregarEPP();
-                } else {
-                    console.error(' [btn-agregar-epp] La función abrirModalAgregarEPP no está disponible');
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'No se pudo abrir el modal de EPP. Intenta recargar la página.',
-                        confirmButtonText: 'Aceptar',
-                        confirmButtonColor: '#ef4444'
-                    });
-                }
-            });
-            console.log(' [btn-agregar-epp] Event listener agregado correctamente');
-        } else {
-            console.warn(' [btn-agregar-epp] Botón no encontrado');
         }
     });
 </script>

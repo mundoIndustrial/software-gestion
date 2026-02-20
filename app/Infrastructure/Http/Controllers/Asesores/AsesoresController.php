@@ -237,6 +237,70 @@ class AsesoresController extends Controller
         }
     }
 
+    public function editCotizacion(int $id, Request $request)
+    {
+        try {
+            $tipoQuery = $request->query('tipo');
+            if ($tipoQuery !== 'EPP') {
+                abort(404);
+            }
+
+            $cotizacion = \App\Models\Cotizacion::findOrFail($id);
+            if ($cotizacion->asesor_id !== \Auth::id()) {
+                abort(403, 'No tienes permiso para editar esta cotización');
+            }
+
+            $eppCot = \DB::table('epp_cotizacion')->where('cotizacion_id', $cotizacion->id)->first();
+            $items = \DB::table('epp_items_cot')->where('cotizacion_id', $cotizacion->id)->orderBy('id')->get();
+            $valores = \DB::table('epp_valor_unitario')
+                ->whereIn('epp_item_id', $items->pluck('id')->all())
+                ->get()
+                ->keyBy('epp_item_id');
+            $imagenes = \DB::table('epp_img_cot')
+                ->whereIn('epp_item_id', $items->pluck('id')->all())
+                ->orderBy('id')
+                ->get()
+                ->groupBy('epp_item_id');
+
+            $itemsUi = $items->map(function ($it) use ($valores, $imagenes) {
+                $vu = $valores[$it->id] ?? null;
+                $imgs = $imagenes->get($it->id, collect());
+
+                return [
+                    'tipo' => 'epp',
+                    'id' => (int)$it->id,
+                    'nombre' => $it->nombre,
+                    'nombre_epp' => $it->nombre,
+                    'cantidad' => (int)($it->cantidad ?? 1),
+                    'observaciones' => $it->observaciones,
+                    'valor_unitario' => $vu ? $vu->valor_unitario : null,
+                    'total' => ($vu && $it->cantidad) ? ((float)$vu->valor_unitario * (int)$it->cantidad) : null,
+                    'imagenes' => $imgs->map(function ($row) {
+                        if (!$row || !$row->ruta) return null;
+                        return \Storage::disk('public')->url($row->ruta);
+                    })->filter()->values()->all(),
+                ];
+            })->values()->all();
+
+            $iva = null;
+            if ($eppCot && isset($eppCot->observaciones_generales)) {
+                $obs = $eppCot->observaciones_generales;
+                if (is_string($obs)) {
+                    $decoded = json_decode($obs, true);
+                    if (is_array($decoded) && array_key_exists('valor_iva', $decoded)) {
+                        $iva = $decoded['valor_iva'];
+                    }
+                }
+            }
+
+            $tipo = 'EPP';
+            return view('asesores.cotizaciones.epp.create', compact('tipo', 'cotizacion', 'eppCot', 'itemsUi', 'iva'));
+        } catch (\Exception $e) {
+            \Log::error('[AsesoresController.editCotizacion] Error', ['error' => $e->getMessage()]);
+            abort(500, $e->getMessage());
+        }
+    }
+
     /**
      * Guardar nuevo pedido - DELEGADO A SERVICIOS
      */

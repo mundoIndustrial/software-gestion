@@ -6,6 +6,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:web', 'role:asesor,admin,supervisor_pedidos'])->group(function () {
     Route::prefix('pedidos-editable')->name('pedidos-editable.')->group(function () {
+        // Cotizaciones: cargar items EPP
+        Route::get('/cotizaciones/{cotizacion}/epp-items', [CrearPedidoEditableController::class, 'obtenerItemsEppCotizacion'])
+            ->name('cotizaciones.epp-items');
+
         // Gestión de ítems
         Route::post('/items/agregar', [CrearPedidoEditableController::class, 'agregarItem'])->name('agregar-item');
         Route::post('/items/eliminar', [CrearPedidoEditableController::class, 'eliminarItem'])->name('eliminar-item');

@@ -544,6 +544,14 @@ final class CotizacionController extends Controller
         try {
             $cotizacion = \App\Models\Cotizacion::findOrFail($id);
 
+            $codigoTipo = null;
+            try {
+                $tipoCot = \App\Models\TipoCotizacion::find($cotizacion->tipo_cotizacion_id);
+                $codigoTipo = $tipoCot ? strtoupper(trim((string)$tipoCot->codigo)) : null;
+            } catch (\Exception $e) {
+                $codigoTipo = null;
+            }
+
             // Verificar que el borrador sea del asesor autenticado
             if ($cotizacion->asesor_id !== auth()->id()) {
                 abort(403, 'No tienes permiso para editar este borrador');
@@ -552,6 +560,10 @@ final class CotizacionController extends Controller
             // Verificar que sea un borrador
             if (!$cotizacion->es_borrador) {
                 abort(400, 'Esta cotización no es un borrador');
+            }
+
+            if ($codigoTipo === 'EPP') {
+                return redirect("/asesores/cotizaciones/{$id}/edit?tipo=EPP");
             }
 
             // Mapeo de tipos a rutas de redirección

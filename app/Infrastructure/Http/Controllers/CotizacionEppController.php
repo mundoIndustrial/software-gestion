@@ -29,7 +29,9 @@ class CotizacionEppController extends Controller
             try {
                 $action = $request->input('action') ?? $request->input('accion');
                 $esBorrador = $action === 'borrador';
-                $estado = $esBorrador ? 'BORRADOR' : 'ENVIADA_CONTADOR';
+                $estado = $esBorrador ? 'BORRADOR' : 'APROBADO_PARA_PEDIDO';
+
+                $cotizacionIdEdicion = $request->input('cotizacion_id');
 
                 $clienteId = $request->input('cliente_id');
                 $nombreCliente = $request->input('cliente');
@@ -43,7 +45,8 @@ class CotizacionEppController extends Controller
                 }
 
                 $numeroCotizacion = null;
-                if (!$esBorrador) {
+                // Si es envío y es una edición de borrador que aún no tiene número, se genera.
+                if (!$esBorrador && !$cotizacionIdEdicion) {
                     $usuarioId = Auth::id();
                     $numeroCotizacion = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId);
                 }
@@ -58,17 +61,45 @@ class CotizacionEppController extends Controller
                     $tipoVenta = null;
                 }
 
-                $cotizacion = Cotizacion::create([
-                    'asesor_id' => Auth::id(),
-                    'cliente_id' => $clienteId,
-                    'numero_cotizacion' => $numeroCotizacion,
-                    'tipo_cotizacion_id' => $tipoCotizacionId,
-                    'tipo_venta' => $tipoVenta,
-                    'es_borrador' => $esBorrador,
-                    'estado' => $estado,
-                    'fecha_envio' => !$esBorrador ? now() : null,
-                    'especificaciones' => json_encode($request->input('especificaciones', [])),
-                ]);
+                if ($cotizacionIdEdicion) {
+                    $cotizacion = Cotizacion::query()
+                        ->where('id', $cotizacionIdEdicion)
+                        ->where('asesor_id', Auth::id())
+                        ->firstOrFail();
+
+                    if ((int)$cotizacion->tipo_cotizacion_id !== (int)$tipoCotizacionId) {
+                        throw new \RuntimeException('La cotización a editar no es de tipo EPP');
+                    }
+
+                    if (!$esBorrador && !$cotizacion->numero_cotizacion) {
+                        $usuarioId = Auth::id();
+                        $numeroCotizacion = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId);
+                    } else {
+                        $numeroCotizacion = $cotizacion->numero_cotizacion;
+                    }
+
+                    $cotizacion->update([
+                        'cliente_id' => $clienteId,
+                        'numero_cotizacion' => $numeroCotizacion,
+                        'tipo_venta' => $tipoVenta,
+                        'es_borrador' => $esBorrador,
+                        'estado' => $estado,
+                        'fecha_envio' => !$esBorrador ? now() : null,
+                        'especificaciones' => json_encode($request->input('especificaciones', [])),
+                    ]);
+                } else {
+                    $cotizacion = Cotizacion::create([
+                        'asesor_id' => Auth::id(),
+                        'cliente_id' => $clienteId,
+                        'numero_cotizacion' => $numeroCotizacion,
+                        'tipo_cotizacion_id' => $tipoCotizacionId,
+                        'tipo_venta' => $tipoVenta,
+                        'es_borrador' => $esBorrador,
+                        'estado' => $estado,
+                        'fecha_envio' => !$esBorrador ? now() : null,
+                        'especificaciones' => json_encode($request->input('especificaciones', [])),
+                    ]);
+                }
 
                 $observacionesGenerales = $request->input('observaciones_generales', []);
                 if (is_string($observacionesGenerales)) {
@@ -78,13 +109,15 @@ class CotizacionEppController extends Controller
                     $observacionesGenerales = [];
                 }
 
-                DB::table('epp_cotizacion')->insert([
-                    'cotizacion_id' => $cotizacion->id,
-                    'tipo_venta' => $tipoVenta,
-                    'observaciones_generales' => json_encode($observacionesGenerales),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
+                DB::table('epp_cotizacion')->updateOrInsert(
+                    ['cotizacion_id' => $cotizacion->id],
+                    [
+                        'tipo_venta' => $tipoVenta,
+                        'observaciones_generales' => json_encode($observacionesGenerales),
+                        'updated_at' => now(),
+                        'created_at' => now(),
+                    ]
+                );
 
                 $items = $request->input('items', []);
                 if (is_string($items)) {
@@ -94,15 +127,48 @@ class CotizacionEppController extends Controller
                     $items = [];
                 }
 
+                $keptItemIds = [];
+
                 foreach ($items as $idx => $item) {
-                    $itemId = DB::table('epp_items_cot')->insertGetId([
-                        'cotizacion_id' => $cotizacion->id,
-                        'nombre' => $item['nombre'] ?? ($item['nombre_completo'] ?? 'Sin nombre'),
-                        'cantidad' => (int)($item['cantidad'] ?? 1),
-                        'observaciones' => $item['observaciones'] ?? null,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+                    $payloadItemId = $item['id'] ?? null;
+                    $payloadItemId = is_numeric($payloadItemId) ? (int)$payloadItemId : null;
+
+                    $nombre = $item['nombre'] ?? ($item['nombre_completo'] ?? 'Sin nombre');
+                    $cantidad = (int)($item['cantidad'] ?? 1);
+                    $observ = $item['observaciones'] ?? null;
+
+                    $itemId = null;
+                    if ($cotizacionIdEdicion && $payloadItemId) {
+                        $exists = DB::table('epp_items_cot')
+                            ->where('id', $payloadItemId)
+                            ->where('cotizacion_id', $cotizacion->id)
+                            ->exists();
+
+                        if ($exists) {
+                            DB::table('epp_items_cot')
+                                ->where('id', $payloadItemId)
+                                ->update([
+                                    'nombre' => $nombre,
+                                    'cantidad' => $cantidad,
+                                    'observaciones' => $observ,
+                                    'updated_at' => now(),
+                                ]);
+                            $itemId = $payloadItemId;
+                        }
+                    }
+
+                    if (!$itemId) {
+                        $itemId = DB::table('epp_items_cot')->insertGetId([
+                            'cotizacion_id' => $cotizacion->id,
+                            'nombre' => $nombre,
+                            'cantidad' => $cantidad,
+                            'observaciones' => $observ,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+
+                    $keptItemIds[] = $itemId;
 
                     $valorUnitario = $item['valor_unitario'] ?? null;
                     if ($valorUnitario !== null && $valorUnitario !== '') {
@@ -110,17 +176,58 @@ class CotizacionEppController extends Controller
                     }
 
                     if ($valorUnitario !== null) {
-                        DB::table('epp_valor_unitario')->insert([
-                            'epp_item_id' => $itemId,
-                            'valor_unitario' => $valorUnitario,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
+                        DB::table('epp_valor_unitario')->updateOrInsert(
+                            ['epp_item_id' => $itemId],
+                            [
+                                'valor_unitario' => $valorUnitario,
+                                'updated_at' => now(),
+                                'created_at' => now(),
+                            ]
+                        );
+                    } else {
+                        DB::table('epp_valor_unitario')->where('epp_item_id', $itemId)->delete();
                     }
 
-                    // Imágenes: se envían en FormData como files en el key `items[{idx}][imagenes][]`
+                    // Sincronizar imágenes en edición: borrar las que ya no están (y sus archivos)
+                    if ($cotizacionIdEdicion) {
+                        $keep = $item['imagenes_keep'] ?? [];
+                        if (is_string($keep)) {
+                            $keep = json_decode($keep, true) ?? [];
+                        }
+                        if (!is_array($keep)) {
+                            $keep = [];
+                        }
+                        $clear = (bool)($item['clear_imagenes'] ?? false);
+
+                        if ($clear || count($keep) > 0) {
+                            $existentes = DB::table('epp_img_cot')
+                                ->where('epp_item_id', $itemId)
+                                ->get(['id', 'ruta']);
+
+                            foreach ($existentes as $row) {
+                                $ruta = $row->ruta ?? null;
+                                if (!$ruta) continue;
+                                $debeBorrar = $clear ? true : !in_array($ruta, $keep, true);
+                                if ($debeBorrar) {
+                                    Storage::disk('public')->delete($ruta);
+                                    DB::table('epp_img_cot')->where('id', $row->id)->delete();
+                                }
+                            }
+                        }
+                    }
+
+                    // Imágenes: SOLO reemplazar si llegan archivos nuevos.
                     $imagenes = $request->file("items.$idx.imagenes", []);
-                    if (is_array($imagenes)) {
+                    if (is_array($imagenes) && count($imagenes) > 0) {
+                        // Si llegan archivos nuevos, reemplazar las imágenes actuales (y borrar archivos antiguos)
+                        $existentes = DB::table('epp_img_cot')->where('epp_item_id', $itemId)->get(['id', 'ruta']);
+                        foreach ($existentes as $row) {
+                            if ($row?->ruta) {
+                                Storage::disk('public')->delete($row->ruta);
+                            }
+                        }
+                        DB::table('epp_img_cot')->where('epp_item_id', $itemId)->delete();
+
                         foreach ($imagenes as $imgFile) {
                             if (!$imgFile || !$imgFile->isValid()) {
                                 continue;
@@ -146,6 +253,27 @@ class CotizacionEppController extends Controller
                     }
                 }
 
+                // En edición: eliminar items que ya no vienen (con sus imágenes/valores)
+                if ($cotizacionIdEdicion) {
+                    $idsToDelete = DB::table('epp_items_cot')
+                        ->where('cotizacion_id', $cotizacion->id)
+                        ->when(count($keptItemIds) > 0, fn($q) => $q->whereNotIn('id', $keptItemIds))
+                        ->pluck('id');
+
+                    if ($idsToDelete->isNotEmpty()) {
+                        // Borrar archivos físicos antes de borrar registros
+                        $rutas = DB::table('epp_img_cot')->whereIn('epp_item_id', $idsToDelete)->pluck('ruta');
+                        foreach ($rutas as $ruta) {
+                            if ($ruta) {
+                                Storage::disk('public')->delete($ruta);
+                            }
+                        }
+                        DB::table('epp_img_cot')->whereIn('epp_item_id', $idsToDelete)->delete();
+                        DB::table('epp_valor_unitario')->whereIn('epp_item_id', $idsToDelete)->delete();
+                        DB::table('epp_items_cot')->whereIn('id', $idsToDelete)->delete();
+                    }
+                }
+
                 if (!$esBorrador) {
                     \App\Jobs\ProcesarEnvioCotizacionJob::dispatch(
                         $cotizacion->id,
@@ -165,7 +293,7 @@ class CotizacionEppController extends Controller
                             'tab' => $esBorrador ? 'borradores' : 'cotizaciones',
                             'highlight' => $cotizacion->id,
                         ])
-                ], 201);
+                ], $cotizacionIdEdicion ? 200 : 201);
             } catch (\Exception $e) {
                 Log::error('Error al guardar cotización EPP', [
                     'error' => $e->getMessage(),

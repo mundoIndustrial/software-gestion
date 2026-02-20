@@ -176,6 +176,14 @@ class EppItemManager {
 
         console.log('[EppItemManager]  Actualizando item:', id, datos);
 
+        // Actualizar nombre
+        if (datos.nombre !== undefined && datos.nombre !== null) {
+            const h4 = item.querySelector('h4');
+            if (h4) {
+                h4.textContent = String(datos.nombre);
+            }
+        }
+
         // Actualizar cantidad
         if (datos.cantidad !== undefined) {
             const detallesDiv = item.querySelector('.epp-detalles') || item.querySelector('div[style*="grid-template-columns"]');
@@ -283,11 +291,22 @@ class EppItemManager {
                 } else {
                     const titleEl = item.querySelector('h4');
                     if (titleEl) {
+                        // Insertar la miniatura en la misma fila (a la derecha), no debajo del título
+                        const filaFlex = titleEl.closest('div[style*="display: flex"]');
                         const nuevoWrapper = document.createElement('div');
                         nuevoWrapper.className = 'epp-miniatura-wrapper';
                         nuevoWrapper.style.cssText = 'width: 135px; height: 140px; margin-left: 0.25rem; border-radius: 14px; overflow: hidden; border: 1px solid #e5e7eb; background: #f3f4f6; flex-shrink: 0;';
                         nuevoWrapper.innerHTML = `<img class="epp-miniatura" src="${nuevaMiniatura}" alt="${titleEl.textContent || 'EPP'}" style="width: 100%; height: 100%; object-fit: cover; display: block; cursor: pointer;" ondblclick="event.preventDefault(); event.stopPropagation(); if (window.mostrarImagenProcesoGrande) window.mostrarImagenProcesoGrande('${nuevaMiniatura}');" />`;
-                        titleEl.insertAdjacentElement('afterend', nuevoWrapper);
+
+                        // Intentar encontrar el contenedor correcto (la fila con gap grande) para respetar el layout
+                        const filaConGap = item.querySelector('div[style*="display: flex"][style*="gap"]');
+                        if (filaConGap && filaConGap.appendChild) {
+                            filaConGap.appendChild(nuevoWrapper);
+                        } else if (filaFlex && filaFlex.appendChild) {
+                            filaFlex.appendChild(nuevoWrapper);
+                        } else {
+                            titleEl.insertAdjacentElement('afterend', nuevoWrapper);
+                        }
                     }
                 }
             } else {

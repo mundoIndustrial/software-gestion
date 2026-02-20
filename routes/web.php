@@ -1785,6 +1785,7 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho'])->pr
     // Pedidos - VISTAS (AsesoresController)
     Route::get('/pedidos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'index'])->name('pedidos.index');
     Route::get('/cotizaciones/create', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'create'])->name('pedidos.create');
+    Route::get('/cotizaciones/{id}/edit', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'editCotizacion'])->name('cotizaciones.edit');
     Route::get('/pedidos/next-pedido', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'getNextPedido'])->name('next-pedido');
     Route::get('/pedidos/{pedido}', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'show'])->name('pedidos.show');
     Route::get('/pedidos/{pedido}/edit', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'edit'])->name('pedidos.edit');
@@ -2466,6 +2467,10 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('ase
         ->name('eliminar-item');
     Route::get('items', [App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'obtenerItems'])
         ->name('obtener-items');
+
+    // Cotizaciones: cargar items EPP (para "Crear desde cotización")
+    Route::get('cotizaciones/{cotizacion}/epp-items', [App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'obtenerItemsEppCotizacion'])
+        ->name('cotizaciones.epp-items');
     
     // Validación y creación
     Route::post('validar', [App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'validarPedido'])

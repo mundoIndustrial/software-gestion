@@ -356,6 +356,81 @@ class CrearPedidoEditableController extends Controller
     }
 
     /**
+     * Obtener items EPP de una cotización (para crear pedido desde cotización)
+     *
+     * Retorna SOLO datos para renderizar en "Ítems del Pedido":
+     * - nombre
+     * - cantidad
+     * - observaciones
+     * - imagenes
+     *
+     * NO incluye: totales, valor unitario, iva.
+     */
+    public function obtenerItemsEppCotizacion(Request $request, Cotizacion $cotizacion): JsonResponse
+    {
+        try {
+            if ((int) $cotizacion->asesor_id !== (int) Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No autorizado',
+                ], 403);
+            }
+
+            $items = DB::table('epp_items_cot')
+                ->where('cotizacion_id', $cotizacion->id)
+                ->orderBy('id')
+                ->get(['id', 'nombre', 'cantidad', 'observaciones']);
+
+            $itemIds = $items->pluck('id')->all();
+            $imgs = [];
+            if (!empty($itemIds)) {
+                $imgs = DB::table('epp_img_cot')
+                    ->whereIn('epp_item_id', $itemIds)
+                    ->orderBy('id')
+                    ->get(['epp_item_id', 'ruta'])
+                    ->groupBy('epp_item_id')
+                    ->map(function ($rows) {
+                        return $rows->pluck('ruta')->filter()->values()->all();
+                    })
+                    ->toArray();
+            }
+
+            $itemsUi = $items->map(function ($it) use ($imgs) {
+                $rutas = $imgs[$it->id] ?? [];
+                $imagenes = array_values(array_filter(array_map(function ($ruta) {
+                    if (!$ruta) return null;
+                    return url('/storage/' . ltrim($ruta, '/'));
+                }, $rutas)));
+
+                return [
+                    'id' => (int) $it->id,
+                    'tipo' => 'epp',
+                    'nombre' => $it->nombre,
+                    'cantidad' => (int) ($it->cantidad ?? 1),
+                    'observaciones' => $it->observaciones,
+                    'imagenes' => $imagenes,
+                ];
+            })->values();
+
+            return response()->json([
+                'success' => true,
+                'cotizacion_id' => (int) $cotizacion->id,
+                'items' => $itemsUi,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('[CrearPedidoEditableController] Error obtenerItemsEppCotizacion', [
+                'cotizacion_id' => $cotizacion->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener items EPP: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Eliminar item del carrito
      * 
      * @param Request $request

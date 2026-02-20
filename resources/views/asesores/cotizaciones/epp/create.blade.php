@@ -64,6 +64,12 @@
 <div class="page-wrapper">
     <script>
         window.__EPP_COTIZACION_MODE__ = true;
+        window.__EPP_COTIZACION_EDIT__ = {{ isset($cotizacion) ? 'true' : 'false' }};
+        window.__EPP_COTIZACION_ID__ = {{ isset($cotizacion) ? (int)$cotizacion->id : 'null' }};
+        window.__EPP_COTIZACION_ITEMS__ = {!! json_encode($itemsUi ?? []) !!};
+        window.__EPP_COTIZACION_TIPO_VENTA__ = {!! json_encode($eppCot->tipo_venta ?? ($cotizacion->tipo_venta ?? null)) !!};
+        window.__EPP_COTIZACION_CLIENTE__ = {!! json_encode($cotizacion->cliente?->nombre ?? null) !!};
+        window.__EPP_COTIZACION_IVA__ = {!! json_encode($iva ?? null) !!};
     </script>
     <div style="background: linear-gradient(135deg, #1e40af 0%, #0ea5e9 100%); border-radius: 12px; padding: 1.25rem 1.75rem; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
         <div style="display: grid; grid-template-columns: auto 1fr; gap: 1.5rem; align-items: start;">
@@ -135,10 +141,21 @@
             <div class="form-section">
                 <h2 style="margin: 0 0 1rem 0;">
                     <span>2</span>
-                    Observaciones generales
+                    Totales de la cotización
                 </h2>
 
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; align-items: end;">
+                    <div style="grid-column: span 1;">
+                        <label style="display: block; color: #111827; font-size: 0.75rem; font-weight: 800; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.4px;">Subtotal</label>
+                        <input
+                            type="text"
+                            id="subtotal-epp"
+                            value="0"
+                            readonly
+                            style="width: 100%; background: #f9fafb; border: 2px solid #e5e7eb; padding: 0.6rem 0.75rem; border-radius: 8px; font-weight: 800; color: #111827; font-size: 0.95rem;"
+                        >
+                    </div>
+
                     <div style="grid-column: span 1;">
                         <label for="valor-iva-epp" style="display: block; color: #111827; font-size: 0.75rem; font-weight: 800; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.4px;">IVA</label>
                         <input
@@ -146,8 +163,19 @@
                             id="valor-iva-epp"
                             min="0"
                             step="1"
-                            placeholder="Esperando para digitar el valor"
-                            style="width: 100%; background: white; border: 2px solid #e5e7eb; padding: 0.6rem 0.75rem; border-radius: 8px; font-weight: 700; color: #111827; font-size: 0.9rem; transition: all 0.2s;"
+                            placeholder="0"
+                            style="width: 100%; background: white; border: 2px solid #e5e7eb; padding: 0.6rem 0.75rem; border-radius: 8px; font-weight: 800; color: #111827; font-size: 0.95rem; transition: all 0.2s;"
+                        >
+                    </div>
+
+                    <div style="grid-column: span 1;">
+                        <label style="display: block; color: #111827; font-size: 0.75rem; font-weight: 800; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.4px;">Total</label>
+                        <input
+                            type="text"
+                            id="total-epp"
+                            value="0"
+                            readonly
+                            style="width: 100%; background: #ecfeff; border: 2px solid #06b6d4; padding: 0.6rem 0.75rem; border-radius: 8px; font-weight: 900; color: #0e7490; font-size: 1rem;"
                         >
                     </div>
                 </div>
@@ -194,6 +222,106 @@
         const emptySelector = '#prendas-container-editable .empty-state';
         const listSelector = '#lista-items-pedido';
 
+        const formatearNumero = (num) => {
+            if (!Number.isFinite(num)) return '0';
+            if (Number.isInteger(num)) return String(num);
+            const s = num.toFixed(2);
+            return s.replace(/\.00$/, '').replace(/(\.[0-9])0$/, '$1');
+        };
+
+        function calcularSubtotalEpp() {
+            const itemsPedido = Array.isArray(window.itemsPedido) ? window.itemsPedido : [];
+            let epps = itemsPedido.filter(i => (i?.tipo || '').toLowerCase() === 'epp');
+            if (epps.length === 0 && itemsPedido.length > 0) {
+                epps = itemsPedido;
+            }
+
+            let subtotal = 0;
+            for (const it of epps) {
+                const cantidad = Number(it?.cantidad || 0);
+                const vu = (it?.valor_unitario !== undefined && it?.valor_unitario !== null && String(it.valor_unitario).trim() !== '' && !isNaN(Number(it.valor_unitario)))
+                    ? Number(it.valor_unitario)
+                    : null;
+                const total = (it?.total !== undefined && it?.total !== null && String(it.total).trim() !== '' && !isNaN(Number(it.total)))
+                    ? Number(it.total)
+                    : null;
+
+                if (total !== null) {
+                    subtotal += total;
+                } else if (vu !== null && cantidad > 0) {
+                    subtotal += (vu * cantidad);
+                }
+            }
+
+            return subtotal;
+        }
+
+        function syncTotales() {
+            const subtotalEl = document.getElementById('subtotal-epp');
+            const ivaEl = document.getElementById('valor-iva-epp');
+            const totalEl = document.getElementById('total-epp');
+            if (!subtotalEl || !ivaEl || !totalEl) return;
+
+            const subtotal = calcularSubtotalEpp();
+            const ivaRaw = ivaEl.value;
+            const iva = (ivaRaw !== undefined && ivaRaw !== null && String(ivaRaw).trim() !== '' && !isNaN(Number(ivaRaw)))
+                ? Number(ivaRaw)
+                : 0;
+            const total = subtotal + iva;
+
+            subtotalEl.value = formatearNumero(subtotal);
+            totalEl.value = formatearNumero(total);
+        }
+
+        try {
+            const clienteEl = document.getElementById('header-cliente');
+            const tipoVentaEl = document.getElementById('header-tipo-venta');
+            const ivaEl = document.getElementById('valor-iva-epp');
+
+            if (clienteEl && window.__EPP_COTIZACION_CLIENTE__) {
+                clienteEl.value = window.__EPP_COTIZACION_CLIENTE__;
+            }
+
+            if (tipoVentaEl && window.__EPP_COTIZACION_TIPO_VENTA__) {
+                tipoVentaEl.value = window.__EPP_COTIZACION_TIPO_VENTA__;
+            }
+
+            if (ivaEl && window.__EPP_COTIZACION_IVA__ !== null && window.__EPP_COTIZACION_IVA__ !== undefined) {
+                ivaEl.value = window.__EPP_COTIZACION_IVA__;
+            }
+        } catch (e) {
+            // noop
+        }
+
+        try {
+            const items = Array.isArray(window.__EPP_COTIZACION_ITEMS__) ? window.__EPP_COTIZACION_ITEMS__ : [];
+            if (!window.itemsPedido) window.itemsPedido = [];
+
+            if (items.length > 0) {
+                window.itemsPedido = items;
+                if (window.eppItemManager && typeof window.eppItemManager.crearItem === 'function') {
+                    const lista = document.getElementById('lista-items-pedido');
+                    if (lista) lista.innerHTML = '';
+
+                    items.forEach((it) => {
+                        window.eppItemManager.crearItem(
+                            it.id,
+                            it.nombre_epp || it.nombre || 'Sin nombre',
+                            it.categoria || null,
+                            it.cantidad || 1,
+                            it.observaciones || null,
+                            it.imagenes || [],
+                            it.id,
+                            it.valor_unitario ?? null,
+                            it.total ?? null
+                        );
+                    });
+                }
+            }
+        } catch (e) {
+            // noop
+        }
+
         async function enviarCotizacionEpp(accion) {
             const btnEnviar = document.getElementById('btnEnviarCotizacionEpp');
             const btnBorrador = document.getElementById('btnGuardarBorradorEpp');
@@ -237,7 +365,10 @@
             }
 
             const itemsPedido = Array.isArray(window.itemsPedido) ? window.itemsPedido : [];
-            const epps = itemsPedido.filter(i => (i?.tipo || '').toLowerCase() === 'epp');
+            let epps = itemsPedido.filter(i => (i?.tipo || '').toLowerCase() === 'epp');
+            if (epps.length === 0 && itemsPedido.length > 0) {
+                epps = itemsPedido;
+            }
 
             if (!cliente) {
                 if (window.Swal) {
@@ -266,6 +397,10 @@
             formData.append('cliente', cliente);
             formData.append('tipo_venta', tipoVenta);
 
+            if (window.__EPP_COTIZACION_EDIT__ && window.__EPP_COTIZACION_ID__) {
+                formData.append('cotizacion_id', String(window.__EPP_COTIZACION_ID__));
+            }
+
             const ivaValor = (ivaRaw !== undefined && ivaRaw !== null && String(ivaRaw).trim() !== '' && !isNaN(Number(ivaRaw)))
                 ? Number(ivaRaw)
                 : null;
@@ -277,6 +412,25 @@
 
             // Items (sin archivos, esos van aparte)
             const itemsPayload = epps.map((epp) => ({
+                imagenes_keep: (() => {
+                    const imgs = Array.isArray(epp.imagenes) ? epp.imagenes : [];
+                    const keep = [];
+                    for (const im of imgs) {
+                        const src = (typeof im === 'string')
+                            ? im
+                            : (im?.previewUrl || im?.url || im?.ruta_web || im?.ruta_webp || im?.ruta_original || null);
+                        if (!src || typeof src !== 'string') continue;
+                        // Convertir URL pública /storage/... a ruta relativa en disk('public')
+                        const idx = src.indexOf('/storage/');
+                        if (idx !== -1) {
+                            const rel = src.substring(idx + '/storage/'.length);
+                            if (rel) keep.push(rel);
+                        }
+                    }
+                    return keep;
+                })(),
+                clear_imagenes: !(Array.isArray(epp.imagenes) && epp.imagenes.length > 0),
+                id: epp.id || epp.pedidoEppId || null,
                 nombre: epp.nombre_epp || epp.nombre_completo || epp.nombre || 'Sin nombre',
                 cantidad: epp.cantidad || 1,
                 valor_unitario: (epp.valor_unitario !== undefined && epp.valor_unitario !== null && String(epp.valor_unitario).trim() !== '')
@@ -359,20 +513,48 @@
             empty.style.display = hasItems ? 'none' : 'flex';
         }
 
+        // Actualizar totales cuando cambie el IVA
+        try {
+            const ivaEl = document.getElementById('valor-iva-epp');
+            if (ivaEl) {
+                ivaEl.addEventListener('input', syncTotales);
+            }
+        } catch (e) {
+            // noop
+        }
+
         if (typeof window.finalizarAgregarEPP === 'function' && !window.__eppCotizacionFinalizarWrapped) {
             const original = window.finalizarAgregarEPP;
             window.finalizarAgregarEPP = async function (...args) {
                 const result = await original.apply(this, args);
                 syncEmptyState();
+                syncTotales();
                 return result;
             };
             window.__eppCotizacionFinalizarWrapped = true;
         }
 
+        if (typeof window.guardarEdicionEPP === 'function' && !window.__eppCotizacionGuardarEdicionWrapped) {
+            const original = window.guardarEdicionEPP;
+            window.guardarEdicionEPP = function (...args) {
+                const result = original.apply(this, args);
+                syncEmptyState();
+                syncTotales();
+                return result;
+            };
+            window.__eppCotizacionGuardarEdicionWrapped = true;
+        }
+
         const list = document.querySelector(listSelector);
         if (list && typeof MutationObserver !== 'undefined') {
             const observer = new MutationObserver(syncEmptyState);
-            observer.observe(list, { childList: true, subtree: true });
+            observer.observe(list, { childList: true, subtree: true, characterData: true });
+        }
+
+        const listTot = document.querySelector(listSelector);
+        if (listTot && typeof MutationObserver !== 'undefined') {
+            const observerTot = new MutationObserver(syncTotales);
+            observerTot.observe(listTot, { childList: true, subtree: true, characterData: true });
         }
 
         const btnEnviar = document.getElementById('btnEnviarCotizacionEpp');
@@ -390,6 +572,7 @@
         }
 
         syncEmptyState();
+        syncTotales();
     });
 </script>
 @endpush

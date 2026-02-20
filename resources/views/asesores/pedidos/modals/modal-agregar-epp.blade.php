@@ -276,6 +276,26 @@ function abrirModalAgregarEPP() {
     const modal = document.getElementById('modalAgregarEPP');
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
+
+    // Si hay un eppEnEdicion pero ya no existe (fue eliminado), resetear para abrir limpio
+    try {
+        if (eppEnEdicion) {
+            const editId = eppEnEdicion?.epp_id || eppEnEdicion?.id || null;
+            const existsInState = Array.isArray(window.itemsPedido)
+                ? window.itemsPedido.some(it => String(it?.id ?? it?.epp_id ?? it?.pedidoEppId ?? '') === String(editId))
+                : false;
+            const existsInDom = editId !== null
+                ? !!document.querySelector(`.item-epp[data-item-id="${editId}"]`)
+                : false;
+
+            if (!existsInState || !existsInDom) {
+                eppEnEdicion = null;
+            }
+        }
+    } catch (e) {
+        // noop
+        eppEnEdicion = null;
+    }
     
     // Solo resetear si no estamos en modo edición
     if (!eppEnEdicion) {
@@ -313,6 +333,10 @@ function cerrarModalAgregarEPP() {
     modal.style.display = 'none';
     document.body.style.overflow = 'auto';
     eppAgregadosList = []; // Limpiar lista al cerrar
+
+    // Siempre limpiar estado de edición y formulario al cerrar/cancelar
+    eppEnEdicion = null;
+    resetearModalAgregarEPP();
 }
 
 function resetearModalAgregarEPP() {
@@ -959,6 +983,62 @@ function editarEPPAgregado(eppData) {
     if (cantidadInput) cantidadInput.value = eppData.cantidad || 1;
     if (obsInput) obsInput.value = eppData.observaciones || '';
     console.log('✏️ [editarEPPAgregado] Valores cargados - cantidad:', eppData.cantidad, 'observaciones:', eppData.observaciones);
+
+    // Precargar valor unitario / total (modo cotización)
+    const modoCotizacion = !!window.__EPP_COTIZACION_MODE__;
+    const vuInput = document.getElementById('valorUnitarioEPP');
+    const totInput = document.getElementById('totalEPP');
+    const vuCont = document.getElementById('valorUnitarioTotalContainer');
+    if (modoCotizacion && vuCont) {
+        vuCont.style.display = 'block';
+    }
+    if (modoCotizacion && vuInput) {
+        vuInput.disabled = false;
+        vuInput.value = (eppData.valor_unitario !== undefined && eppData.valor_unitario !== null && String(eppData.valor_unitario).trim() !== '')
+            ? String(eppData.valor_unitario)
+            : '';
+    }
+    if (modoCotizacion && totInput) {
+        totInput.value = (eppData.total !== undefined && eppData.total !== null && String(eppData.total).trim() !== '')
+            ? String(eppData.total)
+            : '0';
+    }
+    if (modoCotizacion) {
+        actualizarTotalEPP();
+    }
+
+    // Precargar imágenes en el modal
+    try {
+        const imgs = Array.isArray(eppData.imagenes) ? eppData.imagenes : [];
+        window.fotosEPP = [];
+        const contenedor = document.getElementById('contenedorFotosEPP');
+        if (contenedor) {
+            const elementosFoto = contenedor.querySelectorAll('.foto-epp-item');
+            elementosFoto.forEach(el => el.remove());
+        }
+        const mensajeDragDrop = document.getElementById('mensajeDragDrop');
+        if (mensajeDragDrop) {
+            mensajeDragDrop.style.display = imgs.length > 0 ? 'none' : 'flex';
+        }
+        imgs.forEach((img, idx) => {
+            const url = (typeof img === 'string')
+                ? img
+                : (img.previewUrl || img.url || img.ruta_web || img.ruta_webp || img.ruta_original || null);
+            if (!url) return;
+            const imagen = {
+                id: img?.id || `edit-${Date.now()}-${idx}`,
+                nombre: img?.nombre || `imagen-${idx + 1}`,
+                previewUrl: url,
+                url: url,
+            };
+            window.fotosEPP.push(imagen);
+            if (typeof mostrarVistaPreviaFoto === 'function') {
+                mostrarVistaPreviaFoto(imagen);
+            }
+        });
+    } catch (e) {
+        // noop
+    }
     
     // Mostrar los campos del formulario
     const formulario = document.getElementById('formularioAgregarEPP');
@@ -1020,6 +1100,18 @@ function guardarEdicionEPP() {
     const cantidad = document.getElementById('cantidadEPP').value;
     const observaciones = document.getElementById('observacionesEPP').value;
 
+    const modoCotizacion = !!window.__EPP_COTIZACION_MODE__;
+    const vuRaw = modoCotizacion ? document.getElementById('valorUnitarioEPP')?.value : null;
+    const vu = (vuRaw !== undefined && vuRaw !== null && String(vuRaw).trim() !== '' && !isNaN(Number(vuRaw)))
+        ? Number(vuRaw)
+        : null;
+    const totalRaw = modoCotizacion ? document.getElementById('totalEPP')?.value : null;
+    const total = (totalRaw !== undefined && totalRaw !== null && String(totalRaw).trim() !== '' && !isNaN(Number(totalRaw)))
+        ? Number(totalRaw)
+        : null;
+
+    const imagenes = Array.isArray(window.fotosEPP) ? window.fotosEPP : [];
+
     if (!cantidad || cantidad <= 0) {
         Swal.fire({
             icon: 'warning',
@@ -1044,38 +1136,36 @@ function guardarEdicionEPP() {
     });
 
     // Actualizar en window.itemsPedido
-    const index = window.itemsPedido.findIndex(item => item.epp_id === eppEnEdicion.epp_id || item.epp_id === eppEnEdicion.id);
+    const targetId = eppEnEdicion.epp_id || eppEnEdicion.id;
+    const index = window.itemsPedido.findIndex(item =>
+        (item.id !== undefined && item.id !== null && String(item.id) === String(targetId))
+        || (item.epp_id !== undefined && item.epp_id !== null && String(item.epp_id) === String(targetId))
+    );
     if (index !== -1) {
         window.itemsPedido[index].nombre_epp = nombre;
+        window.itemsPedido[index].nombre = nombre;
         window.itemsPedido[index].cantidad = parseInt(cantidad);
         window.itemsPedido[index].observaciones = observaciones || '-';
+        if (modoCotizacion) {
+            window.itemsPedido[index].valor_unitario = vu;
+            window.itemsPedido[index].total = total;
+        }
+        window.itemsPedido[index].imagenes = imagenes;
         console.log(' [guardarEdicionEPP] EPP actualizado en window.itemsPedido:', window.itemsPedido[index]);
     } else {
         console.warn(' [guardarEdicionEPP] No se encontró EPP en window.itemsPedido para actualizar');
     }
 
-    // Actualizar visualmente en la tarjeta
-    const tarjeta = document.querySelector(`.item-epp[data-item-id="${eppEnEdicion.epp_id || eppEnEdicion.id}"]`);
-    if (tarjeta) {
-        // Buscar el h4 que contiene el nombre y actualizarlo
-        const titulo = tarjeta.querySelector('h4');
-        if (titulo) {
-            titulo.textContent = nombre;
-            console.log(' [guardarEdicionEPP] Nombre actualizado en tarjeta a:', nombre);
-        }
-        // Buscar los párrafos que contienen cantidad y observaciones
-        const paragrafos = tarjeta.querySelectorAll('p');
-        // El segundo párrafo de los detalles contiene la cantidad
-        if (paragrafos.length > 1) {
-            paragrafos[1].textContent = cantidad;  // Actualizar cantidad
-            console.log(' [guardarEdicionEPP] Cantidad actualizada en tarjeta de', cantidad);
-        }
-        if (paragrafos.length > 3) {
-            paragrafos[3].textContent = observaciones || '-';  // Actualizar observaciones
-            console.log(' [guardarEdicionEPP] Observaciones actualizadas en tarjeta');
-        }
-    } else {
-        console.warn(' [guardarEdicionEPP] Tarjeta no encontrada en DOM');
+    // Actualizar visualmente en la tarjeta (usar itemManager para actualizar todos los campos)
+    if (window.eppItemManager && typeof window.eppItemManager.actualizarItem === 'function') {
+        window.eppItemManager.actualizarItem(targetId, {
+            nombre,
+            cantidad: parseInt(cantidad),
+            observaciones: observaciones || '-',
+            imagenes,
+            valor_unitario: modoCotizacion ? vu : undefined,
+            total: modoCotizacion ? total : undefined,
+        });
     }
 
     // Limpiar referencia

@@ -176,6 +176,28 @@ window.EppMenuHandlers = {
             }
             console.log('🟪 [_extraerDatosDelDOM] Observaciones encontradas:', observaciones);
 
+            // Buscar valor unitario / total si existen en el DOM
+            let valor_unitario = null;
+            let total = null;
+            try {
+                const ps = item.querySelectorAll('p');
+                for (let i = 0; i < ps.length; i++) {
+                    const t = (ps[i]?.textContent || '').toLowerCase();
+                    if (t.includes('valor unitario')) {
+                        const next = ps[i + 1]?.textContent;
+                        const n = next !== undefined && next !== null ? Number(String(next).replace(/[^0-9.\-]/g, '')) : NaN;
+                        if (!isNaN(n)) valor_unitario = n;
+                    }
+                    if (t === 'total' || t.includes('total')) {
+                        const next = ps[i + 1]?.textContent;
+                        const n = next !== undefined && next !== null ? Number(String(next).replace(/[^0-9.\-]/g, '')) : NaN;
+                        if (!isNaN(n)) total = n;
+                    }
+                }
+            } catch (e) {
+                // noop
+            }
+
             // IMPORTANTE: Priorizar imágenes del stateManager (si existen = cambios pendientes)
             // Si no hay en stateManager, extraer del DOM (imágenes originales)
             let imagenes = [];
@@ -223,6 +245,8 @@ window.EppMenuHandlers = {
                 cantidad,
                 observaciones,
                 imagenes: imagenes,
+                valor_unitario,
+                total,
                 esEdicion: true  // Indicador de que es edición
             };
             console.log('🟪 [_extraerDatosDelDOM] Datos finales:', datos);
@@ -307,6 +331,8 @@ window.EppMenuHandlers = {
             observaciones: eppData.observaciones || '',
             imagenes: eppData.imagenes || [],
             imagen: eppData.imagen || null,
+            valor_unitario: (eppData.valor_unitario !== undefined ? eppData.valor_unitario : (eppData.valorUnitario !== undefined ? eppData.valorUnitario : null)),
+            total: (eppData.total !== undefined ? eppData.total : null),
         };
         console.log(' [_procederAEditarEPP] Datos transformados:', eppDataTransformado);
         
@@ -393,6 +419,36 @@ window.EppMenuHandlers = {
 
         // Eliminar del DOM
         item.remove();
+
+        // Si el item eliminado era el que estaba en edición en el modal, limpiar edición y cerrar modal
+        try {
+            if (window.eppEnEdicion) {
+                const editId = window.eppEnEdicion?.epp_id || window.eppEnEdicion?.id || null;
+                if (editId !== null && String(editId) === String(itemId)) {
+                    window.eppEnEdicion = null;
+                    if (typeof window.cerrarModalAgregarEPP === 'function') {
+                        window.cerrarModalAgregarEPP();
+                    }
+                }
+            }
+        } catch (e) {
+            // noop
+        }
+
+        // Eliminar del estado (para que al guardar borrador se elimine en BD)
+        try {
+            if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
+                const before = window.itemsPedido.length;
+                window.itemsPedido = window.itemsPedido.filter(it => {
+                    const id = it?.id ?? it?.epp_id ?? it?.pedidoEppId ?? null;
+                    return String(id) !== String(itemId);
+                });
+                const after = window.itemsPedido.length;
+                console.log('[EppMenuHandlers] itemsPedido actualizado tras eliminar. Antes:', before, 'Después:', after);
+            }
+        } catch (e) {
+            // noop
+        }
 
         // Actualizar contador si existe
         if (window.eppItemManager) {
