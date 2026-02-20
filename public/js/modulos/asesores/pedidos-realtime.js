@@ -181,12 +181,14 @@ class PedidosRealtimeRefresh {
                     .listen('.pedido.actualizado', (event) => {
                         if (this.debug) console.log('🔄 [PedidosRealtime] Pedido actualizado recibido (cartera):', event?.pedido?.id);
 
-                        const numero = event?.pedido?.numero_pedido || '';
-                        const estado = event?.pedido?.estado || '';
-                        this.showRealtimeToast(
-                            `Pedido ${numero ? '#' + numero : ''} actualizado${estado ? ' (' + estado + ')' : ''}`,
-                            'info'
-                        );
+                        // Notificación desactivada para evitar mostrar "Pedido #X actualizado"
+                        // const numero = event?.pedido?.numero_pedido || '';
+                        // const estado = event?.pedido?.estado || '';
+                        // this.showRealtimeToast(
+                        //     `Pedido ${numero ? '#' + numero : ''} actualizado${estado ? ' (' + estado + ')' : ''}`,
+                        //     'info'
+                        // );
+                        
                         if (typeof window.cargarPedidos === 'function') {
                             window.cargarPedidos();
                         }
