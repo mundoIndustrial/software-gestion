@@ -65,18 +65,30 @@
 }
 
 .table tbody tr.dias-mayor-15 {
-    background: linear-gradient(90deg, #fef3c7 0%, #fde68a 100%) !important;
-    border-left: 4px solid #f59e0b;
+    background: #d4d4d4;
+    border-left: 4px solid #6b7280;
+}
+
+.table tbody tr.dias-mayor-15:hover {
+    background: #c4c7ce;
 }
 
 .table tbody tr.dias-5-9 {
-    background: linear-gradient(90deg, #f0f9ff 0%, #e0f2fe 100%) !important;
-    border-left: 4px solid #3b82f6;
+    background: #fef08a;
+    border-left: 4px solid #ca8a04;
+}
+
+.table tbody tr.dias-5-9:hover {
+    background: #fde047;
 }
 
 .table tbody tr.dias-10-15 {
-    background: linear-gradient(90deg, #ecfdf5 0%, #d1fae5 100%) !important;
-    border-left: 4px solid #10b981;
+    background: #fecaca;
+    border-left: 4px solid #dc2626;
+}
+
+.table tbody tr.dias-10-15:hover {
+    background: #fca5a5;
 }
 
 .table td {

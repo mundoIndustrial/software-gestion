@@ -21,7 +21,11 @@
         <tbody id="tablaRecibosBody">
             @if($recibos->count() > 0)
                 @foreach($recibos as $recibo)
-                    <tr class="@if($recibo['pedido_info']['estado'] == 'PENDIENTE_SUPERVISOR') dias-mayor-15 @else dias-5-9 @endif" data-orden-id="{{ $recibo['id'] }}">
+                    <tr class="@if(isset($recibo['dias_calculados']) && $recibo['dias_calculados'] > 0)
+                        @if($recibo['dias_calculados'] > 15) dias-mayor-15
+                        @elseif($recibo['dias_calculados'] >= 10) dias-10-15
+                        @else dias-5-9 @endif
+                    @endif" data-orden-id="{{ $recibo['id'] }}">
                         <!-- Acciones -->
                         <td class="acciones-column" style="text-align: center; position: relative;">
                             <button class="action-view-btn" title="Ver detalles" data-orden-id="{{ $recibo['id'] }}">
@@ -77,9 +81,21 @@
                             </div>
                         </td>
                         
-                        <!-- Total de días (No aplica para recibos) -->
+                        <!-- Total de días -->
                         <td style="text-align: center;">
-                            <span class="text-muted">-</span>
+                            @if(isset($recibo['dias_calculados']))
+                                @if($recibo['dias_calculados'] == 0)
+                                    <span class="badge bg-secondary" style="font-weight: 600;">
+                                        {{ $recibo['dias_calculados'] }} días
+                                    </span>
+                                @else
+                                    <span class="badge @if($recibo['dias_calculados'] > 15) bg-danger @elseif($recibo['dias_calculados'] >= 10) bg-warning @else bg-success @endif" style="font-weight: 600;">
+                                        {{ $recibo['dias_calculados'] }} días
+                                    </span>
+                                @endif
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
                         </td>
                         
                         <!-- N° Recibo -->

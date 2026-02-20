@@ -1209,9 +1209,35 @@ class RegistroOrdenController extends Controller
                 ->orderBy('consecutivo_actual', 'desc')
                 ->get();
 
+            // Obtener festivos para cálculo de días
+            $currentYear = now()->year;
+            $nextYear = now()->addYear()->year;
+            $festivos = array_merge(
+                \App\Services\FestivosColombiaService::obtenerFestivos($currentYear),
+                \App\Services\FestivosColombiaService::obtenerFestivos($nextYear)
+            );
+
             // Obtener información adicional de pedidos y prendas
-            $recibosConInfo = $recibosCostura->map(function ($recibo) {
+            $recibosConInfo = $recibosCostura->map(function ($recibo) use ($festivos) {
                 $pedido = PedidoProduccion::find($recibo->pedido_produccion_id);
+                
+                // Calcular días para este pedido
+                $diasCalculados = 0;
+                if ($pedido) {
+                    try {
+                        // Usar el mismo servicio que en /registros
+                        $resultado = \App\Services\CacheCalculosService::getTotalDiasBatch([$pedido], $festivos);
+                        $diasCalculados = $resultado[$pedido->numero_pedido] ?? 0;
+                    } catch (\Exception $e) {
+                        \Log::warning('Error calculando días para recibo de costura', [
+                            'recibo_id' => $recibo->id,
+                            'pedido_id' => $pedido->id,
+                            'numero_pedido' => $pedido->numero_pedido,
+                            'error' => $e->getMessage()
+                        ]);
+                        $diasCalculados = 0;
+                    }
+                }
                 
                 return [
                     'id' => $recibo->id,
@@ -1222,6 +1248,7 @@ class RegistroOrdenController extends Controller
                     'notas' => $recibo->notas,
                     'created_at' => $recibo->created_at,
                     'updated_at' => $recibo->updated_at,
+                    'dias_calculados' => $diasCalculados, // NUEVO: Cálculo de días
                     'pedido_info' => $pedido ? [
                         'numero_pedido' => $pedido->numero_pedido,
                         'cliente' => $pedido->cliente,
