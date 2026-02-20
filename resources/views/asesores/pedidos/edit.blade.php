@@ -353,6 +353,53 @@
 <!-- Resto de handlers que necesitan DOMContentLoaded -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // ========== CONFIGURAR INPUTS EN MAYÚSCULAS ==========
+        function setupUpperCaseInput(inputId) {
+            const input = document.getElementById(inputId);
+            if (input) {
+                console.log('🔤 Configurando input para mayúsculas:', inputId);
+                
+                // Función para convertir a mayúsculas
+                function forceUpperCase() {
+                    const currentValue = input.value;
+                    const upperValue = currentValue.toUpperCase();
+                    if (currentValue !== upperValue) {
+                        input.value = upperValue;
+                        console.log('🔤 Convertido a mayúsculas:', currentValue, '→', upperValue);
+                    }
+                }
+                
+                // Eventos para cubrir todos los casos
+                input.addEventListener('input', forceUpperCase);
+                input.addEventListener('keyup', forceUpperCase);
+                input.addEventListener('change', forceUpperCase);
+                input.addEventListener('paste', function(e) {
+                    setTimeout(forceUpperCase, 10);
+                });
+                input.addEventListener('blur', forceUpperCase);
+                
+                // Convertir valor inicial si existe
+                if (input.value) {
+                    input.value = input.value.toUpperCase();
+                    console.log('🔤 Valor inicial convertido:', input.value);
+                }
+                
+                // Forzar mayúsculas cada segundo por si acaso
+                const intervalId = setInterval(forceUpperCase, 1000);
+                
+                // Limpiar intervalo después de 10 segundos para no consumir recursos
+                setTimeout(() => clearInterval(intervalId), 10000);
+            } else {
+                console.warn('⚠️ Input no encontrado:', inputId);
+            }
+        }
+        
+        // Aplicar a los inputs especificados
+        setupUpperCaseInput('cliente');
+        setupUpperCaseInput('forma_de_pago');
+        setupUpperCaseInput('descripcion');
+        setupUpperCaseInput('novedades');
+        
         // Configurar asesora
         const asesoraInput = document.getElementById('asesora_editable');
         if (asesoraInput) {

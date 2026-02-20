@@ -118,50 +118,114 @@ class DragDropManager {
             }
             
             // 🔴 CRÍTICO: Soportar AMBOS modales (creación nueva Y edición) Y EPP
-            // Primero verificar si estamos en el área EPP antes que nada
+            // Verificar TODOS los modales disponibles y sus visibilidad
             let contenedorEPP = document.getElementById('contenedorFotosEPP');
             let modalEPP = document.getElementById('modalAgregarEPP');
+            let previewPrenda = document.getElementById('nueva-prenda-foto-preview');
+            let modalPrenda = document.getElementById('modal-agregar-prenda-nueva');
+            let modalEditarPrenda = document.getElementById('modal-editar-prenda');
             
             let preview = null;
             let modal = null;
             
-            // Si estamos en el área EPP, usar modal EPP
+            // Array de modales candidatos con su información
+            let modalesCandidatos = [];
+            
+            // Agregar modal EPP si existe
             if (contenedorEPP && modalEPP) {
-                preview = contenedorEPP;
-                modal = modalEPP;
-                UIHelperService.log('DragDropManager', '🎯 Priorizando modal EPP (área EPP detectada)');
+                const esVisible = UIHelperService.isModalVisible(modalEPP);
+                modalesCandidatos.push({
+                    tipo: 'EPP',
+                    preview: contenedorEPP,
+                    modal: modalEPP,
+                    visible: esVisible,
+                    prioridad: esVisible ? 1 : 999
+                });
+                UIHelperService.log('DragDropManager', `🔍 Modal EPP evaluado: visible=${esVisible}`);
             }
-            // Si no, buscar modales de prendas
-            else {
-                preview = document.getElementById('nueva-prenda-foto-preview');
-                modal = document.getElementById('modal-agregar-prenda-nueva');
-                
-                // Si no está en modal de creación nueva, buscar en modal de edición
-                if (!modal || !preview) {
-                    preview = document.getElementById('nueva-prenda-foto-preview');
-                    modal = document.getElementById('modal-editar-prenda');
-                    
-                    // Si tampoco está en modal de edición, intentar con selector genérico
-                    if (!modal) {
-                        modal = document.querySelector('[id*="modal"][id*="prenda"]');
-                    }
+            
+            // Agregar modal de creación de prenda si existe
+            if (previewPrenda && modalPrenda) {
+                const esVisible = UIHelperService.isModalVisible(modalPrenda);
+                modalesCandidatos.push({
+                    tipo: 'prenda-creacion',
+                    preview: previewPrenda,
+                    modal: modalPrenda,
+                    visible: esVisible,
+                    prioridad: esVisible ? 2 : 999
+                });
+                UIHelperService.log('DragDropManager', `🔍 Modal prenda-creacion evaluado: visible=${esVisible}`);
+            }
+            
+            // Agregar modal de edición de prenda si existe
+            if (previewPrenda && modalEditarPrenda) {
+                const esVisible = UIHelperService.isModalVisible(modalEditarPrenda);
+                modalesCandidatos.push({
+                    tipo: 'prenda-edicion',
+                    preview: previewPrenda,
+                    modal: modalEditarPrenda,
+                    visible: esVisible,
+                    prioridad: esVisible ? 3 : 999
+                });
+                UIHelperService.log('DragDropManager', `🔍 Modal prenda-edicion evaluado: visible=${esVisible}`);
+            }
+            
+            // Agregar modal de proceso genérico si existe
+            let modalProceso = document.getElementById('modal-proceso-generico');
+            if (modalProceso) {
+                const esVisible = UIHelperService.isModalVisible(modalProceso);
+                // Para procesos, usamos el primer preview como referencia
+                let previewProceso1 = document.getElementById('proceso-foto-preview-1');
+                if (previewProceso1) {
+                    modalesCandidatos.push({
+                        tipo: 'proceso-generico',
+                        preview: previewProceso1,
+                        modal: modalProceso,
+                        visible: esVisible,
+                        prioridad: esVisible ? 0 : 999  // Máxima prioridad para procesos si están visibles
+                    });
+                    UIHelperService.log('DragDropManager', `🔍 Modal proceso-generico evaluado: visible=${esVisible}`);
                 }
+            }
+            
+            // Buscar modal de prenda genérico si no hay ninguno de los anteriores
+            if (modalesCandidatos.length === 0) {
+                let modalGenerico = document.querySelector('[id*="modal"][id*="prenda"]');
+                if (modalGenerico && previewPrenda) {
+                    const esVisible = UIHelperService.isModalVisible(modalGenerico);
+                    modalesCandidatos.push({
+                        tipo: 'prenda-generico',
+                        preview: previewPrenda,
+                        modal: modalGenerico,
+                        visible: esVisible,
+                        prioridad: esVisible ? 4 : 999
+                    });
+                    UIHelperService.log('DragDropManager', `🔍 Modal prenda-generico evaluado: visible=${esVisible}`);
+                }
+            }
+            
+            // Filtrar solo modales visibles y ordenar por prioridad
+            let modalesVisibles = modalesCandidatos.filter(m => m.visible).sort((a, b) => a.prioridad - b.prioridad);
+            
+            UIHelperService.log('DragDropManager', `📊 Modales candidatos: ${modalesCandidatos.length}, visibles: ${modalesVisibles.length}`);
+            
+            // Seleccionar el modal visible con mayor prioridad
+            if (modalesVisibles.length > 0) {
+                let seleccionado = modalesVisibles[0];
+                preview = seleccionado.preview;
+                modal = seleccionado.modal;
+                UIHelperService.log('DragDropManager', `✅ Modal seleccionado: ${seleccionado.tipo} (prioridad: ${seleccionado.prioridad})`);
+            } else {
+                // Si no hay modales visibles, mostrar advertencia y no procesar
+                UIHelperService.log('DragDropManager', `❌ No hay modales visibles. Modales evaluados:`, modalesCandidatos.map(m => `${m.tipo}:${m.visible}`));
+                return;
             }
             
             UIHelperService.log('DragDropManager', `Preview encontrado: ${!!preview}, Modal encontrado: ${!!modal}`);
             
-            // Validar que el modal esté visible
+            // Validar que el modal y preview existan (ya verificamos visibilidad antes)
             if (!modal || !preview) {
                 UIHelperService.log('DragDropManager', 'Modal o preview no existen');
-                return;
-            }
-            
-            // Comprobar si el modal está visible
-            const isModalVisible = UIHelperService.isModalVisible(modal);
-            UIHelperService.log('DragDropManager', `Modal visible: ${isModalVisible}`);
-            
-            if (!isModalVisible) {
-                UIHelperService.log('DragDropManager', 'Modal no está visible, ignorando paste');
                 return;
             }
             
@@ -238,132 +302,67 @@ class DragDropManager {
                             UIHelperService.log('DragDropManager', `⚠️ Error al obtener elemento bajo cursor: ${error.message}`);
                         }
                         
-                        // 🔑 PRIORIDAD MEJORADA: Dar prioridad al elemento activo si está bien identificado
-                        // Esto evita confusión cuando elementoCursor es un DIV hijo
-                        let elementoAnalizado = elementoActivo;
-                        if (elementoActivo?.id && (elementoActivo.id.includes('drop') || elementoActivo.id.includes('preview'))) {
-                            // Usar elemento activo si tiene un ID claro de drop-zone o preview
-                            elementoAnalizado = elementoActivo;
-                        } else if (elementoCursor) {
-                            // Si no hay elemento activo claro, usar elemento bajo cursor
-                            elementoAnalizado = elementoCursor;
-                        }
+                        // 🔑 NUEVA LÓGICA: Usar el modal ya seleccionado para determinar el área
+                        // Ya verificamos qué modal está visible, ahora usamos esa información
+                        let modalSeleccionado = modalesVisibles[0];
                         
-                        // Detectar el área activa
-                        if (elementoAnalizado) {
-                            // Obtener referencias a los elementos
-                            const dropZoneTela = document.getElementById('nueva-prenda-tela-drop-zone');
-                            const previewTela = document.getElementById('nueva-prenda-tela-preview');
+                        if (modalSeleccionado) {
+                            UIHelperService.log('DragDropManager', `🎯 Procesando para modal: ${modalSeleccionado.tipo}`);
                             
-                            // Verificar si está en el área de telas (directamente, como hijo, o usando closest)
-                            if ((dropZoneTela && (dropZoneTela.contains(elementoAnalizado) || dropZoneTela === elementoAnalizado)) ||
-                                     (previewTela && (previewTela.contains(elementoAnalizado) || previewTela === elementoAnalizado)) ||
-                                     (elementoAnalizado.closest && elementoAnalizado.closest('[data-zona="tela"]'))) {
-                                handlerCorrecto = 'telas';
-                                funcionManejo = window.manejarImagenTela;
-                                UIHelperService.log('DragDropManager', '🎯 Detectado área de telas');
-                            }
-                            // Verificar si está en el área de procesos
-                            else {
-                                const previewProceso1 = document.getElementById('proceso-foto-preview-1');
-                                const previewProceso2 = document.getElementById('proceso-foto-preview-2');
-                                const previewProceso3 = document.getElementById('proceso-foto-preview-3');
-                                
-                                let numeroProceso = null;
-                                
-                                // PRIMERO: Verificar si está directamente sobre un preview específico
-                                if (previewProceso1 && (previewProceso1.contains(elementoAnalizado) || previewProceso1 === elementoAnalizado)) {
-                                    numeroProceso = 1;
-                                    UIHelperService.log('DragDropManager', '🎯 Detectado directamente sobre preview de proceso 1');
-                                } else if (previewProceso2 && (previewProceso2.contains(elementoAnalizado) || previewProceso2 === elementoAnalizado)) {
-                                    numeroProceso = 2;
-                                    UIHelperService.log('DragDropManager', '🎯 Detectado directamente sobre preview de proceso 2');
-                                } else if (previewProceso3 && (previewProceso3.contains(elementoAnalizado) || previewProceso3 === elementoAnalizado)) {
-                                    numeroProceso = 3;
-                                    UIHelperService.log('DragDropManager', '🎯 Detectado directamente sobre preview de proceso 3');
-                                }
-                                
-                                // SEGUNDO: Si no está sobre un preview específico, verificar si está en el panel de procesos
-                                if (!numeroProceso) {
-                                    // Buscar el panel contenedor más cercano
-                                    let panelProceso = elementoAnalizado.closest('.foto-panel');
+                            // Según el tipo de modal, determinar el handler
+                            switch (modalSeleccionado.tipo) {
+                                case 'EPP':
+                                    handlerCorrecto = 'EPP';
+                                    funcionManejo = window.manejarSubidaFotosEPP;
+                                    UIHelperService.log('DragDropManager', '🎯 Usando handler para EPP');
+                                    break;
                                     
-                                    // Si no se encuentra por clase, buscar por otros selectores
-                                    if (!panelProceso) {
-                                        // Buscar contenedor que tenga los previews de proceso
-                                        const parent = elementoAnalizado.parentElement;
-                                        if (parent && (
-                                            parent.contains(previewProceso1) || 
-                                            parent.contains(previewProceso2) || 
-                                            parent.contains(previewProceso3)
-                                        )) {
-                                            panelProceso = parent;
-                                        }
+                                case 'proceso-generico':
+                                    // Para procesos, necesitamos determinar qué número de proceso
+                                    let numeroProceso = this._determinarNumeroProceso(elementoActivo, elementoCursor);
+                                    if (numeroProceso) {
+                                        handlerCorrecto = `proceso-${numeroProceso}`;
+                                        funcionManejo = (input) => window.manejarImagenProceso(input, numeroProceso);
+                                        UIHelperService.log('DragDropManager', `🎯 Usando handler para proceso ${numeroProceso}`);
                                     }
+                                    break;
                                     
-                                    if (panelProceso) {
-                                        // Intentar determinar qué preview está más cerca del cursor
-                                        const rect1 = previewProceso1?.getBoundingClientRect();
-                                        const rect2 = previewProceso2?.getBoundingClientRect();
-                                        const rect3 = previewProceso3?.getBoundingClientRect();
-                                        
-                                        if (rect1 && rect2 && rect3) {
-                                            const cursorX = this.mousePosition.x;
-                                            const cursorY = this.mousePosition.y;
-                                            
-                                            // Calcular distancia a cada preview
-                                            const dist1 = Math.sqrt(Math.pow(cursorX - (rect1.left + rect1.width/2), 2) + Math.pow(cursorY - (rect1.top + rect1.height/2), 2));
-                                            const dist2 = Math.sqrt(Math.pow(cursorX - (rect2.left + rect2.width/2), 2) + Math.pow(cursorY - (rect2.top + rect2.height/2), 2));
-                                            const dist3 = Math.sqrt(Math.pow(cursorX - (rect3.left + rect3.width/2), 2) + Math.pow(cursorY - (rect3.top + rect3.height/2), 2));
-                                            
-                                            // Encontrar el preview más cercano
-                                            if (dist1 <= dist2 && dist1 <= dist3) {
-                                                numeroProceso = 1;
-                                            } else if (dist2 <= dist1 && dist2 <= dist3) {
-                                                numeroProceso = 2;
-                                            } else {
-                                                numeroProceso = 3;
-                                            }
-                                            
-                                            UIHelperService.log('DragDropManager', `🎯 Panel detectado, preview más cercano: proceso ${numeroProceso} (distancias: 1=${dist1.toFixed(0)}, 2=${dist2.toFixed(0)}, 3=${dist3.toFixed(0)})`);
-                                        } else {
-                                            // Fallback: usar proceso 1 por defecto
-                                            numeroProceso = 1;
-                                            UIHelperService.log('DragDropManager', '🎯 Panel detectado, usando proceso 1 por defecto (no se pudieron calcular distancias)');
-                                        }
+                                case 'prenda-creacion':
+                                case 'prenda-edicion':
+                                case 'prenda-generico':
+                                    // Para prendas, verificar si es área de telas o de fotos de prenda
+                                    if (this._estaEnAreaTelas(elementoActivo, elementoCursor)) {
+                                        handlerCorrecto = 'telas';
+                                        funcionManejo = window.manejarImagenTela;
+                                        UIHelperService.log('DragDropManager', '🎯 Usando handler para telas (prendas)');
+                                    } else {
+                                        handlerCorrecto = 'prendas';
+                                        funcionManejo = window.manejarImagenesPrenda;
+                                        UIHelperService.log('DragDropManager', '🎯 Usando handler para fotos de prenda');
                                     }
-                                }
-                                
-                                if (numeroProceso) {
-                                    handlerCorrecto = `proceso-${numeroProceso}`;
-                                    funcionManejo = (input) => window.manejarImagenProceso(input, numeroProceso);
-                                    UIHelperService.log('DragDropManager', `🎯 Detectado área de proceso ${numeroProceso}`);
-                                }
+                                    break;
                             }
                         }
                         
-                        // Verificar si está en el área de EPP (independientemente del modal detectado)
-                        const contenedorEPP = document.getElementById('contenedorFotosEPP');
-                        if (contenedorEPP && (contenedorEPP.contains(elementoAnalizado) || contenedorEPP === elementoAnalizado || elementoAnalizado.closest('[data-zona="epp"]'))) {
-                            handlerCorrecto = 'EPP';
-                            funcionManejo = window.manejarSubidaFotosEPP;
-                            UIHelperService.log('DragDropManager', '🎯 Detectado área de EPP');
-                        }
-                        // Verificar si está en el área de prendas
-                        else if (modal && modal.id === 'modal-agregar-prenda-nueva') {
-                            const previewPrenda = document.getElementById('nueva-prenda-foto-preview');
-                            if (previewPrenda && (previewPrenda.contains(elementoAnalizado) || previewPrenda === elementoAnalizado)) {
-                                handlerCorrecto = 'prendas';
-                                funcionManejo = window.manejarImagenesPrenda;
-                                UIHelperService.log('DragDropManager', '🎯 Detectado área de prendas');
+                        // Si no se detectó handler específico, usar fallback según el modal
+                        if (!funcionManejo && modalSeleccionado) {
+                            UIHelperService.log('DragDropManager', '⚠️ No se detectó área específica, usando fallback del modal');
+                            
+                            // Fallback según el tipo de modal
+                            switch (modalSeleccionado.tipo) {
+                                case 'EPP':
+                                    handlerCorrecto = 'EPP (fallback)';
+                                    funcionManejo = window.manejarSubidaFotosEPP;
+                                    break;
+                                case 'proceso-generico':
+                                    handlerCorrecto = 'proceso-1 (fallback)';
+                                    funcionManejo = (input) => window.manejarImagenProceso(input, 1);
+                                    break;
+                                default:
+                                    handlerCorrecto = 'prendas (fallback)';
+                                    funcionManejo = window.manejarImagenesPrenda;
+                                    break;
                             }
-                        }
-                        
-                        // Si no se detectó área específica, usar prendas por defecto
-                        if (!funcionManejo) {
-                            handlerCorrecto = 'prendas (defecto)';
-                            funcionManejo = window.manejarImagenesPrenda;
-                            UIHelperService.log('DragDropManager', '⚠️ Área no detectada, usando prendas por defecto');
                         }
                         
                         // Usar la función de manejo correcta
@@ -663,6 +662,72 @@ class DragDropManager {
                 console.log(`Comando desconocido: ${comando}`);
                 console.log('Comandos disponibles: estado, debug, contextos, rightclick');
         }
+    }
+
+    /**
+     * Determinar el número de proceso según el elemento
+     * @private
+     */
+    _determinarNumeroProceso(elementoActivo, elementoCursor) {
+        const previewProceso1 = document.getElementById('proceso-foto-preview-1');
+        const previewProceso2 = document.getElementById('proceso-foto-preview-2');
+        const previewProceso3 = document.getElementById('proceso-foto-preview-3');
+        
+        let elementoAnalizado = elementoActivo;
+        if (elementoCursor && (!elementoActivo?.id || !elementoActivo.id.includes('preview'))) {
+            elementoAnalizado = elementoCursor;
+        }
+        
+        // Verificar si está directamente sobre un preview específico
+        if (previewProceso1 && (previewProceso1.contains(elementoAnalizado) || previewProceso1 === elementoAnalizado)) {
+            return 1;
+        } else if (previewProceso2 && (previewProceso2.contains(elementoAnalizado) || previewProceso2 === elementoAnalizado)) {
+            return 2;
+        } else if (previewProceso3 && (previewProceso3.contains(elementoAnalizado) || previewProceso3 === elementoAnalizado)) {
+            return 3;
+        }
+        
+        // Si no está sobre un preview específico, usar el más cercano
+        if (previewProceso1 && previewProceso2 && previewProceso3 && this.mousePosition.x && this.mousePosition.y) {
+            const rect1 = previewProceso1.getBoundingClientRect();
+            const rect2 = previewProceso2.getBoundingClientRect();
+            const rect3 = previewProceso3.getBoundingClientRect();
+            
+            const cursorX = this.mousePosition.x;
+            const cursorY = this.mousePosition.y;
+            
+            const dist1 = Math.sqrt(Math.pow(cursorX - (rect1.left + rect1.width/2), 2) + Math.pow(cursorY - (rect1.top + rect1.height/2), 2));
+            const dist2 = Math.sqrt(Math.pow(cursorX - (rect2.left + rect2.width/2), 2) + Math.pow(cursorY - (rect2.top + rect2.height/2), 2));
+            const dist3 = Math.sqrt(Math.pow(cursorX - (rect3.left + rect3.width/2), 2) + Math.pow(cursorY - (rect3.top + rect3.height/2), 2));
+            
+            if (dist1 <= dist2 && dist1 <= dist3) return 1;
+            if (dist2 <= dist1 && dist2 <= dist3) return 2;
+            return 3;
+        }
+        
+        // Fallback: usar proceso 1
+        return 1;
+    }
+
+    /**
+     * Verificar si está en el área de telas
+     * @private
+     */
+    _estaEnAreaTelas(elementoActivo, elementoCursor) {
+        const dropZoneTela = document.getElementById('nueva-prenda-tela-drop-zone');
+        const previewTela = document.getElementById('nueva-prenda-tela-preview');
+        
+        let elementoAnalizado = elementoActivo;
+        if (elementoCursor && (!elementoActivo?.id || (!elementoActivo.id.includes('tela') && !elementoActivo.id.includes('drop')))) {
+            elementoAnalizado = elementoCursor;
+        }
+        
+        if (!elementoAnalizado) return false;
+        
+        // Verificar si está en el área de telas
+        return (dropZoneTela && (dropZoneTela.contains(elementoAnalizado) || dropZoneTela === elementoAnalizado)) ||
+               (previewTela && (previewTela.contains(elementoAnalizado) || previewTela === elementoAnalizado)) ||
+               (elementoAnalizado.closest && elementoAnalizado.closest('[data-zona="tela"]'));
     }
 }
 

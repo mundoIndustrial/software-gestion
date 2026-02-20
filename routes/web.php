@@ -1414,6 +1414,9 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::post('/registros/filter-orders', [RegistroOrdenController::class, 'filterOrders'])->name('registros.filter-orders');
     Route::post('/registros/search', [RegistroOrdenController::class, 'searchOrders'])->name('registros.search');
     
+    // Rutas para recibos de costura
+    Route::get('/recibos-costura', [RegistroOrdenController::class, 'recibosCostura'])->name('registros.recibos-costura');
+    
     // Rutas con parámetros {pedido} - IMPORTANTE: rutas más específicas PRIMERO
     Route::get('/registros/{id}/recibos-datos', [RegistroOrdenQueryController::class, 'getRecibosDatos'])->name('registros.recibos-datos');
     Route::get('/registros/{id}/seguimiento-prenda', [RegistroOrdenQueryController::class, 'getSeguimientoPorPrenda'])->name('registros.seguimiento-prenda');

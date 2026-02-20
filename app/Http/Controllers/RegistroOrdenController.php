@@ -1194,4 +1194,50 @@ class RegistroOrdenController extends Controller
             return null;
         }
     }
+
+    /**
+     * Mostrar recibos de costura por número de recibo
+     */
+    public function recibosCostura(Request $request)
+    {
+        try {
+            // Obtener recibos de costura activos
+            $recibosCostura = DB::table('consecutivos_recibos_pedidos')
+                ->where('tipo_recibo', 'COSTURA')
+                ->where('activo', 1)
+                ->orderBy('consecutivo_actual', 'desc')
+                ->get();
+
+            // Obtener información adicional de pedidos y prendas
+            $recibosConInfo = $recibosCostura->map(function ($recibo) {
+                $pedido = PedidoProduccion::find($recibo->pedido_produccion_id);
+                
+                return [
+                    'id' => $recibo->id,
+                    'pedido_produccion_id' => $recibo->pedido_produccion_id,
+                    'prenda_id' => $recibo->prenda_id,
+                    'consecutivo_actual' => $recibo->consecutivo_actual,
+                    'consecutivo_inicial' => $recibo->consecutivo_inicial,
+                    'notas' => $recibo->notas,
+                    'created_at' => $recibo->created_at,
+                    'updated_at' => $recibo->updated_at,
+                    'pedido_info' => $pedido ? [
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'cliente' => $pedido->cliente,
+                        'estado' => $pedido->estado,
+                        'area' => $pedido->area,
+                    ] : null,
+                ];
+            });
+
+            return view('registros.recibos-costura', [
+                'recibos' => $recibosConInfo,
+                'title' => 'Recibos de Costura'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error en recibosCostura: ' . $e->getMessage());
+            return back()->with('error', 'Error al cargar los recibos de costura');
+        }
+    }
 }
