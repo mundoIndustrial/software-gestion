@@ -160,6 +160,18 @@
 @push('scripts')
     <script src="{{ asset('js/contador/cotizacion.js') }}"></script>
     <script src="{{ asset('js/nav-search.js') }}"></script>
+    
+    {{-- Echo para tiempo real en bodega --}}
+    @if(request()->is('gestion-bodega/*'))
+        @auth
+            <!-- Laravel Echo para actualizaciones en tiempo real -->
+            <script>
+                // Echo ya está inicializado vía Vite en app.js
+                console.log('[Layout App] Echo disponible para bodega:', typeof window.EchoInstance !== 'undefined');
+            </script>
+        @endauth
+    @endif
+    
     @if(Route::currentRouteName() === 'cotizaciones.pendientes')
         <script src="{{ asset('js/realtime-cotizaciones.js') }}?v={{ time() }}"></script>
         <script src="{{ asset('js/contador/busqueda-header.js') }}"></script>

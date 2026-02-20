@@ -711,5 +711,56 @@ document.addEventListener('keydown', function(e) {
         cerrarModalFiltros();
     }
 });
+
+// Sistema de tiempo real para actualizaciones de pedidos
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar si Echo está disponible
+    if (typeof window.EchoInstance !== 'undefined') {
+        console.log('[Bodega Realtime] Escuchando actualizaciones de pedidos...');
+        
+        // Escuchar actualizaciones de pedidos desde cartera
+        window.EchoInstance.channel('despacho.pedidos')
+            .listen('.pedido.actualizado', function(e) {
+                console.log('[Bodega Realtime] Pedido actualizado:', e);
+                
+                // Si el pedido fue aprobado, recargar la página para mostrarlo
+                if (e.pedido && (e.changedFields.includes('estado') || e.action === 'approved')) {
+                    console.log('[Bodega Realtime] Pedido aprobado, recargando página...');
+                    
+                    // Mostrar notificación sutil
+                    const notificacion = document.createElement('div');
+                    notificacion.innerHTML = `
+                        <div style="position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; font-size: 14px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                            📋 Pedido #${e.pedido.numero_pedido} actualizado
+                        </div>
+                    `;
+                    document.body.appendChild(notificacion);
+                    
+                    // Remover notificación después de 3 segundos
+                    setTimeout(() => {
+                        notificacion.remove();
+                    }, 3000);
+                    
+                    // Recargar página después de un breve delay
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                }
+            })
+            .error(function(error) {
+                console.error('[Bodega Realtime] Error en WebSocket:', error);
+            });
+            
+        console.log('[Bodega Realtime] ✅ Conectado al canal despacho.pedidos');
+    } else {
+        console.log('[Bodega Realtime] ⚠️ Echo no disponible, usando fallback de polling');
+        
+        // Fallback: verificar actualizaciones cada 30 segundos
+        setInterval(function() {
+            console.log('[Bodega Realtime] Verificando actualizaciones...');
+            // Aquí podrías agregar una llamada AJAX para verificar si hay nuevos pedidos
+        }, 30000);
+    }
+});
 </script>
 @endsection
