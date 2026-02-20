@@ -135,23 +135,45 @@ class ProcesoDragDropHandler {
         // Obtener el preview
         const preview = document.getElementById(`proceso-foto-preview-${procesoNumero}`);
         
-        // Verificar si hay imágenes en el preview
+        // Verificar si hay imágenes en el preview o en el storage
         let imagenesParaGaleria = [];
-        const imgs = preview ? preview.querySelectorAll('img') : [];
-        imagenesParaGaleria = Array.from(imgs)
-            .map(img => img.src)
-            .filter(src => src && src.length > 0);
         
-        UIHelperService.log('ProcesoDragDropHandler', `Imágenes encontradas en proceso ${procesoNumero}: ${imagenesParaGaleria.length}`);
+        // IMPORTANTE: Usar window.procesoActualIndex para obtener las imágenes correctas del proceso
+        const procesoIndex = window.procesoActualIndex || procesoNumero;
+        
+        // Primero intentar obtener imágenes del storage universal del proceso
+        if (window.universalImagenesStorage && procesoIndex !== undefined) {
+            const imagenesStorage = window.universalImagenesStorage.obtenerImagenes('procesos', procesoIndex);
+            if (imagenesStorage && imagenesStorage.length > 0) {
+                // Extraer las URLs de las imágenes del storage
+                imagenesParaGaleria = imagenesStorage
+                    .map(img => img.previewUrl || img.url || img.src)
+                    .filter(src => src && src.length > 0);
+                UIHelperService.log('ProcesoDragDropHandler', `Imágenes obtenidas del storage para proceso ${procesoIndex}: ${imagenesParaGaleria.length}`);
+            }
+        }
+        
+        // Si no hay imágenes en el storage, fallback a las imágenes del preview actual
+        if (imagenesParaGaleria.length === 0) {
+            const imgs = preview ? preview.querySelectorAll('img') : [];
+            imagenesParaGaleria = Array.from(imgs)
+                .map(img => img.src)
+                .filter(src => src && src.length > 0);
+            UIHelperService.log('ProcesoDragDropHandler', `Imágenes obtenidas del preview ${procesoNumero}: ${imagenesParaGaleria.length} (fallback)`);
+        }
+        
+        UIHelperService.log('ProcesoDragDropHandler', `Total imágenes para galería: ${imagenesParaGaleria.length}`);
         
         // Si hay imágenes y la función de galería está disponible, abrir la galería
         // La función debe estar nombrada como: abrirGaleriaProceso{Numero} o abrirGaleriaproceso{Numero}
-        const functionNamePascal = `abrirGaleriaProceso${procesoNumero}`;
-        const functionNameLower = `abrirGaleriaproceso${procesoNumero}`;
+        // IMPORTANTE: Usar el índice del proceso para la función de galería
+        
+        const functionNamePascal = `abrirGaleriaProceso${procesoIndex}`;
+        const functionNameLower = `abrirGaleriaproceso${procesoIndex}`;
         const galeriaFunction = window[functionNamePascal] || window[functionNameLower];
         
         if (imagenesParaGaleria.length > 0 && typeof galeriaFunction === 'function') {
-            UIHelperService.log('ProcesoDragDropHandler', ` Abriendo galería modal para proceso ${procesoNumero}`);
+            UIHelperService.log('ProcesoDragDropHandler', ` Abriendo galería modal para proceso ${procesoIndex} (desde cuadro ${procesoNumero})`);
             e.preventDefault();
             e.stopPropagation();
             galeriaFunction(imagenesParaGaleria);

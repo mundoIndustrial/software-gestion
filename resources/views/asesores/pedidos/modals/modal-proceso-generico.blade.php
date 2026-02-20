@@ -124,6 +124,7 @@
     function inicializarFallbackProcesos() {
         // Solo agregar fallback si ProcesoDragDropHandler no está activo
         if (!window.DragDropManager || !window.DragDropManager.procesoHandler) {
+            console.log('[Fallback Procesos] DragDropManager no disponible, activando fallback manual');
             for (let i = 1; i <= 3; i++) {
                 const preview = document.getElementById('proceso-foto-preview-' + i);
                 const input = document.getElementById('proceso-foto-input-' + i);
@@ -134,8 +135,36 @@
                     preview.addEventListener('click', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
-                        if (typeof window.abrirSelectorImagenProceso === 'function') {
-                            window.abrirSelectorImagenProceso(i);
+                        
+                        // Verificar si ya hay una imagen cargada
+                        const imgElement = this.querySelector('img');
+                        
+                        if (imgElement) {
+                            // Si hay imagen, abrir galería en lugar de selector de archivos
+                            console.log(`[Preview Click - Fallback] Imagen ya cargada en cuadro ${i}, abriendo galería`);
+                            
+                            // Obtener el índice del proceso actual (window.procesoActualIndex)
+                            const procesoIndex = window.procesoActualIndex || 1;
+                            
+                            // Construir el nombre de la función de galería según el índice del proceso
+                            const functionNamePascal = `abrirGaleriaProceso${procesoIndex}`;
+                            const functionNameLower = `abrirGaleriaproceso${procesoIndex}`;
+                            const galeriaFunction = window[functionNamePascal] || window[functionNameLower];
+                            
+                            if (typeof galeriaFunction === 'function') {
+                                console.log(`[Preview Click - Fallback] Llamando a ${functionNamePascal}`);
+                                galeriaFunction();
+                            } else {
+                                // Fallback: abrir la imagen en una nueva pestaña
+                                console.log(`[Preview Click - Fallback] Galería no disponible (${functionNamePascal}), abriendo imagen en nueva pestaña`);
+                                window.open(imgElement.src, '_blank');
+                            }
+                        } else {
+                            // Si no hay imagen, abrir selector de archivos
+                            console.log(`[Preview Click - Fallback] Cuadro ${i} vacío, abriendo selector de archivos`);
+                            if (typeof window.abrirSelectorImagenProceso === 'function') {
+                                window.abrirSelectorImagenProceso(i);
+                            }
                         }
                     });
                 }
@@ -150,6 +179,8 @@
                     });
                 }
             }
+        } else {
+            console.log('[Fallback Procesos] DragDropManager está activo, omitiendo fallback manual');
         }
     }
 

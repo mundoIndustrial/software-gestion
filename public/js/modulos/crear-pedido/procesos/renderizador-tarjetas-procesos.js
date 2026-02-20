@@ -666,8 +666,14 @@ function cargarDatosProcesoEnModal(tipo, datos) {
     // Esto preserva el estado de eliminación (null) entre aperturas del modal
     const procesoActual = window.procesosSeleccionados?.[tipo];
     
-    if (procesoActual?.datos?.imagenesEliminadas) {
+    console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - procesoActual:', procesoActual);
+    console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - procesoActual.datos:', procesoActual?.datos);
+    console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - procesoActual.datos.imagenesEliminadas:', procesoActual?.datos?.imagenesEliminadas);
+    console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - datos.imagenes:', datos.imagenes);
+    
+    if (procesoActual?.datos?.imagenesEliminadas && procesoActual.datos.imagenesEliminadas.length > 0) {
         // Restaurar el estado de eliminación desde el proceso guardado
+        console.log('[cargarDatosProcesoEnModal] 🔍 USANDO RUTA: imagenesEliminadas');
         window.imagenesProcesoExistentes = [...procesoActual.datos.imagenesEliminadas];
         console.log('[cargarDatosProcesoEnModal] ✅ Restaurando imagenesProcesoExistentes desde proceso guardado:', {
             length: window.imagenesProcesoExistentes.length,
@@ -680,6 +686,11 @@ function cargarDatosProcesoEnModal(tipo, datos) {
     } else {
         // Primera carga: inicializar desde las imágenes del proceso
         // 🔴 CRÍTICO: Filtrar imágenes que tienen deleted_at (marcadas como eliminadas en BD)
+        console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - datos.imagenes:', datos.imagenes);
+        console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - tipo de datos.imagenes:', typeof datos.imagenes);
+        console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - longitud datos.imagenes:', datos.imagenes?.length || 0);
+        console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - window.imagenesProcesoExistentes ANTES de cargar:', window.imagenesProcesoExistentes);
+        
         const imagenesValidas = (datos.imagenes || []).filter(img => {
             // Marcar como null si tiene deleted_at
             if (img && img.deleted_at) {
@@ -688,11 +699,29 @@ function cargarDatosProcesoEnModal(tipo, datos) {
             }
             return img !== null && img !== undefined && img !== '';
         });
+        
+        console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - imagenesValidas después de filtrar:', imagenesValidas);
+        
         window.imagenesProcesoExistentes = imagenesValidas.map(img => img || null);
         console.log('[cargarDatosProcesoEnModal] 🔄 Primera carga: inicializando imagenesProcesoExistentes desde datos', {
             length: window.imagenesProcesoExistentes.length,
-            imagenesConDeleted: (datos.imagenes || []).filter(img => img?.deleted_at).length
+            imagenesConDeleted: (datos.imagenes || []).filter(img => img?.deleted_at).length,
+            windowImagenesProcesoExistentes: window.imagenesProcesoExistentes
         });
+        
+        // 🔴 NUEVO: Verificar que las imágenes se carguen en el DOM
+        setTimeout(() => {
+            console.log('[cargarDatosProcesoEnModal] 🔍 VERIFICACIÓN POST-CARGA - Estado del DOM:');
+            for (let i = 1; i <= 3; i++) {
+                const preview = document.getElementById(`proceso-foto-preview-${i}`);
+                const tieneImagen = preview && preview.querySelector('img');
+                console.log(`  Preview ${i}:`, {
+                    existe: !!preview,
+                    tieneImagen: !!tieneImagen,
+                    innerHTML: tieneImagen ? 'IMG presente' : preview?.innerHTML?.substring(0, 50) + '...'
+                });
+            }
+        }, 100);
     }
     
     // 🔴 CRÍTICO: Limpiar previews antes de cargar nuevas imágenes
@@ -757,6 +786,12 @@ function cargarDatosProcesoEnModal(tipo, datos) {
             }
             
             console.log('[cargarDatosProcesoEnModal] 🖼️ Cargando imagen', indice, '- imgUrl:', imgUrl?.substring(0, 50) || 'N/A');
+            console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - Estado ANTES de modificar preview:', {
+                preview: !!preview,
+                innerHTML: preview?.innerHTML?.substring(0, 100) + '...',
+                border: preview?.style.border,
+                background: preview?.style.background
+            });
             
             preview.style.border = '2px solid #0066cc';
             preview.style.background = 'transparent';
@@ -765,6 +800,12 @@ function cargarDatosProcesoEnModal(tipo, datos) {
             `;
             
             console.log('[cargarDatosProcesoEnModal] ✅ innerHTML reemplazado para imagen', indice);
+            console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - Estado DESPUÉS de modificar preview:', {
+                innerHTML: preview?.innerHTML?.substring(0, 100) + '...',
+                border: preview?.style.border,
+                background: preview?.style.background,
+                tieneImg: !!preview.querySelector('img')
+            });
             
             // 🔴 Crear botón eliminar con data-indice (event delegation global lo detectará)
             // Esto sobrevive a cloneNode(true) de setupDragAndDropProceso
