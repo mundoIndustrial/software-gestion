@@ -33,19 +33,21 @@ class ProcesoPrenda extends Model
     ];
 
     /**
-     * Relación: Un proceso pertenece a una prenda
-     */
-    public function prenda(): BelongsTo
-    {
-        return $this->belongsTo(PrendaPedido::class, 'prenda_pedido_id');
-    }
-
-    /**
-     * Relación: Un proceso pertenece a un pedido (via prenda)
+     * Relación: Un proceso pertenece a un pedido (directa via numero_pedido)
      */
     public function pedido(): BelongsTo
     {
         return $this->belongsTo(PedidoProduccion::class, 'numero_pedido', 'numero_pedido');
+    }
+
+    /**
+     * Relación: Un proceso pertenece a una prenda (via numero_pedido)
+     * Nota: Esta es una relación indirecta, se accede a través del numero_pedido
+     */
+    public function prenda()
+    {
+        // No hay relación directa, pero podemos acceder via numero_pedido
+        return $this->belongsTo(PrendaPedido::class, 'numero_pedido', 'numero_pedido');
     }
 
     /**

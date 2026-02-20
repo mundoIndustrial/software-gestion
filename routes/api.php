@@ -9,7 +9,6 @@ use App\Infrastructure\Http\Controllers\CotizacionPrendaController;
 use App\Modules\Pedidos\Infrastructure\Http\Controllers\PedidoEppController;
 use App\Infrastructure\Http\Controllers\AsistenciaPersonalController;
 use App\Infrastructure\Http\Controllers\PrendaEditorController;
-use App\Http\Controllers\ProcesoSeguimientoController;
 
 /**
  * RUTAS PÚBLICAS - DATOS GENERALES (SIN AUTENTICACIÓN)
