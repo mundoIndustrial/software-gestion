@@ -2005,18 +2005,22 @@
         // Ordenar la tabla en orden ascendente al cargar la página
         function ordenarTablaAscendente() {
             try {
-                const filas = document.querySelectorAll('[data-pedido-id]');
-                if (filas.length === 0) return;
-
-                const contenedorTabla = filas[0].closest('.table-scroll-container');
+                // Buscar el contenedor principal
+                const contenedorTabla = document.querySelector('.table-scroll-container');
                 if (!contenedorTabla) return;
 
+                // Buscar el header
                 const header = contenedorTabla.querySelector('[style*="grid-template-columns: 200px"]');
                 if (!header) return;
 
-                // Convertir a array y extraer números
-                const filasArray = Array.from(filas);
-                const filasConNumero = filasArray.map(fila => {
+                // Buscar todas las filas completas (divs con grid-template-columns)
+                const filas = Array.from(contenedorTabla.querySelectorAll('div[style*="grid-template-columns: 200px"]'))
+                    .filter(fila => fila !== header); // Excluir el header
+
+                if (filas.length === 0) return;
+
+                // Extraer números de pedido de cada fila
+                const filasConNumero = filas.map(fila => {
                     let numeroElement = fila.querySelector('span[style*="font-weight: 600; color: #1e5ba8;"]');
                     if (!numeroElement) {
                         numeroElement = fila.querySelector('span[style*="color: #1e5ba8"]');
@@ -2039,13 +2043,21 @@
                 // Ordenar en orden ASCENDENTE (más antiguo primero)
                 filasConNumero.sort((a, b) => a.numero - b.numero);
 
-                // Reordenar las filas en el DOM
+                console.log('[Supervisor-Pedidos] 📋 Ordenando filas:', 
+                    filasConNumero.map(item => ({ numero: item.numero, tieneElemento: !!item.fila.querySelector('span[style*="color: #1e5ba8"]') }))
+                );
+
+                // Reordenar las filas manteniendo la estructura completa
                 filasConNumero.forEach((item, index) => {
+                    // Mover cada fila completa a su nueva posición
                     if (index === 0) {
+                        // Primera fila: insertar después del header
                         contenedorTabla.insertBefore(item.fila, header.nextSibling);
                     } else {
+                        // Siguientes filas: insertar después de la fila anterior
                         const filaAnterior = filasConNumero[index - 1].fila;
-                        contenedorTabla.insertBefore(item.fila, filaAnterior.nextSibling);
+                        const siguienteElemento = filaAnterior.nextSibling;
+                        contenedorTabla.insertBefore(item.fila, siguienteElemento);
                     }
                 });
 

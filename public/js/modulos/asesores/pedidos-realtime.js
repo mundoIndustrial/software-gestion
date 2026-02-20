@@ -852,23 +852,15 @@ class PedidosRealtimeRefresh {
         if (!pedidoId) return;
         
         try {
-            // Buscar todas las filas de pedidos
-            const filas = document.querySelectorAll('[data-pedido-id]');
-            if (filas.length === 0) {
-                console.log('[PedidosRealtime] 📋 No se encontraron filas de pedidos');
-                this.pedidoMovido = false;
-                return;
-            }
-            
-            // Encontrar el contenedor de la tabla
-            const contenedorTabla = filas[0].closest('.table-scroll-container');
+            // Buscar el contenedor principal
+            const contenedorTabla = document.querySelector('.table-scroll-container');
             if (!contenedorTabla) {
                 console.log('[PedidosRealtime] 📋 Contenedor de tabla no encontrado');
                 this.pedidoMovido = false;
                 return;
             }
             
-            // Encontrar el header para saber dónde insertar las filas
+            // Buscar el header
             const header = contenedorTabla.querySelector('[style*="grid-template-columns: 200px"]');
             if (!header) {
                 console.log('[PedidosRealtime] 📋 Header de tabla no encontrado');
@@ -876,9 +868,18 @@ class PedidosRealtimeRefresh {
                 return;
             }
             
+            // Buscar todas las filas completas (divs con grid-template-columns)
+            const filas = Array.from(contenedorTabla.querySelectorAll('div[style*="grid-template-columns: 200px"]'))
+                .filter(fila => fila !== header); // Excluir el header
+            
+            if (filas.length === 0) {
+                console.log('[PedidosRealtime] 📋 No se encontraron filas de pedidos');
+                this.pedidoMovido = false;
+                return;
+            }
+            
             // Convertir NodeList a array y extraer números de pedido
-            const filasArray = Array.from(filas);
-            const filasConNumero = filasArray.map(fila => {
+            const filasConNumero = filas.map(fila => {
                 // Buscar el span con el número de pedido usando varios selectores posibles
                 let numeroElement = fila.querySelector('span[style*="font-weight: 600; color: #1e5ba8;"]');
                 
@@ -917,15 +918,17 @@ class PedidosRealtimeRefresh {
                 filasConNumero.map(item => ({ id: item.id, numero: item.numero }))
             );
             
-            // Reordenar las filas en el DOM
+            // Reordenar las filas manteniendo la estructura completa
             filasConNumero.forEach((item, index) => {
-                // Insertar después del header
+                // Mover cada fila completa a su nueva posición
                 if (index === 0) {
+                    // Primera fila: insertar después del header
                     contenedorTabla.insertBefore(item.fila, header.nextSibling);
                 } else {
-                    // Insertar después de la fila anterior
+                    // Siguientes filas: insertar después de la fila anterior
                     const filaAnterior = filasConNumero[index - 1].fila;
-                    contenedorTabla.insertBefore(item.fila, filaAnterior.nextSibling);
+                    const siguienteElemento = filaAnterior.nextSibling;
+                    contenedorTabla.insertBefore(item.fila, siguienteElemento);
                 }
                 
                 // Resaltar la fila que se actualizó
