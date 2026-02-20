@@ -61,6 +61,8 @@
                                                 Logo
                                             @elseif($cot->tipo === 'PL')
                                                 Combinada
+                                            @elseif($cot->tipo === 'EPP')
+                                                EPP
                                             @else
                                                 {{ $cot->tipo ?? 'N/A' }}
                                             @endif
@@ -141,6 +143,14 @@
                                                 <!-- Cotización COMBINADA: Descargar directamente sin menú -->
                                                 <button onclick="abrirPDFEnPestana({{ $cot->id }}, 'combinada')" 
                                                     title="Descargar PDF Combinada"
+                                                    style="background: #10b981; color: white; width: 36px; height: 36px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);"
+                                                    onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" 
+                                                    onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
+                                                    <i class="fas fa-file-pdf" style="font-size: 1rem;"></i>
+                                                </button>
+                                            @elseif($cot->tipo === 'EPP')
+                                                <button onclick="abrirPDFEnPestana({{ $cot->id }}, 'epp')"
+                                                    title="Descargar PDF EPP"
                                                     style="background: #10b981; color: white; width: 36px; height: 36px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);"
                                                     onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" 
                                                     onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">

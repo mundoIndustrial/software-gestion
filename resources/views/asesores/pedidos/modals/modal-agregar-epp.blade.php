@@ -150,9 +150,39 @@
                         value="1"
                         placeholder="1"
                         min="1"
+                        oninput="actualizarTotalEPP()"
                         disabled
                         class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 text-gray-500 text-sm disabled:bg-gray-100 disabled:text-gray-400 focus:outline-none"
                     >
+                </div>
+            </div>
+
+            <!-- Valor Unitario (opcional) y Total -->
+            <div id="valorUnitarioTotalContainer" style="display: none;">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="valorUnitarioEPP" class="text-sm font-medium text-gray-700 block mb-2">Valor Unitario (Opcional)</label>
+                        <input
+                            type="number"
+                            id="valorUnitarioEPP"
+                            min="0"
+                            step="0.01"
+                            placeholder="0"
+                            oninput="actualizarTotalEPP()"
+                            disabled
+                            class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 text-gray-500 text-sm disabled:bg-gray-100 disabled:text-gray-400 focus:outline-none"
+                        >
+                    </div>
+                    <div>
+                        <label for="totalEPP" class="text-sm font-medium text-gray-700 block mb-2">Total</label>
+                        <input
+                            type="text"
+                            id="totalEPP"
+                            value="0"
+                            readonly
+                            class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 text-gray-500 text-sm focus:outline-none"
+                        >
+                    </div>
                 </div>
             </div>
 
@@ -256,6 +286,27 @@ function abrirModalAgregarEPP() {
     }
 }
 
+function actualizarTotalEPP() {
+    const cantidadInput = document.getElementById('cantidadEPP');
+    const valorUnitarioInput = document.getElementById('valorUnitarioEPP');
+    const totalInput = document.getElementById('totalEPP');
+    if (!cantidadInput || !valorUnitarioInput || !totalInput) return;
+
+    const formatearNumero = (num) => {
+        if (!Number.isFinite(num)) return '0';
+        if (Number.isInteger(num)) return String(num);
+        const s = num.toFixed(2);
+        return s.replace(/\.00$/, '').replace(/(\.[0-9])0$/, '$1');
+    };
+
+    const cantidad = parseInt(cantidadInput.value) || 0;
+    const vuRaw = String(valorUnitarioInput.value || '').trim();
+    const vu = vuRaw !== '' && !isNaN(Number(vuRaw)) ? Number(vuRaw) : null;
+
+    const total = (vu !== null && cantidad > 0) ? (vu * cantidad) : 0;
+    totalInput.value = formatearNumero(total);
+}
+
 function cerrarModalAgregarEPP() {
     console.log('🔒 [cerrarModalAgregarEPP] Cerrando modal');
     const modal = document.getElementById('modalAgregarEPP');
@@ -276,6 +327,19 @@ function resetearModalAgregarEPP() {
     document.getElementById('cuerpoTablaEPP').innerHTML = '';
     document.getElementById('cantidadEPP').disabled = true;
     document.getElementById('cantidadEPP').value = '1';
+    const vu = document.getElementById('valorUnitarioEPP');
+    const tot = document.getElementById('totalEPP');
+    const vuCont = document.getElementById('valorUnitarioTotalContainer');
+    if (vu) {
+        vu.disabled = true;
+        vu.value = '';
+    }
+    if (tot) {
+        tot.value = '0';
+    }
+    if (vuCont) {
+        vuCont.style.display = 'none';
+    }
     document.getElementById('observacionesEPP').disabled = true;
     document.getElementById('observacionesEPP').value = '';
     document.getElementById('btnAgregarALista').disabled = true;
@@ -367,6 +431,17 @@ function mostrarProductoEPP(producto) {
         cantidadInput.disabled = false;
         console.log(' [mostrarProductoEPP] Campo cantidad habilitado');
     }
+
+    const valorUnitarioInput = document.getElementById('valorUnitarioEPP');
+    const vuCont = document.getElementById('valorUnitarioTotalContainer');
+    const modoCotizacion = !!window.__EPP_COTIZACION_MODE__;
+    if (vuCont) vuCont.style.display = modoCotizacion ? 'block' : 'none';
+    if (valorUnitarioInput) {
+        valorUnitarioInput.disabled = !modoCotizacion;
+    }
+
+    // Recalcular total al habilitar
+    actualizarTotalEPP();
     if (obsInput) {
         obsInput.disabled = false;
         console.log(' [mostrarProductoEPP] Campo observaciones habilitado');
@@ -514,12 +589,24 @@ function agregarEPPALista() {
         return;
     }
 
+    const modoCotizacion = !!window.__EPP_COTIZACION_MODE__;
+    const valorUnitarioRaw = modoCotizacion ? document.getElementById('valorUnitarioEPP')?.value : null;
+    const valorUnitario = (valorUnitarioRaw !== undefined && valorUnitarioRaw !== null && String(valorUnitarioRaw).trim() !== '')
+        ? Number(valorUnitarioRaw)
+        : null;
+    const totalValue = modoCotizacion ? document.getElementById('totalEPP')?.value : null;
+    const total = (totalValue !== undefined && totalValue !== null && String(totalValue).trim() !== '')
+        ? Number(totalValue)
+        : null;
+
     // Agregar a la lista (usar las fotos tal como están, solo URLs blob temporales)
     const eppData = {
         id: productoSeleccionadoEPP.id,
         nombre_completo: productoSeleccionadoEPP.nombre_completo || productoSeleccionadoEPP.nombre,
         cantidad: parseInt(cantidad),
         observaciones: observaciones,
+        valor_unitario: modoCotizacion ? valorUnitario : null,
+        total: modoCotizacion ? total : null,
         imagenes: [...window.fotosEPP], // Mantener fotos con URLs blob (temporal)
         imagen: productoSeleccionadoEPP.imagen
     };
@@ -548,6 +635,12 @@ function agregarEPPALista() {
 
     // Resetear valores
     document.getElementById('cantidadEPP').value = '1';
+    const vu = document.getElementById('valorUnitarioEPP');
+    const tot = document.getElementById('totalEPP');
+    const vuCont = document.getElementById('valorUnitarioTotalContainer');
+    if (vu) vu.value = '';
+    if (tot) tot.value = '0';
+    if (vuCont) vuCont.style.display = 'none';
     document.getElementById('observacionesEPP').value = '';
     
     // 🔑 IMPORTANTE: Limpiar fotos del contenedor (ya están asociadas al EPP)
@@ -1062,6 +1155,7 @@ async function finalizarAgregarEPP() {
         const imagenesParaGuardar = await convertirBlobAArchivos(epp.imagenes);
         
         // Usar eppItemManager para crear la tarjeta visual
+        const modoCotizacion = !!window.__EPP_COTIZACION_MODE__;
         if (window.eppItemManager && typeof window.eppItemManager.crearItem === 'function') {
             window.eppItemManager.crearItem(
                 epp.id,                    // id
@@ -1069,7 +1163,10 @@ async function finalizarAgregarEPP() {
                 'EPP',                     // categoria
                 epp.cantidad,              // cantidad
                 epp.observaciones,         // observaciones
-                imagenesParaGuardar       // imagenes convertidas a archivos
+                imagenesParaGuardar,      // imagenes convertidas a archivos
+                null,
+                modoCotizacion ? epp.valor_unitario : null,
+                modoCotizacion ? epp.total : null
             );
             console.log(` [finalizarAgregarEPP] EPP agregado a tarjeta: ${epp.nombre_completo}`);
         } else {
@@ -1083,6 +1180,8 @@ async function finalizarAgregarEPP() {
             nombre_epp: epp.nombre_completo,
             cantidad: epp.cantidad,
             observaciones: epp.observaciones,
+            valor_unitario: modoCotizacion ? epp.valor_unitario : null,
+            total: modoCotizacion ? epp.total : null,
             imagenes: imagenesParaGuardar // Usar imágenes convertidas a archivos
         };
         

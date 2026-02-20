@@ -53,7 +53,9 @@ final class CotizacionesViewController extends Controller
 
             // Convertir modelos a objetos para la vista
             $cotizaciones = $cotizacionesModelo->map(function($cot) use ($mapeoTipos) {
-                $tipo = $mapeoTipos[$cot->tipo_cotizacion_id] ?? 'PL';
+                $tipo = ($cot->tipoCotizacion && $cot->tipoCotizacion->codigo)
+                    ? $cot->tipoCotizacion->codigo
+                    : ($mapeoTipos[$cot->tipo_cotizacion_id] ?? 'PL');
                 $obj = (object)[
                     'id' => $cot->id,
                     'numero_cotizacion' => $cot->numero_cotizacion,

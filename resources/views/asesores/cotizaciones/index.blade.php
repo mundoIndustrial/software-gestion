@@ -298,6 +298,9 @@
             case 'logo':
                 url = `/asesores/cotizacion/${cotizacionId}/pdf/logo`;
                 break;
+            case 'epp':
+                url = `/asesores/cotizacion/${cotizacionId}/pdf/epp`;
+                break;
             default:
                 url = `/asesores/cotizacion/${cotizacionId}/pdf/prenda`;
         }

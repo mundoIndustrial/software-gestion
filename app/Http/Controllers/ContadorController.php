@@ -10,6 +10,7 @@ use App\Helpers\DescripcionPrendaHelper;
 use App\Events\CotizacionEstadoCambiado;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -229,6 +230,7 @@ class ContadorController extends Controller
 
             // Obtener la cotización con TODAS sus relaciones anidadas
             $cotizacionModelo = Cotizacion::with([
+                'tipoCotizacion',
                 'cliente',
                 'asesor',
                 'prendas' => function($query) {
@@ -278,6 +280,7 @@ class ContadorController extends Controller
                     'estado' => $cotizacionModelo->estado,
                     'tipo_venta' => $cotizacionModelo->tipo_venta ?? 'N/A',
                     'tipo_cotizacion_id' => $cotizacionModelo->tipo_cotizacion_id ?? null,
+                    'tipo_codigo' => ($cotizacionModelo->tipoCotizacion?->codigo) ?? ($cotizacionModelo->obtenerTipoCotizacion() ?? null),
                     'especificaciones' => $this->parseEspecificaciones($cotizacionModelo->especificaciones),
                 ],
                 'prendas_cotizaciones' => $cotizacionModelo->prendas->map(function($prenda, $index) {
@@ -447,6 +450,55 @@ class ContadorController extends Controller
             $datos['logo_cotizacion'] = $logoCotizacion;
             $datos['tiene_logo'] = !is_null($logoCotizacion);
             $datos['tiene_prendas'] = count($datos['prendas_cotizaciones']) > 0;
+
+            // Agregar datos EPP (si aplica)
+            $tipoCodigo = ($datos['cotizacion']['tipo_codigo'] ?? null);
+            $tipoCodigoUpper = is_string($tipoCodigo) ? strtoupper(trim($tipoCodigo)) : null;
+            if ($tipoCodigoUpper === 'EPP') {
+                $eppCot = DB::table('epp_cotizacion')->where('cotizacion_id', $cotizacionModelo->id)->first();
+                $eppItems = DB::table('epp_items_cot')->where('cotizacion_id', $cotizacionModelo->id)->orderBy('id')->get();
+
+                $eppValoresUnitarios = DB::table('epp_valor_unitario')
+                    ->whereIn('epp_item_id', $eppItems->pluck('id')->all())
+                    ->get()
+                    ->keyBy('epp_item_id');
+
+                $imagenes = DB::table('epp_img_cot')
+                    ->whereIn('epp_item_id', $eppItems->pluck('id')->all())
+                    ->orderBy('id')
+                    ->get()
+                    ->groupBy('epp_item_id');
+
+                $datos['epp_cotizacion'] = $eppCot ? [
+                    'tipo_venta' => $eppCot->tipo_venta ?? null,
+                    'observaciones_generales' => $eppCot->observaciones_generales ?? null,
+                ] : null;
+
+                $datos['epp_items'] = $eppItems->map(function ($it) use ($imagenes) {
+                    $imgs = $imagenes->get($it->id, collect());
+                    $urls = $imgs->map(function ($imgRow) {
+                        $ruta = $imgRow->ruta ?? null;
+                        if (!$ruta) return null;
+                        try {
+                            return Storage::disk('public')->url($ruta);
+                        } catch (\Exception $e) {
+                            return str_starts_with($ruta, '/') ? $ruta : ('/storage/' . ltrim($ruta, '/'));
+                        }
+                    })->filter()->values()->all();
+
+                    return [
+                        'id' => $it->id,
+                        'nombre' => $it->nombre ?? 'Sin nombre',
+                        'cantidad' => (int)($it->cantidad ?? 1),
+                        'observaciones' => $it->observaciones ?? null,
+                        'imagenes' => $urls,
+                    ];
+                })->map(function ($it) use ($eppValoresUnitarios) {
+                    $vu = $eppValoresUnitarios[$it['id']] ?? null;
+                    $it['valor_unitario'] = $vu ? $vu->valor_unitario : null;
+                    return $it;
+                })->values()->all();
+            }
 
             return response()->json($datos);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {

@@ -325,7 +325,9 @@ class EppService {
                     this.itemManager.actualizarItem(eppId, {
                         cantidad: valores.cantidad,
                         observaciones: valores.observaciones,
-                        imagenes: imagenes
+                        imagenes: imagenes,
+                        valor_unitario: valores.valor_unitario,
+                        total: valores.total
                     });
 
                     // Actualizar en window.itemsPedido si existe
@@ -336,7 +338,9 @@ class EppService {
                                 ...window.itemsPedido[index],
                                 cantidad: valores.cantidad,
                                 observaciones: valores.observaciones,
-                                imagenes: imagenes
+                                imagenes: imagenes,
+                                valor_unitario: valores.valor_unitario,
+                                total: valores.total
                             };
                         }
                     }
@@ -372,7 +376,10 @@ class EppService {
                 producto.categoria,
                 valores.cantidad,
                 valores.observaciones,
-                imagenes
+                imagenes,
+                null,
+                valores.valor_unitario,
+                valores.total
             );
 
             // Crear objeto EPP (solo campos necesarios)
@@ -383,7 +390,9 @@ class EppService {
                 categoria: producto.categoria || '',
                 cantidad: valores.cantidad,
                 observaciones: valores.observaciones,
-                imagenes: imagenes
+                imagenes: imagenes,
+                valor_unitario: valores.valor_unitario,
+                total: valores.total
             };
             
             console.log('[EppService]  Objeto EPP a guardar:', eppData);

@@ -1,10 +1,64 @@
 // ===== FUNCIONES PARA MODAL DE COTIZACIÓN =====
 
+// Loader interno (sin bundler): carga módulos auxiliares en orden.
+// Nota: no modifica vistas; cotizacion.js sigue siendo el entrypoint.
+if (typeof window !== 'undefined') {
+    window.__cotizacionModalModulesPromise = window.__cotizacionModalModulesPromise || null;
+
+    window.ensureCotizacionModalModules = function ensureCotizacionModalModules() {
+        if (window.__cotizacionModalModulesPromise) return window.__cotizacionModalModulesPromise;
+
+        const loadScript = (src) => new Promise((resolve, reject) => {
+            // Evitar duplicados
+            const existing = document.querySelector(`script[data-cotizacion-module="${src}"]`);
+            if (existing) {
+                if (existing.dataset.loaded === 'true') return resolve();
+                existing.addEventListener('load', () => resolve());
+                existing.addEventListener('error', () => reject(new Error('Error cargando ' + src)));
+                return;
+            }
+
+            const s = document.createElement('script');
+            s.src = src;
+            s.async = false;
+            s.defer = false;
+            s.dataset.cotizacionModule = src;
+            s.addEventListener('load', () => {
+                s.dataset.loaded = 'true';
+                resolve();
+            });
+            s.addEventListener('error', () => reject(new Error('Error cargando ' + src)));
+            document.head.appendChild(s);
+        });
+
+        const base = '/js/contador/cotizacion';
+        window.__cotizacionModalModulesPromise = Promise.resolve()
+            .then(() => loadScript(`${base}/helpers.js`))
+            .then(() => loadScript(`${base}/type-detector.js`))
+            .then(() => loadScript(`${base}/render-prenda.js`))
+            .then(() => loadScript(`${base}/render-logo.js`))
+            .then(() => loadScript(`${base}/render-epp.js`))
+            .then(() => loadScript(`${base}/modal-core.js`))
+            .catch((e) => {
+                console.error('[cotizacion.js] Error cargando módulos de cotización', e);
+                // No romper la app: permitir fallback a lógica legacy.
+            });
+
+        return window.__cotizacionModalModulesPromise;
+    };
+}
+
 /**
  * Abre el modal de detalle de cotización
  * @param {number} cotizacionId - ID de la cotización
  */
 function openCotizacionModal(cotizacionId) {
+
+    const ensureModules = (typeof window !== 'undefined' && typeof window.ensureCotizacionModalModules === 'function')
+        ? window.ensureCotizacionModalModules()
+        : Promise.resolve();
+
+    ensureModules.then(() => {
 
 
     fetch(`/contador/cotizacion/${cotizacionId}`)
@@ -30,8 +84,28 @@ function openCotizacionModal(cotizacionId) {
                     document.getElementById('modalHeaderAdvisor').textContent = cot.asesora_nombre || 'N/A';
                 }
 
-                const esCombinadaRaw = !!(payload.tiene_prendas && payload.tiene_logo);
-                const esSoloLogo = !!(!payload.tiene_prendas && payload.tiene_logo);
+                // Preferir detector modular si existe
+                const typeDetector = (typeof window !== 'undefined') ? window.CotizacionModalTypeDetector : null;
+
+                const tienePrendas = Array.isArray(payload.prendas_cotizaciones)
+                    ? payload.prendas_cotizaciones.length > 0
+                    : !!payload.tiene_prendas;
+                const tieneLogo = !!payload.logo_cotizacion || !!payload.tiene_logo;
+
+                // Fallback legacy (por si el loader no alcanzó a cargar)
+                const codigoTipoCotizacion = (
+                    payload?.cotizacion?.tipo ||
+                    payload?.cotizacion?.tipo_codigo ||
+                    payload?.cotizacion?.tipo_cotizacion_codigo ||
+                    payload?.cotizacion?.tipo_cotizacion?.codigo ||
+                    payload?.cotizacion?.tipoCotizacion?.codigo ||
+                    ''
+                );
+                const codigoTipoUpper = (codigoTipoCotizacion || '').toString().trim().toUpperCase();
+                const esTipoSoloLogoPorCodigo = ['L', 'LG', 'LOGO', 'B'].includes(codigoTipoUpper);
+
+                let esCombinadaRaw = !!(tienePrendas && tieneLogo && !esTipoSoloLogoPorCodigo);
+                let esSoloLogo = !!(esTipoSoloLogoPorCodigo || (!tienePrendas && tieneLogo));
                 const moduloActual = (typeof document !== 'undefined' && document.body && document.body.dataset)
                     ? document.body.dataset.module
                     : '';
@@ -40,6 +114,13 @@ function openCotizacionModal(cotizacionId) {
                 // Nota: no referenciar esCombinada aquí porque aún no está inicializada.
                 // Se decide el modo final después de detectar combinada vs solo-logo.
                 let modo = viewMode || (window.__cotizacionModalViewMode || null);
+
+                if (typeDetector && typeof typeDetector.compute === 'function') {
+                    const ctx = typeDetector.compute(payload, viewMode, { hideSelector });
+                    esCombinadaRaw = ctx.esCombinada;
+                    esSoloLogo = ctx.esSoloLogoFinal;
+                    modo = ctx.modo;
+                }
                 // Helper: identifica si una prenda tiene técnicas de logo
                 const prendaTieneLogo = (prendaObj) => {
                     const tecnicas = (payload.logo_cotizacion && Array.isArray(payload.logo_cotizacion.tecnicas_prendas))
@@ -53,21 +134,15 @@ function openCotizacionModal(cotizacionId) {
                 // En algunos casos (cotización tipo logo) el backend igual envía prendas_cotizaciones,
                 // por lo que tiene_prendas puede venir en true. Detectamos "solo logo" por contenido.
                 const prendasAll = Array.isArray(payload.prendas_cotizaciones) ? payload.prendas_cotizaciones : [];
-                const esSoloLogoPorContenido = !!(
-                    payload.tiene_logo &&
-                    prendasAll.length > 0 &&
-                    prendasAll.every(p => prendaTieneLogo(p))
-                );
-
-                // Caso especial: si parece "combinada" por flags pero por contenido es SOLO LOGO,
-                // NO debemos mostrar el selector Prenda/Logo.
-                const esCombinada = esCombinadaRaw && !esSoloLogoPorContenido;
+                // Si la cotización tiene prendas y logo, es COMBINADA siempre.
+                // Aun si todas las prendas tienen técnicas de logo, necesitamos permitir ver ambos modos (Prenda/Logo).
+                const esCombinada = esCombinadaRaw;
 
                 // Si es COMBINADA, aunque todas las prendas tengan logo, igual necesitamos permitir
                 // ver ambas vistas (Prenda/Logo) sobre la misma prenda.
                 const esSoloLogoFinal = esCombinada
                     ? false
-                    : (esSoloLogo || esSoloLogoPorContenido);
+                    : esSoloLogo;
 
                 // Modo por defecto cuando no viene explícito:
                 // - combinada: recordar selector (default prenda)
@@ -89,66 +164,112 @@ function openCotizacionModal(cotizacionId) {
                 // Construir HTML del modal sin el encabezado (que ya está en el layout)
                 let html = '';
                 
+                // Si es cotización EPP, renderizar sección EPP (módulo) y salir temprano
+                {
+                    const tipoCodigo = (payload?.cotizacion?.tipo_codigo || payload?.cotizacion?.tipo || '').toString().trim().toUpperCase();
+                    if (tipoCodigo === 'EPP') {
+                        const renderEpp = (typeof window !== 'undefined') ? window.CotizacionModalRenderEpp : null;
+                        if (renderEpp && typeof renderEpp.renderEppSection === 'function') {
+                            html += renderEpp.renderEppSection(payload);
+                        } else {
+                            html += '<p style="color: #999; text-align: center; padding: 2rem;">No hay información de EPP para mostrar</p>';
+                        }
+
+                        document.getElementById('modalBody').innerHTML = html;
+                        document.getElementById('cotizacionModal').style.display = 'flex';
+                        return;
+                    }
+                }
+
                 // Construir contenido de prendas
                 let htmlPrendas = '';
 
-            // Contenedor de prendas
-            htmlPrendas += '<div class="prendas-container" style="display: flex; flex-direction: column; gap: 1.5rem;">';
+                // Sección completa de prendas (módulo) con fallback legacy
+                {
+                    const renderPrenda = (typeof window !== 'undefined') ? window.CotizacionModalRenderPrenda : null;
+                    if (renderPrenda && typeof renderPrenda.renderPrendas === 'function') {
+                        htmlPrendas += renderPrenda.renderPrendas(payload, {
+                            esCombinada,
+                            esSoloLogoFinal,
+                            modo,
+                            hideSelector,
+                            prendasAll,
+                            prendaTieneLogo,
+                        });
+                    } else {
+                        // Contenedor de prendas
+                        htmlPrendas += '<div class="prendas-container" style="display: flex; flex-direction: column; gap: 1.5rem;">';
 
-                // Agregar mensaje de tipo de venta antes del primer card
-                let tipoVenta = null;
-                
-                // Reglas:
-                // - Cotización combinada: en modo LOGO, mostrar tipo_venta de logo_cotizaciones.
-                // - En modo PRENDA (o no combinada), mostrar tipo_venta de cotizaciones.
-                // - Cotización solo-logo: mostrar tipo_venta de logo_cotizaciones.
-                if (payload.logo_cotizacion && payload.logo_cotizacion.tipo_venta && ((esCombinada && modo === 'logo') || (!payload.tiene_prendas && payload.tiene_logo))) {
-                    tipoVenta = payload.logo_cotizacion.tipo_venta;
-                } else if (payload.cotizacion && payload.cotizacion.tipo_venta) {
-                    tipoVenta = payload.cotizacion.tipo_venta;
-                }
-            
-                if (tipoVenta) {
-                    htmlPrendas += `
-                        <div style="display: inline-block; text-align: left; margin-bottom: 1.5rem; padding: 1rem; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 2px solid #ef4444; border-radius: 8px;">
-                            <span style="color: #000000; font-size: 1.1rem; font-weight: 600;">
-                                Por favor cotizar al 
-                            </span>
-                            <span style="color: #dc2626; font-size: 1.4rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-left: 8px;">
-                                ${tipoVenta}
-                            </span>
-                        </div>
-                    `;
+                        // Header de tipo de venta y selector Prenda/Logo (módulo)
+                        const renderPrenda = (typeof window !== 'undefined') ? window.CotizacionModalRenderPrenda : null;
+                        const ctxPrendaHeader = {
+                            esCombinada,
+                            esSoloLogoFinal,
+                            modo,
+                            hideSelector,
+                        };
+
+                        if (renderPrenda && typeof renderPrenda.renderTipoVenta === 'function') {
+                            htmlPrendas += renderPrenda.renderTipoVenta(payload, ctxPrendaHeader);
+                        } else {
+                            // Fallback legacy
+                            let tipoVenta = null;
+                            if (payload.logo_cotizacion && payload.logo_cotizacion.tipo_venta && ((esCombinada && modo === 'logo') || (!payload.tiene_prendas && payload.tiene_logo))) {
+                                tipoVenta = payload.logo_cotizacion.tipo_venta;
+                            } else if (payload.cotizacion && payload.cotizacion.tipo_venta) {
+                                tipoVenta = payload.cotizacion.tipo_venta;
+                            }
+                            if (tipoVenta) {
+                                htmlPrendas += `
+                                    <div style="display: inline-block; text-align: left; margin-bottom: 1.5rem; padding: 1rem; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 2px solid #ef4444; border-radius: 8px;">
+                                        <span style="color: #000000; font-size: 1.1rem; font-weight: 600;">Por favor cotizar al</span>
+                                        <span style="color: #dc2626; font-size: 1.4rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-left: 8px;">${tipoVenta}</span>
+                                    </div>
+                                `;
+                            }
+                        }
+
+                        if (renderPrenda && typeof renderPrenda.renderSelector === 'function') {
+                            htmlPrendas += renderPrenda.renderSelector(ctxPrendaHeader);
+                        } else {
+                            // Fallback legacy selector
+                            if (esCombinada && !hideSelector && !esSoloLogoFinal) {
+                                const isPrenda = modo === 'prenda';
+                                const isLogo = modo === 'logo';
+                                htmlPrendas += `
+                                    <div style="display: flex; gap: 0.75rem; margin-bottom: 1.25rem;">
+                                        <button type="button" id="cotModalBtnPrenda" style="padding: 0.6rem 0.9rem; border-radius: 8px; border: 2px solid ${isPrenda ? '#1e5ba8' : '#cbd5e1'}; background: ${isPrenda ? '#1e5ba8' : '#ffffff'}; color: ${isPrenda ? '#ffffff' : '#0f172a'}; font-weight: 800; cursor: pointer;">Cotización Prenda</button>
+                                        <button type="button" id="cotModalBtnLogo" style="padding: 0.6rem 0.9rem; border-radius: 8px; border: 2px solid ${isLogo ? '#1e5ba8' : '#cbd5e1'}; background: ${isLogo ? '#1e5ba8' : '#ffffff'}; color: ${isLogo ? '#ffffff' : '#0f172a'}; font-weight: 800; cursor: pointer;">Cotización Logo</button>
+                                    </div>
+                                `;
+                            }
+                        }
+                    }
                 }
 
-                // Selector Prenda/Logo solo para cotización combinada (NO aplica para cotización solo-logo)
-                if (esCombinada && !hideSelector && !esSoloLogoFinal) {
-                    const isPrenda = modo === 'prenda';
-                    const isLogo = modo === 'logo';
-                    htmlPrendas += `
-                        <div style="display: flex; gap: 0.75rem; margin-bottom: 1.25rem;">
-                            <button type="button" id="cotModalBtnPrenda" style="padding: 0.6rem 0.9rem; border-radius: 8px; border: 2px solid ${isPrenda ? '#1e5ba8' : '#cbd5e1'}; background: ${isPrenda ? '#1e5ba8' : '#ffffff'}; color: ${isPrenda ? '#ffffff' : '#0f172a'}; font-weight: 800; cursor: pointer;">
-                                Cotización Prenda
-                            </button>
-                            <button type="button" id="cotModalBtnLogo" style="padding: 0.6rem 0.9rem; border-radius: 8px; border: 2px solid ${isLogo ? '#1e5ba8' : '#cbd5e1'}; background: ${isLogo ? '#1e5ba8' : '#ffffff'}; color: ${isLogo ? '#ffffff' : '#0f172a'}; font-weight: 800; cursor: pointer;">
-                                Cotización Logo
-                            </button>
-                        </div>
-                    `;
-                }
-
-                const prendas = prendasAll;
-                const prendasFiltradas = esSoloLogoFinal
-                    ? prendas.filter(p => prendaTieneLogo(p))
-                    : (!esCombinada
-                        ? prendas
-                        : (modo === 'logo'
+                // Fallback legacy completo (solo cuando NO existe renderPrendas del módulo)
+                {
+                    const renderPrenda = (typeof window !== 'undefined') ? window.CotizacionModalRenderPrenda : null;
+                    const usaModuloPrendas = !!(renderPrenda && typeof renderPrenda.renderPrendas === 'function');
+                    if (!usaModuloPrendas) {
+                        const prendas = prendasAll;
+                        const prendasFiltradas = esSoloLogoFinal
                             ? prendas.filter(p => prendaTieneLogo(p))
-                            : prendas));
+                            : (!esCombinada
+                                ? prendas
+                                : (modo === 'logo'
+                                    ? prendas.filter(p => prendaTieneLogo(p))
+                                    : prendas));
 
-                if (prendasFiltradas && prendasFiltradas.length > 0) {
-                    prendasFiltradas.forEach((prenda, index) => {
+                        if (prendasFiltradas && prendasFiltradas.length > 0) {
+                            prendasFiltradas.forEach((prenda, index) => {
 
+                    // Render completo de la card de prenda (módulo) con fallback legacy
+                    const renderPrenda = (typeof window !== 'undefined') ? window.CotizacionModalRenderPrenda : null;
+                    if (renderPrenda && typeof renderPrenda.renderPrendaCard === 'function') {
+                        htmlPrendas += renderPrenda.renderPrendaCard(payload, prenda, modo);
+                        return;
+                    }
 
                     // Construir atributos principales
                     let atributosLinea = [];
@@ -219,92 +340,11 @@ function openCotizacionModal(cotizacionId) {
                             </p>
                             <div style="margin: 0 0 1rem 0; color: #333; font-size: 0.85rem; line-height: 1.6;">
                                 <span style="color: #1e5ba8; font-weight: 700;">DESCRIPCION:</span> ${(() => {
-                                    // En vista LOGO: mostrar SOLO las ubicaciones/técnicas de logo.
-                                    // No usar la descripción concatenada de la prenda porque puede incluir reflectivo u otros textos.
-                                    if (modo === 'logo') {
-                                        const tecnicasPrendaArray = (payload.logo_cotizacion && Array.isArray(payload.logo_cotizacion.tecnicas_prendas))
-                                            ? payload.logo_cotizacion.tecnicas_prendas.filter(tp => tp && tp.prenda_id === prenda.id)
-                                            : [];
-
-                                        if (!tecnicasPrendaArray || tecnicasPrendaArray.length === 0) {
-                                            return '-';
-                                        }
-
-                                        // Consolidar ubicaciones por técnica
-                                        const ubicacionesPorTecnica = {};
-                                        tecnicasPrendaArray.forEach(tp => {
-                                            const tecnicaNombre = (tp && tp.tipo_logo_nombre) ? tp.tipo_logo_nombre : 'Logo';
-                                            if (!tp || !tp.ubicaciones) {
-                                                return;
-                                            }
-                                            let ubicacionesArray = Array.isArray(tp.ubicaciones)
-                                                ? tp.ubicaciones
-                                                : [String(tp.ubicaciones)];
-                                            ubicacionesArray = ubicacionesArray
-                                                .map(u => String(u).replace(/[\[\]"']/g, '').trim())
-                                                .filter(u => u);
-                                            if (ubicacionesArray.length === 0) {
-                                                return;
-                                            }
-                                            if (!ubicacionesPorTecnica[tecnicaNombre]) {
-                                                ubicacionesPorTecnica[tecnicaNombre] = [];
-                                            }
-                                            ubicacionesPorTecnica[tecnicaNombre] = ubicacionesPorTecnica[tecnicaNombre].concat(ubicacionesArray);
-                                        });
-
-                                        const ubicacionesTexto = Object.entries(ubicacionesPorTecnica)
-                                            .map(([tecnica, ubicaciones]) => ubicaciones.join(', '))
-                                            .join(', ');
-
-                                        return (ubicacionesTexto || '-').replace(/\n/g, '<br>');
+                                    const renderPrenda = (typeof window !== 'undefined') ? window.CotizacionModalRenderPrenda : null;
+                                    if (renderPrenda && typeof renderPrenda.renderDescripcionPrenda === 'function') {
+                                        return renderPrenda.renderDescripcionPrenda(payload, prenda, modo);
                                     }
-
-                                    let descripcionCompleta = prenda.descripcion_formateada || prenda.descripcion || '';
-                                    
-                                    // LIMPIEZA: Remover Bolsillos y Broche/Botón de la descripción concatenada
-                                    // Patrón 1: Bolsillos: ... (sin viñeta, hasta siguiente palabra clave)
-                                    descripcionCompleta = descripcionCompleta.replace(/Bolsillos:\s*[^,]*(?:,\s*)?/gi, '');
-                                    // Patrón 2: Botón: ... o Broche: ... (sin viñeta, hasta siguiente palabra clave)
-                                    descripcionCompleta = descripcionCompleta.replace(/(Botón|Broche):\s*[^,]*(?:,\s*)?/gi, '');
-                                    // Patrón 3: • BOLSILLOS: ... (si tiene viñeta)
-                                    descripcionCompleta = descripcionCompleta.replace(/\s*•\s*BOLSILLOS:.*?(?=•|$)/gi, '');
-                                    // Patrón 4: • BROCHE: ... o • BOTÓN: ... (si tiene viñeta)
-                                    descripcionCompleta = descripcionCompleta.replace(/\s*•\s*(BROCHE|BOTÓN):.*?(?=•|$)/gi, '');
-                                    // Limpiar espacios múltiples y comas al inicio/final
-                                    descripcionCompleta = descripcionCompleta.replace(/\s+/g, ' ').replace(/^,\s*|,\s*$/g, '').trim();
-                                    
-                                    // (modo logo se maneja arriba)
-                                    
-                                    // Agregar descripción y ubicaciones de prenda_cot_reflectivo
-                                    // SOLO en vista PRENDA. En vista LOGO se debe mostrar únicamente información de logo.
-                                    console.log('Prenda:', prenda.nombre_prenda, 'prenda_cot_reflectivo:', prenda.prenda_cot_reflectivo);
-                                    if (modo !== 'logo' && prenda.prenda_cot_reflectivo) {
-                                        const pcrRef = prenda.prenda_cot_reflectivo;
-                                        
-                                        // Agregar descripción del reflectivo
-                                        if (pcrRef.descripcion) {
-                                            if (descripcionCompleta) {
-                                                descripcionCompleta += ', ';
-                                            }
-                                            descripcionCompleta += pcrRef.descripcion;
-                                        }
-                                        
-                                        // Agregar ubicaciones del reflectivo SIN negrita
-                                        if (pcrRef.ubicaciones && Array.isArray(pcrRef.ubicaciones)) {
-                                            if (descripcionCompleta) {
-                                                descripcionCompleta += ', ';
-                                            }
-                                            const ubicacionesReflectivo = pcrRef.ubicaciones
-                                                .map(u => u.ubicacion ? u.ubicacion + (u.descripcion ? ': ' + u.descripcion : '') : '')
-                                                .filter(u => u)
-                                                .join(', ');
-                                            descripcionCompleta += ubicacionesReflectivo;
-                                        }
-                                    }
-
-                                    // (modo logo se maneja arriba)
-                                    
-                                    return descripcionCompleta.replace(/\n/g, '<br>') || '-';
+                                    return (prenda.descripcion_formateada || prenda.descripcion || '-').toString().replace(/\n/g, '<br>');
                                 })()}
                             </div>
                     `;
@@ -314,693 +354,67 @@ function openCotizacionModal(cotizacionId) {
                     // - Imágenes del logo (si existen)
                     // No mostrar tallas, variantes, reflectivo, telas ni fotos de prenda.
                     if (modo === 'logo') {
-                        const imagenesLogo = [];
-
-                        const logosPorUrl = new Map();
-                        const normalizarUrlLogo = (u) => {
-                            if (!u) return '';
-                            let url = String(u).trim();
-                            if (!url) return '';
-                            try {
-                                url = url.split('#')[0];
-                                url = url.split('?')[0];
-                            } catch (_) {
-                                // no-op
-                            }
-                            if (!url.startsWith('http')) {
-                                if (url.startsWith('storage/')) {
-                                    url = '/' + url;
-                                }
-                                if (!url.startsWith('/storage/')) {
-                                    url = '/storage/' + url.replace(/^\/+/, '').replace(/^storage\//, '');
-                                }
-                            }
-                            return url;
-                        };
-
-                        if (payload.logo_cotizacion && payload.logo_cotizacion.tecnicas_prendas) {
-                            payload.logo_cotizacion.tecnicas_prendas.forEach(tp => {
-                                if (tp.prenda_id === prenda.id && tp.fotos && tp.fotos.length > 0) {
-                                    tp.fotos.forEach((foto) => {
-                                        if (!foto || !foto.url) return;
-                                        const urlKey = normalizarUrlLogo(foto.url) || String(foto.url);
-                                        if (!urlKey) return;
-                                        if (!logosPorUrl.has(urlKey)) {
-                                            logosPorUrl.set(urlKey, urlKey);
-                                        }
-                                    });
-                                }
-                            });
-                        }
-
-                        if (logosPorUrl.size > 0) {
-                            Array.from(logosPorUrl.values()).forEach((url) => {
-                                imagenesLogo.push(url);
-                            });
-                        }
-
-                        if (imagenesLogo.length > 0) {
-                            htmlPrendas += `
-                                <div style="margin-top: 1.25rem; display: flex; gap: 1rem; flex-wrap: wrap; justify-content: flex-start;">
-                            `;
-
-                            imagenesLogo.forEach((url, idx) => {
-                                htmlPrendas += `
-                                    <div style="display: flex; flex-direction: column; align-items: center;">
-                                        <img src="${url}" 
-                                             alt="Logo"
-                                             data-gallery="galeria-logo-${prenda.id}"
-                                             data-index="${idx}"
-                                             style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #1e5ba8; cursor: pointer; transition: all 0.3s;"
-                                             onclick="abrirImagenGrande('${url}', 'galeria-logo-${prenda.id}', ${idx})"
-                                             onmouseover="this.style.boxShadow='0 4px 12px rgba(30, 91, 168, 0.4)'; this.style.transform='scale(1.05)';"
-                                             onmouseout="this.style.boxShadow='none'; this.style.transform='scale(1)';"/>
-                                        <div style="margin-top: 0.5rem; background: linear-gradient(to right, #1e5ba8, #1e5ba8); padding: 0.5rem 0.75rem; border-radius: 4px; color: white; text-align: center; font-weight: 600; font-size: 0.7rem; white-space: nowrap;">
-                                            Logo
-                                        </div>
-                                    </div>
-                                `;
-                            });
-
-                            htmlPrendas += `
-                                </div>
-                            `;
+                        const renderPrenda = (typeof window !== 'undefined') ? window.CotizacionModalRenderPrenda : null;
+                        if (renderPrenda && typeof renderPrenda.renderSoloLogoPorPrenda === 'function') {
+                            htmlPrendas += renderPrenda.renderSoloLogoPorPrenda(payload, prenda);
                         }
 
                         htmlPrendas += `</div>`;
                         return;
                     }
 
-                    // Mostrar tallas si existen (agrupadas por género)
-                    if (prenda.tallas && prenda.tallas.length > 0) {
-                        const tieneColorEnTallas = (Array.isArray(prenda.tallas) ? prenda.tallas : []).some(t => t && t.color);
-                        const tieneSobremedida = (Array.isArray(prenda.tallas) ? prenda.tallas : []).some(t => {
-                            if (!t) return false;
-                            const talla = String(t.talla || '').toLowerCase();
-                            const esSobremedida = (talla === 'sobremedida' || talla === 'cantidad');
-                            const sinGenero = (t.genero_id === null || t.genero_id === undefined || t.genero_id === '');
-                            return esSobremedida && sinGenero;
-                        });
-
-                        const parseTextoPersonalizadoTallasMapLocal = (texto) => {
-                            if (!texto || typeof texto !== 'string') return {};
-                            const t = texto.trim();
-                            if (!t) return {};
-                            if (t.startsWith('{') && t.endsWith('}')) {
-                                try {
-                                    const parsed = JSON.parse(t);
-                                    if (parsed && typeof parsed === 'object') return parsed;
-                                } catch (e) {
-                                    return {};
-                                }
-                            }
-                            const matchParen = t.match(/^\((.*)\)$/);
-                            if (matchParen) return { global: matchParen[1] };
-                            return { global: t };
-                        };
-
-                        const rawTextoPersonalizado = prenda.texto_personalizado_tallas || '';
-                        const textoMap = parseTextoPersonalizadoTallasMapLocal(rawTextoPersonalizado);
-
-                        const getTextoPersonalizadoValor = (colorKey, generoKey) => {
-                            if (textoMap && colorKey && typeof textoMap[colorKey] === 'object' && textoMap[colorKey] !== null) {
-                                const nested = textoMap[colorKey];
-                                if (nested && (nested[generoKey] !== undefined && nested[generoKey] !== null)) {
-                                    return String(nested[generoKey]);
-                                }
-                            }
-                            if (textoMap && colorKey) {
-                                const flatKey = `${colorKey}||${generoKey}`;
-                                if (textoMap[flatKey] !== undefined && textoMap[flatKey] !== null) {
-                                    return String(textoMap[flatKey]);
-                                }
-                            }
-                            if (textoMap && (textoMap[generoKey] !== undefined && textoMap[generoKey] !== null)) {
-                                return String(textoMap[generoKey]);
-                            }
-                            if (textoMap && textoMap.global) return String(textoMap.global);
-                            return '';
-                        };
-
-                        const formatearGrupoTallas = (arr) => {
-                            const items = (Array.isArray(arr) ? arr : [])
-                                .map(x => {
-                                    const talla = (x && x.talla) ? String(x.talla).trim() : '';
-                                    const cantidad = (x && (x.cantidad !== undefined && x.cantidad !== null)) ? x.cantidad : '';
-                                    if (!talla) return '';
-                                    return (cantidad !== '' && cantidad !== 1) ? `${talla} (${cantidad})` : talla;
-                                })
-                                .filter(Boolean);
-                            return items.join(', ');
-                        };
-
-                        // NUEVO: agrupar por color cuando exista campo color o haya sobremedida
-                        if (tieneColorEnTallas || tieneSobremedida) {
-                            const gruposPorColor = {};
-                            (Array.isArray(prenda.tallas) ? prenda.tallas : []).forEach((t) => {
-                                if (!t) return;
-                                const key = (t.color && String(t.color).trim()) ? String(t.color).trim() : 'Sin color';
-                                if (!gruposPorColor[key]) gruposPorColor[key] = [];
-                                gruposPorColor[key].push(t);
-                            });
-
-                            const ordenarKeys = (obj) => Object.keys(obj).sort((a, b) => a.localeCompare(b, 'es'));
-                            let gruposHtml = '';
-
-                            ordenarKeys(gruposPorColor).forEach((colorKey) => {
-                                const group = gruposPorColor[colorKey] || [];
-                                const tallasCaballero = [];
-                                const tallasDama = [];
-                                const tallasSinGenero = [];
-                                const tallasSobremedida = [];
-
-                                group.forEach((t) => {
-                                    if (!t) return;
-                                    const talla = String(t.talla || '').toLowerCase();
-                                    const esSobremedida = (talla === 'sobremedida' || talla === 'cantidad') && (t.genero_id === null || t.genero_id === undefined || t.genero_id === '');
-                                    if (esSobremedida) {
-                                        tallasSobremedida.push(t);
-                                        return;
-                                    }
-
-                                    if (t.genero_id === 1 || t.genero_id === '1') {
-                                        tallasCaballero.push(t);
-                                    } else if (t.genero_id === 2 || t.genero_id === '2') {
-                                        tallasDama.push(t);
-                                    } else {
-                                        tallasSinGenero.push(t);
-                                    }
-                                });
-
-                                const cabTxt = formatearGrupoTallas(tallasCaballero);
-                                const damaTxt = formatearGrupoTallas(tallasDama);
-                                const sinTxt = formatearGrupoTallas(tallasSinGenero);
-                                const tieneSobremedidaEnGrupo = tallasSobremedida.length > 0;
-
-                                const lineEditable = (titulo, generoKey, valorBase) => {
-                                    if (!valorBase) return '';
-                                    const valorParen = getTextoPersonalizadoValor(colorKey, generoKey);
-                                    return `
-                                        <div style="margin-top: 0.25rem;">
-                                            <span style="color: #1e5ba8; font-size: 0.85rem; font-weight: 800;">${titulo}: </span>
-                                            <span
-                                                class="tallas-genero-edit"
-                                                data-prenda-id="${prenda.id}"
-                                                data-genero-key="${generoKey}"
-                                                data-color-key="${String(colorKey).replace(/"/g, '&quot;')}"
-                                                data-tallas-base="${valorBase.replace(/"/g, '&quot;')}"
-                                                data-texto-personalizado="${String(rawTextoPersonalizado).replace(/"/g, '&quot;')}"
-                                                style="color: #ef4444; font-weight: 800; font-size: 0.85rem; cursor: pointer;"
-                                                title="Doble click para editar el texto dentro de paréntesis"
-                                            >${valorBase} (${valorParen || ''})</span>
-                                        </div>
-                                    `;
-                                };
-
-                                const sobremedidaLine = tieneSobremedidaEnGrupo
-                                    ? `
-                                        <div style="margin-top: 0.25rem;">
-                                            <span style="color: #ef4444; font-weight: 900; font-size: 0.85rem;">Sobremedida</span>
-                                        </div>
-                                    `
-                                    : '';
-
-                                const colorHeader = `
-                                    <div style="margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px dashed rgba(30,91,168,0.25);">
-                                        <div style="color:#0f172a; font-weight: 900; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">${colorKey}</div>
-                                    </div>
-                                `;
-
-                                gruposHtml +=
-                                    colorHeader +
-                                    lineEditable('Caballero', 'caballero', cabTxt) +
-                                    lineEditable('Dama', 'dama', damaTxt) +
-                                    sobremedidaLine +
-                                    lineEditable('Sin género', 'sin_genero', sinTxt);
-                            });
-
-                            htmlPrendas += `
-                                <div style="margin: 0 0 0.5rem 0;" data-tallas-prenda-container="1">
-                                    <span style="color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">Tallas:</span>
-                                    <div id="tallas-prenda-${prenda.id}" style="padding: 0.25rem 0.5rem; border-radius: 4px;">
-                                        ${gruposHtml}
-                                    </div>
-                                </div>
-                            `;
+                    // Mostrar tallas (módulo)
+                    {
+                        const renderPrenda = (typeof window !== 'undefined') ? window.CotizacionModalRenderPrenda : null;
+                        if (renderPrenda && typeof renderPrenda.renderTallasPrenda === 'function') {
+                            htmlPrendas += renderPrenda.renderTallasPrenda(payload, prenda);
                         } else {
-                            // LEGACY: render anterior (sin color)
-                            const tallasCaballero = [];
-                            const tallasDama = [];
-                            const tallasSinGenero = [];
-
-                            prenda.tallas.forEach((t) => {
-                                if (!t) return;
-                                if (t.genero_id === 1 || t.genero_id === '1') {
-                                    tallasCaballero.push(t);
-                                } else if (t.genero_id === 2 || t.genero_id === '2') {
-                                    tallasDama.push(t);
-                                } else {
-                                    tallasSinGenero.push(t);
-                                }
-                            });
-
-                            const cabTxt = formatearGrupoTallas(tallasCaballero);
-                            const damaTxt = formatearGrupoTallas(tallasDama);
-                            const sinTxt = formatearGrupoTallas(tallasSinGenero);
-
-                            const parseTextoMap = (texto) => {
-                                if (!texto || typeof texto !== 'string') return {};
-                                const t = texto.trim();
-                                if (!t) return {};
-                                if (t.startsWith('{') && t.endsWith('}')) {
-                                    try {
-                                        const parsed = JSON.parse(t);
-                                        if (parsed && typeof parsed === 'object') return parsed;
-                                    } catch (e) {
-                                        return {};
-                                    }
-                                }
-                                const matchParen = t.match(/^\((.*)\)$/);
-                                if (matchParen) return { global: matchParen[1] };
-                                return { global: t };
-                            };
-
-                            const textoMap = parseTextoMap(prenda.texto_personalizado_tallas || '');
-                            const rawTextoPersonalizado = prenda.texto_personalizado_tallas || '';
-
-                            const construirLinea = (titulo, key, valorBase) => {
-                                if (!valorBase) return '';
-                                const valorParen = (textoMap && (textoMap[key] !== undefined && textoMap[key] !== null))
-                                    ? String(textoMap[key])
-                                    : (textoMap && textoMap.global ? String(textoMap.global) : '');
-                                return `
-                                    <div style="margin-top: 0.25rem;">
-                                        <span style="color: #1e5ba8; font-size: 0.85rem; font-weight: 800;">${titulo}: </span>
-                                        <span
-                                            class="tallas-genero-edit"
-                                            data-prenda-id="${prenda.id}"
-                                            data-genero-key="${key}"
-                                            data-tallas-base="${valorBase.replace(/"/g, '&quot;')}"
-                                            data-texto-personalizado="${String(rawTextoPersonalizado).replace(/"/g, '&quot;')}"
-                                            style="color: #ef4444; font-weight: 800; font-size: 0.85rem; cursor: pointer;"
-                                            title="Doble click para editar el texto dentro de paréntesis"
-                                        >${valorBase} (${valorParen || ''})</span>
-                                    </div>
-                                `;
-                            };
-
-                            const gruposHtml =
-                                construirLinea('Caballero', 'caballero', cabTxt) +
-                                construirLinea('Dama', 'dama', damaTxt) +
-                                construirLinea('Sin género', 'sin_genero', sinTxt);
-
-                            htmlPrendas += `
-                                <div style="margin: 0 0 0.5rem 0;" data-tallas-prenda-container="1">
-                                    <span style="color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">Tallas:</span>
-                                    <div id="tallas-prenda-${prenda.id}" style="padding: 0.25rem 0.5rem; border-radius: 4px;">
-                                        ${gruposHtml}
-                                    </div>
-                                </div>
-                            `;
+                            // Fallback legacy: no renderizar tallas si no está el módulo
                         }
                     }
 
-                    // Renderizar variaciones de técnicas prendas si existen (solo en vista LOGO)
-                    if (modo === 'logo' && payload.logo_cotizacion && payload.logo_cotizacion.tecnicas_prendas && Array.isArray(payload.logo_cotizacion.tecnicas_prendas)) {
-                        // Buscar técnicas prendas para esta prenda
-                        const tecnicasPrendaArray = payload.logo_cotizacion.tecnicas_prendas.filter(tp => tp.prenda_id === prenda.id);
-                        
-                        if (tecnicasPrendaArray.length > 0) {
-                            // Consolidar todas las variaciones
-                            const variacionesFormateadas = {};
-                            tecnicasPrendaArray.forEach(tp => {
-                                if (tp.variaciones_prenda && typeof tp.variaciones_prenda === 'object') {
-                                    for (const [opcionNombre, detalles] of Object.entries(tp.variaciones_prenda)) {
-                                        if (typeof detalles === 'object' && detalles.opcion) {
-                                            const nombreFormato = opcionNombre.charAt(0).toUpperCase() + opcionNombre.slice(1).replace(/_/g, ' ');
-                                            if (!variacionesFormateadas[nombreFormato]) {
-                                                variacionesFormateadas[nombreFormato] = detalles;
-                                            }
-                                        }
-                                    }
-                                }
-                            });
-                            
-                            // Si hay variaciones, renderizar la tabla
-                            if (Object.keys(variacionesFormateadas).length > 0) {
-                                htmlPrendas += `
-                                    <div style="margin-top: 1rem;">
-                                        <h6 style="color: #1e5ba8; font-weight: 600; margin: 0 0 0.75rem 0; font-size: 0.95rem;">VARIACIONES</h6>
-                                        <table style="border-collapse: collapse; table-layout: auto; width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden;">
-                                            <thead>
-                                                <tr style="background: linear-gradient(135deg, #1e5ba8 0%, #2b7ec9 100%); color: white;">
-                                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; min-width: 200px; border-right: 1px solid rgba(255,255,255,0.2);">Tipo</th>
-                                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; min-width: 250px; border-right: 1px solid rgba(255,255,255,0.2);">Valor</th>
-                                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; min-width: 200px;">Observación</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                `;
-                                
-                                for (const [tipo, datos] of Object.entries(variacionesFormateadas)) {
-                                    const opcion = datos.opcion || '-';
-                                    const observacion = datos.observacion || '-';
-                                    htmlPrendas += `
-                                        <tr style="border-bottom: 1px solid #e2e8f0;">
-                                            <td style="padding: 0.75rem; border-right: 1px solid #e2e8f0; font-weight: 600; color: #0f172a;">${tipo}</td>
-                                            <td style="padding: 0.75rem; border-right: 1px solid #e2e8f0; color: #0ea5e9; font-weight: 500;">${opcion}</td>
-                                            <td style="padding: 0.75rem; color: #64748b;">${observacion}</td>
-                                        </tr>
-                                    `;
-                                }
-                                
-                                htmlPrendas += `
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                `;
-                            }
-
-                            // TALLAS Y CANTIDADES
-                            if (tecnicasPrendaArray.some(tp => tp.talla_cantidad && (Array.isArray(tp.talla_cantidad) ? tp.talla_cantidad.length > 0 : Object.keys(tp.talla_cantidad).length > 0))) {
-                                // Consolidar tallas de todas las técnicas
-                                const tallasSet = new Set();
-                                tecnicasPrendaArray.forEach(tp => {
-                                    if (tp.talla_cantidad) {
-                                        let tallaArray = [];
-                                        
-                                        // Si es array directo
-                                        if (Array.isArray(tp.talla_cantidad)) {
-                                            tallaArray = tp.talla_cantidad;
-                                        } 
-                                        // Si es objeto con tallas
-                                        else if (typeof tp.talla_cantidad === 'object') {
-                                            tallaArray = Object.values(tp.talla_cantidad);
-                                        }
-
-                                        tallaArray.forEach(item => {
-                                            if (item && item.talla) {
-                                                tallasSet.add(item.talla);
-                                            }
-                                        });
-                                    }
-                                });
-
-                                if (tallasSet.size > 0) {
-                                    const tallasTexto = Array.from(tallasSet).join(',');
-                                    htmlPrendas += `
-                                        <div style="margin-top: 1rem;">
-                                            <span style="color: #1e5ba8; font-weight: 600; font-size: 0.95rem;">TALLAS </span>
-                                            <span id="tallas-texto-${prenda.id}" 
-                                                  data-prenda-id="${prenda.id}"
-                                                  data-cotizacion-id="${payload.cotizacion.id}"
-                                                  ondblclick="editarTallasConParentesis(this)"
-                                                  style="color: #dc2626; font-weight: 700; font-size: 1rem; cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 4px; transition: all 0.2s; display: inline-block;"
-                                                  onmouseover="this.style.backgroundColor='#fee2e2'"
-                                                  onmouseout="this.style.backgroundColor='transparent'"
-                                                  title="Doble click para editar">
-                                                ${tallasTexto} ()
-                                            </span>
-                                        </div>
-                                    `;
-                                }
-                            }
+                    // Variaciones de técnicas prendas (modo LOGO) (módulo)
+                    if (modo === 'logo') {
+                        const renderPrenda = (typeof window !== 'undefined') ? window.CotizacionModalRenderPrenda : null;
+                        if (renderPrenda && typeof renderPrenda.renderVariacionesTecnicasLogo === 'function') {
+                            htmlPrendas += renderPrenda.renderVariacionesTecnicasLogo(payload, prenda);
                         }
                     }
 
-                    // ===== TABLA DE VARIANTES DE LA PRENDA =====
-                    if (prenda.variantes && prenda.variantes.length > 0) {
-                        htmlPrendas += `
-                            <div style="margin-top: 1.5rem;">
-                                <h6 style="color: #1e5ba8; font-weight: 600; margin: 0 0 0.75rem 0; font-size: 0.95rem;">VARIACIONES ESPECIFICAS</h6>
-                                <table style="border-collapse: collapse; table-layout: auto; width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden;">
-                                    <thead>
-                                        <tr style="background: linear-gradient(135deg, #1e5ba8 0%, #2b7ec9 100%); color: white;">
-                                            <th style="padding: 0.75rem; text-align: left; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.2); font-size: 0.85rem; min-width: 150px;">Variación</th>
-                                            <th style="padding: 0.75rem; text-align: left; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.2); font-size: 0.85rem; min-width: 200px;">Tipo</th>
-                                            <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.85rem;">Observaciones</th>
-                                        </tr>
-                            </thead>
-                            <tbody>
-                        `;
-
-                        const variante = prenda.variantes[0];
-                        
-                        // Construir filas de variaciones con estructura: variacion, tipo, observacion
-                        const filas = [];
-                        
-                        // Caso normal - mostrar variaciones normales
-                        if (variante.tipo_prenda) filas.push({ variacion: 'Tipo Prenda', tipo: variante.tipo_prenda, obs: '' });
-                        if (variante.tipo_jean_pantalon) filas.push({ variacion: 'Tipo Jean/Pantalón', tipo: variante.tipo_jean_pantalon, obs: '' });
-                        
-                        // Tipo Manga
-                        if (variante.tipo_manga_id || variante.tipo_manga) {
-                            let tipo = variante.tipo_manga_nombre || variante.tipo_manga || 'Sin especificar';
-                            filas.push({ variacion: 'Tipo Manga', tipo: tipo, obs: variante.obs_manga || '' });
+                    // Variaciones específicas + reflectivo (módulo)
+                    {
+                        const renderPrenda = (typeof window !== 'undefined') ? window.CotizacionModalRenderPrenda : null;
+                        if (renderPrenda && typeof renderPrenda.renderVariacionesEspecificas === 'function') {
+                            htmlPrendas += renderPrenda.renderVariacionesEspecificas(prenda);
                         }
-                        
-                        // Bolsillos: si tiene_bolsillos = true, mostrar en la tabla de variaciones
-                        if (variante.tiene_bolsillos !== null && variante.tiene_bolsillos) {
-                            let obs = variante.obs_bolsillos || '';
-                            filas.push({ variacion: 'Bolsillos', tipo: 'Sí', obs: obs });
-                        } else if (variante.obs_bolsillos) {
-                            // Si hay observación de bolsillos pero tiene_bolsillos es false, aún mostrar la fila
-                            filas.push({ variacion: 'Bolsillos', tipo: 'Sí', obs: variante.obs_bolsillos });
-                        }
-                        
-                        // Broche/Botón: mostrar en la tabla de variaciones si existe información
-                        if (variante.aplica_broche !== null && variante.aplica_broche) {
-                            let tipo = variante.tipo_broche_nombre || variante.tipo_broche || 'Sí';
-                            let obs = variante.obs_broche || '';
-                            filas.push({ variacion: 'Broche', tipo: tipo, obs: obs });
-                        } else if (variante.obs_broche) {
-                            // Si hay observación de broche pero aplica_broche es false, aún mostrar la fila
-                            let tipo = variante.tipo_broche_nombre || variante.tipo_broche || 'Sí';
-                            filas.push({ variacion: 'Broche', tipo: tipo, obs: variante.obs_broche });
-                        }
-                        
-                        // Reflectivo: mostrar en la tabla de variaciones si tiene_reflectivo = true
-                        if (variante.tiene_reflectivo !== null && variante.tiene_reflectivo) {
-                            let obs = variante.obs_reflectivo || '';
-                            filas.push({ variacion: 'Reflectivo', tipo: 'Sí', obs: obs });
-                        } else if (variante.obs_reflectivo) {
-                            // Si hay observación de reflectivo pero tiene_reflectivo es false, aún mostrar la fila
-                            filas.push({ variacion: 'Reflectivo', tipo: 'Sí', obs: variante.obs_reflectivo });
-                        }
-                        
-                        // NO mostrar Descripción Adicional - se elimina del modal
-                        
-                        // Renderizar filas
-                        filas.forEach((fila, idx) => {
-                            htmlPrendas += `
-                                <tr style="border-bottom: 1px solid #e2e8f0; ${idx % 2 === 0 ? 'background: #f9fafb;' : ''}">
-                                    <td style="padding: 0.75rem; border-right: 1px solid #e2e8f0; font-weight: 600; color: #0f172a; font-size: 0.85rem;">${fila.variacion}</td>
-                                    <td style="padding: 0.75rem; border-right: 1px solid #e2e8f0; color: #0ea5e9; font-weight: 500; font-size: 0.85rem;">${fila.tipo}</td>
-                                    <td style="padding: 0.75rem; color: #64748b; font-size: 0.85rem;">${fila.obs}</td>
-                                </tr>
-                            `;
-                        });
-
-                        htmlPrendas += `
-                                    </tbody>
-                                </table>
-                            </div>
-                        `;
-                    }
-
-                    // ===== SECCIÓN DE REFLECTIVO (si existe) =====
-                    if (prenda.reflectivo) {
-                        const reflectivo = prenda.reflectivo;
-                        
-                        // TABLA DE VARIACIONES DE REFLECTIVO
-                        if (reflectivo.variaciones && Object.keys(reflectivo.variaciones).length > 0) {
-                            htmlPrendas += `
-                                <div style="margin-top: 1.5rem;">
-                                    <h6 style="color: #ef4444; font-weight: 600; margin: 0 0 0.75rem 0; font-size: 0.95rem;">VARIACIONES REFLECTIVO</h6>
-                                    <table style="border-collapse: collapse; table-layout: auto; width: 100%; border: 1px solid #fecaca; border-radius: 4px; overflow: hidden;">
-                                        <thead>
-                                            <tr style="background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color: white;">
-                                                <th style="padding: 0.75rem; text-align: left; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.2); font-size: 0.85rem;">Propiedad</th>
-                                                <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.85rem;">Valor</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                            `;
-
-                            for (const [key, value] of Object.entries(reflectivo.variaciones)) {
-                                let displayValue = '-';
-                                if (typeof value === 'string') {
-                                    displayValue = value;
-                                } else if (typeof value === 'object' && value !== null) {
-                                    displayValue = Object.values(value).filter(v => v).join(', ');
-                                }
-
-                                htmlPrendas += `
-                                    <tr style="border-bottom: 1px solid #fecaca;">
-                                        <td style="padding: 0.75rem; border-right: 1px solid #fecaca; font-weight: 600; color: #7f1d1d; font-size: 0.85rem;">${key}</td>
-                                        <td style="padding: 0.75rem; color: #991b1b; font-weight: 500; font-size: 0.85rem;">${displayValue}</td>
-                                    </tr>
-                                `;
-                            }
-
-                            htmlPrendas += `
-                                        </tbody>
-                                    </table>
-                                </div>
-                            `;
+                        if (renderPrenda && typeof renderPrenda.renderVariacionesReflectivo === 'function') {
+                            htmlPrendas += renderPrenda.renderVariacionesReflectivo(prenda);
                         }
                     }
 
                     // ===== IMÁGENES LADO A LADO: LOGO | PRENDA | REFLECTIVO =====
-                    const imagenesParaMostrar = [];
-                    
-                    // Recolectar imágenes de logo para esta prenda
-                    // Agrupar por URL para soportar "logo compartido" entre técnicas
-                    const logosPorUrl = new Map();
+                    const modalHelpers = (typeof window !== 'undefined') ? window.CotizacionModalHelpers : null;
+                    if (modalHelpers && typeof modalHelpers.buildImagenesParaMostrar === 'function' && typeof modalHelpers.renderImagenesParaMostrar === 'function') {
+                        const imagenesParaMostrar = modalHelpers.buildImagenesParaMostrar({ payload, prenda, modo, imgTela });
+                        htmlPrendas += modalHelpers.renderImagenesParaMostrar({ prendaId: prenda.id, imagenesParaMostrar });
+                    } else {
+                        // Fallback legacy: no renderizar galería si no está el helper
+                    }
 
-                    const normalizarUrlLogo = (u) => {
-                        if (!u) return '';
-                        let url = String(u).trim();
-                        if (!url) return '';
-
-                        // Quitar querystring/hash para evitar duplicados del mismo archivo
-                        try {
-                            url = url.split('#')[0];
-                            url = url.split('?')[0];
-                        } catch (_) {
-                            // no-op
+                                    htmlPrendas += `</div>`;
+                                });
+                        } else {
+                            const mensaje = esCombinada
+                                ? (modo === 'logo'
+                                    ? 'No hay prendas con información de logo para mostrar'
+                                    : 'No hay prendas para mostrar')
+                                : 'No hay prendas para mostrar';
+                            htmlPrendas += `<p style="color: #999; text-align: center; padding: 2rem;">${mensaje}</p>`;
                         }
 
-                        // Estandarizar rutas locales a /storage/...
-                        if (!url.startsWith('http')) {
-                            if (url.startsWith('storage/')) {
-                                url = '/' + url;
-                            }
-                            if (!url.startsWith('/storage/')) {
-                                url = '/storage/' + url.replace(/^\/+/, '').replace(/^storage\//, '');
-                            }
-                        }
-
-                        return url;
-                    };
-                    
-                    if (modo === 'logo' && payload.logo_cotizacion && payload.logo_cotizacion.tecnicas_prendas) {
-                        payload.logo_cotizacion.tecnicas_prendas.forEach(tp => {
-                            if (tp.prenda_id === prenda.id && tp.fotos && tp.fotos.length > 0) {
-                                const tecnicaNombre = (tp.tipo_logo_nombre || (tp.tipoLogo && tp.tipoLogo.nombre) || 'Logo');
-                                tp.fotos.forEach((foto, idx) => {
-                                    if (!foto.url) return;
-
-                                    const urlOriginal = String(foto.url);
-                                    const urlKey = normalizarUrlLogo(urlOriginal) || urlOriginal;
-
-                                    if (!logosPorUrl.has(urlKey)) {
-                                        logosPorUrl.set(urlKey, {
-                                            url: urlKey,
-                                            tecnicas: new Set(),
-                                        });
-                                    }
-
-                                    logosPorUrl.get(urlKey).tecnicas.add(tecnicaNombre);
-                                });
-                            }
-                        });
+                        htmlPrendas += '</div>';
                     }
-
-                    if (modo === 'logo' && logosPorUrl.size > 0) {
-                        Array.from(logosPorUrl.values()).forEach((logo) => {
-                            const tecnicas = Array.from(logo.tecnicas).filter(Boolean);
-                            const textoTecnicas = tecnicas.join(', ');
-                            const label = tecnicas.length <= 1
-                                ? `Logo - ${textoTecnicas || 'Logo'}`
-                                : 'Logo compartido';
-
-                            imagenesParaMostrar.push({
-                                grupo: label,
-                                url: logo.url,
-                                titulo: label,
-                                color: '#1e5ba8'
-                            });
-                        });
-                    }
-                    
-                    // Recolectar imágenes de tela para esta prenda
-                    if (prenda.tela_fotos && prenda.tela_fotos.length > 0) {
-                        prenda.tela_fotos.forEach((foto, idx) => {
-                            if (foto) {
-                                imagenesParaMostrar.push({
-                                    grupo: 'Tela',
-                                    url: foto,
-                                    titulo: `Tela ${idx + 1}`,
-                                    color: '#1e5ba8'
-                                });
-                            }
-                        });
-                    }
-                    
-                    // Recolectar imagen de tela de logo_cotizacion.telas_prendas (solo en vista LOGO)
-                    if (modo === 'logo' && imgTela) {
-                        imagenesParaMostrar.push({
-                            grupo: 'Tela',
-                            url: imgTela,
-                            titulo: 'Tela Logo',
-                            color: '#1e5ba8'
-                        });
-                    }
-                    
-                    // Recolectar imágenes de prenda
-                    if (prenda.fotos && prenda.fotos.length > 0) {
-                        prenda.fotos.forEach((foto, idx) => {
-                            imagenesParaMostrar.push({
-                                grupo: 'Prenda',
-                                url: foto,
-                                titulo: `${prenda.nombre_prenda || 'Prenda'} ${idx + 1}`,
-                                color: '#1e5ba8'
-                            });
-                        });
-                    }
-                    
-                    // Mostrar imágenes lado a lado si existen
-                    if (imagenesParaMostrar.length > 0) {
-                        htmlPrendas += `
-                            <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; justify-content: flex-start;">
-                        `;
-                        
-                        imagenesParaMostrar.forEach((img, idx) => {
-                            htmlPrendas += `
-                                <div style="display: flex; flex-direction: column; align-items: center;">
-                                    <img src="${img.url}" 
-                                         alt="${img.titulo}"
-                                         data-gallery="galeria-${prenda.id}"
-                                         data-index="${idx}"
-                                         style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid ${img.color}; cursor: pointer; transition: all 0.3s;"
-                                         onclick="abrirImagenGrande('${img.url}', 'galeria-${prenda.id}', ${idx})"
-                                         onmouseover="this.style.boxShadow='0 4px 12px rgba(30, 91, 168, 0.4)'; this.style.transform='scale(1.05)';"
-                                         onmouseout="this.style.boxShadow='none'; this.style.transform='scale(1)';"/>
-                                    <div style="margin-top: 0.5rem; background: linear-gradient(to right, ${img.color}, ${img.color}); padding: 0.5rem 0.75rem; border-radius: 4px; color: white; text-align: center; font-weight: 600; font-size: 0.7rem; white-space: nowrap;">
-                                        ${img.grupo}
-                                    </div>
-                                </div>
-                            `;
-                        });
-                        
-                        htmlPrendas += `
-                            </div>
-                        `;
-                    }
-
-                    htmlPrendas += `</div>`;
-                });
-                } else {
-                    const mensaje = esCombinada
-                        ? (modo === 'logo'
-                            ? 'No hay prendas con información de logo para mostrar'
-                            : 'No hay prendas sin logo para mostrar')
-                        : 'No hay prendas para mostrar';
-                    htmlPrendas += `<p style="color: #999; text-align: center; padding: 2rem;">${mensaje}</p>`;
                 }
-
-            htmlPrendas += '</div>';
 
             // HELPER FUNCTION: Verificar si hay especificaciones reales
             const verificarEspecificaciones = (especificacionesObj) => {
@@ -1181,175 +595,14 @@ function openCotizacionModal(cotizacionId) {
                 }
             }
 
-            // Construir contenido de logo
+            // Construir contenido de logo (módulo)
             let htmlLogo = '';
-            if (payload.logo_cotizacion) {
-                const logo = payload.logo_cotizacion;
-                // Normalizar arrays que pueden venir como string o null
-                const parseArray = (value) => {
-                    if (!value) return [];
-                    if (Array.isArray(value)) return value;
-                    try {
-                        const parsed = JSON.parse(value);
-                        return Array.isArray(parsed) ? parsed : [];
-                    } catch (e) {
-                        return [];
-                    }
-                };
-
-                const tecnicas = parseArray(logo.tecnicas);
-                const seccionesLogo = parseArray(logo.secciones || logo.ubicaciones);
-                
-                htmlLogo += '<div class="logo-container" style="display: flex; flex-direction: column; gap: 1.5rem;">';
-                
-                // Descripción del logo
-                if (logo.descripcion) {
-                    htmlLogo += `
-                        <div style="background: #f5f5f5; border-left: 5px solid #1e5ba8; padding: 1rem 1.5rem; border-radius: 4px;">
-                            <h3 style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 1.1rem; font-weight: 700; text-transform: uppercase;">
-                                Descripción
-                            </h3>
-                            <p style="margin: 0; color: #333; font-size: 0.9rem; line-height: 1.6;">
-                                ${logo.descripcion}
-                            </p>
-                        </div>
-                    `;
-                }
-                
-                // Técnicas utilizadas
-                if (tecnicas.length > 0) {
-                    const renderTecnica = (tecnica) => {
-                        if (typeof tecnica === 'string') return tecnica;
-                        if (typeof tecnica === 'object' && tecnica !== null) {
-                            return tecnica.valor || tecnica.nombre || tecnica.tecnica || tecnica.tipo || Object.values(tecnica).join(' ');
-                        }
-                        return String(tecnica);
-                    };
-
-                    htmlLogo += `
-                        <div style="background: #f5f5f5; border-left: 5px solid #1e5ba8; padding: 1rem 1.5rem; border-radius: 4px;">
-                            <h3 style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 0.95rem; font-weight: 700; text-transform: uppercase;">
-                                Técnicas
-                            </h3>
-                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                ${tecnicas.map(tecnica => `<span style="background: #1e5ba8; color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">${renderTecnica(tecnica)}</span>`).join('')}
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                // Ubicaciones/Secciones
-                if (seccionesLogo.length > 0) {
-                    const renderOpcion = (opcion) => {
-                        if (typeof opcion === 'string') return opcion;
-                        if (typeof opcion === 'object' && opcion !== null) {
-                            return opcion.nombre || opcion.valor || opcion.opcion || opcion.ubicacion || Object.values(opcion).join(' ');
-                        }
-                        return String(opcion);
-                    };
-                    const extraerTallas = (seccion) => {
-                        if (!seccion) return [];
-                        if (Array.isArray(seccion.tallas)) return seccion.tallas;
-                        if (typeof seccion.tallas === 'string' && seccion.tallas.trim() !== '') {
-                            // Intentar parsear JSON; si falla, usar split por comas
-                            try {
-                                const parsed = JSON.parse(seccion.tallas);
-                                if (Array.isArray(parsed)) return parsed;
-                            } catch (e) {
-                                return seccion.tallas.split(',').map(t => t.trim()).filter(Boolean);
-                            }
-                        }
-                        if (typeof seccion.tallas === 'object' && seccion.tallas !== null) return [seccion.tallas];
-                        if (seccion.talla) return [seccion.talla];
-                        if (seccion.tallas_texto) return [seccion.tallas_texto];
-                        return [];
-                    };
-
-                    htmlLogo += `
-                        <div style="background: #f5f5f5; border-left: 5px solid #1e5ba8; padding: 1rem 1.5rem; border-radius: 4px;">
-                            <h3 style="margin: 0 0 1rem 0; color: #1e5ba8; font-size: 0.95rem; font-weight: 700; text-transform: uppercase;">
-                                Secciones Prenda
-                            </h3>
-                    `;
-                    
-                    seccionesLogo.forEach((seccion, idx) => {
-                        htmlLogo += `
-                            <div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #ddd;">
-                                <p style="margin: 0 0 0.5rem 0; color: #333; font-weight: 700; font-size: 0.9rem;">
-                                     ${seccion.ubicacion || seccion.seccion || 'Sin ubicación'}
-                                </p>
-                        `;
-                        
-                        if (seccion.opciones && Array.isArray(seccion.opciones) && seccion.opciones.length > 0) {
-                            htmlLogo += `
-                                <p style="margin: 0 0 0.25rem 0; color: #666; font-size: 0.85rem;">
-                                    <strong>UBICACIONES:</strong> ${seccion.opciones.map(renderOpcion).join(', ')}
-                                </p>
-                            `;
-                        }
-                        
-                        const tallasArray = extraerTallas(seccion);
-                        if (tallasArray.length > 0) {
-                            const tallasStr = tallasArray.map(t => {
-                                if (typeof t === 'string') return t;
-                                if (typeof t === 'object' && t !== null) return t.talla || t.valor || t.nombre || '';
-                                return String(t);
-                            }).filter(Boolean).join(', ');
-                            htmlLogo += `
-                                <p style="margin: 0 0 0.25rem 0; color: #666; font-size: 0.85rem;">
-                                    <strong>Tallas:</strong> ${tallasStr}
-                                </p>
-                            `;
-                        }
-                        
-                        if (seccion.observaciones) {
-                            htmlLogo += `
-                                <p style="margin: 0; color: #666; font-size: 0.85rem;">
-                                    <strong>Observaciones:</strong> ${seccion.observaciones}
-                                </p>
-                            `;
-                        }
-                        
-                        htmlLogo += `</div>`;
-                    });
-                    
-                    htmlLogo += `</div>`;
-                }
-                
-                // Fotos del logo
-                if (logo.fotos && Array.isArray(logo.fotos) && logo.fotos.length > 0) {
-                    const galleryIdLogo = `logo-fotos-${logo.id || 'cotizacion'}`;
-                    htmlLogo += `
-                        <div style="background: #f5f5f5; border-left: 5px solid #1e5ba8; padding: 1rem 1.5rem; border-radius: 4px;">
-                            <h3 style="margin: 0 0 1rem 0; color: #1e5ba8; font-size: 0.95rem; font-weight: 700; text-transform: uppercase;">
-                                Imágenes del Logo
-                            </h3>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 1rem;">
-                    `;
-                    
-                    logo.fotos.forEach((foto, idx) => {
-                        htmlLogo += `
-                            <div style="position: relative;">
-                                <img src="${foto.url}" 
-                                     data-gallery="${galleryIdLogo}"
-                                     data-index="${idx}"
-                                     alt="Logo" 
-                                     style="width: 100%; height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" 
-                                     onclick="abrirImagenGrande('${foto.url}', '${galleryIdLogo}', ${idx})">
-                                <span style="position: absolute; top: 2px; right: 2px; background: #1e5ba8; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">${foto.orden}</span>
-                            </div>
-                        `;
-                    });
-                    
-                    htmlLogo += `
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                htmlLogo += '</div>';
+            if (typeof window !== 'undefined' && window.CotizacionModalRenderLogo && typeof window.CotizacionModalRenderLogo.renderLogoSection === 'function') {
+                htmlLogo = window.CotizacionModalRenderLogo.renderLogoSection(payload);
             } else {
-                htmlLogo += '<p style="color: #999; text-align: center; padding: 2rem;">No hay información de logo para mostrar</p>';
+                htmlLogo = payload.logo_cotizacion
+                    ? '<div class="logo-container"></div>'
+                    : '<p style="color: #999; text-align: center; padding: 2rem;">No hay información de logo para mostrar</p>';
             }
 
             // Insertar contenido en el modal sin tabs
@@ -1389,6 +642,7 @@ function openCotizacionModal(cotizacionId) {
 
             alert('Error al cargar la cotización: ' + error.message);
         });
+    });
 }
 
 /**
@@ -1717,13 +971,28 @@ function abrirImagenGrande(imagenUrl, galleryId = null, index = 0) {
     if (galleryId) {
         imagenGaleriaIdActual = galleryId;
         const imgs = document.querySelectorAll(`img[data-gallery="${galleryId}"]`);
-        imagenGaleraActual = Array.from(imgs).map(img => img.getAttribute('src'));
+        imagenGaleraActual = Array.from(imgs)
+            .map(img => img.getAttribute('src'))
+            .filter(Boolean);
         imagenIndiceActualGaleria = Number(index) || 0;
+
+        // Fallback: si no hay imágenes en DOM para esa galería, usar la URL recibida
+        if (!imagenGaleraActual || imagenGaleraActual.length === 0) {
+            const fallback = (imagenUrl || '').toString().trim();
+            imagenGaleraActual = fallback ? [fallback] : [];
+            imagenIndiceActualGaleria = 0;
+            imagenGaleriaIdActual = null;
+        }
     } else {
         imagenGaleriaIdActual = null;
-        imagenGaleraActual = [imagenUrl];
+        const single = (imagenUrl || '').toString().trim();
+        imagenGaleraActual = single ? [single] : [];
         imagenIndiceActualGaleria = 0;
     }
+
+    // Garantizar índice válido
+    if (imagenIndiceActualGaleria < 0) imagenIndiceActualGaleria = 0;
+    if (imagenIndiceActualGaleria >= imagenGaleraActual.length) imagenIndiceActualGaleria = 0;
 
     // Crear modal dinámicamente si no existe
     let modalImagen = document.getElementById('modalImagenGrande');

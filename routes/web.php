@@ -15,6 +15,7 @@ use App\Http\Controllers\BalanceoController;
 use App\Infrastructure\Http\Controllers\Asesores\CotizacionesViewController;
 use App\Infrastructure\Http\Controllers\CotizacionPrendaController;
 use App\Infrastructure\Http\Controllers\CotizacionBordadoController;
+use App\Infrastructure\Http\Controllers\CotizacionEppController;
 use App\Http\Controllers\DebugRegistrosController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\StorageController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\TestTelasPrendaController;
 use App\Http\Controllers\PDFPrendaController;
 use App\Http\Controllers\PDFCotizacionCombiadaController;
 use App\Http\Controllers\PDFLogoController;
+use App\Http\Controllers\PDFEppController;
 
 // Ruta temporal para verificar datos de la base de datos
 Route::get('/verificar-datos-bd', function () {
@@ -1869,6 +1871,7 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho'])->pr
     Route::get('/cotizacion/{id}/pdf/prenda', [PDFPrendaController::class, 'generate'])->name('cotizacion.pdf.prenda');
     Route::get('/cotizacion/{id}/pdf/combinada', [PDFCotizacionCombiadaController::class, 'generate'])->name('cotizacion.pdf.combinada');
     Route::get('/cotizacion/{id}/pdf/logo', [PDFLogoController::class, 'generate'])->name('cotizacion.pdf.logo');
+    Route::get('/cotizacion/{id}/pdf/epp', [PDFEppController::class, 'generate'])->name('cotizacion.pdf.epp');
     
     // RUTA GENÉRICA - Debe ser ÚLTIMA para no shadowers las rutas específicas
     Route::get('/cotizacion/{id}/pdf', [App\Http\Controllers\PDFCotizacionController::class, 'generarPDF'])->name('cotizacion.pdf');
@@ -1947,6 +1950,16 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho'])->pr
     // COTIZACIONES - Rutas protegidas (dentro del grupo asesores)
     // ========================================
     Route::delete('/cotizaciones/{id}/borrador', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'destroyBorrador'])->name('cotizaciones.destroy-borrador');
+
+    // ========================================
+    // ÓRDENES/COTIZACIONES - SISTEMA DE BORRADORES
+    // ========================================
+    Route::get('/borradores', [CotizacionControllerAlias::class, 'borradores'])->name('borradores.index');
+
+    // ========================================
+    // COTIZACIONES - EPP (nuevo)
+    // ========================================
+    Route::post('/cotizaciones-epp', [CotizacionEppController::class, 'store'])->name('cotizaciones-epp.store');
 
     // ========================================
     // COTIZACIONES DE PRENDA - Solo Asesor

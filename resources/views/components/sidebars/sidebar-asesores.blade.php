@@ -89,6 +89,14 @@
                                 <span class="menu-label">Combinada</span>
                             </a>
                         </li>
+                        <li class="submenu-item">
+                            <a href="{{ route('asesores.pedidos.create', ['tipo' => 'EPP']) }}"
+                               class="menu-link {{ request()->routeIs('asesores.pedidos.create') && request()->query('tipo') === 'EPP' ? 'active' : '' }}"
+                               aria-label="Crear cotización EPP">
+                                <span class="material-symbols-rounded">engineering</span>
+                                <span class="menu-label">EPP</span>
+                            </a>
+                        </li>
                     </ul>
                 </li>
             </ul>

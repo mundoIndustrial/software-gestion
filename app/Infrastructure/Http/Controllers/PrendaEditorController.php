@@ -7,6 +7,7 @@ use App\Application\Pedidos\DTOs\PrendaEditadaDTO;
 use App\Domain\Pedidos\Services\TallaProcessorService;
 use App\Domain\Pedidos\Services\VariacionProcessorService;
 use App\Domain\Pedidos\Services\ProcesoProcessorService;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;

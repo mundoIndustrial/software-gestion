@@ -16,12 +16,14 @@ use App\Http\Controllers\Api_temp\PedidoController;
 use App\Infrastructure\Http\Controllers\Asesores\CotizacionesViewController;
 use App\Infrastructure\Http\Controllers\Asesores\CotizacionesFiltrosController;
 use App\Infrastructure\Http\Controllers\CotizacionController;
+use App\Infrastructure\Http\Controllers\CotizacionEppController;
 use App\Infrastructure\Http\Controllers\Cotizaciones\ImagenBorradorController;
 use App\Infrastructure\Http\Controllers\Asesores\ReciboController;
 use App\Http\Controllers\PDFCotizacionController;
 use App\Http\Controllers\PDFPrendaController;
 use App\Http\Controllers\PDFCotizacionCombiadaController;
 use App\Http\Controllers\PDFLogoController;
+use App\Http\Controllers\PDFEppController;
 use App\Infrastructure\Http\Controllers\CotizacionController as CotizacionControllerAlias;
 use Illuminate\Support\Facades\Route;
 
@@ -114,6 +116,11 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     Route::get('/cotizaciones/filtros/valores', [CotizacionesFiltrosController::class, 'valores'])->name('cotizaciones.filtros.valores');
     Route::post('/cotizaciones', [CotizacionController::class, 'store'])->name('cotizaciones.store');
     Route::put('/cotizaciones/{id}', [CotizacionController::class, 'update'])->name('cotizaciones.update');
+
+    // ========================================
+    // COTIZACIONES - EPP (nuevo)
+    // ========================================
+    Route::post('/cotizaciones-epp', [CotizacionEppController::class, 'store'])->name('cotizaciones-epp.store');
     
     // ========================================
     // PDF GENERATION - NEW REFACTORED STRUCTURE
@@ -122,6 +129,7 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     Route::get('/cotizacion/{id}/pdf/prenda', [PDFPrendaController::class, 'generate'])->name('cotizacion.pdf.prenda');
     Route::get('/cotizacion/{id}/pdf/combinada', [PDFCotizacionCombiadaController::class, 'generate'])->name('cotizacion.pdf.combinada');
     Route::get('/cotizacion/{id}/pdf/logo', [PDFLogoController::class, 'generate'])->name('cotizacion.pdf.logo'); // Route for logo PDF
+    Route::get('/cotizacion/{id}/pdf/epp', [PDFEppController::class, 'generate'])->name('cotizacion.pdf.epp');
     Route::get('/cotizacion/{id}/pdf', [PDFCotizacionController::class, 'generarPDF'])->name('cotizacion.pdf'); // Legacy route - DEBE SER ÚLTIMO
     
     Route::delete('/cotizaciones/imagenes/prenda/{id}', [ImagenBorradorController::class, 'borrarPrenda'])->name('cotizaciones.imagen.borrar-prenda');

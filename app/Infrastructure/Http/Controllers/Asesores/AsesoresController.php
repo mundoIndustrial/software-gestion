@@ -199,6 +199,12 @@ class AsesoresController extends Controller
     {
         try {
             $editarId = $request->query('editar');
+
+            $tipoQuery = $request->query('tipo');
+            if ($tipoQuery === 'EPP') {
+                $tipo = $tipoQuery;
+                return view('asesores.cotizaciones.epp.create', compact('tipo'));
+            }
             
             // Crear DTO para el Use Case
             $dto = PrepararCreacionProduccionPedidoDTO::fromRequest(

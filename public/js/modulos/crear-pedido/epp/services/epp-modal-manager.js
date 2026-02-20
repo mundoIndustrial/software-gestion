@@ -9,6 +9,35 @@ class EppModalManager {
         this.modalId = 'modal-agregar-epp';
     }
 
+    _parseNumeroInput(value) {
+        if (value === null || value === undefined) return null;
+        const s = String(value).trim();
+        if (!s) return null;
+        const n = Number(s);
+        return Number.isFinite(n) ? n : null;
+    }
+
+    actualizarTotal() {
+        const cantidadInput = document.getElementById('cantidadEPP');
+        const valorUnitarioInput = document.getElementById('valorUnitarioEPP');
+        const totalInput = document.getElementById('totalEPP');
+
+        const cantidad = cantidadInput ? (parseInt(cantidadInput.value) || 0) : 0;
+        const valorUnitario = valorUnitarioInput ? this._parseNumeroInput(valorUnitarioInput.value) : null;
+
+        const formatearNumero = (num) => {
+            if (!Number.isFinite(num)) return '0';
+            if (Number.isInteger(num)) return String(num);
+            const s = num.toFixed(2);
+            return s.replace(/\.00$/, '').replace(/(\.[0-9])0$/, '$1');
+        };
+
+        const total = (valorUnitario !== null && cantidad > 0) ? (valorUnitario * cantidad) : 0;
+        if (totalInput) {
+            totalInput.value = formatearNumero(total);
+        }
+    }
+
     /**
      * Abrir modal
      */
@@ -41,6 +70,8 @@ class EppModalManager {
     limpiarFormulario() {
         const campos = [
             'cantidadEPP',
+            'valorUnitarioEPP',
+            'totalEPP',
             'observacionesEPP'
         ];
 
@@ -64,6 +95,8 @@ class EppModalManager {
 
         this.limpiarProductoCard();
         this.limpiarImagenes();
+
+        this.actualizarTotal();
 
     }
 
@@ -116,6 +149,8 @@ class EppModalManager {
         // Usar setTimeout para asegurar que el DOM esté listo
         setTimeout(() => {
             const inputCantidad = document.getElementById('cantidadEPP');
+            const inputValorUnitario = document.getElementById('valorUnitarioEPP');
+            const inputTotal = document.getElementById('totalEPP');
             const inputObservaciones = document.getElementById('observacionesEPP');
             
             if (inputCantidad) {
@@ -147,6 +182,7 @@ class EppModalManager {
         console.log('🔓 [ModalManager] habilitarCampos() iniciado');
         const campos = [
             'cantidadEPP',
+            'valorUnitarioEPP',
             'observacionesEPP'
         ];
 
@@ -203,6 +239,72 @@ class EppModalManager {
             console.log(' [ModalManager] Mensaje de selección ocultado');
         } else {
             console.warn(' [ModalManager] Mensaje de selección NO ENCONTRADO en el DOM');
+        }
+
+        this.actualizarTotal();
+    }
+
+    /**
+     * Obtener valores del formulario
+     */
+    obtenerValoresFormulario() {
+        const cantidadInput = document.getElementById('cantidadEPP');
+        const valorUnitarioInput = document.getElementById('valorUnitarioEPP');
+        const observacionesInput = document.getElementById('observacionesEPP');
+
+        const cantidad = cantidadInput ? (parseInt(cantidadInput.value) || 0) : 0;
+        const valorUnitario = valorUnitarioInput ? this._parseNumeroInput(valorUnitarioInput.value) : null;
+        const total = (valorUnitario !== null && cantidad > 0) ? (valorUnitario * cantidad) : 0;
+
+        return {
+            cantidad,
+            valor_unitario: valorUnitario,
+            total,
+            observaciones: observacionesInput ? (observacionesInput.value.trim() || null) : null
+        };
+    }
+
+    /**
+     * Validar formulario
+     */
+    validarFormulario() {
+        const valores = this.obtenerValoresFormulario();
+
+        if (valores.cantidad <= 0) {
+            if (window.eppNotificationService) {
+                window.eppNotificationService.mostrarValidacion(
+                    ' Cantidad Requerida',
+                    'La cantidad debe ser mayor a 0'
+                );
+            } else {
+                alert('Cantidad debe ser mayor a 0');
+            }
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Actualizar estado del botón
+     */
+    actualizarBoton() {
+        const btnAgregar = document.getElementById('btnAgregarEPP');
+        if (!btnAgregar) return;
+
+        this.actualizarTotal();
+        const valores = this.obtenerValoresFormulario();
+        const puedeGuardar = valores.cantidad > 0;
+
+        if (puedeGuardar) {
+            btnAgregar.disabled = false;
+            btnAgregar.style.opacity = '1';
+            btnAgregar.style.cursor = 'pointer';
+            btnAgregar.style.background = '#0066cc';
+        } else {
+            btnAgregar.disabled = true;
+            btnAgregar.style.opacity = '0.5';
+            btnAgregar.style.cursor = 'not-allowed';
         }
     }
 
@@ -376,63 +478,6 @@ class EppModalManager {
         // Solo vaciar el contenedor. habilitarCampos() lo mostrará cuando sea necesario
         console.log('🗑️ [ModalManager] limpiarImagenes() completado');
     }
-
-    /**
-     * Obtener valores del formulario
-     */
-    obtenerValoresFormulario() {
-        const cantidadInput = document.getElementById('cantidadEPP');
-        const observacionesInput = document.getElementById('observacionesEPP');
-        
-        return {
-            cantidad: cantidadInput ? (parseInt(cantidadInput.value) || 0) : 0,
-            observaciones: observacionesInput ? (observacionesInput.value.trim() || null) : null
-        };
-    }
-
-    /**
-     * Validar formulario
-     */
-    validarFormulario() {
-        const valores = this.obtenerValoresFormulario();
-
-        if (valores.cantidad <= 0) {
-            if (window.eppNotificationService) {
-                window.eppNotificationService.mostrarValidacion(
-                    ' Cantidad Requerida',
-                    'La cantidad debe ser mayor a 0'
-                );
-            } else {
-                alert('Cantidad debe ser mayor a 0');
-            }
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Actualizar estado del botón
-     */
-    actualizarBoton() {
-        const btnAgregar = document.getElementById('btnAgregarEPP');
-        if (!btnAgregar) return;
-
-        const valores = this.obtenerValoresFormulario();
-        const puedeGuardar = valores.cantidad > 0;
-
-        if (puedeGuardar) {
-            btnAgregar.disabled = false;
-            btnAgregar.style.opacity = '1';
-            btnAgregar.style.cursor = 'pointer';
-            btnAgregar.style.background = '#0066cc';
-        } else {
-            btnAgregar.disabled = true;
-            btnAgregar.style.opacity = '0.5';
-            btnAgregar.style.cursor = 'not-allowed';
-        }
-    }
 }
-
 // Exportar instancia global
 window.eppModalManager = null; // Se inicializa después

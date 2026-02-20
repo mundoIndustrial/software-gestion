@@ -106,6 +106,32 @@ class EppModalTemplate {
                         >
                     </div>
 
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.5rem;">
+                        <div>
+                            <label style="font-size: 0.875rem; font-weight: 500; color: #1f2937; display: block; margin-bottom: 0.5rem;">Valor Unitario (Opcional)</label>
+                            <input
+                                type="number"
+                                id="valorUnitarioEPP"
+                                min="0"
+                                step="0.01"
+                                placeholder="0"
+                                oninput="actualizarEstilosBotonEPP();"
+                                disabled
+                                style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; font-family: inherit; background: #f3f4f6; color: #9ca3af; cursor: not-allowed;"
+                            >
+                        </div>
+                        <div>
+                            <label style="font-size: 0.875rem; font-weight: 500; color: #1f2937; display: block; margin-bottom: 0.5rem;">Total</label>
+                            <input
+                                type="text"
+                                id="totalEPP"
+                                value="0"
+                                readonly
+                                style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; font-family: inherit; background: #f3f4f6; color: #6b7280;"
+                            >
+                        </div>
+                    </div>
+
                     <div style="margin-bottom: 1.5rem;">
                         <label style="font-size: 0.875rem; font-weight: 500; color: #1f2937; display: block; margin-bottom: 0.5rem;">Observaciones</label>
                         <textarea 
