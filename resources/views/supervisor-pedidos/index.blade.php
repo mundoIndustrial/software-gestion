@@ -1719,9 +1719,8 @@
             tableContainer.scrollLeft = tableContainer.scrollWidth;
         }
 
-        /**
-         * Muestra una notificación al usuario sobre la actualización
-         */
+        /*
+        // Función desactivada - ya no se muestran notificaciones flotantes
         function mostrarNotificacionEnTiempoReal(orden, action) {
             const mensajes = {
                 'created': `🆕 Nuevo pedido #${orden.numero_pedido}`,
@@ -1756,6 +1755,7 @@
                 setTimeout(() => notif.remove(), 500);
             }, 4000);
         }
+        */
 
         // Agregar estilos de animación si no existen
         if (!document.querySelector('style[data-realtime]')) {
@@ -1862,9 +1862,10 @@
                                     cliente: pedido.cliente || '',
                                     estado: pedido.estado || ''
                                 };
-                                if (typeof mostrarNotificacionEnTiempoReal === 'function') {
-                                    mostrarNotificacionEnTiempoReal(ordenNoti, 'created');
-                                }
+                                // Notificación desactivada para evitar mostrar "Pedido #X actualizado"
+                                // if (typeof mostrarNotificacionEnTiempoReal === 'function') {
+                                //     mostrarNotificacionEnTiempoReal(ordenNoti, 'created');
+                                // }
                             } catch (error) {
                                 console.error('[Realtime Supervisor] ❌ Error refrescando tabla:', error);
                             }
