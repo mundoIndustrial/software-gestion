@@ -74,6 +74,9 @@ const DiaEntregaModule = {
             return;
         }
         
+        // Actualizar fecha estimada inmediatamente en tiempo real
+        this._updateEstimatedDateInRealTime(select, value);
+        
         // Si el valor está vacío (deseleccionado), enviar null para borrar
         if (!value || value === '') {
 
@@ -209,6 +212,109 @@ const DiaEntregaModule = {
         if (days <= 5) return '#f97316'; // Naranja - urgente
         if (days <= 10) return '#eab308'; // Amarillo - moderado
         return '#22c55e'; // Verde - normal
+    },
+
+    /**
+     * Actualizar fecha estimada en tiempo real
+     */
+    _updateEstimatedDateInRealTime(select, daysValue) {
+        // Encontrar la fila que contiene el dropdown
+        let row = select.closest('tr');
+        if (!row) {
+            row = select.closest('.table-row');
+        }
+        
+        if (!row) {
+            console.warn('[DiaEntregaModule] No se encontró la fila para actualizar fecha estimada');
+            return;
+        }
+        
+        // Buscar la celda de fecha estimada
+        let fechaCell = row.querySelector('.fecha-estimada-cell');
+        if (!fechaCell) {
+            fechaCell = row.querySelector('td[data-column="fecha_estimada_de_entrega"]');
+        }
+        
+        if (!fechaCell) {
+            console.warn('[DiaEntregaModule] No se encontró la celda de fecha estimada');
+            return;
+        }
+        
+        // Obtener el span donde se muestra la fecha
+        let spanFecha = fechaCell.querySelector('.fecha-estimada-span');
+        if (!spanFecha) {
+            spanFecha = fechaCell.querySelector('.cell-text');
+        }
+        
+        if (!spanFecha) {
+            console.warn('[DiaEntregaModule] No se encontró el span para mostrar fecha estimada');
+            return;
+        }
+        
+        // Si no hay días seleccionados, limpiar la fecha
+        if (!daysValue || daysValue === '') {
+            spanFecha.textContent = '-';
+            fechaCell.setAttribute('data-fecha-estimada', '-');
+            return;
+        }
+        
+        // Calcular fecha estimada usando días hábiles (como el servidor)
+        const days = parseInt(daysValue);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Normalizar a inicio del día
+        
+        const estimatedDate = this._calculateBusinessDays(today, days);
+        
+        // Formatear fecha (usar el mismo formato que el sistema)
+        const formattedDate = this._formatDate(estimatedDate);
+        
+        // Actualizar la UI inmediatamente
+        spanFecha.textContent = formattedDate;
+        fechaCell.setAttribute('data-fecha-estimada', formattedDate);
+        
+        // Agregar indicador visual de que se actualizó en tiempo real
+        spanFecha.style.transition = 'background-color 0.3s';
+        spanFecha.style.backgroundColor = '#fef3c7'; // Amarillo suave
+        setTimeout(() => {
+            spanFecha.style.backgroundColor = '';
+        }, 1000);
+        
+        console.log(`[DiaEntregaModule] Fecha estimada actualizada en tiempo real: ${days} días hábiles -> ${formattedDate}`);
+    },
+
+    /**
+     * Calcular fecha sumando días hábiles (excluyendo fines de semana)
+     * Simula la lógica del servidor PHP
+     */
+    _calculateBusinessDays(startDate, businessDays) {
+        const date = new Date(startDate);
+        let daysAdded = 0;
+        
+        while (daysAdded < businessDays) {
+            date.setDate(date.getDate() + 1);
+            
+            // Saltar fines de semana (sábado=6, domingo=0)
+            if (date.getDay() === 0 || date.getDay() === 6) {
+                continue;
+            }
+            
+            // NOTA: El servidor también salta festivos, pero en JavaScript no tenemos acceso a esa lista
+            // Esta aproximación es suficientemente buena para el tiempo real
+            
+            daysAdded++;
+        }
+        
+        return date;
+    },
+
+    /**
+     * Formatear fecha al formato dd/mm/yyyy
+     */
+    _formatDate(date) {
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
     }
 };
 

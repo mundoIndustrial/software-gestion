@@ -20,10 +20,18 @@ const TrackingUI = (() => {
      * Llena los datos del header del tracking
      */
     function fillOrderHeader(orderData) {
+        console.log('[fillOrderHeader] Datos recibidos:', orderData);
+        console.log('[fillOrderHeader] Campos de fecha:', {
+            fecha_creacion: orderData.fecha_creacion,
+            fecha_de_creacion_de_orden: orderData.fecha_de_creacion_de_orden,
+            created_at: orderData.created_at,
+            fecha_estimada_de_entrega: orderData.fecha_estimada_de_entrega
+        });
+        
         const elements = {
             'trackingOrderNumber': `#${orderData.numero_pedido || '-'}`,
             'trackingOrderClient': orderData.cliente || '-',
-            'trackingOrderDate': DateUtils.formatDate(orderData.fecha_inicio),
+            'trackingOrderDate': DateUtils.formatDate(orderData.fecha_creacion || orderData.fecha_de_creacion_de_orden || orderData.created_at),
             'trackingEstimatedDate': DateUtils.formatDate(orderData.fecha_estimada_de_entrega),
             'trackingOrderStatus': formatOrderStatus(orderData.estado || '-')
         };

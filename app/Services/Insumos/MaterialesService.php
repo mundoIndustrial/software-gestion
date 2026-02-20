@@ -130,7 +130,8 @@ class MaterialesService
         // Estados permitidos
         $filtrosDefecto = [
             'estado' => ['No iniciado', 'En Ejecución', 'Anulada'],
-            'area' => ['Corte', 'Creación de orden', 'Creación']
+            'area' => ['Corte', 'Creación de orden', 'Creación'],
+            'tiene_numero_pedido' => true // Excluir pedidos sin número de pedido
         ];
 
         // Mezclar filtros del usuario con los defectos
@@ -141,6 +142,9 @@ class MaterialesService
         if (empty($filtros['area'])) {
             $filtros['area'] = $filtrosDefecto['area'];
         }
+
+        // Siempre aplicar el filtro de número de pedido
+        $filtros['tiene_numero_pedido'] = $filtrosDefecto['tiene_numero_pedido'];
 
         return $filtros;
     }

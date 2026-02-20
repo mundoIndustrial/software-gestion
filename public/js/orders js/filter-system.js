@@ -648,7 +648,7 @@ function renderFilteredTable(ordenes) {
             <!-- Estado -->
             <div class="table-cell" style="flex: 0 0 auto;">
                 <div class="cell-content">
-                    <select class="estado-dropdown estado-${orden.estado.toLowerCase().replace(/\s+/g, '-')}" data-orden-id="${orden.id}">
+                    <select class="estado-dropdown estado-${orden.estado.toLowerCase().replace(/\s+/g, '-')}" data-orden-id="${orden.numero_pedido}">
                         <option value="No iniciado" ${orden.estado === 'No iniciado' ? 'selected' : ''}>No iniciado</option>
                         <option value="En Ejecución" ${orden.estado === 'En Ejecución' ? 'selected' : ''}>En Ejecución</option>
                         <option value="Entregado" ${orden.estado === 'Entregado' ? 'selected' : ''}>Entregado</option>
@@ -660,7 +660,7 @@ function renderFilteredTable(ordenes) {
             <!-- Área -->
             <div class="table-cell" style="flex: 0 0 auto;">
                 <div class="cell-content">
-                    <select class="area-dropdown" data-orden-id="${orden.id}">
+                    <select class="area-dropdown" data-orden-id="${orden.numero_pedido}">
                         ${getAreaOptionsHtml(orden.area)}
                     </select>
                 </div>
@@ -669,7 +669,7 @@ function renderFilteredTable(ordenes) {
             <!-- Día de entrega -->
             <div class="table-cell" style="flex: 0 0 auto;">
                 <div class="cell-content">
-                    <select class="dia-entrega-dropdown" data-orden-id="${orden.id}">
+                    <select class="dia-entrega-dropdown" data-orden-id="${orden.numero_pedido}">
                         <option value="">Seleccionar</option>
                         <option value="15" ${orden.dia_de_entrega == 15 ? 'selected' : ''}>15 días</option>
                         <option value="20" ${orden.dia_de_entrega == 20 ? 'selected' : ''}>20 días</option>
@@ -702,8 +702,10 @@ function renderFilteredTable(ordenes) {
             
             <!-- Descripción -->
             <div class="table-cell" style="flex: 10;">
-                <div class="cell-content" style="justify-content: center;">
-                    <span>${orden.descripcion}</span>
+                <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL] 📌 Click en descripción'); event.stopPropagation(); abrirModalCeldaConFormato('Descripción', ${JSON.stringify(orden.prendas || [])})">
+                    <span style="color: #6b7280; font-size: 0.875rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Click para ver completo">
+                        ${orden.descripcion ? orden.descripcion + ' <span style="color: #3b82f6; font-weight: 600;">...</span>' : '-'}
+                    </span>
                 </div>
             </div>
             

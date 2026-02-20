@@ -31,6 +31,14 @@
                     <span class="tracking-prendas-info-label">Estado:</span>
                     <span class="tracking-prendas-info-value" id="selectorOrderStatus">-</span>
                 </div>
+                <div class="tracking-prendas-info-item">
+                    <span class="tracking-prendas-info-label">Fecha de Inicio:</span>
+                    <span class="tracking-prendas-info-value" id="selectorOrderStartDate">-</span>
+                </div>
+                <div class="tracking-prendas-info-item">
+                    <span class="tracking-prendas-info-label">Fecha Estimada:</span>
+                    <span class="tracking-prendas-info-value" id="selectorOrderEstimatedDate">-</span>
+                </div>
             </div>
 
             <div class="tracking-prendas-list">
@@ -103,8 +111,22 @@
         <div class="tracking-modal-body">
             <!-- Información Unificada del Pedido -->
             <div class="tracking-order-info-unified">
-                <!-- Fila 1: Pedido, Cliente, Estado -->
+                <!-- Fila 1: N° Recibo, Pedido, Cliente, Estado -->
                 <div class="tracking-info-row">
+                    <!-- N° Recibo -->
+                    <div class="tracking-info-card">
+                        <div class="tracking-info-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 14l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                <path d="M12 6v4m0 2h2"></path>
+                            </svg>
+                        </div>
+                        <div class="tracking-info-content">
+                            <span class="tracking-info-label">N° Recibo</span>
+                            <span class="tracking-info-value" id="trackingOrderRecibo">-</span>
+                        </div>
+                    </div>
+
                     <!-- Pedido -->
                     <div class="tracking-info-card">
                         <div class="tracking-info-icon">
@@ -1289,32 +1311,36 @@
 
 .tracking-prendas-info {
     display: flex;
-    gap: 24px;
+    gap: 16px;
     margin-bottom: 24px;
-    padding: 16px;
+    padding: 12px 16px;
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     border: 1px solid #e2e8f0;
     border-radius: 12px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    align-items: center;
+    overflow-x: auto;
 }
 
 .tracking-prendas-info-item {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    min-width: 120px;
+    gap: 2px;
+    min-width: 100px;
+    flex: 1;
 }
 
 .tracking-prendas-info-label {
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 600;
     color: #3b82f6;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
 }
 
 .tracking-prendas-info-value {
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 700;
     color: #1f2937;
 }
@@ -1327,9 +1353,9 @@
 }
 
 .tracking-prendas-selector-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
+    display: block;
+    width: 100%;
+    height: 100%;
 }
 
 /* Animaciones */
@@ -1386,16 +1412,34 @@
     }
 
     .tracking-prendas-info {
-        gap: 16px;
-        padding: 12px;
+        gap: 12px;
+        padding: 8px 12px;
+        flex-wrap: wrap;
+    }
+
+    .tracking-prendas-info-item {
+        min-width: 80px;
+        flex: 1;
+    }
+
+    .tracking-prendas-info-label {
+        font-size: 9px;
+    }
+
+    .tracking-prendas-info-value {
+        font-size: 11px;
     }
 
     .tracking-prendas-selector-container {
-        grid-template-columns: 1fr;
+        display: block;
+        width: 100%;
+        height: 100%;
     }
 
     .tracking-prendas-container {
-        grid-template-columns: 1fr;
+        display: block;
+        width: 100%;
+        height: 100%;
     }
     
     .tracking-prenda-info {

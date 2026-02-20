@@ -251,7 +251,7 @@
 
                                 <!-- Descripción -->
                                 <div class="table-cell" style="flex: 10;">
-                                    <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL] 📌 Click en descripción'); abrirModalCeldaConFormato('Descripción', {{ json_encode($prendasParaModal) }})">
+                                    <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL] 📌 Click en descripción'); event.stopPropagation(); abrirModalCeldaConFormato('Descripción', {{ json_encode($prendasParaModal) }})">
                                         <span style="color: #6b7280; font-size: 0.875rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Click para ver completo">
                                             @php
                                                 if ($orden->prendas && $orden->prendas->count() > 0) {
@@ -790,27 +790,7 @@
                         ">
                             ${htmlContenido}
                         </div>
-                        <div style="
-                            margin-top: 1.5rem;
-                            display: flex;
-                            justify-content: flex-end;
-                            gap: 0.75rem;
-                        ">
-                            <button onclick="cerrarModalCelda()" style="
-                                background: white;
-                                border: 2px solid #d1d5db;
-                                color: #374151;
-                                padding: 0.625rem 1.25rem;
-                                border-radius: 6px;
-                                cursor: pointer;
-                                font-weight: 600;
-                                font-size: 0.875rem;
-                                transition: all 0.2s ease;
-                            " onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#9ca3af'" onmouseout="this.style.background='white'; this.style.borderColor='#d1d5db'">
-                                Cerrar
-                            </button>
-                        </div>
-                    </div>
+                                            </div>
                 </div>
             `;
 
@@ -977,27 +957,7 @@
                         ">
                             ${htmlContenido}
                         </div>
-                        <div style="
-                            margin-top: 1.5rem;
-                            display: flex;
-                            justify-content: flex-end;
-                            gap: 0.75rem;
-                        ">
-                            <button onclick="cerrarModalCelda()" style="
-                                background: white;
-                                border: 2px solid #d1d5db;
-                                color: #374151;
-                                padding: 0.625rem 1.25rem;
-                                border-radius: 6px;
-                                cursor: pointer;
-                                font-weight: 600;
-                                font-size: 0.875rem;
-                                transition: all 0.2s ease;
-                            " onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#9ca3af'" onmouseout="this.style.background='white'; this.style.borderColor='#d1d5db'">
-                                Cerrar
-                            </button>
-                        </div>
-                    </div>
+                                            </div>
                 </div>
             `;
 

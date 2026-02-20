@@ -202,6 +202,7 @@ class InsumosController extends Controller
         // Construir query base - Filtrar por:
         // - Estados: "Pendiente", "No iniciado", "En Ejecución", "Anulada", "PENDIENTE_INSUMOS"
         // - Áreas: "Corte", "Creación de Orden"
+        // - Excluir pedidos sin número de pedido
         $baseQuery = PedidoProduccion::whereIn('estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'Anulada', 'PENDIENTE_INSUMOS'])
             ->where(function($q) {
                 $q->where('estado', 'PENDIENTE_INSUMOS')
@@ -210,7 +211,9 @@ class InsumosController extends Controller
                          ->orWhere('area', 'LIKE', '%Creación%orden%')
                          ->orWhere('area', 'LIKE', '%Creación de orden%');
                   });
-            });
+            })
+            ->whereNotNull('numero_pedido')
+            ->where('numero_pedido', '!=', '');
         
         // Aplicar múltiples filtros (nuevo sistema)
         $hasFilters = false;
