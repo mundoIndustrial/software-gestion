@@ -346,15 +346,22 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
             const modalVisible = modal && modal.style.display !== 'none';
             
             // Detectar si es modo edición (hay datos de edición cargados)
-            const esModoEdicion = window.modoEdicion === true || 
-                                 (window.pedidoEditarId && window.pedidoEditarId > 0) ||
-                                 (window.pedidoEditarData && window.pedidoEditarData.pedido);
+            // ✅ Usar señales robustas: prenda en edición + input oculto del pedido
+            const pedidoIdDesdeDom = parseInt(document.getElementById('editarOrdenId')?.value || '0', 10);
+            const esModoEdicion = !!(
+                window.modoEdicion === true ||
+                (window.pedidoEditarId && window.pedidoEditarId > 0) ||
+                (window.pedidoEditarData && window.pedidoEditarData.pedido) ||
+                (window._editandoPrendaDePedido && window._editandoPrendaDePedido.prendaId) ||
+                (pedidoIdDesdeDom && pedidoIdDesdeDom > 0)
+            );
             
             console.log('[PrendaDragDropHandler] 🗑️ Modo detectado:', {
                 modalVisible,
                 esModoEdicion,
                 pedidoEditarId: window.pedidoEditarId,
-                modoEdicion: window.modoEdicion
+                modoEdicion: window.modoEdicion,
+                pedidoIdDesdeDom
             });
             
             if (modalVisible && esModoEdicion) {
@@ -378,6 +385,21 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
                             id: imagenAEliminar.id,
                             totalMarcadas: window.imagenesAEliminar.length
                         });
+
+                        // 🔴 IMPORTANTE: sincronizar el STORAGE local eliminando la imagen
+                        // El preview y el collector leen desde imagenesPrendaStorage.
+                        // Esto NO elimina del servidor; solo refleja el estado final antes de guardar.
+                        try {
+                            const imgsActuales = window.imagenesPrendaStorage.obtenerImagenes();
+                            if (Array.isArray(imgsActuales) && idx < imgsActuales.length) {
+                                imgsActuales.splice(idx, 1);
+                                if (typeof window.imagenesPrendaStorage.establecerImagenes === 'function') {
+                                    window.imagenesPrendaStorage.establecerImagenes(imgsActuales);
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('[PrendaDragDropHandler] Error sincronizando storage al eliminar (edición):', e);
+                        }
                         
                         // Ocultar visualmente la imagen en la galería
                         imagenes.splice(idx, 1);

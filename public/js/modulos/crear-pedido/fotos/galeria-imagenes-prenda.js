@@ -349,6 +349,27 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
                     console.log('🔒 [galeria] Imagen marcada para eliminación del pedido (cotización protegida):', imagenEliminadaDatos);
                 } else {
                     // Prenda normal: eliminar directamente
+                    // 🔴 IMPORTANTE: marcar para eliminación diferida al guardar
+                    // (el backend elimina desde imagenes_a_eliminar)
+                    const imagenId = imagenEliminadaDatos?.id || null;
+                    if (imagenId) {
+                        if (!window.imagenesAEliminar) {
+                            window.imagenesAEliminar = [];
+                        }
+
+                        const payload = {
+                            id: imagenId,
+                            ruta_original: imagenEliminadaDatos?.ruta_original || imagenEliminadaDatos?.url || imagenEliminadaDatos?.ruta_webp || null,
+                            ruta_webp: imagenEliminadaDatos?.ruta_webp || null,
+                            url: imagenEliminadaDatos?.url || imagenEliminadaDatos?.ruta_webp || imagenEliminadaDatos?.ruta_original || null
+                        };
+
+                        window.imagenesAEliminar.push(payload);
+                        console.log('📝 [galeria] Imagen marcada para eliminación al guardar (prenda):', payload);
+                    } else {
+                        console.warn('📝 [galeria] Imagen eliminada sin id (no se puede eliminar en BD al guardar):', imagenEliminadaDatos);
+                    }
+
                     prenda.imagenes.splice(indiceActual, 1);
                     console.log(' [galeria] Imagen eliminada directamente (prenda normal):', imagenEliminadaDatos);
                 }
