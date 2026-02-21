@@ -502,7 +502,7 @@ class InvoiceRenderer {
             const resultado = `
                 <div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #6b7280;">
                     <div style="font-weight: 700; color: #374151; font-size: 11px; margin-bottom: 8px;">
-                        ⚡ EQUIPO DE PROTECCIÓN PERSONAL (${epps.length}) - ACTUALIZADO
+                        ⚡ EQUIPO DE PROTECCIÓN PERSONAL (${epps.length})
                     </div>
                     ${epps.map((epp, idx) => {
                         console.log(`[InvoiceRenderer] Procesando EPP ${idx}:`, {
@@ -547,11 +547,7 @@ class InvoiceRenderer {
                                     <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">🖼️ Imágenes (${epp.imagenes ? epp.imagenes.length : 0})</div>
                                     ${imagenesHTML}
                                 </div>
-                            ` : `
-                                <div style="margin-top: 8px; padding: 8px; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 4px;">
-                                    <div style="color: #92400e; font-size: 11px; font-weight: 600;">⚠️ Sin imágenes disponibles</div>
-                                </div>
-                            `}
+                            ` : ''}
                             
                             ${epp.observaciones ? `
                                 <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
