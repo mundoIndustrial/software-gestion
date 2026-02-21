@@ -295,7 +295,23 @@
                     cantidades: p.cantidades,
                     telas: (p.telas || []).map(t => ({tela: t.tela, color: t.color, referencia: t.referencia}))
                 })),
-                epps: (datos.epps || []).map(e => ({epp_id: e.epp_id, cantidad: e.cantidad, observaciones: e.observaciones}))
+                epps: (datos.epps || []).map(e => ({
+                    epp_id: e.epp_id,
+                    cantidad: e.cantidad,
+                    observaciones: e.observaciones,
+                    // Importante: enviar URLs para que backend copie desde /storage
+                    imagenes: Array.isArray(e.imagenes)
+                        ? e.imagenes.map(img => {
+                            if (!img) return null;
+                            if (typeof img === 'string') return img;
+                            if (img.url) return img.url;
+                            if (img.preview) return img.preview;
+                            if (img.ruta_webp) return img.ruta_webp;
+                            if (img.ruta) return img.ruta;
+                            return null;
+                        }).filter(Boolean)
+                        : []
+                }))
             };
             formData.append('pedido', JSON.stringify(pedidoLimpio));
             console.debug('[enviarDatosAlServidor] JSON del pedido:', pedidoLimpio);

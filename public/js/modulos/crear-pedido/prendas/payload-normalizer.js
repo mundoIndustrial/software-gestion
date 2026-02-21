@@ -81,6 +81,24 @@
         return imagenesRaw.filter(function(img) {
             return img !== null && img !== undefined;
         }).map(function(img) {
+            // Si es una imagen EXISTENTE (viene como URL/ruta), preservar la ruta
+            // Esto se usa para copiar desde storage cuando no hay uploads en FormData
+            if (img && typeof img === 'object' && !(img.file instanceof File)) {
+                const urlExistente = img.url || img.preview || img.ruta_webp || img.ruta_original || img.ruta || null;
+                if (typeof urlExistente === 'string' && urlExistente.length > 0) {
+                    return {
+                        uid: img.uid || null,
+                        url: urlExistente,
+                        preview: urlExistente,
+                        ruta_webp: img.ruta_webp || null,
+                        ruta_original: img.ruta_original || null,
+                        ruta: img.ruta || null,
+                        formdata_key: img.formdata_key || null,
+                        nombre_archivo: img.nombre_archivo || img.name || ''
+                    };
+                }
+            }
+
             // Manejar tanto { file, formdata_key } como { uid, nombre_archivo, formdata_key }
             if (img.file instanceof File) {
                 // Formato nuevo de extraerFilesDelPedido

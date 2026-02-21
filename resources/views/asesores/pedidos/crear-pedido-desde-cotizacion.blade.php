@@ -643,32 +643,34 @@
                             id: it.id,
                             pedidoEppId: it.id,
                             tipo: 'epp',
+                            epp_id: it.epp_id || null,
                             nombre: it.nombre,
                             nombre_epp: it.nombre,
                             cantidad: it.cantidad || 1,
                             observaciones: it.observaciones || null,
-                            imagenes: Array.isArray(it.imagenes) ? it.imagenes : [],
+                            imagenes: Array.isArray(it.imagenes)
+                                ? it.imagenes.map(img => (typeof img === 'string' ? { url: img, preview: img } : img))
+                                : [],
                             valor_unitario: null,
                             total: null,
                         };
                         window.itemsPedido.push(nuevo);
 
+                        // Registrar en gestionItemsUI para que el payload incluya epps[]
+                        if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPDesdeModal === 'function') {
+                            const eppParaPayload = {
+                                tipo: 'epp',
+                                epp_id: nuevo.epp_id,
+                                nombre_epp: nuevo.nombre_epp,
+                                cantidad: nuevo.cantidad,
+                                observaciones: nuevo.observaciones,
+                                imagenes: nuevo.imagenes,
+                            };
+                            window.gestionItemsUI.agregarEPPDesdeModal(eppParaPayload);
+                        }
+
                         const msgSinItems = document.getElementById('mensaje-sin-items');
                         if (msgSinItems) msgSinItems.style.display = 'none';
-
-                        if (window.eppItemManager && typeof window.eppItemManager.crearItem === 'function') {
-                            window.eppItemManager.crearItem(
-                                nuevo.id,
-                                nuevo.nombre,
-                                null,
-                                nuevo.cantidad,
-                                nuevo.observaciones,
-                                nuevo.imagenes,
-                                nuevo.id,
-                                null,
-                                null
-                            );
-                        }
 
                         // Ayuda visual en el modal
                         idsYaAgregados.add(String(it.id));
