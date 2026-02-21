@@ -290,8 +290,8 @@
     <script src="{{ asset('js/order-tracking/orderTracking-v2.js') }}"></script>
 
     <!-- Scripts de Órdenes (Estilos y Funcionalidad) -->
-    <script src="{{ asset('js/orders js/row-conditional-colors.js') }}"></script>
-    <script src="{{ asset('js/orders js/filter-system.js') }}"></script>
+    <script src="{{ asset('js/ordersjs/row-conditional-colors.js') }}"></script>
+    <script src="{{ asset('js/ordersjs/filter-system.js') }}"></script>
 
     <!-- Scripts de Bodega -->
     <script src="{{ asset('js/bodega-table.js') }}"></script>
@@ -303,7 +303,7 @@
     <script src="{{ asset('js/bodega-estado-handler.js') }}"></script>
 
     <!-- Scripts de Novedades para Bodega -->
-    <script src="{{ asset('js/orders js/novedades-modal.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/novedades-modal.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/bodega-novedades-modal.js') }}?v={{ time() }}"></script>
 
     <!-- Script de inicialización de colores -->

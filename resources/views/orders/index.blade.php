@@ -1034,42 +1034,42 @@
 @push('scripts')
 
     <!-- ORDER DETAIL MODAL MANAGER (debe cargarse antes de otros scripts) -->
-    <script src="{{ asset('js/orders js/order-detail-modal-manager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/order-detail-modal-manager.js') }}?v={{ time() }}"></script>
     
     <!-- NOVEDADES MODAL MANAGER -->
-    <script src="{{ asset('js/orders js/novedades-modal.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/novedades-modal.js') }}?v={{ time() }}"></script>
     
     <!-- ORDERS TABLE MODULES (SOLID Architecture) -->
-    <script src="{{ asset('js/orders js/modules/formatting.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/orders js/modules/storageModule.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/orders js/modules/notificationModule.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/orders js/modules/rowManager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/orders js/modules/updates.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/orders js/modules/dropdownManager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/orders js/modules/diaEntregaModule.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/modules/formatting.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/modules/storageModule.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/modules/notificationModule.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/modules/rowManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/modules/updates.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/modules/dropdownManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/modules/diaEntregaModule.js') }}?v={{ time() }}"></script>
     
     <!-- CELL EDIT MODAL MODULES (DEBE CARGAR ANTES de cellClickHandler) -->
-    <script src="{{ asset('js/orders js/modules/cellEditModal.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/orders js/modules/cellClickHandler.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/modules/cellEditModal.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/modules/cellClickHandler.js') }}?v={{ time() }}"></script>
     
     <!-- FIX: Descripción de prendas en modal (DEBE CARGAR ANTES de orders-table-v2.js) -->
-    <script src="{{ asset('js/orders js/descripcion-prendas-fix.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/descripcion-prendas-fix.js') }}?v={{ time() }}"></script>
     
     <!-- SCRIPTS REFACTORIZADOS CON MÓDULOS -->
     <!-- Versión V2: Usa módulos SOLID y elimina ~79% código duplicado -->
-    <script src="{{ asset('js/orders js/orders-table-v2.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/orders-table-v2.js') }}?v={{ time() }}"></script>
     
     <!-- SCRIPTS COMPLEMENTARIOS (sin cambios) -->
     <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/orders js/descripcion-prendas-modal.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/orders js/order-navigation.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/orders js/pagination.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/orders js/historial-procesos.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/orders js/realtime-listeners.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/descripcion-prendas-modal.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/order-navigation.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/pagination.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/historial-procesos.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/realtime-listeners.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}?v={{ time() }}"></script>
     
     <!-- ACTION MENU HANDLER -->
-    <script src="{{ asset('js/orders js/action-menu.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/action-menu.js') }}?v={{ time() }}"></script>
     
     <!-- SISTEMA DE RECIBOS DE SUPERVISOR-PEDIDOS -->
     <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
@@ -1289,13 +1289,13 @@
     @include('components.modals.recibo-dinamico-modal')
 
     <!-- FILTER SYSTEM -->
-    <script src="{{ asset('js/orders js/filter-system.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/filter-system.js') }}?v={{ time() }}"></script>
 
     <!-- ROW CONDITIONAL COLORS -->
-    <script src="{{ asset('js/orders js/row-conditional-colors.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/row-conditional-colors.js') }}?v={{ time() }}"></script>
     
     <!-- WEBSOCKET TEST (para desarrollo) -->
-    <script src="{{ asset('js/orders js/websocket-test.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/websocket-test.js') }}?v={{ time() }}"></script>
 
     <!-- ORDER TRACKING MODULES (SOLID Architecture) -->
     <script src="{{ asset('js/order-tracking/modules/dateUtils.js') }}?v={{ time() }}"></script>
@@ -1311,7 +1311,7 @@
     <script src="{{ asset('js/order-tracking/orderTracking-v2.js') }}?v={{ time() }}"></script>
 
     <!-- TRACKING MODAL HANDLER -->
-    <script src="{{ asset('js/orders js/tracking-modal-handler.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}?v={{ time() }}"></script>
 
     <!-- DEBUG SIDEBAR WIDTHS -->
     <script src="{{ asset('js/debug-sidebar.js') }}?v={{ time() }}"></script>

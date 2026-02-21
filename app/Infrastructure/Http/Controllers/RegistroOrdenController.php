@@ -1221,23 +1221,65 @@ class RegistroOrdenController extends Controller
             $recibosConInfo = $recibosCostura->map(function ($recibo) use ($festivos) {
                 $pedido = PedidoProduccion::find($recibo->pedido_produccion_id);
                 
-                // Calcular días para este pedido
+                // Calcular días para este pedido (desde fecha de creación del pedido hasta hoy)
                 $diasCalculados = 0;
-                if ($pedido) {
+                if ($pedido && $pedido->fecha_de_creacion_de_orden) {
                     try {
-                        // Usar el mismo servicio que en /registros
-                        $resultado = \App\Services\CacheCalculosService::getTotalDiasBatch([$pedido], $festivos);
-                        $diasCalculados = $resultado[$pedido->numero_pedido] ?? 0;
+                        // Para recibos, calcular desde fecha_de_creacion_de_orden del pedido hasta hoy
+                        $fechaInicio = $pedido->fecha_de_creacion_de_orden;
+                        $fechaFin = \Carbon\Carbon::now();
+                        
+                        // Obtener festivos
+                        $festivosArray = \App\Models\Festivo::pluck('fecha')->toArray();
+                        $festivosSet = [];
+                        foreach ($festivosArray as $f) {
+                            try {
+                                $festivosSet[\Carbon\Carbon::parse($f)->format('Y-m-d')] = true;
+                            } catch (\Exception $e) {}
+                        }
+                        
+                        // Calcular días hábiles manualmente (misma lógica que CacheCalculosService)
+                        $current = $fechaInicio->copy()->addDay();  // Saltar al próximo día
+                        $totalDays = 0;
+                        $maxIterations = 365;
+                        $iterations = 0;
+                        
+                        while ($current <= $fechaFin && $iterations < $maxIterations) {
+                            $dateString = $current->format('Y-m-d');
+                            $isWeekend = $current->dayOfWeek === 0 || $current->dayOfWeek === 6;
+                            $isFestivo = isset($festivosSet[$dateString]);
+                            
+                            // Solo contar si es día hábil (no es fin de semana ni festivo)
+                            if (!$isWeekend && !$isFestivo) {
+                                $totalDays++;
+                            }
+                            
+                            $current->addDay();
+                            $iterations++;
+                        }
+                        
+                        $diasCalculados = max(0, $totalDays);
+                        
+                        \Log::info('[recibosCostura] Días calculados para pedido', [
+                            'recibo_id' => $recibo->id,
+                            'pedido_id' => $pedido->id,
+                            'numero_pedido' => $pedido->numero_pedido,
+                            'fecha_creacion_pedido' => $pedido->fecha_de_creacion_de_orden->format('Y-m-d H:i:s'),
+                            'dias_calculados' => $diasCalculados
+                        ]);
+                        
                     } catch (\Exception $e) {
                         \Log::warning('Error calculando días para recibo de costura', [
                             'recibo_id' => $recibo->id,
                             'pedido_id' => $pedido->id,
-                            'numero_pedido' => $pedido->numero_pedido,
                             'error' => $e->getMessage()
                         ]);
                         $diasCalculados = 0;
                     }
                 }
+                
+                // Obtener el proceso más reciente para el área
+                $areaProcesoReciente = $this->obtenerAreaProcesoMasReciente($recibo->pedido_produccion_id, $recibo->prenda_id);
                 
                 return [
                     'id' => $recibo->id,
@@ -1253,9 +1295,10 @@ class RegistroOrdenController extends Controller
                         'numero_pedido' => $pedido->numero_pedido,
                         'cliente' => $pedido->cliente,
                         'estado' => $pedido->estado,
-                        'area' => $pedido->area,
+                        'area' => $areaProcesoReciente, // CAMBIADO: Usar proceso más reciente en lugar de $pedido->area
                         'dia_de_entrega' => $pedido->dia_de_entrega,
                         'fecha_estimada_de_entrega' => $pedido->fecha_estimada_de_entrega ? $pedido->fecha_estimada_de_entrega->format('d/m/Y') : null,
+                        'fecha_creacion_orden' => $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('Y-m-d H:i:s') : null,
                     ] : null,
                 ];
             });
@@ -1268,6 +1311,113 @@ class RegistroOrdenController extends Controller
         } catch (\Exception $e) {
             \Log::error('Error en recibosCostura: ' . $e->getMessage());
             return back()->with('error', 'Error al cargar los recibos de costura');
+        }
+    }
+    
+    /**
+     * Obtener el área del proceso más reciente de una prenda
+     */
+    private function obtenerAreaProcesoMasReciente($pedidoProduccionId, $prendaId = null)
+    {
+        try {
+            \Log::info('[obtenerAreaProcesoMasReciente] Buscando proceso más reciente', [
+                'pedido_produccion_id' => $pedidoProduccionId,
+                'prenda_id' => $prendaId
+            ]);
+            
+            // Primero obtener el numero_pedido desde la tabla pedidos_produccion
+            $pedido = \DB::table('pedidos_produccion')
+                ->where('id', $pedidoProduccionId)
+                ->first();
+            
+            if (!$pedido) {
+                \Log::warning('[obtenerAreaProcesoMasReciente] Pedido no encontrado', ['pedido_produccion_id' => $pedidoProduccionId]);
+                return 'Sin procesos';
+            }
+            
+            $numeroPedido = $pedido->numero_pedido;
+            \Log::info('[obtenerAreaProcesoMasReciente] Usando numero_pedido', [
+                'pedido_produccion_id' => $pedidoProduccionId,
+                'numero_pedido' => $numeroPedido
+            ]);
+            
+            $query = \DB::table('procesos_prenda')
+                ->where('numero_pedido', $numeroPedido);
+            
+            // Si se especifica prenda_id, filtrar por esa prenda
+            if ($prendaId) {
+                // Convertir a entero para asegurar comparación correcta
+                $prendaId = (int)$prendaId;
+                $query->where('prenda_pedido_id', $prendaId);
+                \Log::info('[obtenerAreaProcesoMasReciente] Filtrando por prenda_id', ['prenda_id' => $prendaId]);
+            } else {
+                \Log::info('[obtenerAreaProcesoMasReciente] Buscando todos los procesos del pedido');
+            }
+            
+            // Para debugging: ver todos los procesos disponibles
+            $todosLosProcesos = $query->get();
+            \Log::info('[obtenerAreaProcesoMasReciente] Todos los procesos encontrados:', [
+                'total' => $todosLosProcesos->count(),
+                'procesos' => $todosLosProcesos->toArray()
+            ]);
+            
+            // Obtener el proceso más reciente por created_at
+            $procesoReciente = $query->orderBy('created_at', 'desc')
+                ->first();
+            
+            if ($procesoReciente) {
+                $area = $procesoReciente->proceso;
+                \Log::info('[obtenerAreaProcesoMasReciente] Proceso más reciente encontrado', [
+                    'pedido_produccion_id' => $pedidoProduccionId,
+                    'numero_pedido' => $numeroPedido,
+                    'prenda_id' => $prendaId,
+                    'area' => $area,
+                    'proceso_id' => $procesoReciente->id,
+                    'created_at' => $procesoReciente->created_at
+                ]);
+                return $area;
+            }
+            
+            \Log::info('[obtenerAreaProcesoMasReciente] No se encontraron procesos', [
+                'pedido_produccion_id' => $pedidoProduccionId,
+                'numero_pedido' => $numeroPedido,
+                'prenda_id' => $prendaId
+            ]);
+            
+            return 'Sin procesos';
+            
+        } catch (\Exception $e) {
+            \Log::error('[obtenerAreaProcesoMasReciente] Error: ' . $e->getMessage(), [
+                'pedido_produccion_id' => $pedidoProduccionId,
+                'prenda_id' => $prendaId
+            ]);
+            return 'Error';
+        }
+    }
+    
+    /**
+     * Obtener el área más reciente de un pedido (API)
+     */
+    public function getAreaReciente($id)
+    {
+        try {
+            \Log::info('[getAreaReciente] Obteniendo área más reciente para pedido', ['pedido_id' => $id]);
+            
+            $areaReciente = $this->obtenerAreaProcesoMasReciente($id);
+            
+            return response()->json([
+                'success' => true,
+                'area' => $areaReciente,
+                'pedido_id' => $id
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('[getAreaReciente] Error: ' . $e->getMessage(), ['pedido_id' => $id]);
+            
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al obtener área reciente: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

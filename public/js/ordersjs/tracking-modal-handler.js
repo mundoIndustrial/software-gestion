@@ -953,9 +953,9 @@ const trackingTableStyles = `
   }
 
   // Abrir selector de prendas (overlay)
-  window.openOrderTracking = async function(orderId) {
+  window.openOrderTracking = async function(orderId, mostrarSelector = true) {
     try {
-      console.log('[openOrderTracking] Abriendo selector de prendas para orden:', orderId);
+      console.log('[openOrderTracking] Abriendo selector de prendas para orden:', orderId, 'mostrarSelector:', mostrarSelector);
       
       // Cargar datos básicos del pedido
       await loadOrderBasicData(orderId);
@@ -963,8 +963,12 @@ const trackingTableStyles = `
       // Cargar prendas con seguimiento
       await loadPrendasWithTracking(orderId);
       
-      // Mostrar overlay de prendas
-      showPrendasSelector();
+      // Mostrar overlay de prendas solo si se solicita
+      if (mostrarSelector) {
+        showPrendasSelector();
+      }
+      
+      console.log('[openOrderTracking] Datos cargados correctamente. currentOrderData:', window.currentOrderData);
       
     } catch (error) {
       console.error('[openOrderTracking] Error:', error);
@@ -978,7 +982,13 @@ const trackingTableStyles = `
       const response = await fetch(`/registros/${orderId}/recibos-datos`);
       if (!response.ok) throw new Error('Error al cargar datos del pedido');
       
-      const data = await response.json();
+      const result = await response.json();
+      console.log('[loadOrderBasicData] Respuesta del endpoint:', result);
+      
+      // Extraer datos desde la estructura del endpoint
+      const data = result.data || result;
+      console.log('[loadOrderBasicData] Datos extraídos:', data);
+      
       currentOrderData = data;
       
       // Actualizar información del pedido en el modal
@@ -1610,9 +1620,14 @@ const trackingTableStyles = `
       
       currentPrendaData = prenda;
       
-      // Cerrar overlay de prendas
-      console.log('[showPrendaTracking] Cerrando overlay selector...');
-      cerrarSelectorPrendas();
+      // Cerrar overlay de prendas solo si está visible
+      const overlaySelector = document.getElementById('trackingPrendasSelectorOverlay');
+      if (overlaySelector && overlaySelector.style.display !== 'none') {
+        console.log('[showPrendaTracking] Cerrando overlay selector...');
+        cerrarSelectorPrendas();
+      } else {
+        console.log('[showPrendaTracking] Overlay selector no está visible, omitiendo cierre');
+      }
       
       // Mostrar modal de seguimiento
       console.log('[showPrendaTracking] Buscando modal...');
@@ -1946,11 +1961,75 @@ const trackingTableStyles = `
 
       // Mostrar mensaje de éxito
       showSuccess('Proceso eliminado correctamente');
+      
+      // Actualizar el área en la tabla de recibos-costura si estamos en esa página
+      actualizarAreaEnTablaRecibos();
 
     } catch (error) {
       console.error('[executeDeleteProcess] Error:', error);
       showError('Error al eliminar proceso: ' + error.message);
       closeConfirmDeleteModal();
+    }
+  }
+  
+  // Actualizar el área en la tabla de recibos-costura
+  function actualizarAreaEnTablaRecibos() {
+    try {
+      console.log('[actualizarAreaEnTablaRecibos] Verificando si estamos en recibos-costura');
+      
+      // Verificar si estamos en la página de recibos-costura
+      if (!window.location.pathname.includes('/recibos-costura')) {
+        console.log('[actualizarAreaEnTablaRecibos] No estamos en recibos-costura, omitiendo actualización');
+        return;
+      }
+      
+      // Obtener el área más reciente del pedido actual
+      if (!currentOrderData || !currentOrderData.id) {
+        console.warn('[actualizarAreaEnTablaRecibos] No hay currentOrderData disponible');
+        return;
+      }
+      
+      // Llamar a un endpoint para obtener el área más reciente
+      fetch(`/api/pedido/${currentOrderData.id}/area-reciente`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Error al obtener área reciente');
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log('[actualizarAreaEnTablaRecibos] Área reciente obtenida:', data);
+          
+          if (data.success && data.area) {
+            // Buscar la fila correspondiente en la tabla y actualizar el área
+            const filas = document.querySelectorAll('#tablaRecibosBody tr[data-orden-id]');
+            filas.forEach(fila => {
+              const pedidoId = fila.getAttribute('data-orden-id');
+              // Buscar si esta fila corresponde a nuestro pedido
+              const enlaceSeguimiento = fila.querySelector('a[onclick*="abrirModalSeguimiento"]');
+              if (enlaceSeguimiento) {
+                const onclickAttr = enlaceSeguimiento.getAttribute('onclick');
+                if (onclickAttr && onclickAttr.includes(`abrirModalSeguimiento(${currentOrderData.id})`)) {
+                  // Encontramos la fila correcta, actualizar el área
+                  const areaCell = fila.querySelector('td:nth-child(4) .badge');
+                  if (areaCell) {
+                    console.log('[actualizarAreaEnTablaRecibos] Actualizando área en la tabla:', data.area);
+                    areaCell.textContent = data.area;
+                    
+                    // Actualizar clases según el área
+                    areaCell.className = 'badge bg-secondary'; // Mantener estilo consistente
+                  }
+                }
+              }
+            });
+          }
+        })
+        .catch(error => {
+          console.error('[actualizarAreaEnTablaRecibos] Error:', error);
+        });
+        
+    } catch (error) {
+      console.error('[actualizarAreaEnTablaRecibos] Error general:', error);
     }
   }
 

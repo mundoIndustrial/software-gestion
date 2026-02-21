@@ -3,16 +3,16 @@
 <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
 
 <!-- Script para el modal de seguimiento -->
-<script src="{{ asset('js/orders js/tracking-modal-handler.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}?v={{ time() }}"></script>
 
 <!-- Scripts para la funcionalidad de Día de Entrega -->
-<script src="{{ asset('js/orders js/modules/diaEntregaModule.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/modules/diaEntregaModule.js') }}?v={{ time() }}"></script>
 
 <!-- Scripts para Formatters -->
 <script type="module" src="{{ asset('js/modulos/pedidos-recibos/utils/Formatters.js') }}?v={{ time() }}"></script>
 
-<!-- Script para el modal de novedades -->
-<script src="{{ asset('js/orders js/novedades-modal.js') }}?v={{ time() }}"></script>
+<!-- Script para novedades de recibos (sistema completo) -->
+<script src="{{ asset('js/recibos-novedades.js') }}?v={{ time() }}"></script>
 
 <!-- Script con funciones globales (cargado antes del HTML) -->
 <script>
@@ -72,7 +72,64 @@ function abrirModalCeldaConFormato(titulo, prendas) {
     }
     
     console.log('[abrirModalCeldaConFormato]  HTML FINAL A MOSTRAR:', htmlContenido);
-    mostrarModalCeldaFormateado(titulo, htmlContenido);
+    
+    // Crear y mostrar el modal
+    const modal = document.createElement('div');
+    modal.id = 'modal-celda-formateada';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    `;
+    
+    const content = document.createElement('div');
+    content.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        max-width: 800px;
+        width: 100%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    `;
+    
+    content.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #e5e7eb; background: #f9fafb; border-radius: 12px 12px 0 0;">
+            <h2 style="margin: 0; font-size: 18px; font-weight: 600; color: #111827;">${titulo}</h2>
+            <button onclick="this.closest('#modal-celda-formateada').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">×</button>
+        </div>
+        <div style="padding: 24px;">
+            ${htmlContenido}
+        </div>
+    `;
+    
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+    
+    // Cerrar al hacer clic fuera
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+    
+    // Cerrar con ESC
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            modal.remove();
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
 }
 
 function cerrarModalCeldaFormateada() {
@@ -135,263 +192,179 @@ function generarDescripcionSimple(prenda) {
     }
     
     console.log('[generarDescripcionSimple] 📄 OUTPUT HTML:', html);
-    return html;
 }
 
-function normalizarPrendaData(prenda) {
-    if (!prenda) return prenda;
+// Función para normalizar datos de prenda
+function normalizarPrendaData(prendaData) {
+    const normalized = { ...prendaData };
     
-    console.log('[normalizarPrendaData] INPUT - Prenda original:', prenda);
-    
-    const normalizado = { ...prenda };
-    
-    // Lista ampliada de campos que deben ser strings
-    const stringsFields = [
-        'nombre', 'nombre_prenda', 'tela', 'color', 'manga', 'ref', 'referencia',
-        'descripcion', 'genero', 'broche', 'numero', 'numero_prenda'
-    ];
-    
-    for (let field of stringsFields) {
-        if (normalizado[field]) {
-            console.log(`[normalizarPrendaData] Campo "${field}": tipo=${typeof normalizado[field]}, valor=`, normalizado[field]);
-            // Si es un objeto con propiedad 'nombre', extraer el valor
-            if (typeof normalizado[field] === 'object' && normalizado[field] !== null) {
-                normalizado[field] = normalizado[field].nombre || normalizado[field].name || String(normalizado[field]);
-                console.log(`[normalizarPrendaData]   → Convertido a: "${normalizado[field]}"`);
-            } else if (normalizado[field] !== null && normalizado[field] !== undefined) {
-                normalizado[field] = String(normalizado[field]).trim();
+    // Normalizar campos que puedan ser objetos
+    Object.keys(normalized).forEach(key => {
+        if (normalized[key] && typeof normalized[key] === 'object' && !Array.isArray(normalized[key])) {
+            // Si es un objeto con propiedades comunes, convertir a string
+            if (normalized[key].nombre) {
+                normalized[key] = normalized[key].nombre;
+            } else if (normalized[key].id) {
+                normalized[key] = `ID: ${normalized[key].id}`;
+            } else {
+                normalized[key] = JSON.stringify(normalized[key]);
             }
         }
-    }
+    });
     
-    // Asegurar que genero tenga un valor por defecto
-    if (!normalizado.genero || normalizado.genero === '') {
-        normalizado.genero = 'DAMA';
-    }
-    
-    // Normalizar tallas (puede ser array de objetos o array de strings)
-    if (normalizado.tallas && Array.isArray(normalizado.tallas)) {
-        console.log('[normalizarPrendaData] Tallas detectadas:', normalizado.tallas.length);
-        normalizado.tallas = normalizado.tallas.map(t => {
-            if (typeof t === 'object' && t !== null) {
-                return {
-                    genero: String(t.genero || '').toUpperCase(),
-                    talla: String(t.talla || ''),
-                    cantidad: parseInt(t.cantidad) || 0
-                };
-            }
-            return t;
-        });
-    } else {
-        normalizado.tallas = [];
-    }
-    
-    console.log('[normalizarPrendaData] OUTPUT - Prenda normalizada:', normalizado);
-    return normalizado;
+    return normalized;
 }
 
-function mostrarModalCeldaFormateado(titulo, contenidoHtml) {
-    console.log('[mostrarModalCeldaFormateado] 🔓 Abriendo modal');
-    console.log('[mostrarModalCeldaFormateado] Título:', titulo);
-    console.log('[mostrarModalCeldaFormateado] HTML contenido (primeros 500 chars):', contenidoHtml.substring(0, 500));
-    
-    // Crear el modal si no existe
-    let modal = document.getElementById('modal-celda-formateada');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'modal-celda-formateada';
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        `;
-        document.body.appendChild(modal);
-    }
-    
-    // Contenido del modal
-    modal.innerHTML = `
-        <div style="background: white; border-radius: 16px; max-width: 800px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);">
-            <div style="padding: 24px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="margin: 0; color: #1f2937; font-size: 1.25rem; font-weight: 600;">${titulo}</h3>
-                <button onclick="cerrarModalCeldaFormateada()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.2s;">
-                    ×
-                </button>
-            </div>
-            <div style="padding: 24px; color: #374151; line-height: 1.6;">
-                ${contenidoHtml}
+// Función fallback para generar HTML
+function generarFallbackHTML(prendaData) {
+    return `
+        <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+            <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #111827;">
+                ${prendaData.nombre_prenda || 'Prenda sin nombre'}
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 14px;">
+                ${prendaData.talla ? `<div><strong>Talla:</strong> ${prendaData.talla}</div>` : ''}
+                ${prendaData.tela ? `<div><strong>Tela:</strong> ${prendaData.tela}</div>` : ''}
+                ${prendaData.color ? `<div><strong>Color:</strong> ${prendaData.color}</div>` : ''}
+                ${prendaData.manga ? `<div><strong>Manga:</strong> ${prendaData.manga}</div>` : ''}
+                ${prendaData.descripcion ? `<div><strong>Descripción:</strong> ${prendaData.descripcion}</div>` : ''}
             </div>
         </div>
     `;
-    
-    // Mostrar el modal
-    modal.style.display = 'flex';
-    
-    // Cerrar al hacer clic fuera
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            cerrarModalCeldaFormateada();
-        }
-    });
 }
 
-// Cargar Formatters y hacerlo disponible globalmente
-setTimeout(() => {
-    // Intentar importar Formatters y hacerlo disponible globalmente
-    import('{{ asset('js/modulos/pedidos-recibos/utils/Formatters.js') }}')
-        .then(module => {
-            window.Formatters = module.Formatters;
-            console.log('✅ Formatters cargado y disponible globalmente');
+// Función para obtener datos de la prenda asociada al recibo (igual que en registros)
+function obtenerDatosPrendaRecibo(reciboId, titulo) {
+    console.log(`[obtenerDatosPrendaRecibo] 📌 Obteniendo datos para recibo ID: ${reciboId}`);
+    
+    // Obtener pedido_produccion_id desde la base de datos usando el recibo_id
+    fetch(`/api/recibos/${reciboId}/pedido`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(datos => {
+            console.log(`[obtenerDatosPrendaRecibo] 📄 Datos del recibo recibidos:`, datos);
+            
+            if (!datos.pedido_produccion_id) {
+                console.error('No se encontró pedido_produccion_id para el recibo:', reciboId);
+                alert('No se pudo identificar el pedido asociado a este recibo');
+                return;
+            }
+            
+            const pedidoProduccionId = datos.pedido_produccion_id;
+            console.log(`[obtenerDatosPrendaRecibo] 📋 Pedido ID encontrado: ${pedidoProduccionId}`);
+            
+            // Obtener datos de la prenda del pedido (igual que en registros)
+            fetch(`/api/pedidos/${pedidoProduccionId}/prendas`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(datosPrendas => {
+                    console.log(`[obtenerDatosPrendaRecibo] 📄 Datos de prendas recibidos:`, datosPrendas);
+                    
+                    if (datosPrendas.data && typeof datosPrendas.data === 'object') {
+                        datosPrendas = datosPrendas.data;
+                    }
+                    
+                    if (!datosPrendas.prendas || !Array.isArray(datosPrendas.prendas) || datosPrendas.prendas.length === 0) {
+                        console.warn('No se encontraron prendas para el pedido:', pedidoProduccionId);
+                        alert('No se encontraron prendas para este pedido');
+                        return;
+                    }
+                    
+                    console.log(`[obtenerDatosPrendaRecibo] ✅ Prendas encontradas: ${datosPrendas.prendas.length}`);
+                    
+                    // Usar las prendas del pedido (igual que en registros)
+                    abrirModalCeldaConFormato(titulo, datosPrendas.prendas);
+                })
+                .catch(error => {
+                    console.error('[obtenerDatosPrendaRecibo] Error al obtener datos de prendas:', error);
+                    alert('Error al cargar los datos de la prenda: ' + error.message);
+                });
         })
         .catch(error => {
-            console.warn('⚠️ No se pudo cargar Formatters, se usará fallback');
+            console.error('[obtenerDatosPrendaRecibo] Error al obtener datos del recibo:', error);
+            alert('Error al identificar el pedido asociado: ' + error.message);
         });
-}, 100);
-
-function verDetallesRecibo(reciboId) {
-    // Buscar la fila del recibo para obtener el pedido_produccion_id
-    const fila = document.querySelector(`tr[data-orden-id="${reciboId}"]`);
-    if (!fila) {
-        alert('No se encontró el recibo');
-        return;
-    }
-    
-    // Intentar obtener el enlace del pedido para extraer el pedido_produccion_id
-    const enlacePedido = fila.querySelector('a[href*="/registros/"]');
-    let pedidoProduccionId = null;
-    
-    if (enlacePedido) {
-        const href = enlacePedido.getAttribute('href');
-        const match = href.match(/\/registros\/(\d+)/);
-        if (match) {
-            pedidoProduccionId = match[1];
-        }
-    }
-    
-    if (!pedidoProduccionId) {
-        alert('No se pudo identificar el pedido asociado');
-        return;
-    }
-    
-    // Redirigir a la vista de detalles del pedido
-    window.location.href = `/registros/${pedidoProduccionId}`;
 }
 
-// Función para cerrar el modal overlay
-function closeModalOverlay() {
-    const modal = document.getElementById('modal-overlay');
-    if (modal) {
-        modal.style.display = 'none';
+// Función para abrir modal de novedades específicas de recibo (NUEVO SISTEMA)
+function openNovedadesModalRecibo(button) {
+    // Obtener datos desde los data attributes del botón
+    const pedidoId = button.getAttribute('data-pedido-id');
+    const numeroRecibo = button.getAttribute('data-numero-recibo');
+    const novedadesActuales = button.getAttribute('data-novedades') || '';
+    
+    console.log(`[openNovedadesModalRecibo] 📝 Abriendo modal para pedido: ${pedidoId}, recibo: ${numeroRecibo}`);
+    console.log(`[openNovedadesModalRecibo] Novedades actuales:`, novedadesActuales);
+    
+    // Esperar a que el script de novedades esté disponible
+    if (typeof abrirModalNovedadesRecibo === 'function') {
+        abrirModalNovedadesRecibo(pedidoId, numeroRecibo);
+        return;
     }
+    
+    // Si no está disponible, esperar un poco y reintentar
+    setTimeout(() => {
+        if (typeof abrirModalNovedadesRecibo === 'function') {
+            abrirModalNovedadesRecibo(pedidoId, numeroRecibo);
+        } else {
+            console.warn('[openNovedadesModalRecibo] Sistema nuevo no disponible, usando fallback');
+            // Fallback simple: mostrar alerta con las novedades actuales
+            alert(`Novedades del recibo ${numeroRecibo}:\n\n${novedadesActuales || 'Sin novedades'}`);
+        }
+    }, 100);
 }
 
 // Funciones para el menú de acciones
 document.addEventListener('DOMContentLoaded', function() {
-    // Manejo del menú de acciones
-    document.addEventListener('click', function(e) {
-        // Toggle del menú al hacer clic en el botón de acción
-        if (e.target.closest('.action-view-btn')) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const btn = e.target.closest('.action-view-btn');
-            const ordenId = btn.getAttribute('data-orden-id');
-            const menu = document.querySelector(`.action-menu[data-orden-id="${ordenId}"]`);
-            
-            if (menu) {
-                // Cerrar todos los demás menús
-                document.querySelectorAll('.action-menu').forEach(m => {
-                    if (m !== menu) {
-                        m.classList.remove('show', 'active');
-                    }
-                });
-                
-                // Toggle el menú actual
-                menu.classList.toggle('show');
-                menu.classList.toggle('active');
-            }
-        }
-        
-        // Cerrar menú al hacer clic en una opción
-        if (e.target.closest('.action-menu-item')) {
-            // Cerrar todos los menús
-            document.querySelectorAll('.action-menu').forEach(m => {
-                m.classList.remove('show', 'active');
-            });
-        }
-    });
-    
-    // Cerrar menús al hacer clic fuera
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.action-view-btn') && !e.target.closest('.action-menu')) {
-            document.querySelectorAll('.action-menu').forEach(m => {
-                m.classList.remove('show', 'active');
-            });
-        }
-    });
+    console.log('[Menu] Inicializando menú de acciones');
 });
 
-// Función para abrir modal de novedades específicas de recibo
-function openNovedadesModalRecibo(pedidoId, numeroRecibo, novedadesActuales) {
-    console.log(`[openNovedadesModalRecibo] 📝 Abriendo modal para pedido: ${pedidoId}, recibo: ${numeroRecibo}`);
-    console.log(`[openNovedadesModalRecibo] Novedades actuales:`, novedadesActuales);
-    
-    // Usar el modal existente pero con datos específicos de recibo
-    const modal = document.getElementById('novedadesModal') || document.getElementById('novedadesEditModal');
-    if (!modal) {
-        console.error('[openNovedadesModalRecibo] Modal no encontrado');
-        alert('No se encontró el modal de novedades');
-        return;
+// Event listeners globales para menú de acciones
+document.addEventListener('click', function(e) {
+    // Toggle del menú al hacer clic en el botón de acción
+    if (e.target.closest('.action-view-btn')) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const btn = e.target.closest('.action-view-btn');
+        const ordenId = btn.getAttribute('data-orden-id');
+        const menu = document.querySelector(`.action-menu[data-orden-id="${ordenId}"]`);
+        
+        if (menu) {
+            // Cerrar todos los demás menús
+            document.querySelectorAll('.action-menu').forEach(m => {
+                if (m !== menu) {
+                    m.classList.remove('show', 'active');
+                }
+            });
+            
+            // Toggle el menú actual
+            menu.classList.toggle('show');
+            menu.classList.toggle('active');
+        }
     }
     
-    // Guardar contexto del recibo en el modal
-    modal.setAttribute('data-pedido-id', pedidoId);
-    modal.setAttribute('data-numero-recibo', numeroRecibo);
-    modal.setAttribute('data-tipo-novedades', 'recibo');
-    
-    // Cargar las novedades actuales en el textarea
-    const textarea = modal.querySelector('#novedadesTexto') || modal.querySelector('#novedadesTextarea');
-    if (textarea) {
-        textarea.value = novedadesActuales || '';
-        textarea.readOnly = false; // Permitir edición para recibos
+    // Cerrar menú al hacer clic en una opción
+    if (e.target.closest('.action-menu-item')) {
+        // Cerrar todos los menús
+        document.querySelectorAll('.action-menu').forEach(m => {
+            m.classList.remove('show', 'active');
+        });
     }
     
-    // Actualizar título del modal
-    const titulo = modal.querySelector('.modal-title');
-    if (titulo) {
-        titulo.textContent = `Novedades - Recibo ${numeroRecibo}`;
+    // Cerrar menús al hacer clic fuera
+    if (!e.target.closest('.action-view-btn') && !e.target.closest('.action-menu')) {
+        document.querySelectorAll('.action-menu').forEach(m => {
+            m.classList.remove('show', 'active');
+        });
     }
-    
-    // Mostrar botón de guardar de recibos y ocultar otros
-    const btnSaveRecibo = document.getElementById('btnSaveReciboNovedades');
-    const btnSaveEdit = document.getElementById('btnSaveEdit');
-    const btnAddNew = document.getElementById('btnAddNew');
-    const btnEditToggle = document.getElementById('btnEditToggle');
-    
-    if (btnSaveRecibo) btnSaveRecibo.style.display = 'inline-flex';
-    if (btnSaveEdit) btnSaveEdit.style.display = 'none';
-    if (btnAddNew) btnAddNew.style.display = 'none';
-    if (btnEditToggle) btnEditToggle.style.display = 'none';
-    
-    // Mostrar el modal
-    modal.style.display = 'flex';
-    modal.classList.add('show');
-    
-    // Enfocar el textarea
-    if (textarea) {
-        setTimeout(() => {
-            textarea.focus();
-            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-        }, 100);
-    }
-}
-</script>
+});</script>
 @endpush

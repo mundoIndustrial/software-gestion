@@ -143,7 +143,7 @@ typeof window.openOrderDetailModalWithProcess === 'function'
 ## Migraciones Documentadas
 
 -  Archivo Blade actualizado: `resources/views/asesores/pedidos/index.blade.php`
--  Archivo antiguo eliminado: `public/js/orders js/order-detail-modal-proceso-dinamico.js`
+-  Archivo antiguo eliminado: `public/js/ordersjs/order-detail-modal-proceso-dinamico.js`
 -  Documentación disponible: `MIGRACION_PEDIDOS_RECIBOS.md`
 
 ## Estado Final

@@ -30,7 +30,7 @@
     background: #fde047;
 }
 
-/* Fila con días totales entre 10 y 15 - Rojo claro */
+/* Fila con días totales entre 10 y 13 - Rojo claro */
 .table-row.dias-10-15 {
     background: #fecaca;
     border-left: 4px solid #dc2626;
@@ -40,7 +40,7 @@
     background: #fca5a5;
 }
 
-/* Fila con días totales mayor a 15 - Gris semi oscuro */
+/* Fila con días totales mayor o igual a 14 - Gris semi oscuro */
 .table-row.dias-mayor-15 {
     background: #d4d4d4;
     border-left: 4px solid #6b7280;

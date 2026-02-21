@@ -3,11 +3,15 @@
     <table class="table table-striped table-hover modern-table">
         <thead class="table-header">
             <tr>
-                <th class="acciones-column" style="width: 100px; text-align: center;">Acciones</th>
+                <th class="acciones-column" style="width: 60px; text-align: center;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 12h8M12 8v8"></path>
+                    </svg>
+                </th>
                 <th style="width: auto;">Estado</th>
-                <th style="width: auto;">Área</th>
-                <th style="width: 120px;">Total de días</th>
                 <th style="width: 120px;">Día de entrega</th>
+                <th style="width: 120px;">Total de días</th>
                 <th style="width: 120px;">N° Recibo</th>
                 <th style="width: 150px;">Cliente</th>
                 <th style="width: auto;">Descripción</th>
@@ -22,10 +26,15 @@
             @if($recibos->count() > 0)
                 @foreach($recibos as $recibo)
                     <tr class="@if(isset($recibo['dias_calculados']) && $recibo['dias_calculados'] > 0)
-                        @if($recibo['dias_calculados'] > 15) dias-mayor-15
+                        @if($recibo['dias_calculados'] >= 14) dias-mayor-15
                         @elseif($recibo['dias_calculados'] >= 10) dias-10-15
-                        @else dias-5-9 @endif
-                    @endif" data-orden-id="{{ $recibo['id'] }}">
+                        @elseif($recibo['dias_calculados'] >= 5) dias-5-9
+                        @else dias-0-4 @endif
+                    @endif"
+                        data-orden-id="{{ $recibo['id'] }}"
+                        data-pedido-id="{{ $recibo['pedido_produccion_id'] ?? '' }}"
+                        data-numero-recibo="{{ $recibo['consecutivo_actual'] ?? '' }}"
+                    >
                         <!-- Acciones -->
                         <td class="acciones-column" style="text-align: center; position: relative;">
                             <button class="action-view-btn" title="Ver detalles" data-orden-id="{{ $recibo['id'] }}">
@@ -69,18 +78,6 @@
                             @endif
                         </td>
                         
-                        <!-- Día de entrega (Dropdown) -->
-                        <td>
-                            <div class="cell-content">
-                                <select class="dia-entrega-dropdown" data-orden-id="{{ $recibo['pedido_produccion_id'] }}">
-                                    <option value="">Seleccionar</option>
-                                    @foreach(\App\Models\PedidoProduccion::DIAS_ENTREGA as $dia)
-                                        <option value="{{ $dia }}">{{ $dia }} días</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </td>
-                        
                         <!-- Total de días -->
                         <td style="text-align: center;">
                             @if(isset($recibo['dias_calculados']))
@@ -89,7 +86,7 @@
                                         {{ $recibo['dias_calculados'] }} días
                                     </span>
                                 @else
-                                    <span class="badge @if($recibo['dias_calculados'] > 15) bg-danger @elseif($recibo['dias_calculados'] >= 10) bg-warning @else bg-success @endif" style="font-weight: 600;">
+                                    <span class="badge @if($recibo['dias_calculados'] >= 14) bg-danger @elseif($recibo['dias_calculados'] >= 5) bg-warning @else bg-success @endif" style="font-weight: 600;">
                                         {{ $recibo['dias_calculados'] }} días
                                     </span>
                                 @endif
@@ -191,14 +188,16 @@
                                                 ->get();
                                             
                                             foreach ($novedadesPrenda as $novedad) {
-                                                $novedadesRecibo[] = $novedad->novedad_texto;
+                                                // Limpiar el texto de la novedad para evitar problemas
+                                                $textoLimpio = str_replace(["\r", "\n", "'", '"'], " ", $novedad->novedad_texto);
+                                                $novedadesRecibo[] = $textoLimpio;
                                             }
                                         }
                                     }
                                     
                                     // Concatenar todas las novedades para mostrar
                                     if (!empty($novedadesRecibo)) {
-                                        $novedadesTexto = implode("\n", $novedadesRecibo);
+                                        $novedadesTexto = implode(" | ", $novedadesRecibo);
                                     }
                                 }
                             @endphp
@@ -206,14 +205,14 @@
                                 <div class="cell-content" style="justify-content: flex-start;">
                                     <button 
                                         class="btn-edit-novedades"
-                                        data-full-novedades="{{ addslashes($novedadesTexto) }}"
-                                        data-prenda-id="{{ $recibo['pedido_produccion_id'] ?? '' }}"
-                                        data-numero-recibo="{{ $recibo['consecutivo_actual'] ?? '' }}"
-                                        onclick="event.stopPropagation(); openNovedadesModalRecibo('{{ $recibo['pedido_produccion_id'] ?? 'sin-numero' }}', '{{ $recibo['consecutivo_actual'] ?? 'sin-recibo' }}', `{{ addslashes($novedadesTexto) }}`)"
-                                        title="Editar novedades del recibo"
+                                        data-pedido-id="{{ $recibo['pedido_produccion_id'] }}"
+                                        data-numero-recibo="{{ $recibo['consecutivo_actual'] }}"
+                                        data-novedades="{{ addslashes(str_replace(["\r", "\n"], " ", $novedadesTexto)) }}"
+                                        onclick="event.stopPropagation(); openNovedadesModalRecibo(this)"
+                                        title="Ver novedades del recibo"
                                         type="button">
                                         @if($novedadesTexto)
-                                            <span class="novedades-text">{{ \Illuminate\Support\Str::limit($novedadesTexto, 50, '...') }}</span>
+                                            <span class="novedades-text">{{ \Illuminate\Support\Str::limit(str_replace(["\r", "\n"], " ", $novedadesTexto), 50, '...') }}</span>
                                         @else
                                             <span class="novedades-text empty">Sin novedades</span>
                                         @endif
@@ -225,7 +224,11 @@
                         
                         <!-- Fecha de creación -->
                         <td>
-                            <span>{{ \Carbon\Carbon::parse($recibo['created_at'])->format('d/m/Y') }}</span>
+                            @if($recibo['pedido_info'] && isset($recibo['pedido_info']['fecha_creacion_orden']))
+                                <span>{{ \Carbon\Carbon::parse($recibo['pedido_info']['fecha_creacion_orden'])->format('d/m/Y') }}</span>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
                         </td>
                         
                         <!-- Fecha estimada entrega (No aplica para recibos) -->

@@ -43,6 +43,31 @@
     box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.1);
 }
 
+/* Forzar mismo ancho para Día de entrega y Total de días */
+.table-header th:nth-child(1) {
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+}
+
+.table-header th:nth-child(2) {
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+}
+
+.table-header th:nth-child(3) {
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+}
+
+.table-header th:nth-child(4) {
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+}
+
 .table-header th:first-child {
     border-top-left-radius: 16px;
 }
@@ -82,6 +107,15 @@
     background: #fde047;
 }
 
+.table tbody tr.dias-0-4 {
+    background: #dcfce7;
+    border-left: 4px solid #16a34a;
+}
+
+.table tbody tr.dias-0-4:hover {
+    background: #bbf7d0;
+}
+
 .table tbody tr.dias-10-15 {
     background: #fecaca;
     border-left: 4px solid #dc2626;
@@ -91,12 +125,68 @@
     background: #fca5a5;
 }
 
+.table tbody tr.dias-mayor-15 {
+    background: #d4d4d4;
+    border-left: 4px solid #6b7280;
+}
+
+.table tbody tr.dias-mayor-15:hover {
+    background: #c4c7ce;
+}
+
 .table td {
     padding: 14px 12px !important;
     vertical-align: middle !important;
     border-right: 1px solid #f1f5f9;
-    font-size: 0.875rem;
+    font-size: 11px !important;
     color: #475569;
+}
+
+/* Forzar mismo ancho para Día de entrega y Total de días en el cuerpo */
+.table tbody tr td:nth-child(1) {
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+    text-align: center !important;
+    padding: 8px 4px !important;
+}
+
+.table tbody tr td:nth-child(2) {
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+    text-align: center !important;
+}
+
+.table tbody tr td:nth-child(3) {
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+    text-align: center !important;
+}
+
+.table tbody tr td:nth-child(4) {
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+    text-align: center !important;
+}
+
+/* Aplicar font-size 11px a todo el texto dentro de la tabla */
+.table td * {
+    font-size: 11px !important;
+}
+
+.table td span {
+    font-size: 11px !important;
+}
+
+.table td .cell-content {
+    font-size: 11px !important;
+}
+
+.table td .table-cell {
+    font-size: 11px !important;
 }
 
 .table td:last-child {
@@ -107,7 +197,7 @@
 .badge {
     padding: 6px 12px !important;
     border-radius: 20px !important;
-    font-size: 0.75rem !important;
+    font-size: 11px !important;
     font-weight: 600 !important;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -126,25 +216,64 @@
 /* Estilos para dropdown de día de entrega */
 .dia-entrega-dropdown {
     width: 100%;
-    padding: 8px 12px;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    background: white;
-    color: #475569;
-    font-size: 0.875rem;
-    font-weight: 500;
+    padding: 6px 12px !important;
+    border: none !important;
+    border-radius: 20px !important;
+    background: linear-gradient(135deg, #64748b 0%, #475569 100%) !important;
+    color: white !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     transition: all 0.3s ease;
     cursor: pointer;
+    text-align: center;
+    font-family: inherit;
+    line-height: 1.2;
+    height: auto;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .dia-entrega-dropdown:focus {
     outline: none;
-    border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .dia-entrega-dropdown:hover {
-    border-color: #94a3b8;
+    background: linear-gradient(135deg, #475569 0%, #334155 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilo especial para dropdown con valor seleccionado (orange-highlight) */
+.dia-entrega-dropdown.orange-highlight {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    border: none !important;
+}
+
+.dia-entrega-dropdown.orange-highlight:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+}
+
+.dia-entrega-dropdown.orange-highlight:hover {
+    background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.dia-entrega-dropdown option {
+    background: white !important;
+    color: #475569 !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    padding: 8px 12px !important;
 }
 
 /* Estilos para botones de acción */
@@ -153,14 +282,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 28px !important;
+    height: 28px !important;
     border: 1px solid #e2e8f0;
     background: white;
     color: #64748b;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 11px !important;
     transition: all 0.2s ease;
     position: relative;
     flex-shrink: 0;
@@ -222,7 +351,7 @@
     padding: 12px 16px;
     color: #2c3e50;
     text-decoration: none;
-    font-size: 14px;
+    font-size: 11px !important;
     font-weight: 500;
     border-bottom: 1px solid #e5e7eb;
     transition: all 0.2s ease;
@@ -376,7 +505,7 @@ body #orderTrackingModal .tracking-back-btn {
     padding: 12px 16px;
     color: #2c3e50;
     text-decoration: none;
-    font-size: 14px;
+    font-size: 11px !important;
     font-weight: 500;
     border-bottom: 1px solid #e5e7eb;
     transition: all 0.2s ease;

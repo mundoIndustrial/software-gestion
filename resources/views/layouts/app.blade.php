@@ -230,3 +230,28 @@
     @endif
 @endpush
 
+<!-- Modal de Alerta para Novedades de Recibos -->
+<div id="modalAlerta" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-9999" style="z-index: 100003;">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div id="alertaHeader" class="px-6 py-4 border-b">
+            <h3 id="alertaTitulo" class="text-lg font-semibold text-white flex items-center gap-2">
+                <span id="alertaIcono" class="material-symbols-rounded">info</span>
+                Mensaje
+            </h3>
+        </div>
+        <div class="px-6 py-4">
+            <p id="alertaMensaje" class="text-gray-700">Mensaje del sistema</p>
+        </div>
+        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end">
+            <button type="button" onclick="cerrarModalAlerta()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition">
+                Entendido
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Meta tags para usuario actual -->
+@if(auth()->check())
+    <meta name="user-id" content="{{ auth()->id() }}">
+@endif
+

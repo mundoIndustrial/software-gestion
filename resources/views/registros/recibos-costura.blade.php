@@ -38,67 +38,6 @@
 
 <!-- Script con funciones globales adicionales (solo las que no están en el componente) -->
 <script>
-// Función para obtener datos de la prenda asociada al recibo (igual que en registros)
-function obtenerDatosPrendaRecibo(reciboId, titulo) {
-    console.log(`[obtenerDatosPrendaRecibo] 📌 Obteniendo datos para recibo ID: ${reciboId}`);
-    
-    // Obtener pedido_produccion_id desde la base de datos usando el recibo_id
-    fetch(`/api/recibos/${reciboId}/pedido`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            return response.json();
-        })
-        .then(datos => {
-            console.log(`[obtenerDatosPrendaRecibo] 📄 Datos del recibo recibidos:`, datos);
-            
-            if (!datos.pedido_produccion_id) {
-                console.error('No se encontró pedido_produccion_id para el recibo:', reciboId);
-                alert('No se pudo identificar el pedido asociado a este recibo');
-                return;
-            }
-            
-            const pedidoProduccionId = datos.pedido_produccion_id;
-            console.log(`[obtenerDatosPrendaRecibo] 📋 Pedido ID encontrado: ${pedidoProduccionId}`);
-            
-            // Obtener datos de la prenda del pedido (igual que en registros)
-            fetch(`/api/pedidos/${pedidoProduccionId}/prendas`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    return response.json();
-                })
-                .then(datosPrendas => {
-                    console.log(`[obtenerDatosPrendaRecibo] 📄 Datos de prendas recibidos:`, datosPrendas);
-                    
-                    if (datosPrendas.data && typeof datosPrendas.data === 'object') {
-                        datosPrendas = datosPrendas.data;
-                    }
-                    
-                    if (!datosPrendas.prendas || !Array.isArray(datosPrendas.prendas) || datosPrendas.prendas.length === 0) {
-                        console.warn('No se encontraron prendas para el pedido:', pedidoProduccionId);
-                        alert('No se encontraron prendas para este pedido');
-                        return;
-                    }
-                    
-                    console.log(`[obtenerDatosPrendaRecibo] ✅ Prendas encontradas: ${datosPrendas.prendas.length}`);
-                    
-                    // Usar las prendas del pedido (igual que en registros)
-                    abrirModalCeldaConFormato(titulo, datosPrendas.prendas);
-                })
-                .catch(error => {
-                    console.error('[obtenerDatosPrendaRecibo] Error al obtener datos de prendas:', error);
-                    alert('Error al cargar los datos de la prenda: ' + error.message);
-                });
-        })
-        .catch(error => {
-            console.error('[obtenerDatosPrendaRecibo] Error al obtener datos del recibo:', error);
-            alert('Error al identificar el pedido asociado: ' + error.message);
-        });
-}
-
 // Cargar nombres de prendas al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
     console.log('[DOMContentLoaded] 📄 Cargando nombres de prendas en recibos-costura');
@@ -258,6 +197,66 @@ function abrirModalSeguimiento(pedidoId) {
     
     console.log('Abriendo seguimiento para el pedido:', pedidoId);
     
+    // Inicializar datos del pedido para el tracking modal
+    if (typeof openOrderTracking === 'function') {
+        console.log('[abrirModalSeguimiento] Llamando a openOrderTracking para inicializar datos');
+        openOrderTracking(pedidoId, false).then(() => {
+            console.log('[abrirModalSeguimiento] Datos inicializados, abriendo modal directamente');
+            
+            // NO mostrar el selector de prendas, abrir directamente el seguimiento
+            // con la primera prenda disponible
+            console.log('[abrirModalSeguimiento] Estructura de currentOrderData:', window.currentOrderData);
+            console.log('[abrirModalSeguimiento] currentOrderData.prendas:', window.currentOrderData?.prendas);
+            console.log('[abrirModalSeguimiento] currentOrderData.data?.prendas:', window.currentOrderData?.data?.prendas);
+            console.log('[abrirModalSeguimiento] window.prendasData:', window.prendasData);
+            
+            // Intentar encontrar prendas en diferentes estructuras posibles
+            let prendas = null;
+            if (window.currentOrderData && window.currentOrderData.prendas) {
+                prendas = window.currentOrderData.prendas;
+            } else if (window.currentOrderData && window.currentOrderData.data && window.currentOrderData.data.prendas) {
+                prendas = window.currentOrderData.data.prendas;
+            } else if (window.prendasData && window.prendasData.length > 0) {
+                prendas = window.prendasData;
+            }
+            
+            console.log('[abrirModalSeguimiento] Prendas encontradas:', prendas);
+            
+            if (prendas && prendas.length > 0) {
+                const primeraPrenda = prendas[0];
+                console.log('[abrirModalSeguimiento] Abriendo seguimiento directamente con la primera prenda:', primeraPrenda);
+                
+                // Inicializar currentPrendaData
+                window.currentPrendaData = primeraPrenda;
+                
+                // Abrir directamente el modal de seguimiento
+                abrirModalSeguimientoDirecto(pedidoId);
+            } else {
+                console.warn('[abrirModalSeguimiento] No hay prendas disponibles en ninguna estructura');
+                console.warn('[abrirModalSeguimiento] Estructura completa de currentOrderData:', JSON.stringify(window.currentOrderData, null, 2));
+                console.warn('[abrirModalSeguimiento] Estructura completa de window.prendasData:', JSON.stringify(window.prendasData, null, 2));
+                
+                // Como fallback, abrir el selector de prendas para que el usuario pueda seleccionar manualmente
+                console.log('[abrirModalSeguimiento] Abriendo selector de prendas como fallback');
+                if (typeof showPrendasSelector === 'function') {
+                    showPrendasSelector();
+                } else {
+                    alert('No hay prendas disponibles para este pedido');
+                }
+            }
+        }).catch(error => {
+            console.error('[abrirModalSeguimiento] Error al inicializar datos:', error);
+            alert('Error al cargar los datos del pedido: ' + error.message);
+        });
+    } else {
+        console.warn('[abrirModalSeguimiento] openOrderTracking no disponible');
+        alert('Sistema de seguimiento no disponible');
+    }
+}
+
+// Función para abrir el modal de seguimiento directamente sin selector
+function abrirModalSeguimientoDirecto(pedidoId) {
+    
     // Diagnóstico: verificar si los elementos existen
     // Abrir el overlay del modal de seguimiento
     const trackingOverlay = document.getElementById('trackingModalOverlay');
@@ -328,6 +327,14 @@ function abrirModalSeguimiento(pedidoId) {
                         console.log('Fecha de inicio asignada:', fechaFormateada);
                     }
                 }
+                
+                // Ahora mostrar directamente el seguimiento de la primera prenda
+                console.log('[abrirModalSeguimientoDirecto] Llamando a showPrendaTracking con la primera prenda');
+                if (typeof showPrendaTracking === 'function' && window.currentPrendaData) {
+                    showPrendaTracking(window.currentPrendaData);
+                } else {
+                    console.error('[abrirModalSeguimientoDirecto] showPrendaTracking o currentPrendaData no disponibles');
+                }
             })
             .catch(error => {
                 console.error('Error al obtener consecutivo de costura:', error);
@@ -335,9 +342,13 @@ function abrirModalSeguimiento(pedidoId) {
                 if (reciboElement) {
                     reciboElement.textContent = 'COSTURA #?';
                 }
+                
+                // Intentar mostrar el seguimiento de todos modos
+                if (typeof showPrendaTracking === 'function' && window.currentPrendaData) {
+                    showPrendaTracking(window.currentPrendaData);
+                }
             });
         
-        // No aplicar estilos inline, dejar que funcionen los estilos CSS del componente
         console.log('Modal abierto usando estilos CSS del componente');
     } else {
         console.warn('Contenido del modal de seguimiento no encontrado');

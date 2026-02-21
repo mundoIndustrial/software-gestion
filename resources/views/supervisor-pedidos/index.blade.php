@@ -1177,7 +1177,7 @@
     
     <!-- Scripts específicos de supervisor -->
     <script src="{{ asset('js/supervisor-pedidos/supervisor-pedidos-detail-modal.js') }}"></script>
-    <script src="{{ asset('js/orders js/tracking-modal-handler.js') }}"></script>
+    <script src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}"></script>
     
     <!-- Script para abrir el modal de seguimiento (inline para asegurar disponibilidad) -->
     <script>

@@ -1427,6 +1427,9 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/registros/{pedido}/images', [RegistroOrdenQueryController::class, 'getOrderImages'])->name('registros.images');
     Route::get('/registros/{pedido}/descripcion-prendas', [RegistroOrdenQueryController::class, 'getDescripcionPrendas'])->name('registros.descripcion-prendas');
     Route::get('/api/registros/{numero_pedido}/dias', [RegistroOrdenQueryController::class, 'calcularDiasAPI'])->name('api.registros.dias');
+    
+    // Ruta API para obtener el área más reciente de un pedido
+    Route::get('/api/pedido/{id}/area-reciente', [RegistroOrdenController::class, 'getAreaReciente'])->name('api.pedido.area-reciente');
     Route::post('/api/registros/dias-batch', [RegistroOrdenQueryController::class, 'calcularDiasBatchAPI'])->name('api.registros.dias-batch');
     Route::post('/api/registros/{id}/calcular-fecha-estimada', [RegistroOrdenQueryController::class, 'calcularFechaEstimada'])->name('api.registros.calcular-fecha-estimada');
     
@@ -2683,4 +2686,31 @@ Route::prefix('seguimiento-proceso')->name('seguimiento-proceso.')->group(functi
     // Eliminar un proceso
     Route::delete('/{procesoId}', [App\Http\Controllers\ProcesoSeguimientoController::class, 'eliminar'])
         ->name('eliminar');
+});
+
+/**
+ * API Routes for Novedades de Recibos
+ * Gestiona las novedades específicas de prendas por recibo
+ */
+Route::middleware(['auth'])->prefix('recibos-novedades')->name('recibos-novedades.')->group(function () {
+    
+    // Obtener novedades de prendas para un recibo específico
+    Route::get('{pedidoId}/{numeroRecibo}', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'index'])
+        ->name('index');
+    
+    // Obtener texto consolidado de novedades para mostrar en tabla
+    Route::get('{pedidoId}/{numeroRecibo}/consolidado', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'getConsolidado'])
+        ->name('consolidado');
+    
+    // Guardar novedades para prendas de un recibo
+    Route::post('{pedidoId}/{numeroRecibo}', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'store'])
+        ->name('store');
+    
+    // Actualizar una novedad existente
+    Route::put('{novedadId}', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'update'])
+        ->name('update');
+    
+    // Eliminar una novedad
+    Route::delete('{novedadId}', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'destroy'])
+        ->name('destroy');
 });

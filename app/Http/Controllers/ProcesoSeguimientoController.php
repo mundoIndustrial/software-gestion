@@ -98,13 +98,25 @@ class ProcesoSeguimientoController extends Controller
 
             \Log::info('[ProcesoSeguimientoController] Proceso creado:', ['proceso_id' => $proceso->id]);
 
-            // Cargar relaciones para la respuesta
-            $proceso->load(['prenda', 'pedido']);
+            // Cargar relaciones para la respuesta con manejo de errores
+            try {
+                $proceso->load(['prenda', 'pedido']);
+                \Log::info('[ProcesoSeguimientoController] Relaciones cargadas exitosamente');
+            } catch (\Exception $relationError) {
+                \Log::warning('[ProcesoSeguimientoController] Error cargando relaciones: ' . $relationError->getMessage());
+                // Continuar sin las relaciones
+            }
 
             // Obtener datos completos de la prenda con seguimientos actualizados
-            $registroController = new \App\Http\Controllers\RegistroOrdenQueryController();
-            $seguimientoResponse = $registroController->getSeguimientoPorPrenda($request->pedido_produccion_id);
-            $seguimientoData = json_decode($seguimientoResponse->getContent(), true);
+            try {
+                $registroController = new \App\Http\Controllers\RegistroOrdenQueryController();
+                $seguimientoResponse = $registroController->getSeguimientoPorPrenda($request->pedido_produccion_id);
+                $seguimientoData = json_decode($seguimientoResponse->getContent(), true);
+                \Log::info('[ProcesoSeguimientoController] Seguimiento obtenido exitosamente');
+            } catch (\Exception $seguimientoError) {
+                \Log::warning('[ProcesoSeguimientoController] Error obteniendo seguimiento: ' . $seguimientoError->getMessage());
+                $seguimientoData = ['prendas' => []];
+            }
             
             // Buscar la prenda actualizada en los datos de seguimiento
             $prendaActualizada = null;
@@ -123,16 +135,24 @@ class ProcesoSeguimientoController extends Controller
                 'data' => [
                     'proceso' => $proceso,
                     'prenda' => $prendaActualizada,
-                    'pedido' => $proceso->pedido
+                    'pedido' => isset($proceso->pedido) ? $proceso->pedido : null
                 ]
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Error al guardar proceso de seguimiento: ' . $e->getMessage());
+            \Log::error('[ProcesoSeguimientoController] Error al guardar proceso de seguimiento: ' . $e->getMessage());
+            \Log::error('[ProcesoSeguimientoController] Stack trace: ' . $e->getTraceAsString());
+            \Log::error('[ProcesoSeguimientoController] Línea: ' . $e->getLine());
+            \Log::error('[ProcesoSeguimientoController] Archivo: ' . $e->getFile());
             
             return response()->json([
                 'success' => false,
-                'message' => 'Error al guardar el proceso: ' . $e->getMessage()
+                'message' => 'Error al guardar el proceso: ' . $e->getMessage(),
+                'debug_info' => [
+                    'line' => $e->getLine(),
+                    'file' => $e->getFile(),
+                    'trace' => $e->getTraceAsString()
+                ]
             ], 500);
         }
     }

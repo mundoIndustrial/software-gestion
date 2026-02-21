@@ -21,13 +21,18 @@ class PrendaPedidoNovedadRecibo extends Model
         'notas_adicionales',
         'fecha_resolucion',
         'resuelto_por',
+        'editado',
+        'editado_en',
+        'editado_por',
     ];
 
     protected $casts = [
         'creado_en' => 'datetime',
         'fecha_resolucion' => 'datetime',
+        'editado_en' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'editado' => 'boolean',
     ];
 
     // Constantes para tipos de novedad
@@ -66,6 +71,14 @@ class PrendaPedidoNovedadRecibo extends Model
     public function resueltoPor()
     {
         return $this->belongsTo(User::class, 'resuelto_por');
+    }
+
+    /**
+     * Relación con el usuario que editó la novedad
+     */
+    public function editadoPor()
+    {
+        return $this->belongsTo(User::class, 'editado_por');
     }
 
     /**

@@ -19,6 +19,14 @@ function openNovedadesModal(ordenId, novedadesActual) {
     const orderNumber = document.getElementById('novedadesOrderNumber');
     isEditMode = false;
 
+    // Verificar si es un modal de recibo
+    const tipoNovedades = modal.getAttribute('data-tipo-novedades');
+    if (tipoNovedades === 'recibo') {
+        // Ya fue configurado por openNovedadesModalRecibo, solo mostrar
+        modal.style.display = 'flex';
+        return;
+    }
+
     // Obtener el valor actualizado del DOM primero
     let novedadesValue = novedadesActual || '';
     const row = document.querySelector(`[data-orden-id="${ordenId}"]`);
@@ -70,30 +78,38 @@ function closeNovedadesModal() {
 }
 
 /**
- * Alterna entre modo visualización y modo edición
+ * Toggle modo edición
  */
 function toggleEditMode() {
+    const modal = document.getElementById('novedadesEditModal');
+    const tipoNovedades = modal.getAttribute('data-tipo-novedades');
+    
+    // Si es un modal de recibo, usar la función específica
+    if (tipoNovedades === 'recibo') {
+        if (typeof toggleEditModeRecibo === 'function') {
+            toggleEditModeRecibo();
+            return;
+        }
+    }
+    
+    // Función original para pedidos normales
+    isEditMode = !isEditMode;
     const textarea = document.getElementById('novedadesTextarea');
     const btnEditToggle = document.getElementById('btnEditToggle');
     const btnSaveEdit = document.getElementById('btnSaveEdit');
     const btnAddNew = document.getElementById('btnAddNew');
 
-    isEditMode = !isEditMode;
-
     if (isEditMode) {
-        // Habilitar edición
         textarea.readOnly = false;
-        textarea.style.background = '#fffbeb';
-        textarea.style.borderColor = '#fbbf24';
-        textarea.focus();
+        textarea.style.background = '#f9fafb';
+        textarea.style.border = '2px solid #dbeafe';
         btnEditToggle.style.display = 'none';
         btnSaveEdit.style.display = 'inline-flex';
         btnAddNew.style.display = 'none';
     } else {
-        // Deshabilitar edición
         textarea.readOnly = true;
         textarea.style.background = '';
-        textarea.style.borderColor = '';
+        textarea.style.border = '';
         btnEditToggle.style.display = 'inline-flex';
         btnSaveEdit.style.display = 'none';
         btnAddNew.style.display = 'inline-flex';
@@ -104,15 +120,46 @@ function toggleEditMode() {
  * Muestra el input para agregar una nueva novedad
  */
 function showNewNovedadInput() {
+    const modal = document.getElementById('novedadesEditModal');
+    const tipoNovedades = modal.getAttribute('data-tipo-novedades');
+    
+    // Si es un modal de recibo, usar la función específica
+    if (tipoNovedades === 'recibo') {
+        if (typeof showNewNovedadInputRecibo === 'function') {
+            showNewNovedadInputRecibo();
+            return;
+        }
+    }
+    
+    // Función original para pedidos normales
     const container = document.getElementById('nuevaNovedadContainer');
-    container.style.display = 'block';
-    document.getElementById('nuevaNovedadTextarea').focus();
+    const nuevaTextarea = document.getElementById('nuevaNovedadTextarea');
+    
+    if (container) {
+        container.style.display = 'block';
+        if (nuevaTextarea) {
+            nuevaTextarea.value = '';
+            nuevaTextarea.focus();
+        }
+    }
 }
 
 /**
  * Cancela la agregación de nueva novedad
  */
 function cancelNewNovedad() {
+    const modal = document.getElementById('novedadesEditModal');
+    const tipoNovedades = modal.getAttribute('data-tipo-novedades');
+    
+    // Si es un modal de recibo, usar la función específica
+    if (tipoNovedades === 'recibo') {
+        if (typeof cancelNewNovedadRecibo === 'function') {
+            cancelNewNovedadRecibo();
+            return;
+        }
+    }
+    
+    // Función original para pedidos normales
     document.getElementById('nuevaNovedadContainer').style.display = 'none';
     document.getElementById('nuevaNovedadTextarea').value = '';
     document.getElementById('newCharCount').textContent = '0';
@@ -122,6 +169,18 @@ function cancelNewNovedad() {
  * Guarda una nueva novedad (agregando al final con formato [usuario - fecha hora])
  */
 async function saveNewNovedad() {
+    const modal = document.getElementById('novedadesEditModal');
+    const tipoNovedades = modal.getAttribute('data-tipo-novedades');
+    
+    // Si es un modal de recibo, usar la función específica
+    if (tipoNovedades === 'recibo') {
+        if (typeof saveNewNovedadRecibo === 'function') {
+            saveNewNovedadRecibo();
+            return;
+        }
+    }
+    
+    // Función original para pedidos normales
     if (!currentOrderId) {
 
         return;
@@ -189,9 +248,21 @@ async function saveNewNovedad() {
 }
 
 /**
- * Guarda los cambios editados en el textarea (reemplazo total)
+ * Guarda las novedades editadas
  */
 async function saveEditedNovedades() {
+    const modal = document.getElementById('novedadesEditModal');
+    const tipoNovedades = modal.getAttribute('data-tipo-novedades');
+    
+    // Si es un modal de recibo, usar la función específica
+    if (tipoNovedades === 'recibo') {
+        if (typeof saveEditedNovedadesRecibo === 'function') {
+            saveEditedNovedadesRecibo();
+            return;
+        }
+    }
+    
+    // Función original para pedidos normales
     if (!currentOrderId) {
 
         return;
