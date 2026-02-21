@@ -710,7 +710,24 @@ class ObtenerPedidoDetalleService
 
         foreach ($relaciones as $rel) {
             $color = DB::table('colores_prenda')->find($rel->color_id);
-            $tela = DB::table('telas_prenda')->find($rel->tela_id);
+            // Resolver tela de forma robusta (evitar "Tela desconocida" por registros faltantes)
+            $tela = DB::table('telas_prenda')->where('id', $rel->tela_id)->first(['id', 'nombre', 'referencia']);
+
+            $telaNombre = $tela->nombre ?? null;
+            $telaReferencia = $tela->referencia ?? null;
+
+            // Fallback: tomar nombre desde prenda_pedido_talla_colores (en algunos pedidos legacy)
+            if (!$telaNombre) {
+                $telaNombre = DB::table('prenda_pedido_talla_colores as ptc')
+                    ->join('prenda_pedido_tallas as pt', 'ptc.prenda_pedido_talla_id', '=', 'pt.id')
+                    ->where('pt.prenda_pedido_id', $prenda->id)
+                    ->where('ptc.tela_id', $rel->tela_id)
+                    ->value('ptc.tela_nombre');
+            }
+
+            if (!$telaNombre && $rel->tela_id) {
+                $telaNombre = 'Tela #' . $rel->tela_id;
+            }
             
             // Obtener fotos de esta combinación color-tela
             $fotos = DB::table('prenda_fotos_tela_pedido')
@@ -726,8 +743,8 @@ class ObtenerPedidoDetalleService
                 'color_nombre' => $color->nombre ?? 'Sin color',
                 'color_codigo' => $color->codigo ?? '',
                 'tela_id' => $rel->tela_id,
-                'tela_nombre' => $tela->nombre ?? 'Tela desconocida',
-                'tela_referencia' => $rel->referencia ?? $tela->referencia ?? '',
+                'tela_nombre' => $telaNombre ?? 'Tela desconocida',
+                'tela_referencia' => $rel->referencia ?? $telaReferencia ?? '',
                 'fotos_tela' => array_map(function($f) {
                     return [
                         'ruta_original' => $f->ruta_original,

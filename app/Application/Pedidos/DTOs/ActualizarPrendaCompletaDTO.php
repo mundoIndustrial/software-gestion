@@ -154,12 +154,17 @@ final class ActualizarPrendaCompletaDTO
         if (!empty($data['imagenes_a_eliminar'])) {
             if (is_string($data['imagenes_a_eliminar'])) {
                 $imagenesAEliminar = json_decode($data['imagenes_a_eliminar'], true);
-                
-                // 🔴 NUEVO: Convertir array de IDs a array de objetos con estructura esperada
-                if (is_array($imagenesAEliminar)) {
-                    $imagenesAEliminar = array_map(function($id) {
-                        return ['id' => $id];
-                    }, $imagenesAEliminar);
+
+                // Convertir SOLO si viene como array de IDs escalares.
+                // Si ya viene como array de objetos (ej: {id, ruta_original, ruta_webp}), preservarlo.
+                if (is_array($imagenesAEliminar) && !empty($imagenesAEliminar)) {
+                    $primer = $imagenesAEliminar[0] ?? null;
+                    $esObjeto = is_array($primer);
+                    if (!$esObjeto) {
+                        $imagenesAEliminar = array_map(function($id) {
+                            return ['id' => $id];
+                        }, $imagenesAEliminar);
+                    }
                 }
             } else {
                 $imagenesAEliminar = $data['imagenes_a_eliminar'];

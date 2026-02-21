@@ -59,7 +59,7 @@ final class ActualizarPrendaCompletaUseCase
         $this->actualizarFotos($prenda, $dto);
         // 2.5. Eliminar imágenes marcadas para eliminación
         if (!is_null($dto->imagenesAEliminar)) {
-            $this->eliminarImagenes($dto->imagenesAEliminar);
+            $this->eliminarImagenes($prenda, $dto->imagenesAEliminar);
         }
         // 3. Actualizar tallas
         $this->actualizarTallas($prenda, $dto);
@@ -803,6 +803,88 @@ final class ActualizarPrendaCompletaUseCase
             'fotos_recibidas' => $dto->fotosTelas
         ]);
 
+        // =====================================================
+        // ELIMINACIÓN POR DIFERENCIA (MODO EDICIÓN)
+        // Si el frontend envía fotosTelas, se asume que representa el estado final.
+        // Debemos eliminar las fotos existentes que ya no vienen en el payload.
+        // Esto corrige el bug: eliminar imagen de tela, guardar cambios y que NO se elimine.
+        // =====================================================
+        try {
+            $incomingByColorTela = [];
+            foreach ($dto->fotosTelas as $foto) {
+                if (!is_array($foto)) {
+                    continue;
+                }
+                $colorTelaId = $foto['prenda_pedido_colores_telas_id'] ?? $foto['color_tela_id'] ?? null;
+                if (!$colorTelaId) {
+                    continue;
+                }
+                if (!isset($incomingByColorTela[$colorTelaId])) {
+                    $incomingByColorTela[$colorTelaId] = [
+                        'ids' => [],
+                        'rutas' => [],
+                    ];
+                }
+                if (!empty($foto['id'])) {
+                    $incomingByColorTela[$colorTelaId]['ids'][] = (int)$foto['id'];
+                }
+                $ruta = $foto['ruta_original'] ?? $foto['path'] ?? null;
+                if (is_string($ruta) && $ruta !== '') {
+                    $incomingByColorTela[$colorTelaId]['rutas'][] = $ruta;
+                }
+            }
+
+            foreach ($incomingByColorTela as $colorTelaId => $incoming) {
+                $query = \App\Models\PrendaFotoTelaPedido::where('prenda_pedido_colores_telas_id', $colorTelaId);
+
+                // Si llegaron IDs, usar IDs como referencia principal.
+                if (!empty($incoming['ids'])) {
+                    $query->whereNotIn('id', array_values(array_unique($incoming['ids'])));
+                } elseif (!empty($incoming['rutas'])) {
+                    // Si no hay IDs, fallback a rutas.
+                    $query->whereNotIn('ruta_original', array_values(array_unique($incoming['rutas'])));
+                } else {
+                    // Si no hay nada que preservar para esta relación, no borrar aquí.
+                    continue;
+                }
+
+                $aEliminar = $query->get();
+                foreach ($aEliminar as $foto) {
+                    try {
+                        $rutaOriginal = $foto->ruta_original;
+                        $rutaWebp = $foto->ruta_webp;
+
+                        $foto->delete();
+
+                        $imagenService = new \App\Domain\Pedidos\Services\ImagenService();
+                        if ($rutaOriginal) {
+                            $imagenService->eliminarImagen($rutaOriginal);
+                        }
+                        if ($rutaWebp && $rutaWebp !== $rutaOriginal) {
+                            $imagenService->eliminarImagen($rutaWebp);
+                        }
+
+                        \Log::info('[ActualizarPrendaCompletaUseCase] Foto de tela eliminada por diferencia', [
+                            'foto_id' => $foto->id,
+                            'color_tela_id' => $colorTelaId,
+                            'ruta_original' => $rutaOriginal,
+                        ]);
+                    } catch (\Exception $e) {
+                        \Log::warning('[ActualizarPrendaCompletaUseCase] Error eliminando foto de tela por diferencia', [
+                            'foto_id' => $foto->id ?? null,
+                            'color_tela_id' => $colorTelaId,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::warning('[ActualizarPrendaCompletaUseCase] Error en eliminación por diferencia de fotos de telas', [
+                'prenda_id' => $prenda->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         // Contar fotos nuevas encontradas (para mapear a fotosTelasProcesadas)
         $indicePhotoNuevaEncontrada = 0;
 
@@ -1482,7 +1564,7 @@ final class ActualizarPrendaCompletaUseCase
      * 
      * @param array $imagenesAEliminar Array de objetos con estructura: { id, ruta_original, ruta_webp }
      */
-    private function eliminarImagenes(array $imagenesAEliminar): void
+    private function eliminarImagenes(PrendaPedido $prenda, array $imagenesAEliminar): void
     {
         if (empty($imagenesAEliminar)) {
             return;
@@ -1514,7 +1596,11 @@ final class ActualizarPrendaCompletaUseCase
                 }
 
                 // 1. Eliminar registro de BD (soft delete si está configurado)
-                $fotoPedido = \App\Models\PrendaFotoPedido::find($imagenId);
+                // IMPORTANTE: validar que la imagen pertenece a ESTA prenda para evitar cruces
+                // (bug reportado: eliminar foto de prenda borraba foto de tela)
+                $fotoPedido = \App\Models\PrendaFotoPedido::where('id', $imagenId)
+                    ->where('prenda_pedido_id', $prenda->id)
+                    ->first();
                 if ($fotoPedido) {
                     $fotoPedido->delete(); // Usa SoftDelete automáticamente
                     $imagenesProcesadas++;

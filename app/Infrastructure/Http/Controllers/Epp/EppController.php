@@ -1223,22 +1223,22 @@ class EppController extends Controller
             // Debug del pedidoEpp y su relación
             \Log::info("[EppController] PedidoEPP encontrado:", [
                 'pedido_epp_id' => $pedidoEpp->id,
-                'pedido_id' => $pedidoEpp->pedido_id,
+                'pedido_produccion_id' => $pedidoEpp->pedido_produccion_id,
                 'epp_id' => $pedidoEpp->epp_id,
                 'cantidad' => $pedidoEpp->cantidad,
-                'pedido_relationship' => $pedidoEpp->pedido ? [
-                    'id' => $pedidoEpp->pedido->id,
-                    'numero_pedido' => $pedidoEpp->pedido->numero_pedido
+                'pedido_relationship' => $pedidoEpp->pedidoProduccion ? [
+                    'id' => $pedidoEpp->pedidoProduccion->id,
+                    'numero_pedido' => $pedidoEpp->pedidoProduccion->numero_pedido
                 ] : 'null'
             ]);
             
             // Determinar la ruta de guardado usando el ID del pedido correcto
-            $pedidoId = $pedidoEpp->pedido_id;
+            $pedidoId = $pedidoEpp->pedido_produccion_id;
             \Log::info("[EppController] Guardando imagen para pedido ID: {$pedidoId}");
             
-            // Si no hay pedido_id, intentar obtenerlo de la relación
-            if (!$pedidoId && $pedidoEpp->pedido) {
-                $pedidoId = $pedidoEpp->pedido->id;
+            // Si no hay pedido_produccion_id, intentar obtenerlo de la relación
+            if (!$pedidoId && $pedidoEpp->pedidoProduccion) {
+                $pedidoId = $pedidoEpp->pedidoProduccion->id;
                 \Log::info("[EppController] Pedido ID obtenido de relación: {$pedidoId}");
             }
             
@@ -1286,30 +1286,54 @@ class EppController extends Controller
             
             foreach ($imagenes as $index => $imagen) {
                 if ($imagen->isValid()) {
-                    // Generar nombre único
-                    $timestamp = time();
-                    $randomSuffix = substr(md5(uniqid()), 0, 8);
                     $nombreOriginal = $imagen->getClientOriginalName();
-                    $nombreLimpio = preg_replace('/[^a-zA-Z0-9.-]/', '_', $nombreOriginal);
-                    $nombreArchivo = "{$timestamp}_{$randomSuffix}_{$nombreLimpio}";
-                    
-                    // Determinar la ruta de guardado usando el ID del pedido correcto
-                    $pedidoId = $pedidoEpp->pedido_id;
-                    \Log::info("[EppController] Guardando imagen para pedido ID: {$pedidoId}");
-                    
+
+                    // Obtener el siguiente orden
+                    $ultimoOrden = \App\Models\PedidoEppImagen::where('pedido_epp_id', $pedidoEppId)
+                        ->max('orden') ?? 0;
+                    $orden = $ultimoOrden + 1;
+
+                    // Estandarizar destino: pedidos/{pedidoId}/epp/epp_{epp_id}_img_{n}.webp
                     $rutaStorage = "pedidos/{$pedidoId}/epp";
+                    if (!\Storage::disk('public')->exists($rutaStorage)) {
+                        \Storage::disk('public')->makeDirectory($rutaStorage);
+                    }
+
+                    $nombreArchivo = "epp_{$pedidoEpp->epp_id}_img_" . ($orden - 1) . '.webp';
                     $rutaCompleta = "{$rutaStorage}/{$nombreArchivo}";
-                    $rutaWeb = "/storage/{$rutaCompleta}";
+                    $rutaWebRelativa = $rutaCompleta;
                     
                     \Log::info("[EppController] Rutas generadas:", [
                         'pedido_id' => $pedidoId,
                         'ruta_storage' => $rutaStorage,
                         'ruta_completa' => $rutaCompleta,
-                        'ruta_web' => $rutaWeb
+                        'ruta_web' => $rutaWebRelativa
                     ]);
-                    
-                    // Guardar el archivo
-                    $imagen->storeAs($rutaStorage, $nombreArchivo, 'public');
+
+                    // Guardar el archivo (convertido a WebP)
+                    try {
+                        $imageManager = \Intervention\Image\ImageManager::gd();
+                        $imagenObj = $imageManager->read($imagen->getRealPath());
+                    } catch (\Exception $e) {
+                        try {
+                            $imageManager = \Intervention\Image\ImageManager::imagick();
+                            $imagenObj = $imageManager->read($imagen->getRealPath());
+                        } catch (\Exception $e2) {
+                            \Log::error('[EppController] Error leyendo imagen para convertir a WebP', [
+                                'pedido_epp_id' => $pedidoEppId,
+                                'error' => $e2->getMessage(),
+                            ]);
+                            continue;
+                        }
+                    }
+
+                    if ($imagenObj->width() > 2000 || $imagenObj->height() > 2000) {
+                        $imagenObj->scaleDown(width: 2000, height: 2000);
+                    }
+
+                    $webp = $imagenObj->toWebp(quality: 80);
+                    $contenidoWebP = $webp->toString();
+                    \Storage::disk('public')->put($rutaCompleta, $contenidoWebP);
                     
                     // Verificar que el archivo se guardó correctamente
                     $rutaArchivoCompleta = storage_path("app/public/{$rutaCompleta}");
@@ -1318,26 +1342,26 @@ class EppController extends Controller
                     } else {
                         \Log::error("[EppController] Error: Archivo no se guardó: {$rutaArchivoCompleta}");
                     }
-                    
-                    // Obtener el siguiente orden
-                    $ultimoOrden = \App\Models\PedidoEppImagen::where('pedido_epp_id', $pedidoEppId)
-                        ->max('orden') ?? 0;
-                    
+
+                    $tienePrincipal = \App\Models\PedidoEppImagen::where('pedido_epp_id', $pedidoEppId)
+                        ->where('principal', 1)
+                        ->exists();
+
                     // Guardar en la base de datos
                     $pedidoEppImagen = \App\Models\PedidoEppImagen::create([
                         'pedido_epp_id' => $pedidoEppId,
-                        'ruta_original' => $nombreArchivo,
-                        'ruta_web' => $rutaWeb,
-                        'principal' => 0,
-                        'orden' => $ultimoOrden + 1
+                        'ruta_original' => $rutaCompleta,
+                        'ruta_web' => $rutaWebRelativa,
+                        'principal' => $tienePrincipal ? 0 : 1,
+                        'orden' => $orden
                     ]);
                     
                     $imagenesGuardadas[] = [
                         'id' => $pedidoEppImagen->id,
-                        'ruta_original' => $nombreArchivo,
-                        'ruta_web' => $rutaWeb,
-                        'principal' => 0,
-                        'orden' => $pedidoEppImagen->orden,
+                        'ruta_original' => $rutaCompleta,
+                        'ruta_web' => '/storage/' . ltrim($rutaWebRelativa, '/'),
+                        'principal' => (int)$pedidoEppImagen->principal,
+                        'orden' => (int)$pedidoEppImagen->orden,
                         'nombre' => $nombreOriginal
                     ];
                     
@@ -1386,7 +1410,12 @@ class EppController extends Controller
             }
             
             // Eliminar el archivo físico
-            $rutaArchivo = str_replace('/storage/', '', $imagen->ruta_web);
+            $rutaArchivo = $imagen->ruta_web;
+            if (is_string($rutaArchivo) && str_starts_with($rutaArchivo, '/storage/')) {
+                $rutaArchivo = substr($rutaArchivo, strlen('/storage/'));
+            }
+            $rutaArchivo = ltrim((string)$rutaArchivo, '/');
+
             if (Storage::disk('public')->exists($rutaArchivo)) {
                 Storage::disk('public')->delete($rutaArchivo);
                 \Log::info("[EppController] Archivo físico eliminado: {$rutaArchivo}");
