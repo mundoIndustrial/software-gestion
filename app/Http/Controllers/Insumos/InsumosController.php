@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class InsumosController extends Controller
 {
@@ -154,12 +155,12 @@ class InsumosController extends Controller
     }
 
     /**
-     * Control de materiales
+     * Control de materiales - Modificado para mostrar recibos de costura individuales
      */
     public function materiales(Request $request)
     {
         $startTime = microtime(true);
-        \Log::info(' INSUMOS: Iniciando carga de materiales');
+        \Log::info(' INSUMOS: Iniciando carga de recibos de costura individuales');
         
         $user = Auth::user();
         
@@ -199,21 +200,36 @@ class InsumosController extends Controller
             'search' => $search
         ]);
         
-        // Construir query base - Filtrar por:
-        // - Estados: "Pendiente", "No iniciado", "En Ejecución", "Anulada", "PENDIENTE_INSUMOS"
-        // - Áreas: "Corte", "Creación de Orden"
-        // - Excluir pedidos sin número de pedido
-        $baseQuery = PedidoProduccion::whereIn('estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'Anulada', 'PENDIENTE_INSUMOS'])
-            ->where(function($q) {
-                $q->where('estado', 'PENDIENTE_INSUMOS')
-                  ->orWhere(function($q2) {
-                      $q2->where('area', 'LIKE', '%Corte%')
-                         ->orWhere('area', 'LIKE', '%Creación%orden%')
-                         ->orWhere('area', 'LIKE', '%Creación de orden%');
-                  });
-            })
-            ->whereNotNull('numero_pedido')
-            ->where('numero_pedido', '!=', '');
+        // CAMBIO PRINCIPAL: Obtener recibos de costura en lugar de pedidos
+        $baseQuery = DB::table('consecutivos_recibos_pedidos')
+            ->where('tipo_recibo', 'COSTURA')
+            ->where('activo', 1)
+            ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id')
+            ->select(
+                'consecutivos_recibos_pedidos.*',
+                'pedidos_produccion.numero_pedido',
+                'pedidos_produccion.numero_pedido as numero_pedido_original',
+                'pedidos_produccion.cliente',
+                'pedidos_produccion.estado',
+                'pedidos_produccion.area',
+                'pedidos_produccion.fecha_de_creacion_de_orden',
+                'pedidos_produccion.dia_de_entrega',
+                'pedidos_produccion.fecha_estimada_de_entrega'
+            );
+        
+        // Aplicar filtros de estados permitidos para recibos (excluyendo PENDIENTE_SUPERVISOR)
+        $baseQuery->where(function($q) {
+            $q->where('pedidos_produccion.estado', 'PENDIENTE_INSUMOS')
+              ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR')
+              ->orWhere(function($q2) {
+                  $q2->where('pedidos_produccion.area', 'LIKE', '%Corte%')
+                     ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR')
+                     ->orWhere('pedidos_produccion.area', 'LIKE', '%Creación%orden%')
+                     ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR')
+                     ->orWhere('pedidos_produccion.area', 'LIKE', '%Creación de orden%')
+                     ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR');
+              });
+        });
         
         // Aplicar múltiples filtros (nuevo sistema)
         $hasFilters = false;
@@ -233,10 +249,23 @@ class InsumosController extends Controller
                         $filterValue = 'PENDIENTE_INSUMOS';
                     }
                     
-                    // Para campos de texto (numero_pedido, cliente), usar LIKE
-                    if (in_array($column, ['numero_pedido', 'cliente'])) {
-                        $baseQuery->where($column, 'LIKE', "%{$filterValue}%");
+                    // Mapear columnas para recibos
+                    if ($column === 'numero_pedido') {
+                        $column = 'pedidos_produccion.numero_pedido';
+                    } elseif ($column === 'cliente') {
+                        $column = 'pedidos_produccion.cliente';
+                    } elseif ($column === 'estado') {
+                        $column = 'pedidos_produccion.estado';
+                    } elseif ($column === 'area') {
+                        $column = 'pedidos_produccion.area';
                     } elseif ($column === 'fecha_de_creacion_de_orden') {
+                        $column = 'pedidos_produccion.fecha_de_creacion_de_orden';
+                    }
+                    
+                    // Para campos de texto, usar LIKE
+                    if (in_array($column, ['pedidos_produccion.numero_pedido', 'pedidos_produccion.cliente'])) {
+                        $baseQuery->where($column, 'LIKE', "%{$filterValue}%");
+                    } elseif ($column === 'pedidos_produccion.fecha_de_creacion_de_orden') {
                         // Para fechas, convertir de d/m/Y a Y-m-d
                         try {
                             $fecha = \Carbon\Carbon::createFromFormat('d/m/Y', $filterValue);
@@ -260,46 +289,93 @@ class InsumosController extends Controller
                     return $value === 'Pendiente Insumos' ? 'PENDIENTE_INSUMOS' : $value;
                 }, $filterValues);
             }
-            $baseQuery->whereIn($filterColumn, $filterValues);
+            
+            // Mapear columna
+            $mappedColumn = 'pedidos_produccion.' . $filterColumn;
+            $baseQuery->whereIn($mappedColumn, $filterValues);
         }
         
         // Aplicar búsqueda si existe
         if (!empty($search)) {
             $hasFilters = true;
             $baseQuery->where(function($q) use ($search) {
-                $q->where('numero_pedido', 'LIKE', "%{$search}%")
-                  ->orWhere('cliente', 'LIKE', "%{$search}%");
+                $q->where('pedidos_produccion.numero_pedido', 'LIKE', "%{$search}%")
+                  ->orWhere('pedidos_produccion.cliente', 'LIKE', "%{$search}%");
             });
         }
         
-        // Siempre paginar, con o sin filtros - con relaciones optimizadas
-        // Cargar relaciones necesarias para evitar N+1 queries
-        // FILTRO ESPECIAL: Solo cargar prendas con de_bodega = false
-        $allOrdenes = $baseQuery->with([
-            'prendas' => function($query) {
-                // FILTRO: Solo prendas que NO son de bodega (de_bodega = false)
-                $query->where('de_bodega', false);
-            },
-            'materiales' => function($query) {
-                $query->select('id', 'numero_pedido', 'nombre_material', 'recibido', 'fecha_orden', 'fecha_pedido', 'fecha_pago', 'fecha_llegada', 'fecha_despacho', 'observaciones');
-            }
-        ])->orderBy('numero_pedido', 'asc')->get();
+        // Obtener todos los recibos con la información del pedido
+        $allRecibos = $baseQuery->orderBy('consecutivos_recibos_pedidos.consecutivo_actual', 'desc')->get();
         
-        // FILTRO: Eliminar pedidos que NO tienen prendas después del filtro
-        // Si un pedido solo tiene prendas de_bodega:true, no debe mostrarse
-        $ordenesFiltradas = $allOrdenes->filter(function($orden) {
-            if (in_array($orden->estado, ['Pendiente', 'PENDIENTE_INSUMOS'])) {
-                return true;
+        // Transformar los datos para que sean compatibles con la vista
+        $recibosTransformados = $allRecibos->map(function($recibo) {
+            // Calcular días para este recibo
+            $diasCalculados = 0;
+            if ($recibo->fecha_de_creacion_de_orden) {
+                try {
+                    $fechaInicio = \Carbon\Carbon::parse($recibo->fecha_de_creacion_de_orden);
+                    $fechaFin = \Carbon\Carbon::now();
+                    
+                    // Obtener festivos
+                    $festivosArray = \App\Models\Festivo::pluck('fecha')->toArray();
+                    $festivosSet = [];
+                    foreach ($festivosArray as $f) {
+                        try {
+                            $festivosSet[\Carbon\Carbon::parse($f)->format('Y-m-d')] = true;
+                        } catch (\Exception $e) {}
+                    }
+                    
+                    // Calcular días hábiles
+                    $current = $fechaInicio->copy()->addDay();
+                    $totalDays = 0;
+                    $maxIterations = 365;
+                    $iterations = 0;
+                    
+                    while ($current <= $fechaFin && $iterations < $maxIterations) {
+                        $dateString = $current->format('Y-m-d');
+                        $isWeekend = $current->dayOfWeek === 0 || $current->dayOfWeek === 6;
+                        $isFestivo = isset($festivosSet[$dateString]);
+                        
+                        if (!$isWeekend && !$isFestivo) {
+                            $totalDays++;
+                        }
+                        
+                        $current->addDay();
+                        $iterations++;
+                    }
+                    
+                    $diasCalculados = max(0, $totalDays);
+                } catch (\Exception $e) {
+                    $diasCalculados = 0;
+                }
             }
-
-            return $orden->prendas && $orden->prendas->count() > 0;
-        })->values();
+            
+            // Crear objeto compatible con la vista
+            return (object)[
+                'id' => $recibo->id,
+                'numero_pedido' => $recibo->consecutivo_actual, // N° de recibo
+                'numero_pedido_original' => $recibo->numero_pedido_original, // N° de pedido original
+                'cliente' => $recibo->cliente,
+                'estado' => $recibo->estado,
+                'area' => $recibo->area, // Usar directamente el campo area del pedido
+                'fecha_de_creacion_de_orden' => $recibo->fecha_de_creacion_de_orden,
+                'dia_de_entrega' => $recibo->dia_de_entrega,
+                'fecha_estimada_de_entrega' => $recibo->fecha_estimada_de_entrega,
+                'dias_calculados' => $diasCalculados,
+                'pedido_produccion_id' => $recibo->pedido_produccion_id,
+                'prenda_id' => $recibo->prenda_id,
+                'consecutivo_actual' => $recibo->consecutivo_actual,
+                'tipo_recibo' => $recibo->tipo_recibo,
+                'created_at' => $recibo->created_at,
+                'updated_at' => $recibo->updated_at,
+            ];
+        });
         
-        // Aplicar paginación manual después del filtro
+        // Aplicar paginación manual
         $page = $request->get('page', 1);
         $perPage = 10;
-        $total = $ordenesFiltradas->count();
-        $items = $ordenesFiltradas->slice(($page - 1) * $perPage, $perPage)->values();
+        $total = $recibosTransformados->count();
+        $items = $recibosTransformados->slice(($page - 1) * $perPage, $perPage)->values();
         
         // Crear paginador
         $ordenes = new \Illuminate\Pagination\LengthAwarePaginator(
@@ -316,12 +392,8 @@ class InsumosController extends Controller
         // Preservar parámetros de búsqueda y filtro en links de paginación
         $ordenes->appends($request->query());
         
-        // Optimizado: Los materiales ya están cargados via relación eager loading
-        // No se necesita transformación adicional ya que la relación está cargada
-        // El acceso a $orden->materiales será eficiente sin queries adicionales
-        
         $queryTime = microtime(true) - $queryStart;
-        \Log::info(" Consulta BD: {$queryTime}s, Total: " . $ordenes->total() . ", Búsqueda: '{$search}'");
+        \Log::info(" Consulta BD: {$queryTime}s, Total recibos: " . $ordenes->total() . ", Búsqueda: '{$search}'");
         
         $viewStart = microtime(true);
         $response = view('insumos.materiales.index', [
@@ -1086,6 +1158,182 @@ class InsumosController extends Controller
                 'success' => false,
                 'message' => 'Error al guardar ancho y metraje de prenda'
             ], 500);
+        }
+    }
+
+    /**
+     * Mostrar recibos de costura para el módulo de insumos
+     * Funciona como /recibos-costura pero manteniendo las opciones de insumos
+     */
+    public function recibosCostura(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            $this->verificarRolInsumos($user);
+
+            // Obtener recibos de costura activos, excluyendo pedidos con estado PENDIENTE_SUPERVISOR
+            $recibosCostura = DB::table('consecutivos_recibos_pedidos')
+                ->where('tipo_recibo', 'COSTURA')
+                ->where('activo', 1)
+                ->whereNotExists(function($query) {
+                    $query->select(DB::raw(1))
+                          ->from('pedidos_produccion')
+                          ->whereRaw('pedidos_produccion.id = consecutivos_recibos_pedidos.pedido_produccion_id')
+                          ->where('pedidos_produccion.estado', 'PENDIENTE_SUPERVISOR');
+                })
+                ->orderBy('consecutivo_actual', 'desc')
+                ->get();
+
+            \Log::info('[recibosCostura] Filtrando recibos de costura - excluyendo pedidos PENDIENTE_SUPERVISOR', [
+                'total_recibos_encontrados' => $recibosCostura->count()
+            ]);
+
+            // Obtener festivos para cálculo de días
+            $currentYear = now()->year;
+            $nextYear = now()->addYear()->year;
+            $festivos = array_merge(
+                \App\Services\FestivosColombiaService::obtenerFestivos($currentYear),
+                \App\Services\FestivosColombiaService::obtenerFestivos($nextYear)
+            );
+
+            // Obtener información adicional de pedidos y prendas
+            $recibosConInfo = $recibosCostura->map(function ($recibo) use ($festivos) {
+                $pedido = PedidoProduccion::find($recibo->pedido_produccion_id);
+                
+                \Log::info('[materiales] Procesando recibo para insumos', [
+                    'recibo_id' => $recibo->id,
+                    'pedido_produccion_id' => $recibo->pedido_produccion_id,
+                    'prenda_id' => $recibo->prenda_id,
+                    'tipo_recibo' => $recibo->tipo_recibo,
+                    'pedido_encontrado' => $pedido ? true : false
+                ]);
+                
+                if ($pedido) {
+                    \Log::info('[materiales] Prendas del pedido', [
+                        'pedido_id' => $pedido->id,
+                        'total_prendas' => $pedido->prendas ? $pedido->prendas->count() : 0,
+                        'prendas_ids' => $pedido->prendas ? $pedido->prendas->pluck('id')->toArray() : []
+                    ]);
+                }
+                
+                // Calcular días para este pedido (desde fecha de creación del pedido hasta hoy)
+                $diasCalculados = 0;
+                if ($pedido && $pedido->fecha_de_creacion_de_orden) {
+                    try {
+                        // Para recibos, calcular desde fecha_de_creacion_de_orden del pedido hasta hoy
+                        $fechaInicio = $pedido->fecha_de_creacion_de_orden;
+                        $fechaFin = \Carbon\Carbon::now();
+                        
+                        // Obtener festivos
+                        $festivosArray = \App\Models\Festivo::pluck('fecha')->toArray();
+                        $festivosSet = [];
+                        foreach ($festivosArray as $f) {
+                            try {
+                                $festivosSet[\Carbon\Carbon::parse($f)->format('Y-m-d')] = true;
+                            } catch (\Exception $e) {}
+                        }
+                        
+                        // Calcular días hábiles manualmente (misma lógica que CacheCalculosService)
+                        $current = $fechaInicio->copy()->addDay();  // Saltar al próximo día
+                        $totalDays = 0;
+                        $maxIterations = 365;
+                        $iterations = 0;
+                        
+                        while ($current <= $fechaFin && $iterations < $maxIterations) {
+                            $dateString = $current->format('Y-m-d');
+                            $isWeekend = $current->dayOfWeek === 0 || $current->dayOfWeek === 6;
+                            $isFestivo = isset($festivosSet[$dateString]);
+                            
+                            // Solo contar si es día hábil (no es fin de semana ni festivo)
+                            if (!$isWeekend && !$isFestivo) {
+                                $totalDays++;
+                            }
+                            
+                            $current->addDay();
+                            $iterations++;
+                        }
+                        
+                        $diasCalculados = max(0, $totalDays);
+                        
+                        \Log::info('[recibosCostura] Días calculados para pedido', [
+                            'recibo_id' => $recibo->id,
+                            'pedido_id' => $pedido->id,
+                            'numero_pedido' => $pedido->numero_pedido,
+                            'fecha_creacion_pedido' => $pedido->fecha_de_creacion_de_orden->format('Y-m-d H:i:s'),
+                            'dias_calculados' => $diasCalculados
+                        ]);
+                        
+                    } catch (\Exception $e) {
+                        \Log::warning('Error calculando días para recibo de costura', [
+                            'recibo_id' => $recibo->id,
+                            'pedido_id' => $pedido->id,
+                            'error' => $e->getMessage()
+                        ]);
+                        $diasCalculados = 0;
+                    }
+                }
+                
+                // Obtener el proceso más reciente para el área
+                $areaProcesoReciente = $this->obtenerAreaProcesoMasReciente($recibo->pedido_produccion_id, $recibo->prenda_id);
+                
+                return [
+                    'id' => $recibo->id,
+                    'consecutivo_actual' => $recibo->consecutivo_actual,
+                    'pedido_produccion_id' => $recibo->pedido_produccion_id,
+                    'prenda_id' => $recibo->prenda_id,
+                    'tipo_recibo' => $recibo->tipo_recibo,
+                    'notas' => $recibo->notas,
+                    'created_at' => $recibo->created_at,
+                    'updated_at' => $recibo->updated_at,
+                    'dias_calculados' => $diasCalculados,
+                    'pedido_info' => $pedido ? [
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'cliente' => $pedido->cliente,
+                        'estado' => $pedido->estado,
+                        'area' => $areaProcesoReciente,
+                        'dia_de_entrega' => $pedido->dia_de_entrega,
+                        'fecha_estimada_de_entrega' => $pedido->fecha_estimada_de_entrega ? $pedido->fecha_estimada_de_entrega->format('d/m/Y') : null,
+                        'fecha_creacion_orden' => $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('Y-m-d H:i:s') : null,
+                    ] : null,
+                ];
+            });
+
+            return view('insumos.materiales.recibos-costura', [
+                'recibos' => $recibosConInfo,
+                'title' => 'Recibos de Costura - Insumos'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error en recibosCostura (Insumos): ' . $e->getMessage());
+            return back()->with('error', 'Error al cargar los recibos de costura');
+        }
+    }
+
+    /**
+     * Obtener el área del proceso más reciente de una prenda
+     */
+    private function obtenerAreaProcesoMasReciente($pedidoId, $prendaId)
+    {
+        try {
+            $procesoReciente = DB::table('pedidos_procesos_prenda_detalles')
+                ->where('pedido_produccion_id', $pedidoId)
+                ->where('prenda_pedido_id', $prendaId)
+                ->orderBy('updated_at', 'desc')
+                ->first();
+
+            if ($procesoReciente && $procesoReciente->tipo_proceso_id) {
+                $tipoProceso = DB::table('tipos_procesos')->where('id', $procesoReciente->tipo_proceso_id)->first();
+                return $tipoProceso ? $tipoProceso->nombre : 'Sin área';
+            }
+
+            return 'Sin procesos';
+        } catch (\Exception $e) {
+            \Log::warning('Error obteniendo área proceso más reciente', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'error' => $e->getMessage()
+            ]);
+            return 'Error';
         }
     }
 }

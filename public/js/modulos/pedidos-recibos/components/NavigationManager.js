@@ -28,12 +28,13 @@ export class NavigationManager {
             return;
         }
 
-        // En la vista de recibos-costura, solo permitir navegación entre recibos de COSTURA
+        // En la vista de recibos-costura o insumos/materiales, solo permitir navegación entre recibos de COSTURA
         const esVistaRecibosCostura = window.location.pathname.includes('/recibos-costura');
+        const esVistaInsumos = window.location.pathname.includes('/insumos/materiales');
         const state = modalManager.getState();
         let procesosActuales = state.procesosActuales;
         
-        if (esVistaRecibosCostura) {
+        if (esVistaRecibosCostura || esVistaInsumos) {
             // Filtrar solo los recibos de tipo COSTURA
             procesosActuales = procesosActuales.filter(proceso => {
                 const tipo = String(proceso.tipo || proceso.tipo_proceso || '').toUpperCase();
@@ -42,7 +43,8 @@ export class NavigationManager {
             
             console.log('NavigationManager: Filtrando solo COSTURA', {
                 original: state.procesosActuales.length,
-                filtrados: procesosActuales.length
+                filtrados: procesosActuales.length,
+                vista: esVistaRecibosCostura ? 'recibos-costura' : 'insumos/materiales'
             });
         }
 

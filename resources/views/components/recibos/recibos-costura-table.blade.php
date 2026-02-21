@@ -41,7 +41,7 @@
                                 <i class="fas fa-eye"></i>
                             </button>
                             <div class="action-menu" data-orden-id="{{ $recibo['id'] }}">
-                                <a href="#" class="action-menu-item" data-action="detalle" onclick="verDetallesRecibo({{ $recibo['id'] }})">
+                                <a href="#" class="action-menu-item" data-action="detalle" onclick="openOrderDetailModalWithProcess({{ $recibo['pedido_produccion_id'] }}, {{ $recibo['prenda_id'] }}, 'COSTURA')">
                                     <i class="fas fa-eye"></i>
                                     <span>Ver Detalles</span>
                                 </a>

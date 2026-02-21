@@ -2184,6 +2184,7 @@ Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.
     Route::get('/api/materiales/{pedido}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerMateriales'])->name('api.materiales');
     Route::get('/api/filtros/{column}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerValoresFiltro'])->name('api.filtros');
     Route::post('/materiales/{numeroPedido}/cambiar-estado', [\App\Http\Controllers\Insumos\InsumosController::class, 'cambiarEstado'])->name('materiales.cambiar-estado');
+    Route::get('/materiales/recibos-costura', [\App\Infrastructure\Http\Controllers\RegistroOrdenController::class, 'recibosCostura'])->name('materiales.recibos-costura');
     Route::get('/test', function () {
         return view('insumos.test');
     })->name('test');

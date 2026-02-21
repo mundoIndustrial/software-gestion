@@ -75,17 +75,21 @@ export class PedidosRecibosModule {
             alert('Error: ID de prenda debe ser número');
             return;
         }
-        // Actualizar estado
-        this.modalManager.setState({
-            pedidoId,
-            prendaId,
-            tipoProceso: tipoRecibo,
-            prendaIndex
-        });
 
         try {
             // Resetear cualquier galería previa para evitar que quede pegada entre recibos
             GalleryManager.resetGaleria(this.modalManager);
+            
+            // Limpiar estado del modal para evitar caché entre recibos
+            this.modalManager.limpiarEstado();
+
+            // Actualizar estado con los nuevos datos
+            this.modalManager.setState({
+                pedidoId,
+                prendaId,
+                tipoProceso: tipoRecibo,
+                prendaIndex
+            });
 
             // Mostrar modal
             this.modalManager.abrirModal();
@@ -95,12 +99,21 @@ export class PedidosRecibosModule {
             if (window.location.pathname.includes('/registros')) {
                 // Contexto de registros
                 endpoint = `/registros/${pedidoId}/recibos-datos`;
+            } else if (window.location.pathname.includes('insumos/materiales')) {
+                // Contexto de insumos - usar endpoint de registros para evitar filtro de de_bodega
+                endpoint = `/registros/${pedidoId}/recibos-datos`;
             } else {
                 // Contexto público (accesible para cualquier usuario autenticado)
                 endpoint = `/pedidos-public/${pedidoId}/recibos-datos`;
             }
 
             console.log(' [PedidosRecibosModule] Endpoint seleccionado:', endpoint);
+            console.log(' [PedidosRecibosModule] Parámetros recibidos:', {
+                pedidoId,
+                prendaId,
+                tipoRecibo,
+                prendaIndex
+            });
 
             // Obtener datos del servidor
             const response = await fetch(endpoint);
@@ -119,6 +132,8 @@ export class PedidosRecibosModule {
             console.log('Forma de pago:', datos.forma_de_pago);
             console.log('Número pedido:', datos.numero_pedido);
             console.log('Total prendas:', datos.prendas ? datos.prendas.length : 'UNDEFINED');
+            console.log('IDs de prendas disponibles:', datos.prendas ? datos.prendas.map(p => p.id) : 'NONE');
+            console.log('Buscando prenda_id:', prendaId);
             console.groupEnd();
                         
             this.modalManager.setState({ datosCompletos: datos });
@@ -129,8 +144,32 @@ export class PedidosRecibosModule {
             }
 
             // Encontrar la prenda
+            console.log(`[PedidosRecibosModule] 🔍 Buscando prenda con ID ${prendaId} entre ${datos.prendas.length} prendas`);
+            console.log(`[PedidosRecibosModule] 📋 IDs disponibles:`, datos.prendas.map(p => ({ id: p.id, nombre: p.nombre || p.nombre_prenda })));
+            
             const prendaData = datos.prendas.find(p => p.id == prendaId);
-            if (!prendaData) throw new Error(`Prenda ${prendaId} no encontrada`);
+            
+            if (!prendaData) {
+                console.error(`[PedidosRecibosModule] ❌ Prenda ${prendaId} no encontrada`);
+                console.error(`[PedidosRecibosModule] 🔍 Búsqueda realizada con:`, {
+                    buscarPor: 'id',
+                    valorBuscado: prendaId,
+                    tipoDeComparacion: '== (flexible)',
+                    prendasDisponibles: datos.prendas.map(p => ({
+                        id: p.id,
+                        tipoId: typeof p.id,
+                        nombre: p.nombre || p.nombre_prenda
+                    }))
+                });
+                throw new Error(`Prenda ${prendaId} no encontrada`);
+            }
+            
+            console.log(`[PedidosRecibosModule] ✅ Prenda encontrada:`, {
+                id: prendaData.id,
+                nombre: prendaData.nombre || prendaData.nombre_prenda,
+                tieneRecibos: !!prendaData.recibos,
+                totalRecibos: prendaData.recibos ? prendaData.recibos.length : 0
+            });
 
             // Debug: Verificar si los recibos están llegando desde el backend
             console.log(' [PedidosRecibosModule] Prenda encontrada:', {

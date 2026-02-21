@@ -64,9 +64,9 @@ window.crearDropdownVer = function(button) {
         const esRutaInsumos = window.location.pathname.includes('insumos/materiales');
         
         if (esRutaInsumos) {
-            // Para insumos, mostrar "Ver Recibos" como en supervisor
+            // Para insumos, abrir directamente el recibo de costura sin selector
             dropdownHTML = `
-                <button onclick="(window.cerrarModalFactura && window.cerrarModalFactura()); abrirSelectorRecibos(${pedidoId}); closeDropdown()" style="
+                <button onclick="(window.cerrarModalFactura && window.cerrarModalFactura()); openOrderDetailModalWithProcess(${pedidoId}, ${button.getAttribute('data-prenda-id')}, 'COSTURA'); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;

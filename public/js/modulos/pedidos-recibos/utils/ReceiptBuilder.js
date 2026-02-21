@@ -20,7 +20,8 @@ export class ReceiptBuilder {
         // CONDICIÓN ESPECIAL: No mostrar recibo de COSTURA-BODEGA en supervisor-pedidos y registros
         const esSupervisorPedidos = window.location.pathname.includes('/supervisor-pedidos');
         const esRegistros = window.location.pathname.includes('/registros');
-        const excluirCosturaBodega = (esSupervisorPedidos || esRegistros) && prenda.de_bodega == 1;
+        const esRecibosCostura = window.location.pathname.includes('/recibos-costura');
+        const excluirCosturaBodega = (esSupervisorPedidos || esRegistros || esRecibosCostura) && prenda.de_bodega == 1;
         
         if (excluirCosturaBodega) {
             console.log(' [ReceiptBuilder] COSTURA-BODEGA EXCLUIDO para prenda:', prenda.nombre);
@@ -139,9 +140,8 @@ export class ReceiptBuilder {
      */
     static encontrarReceibo(recibos, tipoRecibo) {
         return recibos.findIndex(r => 
-            String(r.tipo) === String(tipoRecibo) || 
-            String(r.tipo_proceso || r.nombre_proceso || '') === String(tipoRecibo)
+            String(r.tipo).toLowerCase() === String(tipoRecibo).toLowerCase() || 
+            String(r.tipo_proceso || r.nombre_proceso || '').toLowerCase() === String(tipoRecibo).toLowerCase()
         );
     }
 }
-

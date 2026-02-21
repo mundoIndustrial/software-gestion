@@ -1536,8 +1536,21 @@ class RegistroOrdenQueryController extends Controller
             // Resolver PedidoController correctamente desde el contenedor
             $pedidoController = app()->make(\App\Http\Controllers\Api_temp\PedidoController::class);
             
+            // Detectar si viene de insumos para evitar filtro de de_bodega
+            $esInsumos = request()->headers->get('referer') && str_contains(request()->headers->get('referer'), 'insumos/materiales');
+            
             //  CRÍTICO: Activar filtrado específico en /registros (bordado, estampado, dtf, sublimado requieren aprobación)
-            $response = $pedidoController->obtenerDetalleCompleto($pedidoId, true);
+            // PERO si viene de insumos, usar false para obtener todas las prendas sin filtro de de_bodega
+            $filtrarProcesosPendientes = $esInsumos ? false : true;
+            
+            \Log::info(' [getRecibosDatos] Configuración de filtro', [
+                'numero_pedido' => $pedido,
+                'pedido_id' => $pedidoId,
+                'es_insumos' => $esInsumos,
+                'filtrar_procesos_pendientes' => $filtrarProcesosPendientes
+            ]);
+            
+            $response = $pedidoController->obtenerDetalleCompleto($pedidoId, $filtrarProcesosPendientes);
             $responseData = $response->getData(true);
             
             // Extraer datos de la estructura de respuesta

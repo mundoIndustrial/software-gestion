@@ -604,12 +604,23 @@ class PedidoController extends Controller
             }
             
             // FILTRO INSUMOS: Si es insumos, filtrar prendas para mostrar SOLO de_bodega = false
+            // PERO: si viene del endpoint de registros o de insumos/materiales, no aplicar filtro
             $esInsumos = auth()->check() && auth()->user()->hasRole('insumos');
-            if ($esInsumos && isset($responseData['prendas']) && is_array($responseData['prendas'])) {
+            $referer = request()->headers->get('referer', '');
+            $vieneDeRegistros = str_contains($referer, '/registros/');
+            $vieneDeInsumos = str_contains($referer, '/insumos/materiales');
+            
+            $aplicarFiltroInsumos = $esInsumos && !$vieneDeRegistros && !$vieneDeInsumos;
+            
+            if ($aplicarFiltroInsumos && isset($responseData['prendas']) && is_array($responseData['prendas'])) {
                 \Log::info('[PedidoController]  FILTRO INSUMOS: Mostrando solo prendas con de_bodega = false', [
                     'pedido_id' => $pedido->id,
                     'usuario_id' => auth()->id(),
-                    'total_prendas_antes' => count($responseData['prendas'])
+                    'total_prendas_antes' => count($responseData['prendas']),
+                    'referer' => $referer,
+                    'viene_de_registros' => $vieneDeRegistros,
+                    'viene_de_insumos' => $vieneDeInsumos,
+                    'aplicar_filtro' => $aplicarFiltroInsumos
                 ]);
                 
                 // Filtrar: solo mantener prendas con de_bodega = false

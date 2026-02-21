@@ -302,7 +302,7 @@
                             type="text" 
                             name="search" 
                             value="{{ request('search') }}"
-                            placeholder="Buscar por Pedido (1234) o Cliente (Empresa ABC)..."
+                            placeholder="Buscar por N° Recibo (1234) o Cliente (Empresa ABC)..."
                             class="w-full px-4 py-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition shadow-sm"
                         >
                     </div>
@@ -355,12 +355,17 @@
                             <th class="text-center py-4 px-6 font-bold whitespace-nowrap" style="min-width: 200px;">Acciones</th>
                             <th class="text-left py-4 px-6 font-bold">
                                 <div class="flex items-center justify-between gap-2">
-                                    <span>Pedido</span>
-                                    <button class="filter-btn-insumos hover:bg-blue-500 p-1 rounded transition" data-column="numero_pedido" title="Filtrar por Pedido">
+                                    <span>N° Recibo</span>
+                                    <button class="filter-btn-insumos hover:bg-blue-500 p-1 rounded transition" data-column="numero_pedido" title="Filtrar por N° Recibo">
                                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                             <path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                                         </svg>
                                     </button>
+                                </div>
+                            </th>
+                            <th class="text-left py-4 px-6 font-bold">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span>N° Pedido</span>
                                 </div>
                             </th>
                             <th class="text-left py-4 px-6 font-bold">
@@ -407,15 +412,26 @@
                     </thead>
                     <tbody>
                         @forelse($ordenes ?? [] as $orden)
-                            <tr class="border-b border-gray-200 hover:bg-gray-50 transition" data-pedido="{{ strtoupper($orden->numero_pedido ?? '') }}" data-cliente="{{ strtoupper($orden->cliente ?? '') }}" data-orden-pedido="{{ $orden->numero_pedido }}">
+                            <tr class="border-b border-gray-200 hover:bg-gray-50 transition @if(isset($orden->dias_calculados) && $orden->dias_calculados > 0)
+                                @if($orden->dias_calculados >= 14) dias-mayor-15
+                                @elseif($orden->dias_calculados >= 10) dias-10-15
+                                @elseif($orden->dias_calculados >= 5) dias-5-9
+                                @else dias-0-4 @endif
+                            @endif" 
+                            data-pedido="{{ strtoupper($orden->numero_pedido ?? '') }}" 
+                            data-cliente="{{ strtoupper($orden->cliente ?? '') }}" 
+                            data-orden-pedido="{{ $orden->numero_pedido }}"
+                            data-recibo="{{ $orden->id ?? '' }}"
+                            data-pedido-produccion-id="{{ $orden->pedido_produccion_id ?? '' }}">
                                 <td class="py-4 px-6 text-center" style="min-width: 250px; overflow: visible; background: white; position: relative; z-index: 5;">
                                     <div class="flex items-center justify-center gap-3" style="display: flex !important; flex-wrap: wrap; overflow: visible;">
                                         {{-- Botón Ver (con dropdown) --}}
                                         @php
-                                            $numeroPedido = $orden->numero_pedido;
-                                            $pedidoId = $orden->id;
+                                            $numeroRecibo = $orden->numero_pedido; // Este es el consecutivo del recibo
+                                            $reciboId = $orden->id;
+                                            $pedidoProduccionId = $orden->pedido_produccion_id;
                                         @endphp
-                                        <button class="btn-ver-dropdown btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition" data-menu-id="menu-ver-{{ str_replace('#', '', $numeroPedido) }}" data-pedido="{{ str_replace('#', '', $numeroPedido) }}" data-pedido-id="{{ $pedidoId }}" title="Ver Opciones">
+                                        <button class="btn-ver-dropdown btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition" data-menu-id="menu-ver-{{ str_replace('#', '', $numeroRecibo) }}" data-pedido="{{ str_replace('#', '', $numeroRecibo) }}" data-pedido-id="{{ $pedidoProduccionId }}" data-prenda-id="{{ $orden->prenda_id ?? '' }}" title="Ver Opciones">
                                             <i class="fas fa-eye text-lg"></i>
                                         </button>
 
@@ -429,7 +445,7 @@
                                             {{-- Botón Materiales --}}
                                             <button 
                                                 class="btn-tooltip p-2 text-green-600 hover:bg-green-50 rounded transition"
-                                                onclick="abrirModalInsumos('{{ $orden->numero_pedido }}')"
+                                                onclick="abrirModalInsumos('{{ $pedidoProduccionId }}')"
                                                 data-tooltip="Gestionar materiales"
                                             >
                                                 <i class="fas fa-box text-lg"></i>
@@ -437,7 +453,7 @@
                                             {{-- Botón Ancho y Metraje --}}
                                             <button 
                                                 class="btn-tooltip p-2 text-orange-600 hover:bg-orange-50 rounded transition"
-                                                onclick="abrirModalAnchoMetraje('{{ $orden->numero_pedido }}')"
+                                                onclick="abrirModalAnchoMetraje('{{ $pedidoProduccionId }}')"
                                                 data-tooltip="Ingresar ancho y metraje"
                                             >
                                                 <i class="fas fa-ruler text-lg"></i>
@@ -446,8 +462,8 @@
                                             @if($orden->estado === 'Pendiente' || $orden->estado === 'PENDIENTE_INSUMOS')
                                                 <button 
                                                     class="btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
-                                                    onclick="cambiarEstadoPedido('{{ $orden->numero_pedido }}', '{{ $orden->estado }}')"
-                                                    data-tooltip="Aprobar pedido"
+                                                    onclick="cambiarEstadoPedido('{{ $pedidoProduccionId }}', '{{ $orden->estado }}')"
+                                                    data-tooltip="Enviar a producción"
                                                 >
                                                     <i class="fas fa-paper-plane text-lg"></i>
                                                 </button>
@@ -457,6 +473,9 @@
                                 </td>
                                 <td class="py-4 px-6">
                                     <span class="font-bold text-blue-600 text-lg">{{ $orden->numero_pedido ?? 'N/A' }}</span>
+                                </td>
+                                <td class="py-4 px-6">
+                                    <span class="font-medium text-gray-800">{{ $orden->numero_pedido_original ?? 'N/A' }}</span>
                                 </td>
                                 <td class="py-4 px-6">
                                     <span class="font-medium text-gray-800">{{ $orden->cliente ?? 'N/A' }}</span>
