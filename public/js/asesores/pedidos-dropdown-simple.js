@@ -215,25 +215,31 @@ window.crearDropdownVer = function(button) {
             " onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='transparent'">
                 <i class="fas fa-tasks" style="color: #10b981;"></i> Seguimiento
             </button>
-            <div style="height: 1px; background: #e5e7eb;"></div>
-            <button onclick="abrirModalObservacionesDespachoAsesores(${pedidoId}, '${pedido}'); closeDropdown()" style="
-                width: 100%;
-                text-align: left;
-                padding: 0.875rem 1rem;
-                border: none;
-                background: transparent;
-                cursor: pointer;
-                color: #374151;
-                font-size: 0.875rem;
-                transition: all 0.2s ease;
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-                font-weight: 500;
-            " onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='transparent'">
-                <i class="fas fa-comment-dots" style="color: #3b82f6;"></i> Observaciones despacho
-            </button>
         `;
+        
+        // Ocultar "Observaciones despacho" si es supervisor-pedidos o insumos/materiales
+        if (!esRutaSupervisor && !esRutaInsumos) {
+            dropdownHTML += `
+                <div style="height: 1px; background: #e5e7eb;"></div>
+                <button onclick="abrirModalObservacionesDespachoAsesores(${pedidoId}, '${pedido}'); closeDropdown()" style="
+                    width: 100%;
+                    text-align: left;
+                    padding: 0.875rem 1rem;
+                    border: none;
+                    background: transparent;
+                    cursor: pointer;
+                    color: #374151;
+                    font-size: 0.875rem;
+                    transition: all 0.2s ease;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    font-weight: 500;
+                " onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='transparent'">
+                    <i class="fas fa-comment-dots" style="color: #3b82f6;"></i> Observaciones despacho
+                </button>
+            `;
+        }
         
         dropdown.innerHTML = dropdownHTML;
         
