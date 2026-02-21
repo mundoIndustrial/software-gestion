@@ -23,8 +23,8 @@ class OperarioController extends Controller
         private OperarioRepository $operarioRepository,
         private ObtenerPedidoUseCase $obtenerPedidoUseCase
     ) {
-        $this->middleware('auth');
-        $this->middleware('operario-access');
+        $this->middleware('auth')->except(['getPedidoData']);
+        $this->middleware('operario-access')->except(['getPedidoData']);
     }
 
     /**
@@ -577,20 +577,41 @@ class OperarioController extends Controller
                     if (isset($prenda['procesos']) && is_array($prenda['procesos'])) {
                         // Filtrar: solo mantener procesos del tipo de recibo especificado
                         $procesosFiltrados = array_filter($prenda['procesos'], function($proceso) use ($tipoReciboFiltro) {
-                            // Obtener el tipo de recibo del proceso
-                            $tipoProcesoRecibo = $proceso['tipo_recibo'] ?? $proceso['recibo_tipo'] ?? '';
-                            $tipoLower = strtolower(trim($tipoProcesoRecibo));
-                            $filtroLower = strtolower(trim($tipoReciboFiltro));
+                            $filtroLower = strtolower(trim((string) $tipoReciboFiltro));
+                            $filtroLower = str_replace(['-', '_', ' '], '', $filtroLower);
+
+                            // Obtener el tipo del proceso desde varias claves posibles
+                            // Nota: en algunos flujos el tipo viene como 'tipo_proceso' (ej: Reflectivo)
+                            // y NO en 'tipo_recibo'. Si filtramos solo por tipo_recibo, eliminamos procesos
+                            // y se pierden ubicaciones/tallas.
+                            $candidatos = [
+                                $proceso['tipo_recibo'] ?? null,
+                                $proceso['recibo_tipo'] ?? null,
+                                $proceso['tipo_proceso'] ?? null,
+                                $proceso['nombre_proceso'] ?? null,
+                                $proceso['nombre'] ?? null,
+                            ];
+
+                            $tipoLower = '';
+                            foreach ($candidatos as $cand) {
+                                if (!$cand) {
+                                    continue;
+                                }
+                                $tipoLower = strtolower(trim((string) $cand));
+                                if ($tipoLower !== '') {
+                                    break;
+                                }
+                            }
+
+                            $tipoLower = str_replace(['-', '_', ' '], '', $tipoLower);
                             
                             \Log::debug('[OperarioController.getPedidoData] Verificando proceso para filtro', [
-                                'tipo_recibo_proceso' => $tipoProcesoRecibo,
                                 'tipo_lower' => $tipoLower,
                                 'filtro_lower' => $filtroLower,
-                                'coincide' => $tipoLower === $filtroLower || str_replace('-', '', $tipoLower) === str_replace('-', '', $filtroLower)
+                                'coincide' => $tipoLower === $filtroLower
                             ]);
                             
-                            // Comparar normalizando guiones
-                            return $tipoLower === $filtroLower || str_replace('-', '', $tipoLower) === str_replace('-', '', $filtroLower);
+                            return $tipoLower === $filtroLower;
                         });
                         
                         $prenda['procesos'] = array_values($procesosFiltrados); // Reindexar array

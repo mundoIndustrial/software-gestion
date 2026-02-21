@@ -7,9 +7,7 @@ use Illuminate\Database\Seeder;
 
 class RolesSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
+
     public function run(): void
     {
         $roles = [
@@ -70,7 +68,7 @@ class RolesSeeder extends Seeder
             ],
             [
                 'name' => 'control de calidad',
-                'description' => 'encargado de gestion de entregas de prendas control de calidad',
+                'description' => 'visualizador de recibos en el area de control de calidad',
                 'requires_credentials' => true,
             ],
         ];

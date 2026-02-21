@@ -48,7 +48,7 @@
         </div>
         
         <!-- Título Recibo -->
-        <h2 class="receipt-title">RECIBO DE COSTURA</h2>
+        <h2 class="receipt-title" id="receipt-title-mobile">RECIBO DE COSTURA</h2>
         
         <!-- Número Pedido -->
         <div class="pedido-number" id="mobile-numero-pedido"></div>
@@ -400,6 +400,94 @@ window.llenarReciboCosturaMobile = function(data) {
     console.log('📱 [RECIBO MOBILE] Datos recibidos:', data);
     console.log('📱 [RECIBO MOBILE] procesoCarouselIndex ACTUAL:', window.procesoCarouselIndex);
     console.log('📱 [RECIBO MOBILE] todosProcesosDisponibles ACTUAL:', window.todosProcesosDisponibles);
+
+    const tipoReciboDataset = document.getElementById('factura-container-mobile')?.getAttribute('data-tipo-recibo') || '';
+    const tipoReciboUpper = (tipoReciboDataset || '').toString().trim().toUpperCase();
+    const receiptTitleEl = document.getElementById('receipt-title-mobile');
+    if (receiptTitleEl) {
+        if (tipoReciboUpper === 'REFLECTIVO') {
+            receiptTitleEl.textContent = 'RECIBO DE REFLECTIVO';
+        } else {
+            receiptTitleEl.textContent = 'RECIBO DE COSTURA';
+        }
+    }
+
+    const normalizarUbicaciones = (raw) => {
+        const out = [];
+        const pushVal = (v) => {
+            if (v === null || v === undefined) return;
+            if (typeof v === 'string') {
+                const s = v.trim();
+                if (!s) return;
+                out.push(s);
+                return;
+            }
+            if (typeof v === 'number') {
+                out.push(String(v));
+                return;
+            }
+            if (Array.isArray(v)) {
+                v.forEach(pushVal);
+                return;
+            }
+            if (typeof v === 'object') {
+                if (v.seccion && v.ubicaciones_seleccionadas) {
+                    const seccion = String(v.seccion).trim();
+                    const ubs = [];
+                    if (Array.isArray(v.ubicaciones_seleccionadas)) {
+                        v.ubicaciones_seleccionadas.forEach((x) => {
+                            if (x === null || x === undefined) return;
+                            const s = (typeof x === 'string') ? x.trim() : String(x);
+                            if (s) ubs.push(s);
+                        });
+                    } else {
+                        const s = (typeof v.ubicaciones_seleccionadas === 'string')
+                            ? v.ubicaciones_seleccionadas.trim()
+                            : String(v.ubicaciones_seleccionadas);
+                        if (s) ubs.push(s);
+                    }
+                    if (seccion && ubs.length > 0) {
+                        out.push(seccion + ': ' + ubs.join(', '));
+                    } else if (ubs.length > 0) {
+                        ubs.forEach((x) => out.push(x));
+                    }
+                    return;
+                }
+                if (v.ubicacion) {
+                    pushVal(v.ubicacion);
+                    return;
+                }
+                if (v.nombre) {
+                    pushVal(v.nombre);
+                    return;
+                }
+                try {
+                    out.push(JSON.stringify(v));
+                } catch (e) {
+                    out.push(String(v));
+                }
+            }
+        };
+
+        try {
+            if (typeof raw === 'string') {
+                const s = raw.trim();
+                if (s.startsWith('[') || s.startsWith('{')) {
+                    pushVal(JSON.parse(s));
+                } else {
+                    pushVal(s);
+                }
+            } else {
+                pushVal(raw);
+            }
+        } catch (e) {
+            pushVal(raw);
+        }
+
+        return out
+            .map((x) => (x || '').toString().trim())
+            .filter((x) => x);
+    };
     
     // ===== NAVEGACIÓN DE PROCESOS =====
     // Inicializar índice de proceso si no existe
@@ -413,6 +501,23 @@ window.llenarReciboCosturaMobile = function(data) {
     // Buscar en recibos primero, luego en procesos
     const todosProcesos = [];
     const userRole = document.getElementById('factura-container-mobile')?.getAttribute('data-user-role');
+    const esVistaControlCalidad = (window.location?.pathname || '').toString().includes('/control-calidad/');
+    const esRolControlCalidad = (userRole || '').toString().trim().toLowerCase() === 'control de calidad';
+    const disableNavigation = esVistaControlCalidad || esRolControlCalidad;
+
+    // En Control de Calidad no se necesita navegación de procesos/prendas
+    if (disableNavigation) {
+        const processNavContainer = document.getElementById('process-navigation-mobile');
+        if (processNavContainer) {
+            processNavContainer.style.display = 'none';
+            processNavContainer.innerHTML = '';
+        }
+        const arrowContainer = document.getElementById('arrow-container-mobile');
+        if (arrowContainer) {
+            arrowContainer.style.display = 'none';
+            arrowContainer.innerHTML = '';
+        }
+    }
     
     if (data.prendas && Array.isArray(data.prendas)) {
         data.prendas.forEach(function(prenda) {
@@ -458,7 +563,7 @@ window.llenarReciboCosturaMobile = function(data) {
     console.log(' [FILTRO PROCESOS] Proceso que se debe mostrar:', procesosFiltrados[window.procesoCarouselIndex || 0]);
     
     // Mostrar navegación de procesos si hay al menos 1 proceso
-    if (procesosFiltrados.length >= 1) {
+    if (!disableNavigation && procesosFiltrados.length >= 1) {
         const processNavContainer = document.getElementById('process-navigation-mobile');
         if (processNavContainer) {
             processNavContainer.innerHTML = '';
@@ -849,6 +954,45 @@ window.llenarReciboCosturaMobile = function(data) {
             // Remover TALLAS de la descripción
             descSinTallas = descripcionFormateada.replace(tallasMatch[0], '').trim();
         }
+
+        // Fallback: si no hay bloque de TALLAS en la descripción, construirlo desde prenda.tallas
+        if (!tallasExtraidas && todasLasPrendas && Array.isArray(todasLasPrendas) && todasLasPrendas.length > 0) {
+            const prendaRef = todasLasPrendas[0];
+            if (prendaRef && prendaRef.tallas && typeof prendaRef.tallas === 'object') {
+                const lineas = [];
+                const generos = Object.keys(prendaRef.tallas);
+                generos.forEach((genero) => {
+                    const tallasGenero = prendaRef.tallas[genero] || {};
+                    const tallas = [];
+                    Object.keys(tallasGenero).forEach((talla) => {
+                        let val = tallasGenero[talla];
+                        let cantidad = 0;
+                        if (Array.isArray(val)) {
+                            cantidad = val.reduce((acc, item) => {
+                                const c = (item && typeof item === 'object') ? (parseInt(item.cantidad) || 0) : (parseInt(item) || 0);
+                                return acc + c;
+                            }, 0);
+                        } else if (val && typeof val === 'object') {
+                            cantidad = parseInt(val.cantidad) || 0;
+                        } else {
+                            cantidad = parseInt(val) || 0;
+                        }
+
+                        if (cantidad > 0) {
+                            tallas.push(`${talla}: <span style="color: #d32f2f;"><strong>${cantidad}</strong></span>`);
+                        }
+                    });
+
+                    if (tallas.length > 0) {
+                        lineas.push(`<strong>${(genero || '').toString().toUpperCase()}:</strong> ${tallas.join(', ')}`);
+                    }
+                });
+
+                if (lineas.length > 0) {
+                    tallasExtraidas = `<strong>TALLAS</strong><br>` + lineas.join('<br>');
+                }
+            }
+        }
         
         descripcionHTML = `<div style="line-height: 1.3; font-size: 0.75rem; color: #333; word-break: break-word; overflow-wrap: break-word; max-width: 100%; margin: 0; padding: 0; text-align: left;">${descSinTallas}</div>`;
         
@@ -859,26 +1003,17 @@ window.llenarReciboCosturaMobile = function(data) {
         const prendasConProcesos = todasLasPrendas.slice(procStartIndex, procEndIndex);
         
         let datosProcesoHTML = '';
+        let tallasIncluidasEnDatosProceso = false;
         prendasConProcesos.forEach((prenda) => {
             if (prenda.procesos && Array.isArray(prenda.procesos) && prenda.procesos.length > 0) {
                 prenda.procesos.forEach((proceso) => {
                     // UBICACIONES
                     if (proceso.ubicaciones) {
-                        let ubicacionesArray = [];
-                        try {
-                            if (typeof proceso.ubicaciones === 'string') {
-                                ubicacionesArray = JSON.parse(proceso.ubicaciones);
-                            } else if (Array.isArray(proceso.ubicaciones)) {
-                                ubicacionesArray = proceso.ubicaciones;
-                            }
-                        } catch (e) {
-                            ubicacionesArray = [proceso.ubicaciones];
-                        }
-                        
-                        if (ubicacionesArray && ubicacionesArray.length > 0) {
+                        const ubicacionesArray = normalizarUbicaciones(proceso.ubicaciones);
+                        if (ubicacionesArray.length > 0) {
                             datosProcesoHTML += `<strong>UBICACIONES:</strong><br>`;
                             ubicacionesArray.forEach(ub => {
-                                datosProcesoHTML += `• ${ub.toUpperCase()}<br>`;
+                                datosProcesoHTML += `• ${(ub || '').toString().toUpperCase()}<br>`;
                             });
                         }
                     }
@@ -886,6 +1021,44 @@ window.llenarReciboCosturaMobile = function(data) {
                     // OBSERVACIONES
                     if (proceso.observaciones) {
                         datosProcesoHTML += `<strong>OBSERVACIONES:</strong><br>${proceso.observaciones.toUpperCase()}<br>`;
+                    }
+
+                    // TALLAS DEL PROCESO (como en /registros)
+                    if (proceso.tallas) {
+                        const grupos = {
+                            DAMA: [],
+                            CABALLERO: [],
+                            UNISEX: [],
+                        };
+
+                        const pushTalla = (grupo, talla, cantidad) => {
+                            const c = parseInt(cantidad) || 0;
+                            if (c > 0) {
+                                grupos[grupo].push(`${talla}: ${c}`);
+                            }
+                        };
+
+                        if (proceso.tallas.dama && Object.keys(proceso.tallas.dama).length > 0) {
+                            Object.entries(proceso.tallas.dama).forEach(([talla, cantidad]) => pushTalla('DAMA', talla, cantidad));
+                        }
+                        if (proceso.tallas.caballero && Object.keys(proceso.tallas.caballero).length > 0) {
+                            Object.entries(proceso.tallas.caballero).forEach(([talla, cantidad]) => pushTalla('CABALLERO', talla, cantidad));
+                        }
+                        if (proceso.tallas.unisex && Object.keys(proceso.tallas.unisex).length > 0) {
+                            Object.entries(proceso.tallas.unisex).forEach(([talla, cantidad]) => pushTalla('UNISEX', talla, cantidad));
+                        }
+
+                        const lineasTallas = [];
+                        Object.keys(grupos).forEach((g) => {
+                            if (grupos[g].length > 0) {
+                                lineasTallas.push(`<strong>${g}:</strong> <span style=\"color: #d32f2f;\">${grupos[g].join(', ')}</span>`);
+                            }
+                        });
+
+                        if (lineasTallas.length > 0) {
+                            tallasIncluidasEnDatosProceso = true;
+                            datosProcesoHTML += `<strong>TALLAS</strong><br>${lineasTallas.join('<br>')}<br>`;
+                        }
                     }
                 });
             }
@@ -896,8 +1069,10 @@ window.llenarReciboCosturaMobile = function(data) {
             descripcionHTML += `<div style="line-height: 1.3; font-size: 0.75rem; color: #333; word-break: break-word; overflow-wrap: break-word; max-width: 100%; margin-top: 0.5rem; padding: 0; text-align: left;">${datosProcesoHTML}</div>`;
         }
         
-        // Mostrar TALLAS al final
-        if (tallasExtraidas) {
+        // Mostrar TALLAS al final (solo si NO se mostraron desde procesos)
+        // y si el contenido tiene datos reales (no solo el encabezado).
+        const tallasSoloEncabezado = /^<strong>\s*TALLAS\s*<\/strong><br>\s*$/i.test((tallasExtraidas || '').trim());
+        if (!tallasIncluidasEnDatosProceso && tallasExtraidas && !tallasSoloEncabezado) {
             descripcionHTML += `<div style="line-height: 1.3; font-size: 0.75rem; color: #333; word-break: break-word; overflow-wrap: break-word; max-width: 100%; margin-top: 0.5rem; padding: 0; text-align: left;">${tallasExtraidas}</div>`;
         }
         
@@ -1126,7 +1301,12 @@ window.llenarReciboCosturaMobile = function(data) {
     // Implementar carousel de prendas basado en bloques (igual que asesores)
     const totalBloques = window.totalBloquesPrendas || 0;
     const totalPaginas = Math.ceil(totalBloques / PRENDAS_POR_PAGINA);
-    if (totalBloques > PRENDAS_POR_PAGINA) {
+    const userRoleLocal = document.getElementById('factura-container-mobile')?.getAttribute('data-user-role');
+    const esVistaControlCalidadLocal = (window.location?.pathname || '').toString().includes('/control-calidad/');
+    const esRolControlCalidadLocal = (userRoleLocal || '').toString().trim().toLowerCase() === 'control de calidad';
+    const disableNavigationLocal = esVistaControlCalidadLocal || esRolControlCalidadLocal;
+
+    if (!disableNavigationLocal && totalBloques > PRENDAS_POR_PAGINA) {
         // Obtener o crear el contenedor de flechas en la esquina superior derecha
         const arrowContainer = document.getElementById('arrow-container-mobile');
         if (arrowContainer) {
@@ -1207,7 +1387,7 @@ window.llenarReciboCosturaMobile = function(data) {
             }
         }
     } else {
-        // Ocultar el contenedor de flechas si no hay más de 2 bloques
+        // Ocultar el contenedor de flechas si no hay más de 2 bloques o si está en Control de Calidad
         const arrowContainer = document.getElementById('arrow-container-mobile');
         if (arrowContainer) {
             arrowContainer.style.display = 'none';
@@ -1218,4 +1398,3 @@ window.llenarReciboCosturaMobile = function(data) {
     console.log('📱 [RECIBO MOBILE]  ========== FIN llenarReciboCosturaMobile ==========');
 };
 </script>
-

@@ -1701,6 +1701,14 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
 });
 
 // ========================================
+// RUTAS PARA CONTROL DE CALIDAD
+// ========================================
+Route::middleware(['auth', 'control-calidad-access'])->prefix('control-calidad')->name('control-calidad.')->group(function () {
+    Route::get('/dashboard', [App\Infrastructure\Http\Controllers\ControlCalidad\ControlCalidadController::class, 'dashboard'])->name('dashboard');
+    Route::get('/pedido/{numeroPedido}', [App\Infrastructure\Http\Controllers\ControlCalidad\ControlCalidadController::class, 'verPedido'])->name('ver-pedido');
+});
+
+// ========================================
 // API PARA SISTEMA DE TIEMPO REAL (FUERA DEL GRUPO DE ASESORES)
 // ========================================
 Route::middleware(['auth'])->prefix('asesores')->group(function () {

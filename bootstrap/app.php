@@ -42,6 +42,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'insumos-access' => \App\Http\Middleware\InsumosAccess::class,
             'redirect-to-login' => \App\Http\Middleware\RedirectToLoginIfUnauthenticated::class,
             'operario-access' => \App\Http\Middleware\OperarioAccess::class,
+            'control-calidad-access' => \App\Http\Middleware\ControlCalidadAccess::class,
             'check.despacho.role' => \App\Http\Middleware\CheckDespachoRole::class,
             'restrict-bodega-roles' => \App\Http\Middleware\RestrictBodegaRoles::class,
         ]);

@@ -1320,7 +1320,18 @@
                                 Object.keys(prenda.tallas).forEach(function(genero) {
                                     const tallasCantidades = [];
                                     Object.keys(prenda.tallas[genero]).forEach(function(talla) {
-                                        const cantidad = prenda.tallas[genero][talla];
+                                        let cantidad = prenda.tallas[genero][talla];
+                                        if (Array.isArray(cantidad)) {
+                                            cantidad = cantidad.reduce(function(acc, item) {
+                                                const c = (item && typeof item === 'object') ? (parseInt(item.cantidad) || 0) : (parseInt(item) || 0);
+                                                return acc + c;
+                                            }, 0);
+                                        } else if (cantidad && typeof cantidad === 'object') {
+                                            cantidad = parseInt(cantidad.cantidad) || 0;
+                                        } else {
+                                            cantidad = parseInt(cantidad) || 0;
+                                        }
+
                                         tallasCantidades.push(talla + ': <span style="color: red;"><strong>' + cantidad + '</strong></span>');
                                     });
                                     if (tallasCantidades.length > 0) {
