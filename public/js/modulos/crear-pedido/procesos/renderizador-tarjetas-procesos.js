@@ -105,9 +105,17 @@ window.renderizarTarjetasProcesos = function() {
     container.style.opacity = '1';
     
     // 🔴 NUEVO: Configurar drag & drop para procesos DESPUÉS de renderizar
+    console.log('[RENDER-PROCESOS] 🔄 Verificando configuración de drag & drop');
+    console.log('[RENDER-PROCESOS] 📊 configurarDragDropProcesos disponible:', typeof configurarDragDropProcesos);
+    
     if (typeof configurarDragDropProcesos === 'function') {
+        console.log('[RENDER-PROCESOS] 🚀 Llamando a configurarDragDropProcesos()');
+        console.log('[RENDER-PROCESOS] 📊 Timestamp:', new Date().toISOString());
+        console.log('[RENDER-PROCESOS] 🔍 Stack trace:', new Error().stack);
         configurarDragDropProcesos();
         console.log('[RENDER-PROCESOS] ✅ Drag & drop configurado para procesos');
+    } else {
+        console.warn('[RENDER-PROCESOS] ⚠️ configurarDragDropProcesos no disponible');
     }
     
     console.log('✅ [RENDER-PROCESOS] Renderización completada', {

@@ -80,7 +80,7 @@ class NotificationService {
                 right: 20px;
                 padding: 15px 20px;
                 border-radius: 4px;
-                z-index: 9999;
+                z-index: 2147483648;
                 font-size: 14px;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.15);
                 max-width: 400px;

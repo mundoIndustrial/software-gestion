@@ -163,8 +163,16 @@ class PrendaEditorProcesos {
                 
                 // 🔴 NUEVO: Configurar drag & drop para procesos
                 // El renderizador debe llamar a esto después de renderizar
+                console.log('[PROCESOS-LOADER] 🔄 Verificando configurarDragDropProcesos');
+                console.log('[PROCESOS-LOADER] 📊 Timestamp:', new Date().toISOString());
+                console.log('[PROCESOS-LOADER] 🔍 Stack trace:', new Error().stack);
+                
                 if (typeof configurarDragDropProcesos === 'function') {
+                    console.log('[PROCESOS-LOADER] 🚀 Llamando a configurarDragDropProcesos desde loader');
                     configurarDragDropProcesos();
+                    console.log('[PROCESOS-LOADER] ✅ configurarDragDropProcesos ejecutado');
+                } else {
+                    console.warn('[PROCESOS-LOADER] ⚠️ configurarDragDropProcesos no disponible');
                 }
                 
                 // Verificación final: asegurar que el contenedor es visible

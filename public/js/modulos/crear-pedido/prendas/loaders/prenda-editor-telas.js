@@ -548,54 +548,124 @@ window.configurarDragDropTela = function() {
 
 // 🔴 NUEVO: Función para configurar drag & drop en previews de procesos
 window.configurarDragDropProcesos = function() {
-    console.log('[configurarDragDropProcesos] 🔄 Configurando drag & drop para procesos');
+    console.log('[configurarDragDropProcesos] 🔄 INICIO - Configurando drag & drop para procesos');
+    console.log('[configurarDragDropProcesos] 📊 Timestamp:', new Date().toISOString());
+    console.log('[configurarDragDropProcesos] 🔍 Stack trace:', new Error().stack);
     
     // Configurar para cada preview de proceso (1, 2, 3)
     for (let i = 1; i <= 3; i++) {
         const preview = document.getElementById(`proceso-foto-preview-${i}`);
-        if (!preview) continue;
+        if (!preview) {
+            console.log(`[configurarDragDropProcesos] ⚠️ Preview ${i} no encontrado`);
+            continue;
+        }
+        
+        console.log(`[configurarDragDropProcesos] 🎯 Procesando preview ${i}`);
+        console.log(`[configurarDragDropProcesos] 📸 Preview ${i} encontrado:`, preview);
+        
+        // 🔧 SOLUCIÓN: Eliminar listeners previos clonando el nodo
+        // Esto evita la duplicación de listeners que causa doble apertura del input
+        console.log(`[configurarDragDropProcesos] 🔄 Clonando preview ${i} para eliminar listeners previos`);
+        const newPreview = preview.cloneNode(true);
+        console.log(`[configurarDragDropProcesos] ✅ Preview ${i} clonado, reemplazando en DOM`);
+        preview.parentNode.replaceChild(newPreview, preview);
+        console.log(`[configurarDragDropProcesos] 🔄 Preview ${i} reemplazado en DOM`);
+        
+        // Click para abrir file input
+        console.log(`[configurarDragDropProcesos] 🖱️ Agregando listener CLICK al preview ${i}`);
+        newPreview.addEventListener('click', (e) => {
+            console.log(`[configurarDragDropProcesos] 🖱️ CLICK detectado en preview ${i}`);
+            console.log(`[configurarDragDropProcesos] 📊 Event details:`, {
+                target: e.target,
+                currentTarget: e.currentTarget,
+                timeStamp: e.timeStamp,
+                eventPhase: e.eventPhase
+            });
+            
+            const fileInput = document.getElementById(`proceso-foto-input-${i}`);
+            console.log(`[configurarDragDropProcesos] 📁 Input file ${i}:`, fileInput);
+            
+            if (fileInput) {
+                console.log(`[configurarDragDropProcesos] 🚀 Abriendo input file ${i}`);
+                console.log(`[configurarDragDropProcesos] 📊 Input state antes de click:`, {
+                    files: fileInput.files?.length || 0,
+                    value: fileInput.value,
+                    disabled: fileInput.disabled
+                });
+                
+                // 🔴 BANDERA ANTI-DUPLICACIÓN
+                if (!fileInput._abiendoAhora) {
+                    console.log(`[configurarDragDropProcesos] ✅ Input ${i} no está siendo abierto, procediendo`);
+                    fileInput._abiendoAhora = true;
+                    fileInput.click();
+                    console.log(`[configurarDragDropProcesos] 🎯 Click ejecutado en input ${i}`);
+                    
+                    setTimeout(() => {
+                        fileInput._abiendoAhora = false;
+                        console.log(`[configurarDragDropProcesos] 🔓 Bandera liberada para input ${i}`);
+                    }, 500);
+                } else {
+                    console.warn(`[configurarDragDropProcesos] ⚠️ Input ${i} ya está siendo abierto, IGNORANDO`);
+                }
+            } else {
+                console.error(`[configurarDragDropProcesos] ❌ Input file ${i} NO encontrado`);
+            }
+        });
+        
+        console.log(`[configurarDragDropProcesos] ✅ Listener CLICK agregado a preview ${i}`);
         
         // Drag over
-        preview.addEventListener('dragover', (e) => {
+        newPreview.addEventListener('dragover', (e) => {
+            console.log(`[configurarDragDropProcesos] 🎯 DRAGOVER en preview ${i}`);
             e.preventDefault();
             e.stopPropagation();
-            preview.style.background = '#e0f2fe';
-            preview.style.borderColor = '#0066cc';
+            newPreview.style.background = '#e0f2fe';
+            newPreview.style.borderColor = '#0066cc';
         });
         
         // Drag leave
-        preview.addEventListener('dragleave', (e) => {
+        newPreview.addEventListener('dragleave', (e) => {
+            console.log(`[configurarDragDropProcesos] 🎯 DRAGLEAVE en preview ${i}`);
             e.preventDefault();
             e.stopPropagation();
-            preview.style.background = '#f9fafb';
-            preview.style.borderColor = '#0066cc';
+            newPreview.style.background = '#f9fafb';
+            newPreview.style.borderColor = '#0066cc';
         });
         
         // Drop
-        preview.addEventListener('drop', (e) => {
+        newPreview.addEventListener('drop', (e) => {
+            console.log(`[configurarDragDropProcesos] 🎯 DROP en preview ${i}`);
             e.preventDefault();
             e.stopPropagation();
-            preview.style.background = '#f9fafb';
+            newPreview.style.background = '#f9fafb';
             
             const files = e.dataTransfer.files;
+            console.log(`[configurarDragDropProcesos] 📁 Files recibidos en drop ${i}:`, files.length);
+            
             if (files.length > 0) {
                 const fileInput = document.getElementById(`proceso-foto-input-${i}`);
                 if (fileInput) {
                     fileInput.files = files;
+                    console.log(`[configurarDragDropProcesos] 📁 Files asignados a input ${i}`);
                     // Disparar evento change
                     const event = new Event('change', { bubbles: true });
                     fileInput.dispatchEvent(event);
+                    console.log(`[configurarDragDropProcesos] 📡 Event change disparado en input ${i}`);
                 }
             }
         });
         
         // Paste
-        preview.addEventListener('paste', (e) => {
+        newPreview.addEventListener('paste', (e) => {
+            console.log(`[configurarDragDropProcesos] 🎯 PASTE en preview ${i}`);
             e.preventDefault();
             const items = e.clipboardData.items;
+            console.log(`[configurarDragDropProcesos] 📋 Items en clipboard:`, items.length);
+            
             for (let item of items) {
                 if (item.kind === 'file' && item.type.startsWith('image/')) {
                     const file = item.getAsFile();
+                    console.log(`[configurarDragDropProcesos] 📸 Imagen pegada en preview ${i}:`, file.name);
                     const fileInput = document.getElementById(`proceso-foto-input-${i}`);
                     if (fileInput) {
                         const dataTransfer = new DataTransfer();
@@ -603,21 +673,17 @@ window.configurarDragDropProcesos = function() {
                         fileInput.files = dataTransfer.files;
                         const event = new Event('change', { bubbles: true });
                         fileInput.dispatchEvent(event);
+                        console.log(`[configurarDragDropProcesos] 📡 Event change disparado por paste en input ${i}`);
                     }
                 }
             }
         });
         
-        // Click para abrir file input
-        preview.addEventListener('click', (e) => {
-            const fileInput = document.getElementById(`proceso-foto-input-${i}`);
-            if (fileInput) {
-                fileInput.click();
-            }
-        });
+        console.log(`[configurarDragDropProcesos] ✅ Todos los listeners agregados a preview ${i}`);
     }
     
-    console.log('[configurarDragDropProcesos] ✅ Drag & drop configurado para procesos');
+    console.log('[configurarDragDropProcesos] ✅ FIN - Drag & drop configurado para procesos');
+    console.log('[configurarDragDropProcesos] 📊 Timestamp final:', new Date().toISOString());
 };
 
 // Exportar
