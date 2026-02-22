@@ -199,7 +199,7 @@ window.crearDropdownVer = function(button) {
         
         dropdownHTML += `
             <div style="height: 1px; background: #e5e7eb;"></div>
-            <button onclick="verSeguimiento(${pedidoId}); closeDropdown()" style="
+            <button onclick="verSeguimiento(${pedidoId}, ${prendaId || 'null'}); closeDropdown()" style="
                 width: 100%;
                 text-align: left;
                 padding: 0.875rem 1rem;
@@ -299,7 +299,7 @@ window.crearDropdownVer = function(button) {
                 <i class="fas fa-eye"></i>
             </button>
             <div style="height: 1px; background: #e5e7eb;"></div>
-            <button onclick="verSeguimiento(${pedidoId}); closeDropdown()" title="Ver Seguimiento" style="
+            <button onclick="verSeguimiento(${pedidoId}, ${prendaId || 'null'}); closeDropdown()" title="Ver Seguimiento" style="
                 width: 100%;
                 text-align: center;
                 padding: 0.875rem 1rem;

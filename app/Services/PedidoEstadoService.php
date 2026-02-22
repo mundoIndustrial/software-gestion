@@ -225,7 +225,8 @@ class PedidoEstadoService extends BaseService
     {
         try {
             // Verificar si ya existe un proceso para este pedido
-            $procesoExistente = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+            $procesoExistente = \App\Models\ProcesoPrenda::whereNull('deleted_at')  // Excluir procesos eliminados (soft delete)
+                ->where('numero_pedido', $pedido->numero_pedido)
                 ->first();
 
             if ($procesoExistente) {

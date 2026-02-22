@@ -126,6 +126,7 @@ class CacheCalculosService
             $procesoDespacho = DB::table('procesos_prenda')
                 ->where('numero_pedido', $numeroPedido)
                 ->where('proceso', 'Despacho')
+                ->whereNull('deleted_at')  // Excluir procesos eliminados (soft delete)
                 ->select('fecha_fin')
                 ->first();
 
@@ -152,6 +153,7 @@ class CacheCalculosService
                 // De fecha_creacion hasta último proceso
                 $ultimoProceso = DB::table('procesos_prenda')
                     ->where('numero_pedido', $numeroPedido)
+                    ->whereNull('deleted_at')  // Excluir procesos eliminados (soft delete)
                     ->orderBy('fecha_fin', 'DESC')
                     ->select('fecha_fin')
                     ->first();
@@ -215,6 +217,7 @@ class CacheCalculosService
                 $procesoDespacho = DB::table('procesos_prenda')
                     ->where('numero_pedido', $numeroPedido)
                     ->where('proceso', 'Despacho')
+                    ->whereNull('deleted_at')  // Excluir procesos eliminados (soft delete)
                     ->select('fecha_fin')
                     ->first();
 
@@ -241,6 +244,7 @@ class CacheCalculosService
                     // De fecha_creacion hasta último proceso (o hoy si sin procesos)
                     $ultimoProceso = DB::table('procesos_prenda')
                         ->where('numero_pedido', $numeroPedido)
+                        ->whereNull('deleted_at')  // Excluir procesos eliminados (soft delete)
                         ->orderBy('fecha_fin', 'DESC')
                         ->select('fecha_fin')
                         ->first();

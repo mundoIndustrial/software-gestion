@@ -903,7 +903,7 @@ const trackingTableStyles = `
       modal.style.setProperty('display', 'flex', 'important');
       modal.style.setProperty('visibility', 'visible', 'important');
       modal.style.setProperty('opacity', '1', 'important');
-      modal.style.setProperty('z-index', '9999', 'important');
+      modal.style.setProperty('z-index', '10000000', 'important');
       
       console.log('[openAddProcesoModal] Modal configurado y mostrado');
       
@@ -1856,6 +1856,7 @@ const trackingTableStyles = `
       modal.style.setProperty('display', 'flex', 'important');
       modal.style.setProperty('visibility', 'visible', 'important');
       modal.style.setProperty('opacity', '1', 'important');
+      modal.style.setProperty('z-index', '10000001', 'important');
       
       // Guardar el ID del proceso a eliminar
       window.processToDelete = { id: procesoId, name: areaName };
@@ -2215,12 +2216,6 @@ const trackingTableStyles = `
         <div class="tracking-detail-row">
           <span class="tracking-detail-label">Duración</span>
           <span class="tracking-detail-value">${data.duracion_dias} días</span>
-        </div>
-        ` : ''}
-        ${data.observaciones ? `
-        <div class="tracking-detail-row">
-          <span class="tracking-detail-label">Observaciones</span>
-          <span class="tracking-detail-value">${data.observaciones}</span>
         </div>
         ` : ''}
       </div>

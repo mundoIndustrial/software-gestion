@@ -1597,14 +1597,24 @@ class RegistroOrdenQueryController extends Controller
     public function getConsecutivoCostura($pedido)
     {
         try {
-            \Log::info(' [getConsecutivoCostura] Obteniendo consecutivo de costura para pedido', ['pedido' => $pedido]);
+            $prendaId = request()->query('prenda_id');
             
-            // Buscar el consecutivo de costura para el pedido
-            $consecutivo = \DB::table('consecutivos_recibos_pedidos')
+            \Log::info(' [getConsecutivoCostura] Obteniendo consecutivo de costura para pedido', [
+                'pedido' => $pedido,
+                'prenda_id' => $prendaId
+            ]);
+            
+            // Buscar el consecutivo de costura para el pedido, filtrando por prenda si se proporcionó
+            $query = \DB::table('consecutivos_recibos_pedidos')
                 ->where('pedido_produccion_id', $pedido)
                 ->where('tipo_recibo', 'COSTURA')
-                ->where('activo', 1)
-                ->value('consecutivo_actual');
+                ->where('activo', 1);
+            
+            if ($prendaId) {
+                $query->where('prenda_id', $prendaId);
+            }
+            
+            $consecutivo = $query->value('consecutivo_actual');
             
             // Obtener la fecha de creación del pedido
             $fechaCreacion = \DB::table('pedidos_produccion')
@@ -1614,6 +1624,7 @@ class RegistroOrdenQueryController extends Controller
             if ($consecutivo || $fechaCreacion) {
                 \Log::info(' [getConsecutivoCostura] Datos encontrados', [
                     'pedido' => $pedido, 
+                    'prenda_id' => $prendaId,
                     'consecutivo' => $consecutivo,
                     'fecha_creacion' => $fechaCreacion
                 ]);
@@ -1624,7 +1635,10 @@ class RegistroOrdenQueryController extends Controller
                     'fecha_creacion' => $fechaCreacion
                 ]);
             } else {
-                \Log::warning(' [getConsecutivoCostura] No se encontraron datos para el pedido', ['pedido' => $pedido]);
+                \Log::warning(' [getConsecutivoCostura] No se encontraron datos para el pedido', [
+                    'pedido' => $pedido,
+                    'prenda_id' => $prendaId
+                ]);
                 
                 return response()->json([
                     'success' => false,
@@ -1700,6 +1714,7 @@ class RegistroOrdenQueryController extends Controller
                 // Obtener procesos de seguimiento por área
                 $procesosSeguimiento = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $prenda->id)
                     ->where('numero_pedido', $pedidoModel->numero_pedido)  // Usar el número de pedido correcto
+                    ->whereNull('deleted_at')  // Excluir procesos eliminados (soft delete)
                     ->orderBy('created_at', 'asc')
                     ->get();
                 

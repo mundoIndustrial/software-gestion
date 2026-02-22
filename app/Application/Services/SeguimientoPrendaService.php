@@ -210,6 +210,7 @@ class SeguimientoPrendaService
             // Obtener procesos de la tabla procesos_prenda
             $procesos = DB::table('procesos_prenda')
                 ->where('numero_pedido', $pedidoId)
+                ->whereNull('deleted_at')  // Excluir procesos eliminados (soft delete)
                 ->get();
 
             $sincronizados = [];

@@ -2668,6 +2668,140 @@
 <!-- Script para el modal de seguimiento -->
 <script src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}?v={{ time() }}"></script>
 
+<!-- Override: Abrir seguimiento directamente por prenda (como recibos-costura) -->
+<script>
+/**
+ * Override de verSeguimiento para insumos/materiales
+ * Abre el modal de seguimiento directamente con la primera prenda,
+ * sin mostrar el selector de prendas (igual que recibos-costura)
+ */
+window.verSeguimiento = function(pedidoId, prendaIdTarget) {
+    console.log('[Insumos verSeguimiento] Abriendo seguimiento directo para pedido:', pedidoId, 'prenda:', prendaIdTarget);
+
+    if (typeof openOrderTracking !== 'function') {
+        console.error('[Insumos verSeguimiento] openOrderTracking no disponible');
+        alert('Sistema de seguimiento no disponible');
+        return;
+    }
+
+    // Cargar datos del pedido SIN mostrar el selector de prendas (false)
+    openOrderTracking(pedidoId, false).then(() => {
+        console.log('[Insumos verSeguimiento] Datos inicializados, buscando prenda:', prendaIdTarget);
+
+        // Buscar prendas en las diferentes estructuras posibles
+        let prendas = null;
+        if (window.currentOrderData && window.currentOrderData.prendas) {
+            prendas = window.currentOrderData.prendas;
+        } else if (window.currentOrderData && window.currentOrderData.data && window.currentOrderData.data.prendas) {
+            prendas = window.currentOrderData.data.prendas;
+        } else if (window.prendasData && window.prendasData.length > 0) {
+            prendas = window.prendasData;
+        }
+
+        if (prendas && prendas.length > 0) {
+            // Buscar la prenda específica por ID
+            let prendaSeleccionada = null;
+            if (prendaIdTarget) {
+                prendaSeleccionada = prendas.find(p => 
+                    String(p.id) === String(prendaIdTarget) || 
+                    String(p.prenda_pedido_id) === String(prendaIdTarget)
+                );
+                console.log('[Insumos verSeguimiento] Prenda encontrada por ID:', prendaSeleccionada?.nombre_prenda || prendaSeleccionada?.nombre);
+            }
+            
+            // Fallback: primera prenda
+            if (!prendaSeleccionada) {
+                prendaSeleccionada = prendas[0];
+                console.log('[Insumos verSeguimiento] Usando primera prenda como fallback');
+            }
+            
+            window.currentPrendaData = prendaSeleccionada;
+            abrirModalSeguimientoDirectoInsumos(pedidoId, prendaIdTarget);
+        } else {
+            console.warn('[Insumos verSeguimiento] No hay prendas, abriendo selector como fallback');
+            if (typeof showPrendasSelector === 'function') {
+                showPrendasSelector();
+            } else {
+                alert('No hay prendas disponibles para este pedido');
+            }
+        }
+    }).catch(error => {
+        console.error('[Insumos verSeguimiento] Error:', error);
+        alert('Error al cargar los datos del pedido: ' + error.message);
+    });
+};
+
+/**
+ * Abre el modal de seguimiento directamente sin selector (versión insumos)
+ */
+function abrirModalSeguimientoDirectoInsumos(pedidoId, prendaIdTarget) {
+    // Abrir overlay
+    const trackingOverlay = document.getElementById('trackingModalOverlay');
+    if (trackingOverlay) {
+        trackingOverlay.style.display = 'block';
+    } else {
+        console.warn('[Insumos] Modal de seguimiento no encontrado');
+        alert('Modal de seguimiento no disponible');
+        return;
+    }
+
+    // Abrir contenido del modal
+    const trackingModal = document.getElementById('orderTrackingModal');
+    if (trackingModal) {
+        trackingModal.style.display = 'flex';
+        trackingModal.classList.add('show');
+
+        // Construir URL con prenda_id si está disponible
+        let urlConsecutivo = `/registros/${pedidoId}/consecutivo-costura`;
+        if (prendaIdTarget) {
+            urlConsecutivo += `?prenda_id=${prendaIdTarget}`;
+        }
+
+        // Obtener consecutivo de costura para esta prenda específica
+        fetch(urlConsecutivo)
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                if (data.success && data.consecutivo) {
+                    const reciboEl = document.getElementById('trackingOrderRecibo');
+                    if (reciboEl) reciboEl.textContent = data.consecutivo;
+
+                    const headerEl = document.getElementById('trackingPrendaReciboHeader');
+                    if (headerEl) headerEl.textContent = `COSTURA #${data.consecutivo}`;
+                } else {
+                    const reciboEl = document.getElementById('trackingOrderRecibo');
+                    if (reciboEl) reciboEl.textContent = '-';
+                    const headerEl = document.getElementById('trackingPrendaReciboHeader');
+                    if (headerEl) headerEl.textContent = 'COSTURA #?';
+                }
+
+                if (data.fecha_creacion) {
+                    const fechaEl = document.getElementById('trackingOrderDate');
+                    if (fechaEl) {
+                        const fecha = new Date(data.fecha_creacion);
+                        fechaEl.textContent = fecha.toLocaleDateString('es-ES', {
+                            day: '2-digit', month: '2-digit', year: 'numeric'
+                        });
+                    }
+                }
+
+                // Mostrar seguimiento de la prenda seleccionada
+                if (typeof showPrendaTracking === 'function' && window.currentPrendaData) {
+                    showPrendaTracking(window.currentPrendaData);
+                }
+            })
+            .catch(error => {
+                console.error('[Insumos] Error al obtener consecutivo:', error);
+                if (typeof showPrendaTracking === 'function' && window.currentPrendaData) {
+                    showPrendaTracking(window.currentPrendaData);
+                }
+            });
+    }
+}
+</script>
+
 <!-- Scripts para Dropdown de Ver Pedido -->
 <script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
 <!-- Scripts para Vista de Factura desde Lista - Lazy Loading -->

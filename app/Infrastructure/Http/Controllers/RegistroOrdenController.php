@@ -1423,7 +1423,8 @@ class RegistroOrdenController extends Controller
             ]);
             
             $query = \DB::table('procesos_prenda')
-                ->where('numero_pedido', $numeroPedido);
+                ->where('numero_pedido', $numeroPedido)
+                ->whereNull('deleted_at');  // Excluir procesos eliminados (soft delete)
             
             // Si se especifica prenda_id, filtrar por esa prenda
             if ($prendaId) {

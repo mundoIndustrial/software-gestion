@@ -986,25 +986,6 @@ class InsumosController extends Controller
                 $pedido->area = $this->determinarAreaPorEstado($nuevoEstado);
                 $pedido->save();
                 
-                // Crear procesos automáticos si pasa a producción
-                if ($nuevoEstado === 'En Ejecución') {
-                    try {
-                        $procesoService = new \App\Services\Insumos\ProcesoAutomaticoService();
-                        $resultadoProcesos = $procesoService->crearProcesosParaPedido($pedido->numero_pedido);
-                        
-                        if ($resultadoProcesos['success']) {
-                            $procesosCreados = $resultadoProcesos['procesos_creados'];
-                            $detallesProcesos = $resultadoProcesos['detalles'] ?? [];
-                        }
-                    } catch (\Exception $e) {
-                        Log::warning('Error al crear procesos automáticos desde recibo', [
-                            'recibo_id' => $reciboId,
-                            'pedido_id' => $pedido->id,
-                            'error' => $e->getMessage()
-                        ]);
-                    }
-                }
-                
                 Log::info('Pedido padre actualizado al aprobar recibo', [
                     'pedido_id' => $pedido->id,
                     'numero_pedido' => $pedido->numero_pedido,
@@ -1012,6 +993,50 @@ class InsumosController extends Controller
                     'estado_nuevo' => $nuevoEstado,
                     'recibos_pendientes' => $recibosPendientes
                 ]);
+            }
+            
+            // Crear proceso de Corte para la prenda específica del recibo aprobado
+            if ($pedido && $nuevoEstado === 'En Ejecución' && $recibo->prenda_id) {
+                try {
+                    // Verificar que no exista ya un proceso de Corte para esta prenda
+                    $yaExisteCorte = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                        ->where('prenda_pedido_id', $recibo->prenda_id)
+                        ->where('proceso', 'Corte')
+                        ->whereNull('deleted_at')
+                        ->exists();
+                    
+                    if (!$yaExisteCorte) {
+                        \App\Models\ProcesoPrenda::create([
+                            'numero_pedido' => $pedido->numero_pedido,
+                            'prenda_pedido_id' => $recibo->prenda_id,
+                            'proceso' => 'Corte',
+                            'fecha_inicio' => now(),
+                            'estado_proceso' => 'Pendiente',
+                            'observaciones' => "Proceso de Corte creado automáticamente al aprobar recibo #{$recibo->consecutivo_actual}",
+                            'codigo_referencia' => "P{$pedido->numero_pedido}-COR-PP{$recibo->prenda_id}-" . date('His'),
+                        ]);
+                        
+                        $procesosCreados = 1;
+                        $detallesProcesos = ['Corte (Prenda ID: ' . $recibo->prenda_id . ')'];
+                        
+                        Log::info('Proceso de Corte creado para prenda al aprobar recibo', [
+                            'recibo_id' => $reciboId,
+                            'prenda_id' => $recibo->prenda_id,
+                            'numero_pedido' => $pedido->numero_pedido,
+                        ]);
+                    } else {
+                        Log::info('Proceso de Corte ya existe para esta prenda, no se duplica', [
+                            'prenda_id' => $recibo->prenda_id,
+                            'numero_pedido' => $pedido->numero_pedido,
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Error al crear proceso de Corte para prenda', [
+                        'recibo_id' => $reciboId,
+                        'prenda_id' => $recibo->prenda_id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
             
             Log::info('Estado de recibo individual cambiado', [

@@ -136,6 +136,7 @@ class RegistroOrdenExtendedQueryService
         elseif ($column === 'encargado_orden') {
             $values = \DB::table('procesos_prenda')
                 ->where('proceso', 'Creación de Orden')
+                ->whereNull('deleted_at')  // Excluir procesos eliminados (soft delete)
                 ->distinct()
                 ->pluck('encargado')
                 ->filter()

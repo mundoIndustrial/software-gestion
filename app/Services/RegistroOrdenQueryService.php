@@ -123,6 +123,7 @@ class RegistroOrdenQueryService
                     
             } elseif ($column === 'encargado_orden') {
                 $values = ProcesoPrenda::where('proceso', 'Creación de Orden')
+                    ->whereNull('deleted_at')  // Excluir procesos eliminados (soft delete)
                     ->whereNotNull('encargado')
                     ->distinct()
                     ->pluck('encargado')

@@ -1738,7 +1738,7 @@
     width: 100vw !important;
     height: 100vh !important;
     display: none !important;
-    z-index: 9999 !important;
+    z-index: 10000000 !important;
     background: rgba(0, 0, 0, 0.5) !important;
     padding: 20px !important;
     box-sizing: border-box !important;
@@ -2509,7 +2509,7 @@ html[data-theme="light"] .tracking-info-value {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 10000;
+    z-index: 10000001 !important;
 }
 
 .confirm-delete-overlay {
