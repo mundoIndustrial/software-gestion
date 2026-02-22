@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Insumos;
 use App\Http\Controllers\Controller;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
+use App\Models\ConsecutivoReciboPedido;
 use App\Models\MaterialesOrdenInsumos;
 use App\Models\PedidoAnchoMetraje;
+use App\Events\ReciboAprobado;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
@@ -210,8 +212,10 @@ class InsumosController extends Controller
                 'pedidos_produccion.numero_pedido',
                 'pedidos_produccion.numero_pedido as numero_pedido_original',
                 'pedidos_produccion.cliente',
-                'pedidos_produccion.estado',
-                'pedidos_produccion.area',
+                'pedidos_produccion.estado as pedido_estado',
+                'pedidos_produccion.area as pedido_area',
+                'consecutivos_recibos_pedidos.estado as recibo_estado',
+                'consecutivos_recibos_pedidos.area as recibo_area',
                 'pedidos_produccion.fecha_de_creacion_de_orden',
                 'pedidos_produccion.dia_de_entrega',
                 'pedidos_produccion.fecha_estimada_de_entrega'
@@ -356,8 +360,9 @@ class InsumosController extends Controller
                 'numero_pedido' => $recibo->consecutivo_actual, // N° de recibo
                 'numero_pedido_original' => $recibo->numero_pedido_original, // N° de pedido original
                 'cliente' => $recibo->cliente,
-                'estado' => $recibo->estado,
-                'area' => $recibo->area, // Usar directamente el campo area del pedido
+                'estado' => $recibo->recibo_estado ?? $recibo->pedido_estado, // Estado del recibo
+                'area' => $recibo->recibo_area ?? $recibo->pedido_area, // Área del recibo
+                'pedido_estado' => $recibo->pedido_estado, // Estado del pedido (para filtros)
                 'fecha_de_creacion_de_orden' => $recibo->fecha_de_creacion_de_orden,
                 'dia_de_entrega' => $recibo->dia_de_entrega,
                 'fecha_estimada_de_entrega' => $recibo->fecha_estimada_de_entrega,
@@ -929,6 +934,165 @@ class InsumosController extends Controller
     }
 
     /**
+     * Cambiar estado de un recibo individual (consecutivos_recibos_pedidos)
+     * Solo aprueba ese recibo específico, NO todo el pedido
+     */
+    public function cambiarEstadoRecibo(Request $request, $reciboId)
+    {
+        try {
+            $user = Auth::user();
+            $this->verificarRolInsumos($user);
+            
+            // Buscar el recibo específico
+            $recibo = ConsecutivoReciboPedido::where('id', $reciboId)
+                ->lockForUpdate()
+                ->firstOrFail();
+            
+            $validated = $request->validate([
+                'estado' => ['required', 'string', Rule::in(['No iniciado', 'En Ejecución'])],
+            ]);
+            
+            $nuevoEstado = $validated['estado'];
+            $estadoAnteriorRecibo = $recibo->estado ?? 'PENDIENTE_INSUMOS';
+            
+            // Solo permitir aprobar si está en PENDIENTE_INSUMOS
+            if ($estadoAnteriorRecibo !== 'PENDIENTE_INSUMOS') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Este recibo ya ha sido aprobado (estado actual: ' . $estadoAnteriorRecibo . ')'
+                ], 422);
+            }
+            
+            // Actualizar estado y area del recibo
+            $recibo->estado = $nuevoEstado;
+            $recibo->area = $this->determinarAreaPorEstado($nuevoEstado);
+            $recibo->save();
+            
+            // Contar recibos de costura pendientes restantes
+            $recibosPendientes = ConsecutivoReciboPedido::where('pedido_produccion_id', $recibo->pedido_produccion_id)
+                ->where('tipo_recibo', 'COSTURA')
+                ->where('activo', 1)
+                ->where('estado', 'PENDIENTE_INSUMOS')
+                ->count();
+            
+            $pedido = PedidoProduccion::find($recibo->pedido_produccion_id);
+            $procesosCreados = 0;
+            $detallesProcesos = [];
+            
+            // Actualizar el estado del pedido padre inmediatamente al aprobar cualquier recibo
+            if ($pedido && $pedido->estado === 'PENDIENTE_INSUMOS') {
+                $estadoAnteriorPedido = $pedido->estado;
+                $pedido->estado = $nuevoEstado;
+                $pedido->area = $this->determinarAreaPorEstado($nuevoEstado);
+                $pedido->save();
+                
+                // Crear procesos automáticos si pasa a producción
+                if ($nuevoEstado === 'En Ejecución') {
+                    try {
+                        $procesoService = new \App\Services\Insumos\ProcesoAutomaticoService();
+                        $resultadoProcesos = $procesoService->crearProcesosParaPedido($pedido->numero_pedido);
+                        
+                        if ($resultadoProcesos['success']) {
+                            $procesosCreados = $resultadoProcesos['procesos_creados'];
+                            $detallesProcesos = $resultadoProcesos['detalles'] ?? [];
+                        }
+                    } catch (\Exception $e) {
+                        Log::warning('Error al crear procesos automáticos desde recibo', [
+                            'recibo_id' => $reciboId,
+                            'pedido_id' => $pedido->id,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+                
+                Log::info('Pedido padre actualizado al aprobar recibo', [
+                    'pedido_id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'estado_anterior' => $estadoAnteriorPedido,
+                    'estado_nuevo' => $nuevoEstado,
+                    'recibos_pendientes' => $recibosPendientes
+                ]);
+            }
+            
+            Log::info('Estado de recibo individual cambiado', [
+                'recibo_id' => $reciboId,
+                'consecutivo' => $recibo->consecutivo_actual,
+                'pedido_produccion_id' => $recibo->pedido_produccion_id,
+                'estado_anterior' => $estadoAnteriorRecibo,
+                'estado_nuevo' => $nuevoEstado,
+                'recibos_pendientes' => $recibosPendientes,
+                'usuario_id' => $user->id,
+            ]);
+            
+            $message = "Recibo #{$recibo->consecutivo_actual} aprobado correctamente.";
+            if ($recibosPendientes === 0) {
+                $message .= " Todos los recibos del pedido fueron aprobados.";
+            } else {
+                $message .= " Quedan {$recibosPendientes} recibo(s) pendiente(s).";
+            }
+            if ($procesosCreados > 0) {
+                $message .= " Se crearon {$procesosCreados} procesos automáticamente.";
+            }
+            
+            // Disparar evento en tiempo real para recibos-costura
+            try {
+                $clienteNombre = $pedido ? $pedido->cliente : '';
+                $numeroPedido = $pedido ? $pedido->numero_pedido : null;
+                
+                event(new ReciboAprobado([
+                    'recibo_id' => $recibo->id,
+                    'consecutivo' => $recibo->consecutivo_actual,
+                    'pedido_produccion_id' => $recibo->pedido_produccion_id,
+                    'prenda_id' => $recibo->prenda_id,
+                    'tipo_recibo' => $recibo->tipo_recibo,
+                    'estado' => $nuevoEstado,
+                    'area' => $recibo->area,
+                    'cliente' => $clienteNombre,
+                    'numero_pedido' => $numeroPedido,
+                ]));
+            } catch (\Exception $e) {
+                Log::warning('Error al broadcast ReciboAprobado', [
+                    'recibo_id' => $reciboId,
+                    'error' => $e->getMessage()
+                ]);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'estado_anterior' => $estadoAnteriorRecibo,
+                'nuevo_estado' => $nuevoEstado,
+                'recibos_pendientes' => $recibosPendientes,
+                'pedido_actualizado' => $recibosPendientes === 0,
+                'procesos_creados' => $procesosCreados,
+                'detalles_procesos' => $detallesProcesos
+            ]);
+            
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Recibo no encontrado'
+            ], 404);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validación fallida',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error al cambiar estado del recibo', [
+                'recibo_id' => $reciboId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cambiar el estado del recibo'
+            ], 500);
+        }
+    }
+
+    /**
      * Guardar ancho y metraje de un pedido
      */
     public function guardarAnchoMetraje(Request $request, $numeroPedido)
@@ -1171,10 +1335,11 @@ class InsumosController extends Controller
             $user = Auth::user();
             $this->verificarRolInsumos($user);
 
-            // Obtener recibos de costura activos, excluyendo pedidos con estado PENDIENTE_SUPERVISOR
+            // Obtener recibos de costura activos, aprobados y excluyendo pedidos con estado PENDIENTE_SUPERVISOR
             $recibosCostura = DB::table('consecutivos_recibos_pedidos')
                 ->where('tipo_recibo', 'COSTURA')
                 ->where('activo', 1)
+                ->where('estado', '!=', 'PENDIENTE_INSUMOS')
                 ->whereNotExists(function($query) {
                     $query->select(DB::raw(1))
                           ->from('pedidos_produccion')

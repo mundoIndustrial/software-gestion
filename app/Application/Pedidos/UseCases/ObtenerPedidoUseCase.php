@@ -310,7 +310,8 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
         }
         
         // Si no hay datos en flujo 2, intentar desde prenda_pedido_tallas (flujo 1)
-        if (empty($tallasColores)) {
+        // NOTA: empty() en un Collection siempre retorna false, usar ->isEmpty()
+        if ($tallasColores->isEmpty()) {
             try {
                 if ($prenda->tallas) {
                     foreach ($prenda->tallas as $talla) {

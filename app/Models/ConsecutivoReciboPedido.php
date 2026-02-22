@@ -16,6 +16,8 @@ class ConsecutivoReciboPedido extends Model
         'consecutivo_actual',
         'consecutivo_inicial',
         'activo',
+        'estado',
+        'area',
         'notas',
     ];
 
@@ -24,6 +26,13 @@ class ConsecutivoReciboPedido extends Model
         'consecutivo_inicial' => 'integer',
         'activo' => 'boolean',
     ];
+
+    /**
+     * Estados posibles del recibo
+     */
+    const ESTADO_PENDIENTE_INSUMOS = 'PENDIENTE_INSUMOS';
+    const ESTADO_NO_INICIADO = 'No iniciado';
+    const ESTADO_EN_EJECUCION = 'En Ejecución';
 
     /**
      * Relación: Un consecutivo pertenece a un pedido

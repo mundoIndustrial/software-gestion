@@ -18,6 +18,7 @@ window.crearDropdownVer = function(button) {
         const menuId = button.getAttribute('data-menu-id');
         const pedido = button.getAttribute('data-pedido');
         const pedidoId = button.getAttribute('data-pedido-id'); // ID de pedidos_produccion
+        const prendaId = button.getAttribute('data-prenda-id'); // ID de la prenda asociada
         const logoPedidoId = button.getAttribute('data-logo-pedido-id'); //  ID específico para logo_pedidos
         let tipoCotizacion = button.getAttribute('data-tipo-cotizacion');
         // Detectar si es LOGO explícito (atributo agregado a la vista)
@@ -27,8 +28,8 @@ window.crearDropdownVer = function(button) {
             tipoCotizacion = 'L';
         }
         
-        // SIEMPRE generar un menuId único basado en el pedidoId
-        const uniqueMenuId = `menu-ver-pedido-${pedidoId}`;
+        // Generar un menuId único basado en pedidoId Y prendaId para que cada fila tenga su propio dropdown
+        const uniqueMenuId = `menu-ver-pedido-${pedidoId}-prenda-${prendaId || 'all'}`;
         
         // IMPORTANTE: Limpiar galerías anteriores para evitar conflictos entre pedidos
         if (typeof window._limpiarGalerias === 'function') {

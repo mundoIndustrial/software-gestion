@@ -327,44 +327,225 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('[Menu] Inicializando menú de acciones');
 });
 
-// Event listeners globales para menú de acciones
-document.addEventListener('click', function(e) {
-    // Toggle del menú al hacer clic en el botón de acción
-    if (e.target.closest('.action-view-btn')) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const btn = e.target.closest('.action-view-btn');
-        const ordenId = btn.getAttribute('data-orden-id');
-        const menu = document.querySelector(`.action-menu[data-orden-id="${ordenId}"]`);
-        
-        if (menu) {
-            // Cerrar todos los demás menús
-            document.querySelectorAll('.action-menu').forEach(m => {
-                if (m !== menu) {
-                    m.classList.remove('show', 'active');
-                }
-            });
-            
-            // Toggle el menú actual
-            menu.classList.toggle('show');
-            menu.classList.toggle('active');
+// Los event listeners del menú de acciones ahora están manejados por el sistema
+// de dropdowns dinámicos (estilo insumos) en recibos-costura.blade.php
+
+// ============================================================
+// TIEMPO REAL: Escuchar canal recibos-costura via WebSocket/Reverb
+// ============================================================
+(function() {
+    console.log('[RecibosCostura-RT] Inicializando listener en tiempo real...');
+
+    function suscribirCanal() {
+        const echoInstance = window.EchoInstance;
+        if (!echoInstance) {
+            console.warn('[RecibosCostura-RT] EchoInstance no disponible aún');
+            return;
         }
+
+        console.log('[RecibosCostura-RT] Suscribiendo al canal recibos-costura...');
+
+        echoInstance.channel('recibos-costura')
+            .listen('.recibo.aprobado', function(data) {
+                console.log('[RecibosCostura-RT] Recibo aprobado recibido:', data);
+                agregarReciboEnTiempoReal(data);
+            });
+
+        console.log('[RecibosCostura-RT] Suscripción activa al canal recibos-costura');
     }
-    
-    // Cerrar menú al hacer clic en una opción
-    if (e.target.closest('.action-menu-item')) {
-        // Cerrar todos los menús
-        document.querySelectorAll('.action-menu').forEach(m => {
-            m.classList.remove('show', 'active');
+
+    /**
+     * Agregar una nueva fila a la tabla cuando llega un recibo aprobado
+     */
+    function agregarReciboEnTiempoReal(data) {
+        const reciboId = data.recibo_id;
+
+        // Verificar que no exista ya en la tabla
+        if (document.querySelector(`tr[data-orden-id="${reciboId}"]`)) {
+            console.log('[RecibosCostura-RT] Recibo ya existe en tabla, ignorando:', reciboId);
+            return;
+        }
+
+        // Obtener datos completos del recibo vía API
+        fetch(`/recibos-costura/recibo/${reciboId}`, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (!result.success || !result.recibo) {
+                console.warn('[RecibosCostura-RT] No se pudo obtener datos del recibo:', reciboId);
+                return;
+            }
+
+            const recibo = result.recibo;
+            console.log('[RecibosCostura-RT] Datos completos del recibo:', recibo);
+
+            insertarFilaRecibo(recibo);
+            mostrarNotificacionNuevoRecibo(recibo);
+        })
+        .catch(error => {
+            console.error('[RecibosCostura-RT] Error al obtener datos del recibo:', error);
         });
     }
-    
-    // Cerrar menús al hacer clic fuera
-    if (!e.target.closest('.action-view-btn') && !e.target.closest('.action-menu')) {
-        document.querySelectorAll('.action-menu').forEach(m => {
-            m.classList.remove('show', 'active');
-        });
+
+    /**
+     * Insertar una nueva fila en la tabla de recibos
+     */
+    function insertarFilaRecibo(recibo) {
+        const tbody = document.getElementById('tablaRecibosBody');
+        if (!tbody) {
+            console.warn('[RecibosCostura-RT] No se encontró tablaRecibosBody');
+            return;
+        }
+
+        // Remover fila de "No se encontraron recibos" si existe
+        const filaVacia = tbody.querySelector('td[colspan]');
+        if (filaVacia) {
+            filaVacia.closest('tr').remove();
+        }
+
+        // Determinar clases de días
+        const dias = recibo.dias_calculados || 0;
+        let diasClase = '';
+        if (dias >= 14) diasClase = 'dias-mayor-15';
+        else if (dias >= 10) diasClase = 'dias-10-15';
+        else if (dias >= 5) diasClase = 'dias-5-9';
+        else if (dias > 0) diasClase = 'dias-0-4';
+
+        // Badge de estado
+        let estadoBadge = 'bg-secondary';
+        let estadoTexto = recibo.estado;
+        if (recibo.estado === 'En Ejecución') estadoBadge = 'bg-primary';
+        else if (recibo.estado === 'No iniciado') estadoBadge = 'bg-warning';
+        else if (recibo.estado === 'PENDIENTE_INSUMOS') { estadoBadge = 'bg-info'; estadoTexto = 'Pendiente Insumos'; }
+
+        // Badge de area
+        let areaBadge = 'bg-secondary';
+        if (recibo.area === 'Corte') areaBadge = 'bg-success';
+        else if (recibo.area === 'Insumos') areaBadge = 'bg-info';
+
+        // Badge de días
+        let diasBadge = 'bg-secondary';
+        if (dias >= 14) diasBadge = 'bg-danger';
+        else if (dias >= 5) diasBadge = 'bg-warning';
+        else if (dias > 0) diasBadge = 'bg-success';
+
+        const tr = document.createElement('tr');
+        tr.className = diasClase;
+        tr.setAttribute('data-orden-id', recibo.id);
+        tr.setAttribute('data-pedido-id', recibo.pedido_produccion_id || '');
+        tr.setAttribute('data-numero-recibo', recibo.consecutivo_actual || '');
+
+        tr.innerHTML = `
+            <td class="acciones-column" style="text-align: center; position: relative;">
+                <button class="btn-ver-dropdown" title="Ver Opciones"
+                    data-menu-id="menu-recibo-${recibo.id}"
+                    data-pedido-id="${recibo.pedido_produccion_id}"
+                    data-prenda-id="${recibo.prenda_id || ''}">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </td>
+            <td><span class="badge ${estadoBadge}">${estadoTexto}</span></td>
+            <td><span class="badge ${areaBadge}">${recibo.area || 'Insumos'}</span></td>
+            <td style="text-align: center;">
+                <span class="badge ${diasBadge}" style="font-weight: 600;">${dias} días</span>
+            </td>
+            <td style="text-align: center;">
+                <span style="font-weight: 600;">${recibo.consecutivo_actual}</span>
+            </td>
+            <td style="text-align: center;">
+                <span>${recibo.cliente || 'N/A'}</span>
+            </td>
+            <td>
+                <div class="table-cell" style="flex: 10;">
+                    <div class="cell-content" style="justify-content: flex-start; cursor: pointer;">
+                        <span class="descripcion-prenda-texto" style="color: #6b7280; font-size: 0.875rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            ${recibo.nombre_prenda || 'Sin prendas'} <span style="color: #3b82f6; font-weight: 600;">...</span>
+                        </span>
+                    </div>
+                </div>
+            </td>
+            <td><span class="text-muted">-</span></td>
+            <td>
+                <div class="table-cell" style="flex: 0 0 120px;">
+                    <div class="cell-content" style="justify-content: flex-start;">
+                        <button class="btn-edit-novedades"
+                            data-pedido-id="${recibo.pedido_produccion_id}"
+                            data-numero-recibo="${recibo.consecutivo_actual}"
+                            data-novedades=""
+                            onclick="event.stopPropagation(); openNovedadesModalRecibo(this)"
+                            title="Ver novedades del recibo" type="button">
+                            <span class="novedades-text empty">Sin novedades</span>
+                            <span class="material-symbols-rounded">edit</span>
+                        </button>
+                    </div>
+                </div>
+            </td>
+            <td><span>${recibo.fecha_creacion || '-'}</span></td>
+            <td><span class="fecha-estimada-span text-muted">-</span></td>
+            <td><span class="text-muted">-</span></td>
+        `;
+
+        // Insertar al inicio de la tabla (los más recientes primero)
+        tbody.insertBefore(tr, tbody.firstChild);
+
+        // Animación de entrada
+        tr.style.transition = 'background-color 1.5s ease';
+        tr.style.backgroundColor = '#d4edda';
+        setTimeout(() => { tr.style.backgroundColor = ''; }, 2000);
+
+        console.log('[RecibosCostura-RT] Fila insertada para recibo:', recibo.consecutivo_actual);
     }
-});</script>
+
+    /**
+     * Mostrar notificación visual de nuevo recibo
+     */
+    function mostrarNotificacionNuevoRecibo(recibo) {
+        // Crear notificación toast
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: fixed; top: 20px; right: 20px; z-index: 99999;
+            background: #28a745; color: white; padding: 12px 20px;
+            border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            font-size: 14px; font-weight: 500; max-width: 400px;
+            animation: slideInRight 0.3s ease-out;
+        `;
+        toast.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-check-circle" style="font-size: 18px;"></i>
+                <div>
+                    <div style="font-weight: 600;">Nuevo recibo aprobado</div>
+                    <div style="font-size: 12px; opacity: 0.9;">Recibo #${recibo.consecutivo_actual} - ${recibo.cliente || ''}</div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(toast);
+
+        // Remover después de 4 segundos
+        setTimeout(() => {
+            toast.style.transition = 'opacity 0.5s ease';
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 500);
+        }, 4000);
+    }
+
+    // Suscribir usando waitForEcho o directamente si ya está listo
+    if (typeof window.waitForEcho === 'function') {
+        window.waitForEcho(suscribirCanal);
+    } else {
+        // Fallback: esperar a que EchoInstance esté disponible
+        const checkInterval = setInterval(() => {
+            if (window.EchoInstance) {
+                clearInterval(checkInterval);
+                suscribirCanal();
+            }
+        }, 500);
+        // Dejar de intentar después de 30 segundos
+        setTimeout(() => clearInterval(checkInterval), 30000);
+    }
+})();
+</script>
 @endpush

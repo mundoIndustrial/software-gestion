@@ -1469,6 +1469,7 @@ const trackingTableStyles = `
     const overlay = document.getElementById('trackingPrendasSelectorOverlay');
     if (overlay) {
       overlay.classList.remove('show');
+      overlay.style.display = 'none';
     }
   };
 
@@ -1620,13 +1621,11 @@ const trackingTableStyles = `
       
       currentPrendaData = prenda;
       
-      // Cerrar overlay de prendas solo si está visible
+      // Cerrar overlay de prendas
       const overlaySelector = document.getElementById('trackingPrendasSelectorOverlay');
-      if (overlaySelector && overlaySelector.style.display !== 'none') {
+      if (overlaySelector) {
         console.log('[showPrendaTracking] Cerrando overlay selector...');
         cerrarSelectorPrendas();
-      } else {
-        console.log('[showPrendaTracking] Overlay selector no está visible, omitiendo cierre');
       }
       
       // Mostrar modal de seguimiento
@@ -1640,7 +1639,7 @@ const trackingTableStyles = `
         modal.style.setProperty('display', 'flex', 'important');
         modal.style.setProperty('visibility', 'visible', 'important');
         modal.style.setProperty('opacity', '1', 'important');
-        modal.style.setProperty('z-index', '9998', 'important');
+        modal.style.setProperty('z-index', '9999999', 'important');
         modal.style.setProperty('position', 'fixed', 'important');
         modal.style.setProperty('top', '0', 'important');
         modal.style.setProperty('left', '0', 'important');

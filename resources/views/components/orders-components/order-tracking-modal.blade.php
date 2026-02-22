@@ -60,7 +60,7 @@
             justify-content: center !important;
             opacity: 1 !important;
             visibility: visible !important;
-            z-index: 9998 !important;
+            z-index: 9999999 !important;
         }
         #orderTrackingModal.show .tracking-modal-content {
             display: flex !important;
@@ -376,7 +376,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 9998;
+    z-index: 9999999;
 }
 
 .tracking-modal-overlay {
@@ -387,6 +387,7 @@
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
+    z-index: 0;
 }
 
 .tracking-modal-content {
@@ -397,6 +398,7 @@
     max-width: 1200px;
     width: 95%;
     max-height: 95vh;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden;

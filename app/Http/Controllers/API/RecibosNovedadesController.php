@@ -21,35 +21,48 @@ class RecibosNovedadesController extends Controller
         try {
             $pedido = PedidoProduccion::findOrFail($pedidoId);
             
-            // Obtener todas las prendas del pedido y sus novedades para este recibo
-            $novedades = [];
+            // Buscar la prenda específica del recibo
+            $recibo = \App\Models\ConsecutivoReciboPedido::where('pedido_produccion_id', $pedido->id)
+                ->where('consecutivo_actual', $numeroRecibo)
+                ->where('activo', 1)
+                ->first();
             
-            $prendas = $pedido->prendas;
-            foreach ($prendas as $prenda) {
-                if ($prenda->novedadesRecibo) {
-                    foreach ($prenda->novedadesRecibo as $novedad) {
-                        $novedades[] = [
-                            'id' => $novedad->id,
-                            'prenda_id' => $prenda->id,
-                            'prenda_nombre' => $prenda->nombre_prenda,
-                            'numero_recibo' => $novedad->numero_recibo,
-                            'novedad_texto' => $novedad->novedad_texto,
-                            'tipo_novedad' => $novedad->tipo_novedad,
-                            'estado_novedad' => $novedad->estado_novedad,
-                            'notas_adicionales' => $novedad->notas_adicionales,
-                            'creado_por' => $novedad->creado_por, // ID del usuario, no el nombre
-                            'creado_por_nombre' => $novedad->creadoPor ? $novedad->creadoPor->name : null, // Nombre para mostrar
-                            'creado_por_rol' => $novedad->creadoPor && $novedad->creadoPor->role ? $novedad->creadoPor->role->name : null, // Rol del usuario
-                            'creado_en' => \Carbon\Carbon::parse($novedad->creado_en)->format('d/m/Y H:i'),
-                            'editado' => $novedad->editado,
-                            'editado_en' => $novedad->editado_en ? \Carbon\Carbon::parse($novedad->editado_en)->format('d/m/Y H:i') : null,
-                            'editado_por' => $novedad->editado_por,
-                            'editado_por_nombre' => $novedad->editadoPor ? $novedad->editadoPor->name : null,
-                            'resuelto_por' => $novedad->resueltoPor ? $novedad->resueltoPor->name : null,
-                            'fecha_resolucion' => $novedad->fecha_resolucion ? \Carbon\Carbon::parse($novedad->fecha_resolucion)->format('d/m/Y H:i') : null,
-                        ];
-                    }
-                }
+            // Obtener novedades filtradas por numero_recibo y prenda del recibo
+            $query = PrendaPedidoNovedadRecibo::where('numero_recibo', $numeroRecibo);
+            
+            if ($recibo && $recibo->prenda_id) {
+                $query->where('prenda_pedido_id', $recibo->prenda_id);
+            } else {
+                // Fallback: buscar para cualquier prenda del pedido
+                $prendasIds = $pedido->prendas->pluck('id')->toArray();
+                $query->whereIn('prenda_pedido_id', $prendasIds);
+            }
+            
+            $novedadesDb = $query->orderBy('creado_en', 'desc')->get();
+            
+            $novedades = [];
+            foreach ($novedadesDb as $novedad) {
+                $prenda = $novedad->prendaPedido;
+                $novedades[] = [
+                    'id' => $novedad->id,
+                    'prenda_id' => $novedad->prenda_pedido_id,
+                    'prenda_nombre' => $prenda ? $prenda->nombre_prenda : null,
+                    'numero_recibo' => $novedad->numero_recibo,
+                    'novedad_texto' => $novedad->novedad_texto,
+                    'tipo_novedad' => $novedad->tipo_novedad,
+                    'estado_novedad' => $novedad->estado_novedad,
+                    'notas_adicionales' => $novedad->notas_adicionales,
+                    'creado_por' => $novedad->creado_por,
+                    'creado_por_nombre' => $novedad->creadoPor ? $novedad->creadoPor->name : null,
+                    'creado_por_rol' => $novedad->creadoPor && $novedad->creadoPor->role ? $novedad->creadoPor->role->name : null,
+                    'creado_en' => \Carbon\Carbon::parse($novedad->creado_en)->format('d/m/Y H:i'),
+                    'editado' => $novedad->editado,
+                    'editado_en' => $novedad->editado_en ? \Carbon\Carbon::parse($novedad->editado_en)->format('d/m/Y H:i') : null,
+                    'editado_por' => $novedad->editado_por,
+                    'editado_por_nombre' => $novedad->editadoPor ? $novedad->editadoPor->name : null,
+                    'resuelto_por' => $novedad->resueltoPor ? $novedad->resueltoPor->name : null,
+                    'fecha_resolucion' => $novedad->fecha_resolucion ? \Carbon\Carbon::parse($novedad->fecha_resolucion)->format('d/m/Y H:i') : null,
+                ];
             }
             
             return response()->json([
@@ -90,10 +103,23 @@ class RecibosNovedadesController extends Controller
             $pedido = PedidoProduccion::findOrFail($pedidoId);
             $usuarioId = Auth::id();
             
-            // Si no se especifican prendas, aplicar a todas las prendas del pedido
+            // Si no se especifican prendas, buscar la prenda del recibo específico
             $prendasIds = $request->prendas_ids;
             if (empty($prendasIds)) {
-                $prendasIds = $pedido->prendas->pluck('id')->toArray();
+                // Buscar el consecutivo de recibo para obtener la prenda específica
+                $recibo = \App\Models\ConsecutivoReciboPedido::where('pedido_produccion_id', $pedido->id)
+                    ->where('consecutivo_actual', $numeroRecibo)
+                    ->where('activo', 1)
+                    ->first();
+                
+                if ($recibo && $recibo->prenda_id) {
+                    // Usar solo la prenda asociada al recibo
+                    $prendasIds = [$recibo->prenda_id];
+                } else {
+                    // Fallback: usar la primera prenda del pedido (solo 1)
+                    $primeraPrenda = $pedido->prendas->first();
+                    $prendasIds = $primeraPrenda ? [$primeraPrenda->id] : [];
+                }
             }
             
             DB::beginTransaction();

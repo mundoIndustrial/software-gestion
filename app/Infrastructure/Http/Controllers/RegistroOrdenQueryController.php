@@ -1660,10 +1660,13 @@ class RegistroOrdenQueryController extends Controller
                 'pedido_numero' => $pedido
             ]);
             
-            // Convertir numero_pedido a ID si es necesario
-            $pedidoModel = \App\Models\PedidoProduccion::where('numero_pedido', $pedido)->first();
-            if (!$pedidoModel) {
+            // Buscar primero por ID (más eficiente), luego por numero_pedido
+            $pedidoModel = null;
+            if (is_numeric($pedido)) {
                 $pedidoModel = \App\Models\PedidoProduccion::where('id', $pedido)->first();
+            }
+            if (!$pedidoModel) {
+                $pedidoModel = \App\Models\PedidoProduccion::where('numero_pedido', $pedido)->first();
             }
             
             if (!$pedidoModel) {

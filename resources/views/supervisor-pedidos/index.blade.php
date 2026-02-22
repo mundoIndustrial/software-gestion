@@ -194,48 +194,57 @@
                                 <i class="fas fa-edit"></i>
                             </button>
 
-                            <!-- Botón Aprobar (solo si está pendiente de aprobación) -->
+                            <!-- Botón Aprobar (solo si está pendiente de aprobación Y no es solo EPP) -->
                             @if($estado === 'PENDIENTE_SUPERVISOR')
-                            <button onclick="abrirModalAprobacion({{ $orden->id }}, '{{ str_replace('#', '', $numeroPedido) }}')" title="Aprobar Pedido" style="
-                                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-                                color: white;
-                                border: none;
-                                padding: 0.5rem;
-                                border-radius: 6px;
-                                cursor: pointer;
-                                font-size: 1rem;
-                                transition: all 0.3s ease;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                width: 36px;
-                                height: 36px;
-                                box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
-                            " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
-                                <i class="fas fa-check"></i>
-                            </button>
+                                @php
+                                    // Verificar si el pedido tiene prendas regulares (no solo EPP)
+                                    $tienePrendasRegulares = $orden->prendas && $orden->prendas->count() > 0;
+                                    $tieneSoloEpp = !$tienePrendasRegulares && $orden->epps && $orden->epps->count() > 0;
+                                @endphp
+                                @if(!$tieneSoloEpp)
+                                <button onclick="abrirModalAprobacion({{ $orden->id }}, '{{ str_replace('#', '', $numeroPedido) }}')" title="Aprobar Pedido" style="
+                                    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                                    color: white;
+                                    border: none;
+                                    padding: 0.5rem;
+                                    border-radius: 6px;
+                                    cursor: pointer;
+                                    font-size: 1rem;
+                                    transition: all 0.3s ease;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    width: 36px;
+                                    height: 36px;
+                                    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+                                " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                @endif
                             @endif
 
-                            <!-- Botón Anular (solo si está pendiente de aprobación) -->
+                            <!-- Botón Anular (solo si está pendiente de aprobación Y no es solo EPP) -->
                             @if($estado === 'PENDIENTE_SUPERVISOR')
-                            <button onclick="abrirModalAnulacion({{ $orden->id }}, '{{ $numeroPedido }}')" title="Pasar a Revisión" style="
-                                background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-                                color: white;
-                                border: none;
-                                padding: 0.5rem;
-                                border-radius: 6px;
-                                cursor: pointer;
-                                font-size: 1rem;
-                                transition: all 0.3s ease;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                width: 36px;
-                                height: 36px;
-                                box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
-                            " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(245, 158, 11, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(245, 158, 11, 0.3)'">
-                                <i class="fas fa-ban"></i>
-                            </button>
+                                @if(!$tieneSoloEpp)
+                                <button onclick="abrirModalAnulacion({{ $orden->id }}, '{{ $numeroPedido }}')" title="Pasar a Revisión" style="
+                                    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                                    color: white;
+                                    border: none;
+                                    padding: 0.5rem;
+                                    border-radius: 6px;
+                                    cursor: pointer;
+                                    font-size: 1rem;
+                                    transition: all 0.3s ease;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    width: 36px;
+                                    height: 36px;
+                                    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+                                " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(245, 158, 11, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(245, 158, 11, 0.3)'">
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                                @endif
                             @endif
                         </div>
                         
@@ -2040,8 +2049,8 @@
                     return { fila, numero };
                 });
 
-                // Ordenar en orden ASCENDENTE (más antiguo primero)
-                filasConNumero.sort((a, b) => a.numero - b.numero);
+                // Ordenar en orden DESCENDENTE (más reciente primero)
+                filasConNumero.sort((a, b) => b.numero - a.numero);
 
                 console.log('[Supervisor-Pedidos] 📋 Ordenando filas:', 
                     filasConNumero.map(item => ({ numero: item.numero, tieneElemento: !!item.fila.querySelector('span[style*="color: #1e5ba8"]') }))
@@ -2061,7 +2070,7 @@
                     }
                 });
 
-                console.log('[Supervisor-Pedidos] 📋 Tabla ordenada en orden ascendente');
+                console.log('[Supervisor-Pedidos] 📋 Tabla ordenada en orden descendente');
             } catch (error) {
                 console.error('[Supervisor-Pedidos] ❌ Error al ordenar tabla:', error);
             }

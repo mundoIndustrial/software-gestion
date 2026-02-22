@@ -97,3 +97,10 @@ Broadcast::channel('asesores.observaciones', function ($user) {
 Broadcast::channel('ordenes', function ($user) {
     return true; // Canal público
 });
+
+/**
+ * Canal público para recibos de costura - cuando insumos aprueba un recibo
+ */
+Broadcast::channel('recibos-costura', function ($user) {
+    return true; // Canal público para recibos de costura
+});

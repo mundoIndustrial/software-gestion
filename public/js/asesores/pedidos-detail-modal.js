@@ -72,6 +72,13 @@ window.verSeguimiento = function verSeguimiento(numeroPedido) {
         return;
     }
     
+    // Intentar con openOrderTracking (usado en registros, insumos, recibos-costura)
+    if (typeof openOrderTracking === 'function') {
+        console.log('[verSeguimiento] Usando openOrderTracking');
+        openOrderTracking(numeroPedido, true);
+        return;
+    }
+    
     // Si ninguna está disponible, mostrar error
     console.error('[verSeguimiento] Ninguna función de tracking está disponible');
     alert('Error: No se puede abrir el seguimiento. Intenta nuevamente.');

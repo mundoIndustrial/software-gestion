@@ -195,10 +195,14 @@ class SupervisorPedidosController extends Controller
     public function index(Request $request)
     {
         // Obtener órdenes con filtros (incluyendo borradas suavemente)
-        $query = PedidoProduccion::withTrashed()->with(['asesora', 'prendas', 'cotizacion']);
+        $query = PedidoProduccion::withTrashed()->with(['asesora', 'prendas', 'epps', 'cotizacion']);
 
         // EXCLUIR pedidos en estado pendiente_cartera o RECHAZADO_CARTERA
         $query->whereNotIn('estado', ['pendiente_cartera', 'RECHAZADO_CARTERA']);
+
+        // EXCLUIR pedidos sin número de pedido
+        $query->whereNotNull('numero_pedido')
+              ->where('numero_pedido', '!=', '');
 
         // FILTRO DE APROBACIÓN: Mostrar solo órdenes según su estado de aprobación
         // Si no hay parámetro aprobacion, mostrar todos los pedidos
@@ -278,8 +282,8 @@ class SupervisorPedidosController extends Controller
             $query->whereDate('fecha_de_creacion_de_orden', '<=', $request->fecha_hasta);
         }
 
-        // Ordenar por fecha descendente
-        $ordenes = $query->orderBy('fecha_de_creacion_de_orden', 'desc')
+        // Ordenar por número de pedido descendente
+        $ordenes = $query->orderBy('numero_pedido', 'desc')
                         ->paginate(15)
                         ->appends($request->query());
 

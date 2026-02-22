@@ -12,6 +12,9 @@
     </div>
 </div>
 
+<!-- Contenedor de dropdowns dinámicos (igual que en insumos) -->
+<div id="dropdowns-container" style="position: fixed; top: 0; left: 0; z-index: 999999; pointer-events: none;"></div>
+
 <!-- Modal para ver detalles del recibo -->
 <div id="modal-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9997; display: none; pointer-events: auto;" onclick="closeModalOverlay()"></div>
 
@@ -190,10 +193,8 @@ function verDetallesRecibo(reciboId) {
 
 // Función para abrir el modal de seguimiento
 function abrirModalSeguimiento(pedidoId) {
-    // Cerrar cualquier menú abierto
-    document.querySelectorAll('.action-menu').forEach(m => {
-        m.classList.remove('show', 'active');
-    });
+    // Cerrar cualquier dropdown abierto
+    closeDropdownRecibos();
     
     console.log('Abriendo seguimiento para el pedido:', pedidoId);
     
@@ -355,34 +356,6 @@ function abrirModalSeguimientoDirecto(pedidoId) {
     }
 }
 
-// Función para menú de acciones (similar a la de registros)
-document.addEventListener('click', function(e) {
-    // Manejo del botón de acción principal - SOLO si no fue manejado por el listener individual
-    if (e.target.closest('.action-view-btn')) {
-        // No hacer nada aquí, dejar que el listener individual lo maneje
-        return;
-    }
-    
-    // Cerrar menús al hacer clic fuera (excluyendo clicks en botones y menús)
-    if (!e.target.closest('.action-view-btn') && !e.target.closest('.action-menu')) {
-        document.querySelectorAll('.action-menu').forEach(m => {
-            m.classList.remove('show', 'active');
-            m.style.cssText = '';
-        });
-    }
-    
-    // Cerrar menú al hacer clic en una opción
-    if (e.target.closest('.action-menu-item')) {
-        // Cerrar todos los menús después de un pequeño delay para permitir la acción
-        setTimeout(() => {
-            document.querySelectorAll('.action-menu').forEach(m => {
-                m.classList.remove('show', 'active');
-                m.style.cssText = '';
-            });
-        }, 100);
-    }
-});
-
 // Función para cerrar el modal overlay
 function closeModalOverlay() {
     const modal = document.getElementById('modal-overlay');
@@ -391,137 +364,148 @@ function closeModalOverlay() {
     }
 }
 
-// Ocultar el botón Volver específicamente en recibos-costura
+// Función global para cerrar todos los dropdowns de recibos-costura
+function closeDropdownRecibos() {
+    document.querySelectorAll('.dropdown-menu-recibos').forEach(menu => {
+        menu.style.display = 'none';
+        menu.style.pointerEvents = 'none';
+    });
+}
+
+/**
+ * Crear dropdown dinámico para recibos-costura (igual que crearDropdownVer en insumos)
+ * Se crea en #dropdowns-container con position:fixed para evitar overflow clipping
+ */
+function crearDropdownRecibos(button) {
+    const menuId = button.getAttribute('data-menu-id');
+    const pedidoId = button.getAttribute('data-pedido-id');
+    const prendaId = button.getAttribute('data-prenda-id');
+
+    // Verificar si ya existe
+    const existing = document.getElementById(menuId);
+    if (existing) return existing;
+
+    const container = document.getElementById('dropdowns-container');
+    if (!container) {
+        console.error('[RecibosDropdown] No se encontró #dropdowns-container');
+        return null;
+    }
+
+    const dropdown = document.createElement('div');
+    dropdown.id = menuId;
+    dropdown.className = 'dropdown-menu-recibos';
+    dropdown.style.cssText = `
+        position: fixed;
+        background: white;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        min-width: 180px;
+        display: none;
+        z-index: 999999;
+        overflow: visible;
+        pointer-events: auto;
+    `;
+
+    dropdown.innerHTML = `
+        <button onclick="openOrderDetailModalWithProcess(${pedidoId}, ${prendaId || 'null'}, 'COSTURA'); closeDropdownRecibos()" style="
+            width: 100%;
+            text-align: left;
+            padding: 0.875rem 1rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: #374151;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 500;
+        " onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='transparent'">
+            <i class="fas fa-eye" style="color: #3b82f6;"></i> Ver Detalles
+        </button>
+        <div style="height: 1px; background: #e5e7eb;"></div>
+        <button onclick="abrirModalSeguimiento(${pedidoId}); closeDropdownRecibos()" style="
+            width: 100%;
+            text-align: left;
+            padding: 0.875rem 1rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: #374151;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 500;
+        " onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='transparent'">
+            <i class="fas fa-tasks" style="color: #10b981;"></i> Seguimiento
+        </button>
+    `;
+
+    container.appendChild(dropdown);
+    return dropdown;
+}
+
+// Ocultar el botón Volver y activar dropdowns estilo insumos
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('[DOMContentLoaded] 📄 Inicializando menús de acción en recibos-costura');
-    
-    // Verificar si estamos en la vista de recibos-costura
+    console.log('[DOMContentLoaded] 📄 Inicializando dropdowns estilo insumos en recibos-costura');
+
     if (window.location.pathname.includes('/recibos-costura')) {
         const botonVolver = document.getElementById('backToPrendasBtn');
         if (botonVolver) {
             botonVolver.style.display = 'none';
             console.log('Botón Volver ocultado en recibos-costura');
         }
-        
-        // Verificar que los botones de acción existen
-        const botonesAccion = document.querySelectorAll('.action-view-btn');
-        console.log(`[Menu] Se encontraron ${botonesAccion.length} botones de acción`);
-        
-        const menus = document.querySelectorAll('.action-menu');
-        console.log(`[Menu] Se encontraron ${menus.length} menús de acción`);
-        
-        // Agregar listeners individuales para debugging
-        botonesAccion.forEach((btn, index) => {
-            const ordenId = btn.dataset.ordenId;
-            console.log(`[Menu] Botón ${index}: orden-id=${ordenId}`);
-            
-            btn.addEventListener('click', function(e) {
-                console.log(`[Menu] Click en botón para orden ${ordenId}`);
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // Buscar el menú específico
-                const menu = document.querySelector(`.action-menu[data-orden-id="${ordenId}"]`);
-                console.log(`[Menu] Menú encontrado:`, menu);
-                
-                if (menu) {
-                    // Cerrar otros menús
-                    document.querySelectorAll('.action-menu').forEach(m => {
-                        if (m !== menu) {
-                            m.classList.remove('show', 'active');
-                        }
-                    });
-                    
-                    // Toggle este menú
-                    const wasVisible = menu.classList.contains('show');
-                    console.log(`[Menu] Estado anterior del menú: ${wasVisible}`);
-                    
-                    if (!wasVisible) {
-                        // Abrir menú
-                        menu.classList.add('show');
-                        menu.classList.add('active');
-                        
-                        // Asegurar que el contenedor padre permita overflow
-                        const td = btn.closest('td');
-                        if (td) {
-                            td.style.overflow = 'visible';
-                        }
-                        
-                        // Aplicar estilos inline forzosamente (estilo contador - horizontal)
-                        menu.style.cssText = `
-                            position: absolute !important;
-                            top: 50% !important;
-                            left: 85px !important;
-                            transform: translateY(-50%) !important;
-                            background: white !important;
-                            border: 1px solid #e0e6ed !important;
-                            border-radius: 8px !important;
-                            box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.08) !important;
-                            z-index: 9999 !important;
-                            min-width: 180px !important;
-                            opacity: 1 !important;
-                            visibility: visible !important;
-                            pointer-events: auto !important;
-                            display: block !important;
-                        `;
-                        
-                        // Forzar estilos en los items del menú también
-                        const menuItems = menu.querySelectorAll('.action-menu-item');
-                        menuItems.forEach(item => {
-                            item.style.cssText = `
-                                display: flex !important;
-                                align-items: center !important;
-                                gap: 10px !important;
-                                padding: 12px 16px !important;
-                                color: #2c3e50 !important;
-                                text-decoration: none !important;
-                                font-size: 14px !important;
-                                font-weight: 500 !important;
-                                border-bottom: 1px solid #e5e7eb !important;
-                                transition: all 0.2s ease !important;
-                                cursor: pointer !important;
-                                background: white !important;
-                            `;
-                        });
-                        
-                        // Ajustar posición si está fuera de la pantalla (estilo contador)
-                        setTimeout(() => {
-                            const rect = menu.getBoundingClientRect();
-                            const windowWidth = window.innerWidth;
-                            
-                            console.log(`[Menu] Posición del menú (estilo contador):`, {
-                                top: rect.top,
-                                left: rect.left,
-                                right: rect.right,
-                                bottom: rect.bottom,
-                                width: rect.width,
-                                height: rect.height
-                            });
-                            
-                            if (rect.right > windowWidth) {
-                                menu.style.left = 'auto';
-                                menu.style.right = '85px';
-                                console.log('[Menu] Ajustado posición a la izquierda (estilo contador)');
-                            }
-                        }, 10);
-                        
-                        console.log(`[Menu] Menú abierto para orden ${ordenId}`);
-                        console.log(`[Menu] Estilos aplicados:`, menu.style.cssText);
-                    } else {
-                        // Cerrar menú
-                        menu.classList.remove('show');
-                        menu.classList.remove('active');
-                        menu.style.cssText = '';
-                        console.log(`[Menu] Menú cerrado para orden ${ordenId}`);
-                    }
-                    
-                    console.log(`[Menu] Menú toggle para orden ${ordenId}: ${!wasVisible}`);
-                } else {
-                    console.warn(`[Menu] No se encontró menú para orden ${ordenId}`);
-                }
-            });
-        });
     }
+
+    // Delegación de clics para botones btn-ver-dropdown (igual que en insumos)
+    document.addEventListener('click', function(e) {
+        const btnVer = e.target.closest('.btn-ver-dropdown');
+
+        if (btnVer) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            console.log('[RecibosDropdown] Click en botón Ver');
+
+            // Cerrar todos los dropdowns abiertos primero
+            closeDropdownRecibos();
+
+            // Crear dropdown si no existe
+            const dropdown = crearDropdownRecibos(btnVer);
+            if (!dropdown) return;
+
+            // Posicionar debajo del botón usando getBoundingClientRect (position: fixed)
+            const rect = btnVer.getBoundingClientRect();
+            dropdown.style.top = (rect.bottom + 5) + 'px';
+            dropdown.style.left = rect.left + 'px';
+            dropdown.style.display = 'block';
+            dropdown.style.pointerEvents = 'auto';
+
+            // Ajustar si se sale de la pantalla por la derecha
+            setTimeout(() => {
+                const dropRect = dropdown.getBoundingClientRect();
+                if (dropRect.right > window.innerWidth) {
+                    dropdown.style.left = (window.innerWidth - dropRect.width - 10) + 'px';
+                }
+                // Ajustar si se sale por abajo
+                if (dropRect.bottom > window.innerHeight) {
+                    dropdown.style.top = (rect.top - dropRect.height - 5) + 'px';
+                }
+            }, 10);
+
+            console.log('[RecibosDropdown] Dropdown abierto');
+            return;
+        }
+
+        // Cerrar al hacer clic fuera
+        if (!e.target.closest('.dropdown-menu-recibos')) {
+            closeDropdownRecibos();
+        }
+    });
 });
 </script>
 @endpush

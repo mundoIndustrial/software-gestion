@@ -1202,10 +1202,11 @@ class RegistroOrdenController extends Controller
     public function recibosCostura(Request $request)
     {
         try {
-            // Obtener recibos de costura activos
+            // Obtener recibos de costura activos y aprobados (excluir pendientes de insumos)
             $recibosCostura = DB::table('consecutivos_recibos_pedidos')
                 ->where('tipo_recibo', 'COSTURA')
                 ->where('activo', 1)
+                ->where('estado', '!=', 'PENDIENTE_INSUMOS')
                 ->orderBy('consecutivo_actual', 'desc')
                 ->get();
 
@@ -1288,14 +1289,16 @@ class RegistroOrdenController extends Controller
                     'prenda_id' => $recibo->prenda_id,
                     'tipo_recibo' => $recibo->tipo_recibo,
                     'notas' => $recibo->notas,
+                    'estado' => $recibo->estado ?? 'PENDIENTE_INSUMOS',
+                    'area' => $recibo->area ?? 'Insumos',
                     'created_at' => $recibo->created_at,
                     'updated_at' => $recibo->updated_at,
-                    'dias_calculados' => $diasCalculados, // NUEVO: Cálculo de días
+                    'dias_calculados' => $diasCalculados,
                     'pedido_info' => $pedido ? [
                         'numero_pedido' => $pedido->numero_pedido,
                         'cliente' => $pedido->cliente,
                         'estado' => $pedido->estado,
-                        'area' => $areaProcesoReciente, // CAMBIADO: Usar proceso más reciente en lugar de $pedido->area
+                        'area' => $areaProcesoReciente,
                         'dia_de_entrega' => $pedido->dia_de_entrega,
                         'fecha_estimada_de_entrega' => $pedido->fecha_estimada_de_entrega ? $pedido->fecha_estimada_de_entrega->format('d/m/Y') : null,
                         'fecha_creacion_orden' => $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('Y-m-d H:i:s') : null,
@@ -1311,6 +1314,84 @@ class RegistroOrdenController extends Controller
         } catch (\Exception $e) {
             \Log::error('Error en recibosCostura: ' . $e->getMessage());
             return back()->with('error', 'Error al cargar los recibos de costura');
+        }
+    }
+    
+    /**
+     * Obtener datos de un recibo específico como JSON (para tiempo real)
+     */
+    public function getReciboJson($reciboId)
+    {
+        try {
+            $recibo = DB::table('consecutivos_recibos_pedidos')
+                ->where('id', $reciboId)
+                ->where('tipo_recibo', 'COSTURA')
+                ->where('activo', 1)
+                ->first();
+            
+            if (!$recibo) {
+                return response()->json(['success' => false, 'message' => 'Recibo no encontrado'], 404);
+            }
+            
+            $pedido = PedidoProduccion::find($recibo->pedido_produccion_id);
+            
+            // Calcular días
+            $diasCalculados = 0;
+            if ($pedido && $pedido->fecha_de_creacion_de_orden) {
+                try {
+                    $fechaInicio = $pedido->fecha_de_creacion_de_orden;
+                    $fechaFin = \Carbon\Carbon::now();
+                    $festivosArray = \App\Models\Festivo::pluck('fecha')->toArray();
+                    $festivosSet = [];
+                    foreach ($festivosArray as $f) {
+                        try { $festivosSet[\Carbon\Carbon::parse($f)->format('Y-m-d')] = true; } catch (\Exception $e) {}
+                    }
+                    $current = $fechaInicio->copy()->addDay();
+                    $totalDays = 0;
+                    $maxIterations = 365;
+                    $iterations = 0;
+                    while ($current <= $fechaFin && $iterations < $maxIterations) {
+                        $dateString = $current->format('Y-m-d');
+                        $isWeekend = $current->dayOfWeek === 0 || $current->dayOfWeek === 6;
+                        $isFestivo = isset($festivosSet[$dateString]);
+                        if (!$isWeekend && !$isFestivo) { $totalDays++; }
+                        $current->addDay();
+                        $iterations++;
+                    }
+                    $diasCalculados = max(0, $totalDays);
+                } catch (\Exception $e) {
+                    $diasCalculados = 0;
+                }
+            }
+            
+            // Obtener nombre primera prenda
+            $nombrePrenda = 'Sin prendas';
+            if ($pedido && $pedido->prendas && $pedido->prendas->count() > 0) {
+                $primeraPrenda = $pedido->prendas->first();
+                $nombrePrenda = $primeraPrenda->nombre_prenda ?? $primeraPrenda->nombre ?? 'Prenda';
+            }
+            
+            return response()->json([
+                'success' => true,
+                'recibo' => [
+                    'id' => $recibo->id,
+                    'consecutivo_actual' => $recibo->consecutivo_actual,
+                    'pedido_produccion_id' => $recibo->pedido_produccion_id,
+                    'prenda_id' => $recibo->prenda_id,
+                    'tipo_recibo' => $recibo->tipo_recibo,
+                    'estado' => $recibo->estado ?? 'PENDIENTE_INSUMOS',
+                    'area' => $recibo->area ?? 'Insumos',
+                    'dias_calculados' => $diasCalculados,
+                    'nombre_prenda' => $nombrePrenda,
+                    'cliente' => $pedido ? $pedido->cliente : '',
+                    'numero_pedido' => $pedido ? $pedido->numero_pedido : '',
+                    'fecha_creacion' => $pedido && $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('d/m/Y') : '-',
+                    'created_at' => $recibo->created_at,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en getReciboJson: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error interno'], 500);
         }
     }
     

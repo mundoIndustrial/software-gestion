@@ -589,15 +589,39 @@ export class Formatters {
             Object.entries(tallas).forEach(([key, value]) => {
                 console.log(`[Formatters._agregarTallasFormato]  Procesando: key=${key}, value=${value}, type=${typeof value}`);
                 
-                if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                if (typeof value === 'object' && value !== null) {
                     const genero = key.toLowerCase();
-                    Object.entries(value).forEach(([talla, datos]) => {
-                        if (genero === 'dama') {
-                            tallasDama[talla] = datos;
-                        } else if (genero === 'caballero') {
-                            tallasCalballero[talla] = datos;
+                    // Ignorar arrays vacíos pero procesar arrays con datos
+                    if (Array.isArray(value)) {
+                        if (value.length === 0) {
+                            console.log(`[Formatters._agregarTallasFormato]  Ignorando array vacío para género: ${genero}`);
+                            return; // Saltar arrays vacíos
                         }
-                    });
+                        // Procesar array con datos (formato antiguo)
+                        console.log(`[Formatters._agregarTallasFormato]  Procesando array con datos para género: ${genero}`);
+                        value.forEach(item => {
+                            if (typeof item === 'object' && item !== null) {
+                                const talla = item.talla || '';
+                                const cantidad = item.cantidad || 0;
+                                if (genero === 'dama') {
+                                    tallasDama[talla] = cantidad;
+                                } else if (genero === 'caballero') {
+                                    tallasCalballero[talla] = cantidad;
+                                }
+                            }
+                        });
+                    } 
+                    // Procesar objeto con datos
+                    else if (!Array.isArray(value)) {
+                        console.log(`[Formatters._agregarTallasFormato]  Procesando objeto para género: ${genero}`);
+                        Object.entries(value).forEach(([talla, datos]) => {
+                            if (genero === 'dama') {
+                                tallasDama[talla] = datos;
+                            } else if (genero === 'caballero') {
+                                tallasCalballero[talla] = datos;
+                            }
+                        });
+                    }
                 } 
                 else if (typeof value === 'number' || typeof value === 'string') {
                     if (key.includes('-')) {
@@ -627,7 +651,10 @@ export class Formatters {
                 .map(([talla, datos]) => {
                     // Si datos es un array de objetos con cantidad y color (nuevo formato)
                     if (Array.isArray(datos)) {
-                        return datos.map(d => `<span style="color: red;"><strong>${talla}: ${d.cantidad}-${d.color}</strong></span>`).join(', ');
+                        return datos.map(d => {
+                            const colorPart = (d.color && d.color !== 'Sin color') ? `-${d.color}` : '';
+                            return `<span style="color: red;"><strong>${talla}: ${d.cantidad}${colorPart}</strong></span>`;
+                        }).join(', ');
                     }
                     // Si es solo cantidad (formato antiguo)
                     else {
@@ -645,7 +672,10 @@ export class Formatters {
                 .map(([talla, datos]) => {
                     // Si datos es un array de objetos con cantidad y color (nuevo formato)
                     if (Array.isArray(datos)) {
-                        return datos.map(d => `<span style="color: red;"><strong>${talla}: ${d.cantidad}-${d.color}</strong></span>`).join(', ');
+                        return datos.map(d => {
+                            const colorPart = (d.color && d.color !== 'Sin color') ? `-${d.color}` : '';
+                            return `<span style="color: red;"><strong>${talla}: ${d.cantidad}${colorPart}</strong></span>`;
+                        }).join(', ');
                     }
                     // Si es solo cantidad (formato antiguo)
                     else {

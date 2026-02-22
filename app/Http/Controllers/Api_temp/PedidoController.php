@@ -579,6 +579,7 @@ class PedidoController extends Controller
                         ]);
                     }
                 }
+                unset($prenda); // CRITICAL: Romper referencia del foreach para evitar corrupción de datos
                 
                 // Validar que bodeguero tenga al menos UN proceso costura-bodega después del filtrado
                 $tieneProcesoCosturaBodega = false;
@@ -729,6 +730,7 @@ class PedidoController extends Controller
                         ]);
                     }
                 }
+                unset($prenda); // CRITICAL: Romper referencia del foreach para evitar corrupción de datos
             }
             
             // Mantener el ancho/metraje general por compatibilidad (opcional)
@@ -761,7 +763,9 @@ class PedidoController extends Controller
                                     'proceso_id' => $proceso['id'] ?? 'N/A',
                                     'tallas_keys' => array_keys($proceso['tallas']),
                                     'tallas_data' => $proceso['tallas'],
-                                    'caballero_data' => $proceso['tallas']['caballero'] ?? 'NO ENCONTRADO'
+                                    'caballero_data' => $proceso['tallas']['caballero'] ?? 'NO ENCONTRADO',
+                                    'caballero_type' => gettype($proceso['tallas']['caballero'] ?? null),
+                                    'caballero_is_array' => is_array($proceso['tallas']['caballero'] ?? null)
                                 ]);
                             }
                         }

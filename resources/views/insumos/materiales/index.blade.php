@@ -462,8 +462,8 @@
                                             @if($orden->estado === 'Pendiente' || $orden->estado === 'PENDIENTE_INSUMOS')
                                                 <button 
                                                     class="btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
-                                                    onclick="cambiarEstadoPedido('{{ $pedidoProduccionId }}', '{{ $orden->estado }}')"
-                                                    data-tooltip="Enviar a producción"
+                                                    onclick="cambiarEstadoRecibo('{{ $reciboId }}', '{{ $orden->consecutivo_actual }}')"
+                                                    data-tooltip="Enviar recibo a producción"
                                                 >
                                                     <i class="fas fa-paper-plane text-lg"></i>
                                                 </button>
@@ -1031,6 +1031,9 @@
     <x-orders-components.order-detail-modal />
 </div>
 
+<!-- Modal de Seguimiento del Pedido -->
+<x-orders-components.order-tracking-modal />
+
 {{-- Modal para ver insumos --}}
 <div id="insumosModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center" style="display: none; z-index: 10001; top: 0; left: 0; right: 0; bottom: 0;">
     <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto" style="z-index: 10002;">
@@ -1218,15 +1221,15 @@
     <div class="bg-white rounded-lg shadow-2xl" style="width: 380px; z-index: 10002;">
         <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-t-lg flex items-center gap-3">
             <i class="fas fa-industry text-2xl"></i>
-            <h2 class="text-base font-bold">Aprobar Pedido</h2>
+            <h2 class="text-base font-bold">Aprobar Recibo</h2>
         </div>
 
         <div class="p-5">
-            <p class="text-gray-700 mb-2 text-sm font-semibold">Pedido:</p>
+            <p class="text-gray-700 mb-2 text-sm font-semibold">Recibo N°:</p>
             <p class="text-2xl font-bold text-blue-600 mb-4" id="numeroPedidoConfirm"></p>
             
             <p class="text-gray-600 text-sm leading-relaxed mb-6">
-                ¿Aprobar este pedido para enviar a producción? Esta acción es definitiva.
+                ¿Aprobar este recibo para enviar a producción? Solo se aprobará este recibo individual.
             </p>
             
             <div class="flex gap-3 justify-end">
@@ -2537,15 +2540,24 @@
     });
     
     /**
-     * Envía el pedido a producción
+     * Envía un recibo individual a producción
+     */
+    function cambiarEstadoRecibo(reciboId, consecutivo) {
+        // Guardar el ID del recibo y su consecutivo en variables globales
+        window.reciboParaProduccion = reciboId;
+        window.consecutivoRecibo = consecutivo;
+        
+        // Mostrar el modal
+        document.getElementById('numeroPedidoConfirm').textContent = consecutivo;
+        document.getElementById('modalConfirmarProduccion').style.display = 'flex';
+    }
+
+    /**
+     * Mantener compatibilidad con llamadas anteriores
      */
     function cambiarEstadoPedido(numeroPedido, estadoActual) {
-        // Si el estado es "Pendiente" o "PENDIENTE_INSUMOS", enviar a producción (No iniciado)
         if (estadoActual.toLowerCase() === 'pendiente' || estadoActual === 'PENDIENTE_INSUMOS') {
-            // Guardar el número de pedido en una variable global
             window.pedidoParaProduccion = numeroPedido;
-            
-            // Mostrar el modal
             document.getElementById('numeroPedidoConfirm').textContent = numeroPedido;
             document.getElementById('modalConfirmarProduccion').style.display = 'flex';
         } else {
@@ -2558,23 +2570,35 @@
      */
     function cerrarModalConfirmarProduccion() {
         document.getElementById('modalConfirmarProduccion').style.display = 'none';
+        window.reciboParaProduccion = null;
+        window.consecutivoRecibo = null;
         window.pedidoParaProduccion = null;
     }
     
     /**
-     * Confirma el envío a producción
+     * Confirma el envío a producción (recibo individual o pedido completo)
      */
     function confirmarEnvioProduccion() {
-        const numeroPedido = window.pedidoParaProduccion;
-        if (!numeroPedido) return;
+        const reciboId = window.reciboParaProduccion;
+        const pedidoId = window.pedidoParaProduccion;
+        
+        if (!reciboId && !pedidoId) return;
         
         const proximoEstado = 'En Ejecución';
         
         // Mostrar loading overlay
         document.getElementById('loadingOverlay').classList.add('active');
         
+        // Determinar URL según si es recibo individual o pedido completo
+        let url;
+        if (reciboId) {
+            url = `/insumos/materiales/recibo/${reciboId}/cambiar-estado`;
+        } else {
+            url = `/insumos/materiales/${pedidoId}/cambiar-estado`;
+        }
+        
         // Enviar petición al servidor
-        fetch(`/insumos/materiales/${numeroPedido}/cambiar-estado`, {
+        fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -2592,14 +2616,12 @@
             if (data.success) {
                 cerrarModalConfirmarProduccion();
                 
-                // Mostrar mensaje mejorado con información de procesos
-                let mensaje = `Pedido aprobado correctamente. Estado: En Ejecución, Área: Corte`;
+                let mensaje = data.message || 'Recibo aprobado correctamente.';
                 if (data.procesos_creados > 0) {
-                    mensaje += `\n Se crearon ${data.procesos_creados} procesos automáticamente`;
+                    mensaje += `\nSe crearon ${data.procesos_creados} procesos automáticamente`;
                     
-                    // Mostrar detalles de procesos si están disponibles
                     if (data.detalles_procesos && data.detalles_procesos.length > 0) {
-                        mensaje += '\n\n Procesos creados:';
+                        mensaje += '\n\nProcesos creados:';
                         data.detalles_procesos.forEach((proceso, index) => {
                             mensaje += `\n   ${index + 1}. ${proceso}`;
                         });
@@ -2608,7 +2630,7 @@
                 
                 showToast(mensaje, 'success');
                 
-                // Recargar la página después de 2 segundos para dar tiempo de leer el mensaje
+                // Recargar la página después de 2 segundos
                 setTimeout(() => {
                     window.location.reload();
                 }, 2000);
@@ -2642,6 +2664,9 @@
 <!-- Image Gallery para mostrar fotos en el modal -->
 <script src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}"></script>
 <script src="{{ asset('js/insumos/pagination.js') }}"></script>
+
+<!-- Script para el modal de seguimiento -->
+<script src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}?v={{ time() }}"></script>
 
 <!-- Scripts para Dropdown de Ver Pedido -->
 <script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>

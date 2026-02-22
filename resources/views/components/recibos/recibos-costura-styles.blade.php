@@ -277,66 +277,40 @@
 }
 
 /* Estilos para botones de acción */
-/* ===== ACTION MENU STYLES (Estilo Contador) ===== */
-.action-view-btn {
+/* ===== DROPDOWN BUTTON STYLES (Estilo Insumos) ===== */
+.btn-ver-dropdown {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px !important;
-    height: 28px !important;
+    width: 32px !important;
+    height: 32px !important;
     border: 1px solid #e2e8f0;
     background: white;
     color: #64748b;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 11px !important;
+    font-size: 14px !important;
     transition: all 0.2s ease;
     position: relative;
     flex-shrink: 0;
+    margin: 0 auto;
 }
 
-.action-view-btn:hover {
+.btn-ver-dropdown:hover {
     background: #1e5ba8;
     color: white;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
 }
 
-.action-view-btn:active {
+.btn-ver-dropdown:active {
     transform: translateY(0);
 }
 
-.action-view-btn i {
+.btn-ver-dropdown i {
     display: flex;
     align-items: center;
     justify-content: center;
-}
-
-/* ===== ACTION MENU (Estilo Contador) ===== */
-.action-menu {
-    position: absolute;
-    top: 50%;
-    left: 85px;
-    transform: translateY(-50%);
-    background: white;
-    border: 1px solid #e0e6ed;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.08);
-    min-width: 180px;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: all 0.2s ease;
-    z-index: 9999;
-}
-
-.action-menu.show,
-.action-menu.active {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-    display: block !important;
-    z-index: 9999 !important;
 }
 
 .acciones-column {
@@ -344,34 +318,9 @@
     z-index: 1 !important;
 }
 
-.action-menu-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    color: #2c3e50;
-    text-decoration: none;
-    font-size: 11px !important;
-    font-weight: 500;
-    border-bottom: 1px solid #e5e7eb;
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
-
-.action-menu-item:last-child {
-    border-bottom: none;
-}
-
-.action-menu-item:hover {
-    background: #2b7ec9;
-    color: #1e5ba8;
-    padding-left: 20px;
-}
-
-.action-menu-item i {
-    font-size: 16px;
-    width: 20px;
-    text-align: center;
+/* ===== DROPDOWN MENU (creado dinámicamente en #dropdowns-container) ===== */
+.dropdown-menu-recibos button:hover {
+    background: #f0f9ff !important;
 }
 
 /* Ocultar botón Volver en recibos-costura - selector más específico */
@@ -412,7 +361,7 @@ body #orderTrackingModal .tracking-back-btn {
     justify-content: center !important;
     opacity: 1 !important;
     visibility: visible !important;
-    z-index: 9998 !important;
+    z-index: 9999999 !important;
 }
 
 #orderTrackingModal.show .tracking-modal-content {
@@ -430,102 +379,6 @@ body #orderTrackingModal .tracking-back-btn {
     max-height: 95vh !important;
 }
 
-/* Acciones - Basado en el ejemplo de registros */
-.acciones-column {
-    position: relative;
-    text-align: center; /* Centrar el botón sin flex */
-}
 
-.action-view-btn {
-    width: 32px;
-    height: 32px;
-    border: 1px solid #e2e8f0;
-    background: white;
-    color: #64748b;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.2s ease;
-    position: relative;
-    flex-shrink: 0;
-}
-
-.action-view-btn:hover {
-    background: #1e5ba8;
-    color: white;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
-}
-
-.action-view-btn:active {
-    transform: translateY(0);
-}
-
-.action-view-btn i {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.action-menu {
-    position: absolute;
-    top: 50%;
-    left: 85px;
-    transform: translateY(-50%);
-    background: white;
-    border: 1px solid #e0e6ed;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.08);
-    min-width: 180px;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: all 0.2s ease;
-    z-index: 9999;
-}
-
-.action-menu.show,
-.action-menu.active {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-    display: block !important;
-    z-index: 9999 !important;
-}
-
-.acciones-column {
-    position: relative !important;
-    z-index: 1 !important;
-}
-
-.action-menu-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    color: #2c3e50;
-    text-decoration: none;
-    font-size: 11px !important;
-    font-weight: 500;
-    border-bottom: 1px solid #e5e7eb;
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
-
-.action-menu-item:last-child {
-    border-bottom: none;
-}
-
-.action-menu-item:hover {
-    background: #2b7ec9;
-    color: #1e5ba8;
-    padding-left: 20px;
-}
-
-.action-menu-item i {
-    font-size: 16px;
-    width: 20px;
-    text-align: center;
-}
 </style>
 @endpush

@@ -37,45 +37,49 @@
                     >
                         <!-- Acciones -->
                         <td class="acciones-column" style="text-align: center; position: relative;">
-                            <button class="action-view-btn" title="Ver detalles" data-orden-id="{{ $recibo['id'] }}">
+                            <button class="btn-ver-dropdown" 
+                                title="Ver Opciones" 
+                                data-menu-id="menu-recibo-{{ $recibo['id'] }}"
+                                data-pedido-id="{{ $recibo['pedido_produccion_id'] ?? '' }}"
+                                data-prenda-id="{{ $recibo['prenda_id'] ?? '' }}">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            <div class="action-menu" data-orden-id="{{ $recibo['id'] }}">
-                                <a href="#" class="action-menu-item" data-action="detalle" onclick="openOrderDetailModalWithProcess({{ $recibo['pedido_produccion_id'] }}, {{ $recibo['prenda_id'] }}, 'COSTURA')">
-                                    <i class="fas fa-eye"></i>
-                                    <span>Ver Detalles</span>
-                                </a>
-                                <a href="#" class="action-menu-item" data-action="seguimiento" onclick="abrirModalSeguimiento({{ $recibo['pedido_produccion_id'] }})">
-                                    <i class="fas fa-tasks"></i>
-                                    <span>Seguimiento</span>
-                                </a>
-                            </div>
                         </td>
                         
-                        <!-- Estado (Badge) -->
+                        <!-- Estado del Recibo (Badge) -->
                         <td>
-                            @if($recibo['pedido_info'])
-                                <span class="badge bg-info">
-                                    {{ $recibo['pedido_info']['estado'] }}
-                                </span>
-                            @else
-                                <span class="badge bg-secondary">
-                                    Sin estado
-                                </span>
-                            @endif
+                            @php
+                                $estadoRecibo = $recibo['estado'] ?? 'PENDIENTE_INSUMOS';
+                                $badgeClass = 'bg-secondary';
+                                $estadoTexto = $estadoRecibo;
+                                if ($estadoRecibo === 'En Ejecución') {
+                                    $badgeClass = 'bg-primary';
+                                } elseif ($estadoRecibo === 'No iniciado') {
+                                    $badgeClass = 'bg-warning';
+                                } elseif ($estadoRecibo === 'PENDIENTE_INSUMOS') {
+                                    $badgeClass = 'bg-info';
+                                    $estadoTexto = 'Pendiente Insumos';
+                                }
+                            @endphp
+                            <span class="badge {{ $badgeClass }}">
+                                {{ $estadoTexto }}
+                            </span>
                         </td>
                         
-                        <!-- Área -->
+                        <!-- Área del Recibo -->
                         <td>
-                            @if($recibo['pedido_info'])
-                                <span class="badge bg-secondary">
-                                    {{ $recibo['pedido_info']['area'] }}
-                                </span>
-                            @else
-                                <span class="badge bg-secondary">
-                                    Sin área
-                                </span>
-                            @endif
+                            @php
+                                $areaRecibo = $recibo['area'] ?? 'Insumos';
+                                $areaBadge = 'bg-secondary';
+                                if ($areaRecibo === 'Corte') {
+                                    $areaBadge = 'bg-success';
+                                } elseif ($areaRecibo === 'Insumos') {
+                                    $areaBadge = 'bg-info';
+                                }
+                            @endphp
+                            <span class="badge {{ $areaBadge }}">
+                                {{ $areaRecibo }}
+                            </span>
                         </td>
                         
                         <!-- Total de días -->

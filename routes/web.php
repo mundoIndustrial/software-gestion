@@ -1418,6 +1418,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     
     // Rutas para recibos de costura
     Route::get('/recibos-costura', [RegistroOrdenController::class, 'recibosCostura'])->name('registros.recibos-costura');
+    Route::get('/recibos-costura/recibo/{reciboId}', [RegistroOrdenController::class, 'getReciboJson'])->name('registros.recibo-json');
     
     // Rutas con parámetros {pedido} - IMPORTANTE: rutas más específicas PRIMERO
     Route::get('/registros/{id}/recibos-datos', [RegistroOrdenQueryController::class, 'getRecibosDatos'])->name('registros.recibos-datos');
@@ -2192,6 +2193,7 @@ Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.
     Route::get('/api/materiales/{pedido}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerMateriales'])->name('api.materiales');
     Route::get('/api/filtros/{column}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerValoresFiltro'])->name('api.filtros');
     Route::post('/materiales/{numeroPedido}/cambiar-estado', [\App\Http\Controllers\Insumos\InsumosController::class, 'cambiarEstado'])->name('materiales.cambiar-estado');
+    Route::post('/materiales/recibo/{reciboId}/cambiar-estado', [\App\Http\Controllers\Insumos\InsumosController::class, 'cambiarEstadoRecibo'])->name('materiales.recibo.cambiar-estado');
     Route::get('/materiales/recibos-costura', [\App\Infrastructure\Http\Controllers\RegistroOrdenController::class, 'recibosCostura'])->name('materiales.recibos-costura');
     Route::get('/test', function () {
         return view('insumos.test');
