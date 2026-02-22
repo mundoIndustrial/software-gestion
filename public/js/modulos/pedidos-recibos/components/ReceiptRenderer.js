@@ -25,6 +25,9 @@ export class ReceiptRenderer {
         // Llenar descripción de la prenda
         this._llenarDescripcion(prendaData, recibo, tipoProceso);
 
+        // Actualizar ancho y metraje para esta prenda
+        this._actualizarAnchoMetraje(prendaData);
+
         // Guardar datos en estado
         modalManager.setState({
             prendaPedidoId: prendaData.prenda_pedido_id || prendaData.id,
@@ -34,6 +37,30 @@ export class ReceiptRenderer {
         });
 
 
+    }
+
+    /**
+     * Actualiza los valores de ancho y metraje para la prenda actual
+     */
+    static _actualizarAnchoMetraje(prendaData) {
+        const anchoSpan = document.getElementById('ancho-valor');
+        const metrajeSpan = document.getElementById('metraje-valor');
+
+        if (anchoSpan && metrajeSpan) {
+            if (prendaData.ancho_metraje && (prendaData.ancho_metraje.ancho || prendaData.ancho_metraje.metraje)) {
+                anchoSpan.textContent = prendaData.ancho_metraje.ancho + ' m';
+                metrajeSpan.textContent = prendaData.ancho_metraje.metraje + ' m';
+                console.log(' [ReceiptRenderer] Ancho/Metraje actualizado:', {
+                    prenda: prendaData.nombre,
+                    ancho: prendaData.ancho_metraje.ancho,
+                    metraje: prendaData.ancho_metraje.metraje
+                });
+            } else {
+                anchoSpan.textContent = '--';
+                metrajeSpan.textContent = '--';
+                console.log(' [ReceiptRenderer] Sin datos de ancho/metraje para prenda:', prendaData.nombre);
+            }
+        }
     }
 
     /**

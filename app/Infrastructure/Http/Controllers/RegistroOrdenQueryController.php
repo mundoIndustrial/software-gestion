@@ -1816,6 +1816,20 @@ class RegistroOrdenQueryController extends Controller
                     ];
                 }
 
+                // Obtener ancho y metraje para esta prenda específica
+                $anchoMetrajePrenda = \App\Models\PedidoAnchoMetraje::where('pedido_produccion_id', $pedidoModel->id)
+                    ->where('prenda_pedido_id', $prenda->id)
+                    ->first();
+                
+                $anchoMetrajeData = null;
+                if ($anchoMetrajePrenda) {
+                    $anchoMetrajeData = [
+                        'ancho' => $anchoMetrajePrenda->ancho,
+                        'metraje' => $anchoMetrajePrenda->metraje,
+                        'prenda_id' => $anchoMetrajePrenda->prenda_pedido_id
+                    ];
+                }
+
                 $prendasConSeguimiento[] = [
                     'id' => $prenda->id,
                     'nombre_prenda' => $prenda->nombre_prenda,
@@ -1831,6 +1845,7 @@ class RegistroOrdenQueryController extends Controller
                     'total_variantes' => $prenda->variantes->count(),
                     'ultimo_proceso_area' => $ultimoProcesoArea, // Área del proceso más reciente
                     'ultimo_recibo_numero' => $ultimoReciboNumero, // Número de recibo más reciente
+                    'ancho_metraje' => $anchoMetrajeData,
                 ];
             }
             

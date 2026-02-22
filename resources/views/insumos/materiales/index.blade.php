@@ -445,7 +445,7 @@
                                             {{-- Botón Materiales --}}
                                             <button 
                                                 class="btn-tooltip p-2 text-green-600 hover:bg-green-50 rounded transition"
-                                                onclick="abrirModalInsumos('{{ $pedidoProduccionId }}')"
+                                                onclick="abrirModalInsumos('{{ $pedidoProduccionId }}', '{{ $orden->prenda_id ?? '' }}')"
                                                 data-tooltip="Gestionar materiales"
                                             >
                                                 <i class="fas fa-box text-lg"></i>
@@ -453,7 +453,7 @@
                                             {{-- Botón Ancho y Metraje --}}
                                             <button 
                                                 class="btn-tooltip p-2 text-orange-600 hover:bg-orange-50 rounded transition"
-                                                onclick="abrirModalAnchoMetraje('{{ $pedidoProduccionId }}')"
+                                                onclick="abrirModalAnchoMetraje('{{ $pedidoProduccionId }}', '{{ $orden->prenda_id }}')"
                                                 data-tooltip="Ingresar ancho y metraje"
                                             >
                                                 <i class="fas fa-ruler text-lg"></i>
@@ -1044,6 +1044,8 @@
                     Insumos de la Orden
                 </h2>
                 <p class="text-blue-100 text-sm">Pedido: <span id="modalPedido" class="font-bold"></span></p>
+                <p class="text-blue-100 text-sm">Prenda: <span id="modalPrendaNombre" class="font-bold"></span></p>
+                <input type="hidden" id="modalPrendaId" value="">
             </div>
             <button onclick="cerrarModalInsumos()" class="text-white hover:bg-blue-600 rounded-full p-2 transition">
                 <i class="fas fa-times text-xl"></i>
@@ -1163,16 +1165,6 @@
         </div>
         <div class="p-6 space-y-6">
             <div>
-                <label class="block text-base font-bold text-gray-800 mb-2">Prenda:</label>
-                <select 
-                    id="prendaSelect" 
-                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                    onchange="onPrendaSeleccionada()"
-                >
-                    <option value="">Seleccione una prenda...</option>
-                </select>
-            </div>
-            <div>
                 <label class="block text-base font-bold text-gray-800 mb-2">Ancho (m):</label>
                 <input 
                     type="number" 
@@ -1256,135 +1248,44 @@
      */
 
     /**
-     * Abre el modal de Ancho y Metraje para una orden
+     * Abre el modal de Ancho y Metraje para una prenda específica
      */
-    function abrirModalAnchoMetraje(pedido) {
+    function abrirModalAnchoMetraje(pedido, prendaId) {
         const modal = document.getElementById('modalAnchoMetraje');
         modal.style.display = 'flex';
         
         // Establecer el pedido
         document.getElementById('anchoMetrajePedido').textContent = pedido;
         
-        // Guardar el pedido en el modal para usarlo después
+        // Guardar pedido y prenda en el modal para usarlos después
         modal.dataset.pedido = pedido;
+        modal.dataset.prendaId = prendaId;
 
-        // Cargar las prendas del pedido
-        cargarPrendasDelPedido(pedido);
-
-        // Detectar automáticamente la prenda seleccionada actualmente
-        let prendaIdSeleccionada = null;
-        
-        // 1. Verificar si hay un ReceiptManager con prenda seleccionada
-        if (window.receiptManager && window.receiptManager.prendasIndex !== null) {
-            const prendasIndex = window.receiptManager.prendasIndex;
-            const datosFactura = window.receiptManager.datosFactura;
-            
-            if (datosFactura && datosFactura.prendas && datosFactura.prendas[prendasIndex]) {
-                const prendaSeleccionada = datosFactura.prendas[prendasIndex];
-                prendaIdSeleccionada = prendaSeleccionada.id;
-                
-                console.log('[abrirModalAnchoMetraje] Prenda detectada desde ReceiptManager:', {
-                    prendasIndex: prendasIndex,
-                    prendaNombre: prendaSeleccionada.nombre,
-                    prendaId: prendaIdSeleccionada
-                });
-            }
-        }
-        
-        // 2. Esperar a que se carguen las prendas y luego seleccionar la prenda detectada
-        setTimeout(() => {
-            if (prendaIdSeleccionada) {
-                const select = document.getElementById('prendaSelect');
-                if (select.querySelector(`option[value="${prendaIdSeleccionada}"]`)) {
-                    select.value = prendaIdSeleccionada;
-                    console.log('[abrirModalAnchoMetraje] Prenda seleccionada automáticamente:', prendaIdSeleccionada);
-                    
-                    // Cargar los datos de esta prenda automáticamente
-                    onPrendaSeleccionada();
-                } else {
-                    console.warn('[abrirModalAnchoMetraje] No se encontró la prenda con ID:', prendaIdSeleccionada);
-                    // Limpiar inputs si no se encuentra la prenda
-                    document.getElementById('anchoInput').value = '';
-                    document.getElementById('metrajeInput').value = '';
-                }
-            } else {
-                // Si no hay prenda seleccionada, limpiar inputs
-                document.getElementById('anchoInput').value = '';
-                document.getElementById('metrajeInput').value = '';
-                console.log('[abrirModalAnchoMetraje] No hay prenda seleccionada, mostrando modal vacío');
-            }
-        }, 500); // Esperar a que se cargue el selector de prendas
-    }
-
-    /**
-     * Carga las prendas del pedido en el selector
-     */
-    function cargarPrendasDelPedido(pedido) {
-        fetch(`/insumos/materiales/${pedido}/obtener-prendas`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.prendas) {
-                    const select = document.getElementById('prendaSelect');
-                    select.innerHTML = '<option value="">Seleccione una prenda...</option>';
-                    
-                    data.prendas.forEach(prenda => {
-                        const option = document.createElement('option');
-                        option.value = prenda.id;
-                        option.textContent = `${prenda.nombre_prenda} - ${prenda.descripcion || ''}`;
-                        select.appendChild(option);
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error al cargar prendas del pedido:', error);
-            });
-    }
-
-    /**
-     * Se ejecuta cuando se selecciona una prenda
-     */
-    function onPrendaSeleccionada() {
-        const prendaId = document.getElementById('prendaSelect').value;
-        
-        // Primero limpiar siempre los campos para evitar mostrar datos de la prenda anterior
+        // Limpiar inputs
         document.getElementById('anchoInput').value = '';
         document.getElementById('metrajeInput').value = '';
-        
+
+        console.log('[abrirModalAnchoMetraje] Abriendo modal para pedido:', pedido, 'prenda:', prendaId);
+
+        // Cargar datos de ancho/metraje para esta prenda específica
         if (prendaId) {
-            // Cargar datos de ancho/metraje para esta prenda específica
-            const pedido = document.getElementById('modalAnchoMetraje').dataset.pedido;
-            console.log(`[onPrendaSeleccionada] Cargando datos para prenda ${prendaId} del pedido ${pedido}`);
-            
             fetch(`/insumos/materiales/${pedido}/obtener-ancho-metraje-prenda/${prendaId}`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log(`[onPrendaSeleccionada] Respuesta recibida:`, data);
+                    console.log('[abrirModalAnchoMetraje] Datos cargados:', data);
                     
                     if (data.success && data.data) {
-                        // Solo establecer valores si existen datos guardados
                         if (data.data.ancho) {
                             document.getElementById('anchoInput').value = data.data.ancho;
-                            console.log(`[onPrendaSeleccionada] Ancho cargado: ${data.data.ancho}`);
                         }
                         if (data.data.metraje) {
                             document.getElementById('metrajeInput').value = data.data.metraje;
-                            console.log(`[onPrendaSeleccionada] Metraje cargado: ${data.data.metraje}`);
                         }
-                        
-                        if (!data.data.ancho && !data.data.metraje) {
-                            console.log(`[onPrendaSeleccionada] La prenda ${prendaId} no tiene datos guardados, campos permanecen vacíos`);
-                        }
-                    } else {
-                        console.log(`[onPrendaSeleccionada] La prenda ${prendaId} no tiene datos guardados o ocurrió un error`);
-                        // Los campos ya están limpios, no hacer nada más
                     }
                 })
                 .catch(error => {
-                    console.error('Error al cargar datos de ancho/metraje de la prenda:', error);
-                    // Los campos ya están limpios, no hacer nada más
+                    console.error('[abrirModalAnchoMetraje] Error al cargar datos:', error);
                 });
-        } else {
-            console.log('[onPrendaSeleccionada] No hay prenda seleccionada, campos limpiados');
         }
     }
 
@@ -1406,8 +1307,9 @@
     function guardarAnchoMetraje() {
         const ancho = parseFloat(document.getElementById('anchoInput').value);
         const metraje = parseFloat(document.getElementById('metrajeInput').value);
-        const prendaId = document.getElementById('prendaSelect').value;
-        const pedido = document.getElementById('anchoMetrajePedido').textContent;
+        const modal = document.getElementById('modalAnchoMetraje');
+        const prendaId = modal.dataset.prendaId;  // Obtener prenda_id del modal
+        const pedido = modal.dataset.pedido;  // Obtener pedido del modal
         
         // Validar que los campos estén completos
         if (!ancho || isNaN(ancho) || ancho <= 0) {
@@ -1421,7 +1323,7 @@
         }
         
         if (!prendaId) {
-            showToast('Por favor selecciona una prenda', 'warning');
+            showToast('Error: No se encontró la información de la prenda', 'error');
             return;
         }
         
@@ -1458,7 +1360,6 @@
                 // Limpiar los inputs
                 document.getElementById('anchoInput').value = '';
                 document.getElementById('metrajeInput').value = '';
-                document.getElementById('prendaSelect').value = '';
                 
                 // Cerrar el modal
                 setTimeout(() => {
@@ -1523,9 +1424,9 @@
     }
 
     /**
-     * Abre el modal de insumos para una orden
+     * Abre el modal de insumos para una orden y prenda específica
      */
-    function abrirModalInsumos(pedido) {
+    function abrirModalInsumos(pedido, prendaId) {
         // Mostrar el modal
         const modal = document.getElementById('insumosModal');
         modal.style.display = 'flex';
@@ -1536,13 +1437,27 @@
             mainContent.removeAttribute('aria-hidden');
         }
 
-        // Establecer el pedido
+        // Establecer el pedido y prenda
         document.getElementById('modalPedido').textContent = pedido;
+        document.getElementById('modalPrendaId').value = prendaId || '';
+        document.getElementById('modalPrendaNombre').textContent = prendaId ? `Cargando...` : 'General';
 
-        // Cargar los insumos de la orden
-        fetch(`/insumos/api/materiales/${pedido}`)
+        // Construir URL con prenda_id si existe
+        let url = `/insumos/api/materiales/${pedido}`;
+        if (prendaId) {
+            url += `?prenda_id=${prendaId}`;
+        }
+
+        // Cargar los insumos de la orden filtrados por prenda
+        fetch(url)
             .then(response => response.json())
             .then(data => {
+                // Actualizar nombre de prenda si viene en la respuesta
+                if (data.nombre_prenda) {
+                    document.getElementById('modalPrendaNombre').textContent = data.nombre_prenda;
+                } else if (prendaId) {
+                    document.getElementById('modalPrendaNombre').textContent = `Prenda #${prendaId}`;
+                }
                 llenarTablaInsumos(data.materiales || []);
             })
             .catch(error => {
@@ -2114,6 +2029,7 @@
      */
     function guardarInsumosModal() {
         const pedido = document.getElementById('modalPedido').textContent;
+        const prendaId = document.getElementById('modalPrendaId').value;
         const materiales = [];
         
         // Recopilar todos los materiales del modal
@@ -2168,7 +2084,7 @@
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
             },
-            body: JSON.stringify({ materiales }),
+            body: JSON.stringify({ materiales, prenda_id: prendaId || null }),
         })
         .then(response => response.json())
         .then(data => {

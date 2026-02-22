@@ -15,6 +15,7 @@ class MaterialesOrdenInsumos extends Model
         'fecha_llegada',
         'recibido',
         'numero_pedido',
+        'prenda_id',
         'fecha_orden',
         'fecha_pago',
         'fecha_despacho',
@@ -39,6 +40,14 @@ class MaterialesOrdenInsumos extends Model
     public function pedido()
     {
         return $this->belongsTo(PedidoProduccion::class, 'numero_pedido', 'numero_pedido');
+    }
+
+    /**
+     * Relación con la prenda del pedido
+     */
+    public function prenda()
+    {
+        return $this->belongsTo(PrendaPedido::class, 'prenda_id');
     }
 
     /**

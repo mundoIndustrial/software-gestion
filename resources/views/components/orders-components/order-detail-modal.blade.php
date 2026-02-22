@@ -3,7 +3,7 @@
 /* Estilos específicos para ancho y metraje */
 .order-ancho-metraje {
     position: absolute !important;
-    top: 570px !important;
+    top: 520px !important;
     left: 30px !important;
     right: 30px !important;
     padding: 8px !important;

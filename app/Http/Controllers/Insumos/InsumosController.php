@@ -496,7 +496,10 @@ class InsumosController extends Controller
                 'materiales.*.fecha_despacho' => 'nullable|date',
                 'materiales.*.observaciones' => 'nullable|string',
                 'materiales.*.recibido' => 'boolean',
+                'prenda_id' => 'nullable|integer|exists:prendas_pedido,id',
             ]);
+            
+            $prendaId = $validated['prenda_id'] ?? null;
             
             // Si materiales no viene en el request, usar array vacío
             if (!isset($validated['materiales'])) {
@@ -518,12 +521,18 @@ class InsumosController extends Controller
                 
                 if ($isRecibido) {
                     // Guardar/actualizar si recibido es true
+                    $matchCriteria = [
+                        'numero_pedido' => $orden->numero_pedido,
+                        'nombre_material' => $material['nombre'],
+                    ];
+                    if ($prendaId) {
+                        $matchCriteria['prenda_id'] = $prendaId;
+                    }
+                    
                     $result = MaterialesOrdenInsumos::updateOrCreate(
+                        $matchCriteria,
                         [
-                            'numero_pedido' => $orden->numero_pedido,
-                            'nombre_material' => $material['nombre'],
-                        ],
-                        [
+                            'prenda_id' => $prendaId,
                             'fecha_orden' => $material['fecha_orden'] ?? null,
                             'fecha_pedido' => $material['fecha_pedido'] ?? null,
                             'fecha_pago' => $material['fecha_pago'] ?? null,
@@ -534,13 +543,18 @@ class InsumosController extends Controller
                         ]
                     );
                     $materialesGuardados++;
-                    \Log::info(" Material guardado: {$material['nombre']}, ID: {$result->id}, Fecha Pedido: {$material['fecha_pedido']}, Fecha Llegada: {$material['fecha_llegada']}");
+                    \Log::info(" Material guardado: {$material['nombre']}, ID: {$result->id}, Prenda: {$prendaId}, Fecha Pedido: {$material['fecha_pedido']}, Fecha Llegada: {$material['fecha_llegada']}");
                 } else {
                     // Eliminar si recibido es false
-                    $deleted = MaterialesOrdenInsumos::where([
+                    $deleteCriteria = [
                         'numero_pedido' => $orden->numero_pedido,
                         'nombre_material' => $material['nombre'],
-                    ])->delete();
+                    ];
+                    if ($prendaId) {
+                        $deleteCriteria['prenda_id'] = $prendaId;
+                    }
+                    
+                    $deleted = MaterialesOrdenInsumos::where($deleteCriteria)->delete();
                     
                     if ($deleted > 0) {
                         $materialesEliminados++;
@@ -646,8 +660,22 @@ class InsumosController extends Controller
             // Validar que el pedido existe
             PedidoProduccion::where('numero_pedido', $pedido)->firstOrFail();
             
-            // Obtener materiales guardados usando numero_pedido
-            $materiales = MaterialesOrdenInsumos::where('numero_pedido', $pedido)->get();
+            // Obtener materiales guardados usando numero_pedido, filtrados por prenda si se envía
+            $query = MaterialesOrdenInsumos::where('numero_pedido', $pedido);
+            
+            $prendaId = request('prenda_id');
+            if ($prendaId) {
+                $query->where('prenda_id', $prendaId);
+            }
+            
+            $materiales = $query->get();
+            
+            // Obtener nombre de la prenda si se filtró por prenda_id
+            $nombrePrenda = null;
+            if ($prendaId) {
+                $prenda = \App\Models\PrendaPedido::find($prendaId);
+                $nombrePrenda = $prenda ? $prenda->nombre_prenda : null;
+            }
             
             // Transformar los datos para la respuesta
             $materialesTransformados = $materiales->map(function($material) {
@@ -655,6 +683,7 @@ class InsumosController extends Controller
                     'id' => $material->id,
                     'nombre_material' => $material->nombre_material,
                     'recibido' => $material->recibido,
+                    'prenda_id' => $material->prenda_id,
                     'fecha_orden' => $material->fecha_orden ? $material->fecha_orden->format('Y-m-d') : null,
                     'fecha_pedido' => $material->fecha_pedido ? $material->fecha_pedido->format('Y-m-d') : null,
                     'fecha_pago' => $material->fecha_pago ? $material->fecha_pago->format('Y-m-d') : null,
@@ -668,6 +697,7 @@ class InsumosController extends Controller
             return response()->json([
                 'success' => true,
                 'materiales' => $materialesTransformados,
+                'nombre_prenda' => $nombrePrenda,
             ]);
         } catch (\Exception $e) {
             \Log::error('Error al obtener materiales: ' . $e->getMessage(), [
@@ -1247,8 +1277,10 @@ class InsumosController extends Controller
             $user = Auth::user();
             $this->verificarRolInsumos($user);
             
-            // Buscar el pedido por número para obtener el ID
-            $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+            // Buscar el pedido por ID primero (el frontend envía pedido_produccion_id),
+            // luego por numero_pedido como fallback
+            $pedido = PedidoProduccion::find($numeroPedido)
+                ?? PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
             
             // Buscar si ya existe un registro para esta prenda
             $anchoMetraje = \App\Models\PedidoAnchoMetraje::where('pedido_produccion_id', $pedido->id)
@@ -1296,35 +1328,24 @@ class InsumosController extends Controller
                 'metraje' => 'required|numeric|min:0'
             ]);
             
-            // Buscar el pedido por número para obtener el ID
-            $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+            // Buscar el pedido por ID primero (el frontend envía pedido_produccion_id),
+            // luego por numero_pedido como fallback
+            $pedido = PedidoProduccion::find($numeroPedido)
+                ?? PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
             
-            // Buscar si ya existe un registro para esta prenda
-            $anchoMetraje = \App\Models\PedidoAnchoMetraje::where('pedido_produccion_id', $pedido->id)
-                ->where('prenda_pedido_id', $validated['prenda_id'])
-                ->first();
-            
-            if ($anchoMetraje) {
-                // Actualizar registro existente
-                $anchoMetraje->update([
-                    'ancho' => $validated['ancho'],
-                    'metraje' => $validated['metraje'],
-                    'actualizado_por' => $user->id,
-                    'updated_at' => now()
-                ]);
-            } else {
-                // Crear nuevo registro
-                $anchoMetraje = \App\Models\PedidoAnchoMetraje::create([
+            // Usar updateOrCreate para evitar duplicados por constraint unique
+            $anchoMetraje = \App\Models\PedidoAnchoMetraje::updateOrCreate(
+                [
                     'pedido_produccion_id' => $pedido->id,
                     'prenda_pedido_id' => $validated['prenda_id'],
+                ],
+                [
                     'ancho' => $validated['ancho'],
                     'metraje' => $validated['metraje'],
                     'creado_por' => $user->id,
                     'actualizado_por' => $user->id,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
-            }
+                ]
+            );
             
             \Log::info("Ancho y metraje guardados para pedido {$numeroPedido}, prenda {$validated['prenda_id']}: {$validated['ancho']}m x {$validated['metraje']}m", [
                 'usuario_id' => $user->id,
