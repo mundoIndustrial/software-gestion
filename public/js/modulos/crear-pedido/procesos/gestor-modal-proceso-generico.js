@@ -98,20 +98,11 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
         console.log(`🔢 [abrirModalProcesoGenerico] CREACIÓN: Índices usados=${[...indicesUsados]}, index asignado=${window.procesoActualIndex} para ${tipoProceso}`);
     }
     
-    // 🔴 CORRECCIÓN: Limpiar el storage SOLO si es un proceso completamente nuevo
-    // Esto evita perder imágenes de procesos que se están editando
+    // 🔴 CORRECCIÓN CRÍTICA: Siempre limpiar el storage en CREACIÓN de proceso nuevo
+    // Esto evita contaminación de imágenes de procesos anteriores
     if (window.universalImagenesStorage && !esEdicion && window.procesoActualIndex !== undefined) {
-        const imagenesExistentes = window.universalImagenesStorage.obtenerImagenes('procesos', window.procesoActualIndex);
-        
-        // Limpiar solo si no hay imágenes o si es un índice recién asignado
-        if (imagenesExistentes.length === 0) {
-            console.log(`[abrirModalProcesoGenerico] 🧹 Limpiando storage de PROCESOS del índice ${window.procesoActualIndex} (está vacío)`);
-            window.universalImagenesStorage.eliminarTodasLasImagenes('procesos', window.procesoActualIndex);
-        } else {
-            // Si hay imágenes, verificar si son de un proceso anterior (contaminación)
-            // Por ahora, conservamos las imágenes existentes
-            console.log(`[abrirModalProcesoGenerico] 📸 Storage de PROCESOS[${window.procesoActualIndex}] tiene ${imagenesExistentes.length} imágenes, CONSERVANDO`);
-        }
+        console.log(`[abrirModalProcesoGenerico] 🧹 LIMPIEZA FORZADA: Storage de PROCESOS[${window.procesoActualIndex}] para nuevo proceso`);
+        window.universalImagenesStorage.eliminarTodasLasImagenes('procesos', window.procesoActualIndex);
     }
     const config = procesosConfig[tipoProceso];
     
@@ -145,6 +136,18 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
             // En CREACIÓN: limpiar todo
             window.tallasSeleccionadasProceso = { dama: [], caballero: [], sobremedida: null };
             window.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
+            
+            // 🔴 CRÍTICO: Limpiar también window.imagenesProcesoActual para evitar contaminación
+            if (window.imagenesProcesoActual) {
+                window.imagenesProcesoActual = [null, null, null];
+                console.log('[abrirModalProcesoGenerico] 🧹 window.imagenesProcesoActual limpiado para nuevo proceso');
+            }
+            
+            // 🔴 CRÍTICO: Limpiar window.imagenesProcesoExistentes también
+            if (window.imagenesProcesoExistentes) {
+                window.imagenesProcesoExistentes = [];
+                console.log('[abrirModalProcesoGenerico] 🧹 window.imagenesProcesoExistentes limpiado para nuevo proceso');
+            }
             
             // Limpiar resumen
             const resumenTallas = document.getElementById('proceso-tallas-resumen');
@@ -581,7 +584,26 @@ function limpiarImagenesProceso() {
         }
     }
     
+    // Limpiar array local
     imagenesProcesoActual = [null, null, null];
+    
+    // 🔴 CRÍTICO: Limpiar arrays globales para evitar contaminación
+    if (window.imagenesProcesoActual) {
+        window.imagenesProcesoActual = [null, null, null];
+        console.log('[limpiarImagenesProceso] 🧹 window.imagenesProcesoActual limpiado');
+    }
+    
+    if (window.imagenesProcesoExistentes) {
+        window.imagenesProcesoExistentes = [];
+        console.log('[limpiarImagenesProceso] 🧹 window.imagenesProcesoExistentes limpiado');
+    }
+    
+    // 🔴 NUEVO: Limpiar también el storage universal si hay un índice activo
+    if (window.universalImagenesStorage && window.procesoActualIndex !== undefined) {
+        console.log(`[limpiarImagenesProceso] 🧹 Limpiando storage universal de PROCESOS[${window.procesoActualIndex}]`);
+        window.universalImagenesStorage.eliminarTodasLasImagenes('procesos', window.procesoActualIndex);
+    }
+    
     for (let i = 1; i <= 3; i++) {
         const preview = document.getElementById(`proceso-foto-preview-${i}`);
         const input = document.getElementById(`proceso-foto-input-${i}`);
