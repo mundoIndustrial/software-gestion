@@ -66,15 +66,22 @@
                             </span>
                         </td>
                         
-                        <!-- Área del Recibo -->
+                        <!-- Área del Recibo (del proceso más reciente) -->
                         <td>
                             @php
-                                $areaRecibo = $recibo['area'] ?? 'Insumos';
+                                // Usar el área del proceso más reciente (pedido_info.area) en lugar del área del recibo
+                                $areaRecibo = $recibo['pedido_info']['area'] ?? $recibo['area'] ?? 'Insumos';
                                 $areaBadge = 'bg-secondary';
-                                if ($areaRecibo === 'Corte') {
+                                if (strpos($areaRecibo, 'Corte') !== false) {
                                     $areaBadge = 'bg-success';
-                                } elseif ($areaRecibo === 'Insumos') {
+                                } elseif (strpos($areaRecibo, 'Insumos') !== false) {
                                     $areaBadge = 'bg-info';
+                                } elseif (strpos($areaRecibo, 'Costura') !== false) {
+                                    $areaBadge = 'bg-primary';
+                                } elseif (strpos($areaRecibo, 'Estampado') !== false) {
+                                    $areaBadge = 'bg-warning';
+                                } elseif (strpos($areaRecibo, 'Bordado') !== false) {
+                                    $areaBadge = 'bg-danger';
                                 }
                             @endphp
                             <span class="badge {{ $areaBadge }}">

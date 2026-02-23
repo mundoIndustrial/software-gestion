@@ -149,25 +149,43 @@ class ObtenerPrendasRecibosService
                             continue;
                         }
                     } else {
-                        // COSTURA: Área debe ser "costura" y estado "En Ejecución"
-                        if (strtolower($pedido->area) !== 'costura') {
-                            \Log::info(' [Filtro COSTURA] Área no es "costura"', [
+                        // COSTURA/COSTURA-BODEGA: Validar que el usuario sea el encargado del proceso Costura para esta PRENDA
+                        // (Sin restricción de estado, permite: Pendiente, En Ejecución, etc)
+                        if ($tipoOperario === 'costurero') {
+                            $usuarioNombre = strtolower(trim($usuario->name));
+                            
+                            // Buscar proceso Costura específicamente para esta prenda
+                            $procesoCosturaDelaPrenda = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                                ->where('prenda_pedido_id', $prenda->id)
+                                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                                ->first();
+                            
+                            if (!$procesoCosturaDelaPrenda || !$procesoCosturaDelaPrenda->encargado) {
+                                \Log::info(' [Filtro COSTURERO] Prenda sin proceso Costura asignado', [
+                                    'prenda_id' => $prenda->id,
+                                    'numero_pedido' => $pedido->numero_pedido,
+                                    'usuario' => $usuario->name
+                                ]);
+                                continue;
+                            }
+                            
+                            $encargadoDelProceso = strtolower(trim($procesoCosturaDelaPrenda->encargado));
+                            
+                            if ($encargadoDelProceso !== $usuarioNombre) {
+                                \Log::info(' [Filtro COSTURERO] Usuario no es encargado de la prenda', [
+                                    'prenda_id' => $prenda->id,
+                                    'numero_pedido' => $pedido->numero_pedido,
+                                    'usuario_actual' => $usuario->name,
+                                    'encargado_prenda' => $procesoCosturaDelaPrenda->encargado
+                                ]);
+                                continue;
+                            }
+                            
+                            \Log::info(' [Filtro COSTURERO] ✓ Usuario es encargado de esta prenda', [
                                 'prenda_id' => $prenda->id,
                                 'numero_pedido' => $pedido->numero_pedido,
-                                'area_actual' => $pedido->area,
-                                'tipo_recibo' => $tipoRecibo
+                                'usuario' => $usuario->name
                             ]);
-                            continue; // Skip COSTURA si área no es costura
-                        }
-                        
-                        if ($pedido->estado !== 'En Ejecución') {
-                            \Log::info(' [Filtro COSTURA] Estado del pedido no es "En Ejecución"', [
-                                'prenda_id' => $prenda->id,
-                                'numero_pedido' => $pedido->numero_pedido,
-                                'estado_actual' => $pedido->estado,
-                                'tipo_recibo' => $tipoRecibo
-                            ]);
-                            continue; // Skip COSTURA si no está en Ejecución
                         }
                     }
                 }

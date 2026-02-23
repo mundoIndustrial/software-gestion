@@ -1279,8 +1279,8 @@ class RegistroOrdenController extends Controller
                     }
                 }
                 
-                // Obtener el proceso más reciente para el área
-                $areaProcesoReciente = $this->obtenerAreaProcesoMasReciente($recibo->pedido_produccion_id, $recibo->prenda_id);
+                // Obtener el área directamente del recibo (que es actualizado por el Observer)
+                $area = $recibo->area ?? 'Insumos';
                 
                 return [
                     'id' => $recibo->id,
@@ -1298,7 +1298,7 @@ class RegistroOrdenController extends Controller
                         'numero_pedido' => $pedido->numero_pedido,
                         'cliente' => $pedido->cliente,
                         'estado' => $pedido->estado,
-                        'area' => $areaProcesoReciente,
+                        'area' => $area,
                         'dia_de_entrega' => $pedido->dia_de_entrega,
                         'fecha_estimada_de_entrega' => $pedido->fecha_estimada_de_entrega ? $pedido->fecha_estimada_de_entrega->format('d/m/Y') : null,
                         'fecha_creacion_orden' => $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('Y-m-d H:i:s') : null,
@@ -1485,11 +1485,18 @@ class RegistroOrdenController extends Controller
         try {
             \Log::info('[getAreaReciente] Obteniendo área más reciente para pedido', ['pedido_id' => $id]);
             
-            $areaReciente = $this->obtenerAreaProcesoMasReciente($id);
+            $pedido = PedidoProduccion::find($id);
+            
+            if (!$pedido) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Pedido no encontrado'
+                ], 404);
+            }
             
             return response()->json([
                 'success' => true,
-                'area' => $areaReciente,
+                'area' => $pedido->area ?? 'Insumos',
                 'pedido_id' => $id
             ]);
             

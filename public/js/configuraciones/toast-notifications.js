@@ -27,7 +27,7 @@ function initializeToastContainer() {
         position: fixed;
         top: 20px;
         right: 20px;
-        z-index: 999999 !important;
+        z-index: 9999999 !important;
         display: flex;
         flex-direction: column;
         gap: 10px;
@@ -109,7 +109,7 @@ window.showToast = function(message, type = 'success') {
     container.appendChild(toast);
     
     // Asegurar que el contenedor esté siempre visible y al frente
-    container.style.zIndex = '999999';
+    container.style.zIndex = '9999999';
     container.style.position = 'fixed';
     
     // Crear objeto para rastrear el toast

@@ -280,36 +280,13 @@
                             <option value="Taller">Taller</option>
                             <option value="Lavandería">Lavandería</option>
                             <option value="Control de Calidad">Control de Calidad</option>
+                            <option value="Despacho">Despacho</option>
                             <option value="Entrega">Entrega</option>
                         </select>
                     </div>
                     <div class="add-proceso-form-group">
-                        <label for="procesoEstado">Estado:</label>
-                        <select id="procesoEstado" class="add-proceso-select">
-                            <option value="Pendiente">Pendiente</option>
-                            <option value="En Progreso">En Progreso</option>
-                            <option value="Completado">Completado</option>
-                            <option value="Pausado">Pausado</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="add-proceso-form-row">
-                    <div class="add-proceso-form-group">
-                        <label for="procesoFechaInicio">Fecha de Inicio:</label>
-                        <input type="date" id="procesoFechaInicio" class="add-proceso-input">
-                    </div>
-                    <div class="add-proceso-form-group">
                         <label for="procesoEncargado">Encargado:</label>
                         <input type="text" id="procesoEncargado" class="add-proceso-input" placeholder="Nombre del encargado">
-                    </div>
-                </div>
-                <div class="add-proceso-form-row">
-                    <div class="add-proceso-form-group">
-                        <label for="procesoObservaciones">Observaciones:</label>
-                        <input type="text" id="procesoObservaciones" class="add-proceso-input" placeholder="Observaciones (opcional)">
-                    </div>
-                    <div class="add-proceso-form-group">
-                        <!-- Espacio vacío para balance -->
                     </div>
                 </div>
             </div>
@@ -319,10 +296,19 @@
         <div class="add-proceso-footer">
             <button type="button" id="btnCancelAddProceso" class="add-proceso-btn-secondary">Cancelar</button>
             <button type="button" id="btnConfirmAddProceso" class="add-proceso-btn-primary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M5 13l4 4L19 7"></path>
-                </svg>
-                Agregar Proceso
+                <span id="addProcesoButtonContent" class="btn-content">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Agregar Proceso
+                </span>
+                <span id="addProcesoButtonLoading" class="btn-loading" style="display: none;">
+                    <svg class="spinner" viewBox="0 0 50 50" width="20" height="20">
+                        <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="4" opacity="0.3"></circle>
+                        <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="31.4 94.2" stroke-linecap="round" class="spinner-circle"></circle>
+                    </svg>
+                    Cargando...
+                </span>
             </button>
         </div>
     </div>
@@ -357,10 +343,19 @@
         <div class="confirm-delete-footer">
             <button type="button" id="btnCancelDelete" class="confirm-delete-btn-secondary">Cancelar</button>
             <button type="button" id="btnConfirmDelete" class="confirm-delete-btn-danger">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"/>
-                </svg>
-                Eliminar Proceso
+                <span id="deleteButtonContent" class="btn-content">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"></path>
+                    </svg>
+                    Eliminar Proceso
+                </span>
+                <span id="deleteButtonLoading" class="btn-loading" style="display: none;">
+                    <svg class="spinner" viewBox="0 0 50 50" width="18" height="18">
+                        <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="4" opacity="0.3"></circle>
+                        <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="31.4 94.2" stroke-linecap="round" class="spinner-circle"></circle>
+                    </svg>
+                    Eliminando...
+                </span>
             </button>
         </div>
     </div>
@@ -1952,6 +1947,37 @@
     height: 16px !important;
 }
 
+.btn-content,
+.btn-loading {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    justify-content: center !important;
+}
+
+.btn-loading {
+    display: none !important;
+}
+
+.btn-loading .spinner {
+    width: 18px !important;
+    height: 18px !important;
+    animation: spin 1s linear infinite !important;
+}
+
+.btn-loading .spinner-circle {
+    animation: spin 1s linear infinite !important;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 /* Botón trigger en el timeline */
 .tracking-add-proceso-trigger {
     display: flex !important;
@@ -2658,5 +2684,27 @@ html[data-theme="light"] .tracking-info-value {
 .confirm-delete-btn-danger svg {
     width: 16px;
     height: 16px;
+}
+
+.btn-content,
+.btn-loading {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    justify-content: center !important;
+}
+
+.btn-loading {
+    display: none !important;
+}
+
+.btn-loading .spinner {
+    width: 16px !important;
+    height: 16px !important;
+    animation: spin 1s linear infinite !important;
+}
+
+.btn-loading .spinner-circle {
+    animation: spin 1s linear infinite !important;
 }
 </style>

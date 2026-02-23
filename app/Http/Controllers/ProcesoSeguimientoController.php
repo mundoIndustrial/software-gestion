@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ProcesoPrenda;
 use App\Models\PrendaPedido;
 use App\Models\PedidoProduccion;
+use App\Models\ConsecutivoReciboPedido;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
@@ -97,6 +98,40 @@ class ProcesoSeguimientoController extends Controller
             ]);
 
             \Log::info('[ProcesoSeguimientoController] Proceso creado:', ['proceso_id' => $proceso->id]);
+
+            // Actualizar el area en consecutivos_recibos_pedidos
+            try {
+                // Obtener el ID del pedido a través de la prenda
+                $prenda = PrendaPedido::find($request->prenda_id);
+                
+                if ($prenda && $prenda->pedido_produccion_id) {
+                    $consecutivo = ConsecutivoReciboPedido::where('pedido_produccion_id', $prenda->pedido_produccion_id)
+                        ->where('prenda_id', $request->prenda_id)
+                        ->first();
+
+                    if ($consecutivo) {
+                        $consecutivo->update([
+                            'area' => $request->area
+                        ]);
+                        \Log::info('[ProcesoSeguimientoController] Consecutivo actualizado:', [
+                            'consecutivo_id' => $consecutivo->id,
+                            'area' => $request->area
+                        ]);
+                    } else {
+                        \Log::warning('[ProcesoSeguimientoController] No se encontró consecutivo para actualizar:', [
+                            'pedido_id' => $prenda->pedido_produccion_id,
+                            'prenda_id' => $request->prenda_id
+                        ]);
+                    }
+                } else {
+                    \Log::warning('[ProcesoSeguimientoController] No se encontró prenda o no tiene pedido asociado:', [
+                        'prenda_id' => $request->prenda_id
+                    ]);
+                }
+            } catch (\Exception $consecutivoError) {
+                \Log::warning('[ProcesoSeguimientoController] Error actualizando consecutivo: ' . $consecutivoError->getMessage());
+                // Continuar sin actualizar el consecutivo
+            }
 
             // Cargar relaciones para la respuesta con manejo de errores
             try {
@@ -319,7 +354,66 @@ class ProcesoSeguimientoController extends Controller
     {
         try {
             $proceso = ProcesoPrenda::findOrFail($id);
+            $prendaId = $proceso->prenda_pedido_id;
+            $numeroPedido = $proceso->numero_pedido;
+            
             $proceso->delete();
+
+            // Obtener el ID del pedido a través de la prenda
+            $prenda = PrendaPedido::find($prendaId);
+            
+            if (!$prenda || !$prenda->pedido_produccion_id) {
+                \Log::warning('[ProcesoSeguimientoController] No se encontró prenda o no tiene pedido asociado al eliminar proceso:', [
+                    'prenda_id' => $prendaId
+                ]);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Proceso eliminado correctamente'
+                ]);
+            }
+
+            // Buscar el proceso más reciente para la misma prenda (excluyendo el eliminado)
+            $procesoMasReciente = ProcesoPrenda::where('prenda_pedido_id', $prendaId)
+                ->where('numero_pedido', $numeroPedido)
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            // Actualizar el area en consecutivos_recibos_pedidos
+            try {
+                $consecutivo = ConsecutivoReciboPedido::where('pedido_produccion_id', $prenda->pedido_produccion_id)
+                    ->where('prenda_id', $prendaId)
+                    ->first();
+
+                if ($consecutivo) {
+                    if ($procesoMasReciente) {
+                        // Usar el proceso más reciente
+                        $consecutivo->update([
+                            'area' => $procesoMasReciente->proceso
+                        ]);
+                        \Log::info('[ProcesoSeguimientoController] Consecutivo actualizado con proceso más reciente:', [
+                            'consecutivo_id' => $consecutivo->id,
+                            'area' => $procesoMasReciente->proceso,
+                            'proceso_id' => $procesoMasReciente->id
+                        ]);
+                    } else {
+                        // Si no hay más procesos, dejar el area vacío
+                        $consecutivo->update([
+                            'area' => null
+                        ]);
+                        \Log::info('[ProcesoSeguimientoController] Consecutivo actualizado a null (sin procesos restantes):', [
+                            'consecutivo_id' => $consecutivo->id
+                        ]);
+                    }
+                } else {
+                    \Log::warning('[ProcesoSeguimientoController] No se encontró consecutivo para actualizar al eliminar:', [
+                        'pedido_id' => $prenda->pedido_produccion_id,
+                        'prenda_id' => $prendaId
+                    ]);
+                }
+            } catch (\Exception $consecutivoError) {
+                \Log::warning('[ProcesoSeguimientoController] Error actualizando consecutivo tras eliminar: ' . $consecutivoError->getMessage());
+                // Continuar aunque falle la actualización del consecutivo
+            }
 
             return response()->json([
                 'success' => true,

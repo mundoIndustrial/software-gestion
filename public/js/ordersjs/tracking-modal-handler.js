@@ -1911,6 +1911,17 @@ const trackingTableStyles = `
   async function executeDeleteProcess() {
     if (!window.processToDelete) return;
     
+    // Mostrar indicador de carga
+    const btnContent = document.getElementById('deleteButtonContent');
+    const btnLoading = document.getElementById('deleteButtonLoading');
+    const btnConfirm = document.getElementById('btnConfirmDelete');
+    
+    if (btnContent && btnLoading && btnConfirm) {
+      btnContent.style.display = 'none';
+      btnLoading.style.display = 'flex';
+      btnConfirm.disabled = true;
+    }
+    
     const { id: procesoId, name: areaName } = window.processToDelete;
     
     try {
@@ -1938,24 +1949,48 @@ const trackingTableStyles = `
       console.log('[executeDeleteProcess] Recargando seguimientos para orden:', currentOrderData.id);
       await loadPrendasWithTracking(currentOrderData.id);
       
-      console.log('[executeDeleteProcess] Seguimientos recargados, currentPrendaData:', currentPrendaData);
+      console.log('[executeDeleteProcess] Seguimientos recargados');
+      
+      // Buscar la prenda actualizada en los datos recargados
+      if (window.prendasData && window.prendasData.length > 0 && currentPrendaData) {
+        const prendaActualizada = window.prendasData.find(p => p.id == currentPrendaData.id);
+        if (prendaActualizada) {
+          currentPrendaData = prendaActualizada;
+          console.log('[executeDeleteProcess] Prenda actualizada encontrada:', currentPrendaData);
+        }
+      }
       
       // Actualizar vista actual
-      if (currentPrendaData) {
-        console.log('[executeDeleteProcess] Actualizando timeline con currentPrendaData:', currentPrendaData);
+      if (currentPrendaData && currentPrendaData.id) {
+        console.log('[executeDeleteProcess] Actualizando timeline con prenda actualizada:', currentPrendaData);
         renderPrendaTrackingTimeline(currentPrendaData);
       } else {
-        console.log('[executeDeleteProcess] No hay currentPrendaData, intentando obtener del DOM');
+        console.log('[executeDeleteProcess] No hay currentPrendaData válida, intentando obtener del DOM');
         // Si no hay currentPrendaData, intentar obtener la primera prenda del DOM
         const prendaCards = document.querySelectorAll('.prenda-card');
         if (prendaCards.length > 0) {
           const firstCard = prendaCards[0];
-          const prendaData = {
-            id: parseInt(firstCard.dataset.prendaId),
-            nombre_prenda: firstCard.querySelector('.prenda-name')?.textContent,
-          };
-          console.log('[executeDeleteProcess] Usando prendaData del DOM:', prendaData);
-          renderPrendaTrackingTimeline(prendaData);
+          const prendaId = parseInt(firstCard.dataset.prendaId);
+          
+          // Buscar en prendasData
+          let prendaParaRender = null;
+          if (window.prendasData) {
+            prendaParaRender = window.prendasData.find(p => p.id == prendaId);
+          }
+          
+          if (prendaParaRender) {
+            console.log('[executeDeleteProcess] Usando prendaData de prendasData:', prendaParaRender);
+            currentPrendaData = prendaParaRender;
+            renderPrendaTrackingTimeline(prendaParaRender);
+          } else {
+            // Fallback: crear objeto con el ID
+            const prendaData = {
+              id: prendaId,
+              nombre_prenda: firstCard.querySelector('.prenda-name')?.textContent,
+            };
+            console.log('[executeDeleteProcess] Usando prendaData del DOM:', prendaData);
+            renderPrendaTrackingTimeline(prendaData);
+          }
         }
       }
 
@@ -1969,6 +2004,17 @@ const trackingTableStyles = `
       console.error('[executeDeleteProcess] Error:', error);
       showError('Error al eliminar proceso: ' + error.message);
       closeConfirmDeleteModal();
+    } finally {
+      // Ocultar indicador de carga
+      const btnContent = document.getElementById('deleteButtonContent');
+      const btnLoading = document.getElementById('deleteButtonLoading');
+      const btnConfirm = document.getElementById('btnConfirmDelete');
+      
+      if (btnContent && btnLoading && btnConfirm) {
+        btnContent.style.display = 'flex';
+        btnLoading.style.display = 'none';
+        btnConfirm.disabled = false;
+      }
     }
   }
   
@@ -2149,10 +2195,7 @@ const trackingTableStyles = `
   // Limpiar formulario de proceso
   function limpiarFormularioProceso() {
     document.getElementById('procesoArea').value = '';
-    document.getElementById('procesoEstado').value = 'Pendiente';
-    document.getElementById('procesoFechaInicio').value = '';
     document.getElementById('procesoEncargado').value = '';
-    document.getElementById('procesoObservaciones').value = '';
   }
 
   // Resetear botón del formulario a su estado original
@@ -2345,32 +2388,65 @@ const trackingTableStyles = `
   // Mostrar error
   function showError(message) {
     console.error('[showError] ' + message);
-    // Aquí podrías mostrar una notificación de error al usuario
+    // Usar el sistema global de toasts
+    if (window.showToast) {
+      window.showToast(message, 'error');
+    }
   }
 
   // Manejar agregar proceso
   async function handleAgregarProceso() {
     try {
+      // Mostrar indicador de carga
+      const btnContent = document.getElementById('addProcesoButtonContent');
+      const btnLoading = document.getElementById('addProcesoButtonLoading');
+      const btnConfirm = document.getElementById('btnConfirmAddProceso');
+      
+      if (btnContent && btnLoading && btnConfirm) {
+        btnContent.style.display = 'none';
+        btnLoading.style.display = 'flex';
+        btnConfirm.disabled = true;
+      }
+
       const area = document.getElementById('procesoArea').value;
-      const estado = document.getElementById('procesoEstado').value;
       const encargado = document.getElementById('procesoEncargado').value;
-      const observaciones = document.getElementById('procesoObservaciones').value;
 
       if (!area) {
         showError('Por favor selecciona un área/proceso');
+        // Ocultar indicador de carga
+        if (btnContent && btnLoading && btnConfirm) {
+          btnContent.style.display = 'flex';
+          btnLoading.style.display = 'none';
+          btnConfirm.disabled = false;
+        }
+        return;
+      }
+
+      if (!encargado.trim()) {
+        showError('Por favor ingresa el nombre del encargado');
+        // Ocultar indicador de carga
+        if (btnContent && btnLoading && btnConfirm) {
+          btnContent.style.display = 'flex';
+          btnLoading.style.display = 'none';
+          btnConfirm.disabled = false;
+        }
         return;
       }
 
       if (!currentPrendaData || !currentOrderData) {
         showError('No hay datos de la prenda o pedido');
+        // Ocultar indicador de carga
+        if (btnContent && btnLoading && btnConfirm) {
+          btnContent.style.display = 'flex';
+          btnLoading.style.display = 'none';
+          btnConfirm.disabled = false;
+        }
         return;
       }
 
       console.log('[handleAgregarProceso] Agregando proceso:', {
         area,
-        estado,
         encargado,
-        observaciones,
         prenda_id: currentPrendaData.id,
         currentOrderData: currentOrderData
       });
@@ -2391,6 +2467,7 @@ const trackingTableStyles = `
       }
 
       // Enviar datos al backend
+      // Estado y fecha_inicio se establecen automáticamente en el backend
       const response = await fetch('/seguimiento-proceso/guardar', {
         method: 'POST',
         headers: {
@@ -2401,9 +2478,8 @@ const trackingTableStyles = `
           pedido_produccion_id: currentOrderData.numero_pedido,
           prenda_id: currentPrendaData.id,
           area: area,
-          estado: estado,
           encargado: encargado,
-          observaciones: observaciones
+          estado: 'Pendiente'
         })
       });
 
@@ -2452,46 +2528,32 @@ const trackingTableStyles = `
     } catch (error) {
       console.error('[handleAgregarProceso] Error:', error);
       showError('Error al agregar proceso: ' + error.message);
+    } finally {
+      // Ocultar indicador de carga
+      const btnContent = document.getElementById('addProcesoButtonContent');
+      const btnLoading = document.getElementById('addProcesoButtonLoading');
+      const btnConfirm = document.getElementById('btnConfirmAddProceso');
+      
+      if (btnContent && btnLoading && btnConfirm) {
+        btnContent.style.display = 'flex';
+        btnLoading.style.display = 'none';
+        btnConfirm.disabled = false;
+      }
     }
   }
 
   // Limpiar formulario de proceso
   function limpiarFormularioProceso() {
     document.getElementById('procesoArea').value = '';
-    document.getElementById('procesoEstado').value = 'Pendiente';
-    document.getElementById('procesoFechaInicio').value = '';
     document.getElementById('procesoEncargado').value = '';
-    document.getElementById('procesoObservaciones').value = '';
   }
 
   // Mostrar mensaje de éxito
   function showSuccess(message) {
-    // Crear elemento temporal para mostrar éxito
-    const successDiv = document.createElement('div');
-    successDiv.className = 'tracking-success-message';
-    successDiv.textContent = message;
-    successDiv.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: white;
-      padding: 12px 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-      z-index: 100000;
-      font-weight: 600;
-      animation: slideInRight 0.3s ease-out;
-    `;
-
-    document.body.appendChild(successDiv);
-
-    // Remover después de 3 segundos
-    setTimeout(() => {
-      if (successDiv.parentNode) {
-        successDiv.parentNode.removeChild(successDiv);
-      }
-    }, 3000);
+    // Usar el sistema global de toasts
+    if (window.showToast) {
+      window.showToast(message, 'success');
+    }
   }
 
   // Inicializar cuando el DOM esté listo

@@ -1002,6 +1002,7 @@ class OperarioController extends Controller
         try {
             $usuario = Auth::user();
             $esCortador = $usuario->hasRole('cortador');
+            $esCosturero = $usuario->hasRole('costurero');
 
             // Obtener novedades de la prenda
             $novedades = \DB::table('prendas_pedido_novedades_recibo')
@@ -1026,8 +1027,8 @@ class OperarioController extends Controller
                     return $n;
                 });
 
-            // Si es cortador, filtrar solo sus propias novedades
-            if ($esCortador) {
+            // Si es cortador o costurero, filtrar solo sus propias novedades
+            if ($esCortador || $esCosturero) {
                 $novedades = $novedades->filter(fn($n) => $n->creado_por === $usuario->id);
             }
 
