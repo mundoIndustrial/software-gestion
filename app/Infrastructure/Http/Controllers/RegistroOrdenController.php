@@ -591,8 +591,8 @@ class RegistroOrdenController extends Controller
                     
                     // Convertir a array de opciones
                     $options = array_map(function($desc, $pedidos) {
-                        // Limitar descripción a 200 caracteres para el display
-                        $displayDesc = strlen($desc) > 200 ? substr(strip_tags($desc), 0, 200) . '...' : strip_tags($desc);
+                        // Limitar descripción a 300 caracteres para el display (aumentado de 200)
+                        $displayDesc = strlen($desc) > 300 ? substr(strip_tags($desc), 0, 300) . '...' : strip_tags($desc);
                         return [
                             'value' => implode(',', $pedidos), // Guardar todos los pedidos con esa descripción
                             'display' => $displayDesc
@@ -737,7 +737,11 @@ class RegistroOrdenController extends Controller
                                 $pedidos = explode(',', $value);
                                 $allPedidos = array_merge($allPedidos, $pedidos);
                             }
-                            $query->whereIn('numero_pedido', $allPedidos);
+                            $query->whereIn('numero_pedido', $allPedidos)
+                                  ->whereNotNull('numero_pedido')
+                                  ->where('numero_pedido', '>', 0);
+                            // Excluir solo estados completamente finalizados
+                            $query->whereNotIn('estado', ['DEVUELTO_A_ASESORA']);
                             break;
                         case 'cliente':
                             foreach ($values as $value) {
@@ -746,6 +750,12 @@ class RegistroOrdenController extends Controller
                             break;
                     }
                 }
+            } else {
+                // Si no hay filtros, mostrar todos los pedidos con número_pedido válido
+                // Excluir solo estados completamente finalizados y pedidos sin número
+                $query->whereNotNull('numero_pedido')
+                      ->where('numero_pedido', '>', 0)
+                      ->whereNotIn('estado', ['DEVUELTO_A_ASESORA']);
             }
 
             // Obtener resultados paginados
@@ -1163,17 +1173,43 @@ class RegistroOrdenController extends Controller
                 }
             }
             
-            // Tallas
-            if ($prenda->variantes && $prenda->variantes->count() > 0) {
-                $tallasSummary = [];
-                foreach ($prenda->variantes as $variante) {
-                    $talla = $variante->talla ?? '-';
-                    $cantidad = $variante->cantidad ?? 0;
-                    $tallasSummary[] = "{$talla}: {$cantidad}";
+            // Tallas (incluyendo tallas por color)
+            $tallasSummary = [];
+            
+            // Primero, verificar si hay tallas por color
+            $tallasPorColor = \DB::table('prenda_pedido_talla_colores')
+                ->join('prenda_pedido_tallas', 'prenda_pedido_talla_colores.prenda_pedido_talla_id', '=', 'prenda_pedido_tallas.id')
+                ->where('prenda_pedido_tallas.prenda_pedido_id', $prenda->id)
+                ->select([
+                    'prenda_pedido_tallas.talla',
+                    'prenda_pedido_talla_colores.color_nombre',
+                    'prenda_pedido_talla_colores.cantidad'
+                ])
+                ->get();
+            
+            if ($tallasPorColor->count() > 0) {
+                // Hay tallas por color, mostrar en formato TALLA:CANTIDAD-COLOR
+                foreach ($tallasPorColor as $tallaColor) {
+                    if ($tallaColor->cantidad > 0) {
+                        $colorNombre = strtoupper($tallaColor->color_nombre);
+                        $tallasSummary[] = "{$tallaColor->talla}:{$tallaColor->cantidad}-{$colorNombre}";
+                    }
                 }
-                if (!empty($tallasSummary)) {
-                    $lineas[] = "TALLAS: " . implode(", ", $tallasSummary);
+            } else {
+                // No hay tallas por color, usar tallas normales
+                if ($prenda->tallas && $prenda->tallas->count() > 0) {
+                    foreach ($prenda->tallas as $talla) {
+                        $tallaNombre = $talla->talla ?? '-';
+                        $cantidad = $talla->cantidad ?? 0;
+                        if ($cantidad > 0) {
+                            $tallasSummary[] = "{$tallaNombre}: {$cantidad}";
+                        }
+                    }
                 }
+            }
+            
+            if (!empty($tallasSummary)) {
+                $lineas[] = "TALLAS: " . implode(", ", $tallasSummary);
             }
             
             $descripcionFinal = implode(" | ", $lineas);

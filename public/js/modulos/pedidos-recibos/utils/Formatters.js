@@ -691,6 +691,19 @@ export class Formatters {
         console.log('[Formatters._agregarTallasFormato] 🎯 INPUT:', { tallas, generoDefault });
         console.log('[Formatters._agregarTallasFormato] 🎯 Tipo tallas:', typeof tallas, 'Es array:', Array.isArray(tallas));
         
+        // Si tallas es un string JSON, parsearlo primero
+        if (typeof tallas === 'string' && tallas.trim()) {
+            try {
+                console.log('[Formatters._agregarTallasFormato] 🔧 Parseando tallas desde string JSON...');
+                tallas = JSON.parse(tallas);
+                console.log('[Formatters._agregarTallasFormato] ✅ Tallas parseadas:', tallas);
+                console.log('[Formatters._agregarTallasFormato] 🎯 Nuevo tipo tallas:', typeof tallas, 'Es array:', Array.isArray(tallas));
+            } catch (error) {
+                console.error('[Formatters._agregarTallasFormato] ❌ Error parseando tallas:', error);
+                tallas = {};
+            }
+        }
+        
         // Debug detallado de la estructura
         if (typeof tallas === 'object' && tallas !== null) {
             console.log('[Formatters._agregarTallasFormato] 🔍 Claves de tallas:', Object.keys(tallas));
@@ -711,8 +724,13 @@ export class Formatters {
         // Si es array, convertir a estructura procesable
         if (Array.isArray(tallas)) {
             console.log('[Formatters._agregarTallasFormato]  Convirtiendo array a objeto...');
+            console.log('[Formatters._agregarTallasFormato]  Array completo:', JSON.stringify(tallas, null, 2));
+            
             tallas.forEach((item, idx) => {
                 console.log(`[Formatters._agregarTallasFormato] Array[${idx}]:`, item);
+                console.log(`[Formatters._agregarTallasFormato] Array[${idx}] - tipo:`, typeof item);
+                console.log(`[Formatters._agregarTallasFormato] Array[${idx}] - esSobremedida:`, item?.es_sobremedida);
+                console.log(`[Formatters._agregarTallasFormato] Array[${idx}] - talla:`, item?.talla);
                 
                 if (typeof item === 'object' && item !== null) {
                     const genero = String(item.genero || generoDefault).toLowerCase();
@@ -725,11 +743,17 @@ export class Formatters {
                     // Si es sobremedida, usar "SOBREMEDIDA" como talla
                     const tallaFinal = esSobremedida ? 'SOBREMEDIDA' : talla;
                     
+                    console.log(`[Formatters._agregarTallasFormato]   → tallaFinal="${tallaFinal}"`);
+                    
                     if (genero === 'dama') {
                         tallasDama[tallaFinal] = cantidad;
+                        console.log(`[Formatters._agregarTallasFormato]   → Agregado a DAMA: ${tallaFinal}=${cantidad}`);
                     } else if (genero === 'caballero') {
                         tallasCalballero[tallaFinal] = cantidad;
+                        console.log(`[Formatters._agregarTallasFormato]   → Agregado a CABALLERO: ${tallaFinal}=${cantidad}`);
                     }
+                } else {
+                    console.log(`[Formatters._agregarTallasFormato]   → Item no es objeto válido:`, item);
                 }
             });
         } else {
@@ -740,174 +764,51 @@ export class Formatters {
                 
                 if (typeof value === 'object' && value !== null) {
                     const genero = key.toLowerCase();
-                    // Ignorar arrays vacíos pero procesar arrays con datos
+                    
+                    // Si es array de objetos (estructura del backend)
                     if (Array.isArray(value)) {
-                        if (value.length === 0) {
-                            console.log(`[Formatters._agregarTallasFormato]  Ignorando array vacío para género: ${genero}`);
-                            return; // Saltar arrays vacíos
-                        }
-                        // Procesar array con datos (formato antiguo)
-                        console.log(`[Formatters._agregarTallasFormato]  Procesando array con datos para género: ${genero}`);
-                        value.forEach(item => {
+                        console.log(`[Formatters._agregarTallasFormato]    🔍 Procesando array de tallas para género: ${genero}`);
+                        value.forEach((item, idx) => {
+                            console.log(`[Formatters._agregarTallasFormato]      Item[${idx}]:`, item);
+                            
                             if (typeof item === 'object' && item !== null) {
-                                const talla = item.talla || '';
-                                const cantidad = item.cantidad || 0;
-                                const esSobremedida = item.es_sobremedida || 0;
-                                
-                                // Si es sobremedida, usar "SOBREMEDIDA" como talla
-                                const tallaFinal = esSobremedida ? 'SOBREMEDIDA' : talla;
-                                
-                                if (genero === 'dama') {
-                                    tallasDama[tallaFinal] = cantidad;
-                                } else if (genero === 'caballero') {
-                                    tallasCalballero[tallaFinal] = cantidad;
+                                // Para sobremedida, buscar si el item tiene cantidad pero no talla específica
+                                if (item.cantidad && (!item.talla || item.talla === null || item.talla === '')) {
+                                    // Es sobremedida
+                                    const cantidad = item.cantidad || 0;
+                                    console.log(`[Formatters._agregarTallasFormato]      ✅ Sobremedida detectada: ${genero}=${cantidad}`);
+                                    
+                                    if (genero === 'dama') {
+                                        tallasDama['SOBREMEDIDA'] = cantidad;
+                                    } else if (genero === 'caballero') {
+                                        tallasCalballero['SOBREMEDIDA'] = cantidad;
+                                    }
+                                } else if (item.talla && item.cantidad) {
+                                    // Talla específica
+                                    const talla = item.talla;
+                                    const cantidad = item.cantidad || 0;
+                                    console.log(`[Formatters._agregarTallasFormato]      ✅ Talla específica: ${genero}=${talla}=${cantidad}`);
+                                    
+                                    if (genero === 'dama') {
+                                        tallasDama[talla] = cantidad;
+                                    } else if (genero === 'caballero') {
+                                        tallasCalballero[talla] = cantidad;
+                                    }
                                 }
                             }
                         });
-                    } 
-                    // Procesar objeto con datos
-                    else if (!Array.isArray(value)) {
-                        console.log(`[Formatters._agregarTallasFormato]  Procesando objeto para género: ${genero}`);
-                        console.log(`[Formatters._agregarTallasFormato]  🔍 Estructura completa de ${genero}:`, value);
-                        
-                        Object.entries(value).forEach(([talla, datos]) => {
-                            console.log(`[Formatters._agregarTallasFormato]    → talla="${talla}", datos=`, datos);
-                            
-                            // Si la talla es vacía o null, verificar si es sobremedida
-                            let tallaFinal = talla;
-                            if (!talla || talla.trim() === '') {
-                                console.log(`[Formatters._agregarTallasFormato]    🔍 Analizando array de datos para detectar sobremedida:`, datos);
-                                
-                                // Verificar si los datos tienen es_sobremedida (puede estar en el array)
-                                let esSobremedida = false;
-                                if (Array.isArray(datos)) {
-                                    console.log(`[Formatters._agregarTallasFormato]    📋 Datos es array con ${datos.length} elementos`);
-                                    datos.forEach((item, idx) => {
-                                        console.log(`[Formatters._agregarTallasFormato]      Item[${idx}]:`, item);
-                                        if (item && item.es_sobremedida) {
-                                            esSobremedida = true;
-                                            console.log(`[Formatters._agregarTallasFormato]      ✅ es_sobremedida encontrado en item[${idx}]`);
-                                        }
-                                    });
-                                } else if (typeof datos === 'object' && datos !== null && datos.es_sobremedida) {
-                                    esSobremedida = true;
-                                    console.log(`[Formatters._agregarTallasFormato]    ✅ es_sobremedida encontrado en objeto`);
-                                }
-                                
-                                // Si no se encontró en los datos, verificar en las tallas de la prenda
-                                if (!esSobremedida && prenda && prenda.tallas) {
-                                    console.log(`[Formatters._agregarTallasFormato]    🔍 Verificando es_sobremedida en tallas de la prenda...`);
-                                    console.log(`[Formatters._agregarTallasFormato]    📋 prenda.tallas:`, prenda.tallas);
-                                    console.log(`[Formatters._agregarTallasFormato]    📋 typeof prenda.tallas:`, typeof prenda.tallas);
-                                    console.log(`[Formatters._agregarTallasFormato]    📋 Array.isArray(prenda.tallas):`, Array.isArray(prenda.tallas));
-                                    
-                                    // prenda.tallas es un objeto: {DAMA: {...}, CABALLERO: [], UNISEX: []}
-                                    if (typeof prenda.tallas === 'object' && !Array.isArray(prenda.tallas)) {
-                                        console.log(`[Formatters._agregarTallasFormato]    📋 Procesando estructura de objeto de tallas...`);
-                                        
-                                        // Buscar en cada género
-                                        Object.keys(prenda.tallas).forEach((genero, genIdx) => {
-                                            const tallasGenero = prenda.tallas[genero];
-                                            console.log(`[Formatters._agregarTallasFormato]      Género[${genIdx}]: ${genero}`, tallasGenero);
-                                            
-                                            if (Array.isArray(tallasGenero)) {
-                                                // Es un array de tallas (formato original del backend)
-                                                tallasGenero.forEach((tallaItem, tallaIdx) => {
-                                                    console.log(`[Formatters._agregarTallasFormato]        TallaItem[${tallaIdx}]:`, tallaItem);
-                                                    console.log(`[Formatters._agregarTallasFormato]        Claves TallaItem[${tallaIdx}]:`, Object.keys(tallaItem));
-                                                    if (tallaItem && tallaItem.es_sobremedida) {
-                                                        esSobremedida = true;
-                                                        console.log(`[Formatters._agregarTallasFormato]        ✅ es_sobremedida encontrado en TallaItem[${tallaIdx}]`);
-                                                    }
-                                                });
-                                            } else if (typeof tallasGenero === 'object' && tallasGenero !== null) {
-                                                // Es un objeto con tallas como claves (formato transformado)
-                                                Object.keys(tallasGenero).forEach((tallaKey) => {
-                                                    const datosTalla = tallasGenero[tallaKey];
-                                                    console.log(`[Formatters._agregarTallasFormato]        TallaKey: ${tallaKey}, datos:`, datosTalla);
-                                                    
-                                                    if (Array.isArray(datosTalla)) {
-                                                        datosTalla.forEach((item, itemIdx) => {
-                                                            console.log(`[Formatters._agregarTallasFormato]          Item[${itemIdx}]:`, item);
-                                                            if (item && item.es_sobremedida) {
-                                                                esSobremedida = true;
-                                                                console.log(`[Formatters._agregarTallasFormato]          ✅ es_sobremedida encontrado en item[${itemIdx}]`);
-                                                            }
-                                                        });
-                                                    }
-                                                });
-                                            }
-                                        });
-                                    } else if (Array.isArray(prenda.tallas)) {
-                                        // Si por alguna razón es array, procesar como array
-                                        console.log(`[Formatters._agregarTallasFormato]    📋 Procesando ${prenda.tallas.length} tallas como array...`);
-                                        prenda.tallas.forEach((talla, idx) => {
-                                            console.log(`[Formatters._agregarTallasFormato]      Talla[${idx}]:`, talla);
-                                            console.log(`[Formatters._agregarTallasFormato]      Claves talla[${idx}]:`, Object.keys(talla));
-                                            if (talla && talla.es_sobremedida) {
-                                                esSobremedida = true;
-                                                console.log(`[Formatters._agregarTallasFormato]      ✅ es_sobremedida encontrado en talla[${idx}]`);
-                                            }
-                                        });
-                                    } else {
-                                        console.log(`[Formatters._agregarTallasFormato]    ❌ prenda.tallas no es ni array ni objeto:`, typeof prenda.tallas);
-                                    }
-                                } else {
-                                    console.log(`[Formatters._agregarTallasFormato]    🔍 No se verifican tallas de la prenda - prenda.tallas:`, prenda ? (prenda.tallas ? 'existe' : 'no existe') : 'no existe prenda');
-                                }
-                                
-                                // Si aún no se encontró, verificar en las variantes usando talla_id (fallback más preciso)
-                                if (!esSobremedida && prenda && prenda.variantes && Array.isArray(prenda.variantes)) {
-                                    console.log(`[Formatters._agregarTallasFormato]    🔍 Verificando es_sobremedida en variantes de la prenda (fallback)...`);
-                                    prenda.variantes.forEach((variante, idx) => {
-                                        console.log(`[Formatters._agregarTallasFormato]      Variante[${idx}]:`, variante);
-                                        console.log(`[Formatters._agregarTallasFormato]      Claves variante[${idx}]:`, Object.keys(variante));
-                                        
-                                        // Si la variante tiene talla_id y la talla está vacía, es sobremedida
-                                        if (variante && variante.talla_id && !talla) {
-                                            esSobremedida = true;
-                                            console.log(`[Formatters._agregarTallasFormato]      ✅ Detectado sobremedida por talla_id=${variante.talla_id} con talla vacía`);
-                                        }
-                                        
-                                        // También verificar si tiene el campo es_sobremedida directamente
-                                        if (variante && variante.es_sobremedida) {
-                                            esSobremedida = true;
-                                            console.log(`[Formatters._agregarTallasFormato]      ✅ es_sobremedida encontrado directamente en variante[${idx}]`);
-                                        }
-                                    });
-                                }
-                                
-                                if (esSobremedida) {
-                                    tallaFinal = 'SOBREMEDIDA';
-                                    console.log(`[Formatters._agregarTallasFormato]    ✅ Detectado sobremedida, usando "SOBREMEDIDA"`);
-                                } else {
-                                    console.log(`[Formatters._agregarTallasFormato]    ❌ Tallavacía pero no es sobremedida`);
-                                }
-                            }
+                    } else {
+                        // Procesamiento original para objetos simples
+                        console.log(`[Formatters._agregarTallasFormato]    🔍 Procesando objeto simple para género: ${genero}`);
+                        Object.entries(value).forEach(([tallaKey, cantidad]) => {
+                            console.log(`[Formatters._agregarTallasFormato]      → tallaKey="${tallaKey}", cantidad="${cantidad}"`);
                             
                             if (genero === 'dama') {
-                                tallasDama[tallaFinal] = datos;
+                                tallasDama[tallaKey] = cantidad;
                             } else if (genero === 'caballero') {
-                                tallasCalballero[tallaFinal] = datos;
+                                tallasCalballero[tallaKey] = cantidad;
                             }
                         });
-                    }
-                } 
-                else if (typeof value === 'number' || typeof value === 'string') {
-                    if (key.includes('-')) {
-                        const [genero, talla] = key.split('-');
-                        if (genero.toLowerCase() === 'dama') {
-                            tallasDama[talla] = value;
-                        } else if (genero.toLowerCase() === 'caballero') {
-                            tallasCalballero[talla] = value;
-                        }
-                    } else {
-                        const genero = generoDefault || 'dama';
-                        if (genero.toLowerCase() === 'dama') {
-                            tallasDama[key] = value;
-                        } else if (genero.toLowerCase() === 'caballero') {
-                            tallasCalballero[key] = value;
-                        }
                     }
                 }
             });

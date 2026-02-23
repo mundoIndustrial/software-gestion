@@ -234,63 +234,50 @@ function generarFallbackHTML(prendaData) {
 }
 
 // Función para obtener datos de la prenda asociada al recibo (igual que en registros)
-function obtenerDatosPrendaRecibo(reciboId, titulo) {
-    console.log(`[obtenerDatosPrendaRecibo] 📌 Obteniendo datos para recibo ID: ${reciboId}`);
+function obtenerDatosPrendaRecibo(titulo, pedidoId, prendaId) {
+    console.log('[obtenerDatosPrendaRecibo] FUNCION LLAMADA - Parametros:', titulo, pedidoId, prendaId);
+    console.log(`[obtenerDatosPrendaRecibo]  Obteniendo datos para pedido ID: ${pedidoId}, prenda ID: ${prendaId}`);
     
-    // Obtener pedido_produccion_id desde la base de datos usando el recibo_id
-    fetch(`/api/recibos/${reciboId}/pedido`)
+    // Obtener datos de la prenda del pedido (igual que en registros)
+    fetch(`/pedidos-public/${pedidoId}/recibos-datos`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             return response.json();
         })
-        .then(datos => {
-            console.log(`[obtenerDatosPrendaRecibo] 📄 Datos del recibo recibidos:`, datos);
+        .then(datosRecibo => {
+            console.log(`[obtenerDatosPrendaRecibo] 📄 Datos del recibo recibidos:`, datosRecibo);
             
-            if (!datos.pedido_produccion_id) {
-                console.error('No se encontró pedido_produccion_id para el recibo:', reciboId);
-                alert('No se pudo identificar el pedido asociado a este recibo');
+            if (!datosRecibo.success || !datosRecibo.data || !datosRecibo.data.prendas) {
+                console.error('No se encontraron datos del recibo:', pedidoId);
+                alert('No se encontraron datos del recibo');
                 return;
             }
             
-            const pedidoProduccionId = datos.pedido_produccion_id;
-            console.log(`[obtenerDatosPrendaRecibo] 📋 Pedido ID encontrado: ${pedidoProduccionId}`);
+            const todasLasPrendas = datosRecibo.data.prendas;
+            console.log(`[obtenerDatosPrendaRecibo] ✅ Prendas encontradas: ${todasLasPrendas.length}`);
             
-            // Obtener datos de la prenda del pedido (igual que en registros)
-            fetch(`/api/pedidos/${pedidoProduccionId}/prendas`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    return response.json();
-                })
-                .then(datosPrendas => {
-                    console.log(`[obtenerDatosPrendaRecibo] 📄 Datos de prendas recibidos:`, datosPrendas);
-                    
-                    if (datosPrendas.data && typeof datosPrendas.data === 'object') {
-                        datosPrendas = datosPrendas.data;
-                    }
-                    
-                    if (!datosPrendas.prendas || !Array.isArray(datosPrendas.prendas) || datosPrendas.prendas.length === 0) {
-                        console.warn('No se encontraron prendas para el pedido:', pedidoProduccionId);
-                        alert('No se encontraron prendas para este pedido');
-                        return;
-                    }
-                    
-                    console.log(`[obtenerDatosPrendaRecibo] ✅ Prendas encontradas: ${datosPrendas.prendas.length}`);
-                    
-                    // Usar las prendas del pedido (igual que en registros)
-                    abrirModalCeldaConFormato(titulo, datosPrendas.prendas);
-                })
-                .catch(error => {
-                    console.error('[obtenerDatosPrendaRecibo] Error al obtener datos de prendas:', error);
-                    alert('Error al cargar los datos de la prenda: ' + error.message);
-                });
+            // Filtrar para mostrar solo la prenda asociada al recibo
+            const prendaFiltrada = todasLasPrendas.filter(prenda => {
+                console.log(`[obtenerDatosPrendaRecibo] 🔍 Comparando prenda.id=${prenda.id} con prendaId=${prendaId}`);
+                return prenda.id == prendaId; // Comparación flexible para manejar string/int
+            });
+            
+            console.log(`[obtenerDatosPrendaRecibo] 📋 Prendas filtradas: ${prendaFiltrada.length}`);
+            
+            if (prendaFiltrada.length === 0) {
+                console.warn('No se encontró la prenda asociada al recibo:', prendaId);
+                alert('No se encontró la prenda asociada a este recibo');
+                return;
+            }
+            
+            // Usar solo la prenda filtrada
+            abrirModalCeldaConFormato(titulo, prendaFiltrada);
         })
         .catch(error => {
             console.error('[obtenerDatosPrendaRecibo] Error al obtener datos del recibo:', error);
-            alert('Error al identificar el pedido asociado: ' + error.message);
+            alert('Error al cargar los datos de la prenda: ' + error.message);
         });
 }
 
@@ -1312,9 +1299,9 @@ function createReciboRow(recibo) {
         </td>
         <td>
             <div class="table-cell" style="flex: 10;">
-                <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL] 📌 Click en descripción'); event.stopPropagation(); abrirModalCeldaConFormato('Descripción', [])">
+                <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL] 📌 Click en descripción'); console.log('[ONCLICK TABLE CELL] 📌 Datos:', {pedidoId: ${recibo.pedido_produccion_id}, prendaId: ${recibo.prenda_id}}); event.stopPropagation(); obtenerDatosPrendaRecibo('Descripción', ${recibo.pedido_produccion_id}, ${recibo.prenda_id})">
                     <span style="color: #6b7280; font-size: 0.875rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Click para ver completo">
-                        <span class="descripcion-prenda-texto">Sin prendas</span> <span style="color: #3b82f6; font-weight: 600;">...</span>
+                        <span class="descripcion-prenda-texto">${recibo.nombre_prenda || 'Sin prendas'}</span> <span style="color: #3b82f6; font-weight: 600;">...</span>
                     </span>
                 </div>
             </div>
