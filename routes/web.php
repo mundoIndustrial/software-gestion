@@ -9,6 +9,7 @@ use App\Http\Controllers\RegistroBodegaController;
 use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EntregaController;
+use App\Http\Controllers\EntregasCompletasController;
 use App\Http\Controllers\TablerosController;
 use App\Http\Controllers\VistasController;
 use App\Http\Controllers\BalanceoController;
@@ -1403,6 +1404,11 @@ Route::middleware(['auth', 'supervisor-access'])->group(function () {
     Route::get('/entrega/{tipo}/sizes/{pedido}/{prenda}', [EntregaController::class, 'sizes'])->name('entrega.sizes')->where('tipo', 'pedido|bodega');
     Route::patch('/entrega/{tipo}/{subtipo}/{id}', [EntregaController::class, 'update'])->name('entrega.update')->where('tipo', 'pedido|bodega')->where('subtipo', 'costura|corte');
     Route::delete('/entrega/{tipo}/{subtipo}/{id}', [EntregaController::class, 'destroy'])->name('entrega.destroy')->where('tipo', 'pedido|bodega')->where('subtipo', 'costura|corte');
+    
+    // Rutas para Entregas Completas (Supervisor -> Despacho -> Asesor)
+    Route::get('/entregas-completas', [EntregasCompletasController::class, 'index'])->name('entregas-completas.index');
+    Route::get('/entregas-completas/{id}', [EntregasCompletasController::class, 'show'])->name('entregas-completas.show');
+    Route::get('/api/entregas-completas', [EntregasCompletasController::class, 'apiIndex'])->name('entregas-completas.api');
 });
 
 Route::middleware(['auth', 'supervisor-readonly'])->group(function () {

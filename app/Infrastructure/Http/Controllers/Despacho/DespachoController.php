@@ -76,7 +76,22 @@ class DespachoController extends Controller
         $prendas = $filas->where('tipo', 'prenda');
         $epps = $filas->where('tipo', 'epp');
         
-        return view('despacho.show', compact('pedido', 'prendas', 'epps'));
+        // Cargar datos de despacho parciales con fechas de entrega
+        $despachos = DesparChoParcialesModel::where('pedido_id', $pedido->id)
+            ->whereNotNull('fecha_entrega')
+            ->get()
+            ->keyBy(function($item) {
+                return ($item->tipo_item === 'epp' ? 'epp-' : '') . $item->item_id . 
+                       ($item->talla_id ? '-' . $item->talla_id : '');
+            });
+        
+        \Log::info('[DespachoController] Datos de despacho cargados', [
+            'pedido_id' => $pedido->id,
+            'despachos_count' => $despachos->count(),
+            'despachos_data' => $despachos->toArray(),
+        ]);
+        
+        return view('despacho.show', compact('pedido', 'prendas', 'epps', 'despachos'));
     }
 
     /**

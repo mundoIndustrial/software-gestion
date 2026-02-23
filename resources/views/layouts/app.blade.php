@@ -16,6 +16,8 @@
                 <div class="breadcrumb-section">
                     @if(request()->is('recibos-costura'))
                         <h1 class="page-title">Recibos de Costura</h1>
+                    @elseif(request()->is('entregas-completas*'))
+                        <h1 class="page-title">Seguimiento Entregas Despacho</h1>
                     @else
                         <h1 class="page-title">@yield('page-title', 'Dashboard')</h1>
                     @endif

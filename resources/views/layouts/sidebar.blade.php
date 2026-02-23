@@ -255,6 +255,14 @@
               <span class="menu-label">Bodega</span>
             </a>
           </li>
+          <li class="submenu-item">
+            <a href="{{ route('entregas-completas.index') }}"
+               class="menu-link {{ request()->routeIs('entregas-completas.*') ? 'active' : '' }}"
+               aria-label="Seguimiento completo de entregas">
+              <span class="material-symbols-rounded" aria-hidden="true">timeline</span>
+              <span class="menu-label">Seguimiento de Entregas</span>
+            </a>
+          </li>
         </ul>
       </li>
       </ul>

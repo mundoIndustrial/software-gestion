@@ -167,14 +167,15 @@ document.addEventListener('DOMContentLoaded', function() {
                             <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm border-r border-slate-400">Género</th>
                             <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm border-r border-slate-400">Talla</th>
                             <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm border-r border-slate-400">Cantidad</th>
-                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-32 text-xs lg:text-sm">Acciones</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-32 text-xs lg:text-sm border-r border-slate-400">Entregar</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-32 text-xs lg:text-sm">Fecha Entrega</th>
                         </tr>
                     </thead>
                     <tbody id="tablaDespacho">
                         <!-- PRENDAS -->
                         @if($prendas->count() > 0)
                             <tr class="bg-slate-100 border-b-2 border-slate-400">
-                                <td colspan="5" class="px-4 py-2 font-semibold text-slate-900">
+                                <td colspan="6" class="px-4 py-2 font-semibold text-slate-900">
                                     Prendas
                                 </td>
                             </tr>
@@ -288,6 +289,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 Entregar
                                             </button>
                                         </td>
+                                        <td class="px-2 lg:px-4 py-3 text-center">
+                                            <input type="date" 
+                                                   class="px-2 py-1 text-xs border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                   id="fecha-entrega-{{ $fila->id }}{{ $fila->tallaId ? '-' . $fila->tallaId : '' }}"
+                                                   value="{{ isset($despachos[$fila->id . ($fila->tallaId ? '-' . $fila->tallaId : '')]) ? $despachos[$fila->id . ($fila->tallaId ? '-' . $fila->tallaId : '')]->fecha_entrega->format('Y-m-d') : '' }}"
+                                                   readonly>
+                                        </td>
                                     </tr>
                                 @endforeach
                             @endforeach
@@ -296,7 +304,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <!-- EPP -->
                         @if($epps->count() > 0)
                             <tr class="bg-slate-100 border-b-2 border-slate-400">
-                                <td colspan="5" class="px-4 py-2 font-semibold text-slate-900">
+                                <td colspan="6" class="px-4 py-2 font-semibold text-slate-900">
                                     EPP
                                 </td>
                             </tr>
@@ -332,13 +340,20 @@ document.addEventListener('DOMContentLoaded', function() {
                                             Entregado
                                         </button>
                                     </td>
+                                    <td class="px-2 lg:px-4 py-3 text-center">
+                                        <input type="date" 
+                                               class="px-2 py-1 text-xs border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                               id="fecha-entrega-epp-{{ $fila->id }}"
+                                               value="{{ isset($despachos['epp-' . $fila->id]) ? $despachos['epp-' . $fila->id]->fecha_entrega->format('Y-m-d') : '' }}"
+                                               readonly>
+                                    </td>
                                 </tr>
                             @endforeach
                         @endif
 
                         @if($prendas->count() === 0 && $epps->count() === 0)
                             <tr>
-                                <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                                <td colspan="6" class="px-6 py-12 text-center text-slate-500">
                                     No hay ítems en este pedido
                                 </td>
                             </tr>
@@ -464,6 +479,15 @@ async function marcarEntregado(button) {
         const data = await response.json();
         
         if (data.success) {
+            // Establecer la fecha actual en el campo correspondiente
+            const fechaActual = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
+            const clave = tipo === 'epp' ? `epp-${itemId}` : `${itemId}${tallaId ? '-' + tallaId : ''}`;
+            const fechaCampo = document.getElementById(`fecha-entrega-${clave}`);
+            if (fechaCampo) {
+                fechaCampo.value = fechaActual;
+                fechaCampo.readOnly = false; // Permitir edición si se necesita
+            }
+            
             // Cambiar el botón a estado "Entregado" con opción de deshacer
             button.innerHTML = '✓ Entregado <span class="ml-1 text-xs">(↶)</span>';
             button.classList.remove('bg-green-500', 'hover:bg-green-600');
@@ -568,6 +592,14 @@ async function confirmarDeshacerEntregado() {
         const data = await response.json();
         
         if (data.success) {
+            // Limpiar el campo de fecha correspondiente
+            const clave = tipo === 'epp' ? `epp-${itemId}` : `${itemId}${tallaId ? '-' + tallaId : ''}`;
+            const fechaCampo = document.getElementById(`fecha-entrega-${clave}`);
+            if (fechaCampo) {
+                fechaCampo.value = '';
+                fechaCampo.readOnly = true; // Volver a readonly
+            }
+            
             // Restaurar el botón a estado inicial
             button.innerHTML = 'Entregar';
             button.classList.remove('bg-orange-500', 'hover:bg-orange-600');
