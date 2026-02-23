@@ -611,7 +611,16 @@ class RegistroOrdenController extends Controller
                     $options = PedidoProduccion::distinct()->pluck('forma_de_pago')->filter()->sort()->values()->toArray();
                     break;
                 case 'encargado':
-                    $options = PedidoProduccion::distinct()->pluck('encargado_orden')->filter()->sort()->values()->toArray();
+                    // Obtener encargados únicos del primer proceso de cada orden
+                    $options = PedidoProduccion::with(['procesos' => function($q) {
+                        $q->orderBy('created_at', 'desc');
+                    }])->get()
+                        ->map(fn($orden) => $orden->procesos->first()?->encargado)
+                        ->filter()
+                        ->unique()
+                        ->sort()
+                        ->values()
+                        ->toArray();
                     break;
                 case 'fecha_creacion':
                     $options = PedidoProduccion::whereNotNull('fecha_de_creacion_de_orden')
@@ -820,7 +829,10 @@ class RegistroOrdenController extends Controller
                             });
                             break;
                         case 'encargado':
-                            $query->whereIn('encargado_orden', $values);
+                            // Filtrar por encargado - verificar que existe un proceso con ese encargado
+                            $query->whereHas('procesos', function($q) use ($values) {
+                                $q->whereIn('encargado', $values);
+                            });
                             break;
                     }
                 }
@@ -838,7 +850,12 @@ class RegistroOrdenController extends Controller
                   ->where('numero_pedido', '>', 0);
 
             // Obtener resultados paginados
-            $ordenes = $query->orderBy('created_at', 'asc')->get();
+            $ordenes = $query
+                ->with(['prendas.tallas', 'asesora', 'procesos' => function($q) {
+                    $q->orderBy('created_at', 'desc');
+                }])
+                ->orderBy('created_at', 'asc')
+                ->get();
 
             // Filtrar por total_dias si está especificado
             if (!empty($filters['total_dias'])) {
@@ -890,7 +907,7 @@ class RegistroOrdenController extends Controller
                     'forma_de_pago' => $orden->forma_de_pago,
                     'fecha_creacion' => $orden->fecha_de_creacion_de_orden ? $orden->fecha_de_creacion_de_orden->format('d/m/Y') : '-',
                     'fecha_estimada' => $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : '-',
-                    'encargado' => $orden->encargado_orden ?? '-',
+                    'encargado' => $orden->procesos?->first()?->encargado ?? '-',
                 ];
             });
 
