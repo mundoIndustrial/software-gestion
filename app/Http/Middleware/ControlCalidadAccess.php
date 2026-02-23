@@ -16,7 +16,7 @@ class ControlCalidadAccess
 
         $usuario = auth()->user();
 
-        if (!$usuario->hasRole('control de calidad')) {
+        if (!$usuario->hasAnyRole(['control de calidad', 'lider-control-calidad'])) {
             return redirect()->route('login')
                 ->with('error', 'No tienes acceso a esta sección');
         }

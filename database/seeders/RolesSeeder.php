@@ -71,6 +71,11 @@ class RolesSeeder extends Seeder
                 'description' => 'visualizador de recibos en el area de control de calidad',
                 'requires_credentials' => true,
             ],
+            [
+                'name' => 'lider-control-calidad',
+                'description' => 'Líder de Control de Calidad - ve recibos de costura/reflectivo sin restricción por área',
+                'requires_credentials' => true,
+            ],
         ];
 
         foreach ($roles as $role) {

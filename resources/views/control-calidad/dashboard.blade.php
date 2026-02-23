@@ -76,6 +76,13 @@
                                     </p>
                                 </div>
 
+                                @if(!empty($prenda['proceso_actual']))
+                                    <div class="orden-cliente">
+                                        <p class="cliente-label">ÁREA ACTUAL</p>
+                                        <p class="cliente-name">{{ $prenda['proceso_actual'] }}</p>
+                                    </div>
+                                @endif
+
                                 <div class="recibos-info">
                                     <div class="recibos-lista">
                                         @if($tipoRecibo)

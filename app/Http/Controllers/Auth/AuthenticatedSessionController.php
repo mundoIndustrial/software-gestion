@@ -37,6 +37,10 @@ class AuthenticatedSessionController extends Controller
         if ($user && ($user->hasRole('diseñador-logos') || $user->hasRole('bordador'))) {
             return redirect(route('visualizador-logo.pedidos-logo', absolute: false));
         }
+
+        if ($user && $user->hasRole('lider-control-calidad')) {
+            return redirect(route('control-calidad.dashboard', absolute: false));
+        }
         
         \Log::info('Login usuario', [
             'user_id' => $user->id,

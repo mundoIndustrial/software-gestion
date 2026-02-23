@@ -59,6 +59,10 @@ class GoogleAuthController extends Controller
             return redirect()->intended(route('visualizador-logo.pedidos-logo'));
         }
 
+        if ($user && method_exists($user, 'hasRole') && $user->hasRole('lider-control-calidad')) {
+            return redirect()->intended(route('control-calidad.dashboard'));
+        }
+
         if ($user && $user->role) {
             $roleName = is_object($user->role) ? $user->role->name : $user->role;
             

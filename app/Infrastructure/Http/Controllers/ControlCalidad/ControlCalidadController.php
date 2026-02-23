@@ -30,6 +30,7 @@ class ControlCalidadController extends Controller
     public function dashboard(Request $request)
     {
         $usuario = auth()->user();
+        $esLiderControlCalidad = $usuario && $usuario->hasRole('lider-control-calidad');
 
         $recibos = ConsecutivoReciboPedido::where('activo', 1)
             ->whereIn('tipo_recibo', ['COSTURA', 'REFLECTIVO'])
@@ -62,24 +63,29 @@ class ControlCalidadController extends Controller
         }
 
         // Filtrar por área de Control de Calidad según el último proceso en procesos_prenda
-        $recibos = $recibos->filter(function ($recibo) use ($ultimoProcesoPorPedido) {
-            $numeroPedido = $recibo->pedido?->numero_pedido;
-            if (!$numeroPedido) {
-                return false;
-            }
+        // EXCEPCIÓN: el rol lider-control-calidad ve todos los recibos (sin filtro por área)
+        if (!$esLiderControlCalidad) {
+            $recibos = $recibos->filter(function ($recibo) use ($ultimoProcesoPorPedido) {
+                $numeroPedido = $recibo->pedido?->numero_pedido;
+                if (!$numeroPedido) {
+                    return false;
+                }
 
-            $proceso = $ultimoProcesoPorPedido[$numeroPedido] ?? null;
-            if (!$proceso) {
-                return false;
-            }
+                $proceso = $ultimoProcesoPorPedido[$numeroPedido] ?? null;
+                if (!$proceso) {
+                    return false;
+                }
 
-            return $this->esControlDeCalidadProceso($proceso);
-        })->values();
+                return $this->esControlDeCalidadProceso($proceso);
+            })->values();
+        }
 
         // Formatear para reutilizar el mismo layout de tarjetas
-        $prendasConRecibos = $recibos->map(function ($recibo) {
+        $prendasConRecibos = $recibos->map(function ($recibo) use ($ultimoProcesoPorPedido) {
             $pedido = $recibo->pedido;
             $prenda = $recibo->prenda ?: $pedido?->prendas?->first();
+            $numeroPedido = $pedido?->numero_pedido;
+            $procesoActual = $numeroPedido ? ($ultimoProcesoPorPedido[$numeroPedido] ?? null) : null;
 
             return [
                 'prenda_id' => $prenda->id ?? 0,
@@ -88,6 +94,7 @@ class ControlCalidadController extends Controller
                 'cliente' => $pedido->cliente ?? '',
                 'nombre_prenda' => $prenda->nombre_prenda ?? 'Pedido',
                 'descripcion' => $prenda->descripcion ?? ($pedido->descripcion ?? ''),
+                'proceso_actual' => $procesoActual,
                 'de_bodega' => $prenda->de_bodega ?? null,
                 'recibos' => [[
                     'id' => $recibo->id,
@@ -115,6 +122,7 @@ class ControlCalidadController extends Controller
     public function verPedido(Request $request, $numeroPedido)
     {
         $usuario = Auth::user();
+        $esLiderControlCalidad = $usuario && $usuario->hasRole('lider-control-calidad');
 
         $pedidoDB = PedidoProduccion::where('numero_pedido', $numeroPedido)
             ->with('prendas')
@@ -126,15 +134,18 @@ class ControlCalidadController extends Controller
         }
 
         // Seguridad adicional: solo permitir ver pedidos que estén en Control de Calidad
-        $ultimoProceso = DB::table('procesos_prenda')
-            ->where('numero_pedido', $pedidoDB->numero_pedido)
-            ->orderBy('fecha_inicio', 'desc')
-            ->orderBy('id', 'desc')
-            ->value('proceso');
+        // EXCEPCIÓN: el rol lider-control-calidad puede ver cualquier recibo COSTURA/REFLECTIVO
+        if (!$esLiderControlCalidad) {
+            $ultimoProceso = DB::table('procesos_prenda')
+                ->where('numero_pedido', $pedidoDB->numero_pedido)
+                ->orderBy('fecha_inicio', 'desc')
+                ->orderBy('id', 'desc')
+                ->value('proceso');
 
-        if (!$this->esControlDeCalidadProceso($ultimoProceso)) {
-            return redirect()->route('control-calidad.dashboard')
-                ->with('error', 'Este pedido no está en Control de Calidad');
+            if (!$this->esControlDeCalidadProceso($ultimoProceso)) {
+                return redirect()->route('control-calidad.dashboard')
+                    ->with('error', 'Este pedido no está en Control de Calidad');
+            }
         }
 
         $fotos = $this->obtenerFotosPedido($numeroPedido);
