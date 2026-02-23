@@ -99,19 +99,18 @@ function getColumnValues(columnIndex) {
 const columnMap = {
     'acciones': 0,
     'estado': 1,
-    'area': 2,
-    'dia_entrega': 3,
-    'total_dias': 4,
-    'pedido': 5,
-    'cliente': 6,
-    'descripcion': 7,
-    'cantidad': 8,
-    'novedades': 9,
-    'asesor': 10,
-    'forma_pago': 11,
-    'fecha_creacion': 12,
-    'fecha_estimada': 13,
-    'encargado': 14
+    'dia_entrega': 2,
+    'total_dias': 3,
+    'pedido': 4,
+    'cliente': 5,
+    'descripcion': 6,
+    'cantidad': 7,
+    'novedades': 8,
+    'asesor': 9,
+    'forma_pago': 10,
+    'fecha_creacion': 11,
+    'fecha_estimada': 12,
+    'encargado': 13
 };
 
 /**
@@ -123,7 +122,7 @@ function getDescripcionesWithPedidoIds() {
     
     rows.forEach(row => {
         const pedidoId = row.getAttribute('data-orden-id');
-        const descCell = row.querySelector('.table-cell:nth-child(8)');
+        const descCell = row.querySelector('.table-cell:nth-child(7)');
         
         if (pedidoId && descCell) {
             const descripcion = descCell.textContent.trim();
@@ -174,43 +173,43 @@ function getColumnValuesByName(columnName) {
                 cellText = diaSelect ? diaSelect.value : '';
                 break;
             case 'pedido':
-                const pedidoCell = row.querySelector('.table-cell:nth-child(6)');
+                const pedidoCell = row.querySelector('.table-cell:nth-child(5)');
                 cellText = pedidoCell ? pedidoCell.textContent.trim() : '';
                 break;
             case 'cliente':
-                const clienteCell = row.querySelector('.table-cell:nth-child(7)');
+                const clienteCell = row.querySelector('.table-cell:nth-child(6)');
                 cellText = clienteCell ? clienteCell.textContent.trim() : '';
                 break;
             case 'descripcion':
-                const descCell = row.querySelector('.table-cell:nth-child(8)');
+                const descCell = row.querySelector('.table-cell:nth-child(7)');
                 cellText = descCell ? descCell.textContent.trim() : '';
                 break;
             case 'cantidad':
-                const cantCell = row.querySelector('.table-cell:nth-child(9)');
+                const cantCell = row.querySelector('.table-cell:nth-child(8)');
                 cellText = cantCell ? cantCell.textContent.trim() : '';
                 break;
             case 'novedades':
-                const novCell = row.querySelector('.table-cell:nth-child(10)');
+                const novCell = row.querySelector('.table-cell:nth-child(9)');
                 cellText = novCell ? novCell.textContent.trim() : '';
                 break;
             case 'asesor':
-                const asesorCell = row.querySelector('.table-cell:nth-child(11)');
+                const asesorCell = row.querySelector('.table-cell:nth-child(10)');
                 cellText = asesorCell ? asesorCell.textContent.trim() : '';
                 break;
             case 'forma_pago':
-                const pagoCell = row.querySelector('.table-cell:nth-child(12)');
+                const pagoCell = row.querySelector('.table-cell:nth-child(11)');
                 cellText = pagoCell ? pagoCell.textContent.trim() : '';
                 break;
             case 'fecha_creacion':
-                const fcreacionCell = row.querySelector('.table-cell:nth-child(13)');
+                const fcreacionCell = row.querySelector('.table-cell:nth-child(12)');
                 cellText = fcreacionCell ? fcreacionCell.textContent.trim() : '';
                 break;
             case 'fecha_estimada':
-                const festimadaCell = row.querySelector('.table-cell:nth-child(14)');
+                const festimadaCell = row.querySelector('.table-cell:nth-child(13)');
                 cellText = festimadaCell ? festimadaCell.textContent.trim() : '';
                 break;
             case 'encargado':
-                const encargadoCell = row.querySelector('.table-cell:nth-child(15)');
+                const encargadoCell = row.querySelector('.table-cell:nth-child(14)');
                 cellText = encargadoCell ? encargadoCell.textContent.trim() : '';
                 break;
             default:
@@ -617,36 +616,42 @@ function renderFilteredTable(ordenes) {
     tableBody.innerHTML = '';
 
     if (ordenes.length === 0) {
-        tableBody.innerHTML = '<div class="table-row" style="text-align: center; padding: 20px;"><span>No hay registros que coincidan con los filtros</span></div>';
+        const emptyRow = document.createElement('tr');
+        emptyRow.style.textAlign = 'center';
+        emptyRow.style.padding = '20px';
+        emptyRow.innerHTML = '<td colspan="14" style="padding: 20px;">No hay registros que coincidan con los filtros</td>';
+        tableBody.appendChild(emptyRow);
         return;
     }
 
-    // Renderizar cada orden
+    // Renderizar cada orden con estructura HTML correcta
     ordenes.forEach(orden => {
-        const row = document.createElement('div');
+        const row = document.createElement('tr');
         row.className = 'table-row';
         row.setAttribute('data-orden-id', orden.numero_pedido);
 
         row.innerHTML = `
             <!-- Acciones -->
-            <div class="table-cell acciones-column" style="flex: 0 0 100px; justify-content: center; position: relative;">
-                <button class="action-view-btn" title="Ver detalles" data-orden-id="${orden.numero_pedido}">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <div class="action-menu" data-orden-id="${orden.numero_pedido}">
-                    <a href="#" class="action-menu-item" data-action="detalle">
+            <td class="table-cell acciones-column">
+                <div class="cell-content">
+                    <button class="action-view-btn" title="Ver detalles" data-orden-id="${orden.numero_pedido}">
                         <i class="fas fa-eye"></i>
-                        <span>Detalle</span>
-                    </a>
-                    <a href="#" class="action-menu-item" data-action="seguimiento">
-                        <i class="fas fa-tasks"></i>
-                        <span>Seguimiento</span>
-                    </a>
+                    </button>
+                    <div class="action-menu" data-orden-id="${orden.numero_pedido}">
+                        <a href="#" class="action-menu-item" data-action="detalle">
+                            <i class="fas fa-eye"></i>
+                            <span>Detalle</span>
+                        </a>
+                        <a href="#" class="action-menu-item" data-action="seguimiento">
+                            <i class="fas fa-tasks"></i>
+                            <span>Seguimiento</span>
+                        </a>
+                    </div>
                 </div>
-            </div>
+            </td>
             
             <!-- Estado -->
-            <div class="table-cell" style="flex: 0 0 auto;">
+            <td class="table-cell">
                 <div class="cell-content">
                     <select class="estado-dropdown estado-${orden.estado.toLowerCase().replace(/\s+/g, '-')}" data-orden-id="${orden.numero_pedido}">
                         <option value="Pendiente" ${orden.estado === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
@@ -656,10 +661,10 @@ function renderFilteredTable(ordenes) {
                         <option value="Anulada" ${orden.estado === 'Anulada' ? 'selected' : ''}>Anulada</option>
                     </select>
                 </div>
-            </div>
+            </td>
             
             <!-- Día de entrega -->
-            <div class="table-cell" style="flex: 0 0 auto;">
+            <td class="table-cell">
                 <div class="cell-content">
                     <select class="dia-entrega-dropdown" data-orden-id="${orden.numero_pedido}">
                         <option value="">Seleccionar</option>
@@ -669,86 +674,86 @@ function renderFilteredTable(ordenes) {
                         <option value="30" ${orden.dia_de_entrega == 30 ? 'selected' : ''}>30 días</option>
                     </select>
                 </div>
-            </div>
+            </td>
             
             <!-- Total de días -->
-            <div class="table-cell" style="flex: 0 0 120px;">
-                <div class="cell-content" style="justify-content: center;">
+            <td class="table-cell">
+                <div class="cell-content">
                     <span>${orden.dias_habiles}</span>
                 </div>
-            </div>
+            </td>
             
             <!-- Pedido -->
-            <div class="table-cell" style="flex: 0 0 120px;">
-                <div class="cell-content" style="justify-content: center;">
+            <td class="table-cell">
+                <div class="cell-content">
                     <span style="font-weight: 600;">${orden.numero_pedido}</span>
                 </div>
-            </div>
+            </td>
             
             <!-- Cliente -->
-            <div class="table-cell" style="flex: 0 0 150px;">
-                <div class="cell-content" style="justify-content: center;">
+            <td class="table-cell">
+                <div class="cell-content">
                     <span>${orden.cliente || '-'}</span>
                 </div>
-            </div>
+            </td>
             
             <!-- Descripción -->
-            <div class="table-cell" style="flex: 10;">
-                <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL] 📌 Click en descripción'); event.stopPropagation(); abrirModalCeldaConFormato('Descripción', ${JSON.stringify(orden.prendas || [])})">
+            <td class="table-cell descripcion-cell">
+                <div class="cell-content" style="cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL] 📌 Click en descripción'); event.stopPropagation(); abrirModalCeldaConFormato('Descripción', ${JSON.stringify(orden.prendas || [])})">
                     <span style="color: #6b7280; font-size: 0.875rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Click para ver completo">
                         ${orden.descripcion ? orden.descripcion + ' <span style="color: #3b82f6; font-weight: 600;">...</span>' : '-'}
                     </span>
                 </div>
-            </div>
+            </td>
             
             <!-- Cantidad -->
-            <div class="table-cell" style="flex: 0 0 100px;">
-                <div class="cell-content" style="margin-left: 50px;">
+            <td class="table-cell">
+                <div class="cell-content">
                     <span>${orden.cantidad || '-'}</span>
                 </div>
-            </div>
+            </td>
             
             <!-- Novedades -->
-            <div class="table-cell" style="flex: 0 0 120px;">
-                <div class="cell-content" style="justify-content: flex-start;">
+            <td class="table-cell">
+                <div class="cell-content">
                     <span>${orden.novedades || '-'}</span>
                 </div>
-            </div>
+            </td>
             
             <!-- Asesor -->
-            <div class="table-cell" style="flex: 0 0 120px;">
-                <div class="cell-content" style="justify-content: center;">
+            <td class="table-cell">
+                <div class="cell-content">
                     <span>${orden.asesor}</span>
                 </div>
-            </div>
+            </td>
             
             <!-- Forma de pago -->
-            <div class="table-cell" style="flex: 0 0 120px;">
-                <div class="cell-content" style="justify-content: center;">
+            <td class="table-cell">
+                <div class="cell-content">
                     <span>${orden.forma_de_pago || '-'}</span>
                 </div>
-            </div>
+            </td>
             
             <!-- Fecha de creación -->
-            <div class="table-cell" style="flex: 0 0 120px;">
-                <div class="cell-content" style="justify-content: center;">
+            <td class="table-cell">
+                <div class="cell-content">
                     <span>${orden.fecha_creacion}</span>
                 </div>
-            </div>
+            </td>
             
             <!-- Fecha estimada -->
-            <div class="table-cell" style="flex: 0 0 120px;">
-                <div class="cell-content" style="justify-content: center;">
-                    <span>${orden.fecha_estimada}</span>
+            <td class="table-cell fecha-estimada-cell" data-fecha-estimada="${orden.fecha_estimada}">
+                <div class="cell-content">
+                    <span class="fecha-estimada-span">${orden.fecha_estimada}</span>
                 </div>
-            </div>
+            </td>
             
             <!-- Encargado -->
-            <div class="table-cell" style="flex: 0 0 120px;">
-                <div class="cell-content" style="justify-content: center;">
+            <td class="table-cell">
+                <div class="cell-content">
                     <span>${orden.encargado}</span>
                 </div>
-            </div>
+            </td>
         `;
 
         tableBody.appendChild(row);

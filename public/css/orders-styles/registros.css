@@ -56,7 +56,7 @@ body:has(.table-container) { font-family: -apple-system, BlinkMacSystemFont, 'Se
   transform: scale(0.75);
   transform-origin: top left;
   width: 133.33%;
-  margin-bottom: -25%;
+  margin-bottom: -33.33vh;
   margin-left: -0.5rem;
   margin-top: -1.5rem;
 }
@@ -70,54 +70,73 @@ body:has(.table-container) { font-family: -apple-system, BlinkMacSystemFont, 'Se
   border: 2px solid var(--primary);
   display: flex;
   flex-direction: column;
-  height: calc(120vh - 40px);
-  max-height: 150vh;
+  height: calc(133vh - 100px);
+  max-height: calc(133vh - 80px);
   margin: 0.5rem 0.5rem 0 0.5rem;
   position: relative;
 }
 
-.modern-table {
+/* Scrollable area wrapping the table */
+.modern-table-wrapper .modern-table {
+  display: block;
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) var(--surface-gray);
+}
+
+.modern-table::-webkit-scrollbar { width: 8px; height: 8px; }
+.modern-table::-webkit-scrollbar-track { background: var(--surface-gray); border-radius: 4px; }
+.modern-table::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+.modern-table::-webkit-scrollbar-thumb:hover { background: var(--primary-hover); }
+
+.modern-table table,
+table.modern-table {
   width: 100%;
   border-collapse: separate;
-  border-spacing: 0;
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  height: 100%;
+  border-spacing: 0 8px;
+  table-layout: fixed;
+}
+
+/* The min-width must be on thead/tbody (the inner content),
+   NOT on the table itself (which is the scroll container with display:block). */
+table.modern-table > thead,
+table.modern-table > tbody {
+  display: table;
+  width: 100%;
+  min-width: 2100px;
+  table-layout: fixed;
 }
 
 .table-head {
   position: sticky;
   top: 0;
-  z-index: 10;
-  background: var(--surface-white);
-  border-bottom: 2px solid var(--border-light);
+  z-index: 20;
+  background: linear-gradient(135deg, var(--primary) 0%, #2563eb 100%);
 }
 
 .table-head tr {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  gap: 12px;
-  padding: 14px 12px;
+  /* Standard table row - no flex needed */
 }
 
 .table-header-cell {
-  display: flex;
-  align-items: center;
-  position: relative;
-  font-weight: 600;
-  font-size: 0.875rem;
-  color: var(--text-primary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 8px 12px;
   background: transparent;
+  color: var(--text-white); 
+  padding: 16px 12px;
   border: none;
+  position: relative; 
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+  text-align: left;
+  vertical-align: middle;
 }
 
 .table-header-cell.acciones-column {
-  justify-content: flex-start !important;
+  text-align: center;
 }
 
 .th-wrapper {
@@ -128,9 +147,11 @@ body:has(.table-container) { font-family: -apple-system, BlinkMacSystemFont, 'Se
 }
 
 .header-text {
-  font-weight: inherit;
-  font-size: inherit;
-  color: inherit;
+  font-weight: 600; 
+  font-size: 13px; 
+  color: var(--text-white);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -168,126 +189,20 @@ body:has(.table-container) { font-family: -apple-system, BlinkMacSystemFont, 'Se
 }
 
 .table-scroll-container { 
-  overflow: auto; 
-  flex: 1;
-  width: 100%;
-  scrollbar-width: thin; 
-  scrollbar-color: var(--primary) var(--surface-gray);
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.table-scroll-container::-webkit-scrollbar { 
-  width: 8px; 
-  height: 8px; 
-}
-
-.table-scroll-container::-webkit-scrollbar-track { 
-  background: var(--surface-gray); 
-  border-radius: 4px; 
-}
-
-.table-scroll-container::-webkit-scrollbar-thumb { 
-  background: var(--primary); 
-  border-radius: 4px; 
-}
-
-.table-scroll-container::-webkit-scrollbar-thumb:hover { 
-  background: var(--primary-hover); 
-}
-
-.modern-table { 
-  width: 100%; 
-  display: flex;
-  flex-direction: column;
-  font-size: 0.875rem;
-  min-width: 2200px;
-}
-
-/* ===== HEADERS ===== */
-.table-head { 
-  position: sticky; 
-  top: 0;
-  z-index: 20;
-  background: linear-gradient(135deg, var(--primary) 0%, #2563eb 100%);
-  border-radius: 16px 16px 0 0;
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  padding: 0 20px;
-  height: 70px;
-  width: 100%;
-  min-width: 2670px;
-  flex-shrink: 0;
-  will-change: transform;
-}
-
-.table-header-cell { 
-  background: transparent;
-  color: var(--text-white); 
-  padding: 0 12px;
-  border: none;
-  position: relative; 
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  height: 100%;
-  user-select: none;
-}
-
-.table-header-cell.acciones-column {
-  justify-content: flex-start;
-}
-
-.header-text { 
-  font-weight: 600; 
-  font-size: 13px; 
-  color: var(--text-white);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* ===== ROWS & CELLS ===== */
-.table-scroll-container tbody { 
   background: #bdbdbe;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 12px;
-  min-width: 2670px;
-  width: 100%;
-  flex: 1;
 }
 
-body.dark-theme .table-scroll-container tbody {
+body.dark-theme .table-scroll-container {
   background: #e4e4e4;
 }
 
 .table-row { 
   transition: var(--transition);
-  height: 70px;
   background: #ffffff;
-  border-radius: 12px;
   border: 1px solid #e5e7eb;
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  padding: 0 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  overflow: visible;
   position: relative;
   z-index: 1;
-  min-width: 2650px;
-  width: 100%;
-  flex-shrink: 0;
 }
 
 .table-row:has(.action-menu.active) {
@@ -295,9 +210,8 @@ body.dark-theme .table-scroll-container tbody {
 }
 
 .table-row:hover { 
-  background: #ffffff;
+  background: #f0f4ff;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
 }
 
 .table-row:last-child { 
@@ -305,26 +219,29 @@ body.dark-theme .table-scroll-container tbody {
 }
 
 .table-cell { 
-  padding: 14px 8px;
+  padding: 12px 10px;
   border-right: none;
   position: relative;
   vertical-align: middle;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  min-width: 170px;
-  overflow: visible;
-  flex: 0 0 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+.table-cell.acciones-column {
+  text-align: center;
+  overflow: visible;
+}
+
+.table-cell.descripcion-cell {
+  /* Allow description to use available space */
+}
 
 .cell-content { 
   padding: 0;
   cursor: pointer;
-  height: 100%;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
   gap: 8px;
   transition: var(--transition);
   width: 100%;

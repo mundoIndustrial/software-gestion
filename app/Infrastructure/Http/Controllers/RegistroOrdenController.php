@@ -613,6 +613,34 @@ class RegistroOrdenController extends Controller
                 case 'encargado':
                     $options = PedidoProduccion::distinct()->pluck('encargado_orden')->filter()->sort()->values()->toArray();
                     break;
+                case 'fecha_creacion':
+                    $options = PedidoProduccion::whereNotNull('fecha_de_creacion_de_orden')
+                        ->pluck('fecha_de_creacion_de_orden')
+                        ->map(fn($f) => \Carbon\Carbon::parse($f)->format('d/m/Y'))
+                        ->unique()
+                        ->sort()
+                        ->values()
+                        ->toArray();
+                    break;
+                case 'fecha_estimada':
+                    $options = PedidoProduccion::whereNotNull('fecha_estimada_de_entrega')
+                        ->pluck('fecha_estimada_de_entrega')
+                        ->map(fn($f) => \Carbon\Carbon::parse($f)->format('d/m/Y'))
+                        ->unique()
+                        ->sort()
+                        ->values()
+                        ->toArray();
+                    break;
+                case 'cantidad':
+                    // Opciones de cantidad basadas en las prendas
+                    $options = PedidoProduccion::with(['prendas.tallas'])->get()
+                        ->map(fn($o) => $o->cantidad_total)
+                        ->filter(fn($v) => $v > 0)
+                        ->unique()
+                        ->sort()
+                        ->values()
+                        ->toArray();
+                    break;
                 case 'total_dias':
                     // Para total_dias, calcular todos los valores y obtener los únicos
                     $currentYear = now()->year;
@@ -744,9 +772,55 @@ class RegistroOrdenController extends Controller
                             $query->whereNotIn('estado', ['DEVUELTO_A_ASESORA']);
                             break;
                         case 'cliente':
-                            foreach ($values as $value) {
-                                $query->orWhere('cliente', 'LIKE', '%' . $value . '%');
-                            }
+                            $query->where(function($q) use ($values) {
+                                foreach ($values as $value) {
+                                    $q->orWhere('cliente', 'LIKE', '%' . $value . '%');
+                                }
+                            });
+                            break;
+                        case 'forma_pago':
+                            $query->whereIn('forma_de_pago', $values);
+                            break;
+                        case 'asesor':
+                            $query->whereHas('asesora', function($q) use ($values) {
+                                $q->whereIn('name', $values);
+                            });
+                            break;
+                        case 'cantidad':
+                            // Se filtra post-query
+                            break;
+                        case 'novedades':
+                            $query->where(function($q) use ($values) {
+                                foreach ($values as $value) {
+                                    $q->orWhere('novedades', 'LIKE', '%' . $value . '%');
+                                }
+                            });
+                            break;
+                        case 'fecha_creacion':
+                            $query->where(function($q) use ($values) {
+                                foreach ($values as $value) {
+                                    // Convertir dd/mm/yyyy a fecha
+                                    $parts = explode('/', $value);
+                                    if (count($parts) === 3) {
+                                        $date = $parts[2] . '-' . $parts[1] . '-' . $parts[0];
+                                        $q->orWhereDate('fecha_de_creacion_de_orden', $date);
+                                    }
+                                }
+                            });
+                            break;
+                        case 'fecha_estimada':
+                            $query->where(function($q) use ($values) {
+                                foreach ($values as $value) {
+                                    $parts = explode('/', $value);
+                                    if (count($parts) === 3) {
+                                        $date = $parts[2] . '-' . $parts[1] . '-' . $parts[0];
+                                        $q->orWhereDate('fecha_estimada_de_entrega', $date);
+                                    }
+                                }
+                            });
+                            break;
+                        case 'encargado':
+                            $query->whereIn('encargado_orden', $values);
                             break;
                     }
                 }
@@ -810,12 +884,12 @@ class RegistroOrdenController extends Controller
                     'dia_de_entrega' => $orden->dia_de_entrega,
                     'dias_habiles' => $orden->calcularDiasHabiles(),
                     'descripcion' => $orden->getNombresPrendas(),
-                    'cantidad' => $orden->prendas->sum('cantidad'),
+                    'cantidad' => $orden->cantidad_total,
                     'novedades' => $orden->novedades,
                     'asesor' => $orden->asesora ? $orden->asesora->name : '-',
                     'forma_de_pago' => $orden->forma_de_pago,
                     'fecha_creacion' => $orden->fecha_de_creacion_de_orden ? $orden->fecha_de_creacion_de_orden->format('d/m/Y') : '-',
-                    'fecha_estimada' => $orden->fecha_estimada_entrega ? $orden->fecha_estimada_entrega->format('d/m/Y') : '-',
+                    'fecha_estimada' => $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : '-',
                     'encargado' => $orden->encargado_orden ?? '-',
                 ];
             });
@@ -882,7 +956,7 @@ class RegistroOrdenController extends Controller
                     'asesor_id',
                     'created_at',
                     'updated_at'
-                )->with('prendas', 'asesora');
+                )->with(['prendas.tallas', 'asesora']);
 
                 // Obtener total antes de paginar
                 $total = $ordenesQuery->count();

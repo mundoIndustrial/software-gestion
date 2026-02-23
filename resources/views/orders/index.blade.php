@@ -22,32 +22,31 @@
     <div class="table-container">
         <div class="modern-table-wrapper">
             <table class="modern-table" id="tablaOrdenes">
+                @php
+                    $columns = [
+                        ['key' => 'acciones', 'label' => 'Acciones'],
+                        ['key' => 'estado', 'label' => 'Estado'],
+                        ['key' => 'dia_entrega', 'label' => 'Día de entrega'],
+                        ['key' => 'total_dias', 'label' => 'Total de días'],
+                        ['key' => 'pedido', 'label' => 'Pedido'],
+                        ['key' => 'cliente', 'label' => 'Cliente'],
+                        ['key' => 'descripcion', 'label' => 'Descripción'],
+                        ['key' => 'cantidad', 'label' => 'Cantidad'],
+                        ['key' => 'novedades', 'label' => 'Novedades'],
+                        ['key' => 'asesor', 'label' => 'Asesor'],
+                        ['key' => 'forma_pago', 'label' => 'Forma de pago'],
+                        ['key' => 'fecha_creacion', 'label' => 'Fecha de creación'],
+                        ['key' => 'fecha_estimada', 'label' => 'Fecha estimada entrega'],
+                        ['key' => 'encargado', 'label' => 'Encargado orden'],
+                    ];
+                @endphp
                 <thead class="table-head" id="tableHead">
-                    <tr style="display: flex; align-items: center; width: 100%; gap: 12px; padding: 14px 12px;">
-                    @php
-                        $columns = [
-                            ['key' => 'acciones', 'label' => 'Acciones', 'flex' => '0 0 100px', 'justify' => 'flex-start'],
-                            ['key' => 'estado', 'label' => 'Estado', 'flex' => '0 0 120px', 'justify' => 'center'],
-                            ['key' => 'dia_entrega', 'label' => 'Día de entrega', 'flex' => '0 0 150px', 'justify' => 'center'],
-                            ['key' => 'total_dias', 'label' => 'Total de días', 'flex' => '0 0 120px', 'justify' => 'center'],
-                            ['key' => 'pedido', 'label' => 'Pedido', 'flex' => '0 0 120px', 'justify' => 'center'],
-                            ['key' => 'cliente', 'label' => 'Cliente', 'flex' => '0 0 150px', 'justify' => 'center'],
-                            ['key' => 'descripcion', 'label' => 'Descripción', 'flex' => '1; margin-left: 50px', 'justify' => 'center'],
-                            ['key' => 'cantidad', 'label' => 'Cantidad', 'flex' => '0 0 100px', 'justify' => 'start'],
-                            ['key' => 'novedades', 'label' => 'Novedades', 'flex' => '0 0 120px', 'justify' => 'flex-start'],
-                            ['key' => 'asesor', 'label' => 'Asesor', 'flex' => '0 0 120px', 'justify' => 'flex-start'],
-                            ['key' => 'forma_pago', 'label' => 'Forma de pago', 'flex' => '0 0 150px', 'justify' => 'flex-start'],
-                            ['key' => 'fecha_creacion', 'label' => 'Fecha de creación', 'flex' => '0 0 150px', 'justify' => 'flex-start'],
-                            ['key' => 'fecha_estimada', 'label' => 'Fecha estimada entrega', 'flex' => '0 0 180px', 'justify' => 'flex-start'],
-                            ['key' => 'encargado', 'label' => 'Encargado orden', 'flex' => '0 0 150px', 'justify' => 'flex-start'],
-                        ];
-                    @endphp
-                    
+                    <tr>
                         @foreach($columns as $column)
-                            <th class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}" style="flex: {{ $column['flex'] }}; justify-content: {{ $column['justify'] }};" data-column="{{ $column['key'] }}">
+                            <th class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}" data-column="{{ $column['key'] }}">
                                 <div class="th-wrapper">
                                     <span class="header-text">{{ $column['label'] }}</span>
-                                    @if($column['key'] !== 'acciones')
+                                    @if($column['key'] !== 'acciones' && $column['key'] !== 'novedades')
                                         <button type="button" class="btn-filter-column" title="Filtrar {{ $column['label'] }}" onclick="openFilterModal('{{ $column['key'] }}')">
                                             <span class="material-symbols-rounded">filter_alt</span>
                                             <span class="filter-badge">0</span>
@@ -163,7 +162,7 @@
                             @endphp
                             <tr class="table-row" data-orden-id="{{ $orden->id }}">
                                 <!-- Acciones -->
-                                <td class="table-cell acciones-column" style="flex: 0 0 100px; justify-content: center; position: relative;">
+                                <td class="table-cell acciones-column">
                                     <button class="action-view-btn" title="Ver detalles" data-orden-id="{{ $orden->id }}">
                                         <i class="fas fa-eye"></i>
                                     </button>
@@ -180,7 +179,7 @@
                                 </td>
                                 
                                 <!-- Estado (Dropdown) -->
-                                <td class="table-cell" style="flex: 0 0 auto;">
+                                <td class="table-cell">
                                     <div class="cell-content">
                                         <select class="estado-dropdown estado-{{ str_replace(' ', '-', strtolower(trim($orden->estado ?? 'pendiente'))) }}" data-orden-id="{{ $orden->id }}">
                                             @foreach(\App\Models\PedidoProduccion::ESTADOS as $estado)
@@ -191,7 +190,7 @@
                                 </td>
                                 
                                 <!-- Día de entrega (Dropdown) -->
-                                <td class="table-cell" style="flex: 0 0 auto;">
+                                <td class="table-cell">
                                     <div class="cell-content">
                                         <select class="dia-entrega-dropdown" data-orden-id="{{ $orden->numero_pedido }}">
                                             <option value="">Seleccionar</option>
@@ -203,22 +202,22 @@
                                 </td>
                                 
                                 <!-- Total de días -->
-                                <td class="table-cell" style="flex: 0 0 120px;">
-                                    <div class="cell-content" style="justify-content: center;">
+                                <td class="table-cell">
+                                    <div class="cell-content">
                                         <span>{{ $orden->calcularDiasHabiles() }}</span>
                                     </div>
                                 </td>
                                 
                                 <!-- Pedido -->
-                                <td class="table-cell" style="flex: 0 0 120px;">
-                                    <div class="cell-content" style="justify-content: center;">
+                                <td class="table-cell">
+                                    <div class="cell-content">
                                         <span style="font-weight: 600;">{{ $orden->numero_pedido ?? $orden->id }}</span>
                                     </div>
                                 </td>
                                 
                                 <!-- Cliente -->
-                                <td class="table-cell" style="flex: 0 0 150px;">
-                                    <div class="cell-content" style="justify-content: center;">
+                                <td class="table-cell">
+                                    <div class="cell-content">
                                         <span>{{ $orden->cliente ?? '-' }}</span>
                                     </div>
                                 </td>
@@ -249,8 +248,8 @@
                                 @endphp
 
                                 <!-- Descripción -->
-                                <td class="table-cell" style="flex: 10;">
-                                    <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL] 📌 Click en descripción'); event.stopPropagation(); abrirModalCeldaConFormato('Descripción', {{ json_encode($prendasParaModal) }})">
+                                <td class="table-cell descripcion-cell">
+                                    <div class="cell-content" style="cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL] 📌 Click en descripción'); event.stopPropagation(); abrirModalCeldaConFormato('Descripción', {{ json_encode($prendasParaModal) }})">
                                         <span style="color: #6b7280; font-size: 0.875rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Click para ver completo">
                                             @php
                                                 if ($orden->prendas && $orden->prendas->count() > 0) {
@@ -268,11 +267,11 @@
                                 </td>
                                 
                                 <!-- Cantidad -->
-                                <td class="table-cell" style="flex: 0 0 100px;">
-                                    <div class="cell-content" style="margin-left: 50px;">
+                                <td class="table-cell">
+                                    <div class="cell-content">
                                         <span>
                                             @php
-                                                $cantidadTotal = $orden->prendas->sum('cantidad');
+                                                $cantidadTotal = $orden->cantidad_total;
                                                 echo $cantidadTotal > 0 ? $cantidadTotal : '-';
                                             @endphp
                                         </span>
@@ -280,8 +279,8 @@
                                 </td>
                                 
                                 <!-- Novedades -->
-                                <td class="table-cell" style="flex: 0 0 120px;">
-                                    <div class="cell-content" style="justify-content: flex-start;">
+                                <td class="table-cell">
+                                    <div class="cell-content">
                                         <button 
                                             class="btn-edit-novedades"
                                             data-full-novedades="{{ addslashes($orden->novedades ?? '') }}"
@@ -299,36 +298,36 @@
                                 </td>
                                 
                                 <!-- Asesor -->
-                                <td class="table-cell" style="flex: 0 0 120px;">
-                                    <div class="cell-content" style="justify-content: flex-start;">
+                                <td class="table-cell">
+                                    <div class="cell-content">
                                         <span>{{ $orden->asesora?->name ?? '-' }}</span>
                                     </div>
                                 </td>
                                 
                                 <!-- Forma de pago -->
-                                <td class="table-cell" style="flex: 0 0 150px;">
-                                    <div class="cell-content" style="justify-content: flex-start;">
+                                <td class="table-cell">
+                                    <div class="cell-content">
                                         <span>{{ $orden->forma_de_pago ?? '-' }}</span>
                                     </div>
                                 </td>
                                 
                                 <!-- Fecha de creación -->
-                                <td class="table-cell" style="flex: 0 0 150px;">
-                                    <div class="cell-content" style="justify-content: flex-start;">
+                                <td class="table-cell">
+                                    <div class="cell-content">
                                         <span>{{ $orden->fecha_de_creacion_de_orden ? \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden)->format('d/m/Y') : '-' }}</span>
                                     </div>
                                 </td>
                                 
                                 <!-- Fecha estimada entrega -->
-                                <td class="table-cell fecha-estimada-cell" style="flex: 0 0 180px;" data-fecha-estimada="{{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : '-' }}">
-                                    <div class="cell-content" style="justify-content: flex-start;">
+                                <td class="table-cell fecha-estimada-cell" data-fecha-estimada="{{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : '-' }}">
+                                    <div class="cell-content">
                                         <span class="fecha-estimada-span">{{ $orden->fecha_estimada_de_entrega ? \Carbon\Carbon::parse($orden->fecha_estimada_de_entrega)->format('d/m/Y') : '-' }}</span>
                                     </div>
                                 </td>
                                 
                                 <!-- Encargado orden -->
-                                <td class="table-cell" style="flex: 0 0 150px;">
-                                    <div class="cell-content" style="justify-content: flex-start;">
+                                <td class="table-cell">
+                                    <div class="cell-content">
                                         <span>
                                             @php
                                                 $encargado = $orden->procesos()
@@ -467,25 +466,9 @@
 
         // Sincronizar scroll horizontal del header con el contenido
         document.addEventListener('DOMContentLoaded', function() {
-            const scrollContainer = document.querySelector('.table-scroll-container');
-            const tableHead = document.querySelector('.table-head');
-            
-            if (scrollContainer && tableHead) {
-                scrollContainer.addEventListener('scroll', function() {
-                    // Solo aplicar transformación si hay scroll horizontal
-                    if (this.scrollLeft > 0) {
-                        tableHead.style.transform = 'translateX(' + (-this.scrollLeft) + 'px)';
-                    } else {
-                        tableHead.style.transform = 'translateX(0px)';
-                    }
-                });
-                
-                // Inicializar posición del header
-                tableHead.style.transform = 'translateX(0px)';
-            }
-            
-            // Actualizar referencias para tabla HTML
-            const tablaBody = document.querySelector('.table-scroll-container tbody');
+            // Con tabla estándar HTML, thead y tbody se alinean automáticamente
+            // Solo necesitamos asignar el id al tbody para referencias JS
+            const tablaBody = document.querySelector('.table-scroll-container');
             if (tablaBody) {
                 tablaBody.id = 'tablaOrdenesBody';
             }

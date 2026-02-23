@@ -251,7 +251,7 @@ const NavSearch = {
      * Crear fila de tabla
      */
     createTableRow(orden) {
-        const row = document.createElement('div');
+        const row = document.createElement('tr');
         row.className = 'table-row';
         row.setAttribute('data-orden-id', orden.numero_pedido);
 
@@ -260,7 +260,7 @@ const NavSearch = {
 
         row.innerHTML = `
             <!-- Acciones -->
-            <div class="table-cell acciones-column" style="flex: 0 0 100px; justify-content: center; position: relative;">
+            <td class="table-cell acciones-column">
                 <button class="action-view-btn" title="Ver detalles" data-orden-id="${orden.numero_pedido}">
                     <i class="fas fa-eye"></i>
                 </button>
@@ -274,10 +274,10 @@ const NavSearch = {
                         <span>Seguimiento</span>
                     </a>
                 </div>
-            </div>
+            </td>
 
             <!-- Estado (Dropdown) -->
-            <div class="table-cell" style="flex: 0 0 auto;">
+            <td class="table-cell">
                 <div class="cell-content">
                     <select class="estado-dropdown estado-${this.getStatusClass(orden.estado)}" data-orden-id="${orden.numero_pedido}">
                         <option value="En Ejecución" ${orden.estado === 'En Ejecución' ? 'selected' : ''}>En Ejecución</option>
@@ -286,10 +286,10 @@ const NavSearch = {
                         <option value="Anulada" ${orden.estado === 'Anulada' ? 'selected' : ''}>Anulada</option>
                     </select>
                 </div>
-            </div>
+            </td>
 
             <!-- Área (Dropdown) -->
-            <div class="table-cell" style="flex: 0 0 auto;">
+            <td class="table-cell">
                 <div class="cell-content">
                     <select class="area-dropdown" data-orden-id="${orden.numero_pedido}">
                         <option value="Corte" ${orden.area === 'Corte' ? 'selected' : ''}>Corte</option>
@@ -305,10 +305,10 @@ const NavSearch = {
                         <option value="Cortando" ${orden.area === 'Cortando' ? 'selected' : ''}>Cortando</option>
                     </select>
                 </div>
-            </div>
+            </td>
 
             <!-- Día de entrega (Dropdown) -->
-            <div class="table-cell" style="flex: 0 0 auto;">
+            <td class="table-cell">
                 <div class="cell-content">
                     <select class="dia-entrega-dropdown" data-orden-id="${orden.numero_pedido}">
                         <option value="">Seleccionar</option>
@@ -317,84 +317,84 @@ const NavSearch = {
                         ).join('')}
                     </select>
                 </div>
-            </div>
+            </td>
 
             <!-- Total de días -->
-            <div class="table-cell" style="flex: 0 0 120px;">
-                <div class="cell-content" style="justify-content: center;">
+            <td class="table-cell">
+                <div class="cell-content">
                     <span class="total-dias">${totalDias}</span>
                 </div>
-            </div>
+            </td>
 
             <!-- Número de Pedido -->
-            <div class="table-cell" style="flex: 0 0 120px;">
-                <div class="cell-content" style="justify-content: center;">
+            <td class="table-cell">
+                <div class="cell-content">
                     <span class="numero-pedido" style="font-weight: 600;">${orden.numero_pedido}</span>
                 </div>
-            </div>
+            </td>
 
             <!-- Cliente -->
-            <div class="table-cell" style="flex: 0 0 150px;">
-                <div class="cell-content" style="justify-content: center;">
+            <td class="table-cell">
+                <div class="cell-content">
                     <span class="cliente">${orden.cliente || '-'}</span>
                 </div>
-            </div>
+            </td>
 
             <!-- Descripción de Prendas -->
-            <div class="table-cell" style="flex: 10;">
-                <div class="cell-content" style="justify-content: center;">
+            <td class="table-cell descripcion-cell">
+                <div class="cell-content">
                     <span class="descripcion-prendas">${this.getDescripcionPrendas(orden)}</span>
                 </div>
-            </div>
+            </td>
 
             <!-- Cantidad -->
-            <div class="table-cell" style="flex: 0 0 100px;">
-                <div class="cell-content" style="margin-left: 50px;">
+            <td class="table-cell">
+                <div class="cell-content">
                     <span class="cantidad">${cantidad}</span>
                 </div>
-            </div>
+            </td>
 
             <!-- Novedades -->
-            <div class="table-cell" style="flex: 0 0 120px;">
-                <div class="cell-content" style="justify-content: flex-start;">
+            <td class="table-cell">
+                <div class="cell-content">
                     <span class="novedades">${orden.novedades || '-'}</span>
                 </div>
-            </div>
+            </td>
 
             <!-- Asesor -->
-            <div class="table-cell" style="flex: 0 0 120px;">
-                <div class="cell-content" style="justify-content: flex-start;">
+            <td class="table-cell">
+                <div class="cell-content">
                     <span class="asesor">${orden.asesor || '-'}</span>
                 </div>
-            </div>
+            </td>
 
             <!-- Forma de pago -->
-            <div class="table-cell" style="flex: 0 0 150px;">
-                <div class="cell-content" style="justify-content: flex-start;">
+            <td class="table-cell">
+                <div class="cell-content">
                     <span class="forma-pago">${orden.forma_de_pago || '-'}</span>
                 </div>
-            </div>
+            </td>
 
             <!-- Fecha de creación -->
-            <div class="table-cell" style="flex: 0 0 150px;">
-                <div class="cell-content" style="justify-content: flex-start;">
+            <td class="table-cell">
+                <div class="cell-content">
                     <span class="fecha-creacion">${this.formatDate(orden.fecha_de_creacion_de_orden || orden.created_at)}</span>
                 </div>
-            </div>
+            </td>
 
             <!-- Fecha estimada entrega -->
-            <div class="table-cell" style="flex: 0 0 180px;">
-                <div class="cell-content" style="justify-content: flex-start;">
+            <td class="table-cell">
+                <div class="cell-content">
                     <span class="fecha-estimada">${this.formatDate(orden.fecha_estimada_de_entrega)}</span>
                 </div>
-            </div>
+            </td>
 
             <!-- Encargado orden -->
-            <div class="table-cell" style="flex: 0 0 150px;">
-                <div class="cell-content" style="justify-content: flex-start;">
+            <td class="table-cell">
+                <div class="cell-content">
                     <span class="encargado">${orden.encargado || '-'}</span>
                 </div>
-            </div>
+            </td>
         `;
 
         return row;
