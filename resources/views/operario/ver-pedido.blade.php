@@ -10,7 +10,7 @@
         <button class="btn-volver-header" onclick="history.back()">
             <span class="material-symbols-rounded">arrow_back</span>
         </button>
-        <h1 class="pedido-numero-header">#{{ $pedido['numero_pedido'] }}</h1>
+        <h1 class="pedido-numero-header" id="header-numero-recibo">#{{ $pedido['numero_pedido'] }}</h1>
     </div>
 
     <!-- Tabs (Arriba para cambiar vistas) -->
@@ -972,7 +972,150 @@
      */
     let fotosGlobales = []; // Variable global para guardar las fotos
     let indiceActualGaleria = 0; // Índice de la foto actual en la galería
+    let datosCompletoPedido = {}; // Guardar los datos completos del pedido para extraer fotos por prenda
     
+
+    /**
+     * Extrae las fotos solo de la prenda actualmente visible
+     */
+    function actualizarFotosPrenda() {
+        const prendaIdx = window.prendaCarouselIndex || 0;
+        const PRENDAS_POR_PAGINA = 1;
+        const startIdx = prendaIdx * PRENDAS_POR_PAGINA;
+        const endIdx = startIdx + PRENDAS_POR_PAGINA;
+        
+        // Obtener las prendas visibles
+        let prendas = (datosCompletoPedido && datosCompletoPedido.prendas) || [];
+        
+        // Filtrar por proceso si aplica
+        const procesoActualIndex = window.procesoCarouselIndex || 0;
+        const procesosDisponibles = window.todosProcesosDisponibles || [];
+        const procesoActualSeleccionado = procesosDisponibles[procesoActualIndex] || null;
+        
+        if (procesoActualSeleccionado) {
+            prendas = prendas.filter(p => {
+                if (p.recibos && typeof p.recibos === 'object') {
+                    return p.recibos[procesoActualSeleccionado] !== null && p.recibos[procesoActualSeleccionado] !== undefined;
+                }
+                return false;
+            });
+        }
+        
+        const prendasVisibles = prendas.slice(startIdx, endIdx);
+        const fotosActuales = [];
+        
+        // Extraer fotos solo de las prendas visibles
+        prendasVisibles.forEach(prenda => {
+            console.log('🖼️ [EXTRAYENDO FOTOS] Prenda:', prenda.nombre_prenda || prenda.nombre, 'ID:', prenda.id);
+            
+            // Fotos directas de la prenda
+            if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
+                console.log('  📸 Fotos de prenda encontradas:', prenda.imagenes.length);
+                prenda.imagenes.forEach(img => {
+                    if (img.ruta_webp || img.url) {
+                        fotosActuales.push(img.ruta_webp || img.url);
+                        console.log('    ✅ Foto prenda agregada:', img.ruta_webp || img.url);
+                    }
+                });
+            }
+            
+            // Fotos de telas
+            if (prenda.telas_array && Array.isArray(prenda.telas_array)) {
+                console.log('  🧵 Telas encontradas:', prenda.telas_array.length);
+                prenda.telas_array.forEach((tela, telaIdx) => {
+                    console.log('    Tela ' + telaIdx + ':', tela.tela_nombre || 'N/A', '- Color:', tela.color_nombre || 'N/A');
+                    if (tela.fotos_tela && Array.isArray(tela.fotos_tela)) {
+                        console.log('      Fotos de tela:', tela.fotos_tela.length);
+                        tela.fotos_tela.forEach(img => {
+                            if (img.ruta_webp || img.url) {
+                                fotosActuales.push(img.ruta_webp || img.url);
+                                console.log('      ✅ Foto tela agregada:', img.ruta_webp || img.url);
+                            }
+                        });
+                    } else {
+                        console.log('      ⚠️ Sin fotos_tela en esta tela');
+                    }
+                });
+            }
+            
+            // Fotos de procesos
+            if (prenda.procesos && Array.isArray(prenda.procesos)) {
+                console.log('  ⚙️ Procesos encontrados:', prenda.procesos.length);
+                prenda.procesos.forEach((proceso, procIdx) => {
+                    console.log('    Proceso ' + procIdx + ':', proceso.tipo_proceso || 'N/A');
+                    if (proceso.imagenes && Array.isArray(proceso.imagenes)) {
+                        console.log('      Fotos de proceso:', proceso.imagenes.length);
+                        proceso.imagenes.forEach(img => {
+                            if (img.ruta_webp || img.url) {
+                                fotosActuales.push(img.ruta_webp || img.url);
+                                console.log('      ✅ Foto proceso agregada:', img.ruta_webp || img.url);
+                            }
+                        });
+                    } else {
+                        console.log('      ⚠️ Sin imagenes en este proceso');
+                    }
+                });
+            }
+        });
+        
+        // Eliminar duplicados
+        const fotosUnicas = Array.from(new Set(fotosActuales));
+        console.log('📸 [FOTOS POR PRENDA] Prenda idx:', prendaIdx, 'Total extraídas:', fotosActuales.length, 'Únicas:', fotosUnicas.length);
+        llenarFotos(fotosUnicas);
+    }
+    
+    // Hacer la función accesible globalmente desde el componente
+    window.actualizarFotosPrenda = actualizarFotosPrenda;
+
+    /**
+     * Actualiza el número del recibo en el header según la prenda y proceso actuale
+     */
+    function actualizarNumeroPrendaHeader() {
+        const prendaIdx = window.prendaCarouselIndex || 0;
+        const PRENDAS_POR_PAGINA = 1;
+        const startIdx = prendaIdx * PRENDAS_POR_PAGINA;
+        const endIdx = startIdx + PRENDAS_POR_PAGINA;
+        
+        // Obtener las prendas
+        let prendas = (datosCompletoPedido && datosCompletoPedido.prendas) || [];
+        
+        // Filtrar por proceso si aplica
+        const procesoActualIndex = window.procesoCarouselIndex || 0;
+        const procesosDisponibles = window.todosProcesosDisponibles || [];
+        const procesoActualSeleccionado = procesosDisponibles[procesoActualIndex] || null;
+        
+        if (procesoActualSeleccionado) {
+            prendas = prendas.filter(p => {
+                if (p.recibos && typeof p.recibos === 'object') {
+                    return p.recibos[procesoActualSeleccionado] !== null && p.recibos[procesoActualSeleccionado] !== undefined;
+                }
+                return false;
+            });
+        }
+        
+        const prendasVisibles = prendas.slice(startIdx, endIdx);
+        
+        if (prendasVisibles.length > 0) {
+            const prendaActual = prendasVisibles[0];
+            let numeroRecibo = null;
+            
+            // Obtener el número de recibo del proceso actual
+            if (procesoActualSeleccionado && prendaActual.recibos) {
+                numeroRecibo = prendaActual.recibos[procesoActualSeleccionado];
+            }
+            
+            // Actualizar el header
+            const headerElement = document.getElementById('header-numero-recibo');
+            if (headerElement && numeroRecibo) {
+                headerElement.textContent = '#' + numeroRecibo;
+                console.log('🏷️ [HEADER ACTUALIZADO] Recibo:', numeroRecibo);
+            }
+        }
+    }
+    
+    // Hacer la función accesible globalmente
+    window.actualizarNumeroPrendaHeader = actualizarNumeroPrendaHeader;
+
     function llenarFotos(fotos) {
         fotosGlobales = fotos; // Guardar fotos globalmente
         
@@ -1233,6 +1376,11 @@
         console.log('📌 Número de pedido del dataset:', numeroPedido);
         console.log('📌 Tipo de recibo del dataset:', tipoRecibo);
         
+        // Leer prenda_id de los query parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const prendaIdParam = urlParams.get('prenda_id');
+        console.log('📌 Prenda ID desde URL:', prendaIdParam);
+        
         if (!numeroPedido) {
             console.error(' ERROR: numeroPedido no encontrado en dataset');
             return;
@@ -1276,73 +1424,9 @@
                 const data = response.data;
                 console.log(' Datos válidos:', data);
                 
-                // Procesar prendas para construir descripción formateada
+                // FIX: No pre-construir descripción estática (causaba mezcla de datos entre prendas)
+                // El componente mobile usará la rama dinámica que asocia correctamente cada prenda con sus procesos
                 let descripcionFormateada = '';
-                if (data.prendas && Array.isArray(data.prendas)) {
-                    data.prendas.forEach(function(prenda, idx) {
-                        if (!descripcionFormateada) {
-                            const lineas = [];
-                            
-                            // Prenda
-                            lineas.push('<strong style="font-size: 13.4px;">PRENDA ' + (idx + 1) + ': ' + (prenda.nombre || 'N/A') + '</strong>');
-                            
-                            // Telas
-                            if (prenda.colores_telas && prenda.colores_telas.length > 0) {
-                                const telas = prenda.colores_telas.map(function(ct) {
-                                    return (ct.tela_nombre || '') + ' / ' + (ct.color_nombre || '') + ' | REF: ' + (ct.referencia || '');
-                                }).join(' | ');
-                                lineas.push('<strong>TELAS:</strong> ' + telas);
-                            }
-                            
-                            // Manga
-                            if (prenda.manga) {
-                                lineas.push('<strong>MANGA:</strong> ' + (prenda.manga || '').toUpperCase());
-                            }
-                            
-                            // Bolsillos
-                            if (prenda.obs_bolsillos) {
-                                lineas.push('• <strong>BOLSILLOS:</strong> ' + (prenda.obs_bolsillos || ''));
-                            }
-                            
-                            // Broche/Botón - Mostrar label dinámico según el tipo
-                            if (prenda.obs_broche && prenda.broche) {
-                                const labelBroche = prenda.broche.toUpperCase();
-                                lineas.push('• <strong>' + labelBroche + ':</strong> ' + (prenda.obs_broche || ''));
-                            }
-                            
-                            // Unir las líneas principales con <br>
-                            descripcionFormateada = lineas.join('<br>');
-                            
-                            // Agregar tallas si existen
-                            if (prenda.tallas && typeof prenda.tallas === 'object') {
-                                descripcionFormateada += '<br><br><strong>TALLAS</strong><br>';
-                                const tallasLineas = [];
-                                Object.keys(prenda.tallas).forEach(function(genero) {
-                                    const tallasCantidades = [];
-                                    Object.keys(prenda.tallas[genero]).forEach(function(talla) {
-                                        let cantidad = prenda.tallas[genero][talla];
-                                        if (Array.isArray(cantidad)) {
-                                            cantidad = cantidad.reduce(function(acc, item) {
-                                                const c = (item && typeof item === 'object') ? (parseInt(item.cantidad) || 0) : (parseInt(item) || 0);
-                                                return acc + c;
-                                            }, 0);
-                                        } else if (cantidad && typeof cantidad === 'object') {
-                                            cantidad = parseInt(cantidad.cantidad) || 0;
-                                        } else {
-                                            cantidad = parseInt(cantidad) || 0;
-                                        }
-
-                                        tallasCantidades.push(talla + ': <span style="color: red;"><strong>' + cantidad + '</strong></span>');
-                                    });
-                                    if (tallasCantidades.length > 0) {
-                                        tallasLineas.push(genero.toUpperCase() + ': ' + tallasCantidades.join(', '));
-                                    }
-                                });
-                                descripcionFormateada += tallasLineas.join('<br>');
-                            }
-                        }
-                    });
-                }
 
                 // Extraer el consecutivo de recibo COSTURA para operarios costura-reflectivo
                 let numeroReciboCostura = null;
@@ -1367,13 +1451,42 @@
                     numeroReciboCostura: numeroReciboCostura  // Agregar para referencia
                 };
 
-                // Resetear índice del carrusel para empezar desde el primer proceso
+                // Resetear índices del carrusel
                 window.procesoCarouselIndex = 0;
+                window.prendaCarouselIndex = 0;
+                
+                // Si se pasó prenda_id desde el dashboard, calcular el índice correcto
+                if (prendaIdParam) {
+                    const prendaIdInt = parseInt(prendaIdParam, 10);
+                    console.log('🔍 [PRENDA ID] Buscando prenda con ID:', prendaIdInt);
+                    
+                    // Encontrar el índice de la prenda en el array
+                    if (data.prendas && Array.isArray(data.prendas)) {
+                        const indice = data.prendas.findIndex(p => p.id === prendaIdInt);
+                        if (indice !== -1) {
+                            window.prendaCarouselIndex = indice;
+                            console.log('✅ [PRENDA ID] Prenda encontrada en índice:', indice);
+                        } else {
+                            console.log('⚠️ [PRENDA ID] Prenda con ID', prendaIdInt, 'no encontrada en el array');
+                        }
+                    }
+                }
 
                 if (window.llenarReciboCosturaMobile) {
                     window.llenarReciboCosturaMobile(pedidoData);
                 } else {
                     console.warn(' llenarReciboCosturaMobile no está disponible');
+                }
+                
+                // Guardar los datos completos para extraer fotos y números de recibo por prenda
+                datosCompletoPedido = data;
+                
+                // Actualizar fotos y número de recibo para la primera prenda
+                if (window.actualizarFotosPrenda) {
+                    window.actualizarFotosPrenda();
+                }
+                if (window.actualizarNumeroPrendaHeader) {
+                    window.actualizarNumeroPrendaHeader();
                 }
                 
                 // ===== CARGAR FOTOS DIRECTAMENTE DESDE LOS DATOS DEL PEDIDO =====
@@ -1423,10 +1536,11 @@
                     });
                 }
                 
-                // Eliminar duplicados usando Set
-                const fotosUnicas = Array.from(new Set(todasLasFotos));
-                console.log('📸 Fotos cargadas:', fotosUnicas.length);
-                llenarFotos(fotosUnicas);
+                // Guardar datos completos para actualizar fotos según la prenda
+                datosCompletoPedido = response.data;
+                
+                // Mostrar fotos iniciales de la primer prenda
+                actualizarFotosPrenda();
 
             })
             .catch(function(error) {

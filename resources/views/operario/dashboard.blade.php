@@ -22,7 +22,7 @@
     <!-- Búsqueda -->
     <div class="search-section">
         <span class="material-symbols-rounded">search</span>
-        <input type="text" id="searchInput" class="search-box" placeholder="Buscar por # Pedido, Prenda o Cliente...">
+        <input type="text" id="searchInput" class="search-box" placeholder="Buscar por # Recibo o Cliente...">
     </div>
 
     <!-- Mis Prendas Section -->
@@ -80,7 +80,7 @@
                             <div class="orden-left">
                                 <div class="orden-top">
                                     <div class="orden-numero-section">
-                                        @if(auth()->user()->hasRole('costura-reflectivo') && isset($prenda['recibos'][0]['consecutivo_actual']))
+                                        @if(isset($prenda['recibos'][0]['consecutivo_actual']))
                                             <h4 class="orden-numero">#{{ $prenda['recibos'][0]['consecutivo_actual'] }}</h4>
                                         @else
                                             <h4 class="orden-numero">#{{ $prenda['numero_pedido'] }}</h4>
@@ -127,8 +127,8 @@
                                             </button>
                                         @endforeach
                                     @else
-                                        {{-- Para otros operarios, un solo botón genérico --}}
-                                        <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}')">
+                                        {{-- Para otros operarios, un solo botón con tipo de recibo --}}
+                                        <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $prenda['recibos'][0]['tipo_recibo'] ?? '' }}')">
                                             <span class="material-symbols-rounded">receipt</span>
                                             VER RECIBOS
                                         </button>
@@ -138,10 +138,10 @@
 
                             <!-- Contenido Derecho -->
                             <div class="orden-right">
-                                @if(auth()->user()->hasRole('costura-reflectivo') && isset($prenda['recibos'][0]['consecutivo_actual']))
-                                    {{-- Para costura-reflectivo, mostrar número del recibo --}}
+                                @if(isset($prenda['recibos'][0]['consecutivo_actual']))
+                                    {{-- Mostrar número del recibo --}}
                                     <div class="orden-fecha">
-                                        <span class="orden-fecha-label">{{ $tieneReflectivo ? 'REFLECTIVO' : 'COSTURA' }}</span>
+                                        <span class="orden-fecha-label">RECIBO</span>
                                         <span>#{{ $prenda['recibos'][0]['consecutivo_actual'] }}</span>
                                     </div>
                                 @else
@@ -155,7 +155,7 @@
                                     <span class="orden-fecha-label">REGISTRO</span>
                                     <span>{{ $prenda['fecha_creacion']->format('d/m/Y') }}</span>
                                 </div>
-                                <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}'); return false;">
+                                <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $prenda['recibos'][0]['tipo_recibo'] ?? '' }}'); return false;">
                                     <span class="material-symbols-rounded">arrow_forward</span>
                                 </a>
                                 
@@ -771,11 +771,22 @@
         const numeroPedidoStr = String(numeroPedido).trim();
         console.log('📝 numeroPedido normalizado:', numeroPedidoStr);
         
-        // Construir la URL con el tipo de recibo si se proporciona
+        // Construir la URL con prenda_id y tipo de recibo si se proporcionan
         let url = '/operario/pedido/' + numeroPedidoStr;
+        const params = new URLSearchParams();
+        
+        if (prendaId) {
+            params.append('prenda_id', prendaId);
+            console.log('📝 Prenda ID:', prendaId);
+        }
+        
         if (tipoRecibo) {
-            url += '?tipo_recibo=' + encodeURIComponent(tipoRecibo);
+            params.append('tipo_recibo', tipoRecibo);
             console.log('📝 Tipo de recibo:', tipoRecibo);
+        }
+        
+        if (params.toString()) {
+            url += '?' + params.toString();
         }
         
         console.log('🌐 URL a navegar:', url);

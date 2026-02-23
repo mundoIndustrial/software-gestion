@@ -560,64 +560,14 @@ class OperarioController extends Controller
             $response = $this->obtenerPedidoUseCase->ejecutar($pedidoId, false);
             $responseData = $response->toArray();
 
-            // FILTRO POR TIPO DE RECIBO: Si se especifica un tipo de recibo, filtrar procesos para mostrar SOLO ese tipo
+            // NOTA: El parámetro tipo_recibo es SOLO informativo para el frontend
+            // NO se debe usar para filtrar procesos, solo para indicar cuál mostrar primero
+            // Todos los procesos deben ser devueltos para poder mostrar fotos de todos ellos
             $tipoReciboFiltro = request('tipo_recibo', '');
-            \Log::info('[OperarioController.getPedidoData]  Verificando filtro de tipo_recibo', [
+            \Log::info('[OperarioController.getPedidoData]  Tipo recibo solicitado (informativo, NO filtra procesos)', [
                 'numero_pedido' => $numeroPedido,
-                'tipo_recibo_solicitado' => $tipoReciboFiltro
+                'tipo_recibo' => $tipoReciboFiltro
             ]);
-            
-            if ($tipoReciboFiltro && isset($responseData['prendas']) && is_array($responseData['prendas'])) {
-                \Log::info('[OperarioController.getPedidoData]  FILTRO TIPO RECIBO: Filtrando procesos - Solo ' . strtoupper($tipoReciboFiltro), [
-                    'numero_pedido' => $numeroPedido,
-                    'tipo_recibo' => $tipoReciboFiltro
-                ]);
-                
-                foreach ($responseData['prendas'] as &$prenda) {
-                    if (isset($prenda['procesos']) && is_array($prenda['procesos'])) {
-                        // Filtrar: solo mantener procesos del tipo de recibo especificado
-                        $procesosFiltrados = array_filter($prenda['procesos'], function($proceso) use ($tipoReciboFiltro) {
-                            $filtroLower = strtolower(trim((string) $tipoReciboFiltro));
-                            $filtroLower = str_replace(['-', '_', ' '], '', $filtroLower);
-
-                            // Obtener el tipo del proceso desde varias claves posibles
-                            // Nota: en algunos flujos el tipo viene como 'tipo_proceso' (ej: Reflectivo)
-                            // y NO en 'tipo_recibo'. Si filtramos solo por tipo_recibo, eliminamos procesos
-                            // y se pierden ubicaciones/tallas.
-                            $candidatos = [
-                                $proceso['tipo_recibo'] ?? null,
-                                $proceso['recibo_tipo'] ?? null,
-                                $proceso['tipo_proceso'] ?? null,
-                                $proceso['nombre_proceso'] ?? null,
-                                $proceso['nombre'] ?? null,
-                            ];
-
-                            $tipoLower = '';
-                            foreach ($candidatos as $cand) {
-                                if (!$cand) {
-                                    continue;
-                                }
-                                $tipoLower = strtolower(trim((string) $cand));
-                                if ($tipoLower !== '') {
-                                    break;
-                                }
-                            }
-
-                            $tipoLower = str_replace(['-', '_', ' '], '', $tipoLower);
-                            
-                            \Log::debug('[OperarioController.getPedidoData] Verificando proceso para filtro', [
-                                'tipo_lower' => $tipoLower,
-                                'filtro_lower' => $filtroLower,
-                                'coincide' => $tipoLower === $filtroLower
-                            ]);
-                            
-                            return $tipoLower === $filtroLower;
-                        });
-                        
-                        $prenda['procesos'] = array_values($procesosFiltrados); // Reindexar array
-                    }
-                }
-            }
 
             // FILTRO BODEGUERO: Si es bodeguero, filtrar procesos para mostrar SOLO 'costura-bodega'
             if ($esBodyguero && isset($responseData['prendas']) && is_array($responseData['prendas'])) {

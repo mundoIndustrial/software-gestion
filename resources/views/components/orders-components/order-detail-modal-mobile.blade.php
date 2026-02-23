@@ -383,6 +383,16 @@ window.cargarReciboDinamico = async function(pedidoId, tipoProceso) {
             // Llenar con los nuevos datos
             window.llenarReciboCosturaMobile(result.data);
             
+            // Actualizar fotos para la primera prenda del nuevo proceso
+            if (window.actualizarFotosPrenda) {
+                window.actualizarFotosPrenda();
+            }
+            
+            // Actualizar número de recibo en el header
+            if (window.actualizarNumeroPrendaHeader) {
+                window.actualizarNumeroPrendaHeader();
+            }
+            
             console.log(' [CARGAR DINAMICO] llenarReciboCosturaMobile completado');
         } else {
             throw new Error('Respuesta inválida de la API: ' + JSON.stringify(result));
@@ -541,9 +551,11 @@ window.llenarReciboCosturaMobile = function(data) {
         });
     }
     
-    // Filtrar procesos según el rol del usuario
+    // Filtrar procesos según el rol del usuario y la vista actual
     let procesosFiltrados = todosProcesos;
+    const esVistaOperario = (window.location?.pathname || '').toString().includes('/operario/');
     console.log(' [FILTRO PROCESOS] Rol del usuario:', userRole);
+    console.log(' [FILTRO PROCESOS] Es vista operario:', esVistaOperario);
     console.log(' [FILTRO PROCESOS] Todos los procesos encontrados:', todosProcesos);
     
     if (userRole === 'costura-reflectivo') {
@@ -556,6 +568,16 @@ window.llenarReciboCosturaMobile = function(data) {
         
         console.log(' [FILTRO PROCESOS] tieneCostu:', tieneCostu);
         console.log(' [FILTRO PROCESOS] tieneReflectivo:', tieneReflectivo);
+    } else if (esVistaOperario) {
+        // Vista operario = solo recibos de COSTURA (igual que /recibos-costura)
+        // Los bodegueros ya tienen su filtro propio en el backend (COSTURA-BODEGA)
+        const tieneCostu = todosProcesos.includes('COSTURA');
+        const tieneCosturaBodega = todosProcesos.includes('COSTURA-BODEGA');
+        procesosFiltrados = [];
+        if (tieneCostu) procesosFiltrados.push('COSTURA');
+        if (tieneCosturaBodega) procesosFiltrados.push('COSTURA-BODEGA');
+        
+        console.log(' [FILTRO PROCESOS] Vista operario - Solo COSTURA:', tieneCostu, 'COSTURA-BODEGA:', tieneCosturaBodega);
     }
     
     console.log(' [FILTRO PROCESOS] Procesos filtrados FINAL:', procesosFiltrados);
@@ -612,58 +634,6 @@ window.llenarReciboCosturaMobile = function(data) {
                     cargarReciboDinamico(data.pedido_id, nuevoProceso);
                 };
                 processNavContainer.appendChild(prevProcBtn);
-            }
-            
-            // Indicador del proceso actual
-            const processIndicator = document.createElement('div');
-            processIndicator.style.background = '#EF5350';
-            processIndicator.style.color = 'white';
-            processIndicator.style.padding = '4px 10px';
-            processIndicator.style.borderRadius = '4px';
-            processIndicator.style.fontSize = '11px';
-            processIndicator.style.fontWeight = 'bold';
-            processIndicator.style.whiteSpace = 'nowrap';
-            processIndicator.style.textAlign = 'center';
-            processIndicator.textContent = (procesoActualIndex + 1) + '/' + procesosFiltrados.length;
-            processNavContainer.appendChild(processIndicator);
-            
-            // Botón siguiente de procesos - SOLO SI HAY MÁS DE UN PROCESO
-            if (procesosFiltrados.length > 1) {
-                const nextProcBtn = document.createElement('button');
-                nextProcBtn.style.background = '#EF5350';
-                nextProcBtn.style.border = 'none';
-                nextProcBtn.style.color = 'white';
-                nextProcBtn.style.cursor = procesoActualIndex < procesosFiltrados.length - 1 ? 'pointer' : 'not-allowed';
-                nextProcBtn.style.padding = '6px 8px';
-                nextProcBtn.style.borderRadius = '4px';
-                nextProcBtn.style.fontSize = '12px';
-                nextProcBtn.style.fontWeight = '600';
-                nextProcBtn.style.transition = 'all 0.2s ease';
-                nextProcBtn.style.opacity = procesoActualIndex < procesosFiltrados.length - 1 ? '1' : '0.5';
-                nextProcBtn.title = 'Proceso siguiente';
-                nextProcBtn.innerHTML = '<span style="font-size: 16px;">▶</span>';
-                nextProcBtn.onmouseover = function() {
-                    if (procesoActualIndex < procesosFiltrados.length - 1) {
-                        this.style.transform = 'scale(1.1)';
-                        this.style.boxShadow = '0 2px 8px rgba(239, 83, 80, 0.3)';
-                    }
-                };
-                nextProcBtn.onmouseout = function() {
-                    this.style.transform = 'scale(1)';
-                    this.style.boxShadow = 'none';
-                };
-                nextProcBtn.onclick = function() {
-                    console.log('🔘 [CLICK BOTÓN] SIGUIENTE presionado');
-                    if (procesoActualIndex < procesosFiltrados.length - 1) {
-                        window.procesoCarouselIndex = Math.min(procesosFiltrados.length - 1, window.procesoCarouselIndex + 1);
-                        const nuevoProceso = procesosFiltrados[window.procesoCarouselIndex];
-                        console.log('🔘 [CLICK BOTÓN] Nuevo índice:', window.procesoCarouselIndex);
-                        console.log('🔘 [CLICK BOTÓN] Nuevo proceso:', nuevoProceso);
-                        // Recargar datos dinámicamente para el nuevo proceso
-                        cargarReciboDinamico(data.pedido_id, nuevoProceso);
-                    }
-                };
-                processNavContainer.appendChild(nextProcBtn);
             }
             
             // Guardar procesos en variable global para usar en filtrado posterior
@@ -781,7 +751,8 @@ window.llenarReciboCosturaMobile = function(data) {
     let descripcionHTML = '';
     const descripcionPrendasCompleta = data.descripcion || '';
     let todasLasPrendas = data.prendas || [];
-    const PRENDAS_POR_PAGINA = 2;
+    // Cada recibo = 1 prenda, mostrar de a una
+    const PRENDAS_POR_PAGINA = 1;
     
     // FILTRAR PRENDAS POR PROCESO SELECCIONADO
     const procesoActualIndex = window.procesoCarouselIndex || 0;
@@ -794,15 +765,9 @@ window.llenarReciboCosturaMobile = function(data) {
     console.log('📱 [RECIBO MOBILE] Procesos disponibles:', procesosDisponibles);
     console.log('📱 [RECIBO MOBILE] Total prendas ANTES de filtrar:', todasLasPrendas.length);
     
-    // Solo filtrar por proceso si el usuario está navegando entre procesos (no en primera carga)
-    // Detectar si ya hay prendas mostradas (significa que es llamada desde evento de click de arrow)
-    const esNavegacionDeProc = window.procesoCarouselIndex !== undefined && window.procesoCarouselIndex > 0;
-    
-    console.log('📱 [RECIBO MOBILE] ¿Es navegación de proceso?:', esNavegacionDeProc);
-    
-    if (esNavegacionDeProc && procesoActualSeleccionado && todasLasPrendas.length > 0) {
+    // SIEMPRE filtrar prendas por el proceso seleccionado (cada recibo = 1 prenda)
+    if (procesoActualSeleccionado && todasLasPrendas.length > 0) {
         console.log('📱 [RECIBO MOBILE]  FILTRANDO prendas para proceso:', procesoActualSeleccionado);
-        // Filtrar prendas que tengan el proceso seleccionado
         todasLasPrendas = todasLasPrendas.filter(function(prenda) {
             // Opción 1: Buscar en recibos
             if (prenda.recibos && typeof prenda.recibos === 'object') {
@@ -819,8 +784,15 @@ window.llenarReciboCosturaMobile = function(data) {
             });
         });
         console.log('📱 [RECIBO MOBILE] Total prendas DESPUÉS de filtrar:', todasLasPrendas.length);
-    } else {
-        console.log('📱 [RECIBO MOBILE]  Primera carga - SIN filtrar, mostrando todas las prendas');
+    } else if (!procesoActualSeleccionado && todasLasPrendas.length > 0) {
+        // Primera carga sin proceso definido: filtrar prendas que tengan al menos un recibo no-null
+        console.log('📱 [RECIBO MOBILE]  Primera carga sin proceso - filtrando prendas con recibos activos');
+        todasLasPrendas = todasLasPrendas.filter(function(prenda) {
+            if (prenda.recibos && typeof prenda.recibos === 'object') {
+                return Object.values(prenda.recibos).some(function(v) { return v !== null && v !== undefined; });
+            }
+            return true;
+        });
     }
     
     // LIMPIAR CONTENEDOR DE RECIBO ANTES DE RECONSTRUIR
@@ -836,10 +808,9 @@ window.llenarReciboCosturaMobile = function(data) {
     console.log('📱 [RECIBO MOBILE] descripcionPrendasCompleta existe?:', !!descripcionPrendasCompleta);
     console.log('📱 [RECIBO MOBILE] descripcionPrendasCompleta trim():', descripcionPrendasCompleta ? descripcionPrendasCompleta.trim().substring(0, 100) : 'NULL');
     
-    //  PRIMERO: Si existe descripcion_prendas construida en el controlador, usarla directamente (IGUAL QUE ASESORES)
-    // PERO: Si estamos navegando entre procesos, IGNORAR descripcionPrendasCompleta y usar fallback dinámico
-    // para que se reconstruya el recibo con solo las prendas del proceso seleccionado
-    const debeUsarDescripcionPreConstruida = descripcionPrendasCompleta && descripcionPrendasCompleta.trim() !== '' && descripcionPrendasCompleta !== 'N/A' && !esNavegacionDeProc;
+    // SIEMPRE usar la rama dinámica para que cada recibo muestre solo su prenda con sus procesos
+    // La descripción pre-construida mezclaba datos de diferentes prendas
+    const debeUsarDescripcionPreConstruida = false;
     
     if (debeUsarDescripcionPreConstruida) {
         console.log('📱 [RECIBO MOBILE]  USANDO RAMA: descripcionPrendasCompleta (pre-construida)');
@@ -1097,114 +1068,254 @@ window.llenarReciboCosturaMobile = function(data) {
             
             let html = '';
             
-            // 1. Nombre de la prenda
-            html += `<strong>PRENDA ${prenda.numero || prenda.numero_prenda || (index + 1)}: ${(prenda.nombre || prenda.nombre_prenda || 'SIN NOMBRE').toUpperCase()}</strong><br>`;
-            
-            // 2. Línea de atributos: Color | Tela | Manga
-            const atributos = [];
-            if (prenda.color) {
-                atributos.push(`<strong>Color:</strong> ${prenda.color.toUpperCase()}`);
-            }
-            if (prenda.tela) {
-                let telaTexto = prenda.tela.toUpperCase();
-                if (prenda.tela_referencia) {
-                    telaTexto += ` REF:${prenda.tela_referencia.toUpperCase()}`;
+            // 1. Nombre de la prenda (con estilo consistente)
+            html += `<strong style="font-size: 13.4px;">PRENDA ${prenda.numero || prenda.numero_prenda || (startIndex + index + 1)}: ${(prenda.nombre || prenda.nombre_prenda || 'SIN NOMBRE').toUpperCase()}</strong><br>`;
+
+            // 2. Telas completas con referencia (colores_telas tiene toda la info)
+            if (prenda.colores_telas && Array.isArray(prenda.colores_telas) && prenda.colores_telas.length > 0) {
+                const telasTexto = prenda.colores_telas.map(function(ct) {
+                    return (ct.tela_nombre || '').toUpperCase() + ' / ' + (ct.color_nombre || '').toUpperCase() + ' | REF: ' + (ct.referencia || '');
+                }).join(' | ');
+                html += `<strong>TELAS:</strong> ${telasTexto}<br>`;
+            } else {
+                // Fallback a campos individuales
+                const atributos = [];
+                if (prenda.color) {
+                    atributos.push(`<strong>Color:</strong> ${prenda.color.toUpperCase()}`);
                 }
-                atributos.push(`<strong>Tela:</strong> ${telaTexto}`);
+                if (prenda.tela) {
+                    let telaTexto = prenda.tela.toUpperCase();
+                    if (prenda.ref || prenda.tela_referencia) {
+                        telaTexto += ` REF:${(prenda.ref || prenda.tela_referencia).toString().toUpperCase()}`;
+                    }
+                    atributos.push(`<strong>Tela:</strong> ${telaTexto}`);
+                }
+                if (atributos.length > 0) {
+                    html += atributos.join(' | ') + '<br>';
+                }
             }
-            if (prenda.tipo_manga) {
+
+            // 3. Manga
+            if (prenda.manga) {
+                html += `<strong>MANGA:</strong> ${(prenda.manga || '').toUpperCase()}<br>`;
+            } else if (prenda.tipo_manga) {
                 let mangaTexto = prenda.tipo_manga.toUpperCase();
-                // Agregar observación de manga si existe en descripcion_variaciones
                 if (prenda.descripcion_variaciones) {
                     const mangaMatch = prenda.descripcion_variaciones.match(/Manga:\s*(.+?)(?:\s*\||$)/i);
                     if (mangaMatch) {
                         const observacionManga = mangaMatch[1].trim().toUpperCase();
-                        // Solo agregar si es diferente al tipo de manga
                         if (observacionManga !== mangaTexto) {
                             mangaTexto += ` (${observacionManga})`;
                         }
                     }
                 }
-                atributos.push(`<strong>Manga:</strong> ${mangaTexto}`);
+                html += `<strong>MANGA:</strong> ${mangaTexto}<br>`;
+            }
+
+            // 4. Bolsillos
+            if (prenda.obs_bolsillos) {
+                html += `• <strong>BOLSILLOS:</strong> ${prenda.obs_bolsillos}<br>`;
+            }
+
+            // 5. Broche/Botón
+            if (prenda.obs_broche && prenda.broche) {
+                html += `• <strong>${prenda.broche.toUpperCase()}:</strong> ${prenda.obs_broche}<br>`;
             }
             
-            if (atributos.length > 0) {
-                html += atributos.join(' | ') + '<br>';
-            }
+            // =========================================================
+            // DATOS DEL PROCESO - Lógica idéntica a recibos-costura
+            // Un recibo = una prenda, filtrado por proceso seleccionado
+            // =========================================================
+            const esReciboCostura = !procesoActualSeleccionado || 
+                procesoActualSeleccionado.toUpperCase() === 'COSTURA' || 
+                procesoActualSeleccionado.toUpperCase() === 'COSTURA-BODEGA';
             
-            // 3. DATOS ESPECÍFICOS DEL PROCESO (Ubicaciones, Observaciones, Tallas del proceso)
-            // Mostrar para TODOS los procesos disponibles en la prenda (no solo navegación)
-            if (prenda.procesos && Array.isArray(prenda.procesos) && prenda.procesos.length > 0) {
-                // Si hay solo un proceso, mostrarlo directo. Si hay varios, mostrar todos en la primera carga
-                prenda.procesos.forEach((proceso, procIdx) => {
-                    // UBICACIONES del proceso
-                    if (proceso.ubicaciones) {
-                        let ubicacionesArray = [];
-                        try {
-                            if (typeof proceso.ubicaciones === 'string') {
-                                ubicacionesArray = JSON.parse(proceso.ubicaciones);
-                            } else if (Array.isArray(proceso.ubicaciones)) {
-                                ubicacionesArray = proceso.ubicaciones;
+            console.log('📱 [RECIBO MOBILE] esReciboCostura:', esReciboCostura, 'procesoActualSeleccionado:', procesoActualSeleccionado);
+            
+            if (esReciboCostura) {
+                // === COSTURA: Tallas de la prenda + REFLECTIVO si aplica ===
+                // (Igual que Formatters.construirDescripcionCostura en recibos-costura)
+                
+                // Tallas a nivel de PRENDA (no de proceso)
+                if (prenda.tallas && typeof prenda.tallas === 'object') {
+                    const tallasLineas = [];
+                    
+                    // Si tallas es un objeto con géneros (dama, caballero, unisex)
+                    const generos = Object.keys(prenda.tallas);
+                    generos.forEach((genero) => {
+                        const tallasGenero = prenda.tallas[genero] || {};
+                        const items = [];
+                        
+                        if (typeof tallasGenero === 'object' && !Array.isArray(tallasGenero)) {
+                            Object.entries(tallasGenero).forEach(([talla, val]) => {
+                                let cantidad = 0;
+                                if (Array.isArray(val)) {
+                                    cantidad = val.reduce((acc, item) => {
+                                        const c = (item && typeof item === 'object') ? (parseInt(item.cantidad) || 0) : (parseInt(item) || 0);
+                                        return acc + c;
+                                    }, 0);
+                                } else if (val && typeof val === 'object') {
+                                    cantidad = parseInt(val.cantidad) || 0;
+                                } else {
+                                    cantidad = parseInt(val) || 0;
+                                }
+                                
+                                if (cantidad > 0) {
+                                    items.push(`${talla}: <span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
+                                }
+                            });
+                        }
+                        
+                        if (items.length > 0) {
+                            tallasLineas.push(`<strong>${(genero || '').toString().toUpperCase()}:</strong> ${items.join(', ')}`);
+                        }
+                    });
+                    
+                    if (tallasLineas.length > 0) {
+                        html += `<br><strong>TALLAS</strong><br>${tallasLineas.join('<br>')}<br>`;
+                    }
+                }
+                
+                // REFLECTIVO: Solo mostrar si la prenda NO es de bodega y tiene proceso reflectivo
+                // (Igual que Formatters.construirDescripcionCostura)
+                if (!prenda.de_bodega && prenda.procesos && Array.isArray(prenda.procesos)) {
+                    const procesoReflectivo = prenda.procesos.find(p => {
+                        const tipo = (p.proceso || p.tipo_proceso || p.nombre_proceso || '').toUpperCase();
+                        return tipo === 'REFLECTIVO';
+                    });
+                    
+                    if (procesoReflectivo) {
+                        console.log('📱 [RECIBO MOBILE] Proceso REFLECTIVO encontrado para prenda:', prenda.nombre);
+                        html += `<br><strong style="font-size: 13.4px;">PROCESO: REFLECTIVO</strong><br>`;
+                        
+                        // Ubicaciones del reflectivo
+                        if (procesoReflectivo.ubicaciones) {
+                            const ubicacionesNorm = normalizarUbicaciones(procesoReflectivo.ubicaciones);
+                            if (ubicacionesNorm.length > 0) {
+                                html += `<strong>UBICACIONES:</strong><br>`;
+                                ubicacionesNorm.forEach(ub => {
+                                    html += `• ${(ub || '').toString().toUpperCase()}<br>`;
+                                });
                             }
-                        } catch (e) {
-                            ubicacionesArray = [proceso.ubicaciones];
                         }
                         
-                        if (ubicacionesArray && ubicacionesArray.length > 0) {
-                            html += `<strong>UBICACIONES:</strong><br>`;
-                            ubicacionesArray.forEach(ub => {
-                                html += `• ${ub.toUpperCase()}<br>`;
-                            });
-                        }
-                    }
-                    
-                    // OBSERVACIONES DEL PROCESO
-                    if (proceso.observaciones) {
-                        html += `<strong>OBSERVACIONES:</strong><br>${proceso.observaciones.toUpperCase()}<br>`;
-                    }
-                    
-                    // TALLAS DEL PROCESO
-                    if (proceso.tallas) {
-                        const tallasProc = [];
-                        if (proceso.tallas.dama && Object.keys(proceso.tallas.dama).length > 0) {
-                            Object.entries(proceso.tallas.dama).forEach(([talla, cantidad]) => {
-                                if (cantidad > 0) {
-                                    tallasProc.push(`DAMA ${talla}: ${cantidad}`);
-                                }
-                            });
-                        }
-                        if (proceso.tallas.caballero && Object.keys(proceso.tallas.caballero).length > 0) {
-                            Object.entries(proceso.tallas.caballero).forEach(([talla, cantidad]) => {
-                                if (cantidad > 0) {
-                                    tallasProc.push(`CABALLERO ${talla}: ${cantidad}`);
-                                }
-                            });
-                        }
-                        if (proceso.tallas.unisex && Object.keys(proceso.tallas.unisex).length > 0) {
-                            Object.entries(proceso.tallas.unisex).forEach(([talla, cantidad]) => {
-                                if (cantidad > 0) {
-                                    tallasProc.push(`UNISEX ${talla}: ${cantidad}`);
-                                }
-                            });
+                        // Observaciones del reflectivo
+                        if (procesoReflectivo.observaciones && procesoReflectivo.observaciones.trim()) {
+                            html += `<strong>OBSERVACIONES:</strong><br>${procesoReflectivo.observaciones.toUpperCase()}<br>`;
                         }
                         
-                        if (tallasProc.length > 0) {
-                            html += `<strong>TALLAS</strong><br><span style="color: #d32f2f; font-weight: bold;">${tallasProc.join(', ')}</span><br>`;
+                        // Tallas del reflectivo (solo si difieren de las de la prenda)
+                        if (procesoReflectivo.tallas && typeof procesoReflectivo.tallas === 'object') {
+                            const tallasRefLineas = [];
+                            ['dama', 'caballero', 'unisex'].forEach((genero) => {
+                                if (procesoReflectivo.tallas[genero] && typeof procesoReflectivo.tallas[genero] === 'object') {
+                                    const items = [];
+                                    Object.entries(procesoReflectivo.tallas[genero]).forEach(([talla, cantidad]) => {
+                                        const c = parseInt(cantidad) || 0;
+                                        if (c > 0) {
+                                            items.push(`${talla}: <span style="color: #d32f2f; font-weight: bold;">${c}</span>`);
+                                        }
+                                    });
+                                    if (items.length > 0) {
+                                        tallasRefLineas.push(`<strong>${genero.toUpperCase()}:</strong> ${items.join(', ')}`);
+                                    }
+                                }
+                            });
+                            
+                            if (tallasRefLineas.length > 0) {
+                                html += `<strong>TALLAS</strong><br>${tallasRefLineas.join('<br>')}<br>`;
+                            }
                         }
                     }
-                });
+                }
+            } else {
+                // === NO-COSTURA (ESTAMPADO, BORDADO, DTF, etc.): Solo el proceso seleccionado ===
+                // (Igual que Formatters.construirDescripcionProceso en recibos-costura)
+                if (prenda.procesos && Array.isArray(prenda.procesos) && prenda.procesos.length > 0) {
+                    const procesosFiltrados = prenda.procesos.filter(p => {
+                        const tipo = (p.proceso || p.tipo_proceso || p.nombre_proceso || '').toUpperCase();
+                        return tipo === procesoActualSeleccionado.toUpperCase();
+                    });
+                    
+                    console.log('📱 [RECIBO MOBILE] Procesos filtrados para', procesoActualSeleccionado + ':', procesosFiltrados.length);
+                    
+                    procesosFiltrados.forEach((proceso) => {
+                        // UBICACIONES del proceso
+                        if (proceso.ubicaciones) {
+                            const ubicacionesNorm = normalizarUbicaciones(proceso.ubicaciones);
+                            if (ubicacionesNorm.length > 0) {
+                                html += `<strong>UBICACIONES:</strong><br>`;
+                                ubicacionesNorm.forEach(ub => {
+                                    html += `• ${(ub || '').toString().toUpperCase()}<br>`;
+                                });
+                            }
+                        }
+                        
+                        // OBSERVACIONES del proceso
+                        if (proceso.observaciones && proceso.observaciones.trim()) {
+                            html += `<strong>OBSERVACIONES:</strong><br>${proceso.observaciones.toUpperCase()}<br>`;
+                        }
+                        
+                        // TALLAS del proceso específico (o fallback a prenda)
+                        let tallasObj = proceso.tallas;
+                        if (!tallasObj || Object.keys(tallasObj).length === 0) {
+                            tallasObj = prenda.tallas; // Fallback a tallas de la prenda
+                        }
+                        
+                        if (tallasObj && typeof tallasObj === 'object') {
+                            const tallasLineas = [];
+                            ['dama', 'caballero', 'unisex'].forEach((genero) => {
+                                if (tallasObj[genero] && typeof tallasObj[genero] === 'object') {
+                                    const items = [];
+                                    Object.entries(tallasObj[genero]).forEach(([talla, cantidad]) => {
+                                        const c = parseInt(cantidad) || 0;
+                                        if (c > 0) {
+                                            items.push(`${talla}: <span style="color: #d32f2f; font-weight: bold;">${c}</span>`);
+                                        }
+                                    });
+                                    if (items.length > 0) {
+                                        tallasLineas.push(`<strong>${genero.toUpperCase()}:</strong> ${items.join(', ')}`);
+                                    }
+                                }
+                            });
+                            
+                            // Also check top-level keys that look like sizes (for non-nested formats)
+                            if (tallasLineas.length === 0) {
+                                const generos = Object.keys(tallasObj);
+                                generos.forEach((genero) => {
+                                    const tallasGenero = tallasObj[genero] || {};
+                                    const items = [];
+                                    if (typeof tallasGenero === 'object' && !Array.isArray(tallasGenero)) {
+                                        Object.entries(tallasGenero).forEach(([talla, val]) => {
+                                            let cantidad = 0;
+                                            if (Array.isArray(val)) {
+                                                cantidad = val.reduce((acc, item) => {
+                                                    const c = (item && typeof item === 'object') ? (parseInt(item.cantidad) || 0) : (parseInt(item) || 0);
+                                                    return acc + c;
+                                                }, 0);
+                                            } else if (val && typeof val === 'object') {
+                                                cantidad = parseInt(val.cantidad) || 0;
+                                            } else {
+                                                cantidad = parseInt(val) || 0;
+                                            }
+                                            if (cantidad > 0) {
+                                                items.push(`${talla}: <span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
+                                            }
+                                        });
+                                    }
+                                    if (items.length > 0) {
+                                        tallasLineas.push(`<strong>${(genero || '').toString().toUpperCase()}:</strong> ${items.join(', ')}`);
+                                    }
+                                });
+                            }
+                            
+                            if (tallasLineas.length > 0) {
+                                html += `<strong>TALLAS</strong><br>${tallasLineas.join('<br>')}<br>`;
+                            }
+                        }
+                    });
+                }
             }
-            
-            //  COMENTADO: Las tallas ya se muestran en la sección de DATOS ESPECÍFICOS DEL PROCESO
-            // const tallasFormateadas = [];
-            // prenda.tallas.forEach((tallaObj) => {
-            //     if (tallaObj.cantidad > 0) {
-            //         tallasFormateadas.push(`${tallaObj.genero}-${tallaObj.talla}: ${tallaObj.cantidad}`);
-            //     }
-            // });
-            // if (tallasFormateadas.length > 0) {
-            //     html += `<strong>Tallas:</strong> <span style="color: #d32f2f; font-weight: bold;">${tallasFormateadas.join(', ')}</span>`;
-            // }
             
             descripcionHTML += `<div class="prenda-item" style="margin-bottom: 16px; line-height: 1.4; font-size: 0.75rem; color: #333;">
                 ${html}
@@ -1239,22 +1350,26 @@ window.llenarReciboCosturaMobile = function(data) {
         }
         
         // ACTUALIZAR NÚMERO DE RECIBO CON EL CONSECUTIVO DEL PROCESO
+        // FIX: Usar la prenda actualmente visible en el carousel, no la primera del array
         const numeroPedidoElement = document.getElementById('mobile-numero-pedido');
-        if (numeroPedidoElement && data.prendas && data.prendas.length > 0) {
-            // Buscar el primer recibo que coincida con el proceso actual
+        if (numeroPedidoElement && todasLasPrendas && todasLasPrendas.length > 0) {
             let reciboBuscado = null;
             
-            console.log('🔢 [NUMERO RECIBO] Buscando recibo para proceso:', procesoActualSeleccionado);
-            console.log('🔢 [NUMERO RECIBO] Total prendas:', data.prendas.length);
+            // Obtener las prendas actualmente visibles en el carousel
+            const reciboStartIdx = window.prendaCarouselIndex || 0;
+            const reciboEndIdx = reciboStartIdx + PRENDAS_POR_PAGINA;
+            const prendasVisibles = todasLasPrendas.slice(reciboStartIdx, reciboEndIdx);
             
-            for (let i = 0; i < data.prendas.length; i++) {
-                const prenda = data.prendas[i];
+            console.log('🔢 [NUMERO RECIBO] Buscando recibo para proceso:', procesoActualSeleccionado);
+            console.log('🔢 [NUMERO RECIBO] Prendas visibles (carousel idx=' + reciboStartIdx + '):', prendasVisibles.map(function(p) { return p.nombre; }));
+            
+            // Primero buscar en las prendas visibles del carousel
+            for (let i = 0; i < prendasVisibles.length; i++) {
+                const prenda = prendasVisibles[i];
                 
-                console.log('🔢 [NUMERO RECIBO] Prenda', i, ':', prenda.nombre, '- Tiene recibos?:', !!prenda.recibos);
+                console.log('🔢 [NUMERO RECIBO] Prenda visible', i, ':', prenda.nombre, '- Tiene recibos?:', !!prenda.recibos);
                 
-                // Los recibos pueden ser: { 'COSTURA': 3, 'REFLECTIVO': 4 } o { 'COSTURA': {...}, 'REFLECTIVO': {...} }
                 if (prenda.recibos && typeof prenda.recibos === 'object' && !Array.isArray(prenda.recibos)) {
-                    // Acceder al recibo del proceso actual - probar diferentes variantes de capitalización
                     let reciboProceso = prenda.recibos[procesoActualSeleccionado];
                     
                     // Si no encuentra con el nombre exacto, buscar case-insensitive
@@ -1270,10 +1385,8 @@ window.llenarReciboCosturaMobile = function(data) {
                     }
                     
                     console.log('🔢 [NUMERO RECIBO] reciboProceso para', procesoActualSeleccionado + ':', reciboProceso);
-                    console.log('🔢 [NUMERO RECIBO] Tipo de reciboProceso:', typeof reciboProceso);
                     
                     if (reciboProceso) {
-                        // El recibo puede ser un número directo o un objeto con consecutivo_actual
                         let numeroRecibo = null;
                         if (typeof reciboProceso === 'number') {
                             numeroRecibo = reciboProceso;
@@ -1283,7 +1396,7 @@ window.llenarReciboCosturaMobile = function(data) {
                         
                         if (numeroRecibo !== null && numeroRecibo !== undefined) {
                             numeroPedidoElement.textContent = '#' + numeroRecibo;
-                            console.log(' [NUMERO RECIBO ACTUALIZADO]', procesoActualSeleccionado, '→ #' + numeroRecibo);
+                            console.log(' [NUMERO RECIBO ACTUALIZADO] prenda:', prenda.nombre, procesoActualSeleccionado, '→ #' + numeroRecibo);
                             reciboBuscado = reciboProceso;
                             break;
                         }
@@ -1291,7 +1404,39 @@ window.llenarReciboCosturaMobile = function(data) {
                 }
             }
             
-            // Si no encontró recibo específico, mantener el numero inicial
+            // Fallback: Si no se encontró en las prendas visibles, buscar en todas
+            if (!reciboBuscado) {
+                for (let i = 0; i < todasLasPrendas.length; i++) {
+                    const prenda = todasLasPrendas[i];
+                    if (prenda.recibos && typeof prenda.recibos === 'object' && !Array.isArray(prenda.recibos)) {
+                        let reciboProceso = prenda.recibos[procesoActualSeleccionado];
+                        if (!reciboProceso) {
+                            const procesoBuscado = procesoActualSeleccionado.toUpperCase();
+                            for (const [key, value] of Object.entries(prenda.recibos)) {
+                                if (key.toUpperCase() === procesoBuscado && value !== null && value !== undefined) {
+                                    reciboProceso = value;
+                                    break;
+                                }
+                            }
+                        }
+                        if (reciboProceso) {
+                            let numeroRecibo = null;
+                            if (typeof reciboProceso === 'number') {
+                                numeroRecibo = reciboProceso;
+                            } else if (typeof reciboProceso === 'object' && reciboProceso.consecutivo_actual) {
+                                numeroRecibo = reciboProceso.consecutivo_actual;
+                            }
+                            if (numeroRecibo !== null && numeroRecibo !== undefined) {
+                                numeroPedidoElement.textContent = '#' + numeroRecibo;
+                                console.log(' [NUMERO RECIBO FALLBACK]', prenda.nombre, procesoActualSeleccionado, '→ #' + numeroRecibo);
+                                reciboBuscado = reciboProceso;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            
             if (!reciboBuscado) {
                 console.log(' [NUMERO RECIBO] No se encontró recibo para', procesoActualSeleccionado);
             }
@@ -1348,42 +1493,17 @@ window.llenarReciboCosturaMobile = function(data) {
                 prevBtn.onclick = function() {
                     window.prendaCarouselIndex = Math.max(0, window.prendaCarouselIndex - PRENDAS_POR_PAGINA);
                     window.llenarReciboCosturaMobile(data);
+                    // Actualizar fotos para la nueva prenda
+                    if (window.actualizarFotosPrenda) {
+                        window.actualizarFotosPrenda();
+                    }
+                    // Actualizar número de recibo en el header
+                    if (window.actualizarNumeroPrendaHeader) {
+                        window.actualizarNumeroPrendaHeader();
+                    }
                 };
                 
                 arrowContainer.appendChild(prevBtn);
-            }
-            
-            // Botón siguiente (> derecha)
-            const puedeAvanzar = currentPage < totalPaginas - 1;
-            
-            if (puedeAvanzar) {
-                const nextBtn = document.createElement('button');
-                nextBtn.id = 'next-arrow-mobile';
-                nextBtn.style.background = 'none';
-                nextBtn.style.border = 'none';
-                nextBtn.style.color = 'red';
-                nextBtn.style.cursor = 'pointer';
-                nextBtn.style.padding = '5px';
-                nextBtn.style.transition = 'all 0.2s ease';
-                nextBtn.style.display = 'inline-flex';
-                nextBtn.style.alignItems = 'center';
-                nextBtn.style.justifyContent = 'center';
-                nextBtn.style.borderRadius = '50%';
-                nextBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
-                nextBtn.onmouseover = function() {
-                    this.style.transform = 'scale(1.15)';
-                    this.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
-                };
-                nextBtn.onmouseout = function() {
-                    this.style.transform = 'scale(1)';
-                    this.style.backgroundColor = 'transparent';
-                };
-                nextBtn.onclick = function() {
-                    window.prendaCarouselIndex = Math.min(totalBloques - 1, window.prendaCarouselIndex + PRENDAS_POR_PAGINA);
-                    window.llenarReciboCosturaMobile(data);
-                };
-                
-                arrowContainer.appendChild(nextBtn);
             }
         }
     } else {

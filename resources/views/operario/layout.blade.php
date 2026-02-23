@@ -176,6 +176,12 @@
     </div>
 
     <!-- Scripts -->
+    <script>
+        // Configuración de rutas para JavaScript
+        window.APP_ROUTES = {
+            buscar: '{{ route("operario.buscar") }}'
+        };
+    </script>
     <script src="{{ asset('js/configuraciones/toast-notifications.js') }}"></script>
     <script src="{{ asset('js/operario/layout.js') }}"></script>
     @stack('scripts')

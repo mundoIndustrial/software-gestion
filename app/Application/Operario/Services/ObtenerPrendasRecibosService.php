@@ -31,11 +31,16 @@ class ObtenerPrendasRecibosService
         }
 
         // Obtener todos los recibos de costura activos con relaciones (incluyendo procesos)
-        $recibos = ConsecutivoReciboPedido::where('activo', 1)
+        $query = ConsecutivoReciboPedido::where('activo', 1)
             ->whereIn('tipo_recibo', $tiposRecibo)
-            ->with(['prenda', 'prenda.pedidoProduccion', 'prenda.procesosPrenda', 'pedido', 'pedido.prendas'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->with(['prenda', 'prenda.pedidoProduccion', 'prenda.procesosPrenda', 'pedido', 'pedido.prendas']);
+        
+        // Para cortadores: excluir PENDIENTE_INSUMOS (misma lógica que /recibos-costura)
+        if ($tipoOperario === 'cortador') {
+            $query->where('estado', '!=', 'PENDIENTE_INSUMOS');
+        }
+        
+        $recibos = $query->orderBy('created_at', 'desc')->get();
 
         \Log::info(' [ObtenerPrendasRecibosService] Recibos encontrados', [
             'total_recibos' => $recibos->count(),
@@ -51,7 +56,7 @@ class ObtenerPrendasRecibosService
             }
             // Si no tiene prenda_id (REFLECTIVO), agrupar por pedido
             return 'pedido_' . $recibo->pedido_produccion_id;
-        })->flatMap(function ($recibosDelaPrenda) use ($tipoOperario) {
+        })->flatMap(function ($recibosDelaPrenda) use ($tipoOperario, $usuario) {
             $primeRecibo = $recibosDelaPrenda->first();
             
             // Obtener la prenda
@@ -127,25 +132,43 @@ class ObtenerPrendasRecibosService
                         'detalle_aprobado' => true
                     ]);
                 } else if (strtoupper($tipoRecibo) === 'COSTURA' || strtoupper($tipoRecibo) === 'COSTURA-BODEGA') {
-                    // COSTURA: Área debe ser "costura" y estado "En Ejecución"
-                    if (strtolower($pedido->area) !== 'costura') {
-                        \Log::info(' [Filtro COSTURA] Área no es "costura"', [
-                            'prenda_id' => $prenda->id,
-                            'numero_pedido' => $pedido->numero_pedido,
-                            'area_actual' => $pedido->area,
-                            'tipo_recibo' => $tipoRecibo
-                        ]);
-                        continue; // Skip COSTURA si área no es costura
-                    }
-                    
-                    if ($pedido->estado !== 'En Ejecución') {
-                        \Log::info(' [Filtro COSTURA] Estado del pedido no es "En Ejecución"', [
-                            'prenda_id' => $prenda->id,
-                            'numero_pedido' => $pedido->numero_pedido,
-                            'estado_actual' => $pedido->estado,
-                            'tipo_recibo' => $tipoRecibo
-                        ]);
-                        continue; // Skip COSTURA si no está en Ejecución
+                    if ($tipoOperario === 'cortador') {
+                        // Para cortadores: verificar que exista proceso "Corte" con encargado = usuario
+                        $usuarioNombre = strtolower(trim($usuario->name));
+                        $tieneProcesoCorte = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
+                            ->whereRaw('LOWER(TRIM(encargado)) = ?', [$usuarioNombre])
+                            ->exists();
+                        
+                        if (!$tieneProcesoCorte) {
+                            \Log::info(' [Filtro CORTADOR] No tiene proceso Corte asignado', [
+                                'prenda_id' => $prenda->id,
+                                'numero_pedido' => $pedido->numero_pedido,
+                                'usuario' => $usuario->name
+                            ]);
+                            continue;
+                        }
+                    } else {
+                        // COSTURA: Área debe ser "costura" y estado "En Ejecución"
+                        if (strtolower($pedido->area) !== 'costura') {
+                            \Log::info(' [Filtro COSTURA] Área no es "costura"', [
+                                'prenda_id' => $prenda->id,
+                                'numero_pedido' => $pedido->numero_pedido,
+                                'area_actual' => $pedido->area,
+                                'tipo_recibo' => $tipoRecibo
+                            ]);
+                            continue; // Skip COSTURA si área no es costura
+                        }
+                        
+                        if ($pedido->estado !== 'En Ejecución') {
+                            \Log::info(' [Filtro COSTURA] Estado del pedido no es "En Ejecución"', [
+                                'prenda_id' => $prenda->id,
+                                'numero_pedido' => $pedido->numero_pedido,
+                                'estado_actual' => $pedido->estado,
+                                'tipo_recibo' => $tipoRecibo
+                            ]);
+                            continue; // Skip COSTURA si no está en Ejecución
+                        }
                     }
                 }
                 
@@ -176,6 +199,93 @@ class ObtenerPrendasRecibosService
         })->values();
 
         return $prendasAgrupadas;
+    }
+
+    /**
+     * Obtener prendas para cortador (basado en procesos/encargado, no recibos)
+     * Los cortadores no tienen tipo de recibo propio, se filtran por 
+     * procesos de "Corte" donde el usuario sea el encargado
+     */
+    private function obtenerPrendasParaCortador(User $usuario): Collection
+    {
+        $usuarioNormalizado = strtolower(trim($usuario->name));
+
+        // Obtener todos los pedidos que tengan proceso de Corte asignado al usuario
+        $pedidos = \App\Models\PedidoProduccion::with(['prendas'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->filter(function ($pedido) use ($usuarioNormalizado) {
+                $procesos = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)->get();
+                
+                if ($procesos->isEmpty()) {
+                    return false;
+                }
+
+                return $procesos->contains(function ($proceso) use ($usuarioNormalizado) {
+                    if (!$proceso->encargado) {
+                        return false;
+                    }
+                    $encargadoNormalizado = strtolower(trim($proceso->encargado));
+                    
+                    // Buscar procesos asignados al usuario
+                    return $encargadoNormalizado === $usuarioNormalizado;
+                });
+            });
+
+        \Log::info('[ObtenerPrendasRecibosService] Cortador - Pedidos encontrados', [
+            'usuario' => $usuario->name,
+            'total_pedidos' => $pedidos->count(),
+        ]);
+
+        // Convertir pedidos a formato de prendas para compatibilidad con la vista
+        $prendas = $pedidos->flatMap(function ($pedido) {
+            if (!$pedido->prendas || $pedido->prendas->isEmpty()) {
+                // Si no hay prendas, crear una entrada genérica
+                return [[
+                    'prenda_id' => 0,
+                    'pedido_id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'cliente' => $pedido->cliente,
+                    'nombre_prenda' => 'Pedido completo',
+                    'descripcion' => $pedido->descripcion,
+                    'de_bodega' => false,
+                    'recibos' => [[
+                        'id' => $pedido->id,
+                        'tipo_recibo' => 'CORTE',
+                        'consecutivo_actual' => $pedido->numero_pedido,
+                        'consecutivo_inicial' => $pedido->numero_pedido,
+                        'notas' => null,
+                        'creado_en' => $pedido->created_at,
+                    ]],
+                    'total_recibos' => 1,
+                    'fecha_creacion' => $pedido->created_at,
+                ]];
+            }
+
+            return $pedido->prendas->map(function ($prenda) use ($pedido) {
+                return [
+                    'prenda_id' => $prenda->id,
+                    'pedido_id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'cliente' => $pedido->cliente,
+                    'nombre_prenda' => $prenda->nombre_prenda,
+                    'descripcion' => $prenda->descripcion,
+                    'de_bodega' => $prenda->de_bodega ?? false,
+                    'recibos' => [[
+                        'id' => $pedido->id,
+                        'tipo_recibo' => 'CORTE',
+                        'consecutivo_actual' => $pedido->numero_pedido,
+                        'consecutivo_inicial' => $pedido->numero_pedido,
+                        'notas' => null,
+                        'creado_en' => $pedido->created_at,
+                    ]],
+                    'total_recibos' => 1,
+                    'fecha_creacion' => $prenda->created_at,
+                ];
+            });
+        })->values();
+
+        return $prendas;
     }
 
     /**
