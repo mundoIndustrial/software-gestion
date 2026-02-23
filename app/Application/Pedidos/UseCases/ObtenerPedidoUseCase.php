@@ -341,6 +341,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
      * 
      * CORRECCIÓN: Itera sobre TALLAS (tienen talla y cantidad)
      * Obtiene especificaciones de VARIANTES (manga, broche, bolsillos)
+     * INCLUYE: Información de color por talla desde prenda_pedido_talla_colores
      */
     private function obtenerVariantes($prenda): array
     {
@@ -391,14 +392,66 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 Log::debug('[VARIANTES] Especificaciones finales', $especificaciones);
             }
             
+            // OBTENER COLORES POR TALLA desde prenda_pedido_talla_colores
+            $coloresPorTalla = [];
+            try {
+                $coloresTalla = \DB::table('prenda_pedido_talla_colores as pptc')
+                    ->join('prenda_pedido_tallas as ppt', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
+                    ->where('ppt.prenda_pedido_id', $prenda->id)
+                    ->select(
+                        'ppt.id as talla_id',
+                        'ppt.talla',
+                        'ppt.genero',
+                        'pptc.color_nombre',
+                        'pptc.cantidad'
+                    )
+                    ->get();
+                    
+                foreach ($coloresTalla as $colorTalla) {
+                    $clave = $colorTalla->talla_id;
+                    if (!isset($coloresPorTalla[$clave])) {
+                        $coloresPorTalla[$clave] = [];
+                    }
+                    $coloresPorTalla[$clave][] = [
+                        'color' => $colorTalla->color_nombre,
+                        'cantidad' => $colorTalla->cantidad
+                    ];
+                }
+                
+                Log::debug('[VARIANTES] Colores por talla obtenidos', [
+                    'prenda_id' => $prenda->id,
+                    'colores_por_talla' => $coloresPorTalla
+                ]);
+            } catch (\Exception $e) {
+                Log::warning('Error obteniendo colores por talla', [
+                    'prenda_id' => $prenda->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+            
             // ITERAR SOBRE TALLAS (tienen talla y cantidad)
             if ($prenda->tallas && $prenda->tallas->count() > 0) {
                 foreach ($prenda->tallas as $talla) {
+                    $tallaId = $talla->id;
+                    $coloresEspecificos = $coloresPorTalla[$tallaId] ?? [];
+                    
+                    // Construir string de colores y cantidades
+                    $colorInfo = '';
+                    if (!empty($coloresEspecificos)) {
+                        $partesColor = [];
+                        foreach ($coloresEspecificos as $color) {
+                            $partesColor[] = "{$color['cantidad']}-{$color['color']}";
+                        }
+                        $colorInfo = implode(', ', $partesColor);
+                    }
+                    
                     $variantes[] = [
-                        'talla_id' => $talla->id,  //  Agregar ID de la talla
+                        'talla_id' => $tallaId,  //  Agregar ID de la talla
                         'talla' => $talla->talla,
                         'genero' => $talla->genero,  //  Agregar género
                         'cantidad' => (int)$talla->cantidad,
+                        'color_info' => $colorInfo,  // NUEVO: información de colores por talla
+                        'colores_detalle' => $coloresEspecificos,  // NUEVO: array detallado de colores
                         'manga' => $especificaciones['manga'],
                         'manga_obs' => $especificaciones['manga_obs'],
                         'broche' => $especificaciones['broche'],

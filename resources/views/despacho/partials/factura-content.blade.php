@@ -77,6 +77,7 @@
                         <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
                             <thead>
                                 <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                                    <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Género</th>
                                     <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
                                     <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
                                 </tr>
@@ -84,6 +85,7 @@
                             <tbody>
                                 @foreach($prenda['variantes'] as $variante)
                                     <tr style="background: #ffffff; border-bottom: 1px solid #f3f4f6;">
+                                        <td style="padding: 6px 8px; font-weight: 600; color: #374151;">{{ $variante['genero'] ?? 'N/A' }}</td>
                                         <td style="padding: 6px 8px; font-weight: 600; color: #374151;">{{ $variante['talla'] ?? 'N/A' }}</td>
                                         <td style="padding: 6px 8px; text-align: center; color: #6b7280;">{{ $variante['cantidad'] ?? 0 }}</td>
                                     </tr>

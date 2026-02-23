@@ -237,6 +237,12 @@ class InvoiceRenderer {
                 return `
                     <div style="font-weight: 700; color: #2c3e50; margin-bottom: 6px; font-size: 11px;"> Tallas</div>
                     <table style="width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed;">
+                        <thead>
+                            <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                                <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Género</th>
+                                <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Tallas y Cantidades</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             ${generosConTallas.map(([genero, tallasObj]) => {
                                 const tallaRows = Object.entries(tallasObj).map(([talla, cant]) => {

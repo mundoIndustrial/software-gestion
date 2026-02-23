@@ -712,10 +712,11 @@ class FacturaPedidoService
     /**
      * 🔴 NUEVO: Construir array de variantes (manga, broche, bolsillos) desde prenda.variantes
      * 
-     * Retorna un array con la primera variante que contiene:
+     * Retorna un array con todas las variantes que contienen:
      * - tipo_manga (o manga)
      * - tipo_broche_boton (o broche)
      * - tiene_bolsillos (o bolsillos)
+     * - género y talla
      * - Observaciones correspondientes
      */
     private function construirVariantesArray($prenda): array
@@ -724,25 +725,30 @@ class FacturaPedidoService
             return [];
         }
 
-        $primeraVariante = $prenda->variantes->first();
+        $variantesArray = [];
         
-        return [
-            [
-                'id' => $primeraVariante->id,
-                'tipo_manga' => $primeraVariante->tipoManga?->nombre ?? null,
-                'manga' => $primeraVariante->tipoManga?->nombre ?? null,
-                'manga_obs' => $primeraVariante->manga_obs ?? '',
-                'tipo_broche_boton' => $primeraVariante->tipoBrocheBoton?->nombre ?? null,
-                'tipo_broche' => $primeraVariante->tipoBrocheBoton?->nombre ?? null,
-                'broche' => $primeraVariante->tipoBrocheBoton?->nombre ?? null,
-                'broche_boton_obs' => $primeraVariante->broche_boton_obs ?? '',
-                'broche_obs' => $primeraVariante->broche_boton_obs ?? '',
-                'tiene_bolsillos' => (bool)($primeraVariante->tiene_bolsillos ?? false),
-                'bolsillos' => (bool)($primeraVariante->tiene_bolsillos ?? false),
-                'bolsillos_obs' => $primeraVariante->bolsillos_obs ?? '',
-                'obs_bolsillos' => $primeraVariante->bolsillos_obs ?? '',
-            ]
-        ];
+        foreach ($prenda->variantes as $variante) {
+            $variantesArray[] = [
+                'id' => $variante->id,
+                'tipo_manga' => $variante->tipoManga?->nombre ?? null,
+                'manga' => $variante->tipoManga?->nombre ?? null,
+                'manga_obs' => $variante->manga_obs ?? '',
+                'tipo_broche_boton' => $variante->tipoBrocheBoton?->nombre ?? null,
+                'tipo_broche' => $variante->tipoBrocheBoton?->nombre ?? null,
+                'broche' => $variante->tipoBrocheBoton?->nombre ?? null,
+                'broche_boton_obs' => $variante->broche_boton_obs ?? '',
+                'broche_obs' => $variante->broche_boton_obs ?? '',
+                'tiene_bolsillos' => (bool)($variante->tiene_bolsillos ?? false),
+                'bolsillos' => (bool)($variante->tiene_bolsillos ?? false),
+                'bolsillos_obs' => $variante->bolsillos_obs ?? '',
+                'obs_bolsillos' => $variante->bolsillos_obs ?? '',
+                'talla' => $variante->talla ?? 'N/A',
+                'genero' => $variante->genero ?? 'N/A',
+                'cantidad' => $variante->cantidad ?? 0,
+            ];
+        }
+        
+        return $variantesArray;
     }
 
     /**

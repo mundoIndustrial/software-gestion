@@ -266,6 +266,44 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 @else
                                                     <div class="text-slate-400 text-xs mt-1">— Sin procesos</div>
                                                 @endif
+                                                
+                                                {{-- COLORES POR TALLA --}}
+                                                @php
+                                                    // Agrupar colores por género y talla
+                                                    $coloresPorGeneroYTalla = [];
+                                                    if (isset($primeraFila->objetoPrenda['variantes']) && is_array($primeraFila->objetoPrenda['variantes'])) {
+                                                        foreach ($primeraFila->objetoPrenda['variantes'] as $variante) {
+                                                            if (isset($variante['colores_detalle']) && !empty($variante['colores_detalle'])) {
+                                                                $genero = ucfirst(strtolower($variante['genero'] ?? ''));
+                                                                $talla = $variante['talla'] ?? '';
+                                                                
+                                                                foreach ($variante['colores_detalle'] as $colorDetalle) {
+                                                                    $color = $colorDetalle['color'] ?? '';
+                                                                    $cantidad = $colorDetalle['cantidad'] ?? 0;
+                                                                    
+                                                                    if (!empty($genero) && !empty($talla) && !empty($color) && $cantidad > 0) {
+                                                                        $clave = "{$genero}: {$talla}:{$cantidad}-{$color}";
+                                                                        $coloresPorGeneroYTalla[] = $clave;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    
+                                                    // Eliminar duplicados y ordenar
+                                                    $coloresPorGeneroYTalla = array_unique($coloresPorGeneroYTalla);
+                                                    sort($coloresPorGeneroYTalla);
+                                                @endphp
+                                                
+                                                @if(!empty($coloresPorGeneroYTalla))
+                                                    <div class="text-slate-700 mt-2 text-xs font-medium">
+                                                        <div class="ml-2">
+                                                            @foreach($coloresPorGeneroYTalla as $colorInfo)
+                                                                <div>• {{ $colorInfo }}</div>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                @endif
                                             </td>
                                             
                                             {{-- CELDA DE GÉNERO: Solo en la primera fila del grupo --}}
@@ -764,21 +802,22 @@ function generarHTMLFactura(datos) {
         // Usar TALLAS primero que es donde están los datos correctos
         let variantesHTML = '';
         if (prenda.tallas && typeof prenda.tallas === 'object' && Object.keys(prenda.tallas).length > 0) {
-            // Convertir objeto de géneros a array de tallas
+            // Convertir objeto de géneros a array de tallas con género
             let todasLasTallas = [];
             Object.keys(prenda.tallas).forEach(genero => {
                 if (typeof prenda.tallas[genero] === 'object') {
                     Object.entries(prenda.tallas[genero]).forEach(([talla, cantidad]) => {
-                        todasLasTallas.push({ talla, cantidad });
+                        todasLasTallas.push({ genero: genero.toUpperCase(), talla, cantidad });
                     });
                 }
             });
             
             if (todasLasTallas.length > 0) {
                 variantesHTML = `
-                    <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+                    <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
                         <thead>
                             <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                                <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Género</th>
                                 <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
                                 <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
                             </tr>
@@ -786,6 +825,7 @@ function generarHTMLFactura(datos) {
                         <tbody>
                             ${todasLasTallas.map((talla_item, varIdx) => `
                                 <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
+                                    <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.genero || 'N/A'}</td>
                                     <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.talla || 'N/A'}</td>
                                     <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${talla_item.cantidad || 0}</td>
                                 </tr>
@@ -797,9 +837,10 @@ function generarHTMLFactura(datos) {
         } else if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
             // Fallback por si vienen como variantes
             variantesHTML = `
-                <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+                <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
                     <thead>
                         <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                            <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Género</th>
                             <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
                             <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
                         </tr>
@@ -807,6 +848,7 @@ function generarHTMLFactura(datos) {
                     <tbody>
                         ${prenda.variantes.map((var_item, varIdx) => `
                             <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
+                                <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${(var_item.genero || 'N/A').toUpperCase()}</td>
                                 <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${var_item.talla || 'N/A'}</td>
                                 <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${var_item.cantidad || 0}</td>
                             </tr>
@@ -823,7 +865,7 @@ function generarHTMLFactura(datos) {
                 <div style="margin-bottom: 12px;">
                     ${prenda.telas_array.map(tela => `
                         <div style="padding: 6px 0; border-bottom: 1px solid #f3f4f6;">
-                            <span style="font-size: 11px; color: #374151;">
+                            <span style="font-size: 13px; color: #374151;">
                                 <strong>Tela:</strong> ${tela.tela_nombre || '—'} 
                                 <strong style="margin-left: 12px;">Color:</strong> ${tela.color_nombre || '—'}
                                 ${tela.referencia ? `<strong style="margin-left: 12px;">Ref:</strong> ${tela.referencia}` : ''}
@@ -834,7 +876,7 @@ function generarHTMLFactura(datos) {
             `;
         } else if (prenda.tela || prenda.color) {
             telaHTML = `
-                <div style="margin-bottom: 12px; font-size: 11px; color: #374151;">
+                <div style="margin-bottom: 12px; font-size: 13px; color: #374151;">
                     <strong>Tela:</strong> ${prenda.tela || '—'} 
                     ${prenda.color ? `<strong style="margin-left: 12px;">Color:</strong> ${prenda.color}` : ''}
                 </div>
@@ -844,43 +886,76 @@ function generarHTMLFactura(datos) {
         // Procesos
         let procesosHTML = '';
         if (prenda.procesos && Array.isArray(prenda.procesos) && prenda.procesos.length > 0) {
-            procesosHTML = `
-                <div style="margin-bottom: 0;">
-                    ${prenda.procesos.map(proc => `
-                        <div style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
-                            <div style="font-weight: 600; color: #374151; margin-bottom: 4px; font-size: 11px;">${proc.nombre || proc.tipo}</div>
-                            ${proc.ubicaciones && proc.ubicaciones.length > 0 ? `
-                                <div style="font-size: 10px; color: #6b7280; margin-bottom: 2px;">
-                                     ${Array.isArray(proc.ubicaciones) ? proc.ubicaciones.join(' • ') : proc.ubicaciones}
-                                </div>
-                            ` : ''}
-                            ${proc.tallas && (proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 || proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 || proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0 || proc.tallas.sobremedida && Object.keys(proc.tallas.sobremedida).length > 0) ? `
-                                <div style="font-size: 10px; color: #6b7280; margin-bottom: 2px;">
-                                    ${[
-                                        ...(proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 ? [`Dama: ${Object.entries(proc.tallas.dama).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
-                                        ...(proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 ? [`Caballero: ${Object.entries(proc.tallas.caballero).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
-                                        ...(proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0 ? [`Unisex: ${Object.entries(proc.tallas.unisex).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
-                                        ...(proc.tallas.sobremedida && Object.keys(proc.tallas.sobremedida).length > 0 ? [`Sobremedida: ${Object.entries(proc.tallas.sobremedida).map(([genero, cantidad]) => `${genero}(${cantidad})`).join(', ')}`] : [])
-                                    ].join(' • ')}
-                                </div>
-                            ` : ''}
-                            ${proc.observaciones ? `
-                                <div style="font-size: 10px; color: #6b7280;">
-                                    ${proc.observaciones}
-                                </div>
-                            ` : ''}
-                        </div>
-                    `).join('')}
-                </div>
-            `;
+            procesosHTML = '<div style="margin-bottom: 0;">';
+            
+            prenda.procesos.forEach(proc => {
+                // Obtener tallas del proceso para comparar con las de la prenda
+                let tallasProceso = [];
+                if (proc.tallas && (proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 || proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 || proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0 || proc.tallas.sobremedida && Object.keys(proc.tallas.sobremedida).length > 0)) {
+                    tallasProceso = [
+                        ...(proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 ? [`Dama: ${Object.entries(proc.tallas.dama).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
+                        ...(proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 ? [`Caballero: ${Object.entries(proc.tallas.caballero).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
+                        ...(proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0 ? [`Unisex: ${Object.entries(proc.tallas.unisex).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
+                        ...(proc.tallas.sobremedida && Object.keys(proc.tallas.sobremedida).length > 0 ? [`Sobremedida: ${Object.entries(proc.tallas.sobremedida).map(([genero, cantidad]) => `${genero}(${cantidad})`).join(', ')}`] : [])
+                    ];
+                }
+                
+                // Obtener tallas de la prenda para comparar
+                let tallasPrenda = [];
+                if (prenda.tallas && typeof prenda.tallas === 'object') {
+                    Object.keys(prenda.tallas).forEach(genero => {
+                        if (typeof prenda.tallas[genero] === 'object') {
+                            const tallasGenero = Object.entries(prenda.tallas[genero]).map(([talla, cantidad]) => `${talla}(${cantidad})`);
+                            if (tallasGenero.length > 0) {
+                                tallasPrenda.push(`${genero.toUpperCase()}: ${tallasGenero.join(', ')}`);
+                            }
+                        }
+                    });
+                }
+                
+                // Estandarizar formato: usar coma como separador para ambos
+                const tallasProcesoStr = tallasProceso.join(', ').toUpperCase();
+                const tallasPrendaStr = tallasPrenda.join(', ').toUpperCase();
+                const mostrarTallas = tallasProcesoStr !== tallasPrendaStr;
+                
+                // Log temporal para depurar
+                console.log('COMPARACIÓN FINAL:');
+                console.log('Proceso:', tallasProcesoStr);
+                console.log('Prenda:', tallasPrendaStr);
+                console.log('¿Mostrar?:', mostrarTallas);
+                console.log('Son iguales?:', tallasProcesoStr === tallasPrendaStr);
+                
+                procesosHTML += `
+                    <div style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
+                        <div style="font-weight: 600; color: #374151; margin-bottom: 4px; font-size: 13px;">${proc.nombre || proc.tipo}</div>
+                        ${proc.ubicaciones && proc.ubicaciones.length > 0 ? `
+                            <div style="font-size: 13px; color: #6b7280; margin-bottom: 2px;">
+                                 ${Array.isArray(proc.ubicaciones) ? proc.ubicaciones.join(' • ') : proc.ubicaciones}
+                            </div>
+                        ` : ''}
+                        ${mostrarTallas && tallasProceso.length > 0 ? `
+                            <div style="font-size: 13px; color: #6b7280; margin-bottom: 2px;">
+                                ${tallasProceso.join(', ')}
+                            </div>
+                        ` : ''}
+                        ${proc.observaciones ? `
+                            <div style="font-size: 13px; color: #6b7280;">
+                                ${proc.observaciones}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            
+            procesosHTML += '</div>';
         }
 
         return `
             <div style="background: white; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 16px; padding: 16px;">
                 <!-- Header simple -->
                 <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 12px;">
-                    <div style="font-size: 14px; font-weight: 600; color: #374151;">PRENDA ${idx + 1}: ${prenda.nombre_prenda || prenda.nombre}${prenda.de_bodega ? ' <span style="color: #ea580c; font-weight: bold;">- SE SACA DE BODEGA</span>' : ''}</div>
-                    ${prenda.descripcion ? `<div style="font-size: 12px; color: #6b7280; margin-top: 2px;">${prenda.descripcion}</div>` : ''}
+                    <div style="font-size: 16px; font-weight: 600; color: #374151;">PRENDA ${idx + 1}: ${prenda.nombre_prenda || prenda.nombre}${prenda.de_bodega ? ' <span style="color: #ea580c; font-weight: bold;">- SE SACA DE BODEGA</span>' : ''}</div>
+                    ${prenda.descripcion ? `<div style="font-size: 14px; color: #6b7280; margin-top: 2px;">${prenda.descripcion}</div>` : ''}
                 </div>
                 
                 <!-- Telas (movido aquí) -->
