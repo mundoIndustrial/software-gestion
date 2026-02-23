@@ -1693,6 +1693,10 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
     Route::get('/pedido/{numeroPedido}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'verPedido'])->name('ver-pedido');
     Route::get('/api/pedidos', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'obtenerPedidosJson'])->name('api.pedidos');
     Route::get('/api/pedido/{numeroPedido}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'obtenerDatosRecibosOperario'])->name('api.pedido');
+    Route::post('/api/novedades/crear', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'crearNovedad'])->name('api.novedades.crear');
+    Route::delete('/api/novedades/{id}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'eliminarNovedad'])->name('api.novedades.eliminar');
+    Route::put('/api/novedades/{id}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'actualizarNovedad'])->name('api.novedades.actualizar');
+    Route::get('/api/novedades/{numeroPedido}/{prendaId}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'obtenerNovedadesPrenda'])->name('api.novedades.prenda');
     Route::get('/api/novedades/{numeroPedido}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'obtenerNovedades'])->name('api.novedades');
     Route::post('/buscar', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'buscarPedido'])->name('buscar');
     Route::post('/reportar-pendiente', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'reportarPendiente'])->name('reportar-pendiente');

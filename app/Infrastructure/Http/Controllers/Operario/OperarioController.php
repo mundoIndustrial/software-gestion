@@ -928,4 +928,231 @@ class OperarioController extends Controller
         }
     }
 
+    /**
+     * API: Crear novedad de prenda/recibo
+     * POST /operario/api/novedades/crear
+     */
+    public function crearNovedad(Request $request)
+    {
+        try {
+            $request->validate([
+                'numero_pedido' => 'required|numeric',
+                'prenda_id' => 'required|numeric',
+                'numero_recibo' => 'required|string',
+                'novedad_texto' => 'required|string|min:5',
+                'tipo_novedad' => 'required|in:observacion,problema,cambio,correccion,aprobacion,rechazo'
+            ]);
+
+            $usuario = Auth::user();
+
+            // Buscar la prenda
+            $prenda = \App\Models\PrendaPedido::find($request->prenda_id);
+            if (!$prenda) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Prenda no encontrada'
+                ], 404);
+            }
+
+            // Crear la novedad
+            $novedad = \DB::table('prendas_pedido_novedades_recibo')->insert([
+                'prenda_pedido_id' => $request->prenda_id,
+                'numero_recibo' => $request->numero_recibo,
+                'novedad_texto' => $request->novedad_texto,
+                'tipo_novedad' => $request->tipo_novedad,
+                'estado_novedad' => 'activa',
+                'creado_por' => $usuario->id,
+                'creado_en' => now(),
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            // Actualizar estado del pedido a Pendiente
+            \DB::table('pedidos_produccion')
+                ->where('numero_pedido', $request->numero_pedido)
+                ->update(['estado' => 'Pendiente', 'updated_at' => now()]);
+
+            \Log::info('[OperarioController] Novedad creada', [
+                'prenda_id' => $request->prenda_id,
+                'usuario_id' => $usuario->id,
+                'tipo_novedad' => $request->tipo_novedad,
+                'numero_pedido' => $request->numero_pedido
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Novedad registrada correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('[OperarioController] Error creando novedad: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear novedad: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * API: Obtener novedades de una prenda
+     * GET /operario/api/novedades/{numeroPedido}/{prendaId}
+     */
+    public function obtenerNovedadesPrenda($numeroPedido, $prendaId)
+    {
+        try {
+            $usuario = Auth::user();
+            $esCortador = $usuario->hasRole('cortador');
+
+            // Obtener novedades de la prenda
+            $novedades = \DB::table('prendas_pedido_novedades_recibo')
+                ->where('prenda_pedido_id', $prendaId)
+                ->orderBy('creado_en', 'desc')
+                ->get()
+                ->map(function($n) use ($usuario) {
+                    $n->creado_en = \Carbon\Carbon::parse($n->creado_en)->format('d/m/Y H:i');
+                    
+                    // Obtener nombre y rol del usuario que creó
+                    $creador = \App\Models\User::find($n->creado_por);
+                    $n->creado_por_nombre = $creador?->name ?? 'Usuario Desconocido';
+                    
+                    // Obtener el rol del usuario
+                    if ($creador) {
+                        $roles = $creador->getRoleNames()->toArray();
+                        $n->creado_por_rol = !empty($roles) ? strtoupper($roles[0]) : 'USUARIO';
+                    } else {
+                        $n->creado_por_rol = 'USUARIO';
+                    }
+                    
+                    return $n;
+                });
+
+            // Si es cortador, filtrar solo sus propias novedades
+            if ($esCortador) {
+                $novedades = $novedades->filter(fn($n) => $n->creado_por === $usuario->id);
+            }
+
+            return response()->json([
+                'success' => true,
+                'novedades' => $novedades->values()
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('[OperarioController] Error obteniendo novedades: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener novedades'
+            ], 500);
+        }
+    }
+
+    /**
+     * API: Eliminar novedad
+     * DELETE /operario/api/novedades/{id}
+     */
+    public function eliminarNovedad($id)
+    {
+        try {
+            $usuario = Auth::user();
+
+            // Obtener la novedad
+            $novedad = \DB::table('prendas_pedido_novedades_recibo')->find($id);
+            if (!$novedad) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Novedad no encontrada'
+                ], 404);
+            }
+
+            // Verificar permisos - solo el que la creó o admin
+            if ($novedad->creado_por !== $usuario->id && !$usuario->hasRole('admin')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permiso para eliminar esta novedad'
+                ], 403);
+            }
+
+            // Eliminar
+            \DB::table('prendas_pedido_novedades_recibo')->delete($id);
+
+            \Log::info('[OperarioController] Novedad eliminada', [
+                'novedad_id' => $id,
+                'usuario_id' => $usuario->id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Novedad eliminada correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('[OperarioController] Error eliminando novedad: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar novedad'
+            ], 500);
+        }
+    }
+
+    /**
+     * API: Actualizar novedad
+     * PUT /operario/api/novedades/{id}
+     */
+    public function actualizarNovedad(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'novedad_texto' => 'required|string|min:5',
+                'tipo_novedad' => 'required|in:observacion,problema,cambio,correccion,aprobacion,rechazo'
+            ]);
+
+            $usuario = Auth::user();
+
+            // Obtener la novedad
+            $novedad = \DB::table('prendas_pedido_novedades_recibo')->find($id);
+            if (!$novedad) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Novedad no encontrada'
+                ], 404);
+            }
+
+            // Verificar permisos - solo el que la creó o admin
+            if ($novedad->creado_por !== $usuario->id && !$usuario->hasRole('admin')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permiso para editar esta novedad'
+                ], 403);
+            }
+
+            // Actualizar
+            \DB::table('prendas_pedido_novedades_recibo')
+                ->where('id', $id)
+                ->update([
+                    'novedad_texto' => $request->novedad_texto,
+                    'tipo_novedad' => $request->tipo_novedad,
+                    'editado' => 1,
+                    'editado_por' => $usuario->id,
+                    'editado_en' => now(),
+                    'updated_at' => now()
+                ]);
+
+            \Log::info('[OperarioController] Novedad actualizada', [
+                'novedad_id' => $id,
+                'usuario_id' => $usuario->id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Novedad actualizada correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('[OperarioController] Error actualizando novedad: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar novedad: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 }

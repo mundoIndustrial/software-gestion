@@ -19,10 +19,20 @@
 
 @section('content')
 <div class="operario-dashboard">
+    <!-- Usuario Logueado en Variable Global -->
+    <script>
+        window.USUARIO_ACTUAL = {
+            id: {{ Auth::id() }},
+            rol: '{{ Auth::user()->roles->first()->name ?? '' }}'
+        };
+    </script>
     <!-- Búsqueda -->
     <div class="search-section">
         <span class="material-symbols-rounded">search</span>
-        <input type="text" id="searchInput" class="search-box" placeholder="Buscar por # Recibo o Cliente...">
+        <input type="text" id="searchInput" class="search-box" placeholder="Buscar por # Recibo, Prenda o Cliente...">
+        <button id="clearFilterBtn" class="clear-filter-btn" title="Limpiar filtro" style="display: none;">
+            <span class="material-symbols-rounded">close</span>
+        </button>
     </div>
 
     <!-- Mis Prendas Section -->
@@ -105,19 +115,14 @@
                                     </p>
                                 </div>
 
-                                <!-- Recibos de Costura -->
-                                <div class="recibos-info">
-                                    <div class="recibos-lista">
-                                        @foreach($prenda['recibos'] as $recibo)
-                                            <span class="recibo-badge recibo-{{ strtolower(str_replace('-', '_', $recibo['tipo_recibo'])) }}">
-                                                {{ $recibo['tipo_recibo'] }}
-                                            </span>
-                                        @endforeach
-                                    </div>
-                                </div>
+
 
                                 <!-- Contenedor de Botones -->
-                                <div class="orden-buttons">
+                                <div class="orden-buttons" style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;">
+                                    <button class="btn-agregar-novedad" onclick="abrirModalNovedad('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', {{ isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'] }})">
+                                        <span class="material-symbols-rounded">comment</span>
+                                        AGREGAR NOVEDAD
+                                    </button>
                                     @if(auth()->user()->hasRole('costura-reflectivo'))
                                         {{-- Para costura-reflectivo, crear un botón por cada tipo de recibo --}}
                                         @foreach($prenda['recibos'] as $recibo)
@@ -209,12 +214,44 @@
 
     .search-section .material-symbols-rounded {
         position: absolute;
-        left: 0.75rem;
         top: 50%;
         transform: translateY(-50%);
         color: #999;
         font-size: 18px;
         pointer-events: none;
+    }
+
+    .search-section > .material-symbols-rounded:first-child {
+        left: 0.75rem;
+    }
+
+    .clear-filter-btn {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #999;
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+
+    .clear-filter-btn:hover {
+        background: rgba(0, 0, 0, 0.05);
+        color: #666;
+    }
+
+    .clear-filter-btn .material-symbols-rounded {
+        font-size: 18px;
+        position: static;
+        transform: none;
+        pointer-events: auto;
     }
 
     /* Órdenes Section */
@@ -514,6 +551,36 @@
         font-size: 14px;
     }
 
+    /* Botón Agregar Novedad */
+    .btn-agregar-novedad {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 0.8rem;
+        background: #EF5350;
+        color: white;
+        border: 1px solid #EF5350;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: fit-content;
+        box-shadow: 0 2px 4px rgba(239, 83, 80, 0.15);
+    }
+
+    .btn-agregar-novedad:hover {
+        background: #E53935;
+        box-shadow: 0 4px 8px rgba(239, 83, 80, 0.25);
+        transform: translateY(-1px);
+    }
+
+    .btn-agregar-novedad .material-symbols-rounded {
+        font-size: 14px;
+    }
+
     /* Recibos de Costura */
     .recibos-info {
         margin-top: 0.5rem;
@@ -679,16 +746,42 @@
         console.log('=====================================\n');
 
         if (searchInput) {
+            const clearBtn = document.getElementById('clearFilterBtn');
+            
+            // Handler para botón de limpiar
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function() {
+                    searchInput.value = '';
+                    clearBtn.style.display = 'none';
+                    
+                    // Trigger input event para actualizar filtro
+                    const event = new Event('input', { bubbles: true });
+                    searchInput.dispatchEvent(event);
+                });
+            }
+            
             searchInput.addEventListener('input', function(e) {
                 const busqueda = e.target.value.toLowerCase().trim();
+                
+                // Mostrar/ocultar botón de limpiar según si hay texto
+                if (clearBtn) {
+                    clearBtn.style.display = busqueda ? 'flex' : 'none';
+                }
 
                 ordenCards.forEach(card => {
-                    const numero = card.dataset.numero.toLowerCase();
-                    const prenda = card.dataset.prenda ? card.dataset.prenda.toLowerCase() : '';
+                    // Extraer número de RECIBO del DOM (desde .orden-right)
+                    const reciboDom = card.querySelector('.orden-right .orden-fecha span:not(.orden-fecha-label)');
+                    const numeroRecibo = reciboDom ? reciboDom.textContent.toLowerCase().trim() : '';
                     const cliente = card.dataset.cliente.toLowerCase();
+                    
+                    // Extraer nombre de PRENDA del DOM (desde .prendas-label strong)
+                    const prendaDom = card.querySelector('.orden-prendas .prendas-label strong');
+                    const nombrePrenda = prendaDom ? prendaDom.textContent.toLowerCase().trim() : '';
 
-                    // Mostrar si coincide con número, prenda o cliente
-                    if (numero.includes(busqueda) || prenda.includes(busqueda) || cliente.includes(busqueda) || busqueda === '') {
+                    console.log('🔍 Filtro:', {busqueda, numeroRecibo, clienteName: cliente, nombrePrenda, coincide: numeroRecibo.includes(busqueda) || cliente.includes(busqueda) || nombrePrenda.includes(busqueda)});
+
+                    // Mostrar si coincide con número de recibo, cliente o prenda
+                    if (numeroRecibo.includes(busqueda) || cliente.includes(busqueda) || nombrePrenda.includes(busqueda) || busqueda === '') {
                         card.style.display = '';
                     } else {
                         card.style.display = 'none';
@@ -1308,6 +1401,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (searchInput) {
         searchInput.addEventListener('keyup', function() {
             const searchTerm = this.value.toLowerCase();
+            const clearBtn = document.getElementById('clearFilterBtn');
+            
+            // Mostrar/ocultar botón de limpiar
+            if (clearBtn) {
+                clearBtn.style.display = searchTerm ? 'flex' : 'none';
+            }
+            
             const ordenesList = document.getElementById('ordenesList');
             const cards = ordenesList.querySelectorAll('.orden-card-simple');
             let visibles = 0;
@@ -1316,12 +1416,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Si el filtro activo no es 'todos', aplicar también el filtro de tipo
                 const badgeActivo = document.querySelector('.badge-filtro-active');
                 const filtroActivo = badgeActivo ? badgeActivo.dataset.filtro : 'todos';
-                const debeVisiblePorTipo = filtroActivo === 'todos' || card.dataset.tipo === filtroActivo;
+                const debeVisiblePorTipo = filtroActivo === 'todos' || card.dataset.tipoRecibo === filtroActivo;
 
-                // Aplicar búsqueda
-                const numero = card.dataset.numero.toLowerCase();
-                const cliente = card.dataset.cliente;
-                const coincide = numero.includes(searchTerm) || cliente.includes(searchTerm);
+                // Extraer número de RECIBO del DOM (desde .orden-right)
+                const reciboDom = card.querySelector('.orden-right .orden-fecha span:not(.orden-fecha-label)');
+                const numeroRecibo = reciboDom ? reciboDom.textContent.toLowerCase().trim() : '';
+                const cliente = card.dataset.cliente ? card.dataset.cliente.toLowerCase() : '';
+                
+                // Extraer nombre de PRENDA del DOM (desde .prendas-label strong)
+                const prendaDom = card.querySelector('.orden-prendas .prendas-label strong');
+                const nombrePrenda = prendaDom ? prendaDom.textContent.toLowerCase().trim() : '';
+                
+                const coincide = numeroRecibo.includes(searchTerm) || cliente.includes(searchTerm) || nombrePrenda.includes(searchTerm);
 
                 if (coincide && debeVisiblePorTipo) {
                     card.style.display = 'flex';
@@ -1339,6 +1445,618 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+</script>
+
+<!-- Modal Agregar Novedad -->
+<div id="modalNovedad" class="modal-overlay">
+    <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header" style="background: #1e293b; border-bottom: 1px solid #e2e8f0;">
+            <h2 style="color: white; margin: 0; font-size: 1rem; font-weight: 600;">
+                💬 Novedades - Pedido <span id="prendaNumeroPedidoDisplay">#</span> - Recibo <span id="prendaNumeroReciboDisplay"></span>
+            </h2>
+            <button onclick="cerrarModalNovedad()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.5rem; padding: 0; margin: 0;">✕</button>
+        </div>
+
+        <div class="modal-body" style="max-height: 600px; overflow-y: auto;">
+            <!-- Historial de Novedades -->
+            <div id="novedadesHistorial" style="margin-bottom: 2rem; max-height: 350px; overflow-y: auto;">
+                <p style="color: #999; text-align: center; padding: 1rem;">Cargando...</p>
+            </div>
+            
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 1.5rem;">
+                <label style="display: block; font-size: 0.875rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem;">Agregar Nueva Novedad:</label>
+                <textarea 
+                    id="novedadDescripcionText" 
+                    style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 0.875rem; font-family: 'Poppins', sans-serif; resize: none; focus: outline none;"
+                    placeholder="Escribe tu novedad aquí..." 
+                    rows="4"></textarea>
+                
+                <div style="margin-bottom: 1rem; margin-top: 1rem;">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">TIPO DE NOVEDAD</label>
+                    <select id="tipoNovedadSelect" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-family: 'Poppins', sans-serif; font-size: 0.85rem; color: #333; background: white;">
+                        <option value="observacion">Observación</option>
+                        <option value="problema">Problema</option>
+                        <option value="cambio">Cambio</option>
+                        <option value="correccion">Corrección</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+                    <button type="button" onclick="guardarNovedad()" style="flex: 1; padding: 0.5rem 1rem; background: #22c55e; color: white; border: none; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease;">
+                        ✓ Guardar Novedad
+                    </button>
+                    <button type="button" onclick="cerrarModalNovedad()" style="flex: 1; padding: 0.5rem 1rem; background: #94a3b8; color: white; border: none; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease;">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Novedad -->
+<div id="modalEditarNovedad" class="modal-overlay">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header" style="background: #1e293b; border-bottom: 1px solid #e2e8f0;">
+            <h2 style="color: white; margin: 0; font-size: 1rem; font-weight: 600;">
+                ✏️ Editar Novedad
+            </h2>
+            <button onclick="cerrarModalEditarNovedad()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.5rem; padding: 0; margin: 0;">✕</button>
+        </div>
+
+        <div class="modal-body" style="padding: 1.5rem;">
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">DESCRIPCIÓN</label>
+            <textarea 
+                id="editarNovedadText" 
+                style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 0.875rem; font-family: 'Poppins', sans-serif; resize: none;"
+                placeholder="Edita la novedad..." 
+                rows="4"></textarea>
+            
+            <div style="margin-bottom: 1rem; margin-top: 1rem;">
+                <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">TIPO DE NOVEDAD</label>
+                <select id="editarTipoSelect" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-family: 'Poppins', sans-serif; font-size: 0.85rem; color: #333; background: white;">
+                    <option value="observacion">Observación</option>
+                    <option value="problema">Problema</option>
+                    <option value="cambio">Cambio</option>
+                    <option value="correccion">Corrección</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+                <button type="button" onclick="guardarNovedadEditada()" style="flex: 1; padding: 0.5rem 1rem; background: #22c55e; color: white; border: none; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease;">
+                    ✓ Guardar Cambios
+                </button>
+                <button type="button" onclick="cerrarModalEditarNovedad()" style="flex: 1; padding: 0.5rem 1rem; background: #94a3b8; color: white; border: none; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease;">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .modal-select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.85rem;
+        color: #333;
+        background: white;
+        transition: all 0.3s ease;
+    }
+
+    .modal-select:focus {
+        outline: none;
+        border-color: #3F51B5;
+        box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.1);
+    }
+
+    /* Modal de Mensajes */
+    .modal-mensaje-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    }
+
+    .modal-mensaje-contenido {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        max-width: 400px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .modal-mensaje-titulo {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        color: #1f2937;
+    }
+
+    .modal-mensaje-texto {
+        font-size: 0.9rem;
+        color: #6b7280;
+        margin-bottom: 1.5rem;
+        line-height: 1.5;
+    }
+
+    .modal-mensaje-exito .modal-mensaje-titulo {
+        color: #15803d;
+    }
+
+    .modal-mensaje-error .modal-mensaje-titulo {
+        color: #b91c1c;
+    }
+
+    .modal-mensaje-info .modal-mensaje-titulo {
+        color: #0369a1;
+    }
+
+    .modal-mensaje-icono {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .modal-mensaje-boton {
+        background: #3F51B5;
+        color: white;
+        border: none;
+        padding: 0.5rem 1.5rem;
+        border-radius: 0.25rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+    }
+
+    .modal-mensaje-boton:hover {
+        background: #3949AB;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(63, 81, 181, 0.3);
+    }
+</style>
+
+<!-- Modal de Mensajes -->
+<div id="modalMensaje" class="modal-mensaje-overlay">
+    <div class="modal-mensaje-contenido" id="modalMensajeContenido" style="position: relative;">
+        <button onclick="cerrarModalMensaje()" style="position: absolute; top: 0.75rem; right: 0.75rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999; transition: all 0.3s ease;" onmouseover="this.style.color='#333'" onmouseout="this.style.color='#999'">✕</button>
+        <div class="modal-mensaje-icono" id="modalMensajeIcono">✓</div>
+        <div class="modal-mensaje-titulo" id="modalMensajeTitulo">Éxito</div>
+        <div class="modal-mensaje-texto" id="modalMensajeTexto">La operación se realizó correctamente</div>
+        <button class="modal-mensaje-boton" onclick="cerrarModalMensaje()">Aceptar</button>
+    </div>
+</div>
+
+<script>
+    // Variables globales para el modal
+    window.novedadActual = {
+        numeroPedido: null,
+        prendaId: null
+    };
+
+    // Funciones para manejar Modal de Mensajes
+    function mostrarMensaje(titulo, texto, tipo = 'exito', icono = '✓') {
+        const modal = document.getElementById('modalMensaje');
+        const contenido = document.getElementById('modalMensajeContenido');
+        const iconoEl = document.getElementById('modalMensajeIcono');
+        const tituloEl = document.getElementById('modalMensajeTitulo');
+        const textoEl = document.getElementById('modalMensajeTexto');
+        const boton = document.querySelector('.modal-mensaje-boton');
+        
+        if (!modal) return;
+        
+        // Limpiar clases
+        contenido.classList.remove('modal-mensaje-exito', 'modal-mensaje-error', 'modal-mensaje-info');
+        
+        // Asignar nueva clase
+        contenido.classList.add(`modal-mensaje-${tipo}`);
+        
+        // Llenar contenido
+        iconoEl.textContent = icono;
+        tituloEl.textContent = titulo;
+        textoEl.textContent = texto;
+        
+        // Resetear botón a valores por defecto (si existe)
+        if (boton) {
+            boton.textContent = 'Aceptar';
+            boton.style.background = '#3F51B5';
+            boton.style.color = 'white';
+            boton.style.border = 'none';
+            boton.style.padding = '0.5rem 1.5rem';
+            boton.style.borderRadius = '0.25rem';
+            boton.style.fontWeight = '700';
+            boton.style.cursor = 'pointer';
+            boton.style.transition = 'all 0.3s ease';
+            boton.style.fontSize = '0.85rem';
+            boton.style.textTransform = 'uppercase';
+            boton.onmouseover = function() { this.style.background = '#3949AB'; };
+            boton.onmouseout = function() { this.style.background = '#3F51B5'; };
+            boton.onclick = cerrarModalMensaje;
+        }
+        
+        // Mostrar modal
+        modal.style.display = 'flex';
+    }
+
+    function cerrarModalMensaje() {
+        const modal = document.getElementById('modalMensaje');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    // Función auxiliar para mensaje de éxito
+    function mostrarExito(titulo, texto = '') {
+        mostrarMensaje(titulo, texto, 'exito', '✓');
+    }
+
+    // Función auxiliar para mensaje de error
+    function mostrarError(titulo, texto = '') {
+        mostrarMensaje(titulo, texto, 'error', '✕');
+    }
+
+    // Función auxiliar para mensaje de información
+    function mostrarInfo(titulo, texto = '') {
+        mostrarMensaje(titulo, texto, 'info', 'ℹ');
+    }
+
+    // Cerrar modal de mensajes al hacer click fuera
+    window.addEventListener('click', function(event) {
+        const modal = document.getElementById('modalMensaje');
+        if (modal && event.target === modal) {
+            cerrarModalMensaje();
+        }
+    });
+
+    // Variables globales para el modal
+
+
+    // Función para abrir modal de agregar novedad
+    function abrirModalNovedad(numeroPedido, prendaId, nombrePrenda, numeroRecibo) {
+        console.log('📝 Abriendo modal novedad', {numeroPedido, prendaId, nombrePrenda, numeroRecibo});
+        
+        const modal = document.getElementById('modalNovedad');
+        if (!modal) {
+            console.error('Modal no encontrado');
+            mostrarError('Error', 'Modal de novedades no cargado');
+            return;
+        }
+        
+        window.novedadActual.numeroPedido = numeroPedido;
+        window.novedadActual.prendaId = prendaId;
+        
+        // Establecer valores con validación
+        const prendaNumeroDisplay = document.getElementById('prendaNumeroPedidoDisplay');
+        const reciboNumeroDisplay = document.getElementById('prendaNumeroReciboDisplay');
+        const textareaDescripcion = document.getElementById('novedadDescripcionText');
+        const selectTipo = document.getElementById('tipoNovedadSelect');
+        
+        if (prendaNumeroDisplay) prendaNumeroDisplay.textContent = '#' + numeroPedido;
+        if (reciboNumeroDisplay) reciboNumeroDisplay.textContent = numeroRecibo;
+        if (textareaDescripcion) textareaDescripcion.value = '';
+        if (selectTipo) selectTipo.value = 'observacion';
+        
+        // Cargar novedades existentes del usuario actual
+        cargarNovedadesDelUsuario(numeroPedido, prendaId);
+        
+        modal.style.display = 'flex';
+    }
+
+    function cargarNovedadesDelUsuario(numeroPedido, prendaId) {
+        console.log('📋 Cargando novedades', {numeroPedido, prendaId});
+        
+        fetch(`/operario/api/novedades/${numeroPedido}/${prendaId}`, {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('✓ Novedades obtenidas:', data);
+            
+            if (window.USUARIO_ACTUAL && window.USUARIO_ACTUAL.rol === 'cortador') {
+                data.novedades = data.novedades.filter(n => n.creado_por === window.USUARIO_ACTUAL.id);
+            }
+            mostrarNovedades(data.novedades || []);
+        })
+        .catch(error => {
+            console.error('❌ Error cargando novedades:', error);
+        });
+    }
+
+    function mostrarNovedades(novedades) {
+        const historial = document.getElementById('novedadesHistorial');
+        if (!historial) {
+            console.error('Historial no encontrado');
+            return;
+        }
+        
+        if (novedades.length === 0) {
+            historial.innerHTML = '<p style="color: #999; text-align: center; padding: 1rem;">No hay novedades registradas</p>';
+            return;
+        }
+        
+        historial.innerHTML = novedades.map(novedad => {
+            const puedeEditar = window.USUARIO_ACTUAL && novedad.creado_por === window.USUARIO_ACTUAL.id;
+            const tipoColorMap = {
+                'observacion': 'background: #dbeafe; color: #1e40af;',
+                'problema': 'background: #fee2e2; color: #7f1d1d;',
+                'cambio': 'background: #fef3c7; color: #92400e;',
+                'correccion': 'background: #dcfce7; color: #166534;',
+                'aprobacion': 'background: #dcfce7; color: #166534;',
+                'rechazo': 'background: #fee2e2; color: #7f1d1d;'
+            };
+            
+            const tipoColor = tipoColorMap[novedad.tipo_novedad] || 'background: #f3f4f6; color: #1f2937;';
+            const esEditada = novedad.editado ? ' <span style="display: inline-block; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 700; border-radius: 0.25rem; background: #fed7aa; color: #92400e;">EDITADO</span>' : '';
+            
+            const botones = puedeEditar ? `
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+                    <button onclick="editarNovedad(${novedad.id}, '${novedad.novedad_texto.replace(/'/g, "\\'")}', '${novedad.tipo_novedad}')" style="padding: 0.25rem 0.75rem; background: #3b82f6; color: white; border: none; border-radius: 0.25rem; font-size: 0.75rem; cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'" title="Editar novedad">
+                        Editar
+                    </button>
+                    <button onclick="eliminarNovedad(${novedad.id})" style="padding: 0.25rem 0.75rem; background: #ef4444; color: white; border: none; border-radius: 0.25rem; font-size: 0.75rem; cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'" title="Eliminar novedad">
+                        Eliminar
+                    </button>
+                </div>
+            ` : '';
+            
+            const textoEditado = novedad.editado ? `<div style="font-size: 0.75rem; color: #b45309; font-style: italic; margin-top: 0.5rem;">Editado por ${novedad.editado_por_nombre || 'Usuario'} el ${novedad.editado_en || ''}</div>` : '';
+            
+            return `
+                <div style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; margin-bottom: 0.75rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                            <span style="display: inline-block; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 700; border-radius: 0.25rem; ${tipoColor}">
+                                ${novedad.tipo_novedad.toUpperCase()}
+                            </span>
+                            <span style="font-size: 0.75rem; color: #6b7280;">
+                                ${novedad.creado_por_nombre || 'Usuario'}
+                                <span style="display: inline-block; background: #e0e7ff; color: #3730a3; padding: 0.15rem 0.4rem; border-radius: 0.2rem; font-weight: 600; font-size: 0.65rem; margin-left: 0.25rem;">
+                                    ${novedad.creado_por_rol || 'USUARIO'}
+                                </span>
+                            </span>
+                            ${esEditada}
+                        </div>
+                        <span style="font-size: 0.75rem; color: #9ca3af;">${novedad.creado_en}</span>
+                    </div>
+                    <div style="font-size: 0.875rem; color: #374151; white-space: pre-wrap;">${novedad.novedad_texto}</div>
+                    ${textoEditado}
+                    ${botones}
+                </div>
+            `;
+        }).join('');
+    }
+
+    function cerrarModalNovedad() {
+        const modal = document.getElementById('modalNovedad');
+        if (modal) {
+            modal.style.display = 'none';
+            const textarea = document.getElementById('novedadDescripcionText');
+            if (textarea) textarea.value = '';
+        }
+    }
+
+    function guardarNovedad() {
+        const textareaDescripcion = document.getElementById('novedadDescripcionText');
+        const selectTipo = document.getElementById('tipoNovedadSelect');
+        
+        if (!textareaDescripcion || !selectTipo) {
+            mostrarError('Error', 'Elementos del formulario no encontrados');
+            return;
+        }
+        
+        const descripcion = textareaDescripcion.value.trim();
+        const tipoNovedad = selectTipo.value;
+
+        if (!descripcion) {
+            mostrarError('Validación', 'Por favor describe la novedad');
+            return;
+        }
+
+        // Enviar al servidor
+        fetch('/operario/api/novedades/crear', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                numero_pedido: window.novedadActual.numeroPedido,
+                prenda_id: window.novedadActual.prendaId,
+                numero_recibo: document.getElementById('prendaNumeroReciboDisplay').textContent,
+                novedad_texto: descripcion,
+                tipo_novedad: tipoNovedad
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (textareaDescripcion) textareaDescripcion.value = '';
+                if (selectTipo) selectTipo.value = 'observacion';
+                
+                // Recargar novedades
+                cargarNovedadesDelUsuario(window.novedadActual.numeroPedido, window.novedadActual.prendaId);
+                mostrarExito('Éxito', 'Novedad guardada correctamente');
+            } else {
+                mostrarError('Error', (data.message || 'No se pudo guardar la novedad'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            mostrarError('Error', 'Error al guardar la novedad');
+        });
+    }
+
+    function editarNovedad(id, texto, tipo) {
+        // Guardar datos de la novedad en edición
+        window.novedadEnEdicion = { id, texto, tipo };
+        
+        // Mostrar modal de edición
+        const editModal = document.getElementById('modalEditarNovedad');
+        if (!editModal) {
+            mostrarError('Error', 'Modal de edición no encontrado');
+            return;
+        }
+        
+        // Llenar formulario con datos actuales
+        const editTextarea = document.getElementById('editarNovedadText');
+        const editSelect = document.getElementById('editarTipoSelect');
+        
+        if (editTextarea) editTextarea.value = texto;
+        if (editSelect) editSelect.value = tipo;
+        
+        editModal.style.display = 'flex';
+    }
+
+    function cerrarModalEditarNovedad() {
+        const modal = document.getElementById('modalEditarNovedad');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    function guardarNovedadEditada() {
+        if (!window.novedadEnEdicion) {
+            mostrarError('Error', 'Datos de novedad no encontrados');
+            return;
+        }
+        
+        const editTextarea = document.getElementById('editarNovedadText');
+        const editSelect = document.getElementById('editarTipoSelect');
+        
+        if (!editTextarea || !editSelect) {
+            mostrarError('Error', 'Elementos del formulario no encontrados');
+            return;
+        }
+        
+        const nuevoTexto = editTextarea.value.trim();
+        const nuevoTipo = editSelect.value;
+        
+        if (!nuevoTexto) {
+            mostrarError('Validación', 'Por favor describe la novedad');
+            return;
+        }
+        
+        // Enviar actualización
+        fetch(`/operario/api/novedades/${window.novedadEnEdicion.id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                novedad_texto: nuevoTexto,
+                tipo_novedad: nuevoTipo
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                cerrarModalEditarNovedad();
+                cargarNovedadesDelUsuario(window.novedadActual.numeroPedido, window.novedadActual.prendaId);
+                mostrarExito('Éxito', 'Novedad actualizada correctamente');
+            } else {
+                mostrarError('Error', (data.message || 'No se pudo actualizar la novedad'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            mostrarError('Error', 'Error al actualizar la novedad');
+        });
+    }
+
+    function eliminarNovedad(id) {
+        // Modal de confirmación
+        const modal = document.getElementById('modalMensaje');
+        const contenido = document.getElementById('modalMensajeContenido');
+        const iconoEl = document.getElementById('modalMensajeIcono');
+        const tituloEl = document.getElementById('modalMensajeTitulo');
+        const textoEl = document.getElementById('modalMensajeTexto');
+        const boton = document.querySelector('.modal-mensaje-boton');
+        
+        contenido.classList.remove('modal-mensaje-exito', 'modal-mensaje-error', 'modal-mensaje-info');
+        contenido.classList.add('modal-mensaje-info');
+        
+        iconoEl.textContent = '?';
+        tituloEl.textContent = 'Confirmar';
+        textoEl.textContent = 'Está seguro de que desea eliminar esta novedad?';
+        
+        boton.textContent = 'Eliminar';
+        boton.style.background = '#ef4444';
+        boton.style.color = 'white';
+        boton.style.border = 'none';
+        boton.style.padding = '0.5rem 1.5rem';
+        boton.style.borderRadius = '0.25rem';
+        boton.style.fontWeight = '700';
+        boton.style.cursor = 'pointer';
+        boton.style.transition = 'all 0.3s ease';
+        boton.style.fontSize = '0.85rem';
+        boton.style.textTransform = 'uppercase';
+        boton.onmouseover = function() { this.style.background = '#dc2626'; };
+        boton.onmouseout = function() { this.style.background = '#ef4444'; };
+        
+        boton.onclick = function() {
+            fetch(`/operario/api/novedades/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    cargarNovedadesDelUsuario(window.novedadActual.numeroPedido, window.novedadActual.prendaId);
+                    mostrarExito('Éxito', 'Novedad eliminada correctamente');
+                } else {
+                    mostrarError('Error', 'Error al eliminar la novedad');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarError('Error', 'Error al procesar la eliminación');
+            });
+        };
+        
+        modal.style.display = 'flex';
+    }
+
+    // Cerrar modal al hacer click fuera
+    window.addEventListener('click', function(event) {
+        const modal = document.getElementById('modalNovedad');
+        if (modal && event.target === modal) {
+            cerrarModalNovedad();
+        }
+        
+        const editModal = document.getElementById('modalEditarNovedad');
+        if (editModal && event.target === editModal) {
+            cerrarModalEditarNovedad();
+        }
+    });
+
 </script>
 
 @endsection
