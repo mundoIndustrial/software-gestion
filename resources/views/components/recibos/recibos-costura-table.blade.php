@@ -30,11 +30,11 @@
                     </button>
                 </th>
                 <th style="width: 120px;">
-                    Día de entrega
+                    Área
                     <button type="button" class="filter-btn" 
-                            data-filter-type="dia_entrega"
-                            onclick="openFilterModal('dia_entrega')" 
-                            title="Filtrar por día de entrega" style="
+                            data-filter-type="area"
+                            onclick="openFilterModal('area')" 
+                            title="Filtrar por área" style="
                         background: none;
                         border: none;
                         color: white;
@@ -330,53 +330,40 @@
                         </td>
                         
                         <!-- Descripción (Recibo de Costura) -->
-                        <td>
+                        <td data-descripcion-detallada="{{ $recibo['descripcion_detallada'] ?? '' }}">
                             @php
-                                // Preparar datos completos de prendas para el modal formateado (igual que en orders/index.blade.php)
-                                $prendasParaModal = [];
+                                // Preparar datos de la prenda específica del recibo
                                 $cantidadTotal = 0;
-                                if ($recibo['pedido_info']) {
-                                    // Obtener las prendas del pedido usando el mismo endpoint que registros
+                                $nombreMostrar = $recibo['descripcion_detallada'] ?? '';
+                                
+                                // Si no hay descripción detallada, buscar la prenda específica
+                                if (empty($nombreMostrar) && $recibo['prenda_id']) {
                                     $pedido = \App\Models\PedidoProduccion::find($recibo['pedido_produccion_id']);
                                     if ($pedido && $pedido->prendas && $pedido->prendas->count() > 0) {
-                                        foreach ($pedido->prendas as $prenda) {
+                                        $prendaRecibo = $pedido->prendas->where('id', $recibo['prenda_id'])->first();
+                                        if ($prendaRecibo) {
+                                            $nombreMostrar = $prendaRecibo->nombre_prenda ?? 'Sin nombre';
+                                            
                                             // Calcular cantidad total de tallas para esta prenda
-                                            $cantidadPrenda = 0;
-                                            if ($prenda->tallas && $prenda->tallas->count() > 0) {
-                                                foreach ($prenda->tallas as $talla) {
-                                                    $cantidadPrenda += $talla->cantidad ?? 0;
+                                            if ($prendaRecibo->tallas && $prendaRecibo->tallas->count() > 0) {
+                                                foreach ($prendaRecibo->tallas as $talla) {
+                                                    $cantidadTotal += $talla->cantidad ?? 0;
                                                 }
                                             }
-                                            $cantidadTotal += $cantidadPrenda;
-                                            
-                                            $prendasParaModal[] = [
-                                                'id' => $prenda->id,
-                                                'nombre' => $prenda->nombre_prenda ?? $prenda->nombre ?? 'Prenda',
-                                                'nombre_prenda' => $prenda->nombre_prenda ?? $prenda->nombre ?? 'Prenda',
-                                                'tela' => $prenda->tela,
-                                                'color' => $prenda->color,
-                                                'manga' => $prenda->manga,
-                                                'descripcion' => $prenda->descripcion,
-                                                'tallas' => $prenda->tallas ?? [],
-                                                'variantes' => $prenda->variantes ?? [],
-                                                'procesos' => $prenda->procesos ?? [],
-                                            ];
                                         }
                                     }
+                                }
+                                
+                                // Truncar si es muy largo para la vista en tabla
+                                if (strlen($nombreMostrar) > 50) {
+                                    $nombreMostrar = substr($nombreMostrar, 0, 47) . '...';
                                 }
                             @endphp
                             
                             <div class="table-cell" style="flex: 10;">
                                 <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL] 📌 Click en descripción'); event.stopPropagation(); obtenerDatosPrendaRecibo('Descripción', {{ $recibo['pedido_produccion_id'] }}, {{ $recibo['prenda_id'] }})">
                                     <span style="color: #6b7280; font-size: 0.875rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Click para ver completo">
-                                        @php
-                                            // Mostrar el nombre de la primera prenda como en registros
-                                            $nombreMostrar = 'Sin prendas';
-                                            if (!empty($prendasParaModal)) {
-                                                $nombreMostrar = $prendasParaModal[0]['nombre_prenda'] ?? $prendasParaModal[0]['nombre'] ?? 'Prenda';
-                                            }
-                                        @endphp
-                                        {{ $nombreMostrar }} <span style="color: #3b82f6; font-weight: 600;">...</span>
+                                        {{ $nombreMostrar ?: 'Sin prenda' }}
                                     </span>
                                 </div>
                             </div>
@@ -464,7 +451,7 @@
                 @endforeach
             @else
                 <tr>
-                    <td colspan="13" class="text-center py-4">
+                    <td colspan="12" class="text-center py-4">
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle"></i>
                             No se encontraron recibos de costura.
@@ -480,12 +467,12 @@
 <div class="filter-modal" id="filterModal" style="display: none;">
     <div class="filter-modal-content">
         <div class="filter-modal-header">
-            <h3 id="filterModalTitle">Filtrar</h3>
+            <h3 id="filterModalTitle">Filtrar por Descripción</h3>
             <button type="button" class="filter-modal-close" onclick="closeFilterModal()">×</button>
         </div>
         <div class="filter-modal-body">
-            <!-- Contenido dinámico según el tipo de filtro -->
-            <div id="filterContent">
+            <input type="text" class="filter-search" id="filterSearch" placeholder="Buscar...">
+            <div class="filter-options" id="filterOptions">
                 <!-- Se llenará dinámicamente -->
             </div>
         </div>

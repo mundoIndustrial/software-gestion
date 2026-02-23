@@ -1889,4 +1889,29 @@ class RegistroOrdenQueryController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Obtener novedades de un pedido específico
+     */
+    public function getNovedades($id)
+    {
+        try {
+            $pedido = PedidoProduccion::findOrFail($id);
+            
+            return response()->json([
+                'novedades' => $pedido->novedades ?? ''
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('[getNovedades] Error: ' . $e->getMessage(), [
+                'pedido_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'error' => 'Error al obtener novedades',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

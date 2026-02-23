@@ -41,6 +41,277 @@
 
 <!-- Script con funciones globales adicionales (solo las que no están en el componente) -->
 <script>
+// Definir funciones de filtro globalmente ANTES de cualquier otro código para evitar ReferenceError
+window.openFilterModal = function(filterType) {
+    console.log('[Filtros] openFilterModal llamado con:', filterType);
+    
+    // Mostrar modal
+    const modal = document.getElementById('filterModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
+        
+        // Guardar el tipo de filtro en el modal
+        modal.setAttribute('data-filter-type', filterType);
+        
+        // Actualizar título
+        const title = document.getElementById('filterModalTitle');
+        if (title) {
+            const titles = {
+                'descripcion': 'Filtrar por Descripción',
+                'cliente': 'Filtrar por Cliente',
+                'estado': 'Filtrar por Estado',
+                'area': 'Filtrar por Área',
+                'total_dias': 'Filtrar por Total de Días',
+                'numero_recibo': 'Filtrar por N° Recibo',
+                'cantidad': 'Filtrar por Cantidad',
+                'novedades': 'Filtrar por Novedades',
+                'fecha_creacion': 'Filtrar por Fecha de Creación',
+                'fecha_estimada': 'Filtrar por Fecha Estimada Entrega',
+                'encargado': 'Filtrar por Encargado'
+            };
+            title.textContent = titles[filterType] || 'Filtrar';
+        }
+        
+        // Cargar opciones dinámicas
+        loadFilterOptions(filterType);
+        
+        console.log('[Filtros] Modal mostrado con opciones dinámicas');
+    }
+};
+
+// Función para cargar opciones dinámicas
+function loadFilterOptions(filterType) {
+    const optionsContainer = document.getElementById('filterOptions');
+    if (!optionsContainer) {
+        console.error('[Filtros] No se encontró el contenedor de opciones');
+        return;
+    }
+    
+    // Obtener opciones desde la tabla
+    const options = getDynamicFilterOptions(filterType);
+    
+    if (options.length === 0) {
+        optionsContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #6b7280;">No hay datos disponibles para filtrar</div>';
+        return;
+    }
+    
+    // Generar HTML con checkboxes
+    let html = `
+        <div style="padding: 12px; border-bottom: 1px solid rgb(229, 231, 235); margin-bottom: 8px;">
+            <button type="button" class="btn-select-all" onclick="selectAllCheckboxFilters('${filterType}')" style="width: 100%; padding: 8px 12px; background: linear-gradient(135deg, rgb(59, 130, 246), rgb(37, 99, 235)); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 14px; transition: 0.2s; box-shadow: rgba(59, 130, 246, 0.2) 0px 2px 4px;">
+                Seleccionar todas
+            </button>
+        </div>
+    `;
+    
+    options.forEach(option => {
+        const safeValue = option.replace(/[^a-zA-Z0-9\s]/g, '_');
+        html += `
+            <div class="filter-option">
+                <input type="checkbox" id="filter-${filterType}-${safeValue}" value="${option}">
+                <label for="filter-${filterType}-${safeValue}">${option}</label>
+            </div>
+        `;
+    });
+    
+    optionsContainer.innerHTML = html;
+    console.log(`[Filtros] Cargadas ${options.length} opciones para ${filterType}`);
+}
+
+// Función para obtener opciones dinámicas desde la tabla
+function getDynamicFilterOptions(filterType) {
+    const tbody = document.getElementById('tablaRecibosBody');
+    if (!tbody) {
+        console.warn('[Filtros] No se encontró la tabla para generar opciones dinámicas');
+        return [];
+    }
+    
+    const options = new Set();
+    const columnIndex = getColumnIndex(filterType);
+    
+    if (columnIndex === -1) return [];
+    
+    const rows = tbody.querySelectorAll('tr');
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length > columnIndex) {
+            let cellText = '';
+            
+            // Para el filtro de descripción, leer el atributo data-descripcion-detallada
+            if (filterType === 'descripcion') {
+                cellText = cells[columnIndex].getAttribute('data-descripcion-detallada') || '';
+            } else {
+                cellText = cells[columnIndex].textContent.trim();
+            }
+            
+            if (cellText && cellText !== '-' && cellText !== 'N/A' && cellText !== '') {
+                options.add(cellText);
+            }
+        }
+    });
+    
+    return Array.from(options).sort();
+}
+
+// Función para obtener el índice de columna según el tipo de filtro
+function getColumnIndex(filterType) {
+    const columnMap = {
+        'estado': 1,           // Columna 2: Estado
+        'area': 2,            // Columna 3: Área ✅
+        'total_dias': 3,       // Columna 4: Total de días
+        'numero_recibo': 4,     // Columna 5: N° Recibo
+        'cliente': 5,          // Columna 6: Cliente
+        'descripcion': 6,      // Columna 7: Descripción ✅
+        'cantidad': 7,         // Columna 8: Cantidad
+        'novedades': 8,        // Columna 9: Novedades
+        'fecha_creacion': 9,  // Columna 10: Fecha de creación
+        'fecha_estimada': 10,  // Columna 11: Fecha estimada entrega
+        'encargado': 11        // Columna 12: Encargado orden
+    };
+    return columnMap[filterType] || -1;
+}
+
+window.closeFilterModal = function() {
+    console.log('[Filtros] closeFilterModal llamado');
+    const modal = document.getElementById('filterModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.style.visibility = 'hidden';
+        modal.style.opacity = '0';
+        console.log('[Filtros] Modal cerrado (implementación básica)');
+    }
+};
+
+window.resetFilters = function() {
+    console.log('[Filtros] resetFilters llamado');
+    
+    // Limpiar checkboxes del modal
+    const checkboxes = document.querySelectorAll('#filterOptions input[type="checkbox"]');
+    checkboxes.forEach(cb => cb.checked = false);
+    
+    // Mostrar todas las filas de la tabla
+    const tbody = document.getElementById('tablaRecibosBody');
+    if (tbody) {
+        const rows = tbody.querySelectorAll('tr');
+        rows.forEach(row => {
+            row.style.display = '';
+        });
+        console.log(`[Filtros] Mostrando todas las ${rows.length} filas`);
+    }
+    
+    // Limpiar filtros activos
+    if (window.activeFilters) {
+        window.activeFilters = {};
+    }
+    
+    console.log('[Filtros] Filtros reiniciados');
+};
+
+window.applyFilters = function() {
+    console.log('[Filtros] applyFilters llamado');
+    
+    const modal = document.getElementById('filterModal');
+    const filterType = modal ? modal.getAttribute('data-filter-type') : null;
+    
+    if (!filterType) {
+        console.warn('[Filtros] No se encontró el tipo de filtro');
+        window.closeFilterModal();
+        return;
+    }
+    
+    // Obtener checkboxes seleccionados
+    const checkboxes = modal.querySelectorAll('input[type="checkbox"]:checked');
+    const selectedValues = Array.from(checkboxes).map(cb => cb.value);
+    
+    console.log('[Filtros] Aplicando filtro:', filterType, 'valores:', selectedValues);
+    
+    if (selectedValues.length === 0) {
+        console.log('[Filtros] No hay valores seleccionados, mostrando todos');
+        resetFilters();
+        return;
+    }
+    
+    // Filtrar filas de la tabla
+    const tbody = document.getElementById('tablaRecibosBody');
+    if (!tbody) {
+        console.warn('[Filtros] No se encontró la tabla');
+        window.closeFilterModal();
+        return;
+    }
+    
+    const columnIndex = getColumnIndex(filterType);
+    if (columnIndex === -1) {
+        console.warn('[Filtros] Índice de columna no válido para:', filterType);
+        window.closeFilterModal();
+        return;
+    }
+    
+    const rows = tbody.querySelectorAll('tr');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length > columnIndex) {
+            let cellText = '';
+            
+            // Para el filtro de descripción, leer el atributo data-descripcion-detallada
+            if (filterType === 'descripcion') {
+                cellText = cells[columnIndex].getAttribute('data-descripcion-detallada') || '';
+            } else {
+                cellText = cells[columnIndex].textContent.trim();
+            }
+            
+            // Verificar si alguna de las opciones seleccionadas está en el texto de la celda
+            const isVisible = selectedValues.some(selectedValue => {
+                if (filterType === 'descripcion') {
+                    // Para descripción, buscar coincidencia exacta
+                    return cellText === selectedValue;
+                } else {
+                    // Para otros filtros, buscar si contiene el texto
+                    return cellText.includes(selectedValue);
+                }
+            });
+            
+            if (isVisible) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    });
+    
+    console.log(`[Filtros] Filtrado completado: ${visibleCount} filas visibles de ${rows.length}`);
+    
+    // Guardar filtros activos
+    if (!window.activeFilters) {
+        window.activeFilters = {};
+    }
+    window.activeFilters[filterType] = selectedValues;
+    
+    window.closeFilterModal();
+};
+
+window.selectAllCheckboxFilters = function(filterType) {
+    console.log('[Filtros] selectAllCheckboxFilters llamado con:', filterType);
+    const checkboxes = document.querySelectorAll(`#filterOptions-${filterType} input[type="checkbox"]`);
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+};
+
+window.filterCheckboxOptions = function(filterType) {
+    console.log('[Filtros] filterCheckboxOptions llamado con:', filterType);
+    const searchTerm = document.querySelector('.filter-search').value.toLowerCase();
+    const options = document.querySelectorAll(`#filterOptions-${filterType} .filter-option`);
+    
+    options.forEach(option => {
+        const label = option.querySelector('label').textContent.toLowerCase();
+        option.style.display = label.includes(searchTerm) ? 'block' : 'none';
+    });
+};
+
 // Cargar nombres de prendas al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
     console.log('[DOMContentLoaded] 📄 Cargando nombres de prendas en recibos-costura');

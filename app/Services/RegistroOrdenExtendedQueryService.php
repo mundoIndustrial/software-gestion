@@ -37,6 +37,7 @@ class RegistroOrdenExtendedQueryService
                 'fecha_estimada_de_entrega', 'asesor_id', 'cliente_id', 'id'
             ])
             ->whereNotNull('numero_pedido') // 🆕 Excluir pedidos sin número de pedido
+            ->where('numero_pedido', '>', 0) // 🔒 Asegurar que el número sea válido
             ->where(function (Builder $query) {
                 $query
                     ->whereIn('estado', [
@@ -97,7 +98,7 @@ class RegistroOrdenExtendedQueryService
         $allowedColumns = [
             'numero_pedido', 'estado', 'area', 'cliente', 'forma_de_pago',
             'novedades', 'dia_de_entrega', 'fecha_de_creacion_de_orden',
-            'fecha_estimada_de_entrega', 'descripcion_prendas', 'asesora', 'encargado_orden'
+            'fecha_estimada_de_entrega', 'descripcion_prendas', 'asesora', 'asesor', 'encargado_orden'
         ];
 
         if (!in_array($column, $allowedColumns)) {
@@ -114,6 +115,16 @@ class RegistroOrdenExtendedQueryService
 
         // Manejar caso especial: asesora
         if ($column === 'asesora') {
+            $values = PedidoProduccion::join('users', 'pedidos_produccion.asesor_id', '=', 'users.id')
+                ->distinct()
+                ->pluck('users.name')
+                ->filter()
+                ->sort()
+                ->values()
+                ->toArray();
+        }
+        // Manejar caso especial: asesor (alias de asesora)
+        elseif ($column === 'asesor') {
             $values = PedidoProduccion::join('users', 'pedidos_produccion.asesor_id', '=', 'users.id')
                 ->distinct()
                 ->pluck('users.name')

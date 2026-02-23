@@ -1424,6 +1424,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/registros/{id}/recibos-datos', [RegistroOrdenQueryController::class, 'getRecibosDatos'])->name('registros.recibos-datos');
     Route::get('/registros/{id}/consecutivo-costura', [RegistroOrdenQueryController::class, 'getConsecutivoCostura'])->name('registros.consecutivo-costura');
     Route::get('/registros/{id}/seguimiento-prenda', [RegistroOrdenQueryController::class, 'getSeguimientoPorPrenda'])->name('registros.seguimiento-prenda');
+    Route::get('/registros/{id}/novedades', [RegistroOrdenQueryController::class, 'getNovedades'])->name('registros.novedades');
     Route::get('/registros/{pedido}', [RegistroOrdenQueryController::class, 'show'])->name('registros.show');
     Route::get('/registros/{pedido}/images', [RegistroOrdenQueryController::class, 'getOrderImages'])->name('registros.images');
     Route::get('/registros/{pedido}/descripcion-prendas', [RegistroOrdenQueryController::class, 'getDescripcionPrendas'])->name('registros.descripcion-prendas');

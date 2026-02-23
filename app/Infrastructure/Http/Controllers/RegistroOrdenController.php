@@ -758,6 +758,11 @@ class RegistroOrdenController extends Controller
                       ->whereNotIn('estado', ['DEVUELTO_A_ASESORA']);
             }
 
+            // 🔒 FILTRADO DE SEGURIDAD: Siempre excluir pedidos sin número de pedido
+            // Esto asegura que nunca se devuelvan pedidos con numero_pedido = null
+            $query->whereNotNull('numero_pedido')
+                  ->where('numero_pedido', '>', 0);
+
             // Obtener resultados paginados
             $ordenes = $query->orderBy('created_at', 'asc')->get();
 
@@ -1278,7 +1283,11 @@ class RegistroOrdenController extends Controller
 
             // Obtener información adicional de pedidos y prendas
             $recibosConInfo = $recibosCostura->map(function ($recibo) use ($festivos) {
-                $pedido = PedidoProduccion::find($recibo->pedido_produccion_id);
+                $pedido = PedidoProduccion::with([
+                    'prendas.coloresTelas.tela',
+                    'prendas.coloresTelas.color', 
+                    'prendas.tallas'
+                ])->find($recibo->pedido_produccion_id);
                 
                 // Calcular días para este pedido (desde fecha de creación del pedido hasta hoy)
                 $diasCalculados = 0;
@@ -1340,6 +1349,46 @@ class RegistroOrdenController extends Controller
                 // Obtener el área directamente del recibo (que es actualizado por el Observer)
                 $area = $recibo->area ?? 'Insumos';
                 
+                // Obtener información detallada de la prenda específica del recibo
+                $descripcionDetallada = '';
+                if ($pedido && $recibo->prenda_id) {
+                    // Buscar la prenda específica del recibo
+                    $prendaRecibo = $pedido->prendas->where('id', $recibo->prenda_id)->first();
+                    if ($prendaRecibo) {
+                        $prendaInfo = "PRENDA: " . ($prendaRecibo->nombre_prenda ?? 'Sin nombre');
+                        
+                        // Agregar información de telas y colores
+                        if ($prendaRecibo->coloresTelas && $prendaRecibo->coloresTelas->count() > 0) {
+                            $telasInfo = [];
+                            foreach ($prendaRecibo->coloresTelas as $colorTela) {
+                                $telaNombre = $colorTela->tela ? $colorTela->tela->nombre : 'Sin tela';
+                                $colorNombre = $colorTela->color ? $colorTela->color->nombre : 'Sin color';
+                                $referencia = $colorTela->referencia ?? '';
+                                $telasInfo[] = "TELA: {$telaNombre} / COLOR: {$colorNombre}" . ($referencia ? " (REF: {$referencia})" : '');
+                            }
+                            if (!empty($telasInfo)) {
+                                $prendaInfo .= " | " . implode(' | ', $telasInfo);
+                            }
+                        }
+                        
+                        // Agregar información de tallas
+                        if ($prendaRecibo->tallas && $prendaRecibo->tallas->count() > 0) {
+                            $tallasInfo = [];
+                            foreach ($prendaRecibo->tallas as $talla) {
+                                $cantidad = $talla->cantidad ?? 0;
+                                if ($cantidad > 0) {
+                                    $tallasInfo[] = $talla->talla . ": " . $cantidad;
+                                }
+                            }
+                            if (!empty($tallasInfo)) {
+                                $prendaInfo .= " | TALLAS: " . implode(', ', $tallasInfo);
+                            }
+                        }
+                        
+                        $descripcionDetallada = $prendaInfo;
+                    }
+                }
+                
                 return [
                     'id' => $recibo->id,
                     'consecutivo_actual' => $recibo->consecutivo_actual,
@@ -1352,6 +1401,7 @@ class RegistroOrdenController extends Controller
                     'created_at' => $recibo->created_at,
                     'updated_at' => $recibo->updated_at,
                     'dias_calculados' => $diasCalculados,
+                    'descripcion_detallada' => $descripcionDetallada, // Nuevo campo para filtro
                     'pedido_info' => $pedido ? [
                         'numero_pedido' => $pedido->numero_pedido,
                         'cliente' => $pedido->cliente,

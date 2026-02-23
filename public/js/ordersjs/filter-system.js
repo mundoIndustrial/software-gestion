@@ -649,19 +649,11 @@ function renderFilteredTable(ordenes) {
             <div class="table-cell" style="flex: 0 0 auto;">
                 <div class="cell-content">
                     <select class="estado-dropdown estado-${orden.estado.toLowerCase().replace(/\s+/g, '-')}" data-orden-id="${orden.numero_pedido}">
+                        <option value="Pendiente" ${orden.estado === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
                         <option value="No iniciado" ${orden.estado === 'No iniciado' ? 'selected' : ''}>No iniciado</option>
                         <option value="En Ejecución" ${orden.estado === 'En Ejecución' ? 'selected' : ''}>En Ejecución</option>
                         <option value="Entregado" ${orden.estado === 'Entregado' ? 'selected' : ''}>Entregado</option>
                         <option value="Anulada" ${orden.estado === 'Anulada' ? 'selected' : ''}>Anulada</option>
-                    </select>
-                </div>
-            </div>
-            
-            <!-- Área -->
-            <div class="table-cell" style="flex: 0 0 auto;">
-                <div class="cell-content">
-                    <select class="area-dropdown" data-orden-id="${orden.numero_pedido}">
-                        ${getAreaOptionsHtml(orden.area)}
                     </select>
                 </div>
             </div>

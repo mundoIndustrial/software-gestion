@@ -96,6 +96,11 @@ const NavSearch = {
             return;
         }
 
+        // Si estamos en recibos-costura, no hacer nada (la búsqueda se maneja localmente)
+        if (window.location.pathname.includes('recibos-costura')) {
+            return;
+        }
+
         e.preventDefault();
         
         const query = e.target.value.trim();
@@ -114,7 +119,6 @@ const NavSearch = {
         }
 
         // Ejecutar búsqueda inmediatamente (sin debounce)
-
         this.performSearch(query);
     },
 
@@ -133,7 +137,11 @@ const NavSearch = {
      * Realizar búsqueda
      */
     async performSearch(query, page = 1) {
-
+        
+        // Si estamos en recibos-costura, no hacer nada (la búsqueda se maneja localmente)
+        if (window.location.pathname.includes('recibos-costura')) {
+            return;
+        }
 
         this.state.isLoading = true;
 

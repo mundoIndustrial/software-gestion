@@ -16,6 +16,52 @@
 
 <!-- Script con funciones globales (cargado antes del HTML) -->
 <script>
+// Definir funciones de filtro globalmente de inmediato para evitar ReferenceError
+window.openFilterModal = function(filterType) {
+    console.log('[Filtros] openFilterModal llamado con:', filterType);
+    // La implementación real se cargará más abajo
+    if (typeof openFilterModalImpl === 'function') {
+        return openFilterModalImpl(filterType);
+    } else {
+        console.warn('[Filtros] La implementación de openFilterModal aún no está cargada');
+    }
+};
+
+window.closeFilterModal = function() {
+    console.log('[Filtros] closeFilterModal llamado');
+    if (typeof closeFilterModalImpl === 'function') {
+        return closeFilterModalImpl();
+    }
+};
+
+window.resetFilters = function() {
+    console.log('[Filtros] resetFilters llamado');
+    if (typeof resetFiltersImpl === 'function') {
+        return resetFiltersImpl();
+    }
+};
+
+window.applyFilters = function() {
+    console.log('[Filtros] applyFilters llamado');
+    if (typeof applyFiltersImpl === 'function') {
+        return applyFiltersImpl();
+    }
+};
+
+window.selectAllCheckboxFilters = function(filterType) {
+    console.log('[Filtros] selectAllCheckboxFilters llamado con:', filterType);
+    if (typeof selectAllCheckboxFiltersImpl === 'function') {
+        return selectAllCheckboxFiltersImpl(filterType);
+    }
+};
+
+window.filterCheckboxOptions = function(filterType) {
+    console.log('[Filtros] filterCheckboxOptions llamado con:', filterType);
+    if (typeof filterCheckboxOptionsImpl === 'function') {
+        return filterCheckboxOptionsImpl(filterType);
+    }
+};
+
 // Funciones globales para el modal de celda formateada
 function abrirModalCeldaConFormato(titulo, prendas) {
     console.log('[abrirModalCeldaConFormato]  INICIO - Datos recibidos:');
@@ -417,7 +463,7 @@ const filterTypes = {
 function initializeFilterModal(filterType) {
     const modal = document.getElementById('filterModal');
     const title = document.getElementById('filterModalTitle');
-    const content = document.getElementById('filterContent');
+    const content = document.getElementById('filterOptions');
     
     if (!modal || !title || !content) {
         console.error('[Filtros] No se encontraron elementos del modal');
@@ -425,8 +471,8 @@ function initializeFilterModal(filterType) {
     }
     
     try {
-        // Configurar título
-        const config = filterTypes[filterType];
+        // Configurar título según el tipo
+        const config = getFilterConfig(filterType);
         title.textContent = config.title;
         
         // Generar contenido según el tipo
@@ -441,46 +487,72 @@ function initializeFilterModal(filterType) {
 
 // Función para enfocar input de forma segura
 function focusFirstInputSafely() {
-    const content = document.getElementById('filterContent');
-    if (!content) {
-        console.warn('[Filtros] No se encontró contenido del modal');
-        return;
-    }
-    
     try {
-        // Intentar enfocar input de texto primero
-        const textInput = content.querySelector('input[type="text"]');
-        if (textInput) {
-            textInput.focus();
+        const content = document.getElementById('filterOptions');
+        if (!content) {
+            console.warn('[Filtros] No se encontró contenido del modal');
             return;
         }
         
-        // Intentar enfocar input de fecha
-        const dateInput = content.querySelector('input[type="date"]');
-        if (dateInput) {
-            dateInput.focus();
+        // Buscar el primer input de búsqueda
+        const searchInput = document.querySelector('.filter-search');
+        if (searchInput) {
+            setTimeout(() => {
+                searchInput.focus();
+                console.log('[Filtros] Input de búsqueda enfocado automáticamente');
+            }, 100);
             return;
         }
         
-        // Intentar enfocar primer checkbox
-        const checkbox = content.querySelector('input[type="checkbox"]');
-        if (checkbox) {
-            checkbox.focus();
-            return;
-        }
-        
-        // Como último recurso, enfocar cualquier input
-        const anyInput = content.querySelector('input');
-        if (anyInput) {
-            anyInput.focus();
+        // Buscar el primer input dentro del contenido
+        const firstInput = content.querySelector('input[type="text"], input[type="search"]');
+        if (firstInput) {
+            setTimeout(() => {
+                firstInput.focus();
+                console.log('[Filtros] Input enfocado automáticamente');
+            }, 100);
+            
+            // Intentar enfocar primer checkbox
+            const checkbox = content.querySelector('input[type="checkbox"]');
+            if (checkbox) {
+                checkbox.focus();
+                return;
+            }
+            
+            // Como último recurso, enfocar cualquier input
+            const anyInput = content.querySelector('input');
+            if (anyInput) {
+                anyInput.focus();
+            }
         }
     } catch (error) {
         console.warn('[Filtros] Error al enfocar input:', error);
     }
 }
 
+// Función para filtrar opciones dinámicamente
+function filterOptions(searchTerm) {
+    const options = document.querySelectorAll('.filter-option');
+    let visibleCount = 0;
+    
+    options.forEach(option => {
+        const label = option.querySelector('label');
+        if (label) {
+            const text = label.textContent.toLowerCase();
+            if (text.includes(searchTerm)) {
+                option.style.display = 'block';
+                visibleCount++;
+            } else {
+                option.style.display = 'none';
+            }
+        }
+    });
+    
+    console.log(`[Filtros] Búsqueda: "${searchTerm}" - ${visibleCount} opciones visibles`);
+}
+
 // Función para abrir el modal de filtros
-function openFilterModal(filterType) {
+function openFilterModalImpl(filterType) {
     console.log('[Filtros] Abriendo modal para tipo:', filterType);
     
     // Validación robusta del parámetro
@@ -739,22 +811,13 @@ function generateDynamicTextFilter(filterType) {
         return '<div style="padding: 20px; text-align: center; color: #6b7280;">No hay datos de texto disponibles</div>';
     }
     
-    return `
-        <div style="padding: 16px 0;">
-            <input type="text" 
-                   id="filter-${filterType}-text" 
-                   class="filter-text-input" 
-                   placeholder="Buscar en ${filterType}..." 
-                   style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
-                   onkeyup="handleTextFilter('${filterType}')">
-            <div style="margin-top: 12px; font-size: 12px; color: #6b7280;">
-                Escribe para buscar coincidencias parciales. Se encontraron ${options.length} valores únicos.
-            </div>
-            <div style="margin-top: 8px; font-size: 11px; color: #9ca3af;">
-                Valores disponibles: ${options.slice(0, 5).join(', ')}${options.length > 5 ? '...' : ''}
-            </div>
-        </div>
-    `;
+    // Convertir opciones al formato esperado por generateCheckboxFilter
+    const checkboxOptions = options.map(option => ({
+        value: option,
+        label: option
+    }));
+    
+    return generateCheckboxFilter(filterType, checkboxOptions);
 }
 
 // Función para generar filtro de rango de fechas dinámico
@@ -1737,5 +1800,13 @@ document.addEventListener('click', function(e) {
         setTimeout(() => clearInterval(checkInterval), 30000);
     }
 })();
+
+// Exportar funciones al objeto window para que estén disponibles globalmente
+window.openFilterModalImpl = openFilterModalImpl;
+window.closeFilterModalImpl = closeFilterModal;
+window.resetFiltersImpl = resetFilters;
+window.applyFiltersImpl = applyFilters;
+window.selectAllCheckboxFiltersImpl = selectAllCheckboxFilters;
+window.filterCheckboxOptionsImpl = filterCheckboxOptions;
 </script>
 @endpush

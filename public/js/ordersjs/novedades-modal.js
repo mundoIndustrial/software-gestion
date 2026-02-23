@@ -15,55 +15,136 @@ let isEditMode = false;
 function openNovedadesModal(ordenId, novedadesActual) {
     currentOrderId = ordenId;
     const modal = document.getElementById('novedadesEditModal');
-    const textarea = document.getElementById('novedadesTextarea');
-    const orderNumber = document.getElementById('novedadesOrderNumber');
-    isEditMode = false;
-
-    // Verificar si es un modal de recibo
-    const tipoNovedades = modal.getAttribute('data-tipo-novedades');
-    if (tipoNovedades === 'recibo') {
-        // Ya fue configurado por openNovedadesModalRecibo, solo mostrar
-        modal.style.display = 'flex';
+    
+    // Verificar si el modal existe
+    if (!modal) {
+        console.error('[openNovedadesModal] Modal no encontrado');
         return;
     }
-
-    // Obtener el valor actualizado del DOM primero
-    let novedadesValue = novedadesActual || '';
-    const row = document.querySelector(`[data-orden-id="${ordenId}"]`);
-    if (row) {
-        const btnEdit = row.querySelector('.btn-edit-novedades');
-        if (btnEdit) {
-            const textSpan = btnEdit.querySelector('.novedades-text');
-            if (textSpan && !textSpan.classList.contains('empty')) {
-                const fullText = btnEdit.getAttribute('data-full-novedades') || textSpan.getAttribute('title');
-                if (fullText) {
-                    novedadesValue = fullText;
-                }
-            }
-        }
+    
+    // Actualizar el número de pedido en el modal
+    const modalNumero = document.getElementById('modalNovedadesNumeroPedido');
+    if (modalNumero) {
+        modalNumero.textContent = ordenId;
     }
-
-    // Establecer contenido
-    textarea.value = novedadesValue;
-    textarea.readOnly = true;
-    orderNumber.textContent = `Pedido: ${ordenId}`;
-
-    // Resetear botones y estado
-    document.getElementById('btnEditToggle').style.display = 'inline-flex';
-    document.getElementById('btnSaveEdit').style.display = 'none';
-    document.getElementById('btnAddNew').style.display = 'inline-flex';
-    document.getElementById('nuevaNovedadContainer').style.display = 'none';
-
+    
+    // Cargar novedades existentes
+    cargarNovedadesPedido(ordenId);
+    
     // Mostrar modal
+    modal.classList.remove('hidden');
     modal.style.display = 'flex';
     
-    // Enfocar textarea
-    setTimeout(() => {
-        textarea.focus();
-    }, 100);
-
     // Prevenir scroll en el body
     document.body.style.overflow = 'hidden';
+}
+
+/**
+ * Carga las novedades existentes de un pedido
+ * @param {string} ordenId - ID del pedido
+ */
+function cargarNovedadesPedido(ordenId) {
+    const historialDiv = document.getElementById('novedadesHistorial');
+    if (!historialDiv) {
+        console.error('[cargarNovedadesPedido] Div de historial no encontrado');
+        return;
+    }
+    
+    // Mostrar loading
+    historialDiv.innerHTML = `
+        <div class="flex justify-center items-center py-8">
+            <span class="text-slate-500">⏳ Cargando novedades...</span>
+        </div>
+    `;
+    
+    // Obtener novedades desde la base de datos
+    fetch(`/registros/${ordenId}/novedades`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error al cargar novedades');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.novedades && data.novedades.trim() !== '') {
+                // Mostrar novedades existentes
+                historialDiv.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                            <div class="text-sm text-slate-700 whitespace-pre-wrap">${data.novedades}</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Si no hay novedades
+                historialDiv.innerHTML = `
+                    <div class="flex justify-center items-center py-8">
+                        <span class="text-slate-500">📝 No hay novedades registradas</span>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('[cargarNovedadesPedido] Error:', error);
+            
+            // Fallback: intentar obtener del DOM
+            const row = document.querySelector(`[data-orden-id="${ordenId}"]`);
+            if (row) {
+                const btnEdit = row.querySelector('.btn-edit-novedades');
+                if (btnEdit) {
+                    const textSpan = btnEdit.querySelector('.novedades-text');
+                    if (textSpan && !textSpan.classList.contains('empty')) {
+                        const fullText = btnEdit.getAttribute('data-full-novedades') || textSpan.getAttribute('title') || textSpan.textContent;
+                        if (fullText && fullText.trim() !== 'Sin novedades') {
+                            historialDiv.innerHTML = `
+                                <div class="space-y-3">
+                                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                                        <div class="text-sm text-slate-700 whitespace-pre-wrap">${fullText}</div>
+                                    </div>
+                                </div>
+                            `;
+                            return;
+                        }
+                    }
+                }
+            }
+            
+            // Si no hay novedades o hay error
+            historialDiv.innerHTML = `
+                <div class="flex justify-center items-center py-8">
+                    <span class="text-slate-500">📝 No hay novedades registradas</span>
+                </div>
+            `;
+        });
+}
+
+/**
+ * Guarda una nueva novedad
+ */
+function guardarNovedad() {
+    const textarea = document.getElementById('novedadesNuevaContent');
+    const ordenId = currentOrderId;
+    
+    if (!textarea || !ordenId) {
+        console.error('[guardarNovedad] Elementos no encontrados');
+        return;
+    }
+    
+    const nuevaNovedad = textarea.value.trim();
+    if (!nuevaNovedad) {
+        alert('Por favor escribe una novedad');
+        return;
+    }
+    
+    // Aquí iría la lógica para guardar en la base de datos
+    // Por ahora, solo mostramos un mensaje de éxito
+    alert('Novedad guardada exitosamente (implementación pendiente)');
+    
+    // Limpiar textarea
+    textarea.value = '';
+    
+    // Recargar novedades
+    cargarNovedadesPedido(ordenId);
 }
 
 /**
@@ -71,10 +152,20 @@ function openNovedadesModal(ordenId, novedadesActual) {
  */
 function closeNovedadesModal() {
     const modal = document.getElementById('novedadesEditModal');
-    modal.style.display = 'none';
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
     document.body.style.overflow = 'auto';
     currentOrderId = null;
     isEditMode = false;
+}
+
+/**
+ * Alias para cerrarModalNovedades (usado por el botón del modal)
+ */
+function cerrarModalNovedades() {
+    closeNovedadesModal();
 }
 
 /**

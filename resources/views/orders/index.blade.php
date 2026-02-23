@@ -21,8 +21,9 @@
 
     <div class="table-container">
         <div class="modern-table-wrapper">
-            <div class="table-head" id="tableHead">
-                <div style="display: flex; align-items: center; width: 100%; gap: 12px; padding: 14px 12px;">
+            <table class="modern-table" id="tablaOrdenes">
+                <thead class="table-head" id="tableHead">
+                    <tr style="display: flex; align-items: center; width: 100%; gap: 12px; padding: 14px 12px;">
                     @php
                         $columns = [
                             ['key' => 'acciones', 'label' => 'Acciones', 'flex' => '0 0 100px', 'justify' => 'flex-start'],
@@ -42,24 +43,22 @@
                         ];
                     @endphp
                     
-                    @foreach($columns as $column)
-                        <div class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}" style="flex: {{ $column['flex'] }}; justify-content: {{ $column['justify'] }};" data-column="{{ $column['key'] }}">
-                            <div class="th-wrapper">
-                                <span class="header-text">{{ $column['label'] }}</span>
-                                @if($column['key'] !== 'acciones')
-                                    <button type="button" class="btn-filter-column" title="Filtrar {{ $column['label'] }}" onclick="openFilterModal('{{ $column['key'] }}')">
-                                        <span class="material-symbols-rounded">filter_alt</span>
-                                        <span class="filter-badge">0</span>
-                                    </button>
-                                @endif
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-            <div class="table-scroll-container">
-                <div class="modern-table">
-                    <div id="tablaOrdenesBody" class="table-body">
+                        @foreach($columns as $column)
+                            <th class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}" style="flex: {{ $column['flex'] }}; justify-content: {{ $column['justify'] }};" data-column="{{ $column['key'] }}">
+                                <div class="th-wrapper">
+                                    <span class="header-text">{{ $column['label'] }}</span>
+                                    @if($column['key'] !== 'acciones')
+                                        <button type="button" class="btn-filter-column" title="Filtrar {{ $column['label'] }}" onclick="openFilterModal('{{ $column['key'] }}')">
+                                            <span class="material-symbols-rounded">filter_alt</span>
+                                            <span class="filter-badge">0</span>
+                                        </button>
+                                    @endif
+                                </div>
+                            </th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody class="table-scroll-container">
                         @forelse($ordenes as $orden)
                             @php
                                 // Construir descripción con tallas POR PRENDA para el modal
@@ -162,9 +161,9 @@
                                     $descripcionConTallas = $descripcionBase;
                                 }
                             @endphp
-                            <div class="table-row" data-orden-id="{{ $orden->id }}">
+                            <tr class="table-row" data-orden-id="{{ $orden->id }}">
                                 <!-- Acciones -->
-                                <div class="table-cell acciones-column" style="flex: 0 0 100px; justify-content: center; position: relative;">
+                                <td class="table-cell acciones-column" style="flex: 0 0 100px; justify-content: center; position: relative;">
                                     <button class="action-view-btn" title="Ver detalles" data-orden-id="{{ $orden->id }}">
                                         <i class="fas fa-eye"></i>
                                     </button>
@@ -178,10 +177,10 @@
                                             <span>Seguimiento</span>
                                         </a>
                                     </div>
-                                </div>
+                                </td>
                                 
                                 <!-- Estado (Dropdown) -->
-                                <div class="table-cell" style="flex: 0 0 auto;">
+                                <td class="table-cell" style="flex: 0 0 auto;">
                                     <div class="cell-content">
                                         <select class="estado-dropdown estado-{{ str_replace(' ', '-', strtolower(trim($orden->estado ?? 'pendiente'))) }}" data-orden-id="{{ $orden->id }}">
                                             @foreach(\App\Models\PedidoProduccion::ESTADOS as $estado)
@@ -189,10 +188,10 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                </div>
+                                </td>
                                 
                                 <!-- Día de entrega (Dropdown) -->
-                                <div class="table-cell" style="flex: 0 0 auto;">
+                                <td class="table-cell" style="flex: 0 0 auto;">
                                     <div class="cell-content">
                                         <select class="dia-entrega-dropdown" data-orden-id="{{ $orden->numero_pedido }}">
                                             <option value="">Seleccionar</option>
@@ -201,28 +200,28 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                </div>
+                                </td>
                                 
                                 <!-- Total de días -->
-                                <div class="table-cell" style="flex: 0 0 120px;">
+                                <td class="table-cell" style="flex: 0 0 120px;">
                                     <div class="cell-content" style="justify-content: center;">
                                         <span>{{ $orden->calcularDiasHabiles() }}</span>
                                     </div>
-                                </div>
+                                </td>
                                 
                                 <!-- Pedido -->
-                                <div class="table-cell" style="flex: 0 0 120px;">
+                                <td class="table-cell" style="flex: 0 0 120px;">
                                     <div class="cell-content" style="justify-content: center;">
                                         <span style="font-weight: 600;">{{ $orden->numero_pedido ?? $orden->id }}</span>
                                     </div>
-                                </div>
+                                </td>
                                 
                                 <!-- Cliente -->
-                                <div class="table-cell" style="flex: 0 0 150px;">
+                                <td class="table-cell" style="flex: 0 0 150px;">
                                     <div class="cell-content" style="justify-content: center;">
                                         <span>{{ $orden->cliente ?? '-' }}</span>
                                     </div>
-                                </div>
+                                </td>
                                 
                                 @php
                                     // Preparar datos completos de prendas para el modal formateado
@@ -250,7 +249,7 @@
                                 @endphp
 
                                 <!-- Descripción -->
-                                <div class="table-cell" style="flex: 10;">
+                                <td class="table-cell" style="flex: 10;">
                                     <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL] 📌 Click en descripción'); event.stopPropagation(); abrirModalCeldaConFormato('Descripción', {{ json_encode($prendasParaModal) }})">
                                         <span style="color: #6b7280; font-size: 0.875rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Click para ver completo">
                                             @php
@@ -266,10 +265,10 @@
                                             @endphp
                                         </span>
                                     </div>
-                                </div>
+                                </td>
                                 
                                 <!-- Cantidad -->
-                                <div class="table-cell" style="flex: 0 0 100px;">
+                                <td class="table-cell" style="flex: 0 0 100px;">
                                     <div class="cell-content" style="margin-left: 50px;">
                                         <span>
                                             @php
@@ -278,10 +277,10 @@
                                             @endphp
                                         </span>
                                     </div>
-                                </div>
+                                </td>
                                 
                                 <!-- Novedades -->
-                                <div class="table-cell" style="flex: 0 0 120px;">
+                                <td class="table-cell" style="flex: 0 0 120px;">
                                     <div class="cell-content" style="justify-content: flex-start;">
                                         <button 
                                             class="btn-edit-novedades"
@@ -297,38 +296,38 @@
                                             <span class="material-symbols-rounded">edit</span>
                                         </button>
                                     </div>
-                                </div>
+                                </td>
                                 
                                 <!-- Asesor -->
-                                <div class="table-cell" style="flex: 0 0 120px;">
+                                <td class="table-cell" style="flex: 0 0 120px;">
                                     <div class="cell-content" style="justify-content: flex-start;">
                                         <span>{{ $orden->asesora?->name ?? '-' }}</span>
                                     </div>
-                                </div>
+                                </td>
                                 
                                 <!-- Forma de pago -->
-                                <div class="table-cell" style="flex: 0 0 150px;">
+                                <td class="table-cell" style="flex: 0 0 150px;">
                                     <div class="cell-content" style="justify-content: flex-start;">
                                         <span>{{ $orden->forma_de_pago ?? '-' }}</span>
                                     </div>
-                                </div>
+                                </td>
                                 
                                 <!-- Fecha de creación -->
-                                <div class="table-cell" style="flex: 0 0 150px;">
+                                <td class="table-cell" style="flex: 0 0 150px;">
                                     <div class="cell-content" style="justify-content: flex-start;">
                                         <span>{{ $orden->fecha_de_creacion_de_orden ? \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden)->format('d/m/Y') : '-' }}</span>
                                     </div>
-                                </div>
+                                </td>
                                 
                                 <!-- Fecha estimada entrega -->
-                                <div class="table-cell fecha-estimada-cell" style="flex: 0 0 180px;" data-fecha-estimada="{{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : '-' }}">
+                                <td class="table-cell fecha-estimada-cell" style="flex: 0 0 180px;" data-fecha-estimada="{{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : '-' }}">
                                     <div class="cell-content" style="justify-content: flex-start;">
                                         <span class="fecha-estimada-span">{{ $orden->fecha_estimada_de_entrega ? \Carbon\Carbon::parse($orden->fecha_estimada_de_entrega)->format('d/m/Y') : '-' }}</span>
                                     </div>
-                                </div>
+                                </td>
                                 
                                 <!-- Encargado orden -->
-                                <div class="table-cell" style="flex: 0 0 150px;">
+                                <td class="table-cell" style="flex: 0 0 150px;">
                                     <div class="cell-content" style="justify-content: flex-start;">
                                         <span>
                                             @php
@@ -339,16 +338,17 @@
                                             @endphp
                                         </span>
                                     </div>
-                                </div>
-                            </div>
+                                </td>
+                            </tr>
                         @empty
-                            <div style="padding: 40px; text-align: center; color: #9ca3af;">
-                                <p>No hay órdenes disponibles</p>
-                            </div>
+                            <tr style="padding: 40px; text-align: center; color: #9ca3af;">
+                                <td colspan="{{ count($columns) }}">
+                                    <p>No hay órdenes disponibles</p>
+                                </td>
+                            </tr>
                         @endforelse
-                    </div>
-                </div>
-            </div>
+                </tbody>
+            </table>
 
             <div class="table-pagination" id="tablePagination">
                 <div class="pagination-info">
@@ -472,8 +472,22 @@
             
             if (scrollContainer && tableHead) {
                 scrollContainer.addEventListener('scroll', function() {
-                    tableHead.style.transform = 'translateX(' + (-this.scrollLeft) + 'px)';
+                    // Solo aplicar transformación si hay scroll horizontal
+                    if (this.scrollLeft > 0) {
+                        tableHead.style.transform = 'translateX(' + (-this.scrollLeft) + 'px)';
+                    } else {
+                        tableHead.style.transform = 'translateX(0px)';
+                    }
                 });
+                
+                // Inicializar posición del header
+                tableHead.style.transform = 'translateX(0px)';
+            }
+            
+            // Actualizar referencias para tabla HTML
+            const tablaBody = document.querySelector('.table-scroll-container tbody');
+            if (tablaBody) {
+                tablaBody.id = 'tablaOrdenesBody';
             }
         });
 

@@ -55,8 +55,8 @@
             </div>
 
             <div class="nav-right">
-                <!-- Botón Limpiar Filtros (solo en cotizaciones pendientes) -->
-                @if(Route::currentRouteName() === 'cotizaciones.pendientes')
+                <!-- Botón Limpiar Filtros (solo en cotizaciones pendientes y recibos-costura) -->
+                @if(Route::currentRouteName() === 'cotizaciones.pendientes' || request()->is('recibos-costura'))
                 <button 
                     id="btnLimpiarFiltros"
                     onclick="limpiarTodosFiltros()"
@@ -83,28 +83,6 @@
                 </button>
                 @endif
                 
-                <!-- Notificaciones (oculto en despacho y bodega) -->
-                @if(!request()->is('despacho*') && !request()->is('gestion-bodega*'))
-                <div class="notification-dropdown">
-                    <button class="notification-btn" id="notificationBtn" aria-label="Notificaciones" aria-expanded="false" aria-controls="notificationMenu">
-                        <span class="material-symbols-rounded" aria-hidden="true">notifications</span>
-                        <span class="notification-badge" id="notificationBadge" aria-label="0 notificaciones nuevas">0</span>
-                    </button>
-                    <div class="notification-menu" id="notificationMenu" role="region" aria-label="Menú de notificaciones">
-                        <div class="notification-header">
-                            <h3>Notificaciones</h3>
-                            <button class="mark-all-read" aria-label="Marcar todas las notificaciones como leídas">Marcar todas</button>
-                        </div>
-                        <div class="notification-list" id="notificationList" role="list">
-                            <div class="notification-empty">
-                                <span class="material-symbols-rounded" aria-hidden="true">notifications_off</span>
-                                <p>Sin notificaciones</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                @endif
-
                 <!-- Perfil de Usuario -->
                 <div class="user-dropdown">
                     <button class="user-btn" id="userBtn" aria-label="Menú de usuario" aria-expanded="false" aria-controls="userMenu">
@@ -227,6 +205,162 @@
                 }
             });
         </script>
+    @elseif(request()->is('recibos-costura'))
+        <script>
+            // Función de búsqueda específica para recibos de costura
+            function initSearchBar() {
+                let searchInput = document.getElementById('navSearchInput');
+                if (!searchInput) {
+                    searchInput = document.querySelector('.nav-search-input');
+                }
+                
+                if (searchInput) {
+                    // Limpiar cualquier evento anterior para evitar duplicación
+                    searchInput.removeEventListener('input', performRecibosSearch);
+                    searchInput.addEventListener('input', function(e) {
+                        const searchTerm = e.target.value.toLowerCase().trim();
+                        performRecibosSearch(searchTerm);
+                    });
+                    
+                    // Agregar evento para el botón de limpiar
+                    const clearBtn = document.getElementById('navSearchClear');
+                    if (clearBtn) {
+                        clearBtn.addEventListener('click', function() {
+                            searchInput.value = '';
+                            performRecibosSearch(''); // Limpiar búsqueda
+                            clearBtn.style.display = 'none';
+                        });
+                    }
+                    
+                    return true;
+                }
+                return false;
+            }
+            
+            function performRecibosSearch(searchTerm) {
+                // Solo ejecutar si estamos en la página de recibos-costura o registros
+                if (!window.location.pathname.includes('recibos-costura') && !window.location.pathname.includes('/registros')) {
+                    return;
+                }
+                
+                const tbody = document.getElementById('tablaRecibosBody');
+                if (!tbody) return;
+                
+                const rows = tbody.querySelectorAll('tr');
+                let visibleCount = 0;
+                
+                // Determinar columna de búsqueda según la vista
+                const isRecibosCostura = window.location.pathname.includes('recibos-costura');
+                // Para registros: Pedido está en columna 5 (después de Área)
+                // Para recibos-costura: N° Recibo está en columna 4
+                const searchColumnIndex = isRecibosCostura ? 4 : 5;
+                
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    let match = false;
+                    
+                    if (!searchTerm) {
+                        match = true;
+                    } else {
+                        // Buscar específicamente en las columnas correspondientes
+                        if (isRecibosCostura) {
+                            // Para recibos-costura: buscar por N° Recibo (columna 4) y Cliente (columna 5)
+                            
+                            // Columna 4: N° Recibo
+                            if (!match && cells.length > 4) {
+                                const numeroRecibo = cells[4].textContent.trim();
+                                if (numeroRecibo === searchTerm || numeroRecibo.startsWith(searchTerm)) {
+                                    match = true;
+                                }
+                            }
+                            
+                            // Columna 5: Cliente
+                            if (!match && cells.length > 5) {
+                                const cliente = cells[5].textContent.trim();
+                                if (cliente.toLowerCase().includes(searchTerm.toLowerCase())) {
+                                    match = true;
+                                }
+                            }
+                        } else {
+                            // Para registros: buscar por N° Pedido (columna 5) y Cliente (columna 6)
+                            // IGNORANDO completamente la columna Área (columna 2) para alinear con header
+                            
+                            // Mapeo real:
+                            // Header: 0-Acciones, 1-Estado, 2-Día entrega, 3-Total días, 4-Pedido, 5-Cliente
+                            // Filas:  0-Acciones, 1-Estado, 2-Área(IGNORAR), 3-Día entrega, 4-Total días, 5-Pedido, 6-Cliente
+                            
+                            // Columna 5: Pedido (corresponde a header columna 4)
+                            if (!match && cells.length > 5) {
+                                const pedido = cells[5].textContent.trim();
+                                if (pedido === searchTerm || pedido.startsWith(searchTerm)) {
+                                    match = true;
+                                }
+                            }
+                            
+                            // Columna 6: Cliente (corresponde a header columna 5)
+                            if (!match && cells.length > 6) {
+                                const cliente = cells[6].textContent.trim();
+                                if (cliente.toLowerCase().includes(searchTerm.toLowerCase())) {
+                                    match = true;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // IMPORTANTE: Solo modificar la visibilidad de la fila completa, no la estructura
+                    if (match) {
+                        row.style.display = '';
+                        row.style.visibility = 'visible';
+                        row.style.opacity = '1';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                        row.style.visibility = 'hidden';
+                        row.style.opacity = '0';
+                    }
+                });
+                
+                const searchType = isRecibosCostura ? 'Recibo' : 'Pedido';
+                console.log(`[Búsqueda ${searchType}] Término: "${searchTerm}" - Filas visibles: ${visibleCount}/${rows.length}`);
+            }
+            
+            // Función para limpiar búsqueda específica de recibos
+            function clearRecibosSearch() {
+                if (!window.location.pathname.includes('recibos-costura')) {
+                    return;
+                }
+                
+                const tbody = document.getElementById('tablaRecibosBody');
+                if (tbody) {
+                    const rows = tbody.querySelectorAll('tr');
+                    rows.forEach(row => {
+                        row.style.display = '';
+                    });
+                    console.log('[Búsqueda Recibos] Búsqueda limpiada - Todas las filas visibles');
+                }
+            }
+            
+            // Inicializar búsqueda
+            document.addEventListener('DOMContentLoaded', function() {
+                if (!initSearchBar()) {
+                    setTimeout(initSearchBar, 100);
+                }
+            });
+            
+            // También intentar cuando la ventana esté completamente cargada
+            window.addEventListener('load', function() {
+                const searchInput = document.getElementById('navSearchInput');
+                if (searchInput && !searchInput.hasAttribute('data-initialized')) {
+                    searchInput.setAttribute('data-initialized', 'true');
+                    initSearchBar();
+                }
+            });
+            
+            // Limpiar búsqueda cuando se cambia de página
+            window.addEventListener('beforeunload', function() {
+                clearRecibosSearch();
+            });
+        </script>
     @endif
 @endpush
 
@@ -250,8 +384,125 @@
     </div>
 </div>
 
+<!-- Función para limpiar filtros (disponible globalmente) -->
+<script>
+function limpiarTodosFiltros() {
+    console.log('[Filtros] Limpiando todos los filtros');
+    
+    // Limpiar filtros activos
+    window.activeFilters = {};
+    
+    // Limpiar búsqueda específica si estamos en recibos-costura o registros
+    if (window.location.pathname.includes('recibos-costura') || window.location.pathname.includes('/registros')) {
+        const searchInput = document.getElementById('navSearchInput');
+        if (searchInput) {
+            searchInput.value = '';
+            searchInput.dispatchEvent(new Event('input'));
+        }
+        const clearBtn = document.getElementById('navSearchClear');
+        if (clearBtn) {
+            clearBtn.style.display = 'none';
+        }
+    }
+    
+    // Limpiar checkboxes del modal (si está abierto)
+    const checkboxes = document.querySelectorAll('#filterOptions input[type="checkbox"]');
+    checkboxes.forEach(cb => cb.checked = false);
+    
+    // Mostrar notificación
+    showFilterNotification('Todos los filtros han sido limpiados');
+}
+
+// Función para mostrar notificación de filtros
+function showFilterNotification(message) {
+    // Crear elemento de notificación
+    const notification = document.createElement('div');
+    notification.className = 'filter-notification';
+    notification.textContent = message;
+    
+    // Estilos
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #10b981;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        z-index: 10000;
+        font-weight: 500;
+        font-size: 14px;
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Mostrar notificación
+    setTimeout(() => {
+        notification.style.opacity = '1';
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Ocultar y eliminar después de 3 segundos
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Mostrar botón de limpiar filtros cuando hay filtros activos
+document.addEventListener('DOMContentLoaded', function() {
+    const updateFilterButton = function() {
+        const btn = document.getElementById('btnLimpiarFiltros');
+        if (!btn) return;
+        
+        const hasActiveFilters = window.activeFilters && Object.keys(window.activeFilters).length > 0;
+        
+        if (hasActiveFilters) {
+            btn.style.opacity = '1';
+            btn.style.visibility = 'visible';
+            btn.style.transform = 'scale(1)';
+        } else {
+            btn.style.opacity = '0';
+            btn.style.visibility = 'hidden';
+            btn.style.transform = 'scale(0)';
+        }
+    };
+    
+    // Actualizar cuando se aplican filtros
+    const originalApplyFilters = window.applyFilters;
+    if (originalApplyFilters) {
+        window.applyFilters = function() {
+            const result = originalApplyFilters.apply(this, arguments);
+            updateFilterButton();
+            return result;
+        };
+    }
+    
+    // Actualizar cuando se reinician filtros
+    const originalResetFilters = window.resetFilters;
+    if (originalResetFilters) {
+        window.resetFilters = function() {
+            const result = originalResetFilters.apply(this, arguments);
+            updateFilterButton();
+            return result;
+        };
+    }
+    
+    // Inicializar estado
+    setTimeout(updateFilterButton, 500);
+});
+</script>
+
 <!-- Meta tags para usuario actual -->
 @if(auth()->check())
     <meta name="user-id" content="{{ auth()->id() }}">
 @endif
-
