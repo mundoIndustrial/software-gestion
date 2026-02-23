@@ -171,36 +171,27 @@ class CarteraPedidosController extends Controller
                     ];
                 }
                 
-                // Generar número de pedido correlativo solo al aprobar usando servicio centralizado
-                try {
-                    $pedidoSequenceService = app(PedidoSequenceService::class);
-                    $siguienteNumero = $pedidoSequenceService->generarNumeroPedido();
-                    
-                    \Log::info('[CARTERA] Número de pedido generado', [
-                        'pedido_id' => $id,
-                        'numero_pedido' => $siguienteNumero,
-                        'tiempo_secuencia' => round((microtime(true) - $inicio) * 1000, 2) . 'ms'
-                    ]);
-                } catch (\Exception $e) {
-                    \Log::error('[CARTERA] Error al generar número de pedido', [
-                        'pedido_id' => $id,
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
-                    ]);
-                    
+                // Verificar que el pedido ya tiene número asignado (generado automáticamente al crear)
+                if (!$pedido->numero_pedido) {
                     return [
                         'success' => false,
-                        'message' => 'Error al generar número de pedido: ' . $e->getMessage(),
+                        'message' => 'El pedido no tiene número de pedido asignado. Contacte al administrador.',
                         'pedido' => null,
                         'numero_pedido' => null
                     ];
                 }
                 
+                \Log::info('[CARTERA] Aprobando pedido con número existente', [
+                    'pedido_id' => $id,
+                    'numero_pedido_existente' => $pedido->numero_pedido,
+                    'tiempo_verificacion' => round((microtime(true) - $inicio) * 1000, 2) . 'ms'
+                ]);
+                
                 // Obtener ID de usuario autenticado o null para evitar foreign key issues
                 $usuarioId = auth()->check() ? auth()->user()->id : null;
                 
                 $pedido->update([
-                    'numero_pedido' => $siguienteNumero,
+                    // 'numero_pedido' => $pedido->numero_pedido, // Ya existe, no se modifica
                     'estado' => 'PENDIENTE_SUPERVISOR',
                     'aprobado_por_usuario_cartera' => $usuarioId,
                     'aprobado_por_cartera_en' => now(),
@@ -219,7 +210,7 @@ class CarteraPedidosController extends Controller
                 
                 \Log::info('[CARTERA] Pedido aprobado exitosamente', [
                     'pedido_id' => $pedido->id,
-                    'numero_pedido_generado' => $siguienteNumero,
+                    'numero_pedido_existente' => $pedido->numero_pedido,
                     'aprobado_por' => $usuarioId,
                     'tiempo_total' => round((microtime(true) - $inicio) * 1000, 2) . 'ms'
                 ]);
@@ -228,7 +219,7 @@ class CarteraPedidosController extends Controller
                     'success' => true,
                     'message' => 'Pedido aprobado correctamente',
                     'pedido' => $pedido->fresh(),
-                    'numero_pedido' => $siguienteNumero
+                    'numero_pedido' => $pedido->numero_pedido
                 ];
             });
             

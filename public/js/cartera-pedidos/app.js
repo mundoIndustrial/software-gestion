@@ -20,6 +20,56 @@ let filtroCliente = '';
 let filtroFechaDesde = '';
 let filtroFechaHasta = '';
 
+// ===== FUNCIÓN PARA AGREGAR COLUMNA NÚMERO PEDIDO AL HEADER =====
+function agregarColumnaNumeroPedidoHeader() {
+    const tableHead = document.getElementById('tableHead');
+    if (!tableHead) return;
+    
+    // Verificar si ya existe la columna
+    const existingColumn = tableHead.querySelector('[data-column="numero_pedido"]');
+    if (existingColumn) return;
+    
+    // Buscar la columna de cliente
+    const clienteColumn = tableHead.querySelector('[data-sort="cliente"]');
+    if (!clienteColumn) return;
+    
+    // Crear la nueva columna de número de pedido
+    const numeroPedidoColumn = document.createElement('div');
+    numeroPedidoColumn.className = 'table-header-cell sortable';
+    numeroPedidoColumn.setAttribute('data-column', 'numero_pedido');
+    numeroPedidoColumn.setAttribute('data-sort', 'numero_pedido');
+    numeroPedidoColumn.style.cssText = 'flex: 0 0 120px; justify-content: center;';
+    
+    numeroPedidoColumn.innerHTML = `
+        <div class="th-wrapper" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; width: 100%;">
+            <span class="header-text">N° Pedido</span>
+            <button type="button" class="btn-filter-column" title="Filtrar N° Pedido" onclick="abrirModalFiltro('numero_pedido', event)">
+                <span class="material-symbols-rounded">filter_alt</span>
+                <div class="filter-badge"></div>
+            </button>
+        </div>
+    `;
+    
+    // Insertar antes de la columna de cliente
+    clienteColumn.parentNode.insertBefore(numeroPedidoColumn, clienteColumn);
+    
+    // Agregar event listener para ordenamiento
+    numeroPedidoColumn.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-filter-column')) return;
+        
+        if (currentSort === 'numero_pedido') {
+            currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSort = 'numero_pedido';
+            currentSortOrder = 'asc';
+        }
+        
+        updateSortIndicators();
+        currentPage = 1;
+        cargarPedidos();
+    });
+}
+
 // ===== HELPER: Obtener elemento =====
 function el(selector) {
     return document.querySelector(selector);
@@ -118,6 +168,31 @@ function cerrarModalFiltro(tipo) {
     }
 }
 
+function aplicarFiltroNumero() {
+    console.log('🔍 APLICAR FILTRO NÚMERO PEDIDO desde app.js');
+    const input = document.getElementById('filtroNumeroInput');
+    const valor = input ? input.value.trim() : '';
+    
+    if (valor) {
+        // Agregar a los parámetros de filtro existentes
+        const url = new URL(window.location);
+        url.searchParams.set('numero_pedido', valor);
+        url.searchParams.set('page', '1');
+        
+        // Actualizar la URL sin recargar la página
+        window.history.pushState({}, '', url);
+        
+        // Actualizar variables de filtro
+        currentSearch = valor; // Reutilizamos currentSearch para número de pedido
+        currentPage = 1;
+        cargarPedidos();
+        cerrarModalFiltro('numero_pedido');
+        mostrarNotificación(`Filtro de número aplicado: "${valor}"`, 'info');
+    } else {
+        mostrarNotificación('Por favor ingresa un número de pedido', 'warning');
+    }
+}
+
 function aplicarFiltroCliente() {
     console.log('🔍 APLICAR FILTRO CLIENTE desde app.js');
     const input = document.getElementById('filtroClienteInput');
@@ -176,6 +251,9 @@ function aplicarFiltroNumero() {
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
+    // Agregar columna de número de pedido al header
+    agregarColumnaNumeroPedidoHeader();
+    
     // Cargar pedidos por primera vez
     cargarPedidos();
     
@@ -423,6 +501,11 @@ function renderizarTabla(pedidos) {
             <!-- Acciones -->
             <div class="table-cell acciones-column" style="flex: 0 0 180px; justify-content: center; position: relative; display: flex; gap: 0.5rem;">
                 ${botonesHTML}
+            </div>
+
+            <!-- Número de Pedido -->
+            <div class="table-cell" style="flex: 0 0 120px; justify-content: center;">
+                <span class="pedido-numero">${pedido.numero_pedido || pedido.numero || 'N/A'}</span>
             </div>
 
             <!-- Cliente -->

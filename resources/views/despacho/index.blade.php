@@ -148,6 +148,10 @@
                                                 bg-red-100 text-red-800
                                             @elseif($pedido->estado === 'PENDIENTE_INSUMOS')
                                                 bg-purple-100 text-purple-800
+                                            @elseif($pedido->estado === 'pendiente_cartera')
+                                                bg-indigo-100 text-indigo-800
+                                            @elseif($pedido->estado === 'RECHAZADO_CARTERA')
+                                                bg-red-200 text-red-900
                                             @else
                                                 bg-slate-100 text-slate-800
                                             @endif

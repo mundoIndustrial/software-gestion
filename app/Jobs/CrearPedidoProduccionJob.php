@@ -78,13 +78,13 @@ class CrearPedidoProduccionJob
                 'primera_prenda_cantidad_telas' => isset($prendasEnriquecidas[0]['telas']) ? count($prendasEnriquecidas[0]['telas']) : 0,
             ]);
 
-            // El número de pedido se genera en Cartera, no aquí
+            // El número de pedido se genera automáticamente al crear el pedido, no aquí ni en cartera
             $numeroPedido = null;
             
             if (!$this->dto->esLogoPedido()) {
-                $numeroPedido = null; // Cartera lo asignará
+                $numeroPedido = null; // Se genera automáticamente en PedidoWebService
                 \Log::info(' [CrearPedidoProduccionJob] numero_pedido establecido como NULL', [
-                    'motivo' => 'Solo Cartera genera el número al aprobar'
+                    'motivo' => 'Se genera automáticamente al crear el pedido via PedidoWebService'
                 ]);
             } else {
                 \Log::info('  [CrearPedidoProduccionJob] Es pedido LOGO, NO se asigna número en pedidos_produccion');

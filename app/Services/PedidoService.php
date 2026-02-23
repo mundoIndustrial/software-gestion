@@ -380,7 +380,7 @@ class PedidoService
 
     /**
      * Método eliminado - ya no se genera numero_pedido al crear
-     * El numero_pedido ahora solo lo genera Cartera al aprobar
+     * El numero_pedido ahora se genera automáticamente al crear el pedido via PedidoWebService
      */
 
     /**

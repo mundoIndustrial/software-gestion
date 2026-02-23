@@ -182,6 +182,13 @@ function renderizarTabla(pedidos) {
           </button>
         </div>
         
+        <!-- Número de Pedido -->
+        <div class="table-cell" style="flex: 0 0 120px;">
+          <div class="cell-content" style="justify-content: center;">
+            <span class="pedido-numero">${numero}</span>
+          </div>
+        </div>
+        
         <!-- Cliente -->
         <div class="table-cell" style="flex: 1 1 auto;">
           <div class="cell-content" style="justify-content: flex-start;">

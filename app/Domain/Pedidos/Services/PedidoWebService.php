@@ -75,7 +75,7 @@ class PedidoWebService
             
             Log::info('[PedidoWebService] Pedido base creado', [
                 'pedido_id' => $pedido->id,
-                'numero_pedido' => $pedido->numero_pedido, // null hasta aprobación de cartera
+                'numero_pedido' => $pedido->numero_pedido, // Asignado automáticamente
                 'area_guardada' => $pedido->area,
                 'estado' => $pedido->estado,
                 'tiempo_base_ms' => round($tiempoBase, 2),
@@ -88,9 +88,17 @@ class PedidoWebService
                 }
             }
 
+            // 3. Crear EPPs si existen
+            if (isset($datosValidados['epps']) && is_array($datosValidados['epps'])) {
+                foreach ($datosValidados['epps'] as $eppIndex => $eppData) {
+                    $this->crearEppCompleto($pedido, $eppData, $eppIndex);
+                }
+            }
+
             Log::info('[PedidoWebService] Pedido completo creado', [
                 'pedido_id' => $pedido->id,
                 'cantidad_prendas' => $pedido->prendas()->count(),
+                'cantidad_epps' => $pedido->epps()->count(),
                 'area_final' => $pedido->area,
                 'tiempo_total_ms' => round((microtime(true) - $tiempoInicio) * 1000, 2),
             ]);
@@ -113,20 +121,35 @@ class PedidoWebService
             $area = 'creacion de pedido';
         }
 
-        Log::info('[PedidoWebService] Creando pedido base sin número (se asignará al aprobar cartera)', [
+        // Determinar estado según contenido del pedido
+        $tienePrendas = isset($datos['items']) && is_array($datos['items']) && count($datos['items']) > 0;
+        $tieneEpps = isset($datos['epps']) && is_array($datos['epps']) && count($datos['epps']) > 0;
+        
+        // Si solo tiene EPPs (sin prendas), colocar en "En Ejecución"
+        // Si tiene prendas o ambos, colocar en "pendiente_cartera"
+        $estado = ($tieneEpps && !$tienePrendas) ? 'En Ejecución' : 'pendiente_cartera';
+
+        // Generar número de pedido consecutivo automáticamente
+        $numeroPedido = $this->pedidoSequenceService->generarNumeroPedido();
+
+        Log::info('[PedidoWebService] Creando pedido base con número consecutivo', [
+            'numero_pedido' => $numeroPedido,
             'area' => $area,
-            'estado' => 'pendiente_cartera',
+            'estado' => $estado,
+            'tiene_prendas' => $tienePrendas,
+            'tiene_epps' => $tieneEpps,
+            'motivo_estado' => ($tieneEpps && !$tienePrendas) ? 'Solo EPPs - En Ejecución' : 'Con prendas - pendiente_cartera',
         ]);
 
         $pedido = PedidoProduccion::create([
-            'numero_pedido' => null, // Se asignará cuando cartera apruebe
+            'numero_pedido' => $numeroPedido, // Número asignado automáticamente
             'cliente' => $datos['cliente'] ?? 'SIN NOMBRE',
             'asesor_id' => $asesorId,
             'cliente_id' => $datos['cliente_id'] ?? null,
             'forma_de_pago' => $datos['forma_de_pago'] ?? 'CONTADO',
             'novedades' => $datos['descripcion'] ?? null,
             'observaciones' => $datos['observaciones'] ?? null,
-            'estado' => 'pendiente_cartera',
+            'estado' => $estado,
             'cantidad_total' => 0,
             'area' => $area,  // AHORA SE GUARDA EL ÁREA CORRECTAMENTE
             'fecha_de_creacion_de_orden' => now(), // Fecha actual de creación de la orden
@@ -1187,5 +1210,42 @@ class PedidoWebService
             // Si hay error, no fallar el flujo, solo loguear
             return null;
         }
+    }
+
+    /**
+     * Crear EPP completo con sus datos e imágenes
+     */
+    private function crearEppCompleto(PedidoProduccion $pedido, array $eppData, int $eppIndex): PedidoEpp
+    {
+        $nombreEpp = $eppData['nombre'] ?? 'SIN NOMBRE';
+        $cantidad = $eppData['cantidad'] ?? 1;
+        $observaciones = $eppData['observaciones'] ?? null;
+        $eppId = $eppData['epp_id'] ?? null;
+
+        Log::info('[PedidoWebService] Creando EPP', [
+            'pedido_id' => $pedido->id,
+            'nombre' => $nombreEpp,
+            'cantidad' => $cantidad,
+            'epp_id' => $eppId,
+        ]);
+
+        $epp = PedidoEpp::create([
+            'pedido_produccion_id' => $pedido->id,
+            'epp_id' => $eppId,
+            'cantidad' => $cantidad,
+            'observaciones' => $observaciones,
+            'nombre' => $nombreEpp, // Guardar nombre también en pedido_epp para referencia
+        ]);
+
+        // TODO: Procesar imágenes del EPP si existen
+        // Esto se puede implementar más adelante siguiendo el mismo patrón que las prendas
+
+        Log::info('[PedidoWebService] EPP creado', [
+            'epp_id' => $epp->id,
+            'nombre' => $epp->nombre,
+            'cantidad' => $epp->cantidad,
+        ]);
+
+        return $epp;
     }
 }

@@ -63,7 +63,8 @@
                         </thead>
                         
                         <tbody id="pedidosTableBody" class="divide-y divide-slate-300">
-                            @forelse($items as $item)
+                            @if($items && count($items) > 0)
+                                @foreach($items as $item)
                                 <tr class="hover:bg-slate-50 transition-colors"
                                     data-numero-pedido="{{ $item['numero_pedido'] }}"
                                     data-asesor="{{ is_string($item['asesor'] ?? null) && !empty($item['asesor']) ? $item['asesor'] : 'N/A' }}"
@@ -86,6 +87,17 @@
                                             $primeraVariante = count($variantes) > 0 ? $variantes[0] : null;
                                             $genero = $primeraVariante['genero'] ?? null;
                                             $procesos = $desc['procesos'] ?? [];
+                                            
+                                            // Debug logging
+                                            \Log::debug('[BODEGA-VARIANTES] Datos de variante', [
+                                                'item_id' => $item['id'] ?? 'unknown',
+                                                'primeraVariante' => $primeraVariante,
+                                                'tipo_manga_id' => $primeraVariante['tipo_manga_id'] ?? 'NULL',
+                                                'tipo_broche_boton_id' => $primeraVariante['tipo_broche_boton_id'] ?? 'NULL',
+                                                'bolsillos' => $primeraVariante['bolsillos'] ?? 'NULL',
+                                                'tipoManga_value' => $primeraVariante['tipoManga_value'] ?? 'NULL',
+                                                'tipoBroche_value' => $primeraVariante['tipoBroche_value'] ?? 'NULL'
+                                            ]);
                                         @endphp
                                         <div class="font-bold text-black mb-1">{{ $nombre }}</div>
                                         @if($tela || $color)
@@ -99,11 +111,39 @@
                                                 @endif
                                             </div>
                                         @endif
-                                        @if($genero)
-                                            <div class="text-black text-xs mb-1">
-                                                Género: <span class="font-semibold">{{ strtoupper($genero) }}</span>
-                                            </div>
+                                        
+                                        <!-- Variantes (manga, botón, bolsillos) -->
+                                        @if(isset($primeraVariante) && $primeraVariante)
+                                            @php
+                                                $variantesInfo = [];
+                                                
+                                                // Manga
+                                                if(!empty($primeraVariante['manga'])) {
+                                                    $mangaObs = !empty($primeraVariante['manga_obs']) ? $primeraVariante['manga_obs'] : '';
+                                                    $variantesInfo[] = 'Manga:' . $primeraVariante['manga'] . ' (' . $mangaObs . ')';
+                                                }
+                                                
+                                                // Botón
+                                                if(!empty($primeraVariante['broche'])) {
+                                                    $brocheObs = !empty($primeraVariante['broche_obs']) ? $primeraVariante['broche_obs'] : '';
+                                                    $variantesInfo[] = $primeraVariante['broche'] . ' (' . $brocheObs . ')';
+                                                }
+                                                
+                                                // Bolsillos
+                                                if(!empty($primeraVariante['bolsillos'])) {
+                                                    $bolsillosObs = !empty($primeraVariante['bolsillos_obs']) ? $primeraVariante['bolsillos_obs'] : '';
+                                                    $variantesInfo[] = 'Bolsillos (' . $bolsillosObs . ')';
+                                                }
+                                            @endphp
+                                            @if(!empty($variantesInfo))
+                                                <div class="text-slate-900 mb-1 text-xs space-y-0.5">
+                                                    @foreach($variantesInfo as $variante)
+                                                        <div>• {{ $variante }}</div>
+                                                    @endforeach
+                                                </div>
+                                            @endif
                                         @endif
+                                        
                                         @if(count($procesos) > 0)
                                             <div class="text-black text-xs mt-2 space-y-0.5">
                                                 @foreach($procesos as $proceso)
@@ -137,6 +177,35 @@
                                                     </div>
                                                 @endforeach
                                             </div>
+                                        @endif
+                                        
+                                        <!-- Colores por talla -->
+                                        @if(isset($item['descripcion']['variantes']) && is_array($item['descripcion']['variantes']))
+                                            @php
+                                                $todosLosColores = [];
+                                                
+                                                foreach($item['descripcion']['variantes'] as $variante) {
+                                                    if(isset($variante['colores_detalle']) && is_array($variante['colores_detalle'])) {
+                                                        foreach($variante['colores_detalle'] as $color) {
+                                                            $todosLosColores[] = [
+                                                                'genero' => $variante['genero'] ?? '',
+                                                                'talla' => $variante['talla'] ?? '',
+                                                                'cantidad' => $color['cantidad'] ?? 1,
+                                                                'color_nombre' => $color['color'] ?? 'Sin color'
+                                                            ];
+                                                        }
+                                                    }
+                                                }
+                                            @endphp
+                                            @if(!empty($todosLosColores))
+                                                <div class="text-slate-700 mt-2 text-xs font-medium">
+                                                    <div class="ml-2">
+                                                        @foreach($todosLosColores as $tallaColor)
+                                                            <div>• {{ strtoupper($tallaColor['genero'] ?? '') }}: {{ $tallaColor['talla'] ?? '' }}:{{ $tallaColor['cantidad'] ?? 1 }}-{{ $tallaColor['color_nombre'] ?? 'Sin color' }}</div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
                                         @endif
                                     </td>
                                     @endif
@@ -297,13 +366,14 @@
                                         </div>
                                     </td>
                                 </tr>
-                            @empty
+                                @endforeach
+                            @else
                                 <tr>
                                     <td colspan="8" class="px-6 py-12 text-center">
                                         <p class="text-slate-500 font-bold text-sm">No hay ítems en este pedido</p>
                                     </td>
                                 </tr>
-                            @endforelse
+                            @endif
                         </tbody>
                     </table>
                 </div>

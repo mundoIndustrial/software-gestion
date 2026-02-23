@@ -790,15 +790,15 @@ class CrearPedidoEditableController extends Controller
                 'tiempo_ms' => $tiempoPaso7,
             ]);
 
-            // ====== PASO 7B: CRÍTICO - Procesar imágenes de EPPs ======
+            // ====== PASO 7B: Procesar imágenes de EPPs (solo imágenes, no crear EPPs) ======
             $tiempoPaso7B = 0;
             $eppsCrudos = $datosFrontend['epps'] ?? [];
             if (!empty($eppsCrudos)) {
                 $inicioPaso7B = microtime(true);
-                $this->procesarYAsignarEpps($request, $pedidoId, $eppsCrudos);
+                $this->procesarImagenesDeEpps($request, $pedidoId, $eppsCrudos);
                 $tiempoPaso7B = round((microtime(true) - $inicioPaso7B) * 1000, 2);
                 
-                Log::info('[CREAR-PEDIDO]  PASO 7B: Imágenes de EPPs procesadas', [
+                Log::info('[CREAR-PEDIDO]  PASO 7B: Imágenes de EPPs procesadas (solo imágenes)', [
                     'pedido_id' => $pedidoId,
                     'epps_count' => count($eppsCrudos),
                     'tiempo_ms' => $tiempoPaso7B,
@@ -1385,6 +1385,189 @@ class CrearPedidoEditableController extends Controller
         }
 
         Log::info('[CrearPedidoEditableController] Todos los EPPs procesados exitosamente', [
+            'pedido_id' => $pedidoId,
+            'epps_count' => count($epps),
+        ]);
+    }
+
+    /**
+     * Procesar SOLO las imágenes de EPPs ya existentes (sin crear EPPs duplicados)
+     * 
+     * @param Request $request
+     * @param int $pedidoId
+     * @param array $epps
+     */
+    private function procesarImagenesDeEpps(Request $request, int $pedidoId, array $epps): void
+    {
+        Log::info('[CrearPedidoEditableController] procesarImagenesDeEpps() - Solo procesando imágenes', [
+            'pedido_id' => $pedidoId,
+            'epps_count' => count($epps),
+        ]);
+
+        foreach ($epps as $eppIdx => $eppData) {
+            // Buscar el EPP ya creado por PedidoWebService
+            $pedidoEpp = PedidoEpp::where('pedido_produccion_id', $pedidoId)
+                ->where('epp_id', $eppData['epp_id'])
+                ->first();
+
+            if (!$pedidoEpp) {
+                Log::warning('[CrearPedidoEditableController] EPP no encontrado para procesar imágenes', [
+                    'pedido_id' => $pedidoId,
+                    'epp_id' => $eppData['epp_id'],
+                ]);
+                continue;
+            }
+
+            Log::info('[CrearPedidoEditableController] Procesando imágenes para EPP existente', [
+                'pedido_epp_id' => $pedidoEpp->id,
+                'epp_id' => $eppData['epp_id'],
+            ]);
+
+            // ==================== PROCESAR ARCHIVOS FORMDATA ====================
+            $imagenesGuardadas = 0;
+            $imgIdx = 0;
+            while (true) {
+                $formKey = "epps.{$eppIdx}.imagenes.{$imgIdx}";
+                if (!$request->hasFile($formKey)) {
+                    break;
+                }
+
+                try {
+                    $archivo = $request->file($formKey);
+                    
+                    // Guardar imagen en carpeta del EPP con conversión a WebP
+                    $resultado = $this->imageUploadService->guardarImagenDirecta(
+                        $archivo, 
+                        $pedidoId, 
+                        'epps',          // tipo
+                        null,            // subcarpeta
+                        "epp_{$eppData['epp_id']}_img_{$imgIdx}"
+                    );
+
+                    // Crear registro en pedido_epp_imagenes
+                    PedidoEppImagen::create([
+                        'pedido_epp_id' => $pedidoEpp->id,
+                        'ruta_original' => $resultado['webp'],  // Convertida a WebP
+                        'ruta_web' => $resultado['webp'],       // Convertida a WebP
+                        'orden' => $imgIdx + 1,
+                        'principal' => $imgIdx === 0 ? 1 : 0,   // Primera imagen es principal
+                    ]);
+
+                    $imagenesGuardadas++;
+
+                    Log::debug('[CrearPedidoEditableController] 📸 Imagen EPP guardada (WebP)', [
+                        'pedido_epp_id' => $pedidoEpp->id,
+                        'webp' => $resultado['webp'],
+                        'orden' => $imgIdx + 1,
+                    ]);
+
+                    $imgIdx++;
+                } catch (\Exception $e) {
+                    Log::error('[CrearPedidoEditableController] Error procesando imagen EPP', [
+                        'pedido_epp_id' => $pedidoEpp->id,
+                        'form_key' => $formKey,
+                        'error' => $e->getMessage(),
+                    ]);
+                    throw $e;
+                }
+            }
+
+            // Si NO llegaron archivos en FormData, pero el JSON trae URLs existentes, copiar desde storage
+            if ($imagenesGuardadas === 0) {
+                $imagenesJson = $eppData['imagenes'] ?? [];
+                if (is_array($imagenesJson) && count($imagenesJson) > 0) {
+                    Log::info('[CrearPedidoEditableController] Copiando imágenes EPP desde URLs (sin FormData)', [
+                        'pedido_epp_id' => $pedidoEpp->id,
+                        'epp_id' => $eppData['epp_id'],
+                        'imagenes_count' => count($imagenesJson),
+                    ]);
+
+                    // Usar carpeta estándar de EPP del pedido
+                    $destDir = "pedidos/{$pedidoId}/epp";
+                    if (!Storage::disk('public')->exists($destDir)) {
+                        Storage::disk('public')->makeDirectory($destDir);
+                    }
+
+                    $orden = 1;
+                    foreach ($imagenesJson as $img) {
+                        $url = null;
+                        if (is_string($img)) {
+                            $url = $img;
+                        } elseif (is_array($img)) {
+                            $url = $img['url'] ?? $img['preview'] ?? null;
+                        }
+
+                        if (!$url) {
+                            continue;
+                        }
+
+                        $path = parse_url($url, PHP_URL_PATH) ?: '';
+                        $pos = strpos($path, '/storage/');
+                        $relative = '';
+
+                        if ($pos !== false) {
+                            $relative = ltrim(substr($path, $pos + strlen('/storage/')), '/');
+                        } else {
+                            $relative = ltrim($path !== '' ? $path : $url, '/');
+                        }
+
+                        if (str_starts_with($relative, 'storage/')) {
+                            $relative = substr($relative, strlen('storage/'));
+                        }
+
+                        if ($relative === '' || !Storage::disk('public')->exists($relative)) {
+                            Log::warning('[CrearPedidoEditableController] Imagen EPP no existe para copiar', [
+                                'pedido_epp_id' => $pedidoEpp->id,
+                                'url' => $url,
+                                'relative' => $relative,
+                            ]);
+                            continue;
+                        }
+
+                        // Guardar como .webp
+                        $destName = "epp_{$eppData['epp_id']}_img_" . ($orden - 1) . '.webp';
+                        $destRelative = $destDir . '/' . $destName;
+
+                        try {
+                            $copiado = Storage::disk('public')->copy($relative, $destRelative);
+                            if ($copiado) {
+                                PedidoEppImagen::create([
+                                    'pedido_epp_id' => $pedidoEpp->id,
+                                    'ruta_original' => $destRelative,
+                                    'ruta_web' => $destRelative,
+                                    'orden' => $orden,
+                                    'principal' => $orden === 1 ? 1 : 0,
+                                ]);
+
+                                Log::debug('[CrearPedidoEditableController] 📸 Imagen EPP copiada desde storage', [
+                                    'pedido_epp_id' => $pedidoEpp->id,
+                                    'dest_relative' => $destRelative,
+                                    'orden' => $orden,
+                                ]);
+                            }
+                        } catch (\Exception $e) {
+                            Log::error('[CrearPedidoEditableController] Error copiando imagen EPP', [
+                                'pedido_epp_id' => $pedidoEpp->id,
+                                'src' => $relative,
+                                'dest' => $destRelative,
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
+
+                        $orden++;
+                    }
+                }
+            }
+
+            if ($imagenesGuardadas === 0) {
+                Log::warning('[CrearPedidoEditableController] EPP sin imágenes procesadas', [
+                    'pedido_epp_id' => $pedidoEpp->id,
+                    'epp_id' => $eppData['epp_id'],
+                ]);
+            }
+        }
+
+        Log::info('[CrearPedidoEditableController] Imágenes de EPPs procesadas exitosamente', [
             'pedido_id' => $pedidoId,
             'epps_count' => count($epps),
         ]);

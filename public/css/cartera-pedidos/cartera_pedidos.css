@@ -880,3 +880,24 @@
   box-shadow: 0 4px 12px rgba(30, 91, 168, 0.3);
   transform: translateY(-2px);
 }
+
+/* ===== NÚMERO DE PEDIDO ===== */
+.pedido-numero {
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.95rem;
+  background: var(--primary-light);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--primary);
+  display: inline-block;
+  min-width: 60px;
+  text-align: center;
+  transition: var(--transition);
+}
+
+.pedido-numero:hover {
+  background: var(--primary);
+  color: var(--text-white);
+  transform: scale(1.05);
+}

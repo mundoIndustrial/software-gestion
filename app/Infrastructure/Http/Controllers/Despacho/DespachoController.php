@@ -41,7 +41,7 @@ class DespachoController extends Controller
         $search = $request->input('search', '');
         
         $query = PedidoProduccion::query()
-            ->whereIn('estado', ['Pendiente', 'En Ejecución', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'])
+            ->whereIn('estado', ['Pendiente', 'En Ejecución', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
             ->whereNotNull('numero_pedido') // Excluir pedidos sin número de pedido
             ->where('numero_pedido', '!=', '') // Excluir números de pedido vacíos
             ->orderByDesc('created_at');
