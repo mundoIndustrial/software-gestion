@@ -46,7 +46,12 @@ class CotizacionBordadoController extends Controller
             ])->findOrFail($id);
 
             // Verificar que sea un borrador y del asesor autenticado
-            if ($cotizacion->es_borrador !== true || $cotizacion->asesor_id !== Auth::id()) {
+            $allowEditarCotizacionCreada = $request->boolean('editar_cotizacion');
+            if ($cotizacion->asesor_id !== Auth::id()) {
+                abort(403, 'No tienes permiso para editar esta cotización');
+            }
+
+            if (!$allowEditarCotizacionCreada && $cotizacion->es_borrador !== true) {
                 abort(403, 'No tienes permiso para editar este borrador');
             }
 
@@ -157,7 +162,12 @@ class CotizacionBordadoController extends Controller
 
                 // Verificar que la cotización existe y es un borrador del asesor
                 $cotizacion = Cotizacion::findOrFail($id);
-                if ($cotizacion->es_borrador !== true || $cotizacion->asesor_id !== Auth::id()) {
+                $allowEditarCotizacionCreada = $request->boolean('editar_cotizacion');
+                if ($cotizacion->asesor_id !== Auth::id()) {
+                    abort(403, 'No tienes permiso para actualizar esta cotización');
+                }
+
+                if (!$allowEditarCotizacionCreada && $cotizacion->es_borrador !== true) {
                     abort(403, 'No tienes permiso para actualizar este borrador');
                 }
 
@@ -183,9 +193,14 @@ class CotizacionBordadoController extends Controller
                 // Si es envío, generar número y cambiar estado
                 $numeroCotizacion = null;
                 if ($esEnvio) {
-                    $usuarioId = Auth::id();
-                    $numeroCotizacion = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId);
-                    Log::info(' Número generado para envío', ['numero' => $numeroCotizacion, 'cotizacion_id' => $id]);
+                    if (!empty($cotizacion->numero_cotizacion)) {
+                        $numeroCotizacion = $cotizacion->numero_cotizacion;
+                        Log::info(' Número existente preservado para re-envío', ['numero' => $numeroCotizacion, 'cotizacion_id' => $id]);
+                    } else {
+                        $usuarioId = Auth::id();
+                        $numeroCotizacion = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId);
+                        Log::info(' Número generado para envío', ['numero' => $numeroCotizacion, 'cotizacion_id' => $id]);
+                    }
                 }
 
                 // Actualizar cotización principal
@@ -506,17 +521,23 @@ class CotizacionBordadoController extends Controller
 
             // Intentar borrar también la prenda base (si existe)
             if ($prendaCotId) {
-                $prendaCot = \App\Models\PrendaCot::with(['fotos', 'telaFotos'])->find($prendaCotId);
-                if ($prendaCot) {
-                    foreach ($prendaCot->fotos as $f) {
-                        $this->borrarArchivoPublicSiExiste($f->ruta_webp ?? $f->ruta_original ?? null);
-                        $f->forceDelete();
+                $prendaCotSigueUsandose = \App\Models\LogoCotizacionTecnicaPrenda::where('logo_cotizacion_id', $logoCotizacionId)
+                    ->where('prenda_cot_id', $prendaCotId)
+                    ->exists();
+
+                if (!$prendaCotSigueUsandose) {
+                    $prendaCot = \App\Models\PrendaCot::with(['fotos', 'telaFotos'])->find($prendaCotId);
+                    if ($prendaCot) {
+                        foreach ($prendaCot->fotos as $f) {
+                            $this->borrarArchivoPublicSiExiste($f->ruta_webp ?? $f->ruta_original ?? null);
+                            $f->forceDelete();
+                        }
+                        foreach ($prendaCot->telaFotos as $tf) {
+                            $this->borrarArchivoPublicSiExiste($tf->ruta_webp ?? $tf->ruta_original ?? null);
+                            $tf->forceDelete();
+                        }
+                        $prendaCot->forceDelete();
                     }
-                    foreach ($prendaCot->telaFotos as $tf) {
-                        $this->borrarArchivoPublicSiExiste($tf->ruta_webp ?? $tf->ruta_original ?? null);
-                        $tf->forceDelete();
-                    }
-                    $prendaCot->forceDelete();
                 }
             }
         }

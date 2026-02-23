@@ -28,6 +28,7 @@ final class ActualizarCotizacionService
             $clienteId = $cliente->id;
         }
 
+        $eraBorradorAntes = (bool) $cotizacion->es_borrador;
         $esBorrador = $dto->esBorrador;
         $estado = $esBorrador ? 'BORRADOR' : 'ENVIADA_CONTADOR';
 
@@ -53,12 +54,19 @@ final class ActualizarCotizacionService
         $datosActualizar = [
             'cliente_id' => $clienteId,
             'tipo_venta' => $dto->tipoVenta,
-            'es_borrador' => $esBorrador,
-            'estado' => $estado,
             'numero_cotizacion' => $numeroCotizacion,
             'tipo_cotizacion_id' => $tipoCotizacionId,
-            'fecha_envio' => !$esBorrador ? Carbon::now('America/Bogota') : null,
         ];
+
+        // Si la cotización ya estaba enviada (no borrador), al editar NO se debe retroceder a borrador
+        // ni reescribir estado/fecha_envio automáticamente.
+        if ($eraBorradorAntes) {
+            $datosActualizar['es_borrador'] = $esBorrador;
+            $datosActualizar['estado'] = $estado;
+            $datosActualizar['fecha_envio'] = !$esBorrador ? Carbon::now('America/Bogota') : null;
+        } else {
+            $datosActualizar['es_borrador'] = false;
+        }
 
         $especificacionesNuevas = $dto->especificaciones;
 

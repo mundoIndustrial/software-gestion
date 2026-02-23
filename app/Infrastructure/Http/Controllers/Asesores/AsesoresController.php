@@ -199,6 +199,7 @@ class AsesoresController extends Controller
     {
         try {
             $editarId = $request->query('editar');
+            $allowEditarCotizacionCreada = $request->boolean('editar_cotizacion');
 
             $tipoQuery = $request->query('tipo');
             if ($tipoQuery === 'EPP') {
@@ -210,7 +211,8 @@ class AsesoresController extends Controller
             $dto = PrepararCreacionProduccionPedidoDTO::fromRequest(
                 tipo: $request->query('tipo', 'PB'),
                 editarId: $editarId,
-                usuarioId: \Auth::id()
+                usuarioId: \Auth::id(),
+                allowEditarCotizacionCreada: $allowEditarCotizacionCreada
             );
 
             // Usar el nuevo Use Case DDD
@@ -242,6 +244,12 @@ class AsesoresController extends Controller
         try {
             $tipoQuery = $request->query('tipo');
             if ($tipoQuery !== 'EPP') {
+                $cotizacion = \App\Models\Cotizacion::findOrFail($id);
+                $codigoTipo = $cotizacion->tipoCotizacion?->codigo;
+                if (is_string($codigoTipo) && strtoupper(trim($codigoTipo)) === 'EPP') {
+                    return redirect("/asesores/cotizaciones/{$id}/edit?tipo=EPP");
+                }
+
                 abort(404);
             }
 
@@ -296,6 +304,14 @@ class AsesoresController extends Controller
             $tipo = 'EPP';
             return view('asesores.cotizaciones.epp.create', compact('tipo', 'cotizacion', 'eppCot', 'itemsUi', 'iva'));
         } catch (\Exception $e) {
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException) {
+                throw $e;
+            }
+
+            if ($e instanceof \Illuminate\Auth\Access\AuthorizationException) {
+                throw $e;
+            }
+
             \Log::error('[AsesoresController.editCotizacion] Error', ['error' => $e->getMessage()]);
             abort(500, $e->getMessage());
         }

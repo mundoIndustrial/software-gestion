@@ -136,9 +136,19 @@ function tienenInformacionValida(tecnicas) {
     });
 }
 
-// ============ GUARDAR COTIZACIÓN ============
+// ============ GUARDAR COTIZACIÓN ==========
 
 async function guardarCotizacion() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const esEdicionCotizacionCreada = params.get('editar_cotizacion') === '1';
+        if (esEdicionCotizacionCreada && window.cotizacionIdActual) {
+            await procederEnviarCotizacion(false);
+            return;
+        }
+    } catch (e) {
+    }
+
     await procederEnviarCotizacion(true);
 }
 
@@ -768,7 +778,25 @@ async function procederEnviarCotizacion(esBorrador = false) {
                 toast: true,
                 position: 'top-end',
                 icon: 'success',
-                title: esBorrador ? '¡Borrador guardado!' : '¡Cotización enviada!',
+                title: (() => {
+                    if (esBorrador) {
+                        return '¡Borrador guardado!';
+                    }
+                    try {
+                        const params = new URLSearchParams(window.location.search);
+                        const esEdicionCotizacionCreada = params.get('editar_cotizacion') === '1';
+                        if (esEdicionCotizacionCreada) {
+                            const numero = (data && data.data && data.data.numero_cotizacion)
+                                ? data.data.numero_cotizacion
+                                : (window.cotizacionParaEditar && window.cotizacionParaEditar.numero_cotizacion)
+                                    ? window.cotizacionParaEditar.numero_cotizacion
+                                    : cotizacionId;
+                            return `Cotización número ${numero} actualizada correctamente`;
+                        }
+                    } catch (e) {
+                    }
+                    return '¡Cotización enviada!';
+                })(),
                 showConfirmButton: false,
                 timer: 3000,
                 timerProgressBar: true
@@ -846,6 +874,26 @@ function toggleAplicaPaso(paso, btn) {
 // ============ INICIALIZACIÓN DE VALIDACIÓN DE TIPO DE VENTA ============
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Ajustes UI para edición de cotización ya creada (NO borrador):
+    // - Ocultar "Guardar como borrador"
+    // - Renombrar "Enviar cotización" a "Guardar cambios"
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const esEdicionCotizacionCreada = params.get('editar_cotizacion') === '1';
+        if (esEdicionCotizacionCreada) {
+            const btnGuardarBorradorPaso5 = document.getElementById('btnGuardarBorrador');
+            if (btnGuardarBorradorPaso5) {
+                btnGuardarBorradorPaso5.style.display = 'none';
+            }
+
+            const btnEnviarPaso5 = document.getElementById('btnEnviarCotizacion');
+            if (btnEnviarPaso5) {
+                btnEnviarPaso5.innerHTML = '<i class="fas fa-save"></i> GUARDAR CAMBIOS';
+            }
+        }
+    } catch (e) {
+    }
+
     // Obtener elementos
     const tipoVentaSelect = document.getElementById('tipo_venta');
     const btnGuardar = document.querySelector('button[onclick="guardarCotizacion()"]');

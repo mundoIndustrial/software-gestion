@@ -88,6 +88,66 @@ final class CotizacionController extends Controller
         }
     }
 
+    /**
+     * Mostrar vista de edición de cotización (NO borrador) reutilizando el mismo formulario
+     */
+    public function editCotizacion(int $id)
+    {
+        try {
+            $cotizacion = \App\Models\Cotizacion::findOrFail($id);
+
+            $codigoTipo = null;
+            try {
+                $tipoCot = \App\Models\TipoCotizacion::find($cotizacion->tipo_cotizacion_id);
+                $codigoTipo = $tipoCot ? strtoupper(trim((string) $tipoCot->codigo)) : null;
+            } catch (\Exception $e) {
+                $codigoTipo = null;
+            }
+
+            if ($cotizacion->asesor_id !== auth()->id()) {
+                abort(403, 'No tienes permiso para editar esta cotización');
+            }
+
+            if ($codigoTipo === 'EPP') {
+                return redirect("/asesores/cotizaciones/{$id}/edit?tipo=EPP");
+            }
+
+            $mapeoTipos = [
+                1 => '/asesores/cotizaciones/create?tipo=PB&editar={id}&editar_cotizacion=1',
+                2 => '/asesores/cotizaciones/bordado/crear?editar={id}&editar_cotizacion=1',
+                3 => '/asesores/cotizaciones/create?tipo=P&editar={id}&editar_cotizacion=1',
+            ];
+
+            $tipoCotizacionId = $cotizacion->tipo_cotizacion_id ?? 1;
+
+            if ($tipoCotizacionId === 1) {
+                $logoCotizacion = $cotizacion->logoCotizacion()
+                    ->withCount(['tecnicasPrendas', 'fotos'])
+                    ->first();
+
+                $logoVacio = !$logoCotizacion
+                    || (((int) ($logoCotizacion->tecnicas_prendas_count ?? 0)) === 0
+                        && ((int) ($logoCotizacion->fotos_count ?? 0)) === 0
+                        && empty($logoCotizacion->observaciones_generales));
+
+                if ($logoVacio) {
+                    $tipoCotizacionId = 3;
+                }
+            }
+
+            $ruta = $mapeoTipos[$tipoCotizacionId] ?? null;
+            if ($ruta) {
+                $ruta = str_replace('{id}', $id, $ruta);
+                return redirect($ruta);
+            }
+
+            abort(400, 'Tipo de cotización no válido');
+        } catch (\Exception $e) {
+            Log::error('CotizacionController@editCotizacion: Error', ['error' => $e->getMessage()]);
+            abort(500, 'Error al cargar la cotización: ' . $e->getMessage());
+        }
+    }
+
     public function show(int $id): JsonResponse
     {
         try {

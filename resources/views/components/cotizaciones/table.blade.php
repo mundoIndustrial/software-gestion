@@ -100,6 +100,16 @@
                                                 onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 8px rgba(107, 114, 128, 0.4)'"
                                                 onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(107, 114, 128, 0.3)'"><i class="fas fa-edit" style="font-size: 1rem;"></i><span style="font-size: 0.85rem; font-weight: 700;">Editar</span></a>
                                         @else
+                                            <?php $editUrl = route('asesores.cotizaciones.edit-creada', ['id' => $cot->id]); ?>
+                                            <a href="{{ $editUrl }}"
+                                                data-url="{{ $editUrl }}"
+                                                class="btn-editar-borrador"
+                                                title="Editar"
+                                                style="background: #6b7280; color: white; width: 36px; height: 36px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(107, 114, 128, 0.3);"
+                                                onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(107, 114, 128, 0.4)'"
+                                                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(107, 114, 128, 0.3)'">
+                                                <i class="fas fa-edit" style="font-size: 1rem;"></i>
+                                            </a>
                                             <a href="#" onclick="openCotizacionModal({{ $cot->id }}); return false;" 
                                                 title="Ver Cotización"
                                                 style="background: {{ $buttonColor }}; color: white; width: 36px; height: 36px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(30, 64, 175, 0.3);"

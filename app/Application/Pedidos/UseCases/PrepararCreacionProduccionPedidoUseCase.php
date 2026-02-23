@@ -26,7 +26,11 @@ class PrepararCreacionProduccionPedidoUseCase
             ])->findOrFail($dto->editarId);
             
             // Validar permisos
-            if ($cotizacion->asesor_id !== $dto->usuarioId || !$cotizacion->es_borrador) {
+            if ($cotizacion->asesor_id !== $dto->usuarioId) {
+                throw new \Exception('No tienes permiso para editar esta cotización');
+            }
+
+            if (!$dto->allowEditarCotizacionCreada && !$cotizacion->es_borrador) {
                 throw new \Exception('No tienes permiso para editar este borrador');
             }
             

@@ -117,6 +117,9 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     Route::post('/cotizaciones', [CotizacionController::class, 'store'])->name('cotizaciones.store');
     Route::put('/cotizaciones/{id}', [CotizacionController::class, 'update'])->name('cotizaciones.update');
 
+    // Editar cotización ya creada (NO borrador) - reusa el mismo formulario y carga
+    Route::get('/cotizaciones/{id}/editar-cotizacion', [CotizacionController::class, 'editCotizacion'])->name('cotizaciones.edit-creada');
+
     // ========================================
     // COTIZACIONES - EPP (nuevo)
     // ========================================

@@ -539,6 +539,28 @@ OR
             </div>
         </form>
 
+        <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const esEdicionCotizacionCreada = params.get('editar_cotizacion') === '1';
+                if (!esEdicionCotizacionCreada) return;
+
+                const botones = Array.from(document.querySelectorAll('#cotizacionBordadoForm .form-actions button[type="submit"]'));
+                const btnBorrador = botones.find(b => (b.getAttribute('value') || '') === 'borrador');
+                const btnEnviar = botones.find(b => (b.getAttribute('value') || '') === 'enviar');
+
+                if (btnBorrador) {
+                    btnBorrador.style.display = 'none';
+                }
+                if (btnEnviar) {
+                    btnEnviar.innerHTML = '<i class="fas fa-save" style="font-size: 0.9rem;"></i> Guardar cambios';
+                }
+            } catch (e) {
+            }
+        });
+        </script>
+
         <!-- MENÚ FLOTANTE PARA ESPECIFICACIONES -->
         <div style="position: fixed; bottom: 30px; right: 30px; z-index: 1000;">
             <!-- Menú flotante -->
@@ -1062,7 +1084,6 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         });
         return;
     }
-
     
     const action = submitButton.value;
     
@@ -1213,6 +1234,12 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     if (debeUsarFormData) {
         // Si hay imágenes nuevas, usar FormData (un solo fetch)
         const formData = new FormData();
+
+        // Flag para permitir editar cotización ya creada (no borrador)
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('editar_cotizacion') === '1') {
+            formData.append('editar_cotizacion', '1');
+        }
         
         // Si es PUT, agregar _method para que Laravel lo reconozca
         if (method === 'PUT') {
@@ -1401,6 +1428,10 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         data.imagenes_existentes = imagenesSeleccionadas
             .filter(img => img.existing)
             .map(img => img.id);
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('editar_cotizacion') === '1') {
+            data.editar_cotizacion = '1';
+        }
         try {
             response = await fetch(url, {
                 method: method,
@@ -1562,6 +1593,16 @@ function cargarDatosBorrador(cotizacion) {
                 observaciones.forEach(obs => {
                     agregarObservacionDesdeBorrador(obs);
                 });
+            }
+        }
+
+        // Cargar especificaciones generales (guardadas en cotizaciones.especificaciones)
+        if (typeof cotizacion.especificaciones !== 'undefined' && cotizacion.especificaciones !== null) {
+            const textareaEspecificaciones = document.getElementById('especificaciones');
+            if (textareaEspecificaciones) {
+                textareaEspecificaciones.value = typeof cotizacion.especificaciones === 'string'
+                    ? cotizacion.especificaciones
+                    : JSON.stringify(cotizacion.especificaciones);
             }
         }
 

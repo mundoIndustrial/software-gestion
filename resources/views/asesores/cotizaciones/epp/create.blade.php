@@ -478,10 +478,19 @@
                 const redirectUrl = data.redirect || `{{ url('/asesores/cotizaciones') }}?tab=${accion === 'borrador' ? 'borradores' : 'cotizaciones'}&highlight=${cotizacionId}`;
 
                 if (window.Swal) {
-                    const title = accion === 'borrador' ? 'Borrador guardado' : 'Cotización enviada';
+                    const params = new URLSearchParams(window.location.search);
+                    const esEdicionCotizacionCreada = params.get('editar_cotizacion') === '1';
+
+                    const numero = data?.numero_cotizacion || data?.numeroCotizacion || cotizacionId;
+
+                    const title = accion === 'borrador'
+                        ? 'Borrador guardado'
+                        : (esEdicionCotizacionCreada ? 'Cotización actualizada' : 'Cotización enviada');
                     const text = data.message || (accion === 'borrador'
                         ? 'La cotización EPP fue guardada como borrador'
-                        : 'La cotización EPP fue enviada correctamente');
+                        : (esEdicionCotizacionCreada
+                            ? `Cotización número ${numero} actualizada correctamente`
+                            : 'La cotización EPP fue enviada correctamente'));
 
                     const result = await Swal.fire({
                         icon: 'success',
@@ -569,6 +578,25 @@
             btnBorrador.addEventListener('click', function () {
                 enviarCotizacionEpp('borrador');
             });
+        }
+
+        // Ajustes UI para edición de cotización ya creada (NO borrador)
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const esEdicionCotizacionCreada = params.get('editar_cotizacion') === '1';
+            if (esEdicionCotizacionCreada) {
+                const btnBorradorUi = document.getElementById('btnGuardarBorradorEpp');
+                if (btnBorradorUi) {
+                    btnBorradorUi.style.display = 'none';
+                }
+
+                const btnEnviarUi = document.getElementById('btnEnviarCotizacionEpp');
+                if (btnEnviarUi) {
+                    btnEnviarUi.innerHTML = '<i class="fas fa-save" style="font-size: 0.9rem;"></i> Guardar cambios';
+                }
+            }
+        } catch (e) {
+            // noop
         }
 
         syncEmptyState();

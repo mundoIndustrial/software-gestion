@@ -1882,6 +1882,9 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho'])->pr
     // API endpoints para cotizaciones
     Route::post('/cotizaciones', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'store'])->name('cotizaciones.store');
     Route::put('/cotizaciones/{id}', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'update'])->name('cotizaciones.update');
+
+    // Editar cotización ya creada (NO borrador) - reusa el mismo formulario y carga
+    Route::get('/cotizaciones/{id}/editar-cotizacion', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'editCotizacion'])->name('cotizaciones.edit-creada');
     
     // ========================================
     // RUTAS PDF ESPECÍFICAS - DEBE ESTAR ANTES DE LA RUTA GENÉRICA

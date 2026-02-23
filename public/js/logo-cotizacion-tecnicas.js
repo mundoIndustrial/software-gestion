@@ -2090,7 +2090,7 @@ function renderizarTecnicasAgregadas() {
             align-items: center;
             justify-content: center;
             transition: background 0.2s;
-        " data-tecnica-indices="${datosPrenda.tecnicas.map(t => t.tecnicaIndex).join(',')}" title="Eliminar">
+        " data-tecnica-indices="${datosPrenda.tecnicas.map(t => t.tecnicaIndex).join(',')}" data-prenda-nombre="${nombrePrenda}" title="Eliminar">
             <i class="fas fa-trash" style="font-size: 1rem;"></i>
         </button>`;
         headerHTML += '</div>';
@@ -2325,9 +2325,41 @@ function renderizarTecnicasAgregadas() {
     document.querySelectorAll('.btn-eliminar-prenda').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const indicesStr = e.currentTarget.getAttribute('data-tecnica-indices');
+            const nombrePrenda = e.currentTarget.getAttribute('data-prenda-nombre');
             const indices = indicesStr.split(',').map(Number);
-            eliminarTecnicaDelGrupo(indices);
+            eliminarPrendaDelGrupo(indices, nombrePrenda);
         });
+    });
+}
+
+function eliminarPrendaDelGrupo(tecnicaIndices, nombrePrenda) {
+    Swal.fire({
+        icon: 'warning',
+        title: '¿Eliminar prenda?',
+        text: 'Se eliminará la prenda seleccionada',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+
+        const indices = Array.isArray(tecnicaIndices) ? tecnicaIndices : [tecnicaIndices];
+        indices.forEach(idx => {
+            const tecnica = tecnicasAgregadas[idx];
+            if (!tecnica || !Array.isArray(tecnica.prendas)) return;
+
+            tecnica.prendas = tecnica.prendas.filter(p => p && p.nombre_prenda !== nombrePrenda);
+        });
+
+        // Si alguna técnica quedó sin prendas, eliminarla
+        for (let i = tecnicasAgregadas.length - 1; i >= 0; i--) {
+            const t = tecnicasAgregadas[i];
+            if (t && Array.isArray(t.prendas) && t.prendas.length === 0) {
+                tecnicasAgregadas.splice(i, 1);
+            }
+        }
+
+        renderizarTecnicasAgregadas();
     });
 }
 
@@ -3246,7 +3278,14 @@ function abrirModalEspecificaciones() {
     // Si hay especificaciones guardadas, cargarlas en los checkboxes y observaciones
     if (especificacionesGuardadas && especificacionesGuardadas !== '{}' && especificacionesGuardadas !== '[]' && especificacionesGuardadas !== '') {
         try {
-            const datos = JSON.parse(especificacionesGuardadas);
+            let datos = JSON.parse(especificacionesGuardadas);
+            // Soportar doble serialización: a veces viene como string con JSON adentro
+            if (typeof datos === 'string') {
+                const inner = datos.trim();
+                if (inner.startsWith('{') || inner.startsWith('[')) {
+                    datos = JSON.parse(inner);
+                }
+            }
             
             // Si tiene estructura de array (forma_pago, disponibilidad, etc)
             if (datos.forma_pago || datos.disponibilidad || datos.regimen) {
