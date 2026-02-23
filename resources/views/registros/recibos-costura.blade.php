@@ -30,9 +30,270 @@
 
 @endsection
 
+<!-- Contenedor para Toast Notifications -->
+<div class="toast-container" id="toastContainer"></div>
+
 @push('styles')
 <!-- Styles Component -->
 <x-recibos.recibos-costura-styles />
+
+<!-- Estilos adicionales para el modal de agregar proceso -->
+<style>
+.add-proceso-modal.show {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    z-index: 10000000 !important;
+}
+
+.add-proceso-modal.show .add-proceso-content {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    animation: slideUp 0.3s ease-out !important;
+    margin: auto !important;
+    position: relative !important;
+    background: white !important;
+    border-radius: 16px !important;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3) !important;
+    max-width: 500px !important;
+    width: 90% !important;
+    max-height: 90vh !important;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.area-badge-clickable {
+    position: relative;
+    overflow: hidden;
+}
+
+.area-badge-clickable::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.area-badge-clickable:hover::before {
+    left: 100%;
+}
+
+/* Colores personalizados para badges de área */
+.badge.bg-purple {
+    background-color: #8b5cf6 !important;
+    color: white !important;
+}
+
+.badge.bg-teal {
+    background-color: #14b8a6 !important;
+    color: white !important;
+}
+
+.badge.bg-orange {
+    background-color: #f97316 !important;
+    color: white !important;
+}
+
+.badge.bg-pink {
+    background-color: #ec4899 !important;
+    color: white !important;
+}
+
+/* Mejorar contraste para badges existentes */
+.badge.bg-success {
+    background-color: #22c55e !important;
+    color: white !important;
+}
+
+.badge.bg-info {
+    background-color: #06b6d4 !important;
+    color: white !important;
+}
+
+.badge.bg-primary {
+    background-color: #3b82f6 !important;
+    color: white !important;
+}
+
+.badge.bg-warning {
+    background-color: #f59e0b !important;
+    color: white !important;
+}
+
+.badge.bg-secondary {
+    background-color: #6b7280 !important;
+    color: white !important;
+}
+
+/* Toast Notifications */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 999999;
+    pointer-events: none;
+}
+
+.toast {
+    background: white;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 300px;
+    max-width: 400px;
+    pointer-events: auto;
+    animation: slideInRight 0.3s ease-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.toast::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: shimmer 2s infinite;
+}
+
+.toast.success {
+    border-left-color: #22c55e;
+    background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+}
+
+.toast.error {
+    border-left-color: #ef4444;
+    background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
+}
+
+.toast.info {
+    border-left-color: #3b82f6;
+    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+}
+
+.toast-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-weight: bold;
+    color: white;
+    font-size: 14px;
+}
+
+.toast.success .toast-icon {
+    background: #22c55e;
+}
+
+.toast.error .toast-icon {
+    background: #ef4444;
+}
+
+.toast.info .toast-icon {
+    background: #3b82f6;
+}
+
+.toast-content {
+    flex: 1;
+}
+
+.toast-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 2px;
+    color: #1f2937;
+}
+
+.toast-message {
+    font-size: 13px;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
+.toast-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #6b7280;
+    transition: all 0.2s ease;
+}
+
+.toast-close:hover {
+    background: rgba(0, 0, 0, 0.2);
+    color: #1f2937;
+}
+
+.toast.removing {
+    animation: slideOutRight 0.3s ease-out forwards;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+</style>
 @endpush
 
 @push('scripts')
@@ -316,6 +577,17 @@ window.filterCheckboxOptions = function(filterType) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('[DOMContentLoaded] 📄 Cargando nombres de prendas en recibos-costura');
     
+    // Diagnóstico del sistema de agregar proceso
+    console.log('[DIAGNÓSTICO] Verificando sistema de agregar proceso desde badge...');
+    console.log('[DIAGNÓSTICO] Elementos disponibles:', {
+        modalAddProceso: !!document.getElementById('addProcesoModal'),
+        btnConfirmAddProceso: !!document.getElementById('btnConfirmAddProceso'),
+        procesoArea: !!document.getElementById('procesoArea'),
+        procesoEncargado: !!document.getElementById('procesoEncargado'),
+        'typeof handleAgregarProceso': typeof handleAgregarProceso,
+        'typeof verificarDatosAntesDeGuardar': typeof verificarDatosAntesDeGuardar
+    });
+    
     // Obtener todas las filas de recibos
     const filasRecibos = document.querySelectorAll('#tablaRecibosBody tr[data-orden-id]');
     
@@ -364,6 +636,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 descripcionElemento.textContent = 'Sin pedido';
             }
         }
+    });
+    
+    // Verificar badges clickeables
+    const badgesArea = document.querySelectorAll('.area-badge-clickable');
+    console.log(`[DIAGNÓSTICO] Encontrados ${badgesArea.length} badges de área clickeables`);
+    
+    badgesArea.forEach((badge, index) => {
+        const onclick = badge.getAttribute('onclick');
+        console.log(`[DIAGNÓSTICO] Badge ${index}:`, {
+            text: badge.textContent.trim(),
+            onclick: onclick ? onclick.substring(0, 100) + '...' : 'sin onclick'
+        });
     });
 });
 
@@ -593,6 +877,440 @@ function abrirModalSeguimientoDirecto(pedidoId, prendaIdTarget) {
             });
     } else {
         console.warn('Contenido del modal de seguimiento no encontrado');
+    }
+}
+
+// Función para abrir el modal de agregar proceso desde el badge del área
+function abrirModalAgregarProcesoDesdeArea(areaSeleccionada, pedidoId, prendaId) {
+    console.log('[abrirModalAgregarProcesoDesdeArea] 📌 Área seleccionada:', areaSeleccionada, 'Pedido:', pedidoId, 'Prenda:', prendaId);
+    
+    // Cerrar cualquier dropdown abierto
+    closeDropdownRecibos();
+    
+    // Verificar que tengamos los IDs necesarios
+    if (!pedidoId) {
+        console.error('[abrirModalAgregarProcesoDesdeArea] No se proporcionó ID del pedido');
+        alert('No se puede identificar el pedido asociado');
+        return;
+    }
+    
+    // Cargar datos del pedido y prenda antes de abrir el modal
+    cargarDatosParaAgregarProceso(pedidoId, prendaId, areaSeleccionada)
+        .then(() => {
+            // Verificación adicional antes de abrir el modal
+            console.log('[abrirModalAgregarProcesoDesdeArea] Verificación pre-apertura:', {
+                hasOrderData: !!window.currentOrderData,
+                hasPrendaData: !!window.currentPrendaData,
+                orderNumero: window.currentOrderData?.numero_pedido,
+                prendaId: window.currentPrendaData?.id
+            });
+            
+            if (!window.currentOrderData || !window.currentPrendaData) {
+                throw new Error('No se pudieron cargar los datos necesarios');
+            }
+            
+            // Abrir el modal de agregar proceso
+            const modal = document.getElementById('addProcesoModal');
+            if (!modal) {
+                console.error('[abrirModalAgregarProcesoDesdeArea] Modal no encontrado');
+                alert('Modal de agregar proceso no disponible');
+                return;
+            }
+            
+            // Guardar datos en atributos data- para persistencia
+            modal.setAttribute('data-pedido-id', pedidoId);
+            modal.setAttribute('data-prenda-id', prendaId || '');
+            modal.setAttribute('data-area', areaSeleccionada);
+            
+            // Mostrar el modal
+            modal.style.display = 'flex';
+            modal.classList.add('show');
+            
+            // Seleccionar automáticamente el área en el select
+            const selectArea = document.getElementById('procesoArea');
+            if (selectArea) {
+                selectArea.value = areaSeleccionada;
+                console.log('[abrirModalAgregarProcesoDesdeArea] ✅ Área seleccionada automáticamente:', areaSeleccionada);
+            }
+            
+            // Limpiar el campo de encargado y enfocarlo
+            const inputEncargado = document.getElementById('procesoEncargado');
+            if (inputEncargado) {
+                inputEncargado.value = '';
+                inputEncargado.focus();
+            }
+            
+            // Agregar listener adicional para verificar datos al hacer clic en "Agregar Proceso"
+            const btnConfirm = document.getElementById('btnConfirmAddProceso');
+            if (btnConfirm) {
+                // Remover listener anterior si existe
+                btnConfirm.removeEventListener('click', verificarDatosAntesDeGuardar);
+                // Agregar nuevo listener
+                btnConfirm.addEventListener('click', verificarDatosAntesDeGuardar);
+            }
+            
+            console.log('[abrirModalAgregarProcesoDesdeArea] ✅ Modal abierto con datos cargados');
+        })
+        .catch(error => {
+            console.error('[abrirModalAgregarProcesoDesdeArea] Error al cargar datos:', error);
+            alert('Error al cargar los datos del pedido: ' + error.message);
+        });
+}
+
+// Función de verificación antes de guardar
+function verificarDatosAntesDeGuardar(event) {
+    console.log('[verificarDatosAntesDeGuardar] Verificando datos antes de guardar...');
+    console.log('[verificarDatosAntesDeGuardar] Estado actual:', {
+        hasOrderData: !!window.currentOrderData,
+        hasPrendaData: !!window.currentPrendaData,
+        orderData: window.currentOrderData,
+        prendaData: window.currentPrendaData,
+        'typeof handleAgregarProceso': typeof handleAgregarProceso
+    });
+    
+    // Si no hay datos, intentar cargarlos desde las variables del modal
+    if (!window.currentOrderData || !window.currentPrendaData) {
+        console.log('[verificarDatosAntesDeGuardar] Intentando recuperar datos desde atributos del modal...');
+        
+        // Intentar obtener los datos desde los atributos data- que guardamos
+        const modal = document.getElementById('addProcesoModal');
+        if (modal) {
+            const pedidoId = modal.getAttribute('data-pedido-id');
+            const prendaId = modal.getAttribute('data-prenda-id');
+            const area = modal.getAttribute('data-area');
+            
+            console.log('[verificarDatosAntesDeGuardar] Datos encontrados en modal:', {pedidoId, prendaId, area});
+            
+            if (pedidoId) {
+                // Intentar cargar datos nuevamente
+                cargarDatosParaAgregarProceso(pedidoId, prendaId, area)
+                    .then(() => {
+                        console.log('[verificarDatosAntesDeGuardar] Datos recargados, reintentando guardar...');
+                        if (window.currentOrderData && window.currentPrendaData) {
+                            handleAgregarProcesoDesdeBadge();
+                        } else {
+                            alert('Error: No se pudieron cargar los datos necesarios. Por favor, recarga la página.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('[verificarDatosAntesDeGuardar] Error al recargar datos:', error);
+                        alert('Error al cargar los datos: ' + error.message);
+                    });
+                
+                event.preventDefault();
+                event.stopPropagation();
+                return false;
+            }
+        }
+    }
+    
+    if (!window.currentOrderData || !window.currentPrendaData) {
+        console.error('[verificarDatosAntesDeGuardar] ❌ Faltan datos necesarios');
+        alert('Error: No hay datos de la prenda o pedido. Por favor, recarga la página e intenta nuevamente.');
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+    }
+    
+    console.log('[verificarDatosAntesDeGuardar] ✅ Datos verificados, procediendo con handleAgregarProceso');
+    
+    // Llamar a la función específica para recibos-costura
+    if (typeof handleAgregarProcesoDesdeBadge === 'function') {
+        handleAgregarProcesoDesdeBadge();
+    } else {
+        console.error('[verificarDatosAntesDeGuardar] handleAgregarProcesoDesdeBadge no disponible');
+        alert('Error: Sistema no disponible. Por favor, recarga la página.');
+    }
+}
+
+// Función específica para agregar proceso desde badge en recibos-costura
+async function handleAgregarProcesoDesdeBadge() {
+    try {
+        console.log('[handleAgregarProcesoDesdeBadge] Iniciando agregado de proceso desde badge...');
+        
+        // Mostrar indicador de carga
+        const btnContent = document.getElementById('addProcesoButtonContent');
+        const btnLoading = document.getElementById('addProcesoButtonLoading');
+        const btnConfirm = document.getElementById('btnConfirmAddProceso');
+        
+        if (btnContent && btnLoading && btnConfirm) {
+            btnContent.style.display = 'none';
+            btnLoading.style.display = 'flex';
+            btnConfirm.disabled = true;
+        }
+
+        const area = document.getElementById('procesoArea').value;
+        const encargado = document.getElementById('procesoEncargado').value;
+
+        if (!area) {
+            showError('Por favor selecciona un área/proceso');
+            // Ocultar indicador de carga
+            if (btnContent && btnLoading && btnConfirm) {
+                btnContent.style.display = 'flex';
+                btnLoading.style.display = 'none';
+                btnConfirm.disabled = false;
+            }
+            return;
+        }
+
+        if (!encargado.trim()) {
+            showError('Por favor ingresa el nombre del encargado');
+            // Ocultar indicador de carga
+            if (btnContent && btnLoading && btnConfirm) {
+                btnContent.style.display = 'flex';
+                btnLoading.style.display = 'none';
+                btnConfirm.disabled = false;
+            }
+            return;
+        }
+
+        if (!window.currentOrderData || !window.currentPrendaData) {
+            showError('No hay datos de la prenda o pedido');
+            // Ocultar indicador de carga
+            if (btnContent && btnLoading && btnConfirm) {
+                btnContent.style.display = 'flex';
+                btnLoading.style.display = 'none';
+                btnConfirm.disabled = false;
+            }
+            return;
+        }
+
+        console.log('[handleAgregarProcesoDesdeBadge] Agregando proceso:', {
+            area,
+            encargado,
+            pedido_produccion_id: window.currentOrderData.numero_pedido,
+            prenda_id: window.currentPrendaData.id,
+            currentOrderData: window.currentOrderData
+        });
+
+        // Enviar datos al backend - mismo endpoint que usa el modal de seguimiento
+        const response = await fetch('/seguimiento-proceso/guardar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            },
+            body: JSON.stringify({
+                pedido_produccion_id: window.currentOrderData.numero_pedido,
+                prenda_id: window.currentPrendaData.id,
+                area: area,
+                encargado: encargado,
+                estado: 'Pendiente'
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al agregar proceso');
+        }
+
+        const result = await response.json();
+        console.log('[handleAgregarProcesoDesdeBadge] Proceso agregado:', result);
+
+        // Limpiar formulario
+        limpiarFormularioProceso();
+
+        // Cerrar modal de agregar proceso
+        const modal = document.getElementById('addProcesoModal');
+        if (modal) {
+            modal.classList.remove('show');
+            modal.style.display = 'none';
+        }
+
+        // Mostrar mensaje de éxito
+        showSuccess('Proceso agregado correctamente');
+        
+        // Recargar la página para mostrar el nuevo proceso
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
+
+    } catch (error) {
+        console.error('[handleAgregarProcesoDesdeBadge] Error:', error);
+        showError('Error al agregar proceso: ' + error.message);
+    } finally {
+        // Ocultar indicador de carga
+        const btnContent = document.getElementById('addProcesoButtonContent');
+        const btnLoading = document.getElementById('addProcesoButtonLoading');
+        const btnConfirm = document.getElementById('btnConfirmAddProceso');
+        
+        if (btnContent && btnLoading && btnConfirm) {
+            btnContent.style.display = 'flex';
+            btnLoading.style.display = 'none';
+            btnConfirm.disabled = false;
+        }
+    }
+}
+
+// Función para limpiar formulario de proceso
+function limpiarFormularioProceso() {
+    const selectArea = document.getElementById('procesoArea');
+    const inputEncargado = document.getElementById('procesoEncargado');
+    
+    if (selectArea) selectArea.value = '';
+    if (inputEncargado) inputEncargado.value = '';
+}
+
+// Funciones para mostrar mensajes (Toast Notifications)
+function showSuccess(message, title = 'Éxito') {
+    console.log('[showSuccess] Mostrando toast de éxito:', message);
+    showToast(message, 'success', title);
+}
+
+function showError(message, title = 'Error') {
+    console.log('[showError] Mostrando toast de error:', message);
+    showToast(message, 'error', title);
+}
+
+// Función principal para mostrar toast notifications
+function showToast(message, type = 'info', title = '') {
+    // Crear o obtener el contenedor de toasts
+    let container = document.getElementById('toastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+    
+    // Crear el elemento toast
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    // Determinar el icono según el tipo
+    let icon = '';
+    if (type === 'success') {
+        icon = '✓';
+    } else if (type === 'error') {
+        icon = '✕';
+    } else {
+        icon = 'ℹ';
+    }
+    
+    // Generar ID único para este toast
+    const toastId = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    toast.id = toastId;
+    
+    // Construir el HTML del toast
+    toast.innerHTML = `
+        <div class="toast-icon">${icon}</div>
+        <div class="toast-content">
+            ${title ? `<div class="toast-title">${title}</div>` : ''}
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" onclick="removeToast('${toastId}')">×</button>
+    `;
+    
+    // Agregar el toast al contenedor
+    container.appendChild(toast);
+    
+    // Auto-eliminar después de 5 segundos
+    setTimeout(() => {
+        removeToast(toastId);
+    }, 5000);
+    
+    console.log(`[showToast] Toast ${type} mostrado:`, { id: toastId, message, title });
+}
+
+// Función para eliminar un toast específico
+function removeToast(toastId) {
+    const toast = document.getElementById(toastId);
+    if (toast && !toast.classList.contains('removing')) {
+        toast.classList.add('removing');
+        
+        // Esperar a que termine la animación antes de eliminar
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+        
+        console.log(`[removeToast] Toast eliminado:`, toastId);
+    }
+}
+
+// Función para limpiar todos los toasts
+function clearAllToasts() {
+    const container = document.getElementById('toastContainer');
+    if (container) {
+        const toasts = container.querySelectorAll('.toast');
+        toasts.forEach(toast => {
+            removeToast(toast.id);
+        });
+    }
+}
+
+// Función para cargar los datos necesarios para agregar proceso
+async function cargarDatosParaAgregarProceso(pedidoId, prendaId, areaSeleccionada) {
+    console.log('[cargarDatosParaAgregarProceso] Cargando datos para pedido:', pedidoId, 'prenda:', prendaId);
+    
+    try {
+        // Cargar datos básicos del pedido
+        const response = await fetch(`/registros/${pedidoId}/recibos-datos`);
+        if (!response.ok) throw new Error('Error al cargar datos del pedido');
+        
+        const result = await response.json();
+        const data = result.data || result;
+        
+        console.log('[cargarDatosParaAgregarProceso] Datos recibidos del endpoint:', data);
+        
+        // Asegurar que la estructura de datos sea compatible con handleAgregarProceso
+        // El endpoint /seguimiento-proceso/guardar espera:
+        // - pedido_produccion_id: el ID del pedido (numero_pedido)
+        // - prenda_id: el ID de la prenda
+        const orderData = {
+            ...data,
+            numero_pedido: data.numero_pedido || data.id || pedidoId,
+            pedido: data.numero_pedido || data.id || pedidoId
+        };
+        
+        // Establecer variables globales para que handleAgregarProceso funcione
+        window.currentOrderData = orderData;
+        window.currentPedidoId = pedidoId;
+        window.currentPrendaId = prendaId;
+        window.currentArea = areaSeleccionada;
+        
+        // Buscar la prenda específica en los datos del pedido
+        if (data.prendas && Array.isArray(data.prendas)) {
+            let prendaEncontrada = null;
+            
+            if (prendaId) {
+                // Buscar por ID si se proporcionó
+                prendaEncontrada = data.prendas.find(p => 
+                    String(p.id) === String(prendaId) || 
+                    String(p.prenda_pedido_id) === String(prendaId)
+                );
+            }
+            
+            // Si no se encuentra o no se proporcionó ID, usar la primera prenda
+            if (!prendaEncontrada && data.prendas.length > 0) {
+                prendaEncontrada = data.prendas[0];
+                console.log('[cargarDatosParaAgregarProceso] Usando primera prenda como fallback');
+            }
+            
+            if (prendaEncontrada) {
+                window.currentPrendaData = prendaEncontrada;
+                console.log('[cargarDatosParaAgregarProceso] ✅ Prenda encontrada:', prendaEncontrada.nombre_prenda || prendaEncontrada.nombre);
+            } else {
+                throw new Error('No se encontró ninguna prenda para este pedido');
+            }
+        } else {
+            throw new Error('El pedido no tiene prendas asociadas');
+        }
+        
+        console.log('[cargarDatosParaAgregarProceso] ✅ Datos cargados correctamente');
+        console.log('[cargarDatosParaAgregarProceso] currentOrderData:', window.currentOrderData);
+        console.log('[cargarDatosParaAgregarProceso] currentPrendaData:', window.currentPrendaData);
+        console.log('[cargarDatosParaAgregarProceso] Verificación final:', {
+            hasOrderData: !!window.currentOrderData,
+            hasPrendaData: !!window.currentPrendaData,
+            orderNumero: window.currentOrderData?.numero_pedido,
+            prendaId: window.currentPrendaData?.id,
+            'pedido_produccion_id_para_endpoint': window.currentOrderData?.numero_pedido
+        });
+        
+    } catch (error) {
+        console.error('[cargarDatosParaAgregarProceso] Error:', error);
+        throw error;
     }
 }
 

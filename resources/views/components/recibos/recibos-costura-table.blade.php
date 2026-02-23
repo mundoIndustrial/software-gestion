@@ -282,18 +282,23 @@
                                 $areaRecibo = $recibo['pedido_info']['area'] ?? $recibo['area'] ?? 'Insumos';
                                 $areaBadge = 'bg-secondary';
                                 if (strpos($areaRecibo, 'Corte') !== false) {
-                                    $areaBadge = 'bg-success';
+                                    $areaBadge = 'bg-success'; // Verde - bueno para corte
                                 } elseif (strpos($areaRecibo, 'Insumos') !== false) {
-                                    $areaBadge = 'bg-info';
+                                    $areaBadge = 'bg-info'; // Azul claro - neutro para insumos
                                 } elseif (strpos($areaRecibo, 'Costura') !== false) {
-                                    $areaBadge = 'bg-primary';
+                                    $areaBadge = 'bg-primary'; // Azul principal - importante
                                 } elseif (strpos($areaRecibo, 'Estampado') !== false) {
-                                    $areaBadge = 'bg-warning';
+                                    $areaBadge = 'bg-warning'; // Amarillo/ámbar - visible para estampado
                                 } elseif (strpos($areaRecibo, 'Bordado') !== false) {
-                                    $areaBadge = 'bg-danger';
+                                    $areaBadge = 'bg-purple'; // Púrpura - elegante para bordado (cambio de bg-danger)
                                 }
                             @endphp
-                            <span class="badge {{ $areaBadge }}">
+                            <span class="badge {{ $areaBadge }} area-badge-clickable" 
+                                  style="cursor: pointer; transition: all 0.2s ease;"
+                                  title="Click para agregar proceso"
+                                  onclick="abrirModalAgregarProcesoDesdeArea('{{ $areaRecibo }}', {{ $recibo['pedido_produccion_id'] ?? 'null' }}, {{ $recibo['prenda_id'] ?? 'null' }})"
+                                  onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.2)';"
+                                  onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
                                 {{ $areaRecibo }}
                             </span>
                         </td>
@@ -443,9 +448,45 @@
                             <span class="fecha-estimada-span text-muted">-</span>
                         </td>
                         
-                        <!-- Encargado orden (No aplica para recibos) -->
+                        <!-- Encargado orden (Proceso más reciente) -->
                         <td>
-                            <span class="text-muted">-</span>
+                            @php
+                                $encargadoProceso = '-';
+                                
+                                // Obtener datos de la prenda directamente desde la base de datos
+                                if (isset($recibo['pedido_produccion_id']) && isset($recibo['prenda_id'])) {
+                                    try {
+                                        // Buscar la prenda con sus procesos usando la relación correcta
+                                        $prendaConProcesos = \App\Models\PrendaPedido::with(['procesosPrenda' => function($query) {
+                                            $query->orderBy('created_at', 'desc');
+                                        }])->find($recibo['prenda_id']);
+                                        
+                                        if ($prendaConProcesos && $prendaConProcesos->procesosPrenda && $prendaConProcesos->procesosPrenda->count() > 0) {
+                                            $procesoMasReciente = $prendaConProcesos->procesosPrenda->first();
+                                            \Log::info('[DEBUG] Proceso más reciente encontrado: ' . json_encode([
+                                                'id' => $procesoMasReciente->id,
+                                                'proceso' => $procesoMasReciente->proceso,
+                                                'encargado' => $procesoMasReciente->encargado,
+                                                'created_at' => $procesoMasReciente->created_at
+                                            ]));
+                                            
+                                            if ($procesoMasReciente && !empty($procesoMasReciente->encargado)) {
+                                                $encargadoProceso = htmlspecialchars($procesoMasReciente->encargado);
+                                                \Log::info('[DEBUG] Encargado encontrado desde BD: ' . $encargadoProceso . ' para prenda ' . $recibo['prenda_id']);
+                                            } else {
+                                                \Log::info('[DEBUG] Proceso más reciente sin encargado');
+                                            }
+                                        } else {
+                                            \Log::info('[DEBUG] Prenda sin procesos - Prenda ID: ' . $recibo['prenda_id']);
+                                        }
+                                    } catch (\Exception $e) {
+                                        \Log::error('[DEBUG] Error obteniendo datos de prenda: ' . $e->getMessage());
+                                    }
+                                } else {
+                                    \Log::info('[DEBUG] No hay pedido_produccion_id o prenda_id');
+                                }
+                            @endphp
+                            <span style="font-weight: 600; color: #374151;">{{ $encargadoProceso }}</span>
                         </td>
                     </tr>
                 @endforeach

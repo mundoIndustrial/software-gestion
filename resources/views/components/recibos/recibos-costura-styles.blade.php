@@ -139,7 +139,6 @@
     vertical-align: middle !important;
     border-right: 1px solid #f1f5f9;
     font-size: 11px !important;
-    color: #475569;
 }
 
 /* Forzar mismo ancho para Día de entrega y Total de días en el cuerpo */

@@ -1748,32 +1748,48 @@ const trackingTableStyles = `
       // Actualizar el header del recibo con el número más reciente
       const reciboHeaderElement = document.getElementById('trackingPrendaReciboHeader');
       if (reciboHeaderElement) {
+        // Debug: Ver qué datos tenemos
+        console.log('[DEBUG] Datos de prenda para recibo:', {
+          'ultimo_recibo_numero': prenda.ultimo_recibo_numero,
+          'consecutivos': prenda.consecutivos,
+          'consecutivos_length': prenda.consecutivos ? prenda.consecutivos.length : 'undefined'
+        });
+        
         // Mostrar el número de recibo más reciente
         const numeroRecibo = prenda.ultimo_recibo_numero;
         if (numeroRecibo && numeroRecibo !== '-') {
           reciboHeaderElement.textContent = `Recibo #${numeroRecibo}`;
+          console.log('[DEBUG] Usando ultimo_recibo_numero:', numeroRecibo);
         } else {
           reciboHeaderElement.textContent = 'Sin recibo';
+          console.log('[DEBUG] ultimo_recibo_numero vacío o inválido');
         }
       }
       
       // Determinar número de recibo desde la tabla consecutivos_recibos_pedidos
       let numeroRecibo = 'Sin recibo';
       if (prenda.consecutivos && prenda.consecutivos.length > 0) {
+        console.log('[DEBUG] Procesando consecutivos:', prenda.consecutivos);
+        
         // Buscar el primer recibo activo
         const reciboActivo = prenda.consecutivos.find(r => r.activo === 1);
         if (reciboActivo) {
           numeroRecibo = `${reciboActivo.tipo_recibo} #${reciboActivo.consecutivo_actual}`;
+          console.log('[DEBUG] Recibo activo encontrado:', reciboActivo);
         } else if (prenda.consecutivos[0]) {
           // Si no hay activo, tomar el primero
           const primerRecibo = prenda.consecutivos[0];
           numeroRecibo = `${primerRecibo.tipo_recibo} #${primerRecibo.consecutivo_actual}`;
+          console.log('[DEBUG] Usando primer recibo:', primerRecibo);
         }
+      } else {
+        console.log('[DEBUG] No hay consecutivos en la prenda');
       }
       
       // Actualizar tanto el subtítulo del header como el del timeline
       if (reciboHeaderElement) {
         reciboHeaderElement.textContent = numeroRecibo;
+        console.log('[DEBUG] Header actualizado con:', numeroRecibo);
       }
       
       const reciboElement = document.getElementById('trackingPrendaRecibo');
