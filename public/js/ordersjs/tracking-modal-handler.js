@@ -456,6 +456,48 @@ const trackingTableStyles = `
   border: 1px solid #93c5fd;
 }
 
+.estado-badge.estado-en-ejecucion {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+.estado-badge.estado-no-iniciado {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+.estado-badge.estado-pendiente_cartera {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.estado-badge.estado-rechazado_cartera {
+  background: #fecaca;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.estado-badge.estado-pendiente_insumos {
+  background: #fed7aa;
+  color: #9a3412;
+  border: 1px solid #fdba74;
+}
+
+.estado-badge.estado-devuelto_a_asesora {
+  background: #e9d5ff;
+  color: #6b21a8;
+  border: 1px solid #d8b4fe;
+}
+
+.estado-badge.estado-pendiente_supervisor {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
 .estado-badge.estado-pendiente {
   background: #fef3c7;
   color: #92400e;
@@ -1440,26 +1482,9 @@ const trackingTableStyles = `
         area = prenda.area;
       }
       
-      // Determinar estado general basado en tipos de recibo de procesos
-      let estadoGeneral = 'Sin procesos';
-      let procesosParaEstado = [];
-      
-      if (prenda.tipos_recibo_procesos && prenda.tipos_recibo_procesos.length > 0) {
-        procesosParaEstado = prenda.tipos_recibo_procesos;
-      } else if (prenda.procesos && prenda.procesos.length > 0) {
-        procesosParaEstado = prenda.procesos;
-      }
-      
-      if (procesosParaEstado.length > 0) {
-        const estados = procesosParaEstado.map(p => p.estado || 'PENDIENTE');
-        if (estados.every(e => e === 'COMPLETADO')) {
-          estadoGeneral = 'Completado';
-        } else if (estados.some(e => e === 'EN EJECUCIÓN')) {
-          estadoGeneral = 'En ejecución';
-        } else {
-          estadoGeneral = 'Pendiente';
-        }
-      }
+      // Usar el estado del pedido en lugar del estado calculado de procesos
+      const estadoPedido = currentOrderData?.estado || 'Sin estado';
+      const estadoFormateado = estadoPedido.replace(/_/g, ' ').toUpperCase();
       
       // Determinar si el botón debe estar desactivado (para prendas de bodega)
       const esDeBodega = prenda.de_bodega || false;
@@ -1487,7 +1512,7 @@ const trackingTableStyles = `
           </td>
           <td class="prendas-table-cell">${area}</td>
           <td class="prendas-table-cell">
-            <span class="estado-badge estado-${estadoGeneral.toLowerCase().replace(' ', '-')}">${estadoGeneral}</span>
+            <span class="estado-badge estado-${estadoPedido.toLowerCase().replace(/_/g, '-')}">${estadoFormateado}</span>
           </td>
           <td class="prendas-table-cell acciones-cell">
             <button class="${botonClass}" ${botonDisabled} onclick="showPrendaTrackingFromTable(${index})" title="${botonTitle}">

@@ -284,8 +284,8 @@
                                         <button 
                                             class="btn-edit-novedades"
                                             data-full-novedades="{{ addslashes($orden->novedades ?? '') }}"
-                                            onclick="event.stopPropagation(); openNovedadesModal('{{ $orden->numero_pedido ?? 'sin-numero' }}', `{{ addslashes($orden->novedades ?? '') }}`)"
-                                            title="Editar novedades"
+                                            onclick="event.stopPropagation(); abrirModalNovedadesAdvanced('{{ $orden->numero_pedido ?? 'sin-numero' }}')"
+                                            title="Gestionar novedades"
                                             type="button">
                                             @if($orden->novedades)
                                                 <span class="novedades-text">{{ Str::limit($orden->novedades, 50, '...') }}</span>
@@ -1284,6 +1284,9 @@
     @include('components.modals.recibos-process-selector')
     @include('components.modals.recibos-intermediate-modal')
     @include('components.modals.recibo-dinamico-modal')
+
+    <!-- MODAL AVANZADO DE NOVEDADES -->
+    @include('components.modals.novedades-advanced-modal')
 
     <!-- FILTER SYSTEM -->
     <script src="{{ asset('js/ordersjs/filter-system.js') }}?v={{ time() }}"></script>

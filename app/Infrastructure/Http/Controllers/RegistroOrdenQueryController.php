@@ -1896,15 +1896,31 @@ class RegistroOrdenQueryController extends Controller
     public function getNovedades($id)
     {
         try {
-            $pedido = PedidoProduccion::findOrFail($id);
+            // Buscar por numero_pedido (no por id)
+            $pedido = PedidoProduccion::where('numero_pedido', $id)->firstOrFail();
+            
+            \Log::info('[getNovedades] Pedido encontrado', [
+                'numero_pedido' => $id,
+                'pedido_id' => $pedido->id,
+                'novedades_length' => strlen($pedido->novedades ?? '')
+            ]);
             
             return response()->json([
                 'novedades' => $pedido->novedades ?? ''
             ]);
             
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::error('[getNovedades] Pedido no encontrado', [
+                'numero_pedido' => $id
+            ]);
+            
+            return response()->json([
+                'error' => 'Pedido no encontrado',
+                'message' => 'No se encontró un pedido con el número: ' . $id
+            ], 404);
         } catch (\Exception $e) {
             \Log::error('[getNovedades] Error: ' . $e->getMessage(), [
-                'pedido_id' => $id,
+                'numero_pedido' => $id,
                 'trace' => $e->getTraceAsString()
             ]);
             
