@@ -1232,6 +1232,7 @@
                     Cancelar
                 </button>
                 <button 
+                    id="btnAprobarProduccion"
                     onclick="confirmarEnvioProduccion()"
                     class="flex-1 px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition text-sm"
                 >
@@ -2489,6 +2490,29 @@
         window.reciboParaProduccion = null;
         window.consecutivoRecibo = null;
         window.pedidoParaProduccion = null;
+        
+        // Restaurar botón al cerrar modal
+        restaurarBotonAprobar();
+    }
+    
+    /**
+     * Restaura el estado original del botón Aprobar
+     */
+    function restaurarBotonAprobar() {
+        const btnAprobar = document.getElementById('btnAprobarProduccion');
+        if (btnAprobar) {
+            // Limpiar interval de animación
+            if (btnAprobar.loadingInterval) {
+                clearInterval(btnAprobar.loadingInterval);
+                btnAprobar.loadingInterval = null;
+            }
+            
+            btnAprobar.disabled = false;
+            btnAprobar.innerHTML = 'Aprobar';
+            btnAprobar.style.fontSize = '';
+            btnAprobar.classList.add('hover:bg-blue-700');
+            btnAprobar.classList.remove('opacity-75', 'cursor-not-allowed');
+        }
     }
     
     /**
@@ -2499,6 +2523,26 @@
         const pedidoId = window.pedidoParaProduccion;
         
         if (!reciboId && !pedidoId) return;
+        
+        // Bloquear botón y mostrar "Cargando..."
+        const btnAprobar = document.getElementById('btnAprobarProduccion');
+        const textoOriginal = btnAprobar.innerHTML;
+        btnAprobar.disabled = true;
+        btnAprobar.innerHTML = 'Cargando';
+        btnAprobar.style.fontSize = '14px';
+        
+        // Animación de puntos
+        let dots = 0;
+        const loadingInterval = setInterval(() => {
+            dots = (dots + 1) % 4;
+            btnAprobar.innerHTML = 'Cargando' + '.'.repeat(dots);
+        }, 500);
+        
+        // Guardar interval para limpiar después
+        btnAprobar.loadingInterval = loadingInterval;
+        
+        btnAprobar.classList.remove('hover:bg-blue-700');
+        btnAprobar.classList.add('opacity-75', 'cursor-not-allowed');
         
         const proximoEstado = 'En Ejecución';
         
@@ -2551,12 +2595,18 @@
                     window.location.reload();
                 }, 2000);
             } else {
+                // Restaurar botón
+                restaurarBotonAprobar();
                 showToast('Error al cambiar el estado: ' + (data.message || ''), 'error');
             }
         })
         .catch(error => {
             // Ocultar loading overlay
             document.getElementById('loadingOverlay').classList.remove('active');
+            
+            // Restaurar botón
+            restaurarBotonAprobar();
+            
             showToast('Error al cambiar el estado', 'error');
         });
     }

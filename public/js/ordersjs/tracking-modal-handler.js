@@ -158,10 +158,10 @@ const trackingTableStyles = `
   background: white;
   border-radius: 12px;
   max-width: 95vw;
-  max-height: 90vh;
+  max-height: 95vh;  /* Aumentado para permitir más espacio */
   width: 1200px;
   height: auto;
-  overflow: hidden;
+  overflow-y: auto;  /* Permitir scroll vertical */
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   transform: scale(0.95);
   transition: all 0.3s ease;
@@ -234,7 +234,7 @@ const trackingTableStyles = `
 
 .tracking-prendas-selector-body {
   padding: 24px;
-  overflow-y: auto;
+  overflow: hidden;  /* Sin scroll - el scroll es del contenedor principal */
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -251,12 +251,15 @@ const trackingTableStyles = `
   background: #f8fafc;
   border-radius: 8px;
   border: 1px solid #e5e7eb;
+  /* Sin scroll individual - el scroll es del modal completo */
 }
 
 .tracking-prendas-info-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  min-width: 140px;
+  flex-shrink: 0;
 }
 
 .tracking-prendas-info-label {
@@ -295,7 +298,7 @@ const trackingTableStyles = `
   width: 100%;
   height: 100%;
   min-height: 0; /* Permitir que el contenedor se encoja */
-  overflow: hidden;
+  overflow: visible; /* Permitir que el scroll del contenedor principal funcione */
   background: white;
   border-radius: 8px;
   border: 1px solid #e5e7eb;
@@ -305,7 +308,7 @@ const trackingTableStyles = `
 .prendas-table-container {
   background: white;
   border-radius: 8px;
-  overflow: hidden;
+  overflow: visible;  /* Permitir scroll */
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   margin: 0;
   width: 100%;
@@ -397,14 +400,28 @@ const trackingTableStyles = `
 
 .bodega-badge {
   display: inline-block;
-  font-size: 10px;
-  padding: 2px 6px;
+  font-size: 9px;
+  padding: 2px 8px;
   background: #f59e0b;  /* Amarillo */
   color: #92400e;      /* Texto oscuro para contraste */
   border-radius: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.confeciona-badge {
+  display: inline-block;
+  font-size: 9px;
+  padding: 2px 8px;
+  background: #10b981;  /* Verde */
+  color: #ffffff;      /* Texto blanco para contraste */
+  border-radius: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 
 .procesos-cell {
@@ -499,6 +516,27 @@ const trackingTableStyles = `
 .btn-ver-seguimiento:active {
   transform: translateY(0);
   box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.btn-ver-seguimiento.disabled {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-ver-seguimiento.disabled:hover {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-ver-seguimiento.disabled:active {
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-ver-seguimiento.disabled svg {
+  opacity: 0.7;
 }
 
 .btn-ver-seguimiento svg {
@@ -1161,21 +1199,20 @@ const trackingTableStyles = `
       trackingOrderStatus.textContent = (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
     }
     if (trackingOrderRecibo) {
-      // Obtener el número de recibo más reciente de todo el pedido
-      let ultimoReciboGeneral = '-';
+      // Buscar específicamente recibos de COSTURA (excluir COSTURA-BODEGA)
+      let ultimoReciboCostura = '-';
       
-      console.log('[updateOrderInfo] Buscando recibo en orderData:', {
+      console.log('[updateOrderInfo] Buscando recibo COSTURA en orderData:', {
         prendas_count: orderData.prendas ? orderData.prendas.length : 0,
         prendas: orderData.prendas
       });
       
-      // Si tenemos datos de prendas con consecutivos, buscar el más reciente
+      // Si tenemos datos de prendas con consecutivos, buscar COSTURA
       if (orderData.prendas && orderData.prendas.length > 0) {
-        let reciboMasReciente = null;
-        let fechaMasReciente = null;
+        let reciboCosturaEncontrado = null;
         let totalRecibosEncontrados = 0;
         
-        // Buscar entre todas las prendas el recibo más reciente por created_at
+        // Buscar entre todas las prendas el recibo de COSTURA
         for (const prenda of orderData.prendas) {
           console.log('[updateOrderInfo] Analizando prenda:', {
             prenda_id: prenda.id,
@@ -1187,14 +1224,13 @@ const trackingTableStyles = `
           if (prenda.consecutivos && typeof prenda.consecutivos === 'object') {
             // Convertir el objeto de consecutivos a un array para procesar
             const recibosArray = [];
-            for (const [tipo, numero] of Object.entries(prenda.consecutivos)) {
-              if (numero !== null && numero !== undefined) {
+            for (const [tipo, datos] of Object.entries(prenda.consecutivos)) {
+              if (datos !== null && datos !== undefined) {
                 recibosArray.push({
                   tipo_recibo: tipo,
-                  consecutivo_actual: numero,
-                  activo: 1,
-                  // Como no tenemos created_at, usamos el tipo como criterio
-                  created_at: new Date().toISOString() // Todos tendrán la misma fecha, se ordenará por tipo
+                  consecutivo_actual: datos.consecutivo_actual || datos,
+                  activo: datos.activo !== undefined ? datos.activo : 1,
+                  created_at: datos.created_at || new Date().toISOString()
                 });
               }
             }
@@ -1205,43 +1241,33 @@ const trackingTableStyles = `
               console.log('[updateOrderInfo] Analizando recibo:', recibo);
               totalRecibosEncontrados++;
               
-              if (recibo.activo === 1) {
-                // Como no tenemos created_at real, usamos el tipo como criterio de ordenamiento
-                // COSTURA-BODEGA > COSTURA > otros (orden alfabético inverso)
-                const prioridadTipo = {
-                  'COSTURA-BODEGA': 3,
-                  'COSTURA': 2,
-                  'ESTAMPADO': 1,
-                  'BORDADO': 1,
-                  'DTF': 1,
-                  'SUBLIMADO': 1,
-                  'REFLECTIVO': 1
-                };
-                
-                const prioridadActual = prioridadTipo[recibo.tipo_recibo] || 0;
-                const prioridadMejor = reciboMasReciente ? (prioridadTipo[reciboMasReciente.tipo_recibo] || 0) : 0;
-                
-                if (!reciboMasReciente || prioridadActual > prioridadMejor) {
-                  reciboMasReciente = recibo;
-                  console.log('[updateOrderInfo] Recibo con mayor prioridad encontrado:', reciboMasReciente);
-                }
+              // Solo buscar recibos de tipo COSTURA (excluir COSTURA-BODEGA)
+              if (recibo.activo === 1 && recibo.tipo_recibo === 'COSTURA') {
+                reciboCosturaEncontrado = recibo;
+                console.log('[updateOrderInfo] Recibo COSTURA encontrado:', reciboCosturaEncontrado);
+                break; // Encontramos el primero, no necesitamos seguir buscando
               }
             }
+          }
+          
+          // Si ya encontramos un recibo COSTURA, salir del bucle de prendas
+          if (reciboCosturaEncontrado) {
+            break;
           }
         }
         
         console.log('[updateOrderInfo] Resumen de búsqueda:', {
           total_recibos_encontrados: totalRecibosEncontrados,
-          recibo_mas_reciente: reciboMasReciente
+          recibo_costura_encontrado: reciboCosturaEncontrado
         });
         
-        if (reciboMasReciente) {
-          ultimoReciboGeneral = `${reciboMasReciente.tipo_recibo} #${reciboMasReciente.consecutivo_actual}`;
+        if (reciboCosturaEncontrado) {
+          ultimoReciboCostura = `COSTURA #${reciboCosturaEncontrado.consecutivo_actual}`;
         }
       }
       
-      console.log('[updateOrderInfo] Resultado final para trackingOrderRecibo:', ultimoReciboGeneral);
-      trackingOrderRecibo.textContent = ultimoReciboGeneral;
+      console.log('[updateOrderInfo] Resultado final para trackingOrderRecibo:', ultimoReciboCostura);
+      trackingOrderRecibo.textContent = ultimoReciboCostura;
     }
     if (selectorOrderEstimatedDate) {
       selectorOrderEstimatedDate.style.color = '#1f2937';
@@ -1374,18 +1400,32 @@ const trackingTableStyles = `
     window.prendasData = prendas;
     
     prendas.forEach((prenda, index) => {
+      // Logging para depuración
+      console.log(`[createPrendasTable] Prenda ${index}:`, {
+        nombre: prenda.nombre_prenda,
+        tipos_recibo_procesos: prenda.tipos_recibo_procesos,
+        procesos_generales: prenda.procesos
+      });
+      
       // Extraer información de la prenda
       const nombrePrenda = prenda.nombre_prenda || `Prenda ${index + 1}`;
       const cantidad = prenda.cantidad || 0;
       const totalProcesos = prenda.total_procesos || 0;
       
-      // Extraer procesos
+      // Extraer tipos de recibo que son procesos (ESTAMPADO, BORDADO, REFLECTIVO, DTF, SUBLIMADO)
       let procesosInfo = '-';
-      if (prenda.procesos && prenda.procesos.length > 0) {
+      if (prenda.tipos_recibo_procesos && prenda.tipos_recibo_procesos.length > 0) {
+        procesosInfo = prenda.tipos_recibo_procesos.map(p => {
+          const nombre = p.nombre || 'Proceso';
+          const estado = (p.estado || 'PENDIENTE').replace(/_/g, ' '); // Reemplazar guiones bajos por espacios
+          return `${nombre} (${estado})`;
+        }).join(', ');
+      } else if (prenda.procesos && prenda.procesos.length > 0) {
+        // Fallback a procesos generales si no hay tipos de recibo
         procesosInfo = prenda.procesos.map(p => {
           const tipoProceso = p.tipo_proceso;
           const nombre = tipoProceso?.nombre || 'Proceso';
-          const estado = p.estado || 'PENDIENTE';
+          const estado = (p.estado || 'PENDIENTE').replace(/_/g, ' '); // Reemplazar guiones bajos por espacios
           return `${nombre} (${estado})`;
         }).join(', ');
       }
@@ -1400,10 +1440,18 @@ const trackingTableStyles = `
         area = prenda.area;
       }
       
-      // Determinar estado general
+      // Determinar estado general basado en tipos de recibo de procesos
       let estadoGeneral = 'Sin procesos';
-      if (prenda.procesos && prenda.procesos.length > 0) {
-        const estados = prenda.procesos.map(p => p.estado || 'PENDIENTE');
+      let procesosParaEstado = [];
+      
+      if (prenda.tipos_recibo_procesos && prenda.tipos_recibo_procesos.length > 0) {
+        procesosParaEstado = prenda.tipos_recibo_procesos;
+      } else if (prenda.procesos && prenda.procesos.length > 0) {
+        procesosParaEstado = prenda.procesos;
+      }
+      
+      if (procesosParaEstado.length > 0) {
+        const estados = procesosParaEstado.map(p => p.estado || 'PENDIENTE');
         if (estados.every(e => e === 'COMPLETADO')) {
           estadoGeneral = 'Completado';
         } else if (estados.some(e => e === 'EN EJECUCIÓN')) {
@@ -1413,14 +1461,25 @@ const trackingTableStyles = `
         }
       }
       
-      // Badge de bodega
-      const bodegaBadge = prenda.de_bodega ? '<span class="bodega-badge">Bodega</span>' : '';
+      // Determinar si el botón debe estar desactivado (para prendas de bodega)
+      const esDeBodega = prenda.de_bodega || false;
+      const botonDisabled = esDeBodega ? 'disabled' : '';
+      const botonTitle = esDeBodega ? 'Prenda de bodega - no disponible para seguimiento' : 'Ver seguimiento detallado';
+      const botonClass = esDeBodega ? 'btn-ver-seguimiento disabled' : 'btn-ver-seguimiento';
+      
+      // Badge de origen de prenda
+      let badgeHtml = '';
+      if (prenda.de_bodega) {
+        badgeHtml = '<span class="bodega-badge">SE SACA DE BODEGA</span>';
+      } else {
+        badgeHtml = '<span class="confeciona-badge">SE CONFECCIONA</span>';
+      }
       
       tableHtml += `
         <tr class="prendas-table-row" data-prenda-index="${index}">
           <td class="prendas-table-cell prendas-name-cell">
             <div class="prendas-name">${nombrePrenda}</div>
-            ${bodegaBadge}
+            ${badgeHtml}
           </td>
           <td class="prendas-table-cell">${cantidad}</td>
           <td class="prendas-table-cell procesos-cell">
@@ -1431,7 +1490,7 @@ const trackingTableStyles = `
             <span class="estado-badge estado-${estadoGeneral.toLowerCase().replace(' ', '-')}">${estadoGeneral}</span>
           </td>
           <td class="prendas-table-cell acciones-cell">
-            <button class="btn-ver-seguimiento" onclick="showPrendaTrackingFromTable(${index})" title="Ver seguimiento detallado">
+            <button class="${botonClass}" ${botonDisabled} onclick="showPrendaTrackingFromTable(${index})" title="${botonTitle}">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M9 11l3 3L22 4"></path>
                 <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>

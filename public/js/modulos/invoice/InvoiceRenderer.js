@@ -225,6 +225,9 @@ class InvoiceRenderer {
     }
 
     renderizarTallas(prenda) {
+        console.log('[InvoiceRenderer] renderizarTallas - Prenda completa:', prenda);
+        console.log('[InvoiceRenderer] renderizarTallas - Variantes:', prenda.variantes);
+        
         if (prenda.tallas && typeof prenda.tallas === 'object' && Object.keys(prenda.tallas).length > 0) {
             const generosConTallas = Object.entries(prenda.tallas).filter(([gen, tallasObj]) => 
                 typeof tallasObj === 'object' && !Array.isArray(tallasObj) && Object.keys(tallasObj).length > 0
@@ -238,6 +241,41 @@ class InvoiceRenderer {
                             ${generosConTallas.map(([genero, tallasObj]) => {
                                 const tallaRows = Object.entries(tallasObj).map(([talla, cant]) => {
                                     let coloresConCantidad = [];
+                                    
+                                    // 🔴 NUEVO: Detectar si es sobremedida cuando la talla está vacía
+                                    let tallaFinal = talla;
+                                    if (!talla || talla.trim() === '') {
+                                        console.log('[InvoiceRenderer] 🔍 Tallavacía detectada, verificando sobremedida...');
+                                        console.log('[InvoiceRenderer] 🔍 Variantes disponibles:', prenda.variantes);
+                                        
+                                        // MÉTODO 1: Verificar en variantes si tiene talla_id (indicador de sobremedida)
+                                        if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+                                            console.log('[InvoiceRenderer] 🔍 Procesando ${prenda.variantes.length} variantes...');
+                                            prenda.variantes.forEach((v, idx) => {
+                                                console.log(`[InvoiceRenderer]   Variante[${idx}]:`, v);
+                                                console.log(`[InvoiceRenderer]   Claves Variante[${idx}]:`, Object.keys(v));
+                                                console.log(`[InvoiceRenderer]   talla_id en Variante[${idx}]:`, v.talla_id);
+                                            });
+                                            
+                                            const varianteConTallaId = prenda.variantes.find(v => v.talla_id);
+                                            console.log('[InvoiceRenderer] 🔍 Variante con talla_id encontrada:', varianteConTallaId);
+                                            
+                                            if (varianteConTallaId) {
+                                                tallaFinal = 'SOBREMEDIDA';
+                                                console.log('[InvoiceRenderer] ✅ Detectado sobremedida por talla_id en variante');
+                                            } else {
+                                                console.log('[InvoiceRenderer] ❌ No se encontró variante con talla_id');
+                                            }
+                                        } else {
+                                            console.log('[InvoiceRenderer] ❌ No hay variantes o no es array');
+                                        }
+                                        
+                                        // MÉTODO 2: Si no hay talla_id, usar la talla vacía como indicador de sobremedida
+                                        if (tallaFinal === talla && (!talla || talla.trim() === '')) {
+                                            tallaFinal = 'SOBREMEDIDA';
+                                            console.log('[InvoiceRenderer] ✅ Detectado sobremedida por talla vacía (fallback)');
+                                        }
+                                    }
                                     
                                     // 🔴 NUEVO: PRIMERO: Buscar en prenda.talla_colores (datos del servidor)
                                     if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
@@ -343,10 +381,10 @@ class InvoiceRenderer {
                                     
                                     // Si hay colores, mostrar M:cantidad - Color: NOMBRE para cada uno
                                     if (coloresConCantidad.length > 0) {
-                                        return coloresConCantidad.map(color => `<div style="margin-bottom: 2px;">${talla}:${color.cantidad} - <strong style="color: #0369a1;">Color:</strong> ${color.nombre}</div>`).join('');
+                                        return coloresConCantidad.map(color => `<div style="margin-bottom: 2px;">${tallaFinal}:${color.cantidad} - <strong style="color: #0369a1;">Color:</strong> ${color.nombre}</div>`).join('');
                                     } else {
                                         // Si no hay colores, mostrar solo talla:cantidad
-                                        return `<div style="margin-bottom: 2px;">${talla}:${cant}</div>`;
+                                        return `<div style="margin-bottom: 2px;">${tallaFinal}:${cant}</div>`;
                                     }
                                 }).join('');
                                 

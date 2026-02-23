@@ -296,6 +296,25 @@ function abrirModalAprobacion(pedidoId, numeroPedido) {
 }
 
 /**
+ * Restaura el estado original del botón Aprobar
+ */
+function restaurarBotonAprobacion() {
+  const btnConfirmar = getElementById('btnConfirmarAprobacion');
+  if (btnConfirmar) {
+    // Limpiar interval de animación
+    if (btnConfirmar.loadingInterval) {
+      clearInterval(btnConfirmar.loadingInterval);
+      btnConfirmar.loadingInterval = null;
+    }
+    
+    btnConfirmar.disabled = false;
+    btnConfirmar.innerHTML = 'Aprobar';
+    btnConfirmar.style.fontSize = '';
+    btnConfirmar.classList.remove('loading', 'opacity-75', 'cursor-not-allowed');
+  }
+}
+
+/**
  * Cierra el modal de aprobación
  */
 function cerrarModalAprobacion() {
@@ -306,6 +325,9 @@ function cerrarModalAprobacion() {
   modal.style.display = 'none';
   document.body.style.overflow = 'auto';
   pedidoSeleccionado = null;
+  
+  // Restaurar botón al cerrar modal
+  restaurarBotonAprobacion();
 }
 
 /**
@@ -323,12 +345,26 @@ async function confirmarAprobacion(event) {
   const pedidoId = pedidoSeleccionado.id;
   const numeroPedido = pedidoSeleccionado.numero;
   
-  try {
-    if (btnConfirmar) {
-      btnConfirmar.disabled = true;
-      btnConfirmar.classList.add('loading');
-    }
+  // Bloquear botón y mostrar "Cargando..."
+  if (btnConfirmar) {
+    btnConfirmar.disabled = true;
+    btnConfirmar.innerHTML = 'Cargando';
+    btnConfirmar.style.fontSize = '14px';
     
+    // Animación de puntos
+    let dots = 0;
+    const loadingInterval = setInterval(() => {
+      dots = (dots + 1) % 4;
+      btnConfirmar.innerHTML = 'Cargando' + '.'.repeat(dots);
+    }, 500);
+    
+    // Guardar interval para limpiar después
+    btnConfirmar.loadingInterval = loadingInterval;
+    
+    btnConfirmar.classList.add('opacity-75', 'cursor-not-allowed');
+  }
+  
+  try {
     const token = document.querySelector('meta[name="csrf-token"]').content;
     
     console.log(' Enviando aprobación para pedido:', pedidoId);
@@ -370,11 +406,9 @@ async function confirmarAprobacion(event) {
   } catch (error) {
     console.error(' Error aprobando pedido:', error);
     mostrarNotificacion('Error al aprobar: ' + error.message, 'error');
-  } finally {
-    if (btnConfirmar) {
-      btnConfirmar.disabled = false;
-      btnConfirmar.classList.remove('loading');
-    }
+    
+    // Restaurar botón en caso de error
+    restaurarBotonAprobacion();
   }
 }
 

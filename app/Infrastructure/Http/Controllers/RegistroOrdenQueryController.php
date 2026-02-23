@@ -1705,7 +1705,7 @@ class RegistroOrdenQueryController extends Controller
             $prendasConSeguimiento = [];
             
             foreach ($prendas as $prenda) {
-                // Obtener consecutivos de recibos para esta prenda
+                // Obtener todos los consecutivos de recibos para esta prenda (todos los tipos)
                 $consecutivos = \App\Models\ConsecutivosRecibosPedidos::where('prenda_id', $prenda->id)
                     ->where('pedido_produccion_id', $pedidoId)
                     ->where('activo', 1)
@@ -1720,12 +1720,23 @@ class RegistroOrdenQueryController extends Controller
                 
                 // Agrupar consecutivos por tipo de recibo
                 $seguimientosPorTipo = [];
+                $tiposReciboProcesos = [];
+                
                 foreach ($consecutivos as $consecutivo) {
                     $seguimientosPorTipo[$consecutivo->tipo_recibo] = [
                         'consecutivo_actual' => $consecutivo->consecutivo_actual,
                         'consecutivo_inicial' => $consecutivo->consecutivo_inicial,
                         'notas' => $consecutivo->notas,
                     ];
+                    
+                    // Solo agregar los tipos de recibo que son procesos (excluir COSTURA y COSTURA-BODEGA)
+                    $tiposProcesoValidos = ['ESTAMPADO', 'BORDADO', 'REFLECTIVO', 'DTF', 'SUBLIMADO'];
+                    if (in_array($consecutivo->tipo_recibo, $tiposProcesoValidos)) {
+                        $tiposReciboProcesos[] = [
+                            'nombre' => $consecutivo->tipo_recibo,
+                            'estado' => $consecutivo->estado ?? 'PENDIENTE'
+                        ];
+                    }
                 }
                 
                 // Agrupar procesos por área
@@ -1764,6 +1775,7 @@ class RegistroOrdenQueryController extends Controller
                         
                         $consecutivosQuery = \App\Models\ConsecutivosRecibosPedidos::where('prenda_id', $prenda->id)
                             ->where('pedido_produccion_id', $pedidoId)
+                            ->where('tipo_recibo', 'COSTURA')
                             ->where('activo', 1);
                         
                         $consecutivosCount = $consecutivosQuery->count();
@@ -1840,6 +1852,7 @@ class RegistroOrdenQueryController extends Controller
                     'seguimientos' => $seguimientosPorTipo,
                     'seguimientos_por_area' => $seguimientosPorArea,
                     'procesos' => $procesosArray,
+                    'tipos_recibo_procesos' => $tiposReciboProcesos, // Agregar tipos de recibo que son procesos
                     'consecutivos' => $consecutivos->toArray(), // Agregar consecutivos para el modal
                     'total_procesos' => $prenda->procesos->count(),
                     'total_variantes' => $prenda->variantes->count(),
@@ -1877,5 +1890,3 @@ class RegistroOrdenQueryController extends Controller
         }
     }
 }
-
-

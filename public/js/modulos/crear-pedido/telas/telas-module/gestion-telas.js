@@ -86,13 +86,29 @@ window.agregarTelaNueva = async function() {
         
         // Crear objeto de tela
         console.log('[agregarTelaNueva] 🖼️  Obteniendo imágenes temporales...');
-        const imagenesActuales = window.imagenesTelaModalNueva || [];
+        
+        // 🔧 CORRECCIÓN: Obtener imágenes desde el storage universal en lugar del array antiguo
+        let imagenesActuales = [];
+        if (window.imagenesTelaStorage) {
+            console.log('[agregarTelaNueva] 📸 Obteniendo imágenes desde storage universal...');
+            try {
+                imagenesActuales = window.imagenesTelaStorage.obtenerImagenes() || [];
+                console.log('[agregarTelaNueva] ✅ Imágenes obtenidas desde storage universal:', imagenesActuales.length);
+            } catch (error) {
+                console.error('[agregarTelaNueva] ❌ Error obteniendo imágenes del storage universal:', error);
+                imagenesActuales = window.imagenesTelaModalNueva || [];
+            }
+        } else {
+            console.log('[agregarTelaNueva] ⚠️ Storage universal no disponible, usando array antiguo');
+            imagenesActuales = window.imagenesTelaModalNueva || [];
+        }
         
         // Debug: Verificar estado del array antes de guardar
         console.log('[agregarTelaNueva] 📸 DIAGNÓSTICO 2 - Imágenes temporales:');
         console.log('  window.imagenesTelaModalNueva definido:', !!window.imagenesTelaModalNueva);
-        console.log('  Cantidad de imágenes:', window.imagenesTelaModalNueva?.length || 0);
-        console.log('  Imágenes:', window.imagenesTelaModalNueva?.map(img => ({ name: img.name, size: img.size })) || []);
+        console.log('  window.imagenesTelaStorage definido:', !!window.imagenesTelaStorage);
+        console.log('  Cantidad de imágenes:', imagenesActuales.length);
+        console.log('  Imágenes:', imagenesActuales.map(img => ({ name: img.name, size: img.size })));
         
         const nuevaTela = {
             color: color,
@@ -148,8 +164,21 @@ window.agregarTelaNueva = async function() {
         
         // Limpiar imágenes temporales DESPUÉS de guardarlas en la tela
         console.log('[agregarTelaNueva] 🧹 Limpiando imágenes temporales...');
+        
+        // 🔧 CORRECCIÓN: Limpiar tanto el array antiguo como el storage universal
         window.imagenesTelaModalNueva = [];
-        console.log('[agregarTelaNueva] ✓ Imágenes temporales limpiadas después de guardar en tela');
+        console.log('[agregarTelaNueva] ✓ Array antiguo limpiado');
+        
+        if (window.imagenesTelaStorage) {
+            try {
+                window.imagenesTelaStorage.limpiarImagenes();
+                console.log('[agregarTelaNueva] ✓ Storage universal limpiado');
+            } catch (error) {
+                console.error('[agregarTelaNueva] ❌ Error limpiando storage universal:', error);
+            }
+        }
+        
+        console.log('[agregarTelaNueva] ✅ Imágenes temporales limpiadas completamente');
         
         // DIAGNÓSTICO 5: ANTES de actualizar tabla
         console.log('[agregarTelaNueva] 📊 DIAGNÓSTICO 5 - ANTES de actualizarTablaTelas():');

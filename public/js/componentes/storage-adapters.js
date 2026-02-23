@@ -249,7 +249,7 @@ window.imagenesTelaStorage = {
     /**
      * Limpiar todas las imágenes de telas
      */
-    limpiar: function() {
+    limpiarImagenes: function() {
         if (!window.universalImagenesStorage) {
             console.warn('[TelaStorageAdapter] ⚠️ Universal storage no disponible');
             return;
@@ -257,6 +257,13 @@ window.imagenesTelaStorage = {
         
         window.universalImagenesStorage.limpiarTipo('telas');
         console.log('[TelaStorageAdapter] 🧹 Storage de telas limpiado');
+    },
+    
+    /**
+     * Limpiar todas las imágenes de telas (alias para compatibilidad)
+     */
+    limpiar: function() {
+        return this.limpiarImagenes();
     },
     
     /**

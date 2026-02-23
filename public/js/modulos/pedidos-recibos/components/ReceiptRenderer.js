@@ -265,22 +265,11 @@ export class ReceiptRenderer {
      */
     static _llenarDescripcion(prendaData, recibo, tipoProceso) {
         const descripcionText = document.getElementById('descripcion-text');
-        if (!descripcionText) {
-            console.warn(' [ReceiptRenderer] Elemento #descripcion-text NO encontrado');
-            return;
-        }
-
-        console.log(' [ReceiptRenderer._llenarDescripcion] prendaData completo:', {
-            nombre: prendaData.nombre,
-            numero: prendaData.numero,
-            tela: prendaData.tela,
-            color: prendaData.color,
-            ref: prendaData.ref,
-            variantes: prendaData.variantes,
-            descripcion: prendaData.descripcion,
-            tallas: prendaData.tallas,
-            genero: prendaData.genero
-        });
+        
+        console.log('[ReceiptRenderer._llenarDescripcion] prendaData completo:', prendaData);
+        console.log('[ReceiptRenderer._llenarDescripcion] prendaData.tallas:', prendaData.tallas);
+        console.log('[ReceiptRenderer._llenarDescripcion] typeof prendaData.tallas:', typeof prendaData.tallas);
+        console.log('[ReceiptRenderer._llenarDescripcion] Array.isArray(prendaData.tallas):', Array.isArray(prendaData.tallas));
 
         // DEBUG: Verificar tallas del recibo
         console.log(' [ReceiptRenderer._llenarDescripcion] RECIBO COMPLETO:', {

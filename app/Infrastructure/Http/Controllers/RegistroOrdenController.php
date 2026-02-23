@@ -1202,13 +1202,35 @@ class RegistroOrdenController extends Controller
     public function recibosCostura(Request $request)
     {
         try {
-            // Obtener recibos de costura activos y aprobados (excluir pendientes de insumos)
-            $recibosCostura = DB::table('consecutivos_recibos_pedidos')
+            // Obtener todos los tipos de filtros desde la solicitud
+            $filtros = [];
+            $tiposFiltro = [
+                'estado', 'dia_entrega', 'total_dias', 'numero_recibo', 
+                'cliente', 'descripcion', 'cantidad', 'novedades', 
+                'fecha_creacion', 'fecha_estimada', 'encargado'
+            ];
+            
+            foreach ($tiposFiltro as $tipo) {
+                $valor = $request->input($tipo, []);
+                if (is_string($valor)) {
+                    $valor = json_decode($valor, true) ?? [];
+                }
+                if (!empty($valor)) {
+                    $filtros[$tipo] = $valor;
+                }
+            }
+            
+            \Log::info('[recibosCostura] Filtros aplicados', ['filtros' => $filtros]);
+            
+            // Construir consulta base
+            $query = DB::table('consecutivos_recibos_pedidos')
                 ->where('tipo_recibo', 'COSTURA')
-                ->where('activo', 1)
-                ->where('estado', '!=', 'PENDIENTE_INSUMOS')
-                ->orderBy('consecutivo_actual', 'desc')
-                ->get();
+                ->where('activo', 1);
+            
+            // Aplicar filtros según el tipo
+            $this->aplicarFiltros($query, $filtros);
+            
+            $recibosCostura = $query->orderBy('consecutivo_actual', 'desc')->get();
 
             // Obtener festivos para cálculo de días
             $currentYear = now()->year;
@@ -1306,6 +1328,16 @@ class RegistroOrdenController extends Controller
                 ];
             });
 
+            // Si es una solicitud AJAX, retornar JSON
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'recibos' => $recibosConInfo,
+                    'total' => $recibosConInfo->count(),
+                    'filtros_aplicados' => $filtros
+                ]);
+            }
+
             return view('registros.recibos-costura', [
                 'recibos' => $recibosConInfo,
                 'title' => 'Recibos de Costura'
@@ -1313,7 +1345,104 @@ class RegistroOrdenController extends Controller
 
         } catch (\Exception $e) {
             \Log::error('Error en recibosCostura: ' . $e->getMessage());
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al cargar los recibos de costura'
+                ], 500);
+            }
+            
             return back()->with('error', 'Error al cargar los recibos de costura');
+        }
+    }
+    
+    /**
+     * Aplicar filtros a la consulta según el tipo
+     */
+    private function aplicarFiltros($query, $filtros)
+    {
+        // Filtro por estado
+        if (isset($filtros['estado']) && !empty($filtros['estado'])) {
+            $query->whereIn('estado', $filtros['estado']);
+        } elseif (empty($filtros)) {
+            // Por defecto, excluir pendientes de insumos solo si no hay filtros
+            $query->where('estado', '!=', 'PENDIENTE_INSUMOS');
+        }
+        
+        // Filtro por número de recibo
+        if (isset($filtros['numero_recibo']) && !empty($filtros['numero_recibo'])) {
+            $query->where(function($q) use ($filtros) {
+                foreach ($filtros['numero_recibo'] as $numero) {
+                    $q->orWhere('consecutivo_actual', 'LIKE', '%' . $numero . '%');
+                }
+            });
+        }
+        
+        // Filtro por total de días (rango) - se aplicará después del cálculo
+        // Guardamos para procesamiento posterior
+        if (isset($filtros['total_dias']) && count($filtros['total_dias']) >= 2) {
+            \Log::info('[recibosCostura] Filtro por total_días se aplicará en procesamiento posterior');
+        }
+        
+        // Filtros que requieren JOIN con pedidos - usamos subconsultas
+        if (isset($filtros['cliente']) && !empty($filtros['cliente'])) {
+            $query->where(function($q) use ($filtros) {
+                foreach ($filtros['cliente'] as $cliente) {
+                    $q->orWhere('pedido_produccion_id', 'IN', function($subQuery) use ($cliente) {
+                        $subQuery->select('id')
+                               ->from('pedidos_produccion')
+                               ->where('cliente', 'LIKE', '%' . $cliente . '%');
+                    });
+                }
+            });
+        }
+        
+        if (isset($filtros['dia_entrega']) && !empty($filtros['dia_entrega'])) {
+            $query->whereIn('pedido_produccion_id', function($subQuery) use ($filtros) {
+                $subQuery->select('id')
+                       ->from('pedidos_produccion')
+                       ->whereIn('dia_de_entrega', $filtros['dia_entrega']);
+            });
+        }
+        
+        if (isset($filtros['fecha_creacion']) && count($filtros['fecha_creacion']) >= 2) {
+            $query->whereIn('pedido_produccion_id', function($subQuery) use ($filtros) {
+                $subQuery->select('id')
+                       ->from('pedidos_produccion')
+                       ->whereBetween('fecha_de_creacion_de_orden', [
+                           \Carbon\Carbon::parse($filtros['fecha_creacion'][0])->startOfDay(),
+                           \Carbon\Carbon::parse($filtros['fecha_creacion'][1])->endOfDay()
+                       ]);
+            });
+        }
+        
+        if (isset($filtros['fecha_estimada']) && count($filtros['fecha_estimada']) >= 2) {
+            $query->whereIn('pedido_produccion_id', function($subQuery) use ($filtros) {
+                $subQuery->select('id')
+                       ->from('pedidos_produccion')
+                       ->whereBetween('fecha_estimada_de_entrega', [
+                           \Carbon\Carbon::parse($filtros['fecha_estimada'][0])->startOfDay(),
+                           \Carbon\Carbon::parse($filtros['fecha_estimada'][1])->endOfDay()
+                       ]);
+            });
+        }
+        
+        // Filtros por descripción y cantidad (requieren procesamiento adicional)
+        if (isset($filtros['descripcion']) && !empty($filtros['descripcion'])) {
+            \Log::info('[recibosCostura] Filtro por descripción requiere procesamiento adicional');
+        }
+        
+        if (isset($filtros['cantidad']) && count($filtros['cantidad']) >= 2) {
+            \Log::info('[recibosCostura] Filtro por cantidad requiere procesamiento adicional');
+        }
+        
+        if (isset($filtros['novedades']) && !empty($filtros['novedades'])) {
+            \Log::info('[recibosCostura] Filtro por novedades requiere procesamiento adicional');
+        }
+        
+        if (isset($filtros['encargado']) && !empty($filtros['encargado'])) {
+            \Log::info('[recibosCostura] Filtro por encargado requiere procesamiento adicional');
         }
     }
     

@@ -379,6 +379,299 @@ body #orderTrackingModal .tracking-back-btn {
     max-height: 95vh !important;
 }
 
+/* Estilos para el modal de filtros - Mejorados para evitar conflictos */
+.filter-modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: blur(4px) !important;
+    z-index: 999999 !important;
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px !important;
+    box-sizing: border-box !important;
+    width: 100vw !important;
+    height: 100vh !important;
+}
+
+.filter-modal[style*="flex"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.filter-modal-content {
+    background: white !important;
+    border-radius: 12px !important;
+    max-width: 400px !important;
+    width: 100% !important;
+    max-height: 80vh !important;
+    overflow: hidden !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+    transform: none !important;
+    min-height: 200px !important;
+}
+
+.filter-modal-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 20px 24px !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    background: #f9fafb !important;
+    border-radius: 12px 12px 0 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+}
+
+.filter-modal-header h3 {
+    margin: 0 !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    color: #111827 !important;
+    padding: 0 !important;
+    line-height: 1.2 !important;
+}
+
+.filter-modal-close {
+    background: none !important;
+    border: none !important;
+    font-size: 24px !important;
+    cursor: pointer !important;
+    color: #6b7280 !important;
+    padding: 0 !important;
+    width: 32px !important;
+    height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 6px !important;
+    transition: all 0.2s ease !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+}
+
+.filter-modal-close:hover {
+    background: #f3f4f6 !important;
+    color: #374151 !important;
+}
+
+.filter-modal-body {
+    padding: 16px 24px !important;
+    overflow-y: auto !important;
+    flex: 1 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    min-height: 100px !important;
+}
+
+.filter-search {
+    width: 100% !important;
+    padding: 10px 12px !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    margin-bottom: 16px !important;
+    transition: border-color 0.2s ease !important;
+    box-sizing: border-box !important;
+    display: block !important;
+}
+
+.filter-search:focus {
+    outline: none !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+.filter-options {
+    max-height: 300px !important;
+    overflow-y: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.filter-option {
+    display: flex !important;
+    align-items: center !important;
+    padding: 8px 0 !important;
+    border-bottom: 1px solid #f3f4f6 !important;
+    transition: background-color 0.2s ease !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.filter-option:hover {
+    background: #f9fafb !important;
+    margin: 0 -12px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+}
+
+.filter-option:last-child {
+    border-bottom: none !important;
+}
+
+.filter-option input[type="checkbox"] {
+    margin-right: 12px !important;
+    width: 16px !important;
+    height: 16px !important;
+    accent-color: #3b82f6 !important;
+    flex-shrink: 0 !important;
+}
+
+.filter-option label {
+    flex: 1 !important;
+    font-size: 14px !important;
+    color: #374151 !important;
+    cursor: pointer !important;
+    font-weight: 500 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.filter-modal-footer {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 16px 24px !important;
+    border-top: 1px solid #e5e7eb !important;
+    background: #f9fafb !important;
+    border-radius: 0 0 12px 12px !important;
+    gap: 12px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+}
+
+.btn-filter-reset,
+.btn-filter-apply {
+    padding: 10px 16px !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    flex: 1 !important;
+    box-sizing: border-box !important;
+    display: block !important;
+}
+
+.btn-filter-reset {
+    background: #f3f4f6 !important;
+    color: #6b7280 !important;
+    border: 1px solid #d1d5db !important;
+}
+
+.btn-filter-reset:hover {
+    background: #e5e7eb !important;
+    color: #374151 !important;
+}
+
+.btn-filter-apply {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    color: white !important;
+    border: 1px solid #2563eb !important;
+}
+
+.btn-filter-apply:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+.btn-select-all:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Estilos específicos para inputs de texto en filtros */
+.filter-text-input {
+    width: 100% !important;
+    padding: 12px !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    box-sizing: border-box !important;
+    transition: border-color 0.2s ease !important;
+    display: block !important;
+}
+
+.filter-text-input:focus {
+    outline: none !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Estilos para inputs de rango */
+input[type="range"] {
+    width: 100% !important;
+    height: 6px !important;
+    border-radius: 3px !important;
+    background: #d1d5db !important;
+    outline: none !important;
+    transition: background 0.3s !important;
+    display: block !important;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    appearance: none !important;
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 50% !important;
+    background: #3b82f6 !important;
+    cursor: pointer !important;
+    transition: background 0.3s !important;
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 50% !important;
+    background: #3b82f6 !important;
+    cursor: pointer !important;
+    border: none !important;
+    transition: background 0.3s !important;
+}
+
+/* Estilos para inputs de fecha */
+.filter-date-input {
+    width: 100% !important;
+    padding: 10px !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    box-sizing: border-box !important;
+    transition: border-color 0.2s ease !important;
+    display: block !important;
+}
+
+.filter-date-input:focus {
+    outline: none !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Forzar visibilidad del contenido del modal */
+.filter-modal * {
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
 
 </style>
 @endpush

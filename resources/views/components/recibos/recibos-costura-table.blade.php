@@ -9,17 +9,226 @@
                         <path d="M8 12h8M12 8v8"></path>
                     </svg>
                 </th>
-                <th style="width: auto;">Estado</th>
-                <th style="width: 120px;">Día de entrega</th>
-                <th style="width: 120px;">Total de días</th>
-                <th style="width: 120px;">N° Recibo</th>
-                <th style="width: 150px;">Cliente</th>
-                <th style="width: auto;">Descripción</th>
-                <th style="width: 100px;">Cantidad</th>
-                <th style="width: 120px;">Novedades</th>
-                <th style="width: 150px;">Fecha de creación</th>
-                <th style="width: 180px;">Fecha estimada entrega</th>
-                <th style="width: 150px;">Encargado orden</th>
+                <th style="width: auto;">
+                    Estado
+                    <button type="button" class="filter-btn" 
+                            data-filter-type="estado"
+                            onclick="openFilterModal('estado')" 
+                            title="Filtrar por estado" style="
+                        background: none;
+                        border: none;
+                        color: white;
+                        margin-left: 8px;
+                        cursor: pointer;
+                        padding: 2px;
+                        border-radius: 4px;
+                        transition: background-color 0.2s;
+                    " onmouseover="this.style.backgroundColor='rgba(255,255,255,0.2)'" onmouseout="this.style.backgroundColor='transparent'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                        </svg>
+                    </button>
+                </th>
+                <th style="width: 120px;">
+                    Día de entrega
+                    <button type="button" class="filter-btn" 
+                            data-filter-type="dia_entrega"
+                            onclick="openFilterModal('dia_entrega')" 
+                            title="Filtrar por día de entrega" style="
+                        background: none;
+                        border: none;
+                        color: white;
+                        margin-left: 8px;
+                        cursor: pointer;
+                        padding: 2px;
+                        border-radius: 4px;
+                        transition: background-color 0.2s;
+                    " onmouseover="this.style.backgroundColor='rgba(255,255,255,0.2)'" onmouseout="this.style.backgroundColor='transparent'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                        </svg>
+                    </button>
+                </th>
+                <th style="width: 120px;">
+                    Total de días
+                    <button type="button" class="filter-btn" 
+                            data-filter-type="total_dias"
+                            onclick="openFilterModal('total_dias')" 
+                            title="Filtrar por total de días" style="
+                        background: none;
+                        border: none;
+                        color: white;
+                        margin-left: 8px;
+                        cursor: pointer;
+                        padding: 2px;
+                        border-radius: 4px;
+                        transition: background-color 0.2s;
+                    " onmouseover="this.style.backgroundColor='rgba(255,255,255,0.2)'" onmouseout="this.style.backgroundColor='transparent'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                        </svg>
+                    </button>
+                </th>
+                <th style="width: 120px;">
+                    N° Recibo
+                    <button type="button" class="filter-btn" 
+                            data-filter-type="numero_recibo"
+                            onclick="openFilterModal('numero_recibo')" 
+                            title="Filtrar por número de recibo" style="
+                        background: none;
+                        border: none;
+                        color: white;
+                        margin-left: 8px;
+                        cursor: pointer;
+                        padding: 2px;
+                        border-radius: 4px;
+                        transition: background-color 0.2s;
+                    " onmouseover="this.style.backgroundColor='rgba(255,255,255,0.2)'" onmouseout="this.style.backgroundColor='transparent'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                        </svg>
+                    </button>
+                </th>
+                <th style="width: 150px;">
+                    Cliente
+                    <button type="button" class="filter-btn" 
+                            data-filter-type="cliente"
+                            onclick="openFilterModal('cliente')" 
+                            title="Filtrar por cliente" style="
+                        background: none;
+                        border: none;
+                        color: white;
+                        margin-left: 8px;
+                        cursor: pointer;
+                        padding: 2px;
+                        border-radius: 4px;
+                        transition: background-color 0.2s;
+                    " onmouseover="this.style.backgroundColor='rgba(255,255,255,0.2)'" onmouseout="this.style.backgroundColor='transparent'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                        </svg>
+                    </button>
+                </th>
+                <th style="width: auto;">
+                    Descripción
+                    <button type="button" class="filter-btn" 
+                            data-filter-type="descripcion"
+                            onclick="openFilterModal('descripcion')" 
+                            title="Filtrar por descripción" style="
+                        background: none;
+                        border: none;
+                        color: white;
+                        margin-left: 8px;
+                        cursor: pointer;
+                        padding: 2px;
+                        border-radius: 4px;
+                        transition: background-color 0.2s;
+                    " onmouseover="this.style.backgroundColor='rgba(255,255,255,0.2)'" onmouseout="this.style.backgroundColor='transparent'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                        </svg>
+                    </button>
+                </th>
+                <th style="width: 100px;">
+                    Cantidad
+                    <button type="button" class="filter-btn" 
+                            data-filter-type="cantidad"
+                            onclick="openFilterModal('cantidad')" 
+                            title="Filtrar por cantidad" style="
+                        background: none;
+                        border: none;
+                        color: white;
+                        margin-left: 8px;
+                        cursor: pointer;
+                        padding: 2px;
+                        border-radius: 4px;
+                        transition: background-color 0.2s;
+                    " onmouseover="this.style.backgroundColor='rgba(255,255,255,0.2)'" onmouseout="this.style.backgroundColor='transparent'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                        </svg>
+                    </button>
+                </th>
+                <th style="width: 120px;">
+                    Novedades
+                    <button type="button" class="filter-btn" 
+                            data-filter-type="novedades"
+                            onclick="openFilterModal('novedades')" 
+                            title="Filtrar por novedades" style="
+                        background: none;
+                        border: none;
+                        color: white;
+                        margin-left: 8px;
+                        cursor: pointer;
+                        padding: 2px;
+                        border-radius: 4px;
+                        transition: background-color 0.2s;
+                    " onmouseover="this.style.backgroundColor='rgba(255,255,255,0.2)'" onmouseout="this.style.backgroundColor='transparent'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                        </svg>
+                    </button>
+                </th>
+                <th style="width: 150px;">
+                    Fecha de creación
+                    <button type="button" class="filter-btn" 
+                            data-filter-type="fecha_creacion"
+                            onclick="openFilterModal('fecha_creacion')" 
+                            title="Filtrar por fecha de creación" style="
+                        background: none;
+                        border: none;
+                        color: white;
+                        margin-left: 8px;
+                        cursor: pointer;
+                        padding: 2px;
+                        border-radius: 4px;
+                        transition: background-color 0.2s;
+                    " onmouseover="this.style.backgroundColor='rgba(255,255,255,0.2)'" onmouseout="this.style.backgroundColor='transparent'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                        </svg>
+                    </button>
+                </th>
+                <th style="width: 180px;">
+                    Fecha estimada entrega
+                    <button type="button" class="filter-btn" 
+                            data-filter-type="fecha_estimada"
+                            onclick="openFilterModal('fecha_estimada')" 
+                            title="Filtrar por fecha estimada de entrega" style="
+                        background: none;
+                        border: none;
+                        color: white;
+                        margin-left: 8px;
+                        cursor: pointer;
+                        padding: 2px;
+                        border-radius: 4px;
+                        transition: background-color 0.2s;
+                    " onmouseover="this.style.backgroundColor='rgba(255,255,255,0.2)'" onmouseout="this.style.backgroundColor='transparent'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                        </svg>
+                    </button>
+                </th>
+                <th style="width: 150px;">
+                    Encargado orden
+                    <button type="button" class="filter-btn" 
+                            data-filter-type="encargado"
+                            onclick="openFilterModal('encargado')" 
+                            title="Filtrar por encargado de orden" style="
+                        background: none;
+                        border: none;
+                        color: white;
+                        margin-left: 8px;
+                        cursor: pointer;
+                        padding: 2px;
+                        border-radius: 4px;
+                        transition: background-color 0.2s;
+                    " onmouseover="this.style.backgroundColor='rgba(255,255,255,0.2)'" onmouseout="this.style.backgroundColor='transparent'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 3H2H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                        </svg>
+                    </button>
+                </th>
             </tr>
         </thead>
         <tbody id="tablaRecibosBody">
@@ -265,4 +474,24 @@
             @endif
         </tbody>
     </table>
+</div>
+
+<!-- Modal de Filtros Dinámico -->
+<div class="filter-modal" id="filterModal" style="display: none;">
+    <div class="filter-modal-content">
+        <div class="filter-modal-header">
+            <h3 id="filterModalTitle">Filtrar</h3>
+            <button type="button" class="filter-modal-close" onclick="closeFilterModal()">×</button>
+        </div>
+        <div class="filter-modal-body">
+            <!-- Contenido dinámico según el tipo de filtro -->
+            <div id="filterContent">
+                <!-- Se llenará dinámicamente -->
+            </div>
+        </div>
+        <div class="filter-modal-footer">
+            <button type="button" class="btn-filter-reset" onclick="resetFilters()">Limpiar</button>
+            <button type="button" class="btn-filter-apply" onclick="applyFilters()">Aplicar</button>
+        </div>
+    </div>
 </div>
