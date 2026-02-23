@@ -58,6 +58,24 @@ class DespachoController extends Controller
         // Agregar estado de entrega a cada pedido
         $pedidos->getCollection()->transform(function ($pedido) {
             $pedido->estado_entrega = $this->despachoEstadoService->obtenerEstadoEntrega($pedido->id);
+            
+            // Obtener fecha de entrega desde prenda_entregas (para vista principal)
+            $fechaEntrega = \App\Models\PrendaPedido::where('pedido_produccion_id', $pedido->id)
+                ->whereHas('entrega', function ($q) {
+                    $q->where('entregado', true)
+                      ->whereNotNull('fecha_entrega');
+                })
+                ->with(['entrega' => function ($q) {
+                    $q->where('entregado', true)
+                      ->whereNotNull('fecha_entrega')
+                      ->orderBy('fecha_entrega', 'desc');
+                }])
+                ->first();
+                
+            $pedido->fecha_entrega_prendas = $fechaEntrega && $fechaEntrega->entrega 
+                ? $fechaEntrega->entrega->fecha_entrega->format('d/m/Y h:i A') 
+                : '—';
+            
             return $pedido;
         });
         
@@ -1127,7 +1145,14 @@ class DespachoController extends Controller
             
             // Agregar información adicional a cada pedido
             $pedidos->transform(function ($pedido) {
-                $pedido->fecha_entrega = $pedido->updated_at ? $pedido->updated_at->format('d/m/Y H:i') : '—';
+                // Obtener fecha de entrega desde despacho_parciales (para vista entregados)
+                $fechaEntrega = DesparChoParcialesModel::where('pedido_id', $pedido->id)
+                    ->where('entregado', true)
+                    ->whereNotNull('fecha_entrega')
+                    ->orderBy('fecha_entrega', 'desc')
+                    ->first();
+                    
+                $pedido->fecha_entrega = $fechaEntrega ? $fechaEntrega->fecha_entrega->format('d/m/Y h:i A') : '—';
                 $pedido->fecha_creacion = $pedido->created_at ? $pedido->created_at->format('d/m/Y') : '—';
                 return $pedido;
             });
