@@ -157,6 +157,9 @@ class CotizacionEppController extends Controller
                         'cotizacion_id' => $cotizacion->id,
                         'observaciones_generales_guardadas' => $cotizacion->observaciones_generales,
                         'especificaciones_guardadas' => $cotizacion->especificaciones,
+                        'cliente_nit_guardado' => $cotizacion->cliente_nit,
+                        'cliente_direccion_guardada' => $cotizacion->cliente_direccion,
+                        'cliente_telefono_guardado' => $cotizacion->cliente_telefono,
                     ]);
                 } else {
                     $cotizacion = Cotizacion::create([
@@ -179,6 +182,9 @@ class CotizacionEppController extends Controller
                         'cotizacion_id' => $cotizacion->id,
                         'observaciones_generales_guardadas' => $cotizacion->observaciones_generales,
                         'especificaciones_guardadas' => $cotizacion->especificaciones,
+                        'cliente_nit_guardado' => $cotizacion->cliente_nit,
+                        'cliente_direccion_guardada' => $cotizacion->cliente_direccion,
+                        'cliente_telefono_guardado' => $cotizacion->cliente_telefono,
                     ]);
                 }
 
