@@ -61,6 +61,67 @@ class CotizacionEppController extends Controller
                     $tipoVenta = null;
                 }
 
+                // Preparar datos adicionales para especificaciones
+                $informacionAdicional = [];
+                $titulos = $request->input('informacion_adicional_titulo', []);
+                $contenidos = $request->input('informacion_adicional_contenido', []);
+                
+                if (is_array($titulos) && is_array($contenidos)) {
+                    foreach ($titulos as $index => $titulo) {
+                        if (!empty($titulo) && isset($contenidos[$index])) {
+                            $informacionAdicional[] = [
+                                'titulo' => $titulo,
+                                'contenido' => $contenidos[$index]
+                            ];
+                        }
+                    }
+                }
+                
+                // Preparar especificaciones existentes + información adicional
+                $especificaciones = $request->input('especificaciones', []);
+                if (!is_array($especificaciones)) {
+                    $especificaciones = json_decode($especificaciones, true) ?? [];
+                }
+                
+                // Agregar información adicional a especificaciones
+                if (!empty($informacionAdicional)) {
+                    $especificaciones['informacion_adicional'] = $informacionAdicional;
+                }
+                
+                // Agregar campos fijos a especificaciones
+                $condicionesPago = $request->input('condiciones_pago');
+                $tiempoEntrega = $request->input('tiempo_entrega');
+                $cuentasAutorizadas = $request->input('cuentas_autorizadas');
+                
+                if (!empty($condicionesPago)) {
+                    $especificaciones['condiciones_pago'] = $condicionesPago;
+                }
+                if (!empty($tiempoEntrega)) {
+                    $especificaciones['tiempo_entrega'] = $tiempoEntrega;
+                }
+                if (!empty($cuentasAutorizadas)) {
+                    $especificaciones['cuentas_autorizadas'] = $cuentasAutorizadas;
+                }
+
+                // Obtener observaciones generales del textarea
+                $observacionesGenerales = $request->input('observaciones_generales_texto', '');
+                $observacionesGeneralesJson = $request->input('observaciones_generales', '{}');
+                
+                // Logging para depuración
+                Log::info('[CotizacionEppController] Datos recibidos para guardar', [
+                    'observaciones_generales_texto' => $observacionesGenerales,
+                    'observaciones_generales_json' => $observacionesGeneralesJson,
+                    'condiciones_pago' => $request->input('condiciones_pago'),
+                    'tiempo_entrega' => $request->input('tiempo_entrega'),
+                    'cuentas_autorizadas' => $request->input('cuentas_autorizadas'),
+                    'informacion_adicional_titulo' => $request->input('informacion_adicional_titulo'),
+                    'informacion_adicional_contenido' => $request->input('informacion_adicional_contenido'),
+                    'cliente_nit' => $request->input('cliente_nit'),
+                    'cliente_direccion' => $request->input('cliente_direccion'),
+                    'cliente_telefono' => $request->input('cliente_telefono'),
+                    'especificaciones_finales' => $especificaciones,
+                ]);
+
                 if ($cotizacionIdEdicion) {
                     $cotizacion = Cotizacion::query()
                         ->where('id', $cotizacionIdEdicion)
@@ -85,7 +146,17 @@ class CotizacionEppController extends Controller
                         'es_borrador' => $esBorrador,
                         'estado' => $estado,
                         'fecha_envio' => !$esBorrador ? now() : null,
-                        'especificaciones' => json_encode($request->input('especificaciones', [])),
+                        'especificaciones' => json_encode($especificaciones),
+                        'observaciones_generales' => $observacionesGenerales,
+                        'cliente_nit' => $request->input('cliente_nit'),
+                        'cliente_direccion' => $request->input('cliente_direccion'),
+                        'cliente_telefono' => $request->input('cliente_telefono'),
+                    ]);
+                    
+                    Log::info('[CotizacionEppController] Cotización actualizada', [
+                        'cotizacion_id' => $cotizacion->id,
+                        'observaciones_generales_guardadas' => $cotizacion->observaciones_generales,
+                        'especificaciones_guardadas' => $cotizacion->especificaciones,
                     ]);
                 } else {
                     $cotizacion = Cotizacion::create([
@@ -97,27 +168,19 @@ class CotizacionEppController extends Controller
                         'es_borrador' => $esBorrador,
                         'estado' => $estado,
                         'fecha_envio' => !$esBorrador ? now() : null,
-                        'especificaciones' => json_encode($request->input('especificaciones', [])),
+                        'especificaciones' => json_encode($especificaciones),
+                        'observaciones_generales' => $observacionesGenerales,
+                        'cliente_nit' => $request->input('cliente_nit'),
+                        'cliente_direccion' => $request->input('cliente_direccion'),
+                        'cliente_telefono' => $request->input('cliente_telefono'),
+                    ]);
+                    
+                    Log::info('[CotizacionEppController] Cotización creada', [
+                        'cotizacion_id' => $cotizacion->id,
+                        'observaciones_generales_guardadas' => $cotizacion->observaciones_generales,
+                        'especificaciones_guardadas' => $cotizacion->especificaciones,
                     ]);
                 }
-
-                $observacionesGenerales = $request->input('observaciones_generales', []);
-                if (is_string($observacionesGenerales)) {
-                    $observacionesGenerales = json_decode($observacionesGenerales, true) ?? [];
-                }
-                if (!is_array($observacionesGenerales)) {
-                    $observacionesGenerales = [];
-                }
-
-                DB::table('epp_cotizacion')->updateOrInsert(
-                    ['cotizacion_id' => $cotizacion->id],
-                    [
-                        'tipo_venta' => $tipoVenta,
-                        'observaciones_generales' => json_encode($observacionesGenerales),
-                        'updated_at' => now(),
-                        'created_at' => now(),
-                    ]
-                );
 
                 $items = $request->input('items', []);
                 if (is_string($items)) {

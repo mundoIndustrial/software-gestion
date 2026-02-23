@@ -14,6 +14,7 @@
         background: #ffffff;
         border-radius: 10px;
         padding: 16px;
+        border-left: 4px solid #1d4ed8;
         box-shadow: 0 2px 10px rgba(0,0,0,0.06);
         margin-bottom: 1rem;
     }
@@ -42,7 +43,6 @@
     }
 
     .items-pedido-box {
-        border-left: 4px solid #1d4ed8;
         border-radius: 10px;
         padding: 12px;
         background: #ffffff;
@@ -56,6 +56,72 @@
         color: #6b7280;
         font-weight: 500;
         background: #fafafa;
+    }
+
+    .obs-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .obs-header label {
+        font-weight: 700;
+        color: #111827;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .btn-add {
+        background: #1d4ed8;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: bold;
+        transition: all 0.2s;
+    }
+
+    .btn-add:hover {
+        background: #1e40af;
+        transform: scale(1.1);
+    }
+
+    .observacion-item {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+        align-items: center;
+    }
+
+    .observacion-item input {
+        flex: 1;
+        padding: 0.5rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 6px;
+        font-size: 0.9rem;
+    }
+
+    .observacion-item button {
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 0.4rem 0.6rem;
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition: all 0.2s;
+    }
+
+    .observacion-item button:hover {
+        background: #dc2626;
     }
 </style>
 @endsection
@@ -106,6 +172,60 @@
                         <option value="X">X</option>
                     </select>
                 </div>
+            </div>
+
+            <!-- Campos adicionales del cliente -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; grid-column: 1 / -1;">
+                <div>
+                    <label style="display: block; color: rgba(255,255,255,0.8); font-size: 0.7rem; font-weight: 700; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.4px;">CC/NIT</label>
+                    <input type="text" id="header-nit" placeholder="CC/NIT del cliente" style="width: 100%; background: white; border: 2px solid transparent; padding: 0.6rem 0.75rem; border-radius: 6px; font-weight: 600; color: #1e40af; font-size: 0.9rem; transition: all 0.2s;">
+                </div>
+
+                <div>
+                    <label style="display: block; color: rgba(255,255,255,0.8); font-size: 0.7rem; font-weight: 700; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.4px;">Dirección</label>
+                    <input type="text" id="header-direccion" placeholder="Dirección del cliente" style="width: 100%; background: white; border: 2px solid transparent; padding: 0.6rem 0.75rem; border-radius: 6px; font-weight: 600; color: #1e40af; font-size: 0.9rem; transition: all 0.2s;">
+                </div>
+
+                <div>
+                    <label style="display: block; color: rgba(255,255,255,0.8); font-size: 0.7rem; font-weight: 700; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.4px;">Teléfono</label>
+                    <input type="text" id="header-telefono" placeholder="Teléfono del cliente" style="width: 100%; background: white; border: 2px solid transparent; padding: 0.6rem 0.75rem; border-radius: 6px; font-weight: 600; color: #1e40af; font-size: 0.9rem; transition: all 0.2s;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para agregar información adicional -->
+    <div id="modalInformacionAdicional" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; padding: 2rem; width: 90%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
+            <h3 style="margin: 0 0 1.5rem 0; color: #111827; font-size: 1.25rem; font-weight: 700;">Agregar Información Adicional</h3>
+            
+            <div style="margin-bottom: 1rem;">
+                <label for="titulo-informacion" style="display: block; color: #111827; font-size: 0.75rem; font-weight: 800; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.4px;">Título</label>
+                <input 
+                    type="text" 
+                    id="titulo-informacion" 
+                    placeholder="Ej: Garantía, Devoluciones, etc."
+                    style="width: 100%; background: white; border: 2px solid #e5e7eb; padding: 0.6rem 0.75rem; border-radius: 8px; font-weight: 600; color: #111827; font-size: 0.9rem; transition: all 0.2s;"
+                >
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label for="contenido-informacion" style="display: block; color: #111827; font-size: 0.75rem; font-weight: 800; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.4px;">Contenido</label>
+                <textarea 
+                    id="contenido-informacion" 
+                    placeholder="Ingrese la información adicional..."
+                    rows="4"
+                    style="width: 100%; background: white; border: 2px solid #e5e7eb; padding: 0.6rem 0.75rem; border-radius: 8px; font-weight: 600; color: #111827; font-size: 0.9rem; transition: all 0.2s; resize: vertical;"
+                ></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <button type="button" onclick="cerrarModalInformacionAdicional()" style="padding: 0.5rem 1.2rem; background: #6b7280; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; font-size: 0.85rem; transition: all 0.2s;">
+                    Cancelar
+                </button>
+                <button type="button" onclick="guardarInformacionAdicional()" style="padding: 0.5rem 1.2rem; background: #1d4ed8; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; font-size: 0.85rem; transition: all 0.2s;">
+                    Agregar
+                </button>
             </div>
         </div>
     </div>
@@ -181,6 +301,65 @@
                 </div>
             </div>
 
+            <div class="form-section">
+                <div class="obs-header">
+                    <label for="observaciones_generales">Observaciones Generales</label>
+                </div>
+                <textarea 
+                    id="observaciones_generales" 
+                    name="observaciones_generales" 
+                    placeholder="Observaciones Generales"
+                    rows="3"
+                    style="width: 100%; background: white; border: 2px solid #e5e7eb; padding: 0.6rem 0.75rem; border-radius: 8px; font-weight: 600; color: #111827; font-size: 0.9rem; transition: all 0.2s; resize: vertical; margin-bottom: 1rem;"
+                >OFERTA SUJETA A CAMBIOS Y DISPONIBILIDAD AL MOMENTO DE REALIZAR LA COMPRA
+
+NO REALIZAMOS DESPACHO SIN PREVIO PAGO</textarea>
+                <div id="observaciones-container">
+                    <!-- Aquí se agregarán las observaciones dinámicamente -->
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2 style="margin: 0;">
+                        <span>3</span>
+                        Información Adicional
+                    </h2>
+                    <button type="button" class="btn-add" onclick="agregarInformacionAdicional()">+</button>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                    <div>
+                        <label for="condiciones_pago" style="display: block; color: #111827; font-size: 0.75rem; font-weight: 800; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.4px;">Condiciones de pago</label>
+                        <input type="text" id="condiciones_pago" name="condiciones_pago" placeholder="Condiciones de pago" style="width: 100%; background: white; border: 2px solid #e5e7eb; padding: 0.6rem 0.75rem; border-radius: 8px; font-weight: 600; color: #111827; font-size: 0.9rem; transition: all 0.2s;">
+                    </div>
+
+                    <div>
+                        <label for="tiempo_entrega" style="display: block; color: #111827; font-size: 0.75rem; font-weight: 800; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.4px;">Tiempo de entrega</label>
+                        <input type="text" id="tiempo_entrega" name="tiempo_entrega" placeholder="Tiempo de entrega" style="width: 100%; background: white; border: 2px solid #e5e7eb; padding: 0.6rem 0.75rem; border-radius: 8px; font-weight: 600; color: #111827; font-size: 0.9rem; transition: all 0.2s;">
+                    </div>
+                </div>
+
+                <div style="margin-top: 1rem;">
+                    <label for="cuentas_autorizadas" style="display: block; color: #111827; font-size: 0.75rem; font-weight: 800; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.4px;">Cuentas Autorizadas</label>
+                    <textarea 
+                        id="cuentas_autorizadas" 
+                        name="cuentas_autorizadas" 
+                        placeholder="Cuentas Autorizadas"
+                        rows="4"
+                        style="width: 100%; background: white; border: 2px solid #e5e7eb; padding: 0.6rem 0.75rem; border-radius: 8px; font-weight: 600; color: #111827; font-size: 0.9rem; transition: all 0.2s; resize: vertical;"
+                    >B. BOGOTA # 614027860 – CTA AHORROS
+BANCOLOMBIA # 088-000575-67 – CTA AHORROS
+A NOMBRE DE: LENIS RUTH MAHECHA ACOSTA 
+NIT 1.093.738.433-3</textarea>
+                </div>
+                
+                <div id="informacion-adicional-container" style="margin-top: 1rem;">
+                    <!-- Aquí se agregarán los campos adicionales dinámicamente -->
+                </div>
+            </div>
+            </div>
+
             <div class="form-actions">
                 <div style="display: flex; gap: 0.5rem; flex: 1; justify-content: flex-end;">
                     <button id="btnGuardarBorradorEpp" type="button" class="btn btn-primary" style="padding: 0.5rem 1.2rem; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); border: 2px solid #3d8b40; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; font-size: 0.85rem; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='linear-gradient(135deg, #45a049 0%, #3d8b40 100%)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(76, 175, 80, 0.2)';" onmouseout="this.style.background='linear-gradient(135deg, #4CAF50 0%, #45a049 100%)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
@@ -218,6 +397,102 @@
 <script defer src="{{ asset('js/modulos/crear-pedido/epp/epp-init.js') }}"></script>
 
 <script>
+    // Funciones globales para el modal
+    function agregarInformacionAdicional() {
+        document.getElementById('modalInformacionAdicional').style.display = 'flex';
+        document.getElementById('titulo-informacion').value = '';
+        document.getElementById('contenido-informacion').value = '';
+        document.getElementById('titulo-informacion').focus();
+    }
+
+    function cerrarModalInformacionAdicional() {
+        document.getElementById('modalInformacionAdicional').style.display = 'none';
+    }
+
+    function guardarInformacionAdicional() {
+        const titulo = document.getElementById('titulo-informacion').value.trim();
+        const contenido = document.getElementById('contenido-informacion').value.trim();
+        
+        if (!titulo || !contenido) {
+            alert('Por favor complete ambos campos: título y contenido.');
+            return;
+        }
+        
+        const container = document.getElementById('informacion-adicional-container');
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'informacion-adicional-item';
+        infoDiv.style.marginBottom = '1rem';
+        infoDiv.style.padding = '1rem';
+        infoDiv.style.background = '#f8fafc';
+        infoDiv.style.border = '2px solid #e5e7eb';
+        infoDiv.style.borderRadius = '8px';
+        
+        // Header con título y botón eliminar
+        const headerDiv = document.createElement('div');
+        headerDiv.style.display = 'flex';
+        headerDiv.style.justifyContent = 'space-between';
+        headerDiv.style.alignItems = 'center';
+        headerDiv.style.marginBottom = '0.5rem';
+        
+        const tituloLabel = document.createElement('label');
+        tituloLabel.style.display = 'block';
+        tituloLabel.style.color = '#111827';
+        tituloLabel.style.fontSize = '0.75rem';
+        tituloLabel.style.fontWeight = '800';
+        tituloLabel.style.marginBottom = '0.35rem';
+        tituloLabel.style.textTransform = 'uppercase';
+        tituloLabel.style.letterSpacing = '0.4px';
+        tituloLabel.textContent = titulo;
+        
+        const btnEliminar = document.createElement('button');
+        btnEliminar.type = 'button';
+        btnEliminar.textContent = '×';
+        btnEliminar.style.background = '#ef4444';
+        btnEliminar.style.color = 'white';
+        btnEliminar.style.border = 'none';
+        btnEliminar.style.borderRadius = '4px';
+        btnEliminar.style.padding = '0.25rem 0.5rem';
+        btnEliminar.style.cursor = 'pointer';
+        btnEliminar.style.fontSize = '1rem';
+        btnEliminar.style.fontWeight = 'bold';
+        btnEliminar.onclick = function() {
+            infoDiv.remove();
+        };
+        
+        headerDiv.appendChild(tituloLabel);
+        headerDiv.appendChild(btnEliminar);
+        
+        // Campo oculto para título
+        const inputTitulo = document.createElement('input');
+        inputTitulo.type = 'hidden';
+        inputTitulo.name = 'informacion_adicional_titulo[]';
+        inputTitulo.value = titulo;
+        
+        // Campo oculto para contenido
+        const inputContenido = document.createElement('input');
+        inputContenido.type = 'hidden';
+        inputContenido.name = 'informacion_adicional_contenido[]';
+        inputContenido.value = contenido;
+        
+        // Contenido visible
+        const contenidoDiv = document.createElement('div');
+        contenidoDiv.style.color = '#111827';
+        contenidoDiv.style.fontSize = '0.9rem';
+        contenidoDiv.style.fontWeight = '500';
+        contenidoDiv.style.whiteSpace = 'pre-wrap';
+        contenidoDiv.textContent = contenido;
+        
+        infoDiv.appendChild(headerDiv);
+        infoDiv.appendChild(inputTitulo);
+        infoDiv.appendChild(inputContenido);
+        infoDiv.appendChild(contenidoDiv);
+        
+        container.appendChild(infoDiv);
+        
+        // Cerrar modal
+        cerrarModalInformacionAdicional();
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         const emptySelector = '#prendas-container-editable .empty-state';
         const listSelector = '#lista-items-pedido';
@@ -328,6 +603,11 @@
             const cliente = document.getElementById('header-cliente')?.value?.trim();
             const tipoVenta = document.getElementById('header-tipo-venta')?.value?.trim();
             const ivaRaw = document.getElementById('valor-iva-epp')?.value;
+            
+            // Capturar campos adicionales del cliente
+            const clienteNit = document.getElementById('header-nit')?.value?.trim() || '';
+            const clienteDireccion = document.getElementById('header-direccion')?.value?.trim() || '';
+            const clienteTelefono = document.getElementById('header-telefono')?.value?.trim() || '';
 
             async function convertirImagenAFile(img, fallbackName = 'epp_imagen.webp') {
                 try {
@@ -395,6 +675,9 @@
             formData.append('_token', document.querySelector('input[name="_token"]')?.value || '');
             formData.append('accion', accion);
             formData.append('cliente', cliente);
+            formData.append('cliente_nit', clienteNit);
+            formData.append('cliente_direccion', clienteDireccion);
+            formData.append('cliente_telefono', clienteTelefono);
             formData.append('tipo_venta', tipoVenta);
 
             if (window.__EPP_COTIZACION_EDIT__ && window.__EPP_COTIZACION_ID__) {
@@ -404,11 +687,68 @@
             const ivaValor = (ivaRaw !== undefined && ivaRaw !== null && String(ivaRaw).trim() !== '' && !isNaN(Number(ivaRaw)))
                 ? Number(ivaRaw)
                 : null;
+            
+            // Capturar observaciones generales del textarea
+            const observacionesGeneralesTexto = document.getElementById('observaciones_generales')?.value?.trim() || '';
+            
+            // Capturar campos adicionales
+            const condicionesPago = document.getElementById('condiciones_pago')?.value?.trim() || '';
+            const tiempoEntrega = document.getElementById('tiempo_entrega')?.value?.trim() || '';
+            const cuentasAutorizadas = document.getElementById('cuentas_autorizadas')?.value?.trim() || '';
+            
+            // Capturar información adicional dinámica
+            const titulosAdicionales = [];
+            const contenidosAdicionales = [];
+            const elementosAdicionales = document.querySelectorAll('#informacion-adicional-container .informacion-adicional-item');
+            
+            elementosAdicionales.forEach(elemento => {
+                const tituloElement = elemento.querySelector('input[name="informacion_adicional_titulo[]"]');
+                const contenidoElement = elemento.querySelector('input[name="informacion_adicional_contenido[]"]');
+                
+                if (tituloElement && contenidoElement) {
+                    const titulo = tituloElement.value?.trim() || '';
+                    const contenido = contenidoElement.value?.trim() || '';
+                    
+                    if (titulo && contenido) {
+                        titulosAdicionales.push(titulo);
+                        contenidosAdicionales.push(contenido);
+                    }
+                }
+            });
+            
+            // Crear objeto de observaciones generales con IVA
             const observacionesGenerales = {};
             if (ivaValor !== null) {
                 observacionesGenerales.valor_iva = ivaValor;
             }
+            
             formData.append('observaciones_generales', JSON.stringify(observacionesGenerales));
+            
+            // Agregar campos adicionales al formData
+            if (condicionesPago) {
+                formData.append('condiciones_pago', condicionesPago);
+            }
+            if (tiempoEntrega) {
+                formData.append('tiempo_entrega', tiempoEntrega);
+            }
+            if (cuentasAutorizadas) {
+                formData.append('cuentas_autorizadas', cuentasAutorizadas);
+            }
+            
+            // Agregar información adicional
+            if (titulosAdicionales.length > 0) {
+                titulosAdicionales.forEach((titulo, index) => {
+                    formData.append(`informacion_adicional_titulo[${index}]`, titulo);
+                });
+            }
+            if (contenidosAdicionales.length > 0) {
+                contenidosAdicionales.forEach((contenido, index) => {
+                    formData.append(`informacion_adicional_contenido[${index}]`, contenido);
+                });
+            }
+            
+            // Agregar observaciones generales del textarea como campo separado
+            formData.append('observaciones_generales_texto', observacionesGeneralesTexto);
 
             // Items (sin archivos, esos van aparte)
             const itemsPayload = epps.map((epp) => ({
@@ -520,6 +860,31 @@
 
             const hasItems = list.querySelectorAll('.item-epp, .item-epp-card').length > 0;
             empty.style.display = hasItems ? 'none' : 'flex';
+        }
+
+        function agregarObservacion() {
+            const container = document.getElementById('observaciones-container');
+            const observacionDiv = document.createElement('div');
+            observacionDiv.className = 'observacion-item';
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.placeholder = 'Ingrese una observación...';
+            input.name = 'observaciones_generales[]';
+            
+            const btnEliminar = document.createElement('button');
+            btnEliminar.type = 'button';
+            btnEliminar.textContent = '×';
+            btnEliminar.onclick = function() {
+                observacionDiv.remove();
+            };
+            
+            observacionDiv.appendChild(input);
+            observacionDiv.appendChild(btnEliminar);
+            container.appendChild(observacionDiv);
+            
+            // Enfocar el nuevo input
+            input.focus();
         }
 
         // Actualizar totales cuando cambie el IVA

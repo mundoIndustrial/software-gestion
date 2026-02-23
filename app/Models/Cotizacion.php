@@ -47,7 +47,7 @@ class Cotizacion extends Model
         'imagenes' => 'array',
         'tecnicas' => 'array',
         'observaciones_tecnicas' => 'string',
-        'observaciones_generales' => 'array',
+        'observaciones_generales' => 'string',
         'estado' => 'string',
         'tipo_cotizacion' => 'string'
     ];
