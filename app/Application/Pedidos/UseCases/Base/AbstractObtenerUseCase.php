@@ -167,10 +167,49 @@ abstract class AbstractObtenerUseCase
                 'coloresTelas' => function ($q) {
                     $q->with(['color', 'tela', 'fotos']);
                 },
-                'fotos'
+                'fotos',
+                'entrega' => function ($q) {
+                    $q->with(['usuario:id,name']);
+                }
             ])
             ->get()
+            ->map(function ($prenda) {
+                // Asegurar que los datos de entrega se serialicen correctamente
+                $prendaArray = $prenda->toArray();
+                
+                if ($prenda->entrega) {
+                    $prendaArray['entrega'] = [
+                        'id' => $prenda->entrega->id,
+                        'prenda_pedido_id' => $prenda->entrega->prenda_pedido_id,
+                        'entregado' => $prenda->entrega->entregado,
+                        'fecha_entrega' => $prenda->entrega->fecha_entrega,
+                        'usuario_id' => $prenda->entrega->usuario_id,
+                        'usuario' => $prenda->entrega->usuario ? [
+                            'id' => $prenda->entrega->usuario->id,
+                            'name' => $prenda->entrega->usuario->name
+                        ] : null
+                    ];
+                }
+                
+                return $prendaArray;
+            })
             ->toArray();
+        
+        // DEBUG: Verificar datos de entrega específicamente
+        foreach ($prendas as $index => $prenda) {
+            if (isset($prenda['entrega'])) {
+                \Log::debug("[obtenerPrendas] Prenda {$index} - Datos de entrega:", [
+                    'prenda_id' => $prenda['id'],
+                    'entrega_existe' => !empty($prenda['entrega']),
+                    'entregado' => $prenda['entrega']['entregado'] ?? null,
+                    'usuario_id' => $prenda['entrega']['usuario_id'] ?? null,
+                    'usuario_datos' => $prenda['entrega']['usuario'] ?? null,
+                    'usuario_nombre' => $prenda['entrega']['usuario']['name'] ?? null
+                ]);
+            } else {
+                \Log::debug("[obtenerPrendas] Prenda {$index} - Sin datos de entrega");
+            }
+        }
         
         \Log::debug('[obtenerPrendas] QUERY RESULT', [
             'pedido_id' => $pedidoId,

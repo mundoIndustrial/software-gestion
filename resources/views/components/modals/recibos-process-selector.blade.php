@@ -507,6 +507,71 @@
             const colorBoton = estaEntregada ? '#3b82f6' : '#10b981';
             const iconoBoton = estaEntregada ? 'fa-check-double' : 'fa-check-circle';
             const ocultarBotonEntregar = window.location.pathname.includes('/registros');
+            
+            // Depuración completa de datos de la prenda
+            console.log('[PRENDA-DEBUG] Datos completos de la prenda:', {
+                prenda_id: prenda.id,
+                nombre: prenda.nombre,
+                entrega: prenda.entrega,
+                entrega_existe: !!prenda.entrega,
+                entregado: estaEntregada,
+                usuario: prenda.entrega?.usuario,
+                usuario_id: prenda.entrega?.usuario_id,
+                usuario_nombre: prenda.entrega?.usuario?.name,
+                fecha_entrega: prenda.entrega?.fecha_entrega
+            });
+            
+            // Obtener fecha de entrega si está entregada
+            let fechaEntregaHtml = '';
+            if (estaEntregada && prenda.entrega?.fecha_entrega) {
+                const fechaEntrega = new Date(prenda.entrega.fecha_entrega);
+                const fechaFormateada = fechaEntrega.toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true // Usar formato AM/PM
+                });
+                
+                // Depuración: mostrar datos disponibles
+                console.log('[DEBUG] Datos de entrega:', {
+                    entrega: prenda.entrega,
+                    usuario: prenda.entrega?.usuario,
+                    usuario_id: prenda.entrega?.usuario_id,
+                    nombre_usuario: prenda.entrega?.usuario?.name
+                });
+                
+                // Obtener nombre real del usuario con múltiples fallbacks
+                let nombreUsuario = 'Usuario desconocido';
+                
+                // Caso 1: usuario es un objeto con propiedad name
+                if (prenda.entrega?.usuario?.name) {
+                    nombreUsuario = prenda.entrega.usuario.name;
+                }
+                // Caso 2: usuario es directamente un string (el nombre)
+                else if (typeof prenda.entrega?.usuario === 'string' && prenda.entrega.usuario.trim() !== '') {
+                    nombreUsuario = prenda.entrega.usuario;
+                }
+                // Caso 3: tenemos usuario_id pero no el nombre
+                else if (prenda.entrega?.usuario_id) {
+                    nombreUsuario = `Usuario #${prenda.entrega.usuario_id}`;
+                }
+                // Caso 4: es el administrador
+                else if (prenda.entrega?.usuario_id === 1) {
+                    nombreUsuario = 'Administrador';
+                }
+                
+                console.log('[DEBUG] Nombre final de usuario:', nombreUsuario);
+                
+                fechaEntregaHtml = `
+                    <div style="margin-left: 12px; font-size: 11px; color: #6b7280; display: flex; flex-direction: column; gap: 2px;">
+                        <span style="font-weight: 600; color: #3b82f6;">Entregado: ${fechaFormateada}</span>
+                        <span style="font-size: 10px; color: #9ca3af;">Por: ${nombreUsuario}</span>
+                    </div>
+                `;
+            }
+            
             const botonEntregarHtml = ocultarBotonEntregar ? '' : `
                         <button class="btn-entregar-prenda ${claseBotonEntregado}" onclick="event.stopPropagation(); toggleEntregarPrenda(this, ${prenda.id || prendaIdx})" style="background: ${colorBoton};">
                             <i class="fas ${iconoBoton}"></i>
@@ -521,6 +586,7 @@
                             <p class="prenda-subtitle">${totalRecibos} recibo(s)</p>
                         </div>
                         ${botonEntregarHtml}
+                        ${fechaEntregaHtml}
                         <div class="prenda-chevron">▼</div>
                     </div>
                     <div class="prenda-processes" id="${idAccordion}">
