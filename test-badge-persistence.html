@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Badge Persistence</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn-ver-dropdown {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            width: 36px;
+            height: 36px;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+        }
+        .btn-ver-dropdown:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(37, 99, 235, 0.4);
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            background: #e3f2fd;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        button {
+            margin: 5px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .clear {
+            background: #dc3545;
+        }
+        .clear:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test de Persistencia de Badges</h1>
+    
+    <div class="test-container">
+        <h2>Botón de Prueba</h2>
+        <p>Este botón simula el botón "Ver" con notificaciones:</p>
+        
+        <button class="btn-ver-dropdown" data-pedido-id="19" data-pedido="#19">
+            <i class="fas fa-eye">👁️</i>
+        </button>
+        
+        <div class="status" id="status">
+            Estado: Esperando acciones...
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>Controles de Prueba</h2>
+        <button onclick="simularBadge()">🔔 Simular Badge</button>
+        <button onclick="marcarComoVisto()">✅ Marcar como Visto</button>
+        <button onclick="verificarEstado()">🔍 Verificar Estado</button>
+        <button onclick="recargarPagina()">🔄 Recargar Página</button>
+        <button class="clear" onclick="limpiarLocalStorage()">🗑️ Limpiar LocalStorage</button>
+    </div>
+
+    <div class="test-container">
+        <h2>Log de Eventos</h2>
+        <div class="log" id="log"></div>
+        <button onclick="limpiarLog()">Limpiar Log</button>
+    </div>
+
+    <script>
+        // Clave para localStorage
+        const BADGE_STORAGE_KEY = 'obs_despacho_badges_seen';
+        
+        // Funciones de localStorage
+        function getSeenBadges() {
+            try {
+                const data = localStorage.getItem(BADGE_STORAGE_KEY);
+                return data ? JSON.parse(data) : {};
+            } catch (e) {
+                log('❌ Error leyendo localStorage: ' + e.message);
+                return {};
+            }
+        }
+        
+        function setBadgeSeen(pedidoId) {
+            try {
+                const seen = getSeenBadges();
+                seen[pedidoId] = Date.now();
+                localStorage.setItem(BADGE_STORAGE_KEY, JSON.stringify(seen));
+                log(`✅ Badge ${pedidoId} marcado como visto en localStorage`);
+            } catch (e) {
+                log('❌ Error guardando en localStorage: ' + e.message);
+            }
+        }
+        
+        function isBadgeRecentlySeen(pedidoId) {
+            const seen = getSeenBadges();
+            const seenTime = seen[pedidoId];
+            if (!seenTime) return false;
+            
+            const twentyFourHours = 24 * 60 * 60 * 1000;
+            return (Date.now() - seenTime) < twentyFourHours;
+        }
+
+        function clearBadge(pedidoId) {
+            const btn = document.querySelector(`.btn-ver-dropdown[data-pedido-id="${pedidoId}"]`);
+            if (!btn) return;
+            const badge = btn.querySelector('.obs-despacho-badge');
+            if (badge) badge.remove();
+        }
+
+        function renderBadge(pedidoId, count) {
+            const btn = document.querySelector(`.btn-ver-dropdown[data-pedido-id="${pedidoId}"]`);
+            if (!btn) return;
+            
+            // Verificar si fue visto recientemente
+            if (isBadgeRecentlySeen(pedidoId)) {
+                log(`⏰ Badge ${pedidoId} fue visto recientemente, no mostrar`);
+                clearBadge(pedidoId);
+                return;
+            }
+            
+            clearBadge(pedidoId);
+            if (!count || count <= 0) return;
+
+            const badge = document.createElement('span');
+            badge.className = 'obs-despacho-badge';
+            badge.textContent = count > 99 ? '99+' : String(count);
+            badge.style.cssText = [
+                'position:absolute',
+                'top:-6px',
+                'right:-6px',
+                'min-width:18px',
+                'height:18px',
+                'padding:0 5px',
+                'border-radius:999px',
+                'background:#ef4444',
+                'color:#ffffff',
+                'font-size:11px',
+                'font-weight:700',
+                'line-height:18px',
+                'text-align:center',
+                'box-shadow:0 2px 6px rgba(0,0,0,0.25)'
+            ].join(';');
+            btn.appendChild(badge);
+            
+            log(`🎯 Badge creado para pedido ${pedidoId} con count: ${count}`);
+        }
+
+        function log(message) {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.textContent += `[${timestamp}] ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = `Estado: ${message}`;
+        }
+
+        // Funciones de prueba
+        function simularBadge() {
+            log('🔔 Simulando badge para pedido 19...');
+            renderBadge('19', 1);
+            updateStatus('Badge mostrado');
+        }
+
+        function marcarComoVisto() {
+            log('✅ Marcando badge como visto...');
+            setBadgeSeen('19');
+            clearBadge('19');
+            updateStatus('Badge marcado como visto y eliminado');
+        }
+
+        function verificarEstado() {
+            const seen = getSeenBadges();
+            const isSeen = isBadgeRecentlySeen('19');
+            log(`🔍 Estado actual:`);
+            log(`   - Badges vistos: ${JSON.stringify(seen)}`);
+            log(`   - Pedido 19 visto recientemente: ${isSeen}`);
+            log(`   - Tiempo restante: ${isSeen ? Math.round((24*60*60*1000 - (Date.now() - seen['19']))/1000/60) + ' minutos' : 'N/A'}`);
+            updateStatus(`Verificación completada`);
+        }
+
+        function recargarPagina() {
+            log('🔄 Recargando página en 2 segundos...');
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        }
+
+        function limpiarLocalStorage() {
+            localStorage.removeItem(BADGE_STORAGE_KEY);
+            log('🗑️ LocalStorage limpiado');
+            clearBadge('19');
+            updateStatus('LocalStorage limpiado');
+        }
+
+        function limpiarLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        // Event listener para el botón
+        document.addEventListener('click', function(e) {
+            const button = e.target.closest('.btn-ver-dropdown');
+            if (button) {
+                const pedidoId = button.getAttribute('data-pedido-id');
+                log(`🖱️ Click en botón Ver - Pedido ${pedidoId}`);
+                setBadgeSeen(pedidoId);
+                clearBadge(pedidoId);
+                updateStatus(`Badge del pedido ${pedidoId} marcado como visto`);
+            }
+        });
+
+        // Verificar estado al cargar la página
+        window.addEventListener('load', function() {
+            log('🚀 Página cargada');
+            const seen = getSeenBadges();
+            log(`📋 Badges previamente vistos: ${JSON.stringify(seen)}`);
+            
+            // Simular badge si no fue visto
+            if (!isBadgeRecentlySeen('19')) {
+                log('🎯 Badge no visto recientemente, mostrando...');
+                renderBadge('19', 1);
+                updateStatus('Badge mostrado (no visto recientemente)');
+            } else {
+                log('⏰ Badge fue visto recientemente, no mostrar');
+                updateStatus('Badge oculto (visto recientemente)');
+            }
+        });
+    </script>
+</body>
+</html>

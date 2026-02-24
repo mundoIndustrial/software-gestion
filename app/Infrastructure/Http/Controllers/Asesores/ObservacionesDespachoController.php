@@ -96,8 +96,8 @@ class ObservacionesDespachoController extends Controller
         $conteos = PedidoObservacionesDespacho::query()
             ->selectRaw('pedido_produccion_id, COUNT(*) as unread')
             ->whereIn('pedido_produccion_id', $permitidos)
-            ->where('estado', 0)
             ->where('usuario_rol', 'Despacho')
+            ->whereNull('visto_at')
             ->groupBy('pedido_produccion_id')
             ->pluck('unread', 'pedido_produccion_id');
 
@@ -120,9 +120,9 @@ class ObservacionesDespachoController extends Controller
 
         PedidoObservacionesDespacho::query()
             ->where('pedido_produccion_id', $pedido->id)
-            ->where('estado', 0)
             ->where('usuario_rol', 'Despacho')
-            ->update(['estado' => 1]);
+            ->whereNull('visto_at')
+            ->update(['visto_at' => now()]);
 
         return response()->json([
             'success' => true,

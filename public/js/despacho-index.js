@@ -8,6 +8,44 @@
     window.__despachoObsCtx = window.__despachoObsCtx || { pedidoId: null };
 
     // ==================== BADGE FUNCTIONS ====================
+    
+    // Clave para localStorage
+    const BADGE_STORAGE_KEY = 'obs_despacho_badges_seen';
+    
+    // Obtener badges marcados como vistos desde localStorage
+    function getSeenBadges() {
+        try {
+            const data = localStorage.getItem(BADGE_STORAGE_KEY);
+            return data ? JSON.parse(data) : {};
+        } catch (e) {
+            console.warn('[DEBUG-BADGE] Error leyendo localStorage:', e);
+            return {};
+        }
+    }
+    
+    // Guardar badge como visto en localStorage
+    function setBadgeSeen(pedidoId) {
+        try {
+            const seen = getSeenBadges();
+            seen[pedidoId] = Date.now();
+            localStorage.setItem(BADGE_STORAGE_KEY, JSON.stringify(seen));
+            console.log(`[DEBUG-BADGE] Badge ${pedidoId} marcado como visto en localStorage`);
+        } catch (e) {
+            console.warn('[DEBUG-BADGE] Error guardando en localStorage:', e);
+        }
+    }
+    
+    // Verificar si el badge fue visto recientemente (dentro de las últimas 24 horas)
+    function isBadgeRecentlySeen(pedidoId) {
+        const seen = getSeenBadges();
+        const seenTime = seen[pedidoId];
+        if (!seenTime) return false;
+        
+        // Considerar como visto si fue marcado en las últimas 24 horas
+        const twentyFourHours = 24 * 60 * 60 * 1000;
+        return (Date.now() - seenTime) < twentyFourHours;
+    }
+
     function __clearBadge(pedidoId) {
         console.log(`[DEBUG-BADGE] __clearBadge llamado para pedidoId: ${pedidoId}`);
         
@@ -38,6 +76,13 @@
 
     function __renderBadge(pedidoId, count) {
         console.log(`[DEBUG-BADGE] __renderBadge llamado - pedidoId: ${pedidoId}, count: ${count}`);
+        
+        // Verificar si el badge fue visto recientemente
+        if (isBadgeRecentlySeen(pedidoId)) {
+            console.log(`[DEBUG-BADGE] Badge ${pedidoId} fue visto recientemente, no mostrar`);
+            __clearBadge(pedidoId);
+            return;
+        }
         
         // Buscar en botones de despacho primero
         let btn = document.querySelector(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
@@ -169,6 +214,9 @@
         console.log(`[DEBUG-BADGE] marcarNotificacionesComoVistas llamado para pedidoId: ${pedidoId}`);
         
         try {
+            // Marcar como visto en localStorage inmediatamente
+            setBadgeSeen(pedidoId);
+            
             // Detectar si estamos en despacho o asesores
             const isDespachoPage = window.location.pathname.includes('/despacho');
             const url = isDespachoPage 
@@ -647,6 +695,11 @@
     window.guardarObservacionDespachoIndex = guardarObservacionDespachoIndex;
     window.editarObservacionDespachoIndex = editarObservacionDespachoIndex;
     window.eliminarObservacionDespachoIndex = eliminarObservacionDespachoIndex;
+    
+    // Hacer funciones de localStorage disponibles globalmente
+    window.getSeenBadges = getSeenBadges;
+    window.setBadgeSeen = setBadgeSeen;
+    window.isBadgeRecentlySeen = isBadgeRecentlySeen;
 
     // ==================== INSERTAR PEDIDO EN TIEMPO REAL ====================
     function getEstadoBadgeClass(estado) {

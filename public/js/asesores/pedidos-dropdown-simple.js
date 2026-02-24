@@ -423,6 +423,12 @@ window.crearDropdownVer = function(button) {
             
             e.stopPropagation();
             
+            // IMPORTANTE: Marcar badge como visto cuando el usuario hace clic en el botón
+            if (pedidoId && typeof window.setBadgeSeen === 'function') {
+                window.setBadgeSeen(pedidoId);
+                console.log('[pedidos-dropdown] Badge marcado como visto para pedido:', pedidoId);
+            }
+            
             // IMPORTANTE: Cerrar TODOS los dropdowns abiertos PRIMERO
             console.log('[pedidos-dropdown] Cerrando todos los dropdowns...');
             document.querySelectorAll('.dropdown-menu').forEach(menu => {

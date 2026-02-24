@@ -5,6 +5,54 @@
         return '';
     }
 
+    // ==================== BADGE PERSISTENCE ====================
+    // Clave para localStorage
+    const BADGE_STORAGE_KEY = 'obs_despacho_badges_seen';
+    
+    // Obtener badges marcados como vistos desde localStorage
+    function getSeenBadges() {
+        try {
+            const data = localStorage.getItem(BADGE_STORAGE_KEY);
+            return data ? JSON.parse(data) : {};
+        } catch (e) {
+            console.warn('[Asesores] Error leyendo localStorage:', e);
+            return {};
+        }
+    }
+    
+    // Guardar badge como visto en localStorage
+    function setBadgeSeen(pedidoId) {
+        try {
+            const seen = getSeenBadges();
+            seen[pedidoId] = Date.now();
+            localStorage.setItem(BADGE_STORAGE_KEY, JSON.stringify(seen));
+            console.log(`[Asesores] Badge ${pedidoId} marcado como visto en localStorage`);
+        } catch (e) {
+            console.warn('[Asesores] Error guardando en localStorage:', e);
+        }
+    }
+    
+    // Verificar si el badge fue visto recientemente (dentro de las últimas 24 horas)
+    function isBadgeRecentlySeen(pedidoId) {
+        const seen = getSeenBadges();
+        const seenTime = seen[pedidoId];
+        console.log(`[Asesores] isBadgeRecentlySeen - pedidoId: ${pedidoId}, seenTime: ${seenTime}`);
+        
+        if (!seenTime) {
+            console.log(`[Asesores] Badge ${pedidoId} nunca fue visto`);
+            return false;
+        }
+        
+        // Considerar como visto si fue marcado en las últimas 24 horas
+        const twentyFourHours = 24 * 60 * 60 * 1000;
+        const isRecent = (Date.now() - seenTime) < twentyFourHours;
+        const timeDiff = Date.now() - seenTime;
+        const hoursAgo = Math.floor(timeDiff / (1000 * 60 * 60));
+        
+        console.log(`[Asesores] Badge ${pedidoId} visto hace ${hoursAgo} horas, es reciente: ${isRecent}`);
+        return isRecent;
+    }
+
     function __clearBadge(pedidoId) {
         const btn = document.querySelector(`.btn-ver-dropdown[data-pedido-id="${pedidoId}"]`);
         if (!btn) return;
@@ -13,11 +61,36 @@
     }
 
     function __renderBadge(pedidoId, count) {
+        console.log(`[Asesores] __renderBadge llamado - pedidoId: ${pedidoId}, count: ${count}`);
+        
         const btn = document.querySelector(`.btn-ver-dropdown[data-pedido-id="${pedidoId}"]`);
-        if (!btn) return;
+        console.log(`[Asesores] Botón encontrado para render:`, btn);
+        
+        if (!btn) {
+            console.warn(`[Asesores] No se encontró botón para pedido ${pedidoId}`);
+            return;
+        }
+        
+        // Verificar si el badge fue visto recientemente
+        const wasRecentlySeen = isBadgeRecentlySeen(pedidoId);
+        console.log(`[Asesores] Badge ${pedidoId} fue visto recientemente: ${wasRecentlySeen}`);
+        
+        if (wasRecentlySeen) {
+            console.log(`[Asesores] Badge ${pedidoId} fue visto recientemente, no mostrar`);
+            __clearBadge(pedidoId);
+            return;
+        }
+        
+        console.log(`[Asesores] Limpiando badge existente antes de renderizar`);
         __clearBadge(pedidoId);
-        if (!count || count <= 0) return;
+        
+        if (!count || count <= 0) {
+            console.log(`[Asesores] No hay badge para mostrar - count: ${count}`);
+            return;
+        }
 
+        console.log(`[Asesores] Creando badge para pedido ${pedidoId} con count: ${count}`);
+        
         const badge = document.createElement('span');
         badge.className = 'obs-despacho-badge';
         badge.textContent = count > 99 ? '99+' : String(count);
@@ -38,25 +111,32 @@
             'box-shadow:0 2px 6px rgba(0,0,0,0.25)'
         ].join(';');
         btn.appendChild(badge);
+        
+        console.log(`[Asesores] Badge agregado exitosamente para pedido ${pedidoId}`);
+        console.log(`[Asesores] Badge HTML:`, badge.outerHTML);
     }
 
     async function refrescarBadgesObservacionesDespachoAsesores() {
-        // DESACTIVADO: Usar sistema unificado de despacho-index.js
-        // Esto evita conflictos entre múltiples sistemas de badges
-        console.log('[DEBUG] refrescarBadgesObservacionesDespachoAsesores desactivado - usando despacho-index.js');
-        return;
+        console.log('[Asesores] Iniciando refrescarBadgesObservacionesDespachoAsesores');
         
-        /* Código original comentado para evitar conflictos
         try {
             const rows = Array.from(document.querySelectorAll('[data-pedido-row][data-pedido-id]'));
+            console.log('[Asesores] Filas encontradas:', rows.length);
+            
             const ids = rows
                 .map(r => r.getAttribute('data-pedido-id'))
                 .filter(Boolean)
                 .map(v => parseInt(v, 10))
                 .filter(n => Number.isFinite(n));
 
-            if (ids.length === 0) return;
+            console.log('[Asesores] IDs de pedidos encontrados:', ids);
 
+            if (ids.length === 0) {
+                console.log('[Asesores] No se encontraron IDs de pedidos, saliendo');
+                return;
+            }
+
+            console.log('[Asesores] Obteniendo resumen de observaciones...');
             const r = await fetch('/asesores/pedidos/observaciones-despacho/resumen', {
                 method: 'POST',
                 headers: {
@@ -69,16 +149,21 @@
             });
 
             const data = await r.json().catch(() => null);
+            console.log('[Asesores] Respuesta del servidor:', data);
+            
             const map = (data && data.success && data.data) ? data.data : {};
+            console.log('[Asesores] Map de unread counts:', map);
 
             ids.forEach((pedidoId) => {
                 const unread = parseInt(map?.[pedidoId]?.unread ?? '0', 10) || 0;
+                console.log(`[Asesores] Pedido ${pedidoId} - unread: ${unread}`);
                 __renderBadge(pedidoId, unread);
             });
+            
+            console.log('[Asesores] Refrescado de badges completado');
         } catch (e) {
-            console.error('Error refrescando badges de observaciones despacho:', e);
+            console.error('[Asesores] Error refrescando badges de observaciones despacho:', e);
         }
-        */ // Fin del código comentado
     }
 
     window.__asesoresObsDespachoCtx = window.__asesoresObsDespachoCtx || { pedidoId: null, pedidoNumero: null };
@@ -113,6 +198,9 @@
         if (nueva) nueva.value = '';
 
         await cargarObservacionesDespachoAsesores();
+
+        // Marcar como visto en localStorage inmediatamente
+        setBadgeSeen(pedidoId);
 
         // Marcar notificaciones como vistas cuando el usuario abre el modal
         try {
@@ -528,6 +616,11 @@
     window.guardarObservacionDespachoAsesores = guardarObservacionDespachoAsesores;
     window.editarObservacionDespachoAsesores = editarObservacionDespachoAsesores;
     window.eliminarObservacionDespachoAsesores = eliminarObservacionDespachoAsesores;
+    
+    // Hacer funciones de localStorage disponibles globalmente
+    window.getSeenBadges = getSeenBadges;
+    window.setBadgeSeen = setBadgeSeen;
+    window.isBadgeRecentlySeen = isBadgeRecentlySeen;
 
     // ==================== WEBSOCKET / REALTIME ====================
     function setupObservacionesRealtimeAsesores() {

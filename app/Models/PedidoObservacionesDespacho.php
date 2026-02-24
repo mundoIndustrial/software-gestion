@@ -18,6 +18,7 @@ class PedidoObservacionesDespacho extends Model
         'usuario_rol',
         'ip_address',
         'estado',
+        'visto_at',
     ];
 
     public function pedido(): BelongsTo
