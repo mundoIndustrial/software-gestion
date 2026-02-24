@@ -189,19 +189,36 @@
             
             // Determinar clase CSS según estado
             $estadoClase = 'estado-' . strtolower(str_replace('_', '-', $estadoActual));
+            
+            // Determinar color del badge según estado
+            $badgeColor = match($estadoActual) {
+                'Pendiente' => 'bg-gray-500',
+                'No iniciado' => 'bg-gray-500',
+                'En Ejecución' => 'bg-blue-500',
+                'Entregado' => 'bg-green-500',
+                'Anulada' => 'bg-amber-500',
+                'PENDIENTE_SUPERVISOR' => 'bg-orange-500',
+                'PENDIENTE_INSUMOS' => 'bg-purple-500',
+                'pendiente_cartera' => 'bg-indigo-500',
+                'RECHAZADO_CARTERA' => 'bg-red-500',
+                'DEVUELTO_A_ASESORA' => 'bg-yellow-500',
+                default => 'bg-gray-500'
+            };
         @endphp
-        <select class="estado-dropdown {{ $estadoClase }}" data-pedido-id="{{ $pedido->id }}" data-value="{{ $estadoActual }}" onchange="actualizarEstado(this, {{ $pedido->id }})">
-            <option value="Pendiente" {{ $estadoActual === 'Pendiente' ? 'selected' : '' }}>Pendiente</option>
-            <option value="No iniciado" {{ $estadoActual === 'No iniciado' ? 'selected' : '' }}>No iniciado</option>
-            <option value="En Ejecución" {{ $estadoActual === 'En Ejecución' ? 'selected' : '' }}>En Ejecución</option>
-            <option value="Entregado" {{ $estadoActual === 'Entregado' ? 'selected' : '' }}>Entregado</option>
-            <option value="Anulada" {{ $estadoActual === 'Anulada' ? 'selected' : '' }}>Anulada</option>
-            <option value="PENDIENTE_SUPERVISOR" {{ $estadoActual === 'PENDIENTE_SUPERVISOR' ? 'selected' : '' }}>Pendiente Supervisor</option>
-            <option value="PENDIENTE_INSUMOS" {{ $estadoActual === 'PENDIENTE_INSUMOS' ? 'selected' : '' }}>Pendiente Insumos</option>
-            <option value="pendiente_cartera" {{ $estadoActual === 'pendiente_cartera' ? 'selected' : '' }}>Pendiente Cartera</option>
-            <option value="RECHAZADO_CARTERA" {{ $estadoActual === 'RECHAZADO_CARTERA' ? 'selected' : '' }}>Rechazado Cartera</option>
-            <option value="DEVUELTO_A_ASESORA" {{ $estadoActual === 'DEVUELTO_A_ASESORA' ? 'selected' : '' }}>Devuelto a Asesora</option>
-        </select>
+        <span class="estado-badge {{ $badgeColor }}" style="
+            color: white;
+            padding: 0.375rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: inline-block;
+            white-space: nowrap;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+        " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 2px 6px rgba(0, 0, 0, 0.3)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.2)'">
+            {{ $estadoTexto }}
+        </span>
     </div>
 </div>
 

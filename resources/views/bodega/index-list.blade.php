@@ -33,24 +33,7 @@
             </form>
         </div>
 
-        <!-- Stats compactas -->
-        <div class="px-6 py-4 border-b border-slate-200">
-            <div class="flex gap-8 text-sm">
-                <div>
-                    <span class="text-slate-500">Pedidos totales</span>
-                    <span class="block text-2xl font-semibold text-slate-900">{{ $totalPedidos }}</span>
-                </div>
-                <div>
-                    <span class="text-slate-500">En esta página</span>
-                    <span class="block text-2xl font-semibold text-slate-900">{{ count($pedidosPorPagina) }}</span>
-                </div>
-                <div>
-                    <span class="text-slate-500">Página</span>
-                    <span class="block text-2xl font-semibold text-slate-900">{{ $paginaActual }} / {{ ceil($totalPedidos / $porPagina) }}</span>
-                </div>
-            </div>
-        </div>
-
+        
         <!-- Tabla de Pedidos -->
         <div class="bg-white overflow-hidden relative">
             @if(count($pedidosPorPagina) > 0)

@@ -88,8 +88,8 @@ class BodegaPedidoService
         // para que el listado siempre muestre los pedidos anulados.
         $todosLosPedidos = ReciboPrenda::with(['asesor'])
             ->whereIn('numero_pedido', $numerosAnulados)
-            ->orderBy('numero_pedido', 'asc')
-            ->orderBy('created_at', 'asc')
+            ->orderBy('numero_pedido', 'desc')
+            ->orderBy('created_at', 'desc')
             ->get();
 
         // Filtrar por áreas según rol
@@ -133,8 +133,8 @@ class BodegaPedidoService
         // Cargar recibos por número de pedido que tengan items entregados
         $todosLosPedidos = ReciboPrenda::with(['asesor'])
             ->whereIn('numero_pedido', $numerosConEntregados)
-            ->orderBy('numero_pedido', 'asc')
-            ->orderBy('created_at', 'asc')
+            ->orderBy('numero_pedido', 'desc')
+            ->orderBy('created_at', 'desc')
             ->get();
 
         // Filtrar por áreas según rol
@@ -326,7 +326,7 @@ class BodegaPedidoService
 
     private function obtenerEstadosPermitidos(): array
     {
-        return ['Pendiente', 'EN EJECUCIÓN', 'NO INICIADO', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA', 'Entregado'];
+        return ['Pendiente', 'EN EJECUCIÓN', 'NO INICIADO', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA', 'pendiente_cartera'];
     }
 
     private function filtrarPedidosPorArea(Collection $pedidos, array $areasPermitidas): Collection
@@ -700,7 +700,7 @@ class BodegaPedidoService
                 'cantidad' => $cantidad,
                 'pendientes' => $bodegaData['pendientes'] ?? 0,
                 'area' => $bodegaData['area'] ?? '',
-                'estado' => $bodegaData['estado'] ?? 'Pendiente',
+                'estado_bodega' => $bodegaData['estado_bodega'] ?? 'Pendiente',
                 'pedido_produccion_id' => $bodegaData['id'] ?? null,
                 'observaciones' => $bodegaData['observaciones'] ?? '',
                 'fecha_entrega' => $bodegaData['fecha_entrega'] ?? ''
@@ -776,7 +776,7 @@ class BodegaPedidoService
             'pendientes' => $bodegaData['pendientes'] ?? null,
             'fecha_entrega' => $bodegaData['fecha_entrega'],
             'fecha_pedido' => $bodegaData['fecha_pedido'],
-            'estado_bodega' => $bodegaData['estado'],
+            'estado_bodega' => $bodegaData['estado_bodega'],
             'costura_estado' => $bodegaData['costura_estado'] ?? null,
             'epp_estado' => $bodegaData['epp_estado'] ?? null,
             'area' => $bodegaData['area'],
@@ -849,7 +849,7 @@ class BodegaPedidoService
             'talla' => $eppId,
             'cantidad' => $bodegaData['cantidad'] ?? $eppCantidad,
             'cantidad_total' => $eppCantidad,
-            'estado_bodega' => $bodegaData['estado'],
+            'estado_bodega' => $bodegaData['estado_bodega'],
             'area' => $bodegaData['area'],
             'pedido_epp_usado' => $pedidoEppId ? [
                 'id' => $pedidoEppId,
@@ -874,7 +874,7 @@ class BodegaPedidoService
             'pendientes' => $bodegaData['pendientes'] ?? null,
             'fecha_entrega' => $bodegaData['fecha_entrega'],
             'fecha_pedido' => $bodegaData['fecha_pedido'],
-            'estado_bodega' => $bodegaData['estado'],
+            'estado_bodega' => $bodegaData['estado_bodega'],
             'costura_estado' => $bodegaData['costura_estado'] ?? null,
             'epp_estado' => $bodegaData['epp_estado'] ?? null,
             'area' => $bodegaData['area'],
@@ -883,7 +883,7 @@ class BodegaPedidoService
                 'cantidad' => $bodegaData['cantidad'] ?? $eppCantidad,
                 'pendientes' => $bodegaData['pendientes'] ?? 0,
                 'area' => $bodegaData['area'] ?? '',
-                'estado' => $bodegaData['estado'] ?? 'Pendiente',
+                'estado_bodega' => $bodegaData['estado_bodega'] ?? 'Pendiente',
                 'pedido_produccion_id' => $bodegaData['id'] ?? null,
                 'observaciones' => $bodegaData['observaciones'] ?? '',
                 'fecha_entrega' => $bodegaData['fecha_entrega'] ?? ''
@@ -1449,56 +1449,54 @@ class BodegaPedidoService
     }
     
     /**
-     * Filtrar items para despacho: mostrar todos los pedidos con estados permitidos
-     * Estados permitidos: 'Pendiente','Entregado','En Ejecución','No iniciado','PENDIENTE_SUPERVISOR','PENDIENTE_INSUMOS','DEVUELTO_A_ASESORA'
+     * Filtrar items para despacho: mostrar solo items con estado "Pendiente"
+     * - Para todas las áreas (Costura, EPP, Otro): estado_bodega = 'Pendiente'
      */
     private function filtrarItemsParaDespacho(array $items): array
     {
         $itemsFiltrados = [];
-        $estadosPermitidos = ['Pendiente','Entregado','En Ejecución','No iniciado','PENDIENTE_SUPERVISOR','PENDIENTE_INSUMOS','DEVUELTO_A_ASESORA'];
         
-        \Log::info('[DESPACHO-FILTRO] Inicio filtrado', [
+        \Log::info('[DESPACHO-FILTRO] Inicio filtrado por estado_bodega = Pendiente', [
             'items_totales' => count($items),
-            'estados_permitidos' => $estadosPermitidos,
             'items_recibidos' => array_map(fn($item) => [
                 'numero_pedido' => $item['numero_pedido'],
                 'tipo' => $item['tipo'] ?? 'unknown',
+                'area' => $item['area'] ?? 'unknown',
                 'tiene_tallas' => isset($item['tallas']) && is_array($item['tallas'])
             ], $items)
         ]);
         
         foreach ($items as $item) {
-            // Obtener el estado del pedido desde pedidos_produccion
-            $estadoPedido = null;
-            try {
-                $pedidoProduccion = \App\Models\PedidoProduccion::where('numero_pedido', $item['numero_pedido'])->first();
-                if ($pedidoProduccion) {
-                    $estadoPedido = $pedidoProduccion->estado;
+            $area = $item['area'] ?? '';
+            $tallas = $item['tallas'] ?? [];
+            
+            // Filtrar tallas por estado_bodega (aplica para todas las áreas)
+            $tallasFiltradas = [];
+            foreach ($tallas as $talla) {
+                // Verificar estado_bodega = 'Pendiente' para todas las áreas
+                $estadoPendiente = ($talla['estado_bodega'] ?? '') === 'Pendiente';
+                
+                if ($estadoPendiente) {
+                    $tallasFiltradas[] = $talla;
                 }
-            } catch (\Exception $e) {
-                \Log::warning('[DESPACHO-FILTRO] Error al obtener estado del pedido', [
-                    'numero_pedido' => $item['numero_pedido'],
-                    'error' => $e->getMessage()
-                ]);
             }
             
-            \Log::info('[DESPACHO-FILTRO] Verificando item', [
-                'numero_pedido' => $item['numero_pedido'],
-                'estado_pedido' => $estadoPedido,
-                'estado_permitido' => in_array($estadoPedido, $estadosPermitidos)
-            ]);
-            
-            // Mostrar el item si el estado del pedido está en la lista de permitidos
-            if ($estadoPedido && in_array($estadoPedido, $estadosPermitidos)) {
+            // Solo incluir el item si tiene tallas con estado Pendiente
+            if (!empty($tallasFiltradas)) {
+                $item['tallas'] = $tallasFiltradas; // Reemplazar con tallas filtradas
                 $itemsFiltrados[] = $item;
-                \Log::info('[DESPACHO-FILTRO] Item agregado a filtrados', [
+                
+                \Log::info('[DESPACHO-FILTRO] Item agregado', [
                     'numero_pedido' => $item['numero_pedido'],
-                    'estado' => $estadoPedido
+                    'area' => $area,
+                    'tallas_pendientes' => count($tallasFiltradas),
+                    'tallas_originales' => count($tallas)
                 ]);
             } else {
-                \Log::warning('[DESPACHO-FILTRO] Item no agregado - estado no permitido', [
+                \Log::info('[DESPACHO-FILTRO] Item descartado - sin tallas pendientes', [
                     'numero_pedido' => $item['numero_pedido'],
-                    'estado_pedido' => $estadoPedido
+                    'area' => $area,
+                    'total_tallas' => count($tallas)
                 ]);
             }
         }

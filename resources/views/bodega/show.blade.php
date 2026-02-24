@@ -52,6 +52,7 @@
                         <thead>
                             <tr class="bg-slate-50 border-b border-slate-300">
                                 <th class="px-4 py-3 text-left text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 22%;">Artículo</th>
+                                <th class="px-2 py-3 text-center text-[10px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 6%;">Género</th>
                                 <th class="px-2 py-3 text-center text-[10px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 6%;">Talla</th>
                                 <th class="px-4 py-3 text-center text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 6%;">Cant.</th>
                                 <th class="px-4 py-3 text-center text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 8%;">Pendientes</th>
@@ -206,6 +207,27 @@
                                                     </div>
                                                 </div>
                                             @endif
+                                        @endif
+                                    </td>
+                                    @endif
+                                    
+                                    <!-- GÉNERO -->
+                                    @if(($item['descripcion_rowspan'] ?? 0) > 0)
+                                    <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" rowspan="{{ $item['descripcion_rowspan'] }}" style="width: 6%;">
+                                        @if(($item['tipo'] ?? null) === 'epp' || ($item['area'] ?? null) === 'EPP')
+                                            —
+                                        @else
+                                            @php
+                                                $genero = '';
+                                                if(isset($item['descripcion']['variantes']) && is_array($item['descripcion']['variantes']) && count($item['descripcion']['variantes']) > 0) {
+                                                    $primeraVariante = $item['descripcion']['variantes'][0];
+                                                    $genero = $primeraVariante['genero'] ?? '';
+                                                }
+                                                elseif(isset($item['genero'])) {
+                                                    $genero = $item['genero'];
+                                                }
+                                            @endphp
+                                            {{ $genero ? ucfirst(strtolower($genero)) : '—' }}
                                         @endif
                                     </td>
                                     @endif

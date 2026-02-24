@@ -101,6 +101,7 @@
                                         </button>
                                     </div>
                                 </th>
+                                {{-- Comentada columna de estado
                                 <th class="px-6 py-3 text-center font-medium text-slate-700">
                                     <div class="flex items-center justify-center gap-2">
                                         Estado
@@ -114,6 +115,7 @@
                                         </button>
                                     </div>
                                 </th>
+                                --}}
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200">
@@ -149,9 +151,11 @@
                                             <span class="text-slate-400">—</span>
                                         @endif
                                     </td>
+                                    {{-- Comentada columna de estado
                                     <td class="px-6 py-4 text-center">
                                         <span class="{{ $estadoClass }}">{{ $pedido['estado'] ?? '—' }}</span>
                                     </td>
+                                    --}}
                                 </tr>
                             @endforeach
                         </tbody>

@@ -50,7 +50,9 @@
                                 <th class="px-4 py-3 text-left text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 16%;">Observaciones</th>
                                 <th class="px-4 py-3 text-center text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 12%;">Fecha Pedido</th>
                                 <th class="px-4 py-3 text-center text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 12%;">Fecha Entrega</th>
+                                {{-- Comentada columna de estado
                                 <th class="px-4 py-3 text-center text-[11px] font-semibold text-black uppercase tracking-widest" style="width: 14%;">Estado</th>
+                                --}}
                             </tr>
                         </thead>
                         
@@ -231,6 +233,7 @@
                                         >
                                     </td>
                                     
+                                    {{-- Comentada columna de estado
                                     <!-- ESTADO -->
                                     <td class="px-4 py-3" style="width: 14%;">
                                         <select
@@ -268,6 +271,7 @@
                                         </div>
                                         @endif
                                     </td>
+                                    --}}
                                 </tr>
                             @empty
                                 <tr>

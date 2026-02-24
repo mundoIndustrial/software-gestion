@@ -17,25 +17,23 @@
                             | Asesor: <span class="font-semibold text-black">{{ $pedido['asesor'] }}</span>
                         @endif
                     </p>
-                    @if(isset($filtro_aplicado))
-                        <div class="mt-2 p-2 bg-orange-100 border border-orange-200 rounded">
-                            <p class="text-xs font-medium text-orange-800">
-                                <span class="material-symbols-rounded text-sm align-middle">filter_alt</span>
-                                {{ $filtro_aplicado['descripcion'] }}
-                            </p>
-                        </div>
-                    @endif
+                    <div class="mt-2 p-2 bg-orange-100 border border-orange-200 rounded">
+                        <p class="text-xs font-medium text-orange-800">
+                            <span class="material-symbols-rounded text-sm align-middle">filter_alt</span>
+                            Mostrando solo artículos con estado Pendiente para Despacho
+                        </p>
+                    </div>
                 </div>
                 <div class="flex items-center gap-4">
                     <a href="{{ route('despacho.pendientes') }}" 
                        class="px-4 py-2 border border-slate-300 text-black hover:text-black font-medium rounded transition-colors">
-                        ← Volver
+                        ← Volver a Pendientes
                     </a>
                     @if($pedido['id'])
                         <button type="button"
                                 onclick="abrirModalFactura({{ $pedido['id'] }})"
                                 class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded transition-colors">
-                            Ver Pedido
+                            Ver Pedido Completo
                         </button>
                     @endif
                 </div>
@@ -52,208 +50,228 @@
                         <thead>
                             <tr class="bg-slate-50 border-b border-slate-300">
                                 <th class="px-4 py-3 text-left text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 22%;">Artículo</th>
+                                <th class="px-2 py-3 text-center text-[10px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 6%;">Género</th>
                                 <th class="px-2 py-3 text-center text-[10px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 6%;">Talla</th>
                                 <th class="px-4 py-3 text-center text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 6%;">Cant.</th>
                                 <th class="px-4 py-3 text-center text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 8%;">Pendientes</th>
                                 <th class="px-4 py-3 text-left text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 16%;">Observaciones</th>
                                 <th class="px-4 py-3 text-center text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 12%;">Fecha Pedido</th>
                                 <th class="px-4 py-3 text-center text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 12%;">Fecha Entrega</th>
-                                <th class="px-4 py-3 text-center text-[11px] font-semibold text-black uppercase tracking-widest" style="width: 18%;">Área / Estado</th>
+                                <th class="px-4 py-3 text-center text-[11px] font-semibold text-black uppercase tracking-widest" style="width: 18%;">Estado</th>
                             </tr>
                         </thead>
                         
                         <tbody id="pedidosTableBody" class="divide-y divide-slate-300">
                             @forelse($items as $item)
-                                <tr class="hover:bg-slate-50 transition-colors"
-                                    data-numero-pedido="{{ $item['numero_pedido'] }}"
-                                    data-asesor="{{ $item['asesor'] ?? 'N/A' }}"
-                                    data-empresa="{{ $item['empresa'] ?? 'N/A' }}"
-                                    @if($item['estado_bodega'] === 'Homologar')
-                                        style="background-color: rgba(147, 51, 234, 0.08);"
-                                    @elseif($item['estado_bodega'] === 'Entregado')
-                                        style="background-color: rgba(37, 99, 235, 0.05);"
-                                    @endif
-                                >
-                                    <!-- DESCRIPCIÓN (PRENDA) -->
-                                    @if(($item['descripcion_rowspan'] ?? 0) > 0)
-                                    <td class="px-4 py-3 text-xs text-black border-r border-slate-300" rowspan="{{ $item['descripcion_rowspan'] }}" style="width: 22%;">
-                                        @php
-                                            $desc = $item['descripcion'];
-                                            $nombre = $desc['nombre_prenda'] ?? $desc['nombre'] ?? 'Prenda sin nombre';
-                                            $tela = $desc['tela'] ?? null;
-                                            $color = $desc['color'] ?? null;
-                                            $variantes = $desc['variantes'] ?? [];
-                                            $primeraVariante = count($variantes) > 0 ? $variantes[0] : null;
-                                            $genero = $primeraVariante['genero'] ?? null;
-                                            $procesos = $desc['procesos'] ?? [];
-                                        @endphp
-                                        <div class="font-bold text-black mb-1">{{ $nombre }}</div>
-                                        @if($tela || $color)
-                                            <div class="text-black text-xs mb-1">
-                                                @if($tela && $color)
-                                                    Tela: {{ $tela }} - Color: {{ $color }}
-                                                @elseif($tela)
-                                                    Tela: {{ $tela }}
-                                                @else
-                                                    Color: {{ $color }}
-                                                @endif
-                                            </div>
+                                @php
+                                    $tallas = $item['tallas'] ?? [];
+                                    $cantidadTotal = $item['cantidad'] ?? 0;
+                                    $rowspanPrenda = count($tallas) > 0 ? count($tallas) : 1;
+                                @endphp
+                                @foreach($tallas as $indexTalla => $talla)
+                                    <tr class="hover:bg-slate-50 transition-colors"
+                                        data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                        data-asesor="{{ $item['asesor'] ?? ($pedido['asesor'] ?? '') }}"
+                                        data-empresa="{{ $item['empresa'] ?? ($pedido['cliente'] ?? '') }}"
+                                    >
+                                        <!-- DESCRIPCIÓN (PRENDA) - Solo en primera talla -->
+                                        @if($indexTalla === 0)
+                                        <td class="px-4 py-3 text-xs text-black border-r border-slate-300" rowspan="{{ $rowspanPrenda }}" style="width: 22%;">
+                                            @php
+                                                $desc = $item['descripcion'];
+                                                $nombre = $desc['nombre_prenda'] ?? $desc['nombre'] ?? 'Prenda sin nombre';
+                                                $tela = $desc['tela'] ?? null;
+                                                $color = $desc['color'] ?? null;
+                                                $variantes = $desc['variantes'] ?? [];
+                                                $primeraVariante = count($variantes) > 0 ? $variantes[0] : null;
+                                                $genero = $primeraVariante['genero'] ?? null;
+                                                $procesos = $desc['procesos'] ?? [];
+                                            @endphp
+                                            <div class="font-bold text-black mb-1">{{ $nombre }}</div>
+                                            @if($tela || $color)
+                                                <div class="text-black text-xs mb-1">
+                                                    @if($tela && $color)
+                                                        Tela: {{ $tela }} - Color: {{ $color }}
+                                                    @elseif($tela)
+                                                        Tela: {{ $tela }}
+                                                    @else
+                                                        Color: {{ $color }}
+                                                    @endif
+                                                </div>
+                                            @endif
+                                            @if($genero)
+                                                <div class="text-black text-xs mb-1">
+                                                    Género: <span class="font-semibold">{{ strtoupper($genero) }}</span>
+                                                </div>
+                                            @endif
+                                            @if(count($procesos) > 0)
+                                                <div class="text-black text-xs mt-2 space-y-0.5">
+                                                    @foreach($procesos as $proceso)
+                                                        <div class="flex items-start gap-1">
+                                                            <span class="text-blue-600 font-bold">•</span>
+                                                            <span>
+                                                                {{ $proceso['tipo_proceso'] ?? 'Proceso' }}
+                                                                @if(!empty($proceso['ubicaciones']))
+                                                                    @php
+                                                                        $ubicaciones = $proceso['ubicaciones'];
+                                                                        if (is_string($ubicaciones) && (strpos($ubicaciones, '[') === 0 || strpos($ubicaciones, '{') === 0)) {
+                                                                            $ubicacionesDecodificadas = json_decode($ubicaciones, true);
+                                                                            if (is_array($ubicacionesDecodificadas)) {
+                                                                                $ubicacionesStr = implode(', ', $ubicacionesDecodificadas);
+                                                                            } else {
+                                                                                $ubicacionesStr = $ubicaciones;
+                                                                            }
+                                                                        } elseif (is_array($ubicaciones)) {
+                                                                            $ubicacionesStr = implode(', ', $ubicaciones);
+                                                                        } else {
+                                                                            $ubicacionesStr = $ubicaciones;
+                                                                        }
+                                                                    @endphp
+                                                                    @if(!empty($ubicacionesStr))
+                                                                        ({{ $ubicacionesStr }})
+                                                                    @endif
+                                                                @endif
+                                                            </span>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+                                        </td>
                                         @endif
                                         
-                                        <!-- GÉNERO -->
-                                        @if($genero)
-                                            <div class="text-black text-xs mb-1">
-                                                Género: <span class="font-semibold">{{ strtoupper($genero) }}</span>
-                                            </div>
+                                        <!-- GÉNERO - Solo en primera talla -->
+                                        @if($indexTalla === 0)
+                                        <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" rowspan="{{ $rowspanPrenda }}" style="width: 6%;">
+                                            @php
+                                                $genero = '';
+                                                if(isset($item['descripcion']['variantes']) && is_array($item['descripcion']['variantes']) && count($item['descripcion']['variantes']) > 0) {
+                                                    $primeraVariante = $item['descripcion']['variantes'][0];
+                                                    $genero = $primeraVariante['genero'] ?? '';
+                                                }
+                                                elseif(isset($item['genero'])) {
+                                                    $genero = $item['genero'];
+                                                }
+                                            @endphp
+                                            {{ $genero ? ucfirst(strtolower($genero)) : '—' }}
+                                        </td>
                                         @endif
                                         
-                                        <!-- PROCESOS -->
-                                        @if(!empty($procesos))
-                                            <div class="text-black text-xs mt-2 space-y-0.5">
-                                                @foreach($procesos as $proceso)
-                                                    <div class="flex items-start gap-1">
-                                                        <span class="text-blue-600 font-bold">•</span>
-                                                        <span>
-                                                            {{ $proceso['tipo_proceso'] ?? 'N/A' }}
-                                                            @if(!empty($proceso['observaciones']))
-                                                                ({{ $proceso['observaciones'] }})
-                                                            @endif
-                                                        </span>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        @endif
-                                    </td>
-                                    @endif
-                                    
-                                    <!-- TALLAS -->
-                                    @php
-                                        $tallas = $item['tallas'] ?? [];
-                                        $cantidadTotal = $item['cantidad'] ?? 0;
-                                        $pendientesTotal = $item['pendientes'] ?? 0;
-                                    @endphp
-                                    @foreach($tallas as $index => $talla)
-                                        @php
-                                            $cantidad = $talla['cantidad'] ?? 0;
-                                            $pendientes = $talla['pendientes'] ?? 0;
-                                            $rowspan = ($index === 0) ? count($tallas) : 0;
-                                        @endphp
-                                        @if($rowspan > 0)
-                                            <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" rowspan="{{ $rowspan }}" style="width: 6%;">
-                                                @php
-                                                    // Verificar si la talla es un hash MD5 y mostrar vacío en ese caso
-                                                    $tallaMostrar = $talla['talla'] ?? '';
-                                                    // Si parece un hash MD5 (32 caracteres hexadecimales), mostrar vacío
-                                                    if (strlen($tallaMostrar) === 32 && ctype_xdigit($tallaMostrar)) {
-                                                        $tallaMostrar = '';
-                                                    }
-                                                @endphp
-                                                {{ $tallaMostrar }}
-                                            </td>
-                                        @endif
+                                        <!-- TALLA -->
+                                        <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
+                                            @php
+                                                $es_epp = $item['es_epp'] ?? false;
+                                                $talla_valor = $talla['talla'] ?? '';
+                                                // Detectar si es un UUID (formato de UUID estándar)
+                                                $es_uuid = preg_match('/^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i', $talla_valor) || 
+                                                           preg_match('/^[0-9a-f]{32}$/i', $talla_valor);
+                                            @endphp
+                                            {{ $es_epp || $es_uuid ? '—' : ($talla_valor ?: '—') }}
+                                        </td>
                                         
                                         <!-- CANTIDAD -->
                                         <td class="px-4 py-3 text-center text-xs font-bold text-black border-r border-slate-300" style="width: 6%;">
-                                            {{ $cantidad }}
+                                            {{ $talla['cantidad'] ?? 0 }}
                                         </td>
                                         
                                         <!-- PENDIENTES -->
                                         <td class="px-2 py-3 border-r border-slate-300" style="width: 8%;">
-                                            <textarea class="pendientes-input w-full px-1.5 py-1 border-2 text-[10px] outline-none transition resize-none
-                                            @if(auth()->user()->hasRole('despacho'))
-                                                bg-gray-100 border-gray-400 text-gray-700 cursor-not-allowed
-                                            @else
-                                                bg-slate-50 border-slate-300 focus:ring-2 focus:ring-slate-500 focus:border-slate-700
-                                            @endif" 
-                                                style="font-family: Poppins, sans-serif; height: 32px;" 
-                                                data-numero-pedido="{{ $item['numero_pedido'] }}" 
-                                                data-talla="{{ $talla['talla'] }}" 
-                                                data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}" 
-                                                data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}" 
-                                                placeholder="Pendientes..." rows="1"
-                                                @if(auth()->user()->hasRole('despacho')) readonly @endif>{{ $pendientes }}</textarea>
+                                            <textarea
+                                                class="pendientes-input w-full px-1.5 py-1 border-2 border-slate-300 text-[10px] focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none bg-slate-50"
+                                                style="font-family: 'Poppins', sans-serif; height: 32px;"
+                                                data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                                data-talla="{{ $talla['talla'] }}"
+                                                placeholder="Pendientes..."
+                                                rows="1"
+                                            >{{ $talla['pendientes'] ?? '' }}</textarea>
                                         </td>
-                                    @endforeach
-                                    
-                                    <!-- OBSERVACIONES -->
-                                    <td class="px-4 py-3 border-r border-slate-300" style="width: 16%;">
-                                        <div class="flex gap-1">
-                                            <textarea class="observaciones-input flex-1 px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none rounded
-                                            bg-slate-50" 
-                                                data-numero-pedido="{{ $item['numero_pedido'] }}" 
-                                                data-talla="{{ $tallas[0]['talla'] ?? '' }}" 
-                                                placeholder="Notas..." rows="1" readonly style="height: 24px;">{{ $item['observaciones'] ?? '' }}</textarea>
-                                            <button type="button" onclick="abrirModalNotas('{{ $item['numero_pedido'] }}', '{{ $tallas[0]['talla'] ?? '' }}', '{{ $item['descripcion']['nombre_prenda'] ?? 'Prenda' }}', 'prenda', '{{ $tallas[0]['talla'] ?? '' }}')" class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded transition whitespace-nowrap" title="Ver/agregar notas">
-                                                💬
-                                            </button>
-                                        </div>
-                                    </td>
-                                    
-                                    <!-- FECHA PEDIDO -->
-                                    <td class="px-4 py-3 border-r border-slate-300" style="width: 12%;">
-                                        <input type="date" class="fecha-pedido-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded
-                                        bg-slate-50" 
-                                            value="{{ $item['fecha_pedido'] ? date('Y-m-d', strtotime($item['fecha_pedido'])) : '' }}" 
-                                            data-numero-pedido="{{ $item['numero_pedido'] }}" 
-                                            data-talla="{{ $tallas[0]['talla'] ?? '' }}" 
-                                            data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}" 
-                                            data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}">
-                                    </td>
-                                    
-                                    <!-- FECHA ENTREGA -->
-                                    <td class="px-4 py-3 border-r border-slate-300" style="width: 12%;">
-                                        <input type="date" class="fecha-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded
-                                        bg-slate-50" 
-                                            value="{{ $tallas[0]['fecha_entrega'] ?? '' }}" 
-                                            data-numero-pedido="{{ $item['numero_pedido'] }}" 
-                                            data-talla="{{ $tallas[0]['talla'] ?? '' }}" 
-                                            data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}" 
-                                            data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}">
-                                    </td>
-                                    
-                                    <!-- ÁREA / ESTADO -->
-                                    <td class="px-4 py-3" style="width: 18%;">
-                                        <div class="space-y-2">
-                                            <div class="w-full px-2 py-1 border-2 border-gray-300 bg-gray-100 text-gray-700 text-xs font-semibold uppercase rounded cursor-not-allowed" style="font-family: Poppins, sans-serif;">
-                                                @if(($tallas[0]['area'] ?? '') == 'Costura')
-                                                    COSTURA
-                                                @elseif(($tallas[0]['area'] ?? '') == 'EPP')
-                                                    EPP
-                                                @else
-                                                    ÁREA
-                                                @endif
+                                        
+                                        <!-- OBSERVACIONES - Solo en primera talla -->
+                                        @if($indexTalla === 0)
+                                        <td class="px-4 py-3 border-r border-slate-300" rowspan="{{ $rowspanPrenda }}" style="width: 16%;">
+                                            <div class="flex gap-1">
+                                                <textarea
+                                                    class="observaciones-input flex-1 px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none rounded bg-slate-50"
+                                                    data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                                    data-talla="{{ $talla['talla'] }}"
+                                                    placeholder="Notas..."
+                                                    rows="1"
+                                                    readonly
+                                                    style="height: 40px;"
+                                                >{{ $item['observaciones'] ?? '' }}</textarea>
+                                                <button
+                                                    type="button"
+                                                    onclick="abrirModalNotas('{{ $item['numero_pedido'] }}', '{{ $talla['talla'] }}', '{{ addslashes($item['descripcion']['nombre_prenda'] ?? 'Prenda') }}', 'prenda', '{{ $talla['talla'] }}')"
+                                                    class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded transition whitespace-nowrap"
+                                                    title="Ver/agregar notas"
+                                                >
+                                                    💬
+                                                </button>
                                             </div>
-
-                                            <select class="estado-select w-full px-2 py-1 border border-slate-300 bg-white text-black text-xs font-semibold uppercase rounded" 
-                                                data-numero-pedido="{{ $item['numero_pedido'] }}" 
-                                                data-talla="{{ $tallas[0]['talla'] ?? '' }}" 
-                                                data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}" 
-                                                data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}" 
-                                                data-prenda-nombre="{{ $item['descripcion']['nombre_prenda'] ?? 'Prenda' }}" 
-                                                data-cantidad="{{ $cantidadTotal }}" 
-                                                data-original-estado="{{ $tallas[0]['estado'] ?? 'Pendiente' }}">
+                                        </td>
+                                        @endif
+                                        
+                                        <!-- FECHA PEDIDO - Solo en primera talla -->
+                                        @if($indexTalla === 0)
+                                        <td class="px-4 py-3 border-r border-slate-300" rowspan="{{ $rowspanPrenda }}" style="width: 12%;">
+                                            <input
+                                                type="date"
+                                                class="fecha-pedido-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded bg-slate-50"
+                                                value="{{ $pedido['fecha_de_creacion_de_orden'] ? \Carbon\Carbon::parse($pedido['fecha_de_creacion_de_orden'])->format('Y-m-d') : '' }}"
+                                                data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                                data-talla="{{ $talla['talla'] }}"
+                                            >
+                                        </td>
+                                        @endif
+                                        
+                                        <!-- FECHA ENTREGA -->
+                                        <td class="px-4 py-3 border-r border-slate-300" style="width: 12%;">
+                                            <input
+                                                type="date"
+                                                class="fecha-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded bg-slate-50"
+                                                value="{{ $talla['fecha_entrega'] ?? '' }}"
+                                                data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                                data-talla="{{ $talla['talla'] }}"
+                                            >
+                                        </td>
+                                        
+                                        <!-- ESTADO -->
+                                        <td class="px-4 py-3" style="width: 18%;">
+                                            <select
+                                                class="estado-select w-full px-2 py-1 border border-slate-300 bg-white text-black text-xs font-semibold uppercase rounded"
+                                                data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                                data-talla="{{ $talla['talla'] }}"
+                                                data-prenda-nombre="{{ $item['descripcion']['nombre_prenda'] ?? ($item['descripcion']['nombre'] ?? '') }}"
+                                                data-cantidad="{{ $cantidadTotal }}"
+                                                data-original-estado="{{ $talla['estado_bodega'] ?? '' }}"
+                                            >
                                                 <option value="">ESTADO</option>
-                                                <option value="Pendiente" {{ ($tallas[0]['estado'] ?? '') == 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
-                                                <option value="Entregado" {{ ($tallas[0]['estado'] ?? '') == 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
-                                                <option value="Homologar" {{ ($tallas[0]['estado'] ?? '') == 'Homologar' ? 'selected' : '' }}>HOMOLOGAR</option>
-                                                <option value="Anulado" {{ ($tallas[0]['estado'] ?? '') == 'Anulado' ? 'selected' : '' }}>ANULADO</option>
+                                                <option value="Pendiente" {{ ($talla['estado_bodega'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
+                                                <option value="Entregado" {{ ($talla['estado_bodega'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
+                                                <option value="Homologar" {{ ($talla['estado_bodega'] ?? null) === 'Homologar' ? 'selected' : '' }}>HOMOLOGAR</option>
+                                                <option value="Anulado" {{ ($talla['estado_bodega'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
                                             </select>
 
-                                            <button type="button" onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $tallas[0]['talla'] ?? '' }}')" class="w-full px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase rounded transition">
-                                                💾 Guardar Cambios
+                                            <button
+                                                type="button"
+                                                onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $talla['talla'] }}')"
+                                                class="w-full px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase rounded transition mt-1"
+                                                style="display: none;"
+                                            >
+                                                GUARDAR
                                             </button>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @empty
+                                <tr>
+                                    <td colspan="9" class="px-6 py-12 text-center">
+                                        <div class="flex flex-col items-center">
+                                            <span class="material-symbols-rounded text-slate-300 text-5xl">inventory_2</span>
+                                            <p class="text-slate-500 font-medium mt-3">No hay artículos pendientes</p>
+                                            <p class="text-slate-400 text-sm mt-1">Este pedido no tiene artículos con estado Pendiente</p>
                                         </div>
                                     </td>
                                 </tr>
-                            @empty
-                            <tr>
-                                <td colspan="8" class="px-4 py-8 text-center text-gray-500">
-                                    <div class="flex flex-col items-center">
-                                        <span class="material-symbols-rounded text-4xl mb-2 text-gray-400">inbox</span>
-                                        <p>No hay datos disponibles para este pedido</p>
-                                    </div>
-                                </td>
-                            </tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -637,6 +655,7 @@ function cerrarModalFactura() {
                         type="button"
                         onclick="guardarNota()"
                         class="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition"
+                        style="display: none;"
                     >
                         ✓ Guardar Nota
                     </button>

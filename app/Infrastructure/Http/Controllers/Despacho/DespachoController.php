@@ -1194,30 +1194,102 @@ class DespachoController extends Controller
     public function showPendienteUnificado($id)
     {
         try {
-            // Usar el mismo servicio que bodega para obtener detalles completos
-            $datos = $this->bodegaPedidoService->obtenerDetallePedido($id, true); // <- true para despacho
+            // Obtener el recibo base para obtener numero_pedido
+            $reciboPrenda = \App\Models\ReciboPrenda::findOrFail($id);
+            $numeroPedido = $reciboPrenda->numero_pedido;
             
-            // DEBUG: Ver qué datos vienen del servicio
-            \Log::info('[DESPACHO] Datos del servicio', [
-                'pedido_id' => $id,
-                'pedido' => $datos['pedido'] ?? 'null',
-                'items_count' => isset($datos['items']) ? count($datos['items']) : 0,
-                'primer_item' => isset($datos['items'][0]) ? [
-                    'numero_pedido' => $datos['items'][0]['numero_pedido'] ?? 'N/A',
-                    'tallas_count' => isset($datos['items'][0]['tallas']) ? count($datos['items'][0]['tallas']) : 0,
-                    'tallas' => $datos['items'][0]['tallas'] ?? 'null',
-                    'descripcion' => $datos['items'][0]['descripcion'] ?? 'null'
-                ] : 'null'
-            ]);
+            // Obtener el pedido info
+            $pedidoProduccion = \App\Models\PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+            
+            if (!$pedidoProduccion) {
+                return redirect()->route('despacho.pendientes')
+                    ->with('error', 'Pedido de producción no encontrado');
+            }
+            
+            // Obtener datos del pedido
+            $pedidoData = [
+                'id' => $reciboPrenda->id,
+                'numero_pedido' => $numeroPedido,
+                'estado' => $pedidoProduccion->estado ?? 'Pendiente',
+                'cliente' => $reciboPrenda->cliente ?? 'No especificado',
+                'asesor' => $reciboPrenda->asesor?->nombre ?? $reciboPrenda->asesor?->name ?? null,
+                'fecha_de_creacion_de_orden' => $pedidoProduccion->fecha_de_creacion_de_orden,
+            ];
+            
+            // Usar el servicio para obtener todos los detalles del pedido con información completa
+            $datosCompletos = $this->bodegaPedidoService->obtenerDetallePedido($pedidoProduccion->id);
+            
+            // Filtrar solo items de Despacho con estado_bodega 'Pendiente' y agrupar por prenda
+            $itemsPendientes = [];
+            if (isset($datosCompletos['items']) && is_array($datosCompletos['items'])) {
+                foreach ($datosCompletos['items'] as $item) {
+                    if (($item['estado_bodega'] ?? '') === 'Pendiente') {
+                        $itemsPendientes[] = $item;
+                    }
+                }
+            }
+            
+            // Agrupar items por prenda
+            $items = [];
+            $prendasAgrupadas = [];
+            
+            foreach ($itemsPendientes as $item) {
+                $prendaKey = $item['descripcion']['nombre_prenda'] ?? $item['prenda_nombre'] ?? '';
+                if (!isset($prendasAgrupadas[$prendaKey])) {
+                    $prendasAgrupadas[$prendaKey] = [];
+                }
+                $prendasAgrupadas[$prendaKey][] = $item;
+            }
+            
+            // Convertir agrupado a items con estructura esperada
+            foreach ($prendasAgrupadas as $prendaNombre => $tallasDeProenda) {
+                $es_epp = strpos(strtoupper($prendaNombre), 'EPP') !== false;
+                $primerItem = $tallasDeProenda[0];
+                
+                $item = [
+                    'numero_pedido' => $numeroPedido,
+                    'asesor' => $primerItem['asesor'] ?? $pedidoData['asesor'],
+                    'empresa' => $primerItem['empresa'] ?? $pedidoData['cliente'],
+                    'prenda_nombre' => $prendaNombre,
+                    'es_epp' => $es_epp,
+                    'descripcion' => $primerItem['descripcion'] ?? [
+                        'nombre_prenda' => $prendaNombre,
+                        'nombre' => $prendaNombre,
+                        'tela' => null,
+                        'color' => null,
+                        'procesos' => [],
+                        'variantes' => [],
+                    ],
+                    'genero' => $primerItem['genero'] ?? null,
+                    'cantidad' => collect($tallasDeProenda)->sum('cantidad') ?? 0,
+                    'observaciones' => $primerItem['observaciones'] ?? '',
+                    'tallas' => array_map(function($taItem) {
+                        return [
+                            'talla' => $taItem['talla'] ?? '',
+                            'cantidad' => $taItem['cantidad'] ?? 0,
+                            'pendientes' => $taItem['pendientes'] ?? '',
+                            'estado_bodega' => $taItem['estado_bodega'] ?? 'Pendiente',
+                            'fecha_entrega' => $taItem['fecha_entrega'] ?? '',
+                            'observaciones_bodega' => $taItem['observaciones_bodega'] ?? '',
+                        ];
+                    }, $tallasDeProenda),
+                    'descripcion_rowspan' => count($tallasDeProenda),
+                ];
+                
+                $items[] = $item;
+            }
             
             // Verificar que sea un pedido con estado permitido
             $estadosPermitidos = ['Pendiente', 'Entregado', 'En Ejecución', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'];
-            if (!in_array($datos['pedido']['estado'] ?? '', $estadosPermitidos)) {
+            if (!in_array($pedidoData['estado'] ?? '', $estadosPermitidos)) {
                 return redirect()->route('despacho.pendientes')
                     ->with('error', 'Este pedido no tiene un estado válido para despacho');
             }
             
-            return view('despacho.show-pendiente-bodega', $datos);
+            return view('despacho.show-pendiente-bodega', [
+                'pedido' => $pedidoData,
+                'items' => $items,
+            ]);
         } catch (\Exception $e) {
             \Log::error('[DESPACHO] Error al mostrar detalles del pedido pendiente', [
                 'pedido_id' => $id,

@@ -50,13 +50,16 @@
                         <thead>
                             <tr class="bg-slate-50 border-b border-slate-300">
                                 <th class="px-4 py-3 text-left text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 22%;">Artículo</th>
+                                <th class="px-2 py-3 text-center text-[10px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 6%;">Género</th>
                                 <th class="px-2 py-3 text-center text-[10px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 6%;">Talla</th>
                                 <th class="px-4 py-3 text-center text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 6%;">Cant.</th>
                                 <th class="px-4 py-3 text-center text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 8%;">Pendientes</th>
                                 <th class="px-4 py-3 text-left text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 16%;">Observaciones</th>
                                 <th class="px-4 py-3 text-center text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 12%;">Fecha Pedido</th>
                                 <th class="px-4 py-3 text-center text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 12%;">Fecha Entrega</th>
+                                {{-- Comentada columna de estado
                                 <th class="px-4 py-3 text-center text-[11px] font-semibold text-black uppercase tracking-widest" style="width: 18%;">Estado</th>
+                                --}}
                             </tr>
                         </thead>
                         
@@ -139,6 +142,23 @@
                                     </td>
                                     @endif
                                     
+                                    <!-- GÉNERO -->
+                                    @if(($item['descripcion_rowspan'] ?? 0) > 0)
+                                    <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" rowspan="{{ $item['descripcion_rowspan'] }}" style="width: 6%;">
+                                        @php
+                                            $genero = '';
+                                            if(isset($item['descripcion']['variantes']) && is_array($item['descripcion']['variantes']) && count($item['descripcion']['variantes']) > 0) {
+                                                $primeraVariante = $item['descripcion']['variantes'][0];
+                                                $genero = $primeraVariante['genero'] ?? '';
+                                            }
+                                            elseif(isset($item['genero'])) {
+                                                $genero = $item['genero'];
+                                            }
+                                        @endphp
+                                        {{ $genero ? ucfirst(strtolower($genero)) : '—' }}
+                                    </td>
+                                    @endif
+                                    
                                     <!-- TALLA -->
                                     <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
                                         {{ $item['talla'] ?? '—' }}
@@ -208,6 +228,7 @@
                                         >
                                     </td>
                                     
+                                    {{-- Comentada columna de estado
                                     <!-- ESTADO -->
                                     <td class="px-4 py-3" style="width: 18%;">
                                         <select
@@ -240,6 +261,7 @@
                                         </div>
                                         @endif
                                     </td>
+                                    --}}
                                 </tr>
                             @empty
                                 <tr>
