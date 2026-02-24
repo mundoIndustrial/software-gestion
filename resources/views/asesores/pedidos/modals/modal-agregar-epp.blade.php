@@ -96,49 +96,6 @@
                 </div>
             </div>
 
-            <!-- Sección de Fotos (opcional) -->
-            <div id="seccionFotosEPP" style="display: none;">
-                <div class="flex items-center justify-between mb-3">
-                    <label class="text-sm font-medium text-gray-700">Fotos del EPP (Opcional)</label>
-                    <button type="button" onclick="agregarFotoEPP()" class="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg font-medium flex items-center gap-1 hover:bg-blue-700 transition">
-                        <i class="material-symbols-rounded" style="font-size: 16px;">add_photo_alternate</i>
-                        Agregar Foto
-                    </button>
-                </div>
-                
-                <!-- Contenedor de imágenes -->
-                <div id="contenedorFotosEPP" class="grid grid-cols-3 gap-3 mb-4 border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[120px] transition-all"
-                     tabindex="0" 
-                     style="outline: none;"
-                     data-zona="epp"
-                     onmouseover="this.focus()"
-                     onmouseleave="this.blur()"
-                     ondrop="handleDropEPP(event)"
-                     ondragover="handleDragOverEPP(event)"
-                     ondragleave="handleDragLeaveEPP(event)">
-                    
-                    <!-- Mensaje inicial -->
-                    <div id="mensajeDragDrop" class="col-span-3 flex flex-col items-center justify-center text-gray-400">
-                        <i class="material-symbols-rounded text-4xl mb-2">cloud_upload</i>
-                        <p class="text-sm">Arrastra imágenes aquí o haz clic en "Agregar Foto"</p>
-                        <p class="text-xs">También puedes pegar con Ctrl+V</p>
-                        <p class="text-xs">Formatos: JPG, PNG, GIF, WebP, JFIF</p>
-                    </div>
-                    
-                    <!-- Las imágenes se agregarán aquí dinámicamente -->
-                </div>
-                
-                <!-- Input oculto para subir archivos -->
-                <input 
-                    type="file" 
-                    id="inputFotosEPP" 
-                    multiple 
-                    accept="image/*" 
-                    style="display: none;"
-                    onchange="manejarSubidaFotosEPP(this)"
-                >
-            </div>
-
             <!-- Cantidad y Talla -->
             <!-- Solo Cantidad -->
             <div id="formularioAgregarEPP" style="display: none;">
@@ -196,6 +153,49 @@
                     rows="2"
                     class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 text-gray-500 text-sm disabled:bg-gray-100 disabled:text-gray-400 focus:outline-none resize-none"
                 ></textarea>
+            </div>
+
+            <!-- Sección de Fotos (opcional) -->
+            <div id="seccionFotosEPP" style="display: none;">
+                <div class="flex items-center justify-between mb-3">
+                    <label class="text-sm font-medium text-gray-700">Fotos del EPP (Opcional)</label>
+                    <button type="button" onclick="agregarFotoEPP()" class="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg font-medium flex items-center gap-1 hover:bg-blue-700 transition">
+                        <i class="material-symbols-rounded" style="font-size: 16px;">add_photo_alternate</i>
+                        Agregar Foto
+                    </button>
+                </div>
+                
+                <!-- Contenedor de imágenes -->
+                <div id="contenedorFotosEPP" class="grid grid-cols-3 gap-3 mb-4 border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[120px] transition-all"
+                     tabindex="0" 
+                     style="outline: none;"
+                     data-zona="epp"
+                     onmouseover="this.focus()"
+                     onmouseleave="this.blur()"
+                     ondrop="handleDropEPP(event)"
+                     ondragover="handleDragOverEPP(event)"
+                     ondragleave="handleDragLeaveEPP(event)">
+                    
+                    <!-- Mensaje inicial -->
+                    <div id="mensajeDragDrop" class="col-span-3 flex flex-col items-center justify-center text-gray-400">
+                        <i class="material-symbols-rounded text-4xl mb-2">cloud_upload</i>
+                        <p class="text-sm">Arrastra imágenes aquí o haz clic en "Agregar Foto"</p>
+                        <p class="text-xs">También puedes pegar con Ctrl+V</p>
+                        <p class="text-xs">Formatos: JPG, PNG, GIF, WebP, JFIF</p>
+                    </div>
+                    
+                    <!-- Las imágenes se agregarán aquí dinámicamente -->
+                </div>
+                
+                <!-- Input oculto para subir archivos -->
+                <input 
+                    type="file" 
+                    id="inputFotosEPP" 
+                    multiple 
+                    accept="image/*" 
+                    style="display: none;"
+                    onchange="manejarSubidaFotosEPP(this)"
+                >
             </div>
 
             <!-- Botón Agregar a Lista -->
@@ -1313,15 +1313,43 @@ function guardarEdicionEPP() {
         icon: 'success',
         title: 'Guardado',
         toast: true,
-        position: 'bottom-end',
+        position: 'top-end',
         showConfirmButton: false,
         timer: 2500,
         timerProgressBar: false,
+        customClass: {
+            popup: 'swal2-toast-compact'
+        },
         didOpen: (toast) => {
             toast.addEventListener('mouseenter', Swal.stopTimer)
             toast.addEventListener('mouseleave', Swal.resumeTimer)
         }
     });
+    
+    // Agregar estilos CSS para toast compacto si no existen
+    if (!document.getElementById('swal2-toast-compact-style')) {
+        const style = document.createElement('style');
+        style.id = 'swal2-toast-compact-style';
+        style.textContent = `
+            .swal2-toast-compact {
+                min-width: auto !important;
+                width: auto !important;
+                padding: 8px 12px !important;
+                border-radius: 6px !important;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+            }
+            .swal2-toast-compact .swal2-title {
+                font-size: 14px !important;
+                margin: 0 !important;
+            }
+            .swal2-toast-compact .swal2-icon {
+                width: 24px !important;
+                height: 24px !important;
+                margin-right: 8px !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
     
     console.log(' [guardarEdicionEPP] Edición completada');
 }

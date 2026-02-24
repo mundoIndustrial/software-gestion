@@ -150,18 +150,19 @@ window.EppMenuHandlers = {
     _extraerDatosDelDOM(item, itemId) {
         console.log('🟪 [_extraerDatosDelDOM] Extrayendo datos del DOM para itemId:', itemId);
         try {
-            // Extraer datos de la estructura de tabla
-            const cells = item.querySelectorAll('td');
             let nombre = '';
             let cantidad = 0;
             let observaciones = '';
             let valor_unitario = null;
             let total = null;
             
+            // Detectar si es estructura de tabla o estructura div (item-epp-card)
+            const cells = item.querySelectorAll('td');
             console.log('🟪 [_extraerDatosDelDOM] Celdas encontradas:', cells.length);
             
             if (cells.length >= 7) {
-                // Estructura de tabla: [ÍTEM, IMAGEN, DESCRIPCIÓN, CANTIDAD, OBSERVACIONES, V. UNITARIO, TOTAL]
+                // ESTRUCTURA ANTIGUA: tabla con <td> elementos
+                console.log('🟪 [_extraerDatosDelDOM] Usando estructura de TABLA');
                 
                 // Extraer nombre de la columna DESCRIPCIÓN (celda 2)
                 const descCell = cells[2];
@@ -222,7 +223,47 @@ window.EppMenuHandlers = {
                 }
                 console.log('🟪 [_extraerDatosDelDOM] Total encontrado:', total);
             } else {
-                console.warn('🟪 [_extraerDatosDelDOM] Estructura de tabla no válida, celdas insuficientes');
+                // ESTRUCTURA NUEVA: div (item-epp-card)
+                console.log('🟪 [_extraerDatosDelDOM] Usando estructura de DIV (item-epp-card)');
+                
+                // Extraer nombre de <h4>
+                const h4Element = item.querySelector('h4');
+                if (h4Element) {
+                    nombre = h4Element.textContent?.trim() || '';
+                    console.log('🟪 [_extraerDatosDelDOM] Nombre encontrado en <h4>:', nombre);
+                } else {
+                    console.warn('🟪 [_extraerDatosDelDOM] No se encontró <h4> para el nombre');
+                }
+                
+                // Extraer Cantidad y Observaciones de la grid de información
+                // Estructura: <div style="display: grid; ...">
+                //   <div><p>Cantidad</p><p>8</p></div>
+                //   <div><p>Observaciones</p><p>-</p></div>
+                // </div>
+                const gridDivs = item.querySelectorAll('div[style*="grid"]');
+                if (gridDivs.length > 0) {
+                    // Buscar el grid que contiene Cantidad y Observaciones
+                    for (const gridDiv of gridDivs) {
+                        const columnDivs = gridDiv.querySelectorAll(':scope > div');
+                        for (const col of columnDivs) {
+                            const paragraphs = col.querySelectorAll('p');
+                            if (paragraphs.length >= 2) {
+                                const label = paragraphs[0].textContent?.trim().toLowerCase() || '';
+                                const value = paragraphs[1].textContent?.trim() || '';
+                                
+                                if (label.includes('cantidad')) {
+                                    cantidad = parseInt(value) || 0;
+                                    console.log('🟪 [_extraerDatosDelDOM] Cantidad encontrada en grid:', cantidad);
+                                } else if (label.includes('observaciones')) {
+                                    observaciones = value === '-' ? '' : value;
+                                    console.log('🟪 [_extraerDatosDelDOM] Observaciones encontradas en grid:', observaciones);
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    console.warn('🟪 [_extraerDatosDelDOM] No se encontraron grids de información');
+                }
             }
 
             // IMPORTANTE: Priorizar imágenes del stateManager (si existen = cambios pendientes)

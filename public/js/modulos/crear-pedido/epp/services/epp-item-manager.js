@@ -248,36 +248,27 @@ class EppItemManager {
         if (datos.imagenes !== undefined) {
             console.log('[EppItemManager] 🖼️ Procesando imágenes:', datos.imagenes.length);
 
-            const nuevaMiniatura = this._obtenerMiniatura(datos.imagenes);
-            const wrapper = item.querySelector('.epp-miniatura-wrapper');
-            const imgEl = item.querySelector('.epp-miniatura');
-
-            if (nuevaMiniatura) {
-                if (imgEl) {
-                    imgEl.src = nuevaMiniatura;
+            // Buscar y actualizar la sección de galería existente
+            const galeriaSeccion = item.querySelector('div[style*="border-top: 1px solid #bfdbfe"]');
+            
+            if (galeriaSeccion) {
+                if (datos.imagenes.length > 0) {
+                    // Regenerar la galería con las nuevas imágenes
+                    const nombreEPP = item.querySelector('h4')?.textContent || 'Imagen EPP';
+                    const nuevoHTML = this._crearGaleriaHTML(nombreEPP, datos.imagenes);
+                    galeriaSeccion.outerHTML = nuevoHTML;
+                    console.log('[EppItemManager] Galería actualizada con', datos.imagenes.length, 'imágenes');
                 } else {
-                    const titleEl = item.querySelector('h4');
-                    if (titleEl) {
-                        // Insertar la miniatura en la misma fila (a la derecha), no debajo del título
-                        const filaFlex = titleEl.closest('div[style*="display: flex"]');
-                        const nuevoWrapper = document.createElement('div');
-                        nuevoWrapper.className = 'epp-miniatura-wrapper';
-                        nuevoWrapper.style.cssText = 'width: 135px; height: 140px; margin-left: 0.25rem; border-radius: 14px; overflow: hidden; border: 1px solid #e5e7eb; background: #f3f4f6; flex-shrink: 0;';
-                        nuevoWrapper.innerHTML = `<img class="epp-miniatura" src="${nuevaMiniatura}" alt="${titleEl.textContent || 'EPP'}" style="width: 100%; height: 100%; object-fit: cover; display: block; cursor: pointer;" ondblclick="event.preventDefault(); event.stopPropagation(); if (window.mostrarImagenProcesoGrande) window.mostrarImagenProcesoGrande('${nuevaMiniatura}');" />`;
-
-                        // Intentar encontrar el contenedor correcto (la fila con gap grande) para respetar el layout
-                        const filaConGap = item.querySelector('div[style*="display: flex"][style*="gap"]');
-                        if (filaConGap && filaConGap.appendChild) {
-                            filaConGap.appendChild(nuevoWrapper);
-                        } else if (filaFlex && filaFlex.appendChild) {
-                            filaFlex.appendChild(nuevoWrapper);
-                        } else {
-                            titleEl.insertAdjacentElement('afterend', nuevoWrapper);
-                        }
-                    }
+                    // Si no hay imágenes, remover la sección de galería
+                    galeriaSeccion.remove();
+                    console.log('[EppItemManager] Sección de galería removida (sin imágenes)');
                 }
-            } else {
-                if (wrapper) wrapper.remove();
+            } else if (datos.imagenes.length > 0) {
+                // Si no existe la galería pero hay imágenes, crearla
+                const nombreEPP = item.querySelector('h4')?.textContent || 'Imagen EPP';
+                const nuevoHTML = this._crearGaleriaHTML(nombreEPP, datos.imagenes);
+                item.insertAdjacentHTML('beforeend', nuevoHTML);
+                console.log('[EppItemManager] Galería creada con', datos.imagenes.length, 'imágenes');
             }
         }
 
