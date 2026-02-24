@@ -181,9 +181,14 @@
                                 <!-- Estado (Dropdown) -->
                                 <td class="table-cell">
                                     <div class="cell-content">
-                                        <select class="estado-dropdown estado-{{ str_replace(' ', '-', strtolower(trim($orden->estado ?? 'pendiente'))) }}" data-orden-id="{{ $orden->id }}">
-                                            @foreach(\App\Models\PedidoProduccion::ESTADOS as $estado)
-                                                <option value="{{ $estado }}" {{ $orden->estado === $estado ? 'selected' : '' }}>{{ $estado }}</option>
+                                        <select class="estado-dropdown estado-{{ str_replace(['_', ' '], '-', strtolower(trim($orden->estado ?? 'pendiente'))) }}" data-orden-id="{{ $orden->id }}">
+                                            @php
+                                                $estadosDB = \App\Models\PedidoProduccion::ESTADOS;
+                                                $estadosDisplay = \App\Models\PedidoProduccion::getEstadosDisplay();
+                                                $estadoMapped = array_combine($estadosDB, $estadosDisplay);
+                                            @endphp
+                                            @foreach($estadoMapped as $estado => $display)
+                                                <option value="{{ $estado }}" {{ $orden->estado === $estado ? 'selected' : '' }}>{{ $display }}</option>
                                             @endforeach
                                         </select>
                                     </div>

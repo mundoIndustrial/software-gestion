@@ -40,20 +40,24 @@ class CheckDespachoRole
         $despachoRoleId = \App\Models\Role::where('name', 'Despacho')->first()?->id;
         $asesorRoleId = \App\Models\Role::where('name', 'asesor')->first()?->id;
         $adminRoleId = \App\Models\Role::where('name', 'admin')->first()?->id;
+        $supervisorGerenciaRoleId = \App\Models\Role::where('name', 'supervisor_gerencia')->first()?->id;
         
         \Log::info('[CheckDespachoRole] Verificación de rol', [
             'despacho_role_id' => $despachoRoleId,
             'asesor_role_id' => $asesorRoleId,
             'admin_role_id' => $adminRoleId,
+            'supervisor_gerencia_role_id' => $supervisorGerenciaRoleId,
             'user_has_despacho_role' => $despachoRoleId && in_array($despachoRoleId, $rolesIds),
             'user_has_asesor_role' => $asesorRoleId && in_array($asesorRoleId, $rolesIds),
             'user_has_admin_role' => $adminRoleId && in_array($adminRoleId, $rolesIds),
+            'user_has_supervisor_gerencia_role' => $supervisorGerenciaRoleId && in_array($supervisorGerenciaRoleId, $rolesIds),
         ]);
         
-        // Permitir acceso si tiene rol Despacho O rol asesor O rol admin
+        // Permitir acceso si tiene rol Despacho O rol asesor O rol admin O rol supervisor_gerencia
         $hasAccess = ($despachoRoleId && in_array($despachoRoleId, $rolesIds)) || 
                     ($asesorRoleId && in_array($asesorRoleId, $rolesIds)) ||
-                    ($adminRoleId && in_array($adminRoleId, $rolesIds));
+                    ($adminRoleId && in_array($adminRoleId, $rolesIds)) ||
+                    ($supervisorGerenciaRoleId && in_array($supervisorGerenciaRoleId, $rolesIds));
         
         if (!$hasAccess) {
             \Log::warning('[CheckDespachoRole] Acceso denegado', [
@@ -61,6 +65,7 @@ class CheckDespachoRole
                 'despacho_role_id' => $despachoRoleId,
                 'asesor_role_id' => $asesorRoleId,
                 'admin_role_id' => $adminRoleId,
+                'supervisor_gerencia_role_id' => $supervisorGerenciaRoleId,
                 'user_roles' => $rolesIds,
             ]);
             return abort(403, 'No tienes permiso para acceder al módulo de despacho');

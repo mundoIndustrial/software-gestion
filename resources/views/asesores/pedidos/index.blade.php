@@ -1396,6 +1396,112 @@
 <script src="{{ asset('js/componentes/manejo-imagenes-proceso.js') }}"></script>
 <script src="{{ asset('js/componentes/manejador-imagen-proceso-con-indice.js') }}"></script>
 
+<!-- Función para actualizar estado del pedido -->
+<script>
+    // Función para actualizar el estado del pedido
+    async function actualizarEstado(selectElement, pedidoId) {
+        const nuevoEstado = selectElement.value;
+        const estadoAnterior = selectElement.dataset.value;
+        
+        // Si no hay cambio, no hacer nada
+        if (nuevoEstado === estadoAnterior) {
+            return;
+        }
+        
+        try {
+            // Mostrar confirmación
+            const result = await Swal.fire({
+                title: '¿Cambiar estado?',
+                html: `
+                    <div style="text-align: left;">
+                        <p style="margin-bottom: 1rem;">¿Estás seguro de cambiar el estado del pedido #${pedidoId}?</p>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div style="flex: 1;">
+                                <strong>Estado actual:</strong><br>
+                                <span style="color: #6b7280;">${estadoAnterior.replace('_', ' ')}</span>
+                            </div>
+                            <div style="font-size: 1.5rem;">→</div>
+                            <div style="flex: 1;">
+                                <strong>Nuevo estado:</strong><br>
+                                <span style="color: #059669;">${nuevoEstado.replace('_', ' ')}</span>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Sí, cambiar',
+                cancelButtonText: 'Cancelar'
+            });
+            
+            if (!result.isConfirmed) {
+                // Revertir al estado anterior si cancela
+                selectElement.value = estadoAnterior;
+                return;
+            }
+            
+            // Enviar actualización al servidor
+            UI.cargando('Actualizando estado...', 'Por favor espera');
+            
+            const response = await fetch(`/api/pedidos/${pedidoId}/actualizar-estado`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    estado: nuevoEstado
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            // Actualizar el dataset value
+            selectElement.dataset.value = nuevoEstado;
+            
+            // Actualizar clases CSS
+            selectElement.className = selectElement.className.replace(/estado-\w+/g, '');
+            const nuevaClase = 'estado-' + nuevoEstado.toLowerCase().replace(/_/g, '-');
+            selectElement.classList.add('estado-dropdown', nuevaClase);
+            
+            // Cerrar modal de carga
+            Swal.close();
+            
+            // Mostrar éxito
+            Swal.fire({
+                title: '¡Estado actualizado!',
+                text: `El pedido #${pedidoId} ahora está "${nuevoEstado.replace('_', ' ')}"`,
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            
+            // Actualizar la fila en tiempo real si hay WebSocket
+            if (window.PedidosRealtimeRefresh && window.PedidosRealtimeRefresh.actualizarFilaEnTiempoReal) {
+                window.PedidosRealtimeRefresh.actualizarFilaEnTiempoReal(pedidoId, { estado: nuevoEstado });
+            }
+            
+        } catch (error) {
+            console.error('Error actualizando estado:', error);
+            
+            // Revertir al estado anterior
+            selectElement.value = estadoAnterior;
+            
+            Swal.close();
+            UI.error('Error', 'No se pudo actualizar el estado: ' + error.message);
+        }
+    }
+
+    // Hacer la función global para que pueda ser llamada desde el HTML
+    window.actualizarEstado = actualizarEstado;
+</script>
+
 
 @endpush
 

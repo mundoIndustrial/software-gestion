@@ -114,6 +114,90 @@
       </ul>
     </div>
 
+    @elseif(auth()->user()->hasRole('supervisor_gerencia'))
+    <!-- SUPERVISOR GERENCIA: Menú especializado para supervisores de gerencia -->
+    <div class="menu-section">
+      <span class="menu-section-title">Registros</span>
+      <ul class="menu-list" role="navigation">
+      <li class="menu-item">
+        <a href="/recibos-costura"
+           class="menu-link {{ request()->is('recibos-costura') ? 'active' : '' }}"
+           aria-label="Recibos de Costura - Vista Principal">
+          <span class="material-symbols-rounded" aria-hidden="true">receipt_long</span>
+          <span class="menu-label">Recibos de Costura</span>
+        </a>
+      </li>
+      </ul>
+    </div>
+
+    <div class="menu-section">
+      <span class="menu-section-title">Gestión de Bodega</span>
+      <ul class="menu-list" role="navigation">
+      <li class="menu-item">
+        <a href="{{ route('registros.index') }}"
+           class="menu-link {{ request()->routeIs('registros.index') ? 'active' : '' }}"
+           aria-label="Ver todos los pedidos">
+          <span class="material-symbols-rounded" aria-hidden="true">list</span>
+          <span class="menu-label">Todos los Pedidos</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="{{ route('despacho.index') }}"
+           class="menu-link {{ request()->routeIs('despacho.*') ? 'active' : '' }}"
+           aria-label="Despacho">
+          <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
+          <span class="menu-label">Despacho</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="{{ route('gestion-bodega.pedidos') }}"
+           class="menu-link {{ request()->routeIs('gestion-bodega.pedidos') ? 'active' : '' }}"
+           aria-label="Pendientes Pedidos">
+          <span class="material-symbols-rounded" aria-hidden="true">cancel</span>
+          <span class="menu-label">Pendientes Pedidos</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="{{ route('gestion-bodega.pedidos-anulados') }}"
+           class="menu-link {{ request()->routeIs('gestion-bodega.pedidos-anulados') ? 'active' : '' }}"
+           aria-label="Pedidos anulados">
+          <span class="material-symbols-rounded" aria-hidden="true">checklist</span>
+          <span class="menu-label">Pedidos anulados</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="{{ route('gestion-bodega.pendientes-costura') }}"
+           class="menu-link {{ request()->routeIs('gestion-bodega.pendientes-costura') ? 'active' : '' }}"
+           aria-label="Pendiente Costura">
+          <span class="material-symbols-rounded" aria-hidden="true">shield</span>
+          <span class="menu-label">Pendiente Costura</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="{{ route('gestion-bodega.pendientes-epp') }}"
+           class="menu-link {{ request()->routeIs('gestion-bodega.pendientes-epp') ? 'active' : '' }}"
+           aria-label="Pendiente EPP">
+          <span class="material-symbols-rounded" aria-hidden="true">shield</span>
+          <span class="menu-label">Pendiente EPP</span>
+        </a>
+      </li>
+      </ul>
+    </div>
+
+    <div class="menu-section">
+      <span class="menu-section-title">Entregas</span>
+      <ul class="menu-list" role="navigation">
+      <li class="menu-item">
+        <a href="{{ route('entregas-completas.index') }}"
+           class="menu-link {{ request()->routeIs('entregas-completas.*') ? 'active' : '' }}"
+           aria-label="Entregas Completas">
+          <span class="material-symbols-rounded" aria-hidden="true">local_shipping</span>
+          <span class="menu-label">Entregas Completas</span>
+        </a>
+      </li>
+      </ul>
+    </div>
+
     @else
     <!-- OTROS ROLES: Menú completo -->
     

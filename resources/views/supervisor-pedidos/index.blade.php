@@ -616,15 +616,16 @@
                 titulo = 'Filtrar por Estado';
                 campoNombre = 'estado';
                 // Estados predefinidos
-                const estados = ['No iniciado', 'En Ejecución', 'Entregado', 'Anulada'];
+                const estadosDisplay = ['Pendiente', 'No iniciado', 'En Ejecución', 'Entregado', 'Anulada', 'Pendiente Supervisor', 'Pendiente Insumos', 'Pendiente Cartera', 'Rechazado Cartera', 'Devuelto a Asesora'];
+                const estadosDB = ['Pendiente', 'No iniciado', 'En Ejecución', 'Entregado', 'Anulada', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'pendiente_cartera', 'RECHAZADO_CARTERA', 'DEVUELTO_A_ASESORA'];
                 filtroContenido.innerHTML = `
                     <div class="form-group">
                         <input type="text" id="buscadorEstado" class="form-control" placeholder="Buscar estado..." style="margin-bottom: 1rem;">
                         <div id="listaEstados">
-                            ${estados.map(estado => `
+                            ${estadosDisplay.map((display, index) => `
                                 <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; cursor: pointer; border-radius: 4px;">
-                                    <input type="checkbox" name="estado" value="${estado}" class="filtro-checkbox">
-                                    <span>${estado}</span>
+                                    <input type="checkbox" name="estado" value="${estadosDB[index]}" class="filtro-checkbox">
+                                    <span>${display}</span>
                                 </label>
                             `).join('')}
                         </div>

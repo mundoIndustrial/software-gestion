@@ -284,6 +284,114 @@ class PedidoController extends Controller
     }
 
     /**
+     * PATCH /api/pedidos/{id}/actualizar-estado
+     * 
+     * Actualizar estado de un pedido
+     */
+    public function actualizarEstado(Request $request, int $id): JsonResponse
+    {
+        try {
+            \Log::info('[actualizarEstado] Iniciando', [
+                'pedido_id' => $id,
+                'nuevo_estado' => $request->input('estado'),
+                'metodo' => $request->method(),
+                'ruta' => $request->path(),
+                'usuario_id' => auth()->id()
+            ]);
+
+            // Validar entrada
+            $request->validate([
+                'estado' => 'required|string|in:Pendiente,No iniciado,En Ejecución,Entregado,Anulada,PENDIENTE_SUPERVISOR,PENDIENTE_INSUMOS,pendiente_cartera,RECHAZADO_CARTERA,DEVUELTO_A_ASESORA'
+            ]);
+
+            $nuevoEstado = $request->input('estado');
+
+            // Buscar el pedido
+            $pedido = \App\Models\PedidoProduccion::find($id);
+            if (!$pedido) {
+                \Log::warning('[actualizarEstado] Pedido no encontrado', ['pedido_id' => $id]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pedido no encontrado'
+                ], 404);
+            }
+
+            $estadoAnterior = $pedido->estado;
+
+            // Si el estado es el mismo, no hacer nada
+            if ($estadoAnterior === $nuevoEstado) {
+                \Log::info('[actualizarEstado] El estado es el mismo, no se actualiza', [
+                    'pedido_id' => $id,
+                    'estado' => $nuevoEstado
+                ]);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'El estado ya es el mismo',
+                    'data' => [
+                        'id' => $pedido->id,
+                        'estado' => $nuevoEstado,
+                        'estado_anterior' => $estadoAnterior
+                    ]
+                ]);
+            }
+
+            // Actualizar estado
+            $pedido->estado = $nuevoEstado;
+            $pedido->save();
+
+            // Registrar en novedades si hay cambio
+            if ($estadoAnterior !== $nuevoEstado) {
+                $usuario = auth()->user();
+                $nombreUsuario = $usuario ? $usuario->name : 'Sistema';
+                
+                $novedad = "Estado cambiado de '{$estadoAnterior}' a '{$nuevoEstado}' por {$nombreUsuario}";
+                
+                if (!empty($pedido->novedades)) {
+                    $pedido->novedades .= "\n\n" . $novedad;
+                } else {
+                    $pedido->novedades = $novedad;
+                }
+                
+                $pedido->save();
+                
+                \Log::info('[actualizarEstado] Novedad registrada', [
+                    'pedido_id' => $id,
+                    'novedad' => $novedad
+                ]);
+            }
+
+            \Log::info('[actualizarEstado] Estado actualizado exitosamente', [
+                'pedido_id' => $id,
+                'estado_anterior' => $estadoAnterior,
+                'nuevo_estado' => $nuevoEstado
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Estado actualizado correctamente',
+                'data' => [
+                    'id' => $pedido->id,
+                    'estado' => $nuevoEstado,
+                    'estado_anterior' => $estadoAnterior,
+                    'novedades' => $pedido->novedades
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('[actualizarEstado] Error:', [
+                'pedido_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar estado: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * GET /api/pedidos/{id}
      * 
      * Obtener un pedido (lectura - CQRS read side)

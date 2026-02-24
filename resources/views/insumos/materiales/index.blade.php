@@ -2236,11 +2236,20 @@
         // Valores predefinidos para ciertos filtros
         const predefinedValues = {
             'area': ['Corte', 'Creación de Orden'],
-            'estado': ['En Ejecución', 'No iniciado', 'Entregado', 'Anulada', 'Pendiente Insumos']
+            'estado': {
+                db: ['Pendiente', 'No iniciado', 'En Ejecución', 'Entregado', 'Anulada', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'pendiente_cartera', 'RECHAZADO_CARTERA', 'DEVUELTO_A_ASESORA'],
+                display: ['Pendiente', 'No iniciado', 'En Ejecución', 'Entregado', 'Anulada', 'Pendiente Supervisor', 'Pendiente Insumos', 'Pendiente Cartera', 'Rechazado Cartera', 'Devuelto a Asesora']
+            }
         };
 
         // Usar valores predefinidos si existen, sino usar los de la tabla
-        const displayValues = predefinedValues[column] || values;
+        let displayValues = values;
+        if (column === 'estado' && predefinedValues[column]) {
+            displayValues = predefinedValues[column].display;
+            values = predefinedValues[column].db;
+        } else if (predefinedValues[column]) {
+            displayValues = predefinedValues[column];
+        }
         
         modal.innerHTML = `
             <div style="background: white; border-radius: 12px; padding: 24px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
@@ -2345,10 +2354,27 @@
         const filterColumns = urlParams.getAll('filter_columns[]') || [];
         const filterValuesArray = urlParams.getAll('filter_values[]') || [];
         
+        // Mapeo de estados para display
+        const estadoMap = {
+            'PENDIENTE_SUPERVISOR': 'Pendiente Supervisor',
+            'PENDIENTE_INSUMOS': 'Pendiente Insumos',
+            'pendiente_cartera': 'Pendiente Cartera',
+            'RECHAZADO_CARTERA': 'Rechazado Cartera',
+            'DEVUELTO_A_ASESORA': 'Devuelto a Asesora'
+        };
+        
+        // Convertir valores a display si es estado
+        const displayMappedValues = values.map(val => {
+            if (column === 'estado' && estadoMap[val]) {
+                return { db: val, display: estadoMap[val] };
+            }
+            return { db: val, display: val };
+        });
+        
         // Filtrar valores según búsqueda
-        let filteredValues = values.filter(val => {
+        let filteredValues = displayMappedValues.filter(valObj => {
             // Convertir a string si no lo es
-            const valStr = String(val || '').trim();
+            const valStr = String(valObj.display || '').trim();
             return valStr.length > 0 && valStr.toLowerCase().includes(searchTerm.toLowerCase());
         });
         
@@ -2367,22 +2393,23 @@
         }
         
         // Renderizar checkboxes
-        filterList.innerHTML = totalText + displayValues.map(val => {
-            // Convertir a string
-            const valStr = String(val || '').trim();
+        filterList.innerHTML = totalText + displayValues.map(valObj => {
+            // Usar el valor de la BD para el comparador
+            const dbVal = String(valObj.db || '').trim();
+            const displayVal = String(valObj.display || '').trim();
             
             // Buscar si este valor está en los filtros del MISMO TIPO DE COLUMNA
             let isChecked = false;
             filterColumns.forEach((col, idx) => {
-                if (col === column && filterValuesArray[idx] === valStr) {
+                if (col === column && filterValuesArray[idx] === dbVal) {
                     isChecked = true;
                 }
             });
             
             return `
                 <label style="display: flex; align-items: center; padding: 10px; cursor: pointer; border-radius: 4px; transition: background 0.2s; hover: background-color: #f3f4f6;">
-                    <input type="checkbox" value="${valStr}" class="filter-checkbox" ${isChecked ? 'checked' : ''} style="margin-right: 10px; cursor: pointer;">
-                    <span style="flex: 1;">${valStr}</span>
+                    <input type="checkbox" value="${dbVal}" class="filter-checkbox" ${isChecked ? 'checked' : ''} style="margin-right: 10px; cursor: pointer;">
+                    <span style="flex: 1;">${displayVal}</span>
                 </label>
             `;
         }).join('');

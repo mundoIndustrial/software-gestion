@@ -315,6 +315,9 @@ Route::withoutMiddleware(['api']) // Remover el middleware api global
         Route::patch('{id}/actualizar-descripcion', [PedidoController::class, 'actualizarDescripcion'])
             ->name('actualizar-descripcion');
         
+        Route::patch('{id}/actualizar-estado', [PedidoController::class, 'actualizarEstado'])
+            ->name('actualizar-estado');
+        
         Route::delete('{id}/cancelar', [PedidoController::class, 'cancelar'])
             ->name('cancelar');
     });

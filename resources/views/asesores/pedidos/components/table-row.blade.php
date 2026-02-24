@@ -175,30 +175,34 @@
 </div>
 
 <!-- Estado -->
-<div style="display: flex; align-items: center;">
-    <span style="
-        background: #fef3c7;
-        color: #92400e;
-        padding: 0.25rem 0.5rem;
-        border-radius: 12px;
-        font-size: 0.7rem;
-        font-weight: 600;
-        display: inline-block;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 90px;
-        white-space: nowrap;
-    ">
+<div class="table-cell">
+    <div class="cell-content">
         @php
+            // Obtener estado actual
             if (get_class($pedido) === 'App\Models\LogoPedido') {
-                $estado = $pedido->estado ?? 'pendiente';
-                echo str_replace('_', ' ', ucfirst($estado));
+                $estadoActual = $pedido->estado ?? 'pendiente';
+                $estadoTexto = str_replace('_', ' ', ucfirst($estadoActual));
             } else {
-                $estado = $pedido->estado ?? 'Pendiente';
-                echo str_replace('_', ' ', $estado);
+                $estadoActual = $pedido->estado ?? 'Pendiente';
+                $estadoTexto = str_replace('_', ' ', $estadoActual);
             }
+            
+            // Determinar clase CSS según estado
+            $estadoClase = 'estado-' . strtolower(str_replace('_', '-', $estadoActual));
         @endphp
-    </span>
+        <select class="estado-dropdown {{ $estadoClase }}" data-pedido-id="{{ $pedido->id }}" data-value="{{ $estadoActual }}" onchange="actualizarEstado(this, {{ $pedido->id }})">
+            <option value="Pendiente" {{ $estadoActual === 'Pendiente' ? 'selected' : '' }}>Pendiente</option>
+            <option value="No iniciado" {{ $estadoActual === 'No iniciado' ? 'selected' : '' }}>No iniciado</option>
+            <option value="En Ejecución" {{ $estadoActual === 'En Ejecución' ? 'selected' : '' }}>En Ejecución</option>
+            <option value="Entregado" {{ $estadoActual === 'Entregado' ? 'selected' : '' }}>Entregado</option>
+            <option value="Anulada" {{ $estadoActual === 'Anulada' ? 'selected' : '' }}>Anulada</option>
+            <option value="PENDIENTE_SUPERVISOR" {{ $estadoActual === 'PENDIENTE_SUPERVISOR' ? 'selected' : '' }}>Pendiente Supervisor</option>
+            <option value="PENDIENTE_INSUMOS" {{ $estadoActual === 'PENDIENTE_INSUMOS' ? 'selected' : '' }}>Pendiente Insumos</option>
+            <option value="pendiente_cartera" {{ $estadoActual === 'pendiente_cartera' ? 'selected' : '' }}>Pendiente Cartera</option>
+            <option value="RECHAZADO_CARTERA" {{ $estadoActual === 'RECHAZADO_CARTERA' ? 'selected' : '' }}>Rechazado Cartera</option>
+            <option value="DEVUELTO_A_ASESORA" {{ $estadoActual === 'DEVUELTO_A_ASESORA' ? 'selected' : '' }}>Devuelto a Asesora</option>
+        </select>
+    </div>
 </div>
 
 <!-- Área -->

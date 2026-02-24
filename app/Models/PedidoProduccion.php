@@ -722,6 +722,38 @@ class PedidoProduccion extends Model
     /**
      * Constantes de estados y opciones
      */
-    const ESTADOS = ['Pendiente', 'No iniciado', 'En Ejecución', 'Entregado', 'Anulada'];
+    const ESTADOS = [
+        'Pendiente', 
+        'No iniciado', 
+        'En Ejecución', 
+        'Entregado', 
+        'Anulada',
+        'PENDIENTE_SUPERVISOR',
+        'PENDIENTE_INSUMOS',
+        'pendiente_cartera',
+        'RECHAZADO_CARTERA',
+        'DEVUELTO_A_ASESORA'
+    ];
     const DIAS_ENTREGA = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35];
+
+    /**
+     * Estados con nombres formateados para display
+     * 
+     * @return array
+     */
+    public static function getEstadosDisplay(): array
+    {
+        return [
+            'Pendiente',
+            'No iniciado',
+            'En Ejecución',
+            'Entregado',
+            'Anulada',
+            'Pendiente Supervisor',
+            'Pendiente Insumos',
+            'Pendiente Cartera',
+            'Rechazado Cartera',
+            'Devuelto a Asesora'
+        ];
+    }
 }

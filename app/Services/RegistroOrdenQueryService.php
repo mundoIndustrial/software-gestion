@@ -63,6 +63,11 @@ class RegistroOrdenQueryService
      */
     public function applyRoleFilters($query, $user, $request)
     {
+        // Si es supervisor_gerencia, mostrar TODOS los pedidos sin filtros
+        if ($user && $user->role && $user->role->name === 'supervisor_gerencia') {
+            return $query;
+        }
+
         if ($user && $user->role && $user->role->name === 'supervisor') {
             if (!$request->has('filter_estado')) {
                 $query->where('estado', 'En Ejecución');

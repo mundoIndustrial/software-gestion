@@ -331,12 +331,12 @@ body.dark-theme .pagination-info {
 
 /* ===== ESTADO DROPDOWN STYLES ===== */
 .estado-dropdown {
-  padding: 6px 12px;
+  padding: 8px 12px;
   border-radius: 20px;
   border: none;
   color: white;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 13px;
   cursor: pointer;
   appearance: none;
   background-repeat: no-repeat;
@@ -346,7 +346,13 @@ body.dark-theme .pagination-info {
   transition: all 0.3s ease;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
   background-image: url('data:image/svg+xml;utf8,<svg fill="white" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  max-width: 200px;
+  white-space: normal;
+  text-overflow: ellipsis;
 }
 
 .estado-dropdown:hover {
@@ -378,6 +384,26 @@ body.dark-theme .pagination-info {
 
 .estado-dropdown.estado-anulada {
   background-color: #d97706;
+}
+
+.estado-dropdown.estado-pendiente-supervisor {
+  background-color: #8b5cf6;
+}
+
+.estado-dropdown.estado-pendiente-insumos {
+  background-color: #06b6d4;
+}
+
+.estado-dropdown.estado-pendiente-cartera {
+  background-color: #ec4899;
+}
+
+.estado-dropdown.estado-rechazado-cartera {
+  background-color: #dc2626;
+}
+
+.estado-dropdown.estado-devuelto-a-asesora {
+  background-color: #ca8a04;
 }
 
 /* Estilos para las opciones del dropdown */
@@ -412,6 +438,31 @@ body.dark-theme .pagination-info {
 
 .estado-dropdown option[value="Anulada"] {
   background: #d97706;
+  color: white;
+}
+
+.estado-dropdown option[value="PENDIENTE_SUPERVISOR"] {
+  background: #8b5cf6;
+  color: white;
+}
+
+.estado-dropdown option[value="PENDIENTE_INSUMOS"] {
+  background: #06b6d4;
+  color: white;
+}
+
+.estado-dropdown option[value="pendiente_cartera"] {
+  background: #ec4899;
+  color: white;
+}
+
+.estado-dropdown option[value="RECHAZADO_CARTERA"] {
+  background: #dc2626;
+  color: white;
+}
+
+.estado-dropdown option[value="DEVUELTO_A_ASESORA"] {
+  background: #ca8a04;
   color: white;
 }
 

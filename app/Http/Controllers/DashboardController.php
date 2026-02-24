@@ -66,6 +66,10 @@ class DashboardController extends Controller
                 return redirect()->route('visualizador-logo.dashboard');
             }
 
+            if ($roleName === 'supervisor_gerencia') {
+                return redirect()->route('registros.recibos-costura');
+            }
+
             if ($roleName === 'cartera') {
                 return redirect()->route('cartera.pedidos');
             }

@@ -601,3 +601,149 @@
     flex-wrap: wrap !important;
     gap: 1rem !important;
 }
+
+/* ====================== DROPDOWN DE ESTADO MEJORADO ====================== */
+.table-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cell-content {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.estado-dropdown {
+    width: 100%;
+    max-width: 140px;
+    padding: 0.375rem 0.5rem;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 1rem;
+    padding-right: 2rem;
+}
+
+.estado-dropdown:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.estado-dropdown:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Colores según estado */
+.estado-pendiente {
+    background-color: #fef3c7 !important;
+    color: #92400e !important;
+    border-color: #f59e0b !important;
+}
+
+.estado-pendiente:hover {
+    background-color: #fde68a !important;
+}
+
+.estado-no-iniciado {
+    background-color: #f3f4f6 !important;
+    color: #374151 !important;
+    border-color: #9ca3af !important;
+}
+
+.estado-no-iniciado:hover {
+    background-color: #e5e7eb !important;
+}
+
+.estado-en-ejecución {
+    background-color: #dbeafe !important;
+    color: #1e40af !important;
+    border-color: #3b82f6 !important;
+}
+
+.estado-en-ejecución:hover {
+    background-color: #bfdbfe !important;
+}
+
+.estado-entregado {
+    background-color: #d1fae5 !important;
+    color: #065f46 !important;
+    border-color: #10b981 !important;
+}
+
+.estado-entregado:hover {
+    background-color: #a7f3d0 !important;
+}
+
+.estado-anulada {
+    background-color: #fee2e2 !important;
+    color: #991b1b !important;
+    border-color: #ef4444 !important;
+}
+
+.estado-anulada:hover {
+    background-color: #fecaca !important;
+}
+
+.estado-pendiente-supervisor {
+    background-color: #e9d5ff !important;
+    color: #6b21a8 !important;
+    border-color: #a855f7 !important;
+}
+
+.estado-pendiente-supervisor:hover {
+    background-color: #d8b4fe !important;
+}
+
+.estado-pendiente-insumos {
+    background-color: #fed7aa !important;
+    color: #9a3412 !important;
+    border-color: #fb923c !important;
+}
+
+.estado-pendiente-insumos:hover {
+    background-color: #fdba74 !important;
+}
+
+.estado-pendiente-cartera {
+    background-color: #fef3c7 !important;
+    color: #92400e !important;
+    border-color: #f59e0b !important;
+}
+
+.estado-pendiente-cartera:hover {
+    background-color: #fde68a !important;
+}
+
+.estado-rechazado-cartera {
+    background-color: #fee2e2 !important;
+    color: #991b1b !important;
+    border-color: #ef4444 !important;
+}
+
+.estado-rechazado-cartera:hover {
+    background-color: #fecaca !important;
+}
+
+.estado-devuelto-a-asesora {
+    background-color: #e0e7ff !important;
+    color: #3730a3 !important;
+    border-color: #6366f1 !important;
+}
+
+.estado-devuelto-a-asesora:hover {
+    background-color: #c7d2fe !important;
+}

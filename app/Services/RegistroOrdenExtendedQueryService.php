@@ -62,8 +62,10 @@ class RegistroOrdenExtendedQueryService
     /**
      * Aplicar filtros según el rol del usuario
      * 
-     * Para supervisores: Aplica filtro por estado "En Ejecución"
-     * Para asesores y otros: Sin filtros automáticos
+     * Para supervisor_gerencia: Mostrar TODOS los pedidos sin filtros
+     * Para admin y aprobador_pedidos: Solo estados específicos
+     * Para supervisor: Filtrar por estado "En Ejecución"
+     * Para otros roles: Sin filtros automáticos
      * 
      * @param Builder $query
      * @param object $user Usuario autenticado
@@ -72,6 +74,19 @@ class RegistroOrdenExtendedQueryService
      */
     public function applyRoleFilters(Builder $query, $user, $request): Builder
     {
+        // Si es supervisor_gerencia, mostrar TODOS los pedidos sin filtros
+        if ($user && $user->role && $user->role->name === 'supervisor_gerencia') {
+            return $query;
+        }
+
+        // Para admin y aprobador_pedidos: Solo estados específicos
+        if ($user && $user->role && in_array($user->role->name, ['admin', 'aprobador_pedidos'])) {
+            $query->whereIn('estado', [
+                'Pendiente', 'Entregado', 'En Ejecución', 'No iniciado', 'Anulada'
+            ]);
+            return $query;
+        }
+
         // Si es supervisor, filtrar por estado por defecto
         if ($user && $user->role && $user->role->name === 'supervisor') {
             $query->where('estado', 'En Ejecución');

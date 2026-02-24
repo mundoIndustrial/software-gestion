@@ -26,7 +26,8 @@ class CheckBodegaAccess
             'admin',
             'supervisor-admin',
             'supervisor_planta',
-            'despacho'
+            'despacho',
+            'supervisor_gerencia'
         ];
         
         // Obtener roles del usuario
