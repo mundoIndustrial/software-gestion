@@ -21,16 +21,14 @@ class EppItemManager {
     }
 
     /**
-     * Crear item visual de EPP
+     * Crear item visual de EPP como fila de tabla
      */
     crearItem(id, nombre, categoria, cantidad, observaciones, imagenes = [], pedidoEppId = null, valorUnitario = null, total = null) {
         const listaItems = document.getElementById(this.listaItemsId);
         if (!listaItems) {
-
+            console.warn('[EppItemManager] Contenedor no encontrado:', this.listaItemsId);
             return;
         }
-
-        const miniatura = this._obtenerMiniatura(imagenes);
 
         const formatearNumero = (num) => {
             if (!Number.isFinite(num)) return '0';
@@ -46,86 +44,55 @@ class EppItemManager {
             ? Number(total)
             : null;
         
-        const itemHTML = `
-            <div class="item-epp" data-item-id="${id}" data-pedido-epp-id="${pedidoEppId || id}" style="padding: 0.75rem; background: white; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 0.5rem;">
-                <!-- Header con menú contextual -->
-                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
-                    <div style="flex: 1;">
-                        <div style="display: flex; gap: 1.1rem; align-items: flex-start;">
-                            <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                                <h4 style="margin: 0; margin-top: -4px; font-size: 0.9rem; font-weight: 600; color: #1f2937;">${nombre}</h4>
-
-                                <div class="epp-detalles" style="display: grid; grid-template-columns: 120px 1fr; gap: 0.6rem; align-items: start;">
-                                    <div>
-                                        <p style="margin: 0 0 0.1rem 0; font-size: 0.65rem; font-weight: 600; color: #9ca3af; text-transform: uppercase;">Cantidad</p>
-                                        <p style="margin: 0; font-size: 0.85rem; font-weight: 500; color: #1f2937;">${cantidad}</p>
-                                    </div>
-                                    <div>
-                                        <p style="margin: 0 0 0.1rem 0; font-size: 0.65rem; font-weight: 600; color: #9ca3af; text-transform: uppercase;">Observaciones</p>
-                                        <p style="margin: 0; font-size: 0.85rem; font-weight: 500; color: #1f2937;">${observaciones || 'N/A'}</p>
-                                    </div>
-                                </div>
-
-                                ${(vu !== null || tot !== null) ? `
-                                    <div class="epp-detalles" style="display: grid; grid-template-columns: 120px 1fr; gap: 0.6rem; align-items: start; margin-top: 0.45rem;">
-                                        <div>
-                                            <p style="margin: 0 0 0.1rem 0; font-size: 0.65rem; font-weight: 600; color: #9ca3af; text-transform: uppercase;">Valor Unitario</p>
-                                            <p style="margin: 0; font-size: 0.85rem; font-weight: 600; color: #1f2937;">${vu !== null ? formatearNumero(vu) : 'N/A'}</p>
-                                        </div>
-                                        <div>
-                                            <p style="margin: 0 0 0.1rem 0; font-size: 0.65rem; font-weight: 600; color: #9ca3af; text-transform: uppercase;">Total</p>
-                                            <p style="margin: 0; font-size: 0.85rem; font-weight: 800; color: #1f2937;">${tot !== null ? formatearNumero(tot) : ((vu !== null && cantidad) ? formatearNumero(vu * Number(cantidad)) : '0')}</p>
-                                        </div>
-                                    </div>
-                                ` : ''}
-                            </div>
-
-                            ${miniatura ? `
-                                <div class="epp-miniatura-wrapper" style="width: 135px; height: 140px; margin-left: 0.25rem; border-radius: 14px; overflow: hidden; border: 1px solid #e5e7eb; background: #f3f4f6; flex-shrink: 0;">
-                                    <img class="epp-miniatura" src="${miniatura}" alt="${nombre}" style="width: 100%; height: 100%; object-fit: cover; display: block; cursor: pointer;" ondblclick="event.preventDefault(); event.stopPropagation(); if (window.mostrarImagenProcesoGrande) window.mostrarImagenProcesoGrande('${miniatura}');" />
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                    <!-- Menú contextual (posicionado como en prenda) -->
+        // Crear fila de tabla
+        const row = document.createElement('tr');
+        row.className = 'item-epp';
+        row.setAttribute('data-item-id', id);
+        row.setAttribute('data-pedido-epp-id', pedidoEppId || id);
+        
+        row.innerHTML = `
+            <td style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #1f2937; border-bottom: 1px solid #e5e7eb;">1</td>
+            <td style="padding: 12px 16px; text-align: center; font-size: 11px; font-weight: 500; color: #1f2937; border-bottom: 1px solid #e5e7eb;">
+                ${this._obtenerMiniatura(imagenes) ? `
+                    <img src="${this._obtenerMiniatura(imagenes)}" alt="${nombre}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; cursor: pointer;" 
+                         onclick="event.preventDefault(); event.stopPropagation(); if (window.mostrarImagenProcesoGrande) window.mostrarImagenProcesoGrande('${this._obtenerMiniatura(imagenes)}'); else if (window.abrirImagenGrande) window.abrirImagenGrande('${this._obtenerMiniatura(imagenes)}', 'galeria-epp-${id}', 0);">
+                ` : '<span style="color: #9ca3af;">Sin imagen</span>'}
+            </td>
+            <td style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 500; color: #1f2937; border-bottom: 1px solid #e5e7eb;">
+                <span>${nombre}</span>
+            </td>
+            <td style="padding: 12px 16px; text-align: center; font-size: 11px; font-weight: 600; color: #1f2937; border-bottom: 1px solid #e5e7eb;">${cantidad}</td>
+            <td style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 500; color: #1f2937; border-bottom: 1px solid #e5e7eb;">${observaciones || '-'}</td>
+            <td style="padding: 12px 16px; text-align: center; font-size: 11px; font-weight: 600; color: #1f2937; border-bottom: 1px solid #e5e7eb;">${vu !== null ? formatearNumero(vu) : 'N/A'}</td>
+            <td style="padding: 12px 16px; text-align: center; font-size: 11px; font-weight: 700; color: #1f2937; border-bottom: 1px solid #e5e7eb;">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>${tot !== null ? formatearNumero(tot) : ((vu !== null && cantidad) ? formatearNumero(vu * Number(cantidad)) : '0')}</span>
                     <div style="position: relative;">
-                        <button class="btn-menu-epp" data-item-id="${id}" type="button" style="background: none; border: none; cursor: pointer; font-size: 1.25rem; color: #6b7280; padding: 0.25rem; border-radius: 4px; transition: all 0.2s ease;" 
+                        <button class="btn-menu-epp" data-item-id="${id}" type="button" style="background: none; border: none; cursor: pointer; font-size: 16px; color: #6b7280; padding: 2px; border-radius: 4px; transition: all 0.2s ease;" 
                             onmouseover="this.style.background='#f3f4f6'; this.style.color='#1f2937';"
                             onmouseout="this.style.background='none'; this.style.color='#6b7280';">
                             ⋮
                         </button>
-                        <div class="submenu-epp" data-item-id="${id}" style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; flex-direction: column; min-width: 120px;">
-                            <button 
-                                type="button"
-                                class="btn-editar-epp"
-                                data-item-id="${id}"
-                                style="display: block; width: 100%; padding: 0.5rem 0.75rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.8rem; color: #1f2937; transition: background 0.2s ease; border-bottom: 1px solid #e5e7eb;"
-                                onmouseover="this.style.background = '#f3f4f6';"
-                                onmouseout="this.style.background = 'transparent';"
-                            >
+                        <div class="submenu-epp" data-item-id="${id}" style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; flex-direction: column; min-width: 100px;">
+                            <button type="button" class="btn-editar-epp" data-item-id="${id}" style="display: block; width: 100%; padding: 8px 12px; text-align: left; background: none; border: none; cursor: pointer; font-size: 12px; color: #1f2937; transition: background 0.2s ease; border-bottom: 1px solid #e5e7eb;" 
+                                onmouseover="this.style.background = '#f3f4f6';" 
+                                onmouseout="this.style.background = 'transparent';">
                                 Editar
                             </button>
-                            <button 
-                                type="button"
-                                class="btn-eliminar-epp"
-                                data-item-id="${id}"
-                                style="display: block; width: 100%; padding: 0.5rem 0.75rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.8rem; color: #dc2626; transition: background 0.2s ease; border-radius: 0 0 6px 6px;"
-                                onmouseover="this.style.background = '#fef2f2';"
-                                onmouseout="this.style.background = 'transparent';"
-                            >
+                            <button type="button" class="btn-eliminar-epp" data-item-id="${id}" style="display: block; width: 100%; padding: 8px 12px; text-align: left; background: none; border: none; cursor: pointer; font-size: 12px; color: #dc2626; transition: background 0.2s ease; border-radius: 0 0 6px 6px;" 
+                                onmouseover="this.style.background = '#fef2f2';" 
+                                onmouseout="this.style.background = 'transparent';">
                                 Eliminar
                             </button>
                         </div>
                     </div>
                 </div>
-            </div>
+            </td>
         `;
-
-        const itemElement = document.createElement('div');
-        itemElement.innerHTML = itemHTML;
-        listaItems.appendChild(itemElement.firstElementChild);
-
-
+        
+        listaItems.appendChild(row);
+        
+        console.log('[EppItemManager] Item creado como fila de tabla:', id);
     }
 
     /**

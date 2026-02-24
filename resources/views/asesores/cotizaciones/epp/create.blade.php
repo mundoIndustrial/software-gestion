@@ -136,6 +136,46 @@
         window.__EPP_COTIZACION_TIPO_VENTA__ = {!! json_encode($eppCot->tipo_venta ?? ($cotizacion->tipo_venta ?? null)) !!};
         window.__EPP_COTIZACION_CLIENTE__ = {!! json_encode($cotizacion->cliente?->nombre ?? null) !!};
         window.__EPP_COTIZACION_IVA__ = {!! json_encode($iva ?? null) !!};
+        window.__EPP_COTIZACION_CONDICIONES_PAGO__ = {!! json_encode($condicionesPago ?? '') !!};
+        window.__EPP_COTIZACION_TIEMPO_ENTREGA__ = {!! json_encode($tiempoEntrega ?? '') !!};
+        window.__EPP_COTIZACION_CUENTAS_AUTORIZADAS__ = {!! json_encode($cuentasAutorizadas ?? '') !!};
+        window.__EPP_COTIZACION_CLIENTE_NIT__ = {!! json_encode($cotizacion->cliente_nit ?? '') !!};
+        window.__EPP_COTIZACION_CLIENTE_DIRECCION__ = {!! json_encode($cotizacion->cliente_direccion ?? '') !!};
+        window.__EPP_COTIZACION_CLIENTE_TELEFONO__ = {!! json_encode($cotizacion->cliente_telefono ?? '') !!};
+        
+        // Logging inicial de variables
+        console.log('[EPP Form] Variables iniciales establecidas:', {
+            '__EPP_COTIZACION_EDIT__': window.__EPP_COTIZACION_EDIT__,
+            '__EPP_COTIZACION_MODE__': window.__EPP_COTIZACION_MODE__,
+            '__EPP_COTIZACION_ID__': window.__EPP_COTIZACION_ID__
+        });
+        
+        // Verificar si las variables se mantienen después de un timeout
+        setTimeout(() => {
+            console.log('[EPP Form] Variables después de 500ms:', {
+                '__EPP_COTIZACION_EDIT__': window.__EPP_COTIZACION_EDIT__,
+                '__EPP_COTIZACION_MODE__': window.__EPP_COTIZACION_MODE__,
+                '__EPP_COTIZACION_ID__': window.__EPP_COTIZACION_ID__
+            });
+        }, 500);
+        
+        // Verificar si las variables se mantienen después de 1 segundo
+        setTimeout(() => {
+            console.log('[EPP Form] Variables después de 1000ms:', {
+                '__EPP_COTIZACION_EDIT__': window.__EPP_COTIZACION_EDIT__,
+                '__EPP_COTIZACION_MODE__': window.__EPP_COTIZACION_MODE__,
+                '__EPP_COTIZACION_ID__': window.__EPP_COTIZACION_ID__
+            });
+        }, 1000);
+        
+        // Verificar si las variables se mantienen después de 2 segundos
+        setTimeout(() => {
+            console.log('[EPP Form] Variables después de 2000ms:', {
+                '__EPP_COTIZACION_EDIT__': window.__EPP_COTIZACION_EDIT__,
+                '__EPP_COTIZACION_MODE__': window.__EPP_COTIZACION_MODE__,
+                '__EPP_COTIZACION_ID__': window.__EPP_COTIZACION_ID__
+            });
+        }, 2000);
     </script>
     <div style="background: linear-gradient(135deg, #1e40af 0%, #0ea5e9 100%); border-radius: 12px; padding: 1.25rem 1.75rem; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
         <div style="display: grid; grid-template-columns: auto 1fr; gap: 1.5rem; align-items: start;">
@@ -188,7 +228,7 @@
 
                 <div>
                     <label style="display: block; color: rgba(255,255,255,0.8); font-size: 0.7rem; font-weight: 700; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.4px;">Teléfono</label>
-                    <input type="text" id="header-telefono" placeholder="Teléfono del cliente" style="width: 100%; background: white; border: 2px solid transparent; padding: 0.6rem 0.75rem; border-radius: 6px; font-weight: 600; color: #1e40af; font-size: 0.9rem; transition: all 0.2s;">
+                    <input type="tel" id="header-telefono" placeholder="Teléfono del cliente" maxlength="15" pattern="[0-9]+" inputmode="numeric" style="width: 100%; background: white; border: 2px solid transparent; padding: 0.6rem 0.75rem; border-radius: 6px; font-weight: 600; color: #1e40af; font-size: 0.9rem; transition: all 0.2s;" onkeypress="return event.charCode >= 48 && event.charCode <= 57" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                 </div>
             </div>
         </div>
@@ -239,64 +279,72 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 1rem;">
                         <h2 style="margin: 0; display: flex; align-items: center; gap: 10px;">
                             <span>1</span>
-                            Ítems del Pedido
+                            Ítems y Totales del Pedido
                         </h2>
 
-                        <button type="button" onclick="abrirModalAgregarEPP()" style="padding: 0.55rem 0.9rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); border: 2px solid #003d7a; border-radius: 8px; cursor: pointer; font-weight: 700; color: white; font-size: 0.85rem; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.5rem; white-space: nowrap;" onmouseover="this.style.background='linear-gradient(135deg, #0052a3 0%, #003d7a 100%)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 12px rgba(0, 102, 204, 0.3)';" onmouseout="this.style.background='linear-gradient(135deg, #0066cc 0%, #0052a3 100%)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                        <button type="button" onclick="abrirModalAgregarEPP()" style="padding: 0.55rem 0.9rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); border: 2px solid #003d7a; border-radius: 8px; cursor: pointer; font-weight: 700; color: white; font-size: 0.85rem; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.5rem; white-space: nowrap;" onmouseover="this.style.background='linear-gradient(135deg, #0052a3 0%, #003d7a 100%)'; this.style.transform='translateY(-1px)'; this.boxShadow='0 6px 12px rgba(0, 102, 204, 0.3)';" onmouseout="this.style.background='linear-gradient(135deg, #0066cc 0%, #0052a3 100%)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
                             <span class="material-symbols-rounded" style="font-size: 18px;">add_circle</span>
                             Agregar
                         </button>
                     </div>
 
-                    <div id="lista-items-pedido" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
+                    <!-- Tabla unificada de items y totales -->
+                    <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                        <thead>
+                            <tr style="background: #f8fafc; color: #1f2937;">
+                                <th style="padding: 12px 16px; text-align: left; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e7eb;">ÍTEM</th>
+                                <th style="padding: 12px 16px; text-align: center; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e7eb;">IMAGEN</th>
+                                <th style="padding: 12px 16px; text-align: left; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e7eb;">DESCRIPCIÓN</th>
+                                <th style="padding: 12px 16px; text-align: center; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e7eb;">CANTIDAD</th>
+                                <th style="padding: 12px 16px; text-align: left; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e7eb;">OBSERVACIONES</th>
+                                <th style="padding: 12px 16px; text-align: center; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e7eb;">V. UNITARIO</th>
+                                <th style="padding: 12px 16px; text-align: center; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e7eb;">TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-items-pedido">
+                            <!-- Los items se cargarán aquí dinámicamente -->
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: #f1f5f9;">
+                                <td colspan="3" style="padding: 8px; text-align: left; font-size: 10px; font-weight: 600; color: #64748b; border-top: 1px solid #e5e7eb;">
+                                    <strong>Subtotal</strong>
+                                </td>
+                                <td colspan="4" style="padding: 8px; text-align: right; font-size: 10px; font-weight: 600; color: #64748b; border-top: 1px solid #e5e7eb;">
+                                    <input type="text" id="subtotal-epp" value="0" readonly style="width: 150px; background: #f9fafb; border: 1px solid #e5e7eb; padding: 6px 8px; border-radius: 4px; font-weight: 700; color: #111827; font-size: 11px; text-align: right;">
+                                </td>
+                            </tr>
+                            <tr style="background: #f1f5f9;">
+                                <td colspan="3" style="padding: 8px; text-align: left; font-size: 10px; font-weight: 600; color: #64748b; border-top: 1px solid #e5e7eb;">
+                                    <strong>IVA</strong>
+                                </td>
+                                <td colspan="4" style="padding: 8px; text-align: right; font-size: 10px; font-weight: 600; color: #64748b; border-top: 1px solid #e5e7eb;">
+                                    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px;">
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <label style="font-size: 9px; color: #64748b; white-space: nowrap;">%</label>
+                                            <input type="number" id="valor-iva-epp" min="0" step="1" placeholder="0" style="width: 80px; background: white; border: 1px solid #e5e7eb; padding: 6px 8px; border-radius: 4px; font-weight: 700; color: #111827; font-size: 11px; text-align: center;">
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <label style="font-size: 9px; color: #64748b; white-space: nowrap;">Valor</label>
+                                            <input type="text" id="valor-iva-calculado" value="0" readonly style="width: 100px; background: #f8fafc; border: 1px solid #e5e7eb; padding: 6px 8px; border-radius: 4px; font-weight: 700; color: #111827; font-size: 11px; text-align: right;">
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr style="background: #0c8cc7ff;">
+                                <td colspan="3" style="padding: 8px; text-align: left; font-size: 10px; font-weight: 700; color: #ffffff; border-top: 1px solid #e5e7eb;">
+                                    <strong>Total</strong>
+                                </td>
+                                <td colspan="4" style="padding: 8px; text-align: right; font-size: 10px; font-weight: 700; color: #ffffff; border-top: 1px solid #e5e7eb;">
+                                    <input type="text" id="total-epp" value="0" readonly style="width: 150px; background: #0284c7; border: 2px solid #0369a1; padding: 6px 8px; border-radius: 4px; font-weight: 900; color: #ffffff; font-size: 12px; text-align: right;">
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
 
                     <div id="prendas-container-editable" style="margin-top: 1.25rem;">
-                        <div class="items-pedido-empty empty-state">
+                        <div class="items-pedido-empty empty-state" style="display: none;">
                             Agrega ítems al pedido
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-section">
-                <h2 style="margin: 0 0 1rem 0;">
-                    <span>2</span>
-                    Totales de la cotización
-                </h2>
-
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; align-items: end;">
-                    <div style="grid-column: span 1;">
-                        <label style="display: block; color: #111827; font-size: 0.75rem; font-weight: 800; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.4px;">Subtotal</label>
-                        <input
-                            type="text"
-                            id="subtotal-epp"
-                            value="0"
-                            readonly
-                            style="width: 100%; background: #f9fafb; border: 2px solid #e5e7eb; padding: 0.6rem 0.75rem; border-radius: 8px; font-weight: 800; color: #111827; font-size: 0.95rem;"
-                        >
-                    </div>
-
-                    <div style="grid-column: span 1;">
-                        <label for="valor-iva-epp" style="display: block; color: #111827; font-size: 0.75rem; font-weight: 800; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.4px;">IVA</label>
-                        <input
-                            type="number"
-                            id="valor-iva-epp"
-                            min="0"
-                            step="1"
-                            placeholder="0"
-                            style="width: 100%; background: white; border: 2px solid #e5e7eb; padding: 0.6rem 0.75rem; border-radius: 8px; font-weight: 800; color: #111827; font-size: 0.95rem; transition: all 0.2s;"
-                        >
-                    </div>
-
-                    <div style="grid-column: span 1;">
-                        <label style="display: block; color: #111827; font-size: 0.75rem; font-weight: 800; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.4px;">Total</label>
-                        <input
-                            type="text"
-                            id="total-epp"
-                            value="0"
-                            readonly
-                            style="width: 100%; background: #ecfeff; border: 2px solid #06b6d4; padding: 0.6rem 0.75rem; border-radius: 8px; font-weight: 900; color: #0e7490; font-size: 1rem;"
-                        >
                     </div>
                 </div>
             </div>
@@ -534,17 +582,21 @@ NIT 1.093.738.433-3</textarea>
         function syncTotales() {
             const subtotalEl = document.getElementById('subtotal-epp');
             const ivaEl = document.getElementById('valor-iva-epp');
+            const ivaCalculadoEl = document.getElementById('valor-iva-calculado');
             const totalEl = document.getElementById('total-epp');
-            if (!subtotalEl || !ivaEl || !totalEl) return;
+            if (!subtotalEl || !ivaEl || !totalEl || !ivaCalculadoEl) return;
 
             const subtotal = calcularSubtotalEpp();
-            const ivaRaw = ivaEl.value;
-            const iva = (ivaRaw !== undefined && ivaRaw !== null && String(ivaRaw).trim() !== '' && !isNaN(Number(ivaRaw)))
-                ? Number(ivaRaw)
+            const ivaPorcentaje = (ivaEl.value !== undefined && ivaEl.value !== null && String(ivaEl.value).trim() !== '' && !isNaN(Number(ivaEl.value)))
+                ? Number(ivaEl.value)
                 : 0;
-            const total = subtotal + iva;
+            
+            // Calcular el valor del IVA como porcentaje del subtotal
+            const ivaValor = (subtotal * ivaPorcentaje) / 100;
+            const total = subtotal + ivaValor;
 
             subtotalEl.value = formatearNumero(subtotal);
+            ivaCalculadoEl.value = formatearNumero(ivaValor);
             totalEl.value = formatearNumero(total);
         }
 
@@ -564,8 +616,90 @@ NIT 1.093.738.433-3</textarea>
             if (ivaEl && window.__EPP_COTIZACION_IVA__ !== null && window.__EPP_COTIZACION_IVA__ !== undefined) {
                 ivaEl.value = window.__EPP_COTIZACION_IVA__;
             }
+            
+            // Cargar información adicional en modo edición
+            console.log('[EPP Form] Iniciando carga de datos en modo edición:', window.__EPP_COTIZACION_EDIT__);
+            console.log('[EPP Form] Tipo de __EPP_COTIZACION_EDIT__:', typeof window.__EPP_COTIZACION_EDIT__);
+            console.log('[EPP Form] Valor de __EPP_COTIZACION_EDIT__:', window.__EPP_COTIZACION_EDIT__);
+            console.log('[EPP Form] Stack trace:', new Error().stack);
+            
+            // Verificar si el valor cambia después de un pequeño timeout
+            setTimeout(() => {
+                console.log('[EPP Form] Valor de __EPP_COTIZACION_EDIT__ después de timeout:', window.__EPP_COTIZACION_EDIT__);
+            }, 100);
+            
+            // Modificar la condición para aceptar tanto booleano como string
+            if (window.__EPP_COTIZACION_EDIT__ === 'true' || window.__EPP_COTIZACION_EDIT__ === true) {
+                console.log('[EPP Form] Modo edición detectado, cargando campos...');
+                
+                const condicionesPagoEl = document.getElementById('condiciones_pago');
+                const tiempoEntregaEl = document.getElementById('tiempo_entrega');
+                const cuentasAutorizadasEl = document.getElementById('cuentas_autorizadas');
+                
+                if (condicionesPagoEl && window.__EPP_COTIZACION_CONDICIONES_PAGO__) {
+                    condicionesPagoEl.value = window.__EPP_COTIZACION_CONDICIONES_PAGO__;
+                    console.log('[EPP Form] Condiciones de pago cargadas:', window.__EPP_COTIZACION_CONDICIONES_PAGO__);
+                }
+                
+                if (tiempoEntregaEl && window.__EPP_COTIZACION_TIEMPO_ENTREGA__) {
+                    tiempoEntregaEl.value = window.__EPP_COTIZACION_TIEMPO_ENTREGA__;
+                    console.log('[EPP Form] Tiempo de entrega cargado:', window.__EPP_COTIZACION_TIEMPO_ENTREGA__);
+                }
+                
+                if (cuentasAutorizadasEl && window.__EPP_COTIZACION_CUENTAS_AUTORIZADAS__) {
+                    cuentasAutorizadasEl.value = window.__EPP_COTIZACION_CUENTAS_AUTORIZADAS__;
+                    console.log('[EPP Form] Cuentas autorizadas cargadas:', window.__EPP_COTIZACION_CUENTAS_AUTORIZADAS__);
+                }
+                
+                // Cargar campos adicionales del cliente
+                const nitEl = document.getElementById('header-nit');
+                const direccionEl = document.getElementById('header-direccion');
+                const telefonoEl = document.getElementById('header-telefono');
+                
+                console.log('[EPP Form] Elementos del cliente encontrados:', {
+                    'nitEl': !!nitEl,
+                    'direccionEl': !!direccionEl,
+                    'telefonoEl': !!telefonoEl
+                });
+                
+                // Logging para depurar datos del cliente
+                console.log('[EPP Form] Datos del cliente:', {
+                    'cliente_nit': window.__EPP_COTIZACION_CLIENTE_NIT__,
+                    'cliente_direccion': window.__EPP_COTIZACION_CLIENTE_DIRECCION__,
+                    'cliente_telefono': window.__EPP_COTIZACION_CLIENTE_TELEFONO__,
+                    'es_edicion': window.__EPP_COTIZACION_EDIT__,
+                    'cotizacion_id': window.__EPP_COTIZACION_ID__
+                });
+                
+                if (nitEl && window.__EPP_COTIZACION_CLIENTE_NIT__) {
+                    nitEl.value = window.__EPP_COTIZACION_CLIENTE_NIT__;
+                    console.log('[EPP Form] NIT cargado:', window.__EPP_COTIZACION_CLIENTE_NIT__);
+                } else {
+                    console.warn('[EPP Form] No se encontró elemento NIT o no hay datos');
+                }
+                
+                if (direccionEl && window.__EPP_COTIZACION_CLIENTE_DIRECCION__) {
+                    direccionEl.value = window.__EPP_COTIZACION_CLIENTE_DIRECCION__;
+                    console.log('[EPP Form] Dirección cargada:', window.__EPP_COTIZACION_CLIENTE_DIRECCION__);
+                } else {
+                    console.warn('[EPP Form] No se encontró elemento Dirección o no hay datos');
+                }
+                
+                if (telefonoEl && window.__EPP_COTIZACION_CLIENTE_TELEFONO__) {
+                    telefonoEl.value = window.__EPP_COTIZACION_CLIENTE_TELEFONO__;
+                    console.log('[EPP Form] Teléfono cargado:', window.__EPP_COTIZACION_CLIENTE_TELEFONO__);
+                } else {
+                    console.warn('[EPP Form] No se encontró elemento Teléfono o no hay datos');
+                }
+                
+                console.log('[EPP Form] Carga de datos del cliente completada');
+            } else {
+                console.log('[EPP Form] No está en modo edición, omitiendo carga de datos');
+                console.log('[EPP Form] Stack trace en modo no edición:', new Error().stack);
+            }
         } catch (e) {
-            // noop
+            console.error('[EPP Form] Error durante la carga de datos del cliente:', e);
+            console.error('[EPP Form] Stack trace:', e.stack);
         }
 
         try {
@@ -575,7 +709,7 @@ NIT 1.093.738.433-3</textarea>
             if (items.length > 0) {
                 window.itemsPedido = items;
                 if (window.eppItemManager && typeof window.eppItemManager.crearItem === 'function') {
-                    const lista = document.getElementById('lista-items-pedido');
+                    const lista = document.getElementById('tabla-items-pedido');
                     if (lista) lista.innerHTML = '';
 
                     items.forEach((it) => {
@@ -817,6 +951,57 @@ NIT 1.093.738.433-3</textarea>
                 const cotizacionId = data.cotizacionId;
                 const redirectUrl = data.redirect || `{{ url('/asesores/cotizaciones') }}?tab=${accion === 'borrador' ? 'borradores' : 'cotizaciones'}&highlight=${cotizacionId}`;
 
+                // Si es una edición, actualizar los datos del cliente en el encabezado
+                if (window.__EPP_COTIZACION_EDIT__ === 'true' || window.__EPP_COTIZACION_EDIT__ === true) {
+                    console.log('✏️ [enviarCotizacionEpp] Actualizando datos del cliente en encabezado (modo edición)');
+                    
+                    // Actualizar campos del cliente si vienen en la respuesta
+                    if (data.cliente) {
+                        const clienteEl = document.getElementById('header-cliente');
+                        if (clienteEl) {
+                            clienteEl.value = data.cliente;
+                            console.log('✏️ [enviarCotizacionEpp] Cliente actualizado:', data.cliente);
+                        }
+                    }
+                    
+                    if (data.cliente_nit !== undefined) {
+                        const nitEl = document.getElementById('header-nit');
+                        if (nitEl) {
+                            nitEl.value = data.cliente_nit;
+                            console.log('✏️ [enviarCotizacionEpp] NIT actualizado:', data.cliente_nit);
+                        }
+                    }
+                    
+                    if (data.cliente_direccion !== undefined) {
+                        const direccionEl = document.getElementById('header-direccion');
+                        if (direccionEl) {
+                            direccionEl.value = data.cliente_direccion;
+                            console.log('✏️ [enviarCotizacionEpp] Dirección actualizada:', data.cliente_direccion);
+                        }
+                    }
+                    
+                    if (data.cliente_telefono !== undefined) {
+                        const telefonoEl = document.getElementById('header-telefono');
+                        if (telefonoEl) {
+                            telefonoEl.value = data.cliente_telefono;
+                            console.log('✏️ [enviarCotizacionEpp] Teléfono actualizado:', data.cliente_telefono);
+                        }
+                    }
+                    
+                    // Actualizar variables globales
+                    if (data.cliente_nit !== undefined) {
+                        window.__EPP_COTIZACION_CLIENTE_NIT__ = data.cliente_nit;
+                    }
+                    if (data.cliente_direccion !== undefined) {
+                        window.__EPP_COTIZACION_CLIENTE_DIRECCION__ = data.cliente_direccion;
+                    }
+                    if (data.cliente_telefono !== undefined) {
+                        window.__EPP_COTIZACION_CLIENTE_TELEFONO__ = data.cliente_telefono;
+                    }
+                    
+                    console.log('✏️ [enviarCotizacionEpp] Datos del cliente actualizados en encabezado y variables globales');
+                }
+
                 if (window.Swal) {
                     const params = new URLSearchParams(window.location.search);
                     const esEdicionCotizacionCreada = params.get('editar_cotizacion') === '1';
@@ -907,6 +1092,599 @@ NIT 1.093.738.433-3</textarea>
             };
             window.__eppCotizacionFinalizarWrapped = true;
         }
+
+        // Función para guardar cambios de edición de EPP
+        window.guardarEdicionEPP = function() {
+            console.log('✏️ [guardarEdicionEPP] Iniciando actualización de EPP en modo edición de cotización...');
+            console.log('✏️ [guardarEdicionEPP] NOTA: Solo actualizando en memoria, no guardando en BD');
+            
+            try {
+                // Obtener datos del formulario
+                const nombre = document.getElementById('nombreProductoEPP')?.value?.trim() || '';
+                const cantidad = parseInt(document.getElementById('cantidadEPP')?.value) || 1;
+                const observaciones = document.getElementById('observacionesEPP')?.value?.trim() || '';
+                const valorUnitario = parseFloat(document.getElementById('valorUnitarioEPP')?.value) || null;
+                const total = parseFloat(document.getElementById('totalEPP')?.value) || 0;
+                
+                // Obtener imágenes del array temporal o stateManager (prioridad invertida)
+                let imagenes = [];
+                console.log('✏️ [guardarEdicionEPP] Verificando fuentes de imágenes:');
+                console.log('✏️ [guardarEdicionEPP] - window.fotosEPP existe:', !!window.fotosEPP);
+                console.log('✏️ [guardarEdicionEPP] - window.fotosEPP es array:', Array.isArray(window.fotosEPP));
+                console.log('✏️ [guardarEdicionEPP] - window.eppStateManager existe:', !!window.eppStateManager);
+                console.log('✏️ [guardarEdicionEPP] - window.eppStateManager.getImagenesSubidas es función:', typeof window.eppStateManager?.getImagenesSubidas);
+                
+                // Prioridad 1: Array temporal (donde se guardan las imágenes nuevas)
+                if (window.fotosEPP && Array.isArray(window.fotosEPP) && window.fotosEPP.length > 0) {
+                    imagenes = window.fotosEPP;
+                    console.log('✏️ [guardarEdicionEPP] Imágenes obtenidas desde array temporal:', imagenes.length);
+                    console.log('✏️ [guardarEdicionEPP] Detalle imágenes array temporal:', imagenes.map(img => ({id: img.id, nombre: img.nombre, tieneFile: !!img.file})));
+                } 
+                // Prioridad 2: StateManager (si el array temporal está vacío)
+                else if (window.eppStateManager && typeof window.eppStateManager.getImagenesSubidas === 'function') {
+                    imagenes = window.eppStateManager.getImagenesSubidas() || [];
+                    console.log('✏️ [guardarEdicionEPP] Imágenes obtenidas desde stateManager:', imagenes.length);
+                    console.log('✏️ [guardarEdicionEPP] Detalle imágenes stateManager:', imagenes.map(img => ({id: img.id, nombre: img.nombre, tieneFile: !!img.file})));
+                } 
+                // Si no hay imágenes en ninguna fuente
+                else {
+                    console.log('✏️ [guardarEdicionEPP] No se encontraron imágenes en ninguna fuente');
+                }
+                
+                console.log('✏️ [guardarEdicionEPP] Imágenes finales a guardar:', imagenes.length);
+                
+                // Obtener el ID del EPP en edición
+                const eppEnEdicion = window.eppEnEdicion;
+                if (!eppEnEdicion || !eppEnEdicion.id) {
+                    console.error('✏️ [guardarEdicionEPP] No hay EPP en edición');
+                    return;
+                }
+                
+                console.log('✏️ [guardarEdicionEPP] Datos a guardar:', {
+                    id: eppEnEdicion.id,
+                    nombre,
+                    cantidad,
+                    observaciones,
+                    valorUnitario,
+                    total,
+                    imagenes: imagenes.length
+                });
+                
+                // Actualizar la fila en la tabla
+                const fila = document.querySelector(`tr.item-epp[data-item-id="${eppEnEdicion.id}"]`);
+                if (fila) {
+                    console.log('✏️ [guardarEdicionEPP] Fila encontrada, actualizando...');
+                    const cells = fila.querySelectorAll('td');
+                    console.log('✏️ [guardarEdicionEPP] Celdas encontradas:', cells.length);
+                    
+                    // Actualizar celda de imagen (celda 1)
+                    if (cells[1]) {
+                        console.log('✏️ [guardarEdicionEPP] Actualizando celda imagen...');
+                        if (imagenes.length > 0) {
+                            const imagenPrincipal = imagenes.find(img => img.principal === 1) || imagenes[0];
+                            if (imagenPrincipal) {
+                                console.log('✏️ [guardarEdicionEPP] Agregando imagen principal a la tabla:', imagenPrincipal.nombre);
+                                cells[1].innerHTML = `
+                                    <img src="${imagenPrincipal.previewUrl || imagenPrincipal.ruta}" alt="${imagenPrincipal.nombre}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; cursor: pointer;" 
+                                         onclick="event.preventDefault(); event.stopPropagation(); if (window.mostrarImagenProcesoGrande) window.mostrarImagenProcesoGrande('${imagenPrincipal.previewUrl || imagenPrincipal.ruta}'); else if (window.abrirImagenGrande) window.abrirImagenGrande('${imagenPrincipal.previewUrl || imagenPrincipal.ruta}', 'galeria-epp-${eppEnEdicion.id}', 0);">
+                                `;
+                                console.log('✏️ [guardarEdicionEPP] Imagen agregada al DOM de la tabla');
+                            }
+                        } else {
+                            cells[1].innerHTML = '<span style="color: #9ca3af;">Sin imagen</span>';
+                            console.log('✏️ [guardarEdicionEPP] Sin imagen, mostrando placeholder');
+                        }
+                    }
+                    
+                    // Actualizar celda de descripción (celda 2)
+                    if (cells[2]) {
+                        console.log('✏️ [guardarEdicionEPP] Actualizando celda descripción...');
+                        const nombreSpan = cells[2].querySelector('span');
+                        if (nombreSpan) {
+                            nombreSpan.textContent = nombre;
+                            console.log('✏️ [guardarEdicionEPP] Nombre actualizado en span:', nombre);
+                        } else {
+                            cells[2].textContent = nombre;
+                            console.log('✏️ [guardarEdicionEPP] Nombre actualizado en celda:', nombre);
+                        }
+                    }
+                    
+                    // Actualizar celda de cantidad (celda 3)
+                    if (cells[3]) {
+                        cells[3].textContent = cantidad;
+                        console.log('✏️ [guardarEdicionEPP] Cantidad actualizada:', cantidad);
+                    }
+                    
+                    // Actualizar celda de observaciones (celda 4)
+                    if (cells[4]) {
+                        cells[4].textContent = observaciones || '-';
+                        console.log('✏️ [guardarEdicionEPP] Observaciones actualizadas:', observaciones || '-');
+                    }
+                    
+                    // Actualizar celda de valor unitario (celda 5)
+                    if (cells[5]) {
+                        cells[5].textContent = valorUnitario !== null ? valorUnitario : 'N/A';
+                        console.log('✏️ [guardarEdicionEPP] Valor unitario actualizado:', valorUnitario);
+                    }
+                    
+                    // Actualizar celda de total (celda 6)
+                    if (cells[6]) {
+                        const totalSpan = cells[6].querySelector('span');
+                        if (totalSpan) {
+                            totalSpan.textContent = total;
+                            console.log('✏️ [guardarEdicionEPP] Total actualizado en span:', total);
+                        } else {
+                            // Buscar el span dentro del div
+                            const div = cells[6].querySelector('div');
+                            if (div) {
+                                const span = div.querySelector('span');
+                                if (span) {
+                                    span.textContent = total;
+                                    console.log('✏️ [guardarEdicionEPP] Total actualizado en span anidado:', total);
+                                }
+                            }
+                        }
+                    }
+                    
+                    console.log('✏️ [guardarEdicionEPP] Fila actualizada correctamente en memoria');
+                } else {
+                    console.error('✏️ [guardarEdicionEPP] No se encontró la fila para actualizar:', eppEnEdicion.id);
+                }
+                
+                // Actualizar el item en window.itemsPedido
+                if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
+                    const itemIndex = window.itemsPedido.findIndex(item => item.id == eppEnEdicion.id);
+                    if (itemIndex !== -1) {
+                        window.itemsPedido[itemIndex] = {
+                            ...window.itemsPedido[itemIndex],
+                            nombre_epp: nombre,
+                            nombre: nombre,
+                            cantidad: cantidad,
+                            observaciones: observaciones,
+                            valor_unitario: valorUnitario,
+                            total: total,
+                            imagenes: imagenes
+                        };
+                        console.log('✏️ [guardarEdicionEPP] Item actualizado en window.itemsPedido (memoria)');
+                    }
+                }
+                
+                // Cerrar modal
+                if (typeof window.cerrarModalAgregarEPP === 'function') {
+                    window.cerrarModalAgregarEPP();
+                }
+                
+                // Resetear estado de edición
+                window.eppEnEdicion = null;
+                
+                // Sincronizar totales
+                if (typeof syncTotales === 'function') {
+                    syncTotales();
+                }
+                
+                console.log('✏️ [guardarEdicionEPP] Cambios actualizados en memoria exitosamente');
+                console.log('✏️ [guardarEdicionEPP] Para guardar en BD, use "Enviar Cotización"');
+                
+            } catch (error) {
+                console.error('✏️ [guardarEdicionEPP] Error al guardar cambios:', error);
+            }
+        };
+
+        // Función para editar un EPP agregado
+        window.editarEPPAgregado = function(eppData) {
+            console.log('✏️ [editarEPPAgregado] INICIANDO - Editando EPP:', eppData);
+            
+            // Guardar referencia del EPP en edición a nivel global
+            window.eppEnEdicion = eppData;
+            console.log('✏️ [editarEPPAgregado] window.eppEnEdicion configurado:', !!window.eppEnEdicion);
+            
+            // Limpiar buscador
+            const buscador = document.getElementById('inputBuscadorEPP');
+            if (buscador) buscador.value = '';
+            const resultados = document.getElementById('resultadosBuscadorEPP');
+            if (resultados) resultados.style.display = 'none';
+            
+            // Mostrar el producto seleccionado
+            if (window.mostrarProductoEPP) {
+                window.mostrarProductoEPP({
+                    id: eppData.epp_id || eppData.id,
+                    nombre_completo: eppData.nombre_epp || eppData.nombre,
+                    nombre: eppData.nombre_epp || eppData.nombre,
+                    imagen: ''
+                });
+            }
+            
+            // Cargar valores en el formulario
+            const cantidadInput = document.getElementById('cantidadEPP');
+            const obsInput = document.getElementById('observacionesEPP');
+            if (cantidadInput) cantidadInput.value = eppData.cantidad || 1;
+            if (obsInput) obsInput.value = eppData.observaciones || '';
+            
+            // Precargar valor unitario / total si existen
+            const valorUnitarioInput = document.getElementById('valorUnitarioEPP');
+            const totalInput = document.getElementById('totalEPP');
+            if (valorUnitarioInput && eppData.valor_unitario) {
+                valorUnitarioInput.value = eppData.valor_unitario;
+            }
+            if (totalInput && eppData.total) {
+                totalInput.value = eppData.total;
+            }
+            
+            // Cargar imágenes existentes si hay
+            if (eppData.imagenes && Array.isArray(eppData.imagenes) && eppData.imagenes.length > 0) {
+                console.log('✏️ [editarEPPAgregado] Cargando imágenes existentes:', eppData.imagenes.length);
+                console.log('✏️ [editarEPPAgregado] Detalle imágenes existentes:', eppData.imagenes.map(img => ({id: img.id, nombre: img.nombre, ruta: img.ruta})));
+                
+                eppData.imagenes.forEach((imagen, index) => {
+                    console.log(`✏️ [editarEPPAgregado] Procesando imagen existente ${index + 1}:`, imagen);
+                    console.log(`✏️ [editarEPPAgregado] Estructura completa de imagen:`, imagen);
+                    
+                    // Determinar la URL correcta para mostrar
+                    let imageUrl = null;
+                    if (imagen.previewUrl) {
+                        imageUrl = imagen.previewUrl;
+                        console.log(`✏️ [editarEPPAgregado] Usando previewUrl:`, imageUrl);
+                    } else if (imagen.ruta_webp) {
+                        imageUrl = imagen.ruta_webp;
+                        console.log(`✏️ [editarEPPAgregado] Usando ruta_webp:`, imageUrl);
+                    } else if (imagen.ruta_original) {
+                        imageUrl = imagen.ruta_original;
+                        console.log(`✏️ [editarEPPAgregado] Usando ruta_original:`, imageUrl);
+                    } else {
+                        console.warn(`✏️ [editarEPPAgregado] Imagen sin URL válida, usando fallback`);
+                        imageUrl = imagen.url || null;
+                    }
+                    
+                    if (imageUrl) {
+                        console.log(`✏️ [editarEPPAgregado] URL final para imagen: ${imagen.nombre}:`, imageUrl);
+                        
+                        // Crear elemento de imagen en el contenedor
+                        const contenedorFotos = document.getElementById('contenedorFotosEPP');
+                        if (contenedorFotos) {
+                            const fotoElement = document.createElement('div');
+                            fotoElement.className = 'relative group foto-epp-item';
+                            fotoElement.setAttribute('data-foto-id', imagen.id || `existing-${index}`);
+                            
+                            fotoElement.innerHTML = `
+                                <div class="relative overflow-hidden rounded-lg border-2 border-gray-200">
+                                    <img src="${imageUrl}" alt="Foto EPP" class="w-full h-32 object-cover">
+                                    <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button type="button" onclick="eliminarFotoEPP('${imagen.id || `existing-${index}`}')" class="bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <i class="material-symbols-rounded text-sm">delete</i>
+                                        </button>
+                                    </div>
+                                    <div class="absolute bottom-0 right-0 bg-blue-600 text-white text-xs px-2 py-1 rounded-tl">
+                                        ${imagen.nombre || `Foto ${index + 1}`}
+                                    </div>
+                                </div>
+                            `;
+                            
+                            // Ocultar mensaje inicial si está visible
+                            const mensajeDragDrop = document.getElementById('mensajeDragDrop');
+                            if (mensajeDragDrop) {
+                                mensajeDragDrop.style.display = 'none';
+                            }
+                            
+                            contenedorFotos.appendChild(fotoElement);
+                            console.log(`✏️ [editarEPPAgregado] Imagen existente agregada al DOM: ${imagen.nombre}`);
+                        }
+                    } else {
+                        console.warn(`✏️ [editarEPPAgregado] Imagen existente sin URL válida:`, imagen);
+                    }
+                });
+            } else {
+                console.log('✏️ [editarEPPAgregado] No hay imágenes existentes para cargar');
+                console.log('✏️ [editarEPPAgregado] eppData.imagenes:', eppData.imagenes);
+                console.log('✏️ [editarEPPAgregado] es array:', Array.isArray(eppData.imagenes));
+                console.log('✏️ [editarEPPAgregado] longitud:', eppData.imagenes?.length);
+            }
+            
+            // Mostrar los contenedores de campos que están ocultos por defecto
+            const formularioContainer = document.getElementById('formularioAgregarEPP');
+            const valorContainer = document.getElementById('valorUnitarioTotalContainer');
+            const obsContainer = document.getElementById('observacionesContainer');
+            const seccionFotos = document.getElementById('seccionFotosEPP');
+            
+            if (formularioContainer) {
+                formularioContainer.style.display = 'grid';
+                console.log('✏️ [editarEPPAgregado] Formulario mostrado');
+            }
+            if (valorContainer) {
+                valorContainer.style.display = 'block';
+            }
+            if (obsContainer) {
+                obsContainer.style.display = 'block';
+                console.log('✏️ [editarEPPAgregado] Contenedor observaciones mostrado');
+            }
+            if (seccionFotos) {
+                seccionFotos.style.display = 'block';
+            }
+            
+            // Habilitar campos para edición
+            if (cantidadInput) cantidadInput.disabled = false;
+            if (obsInput) obsInput.disabled = false;
+            if (valorUnitarioInput) valorUnitarioInput.disabled = false;
+            console.log('✏️ [editarEPPAgregado] Campos habilitados');
+            
+            // Ocultar botón de agregar a lista
+            const btnAgregar = document.getElementById('btnAgregarALista');
+            if (btnAgregar) {
+                btnAgregar.style.display = 'none';
+                console.log('✏️ [editarEPPAgregado] Botón agregar a lista ocultado');
+            }
+            
+            // Mostrar botón guardar cambios
+            const btnGuardarCambios = document.getElementById('btnGuardarCambiosEPP');
+            if (btnGuardarCambios) {
+                btnGuardarCambios.style.display = 'flex';
+                btnGuardarCambios.disabled = false;
+                console.log('✏️ [editarEPPAgregado] Botón guardar cambios mostrado y habilitado');
+            }
+            
+            // Ocultar botón finalizar
+            const btnFinalizar = document.getElementById('btnFinalizarAgregarEPP');
+            if (btnFinalizar) {
+                btnFinalizar.style.display = 'none';
+                btnFinalizar.disabled = true;
+                console.log('✏️ [editarEPPAgregado] Botón finalizar ocultado');
+            }
+            
+            // Abrir modal
+            if (window.abrirModalAgregarEPP) {
+                window.abrirModalAgregarEPP();
+            }
+            
+            console.log('✏️ [editarEPPAgregado] FINALIZADO - Modal abierto en modo edición');
+        };
+
+        // Función para abrir modal de agregar EPP
+        window.abrirModalAgregarEPP = function() {
+            console.log('📖 [abrirModalAgregarEPP] Abriendo modal');
+            const modal = document.getElementById('modalAgregarEPP');
+            if (modal) {
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
+
+            // Solo resetear si no estamos en modo edición
+            if (!window.eppEnEdicion) {
+                console.log('📖 [abrirModalAgregarEPP] Modo normal - resetear modal');
+                resetearModalAgregarEPP();
+            } else {
+                console.log('📖 [abrirModalAgregarEPP] Modo edición - NO resetear modal');
+            }
+        };
+
+        // Función para cerrar modal de agregar EPP
+        window.cerrarModalAgregarEPP = function() {
+            console.log('📖 [cerrarModalAgregarEPP] Cerrando modal');
+            const modal = document.getElementById('modalAgregarEPP');
+            if (modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+            
+            // Resetear estado de edición
+            window.eppEnEdicion = null;
+            
+            // Resetear formulario
+            resetearModalAgregarEPP();
+        };
+
+        // Función para resetear el modal
+        function resetearModalAgregarEPP() {
+            console.log('🔄 [resetearModalAgregarEPP] Resetear formulario');
+            
+            // Limpiar buscador
+            const buscador = document.getElementById('inputBuscadorEPP');
+            if (buscador) buscador.value = '';
+            const resultados = document.getElementById('resultadosBuscadorEPP');
+            if (resultados) resultados.style.display = 'none';
+            
+            // Ocultar tarjeta de producto
+            const tarjeta = document.getElementById('productoCardEPP');
+            if (tarjeta) tarjeta.style.display = 'none';
+            
+            // Resetear campos
+            const cantidadInput = document.getElementById('cantidadEPP');
+            const obsInput = document.getElementById('observacionesEPP');
+            const valorUnitarioInput = document.getElementById('valorUnitarioEPP');
+            const totalInput = document.getElementById('totalEPP');
+            
+            if (cantidadInput) {
+                cantidadInput.value = '1';
+                cantidadInput.disabled = true;
+            }
+            if (obsInput) {
+                obsInput.value = '';
+                obsInput.disabled = true;
+            }
+            if (valorUnitarioInput) {
+                valorUnitarioInput.value = '';
+                valorUnitarioInput.disabled = true;
+            }
+            if (totalInput) {
+                totalInput.value = '0';
+            }
+            
+            // Ocultar contenedores
+            const formularioContainer = document.getElementById('formularioAgregarEPP');
+            const valorContainer = document.getElementById('valorUnitarioTotalContainer');
+            const obsContainer = document.getElementById('observacionesContainer');
+            
+            if (formularioContainer) formularioContainer.style.display = 'none';
+            if (valorContainer) valorContainer.style.display = 'none';
+            if (obsContainer) obsContainer.style.display = 'none';
+            
+            // Resetear botones
+            const btnAgregar = document.getElementById('btnAgregarALista');
+            const btnFinalizar = document.getElementById('btnFinalizarAgregarEPP');
+            const btnGuardarCambios = document.getElementById('btnGuardarCambiosEPP');
+            
+            if (btnAgregar) {
+                btnAgregar.style.display = 'flex';
+                btnAgregar.disabled = true;
+            }
+            if (btnFinalizar) {
+                btnFinalizar.style.display = 'flex';
+                btnFinalizar.disabled = true;
+            }
+            if (btnGuardarCambios) {
+                btnGuardarCambios.style.display = 'none';
+                btnGuardarCambios.disabled = true;
+            }
+            
+            // Limpiar fotos
+            const contenedorFotos = document.getElementById('contenedorFotosEPP');
+            if (contenedorFotos) {
+                const imagenes = contenedorFotos.querySelectorAll('.foto-epp-item');
+                imagenes.forEach(img => img.remove());
+            }
+            
+            // Resetear state manager
+            if (window.eppStateManager && typeof window.eppStateManager.limpiarImagenes === 'function') {
+                window.eppStateManager.limpiarImagenes();
+            }
+        }
+
+        // Función para manejar la subida de fotos de EPP
+        window.manejarSubidaFotosEPP = function(input) {
+            const archivos = input.files;
+            const pedidoId = window.__EPP_COTIZACION_ID__ || 31;
+            
+            console.log(`📸 [manejarSubidaFotosEPP] Seleccionados ${archivos.length} archivos para el pedido ${pedidoId}`);
+            console.log(`📸 [manejarSubidaFotosEPP] Estado de window.eppStateManager:`, !!window.eppStateManager);
+            console.log(`📸 [manejarSubidaFotosEPP] Estado de window.fotosEPP:`, !!window.fotosEPP);
+            
+            Array.from(archivos).forEach((archivo, index) => {
+                const nombreArchivo = archivo.name;
+                const extension = nombreArchivo.split('.').pop().toLowerCase();
+                
+                // Validar que sea una imagen
+                if (!['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'jfif'].includes(extension)) {
+                    console.warn(`[manejarSubidaFotosEPP] Archivo no válido: ${nombreArchivo}`);
+                    return;
+                }
+                
+                // Crear URL blob para la imagen
+                const previewUrl = URL.createObjectURL(archivo);
+                
+                // Crear objeto de imagen con URL blob
+                const imagen = {
+                    id: Date.now() + '_' + index,
+                    file: archivo, // Mantener referencia al archivo original
+                    previewUrl: previewUrl, // URL blob para mostrar
+                    nombre: nombreArchivo,
+                    extension: extension,
+                    tamaño: archivo.size,
+                    pedido_epp_id: null, // Se asignará al guardar
+                    ruta_original: null,
+                    ruta_webp: null,
+                    principal: 0,
+                    orden: 0
+                };
+                
+                console.log(`📸 [manejarSubidaFotosEPP] Procesando imagen:`, {
+                    id: imagen.id,
+                    nombre: imagen.nombre,
+                    tamaño: imagen.tamaño
+                });
+                
+                // Agregar al stateManager si existe, sino a array temporal
+                if (window.eppStateManager && typeof window.eppStateManager.agregarImagen === 'function') {
+                    console.log(`📸 [manejarSubidaFotosEPP] Usando stateManager.agregarImagen`);
+                    window.eppStateManager.agregarImagen(imagen);
+                    console.log(`📸 [manejarSubidaFotosEPP] Imágenes en stateManager después de agregar:`, window.eppStateManager.getImagenesSubidas()?.length || 0);
+                } else {
+                    // Array temporal como fallback
+                    console.log(`📸 [manejarSubidaFotosEPP] Usando array temporal window.fotosEPP`);
+                    if (!window.fotosEPP) window.fotosEPP = [];
+                    window.fotosEPP.push(imagen);
+                    console.log(`📸 [manejarSubidaFotosEPP] Imágenes en array temporal después de agregar:`, window.fotosEPP.length);
+                }
+                
+                // Mostrar vista previa
+                mostrarVistaPreviaFotoEPP(imagen);
+                
+                console.log(`📸 [manejarSubidaFotosEPP] Foto agregada: ${nombreArchivo} (${(archivo.size / 1024).toFixed(2)} KB)`);
+            });
+            
+            // Limpiar input para permitir seleccionar el mismo archivo nuevamente
+            input.value = '';
+        };
+
+        // Función para mostrar vista previa de foto
+        function mostrarVistaPreviaFotoEPP(imagen) {
+            const contenedor = document.getElementById('contenedorFotosEPP');
+            if (!contenedor) return;
+            
+            // Ocultar mensaje inicial si está visible
+            const mensajeDragDrop = document.getElementById('mensajeDragDrop');
+            if (mensajeDragDrop) {
+                mensajeDragDrop.style.display = 'none';
+            }
+            
+            const fotoElement = document.createElement('div');
+            fotoElement.className = 'relative group foto-epp-item';
+            fotoElement.setAttribute('data-foto-id', imagen.id);
+            
+            fotoElement.innerHTML = `
+                <div class="relative overflow-hidden rounded-lg border-2 border-gray-200">
+                    <img src="${imagen.previewUrl}" alt="Foto EPP" class="w-full h-32 object-cover">
+                    <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button type="button" onclick="eliminarFotoEPP('${imagen.id}')" class="bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                            <i class="material-symbols-rounded text-sm">delete</i>
+                        </button>
+                    </div>
+                    <div class="absolute bottom-0 right-0 bg-blue-600 text-white text-xs px-2 py-1 rounded-tl">
+                        ${imagen.nombre}
+                    </div>
+                </div>
+            `;
+            
+            contenedor.appendChild(fotoElement);
+        }
+
+        // Función para eliminar foto
+        window.eliminarFotoEPP = function(fotoId) {
+            console.log(`🗑️ [eliminarFotoEPP] Eliminando foto: ${fotoId}`);
+            
+            // Eliminar del DOM
+            const fotoElement = document.querySelector(`[data-foto-id="${fotoId}"]`);
+            if (fotoElement) {
+                fotoElement.remove();
+            }
+            
+            // Eliminar del stateManager si existe
+            if (window.eppStateManager && typeof window.eppStateManager.eliminarImagen === 'function') {
+                window.eppStateManager.eliminarImagen(fotoId);
+            } else {
+                // Eliminar del array temporal
+                if (window.fotosEPP) {
+                    window.fotosEPP = window.fotosEPP.filter(img => img.id !== fotoId);
+                }
+            }
+            
+            // Mostrar mensaje inicial si no hay más fotos
+            const contenedor = document.getElementById('contenedorFotosEPP');
+            if (contenedor) {
+                const fotosRestantes = contenedor.querySelectorAll('.foto-epp-item');
+                if (fotosRestantes.length === 0) {
+                    const mensajeDragDrop = document.getElementById('mensajeDragDrop');
+                    if (mensajeDragDrop) {
+                        mensajeDragDrop.style.display = 'flex';
+                    }
+                }
+            }
+        };
+
+        // Función para agregar foto (botón)
+        window.agregarFotoEPP = function() {
+            const input = document.getElementById('inputFotosEPP');
+            if (input) {
+                input.click();
+            }
+        };
 
         if (typeof window.guardarEdicionEPP === 'function' && !window.__eppCotizacionGuardarEdicionWrapped) {
             const original = window.guardarEdicionEPP;

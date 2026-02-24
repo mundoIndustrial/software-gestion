@@ -250,6 +250,17 @@ final class CotizacionController extends Controller
             $data['prendas'] = $cotizacion->prendas
                 ->values()
                 ->toArray();
+            
+            // Logging para depuración de datos de edición
+            Log::info('CotizacionController@getForEdit: Datos devueltos', [
+                'cotizacion_id' => $cotizacion->id,
+                'iva_from_model' => $cotizacion->iva,
+                'iva_in_data' => $data['iva'] ?? 'NOT_FOUND',
+                'cliente_nit_in_data' => $data['cliente_nit'] ?? 'NOT_FOUND',
+                'cliente_direccion_in_data' => $data['cliente_direccion'] ?? 'NOT_FOUND',
+                'cliente_telefono_in_data' => $data['cliente_telefono'] ?? 'NOT_FOUND',
+                'all_keys' => array_keys($data)
+            ]);
 
             return response()->json([
                 'success' => true,

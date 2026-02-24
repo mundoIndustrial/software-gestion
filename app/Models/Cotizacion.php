@@ -22,6 +22,9 @@ class Cotizacion extends Model
     protected $fillable = [
         'asesor_id',
         'cliente_id',
+        'cliente_nit',
+        'cliente_direccion',
+        'cliente_telefono',
         'numero_cotizacion',
         'tipo_cotizacion_id',
         'tipo_venta',
@@ -32,10 +35,11 @@ class Cotizacion extends Model
         'estado',
         'novedades',
         'especificaciones',
+        'observaciones_generales',
+        'iva',
         'imagenes',
         'tecnicas',
-        'observaciones_tecnicas',
-        'observaciones_generales'
+        'observaciones_tecnicas'
     ];
 
     protected $casts = [
@@ -48,6 +52,7 @@ class Cotizacion extends Model
         'tecnicas' => 'array',
         'observaciones_tecnicas' => 'string',
         'observaciones_generales' => 'string',
+        'iva' => 'decimal:2',
         'estado' => 'string',
         'tipo_cotizacion' => 'string'
     ];

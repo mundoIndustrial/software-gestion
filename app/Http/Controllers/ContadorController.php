@@ -282,6 +282,10 @@ class ContadorController extends Controller
                     'tipo_cotizacion_id' => $cotizacionModelo->tipo_cotizacion_id ?? null,
                     'tipo_codigo' => ($cotizacionModelo->tipoCotizacion?->codigo) ?? ($cotizacionModelo->obtenerTipoCotizacion() ?? null),
                     'especificaciones' => $this->parseEspecificaciones($cotizacionModelo->especificaciones),
+                    'iva' => $cotizacionModelo->iva ?? 0,
+                    'cliente_nit' => $cotizacionModelo->cliente_nit ?? null,
+                    'cliente_direccion' => $cotizacionModelo->cliente_direccion ?? null,
+                    'cliente_telefono' => $cotizacionModelo->cliente_telefono ?? null,
                 ],
                 'prendas_cotizaciones' => $cotizacionModelo->prendas->map(function($prenda, $index) {
                     // Generar descripción formateada usando el método del modelo

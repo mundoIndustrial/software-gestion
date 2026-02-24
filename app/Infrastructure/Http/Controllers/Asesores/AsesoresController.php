@@ -290,19 +290,37 @@ class AsesoresController extends Controller
                 ];
             })->values()->all();
 
-            $iva = null;
-            if ($eppCot && isset($eppCot->observaciones_generales)) {
-                $obs = $eppCot->observaciones_generales;
-                if (is_string($obs)) {
-                    $decoded = json_decode($obs, true);
-                    if (is_array($decoded) && array_key_exists('valor_iva', $decoded)) {
-                        $iva = $decoded['valor_iva'];
-                    }
+            // Obtener IVA directamente desde el campo de la cotización
+            $iva = $cotizacion->iva ?? null;
+            
+            // Extraer datos adicionales desde especificaciones (JSON)
+            $especificaciones = [];
+            if ($cotizacion->especificaciones) {
+                $decoded = json_decode($cotizacion->especificaciones, true);
+                if (is_array($decoded)) {
+                    $especificaciones = $decoded;
                 }
             }
+            
+            // Extraer información adicional para el formulario
+            $condicionesPago = $especificaciones['condiciones_pago'] ?? '';
+            $tiempoEntrega = $especificaciones['tiempo_entrega'] ?? '';
+            $cuentasAutorizadas = $especificaciones['cuentas_autorizadas'] ?? '';
+            
+            // Logging para depurar datos del cliente
+            \Log::info('AsesoresController.editCotizacion: Datos del cliente', [
+                'cotizacion_id' => $cotizacion->id,
+                'cliente_nit' => $cotizacion->cliente_nit,
+                'cliente_direccion' => $cotizacion->cliente_direccion,
+                'cliente_telefono' => $cotizacion->cliente_telefono,
+                'condiciones_pago' => $condicionesPago,
+                'tiempo_entrega' => $tiempoEntrega,
+                'cuentas_autorizadas' => $cuentasAutorizadas,
+                'iva' => $iva
+            ]);
 
             $tipo = 'EPP';
-            return view('asesores.cotizaciones.epp.create', compact('tipo', 'cotizacion', 'eppCot', 'itemsUi', 'iva'));
+            return view('asesores.cotizaciones.epp.create', compact('tipo', 'cotizacion', 'eppCot', 'itemsUi', 'iva', 'condicionesPago', 'tiempoEntrega', 'cuentasAutorizadas'));
         } catch (\Exception $e) {
             if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException) {
                 throw $e;

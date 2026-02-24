@@ -150,52 +150,79 @@ window.EppMenuHandlers = {
     _extraerDatosDelDOM(item, itemId) {
         console.log('🟪 [_extraerDatosDelDOM] Extrayendo datos del DOM para itemId:', itemId);
         try {
-            const nombre = item.querySelector('h4')?.textContent?.trim() || '';
-            console.log('🟪 [_extraerDatosDelDOM] Nombre encontrado:', nombre);
-            
-            // Buscar cantidad - puede estar en diferentes lugares
+            // Extraer datos de la estructura de tabla
+            const cells = item.querySelectorAll('td');
+            let nombre = '';
             let cantidad = 0;
-            const cantidadSpans = item.querySelectorAll('p');
-            for (let span of cantidadSpans) {
-                const text = span.textContent.toLowerCase();
-                if (text.includes('cantidad')) {
-                    cantidad = parseInt(span.nextElementSibling?.textContent) || 0;
-                    break;
-                }
-            }
-            console.log('🟪 [_extraerDatosDelDOM] Cantidad encontrada:', cantidad);
-            
-            // Buscar observaciones
             let observaciones = '';
-            for (let span of cantidadSpans) {
-                const text = span.textContent.toLowerCase();
-                if (text.includes('observaciones')) {
-                    observaciones = span.nextElementSibling?.textContent?.trim() || '';
-                    break;
-                }
-            }
-            console.log('🟪 [_extraerDatosDelDOM] Observaciones encontradas:', observaciones);
-
-            // Buscar valor unitario / total si existen en el DOM
             let valor_unitario = null;
             let total = null;
-            try {
-                const ps = item.querySelectorAll('p');
-                for (let i = 0; i < ps.length; i++) {
-                    const t = (ps[i]?.textContent || '').toLowerCase();
-                    if (t.includes('valor unitario')) {
-                        const next = ps[i + 1]?.textContent;
-                        const n = next !== undefined && next !== null ? Number(String(next).replace(/[^0-9.\-]/g, '')) : NaN;
-                        if (!isNaN(n)) valor_unitario = n;
-                    }
-                    if (t === 'total' || t.includes('total')) {
-                        const next = ps[i + 1]?.textContent;
-                        const n = next !== undefined && next !== null ? Number(String(next).replace(/[^0-9.\-]/g, '')) : NaN;
-                        if (!isNaN(n)) total = n;
+            
+            console.log('🟪 [_extraerDatosDelDOM] Celdas encontradas:', cells.length);
+            
+            if (cells.length >= 7) {
+                // Estructura de tabla: [ÍTEM, IMAGEN, DESCRIPCIÓN, CANTIDAD, OBSERVACIONES, V. UNITARIO, TOTAL]
+                
+                // Extraer nombre de la columna DESCRIPCIÓN (celda 2)
+                const descCell = cells[2];
+                
+                // Intentar encontrar el span con el nombre (caso normal)
+                let nombreSpan = descCell.querySelector('span');
+                if (nombreSpan) {
+                    nombre = nombreSpan.textContent?.trim() || '';
+                    console.log('🟪 [_extraerDatosDelDOM] Nombre encontrado en span:', nombre);
+                } else {
+                    // Si no hay span, buscar en el div (caso con imagen)
+                    const divContainer = descCell.querySelector('div');
+                    if (divContainer) {
+                        // El nombre podría estar después de la imagen
+                        const textNodes = Array.from(divContainer.childNodes).filter(node => 
+                            node.nodeType === Node.TEXT_NODE && node.textContent?.trim()
+                        );
+                        if (textNodes.length > 0) {
+                            nombre = textNodes[0].textContent.trim();
+                        } else {
+                            // Último recurso: tomar todo el texto y limpiar
+                            const fullText = divContainer.textContent || '';
+                            // Quitar nombre de imagen si está presente
+                            nombre = fullText.replace(/\s*\([^)]*\)\s*$/, '').trim();
+                        }
+                        console.log('🟪 [_extraerDatosDelDOM] Nombre encontrado en div:', nombre);
+                    } else {
+                        // Fallback: tomar todo el texto de la celda
+                        nombre = descCell.textContent?.trim() || '';
+                        console.log('🟪 [_extraerDatosDelDOM] Nombre encontrado en fallback:', nombre);
                     }
                 }
-            } catch (e) {
-                // noop
+                
+                // Extraer cantidad de la columna CANTIDAD (celda 3)
+                cantidad = parseInt(cells[3].textContent?.trim()) || 0;
+                console.log('🟪 [_extraerDatosDelDOM] Cantidad encontrada:', cantidad);
+                
+                // Extraer observaciones de la columna OBSERVACIONES (celda 4)
+                observaciones = cells[4].textContent?.trim() || '';
+                console.log('🟪 [_extraerDatosDelDOM] Observaciones encontradas:', observaciones);
+                
+                // Extraer valor unitario de la columna V. UNITARIO (celda 5)
+                const vuText = cells[5].textContent?.trim() || '';
+                if (vuText && vuText !== 'N/A') {
+                    valor_unitario = parseFloat(vuText.replace(/[^0-9.\-]/g, '')) || null;
+                }
+                console.log('🟪 [_extraerDatosDelDOM] Valor unitario encontrado:', valor_unitario);
+                
+                // Extraer total de la columna TOTAL (celda 6)
+                const totalText = cells[6].textContent?.trim() || '';
+                if (totalText) {
+                    const totalSpan = cells[6].querySelector('span');
+                    if (totalSpan) {
+                        total = parseFloat(totalSpan.textContent?.replace(/[^0-9.\-]/g, '') || 0);
+                    } else {
+                        total = parseFloat(totalText.replace(/[^0-9.\-]/g, '') || 0);
+                    }
+                }
+                console.log('🟪 [_extraerDatosDelDOM] Total encontrado:', total);
+            } else {
+                console.warn('🟪 [_extraerDatosDelDOM] Estructura de tabla no válida, celdas insuficientes');
             }
 
             // IMPORTANTE: Priorizar imágenes del stateManager (si existen = cambios pendientes)
@@ -203,11 +230,14 @@ window.EppMenuHandlers = {
             let imagenes = [];
             
             if (window.eppStateManager) {
+                console.log('🟪 [_extraerDatosDelDOM] DEBUG - Variable nombre antes de stateManager:', nombre);
                 const imagenesState = window.eppStateManager.getImagenesSubidas();
+                console.log('🟪 [_extraerDatosDelDOM] DEBUG - ImágenesState:', imagenesState);
                 if (imagenesState && imagenesState.length > 0) {
                     // Usar imágenes del stateManager (reflejan eliminaciones)
                     imagenes = imagenesState;
                     console.log('🟪 [_extraerDatosDelDOM] Imágenes de stateManager:', imagenes.length);
+                    console.log('🟪 [_extraerDatosDelDOM] DEBUG - Variable nombre después de asignar stateManager:', nombre);
                 } else {
                     // Si stateManager está vacío, obtener del DOM
                     const todosLosImg = item.querySelectorAll('img');
@@ -222,6 +252,7 @@ window.EppMenuHandlers = {
                         }
                     });
                     console.log('🟪 [_extraerDatosDelDOM] Imágenes del DOM (vacío stateManager):', imagenes.length);
+                    console.log('🟪 [_extraerDatosDelDOM] DEBUG - Variable nombre después de procesar imágenes:', nombre);
                 }
             } else {
                 // Fallback: si no hay stateManager, extraer del DOM
@@ -241,14 +272,15 @@ window.EppMenuHandlers = {
 
             const datos = {
                 epp_id: parseInt(itemId),
-                nombre,
-                cantidad,
-                observaciones,
+                nombre: nombre,
+                cantidad: cantidad,
+                observaciones: observaciones,
                 imagenes: imagenes,
-                valor_unitario,
-                total,
+                valor_unitario: valor_unitario,
+                total: total,
                 esEdicion: true  // Indicador de que es edición
             };
+            console.log('🟪 [_extraerDatosDelDOM] DEBUG - Variable nombre antes de asignar:', nombre);
             console.log('🟪 [_extraerDatosDelDOM] Datos finales:', datos);
             return datos;
         } catch (error) {

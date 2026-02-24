@@ -107,10 +107,20 @@ class CotizacionEppController extends Controller
                 $observacionesGenerales = $request->input('observaciones_generales_texto', '');
                 $observacionesGeneralesJson = $request->input('observaciones_generales', '{}');
                 
+                // Extraer IVA del JSON y guardarlo en campo específico
+                $iva = 0;
+                if (!empty($observacionesGeneralesJson)) {
+                    $obsDecoded = json_decode($observacionesGeneralesJson, true);
+                    if (is_array($obsDecoded) && isset($obsDecoded['valor_iva'])) {
+                        $iva = (float) $obsDecoded['valor_iva'];
+                    }
+                }
+                
                 // Logging para depuración
                 Log::info('[CotizacionEppController] Datos recibidos para guardar', [
                     'observaciones_generales_texto' => $observacionesGenerales,
                     'observaciones_generales_json' => $observacionesGeneralesJson,
+                    'iva_extraido' => $iva,
                     'condiciones_pago' => $request->input('condiciones_pago'),
                     'tiempo_entrega' => $request->input('tiempo_entrega'),
                     'cuentas_autorizadas' => $request->input('cuentas_autorizadas'),
@@ -148,6 +158,7 @@ class CotizacionEppController extends Controller
                         'fecha_envio' => !$esBorrador ? now() : null,
                         'especificaciones' => json_encode($especificaciones),
                         'observaciones_generales' => $observacionesGenerales,
+                        'iva' => $iva,
                         'cliente_nit' => $request->input('cliente_nit'),
                         'cliente_direccion' => $request->input('cliente_direccion'),
                         'cliente_telefono' => $request->input('cliente_telefono'),
@@ -173,6 +184,7 @@ class CotizacionEppController extends Controller
                         'fecha_envio' => !$esBorrador ? now() : null,
                         'especificaciones' => json_encode($especificaciones),
                         'observaciones_generales' => $observacionesGenerales,
+                        'iva' => $iva,
                         'cliente_nit' => $request->input('cliente_nit'),
                         'cliente_direccion' => $request->input('cliente_direccion'),
                         'cliente_telefono' => $request->input('cliente_telefono'),

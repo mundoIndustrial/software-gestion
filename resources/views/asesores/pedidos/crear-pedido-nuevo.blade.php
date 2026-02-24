@@ -251,6 +251,26 @@
     <link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}?v={{ $v }}">
     <link rel="stylesheet" href="{{ asset('css/componentes/epp-card.css') }}">
 
+    <!-- EPP Services exclusivos para vista de nuevo pedido (solo los que no están duplicados) -->
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-item-manager-nuevo.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-menu-handlers-nuevo.js') }}?v={{ time() }}"></script>
+    
+    <!-- Inicializar EPP Menu Handlers para vista nuevo pedido -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[crear-pedido-nuevo] Inicializando EPP Menu Handlers...');
+            
+            // Crear instancia del manejador de menús EPP
+            if (typeof EppMenuHandlersNuevo !== 'undefined') {
+                window.eppMenuHandlersNuevo = new EppMenuHandlersNuevo();
+                window.eppMenuHandlersNuevo.inicializar();
+                console.log('[crear-pedido-nuevo] EPP Menu Handlers inicializado correctamente');
+            } else {
+                console.error('[crear-pedido-nuevo] EppMenuHandlersNuevo no está disponible');
+            }
+        });
+    </script>
+
     <!-- ─── Prendas Services ─── -->
     <script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/proceso-editor.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/gestor-edicion-procesos.js') }}?v={{ $v }}"></script>

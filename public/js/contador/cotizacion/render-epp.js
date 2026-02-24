@@ -51,8 +51,14 @@
     function formatearMoneda(num) {
         const n = Number(num);
         if (!Number.isFinite(n)) return '$ 0';
-        const entero = Math.round(n);
-        return '$ ' + entero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        
+        // Formatear sin redondear, mostrando hasta 2 decimales si existen
+        const str = n.toFixed(2).replace('.', '.');
+        
+        // Eliminar .00 si no hay decimales
+        const formatted = str.endsWith('.00') ? str.slice(0, -3) : str;
+        
+        return '$ ' + formatted;
     }
 
     function renderEppItemCard(item) {
@@ -77,44 +83,39 @@
             : null;
 
         return `
-            <div class="epp-item-card" style="background: #f5f5f5; border-left: 5px solid #0ea5e9; padding: 1rem 1.5rem; border-radius: 4px;">
-                <div style="display: flex; gap: 0.9rem; align-items: flex-start; justify-content: flex-start;">
-                    <div style="flex: 0 1 auto; min-width: 0;">
-                        <h3 style="margin: 0 0 0.5rem 0; color: #0f172a; font-size: 1.05rem; font-weight: 800; text-transform: uppercase;">
-                            ${nombre}
-                        </h3>
-
-                        <div style="display: grid; grid-template-columns: 140px 1fr; gap: 0.75rem; align-items: start;">
-                            <div>
-                                <p style="margin: 0 0 0.15rem 0; font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Cantidad</p>
-                                <p style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #0f172a;">${cantidad}</p>
-                            </div>
-                            <div>
-                                <p style="margin: 0 0 0.15rem 0; font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Observaciones</p>
-                                <p style="margin: 0; font-size: 0.95rem; font-weight: 500; color: #0f172a;">${observaciones || 'N/A'}</p>
-                            </div>
-                        </div>
-
-                        ${(valorUnitario !== null) ? `
-                            <div style="display: grid; grid-template-columns: 140px 1fr; gap: 0.75rem; align-items: start; margin-top: 0.75rem;">
-                                <div>
-                                    <p style="margin: 0 0 0.15rem 0; font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Valor Unitario</p>
-                                    <p style="margin: 0; font-size: 0.95rem; font-weight: 800; color: #0f172a;">${formatearNumero(valorUnitario) || 'N/A'}</p>
-                                </div>
-                                <div>
-                                    <p style="margin: 0 0 0.15rem 0; font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Total</p>
-                                    <p style="margin: 0; font-size: 1rem; font-weight: 900; color: #0f172a;">${formatearNumero(total) || '0'}</p>
-                                </div>
-                            </div>
-                        ` : ''}
+            <div class="epp-item-card" style="background: #f5f5f5; border-left: 5px solid #0ea5e9; padding: 1rem 1.5rem; border-radius: 4px; margin-bottom: 1rem;">
+                <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden;">
+                            <thead>
+                                <tr style="background: #fef3c7; color: #000000;">
+                                    <th style="padding: 10px; text-align: left; font-size: 10px; font-weight: bold; border: 1px solid #fbbf24;">ÍTEM</th>
+                                    <th style="padding: 10px; text-align: center; font-size: 10px; font-weight: bold; border: 1px solid #fbbf24;">IMAGEN</th>
+                                    <th style="padding: 10px; text-align: left; font-size: 10px; font-weight: bold; border: 1px solid #fbbf24;">DESCRIPCIÓN</th>
+                                    <th style="padding: 10px; text-align: center; font-size: 10px; font-weight: bold; border: 1px solid #fbbf24;">CANTIDAD</th>
+                                    <th style="padding: 10px; text-align: left; font-size: 10px; font-weight: bold; border: 1px solid #fbbf24;">OBSERVACIONES</th>
+                                    <th style="padding: 10px; text-align: right; font-size: 10px; font-weight: bold; border: 1px solid #fbbf24;">V. UNITARIO</th>
+                                    <th style="padding: 10px; text-align: right; font-size: 10px; font-weight: bold; border: 1px solid #fbbf24;">TOTAL</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="padding: 10px; text-align: left; font-size: 11px; font-weight: 600; border: 1px solid #e5e7eb;">1</td>
+                                    <td style="padding: 10px; text-align: center; font-size: 11px; font-weight: 500; border: 1px solid #e5e7eb;">
+                                        ${img ? `
+                                            <img src="${img}" alt="${nombre}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; cursor: pointer;" 
+                                                 onclick="event.preventDefault(); event.stopPropagation(); if (window.mostrarImagenProcesoGrande) window.mostrarImagenProcesoGrande('${img}'); else if (window.abrirImagenGrande) window.abrirImagenGrande('${img}', '${galleryId}', 0);">
+                                        ` : '<span style="color: #9ca3af;">Sin imagen</span>'}
+                                    </td>
+                                    <td style="padding: 10px; text-align: left; font-size: 11px; font-weight: 500; border: 1px solid #e5e7eb;">${nombre}</td>
+                                    <td style="padding: 10px; text-align: center; font-size: 11px; font-weight: 600; border: 1px solid #e5e7eb;">${cantidad}</td>
+                                    <td style="padding: 10px; text-align: left; font-size: 11px; font-weight: 500; border: 1px solid #e5e7eb;">${observaciones || '-'}</td>
+                                    <td style="padding: 10px; text-align: right; font-size: 11px; font-weight: 600; border: 1px solid #e5e7eb;">${valorUnitario !== null ? formatearNumero(valorUnitario) : 'N/A'}</td>
+                                    <td style="padding: 10px; text-align: right; font-size: 11px; font-weight: 700; border: 1px solid #e5e7eb;">${total !== null ? formatearNumero(total) : '0'}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-
-                    ${img ? `
-                        <div style="width: 140px; height: 140px; border-radius: 14px; overflow: hidden; border: 1px solid #e5e7eb; background: #f3f4f6; flex-shrink: 0; margin-left: 0.25rem;">
-                            <img src="${img}" data-gallery="${galleryId}" data-index="0" alt="${nombre}" style="width: 100%; height: 100%; object-fit: cover; display: block; cursor: pointer;" ondblclick="event.preventDefault(); event.stopPropagation(); if (window.mostrarImagenProcesoGrande) window.mostrarImagenProcesoGrande('${img}'); else if (window.abrirImagenGrande) window.abrirImagenGrande('${img}', '${galleryId}', 0);" />
-                            ${galleryHiddenImgs}
-                        </div>
-                    ` : ''}
                 </div>
             </div>
         `;
@@ -134,17 +135,18 @@
             null
         );
 
-        let obsGenerales = payload?.epp_cotizacion?.observaciones_generales ?? null;
-        if (typeof obsGenerales === 'string') {
-            try {
-                obsGenerales = JSON.parse(obsGenerales);
-            } catch (_) {
-                obsGenerales = null;
-            }
-        }
-        const valorIva = (obsGenerales && (obsGenerales.valor_iva !== undefined) && obsGenerales.valor_iva !== null && String(obsGenerales.valor_iva).trim() !== '')
-            ? Number(obsGenerales.valor_iva)
+        // Obtener IVA directamente desde el campo de la cotización
+        const valorIva = (payload?.cotizacion?.iva !== undefined && payload?.cotizacion?.iva !== null && String(payload?.cotizacion?.iva).trim() !== '')
+            ? Number(payload?.cotizacion?.iva)
             : null;
+        
+        // Logging para depuración
+        console.log('[EPP Render] Datos de IVA:', {
+            'payload.cotizacion.iva': payload?.cotizacion?.iva,
+            'valorIva': valorIva,
+            'tipo': typeof payload?.cotizacion?.iva,
+            'payload_completo': payload
+        });
 
         let html = '<div class="epp-container" style="display: flex; flex-direction: column; gap: 1.25rem;">';
 
@@ -176,8 +178,20 @@
             const tot = (vu !== null) ? (vu * cant) : 0;
             return acc + (Number.isFinite(tot) ? tot : 0);
         }, 0);
-        const iva = (valorIva !== null && Number.isFinite(valorIva)) ? Number(valorIva) : 0;
-        const totalConIva = subtotal + iva;
+        
+        // Calcular el IVA como porcentaje del subtotal
+        const ivaPorcentaje = (valorIva !== null && Number.isFinite(valorIva)) ? Number(valorIva) : 0;
+        const ivaValor = (subtotal * ivaPorcentaje) / 100;
+        const totalConIva = subtotal + ivaValor;
+        
+        // Logging para depuración del cálculo
+        console.log('[EPP Render] Cálculo de IVA:', {
+            'subtotal': subtotal,
+            'ivaPorcentaje': ivaPorcentaje,
+            'ivaValor': ivaValor,
+            'totalConIva': totalConIva,
+            'formula': `(${subtotal} × ${ivaPorcentaje}) ÷ 100 = ${ivaValor}`
+        });
 
         html += `
             <div style="margin-top: 0.25rem; border-radius: 14px; overflow: hidden; border: 1px solid #e5e7eb; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.10); background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);">
@@ -194,7 +208,7 @@
                     <div style="font-size: 1.05rem; font-weight: 900; color: #0f172a;">${formatearMoneda(subtotal)}</div>
 
                     <div style="font-size: 0.95rem; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.6px;">IVA</div>
-                    <div style="font-size: 1.05rem; font-weight: 900; color: #0f172a;">${formatearMoneda(iva)}</div>
+                    <div style="font-size: 1.05rem; font-weight: 900; color: #0f172a;">${formatearMoneda(ivaValor)}</div>
                 </div>
 
                 <div style="padding: 1rem 1.25rem; background: #0c8cc7ff; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">

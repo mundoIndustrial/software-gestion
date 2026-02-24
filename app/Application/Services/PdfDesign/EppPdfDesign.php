@@ -191,17 +191,31 @@ CSS;
         $nombreCliente = htmlspecialchars($this->cotizacion->cliente?->nombre ?? 'N/A');
         $nombreAsesor = htmlspecialchars($this->cotizacion->usuario?->name ?? 'N/A');
         $fecha = htmlspecialchars($this->cotizacion->created_at?->format('d/m/Y') ?? 'N/A');
+        
+        // Datos adicionales del cliente
+        $clienteNit = htmlspecialchars($this->cotizacion->cliente_nit ?? 'N/A');
+        $clienteDireccion = htmlspecialchars($this->cotizacion->cliente_direccion ?? 'N/A');
+        $clienteTelefono = htmlspecialchars($this->cotizacion->cliente_telefono ?? 'N/A');
 
         return <<<HTML
         <div class="info-wrapper">
+            <!-- Información principal y adicional en una sola tabla -->
             <table class="info-table">
                 <tr>
-                    <td class="label" style="width: 15%;">CLIENTE</td>
-                    <td style="color: #e74c3c; font-weight: bold; width: 25%;">{$nombreCliente}</td>
-                    <td class="label" style="width: 15%;">ASESOR</td>
-                    <td style="color: #e74c3c; font-weight: bold; width: 25%;">{$nombreAsesor}</td>
-                    <td class="label" style="width: 10%;">Fecha</td>
-                    <td style="color: #e74c3c; font-weight: bold; width: 10%;">{$fecha}</td>
+                    <td class="label" style="width: 12%;">CLIENTE</td>
+                    <td style="color: #e74c3c; font-weight: bold; width: 20%;">{$nombreCliente}</td>
+                    <td class="label" style="width: 10%;">CC/NIT</td>
+                    <td style="color: #e74c3c; font-weight: bold; width: 15%;">{$clienteNit}</td>
+                    <td class="label" style="width: 12%;">ASESOR</td>
+                    <td style="color: #e74c3c; font-weight: bold; width: 18%;">{$nombreAsesor}</td>
+                    <td class="label" style="width: 8%;">Fecha</td>
+                    <td style="color: #e74c3c; font-weight: bold; width: 5%;">{$fecha}</td>
+                </tr>
+                <tr>
+                    <td class="label" style="width: 12%;">DIRECCIÓN</td>
+                    <td colspan="3" style="color: #e74c3c; font-weight: bold;">{$clienteDireccion}</td>
+                    <td class="label" style="width: 12%;">TELÉFONO</td>
+                    <td colspan="3" style="color: #e74c3c; font-weight: bold;">{$clienteTelefono}</td>
                 </tr>
             </table>
         </div>
@@ -214,16 +228,8 @@ CSS;
             $eppCot = $this->data['epp_cotizacion'] ?? null;
             $items = $this->data['items'] ?? [];
             
-            // Obtener IVA desde observaciones generales del EPP
-            $obs = null;
-            if ($eppCot) {
-                $obs = $eppCot->observaciones_generales;
-            }
-            if (is_string($obs)) {
-                $decoded = json_decode($obs, true);
-                $obs = is_array($decoded) ? $decoded : null;
-            }
-            $iva = (is_array($obs) && array_key_exists('valor_iva', $obs)) ? (float)$obs['valor_iva'] : 0.0;
+            // Obtener IVA directamente desde el campo de la cotización
+            $ivaPorcentaje = (float)($this->cotizacion->iva ?? 0.0);
 
             $html = '<div class="content-wrapper">';
 
@@ -279,8 +285,22 @@ CSS;
             $html .= '</table>';
             $html .= '</div>';
 
+            // Calcular el valor del IVA como porcentaje del subtotal
+            $ivaValor = ($subtotal * $ivaPorcentaje) / 100;
+            
+            // Calcular total con IVA
+            $totalConIva = $subtotal + $ivaValor;
+            
+            // Logging para depuración del IVA
+            \Log::info('[EppPdfDesign] IVA procesado', [
+                'cotizacion_id' => $this->cotizacion->id,
+                'iva_porcentaje' => $ivaPorcentaje,
+                'subtotal' => $subtotal,
+                'iva_valor_calculado' => $ivaValor,
+                'total_con_iva' => $totalConIva
+            ]);
+
             // Tabla de resumen de totales
-            $totalConIva = $subtotal + $iva;
 
             $html .= '<div class="resumen" style="margin-bottom: 20px;">';
             $html .= '<table style="width: 100%; border-collapse: collapse;">';
@@ -291,7 +311,7 @@ CSS;
             $html .= '</tr>';
             $html .= '<tr>';
             $html .= '<td style="background: #f1f5f9; color: #1f2937; padding: 12px; text-align: right; font-size: 11px; font-weight: 600; border-bottom: 1px solid #e5e7eb;">';
-            $html .= 'IVA: ' . $this->formatMoney($iva);
+            $html .= 'IVA: ' . $this->formatMoney($ivaValor);
             $html .= '</td>';
             $html .= '</tr>';
             $html .= '<tr>';
@@ -319,8 +339,14 @@ CSS;
 
     private function formatMoney(float $value): string
     {
-        $entero = (int)round($value);
-        $str = number_format($entero, 0, '', '.');
+        // Formatear sin redondear, mostrando hasta 2 decimales si existen
+        $str = number_format($value, 2, '.', '.');
+        
+        // Eliminar .00 si no hay decimales
+        if (substr($str, -3) === '.00') {
+            $str = substr($str, 0, -3);
+        }
+        
         return '$ ' . $str;
     }
 
