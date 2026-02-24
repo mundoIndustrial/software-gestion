@@ -2662,6 +2662,9 @@ Route::middleware(['auth'])->post('procesos/{procesoId}/activar-recibo', functio
 // ========================================
 // DESPACHO - OBSERVACIONES BADGES
 // ========================================
+Route::post('/despacho/observaciones/resumen', [\App\Infrastructure\Http\Controllers\Despacho\DespachoController::class, 'resumenObservaciones'])
+    ->name('despacho.observaciones.resumen');
+
 Route::post('/despacho/{pedido_id}/observaciones/marcar-vistas', [\App\Infrastructure\Http\Controllers\Despacho\DespachoController::class, 'marcarObservacionesComoVistas'])
     ->name('despacho.observaciones.marcar-vistas')
     ->where('pedido_id', '[0-9]+');

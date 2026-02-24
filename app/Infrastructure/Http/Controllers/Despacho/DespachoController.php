@@ -582,15 +582,11 @@ class DespachoController extends Controller
         $usuario = auth()->user();
         $usuarioId = $usuario?->id;
 
-        // Contar observaciones no leídas (estado = 0) por pedido
-        // Excluir las creadas por el mismo usuario
+        // Contar observaciones no leídas (visto_at IS NULL) por pedido
+        // Incluir todas las observaciones para que el badge aparezca cuando el usuario crea una
         $resumen = PedidoObservacionesDespacho::query()
             ->whereIn('pedido_produccion_id', $pedidoIds)
-            ->where('estado', 0)
-            ->where(function ($q) use ($usuarioId) {
-                $q->whereNull('usuario_id')
-                  ->orWhere('usuario_id', '!=', $usuarioId);
-            })
+            ->whereNull('visto_at')
             ->selectRaw('pedido_produccion_id, COUNT(*) as unread')
             ->groupBy('pedido_produccion_id')
             ->pluck('unread', 'pedido_produccion_id')
@@ -615,15 +611,15 @@ class DespachoController extends Controller
         $usuario = auth()->user();
         $usuarioId = $usuario?->id;
 
-        // Marcar como leídas (estado = 1) las observaciones no leídas de otros usuarios
+        // Marcar como leídas (visto_at = now()) las observaciones no leídas de otros usuarios
         PedidoObservacionesDespacho::query()
             ->where('pedido_produccion_id', $pedido->id)
-            ->where('estado', 0)
+            ->whereNull('visto_at')
             ->where(function ($q) use ($usuarioId) {
                 $q->whereNull('usuario_id')
                   ->orWhere('usuario_id', '!=', $usuarioId);
             })
-            ->update(['estado' => 1]);
+            ->update(['visto_at' => now()]);
 
         return response()->json([
             'success' => true,
@@ -1415,8 +1411,8 @@ class DespachoController extends Controller
             // Actualizar todas las observaciones no leídas del pedido
             $updated = \DB::table('pedido_observaciones_despacho')
                 ->where('pedido_produccion_id', $pedidoId)
-                ->where('estado', 0) // 0 = no leída
-                ->update(['estado' => 1]); // 1 = leída
+                ->whereNull('visto_at') // No leídas
+                ->update(['visto_at' => now()]); // Marcar como leídas
 
             \Log::info('[DespachoController] Observaciones marcadas como vistas', [
                 'pedido_id' => $pedidoId,

@@ -16,7 +16,9 @@
     function getSeenBadges() {
         try {
             const data = localStorage.getItem(BADGE_STORAGE_KEY);
-            return data ? JSON.parse(data) : {};
+            const seen = data ? JSON.parse(data) : {};
+            console.log(`[DEBUG-BADGE] 📖 getSeenBadges - badges vistos:`, seen);
+            return seen;
         } catch (e) {
             console.warn('[DEBUG-BADGE] Error leyendo localStorage:', e);
             return {};
@@ -29,7 +31,9 @@
             const seen = getSeenBadges();
             seen[pedidoId] = Date.now();
             localStorage.setItem(BADGE_STORAGE_KEY, JSON.stringify(seen));
-            console.log(`[DEBUG-BADGE] Badge ${pedidoId} marcado como visto en localStorage`);
+            console.log(`[DEBUG-BADGE] 💾 setBadgeSeen - Pedido ${pedidoId} marcado como visto`);
+            console.log(`[DEBUG-BADGE] - Timestamp: ${seen[pedidoId]}`);
+            console.log(`[DEBUG-BADGE] - Total badges vistos: ${Object.keys(seen).length}`);
         } catch (e) {
             console.warn('[DEBUG-BADGE] Error guardando en localStorage:', e);
         }
@@ -39,11 +43,24 @@
     function isBadgeRecentlySeen(pedidoId) {
         const seen = getSeenBadges();
         const seenTime = seen[pedidoId];
-        if (!seenTime) return false;
+        console.log(`[DEBUG-BADGE] 🔍 isBadgeRecentlySeen - Pedido ${pedidoId}`);
+        console.log(`[DEBUG-BADGE] - seenTime: ${seenTime}`);
+        
+        if (!seenTime) {
+            console.log(`[DEBUG-BADGE] - Nunca fue visto, retorna false`);
+            return false;
+        }
         
         // Considerar como visto si fue marcado en las últimas 24 horas
         const twentyFourHours = 24 * 60 * 60 * 1000;
-        return (Date.now() - seenTime) < twentyFourHours;
+        const isRecent = (Date.now() - seenTime) < twentyFourHours;
+        const timeDiff = Date.now() - seenTime;
+        const hoursAgo = Math.floor(timeDiff / (1000 * 60 * 60));
+        
+        console.log(`[DEBUG-BADGE] - Tiempo transcurrido: ${hoursAgo} horas`);
+        console.log(`[DEBUG-BADGE] - ¿Es reciente (<24h)?: ${isRecent}`);
+        
+        return isRecent;
     }
 
     function __clearBadge(pedidoId) {
@@ -75,59 +92,70 @@
     }
 
     function __renderBadge(pedidoId, count) {
-        console.log(`[DEBUG-BADGE] __renderBadge llamado - pedidoId: ${pedidoId}, count: ${count}`);
+        console.log(`[DEBUG-BADGE] 🎨 __renderBadge INICIADO`);
+        console.log(`[DEBUG-BADGE] - Pedido ID: ${pedidoId}`);
+        console.log(`[DEBUG-BADGE] - Count (unread): ${count}`);
         
-        // Verificar si el badge fue visto recientemente
-        if (isBadgeRecentlySeen(pedidoId)) {
-            console.log(`[DEBUG-BADGE] Badge ${pedidoId} fue visto recientemente, no mostrar`);
-            __clearBadge(pedidoId);
-            return;
+        // Lógica principal: Si hay observaciones no leídas, mostrar badge
+        // El localStorage solo se usa para persistencia cuando el usuario hace clic
+        if (count > 0) {
+            console.log(`[DEBUG-BADGE] 🆕 Hay ${count} observaciones no leídas - MOSTRAR badge`);
+            console.log(`[DEBUG-BADGE] - El badge debe aparecer siempre que haya observaciones no leídas`);
+        } else {
+            // Si no hay observaciones no leídas, verificar localStorage
+            const wasRecentlySeen = isBadgeRecentlySeen(pedidoId);
+            console.log(`[DEBUG-BADGE] - No hay observaciones no leídas, verificando localStorage...`);
+            console.log(`[DEBUG-BADGE] - ¿Fue visto recientemente?: ${wasRecentlySeen}`);
+            
+            if (wasRecentlySeen) {
+                console.log(`[DEBUG-BADGE] 🚫 Badge ${pedidoId} fue visto recientemente y no hay nuevas observaciones, NO mostrar`);
+                __clearBadge(pedidoId);
+                return;
+            } else {
+                console.log(`[DEBUG-BADGE] ✅ Badge ${pedidoId} no fue visto recientemente, se podría mostrar si hubiera observaciones`);
+            }
         }
         
         // Buscar en botones de despacho primero
         let btn = document.querySelector(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
+        console.log(`[DEBUG-BADGE] - Botón despacho encontrado:`, !!btn);
+        
         if (!btn) {
             // Buscar en botones de asesores/pedidos
             btn = document.querySelector(`.btn-ver-dropdown[data-pedido-id="${pedidoId}"]`);
+            console.log(`[DEBUG-BADGE] - Botón asesores encontrado:`, !!btn);
         }
-        console.log(`[DEBUG-BADGE] Botón encontrado para render:`, btn);
+        
+        console.log(`[DEBUG-BADGE] - Botón final a usar:`, btn);
         
         if (!btn) {
-            console.warn(`[DEBUG-BADGE] No se encontró botón para pedido ${pedidoId}`);
+            console.warn(`[DEBUG-BADGE] ❌ No se encontró botón para pedido ${pedidoId}`);
             // Buscar todos los botones para debugging
             const allDespachoBtns = document.querySelectorAll('.despacho-obs-btn');
             const allAsesoresBtns = document.querySelectorAll('.btn-ver-dropdown');
-            console.log(`[DEBUG-BADGE] Botones despacho encontrados:`, allDespachoBtns.length);
-            console.log(`[DEBUG-BADGE] Botones asesores encontrados:`, allAsesoresBtns.length);
+            console.log(`[DEBUG-BADGE] - Botones despacho encontrados: ${allDespachoBtns.length}`);
+            console.log(`[DEBUG-BADGE] - Botones asesores encontrados: ${allAsesoresBtns.length}`);
             
             // Mostrar botones de despacho
             allDespachoBtns.forEach((b, i) => {
-                console.log(`[DEBUG-BADGE] Botón despacho ${i}:`, {
+                console.log(`[DEBUG-BADGE] - Botón despacho ${i}:`, {
                     'data-pedido-id': b.getAttribute('data-pedido-id'),
                     'onclick': b.getAttribute('onclick'),
                     'class': b.className
                 });
             });
-            
-            // Mostrar botones de asesores
-            allAsesoresBtns.forEach((b, i) => {
-                console.log(`[DEBUG-BADGE] Botón asesores ${i}:`, {
-                    'data-pedido-id': b.getAttribute('data-pedido-id'),
-                    'class': b.className
-                });
-            });
             return;
         }
         
-        console.log(`[DEBUG-BADGE] Limpiando badge existente antes de renderizar`);
+        console.log(`[DEBUG-BADGE] 🧹 Limpiando badge existente antes de renderizar`);
         __clearBadge(pedidoId);
         
         if (!count || count <= 0) {
-            console.log(`[DEBUG-BADGE] No hay badge para mostrar - count: ${count}`);
+            console.log(`[DEBUG-BADGE] 🚫 No hay badge para mostrar - count: ${count}`);
             return;
         }
 
-        console.log(`[DEBUG-BADGE] Creando badge para pedido ${pedidoId} con count: ${count}`);
+        console.log(`[DEBUG-BADGE] 🎯 Creando badge para pedido ${pedidoId} con count: ${count}`);
         
         const badge = document.createElement('span');
         badge.className = 'obs-despacho-badge';
@@ -150,22 +178,30 @@
         ].join(';');
         btn.appendChild(badge);
         
-        console.log(`[DEBUG-BADGE] Badge agregado exitosamente para pedido ${pedidoId}`);
-        console.log(`[DEBUG-BADGE] Badge HTML:`, badge.outerHTML);
+        console.log(`[DEBUG-BADGE] ✅ Badge agregado exitosamente para pedido ${pedidoId}`);
+        console.log(`[DEBUG-BADGE] - Badge HTML:`, badge.outerHTML);
+        console.log(`[DEBUG-BADGE] - Badge padre (botón):`, btn.outerHTML);
     }
 
     async function refrescarBadgesObservacionesDespacho() {
+        console.log(`[DEBUG] 🔄 refrescarBadgesObservacionesDespacho INICIADO`);
+        
         try {
             const rows = Array.from(document.querySelectorAll('tr[data-pedido-id]'));
+            console.log(`[DEBUG] - Filas encontradas con data-pedido-id: ${rows.length}`);
+            
             const ids = rows
                 .map(r => r.getAttribute('data-pedido-id'))
                 .filter(Boolean)
                 .map(v => parseInt(v, 10))
                 .filter(n => Number.isFinite(n));
 
-            console.log(`[DEBUG] refrescarBadges - IDs encontrados:`, ids);
+            console.log(`[DEBUG] - IDs de pedidos extraídos:`, ids);
 
-            if (ids.length === 0) return;
+            if (ids.length === 0) {
+                console.log(`[DEBUG] 🚫 No hay IDs de pedidos, saliendo`);
+                return;
+            }
 
             // Detectar si estamos en despacho o asesores
             const isDespachoPage = window.location.pathname.includes('/despacho');
@@ -173,8 +209,11 @@
                 ? '/despacho/observaciones/resumen'
                 : '/asesores/pedidos/observaciones-despacho/resumen';
                 
-            console.log(`[DEBUG] Refrescando badges desde: ${url}`);
+            console.log(`[DEBUG] - Página actual: ${window.location.pathname}`);
+            console.log(`[DEBUG] - ¿Es página de despacho?: ${isDespachoPage}`);
+            console.log(`[DEBUG] - URL a consultar: ${url}`);
 
+            console.log(`[DEBUG] 📡 Enviando request al servidor...`);
             const r = await fetch(url, {
                 method: 'POST',
                 headers: {
@@ -186,19 +225,25 @@
                 cache: 'no-store',
             });
 
+            console.log(`[DEBUG] - Response status: ${r.status}`);
+            console.log(`[DEBUG] - Response ok: ${r.ok}`);
+
             const data = await r.json().catch(() => null);
-            console.log(`[DEBUG] Respuesta del servidor:`, data);
+            console.log(`[DEBUG] 📦 Respuesta del servidor:`, data);
             
             const map = (data && data.success && data.data) ? data.data : {};
-            console.log(`[DEBUG] Map de unread counts:`, map);
+            console.log(`[DEBUG] - Map de unread counts:`, map);
 
+            console.log(`[DEBUG] 🎨 Renderizando badges para cada pedido...`);
             ids.forEach((pedidoId) => {
                 const unread = parseInt(map?.[pedidoId]?.unread ?? '0', 10) || 0;
-                console.log(`[DEBUG] Pedido ${pedidoId} - unread: ${unread}`);
+                console.log(`[DEBUG] - Pedido ${pedidoId} - unread: ${unread}`);
                 __renderBadge(pedidoId, unread);
             });
+            
+            console.log(`[DEBUG] ✅ Refrescado de badges completado`);
         } catch (e) {
-            console.error('Error refrescando badges de observaciones despacho:', e);
+            console.error('[DEBUG] ❌ Error refrescando badges de observaciones despacho:', e);
         }
     }
 
@@ -369,10 +414,8 @@
 
         await cargarObservacionesDespachoIndex();
 
-        console.log(`[DEBUG-BADGE] Llamando a marcarNotificacionesComoVistas desde abrirModal`);
-        // Marcar notificaciones como vistas cuando el usuario abre el modal
-        await marcarNotificacionesComoVistas(pedidoId);
-        console.log(`[DEBUG-BADGE] Modal abierto y notificaciones marcadas como vistas`);
+        console.log(`[DEBUG-BADGE] Modal abierto - NO se marcan notificaciones como vistas automáticamente`);
+        console.log(`[DEBUG-BADGE] Las notaciones se marcarán como vistas solo cuando el usuario haga clic en el botón`);
     }
 
     function cerrarModalObservacionesDespachoIndex() {
@@ -895,23 +938,68 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        console.log(`[DEBUG] 🚀 DOMContentLoaded - Iniciando sistema de badges`);
+        console.log(`[DEBUG] - Página actual: ${window.location.pathname}`);
+        console.log(`[DEBUG] - URL completa: ${window.location.href}`);
+        
         try {
+            console.log(`[DEBUG] 🔍 Buscando filas con data-pedido-id...`);
             const rows = Array.from(document.querySelectorAll('tr[data-pedido-id]'));
             const ids = rows.map(r => r.getAttribute('data-pedido-id')).filter(Boolean);
+            console.log(`[DEBUG] - Filas encontradas: ${rows.length}`);
+            console.log(`[DEBUG] - IDs encontrados:`, ids);
+            
             const ejecutar = async () => {
+                console.log(`[DEBUG] ⏰ Iniciando carga de previews...`);
                 for (const id of ids) {
+                    console.log(`[DEBUG] - Cargando preview para pedido ${id}...`);
                     await cargarPreviewObservacionesDespacho(id);
                     await new Promise(r => setTimeout(r, 25));
                 }
+                console.log(`[DEBUG] ✅ Previews cargados`);
+                
                 // Refresh badges after loading previews
+                console.log(`[DEBUG] 🔄 Refrescando badges después de cargar previews...`);
                 await refrescarBadgesObservacionesDespacho();
 
                 // Setup WebSocket para tiempo real
+                console.log(`[DEBUG] 📡 Configurando WebSocket...`);
                 setupObservacionesRealtime();
+                console.log(`[DEBUG] ✅ Sistema de badges completamente inicializado`);
             };
             ejecutar();
         } catch (e) {
-            console.error('Error inicializando previews de observaciones despacho:', e);
+            console.error('[DEBUG] ❌ Error inicializando previews de observaciones despacho:', e);
         }
+
+        // ==================== EVENT LISTENER PARA BOTONES DE OBSERVACIONES ====================
+        // Marcar como visto solo cuando el usuario hace clic en el botón 💬
+        document.addEventListener('click', function(e) {
+            const botonObs = e.target.closest('.despacho-obs-btn[data-pedido-id]');
+            if (botonObs) {
+                const pedidoId = botonObs.getAttribute('data-pedido-id');
+                console.log(`[DEBUG-BADGE] 🖱️ USUARIO HIZO CLIC EN BOTÓN DE OBSERVACIONES`);
+                console.log(`[DEBUG-BADGE] - Pedido ID: ${pedidoId}`);
+                console.log(`[DEBUG-BADGE] - Botón:`, botonObs);
+                console.log(`[DEBUG-BADGE] - Event target:`, e.target);
+                
+                // Verificar estado actual antes de marcar
+                const wasRecentlySeen = isBadgeRecentlySeen(pedidoId);
+                console.log(`[DEBUG-BADGE] - ¿Era visto recientemente antes del clic?: ${wasRecentlySeen}`);
+                
+                // Marcar como visto en localStorage inmediatamente
+                console.log(`[DEBUG-BADGE] 📝 Marcando como visto en localStorage...`);
+                setBadgeSeen(pedidoId);
+                console.log(`[DEBUG-BADGE] ✅ Marcado como visto en localStorage`);
+                
+                // También marcar como visto en el backend
+                console.log(`[DEBUG-BADGE] 📡 Marcando como visto en el backend...`);
+                marcarNotificacionesComoVistas(pedidoId);
+                console.log(`[DEBUG-BADGE] ✅ Solicitado marcado como visto en backend`);
+                
+                console.log(`[DEBUG-BADGE] 🎯 Badge ${pedidoId} marcado como visto por clic del usuario`);
+                console.log(`[DEBUG-BADGE] 🔄 El badge debería desaparecer ahora`);
+            }
+        });
     });
 })();

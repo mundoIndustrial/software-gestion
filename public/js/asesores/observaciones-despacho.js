@@ -63,21 +63,41 @@
     function __renderBadge(pedidoId, count) {
         console.log(`[Asesores] __renderBadge llamado - pedidoId: ${pedidoId}, count: ${count}`);
         
-        const btn = document.querySelector(`.btn-ver-dropdown[data-pedido-id="${pedidoId}"]`);
+        // Lógica principal: Si hay observaciones no leídas, mostrar badge
+        // El localStorage solo se usa para persistencia cuando el usuario hace clic
+        if (count > 0) {
+            console.log(`[Asesores] 🆕 Hay ${count} observaciones no leídas - MOSTRAR badge`);
+            console.log(`[Asesores] - El badge debe aparecer siempre que haya observaciones no leídas`);
+        } else {
+            // Si no hay observaciones no leídas, verificar localStorage
+            const wasRecentlySeen = isBadgeRecentlySeen(pedidoId);
+            console.log(`[Asesores] - No hay observaciones no leídas, verificando localStorage...`);
+            console.log(`[Asesores] isBadgeRecentlySeen - pedidoId: ${pedidoId}, seenTime: ${getSeenBadges()[pedidoId]}`);
+            console.log(`[Asesores] Badge ${pedidoId} visto hace ${Math.floor((Date.now() - getSeenBadges()[pedidoId]) / (1000 * 60 * 60))} horas, es reciente: ${wasRecentlySeen}`);
+            
+            if (wasRecentlySeen) {
+                console.log(`[Asesores] 🚫 Badge ${pedidoId} fue visto recientemente y no hay nuevas observaciones, no mostrar`);
+                __clearBadge(pedidoId);
+                return;
+            } else {
+                console.log(`[Asesores] ✅ Badge ${pedidoId} no fue visto recientemente, se podría mostrar si hubiera observaciones`);
+            }
+        }
+        
+        // Buscar en botones de despacho primero
+        let btn = document.querySelector(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
         console.log(`[Asesores] Botón encontrado para render:`, btn);
         
         if (!btn) {
-            console.warn(`[Asesores] No se encontró botón para pedido ${pedidoId}`);
-            return;
+            // Buscar en botones de asesores/pedidos
+            btn = document.querySelector(`.btn-ver-dropdown[data-pedido-id="${pedidoId}"]`);
+            console.log(`[Asesores] Botón encontrado para render:`, btn);
         }
         
-        // Verificar si el badge fue visto recientemente
-        const wasRecentlySeen = isBadgeRecentlySeen(pedidoId);
-        console.log(`[Asesores] Badge ${pedidoId} fue visto recientemente: ${wasRecentlySeen}`);
+        console.log(`[Asesores] Botón final a usar:`, btn);
         
-        if (wasRecentlySeen) {
-            console.log(`[Asesores] Badge ${pedidoId} fue visto recientemente, no mostrar`);
-            __clearBadge(pedidoId);
+        if (!btn) {
+            console.warn(`[Asesores] No se encontró botón para pedido ${pedidoId}`);
             return;
         }
         
@@ -199,12 +219,32 @@
 
         await cargarObservacionesDespachoAsesores();
 
-        // Marcar como visto en localStorage inmediatamente
-        setBadgeSeen(pedidoId);
+        console.log('[Asesores] Modal abierto - NO se marcan notificaciones como vistas automáticamente');
+        console.log('[Asesores] Las notificaciones se marcarán como vistas solo cuando el usuario haga clic en el botón');
+    }
 
-        // Marcar notificaciones como vistas cuando el usuario abre el modal
+    function cerrarModalObservacionesDespachoAsesores() {
+        const modal = document.getElementById('modalObservacionesDespachoAsesores');
+        if (!modal) return;
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        modal.style.display = '';
+    }
+
+    // Marcar notificaciones como vistas cuando el usuario hace clic
+    async function marcarNotificacionesComoVistas(pedidoId) {
+        console.log(`[Asesores] marcarNotificacionesComoVistas llamado para pedidoId: ${pedidoId}`);
+        
         try {
-            const r = await fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`, {
+            // Detectar si estamos en despacho o asesores
+            const isDespachoPage = window.location.pathname.includes('/despacho');
+            const url = isDespachoPage 
+                ? `/despacho/${pedidoId}/observaciones/marcar-vistas`
+                : `/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`;
+                
+            console.log(`[Asesores] Marcando notificaciones como vistas en: ${url}`);
+            
+            const r = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -216,33 +256,22 @@
             });
 
             const data = await r.json().catch(() => null);
+            console.log(`[Asesores] Respuesta del servidor al marcar como vistas:`, data);
+            
             if (data && data.success) {
                 console.log(`[Asesores] Notificaciones marcadas como vistas para pedido ${pedidoId}`);
+                console.log(`[Asesores] Llamando a __clearBadge para pedido ${pedidoId}`);
                 // Ahora sí limpiar el badge
                 __clearBadge(pedidoId);
                 // Refrescar para confirmar
+                console.log(`[Asesores] Refrescando badges después de marcar como vistas`);
                 refrescarBadgesObservacionesDespachoAsesores();
             } else {
-                console.warn(`[Asesores] Error marcando notificaciones como vistas para pedido ${pedidoId}`);
+                console.warn(`[Asesores] Error marcando notificaciones como vistas para pedido ${pedidoId}:`, data);
             }
         } catch (e) {
-            console.error('Error marcando notificaciones como vistas:', e);
+            console.error(`[Asesores] Error en marcarNotificacionesComoVistas:`, e);
         }
-    }
-
-    function cerrarModalObservacionesDespachoAsesores() {
-        const modal = document.getElementById('modalObservacionesDespachoAsesores');
-        if (!modal) return;
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        modal.style.display = '';
-
-        // NO limpiar badge automáticamente - ya se limpió al abrir
-        // const pedidoId = window.__asesoresObsDespachoCtx?.pedidoId;
-        // if (pedidoId) {
-        //     __clearBadge(pedidoId);
-        //     refrescarBadgesObservacionesDespachoAsesores();
-        // }
     }
 
     async function cargarObservacionesDespachoAsesores() {
@@ -690,6 +719,46 @@
 
         // Setup WebSocket para tiempo real
         setupObservacionesRealtimeAsesores();
+
+        // ==================== EVENT LISTENER PARA BOTONES DE OBSERVACIONES ====================
+        // Marcar como visto solo cuando el usuario hace clic en el botón 💬 o dropdown
+        document.addEventListener('click', function(e) {
+            // Buscar botón directo 💬
+            const botonObs = e.target.closest('.despacho-obs-btn[data-pedido-id]');
+            if (botonObs) {
+                const pedidoId = botonObs.getAttribute('data-pedido-id');
+                console.log(`[Asesores] Usuario hizo clic en botón de observaciones - Pedido ${pedidoId}`);
+                
+                // Marcar como visto en localStorage inmediatamente
+                setBadgeSeen(pedidoId);
+                
+                // También marcar como visto en el backend
+                marcarNotificacionesComoVistas(pedidoId);
+                
+                console.log(`[Asesores] Badge ${pedidoId} marcado como visto por clic del usuario`);
+                return;
+            }
+            
+            // Buscar opción en dropdown
+            const opcionDropdown = e.target.closest('[onclick*="abrirModalObservacionesDespachoAsesores"]');
+            if (opcionDropdown) {
+                // Extraer pedidoId del onclick
+                const onclickStr = opcionDropdown.getAttribute('onclick') || '';
+                const match = onclickStr.match(/abrirModalObservacionesDespachoAsesores\((\d+)/);
+                if (match) {
+                    const pedidoId = match[1];
+                    console.log(`[Asesores] Usuario hizo clic en opción dropdown de observaciones - Pedido ${pedidoId}`);
+                    
+                    // Marcar como visto en localStorage inmediatamente
+                    setBadgeSeen(pedidoId);
+                    
+                    // También marcar como visto en el backend
+                    marcarNotificacionesComoVistas(pedidoId);
+                    
+                    console.log(`[Asesores] Badge ${pedidoId} marcado como visto por clic en dropdown`);
+                }
+            }
+        });
     });
 
     window.refrescarBadgesObservacionesDespachoAsesores = refrescarBadgesObservacionesDespachoAsesores;
