@@ -1544,40 +1544,21 @@ class BodegaPedidoService
                 'hay_pendientes' => isset($estadosCount['Pendiente']) && $estadosCount['Pendiente'] > 0
             ]);
             
-            // Determinar el nuevo estado del pedido - SOLO cambiar a "Pendiente"
-            $nuevoEstado = $pedido->estado; // Mantener el actual por defecto
+            // IMPORTANTE: NO actualizar el estado del pedido principal desde bodega
+            // Los cambios de estado deben manejarse exclusivamente desde el módulo de despacho
+            $nuevoEstado = $pedido->estado; // Siempre mantener el estado actual
             
-            // Únicamente cambiar a "Pendiente" si hay ítems pendientes
-            if (isset($estadosCount['Pendiente']) && $estadosCount['Pendiente'] > 0) {
-                $nuevoEstado = 'Pendiente';
-            }
-            // IMPORTANTE: NUNCA cambiar a "Entregado" o "Anulada" desde bodega
-            // Esos cambios solo deben manejarse desde el módulo de despacho
-            // Para otros estados, mantener el estado actual del pedido
+            // NO actualizar el estado - mantener el estado actual del pedido
+            // Esto evita que se cambie a "Pendiente" cuando se marca algo como pendiente en bodega
             
-            // Actualizar el estado si cambió
-            if ($nuevoEstado !== $pedido->estado) {
-                $estadoAnterior = $pedido->estado;
-                $pedido->update([
-                    'estado' => $nuevoEstado,
-                    'updated_at' => now()
-                ]);
-                
-                \Log::info('[BodegaPedidoService] Estado del pedido actualizado', [
-                    'pedido_id' => $pedido->id,
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'estado_anterior' => $estadoAnterior,
-                    'estado_nuevo' => $nuevoEstado,
-                    'motivo' => 'Cambio desde bodega - Solo permite Pendiente'
-                ]);
-            } else {
-                \Log::info('[BodegaPedidoService] No se actualiza el estado - sin cambios', [
-                    'pedido_id' => $pedido->id,
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'estado_actual' => $pedido->estado,
-                    'nuevo_estado' => $nuevoEstado
-                ]);
-            }
+            // NO actualizar el estado - mantener siempre el estado actual del pedido
+            // Los cambios de estado deben manejarse exclusivamente desde el módulo de despacho
+            \Log::info('[BodegaPedidoService] No se actualiza el estado del pedido - política de bodega', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'estado_mantenido' => $pedido->estado,
+                'motivo' => 'El estado del pedido no se modifica desde bodega'
+            ]);
             
             // SIEMPRE disparar evento de actualización cuando hay cambios en bodega
             // para que el frontend de despacho se actualice en tiempo real

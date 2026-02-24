@@ -69,10 +69,17 @@
                                     $rowspanPrenda = count($tallas) > 0 ? count($tallas) : 1;
                                 @endphp
                                 @foreach($tallas as $indexTalla => $talla)
-                                    <tr class="hover:bg-slate-50 transition-colors"
+                                    @php
+                                        $estadoActual = $talla['estado_bodega'] ?? '';
+                                        $filaAmarilla = $estadoActual === 'Pendiente';
+                                    @endphp
+                                    <tr class="hover:bg-slate-50 transition-colors {{ $filaAmarilla ? 'bg-yellow-100' : '' }}"
                                         data-numero-pedido="{{ $item['numero_pedido'] }}"
                                         data-asesor="{{ $item['asesor'] ?? ($pedido['asesor'] ?? '') }}"
                                         data-empresa="{{ $item['empresa'] ?? ($pedido['cliente'] ?? '') }}"
+                                        @if($filaAmarilla)
+                                        style="background-color: rgba(254, 243, 199, 0.5) !important;"
+                                        @endif
                                     >
                                         <!-- DESCRIPCIÓN (PRENDA) - Solo en primera talla -->
                                         @if($indexTalla === 0)
@@ -234,31 +241,22 @@
                                             >
                                         </td>
                                         
-                                        <!-- ESTADO -->
+                                        <!-- ESTADO (ESTÁTICO) -->
                                         <td class="px-4 py-3" style="width: 18%;">
-                                            <select
-                                                class="estado-select w-full px-2 py-1 border border-slate-300 bg-white text-black text-xs font-semibold uppercase rounded"
-                                                data-numero-pedido="{{ $item['numero_pedido'] }}"
-                                                data-talla="{{ $talla['talla'] }}"
-                                                data-prenda-nombre="{{ $item['descripcion']['nombre_prenda'] ?? ($item['descripcion']['nombre'] ?? '') }}"
-                                                data-cantidad="{{ $cantidadTotal }}"
-                                                data-original-estado="{{ $talla['estado_bodega'] ?? '' }}"
-                                            >
-                                                <option value="">ESTADO</option>
-                                                <option value="Pendiente" {{ ($talla['estado_bodega'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
-                                                <option value="Entregado" {{ ($talla['estado_bodega'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
-                                                <option value="Homologar" {{ ($talla['estado_bodega'] ?? null) === 'Homologar' ? 'selected' : '' }}>HOMOLOGAR</option>
-                                                <option value="Anulado" {{ ($talla['estado_bodega'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
-                                            </select>
-
-                                            <button
-                                                type="button"
-                                                onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $talla['talla'] }}')"
-                                                class="w-full px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase rounded transition mt-1"
-                                                style="display: none;"
-                                            >
-                                                GUARDAR
-                                            </button>
+                                            <div class="w-full px-2 py-1 border border-slate-300 bg-slate-100 text-black text-xs font-semibold uppercase rounded" 
+                                                 style="background-color: rgb(254, 243, 199); color: rgb(120, 53, 15);">
+                                                @php
+                                                    $estadoActual = $talla['estado_bodega'] ?? '';
+                                                    $estadoTexto = match($estadoActual) {
+                                                        'Pendiente' => 'PENDIENTE',
+                                                        'Entregado' => 'ENTREGADO',
+                                                        'Homologar' => 'HOMOLOGAR',
+                                                        'Anulado' => 'ANULADO',
+                                                        default => $estadoActual ?: 'SIN ESTADO'
+                                                    };
+                                                @endphp
+                                                {{ $estadoTexto }}
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach

@@ -487,7 +487,7 @@ class DespachoController extends Controller
                 ->join('bodega_detalles_talla', 'bodega_detalles_talla.pedido_produccion_id', '=', 'pedidos_produccion.id')
                 ->whereNotNull('pedidos_produccion.numero_pedido')
                 ->where('pedidos_produccion.numero_pedido', '!=', '')
-                ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'Entregado'])
+                ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'Entregado', 'Anulada', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
                 ->where('bodega_detalles_talla.area', 'Costura')
                 ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
                 ->select('pedidos_produccion.*') // Evitar columnas duplicadas
@@ -800,7 +800,7 @@ class DespachoController extends Controller
                 ->join('bodega_detalles_talla', 'bodega_detalles_talla.pedido_produccion_id', '=', 'pedidos_produccion.id')
                 ->whereNotNull('pedidos_produccion.numero_pedido')
                 ->where('pedidos_produccion.numero_pedido', '!=', '')
-                ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'Entregado'])
+                ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'Entregado', 'Anulada', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
                 ->where('bodega_detalles_talla.area', 'EPP')
                 ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
                 ->select('pedidos_produccion.*') // Evitar columnas duplicadas
