@@ -39,7 +39,7 @@
     <div class="ordenes-section">
         <div class="section-title">
             <span class="material-symbols-rounded">checkroom</span>
-            <h3>MIS PRENDAS - RECIBOS DE COSTURA</h3>
+            <h3>RECIBOS DE COSTURA</h3>
             <span class="ordenes-count">{{ count($prendasConRecibos ?? []) }}</span>
         </div>
 
@@ -1470,16 +1470,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 0.875rem; font-family: 'Poppins', sans-serif; resize: none; focus: outline none;"
                     placeholder="Escribe tu novedad aquí..." 
                     rows="4"></textarea>
-                
-                <div style="margin-bottom: 1rem; margin-top: 1rem;">
-                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">TIPO DE NOVEDAD</label>
-                    <select id="tipoNovedadSelect" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-family: 'Poppins', sans-serif; font-size: 0.85rem; color: #333; background: white;">
-                        <option value="observacion">Observación</option>
-                        <option value="problema">Problema</option>
-                        <option value="cambio">Cambio</option>
-                        <option value="correccion">Corrección</option>
-                    </select>
-                </div>
 
                 <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
                     <button type="button" onclick="guardarNovedad()" style="flex: 1; padding: 0.5rem 1rem; background: #22c55e; color: white; border: none; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease;">
@@ -1752,12 +1742,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const prendaNumeroDisplay = document.getElementById('prendaNumeroPedidoDisplay');
         const reciboNumeroDisplay = document.getElementById('prendaNumeroReciboDisplay');
         const textareaDescripcion = document.getElementById('novedadDescripcionText');
-        const selectTipo = document.getElementById('tipoNovedadSelect');
         
         if (prendaNumeroDisplay) prendaNumeroDisplay.textContent = '#' + numeroPedido;
         if (reciboNumeroDisplay) reciboNumeroDisplay.textContent = numeroRecibo;
         if (textareaDescripcion) textareaDescripcion.value = '';
-        if (selectTipo) selectTipo.value = 'observacion';
         
         // Cargar novedades existentes del usuario actual
         cargarNovedadesDelUsuario(numeroPedido, prendaId);
@@ -1862,15 +1850,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function guardarNovedad() {
         const textareaDescripcion = document.getElementById('novedadDescripcionText');
-        const selectTipo = document.getElementById('tipoNovedadSelect');
         
-        if (!textareaDescripcion || !selectTipo) {
+        if (!textareaDescripcion) {
             mostrarError('Error', 'Elementos del formulario no encontrados');
             return;
         }
         
         const descripcion = textareaDescripcion.value.trim();
-        const tipoNovedad = selectTipo.value;
+        const tipoNovedad = 'observacion';
 
         if (!descripcion) {
             mostrarError('Validación', 'Por favor describe la novedad');
@@ -1896,7 +1883,6 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 if (textareaDescripcion) textareaDescripcion.value = '';
-                if (selectTipo) selectTipo.value = 'observacion';
                 
                 // Recargar novedades
                 cargarNovedadesDelUsuario(window.novedadActual.numeroPedido, window.novedadActual.prendaId);

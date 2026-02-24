@@ -96,7 +96,7 @@
                                 <div class="orden-buttons">
                                     <a
                                         class="btn-ver-recibos"
-                                        href="{{ route('control-calidad.ver-pedido', $prenda['numero_pedido']) }}?tipo_recibo={{ urlencode($tipoRecibo) }}">
+                                        href="{{ route('control-calidad.ver-pedido', $prenda['numero_pedido']) }}?tipo_recibo={{ urlencode($tipoRecibo) }}&prenda_id={{ $prenda['prenda_id'] }}">
                                         <span class="material-symbols-rounded">receipt</span>
                                         VER
                                     </a>
@@ -112,7 +112,7 @@
                                     <span class="orden-fecha-label">REGISTRO</span>
                                     <span>{{ $prenda['fecha_creacion']->format('d/m/Y') }}</span>
                                 </div>
-                                <a href="{{ route('control-calidad.ver-pedido', $prenda['numero_pedido']) }}?tipo_recibo={{ urlencode($tipoRecibo) }}" class="action-arrow">
+                                <a href="{{ route('control-calidad.ver-pedido', $prenda['numero_pedido']) }}?tipo_recibo={{ urlencode($tipoRecibo) }}&prenda_id={{ $prenda['prenda_id'] }}" class="action-arrow">
                                     <span class="material-symbols-rounded">arrow_forward</span>
                                 </a>
                                 <div class="orden-pedido-footer">

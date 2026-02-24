@@ -33,6 +33,7 @@ class ObtenerPrendasRecibosService
         // Obtener todos los recibos de costura activos con relaciones (incluyendo procesos)
         $query = ConsecutivoReciboPedido::where('activo', 1)
             ->whereIn('tipo_recibo', $tiposRecibo)
+            ->whereIn('area', ['Corte', 'Costura', 'Control de Calidad'])
             ->with(['prenda', 'prenda.pedidoProduccion', 'prenda.procesosPrenda', 'pedido', 'pedido.prendas']);
         
         // Para cortadores: excluir PENDIENTE_INSUMOS (misma lógica que /recibos-costura)
@@ -45,6 +46,7 @@ class ObtenerPrendasRecibosService
         \Log::info(' [ObtenerPrendasRecibosService] Recibos encontrados', [
             'total_recibos' => $recibos->count(),
             'tipos_buscados' => $tiposRecibo,
+            'areas_permitidas' => ['Corte', 'Costura', 'Control de Calidad'],
             'prenda_ids' => $recibos->pluck('prenda_id')->toArray()
         ]);
 
@@ -151,7 +153,15 @@ class ObtenerPrendasRecibosService
                     } else {
                         // COSTURA/COSTURA-BODEGA: Validar que el usuario sea el encargado del proceso Costura para esta PRENDA
                         // (Sin restricción de estado, permite: Pendiente, En Ejecución, etc)
-                        if ($tipoOperario === 'costurero') {
+                        // EXCEPCIÓN: vista-costura ve TODOS sin restricción de encargado
+                        if ($tipoOperario === 'vista-costura') {
+                            // vista-costura ve todos los recibos sin validación de encargado
+                            \Log::info(' [Filtro VISTA-COSTURA] ✓ Usuario con rol vista-costura ve todos los recibos', [
+                                'prenda_id' => $prenda->id,
+                                'numero_pedido' => $pedido->numero_pedido,
+                                'usuario' => $usuario->name
+                            ]);
+                        } else if ($tipoOperario === 'costurero') {
                             $usuarioNombre = strtolower(trim($usuario->name));
                             
                             // Buscar proceso Costura específicamente para esta prenda
@@ -313,6 +323,10 @@ class ObtenerPrendasRecibosService
     {
         if ($usuario->hasRole('cortador')) {
             return 'cortador';
+        }
+
+        if ($usuario->hasRole('vista-costura')) {
+            return 'vista-costura';
         }
 
         if ($usuario->hasRole('costurero')) {

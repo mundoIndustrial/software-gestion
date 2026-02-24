@@ -150,19 +150,42 @@ class OperarioController extends Controller
         // Obtener fotos relacionadas del pedido
         $fotos = $this->obtenerFotosPedido($numeroPedido);
 
+        // Obtener parámetros de la URL
+        $prendaIdRequest = request('prenda_id');
+        $tipoReciboRequest = request('tipo_recibo', 'COSTURA');
+
         // Obtener número de recibo COSTURA para operarios
         $numeroReciboCostura = null;
-        $reciboCostura = \App\Models\ConsecutivoReciboPedido::where('pedido_produccion_id', $pedidoDB->id)
-            ->where('tipo_recibo', 'COSTURA')
-            ->where('activo', 1)
-            ->first();
         
-        if ($reciboCostura) {
-            $numeroReciboCostura = $reciboCostura->consecutivo_actual;
+        // Si viene prenda_id específicamente, obtener el recibo de esa prenda
+        if ($prendaIdRequest) {
+            $reciboEspecifico = \App\Models\ConsecutivoReciboPedido::where('pedido_produccion_id', $pedidoDB->id)
+                ->where('prenda_id', $prendaIdRequest)
+                ->where('tipo_recibo', $tipoReciboRequest)
+                ->where('activo', 1)
+                ->first();
+            
+            if ($reciboEspecifico) {
+                $numeroReciboCostura = $reciboEspecifico->consecutivo_actual;
+            }
+        }
+        
+        // Fallback: si no encuentra con prenda_id específica, obtener el primero
+        if (!$numeroReciboCostura) {
+            $reciboCostura = \App\Models\ConsecutivoReciboPedido::where('pedido_produccion_id', $pedidoDB->id)
+                ->where('tipo_recibo', $tipoReciboRequest)
+                ->where('activo', 1)
+                ->first();
+            
+            if ($reciboCostura) {
+                $numeroReciboCostura = $reciboCostura->consecutivo_actual;
+            }
         }
 
         \Log::info('[OperarioController]  Renderizando ver-pedido', [
             'numero_pedido' => $numeroPedido,
+            'prenda_id_request' => $prendaIdRequest,
+            'tipo_recibo_request' => $tipoReciboRequest,
             'total_fotos' => count($fotos),
             'numero_recibo_costura' => $numeroReciboCostura
         ]);
@@ -172,6 +195,8 @@ class OperarioController extends Controller
             'pedido' => [
                 'numero_pedido' => $pedidoDB->numero_pedido,
                 'numero_recibo_costura' => $numeroReciboCostura,
+                'prenda_id' => $prendaIdRequest,
+                'tipo_recibo' => $tipoReciboRequest,
                 'cliente' => $pedidoDB->cliente,
                 'asesor' => $pedidoDB->asesor_id ? $pedidoDB->asesor_id : 'N/A',
                 'asesora' => $pedidoDB->asesor_id ? $pedidoDB->asesor_id : 'N/A',
@@ -564,10 +589,30 @@ class OperarioController extends Controller
             // NO se debe usar para filtrar procesos, solo para indicar cuál mostrar primero
             // Todos los procesos deben ser devueltos para poder mostrar fotos de todos ellos
             $tipoReciboFiltro = request('tipo_recibo', '');
+            $prendaIdFiltro = request('prenda_id', null);
+            
             \Log::info('[OperarioController.getPedidoData]  Tipo recibo solicitado (informativo, NO filtra procesos)', [
                 'numero_pedido' => $numeroPedido,
-                'tipo_recibo' => $tipoReciboFiltro
+                'tipo_recibo' => $tipoReciboFiltro,
+                'prenda_id_filtro' => $prendaIdFiltro
             ]);
+
+            // Si se solicita una prenda específica, filtrar solo esa prenda
+            if ($prendaIdFiltro && isset($responseData['prendas']) && is_array($responseData['prendas'])) {
+                $prendaIdFiltroInt = (int) $prendaIdFiltro;
+                $prendasFiltradas = array_filter($responseData['prendas'], function($prenda) use ($prendaIdFiltroInt) {
+                    $prendaId = $prenda['id'] ?? $prenda['prenda_pedido_id'] ?? null;
+                    return (int)$prendaId === $prendaIdFiltroInt;
+                });
+                
+                $responseData['prendas'] = array_values($prendasFiltradas); // Reindexar
+                
+                \Log::info('[OperarioController.getPedidoData] Filtrando por prenda específica', [
+                    'numero_pedido' => $numeroPedido,
+                    'prenda_id_solicitada' => $prendaIdFiltroInt,
+                    'prendas_encontradas' => count($prendasFiltradas)
+                ]);
+            }
 
             // FILTRO BODEGUERO: Si es bodeguero, filtrar procesos para mostrar SOLO 'costura-bodega'
             if ($esBodyguero && isset($responseData['prendas']) && is_array($responseData['prendas'])) {
@@ -1002,7 +1047,7 @@ class OperarioController extends Controller
         try {
             $usuario = Auth::user();
             $esCortador = $usuario->hasRole('cortador');
-            $esCosturero = $usuario->hasRole('costurero');
+            $esCosturero = $usuario->hasAnyRole(['costurero', 'vista-costura']);
 
             // Obtener novedades de la prenda
             $novedades = \DB::table('prendas_pedido_novedades_recibo')

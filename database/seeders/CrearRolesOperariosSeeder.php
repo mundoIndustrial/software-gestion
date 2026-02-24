@@ -48,6 +48,15 @@ class CrearRolesOperariosSeeder extends Seeder
             ]
         );
 
+        // Crear rol Vista Costura
+        Role::firstOrCreate(
+            ['name' => 'vista-costura'],
+            [
+                'description' => 'Operario con acceso a la vista de costura',
+                'requires_credentials' => false,
+            ]
+        );
+
         $this->command->info(' Roles de operarios creados exitosamente');
     }
 }

@@ -54,8 +54,12 @@ class DashboardController extends Controller
                 return redirect()->route('cotizaciones.pendientes');
             }
 
-            if ($roleName === 'cortador' || $roleName === 'costurero') {
+            if ($roleName === 'cortador' || $roleName === 'costurero' || $roleName === 'vista-costura') {
                 return redirect()->route('operario.dashboard');
+            }
+
+            if ($roleName === 'lider-control-calidad' || $roleName === 'control de calidad') {
+                return redirect()->route('control-calidad.dashboard');
             }
 
             if ($roleName === 'visualizador_cotizaciones_logo') {

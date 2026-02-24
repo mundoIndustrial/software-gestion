@@ -23,7 +23,7 @@ class OperarioRepositoryImpl implements OperarioRepository
     {
         $usuario = User::find($id);
 
-        if (!$usuario || !$usuario->hasAnyRole(['cortador', 'costurero'])) {
+        if (!$usuario || !$usuario->hasAnyRole(['cortador', 'costurero', 'vista-costura'])) {
             return null;
         }
 

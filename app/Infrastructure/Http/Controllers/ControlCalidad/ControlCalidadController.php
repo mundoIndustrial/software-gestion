@@ -32,8 +32,16 @@ class ControlCalidadController extends Controller
         $usuario = auth()->user();
         $esLiderControlCalidad = $usuario && $usuario->hasRole('lider-control-calidad');
 
-        $recibos = ConsecutivoReciboPedido::where('activo', 1)
-            ->whereIn('tipo_recibo', ['COSTURA', 'REFLECTIVO'])
+        // Filtrar recibos que estén en el área de Control de Calidad
+        $recibosQuery = ConsecutivoReciboPedido::where('activo', 1)
+            ->whereIn('tipo_recibo', ['COSTURA', 'REFLECTIVO']);
+
+        // Si NO es líder, filtrar solo por área = 'control de calidad'
+        if (!$esLiderControlCalidad) {
+            $recibosQuery->where('area', 'control de calidad');
+        }
+
+        $recibos = $recibosQuery
             ->with(['pedido', 'prenda', 'pedido.prendas'])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -60,24 +68,6 @@ class ControlCalidadController extends Controller
                     $ultimoProcesoPorPedido[$p->numero_pedido] = $p->proceso;
                 }
             }
-        }
-
-        // Filtrar por área de Control de Calidad según el último proceso en procesos_prenda
-        // EXCEPCIÓN: el rol lider-control-calidad ve todos los recibos (sin filtro por área)
-        if (!$esLiderControlCalidad) {
-            $recibos = $recibos->filter(function ($recibo) use ($ultimoProcesoPorPedido) {
-                $numeroPedido = $recibo->pedido?->numero_pedido;
-                if (!$numeroPedido) {
-                    return false;
-                }
-
-                $proceso = $ultimoProcesoPorPedido[$numeroPedido] ?? null;
-                if (!$proceso) {
-                    return false;
-                }
-
-                return $this->esControlDeCalidadProceso($proceso);
-            })->values();
         }
 
         // Formatear para reutilizar el mismo layout de tarjetas
@@ -133,18 +123,18 @@ class ControlCalidadController extends Controller
                 ->with('error', 'Pedido no encontrado');
         }
 
-        // Seguridad adicional: solo permitir ver pedidos que estén en Control de Calidad
+        // Seguridad adicional: solo permitir ver pedidos que tengan al menos un recibo en Control de Calidad
         // EXCEPCIÓN: el rol lider-control-calidad puede ver cualquier recibo COSTURA/REFLECTIVO
         if (!$esLiderControlCalidad) {
-            $ultimoProceso = DB::table('procesos_prenda')
-                ->where('numero_pedido', $pedidoDB->numero_pedido)
-                ->orderBy('fecha_inicio', 'desc')
-                ->orderBy('id', 'desc')
-                ->value('proceso');
+            $tieneReciboEnControlCalidad = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedidoDB->id)
+                ->whereIn('tipo_recibo', ['COSTURA', 'REFLECTIVO'])
+                ->where('area', 'control de calidad')
+                ->where('activo', 1)
+                ->exists();
 
-            if (!$this->esControlDeCalidadProceso($ultimoProceso)) {
+            if (!$tieneReciboEnControlCalidad) {
                 return redirect()->route('control-calidad.dashboard')
-                    ->with('error', 'Este pedido no está en Control de Calidad');
+                    ->with('error', 'Este pedido no tiene recibos en Control de Calidad');
             }
         }
 
@@ -157,10 +147,16 @@ class ControlCalidadController extends Controller
         // del recibo seleccionado en el mismo campo que el blade espera.
         $numeroReciboSeleccionado = null;
         if ($tipoRecibo) {
-            $reciboSeleccionado = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedidoDB->id)
+            $queryRecibo = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedidoDB->id)
                 ->where('tipo_recibo', $tipoRecibo)
-                ->where('activo', 1)
-                ->first();
+                ->where('activo', 1);
+
+            // Si no es líder, filtrar por área
+            if (!$esLiderControlCalidad) {
+                $queryRecibo->where('area', 'control de calidad');
+            }
+
+            $reciboSeleccionado = $queryRecibo->first();
 
             if ($reciboSeleccionado) {
                 $numeroReciboSeleccionado = $reciboSeleccionado->consecutivo_actual;
@@ -169,10 +165,16 @@ class ControlCalidadController extends Controller
 
         // Fallback a COSTURA (compatibilidad)
         if (!$numeroReciboSeleccionado) {
-            $reciboCostura = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedidoDB->id)
+            $queryReciboCostura = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedidoDB->id)
                 ->where('tipo_recibo', 'COSTURA')
-                ->where('activo', 1)
-                ->first();
+                ->where('activo', 1);
+
+            // Si no es líder, filtrar por área
+            if (!$esLiderControlCalidad) {
+                $queryReciboCostura->where('area', 'control de calidad');
+            }
+
+            $reciboCostura = $queryReciboCostura->first();
 
             if ($reciboCostura) {
                 $numeroReciboSeleccionado = $reciboCostura->consecutivo_actual;

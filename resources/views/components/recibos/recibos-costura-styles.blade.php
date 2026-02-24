@@ -57,9 +57,9 @@
 }
 
 .table-header th:nth-child(3) {
-    width: 120px !important;
+    width: auto !important;
     min-width: 120px !important;
-    max-width: 120px !important;
+    max-width: none !important;
 }
 
 .table-header th:nth-child(4) {
@@ -158,10 +158,13 @@
 }
 
 .table tbody tr td:nth-child(3) {
-    width: 120px !important;
+    width: auto !important;
     min-width: 120px !important;
-    max-width: 120px !important;
+    max-width: none !important;
     text-align: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
 
 .table tbody tr td:nth-child(4) {

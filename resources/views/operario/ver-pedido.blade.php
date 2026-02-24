@@ -973,7 +973,8 @@
     let fotosGlobales = []; // Variable global para guardar las fotos
     let indiceActualGaleria = 0; // Índice de la foto actual en la galería
     let datosCompletoPedido = {}; // Guardar los datos completos del pedido para extraer fotos por prenda
-    
+    let numeroReciboActual = null; // Guardará el número del recibo actual a mostrar en el header
+
 
     /**
      * Extrae las fotos solo de la prenda actualmente visible
@@ -1102,6 +1103,11 @@
             // Obtener el número de recibo del proceso actual
             if (procesoActualSeleccionado && prendaActual.recibos) {
                 numeroRecibo = prendaActual.recibos[procesoActualSeleccionado];
+            }
+            
+            // Fallback a la variable global si existen
+            if (!numeroRecibo && numeroReciboActual) {
+                numeroRecibo = numeroReciboActual;
             }
             
             // Actualizar el header
@@ -1389,9 +1395,21 @@
         // USAR EL NUEVO ENDPOINT: /api/operario/pedido/{numeroPedido}
         // Retorna exactamente la misma estructura que /pedidos-public/{id}/recibos-datos
         let apiUrl = '/api/operario/pedido/' + numeroPedido;
+        
+        // Agregar parámetros a la URL
+        const params = new URLSearchParams();
         if (tipoRecibo) {
-            apiUrl += '?tipo_recibo=' + encodeURIComponent(tipoRecibo);
+            params.append('tipo_recibo', tipoRecibo);
         }
+        if (prendaIdParam) {
+            params.append('prenda_id', prendaIdParam);
+        }
+        
+        const queryString = params.toString();
+        if (queryString) {
+            apiUrl += '?' + queryString;
+        }
+        
         console.log('🌐 URL API (nuevo endpoint operario):', apiUrl);
         
         console.log(' Iniciando fetch a:', apiUrl);
@@ -1434,6 +1452,9 @@
                 
                 // Obtener del blade (inyectado por el controlador)
                 numeroReciboCostura = '{{ $pedido["numero_recibo_costura"] ?? null }}';
+                
+                // Guardar en variable global para usar en actualizarNumeroPrendaHeader
+                numeroReciboActual = numeroReciboCostura;
                 
                 console.log('🔢 [NUMERO RECIBO COSTURA]', numeroReciboCostura, 'tipo:', typeof numeroReciboCostura);
 

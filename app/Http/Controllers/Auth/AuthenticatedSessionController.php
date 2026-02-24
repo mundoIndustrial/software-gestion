@@ -177,14 +177,20 @@ class AuthenticatedSessionController extends Controller
                 return redirect(route('operario.dashboard', absolute: false));
             }
 
+            // Vista Costura - Dashboard de operario
+            if ($roleName === 'vista-costura') {
+                return redirect(route('operario.dashboard', absolute: false));
+            }
+
             // Supervisor Personal - Gestión de asistencia
             if ($roleName === 'supervisor-personal') {
                 return redirect(route('asistencia-personal.index', absolute: false));
             }
         }
 
-        // Admin y otros - Dashboard principal
-        return redirect(route('dashboard', absolute: false));
+        // Fallback: Si no hay rol definido o no coincide con ninguno, redirigir al home
+        // Nunca redirigir a /dashboard si el usuario no tiene un rol específico asignado
+        return redirect('/');
     }
 
     /**

@@ -160,7 +160,7 @@ class ObtenerPedidosOperarioService
             return 'cortador';
         }
 
-        if ($usuario->hasRole('costurero')) {
+        if ($usuario->hasAnyRole(['costurero', 'vista-costura'])) {
             return 'costurero';
         }
 

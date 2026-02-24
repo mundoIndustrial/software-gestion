@@ -29,7 +29,7 @@
                         </svg>
                     </button>
                 </th>
-                <th style="width: 120px;">
+                <th style="width: auto; min-width: 120px;">
                     Área
                     <button type="button" class="filter-btn" 
                             data-filter-type="area"

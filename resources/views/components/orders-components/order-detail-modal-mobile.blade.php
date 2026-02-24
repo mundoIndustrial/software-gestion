@@ -1148,20 +1148,48 @@ window.llenarReciboCosturaMobile = function(data) {
                         
                         if (typeof tallasGenero === 'object' && !Array.isArray(tallasGenero)) {
                             Object.entries(tallasGenero).forEach(([talla, val]) => {
-                                let cantidad = 0;
+                                // Array de colores para esta talla con sus cantidades
+                                const coloresPorTalla = [];
+                                
                                 if (Array.isArray(val)) {
-                                    cantidad = val.reduce((acc, item) => {
-                                        const c = (item && typeof item === 'object') ? (parseInt(item.cantidad) || 0) : (parseInt(item) || 0);
-                                        return acc + c;
-                                    }, 0);
+                                    // Cada elemento del array tiene {cantidad, color}
+                                    val.forEach((item) => {
+                                        if (item && typeof item === 'object') {
+                                            const c = parseInt(item.cantidad) || 0;
+                                            const color = (item.color || '').trim();
+                                            if (c > 0) {
+                                                // Si tiene color (y no es "SIN COLOR"), mostrarlo con el formato "cantidad-color"
+                                                if (color && color.toUpperCase() !== 'SIN COLOR') {
+                                                    coloresPorTalla.push(`${c}-${color.toUpperCase()}`);
+                                                } else {
+                                                    // Si no tiene color o es "SIN COLOR", solo la cantidad
+                                                    coloresPorTalla.push(c.toString());
+                                                }
+                                            }
+                                        }
+                                    });
                                 } else if (val && typeof val === 'object') {
-                                    cantidad = parseInt(val.cantidad) || 0;
+                                    // Objeto con cantidad y color
+                                    const c = parseInt(val.cantidad) || 0;
+                                    const color = (val.color || '').trim();
+                                    if (c > 0) {
+                                        if (color && color.toUpperCase() !== 'SIN COLOR') {
+                                            coloresPorTalla.push(`${c}-${color.toUpperCase()}`);
+                                        } else {
+                                            coloresPorTalla.push(c.toString());
+                                        }
+                                    }
                                 } else {
-                                    cantidad = parseInt(val) || 0;
+                                    // Número directo (fallback)
+                                    const c = parseInt(val) || 0;
+                                    if (c > 0) {
+                                        coloresPorTalla.push(c.toString());
+                                    }
                                 }
                                 
-                                if (cantidad > 0) {
-                                    items.push(`${talla}: <span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
+                                // Si hay colores con sus cantidades, agregarlos
+                                if (coloresPorTalla.length > 0) {
+                                    items.push(`${talla}: <span style="color: #d32f2f; font-weight: bold;">${coloresPorTalla.join(', ')}</span>`);
                                 }
                             });
                         }
@@ -1204,26 +1232,82 @@ window.llenarReciboCosturaMobile = function(data) {
                             html += `<strong>OBSERVACIONES:</strong><br>${procesoReflectivo.observaciones.toUpperCase()}<br>`;
                         }
                         
-                        // Tallas del reflectivo (solo si difieren de las de la prenda)
+                        // Tallas del reflectivo
+                        // Lógica: 
+                        // - Si de_bodega=FALSE (COSTURA normal): omitir tallas del reflectivo si son iguales a la prenda
+                        // - Si de_bodega=TRUE (REFLECTIVO recibo): SIEMPRE mostrar tallas del reflectivo
                         if (procesoReflectivo.tallas && typeof procesoReflectivo.tallas === 'object') {
-                            const tallasRefLineas = [];
-                            ['dama', 'caballero', 'unisex'].forEach((genero) => {
-                                if (procesoReflectivo.tallas[genero] && typeof procesoReflectivo.tallas[genero] === 'object') {
-                                    const items = [];
-                                    Object.entries(procesoReflectivo.tallas[genero]).forEach(([talla, cantidad]) => {
-                                        const c = parseInt(cantidad) || 0;
-                                        if (c > 0) {
-                                            items.push(`${talla}: <span style="color: #d32f2f; font-weight: bold;">${c}</span>`);
-                                        }
-                                    });
-                                    if (items.length > 0) {
-                                        tallasRefLineas.push(`<strong>${genero.toUpperCase()}:</strong> ${items.join(', ')}`);
+                            // Función para normalizar y extraer valores de cantidad
+                            const normalizarValor = (val) => {
+                                if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'object' && val[0].cantidad) {
+                                    return parseInt(val[0].cantidad) || 0;
+                                }
+                                return parseInt(val) || 0;
+                            };
+                            
+                            // Función para comparar dos objetos de tallas (sin importar orden ni case)
+                            const sonTallasIguales = (tallas1, tallas2) => {
+                                if (!tallas1 && !tallas2) return true;
+                                if (!tallas1 || !tallas2) return false;
+                                
+                                const generos = ['dama', 'caballero', 'unisex'];
+                                for (let genero of generos) {
+                                    // Obtener las tallas normalizando el case del género
+                                    const t1Data = tallas1[genero] || tallas1[genero.toUpperCase()] || {};
+                                    const t2Data = tallas2[genero] || tallas2[genero.toUpperCase()] || {};
+                                    
+                                    const t1Keys = Object.keys(t1Data);
+                                    const t2Keys = Object.keys(t2Data);
+                                    
+                                    // Si la cantidad de tallas es diferente, no son iguales
+                                    if (t1Keys.length !== t2Keys.length) return false;
+                                    
+                                    // Comparar valores para cada talla (sin importar orden)
+                                    for (let talla of t1Keys) {
+                                        const val1 = normalizarValor(t1Data[talla]);
+                                        const val2 = normalizarValor(t2Data[talla]);
+                                        if (val1 !== val2) return false;
                                     }
                                 }
-                            });
+                                return true;
+                            };
                             
-                            if (tallasRefLineas.length > 0) {
-                                html += `<strong>TALLAS</strong><br>${tallasRefLineas.join('<br>')}<br>`;
+                            // Determinar si se deben mostrar las tallas del reflectivo
+                            let mostrarTallasReflectivo = true;
+                            
+                            // Si prenda NO es de bodega (de_bodega=FALSE), aplicar comparación
+                            // Si prenda SÍ es de bodega (de_bodega=TRUE), SIEMPRE mostrar tallas
+                            if (!prenda.de_bodega) {
+                                // COSTURA normal: solo mostrar tallas si son diferentes
+                                const tallasIguales = sonTallasIguales(prenda.tallas, procesoReflectivo.tallas);
+                                mostrarTallasReflectivo = !tallasIguales;
+                                console.log('📱 [TALLAS COMPARACIÓN] COSTURA normal (de_bodega=FALSE) - ¿Son iguales?:', tallasIguales, '→ Mostrar:', mostrarTallasReflectivo);
+                            } else {
+                                // REFLECTIVO recibo (de_bodega=TRUE): siempre mostrar
+                                console.log('📱 [TALLAS COMPARACIÓN] REFLECTIVO recibo (de_bodega=TRUE) → SIEMPRE mostrar tallas');
+                            }
+                            
+                            // Mostrar tallas del reflectivo según la lógica anterior
+                            if (mostrarTallasReflectivo) {
+                                const tallasRefLineas = [];
+                                ['dama', 'caballero', 'unisex'].forEach((genero) => {
+                                    if (procesoReflectivo.tallas[genero] && typeof procesoReflectivo.tallas[genero] === 'object') {
+                                        const items = [];
+                                        Object.entries(procesoReflectivo.tallas[genero]).forEach(([talla, cantidad]) => {
+                                            const c = parseInt(cantidad) || 0;
+                                            if (c > 0) {
+                                                items.push(`${talla}: <span style="color: #d32f2f; font-weight: bold;">${c}</span>`);
+                                            }
+                                        });
+                                        if (items.length > 0) {
+                                            tallasRefLineas.push(`<strong>${genero.toUpperCase()}:</strong> ${items.join(', ')}`);
+                                        }
+                                    }
+                                });
+                                
+                                if (tallasRefLineas.length > 0) {
+                                    html += `<strong>TALLAS</strong><br>${tallasRefLineas.join('<br>')}<br>`;
+                                }
                             }
                         }
                     }
@@ -1256,10 +1340,11 @@ window.llenarReciboCosturaMobile = function(data) {
                             html += `<strong>OBSERVACIONES:</strong><br>${proceso.observaciones.toUpperCase()}<br>`;
                         }
                         
-                        // TALLAS del proceso específico (o fallback a prenda)
+                        // TALLAS del proceso específico (SIEMPRE mostrar para procesos NO-COSTURA)
                         let tallasObj = proceso.tallas;
                         if (!tallasObj || Object.keys(tallasObj).length === 0) {
-                            tallasObj = prenda.tallas; // Fallback a tallas de la prenda
+                            // Si no hay tallas en el proceso, usar fallback de la prenda
+                            tallasObj = prenda.tallas;
                         }
                         
                         if (tallasObj && typeof tallasObj === 'object') {
