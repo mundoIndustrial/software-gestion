@@ -130,6 +130,22 @@
       </ul>
     </div>
 
+    @elseif(auth()->user()->hasRole('Costura-Bodega'))
+    <!-- COSTURA-BODEGA: Menú con única opción Pendiente Costura -->
+    <div class="menu-section">
+      <span class="menu-section-title">Gestión de Bodega</span>
+      <ul class="menu-list" role="navigation">
+      <li class="menu-item">
+        <a href="{{ route('gestion-bodega.pendientes-costura') }}"
+           class="menu-link {{ request()->routeIs('gestion-bodega.pendientes-costura') ? 'active' : '' }}"
+           aria-label="Pendiente Costura">
+          <span class="material-symbols-rounded" aria-hidden="true">checklist</span>
+          <span class="menu-label">Pendiente Costura</span>
+        </a>
+      </li>
+      </ul>
+    </div>
+
     @elseif(auth()->user()->hasRole('supervisor_gerencia'))
     <!-- SUPERVISOR GERENCIA: Menú especializado para supervisores de gerencia -->
     <div class="menu-section">
