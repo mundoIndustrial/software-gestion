@@ -1,3 +1,140 @@
+<!-- Modal Selección de Tipo (Prenda o EPP) -->
+<div id="modalSeleccionTipo" class="fixed inset-0 bg-black/50 flex items-center justify-center" style="display: none; z-index: 999999;">
+    <div class="bg-white rounded-lg w-full max-w-md shadow-2xl">
+        <!-- Header -->
+        <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+            <h2 class="text-white text-lg font-bold">Seleccionar Tipo de Producto</h2>
+            <button onclick="cerrarModalSeleccion()" class="text-white hover:bg-blue-700 p-1 rounded transition">
+                <i class="material-symbols-rounded">close</i>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 space-y-4">
+            <p class="text-gray-700 text-center mb-6">¿Qué tipo de producto deseas agregar?</p>
+            
+            <button type="button" onclick="seleccionarTipoProducto('prenda')" 
+                class="w-full px-6 py-4 border-2 border-blue-400 rounded-lg hover:bg-blue-50 transition flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <i class="material-symbols-rounded text-2xl text-blue-600">checkroom</i>
+                    <div class="text-left">
+                        <div class="font-semibold text-gray-900">Prenda</div>
+                        <div class="text-xs text-gray-500">Ropa y accesorios personalizados</div>
+                    </div>
+                </div>
+                <i class="material-symbols-rounded text-blue-600">arrow_forward</i>
+            </button>
+
+            <button type="button" onclick="seleccionarTipoProducto('epp')" 
+                class="w-full px-6 py-4 border-2 border-green-400 rounded-lg hover:bg-green-50 transition flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <i class="material-symbols-rounded text-2xl text-green-600">engineering</i>
+                    <div class="text-left">
+                        <div class="font-semibold text-gray-900">EPP</div>
+                        <div class="text-xs text-gray-500">Equipo de protección personal</div>
+                    </div>
+                </div>
+                <i class="material-symbols-rounded text-green-600">arrow_forward</i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Agregar Prenda al Pedido -->
+<div id="modalAgregarPrenda" class="fixed inset-0 bg-black/50 flex items-center justify-center" style="display: none; z-index: 999999;">
+    <div class="bg-white rounded-lg w-full max-w-2xl shadow-2xl overflow-hidden" style="z-index: 1000000; max-height: 90vh; display: flex; flex-direction: column;">
+        
+        <!-- Header Azul -->
+        <div class="bg-blue-600 px-6 py-4 flex justify-between items-center flex-shrink-0">
+            <h2 class="text-white text-lg font-bold">Agregar Prenda al Pedido</h2>
+            <button onclick="cerrarModalAgregarPrenda()" class="text-white hover:bg-blue-700 p-1 rounded transition">
+                <i class="material-symbols-rounded">close</i>
+            </button>
+        </div>
+
+        <!-- Body con scroll -->
+        <div class="p-6 space-y-4 overflow-y-auto flex-1" style="max-height: calc(90vh - 140px);">
+            
+            <!-- Descripción -->
+            <div>
+                <label for="descripcionPrenda" class="text-sm font-medium text-gray-700 block mb-2">Descripción</label>
+                <textarea id="descripcionPrenda" placeholder="Detalles de la prenda..." rows="3"
+                    class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 text-sm resize-none"></textarea>
+            </div>
+
+            <!-- Cantidad -->
+            <div>
+                <label for="cantidadPrenda" class="text-sm font-medium text-gray-700 block mb-2">Cantidad</label>
+                <input type="number" id="cantidadPrenda" value="1" min="1" oninput="actualizarTotalPrenda()"
+                    class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 text-sm">
+            </div>
+
+            <!-- Valor Unitario y Total -->
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label for="valorUnitarioPrenda" class="text-sm font-medium text-gray-700 block mb-2">Valor Unitario (Opcional)</label>
+                    <input type="number" id="valorUnitarioPrenda" min="0" step="0.01" placeholder="0" oninput="actualizarTotalPrenda()"
+                        class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 text-sm">
+                </div>
+                <div>
+                    <label for="totalPrenda" class="text-sm font-medium text-gray-700 block mb-2">Total</label>
+                    <input type="text" id="totalPrenda" value="0" readonly
+                        class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm focus:outline-none cursor-default">
+                </div>
+            </div>
+
+            <!-- Observaciones -->
+            <div>
+                <label for="observacionesPrenda" class="text-sm font-medium text-gray-700 block mb-2">Observaciones (Opcional)</label>
+                <textarea id="observacionesPrenda" placeholder="Detalles adicionales..." rows="2"
+                    class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 text-sm resize-none"></textarea>
+            </div>
+
+            <!-- Sección de Fotos (opcional) -->
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <label class="text-sm font-medium text-gray-700">Fotos de la Prenda (Opcional)</label>
+                    <button type="button" onclick="agregarFotoPrenda()" 
+                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg font-medium flex items-center gap-1 hover:bg-blue-700 transition">
+                        <i class="material-symbols-rounded" style="font-size: 16px;">add_photo_alternate</i>
+                        Agregar Foto
+                    </button>
+                </div>
+                
+                <!-- Contenedor de imágenes -->
+                <div id="contenedorFotosPrenda" class="grid grid-cols-3 gap-3 border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[120px] transition-all" 
+                    tabindex="0" style="outline: none;" data-zona="prenda" onmouseover="this.focus()" onmouseleave="this.blur()" 
+                    ondrop="handleDropPrenda(event)" ondragover="handleDragOverPrenda(event)" ondragleave="handleDragLeavePrenda(event)">
+                    
+                    <!-- Mensaje inicial -->
+                    <div id="mensajeDragDropPrenda" class="col-span-3 flex flex-col items-center justify-center text-gray-400">
+                        <i class="material-symbols-rounded text-4xl mb-2">cloud_upload</i>
+                        <p class="text-sm">Arrastra imágenes aquí o haz clic en "Agregar Foto"</p>
+                        <p class="text-xs">También puedes pegar con Ctrl+V</p>
+                        <p class="text-xs">Formatos: JPG, PNG, GIF, WebP, JFIF</p>
+                    </div>
+                </div>
+                
+                <!-- Input oculto para subir archivos -->
+                <input type="file" id="inputFotosPrenda" multiple accept="image/*" style="display: none;" onchange="manejarSubidaFotosPrenda(this)">
+            </div>
+        </div>
+
+        <!-- Footer fijo -->
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3 flex-shrink-0">
+            <button onclick="cerrarModalAgregarPrenda()" 
+                class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 transition text-sm">
+                Cancelar
+            </button>
+            <button id="btnFinalizarAgregarPrenda" onclick="finalizarAgregarPrenda()"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium flex items-center gap-2 hover:bg-blue-700 transition text-sm">
+                <i class="material-symbols-rounded" style="font-size: 20px;">check_circle</i>
+                Finalizar
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Agregar EPP al Pedido -->
 <div id="modalAgregarEPP" class="fixed inset-0 bg-black/50 flex items-center justify-center" style="display: none; z-index: 999999;">
     <div class="bg-white rounded-lg w-full max-w-2xl shadow-2xl overflow-hidden" style="z-index: 1000000; max-height: 90vh; display: flex; flex-direction: column;">
@@ -1973,6 +2110,324 @@ function abrirModalEditarEPPNuevo(epp) {
 }
 </script>
 
+<script>
+// ========== FUNCIONES PARA MODAL DE SELECCIÓN ==========
+
+function abrirModalSeleccion() {
+    console.log('[abrirModalSeleccion] Abriendo modal de selección de tipo');
+    const modal = document.getElementById('modalSeleccionTipo');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function cerrarModalSeleccion() {
+    console.log('[cerrarModalSeleccion] Cerrando modal de selección de tipo');
+    const modal = document.getElementById('modalSeleccionTipo');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function seleccionarTipoProducto(tipo) {
+    console.log('[seleccionarTipoProducto] Tipo seleccionado:', tipo);
+    cerrarModalSeleccion();
+    
+    if (tipo === 'prenda') {
+        abrirModalAgregarPrenda();
+    } else if (tipo === 'epp') {
+        abrirModalAgregarEPP();
+    }
+}
+
+// ========== FUNCIONES PARA MODAL DE PRENDA ==========
+
+function abrirModalAgregarPrenda() {
+    console.log('[abrirModalAgregarPrenda] Abriendo modal de prenda');
+    const modal = document.getElementById('modalAgregarPrenda');
+    if (modal) {
+        // Limpiar formulario
+        document.getElementById('descripcionPrenda').value = '';
+        document.getElementById('cantidadPrenda').value = '1';
+        document.getElementById('valorUnitarioPrenda').value = '';
+        document.getElementById('totalPrenda').value = '0';
+        document.getElementById('observacionesPrenda').value = '';
+        limpiarFotosPrenda();
+        
+        modal.style.display = 'flex';
+    }
+}
+
+function cerrarModalAgregarPrenda() {
+    console.log('[cerrarModalAgregarPrenda] Cerrando modal de prenda');
+    const modal = document.getElementById('modalAgregarPrenda');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function actualizarTotalPrenda() {
+    const cantidad = parseFloat(document.getElementById('cantidadPrenda').value) || 0;
+    const valorUnitario = parseFloat(document.getElementById('valorUnitarioPrenda').value) || 0;
+    const total = cantidad * valorUnitario;
+    document.getElementById('totalPrenda').value = total.toFixed(2);
+}
+
+function agregarFotoPrenda() {
+    console.log('[agregarFotoPrenda] Abriendo selector de archivos');
+    const input = document.getElementById('inputFotosPrenda');
+    if (input) {
+        input.click();
+    }
+}
+
+function manejarSubidaFotosPrenda(input) {
+    console.log('[manejarSubidaFotosPrenda] Archivos seleccionados:', input.files.length);
+    
+    const archivos = Array.from(input.files);
+    const contenedor = document.getElementById('contenedorFotosPrenda');
+    const mensaje = document.getElementById('mensajeDragDropPrenda');
+    
+    archivos.forEach((archivo, index) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const div = document.createElement('div');
+            div.className = 'relative group rounded-lg overflow-hidden';
+            div.innerHTML = `
+                <img src="${e.target.result}" class="w-full h-24 object-cover border border-gray-300 rounded-lg cursor-pointer" 
+                    onclick="mostrarVistaPreviaFotoPrenda(this.src)">
+                <button type="button" class="absolute top-1 right-1 bg-red-600 text-white p-1 rounded opacity-0 group-hover:opacity-100 transition" 
+                    onclick="this.parentElement.remove(); validarBotonesPrenda()">
+                    <i class="material-symbols-rounded" style="font-size: 16px;">close</i>
+                </button>
+            `;
+            contenedor.appendChild(div);
+            if (mensaje) mensaje.style.display = 'none';
+            validarBotonesPrenda();
+        };
+        reader.readAsDataURL(archivo);
+    });
+    
+    input.value = '';
+}
+
+function limpiarFotosPrenda() {
+    const contenedor = document.getElementById('contenedorFotosPrenda');
+    const mensaje = document.getElementById('mensajeDragDropPrenda');
+    
+    if (contenedor) {
+        const fotos = contenedor.querySelectorAll('div.relative');
+        fotos.forEach(foto => foto.remove());
+    }
+    
+    if (mensaje) mensaje.style.display = 'flex';
+}
+
+function mostrarVistaPreviaFotoPrenda(src) {
+    console.log('[mostrarVistaPreviaFotoPrenda] Mostrando vista previa');
+    // Implementar modal de vista previa si es necesario
+}
+
+function handleDropPrenda(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const contenedor = e.currentTarget;
+    contenedor.style.borderColor = '#ccc';
+    
+    if (e.dataTransfer.files.length > 0) {
+        const input = document.getElementById('inputFotosPrenda');
+        input.files = e.dataTransfer.files;
+        manejarSubidaFotosPrenda(input);
+    }
+}
+
+function handleDragOverPrenda(e) {
+    e.preventDefault();
+    e.currentTarget.style.borderColor = '#3b82f6';
+    e.currentTarget.style.backgroundColor = '#eff6ff';
+}
+
+function handleDragLeavePrenda(e) {
+    e.currentTarget.style.borderColor = '#d1d5db';
+    e.currentTarget.style.backgroundColor = 'transparent';
+}
+
+function validarBotonesPrenda() {
+    const descripcion = document.getElementById('descripcionPrenda').value.trim();
+    const cantidad = parseInt(document.getElementById('cantidadPrenda').value) || 0;
+    const valido = descripcion.length > 0 && cantidad > 0;
+    
+    const btnFinalizar = document.getElementById('btnFinalizarAgregarPrenda');
+    if (btnFinalizar) {
+        btnFinalizar.disabled = !valido;
+    }
+}
+
+function finalizarAgregarPrenda() {
+    console.log('[finalizarAgregarPrenda] Finalizando agregación de prenda');
+    
+    const descripcion = document.getElementById('descripcionPrenda').value.trim();
+    const cantidad = parseInt(document.getElementById('cantidadPrenda').value) || 1;
+    const valorUnitario = parseFloat(document.getElementById('valorUnitarioPrenda').value) || 0;
+    const total = parseFloat(document.getElementById('totalPrenda').value) || 0;
+    const observaciones = document.getElementById('observacionesPrenda').value.trim();
+    
+    if (!descripcion) {
+        alert('Por favor ingresa la descripción de la prenda');
+        return;
+    }
+    
+    // Obtener imágenes
+    const fotos = [];
+    const imagenes = document.querySelectorAll('#contenedorFotosPrenda img');
+    imagenes.forEach(img => {
+        fotos.push(img.src);
+    });
+    
+    // Crear objeto de prenda
+    const prenda = {
+        tipo: 'prenda',
+        id: Date.now(),
+        descripcion: descripcion,
+        cantidad: cantidad,
+        valorUnitario: valorUnitario,
+        total: total,
+        observaciones: observaciones,
+        imagenes: fotos
+    };
+    
+    console.log('[finalizarAgregarPrenda] Prenda creada:', prenda);
+    
+    // Agregar a ventana global para uso posterior
+    if (!window.prendasAgregadas) {
+        window.prendasAgregadas = [];
+    }
+    window.prendasAgregadas.push(prenda);
+    
+    // Agregar a window.itemsPedido para envío
+    if (!window.itemsPedido) {
+        window.itemsPedido = [];
+    }
+    
+    const prendaData = {
+        tipo: 'prenda',
+        id: prenda.id,
+        nombre_epp: descripcion,  // Usar mismo field que EPP para compatibilidad
+        cantidad: cantidad,
+        observaciones: observaciones || '-',
+        valor_unitario: valorUnitario,
+        total: total,
+        imagenes: fotos
+    };
+    
+    window.itemsPedido.push(prendaData);
+    
+    console.log('[finalizarAgregarPrenda] Prenda agregada a window.itemsPedido');
+    
+    // Renderizar en la tabla principal usando eppItemManager
+    if (window.eppItemManager && typeof window.eppItemManager.crearItem === 'function') {
+        console.log('[finalizarAgregarPrenda] Renderizando prenda en tabla principal');
+        window.eppItemManager.crearItem(
+            prenda.id,                // id
+            descripcion,               // nombre
+            'prenda',                  // categoria
+            cantidad,                  // cantidad
+            observaciones || '-',      // observaciones
+            fotos.map((src, idx) => ({  // imagenes
+                previewUrl: src,
+                base64: src,
+                nombre: `prenda_${prenda.id}_${idx}`
+            })),
+            prenda.id,                 // pedidoEppId
+            valorUnitario,             // valorUnitario
+            total                      // total
+        );
+    } else {
+        console.warn('[finalizarAgregarPrenda] eppItemManager no disponible');
+    }
+    
+    // Registrar en gestionItemsUI si está disponible
+    if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPAlOrden === 'function') {
+        window.gestionItemsUI.agregarEPPAlOrden(prendaData);
+        console.log('[finalizarAgregarPrenda] Prenda registrada en gestionItemsUI');
+    }
+    
+    // Guardar en la base de datos
+    guardarPrendaEnBD(prendaData);
+    
+    cerrarModalAgregarPrenda();
+}
+
+/**
+ * Guardar prenda en la base de datos
+ */
+function guardarPrendaEnBD(prendaData) {
+    const cotizacionId = document.querySelector('[data-cotizacion-id]')?.getAttribute('data-cotizacion-id') 
+        || new URLSearchParams(window.location.search).get('id')
+        || window.__COTIZACION_ID__;
+    
+    if (!cotizacionId) {
+        console.warn('[guardarPrendaEnBD] No se puede obtener el ID de cotización');
+        return;
+    }
+    
+    const datos = {
+        cotizacion_id: cotizacionId,
+        descripcion: prendaData.nombre_epp,
+        cantidad: prendaData.cantidad,
+        observaciones: prendaData.observaciones,
+        valor_unitario: prendaData.valor_unitario,
+        imagenes: prendaData.imagenes
+    };
+    
+    console.log('[guardarPrendaEnBD] Intentando guardar prenda:', datos);
+    
+    fetch('/api/cotizacion/prendas', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+        },
+        body: JSON.stringify(datos)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('[guardarPrendaEnBD] Prenda guardada exitosamente:', data);
+            if (window.mostrarNotificacion) {
+                window.mostrarNotificacion('Prenda guardada correctamente', 'success');
+            }
+        } else {
+            console.error('[guardarPrendaEnBD] Error:', data.error);
+            if (window.mostrarNotificacion) {
+                window.mostrarNotificacion('Error al guardar prenda: ' + data.error, 'error');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('[guardarPrendaEnBD] Error de conexión:', error);
+        if (window.mostrarNotificacion) {
+            window.mostrarNotificacion('Error de conexión: ' + error.message, 'error');
+        }
+    });
+}
+
+// Observadores de cambios en el formulario de prenda
+document.addEventListener('DOMContentLoaded', function() {
+    const descripcionPrenda = document.getElementById('descripcionPrenda');
+    const cantidadPrenda = document.getElementById('cantidadPrenda');
+    
+    if (descripcionPrenda) {
+        descripcionPrenda.addEventListener('input', validarBotonesPrenda);
+    }
+    
+    if (cantidadPrenda) {
+        cantidadPrenda.addEventListener('input', validarBotonesPrenda);
+    }
+});
+</script>
+
 <style>
     /* Asegurar que los toasts EPP aparezcan encima de todo */
     .toast-epp-container {
@@ -1982,6 +2437,21 @@ function abrirModalEditarEPPNuevo(epp) {
 
 <script>
 // Exportar funciones necesarias al objeto window para que estén disponibles globalmente
+window.abrirModalSeleccion = abrirModalSeleccion;
+window.cerrarModalSeleccion = cerrarModalSeleccion;
+window.seleccionarTipoProducto = seleccionarTipoProducto;
+window.abrirModalAgregarPrenda = abrirModalAgregarPrenda;
+window.cerrarModalAgregarPrenda = cerrarModalAgregarPrenda;
+window.actualizarTotalPrenda = actualizarTotalPrenda;
+window.agregarFotoPrenda = agregarFotoPrenda;
+window.manejarSubidaFotosPrenda = manejarSubidaFotosPrenda;
+window.limpiarFotosPrenda = limpiarFotosPrenda;
+window.mostrarVistaPreviaFotoPrenda = mostrarVistaPreviaFotoPrenda;
+window.handleDropPrenda = handleDropPrenda;
+window.handleDragOverPrenda = handleDragOverPrenda;
+window.handleDragLeavePrenda = handleDragLeavePrenda;
+window.validarBotonesPrenda = validarBotonesPrenda;
+window.finalizarAgregarPrenda = finalizarAgregarPrenda;
 window.abrirModalAgregarEPP = abrirModalAgregarEPP;
 window.abrirModalEditarEPPNuevo = abrirModalEditarEPPNuevo;
 window.resetearModalAgregarEPP = resetearModalAgregarEPP;
@@ -1997,5 +2467,26 @@ window.mostrarVistaPreviaFoto = mostrarVistaPreviaFoto;
 window.limpiarImagenesTemporales = limpiarImagenesTemporales;
 
 console.log('[EPP Modal] Funciones exportadas al objeto window');
+
+// ========== CERRAR MODALES AL HACER CLIC EN EL FONDO ==========
+document.addEventListener('click', function(e) {
+    // Cerrar modal de selección si se hace clic en el fondo
+    const modalSeleccion = document.getElementById('modalSeleccionTipo');
+    if (e.target === modalSeleccion) {
+        cerrarModalSeleccion();
+    }
+    
+    // Cerrar modal de prenda si se hace clic en el fondo
+    const modalPrenda = document.getElementById('modalAgregarPrenda');
+    if (e.target === modalPrenda) {
+        cerrarModalAgregarPrenda();
+    }
+    
+    // Cerrar modal de EPP si se hace clic en el fondo
+    const modalEPP = document.getElementById('modalAgregarEPP');
+    if (e.target === modalEPP) {
+        cerrarModalAgregarEPP();
+    }
+});
 </script>
 

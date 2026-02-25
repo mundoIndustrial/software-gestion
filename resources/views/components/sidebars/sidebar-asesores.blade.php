@@ -90,11 +90,11 @@
                             </a>
                         </li>
                         <li class="submenu-item">
-                            <a href="{{ route('asesores.pedidos.create', ['tipo' => 'EPP']) }}"
-                               class="menu-link {{ request()->routeIs('asesores.pedidos.create') && request()->query('tipo') === 'EPP' ? 'active' : '' }}"
-                               aria-label="Crear cotización EPP">
+                            <a href="{{ route('asesores.pedidos.create', ['tipo' => 'PARA_CLIENTE']) }}"
+                               class="menu-link {{ request()->routeIs('asesores.pedidos.create') && request()->query('tipo') === 'PARA_CLIENTE' ? 'active' : '' }}"
+                               aria-label="Crear cotización Para Cliente">
                                 <span class="material-symbols-rounded">engineering</span>
-                                <span class="menu-label">EPP</span>
+                                <span class="menu-label">Para Cliente</span>
                             </a>
                         </li>
                     </ul>
