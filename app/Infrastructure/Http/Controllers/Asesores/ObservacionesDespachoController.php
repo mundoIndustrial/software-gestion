@@ -4,6 +4,7 @@ namespace App\Infrastructure\Http\Controllers\Asesores;
 
 use App\Models\PedidoObservacionesDespacho;
 use App\Models\PedidoProduccion;
+use App\Models\BodegaNota;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -46,10 +47,17 @@ class ObservacionesDespachoController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        $observaciones = $rows->map(function ($row) {
+        $bodegaRows = BodegaNota::query()
+            ->where('pedido_produccion_id', $pedido->id)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $observacionesDespacho = $rows->map(function ($row) {
             return [
+                'source' => 'despacho',
                 'id' => (string) $row->uuid,
                 'contenido' => $row->contenido,
+                'talla' => null,
                 'usuario_id' => $row->usuario_id,
                 'usuario_nombre' => $row->usuario_nombre,
                 'usuario_rol' => $row->usuario_rol,
@@ -58,11 +66,35 @@ class ObservacionesDespachoController extends Controller
                 'created_at' => optional($row->created_at)->toISOString(),
                 'updated_at' => optional($row->updated_at)->toISOString(),
             ];
-        })->values()->all();
+        });
+
+        $observacionesBodega = $bodegaRows->map(function ($row) {
+            return [
+                'source' => 'bodega',
+                'id' => 'bodega-' . (string) $row->id,
+                'contenido' => $row->contenido,
+                'talla' => $row->talla,
+                'usuario_id' => $row->usuario_id,
+                'usuario_nombre' => $row->usuario_nombre,
+                'usuario_rol' => $row->usuario_rol,
+                'ip_address' => $row->ip_address,
+                'estado' => null,
+                'created_at' => optional($row->created_at)->toISOString(),
+                'updated_at' => optional($row->updated_at)->toISOString(),
+            ];
+        });
+
+        $unificado = $observacionesDespacho
+            ->concat($observacionesBodega)
+            ->sortByDesc(function ($item) {
+                return $item['updated_at'] ?: $item['created_at'] ?: '';
+            })
+            ->values()
+            ->all();
 
         return response()->json([
             'success' => true,
-            'data' => $observaciones,
+            'data' => $unificado,
         ]);
     }
 
@@ -101,14 +133,43 @@ class ObservacionesDespachoController extends Controller
             ->groupBy('pedido_produccion_id')
             ->pluck('unread', 'pedido_produccion_id');
 
+        $conteosBodega = BodegaNota::query()
+            ->selectRaw('pedido_produccion_id, COUNT(*) as unread')
+            ->whereIn('pedido_produccion_id', $permitidos)
+            ->whereNull('visto_at')
+            ->groupBy('pedido_produccion_id')
+            ->pluck('unread', 'pedido_produccion_id');
+
         $map = [];
         foreach ($permitidos as $pedidoId) {
-            $map[(int) $pedidoId] = ['unread' => (int) ($conteos[(int) $pedidoId] ?? 0)];
+            $unreadDespacho = (int) ($conteos[(int) $pedidoId] ?? 0);
+            $unreadBodega = (int) ($conteosBodega[(int) $pedidoId] ?? 0);
+            $map[(int) $pedidoId] = [
+                'unread' => $unreadDespacho + $unreadBodega,
+                'unread_despacho' => $unreadDespacho,
+                'unread_bodega' => $unreadBodega,
+            ];
         }
 
         return response()->json([
             'success' => true,
             'data' => $map,
+        ]);
+    }
+
+    public function marcarBodegaVistas(Request $request, PedidoProduccion $pedido): JsonResponse
+    {
+        if ($resp = $this->assertPuedeAccederPedido($pedido)) {
+            return $resp;
+        }
+
+        BodegaNota::query()
+            ->where('pedido_produccion_id', $pedido->id)
+            ->whereNull('visto_at')
+            ->update(['visto_at' => now()]);
+
+        return response()->json([
+            'success' => true,
         ]);
     }
 

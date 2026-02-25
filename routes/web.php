@@ -1793,6 +1793,16 @@ Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,contador,a
 });
 
 // ========================================
+// PDF - RUTAS GLOBALES (FUERA DE /asesores)
+// ========================================
+// Necesarias para que módulos como Contador puedan descargar PDFs sin depender de /asesores.
+Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho,contador,aprobador_cotizaciones'])->group(function () {
+    Route::get('/cotizacion/{id}/pdf/prenda', [PDFPrendaController::class, 'generate']);
+    Route::get('/cotizacion/{id}/pdf/combinada', [PDFCotizacionCombiadaController::class, 'generate']);
+    Route::get('/cotizacion/{id}/pdf/epp', [PDFEppController::class, 'generate']);
+});
+
+// ========================================
 // RUTAS PARA ASESORES (MÓDULO INDEPENDIENTE)
 // ========================================
 // Admin y supervisor_pedidos pueden acceder a asesores además del rol asesor
@@ -1847,6 +1857,10 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho'])->pr
         ->where('pedido', '[0-9]+')
         ->name('pedidos.observaciones-despacho.marcar-leidas');
 
+    Route::post('/pedidos/{pedido}/observaciones-despacho/marcar-bodega-vistas', [App\Infrastructure\Http\Controllers\Asesores\ObservacionesDespachoController::class, 'marcarBodegaVistas'])
+        ->where('pedido', '[0-9]+')
+        ->name('pedidos.observaciones-despacho.marcar-bodega-vistas');
+
     Route::post('/pedidos/{pedido}/observaciones-despacho/{observacionId}/actualizar', [App\Infrastructure\Http\Controllers\Asesores\ObservacionesDespachoController::class, 'actualizar'])
         ->where('pedido', '[0-9]+')
         ->where('observacionId', '[A-Za-z0-9\-]+')
@@ -1896,10 +1910,22 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho'])->pr
     // ========================================
     // RUTAS PDF ESPECÍFICAS - DEBE ESTAR ANTES DE LA RUTA GENÉRICA
     // ========================================
-    Route::get('/cotizacion/{id}/pdf/prenda', [PDFPrendaController::class, 'generate'])->name('cotizacion.pdf.prenda');
-    Route::get('/cotizacion/{id}/pdf/combinada', [PDFCotizacionCombiadaController::class, 'generate'])->name('cotizacion.pdf.combinada');
-    Route::get('/cotizacion/{id}/pdf/logo', [PDFLogoController::class, 'generate'])->name('cotizacion.pdf.logo');
-    Route::get('/cotizacion/{id}/pdf/epp', [PDFEppController::class, 'generate'])->name('cotizacion.pdf.epp');
+    Route::get('/cotizacion/{id}/pdf/prenda', [PDFPrendaController::class, 'generate'])
+        ->withoutMiddleware('role')
+        ->middleware('role:asesor,admin,supervisor_pedidos,despacho,contador,aprobador_cotizaciones')
+        ->name('cotizacion.pdf.prenda');
+    Route::get('/cotizacion/{id}/pdf/combinada', [PDFCotizacionCombiadaController::class, 'generate'])
+        ->withoutMiddleware('role')
+        ->middleware('role:asesor,admin,supervisor_pedidos,despacho,contador,aprobador_cotizaciones')
+        ->name('cotizacion.pdf.combinada');
+    Route::get('/cotizacion/{id}/pdf/logo', [PDFLogoController::class, 'generate'])
+        ->withoutMiddleware('role')
+        ->middleware('role:asesor,admin,supervisor_pedidos,despacho,contador,aprobador_cotizaciones,visualizador_cotizaciones_logo')
+        ->name('cotizacion.pdf.logo');
+    Route::get('/cotizacion/{id}/pdf/epp', [PDFEppController::class, 'generate'])
+        ->withoutMiddleware('role')
+        ->middleware('role:asesor,admin,supervisor_pedidos,despacho,contador,aprobador_cotizaciones')
+        ->name('cotizacion.pdf.epp');
     
     // RUTA GENÉRICA - Debe ser ÚLTIMA para no shadowers las rutas específicas
     Route::get('/cotizacion/{id}/pdf', [App\Http\Controllers\PDFCotizacionController::class, 'generarPDF'])->name('cotizacion.pdf');

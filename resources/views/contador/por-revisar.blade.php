@@ -16,6 +16,7 @@
                             ['key' => 'acciones', 'label' => 'Acciones', 'flex' => '0 0 160px', 'justify' => 'flex-start'],
                             ['key' => 'estado', 'label' => 'Estado', 'flex' => '0 0 150px', 'justify' => 'center'],
                             ['key' => 'numero', 'label' => 'Número', 'flex' => '0 0 140px', 'justify' => 'center'],
+                            ['key' => 'tipo', 'label' => 'Tipo', 'flex' => '0 0 120px', 'justify' => 'center'],
                             ['key' => 'fecha', 'label' => 'Fecha', 'flex' => '0 0 180px', 'justify' => 'center'],
                             ['key' => 'cliente', 'label' => 'Cliente', 'flex' => '0 0 200px', 'justify' => 'center'],
                             ['key' => 'asesora', 'label' => 'Asesora', 'flex' => '0 0 150px', 'justify' => 'center'],
@@ -51,7 +52,25 @@
                         @endphp
                         
                         @forelse($cotizacionesPaginadas as $cotizacion)
-                            <div class="table-row" data-cotizacion-id="{{ $cotizacion->id }}" data-numero="{{ $cotizacion->numero_cotizacion ?? 'N/A' }}" data-cliente="{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}" data-asesora="{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '') }}" data-fecha="{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : '' }}" data-estado="{{ $cotizacion->estado }}" data-novedades="{{ $cotizacion->novedades ?? '-' }}">
+                            @php
+                                $tipoId = (int) ($cotizacion->tipo_cotizacion_id ?? 0);
+                                $tipoLabel = match ($tipoId) {
+                                    1 => 'Combinada',
+                                    2 => 'Logo',
+                                    3 => 'Prenda',
+                                    default => (function () use ($cotizacion) {
+                                        $tipoCodigo = $cotizacion->tipoCotizacion?->codigo ?? $cotizacion->obtenerTipoCotizacion();
+                                        return in_array($tipoCodigo, ['PB', 'prenda_logo']) ? 'Combinada' : (in_array($tipoCodigo, ['B', 'logo']) ? 'Logo' : 'Prenda');
+                                    })(),
+                                };
+
+                                $tipoStyle = match ($tipoLabel) {
+                                    'Combinada' => 'background:#ede9fe;color:#5b21b6;',
+                                    'Logo' => 'background:#dbeafe;color:#1e40af;',
+                                    default => 'background:#dcfce7;color:#166534;',
+                                };
+                            @endphp
+                            <div class="table-row" data-cotizacion-id="{{ $cotizacion->id }}" data-numero="{{ $cotizacion->numero_cotizacion ?? 'N/A' }}" data-tipo="{{ $tipoLabel }}" data-cliente="{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}" data-asesora="{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '') }}" data-fecha="{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : '' }}" data-estado="{{ $cotizacion->estado }}" data-novedades="{{ $cotizacion->novedades ?? '-' }}">
                                 <!-- Acciones -->
                                 <div class="table-cell acciones-column" style="flex: 0 0 160px; justify-content: flex-start; position: relative;">
                                     <div class="actions-group">
@@ -105,11 +124,18 @@
                                         <span style="font-weight: 600;">{{ $cotizacion->numero_cotizacion ?? 'Por asignar' }}</span>
                                     </div>
                                 </div>
+
+                                <!-- Tipo -->
+                                <div class="table-cell" style="flex: 0 0 120px;" data-tipo="{{ $tipoLabel }}">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <span style="{{ $tipoStyle }} padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 700;">{{ $tipoLabel }}</span>
+                                    </div>
+                                </div>
                                 
                                 <!-- Fecha -->
                                 <div class="table-cell" style="flex: 0 0 180px;" data-fecha="{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : '' }}">
                                     <div class="cell-content" style="justify-content: center;">
-                                        <span>{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y H:i') : '-' }}</span>
+                                        <span>{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : '-' }}</span>
                                     </div>
                                 </div>
                                 

@@ -74,6 +74,9 @@
                                     Cliente
                                 </th>
                                 <th class="px-6 py-3 text-left font-medium text-slate-700">
+                                    Novedades
+                                </th>
+                                <th class="px-6 py-3 text-left font-medium text-slate-700">
                                     Observaciones
                                 </th>
                                 <th class="px-6 py-3 text-left font-medium text-slate-700">
@@ -106,13 +109,36 @@
                                     <td class="px-6 py-4 text-slate-600">
                                         {{ $pedido->cliente ?? '—' }}
                                     </td>
+                                    <td class="px-6 py-3" style="min-width: 320px;">
+                                        <div class="flex gap-2 items-center">
+                                            <textarea
+                                                class="despacho-novedades-preview w-56 px-2 py-1 border border-slate-300 rounded text-xs bg-slate-50 resize-none"
+                                                data-pedido-id="{{ $pedido->id }}"
+                                                rows="3"
+                                                readonly
+                                                title="{{ $pedido->novedades ?? '' }}"
+                                                style="height:72px"
+                                            >{{ !empty($pedido->novedades) ? $pedido->novedades : '—' }}</textarea>
+                                            <button
+                                                type="button"
+                                                onclick="abrirModalNovedadesDespachoIndex({{ $pedido->id }}, '{{ addslashes($pedido->numero_pedido) }}')"
+                                                data-pedido-id="{{ $pedido->id }}"
+                                                class="despacho-novedades-btn px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors"
+                                                title="Ver novedades"
+                                                style="position:relative"
+                                            >
+                                                💬
+                                            </button>
+                                        </div>
+                                    </td>
                                     <td class="px-6 py-4">
-                                        <div class="flex gap-2 items-start">
+                                        <div class="flex gap-2 items-center">
                                             <textarea
                                                 class="despacho-observaciones-preview w-56 px-2 py-1 border border-slate-300 rounded text-xs bg-slate-50 resize-none"
-                                                rows="2"
+                                                rows="3"
                                                 readonly
                                                 data-pedido-id="{{ $pedido->id }}"
+                                                style="height:72px"
                                             ></textarea>
                                             <button
                                                 type="button"
@@ -218,10 +244,80 @@
     </div>
 </div>
 
+@include('components.modals.novedades-advanced-modal')
+
 <script>
 console.log('🚀 SCRIPT DESPACHO CARGADO - Iniciando configuración...');
 window.__despachoObsUsuarioActualId = {{ auth()->id() ?? 'null' }};
 window.__despachoObsUsuarioEsAdmin = {{ auth()->user()->hasRole(['Admin','SuperAdmin','admin']) ? 'true' : 'false' }};
+
+function abrirModalNovedadesDespachoIndex(pedidoId, numeroPedido) {
+    if (typeof abrirModalNovedadesAdvanced !== 'function') {
+        console.error('[Despacho] abrirModalNovedadesAdvanced no está disponible');
+        return;
+    }
+
+    abrirModalNovedadesAdvanced(String(pedidoId));
+
+    const el = document.getElementById('modalNovedadesNumeroPedido');
+    if (el && numeroPedido) {
+        el.textContent = numeroPedido;
+    }
+}
+
+(function __despachoNovedadesSoloLectura() {
+    const isDespachoPage = window.location.pathname.includes('/despacho');
+    if (!isDespachoPage) return;
+
+    const warn = (msg) => {
+        if (typeof showNotification === 'function') {
+            showNotification(msg, 'warning');
+        } else {
+            alert(msg);
+        }
+    };
+
+    // Bloquear acciones de escritura
+    window.abrirModalAgregarNovedad = function () {
+        warn('Solo lectura: no puedes agregar novedades desde Despacho');
+    };
+    window.editarNovedad = function () {
+        warn('Solo lectura: no puedes editar novedades desde Despacho');
+    };
+    window.eliminarNovedad = function () {
+        warn('Solo lectura: no puedes eliminar novedades desde Despacho');
+    };
+    window.guardarNovedadForm = function () {
+        warn('Solo lectura: no puedes guardar novedades desde Despacho');
+    };
+
+    // Ocultar botón "Agregar Novedad" cuando el modal esté en el DOM
+    document.addEventListener('DOMContentLoaded', function () {
+        const modal = document.getElementById('novedadesAdvancedModal');
+        if (!modal) return;
+        const btn = modal.querySelector('button[onclick="abrirModalAgregarNovedad()"]');
+        if (btn) {
+            btn.style.display = 'none';
+        }
+
+        // Ocultar botones de editar/eliminar (sin romper el render original)
+        const container = document.getElementById('novedadesContainer');
+        if (!container) return;
+
+        const hideActionButtons = () => {
+            container.querySelectorAll('button').forEach((b) => {
+                b.style.display = 'none';
+            });
+        };
+
+        // 1) ocultar si ya hay contenido
+        hideActionButtons();
+
+        // 2) observar cambios (cuando se renderizan novedades async)
+        const observer = new MutationObserver(() => hideActionButtons());
+        observer.observe(container, { childList: true, subtree: true });
+    });
+})();
 
 console.log('🔍 Variables globales configuradas:');
 console.log('  - Usuario ID:', window.__despachoObsUsuarioActualId);
@@ -302,7 +398,7 @@ function connectWebSocket() {
                             if (tbody && tbody.children.length === 0) {
                                 tbody.innerHTML = `
                                     <tr>
-                                        <td colspan="7" class="text-center py-8 text-slate-500">
+                                        <td colspan="8" class="text-center py-8 text-slate-500">
                                             No hay pedidos pendientes
                                         </td>
                                     </tr>

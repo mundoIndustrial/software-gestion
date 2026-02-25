@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Application\Services\PdfDesign\CombiadaPdfDesign;
 use App\Models\Cotizacion;
+use App\Models\TallasCostosCot;
 use Illuminate\Http\Request;
 
 /**
@@ -54,6 +55,16 @@ class PDFCotizacionCombiadaController extends Controller
                     }]);
                 }
             ])->findOrFail($id);
+
+            $tallasCostos = TallasCostosCot::query()
+                ->where('cotizacion_id', $cotizacion->id)
+                ->whereIn('prenda_cot_id', $cotizacion->prendas->pluck('id'))
+                ->get()
+                ->keyBy('prenda_cot_id');
+
+            foreach ($cotizacion->prendas as $prenda) {
+                $prenda->tallas_costos_descripcion = $tallasCostos->get($prenda->id)?->descripcion;
+            }
 
             \Log::info("Cotización encontrada: " . json_encode([
                 'id' => $cotizacion->id,
@@ -139,9 +150,22 @@ class PDFCotizacionCombiadaController extends Controller
     private function validateAccess(Cotizacion $cotizacion): void
     {
         $user = auth()->user();
-        
-        if ($user && $user->hasRole('visualizador_cotizaciones_logo')) {
-            abort(403, 'No tienes permiso para ver PDFs de cotizaciones combinadas. Solo puedes ver PDFs de logo.');
+
+        if (!$user) {
+            abort(401, 'Usuario no autenticado');
+        }
+
+        // Si el usuario es visualizador de logo, bloquear SOLO si no tiene un rol con acceso completo.
+        // (Hay usuarios que pueden tener múltiples roles: p.ej. asesor + visualizador)
+        if ($user->hasRole('visualizador_cotizaciones_logo')) {
+            $hasPrivilegedRole = $user->hasRole('admin') ||
+                $user->hasRole('contador') ||
+                $user->hasRole('aprobador_cotizaciones') ||
+                $user->hasRole('asesor');
+
+            if (!$hasPrivilegedRole) {
+                abort(403, 'No tienes permiso para ver PDFs de cotizaciones combinadas. Solo puedes ver PDFs de logo.');
+            }
         }
     }
 

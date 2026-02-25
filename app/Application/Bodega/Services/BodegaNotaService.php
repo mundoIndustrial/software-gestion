@@ -4,6 +4,7 @@ namespace App\Application\Bodega\Services;
 
 use App\Models\BodegaNota;
 use App\Events\BodegaNotasGuardada;
+use App\Events\BodegaNotaCreada;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -49,6 +50,8 @@ class BodegaNotaService
                 'usuario_rol' => $rolActual,
                 'ip_address' => $request->ip(),
             ]);
+
+            BodegaNotaCreada::dispatch($nota);
 
             // Disparar evento para tiempo real (temporalmente deshabilitado hasta solucionar Reverb)
             // BodegaNotasGuardada::dispatch(

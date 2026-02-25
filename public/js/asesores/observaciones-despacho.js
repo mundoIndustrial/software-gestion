@@ -219,6 +219,25 @@
 
         await cargarObservacionesDespachoAsesores();
 
+        // Marcar notas de bodega como vistas al abrir el modal
+        try {
+            await fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-bodega-vistas`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': __csrfToken(),
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({}),
+                cache: 'no-store',
+            });
+
+            // Refrescar badges para que desaparezcan si ya se vieron las notas
+            refrescarBadgesObservacionesDespachoAsesores();
+        } catch (e) {
+            console.warn('[Asesores] No se pudo marcar notas de bodega como vistas:', e);
+        }
+
         console.log('[Asesores] Modal abierto - NO se marcan notificaciones como vistas automáticamente');
         console.log('[Asesores] Las notificaciones se marcarán como vistas solo cuando el usuario haga clic en el botón');
     }
@@ -295,20 +314,28 @@
 
             let html = '<div class="space-y-3">';
             items.forEach(item => {
-                const puedeEditar = (String(item.usuario_id) === String(window.__despachoObsUsuarioActualId));
+                const source = (item.source || 'despacho');
+                const esEditable = source === 'despacho';
+                const puedeEditar = esEditable && (String(item.usuario_id) === String(window.__despachoObsUsuarioActualId));
                 const botones = puedeEditar ? `
                     <button onclick="editarObservacionDespachoAsesores('${item.id}')" style="border:none;background:#e2e8f0;color:#0f172a;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Editar">✏️</button>
-                    <button onclick="eliminarObservacionDespachoAsesores('${item.id}')" style="border:none;background:#fee2e2;color:#991b1b;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Eliminar">🗑️</button>
+                    <button onclick="eliminarObservacionDespachoAsesores('${item.id}')" style="border:none;background:#fee2e2;color:#991b1b;border-radius:6px;padding:4px  8px;cursor:pointer;font-size:12px;" title="Eliminar">🗑️</button>
                 ` : '';
 
                 const fecha = item.updated_at || item.created_at || '';
+                const rol = item.usuario_rol ? ` <span style="color:#64748b;font-weight:600;">(${item.usuario_rol})</span>` : '';
+                const talla = item.talla ? ` <span style="background:#eef2ff;color:#3730a3;border-radius:9999px;padding:2px 8px;font-size:11px;font-weight:700;">Talla: ${item.talla}</span>` : '';
+                const badgeOrigen = source === 'bodega'
+                    ? '<span style="background:#fef3c7;color:#92400e;border-radius:9999px;padding:2px 8px;font-size:11px;font-weight:700;">Bodega</span>'
+                    : '<span style="background:#dbeafe;color:#1e40af;border-radius:9999px;padding:2px 8px;font-size:11px;font-weight:700;">Despacho</span>';
 
                 html += `
                     <div data-obs-id="${item.id}" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px;">
                         <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
                             <div>
-                                <div style="font-weight:700;color:#0f172a;font-size:13px;">${item.usuario_nombre ?? ''}</div>
+                                <div style="font-weight:700;color:#0f172a;font-size:13px;">${item.usuario_nombre ?? ''}${rol}</div>
                                 <div style="color:#64748b;font-size:12px;">${fecha}</div>
+                                <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">${badgeOrigen}${talla}</div>
                             </div>
                             <div style="display:flex;gap:8px;align-items:center;">${botones}</div>
                         </div>
@@ -687,6 +714,38 @@
 
                 // Refrescar todos los badges
                 setTimeout(refrescarBadgesObservacionesDespachoAsesores, 500);
+            });
+
+        // Escuchar notas de bodega (para refrescar badges en tiempo real)
+        window.EchoInstance.channel('asesores.observaciones')
+            .listen('.bodega.nota', async (e) => {
+                console.log('[Asesores] Evento nota de bodega recibido:', e);
+                const pedidoId = e?.pedido_id;
+                if (!pedidoId) return;
+
+                // Refrescar badges (si no has abierto el modal, debe aparecer)
+                refrescarBadgesObservacionesDespachoAsesores();
+
+                // Si el modal está abierto para este pedido, recargar y marcar vistas
+                const currentPedidoId = window.__asesoresObsDespachoCtx?.pedidoId;
+                if (currentPedidoId && String(currentPedidoId) === String(pedidoId)) {
+                    await cargarObservacionesDespachoAsesores();
+                    try {
+                        await fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-bodega-vistas`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': __csrfToken(),
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({}),
+                            cache: 'no-store',
+                        });
+                        refrescarBadgesObservacionesDespachoAsesores();
+                    } catch (err) {
+                        console.warn('[Asesores] No se pudo marcar bodega vistas tras evento realtime:', err);
+                    }
+                }
             });
 
         // Escuchar canales específicos de cada pedido visible

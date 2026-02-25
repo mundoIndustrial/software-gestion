@@ -6,6 +6,7 @@ use App\Events\DespachoPedidoActualizado;
 use App\Http\Controllers\Controller;
 use App\Models\PedidoProduccion;
 use App\Models\PedidoObservacionesDespacho;
+use App\Models\BodegaNota;
 use App\Models\DesparChoParcialesModel;
 use App\Models\Role;
 use App\Models\ReciboPrenda;
@@ -582,21 +583,29 @@ class DespachoController extends Controller
         $usuario = auth()->user();
         $usuarioId = $usuario?->id;
 
-        // Contar observaciones no leídas (visto_at IS NULL) por pedido
-        // Incluir todas las observaciones para que el badge aparezca cuando el usuario crea una
-        $resumen = PedidoObservacionesDespacho::query()
+        // DESPACHO: El badge debe mostrar SIEMPRE el total de items que se visualizan en el modal
+        // (observaciones despacho + notas de bodega), sin usar visto_at/estado.
+        $resumenDespacho = PedidoObservacionesDespacho::query()
             ->whereIn('pedido_produccion_id', $pedidoIds)
-            ->whereNull('visto_at')
-            ->selectRaw('pedido_produccion_id, COUNT(*) as unread')
+            ->selectRaw('pedido_produccion_id, COUNT(*) as total')
             ->groupBy('pedido_produccion_id')
-            ->pluck('unread', 'pedido_produccion_id')
+            ->pluck('total', 'pedido_produccion_id')
+            ->toArray();
+
+        $resumenBodega = BodegaNota::query()
+            ->whereIn('pedido_produccion_id', $pedidoIds)
+            ->selectRaw('pedido_produccion_id, COUNT(*) as total')
+            ->groupBy('pedido_produccion_id')
+            ->pluck('total', 'pedido_produccion_id')
             ->toArray();
 
         // Construir respuesta con todos los pedidos
         $resultado = [];
         foreach ($pedidoIds as $pedidoId) {
+            $total = (int) ($resumenDespacho[$pedidoId] ?? 0) + (int) ($resumenBodega[$pedidoId] ?? 0);
             $resultado[$pedidoId] = [
-                'unread' => (int) ($resumen[$pedidoId] ?? 0),
+                // Mantener nombre 'unread' por compatibilidad con JS actual
+                'unread' => $total,
             ];
         }
 
@@ -634,10 +643,17 @@ class DespachoController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        $observaciones = $rows->map(function ($row) {
+        $bodegaRows = BodegaNota::query()
+            ->where('pedido_produccion_id', $pedido->id)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $observacionesDespacho = $rows->map(function ($row) {
             return [
+                'source' => 'despacho',
                 'id' => (string) $row->uuid,
                 'contenido' => $row->contenido,
+                'talla' => null,
                 'usuario_id' => $row->usuario_id,
                 'usuario_nombre' => $row->usuario_nombre,
                 'usuario_rol' => $row->usuario_rol,
@@ -646,11 +662,35 @@ class DespachoController extends Controller
                 'created_at' => optional($row->created_at)->toISOString(),
                 'updated_at' => optional($row->updated_at)->toISOString(),
             ];
-        })->values()->all();
+        });
+
+        $observacionesBodega = $bodegaRows->map(function ($row) {
+            return [
+                'source' => 'bodega',
+                'id' => 'bodega-' . (string) $row->id,
+                'contenido' => $row->contenido,
+                'talla' => $row->talla,
+                'usuario_id' => $row->usuario_id,
+                'usuario_nombre' => $row->usuario_nombre,
+                'usuario_rol' => $row->usuario_rol,
+                'ip_address' => $row->ip_address,
+                'estado' => null,
+                'created_at' => optional($row->created_at)->toISOString(),
+                'updated_at' => optional($row->updated_at)->toISOString(),
+            ];
+        });
+
+        $unificado = $observacionesDespacho
+            ->concat($observacionesBodega)
+            ->sortByDesc(function ($item) {
+                return $item['updated_at'] ?: $item['created_at'] ?: '';
+            })
+            ->values()
+            ->all();
 
         return response()->json([
             'success' => true,
-            'data' => $observaciones,
+            'data' => $unificado,
         ]);
     }
 

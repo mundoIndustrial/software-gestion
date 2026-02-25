@@ -118,23 +118,41 @@ class ContadorController extends Controller
     {
         // Obtener SOLO cotizaciones pendientes por aprobar (ENVIADA_CONTADOR)
         // Excluir borradores (es_borrador = 0 o false)
-        $cotizaciones = Cotizacion::with('cliente', 'usuario')
+        $cotizaciones = Cotizacion::with('cliente', 'usuario', 'tipoCotizacion')
             ->where('estado', 'ENVIADA_CONTADOR')
             ->where('es_borrador', 0)
+            ->where(function ($q) {
+                $q->whereNull('tipo_cotizacion_id')
+                    ->orWhereHas('tipoCotizacion', function ($tq) {
+                        $tq->where('codigo', '!=', 'EPP');
+                    });
+            })
             ->orderBy('created_at', 'desc')
             ->get();
         
         // Obtener cotizaciones en corrección (Cotizaciones por Corregir y a Revisar)
-        $cotizacionesPorCorregir = Cotizacion::with('cliente', 'usuario')
+        $cotizacionesPorCorregir = Cotizacion::with('cliente', 'usuario', 'tipoCotizacion')
             ->where('estado', 'EN_CORRECCION')
             ->where('es_borrador', 0)
+            ->where(function ($q) {
+                $q->whereNull('tipo_cotizacion_id')
+                    ->orWhereHas('tipoCotizacion', function ($tq) {
+                        $tq->where('codigo', '!=', 'EPP');
+                    });
+            })
             ->orderBy('created_at', 'desc')
             ->get();
         
         // Obtener cotizaciones rechazadas (mismo que por corregir para la sección a revisar)
-        $cotizacionesRechazadas = Cotizacion::with('cliente', 'usuario')
+        $cotizacionesRechazadas = Cotizacion::with('cliente', 'usuario', 'tipoCotizacion')
             ->where('estado', 'EN_CORRECCION')
             ->where('es_borrador', 0)
+            ->where(function ($q) {
+                $q->whereNull('tipo_cotizacion_id')
+                    ->orWhereHas('tipoCotizacion', function ($tq) {
+                        $tq->where('codigo', '!=', 'EPP');
+                    });
+            })
             ->orderBy('created_at', 'desc')
             ->get();
         
@@ -148,9 +166,15 @@ class ContadorController extends Controller
     {
         // Obtener todas las cotizaciones EXCEPTO las que están en estado ENVIADA_CONTADOR
         // También excluir borradores (es_borrador = 0)
-        $todasLasCotizaciones = Cotizacion::with('cliente', 'usuario')
+        $todasLasCotizaciones = Cotizacion::with('cliente', 'usuario', 'tipoCotizacion')
             ->where('estado', '!=', 'ENVIADA_CONTADOR')
             ->where('es_borrador', 0)
+            ->where(function ($q) {
+                $q->whereNull('tipo_cotizacion_id')
+                    ->orWhereHas('tipoCotizacion', function ($tq) {
+                        $tq->where('codigo', '!=', 'EPP');
+                    });
+            })
             ->orderBy('created_at', 'desc')
             ->get();
         
@@ -163,8 +187,14 @@ class ContadorController extends Controller
     public function porRevisar(): View
     {
         // Obtener cotizaciones en corrección
-        $cotizacionesParaRevisar = Cotizacion::with('cliente', 'usuario')
+        $cotizacionesParaRevisar = Cotizacion::with('cliente', 'usuario', 'tipoCotizacion')
             ->where('estado', 'EN_CORRECCION')
+            ->where(function ($q) {
+                $q->whereNull('tipo_cotizacion_id')
+                    ->orWhereHas('tipoCotizacion', function ($tq) {
+                        $tq->where('codigo', '!=', 'EPP');
+                    });
+            })
             ->orderBy('created_at', 'desc')
             ->get();
         
@@ -917,18 +947,30 @@ class ContadorController extends Controller
             $viewedCotizationIds = session('viewed_cotizations_' . $user->id, []);
             
             // Cotizaciones enviadas a revisar (estado ENVIADA_CONTADOR)
-            $cotizacionesParaRevisar = Cotizacion::with('cliente')
+            $cotizacionesParaRevisar = Cotizacion::with('cliente', 'tipoCotizacion')
                 ->where('estado', 'ENVIADA_CONTADOR')
                 ->whereNotIn('id', $viewedCotizationIds)
+                ->where(function ($q) {
+                    $q->whereNull('tipo_cotizacion_id')
+                        ->orWhereHas('tipoCotizacion', function ($tq) {
+                            $tq->where('codigo', '!=', 'EPP');
+                        });
+                })
                 ->orderBy('created_at', 'desc')
                 ->limit(5)
                 ->get();
             
             // Nuevas cotizaciones creadas (últimas 5 de las últimas 24 horas)
-            $nuevasCotizaciones = Cotizacion::with('cliente')
+            $nuevasCotizaciones = Cotizacion::with('cliente', 'tipoCotizacion')
                 ->where('created_at', '>=', now()->subHours(24))
                 ->whereNotIn('estado', ['ENVIADA_CONTADOR'])
                 ->whereNotIn('id', $viewedCotizationIds)
+                ->where(function ($q) {
+                    $q->whereNull('tipo_cotizacion_id')
+                        ->orWhereHas('tipoCotizacion', function ($tq) {
+                            $tq->where('codigo', '!=', 'EPP');
+                        });
+                })
                 ->orderBy('created_at', 'desc')
                 ->limit(5)
                 ->get();
@@ -1009,7 +1051,14 @@ class ContadorController extends Controller
     public function cotizacionesPendientesCount()
     {
         try {
-            $count = Cotizacion::where('estado', 'ENVIADA_CONTADOR')->count();
+            $count = Cotizacion::where('estado', 'ENVIADA_CONTADOR')
+                ->where(function ($q) {
+                    $q->whereNull('tipo_cotizacion_id')
+                        ->orWhereHas('tipoCotizacion', function ($tq) {
+                            $tq->where('codigo', '!=', 'EPP');
+                        });
+                })
+                ->count();
 
             return response()->json([
                 'success' => true,
@@ -1035,9 +1084,15 @@ class ContadorController extends Controller
     public function aprobadas(): View
     {
         // Obtener cotizaciones aprobadas por el aprobador de cotizaciones
-        $cotizacionesAprobadas = Cotizacion::with('cliente', 'usuario')
+        $cotizacionesAprobadas = Cotizacion::with('cliente', 'usuario', 'tipoCotizacion')
             ->where('estado', 'APROBADA_POR_APROBADOR')
             ->where('es_borrador', 0)
+            ->where(function ($q) {
+                $q->whereNull('tipo_cotizacion_id')
+                    ->orWhereHas('tipoCotizacion', function ($tq) {
+                        $tq->where('codigo', '!=', 'EPP');
+                    });
+            })
             ->orderBy('created_at', 'desc')
             ->get();
 

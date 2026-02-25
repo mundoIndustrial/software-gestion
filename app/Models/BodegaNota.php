@@ -18,6 +18,7 @@ class BodegaNota extends Model
         'usuario_nombre',
         'usuario_rol',
         'ip_address',
+        'visto_at',
     ];
 
     protected $dates = ['created_at', 'updated_at'];

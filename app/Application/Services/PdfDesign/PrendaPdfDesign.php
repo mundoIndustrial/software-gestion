@@ -206,16 +206,7 @@ CSS;
      */
     private function renderPrendas(): string
     {
-        $prendas = $this->cotizacion->prendas()
-            ->with([
-                'telas.tela',
-                'variantes.manga',
-                'variantes.broche',
-                'tallas',
-                'fotos',
-                'telaFotos'
-            ])
-            ->get() ?? [];
+        $prendas = $this->cotizacion->prendas ?? collect();
 
         if ($prendas->isEmpty()) {
             return '';
@@ -401,6 +392,57 @@ CSS;
      */
     private function renderPrendaTallas($prenda): string
     {
+        $textoPersonalizadoRaw = $prenda->texto_personalizado_tallas ?? null;
+        $textoPersonalizadoRaw = is_null($textoPersonalizadoRaw) ? '' : trim((string) $textoPersonalizadoRaw);
+
+        $textoPersonalizadoMap = null;
+        if ($textoPersonalizadoRaw !== '' && str_starts_with($textoPersonalizadoRaw, '{') && str_ends_with($textoPersonalizadoRaw, '}')) {
+            $decoded = json_decode($textoPersonalizadoRaw, true);
+            if (is_array($decoded)) {
+                $textoPersonalizadoMap = $decoded;
+            }
+        }
+
+        $getObs = function(string $colorKey, string $generoKey) use ($textoPersonalizadoRaw, $textoPersonalizadoMap): string {
+            $colorKey = trim($colorKey);
+            $generoKey = trim(strtolower($generoKey));
+
+            if (is_array($textoPersonalizadoMap)) {
+                if ($colorKey !== '' && isset($textoPersonalizadoMap[$colorKey]) && is_array($textoPersonalizadoMap[$colorKey])) {
+                    $nested = $textoPersonalizadoMap[$colorKey];
+                    if (isset($nested[$generoKey]) && $nested[$generoKey] !== null) {
+                        return trim((string) $nested[$generoKey]);
+                    }
+                }
+
+                if ($colorKey !== '') {
+                    $flatKey = $colorKey . '||' . $generoKey;
+                    if (isset($textoPersonalizadoMap[$flatKey]) && $textoPersonalizadoMap[$flatKey] !== null) {
+                        return trim((string) $textoPersonalizadoMap[$flatKey]);
+                    }
+                }
+
+                if (isset($textoPersonalizadoMap[$generoKey]) && $textoPersonalizadoMap[$generoKey] !== null) {
+                    return trim((string) $textoPersonalizadoMap[$generoKey]);
+                }
+
+                if (isset($textoPersonalizadoMap['global']) && $textoPersonalizadoMap['global'] !== null) {
+                    return trim((string) $textoPersonalizadoMap['global']);
+                }
+
+                return '';
+            }
+
+            $raw = $textoPersonalizadoRaw;
+            if ($raw === '') {
+                return '';
+            }
+            if (preg_match('/^\((.*)\)$/s', $raw, $m)) {
+                $raw = trim((string) ($m[1] ?? ''));
+            }
+            return $raw;
+        };
+
         $tallasCollection = $prenda->tallas ?? null;
         if (!$tallasCollection || (is_object($tallasCollection) && method_exists($tallasCollection, 'isEmpty') && $tallasCollection->isEmpty())) {
             return '<div class="prenda-tallas">Tallas: ' . htmlspecialchars('Sin tallas') . '</div>';
@@ -487,21 +529,26 @@ CSS;
             $damaTxt = $fmtGrupo($tallasDama);
             $sinTxt = $fmtGrupo($tallasSinGenero);
 
-            $html .= '<div style="margin-top: 6px; padding-top: 4px; border-top: 1px dashed rgba(0,0,0,0.18);">'
-                . '<span style="color:#0f172a; font-weight:900; font-size: 9px; text-transform: uppercase;">' . htmlspecialchars($colorKey) . '</span>'
-                . '</div>';
+            if (strtolower(trim((string) $colorKey)) !== 'sin color') {
+                $html .= '<div style="margin-top: 6px; padding-top: 4px; border-top: 1px dashed rgba(0,0,0,0.18);">'
+                    . '<span style="color:#0f172a; font-weight:900; font-size: 9px; text-transform: uppercase;">' . htmlspecialchars($colorKey) . '</span>'
+                    . '</div>';
+            }
 
             if ($cabTxt !== '') {
-                $html .= '<div><span style="color:#1e5ba8; font-weight:800;">Caballero:</span> <span style="color:#e74c3c;">' . htmlspecialchars($cabTxt) . '</span></div>';
+                $obs = $getObs($colorKey, 'caballero');
+                $html .= '<div><span style="color:#1e5ba8; font-weight:800;">Caballero:</span> <span style="color:#e74c3c;">' . htmlspecialchars($cabTxt) . ($obs !== '' ? ' (' . htmlspecialchars($obs) . ')' : '') . '</span></div>';
             }
             if ($damaTxt !== '') {
-                $html .= '<div><span style="color:#1e5ba8; font-weight:800;">Dama:</span> <span style="color:#e74c3c;">' . htmlspecialchars($damaTxt) . '</span></div>';
+                $obs = $getObs($colorKey, 'dama');
+                $html .= '<div><span style="color:#1e5ba8; font-weight:800;">Dama:</span> <span style="color:#e74c3c;">' . htmlspecialchars($damaTxt) . ($obs !== '' ? ' (' . htmlspecialchars($obs) . ')' : '') . '</span></div>';
             }
             if ($haySobremedida) {
                 $html .= '<div style="margin-top: 2px;"><span style="color:#e74c3c; font-weight:900;">Sobremedida</span></div>';
             }
             if ($sinTxt !== '') {
-                $html .= '<div><span style="color:#1e5ba8; font-weight:800;">Sin género:</span> <span style="color:#e74c3c;">' . htmlspecialchars($sinTxt) . '</span></div>';
+                $obs = $getObs($colorKey, 'sin_genero');
+                $html .= '<div><span style="color:#1e5ba8; font-weight:800;">Sin género:</span> <span style="color:#e74c3c;">' . htmlspecialchars($sinTxt) . ($obs !== '' ? ' (' . htmlspecialchars($obs) . ')' : '') . '</span></div>';
             }
         }
 

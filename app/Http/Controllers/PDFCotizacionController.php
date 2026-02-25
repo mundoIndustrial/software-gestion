@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cotizacion;
 use Illuminate\Http\Request;
 
 /**
@@ -25,7 +26,31 @@ class PDFCotizacionController extends Controller
      */
     public function generarPDF($id, Request $request)
     {
-        // Redirigir al nuevo controlador
-        return redirect()->route('asesores.cotizacion.pdf.prenda', ['id' => $id]);
+        $tipoParam = $request->query('tipo');
+        $tipo = is_null($tipoParam) ? null : strtolower(trim((string) $tipoParam));
+
+        if (is_null($tipo) || $tipo === '' || $tipo === 'prenda') {
+            $cotizacion = Cotizacion::with(['prendas', 'logoCotizacion'])->findOrFail($id);
+
+            $tienePrendas = ($cotizacion->prendas && $cotizacion->prendas->count() > 0);
+            $tieneLogo = !is_null($cotizacion->logoCotizacion);
+
+            if ($tienePrendas && $tieneLogo) {
+                $tipo = 'combinada';
+            } elseif ($tieneLogo && !$tienePrendas) {
+                $tipo = 'logo';
+            } else {
+                $tipo = 'prenda';
+            }
+        }
+
+        $path = match ($tipo) {
+            'logo' => "/cotizacion/{$id}/pdf/logo",
+            'combinada' => "/cotizacion/{$id}/pdf/combinada",
+            'epp' => "/cotizacion/{$id}/pdf/epp",
+            default => "/cotizacion/{$id}/pdf/prenda",
+        };
+
+        return redirect($path);
     }
 }

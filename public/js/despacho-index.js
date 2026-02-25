@@ -7,6 +7,66 @@
 
     window.__despachoObsCtx = window.__despachoObsCtx || { pedidoId: null };
 
+    // ==================== NOVEDADES BADGE (DESPACHO) ====================
+    function __countNovedadesFromText(text) {
+        const raw = (text || '').trim();
+        if (!raw || raw === '—') return 0;
+        return raw
+            .split(/\n\s*\n/)
+            .map(s => s.trim())
+            .filter(Boolean)
+            .length;
+    }
+
+    function __clearNovedadesBadge(pedidoId) {
+        const btn = document.querySelector(`.despacho-novedades-btn[data-pedido-id="${pedidoId}"]`);
+        if (!btn) return;
+        const badge = btn.querySelector('.novedades-badge');
+        if (badge) badge.remove();
+    }
+
+    function __renderNovedadesBadge(pedidoId, count) {
+        const isDespachoPage = window.location.pathname.includes('/despacho');
+        if (!isDespachoPage) return;
+        const btn = document.querySelector(`.despacho-novedades-btn[data-pedido-id="${pedidoId}"]`);
+        if (!btn) return;
+        __clearNovedadesBadge(pedidoId);
+        if (!count || count <= 0) return;
+
+        const badge = document.createElement('span');
+        badge.className = 'novedades-badge';
+        badge.textContent = count > 99 ? '99+' : String(count);
+        badge.style.cssText = [
+            'position:absolute',
+            'top:-6px',
+            'right:-6px',
+            'min-width:18px',
+            'height:18px',
+            'padding:0 5px',
+            'border-radius:999px',
+            'background:#ef4444',
+            'color:#ffffff',
+            'font-size:11px',
+            'font-weight:700',
+            'line-height:18px',
+            'text-align:center',
+            'box-shadow:0 2px 6px rgba(0,0,0,0.25)'
+        ].join(';');
+        btn.appendChild(badge);
+    }
+
+    function refrescarBadgesNovedadesDespacho() {
+        const isDespachoPage = window.location.pathname.includes('/despacho');
+        if (!isDespachoPage) return;
+        const previews = Array.from(document.querySelectorAll('textarea.despacho-novedades-preview[data-pedido-id]'));
+        previews.forEach(el => {
+            const pedidoId = el.getAttribute('data-pedido-id');
+            if (!pedidoId) return;
+            const count = __countNovedadesFromText(el.value);
+            __renderNovedadesBadge(pedidoId, count);
+        });
+    }
+
     // ==================== BADGE FUNCTIONS ====================
     
     // Clave para localStorage
@@ -95,27 +155,9 @@
         console.log(`[DEBUG-BADGE] 🎨 __renderBadge INICIADO`);
         console.log(`[DEBUG-BADGE] - Pedido ID: ${pedidoId}`);
         console.log(`[DEBUG-BADGE] - Count (unread): ${count}`);
-        
-        // Lógica principal: Si hay observaciones no leídas, mostrar badge
-        // El localStorage solo se usa para persistencia cuando el usuario hace clic
-        if (count > 0) {
-            console.log(`[DEBUG-BADGE] 🆕 Hay ${count} observaciones no leídas - MOSTRAR badge`);
-            console.log(`[DEBUG-BADGE] - El badge debe aparecer siempre que haya observaciones no leídas`);
-        } else {
-            // Si no hay observaciones no leídas, verificar localStorage
-            const wasRecentlySeen = isBadgeRecentlySeen(pedidoId);
-            console.log(`[DEBUG-BADGE] - No hay observaciones no leídas, verificando localStorage...`);
-            console.log(`[DEBUG-BADGE] - ¿Fue visto recientemente?: ${wasRecentlySeen}`);
-            
-            if (wasRecentlySeen) {
-                console.log(`[DEBUG-BADGE] 🚫 Badge ${pedidoId} fue visto recientemente y no hay nuevas observaciones, NO mostrar`);
-                __clearBadge(pedidoId);
-                return;
-            } else {
-                console.log(`[DEBUG-BADGE] ✅ Badge ${pedidoId} no fue visto recientemente, se podría mostrar si hubiera observaciones`);
-            }
-        }
-        
+
+        const isDespachoPage = window.location.pathname.includes('/despacho');
+
         // Buscar en botones de despacho primero
         let btn = document.querySelector(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
         console.log(`[DEBUG-BADGE] - Botón despacho encontrado:`, !!btn);
@@ -125,38 +167,56 @@
             btn = document.querySelector(`.btn-ver-dropdown[data-pedido-id="${pedidoId}"]`);
             console.log(`[DEBUG-BADGE] - Botón asesores encontrado:`, !!btn);
         }
-        
+
         console.log(`[DEBUG-BADGE] - Botón final a usar:`, btn);
         
         if (!btn) {
             console.warn(`[DEBUG-BADGE] ❌ No se encontró botón para pedido ${pedidoId}`);
-            // Buscar todos los botones para debugging
-            const allDespachoBtns = document.querySelectorAll('.despacho-obs-btn');
-            const allAsesoresBtns = document.querySelectorAll('.btn-ver-dropdown');
-            console.log(`[DEBUG-BADGE] - Botones despacho encontrados: ${allDespachoBtns.length}`);
-            console.log(`[DEBUG-BADGE] - Botones asesores encontrados: ${allAsesoresBtns.length}`);
-            
-            // Mostrar botones de despacho
-            allDespachoBtns.forEach((b, i) => {
-                console.log(`[DEBUG-BADGE] - Botón despacho ${i}:`, {
-                    'data-pedido-id': b.getAttribute('data-pedido-id'),
-                    'onclick': b.getAttribute('onclick'),
-                    'class': b.className
-                });
-            });
-            return;
-        }
-        
-        console.log(`[DEBUG-BADGE] 🧹 Limpiando badge existente antes de renderizar`);
-        __clearBadge(pedidoId);
-        
-        if (!count || count <= 0) {
-            console.log(`[DEBUG-BADGE] 🚫 No hay badge para mostrar - count: ${count}`);
             return;
         }
 
-        console.log(`[DEBUG-BADGE] 🎯 Creando badge para pedido ${pedidoId} con count: ${count}`);
-        
+        // DESPACHO: el badge no depende de visto/estado; solo muestra el total de items.
+        // No usamos localStorage para ocultarlo.
+        if (isDespachoPage) {
+            __clearBadge(pedidoId);
+            if (!count || count <= 0) return;
+
+            const badge = document.createElement('span');
+            badge.className = 'obs-despacho-badge';
+            badge.textContent = count > 99 ? '99+' : String(count);
+            badge.style.cssText = [
+                'position:absolute',
+                'top:-6px',
+                'right:-6px',
+                'min-width:18px',
+                'height:18px',
+                'padding:0 5px',
+                'border-radius:999px',
+                'background:#ef4444',
+                'color:#ffffff',
+                'font-size:11px',
+                'font-weight:700',
+                'line-height:18px',
+                'text-align:center',
+                'box-shadow:0 2px 6px rgba(0,0,0,0.25)'
+            ].join(';');
+            btn.appendChild(badge);
+            return;
+        }
+
+        // Fuera de despacho: mantener comportamiento anterior (unread + persistencia)
+        if (!count || count <= 0) {
+            const wasRecentlySeen = isBadgeRecentlySeen(pedidoId);
+            if (wasRecentlySeen) {
+                __clearBadge(pedidoId);
+                return;
+            }
+            __clearBadge(pedidoId);
+            return;
+        }
+
+        __clearBadge(pedidoId);
+
         const badge = document.createElement('span');
         badge.className = 'obs-despacho-badge';
         badge.textContent = count > 99 ? '99+' : String(count);
@@ -177,10 +237,6 @@
             'box-shadow:0 2px 6px rgba(0,0,0,0.25)'
         ].join(';');
         btn.appendChild(badge);
-        
-        console.log(`[DEBUG-BADGE] ✅ Badge agregado exitosamente para pedido ${pedidoId}`);
-        console.log(`[DEBUG-BADGE] - Badge HTML:`, badge.outerHTML);
-        console.log(`[DEBUG-BADGE] - Badge padre (botón):`, btn.outerHTML);
     }
 
     async function refrescarBadgesObservacionesDespacho() {
@@ -259,11 +315,13 @@
         console.log(`[DEBUG-BADGE] marcarNotificacionesComoVistas llamado para pedidoId: ${pedidoId}`);
         
         try {
-            // Marcar como visto en localStorage inmediatamente
-            setBadgeSeen(pedidoId);
+            const isDespachoPage = window.location.pathname.includes('/despacho');
+            // DESPACHO: no persistimos visto ni limpiamos badge
+            if (!isDespachoPage) {
+                setBadgeSeen(pedidoId);
+            }
             
             // Detectar si estamos en despacho o asesores
-            const isDespachoPage = window.location.pathname.includes('/despacho');
             const url = isDespachoPage 
                 ? `/despacho/${pedidoId}/observaciones/marcar-vistas`
                 : `/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`;
@@ -287,8 +345,10 @@
             if (data && data.success) {
                 console.log(`[DEBUG-BADGE] Notificaciones marcadas como vistas para pedido ${pedidoId}`);
                 console.log(`[DEBUG-BADGE] Llamando a __clearBadge para pedido ${pedidoId}`);
-                // Ahora sí limpiar el badge
-                __clearBadge(pedidoId);
+                // DESPACHO: no limpiar el badge
+                if (!isDespachoPage) {
+                    __clearBadge(pedidoId);
+                }
                 // Refrescar para confirmar
                 console.log(`[DEBUG-BADGE] Refrescando badges después de marcar como vistas`);
                 refrescarBadgesObservacionesDespacho();
@@ -326,10 +386,14 @@
     function __renderPreviewObservaciones(pedidoId, items) {
         const el = document.querySelector(`.despacho-observaciones-preview[data-pedido-id="${pedidoId}"]`);
         if (!el) return;
-        const text = items.map(i => `${i.usuario_nombre ?? ''} - ${i.contenido ?? ''}`).join('\n');
+        const text = items.map(i => {
+            const source = (i.source || 'despacho');
+            const srcLabel = source === 'bodega' ? 'BODEGA' : 'DESPACHO';
+            const rol = i.usuario_rol ? ` (${i.usuario_rol})` : '';
+            const talla = i.talla ? ` [${i.talla}]` : '';
+            return `${srcLabel}${talla} - ${i.usuario_nombre ?? ''}${rol} - ${i.contenido ?? ''}`;
+        }).join('\n');
         el.value = text;
-        el.style.height = 'auto';
-        el.style.height = (el.scrollHeight) + 'px';
     }
 
     async function cargarPreviewObservacionesDespacho(pedidoId) {
@@ -365,18 +429,26 @@
 
             let html = '<div class="space-y-3">';
             items.forEach(item => {
-                const puedeEditar = (String(item.usuario_id) === String(window.__despachoObsUsuarioActualId));
+                const source = (item.source || 'despacho');
+                const esEditable = source === 'despacho';
+                const puedeEditar = esEditable && (String(item.usuario_id) === String(window.__despachoObsUsuarioActualId));
                 const botones = puedeEditar ? `
                     <button onclick="editarObservacionDespachoIndex('${item.id}')" style="border:none;background:#e2e8f0;color:#0f172a;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Editar">✏️</button>
                     <button onclick="eliminarObservacionDespachoIndex('${item.id}')" style="border:none;background:#fee2e2;color:#991b1b;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Eliminar">🗑️</button>
                 ` : '';
                 const fecha = item.updated_at || item.created_at || '';
+                const rol = item.usuario_rol ? ` <span style="color:#64748b;font-weight:600;">(${item.usuario_rol})</span>` : '';
+                const talla = item.talla ? ` <span style="background:#eef2ff;color:#3730a3;border-radius:9999px;padding:2px 8px;font-size:11px;font-weight:700;">Talla: ${item.talla}</span>` : '';
+                const badgeOrigen = source === 'bodega'
+                    ? '<span style="background:#fef3c7;color:#92400e;border-radius:9999px;padding:2px 8px;font-size:11px;font-weight:700;">Bodega</span>'
+                    : '<span style="background:#dbeafe;color:#1e40af;border-radius:9999px;padding:2px 8px;font-size:11px;font-weight:700;">Despacho</span>';
                 html += `
                     <div data-obs-id="${item.id}" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px;">
                         <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
                             <div>
-                                <div style="font-weight:700;color:#0f172a;font-size:13px;">${item.usuario_nombre ?? ''}</div>
+                                <div style="font-weight:700;color:#0f172a;font-size:13px;">${item.usuario_nombre ?? ''}${rol}</div>
                                 <div style="color:#64748b;font-size:12px;">${fecha}</div>
+                                <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">${badgeOrigen}${talla}</div>
                             </div>
                             <div style="display:flex;gap:8px;align-items:center;">${botones}</div>
                         </div>
@@ -910,6 +982,26 @@
                 }
             });
 
+        // Escuchar actualizaciones de pedido (incluye novedades) para actualizar badge en tiempo real
+        window.EchoInstance.channel('despacho.pedidos')
+            .listen('.pedido.actualizado', (e) => {
+                const pedidoId = e?.pedido_id || e?.pedido?.id;
+                if (!pedidoId) return;
+
+                const novedades = e?.pedido?.novedades;
+                if (typeof novedades === 'string') {
+                    const textarea = document.querySelector(`textarea.despacho-novedades-preview[data-pedido-id="${pedidoId}"]`);
+                    if (textarea) {
+                        textarea.value = novedades && novedades.trim() ? novedades : '—';
+                        textarea.title = novedades || '';
+                    }
+                }
+
+                const textarea2 = document.querySelector(`textarea.despacho-novedades-preview[data-pedido-id="${pedidoId}"]`);
+                const count = __countNovedadesFromText(textarea2 ? textarea2.value : novedades);
+                __renderNovedadesBadge(String(pedidoId), count);
+            });
+
         // Escuchar canales específicos de cada pedido visible en la página
         const rows = document.querySelectorAll('tr[data-pedido-id]');
         rows.forEach(row => {
@@ -920,16 +1012,13 @@
                 .listen('.observacion.despacho', (e) => {
                     console.log(`[Despacho] Evento en pedido ${pedidoId}:`, e);
 
-                    // Actualizar badge
-                    refrescarBadgesObservacionesDespacho();
+                    __renderBadge(pedidoId, 1);
 
-                    // Si el modal está abierto, recargar
                     const currentPedidoId = window.__despachoObsCtx?.pedidoId;
                     if (currentPedidoId && String(currentPedidoId) === String(pedidoId)) {
                         cargarObservacionesDespachoIndex();
                     }
 
-                    // Recargar preview
                     cargarPreviewObservacionesDespacho(pedidoId);
                 });
         });
@@ -961,6 +1050,7 @@
                 // Refresh badges after loading previews
                 console.log(`[DEBUG] 🔄 Refrescando badges después de cargar previews...`);
                 await refrescarBadgesObservacionesDespacho();
+                refrescarBadgesNovedadesDespacho();
 
                 // Setup WebSocket para tiempo real
                 console.log(`[DEBUG] 📡 Configurando WebSocket...`);
