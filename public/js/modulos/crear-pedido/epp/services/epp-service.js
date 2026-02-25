@@ -10,6 +10,11 @@ class EppService {
         this.modalManager = null;
         this.itemManager = window.eppItemManager;
         this.imagenManager = null;
+        
+        // Debouncing y caché para búsqueda
+        this.debounceTimerBusqueda = null;
+        this.cacheBusqueda = {};
+        this.ultimaConsultaBusqueda = '';
     }
 
     /**
@@ -499,53 +504,145 @@ class EppService {
     }
 
     /**
-     * Filtrar EPP por término de búsqueda
+     * Filtrar EPP por término de búsqueda - OPTIMIZADO (debounce + validación mínima)
      */
     async filtrarEPP(valor) {
         console.log('🔎 [EppService] filtrarEPP iniciado con valor:', valor);
         const container = document.getElementById('resultadosBuscadorEPP');
-        console.log('🔎 [EppService] Contenedor encontrado:', !!container);
+        const inputBuscador = document.getElementById('inputBuscadorEPP');
         
         if (!container) {
             console.warn(' [EppService] No se encontró el contenedor resultadosBuscadorEPP');
             return;
         }
 
-        if (!valor || valor.trim() === '') {
+        const valorLimpio = (valor || '').trim().toLowerCase();
+
+        if (!valorLimpio) {
             console.log('🔎 [EppService] Valor vacío, ocultando resultados');
             container.style.display = 'none';
             return;
         }
 
-        try {
-            console.log('🔎 [EppService] Llamando a _buscarEPPDesdeDB');
-            // Buscar EPP desde la base de datos
-            const epps = await this._buscarEPPDesdeDB(valor);
-            console.log('🔎 [EppService] EPPs retornados:', epps.length);
+        // ⚡ VALIDACIÓN: Requiere mínimo 2 caracteres
+        if (valorLimpio.length < 2) {
+            container.innerHTML = `<div style="padding: 0.75rem 1rem; text-align: center; color: #9ca3af; font-size: 0.85rem;">Escribe al menos 2 caracteres para buscar</div>`;
+            container.style.display = 'block';
+            
+            // Limpiar debounce anterior
+            if (this.debounceTimerBusqueda) {
+                clearTimeout(this.debounceTimerBusqueda);
+            }
+            return;
+        }
 
-            if (epps.length === 0) {
-                container.innerHTML = `<div style="padding: 1rem; text-align: center; color: #6b7280;">No se encontraron resultados para "${valor}"</div>`;
-            } else {
-                console.log(' [EppService] Renderizando resultados:', epps.length);
-                const html = epps.map(epp => `
-                    <div onclick="if(window.mostrarProductoEPP) { window.mostrarProductoEPP({id: ${epp.id}, nombre_completo: '${epp.nombre_completo || epp.nombre}', nombre: '${epp.nombre}', imagen: '${epp.imagen || ''}', tallas: ${JSON.stringify(epp.tallas || [])}}); } document.getElementById('resultadosBuscadorEPP').style.display = 'none'; document.getElementById('inputBuscadorEPP').value = '';" 
-                         style="padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid #e5e7eb; transition: background 0.2s ease;"
-                         onmouseover="this.style.background = '#f3f4f6';"
-                         onmouseout="this.style.background = 'white';">
-                        <div style="font-weight: 500; color: #1f2937;">${epp.nombre_completo || epp.nombre}</div>
-                    </div>
-                `).join('');
-                container.innerHTML = html;
-                console.log(' [EppService] HTML renderizado en contenedor');
+        // Limpiar debounce anterior
+        if (this.debounceTimerBusqueda) {
+            clearTimeout(this.debounceTimerBusqueda);
+        }
+
+        // Mostrar indicador de carga
+        container.innerHTML = `
+            <div style="padding: 1rem; text-align: center; color: #6b7280;">
+                <div style="display: inline-block;">
+                    <div style="border: 2px solid #e5e7eb; border-top: 2px solid #3b82f6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite;"></div>
+                </div>
+                <p style="margin-top: 0.5rem; font-size: 0.85rem;">Buscando...</p>
+            </div>
+            <style>
+                @keyframes spin {
+                    to { transform: rotate(360deg); }
+                }
+            </style>
+        `;
+        container.style.display = 'block';
+
+        // ⚡ DEBOUNCE AUMENTADO: esperar 400ms después de inactividad
+        this.debounceTimerBusqueda = setTimeout(async () => {
+            const terminoBusqueda = (inputBuscador?.value || '').toLowerCase().trim();
+            
+            if (!terminoBusqueda || terminoBusqueda.length < 2) {
+                container.style.display = 'none';
+                return;
             }
 
-            container.style.display = 'block';
-            console.log(' [EppService] Contenedor visible:', container.style.display);
-        } catch (error) {
+            try {
+                console.log('🔎 [EppService] Ejecutando búsqueda con debounce para:', terminoBusqueda);
+                
+                // Verificar si está en caché
+                if (this.cacheBusqueda[terminoBusqueda]) {
+                    console.log('🔎 [EppService] Resultado obtenido del caché');
+                    const epps = this.cacheBusqueda[terminoBusqueda];
+                    this._renderizarResultadosBusqueda(epps, terminoBusqueda, container);
+                    return;
+                }
 
-            container.innerHTML = `<div style="padding: 1rem; text-align: center; color: #dc2626;">Error al buscar EPP</div>`;
-            container.style.display = 'block';
+                // Buscar desde BD
+                const epps = await this._buscarEPPDesdeDB(terminoBusqueda);
+                
+                // Guardar en caché
+                this.cacheBusqueda[terminoBusqueda] = epps;
+                
+                console.log('🔎 [EppService] EPPs retornados:', epps.length);
+                this._renderizarResultadosBusqueda(epps, terminoBusqueda, container);
+
+            } catch (error) {
+                console.error('🔎 [EppService] Error en filtrarEPP:', error);
+                container.innerHTML = `<div style="padding: 1rem; text-align: center; color: #dc2626; font-size: 0.9rem;">❌ Error al buscar EPP</div>`;
+                container.style.display = 'block';
+            }
+        }, 400); // ⚡ Esperar 400ms (fue 300ms) para reducir peticiones
+    }
+
+    /**
+     * Renderizar resultados de búsqueda con mejor UI
+     */
+    _renderizarResultadosBusqueda(epps, termino, container) {
+        if (epps.length === 0) {
+            container.innerHTML = `
+                <div style="padding: 1rem; text-align: center; color: #6b7280; font-size: 0.9rem;">
+                    <p style="margin: 0;">❌ No se encontraron resultados para "<strong>${termino}</strong>"</p>
+                    <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #9ca3af;">Intenta con otras palabras</p>
+                </div>
+            `;
+        } else {
+            console.log(' [EppService] Renderizando resultados:', epps.length);
+            
+            // Crear HTML para cada resultado con más información
+            const html = epps.map(epp => {
+                const nombre = epp.nombre_completo || epp.nombre;
+                const codigo = epp.codigo ? `<span style="color: #6b7280; font-size: 0.8rem; margin-top: 0.25rem; display: block;">Código: ${epp.codigo}</span>` : '';
+                const categoria = epp.categoria ? `<span style="color: #9ca3af; font-size: 0.75rem; margin-top: 0.15rem; display: block;">📦 ${epp.categoria}</span>` : '';
+                const imagen = epp.imagen ? `<img src="${epp.imagen}" alt="${nombre}" style="width: 35px; height: 35px; object-fit: cover; border-radius: 4px; margin-right: 0.75rem;">` : '';
+                
+                return `
+                    <div onclick="if(window.mostrarProductoEPP) { window.mostrarProductoEPP({id: ${epp.id}, nombre_completo: '${nombre.replace(/'/g, "\\'")}', nombre: '${epp.nombre.replace(/'/g, "\\'")}', imagen: '${epp.imagen || ''}', tallas: ${JSON.stringify(epp.tallas || [])}}); } document.getElementById('resultadosBuscadorEPP').style.display = 'none'; document.getElementById('inputBuscadorEPP').value = '';" 
+                         style="padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid #e5e7eb; display: flex; align-items: flex-start; transition: background 0.2s ease;"
+                         onmouseover="this.style.background = '#f9fafb';"
+                         onmouseout="this.style.background = 'white';">
+                        <div style="display: flex; align-items: center; width: 100%;">
+                            ${imagen}
+                            <div style="flex: 1;">
+                                <div style="font-weight: 500; color: #1f2937; font-size: 0.95rem;">${nombre}</div>
+                                ${codigo}
+                                ${categoria}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Mostrar contador de resultados
+            const contador = epps.length > 1 ? `<div style="padding: 0.5rem 1rem; background: #f3f4f6; font-size: 0.8rem; color: #6b7280; border-bottom: 1px solid #e5e7eb;">
+                ✓ Se encontraron ${epps.length} resultados
+            </div>` : '';
+            
+            container.innerHTML = contador + html;
+            console.log(' [EppService] HTML renderizado en contenedor');
         }
+        
+        container.style.display = 'block';
+        console.log(' [EppService] Contenedor visible:', container.style.display);
     }
 
     /**

@@ -61,28 +61,30 @@ class EppRepository implements EppRepositoryInterface
 
 
     /**
-     * Buscar EPP por término
+     * Buscar EPP por término - OPTIMIZADO PARA VELOCIDAD
+     * Búsqueda en: nombre_completo (prioritario), marca, tipo, talla, color
      */
     public function buscar(string $termino): Collection
     {
-        //  DESACTIVADO CACHÉ TEMPORALMENTE PARA DEBUG
+        $termino = strtolower(trim($termino));
+        
+        // ⚡ QUERY OPTIMIZADA: Más simple y más rápida
         $epps = EppModel::where('activo', true)
             ->where(function ($query) use ($termino) {
                 $query->where('nombre_completo', 'like', "%{$termino}%")
-                    ->orWhere('marca', 'like', "%{$termino}%");
+                    ->orWhere('marca', 'like', "%{$termino}%")
+                    ->orWhere('tipo', 'like', "%{$termino}%")
+                    ->orWhere('talla', 'like', "%{$termino}%")
+                    ->orWhere('color', 'like', "%{$termino}%");
             })
             ->orderBy('nombre_completo')
-            ->limit(50)  // ⚡ Limitar a 50 resultados
+            ->limit(50)  // ⚡ REDUCIDO a 50 resultados (fue 100) - más velocidad
             ->get();
 
-        // Ignorar tabla epp_imagenes (no existe)
-        \Illuminate\Support\Facades\Log::debug(' [EPP-REPO] Buscando EPPs sin caché', [
+        // Log de búsqueda
+        \Illuminate\Support\Facades\Log::debug('[EPP-REPO] Búsqueda optimizada ejecutada', [
             'termino' => $termino,
             'total' => $epps->count(),
-            'sql' => EppModel::where('activo', true)->where(function ($query) use ($termino) {
-                $query->where('nombre_completo', 'like', "%{$termino}%")
-                    ->orWhere('marca', 'like', "%{$termino}%");
-            })->toSql(),
         ]);
 
         return $epps->map(function($modelo) {
