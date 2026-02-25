@@ -388,6 +388,25 @@ class PedidosController extends Controller
             $rolesDelUsuario = $usuario->getRoleNames()->toArray();
             $esReadOnly = $this->roleService->esReadOnly($rolesDelUsuario);
             
+            // Filtrar items según el rol del usuario
+            if (in_array('EPP-Bodega', $rolesDelUsuario)) {
+                // EPP-Bodega: solo ver EPP pendientes
+                if (isset($datos['items']) && is_array($datos['items'])) {
+                    $datos['items'] = array_filter($datos['items'], function($item) {
+                        return ($item['area'] ?? '') === 'EPP' && ($item['estado_bodega'] ?? '') === 'Pendiente';
+                    });
+                    $datos['items'] = array_values($datos['items']);
+                }
+            } elseif (in_array('Costura-Bodega', $rolesDelUsuario)) {
+                // Costura-Bodega: solo ver Costura pendientes
+                if (isset($datos['items']) && is_array($datos['items'])) {
+                    $datos['items'] = array_filter($datos['items'], function($item) {
+                        return ($item['area'] ?? '') === 'Costura' && ($item['estado_bodega'] ?? '') === 'Pendiente';
+                    });
+                    $datos['items'] = array_values($datos['items']);
+                }
+            }
+            
             // Agregar la variable esReadOnly a los datos
             $datos['esReadOnly'] = $esReadOnly;
             

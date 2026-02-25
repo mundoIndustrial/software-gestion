@@ -90,6 +90,12 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     // Actualizar prenda completa (con novedades) en un pedido existente
     Route::post('/pedidos/{id}/actualizar-prenda', [\App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'actualizarPrendaCompleta'])->where('id', '[0-9]+')->name('pedidos.actualizar-prenda-completa');
 
+    // Eliminar prenda de un pedido y registrar motivo en novedades
+    Route::post('/pedidos/{id}/eliminar-prenda', [\App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'eliminarPrenda'])->where('id', '[0-9]+')->name('pedidos.eliminar-prenda');
+
+    // Eliminar EPP de un pedido y registrar motivo en novedades
+    Route::post('/pedidos/{id}/eliminar-epp', [\App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'eliminarEpp'])->where('id', '[0-9]+')->name('pedidos.eliminar-epp');
+
     // Actualizar SOLO la variante de prenda (manga, broche, bolsillos) - CON MERGE
     Route::put('/pedidos/{pedidoId}/prendas/{prendaId}/variante', [\App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'actualizarVariantePrend'])->where('pedidoId', '[0-9]+')->where('prendaId', '[0-9]+')->name('pedidos.actualizar-variante-prenda');
 

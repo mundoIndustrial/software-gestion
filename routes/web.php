@@ -2605,9 +2605,8 @@ require __DIR__.'/auth.php';
 // ========================================
 // RUTAS DE ASESORES (MÓDULO INDEPENDIENTE)
 // ========================================
-// Las rutas de asesores ya están definidas arriba en este archivo
-// El archivo asesores.php se mantiene como referencia pero no se carga aquí para evitar duplicados
-// require __DIR__.'/asesores.php';  // DESHABILITADO: Las rutas están en web.php línea 431
+// Las rutas de asesores están definidas en el archivo asesores.php
+require __DIR__.'/asesores.php';
 
 // ========================================
 // RUTAS DE DESPACHO (MÓDULO NUEVO)

@@ -1202,4 +1202,237 @@
         window.prendaActual = prenda;
     }
 
+    // ====================================================
+    // 6. abrirModalEliminarPrenda — Abre modal para eliminar prenda
+    //    Pide motivo y luego elimina del servidor
+    // ====================================================
+    window.abrirModalEliminarPrenda = function(prenda, prendaIndex, pedidoId) {
+        const prendaId = prenda.id || prenda.prenda_pedido_id;
+        console.log('[PedidosAdapter] 🗑️ Eliminando prenda:', prenda.nombre_prenda || prenda.nombre, 'id:', prendaId, 'pedidoId:', pedidoId);
+
+        if (!pedidoId || !prendaId) {
+            console.error('[PedidosAdapter] Faltan pedidoId o prendaId para eliminar');
+            if (typeof Swal !== 'undefined') {
+                Swal.fire('Error', 'No se pudo identificar el pedido o la prenda para eliminar', 'error');
+            }
+            return;
+        }
+
+        if (typeof Swal === 'undefined') {
+            console.error('[PedidosAdapter] SweetAlert2 no disponible');
+            return;
+        }
+
+        // Inyectar CSS para z-index y centrado
+        let eliminarStyle = document.getElementById('swal-eliminar-prenda-style');
+        if (!eliminarStyle) {
+            eliminarStyle = document.createElement('style');
+            eliminarStyle.id = 'swal-eliminar-prenda-style';
+            document.head.appendChild(eliminarStyle);
+        }
+        eliminarStyle.textContent = `
+            .swal-eliminar-prenda-container {
+                z-index: 2000000 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+            }
+            .swal-eliminar-prenda-container .swal2-popup {
+                margin: auto !important;
+            }
+        `;
+
+        // Pedir motivo de eliminación
+        Swal.fire({
+            title: '¿Eliminar prenda?',
+            html: `<p>¿Estás seguro de que deseas eliminar <strong>${(prenda.nombre_prenda || prenda.nombre || 'esta prenda').toUpperCase()}</strong>?</p>
+                   <p style="color: #ef4444; font-size: 0.9em; margin-top: 1rem;">Esta acción no se puede deshacer.</p>`,
+            icon: 'warning',
+            input: 'textarea',
+            inputLabel: 'Motivo de la eliminación',
+            inputPlaceholder: 'Ej: Prenda no requerida, cambio en especificaciones, etc.',
+            inputAttributes: { 'aria-label': 'Motivo de eliminación' },
+            showCancelButton: true,
+            confirmButtonText: '🗑️ Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            customClass: {
+                container: 'swal-eliminar-prenda-container'
+            },
+            didOpen: (modal) => {
+                const container = modal.closest('.swal2-container');
+                if (container) {
+                    container.style.display = 'flex';
+                    container.style.alignItems = 'center';
+                    container.style.justifyContent = 'center';
+                    container.style.height = '100vh';
+                    container.style.zIndex = '2000000';
+                }
+            },
+            inputValidator: (value) => {
+                if (!value || !value.trim()) {
+                    return 'Debes ingresar un motivo de eliminación';
+                }
+                if (value.trim().length < 5) {
+                    return 'El motivo debe tener al menos 5 caracteres';
+                }
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                _eliminarPrendaDelAPI(pedidoId, prendaId, prendaIndex, prenda, result.value.trim());
+            }
+        });
+    };
+
+    /**
+     * Eliminar prenda del servidor y actualizar novedades
+     * @private
+     */
+    async function _eliminarPrendaDelAPI(pedidoId, prendaId, prendaIndex, prenda, motivo) {
+        try {
+            // Mostrar loading
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Eliminando prenda...',
+                    text: 'Por favor espera',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    customClass: {
+                        container: 'swal-eliminar-prenda-container'
+                    },
+                    didOpen: () => {
+                        const container = document.querySelector('.swal-eliminar-prenda-container');
+                        if (container) {
+                            container.style.display = 'flex';
+                            container.style.alignItems = 'center';
+                            container.style.justifyContent = 'center';
+                            container.style.height = '100vh';
+                            container.style.zIndex = '2000000';
+                        }
+                        Swal.showLoading();
+                    }
+                });
+            }
+
+            const urlPrefix = _getUrlPrefix();
+            const deleteUrl = `${urlPrefix.save}/${pedidoId}/eliminar-prenda`;
+            
+            console.log('[PedidosAdapter] 📤 Enviando DELETE a:', deleteUrl);
+
+            const response = await fetch(deleteUrl, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    prenda_id: prendaId,
+                    motivo: motivo
+                })
+            });
+
+            if (!response.ok) {
+                let errorMsg = 'Error desconocido';
+                try {
+                    const error = await response.json();
+                    errorMsg = error.message || error.error || JSON.stringify(error);
+                } catch (e) {
+                    errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+                }
+                console.error('[PedidosAdapter] Error al eliminar:', errorMsg);
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ 
+                        icon: 'error', 
+                        title: 'Error', 
+                        text: `No se pudo eliminar: ${errorMsg}`,
+                        customClass: {
+                            container: 'swal-eliminar-prenda-container'
+                        },
+                        didOpen: (modal) => {
+                            const container = modal.closest('.swal2-container');
+                            if (container) {
+                                container.style.display = 'flex';
+                                container.style.alignItems = 'center';
+                                container.style.justifyContent = 'center';
+                                container.style.height = '100vh';
+                                container.style.zIndex = '2000000';
+                            }
+                        }
+                    });
+                }
+                return;
+            }
+
+            const result = await response.json();
+            console.log('[PedidosAdapter] ✅ Prenda eliminada:', result);
+
+            // Actualizar datos locales
+            if (window.datosEdicionPedido?.prendas && prendaIndex !== null && prendaIndex !== undefined) {
+                window.datosEdicionPedido.prendas.splice(prendaIndex, 1);
+                console.log('[PedidosAdapter] 🔄 Lista de prendas actualizada (removida prenda en índice', prendaIndex + ')');
+            }
+
+            // Mostrar éxito
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: '✅ Prenda eliminada',
+                    text: 'La prenda se elimió y se registró el motivo en novedades del pedido',
+                    timer: 1800,
+                    showConfirmButton: false,
+                    customClass: {
+                        container: 'swal-eliminar-prenda-container'
+                    },
+                    didOpen: (modal) => {
+                        const container = modal.closest('.swal2-container');
+                        if (container) {
+                            container.style.display = 'flex';
+                            container.style.alignItems = 'center';
+                            container.style.justifyContent = 'center';
+                            container.style.height = '100vh';
+                            container.style.zIndex = '2000000';
+                        }
+                    }
+                });
+            }
+
+            // Cerrar modal y recargar lista de prendas
+            setTimeout(function() {
+                // Recargar la lista de prendas
+                abrirEditarPrendas();
+            }, 1900);
+
+        } catch (error) {
+            console.error('[PedidosAdapter] Error de red al eliminar:', error);
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ 
+                    icon: 'error', 
+                    title: 'Error', 
+                    text: 'Error de conexión al eliminar la prenda',
+                    customClass: {
+                        container: 'swal-eliminar-prenda-container'
+                    },
+                    didOpen: (modal) => {
+                        const container = modal.closest('.swal2-container');
+                        if (container) {
+                            container.style.display = 'flex';
+                            container.style.alignItems = 'center';
+                            container.style.justifyContent = 'center';
+                            container.style.height = '100vh';
+                            container.style.zIndex = '2000000';
+                        }
+                    }
+                });
+            }
+        }
+    }
+
 })();

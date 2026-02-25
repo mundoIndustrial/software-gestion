@@ -2036,5 +2036,344 @@ class PedidosProduccionController
         }
     }
 
+    /**
+     * POST /asesores/pedidos/{id}/eliminar-prenda
+     * Eliminar una prenda de un pedido y registrar el motivo en novedades
+     * 
+     * Body:
+     * {
+     *   "prenda_id": 123,
+     *   "motivo": "Prenda no requerida, cambio en especificaciones"
+     * }
+     * 
+     * Response:
+     * {
+     *   "success": true,
+     *   "message": "Prenda eliminada correctamente",
+     *   "prenda_id": 123,
+     *   "motivo_registrado": "Prenda no requerida, cambio en especificaciones"
+     * }
+     * 
+     * @param Request $request
+     * @param int|string $id - ID del pedido
+     * @return JsonResponse
+     */
+    public function eliminarPrenda(Request $request, int|string $id): JsonResponse
+    {
+        try {
+            Log::info('[PedidosProduccionController] POST /asesores/pedidos/{id}/eliminar-prenda', [
+                'pedido_id' => $id,
+            ]);
+
+            // Validar datos
+            $validated = $request->validate([
+                'prenda_id' => 'required|numeric|min:1',
+                'motivo' => 'required|string|min:5|max:1000',
+            ]);
+
+            $prendaId = (int)$validated['prenda_id'];
+            $motivo = $validated['motivo'];
+
+            // Obtener la prenda para conocer su nombre
+            $prenda = PrendaPedido::findOrFail($prendaId);
+            $nombrePrenda = $prenda->nombre_prenda ?? $prenda->nombre ?? 'Sin nombre';
+
+            // Obtener el pedido
+            $pedido = PedidoProduccion::findOrFail($id);
+
+            Log::info('[PedidosProduccionController] Prenda encontrada', [
+                'prenda_id' => $prendaId,
+                'nombre' => $nombrePrenda,
+                'pedido_id' => $id,
+            ]);
+
+            // Construir mensaje de eliminación
+            $mensajeEliminacion = "[ELIMINADA PRENDA] {$nombrePrenda} - Motivo: {$motivo}";
+
+            // Actualizar novedades del pedido
+            if ($pedido->novedades) {
+                $pedido->novedades .= "\n\n" . $mensajeEliminacion;
+            } else {
+                $pedido->novedades = $mensajeEliminacion;
+            }
+            $pedido->save();
+
+            Log::info('[PedidosProduccionController] Novedades actualizadas', [
+                'pedido_id' => $id,
+                'novedades_length' => strlen($pedido->novedades),
+            ]);
+
+            // Eliminar imágenes asociadas a la prenda
+            $prendaFotos = PrendaFotoPedido::where('prenda_pedido_id', $prendaId)->get();
+            foreach ($prendaFotos as $foto) {
+                // Eliminar archivos físicos
+                if ($foto->ruta_original && Storage::disk('public')->exists($foto->ruta_original)) {
+                    Storage::disk('public')->delete($foto->ruta_original);
+                }
+                if ($foto->ruta_webp && $foto->ruta_webp !== $foto->ruta_original && Storage::disk('public')->exists($foto->ruta_webp)) {
+                    Storage::disk('public')->delete($foto->ruta_webp);
+                }
+                // Marcar como eliminado (soft delete)
+                $foto->delete();
+            }
+
+            Log::info('[PedidosProduccionController] Imágenes de prenda eliminadas', [
+                'cantidad' => $prendaFotos->count(),
+                'prenda_id' => $prendaId,
+            ]);
+
+            // Eliminar fotos de telas/colores (prenda_fotos_tela_pedido)
+            // Obtener IDs de prenda_pedido_colores_telas para esta prenda
+            $colorTelasIds = DB::table('prenda_pedido_colores_telas')
+                ->where('prenda_pedido_id', $prendaId)
+                ->pluck('id');
+            
+            // Eliminar fotos asociadas a los colores/telas
+            if ($colorTelasIds->count() > 0) {
+                $telasFotos = PrendaFotoTelaPedido::whereIn('prenda_pedido_colores_telas_id', $colorTelasIds)->get();
+                foreach ($telasFotos as $foto) {
+                    if ($foto->ruta_original && Storage::disk('public')->exists($foto->ruta_original)) {
+                        Storage::disk('public')->delete($foto->ruta_original);
+                    }
+                    if ($foto->ruta_webp && $foto->ruta_webp !== $foto->ruta_original && Storage::disk('public')->exists($foto->ruta_webp)) {
+                        Storage::disk('public')->delete($foto->ruta_webp);
+                    }
+                    $foto->delete();
+                }
+            }
+
+            // Eliminar telas/colores asociados (prenda_pedido_colores_telas)
+            DB::table('prenda_pedido_colores_telas')
+                ->where('prenda_pedido_id', $prendaId)
+                ->delete();
+
+            // Eliminar tallas/colores asociados (prenda_pedido_talla_colores)
+            // Primero obtener los IDs de prenda_pedido_talla para esta prenda
+            $tallasIds = DB::table('prenda_pedido_tallas')
+                ->where('prenda_pedido_id', $prendaId)
+                ->pluck('id');
+            
+            // Eliminar prenda_pedido_talla_colores (basado en las tallas de la prenda)
+            DB::table('prenda_pedido_talla_colores')
+                ->whereIn('prenda_pedido_talla_id', $tallasIds)
+                ->delete();
+
+            DB::table('prenda_pedido_tallas')
+                ->where('prenda_pedido_id', $prendaId)
+                ->delete();
+
+            DB::table('prenda_pedido_variantes')
+                ->where('prenda_pedido_id', $prendaId)
+                ->delete();
+
+            // Eliminar procesos y sus imágenes
+            $procesos = \App\Models\PedidosProcesosPrendaDetalle::where('prenda_pedido_id', $prendaId)->get();
+            foreach ($procesos as $proceso) {
+                // Eliminar imágenes del proceso
+                if ($proceso->imagenes) {
+                    foreach ($proceso->imagenes as $imagen) {
+                        if ($imagen->ruta_original && Storage::disk('public')->exists($imagen->ruta_original)) {
+                            Storage::disk('public')->delete($imagen->ruta_original);
+                        }
+                        if ($imagen->ruta_webp && $imagen->ruta_webp !== $imagen->ruta_original && Storage::disk('public')->exists($imagen->ruta_webp)) {
+                            Storage::disk('public')->delete($imagen->ruta_webp);
+                        }
+                        $imagen->delete();
+                    }
+                }
+                // Eliminar tallas del proceso
+                if ($proceso->tallas) {
+                    foreach ($proceso->tallas as $talla) {
+                        $talla->delete();
+                    }
+                }
+                // Marcar como eliminado (soft delete)
+                $proceso->delete();
+            }
+
+            Log::info('[PedidosProduccionController] Procesos eliminados', [
+                'cantidad' => $procesos->count(),
+                'prenda_id' => $prendaId,
+            ]);
+
+            // Marcar prenda como eliminada (soft delete)
+            $prenda->delete();
+
+            Log::info('[PedidosProduccionController] Prenda eliminada exitosamente', [
+                'prenda_id' => $prendaId,
+                'nombre' => $nombrePrenda,
+                'pedido_id' => $id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Prenda eliminada correctamente',
+                'prenda_id' => $prendaId,
+                'prenda_nombre' => $nombrePrenda,
+                'motivo_registrado' => $motivo,
+                'pedido_id' => $id,
+            ], 200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::warning('[PedidosProduccionController] Prenda o pedido no encontrado', [
+                'pedido_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Prenda o pedido no encontrado',
+            ], 404);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('[PedidosProduccionController] Validación fallida al eliminar prenda', [
+                'errors' => $e->errors(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validación fallida',
+                'errors' => $e->errors(),
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error eliminando prenda', [
+                'pedido_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar prenda: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Eliminar EPP de un pedido
+     * POST /asesores/pedidos/{id}/eliminar-epp
+     */
+    public function eliminarEpp(Request $request, int|string $id): JsonResponse
+    {
+        try {
+            Log::info('[PedidosProduccionController] POST /asesores/pedidos/{id}/eliminar-epp', [
+                'pedido_id' => $id,
+            ]);
+
+            // Validar datos
+            $validated = $request->validate([
+                'epp_id' => 'required|numeric|min:1',
+                'motivo' => 'required|string|min:5|max:1000',
+            ]);
+
+            $eppId = (int)$validated['epp_id'];
+            $motivo = $validated['motivo'];
+
+            // Obtener el EPP del pedido
+            $pedidoEpp = \App\Models\PedidoEpp::findOrFail($eppId);
+            
+            // Obtener datos del EPP
+            $epp = $pedidoEpp->epp; // Relación con tabla epp
+            $nombreEpp = $epp->nombre_completo ?? $epp->nombre ?? 'EPP Sin nombre';
+
+            // Obtener el pedido
+            $pedido = PedidoProduccion::findOrFail($id);
+
+            Log::info('[PedidosProduccionController] EPP encontrado', [
+                'epp_id' => $eppId,
+                'nombre' => $nombreEpp,
+                'pedido_id' => $id,
+            ]);
+
+            // Construir mensaje de eliminación
+            $mensajeEliminacion = "[ELIMINADO EPP] {$nombreEpp} (Cantidad: {$pedidoEpp->cantidad}) - Motivo: {$motivo}";
+
+            // Actualizar novedades del pedido
+            if ($pedido->novedades) {
+                $pedido->novedades .= "\n\n" . $mensajeEliminacion;
+            } else {
+                $pedido->novedades = $mensajeEliminacion;
+            }
+            $pedido->save();
+
+            Log::info('[PedidosProduccionController] Novedades actualizadas', [
+                'pedido_id' => $id,
+                'novedades_length' => strlen($pedido->novedades),
+            ]);
+
+            // Eliminar imágenes del EPP
+            $imagenes = \App\Models\PedidoEppImagen::where('pedido_epp_id', $eppId)->get();
+            foreach ($imagenes as $imagen) {
+                // Eliminar archivos físicos
+                if ($imagen->ruta_original && Storage::disk('public')->exists($imagen->ruta_original)) {
+                    Storage::disk('public')->delete($imagen->ruta_original);
+                }
+                if ($imagen->ruta_web && $imagen->ruta_web !== $imagen->ruta_original && Storage::disk('public')->exists($imagen->ruta_web)) {
+                    Storage::disk('public')->delete($imagen->ruta_web);
+                }
+                // Marcar como eliminado (soft delete)
+                $imagen->delete();
+            }
+
+            Log::info('[PedidosProduccionController] Imágenes de EPP eliminadas', [
+                'cantidad' => $imagenes->count(),
+                'epp_id' => $eppId,
+            ]);
+
+            // Marcar EPP como eliminado (soft delete)
+            $pedidoEpp->delete();
+
+            Log::info('[PedidosProduccionController] EPP eliminado exitosamente', [
+                'epp_id' => $eppId,
+                'nombre' => $nombreEpp,
+                'pedido_id' => $id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'EPP eliminado correctamente',
+                'epp_id' => $eppId,
+                'epp_nombre' => $nombreEpp,
+                'motivo_registrado' => $motivo,
+                'pedido_id' => $id,
+            ], 200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::warning('[PedidosProduccionController] EPP o pedido no encontrado', [
+                'pedido_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'EPP o pedido no encontrado',
+            ], 404);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('[PedidosProduccionController] Validación fallida al eliminar EPP', [
+                'errors' => $e->errors(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validación fallida',
+                'errors' => $e->errors(),
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error eliminando EPP', [
+                'pedido_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar EPP: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
 }
 

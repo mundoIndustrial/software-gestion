@@ -94,18 +94,28 @@
                 // Usar campos estandarizados del backend: nombre_completo, nombre, epp_nombre
                 const nombre = item.nombre_completo || item.epp_nombre || item.nombre || '';
                 htmlListaEPP += `
-                    <button onclick="abrirEditarEPPEspecifico(${idx})" 
-                        style="background: white; border: 2px solid #1e40af; border-radius: 8px; padding: 1rem; text-align: left; cursor: pointer; transition: all 0.3s ease;"
-                        onmouseover="this.style.background='#eff6ff'; this.style.borderColor='#1e40af';"
-                        onmouseout="this.style.background='white'; this.style.borderColor='#1e40af';">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <h4 style="margin: 0; color: #1f2937; font-size: 0.95rem; font-weight: 700;"> ${nombre.toUpperCase()}</h4>
-                                <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.85rem;">Cantidad: <strong>${item.cantidad || 0}</strong></p>
-                            </div>
-                            <span style="background: #1e40af; color: white; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600;"> Editar</span>
+                    <div style="background: white; border: 2px solid #1e40af; border-radius: 8px; padding: 1rem; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease;"
+                        onmouseover="this.style.background='#eff6ff';"
+                        onmouseout="this.style.background='white';">
+                        <div style="flex: 1;">
+                            <h4 style="margin: 0; color: #1f2937; font-size: 0.95rem; font-weight: 700;"> ${nombre.toUpperCase()}</h4>
+                            <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.85rem;">Cantidad: <strong>${item.cantidad || 0}</strong></p>
                         </div>
-                    </button>
+                        <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
+                            <button onclick="abrirEditarEPPEspecifico(${idx})" 
+                                style="background: #1e40af; color: white; padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"
+                                onmouseover="this.style.background='#1e3a8a'; this.style.transform='scale(1.05)';"
+                                onmouseout="this.style.background='#1e40af'; this.style.transform='scale(1)';">
+                                ✏️ Editar
+                            </button>
+                            <button onclick="abrirModalEliminarEpp(${JSON.stringify(item).replace(/"/g, '&quot;')}, ${idx}, window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido)" 
+                                style="background: #ef4444; color: white; padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"
+                                onmouseover="this.style.background='#dc2626'; this.style.transform='scale(1.05)';"
+                                onmouseout="this.style.background='#ef4444'; this.style.transform='scale(1)';">
+                                🗑️ Eliminar
+                            </button>
+                        </div>
+                    </div>
                 `;
             });
             htmlListaEPP += '</div>';
@@ -976,6 +986,134 @@
         document.getElementById('noveladaEPP').focus();
     }
     
+    /**
+     * Eliminar EPP del pedido
+     */
+    window.abrirModalEliminarEpp = function(epp, eppIndex, pedidoId) {
+        const eppId = epp.id || epp.pedido_epp_id;
+        const nombreEpp = epp.nombre || epp.epp?.nombre || epp.nombre_completo || epp.epp_nombre || 'EPP Sin nombre';
+        const cantidad = epp.cantidad || 1;
+        
+        console.log('[EPP] 🗑️ Eliminando EPP:', nombreEpp, 'id:', eppId, 'pedidoId:', pedidoId);
+
+        if (!pedidoId || !eppId) {
+            console.error('[EPP] Faltan pedidoId o eppId para eliminar');
+            Swal.fire('Error', 'No se pudo identificar el pedido o el EPP para eliminar', 'error');
+            return;
+        }
+
+        // Pedir motivo de eliminación
+        Swal.fire({
+            title: '¿Eliminar EPP?',
+            html: `<p>¿Estás seguro de que deseas eliminar <strong>${nombreEpp.toUpperCase()}</strong>?</p>
+                   <p style="color: #6b7280; font-size: 0.85em; margin-top: 0.5rem;">Cantidad: <strong>${cantidad}</strong></p>
+                   <p style="color: #ef4444; font-size: 0.9em; margin-top: 1rem;">Se registrará en las novedades del pedido.</p>`,
+            icon: 'warning',
+            input: 'textarea',
+            inputLabel: 'Motivo de la eliminación',
+            inputPlaceholder: 'Ej: EPP no requerido, cambio en especificaciones, etc.',
+            inputAttributes: { 'aria-label': 'Motivo de eliminación' },
+            showCancelButton: true,
+            confirmButtonText: '🗑️ Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            didOpen: (modal) => {
+                const container = modal.closest('.swal2-container');
+                if (container) {
+                    container.style.display = 'flex';
+                    container.style.alignItems = 'center';
+                    container.style.justifyContent = 'center';
+                    container.style.height = '100vh';
+                    container.style.zIndex = '2000000';
+                }
+            },
+            inputValidator: (value) => {
+                if (!value || !value.trim()) {
+                    return 'Debes ingresar un motivo de eliminación';
+                }
+                if (value.trim().length < 5) {
+                    return 'El motivo debe tener al menos 5 caracteres';
+                }
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                _eliminarEppDelAPI(pedidoId, eppId, eppIndex, epp, result.value.trim());
+            }
+        });
+    };
+
+    /**
+     * Eliminar EPP del servidor
+     * @private
+     */
+    async function _eliminarEppDelAPI(pedidoId, eppId, eppIndex, epp, motivo) {
+        try {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Eliminando EPP...',
+                html: 'Por favor espera mientras se elimina el EPP',
+                icon: 'info',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            console.log('[EPP] 📤 Enviando DELETE a: /asesores/pedidos/' + pedidoId + '/eliminar-epp');
+            
+            const response = await fetch(`/asesores/pedidos/${pedidoId}/eliminar-epp`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    epp_id: eppId,
+                    motivo: motivo
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Error al eliminar EPP');
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                console.log('[EPP] ✅ EPP eliminado correctamente:', data);
+                
+                Swal.fire({
+                    title: '¡EPP Eliminado!',
+                    html: `<p><strong>${data.epp_nombre}</strong> ha sido eliminado correctamente.</p>
+                           <p style="color: #6b7280; font-size: 0.9em; margin-top: 0.5rem;">Se ha registrado en las novedades del pedido.</p>`,
+                    icon: 'success',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#1e40af'
+                }).then(() => {
+                    // Recargar la página para reflejar cambios
+                    location.reload();
+                });
+            } else {
+                throw new Error(data.message || 'No se pudo eliminar el EPP');
+            }
+
+        } catch (error) {
+            console.error('[EPP] Error al eliminar:', error.message);
+            
+            Swal.fire({
+                title: 'Error',
+                text: error.message || 'No se pudo eliminar el EPP. Por favor intenta de nuevo.',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#1e40af'
+            });
+        }
+    }
+
     // Exponer funciones globalmente
     window.abrirModalEditarEppForm = abrirModalEditarEppFormConImagenes;
     window.cerrarModalEditarEppForm = cerrarModalEditarEppForm;

@@ -41,41 +41,72 @@
                     // Serializar item para inyectarlo como dato literal en el onclick
                     const itemJson = JSON.stringify(item).replace(/"/g, '&quot;').replace(/'/g, "\\'");
                     htmlListaPrendas += `
-                        <button onclick="(function() {
-                            var item = JSON.parse(this.getAttribute('data-prenda'));
-                            var idx = ${idx};
-                            var pedidoId = window.datosEdicionPedido?.id;
-                            console.log('[ONCLICK] Prenda clickeada:', item.nombre_prenda || item.nombre, 'idx:', idx);
-                            
-                            Swal.close();
-                            setTimeout(function() {
-                                // Usar el adapter de pedidos para abrir modal completo
-                                if (typeof window.editarPrendaDePedido === 'function') {
-                                    console.log('[ONCLICK] Abriendo modal completo via editarPrendaDePedido');
-                                    window.editarPrendaDePedido(item, idx, pedidoId);
-                                } else {
-                                    console.error('[ONCLICK-ERROR] editarPrendaDePedido no disponible');
-                                    // Fallback: intentar abrir modal directamente
-                                    var editor = window.prendaEditorGlobal;
-                                    if (editor && typeof editor.cargarPrendaEnModal === 'function') {
-                                        window._editandoPrendaDePedido = { pedidoId: pedidoId, prendaIndex: idx };
-                                        editor.cargarPrendaEnModal(item, idx);
+                        <div data-prenda="${itemJson}" style="background: white; border: 2px solid #1e40af; border-radius: 8px; padding: 1rem; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease;" onmouseover="this.style.background='#eff6ff'; this.style.borderColor='#1e40af';" onmouseout="this.style.background='white'; this.style.borderColor='#1e40af';">
+                            <div style="flex: 1; cursor: pointer;" onclick="(function() {
+                                var item = JSON.parse(this.closest('[data-prenda]').getAttribute('data-prenda'));
+                                var idx = ${idx};
+                                var pedidoId = window.datosEdicionPedido?.id;
+                                console.log('[ONCLICK] Prenda clickeada:', item.nombre_prenda || item.nombre, 'idx:', idx);
+                                
+                                Swal.close();
+                                setTimeout(function() {
+                                    // Usar el adapter de pedidos para abrir modal completo
+                                    if (typeof window.editarPrendaDePedido === 'function') {
+                                        console.log('[ONCLICK] Abriendo modal completo via editarPrendaDePedido');
+                                        window.editarPrendaDePedido(item, idx, pedidoId);
+                                    } else {
+                                        console.error('[ONCLICK-ERROR] editarPrendaDePedido no disponible');
+                                        // Fallback: intentar abrir modal directamente
+                                        var editor = window.prendaEditorGlobal;
+                                        if (editor && typeof editor.cargarPrendaEnModal === 'function') {
+                                            window._editandoPrendaDePedido = { pedidoId: pedidoId, prendaIndex: idx };
+                                            editor.cargarPrendaEnModal(item, idx);
+                                        }
                                     }
-                                }
-                            }, 150);
-                        }).call(this)" 
-                            data-prenda="${itemJson}"
-                            style="background: white; border: 2px solid #1e40af; border-radius: 8px; padding: 1rem; text-align: left; cursor: pointer; transition: all 0.3s ease;"
-                            onmouseover="this.style.background='#eff6ff'; this.style.borderColor='#1e40af';"
-                            onmouseout="this.style.background='white'; this.style.borderColor='#1e40af';">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <h4 style="margin: 0; color: #1f2937; font-size: 0.95rem; font-weight: 700;">${nombre.toUpperCase()}</h4>
-                                    <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.85rem;">Cantidad: <strong>${cantidad}</strong></p>
-                                </div>
-                                <span style="background: #1e40af; color: white; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600;">✏️ Editar</span>
+                                }, 150);
+                            }).call(this)">
+                                <h4 style="margin: 0; color: #1f2937; font-size: 0.95rem; font-weight: 700;">${nombre.toUpperCase()}</h4>
+                                <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.85rem;">Cantidad: <strong>${cantidad}</strong></p>
                             </div>
-                        </button>
+                            <div style="display: flex; gap: 0.5rem; margin-left: 1rem;">
+                                <button type="button" style="background: #1e40af; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.opacity='0.8'; this.style.transform='scale(1.05)';" onmouseout="this.style.opacity='1'; this.style.transform='scale(1)';" onclick="(function() {
+                                    var item = JSON.parse(this.closest('[data-prenda]').getAttribute('data-prenda'));
+                                    var idx = ${idx};
+                                    var pedidoId = window.datosEdicionPedido?.id;
+                                    console.log('[ONCLICK] Prenda clickeada:', item.nombre_prenda || item.nombre, 'idx:', idx);
+                                    
+                                    Swal.close();
+                                    setTimeout(function() {
+                                        if (typeof window.editarPrendaDePedido === 'function') {
+                                            console.log('[ONCLICK] Abriendo modal completo via editarPrendaDePedido');
+                                            window.editarPrendaDePedido(item, idx, pedidoId);
+                                        } else {
+                                            console.error('[ONCLICK-ERROR] editarPrendaDePedido no disponible');
+                                            var editor = window.prendaEditorGlobal;
+                                            if (editor && typeof editor.cargarPrendaEnModal === 'function') {
+                                                window._editandoPrendaDePedido = { pedidoId: pedidoId, prendaIndex: idx };
+                                                editor.cargarPrendaEnModal(item, idx);
+                                            }
+                                        }
+                                    }, 150);
+                                }).call(this)">
+                                    ✏️ Editar
+                                </button>
+                                <button type="button" style="background: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.opacity='0.8'; this.style.transform='scale(1.05)';" onmouseout="this.style.opacity='1'; this.style.transform='scale(1)';" onclick="(function() {
+                                    var item = JSON.parse(this.closest('[data-prenda]').getAttribute('data-prenda'));
+                                    var idx = ${idx};
+                                    var pedidoId = window.datosEdicionPedido?.id;
+                                    console.log('[ONCLICK-ELIMINAR] Prenda a eliminar:', item.nombre_prenda || item.nombre, 'idx:', idx);
+                                    if (typeof window.abrirModalEliminarPrenda === 'function') {
+                                        window.abrirModalEliminarPrenda(item, idx, pedidoId);
+                                    } else {
+                                        console.error('[ONCLICK-ERROR] abrirModalEliminarPrenda no disponible');
+                                    }
+                                }).call(this)">
+                                    🗑️ Eliminar
+                                </button>
+                            </div>
+                        </div>
                     `;
                 });
                 

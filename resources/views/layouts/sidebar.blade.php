@@ -114,6 +114,22 @@
       </ul>
     </div>
 
+    @elseif(auth()->user()->hasRole('EPP-Bodega'))
+    <!-- EPP-BODEGA: Menú con única opción Pendiente EPP -->
+    <div class="menu-section">
+      <span class="menu-section-title">Gestión de Bodega</span>
+      <ul class="menu-list" role="navigation">
+      <li class="menu-item">
+        <a href="{{ route('gestion-bodega.pendientes-epp') }}"
+           class="menu-link {{ request()->routeIs('gestion-bodega.pendientes-epp') ? 'active' : '' }}"
+           aria-label="Pendiente EPP">
+          <span class="material-symbols-rounded" aria-hidden="true">shield</span>
+          <span class="menu-label">Pendiente EPP</span>
+        </a>
+      </li>
+      </ul>
+    </div>
+
     @elseif(auth()->user()->hasRole('supervisor_gerencia'))
     <!-- SUPERVISOR GERENCIA: Menú especializado para supervisores de gerencia -->
     <div class="menu-section">
