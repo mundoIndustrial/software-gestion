@@ -321,7 +321,7 @@
                                     <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px;">
                                         <div style="display: flex; align-items: center; gap: 6px;">
                                             <label style="font-size: 9px; color: #64748b; white-space: nowrap;">%</label>
-                                            <input type="number" id="valor-iva-epp" min="0" step="1" placeholder="0" style="width: 80px; background: white; border: 1px solid #e5e7eb; padding: 6px 8px; border-radius: 4px; font-weight: 700; color: #111827; font-size: 11px; text-align: center;">
+                                            <input type="number" id="valor-iva-epp" min="0" step="1" value="19" placeholder="19" style="width: 80px; background: white; border: 1px solid #e5e7eb; padding: 6px 8px; border-radius: 4px; font-weight: 700; color: #111827; font-size: 11px; text-align: center;">
                                         </div>
                                         <div style="display: flex; align-items: center; gap: 6px;">
                                             <label style="font-size: 9px; color: #64748b; white-space: nowrap;">Valor</label>
@@ -555,13 +555,30 @@ NIT 1.093.738.433-3</textarea>
 
         function calcularSubtotalEpp() {
             const itemsPedido = Array.isArray(window.itemsPedido) ? window.itemsPedido : [];
-            let epps = itemsPedido.filter(i => (i?.tipo || '').toLowerCase() === 'epp');
-            if (epps.length === 0 && itemsPedido.length > 0) {
-                epps = itemsPedido;
+            
+            // Si window.itemsPedido está vacío, intentar leer directamente del DOM
+            if (itemsPedido.length === 0) {
+                console.log('[calcularSubtotalEpp] window.itemsPedido vacío, leyendo del DOM...');
+                const filas = document.querySelectorAll('#tabla-items-pedido tr.item-epp');
+                let subtotal = 0;
+                
+                filas.forEach(fila => {
+                    const celdas = fila.querySelectorAll('td');
+                    if (celdas.length >= 7) {
+                        const totalText = celdas[6]?.textContent?.trim() || '0';
+                        const totalMatch = totalText.match(/[\d.]+/);
+                        const total = totalMatch ? parseFloat(totalMatch[0]) : 0;
+                        subtotal += total;
+                        console.log('[calcularSubtotalEpp] Fila encontrada, total:', total, 'subtotal acumulado:', subtotal);
+                    }
+                });
+                
+                return subtotal;
             }
-
+            
+            // Si window.itemsPedido tiene datos, usarlo (original)
             let subtotal = 0;
-            for (const it of epps) {
+            for (const it of itemsPedido) {
                 const cantidad = Number(it?.cantidad || 0);
                 const vu = (it?.valor_unitario !== undefined && it?.valor_unitario !== null && String(it.valor_unitario).trim() !== '' && !isNaN(Number(it.valor_unitario)))
                     ? Number(it.valor_unitario)
@@ -614,8 +631,10 @@ NIT 1.093.738.433-3</textarea>
                 tipoVentaEl.value = window.__EPP_COTIZACION_TIPO_VENTA__;
             }
 
-            if (ivaEl && window.__EPP_COTIZACION_IVA__ !== null && window.__EPP_COTIZACION_IVA__ !== undefined) {
-                ivaEl.value = window.__EPP_COTIZACION_IVA__;
+            if (ivaEl) {
+                // Si el IVA viene vacío, null, undefined o 0, usar 19 como default
+                const ivaValue = window.__EPP_COTIZACION_IVA__ || 19;
+                ivaEl.value = ivaValue;
             }
             
             // Cargar información adicional en modo edición
@@ -723,9 +742,16 @@ NIT 1.093.738.433-3</textarea>
                             it.imagenes || [],
                             it.id,
                             it.valor_unitario ?? null,
-                            it.total ?? null
+                            it.total ?? null,
+                            it.tipo || 'epp'  // ✨ Agregar tipo para diferenciar EPP/Prenda
                         );
                     });
+                    
+                    // Recalcular totales después de cargar los items
+                    setTimeout(() => {
+                        syncTotales();
+                        console.log('[EPP Form] Totales recalculados después de cargar items');
+                    }, 100);
                 }
             }
         } catch (e) {
@@ -797,9 +823,16 @@ NIT 1.093.738.433-3</textarea>
             }
 
             const itemsPedido = Array.isArray(window.itemsPedido) ? window.itemsPedido : [];
-            let epps = itemsPedido.filter(i => (i?.tipo || '').toLowerCase() === 'epp');
-            if (epps.length === 0 && itemsPedido.length > 0) {
-                epps = itemsPedido;
+            
+            // Procesar tanto EPPs como prendas (todos los items)
+            let items = itemsPedido.filter(i => {
+                const tipo = (i?.tipo || '').toLowerCase();
+                return tipo === 'epp' || tipo === 'prenda';
+            });
+            
+            // Si no hay filtrado por tipo, asumir que todos son items válidos
+            if (items.length === 0 && itemsPedido.length > 0) {
+                items = itemsPedido;
             }
 
             if (!cliente) {
@@ -816,9 +849,9 @@ NIT 1.093.738.433-3</textarea>
                 return;
             }
 
-            if (epps.length === 0) {
+            if (items.length === 0) {
                 if (window.Swal) {
-                    Swal.fire({ icon: 'warning', title: 'Sin ítems', text: 'Agrega al menos un EPP a la cotización' });
+                    Swal.fire({ icon: 'warning', title: 'Sin ítems', text: 'Agrega al menos un artículo (EPP o Prenda) a la cotización' });
                 }
                 return;
             }
@@ -903,9 +936,10 @@ NIT 1.093.738.433-3</textarea>
             formData.append('observaciones_generales_texto', observacionesGeneralesTexto);
 
             // Items (sin archivos, esos van aparte)
-            const itemsPayload = epps.map((epp) => ({
+            const itemsPayload = items.map((item) => ({
+                tipo: item.tipo || 'epp',  // Asegurar que el tipo se incluya (epp o prenda)
                 imagenes_keep: (() => {
-                    const imgs = Array.isArray(epp.imagenes) ? epp.imagenes : [];
+                    const imgs = Array.isArray(item.imagenes) ? item.imagenes : [];
                     const keep = [];
                     for (const im of imgs) {
                         // Identificar si es una imagen existente (sin file object) o nueva (con file object)
@@ -943,24 +977,24 @@ NIT 1.093.738.433-3</textarea>
                     }
                     return keep;
                 })(),
-                clear_imagenes: !(Array.isArray(epp.imagenes) && epp.imagenes.length > 0),
-                id: epp.id || epp.pedidoEppId || null,
-                nombre: epp.nombre_epp || epp.nombre_completo || epp.nombre || 'Sin nombre',
-                cantidad: epp.cantidad || 1,
-                valor_unitario: (epp.valor_unitario !== undefined && epp.valor_unitario !== null && String(epp.valor_unitario).trim() !== '')
-                    ? Number(epp.valor_unitario)
+                clear_imagenes: !(Array.isArray(item.imagenes) && item.imagenes.length > 0),
+                id: item.id || item.pedidoEppId || null,
+                nombre: item.nombre_epp || item.nombre_completo || item.nombre || 'Sin nombre',
+                cantidad: item.cantidad || 1,
+                valor_unitario: (item.valor_unitario !== undefined && item.valor_unitario !== null && String(item.valor_unitario).trim() !== '')
+                    ? Number(item.valor_unitario)
                     : null,
-                total: (epp.total !== undefined && epp.total !== null && String(epp.total).trim() !== '')
-                    ? Number(epp.total)
+                total: (item.total !== undefined && item.total !== null && String(item.total).trim() !== '')
+                    ? Number(item.total)
                     : null,
-                observaciones: epp.observaciones || null,
+                observaciones: item.observaciones || null,
             }));
             formData.append('items', JSON.stringify(itemsPayload));
 
             // Archivos: items[i][imagenes][]
-            for (let idx = 0; idx < epps.length; idx++) {
-                const epp = epps[idx];
-                const imagenes = Array.isArray(epp.imagenes) ? epp.imagenes : [];
+            for (let idx = 0; idx < items.length; idx++) {
+                const item = items[idx];
+                const imagenes = Array.isArray(item.imagenes) ? item.imagenes : [];
                 for (let j = 0; j < imagenes.length; j++) {
                     const file = await convertirImagenAFile(imagenes[j], `epp_${idx + 1}_${j + 1}.webp`);
                     if (file) {

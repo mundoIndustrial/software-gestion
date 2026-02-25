@@ -64,7 +64,7 @@
     function renderEppItemCard(item) {
         if (!item) return '';
 
-        const nombre = (item.nombre || 'Sin nombre').toString();
+        const nombre = (item.nombre || item.descripcion || 'Sin nombre').toString();
         const cantidad = (item.cantidad !== undefined && item.cantidad !== null) ? item.cantidad : 1;
         const observaciones = (item.observaciones || '').toString().trim();
         const galleryId = `galeria-epp-${item.id}`;
@@ -127,7 +127,9 @@
             return '';
         }
 
-        const items = Array.isArray(payload?.epp_items) ? payload.epp_items : [];
+        const eppItems = Array.isArray(payload?.epp_items) ? payload.epp_items : [];
+        const prendaItems = Array.isArray(payload?.prenda_items) ? payload.prenda_items : [];
+        const items = [...eppItems, ...prendaItems];
 
         const tipoVenta = (
             payload?.epp_cotizacion?.tipo_venta ||
@@ -145,6 +147,8 @@
             'payload.cotizacion.iva': payload?.cotizacion?.iva,
             'valorIva': valorIva,
             'tipo': typeof payload?.cotizacion?.iva,
+            'eppItems': eppItems.length,
+            'prendaItems': prendaItems.length,
             'payload_completo': payload
         });
 
@@ -165,9 +169,25 @@
             return html;
         }
 
-        items.forEach((it) => {
-            html += renderEppItemCard(it);
-        });
+        // Renderizar sección de EPPs si existen
+        if (eppItems.length > 0) {
+            html += '<div style="margin-bottom: 1.5rem;">';
+            html += '<h3 style="color: #0f172a; font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #0ea5e9;">Equipos de Protección Personal (EPP)</h3>';
+            eppItems.forEach((it) => {
+                html += renderEppItemCard(it);
+            });
+            html += '</div>';
+        }
+
+        // Renderizar sección de prendas si existen
+        if (prendaItems.length > 0) {
+            html += '<div style="margin-bottom: 1.5rem;">';
+            html += '<h3 style="color: #0f172a; font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #ec4899;">Prendas</h3>';
+            prendaItems.forEach((it) => {
+                html += renderEppItemCard(it);
+            });
+            html += '</div>';
+        }
 
         // Resumen al final: subtotal (suma de items), IVA y total con IVA
         const subtotal = items.reduce((acc, it) => {

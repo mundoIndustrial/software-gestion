@@ -35,9 +35,9 @@ class EppItemManager {
     }
 
     /**
-     * Crear item visual de EPP como fila de tabla
+     * Crear item visual de EPP o PRENDA como fila de tabla
      */
-    crearItem(id, nombre, categoria, cantidad, observaciones, imagenes = [], pedidoEppId = null, valorUnitario = null, total = null) {
+    crearItem(id, nombre, categoria, cantidad, observaciones, imagenes = [], pedidoEppId = null, valorUnitario = null, total = null, tipo = 'epp') {
         const listaItems = document.getElementById(this.listaItemsId);
         if (!listaItems) {
             console.warn('[EppItemManager] Contenedor no encontrado:', this.listaItemsId);
@@ -58,14 +58,29 @@ class EppItemManager {
             ? Number(total)
             : null;
         
+        // Colores según tipo
+        const colorPorTipo = {
+            'epp': { borde: '#0ea5e9', etiqueta: 'EPP' },
+            'prenda': { borde: '#ec4899', etiqueta: 'PRENDA' }
+        };
+        const estilos = colorPorTipo[tipo] || colorPorTipo['epp'];
+        
         // Crear fila de tabla
         const row = document.createElement('tr');
         row.className = 'item-epp';
         row.setAttribute('data-item-id', id);
         row.setAttribute('data-pedido-epp-id', pedidoEppId || id);
+        row.setAttribute('data-tipo', tipo);
+        row.style.borderLeft = `5px solid ${estilos.borde}`;
+        row.style.backgroundColor = tipo === 'prenda' ? '#fdf2f8' : 'transparent';
         
         row.innerHTML = `
-            <td style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #1f2937; border-bottom: 1px solid #e5e7eb;">1</td>
+            <td style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #1f2937; border-bottom: 1px solid #e5e7eb;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <span>1</span>
+                    <span style="background: ${estilos.borde}; color: white; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 3px;">${estilos.etiqueta}</span>
+                </div>
+            </td>
             <td style="padding: 12px 16px; text-align: center; font-size: 11px; font-weight: 500; color: #1f2937; border-bottom: 1px solid #e5e7eb;">
                 ${this._obtenerMiniatura(imagenes) ? `
                     <img src="${this._obtenerMiniatura(imagenes)}" alt="${nombre}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; cursor: pointer;" 
@@ -88,7 +103,7 @@ class EppItemManager {
                             ⋮
                         </button>
                         <div class="submenu-epp" data-item-id="${id}" style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; flex-direction: column; min-width: 100px;">
-                            <button type="button" class="btn-editar-epp" data-item-id="${id}" style="display: block; width: 100%; padding: 8px 12px; text-align: left; background: none; border: none; cursor: pointer; font-size: 12px; color: #1f2937; transition: background 0.2s ease; border-bottom: 1px solid #e5e7eb;" 
+                            <button type="button" class="btn-editar-epp" data-item-id="${id}" data-tipo="${tipo}" style="display: block; width: 100%; padding: 8px 12px; text-align: left; background: none; border: none; cursor: pointer; font-size: 12px; color: #1f2937; transition: background 0.2s ease; border-bottom: 1px solid #e5e7eb;" 
                                 onmouseover="this.style.background = '#f3f4f6';" 
                                 onmouseout="this.style.background = 'transparent';">
                                 Editar
@@ -112,7 +127,7 @@ class EppItemManager {
             console.log(`[EppItemManager] Imágenes cacheadas para item: ${id}, total: ${imagenes.length}`);
         }
         
-        console.log('[EppItemManager] Item creado como fila de tabla:', id);
+        console.log('[EppItemManager] Item creado como fila de tabla:', id, 'tipo:', tipo);
     }
 
     /**

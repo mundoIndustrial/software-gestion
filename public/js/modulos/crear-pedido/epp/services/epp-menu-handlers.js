@@ -99,7 +99,8 @@ window.EppMenuHandlers = {
     _editarEpp(btn) {
         console.log(' [_editarEpp] ===== CLICK EN EDITAR =====');
         const itemId = btn.dataset.itemId;
-        console.log(' [_editarEpp] itemId:', itemId);
+        const tipo = btn.dataset.tipo || 'epp'; // Obtener tipo desde data-tipo attribute
+        console.log(' [_editarEpp] itemId:', itemId, 'tipo:', tipo);
         
         // Obtener el item EPP
         const item = btn.closest('.item-epp') || btn.closest('.item-epp-card');
@@ -137,11 +138,18 @@ window.EppMenuHandlers = {
         if (eppData && !eppData.pedido_epp_id) {
             eppData.pedido_epp_id = pedidoEppId;
         }
+        eppData.tipo = tipo; // Incluir tipo en los datos
         console.log(' [_editarEpp] Datos finales con pedido_epp_id:', eppData);
 
         // Si ya tenemos los datos, proceder a editar
-        console.log(' [_editarEpp] Datos completos encontrados - Procediendo a editar');
-        this._procederAEditarEPP(eppData, itemId, item);
+        console.log(' [_editarEpp] Datos completos encontrados - Procediendo a editar (tipo: ' + tipo + ')');
+        
+        // Abrir el modal correcto según el tipo
+        if (tipo === 'prenda') {
+            this._procederAEditarPrenda(eppData, itemId, item);
+        } else {
+            this._procederAEditarEPP(eppData, itemId, item);
+        }
     },
 
     /**
@@ -443,6 +451,148 @@ window.EppMenuHandlers = {
                 } else {
                     console.error('[EppMenuHandlers]  No hay función disponible para editar EPP');
                 }
+            }
+        }, 100);
+    },
+
+    /**
+     * Proceder a editar prenda - similar a EPP pero abre modal de prenda
+     */
+    _procederAEditarPrenda(prendaData, itemId, item) {
+        console.log(' [_procederAEditarPrenda] ===== INICIANDO EDICIÓN DE PRENDA =====');
+        console.log(' [_procederAEditarPrenda] Datos recibidos:', prendaData);
+        
+        // Transformar datos para que sean compatibles con el modal de prenda
+        const prendaDataTransformado = {
+            prenda_id: prendaData.prenda_id || prendaData.epp_id || prendaData.id,
+            id: prendaData.prenda_id || prendaData.epp_id || prendaData.id,
+            descripcion: prendaData.descripcion || prendaData.nombre || '',
+            nombre: prendaData.descripcion || prendaData.nombre || '',
+            cantidad: prendaData.cantidad || 1,
+            observaciones: prendaData.observaciones || '',
+            imagenes: prendaData.imagenes || [],
+            imagen: prendaData.imagen || null,
+            valor_unitario: (prendaData.valor_unitario !== undefined ? prendaData.valor_unitario : (prendaData.valorUnitario !== undefined ? prendaData.valorUnitario : null)),
+            total: (prendaData.total !== undefined ? prendaData.total : null),
+            tipo: 'prenda'
+        };
+        console.log(' [_procederAEditarPrenda] Datos transformados:', prendaDataTransformado);
+        console.log(' [_procederAEditarPrenda] Imágenes disponibles:', prendaDataTransformado.imagenes.length);
+        console.log(' [_procederAEditarPrenda] Total disponible:', prendaDataTransformado.total);
+        
+        // Cerrar menú primero
+        const submenu = item.querySelector('.submenu-epp');
+        if (submenu) submenu.style.display = 'none';
+        console.log(' [_procederAEditarPrenda] Menú cerrado');
+
+        // Usar setTimeout para asegurar que la función esté disponible
+        console.log(' [_procederAEditarPrenda] Abriendo modal de prenda...');
+        setTimeout(() => {
+            if (typeof window.abrirModalAgregarPrenda === 'function') {
+                console.log(' [_procederAEditarPrenda] Llamando a window.abrirModalAgregarPrenda()');
+                window.abrirModalAgregarPrenda();
+                
+                // Cargar datos en el modal después de un pequeño delay para asegurar que está renderizado
+                setTimeout(() => {
+                    const descEl = document.getElementById('descripcionPrenda');
+                    const cantEl = document.getElementById('cantidadPrenda');
+                    const valUnitEl = document.getElementById('valorUnitarioPrenda');
+                    const obsEl = document.getElementById('observacionesPrenda');
+                    const totalEl = document.getElementById('totalPrenda');
+                    const contenedorFotos = document.getElementById('contenedorFotosPrenda');
+                    
+                    if (descEl && cantEl && valUnitEl && obsEl) {
+                        // Cargar datos de texto
+                        descEl.value = prendaDataTransformado.descripcion || '';
+                        cantEl.value = prendaDataTransformado.cantidad || 1;
+                        valUnitEl.value = prendaDataTransformado.valor_unitario || '';
+                        obsEl.value = prendaDataTransformado.observaciones || '';
+                        
+                        // Cargar total
+                        if (totalEl && prendaDataTransformado.total) {
+                            totalEl.value = prendaDataTransformado.total;
+                            console.log(' [_procederAEditarPrenda] Total cargado:', prendaDataTransformado.total);
+                        }
+                        
+                        // Cargar imágenes si existen
+                        if (prendaDataTransformado.imagenes && prendaDataTransformado.imagenes.length > 0 && contenedorFotos) {
+                            console.log(' [_procederAEditarPrenda] Cargando imágenes:', prendaDataTransformado.imagenes.length, 'imágenes');
+                            
+                            // Limpiar mensaje inicial
+                            const mensajeDrag = document.getElementById('mensajeDragDropPrenda');
+                            if (mensajeDrag) mensajeDrag.style.display = 'none';
+                            
+                            // Limpiar contenedor
+                            contenedorFotos.innerHTML = '';
+                            
+                            // Agregar imágenes
+                            prendaDataTransformado.imagenes.forEach((imgData, idx) => {
+                                if (imgData) {
+                                    // Extraer URL dependiendo de si es string u objeto
+                                    let imgUrl = '';
+                                    if (typeof imgData === 'string') {
+                                        imgUrl = imgData;
+                                    } else if (typeof imgData === 'object') {
+                                        imgUrl = imgData.url || imgData.ruta_web || imgData.previewUrl || '';
+                                    }
+                                    
+                                    if (!imgUrl) {
+                                        console.warn(' [_procederAEditarPrenda] No se pudo obtener URL de imagen:', imgData);
+                                        return;
+                                    }
+                                    
+                                    const divFoto = document.createElement('div');
+                                    divFoto.style.position = 'relative';
+                                    divFoto.className = 'foto-prenda-item';
+                                    divFoto.dataset.index = idx;
+                                    
+                                    const img = document.createElement('img');
+                                    img.src = imgUrl;
+                                    img.style.width = '100%';
+                                    img.style.height = '100px';
+                                    img.style.objectFit = 'cover';
+                                    img.style.borderRadius = '4px';
+                                    img.style.border = '1px solid #e5e7eb';
+                                    img.alt = 'Foto de prenda';
+                                    
+                                    const btnEliminar = document.createElement('button');
+                                    btnEliminar.type = 'button';
+                                    btnEliminar.textContent = '✕';
+                                    btnEliminar.style.position = 'absolute';
+                                    btnEliminar.style.top = '-8px';
+                                    btnEliminar.style.right = '-8px';
+                                    btnEliminar.style.width = '24px';
+                                    btnEliminar.style.height = '24px';
+                                    btnEliminar.style.background = '#dc2626';
+                                    btnEliminar.style.color = 'white';
+                                    btnEliminar.style.border = 'none';
+                                    btnEliminar.style.borderRadius = '50%';
+                                    btnEliminar.style.cursor = 'pointer';
+                                    btnEliminar.style.fontSize = '12px';
+                                    btnEliminar.onclick = (e) => {
+                                        e.preventDefault();
+                                        divFoto.remove();
+                                        console.log(' [_procederAEditarPrenda] Imagen eliminada');
+                                    };
+                                    
+                                    divFoto.appendChild(img);
+                                    divFoto.appendChild(btnEliminar);
+                                    contenedorFotos.appendChild(divFoto);
+                                    console.log(' [_procederAEditarPrenda] Imagen cargada:', imgUrl);
+                                }
+                            });
+                        }
+                        
+                        // Guardar como prenda en edición
+                        window.prendaEnEdicion = prendaDataTransformado;
+                        console.log(' [_procederAEditarPrenda] Datos cargados en el modal de prenda');
+                    } else {
+                        console.warn(' [_procederAEditarPrenda] No se encontraron todos los campos del modal');
+                    }
+                }, 150);
+            } else {
+                console.warn(' [_procederAEditarPrenda] No hay función disponible para editar prenda');
+                alert('Por favor haz clic nuevamente en editar. El modal se está cargando.');
             }
         }, 100);
     },

@@ -60,6 +60,48 @@ class PDFEppController extends Controller
                 ];
             })->values()->all();
 
+            // ============ AGREGAR PRENDAS AL PDF ============
+            $prendaItems = DB::table('prenda_items_cot')->where('cotizacion_id', $cotizacion->id)->orderBy('id')->get();
+
+            $valoresPrendas = DB::table('prenda_valor_unitario')
+                ->whereIn('prenda_item_id', $prendaItems->pluck('id')->all())
+                ->get()
+                ->keyBy('prenda_item_id');
+
+            $imagenesPrendas = DB::table('prenda_img_cot')
+                ->whereIn('prenda_item_id', $prendaItems->pluck('id')->all())
+                ->orderBy('id')
+                ->get()
+                ->groupBy('prenda_item_id');
+
+            $prendas = $prendaItems->map(function ($it) use ($valoresPrendas, $imagenesPrendas) {
+                $vu = $valoresPrendas[$it->id] ?? null;
+                $imgs = $imagenesPrendas->get($it->id, collect());
+
+                $imgPaths = $imgs->map(function ($row) {
+                    $ruta = $row->ruta ?? null;
+                    if (!$ruta) return null;
+                    try {
+                        $path = Storage::disk('public')->path($ruta);
+                        return $path;
+                    } catch (\Exception $e) {
+                        return null;
+                    }
+                })->filter()->values()->all();
+
+                return [
+                    'id' => $it->id,
+                    'nombre' => $it->descripcion ?? 'Sin nombre',
+                    'cantidad' => (int)($it->cantidad ?? 1),
+                    'observaciones' => $it->observaciones ?? null,
+                    'valor_unitario' => $vu ? $vu->valor_unitario : null,
+                    'imagenes' => $imgPaths,
+                ];
+            })->values()->all();
+
+            // Combinar EPPs y prendas en un solo array
+            $items = array_merge($items, $prendas);
+
             $design = new EppPdfDesign($cotizacion, [
                 'epp_cotizacion' => $eppCot,
                 'items' => $items,
