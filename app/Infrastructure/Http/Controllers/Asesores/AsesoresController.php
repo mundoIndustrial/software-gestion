@@ -202,7 +202,7 @@ class AsesoresController extends Controller
             $allowEditarCotizacionCreada = $request->boolean('editar_cotizacion');
 
             $tipoQuery = $request->query('tipo');
-            if ($tipoQuery === 'PARA_CLIENTE') {
+            if ($tipoQuery === 'EPP') {
                 $tipo = $tipoQuery;
                 return view('asesores.cotizaciones.epp.create', compact('tipo'));
             }
@@ -243,11 +243,11 @@ class AsesoresController extends Controller
     {
         try {
             $tipoQuery = $request->query('tipo');
-            if ($tipoQuery !== 'PARA_CLIENTE') {
+            if ($tipoQuery !== 'EPP') {
                 $cotizacion = \App\Models\Cotizacion::findOrFail($id);
                 $codigoTipo = $cotizacion->tipoCotizacion?->codigo;
                 if (is_string($codigoTipo) && strtoupper(trim($codigoTipo)) === 'EPP') {
-                    return redirect("/asesores/cotizaciones/{$id}/edit?tipo=PARA_CLIENTE");
+                    return redirect("/asesores/cotizaciones/{$id}/edit?tipo=EPP");
                 }
 
                 abort(404);
@@ -319,7 +319,7 @@ class AsesoresController extends Controller
                 'iva' => $iva
             ]);
 
-            $tipo = 'PARA_CLIENTE';
+            $tipo = 'EPP';
             return view('asesores.cotizaciones.epp.create', compact('tipo', 'cotizacion', 'eppCot', 'itemsUi', 'iva', 'condicionesPago', 'tiempoEntrega', 'cuentasAutorizadas'));
         } catch (\Exception $e) {
             if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException) {
