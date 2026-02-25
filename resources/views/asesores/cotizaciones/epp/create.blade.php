@@ -748,8 +748,15 @@ NIT 1.093.738.433-3</textarea>
                 try {
                     if (!img) return null;
 
+                    // PRIORIDAD 1: Si ya es un File object, retornarlo directamente
                     if (img instanceof File) {
                         return img;
+                    }
+
+                    // PRIORIDAD 2: Si tiene un file object guardado (desde window.fotosEPP), usarlo sin fetch
+                    if (img?.file && img.file instanceof File) {
+                        console.log(`[convertirImagenAFile] Usando File object guardado: ${img.nombre}`);
+                        return img.file;
                     }
 
                     const src = (typeof img === 'string')
@@ -758,15 +765,24 @@ NIT 1.093.738.433-3</textarea>
 
                     if (!src || typeof src !== 'string') return null;
 
-                    // DataURL
+                    // PRIORIDAD 3: DataURL (puede hacer fetch, no viola CSP)
                     if (src.startsWith('data:')) {
+                        console.log(`[convertirImagenAFile] Convirtiendo DataURL a File: ${fallbackName}`);
                         const res = await fetch(src);
                         const blob = await res.blob();
                         return new File([blob], fallbackName, { type: blob.type || 'image/webp' });
                     }
 
-                    // Blob URL o URL normal (misma origen o accesible)
-                    if (src.startsWith('blob:') || src.startsWith('http') || src.startsWith('/')) {
+                    // PRIORIDAD 4: URLs normales (NO blob URLs - violarían CSP en producción)
+                    // Blob URLs no pueden ser fetched en producción, se saltan
+                    if (src.startsWith('blob:')) {
+                        console.warn(`[convertirImagenAFile] Blob URL detectado sin File object. Ignorando fetch para cumplir CSP: ${src.substring(0, 50)}...`);
+                        return null;
+                    }
+
+                    // URLs normales (http/https/relativas)
+                    if (src.startsWith('http') || src.startsWith('/')) {
+                        console.log(`[convertirImagenAFile] Fetching URL normal: ${src.substring(0, 50)}...`);
                         const res = await fetch(src);
                         const blob = await res.blob();
                         const name = (img?.nombre_archivo || img?.name || fallbackName);
@@ -775,6 +791,7 @@ NIT 1.093.738.433-3</textarea>
 
                     return null;
                 } catch (e) {
+                    console.error(`[convertirImagenAFile] Error procesando imagen:`, e);
                     return null;
                 }
             }
@@ -891,15 +908,37 @@ NIT 1.093.738.433-3</textarea>
                     const imgs = Array.isArray(epp.imagenes) ? epp.imagenes : [];
                     const keep = [];
                     for (const im of imgs) {
+                        // Identificar si es una imagen existente (sin file object) o nueva (con file object)
+                        if (im?.file && im.file instanceof File) {
+                            // Imagen nueva - será subida como archivo, no agregar a keep
+                            continue;
+                        }
+                        
                         const src = (typeof im === 'string')
                             ? im
                             : (im?.previewUrl || im?.url || im?.ruta_web || im?.ruta_webp || im?.ruta_original || null);
                         if (!src || typeof src !== 'string') continue;
+                        
+                        // Solo mantener URLs que NO son blob URLs
+                        // Las blob URLs son temporales y no se pueden usar después
+                        if (src.startsWith('blob:')) {
+                            console.log(`[itemsPayload] Ignorando blob URL temporal (será resubida si tiene file object):`, src.substring(0, 50));
+                            continue;
+                        }
+                        
                         // Convertir URL pública /storage/... a ruta relativa en disk('public')
-                        const idx = src.indexOf('/storage/');
-                        if (idx !== -1) {
+                        if (src.includes('/storage/')) {
+                            const idx = src.indexOf('/storage/');
                             const rel = src.substring(idx + '/storage/'.length);
-                            if (rel) keep.push(rel);
+                            if (rel) {
+                                keep.push(rel);
+                                console.log(`[itemsPayload] Imagen a mantener: ${rel}`);
+                            }
+                        } else if (src.startsWith('http') || src.startsWith('/')) {
+                            // Para URLs que no están en /storage/, intentar extraer la ruta relativa
+                            // o agregarlas tal cual si son URLs accesibles
+                            keep.push(src);
+                            console.log(`[itemsPayload] Imagen URL a mantener: ${src.substring(0, 50)}`);
                         }
                     }
                     return keep;
