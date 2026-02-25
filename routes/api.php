@@ -365,6 +365,12 @@ Route::middleware('auth')->prefix('procesos')->name('procesos.')->group(function
             Route::post('activar-recibo', [ProcesosController::class, 'activarRecibo'])
                 ->name('activar-recibo');
 
+            Route::get('tallas-disponibles', [ProcesosController::class, 'tallasDisponibles'])
+                ->name('tallas-disponibles');
+
+            Route::post('activar-recibo-con-tallas', [ProcesosController::class, 'activarReciboConTallas'])
+                ->name('activar-recibo-con-tallas');
+
             // Gestión de imágenes
             Route::prefix('imagenes')->name('imagenes.')->group(function () {
                 Route::get('/', [ProcesosController::class, 'obtenerImagenes'])
@@ -380,12 +386,6 @@ Route::middleware('auth')->prefix('procesos')->name('procesos.')->group(function
                     ->name('eliminar');
             });
         });
-});
-
-// Ruta específica para activar recibos - con middleware api
-Route::middleware(['api'])->prefix('api/procesos')->group(function () {
-    Route::post('{procesoId}/activar-recibo', [ProcesosController::class, 'activarRecibo'])
-        ->name('procesos.activar-recibo');
 });
 
 // Gestión de imágenes de EPP

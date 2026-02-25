@@ -27,6 +27,7 @@ use App\Http\Controllers\PDFPrendaController;
 use App\Http\Controllers\PDFCotizacionCombiadaController;
 use App\Http\Controllers\PDFLogoController;
 use App\Http\Controllers\PDFEppController;
+use App\Http\Controllers\Api_temp\ProcesosController;
 
 // Ruta temporal para verificar datos de la base de datos
 Route::get('/verificar-datos-bd', function () {
@@ -235,6 +236,18 @@ Route::get('/verificar-tablas-bd', function () {
 // RUTAS DE SUGERENCIAS DE CARTERA - PEDIDOS (pendiente_cartera)
 // ========================================
 Route::middleware(['web', 'auth'])->group(function () {
+    // Endpoints usados por supervisor-pedidos vía fetch, requieren sesión (web)
+    Route::prefix('api/procesos')->group(function () {
+        Route::post('{procesoId}/activar-recibo', [ProcesosController::class, 'activarRecibo'])
+            ->name('procesos.activar-recibo.web');
+
+        Route::get('{procesoId}/tallas-disponibles', [ProcesosController::class, 'tallasDisponibles'])
+            ->name('procesos.tallas-disponibles.web');
+
+        Route::post('{procesoId}/activar-recibo-con-tallas', [ProcesosController::class, 'activarReciboConTallas'])
+            ->name('procesos.activar-recibo-con-tallas.web');
+    });
+
     Route::prefix('cartera/pedidos')->group(function () {
         Route::post('/clientes/sugerencias', function (\Illuminate\Http\Request $request) {
             try {

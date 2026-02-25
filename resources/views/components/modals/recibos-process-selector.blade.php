@@ -69,6 +69,34 @@
     </div>
 </div>
 
+<!-- Modal de Selección de Tallas para Activar Recibo -->
+<div id="activar-recibo-tallas-modal" 
+     style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 99999;"
+     onclick="if(event.target === this) cerrarModalActivarReciboTallas()">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 8px; padding: 20px; max-width: 560px; width: 92%; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 80vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <h3 style="margin: 0; color: #1f2937; font-size: 18px;">Activar Recibo - Seleccionar Tallas</h3>
+            <button onclick="cerrarModalActivarReciboTallas()" style="background: #e5e7eb; border: none; color: #111827; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 18px; line-height: 32px;">✕</button>
+        </div>
+
+        <div id="activar-recibo-tallas-subtitle" style="color: #6b7280; font-size: 13px; margin-bottom: 14px;"></div>
+
+        <div id="activar-recibo-tallas-loading" style="display:none; text-align:center; padding: 18px;">
+            <div style="display: inline-block; width: 28px; height: 28px; border: 3px solid #e5e7eb; border-top: 3px solid #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+            <div style="margin-top: 10px; color: #6b7280; font-size: 13px;">Cargando tallas...</div>
+        </div>
+
+        <div id="activar-recibo-tallas-error" style="display:none; background:#fee2e2; border:1px solid #fecaca; border-radius: 8px; padding: 12px; color:#991b1b; font-size: 13px; margin-bottom: 12px;"></div>
+
+        <div id="activar-recibo-tallas-container"></div>
+
+        <div style="display:flex; justify-content:flex-end; gap: 10px; margin-top: 16px;">
+            <button onclick="cerrarModalActivarReciboTallas()" style="background:#e5e7eb; color:#374151; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; font-weight:600;">Cancelar</button>
+            <button id="activar-recibo-tallas-confirmar" onclick="confirmarActivarReciboConTallas()" style="background:#10b981; color:white; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; font-weight:700;">Activar Recibo</button>
+        </div>
+    </div>
+</div>
+
 <style>
     @keyframes fadeIn {
         from { opacity: 0; }
@@ -467,10 +495,11 @@
             }
 
             //  PROCESOS ADICIONALES
-            const procesos = prenda.procesos || [];
+            const procesos = prenda.procesos || prenda.procesos_prenda || prenda.procesosPrenda || [];
             procesos.forEach((proc) => {
                 // Garantizar que tipo_proceso es STRING
                 const tipoProceso = String(proc.tipo_proceso || proc.nombre_proceso || '');
+                const procesoId = proc.id || proc.proceso_id || proc.proceso_prenda_detalle_id || null;
                 
                 // Filtrar: excluir REFLECTIVO si de_bodega es false
                 if (!prenda.de_bodega && tipoProceso.toLowerCase() === 'reflectivo') {
@@ -491,7 +520,8 @@
                     tipo: tipoProceso,
                     nombre: `${tipoProceso}`,
                     estado: proc.estado || "",
-                    es_base: false
+                    es_base: false,
+                    proceso_id: procesoId
                 });
             });
 
@@ -602,9 +632,14 @@
                     //  CRÍTICO: Pasar tipo como STRING puro
                     const tipoString = String(recibo.tipo);
                     
-                    // Determinar si el recibo está activo (solo para procesos reales)
+                    // Determinar si el recibo está activo
+                    // (para procesos reales viene de backend; para base normalmente viene vacío)
                     const estaActivo = !recibo.es_base && recibo.estado === 'APROBADO' && recibo.numero_recibo;
-                    const puedeActivar = !recibo.es_base && recibo.estado === 'PENDIENTE';
+                    
+                    // En pedidos aún no aprobados, algunos procesos pueden venir con estado vacío/null.
+                    // Para el selector, considerar eso como equivalente a PENDIENTE para poder activar el recibo.
+                    const estadoRecibo = (recibo.estado ?? '').toString().trim().toUpperCase();
+                    const puedeActivar = (estadoRecibo === 'PENDIENTE' || estadoRecibo === '');
                     
                     //  CRÍTICO: Solo supervisor_pedidos puede activar/desactivar recibos
                     const usuarioEsSupervisor = window.selectorRecibosState?.esSupervisorPedidos || window.selectorRecibosState?.esSupervisor;
@@ -613,6 +648,11 @@
                     
                     const reciboClass = estaActivo ? 'recibo-activo' : '';
                     
+                    const procesoId = recibo.proceso_id || null;
+                    const procesoIdNum = (procesoId !== null && procesoId !== undefined && procesoId !== '' && !Number.isNaN(Number.parseInt(procesoId, 10)))
+                        ? Number.parseInt(procesoId, 10)
+                        : null;
+
                     html += `
                         <div class="proceso-item ${reciboClass}" onclick="seleccionarProceso(${prenda.id}, '${tipoString}')">
                             <div class="proceso-info">
@@ -623,7 +663,7 @@
                             <div class="proceso-acciones">
                                 ${puedeModificarRecibo ? `
                                     <button class="btn-activar-recibo" 
-                                            onclick="event.stopPropagation(); toggleActivarRecibo(${prenda.id}, '${tipoString}', ${!estaActivo})"
+                                            onclick="event.stopPropagation(); toggleActivarRecibo(${prenda.id}, '${tipoString}', ${!estaActivo}, ${procesoIdNum !== null ? procesoIdNum : 'null'})"
                                             title="Activar recibo">
                                         <i class="fas fa-check"></i>
                                         Activar
@@ -631,7 +671,7 @@
                                 ` : ''}
                                 ${puedeDesactivarRecibo ? `
                                     <button class="btn-desactivar-recibo" 
-                                            onclick="event.stopPropagation(); toggleActivarRecibo(${prenda.id}, '${tipoString}', ${!estaActivo})"
+                                            onclick="event.stopPropagation(); toggleActivarRecibo(${prenda.id}, '${tipoString}', ${!estaActivo}, ${procesoIdNum !== null ? procesoIdNum : 'null'})"
                                             title="Desactivar recibo">
                                         <i class="fas fa-times"></i>
                                         Desactivar
@@ -793,16 +833,39 @@
      * @param {string} tipoProceso - Tipo de proceso
      * @param {boolean} activar - true para activar, false para desactivar
      */
-    window.toggleActivarRecibo = async function(prendaId, tipoProceso, activar) {
+    window.toggleActivarRecibo = async function(prendaId, tipoProceso, activar, procesoId = null) {
         try {
-            // Mostrar modal de confirmación
+            console.log('[toggleActivarRecibo] params:', { prendaId, tipoProceso, activar, procesoId });
+
+            if (procesoId !== null && procesoId !== undefined && procesoId !== '' && !Number.isNaN(Number.parseInt(procesoId, 10))) {
+                procesoId = Number.parseInt(procesoId, 10);
+            } else {
+                procesoId = null;
+            }
+
+            const prenda = window.selectorRecibosState?.prendas?.find(p => p.id == prendaId) || null;
+            const esBodega = prenda ? (String(prenda.de_bodega) === '1' || prenda.de_bodega === 1 || prenda.de_bodega === true) : false;
+            const tipoProcesoNorm = String(tipoProceso || '').trim().toLowerCase();
+            const procesosConTallas = new Set(['dtf', 'sublimado', 'estampado', 'bordado', 'reflectivo']);
+            const debeSeleccionarTallas = activar && esBodega && procesosConTallas.has(tipoProcesoNorm);
+
+            if (debeSeleccionarTallas) {
+                if (!procesoId) {
+                    alert('No se encontró el proceso para activar recibo con tallas.');
+                    return;
+                }
+                await abrirModalActivarReciboTallas(prendaId, tipoProceso, procesoId);
+                return;
+            }
+
+            // Para NO-bodega o tipos distintos, mantener flujo antiguo (confirmación simple)
             const accion = activar ? 'activar' : 'desactivar';
             const titulo = activar ? 'Activar Recibo' : 'Desactivar Recibo';
             const mensaje = `¿Está seguro de que desea ${accion} el recibo de ${tipoProceso}?`;
             const colorBoton = activar ? '#10b981' : '#ef4444';
-            
+
             mostrarModalConfirmar(titulo, mensaje, colorBoton, async () => {
-                await ejecutarActivarRecibo(prendaId, tipoProceso, activar);
+                await ejecutarActivarRecibo(prendaId, tipoProceso, activar, procesoId);
             });
 
         } catch (error) {
@@ -811,21 +874,246 @@
         }
     };
 
+    // Estado modal tallas
+    window.activarReciboTallasState = {
+        procesoId: null,
+        prendaId: null,
+        tipoProceso: null,
+        tallas: []
+    };
+
+    window.cerrarModalActivarReciboTallas = function() {
+        const modal = document.getElementById('activar-recibo-tallas-modal');
+        if (modal) modal.style.display = 'none';
+        window.activarReciboTallasState = { procesoId: null, prendaId: null, tipoProceso: null, tallas: [] };
+        const cont = document.getElementById('activar-recibo-tallas-container');
+        if (cont) cont.innerHTML = '';
+        const err = document.getElementById('activar-recibo-tallas-error');
+        if (err) { err.style.display = 'none'; err.textContent = ''; }
+    };
+
+    async function abrirModalActivarReciboTallas(prendaId, tipoProceso, procesoId = null) {
+        const modal = document.getElementById('activar-recibo-tallas-modal');
+        const loading = document.getElementById('activar-recibo-tallas-loading');
+        const error = document.getElementById('activar-recibo-tallas-error');
+        const container = document.getElementById('activar-recibo-tallas-container');
+        const subtitle = document.getElementById('activar-recibo-tallas-subtitle');
+
+        if (!modal || !loading || !error || !container || !subtitle) {
+            alert('Error: modal de tallas no disponible');
+            return;
+        }
+
+        // Resolver procesoId: preferir el que viene desde el botón (recibo.proceso_id)
+        // y solo si no viene, intentar buscarlo en la prenda.
+        if (!procesoId) {
+            const prenda = window.selectorRecibosState.prendas.find(p => p.id == prendaId);
+            const procesos = prenda ? (prenda.procesos || prenda.procesos_prenda || prenda.procesosPrenda || []) : [];
+            if (prenda && procesos) {
+                const tipoBuscado = String(tipoProceso || '').trim().toLowerCase();
+                const proceso = procesos.find(p => {
+                    const tipoActual = String(p.tipo_proceso || p.nombre_proceso || '').trim().toLowerCase();
+                    return tipoActual === tipoBuscado;
+                });
+                if (proceso) procesoId = proceso.id || proceso.proceso_id || proceso.proceso_prenda_detalle_id || null;
+            }
+        }
+
+        if (procesoId !== null && procesoId !== undefined && procesoId !== '' && !Number.isNaN(Number.parseInt(procesoId, 10))) {
+            procesoId = Number.parseInt(procesoId, 10);
+        } else {
+            procesoId = null;
+        }
+
+        if (!procesoId) {
+            alert('Error: No se encontró el proceso para activar recibo');
+            return;
+        }
+
+        window.activarReciboTallasState.procesoId = procesoId;
+        window.activarReciboTallasState.prendaId = prendaId;
+        window.activarReciboTallasState.tipoProceso = tipoProceso;
+
+        modal.style.display = 'block';
+        loading.style.display = 'block';
+        error.style.display = 'none';
+        error.textContent = '';
+        container.innerHTML = '';
+        subtitle.textContent = `Proceso: ${tipoProceso}`;
+
+        try {
+            const resp = await fetch(`/api/procesos/${procesoId}/tallas-disponibles`, {
+                headers: {
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            });
+            const data = await resp.json();
+            if (!resp.ok || !data.success) {
+                throw new Error(data.message || `HTTP ${resp.status}`);
+            }
+
+            const tallas = (data.data && Array.isArray(data.data.tallas)) ? data.data.tallas : [];
+            window.activarReciboTallasState.tallas = tallas;
+
+            if (tallas.length === 0) {
+                container.innerHTML = '<div style="color:#6b7280; font-size: 13px; padding: 10px 0;">Este proceso no tiene tallas disponibles para activar.</div>';
+                return;
+            }
+
+            const grupos = {};
+            tallas.forEach(t => {
+                const g = String(t.genero || 'UNISEX');
+                if (!grupos[g]) grupos[g] = [];
+                grupos[g].push(t);
+            });
+
+            let html = '';
+            Object.keys(grupos).forEach(genero => {
+                html += `
+                    <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                        <div style="font-weight: 800; color:#111827; margin-bottom: 10px;">${genero}</div>
+                        <div style="display:grid; grid-template-columns: 1fr 120px; gap: 10px; align-items: center;">
+                `;
+                grupos[genero].forEach(row => {
+                    const talla = String(row.talla);
+                    const max = Number.parseInt(row.cantidad, 10) || 0;
+                    const inputId = `talla-input-${genero}-${talla}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+                    html += `
+                        <div style="color:#374151; font-weight:600;">${talla} <span style="color:#9ca3af; font-weight:700;">(max ${max})</span></div>
+                        <input id="${inputId}" type="number" min="0" max="${max}" value="0" data-genero="${genero}" data-talla="${talla}" data-max="${max}"
+                               style="width: 120px; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+                    `;
+                });
+                html += `</div></div>`;
+            });
+
+            container.innerHTML = html;
+
+            // Validación en vivo de máximos
+            container.querySelectorAll('input[type="number"]').forEach(inp => {
+                inp.addEventListener('input', function() {
+                    const max = Number.parseInt(this.dataset.max, 10) || 0;
+                    let val = Number.parseInt(this.value, 10);
+                    if (Number.isNaN(val)) val = 0;
+                    if (val < 0) val = 0;
+                    if (val > max) val = max;
+                    this.value = String(val);
+                });
+            });
+        } catch (e) {
+            error.style.display = 'block';
+            error.textContent = e.message || 'Error cargando tallas';
+        } finally {
+            loading.style.display = 'none';
+        }
+    }
+
+    window.confirmarActivarReciboConTallas = async function() {
+        const { procesoId } = window.activarReciboTallasState;
+        const container = document.getElementById('activar-recibo-tallas-container');
+        const error = document.getElementById('activar-recibo-tallas-error');
+        const btn = document.getElementById('activar-recibo-tallas-confirmar');
+        if (!procesoId || !container) {
+            return;
+        }
+
+        const inputs = Array.from(container.querySelectorAll('input[type="number"]'));
+        const seleccion = inputs
+            .map(i => ({
+                genero: i.dataset.genero,
+                talla: i.dataset.talla,
+                cantidad: Number.parseInt(i.value, 10) || 0,
+                max: Number.parseInt(i.dataset.max, 10) || 0,
+            }))
+            .filter(x => x.cantidad > 0);
+
+        if (seleccion.length === 0) {
+            if (error) {
+                error.style.display = 'block';
+                error.textContent = 'Selecciona al menos una talla con cantidad > 0.';
+            }
+            return;
+        }
+
+        const invalida = seleccion.find(x => x.cantidad < 0 || x.cantidad > x.max);
+        if (invalida) {
+            if (error) {
+                error.style.display = 'block';
+                error.textContent = `Cantidad inválida para ${invalida.genero} ${invalida.talla}. Máximo: ${invalida.max}`;
+            }
+            return;
+        }
+
+        try {
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Activando...';
+            }
+            if (error) {
+                error.style.display = 'none';
+                error.textContent = '';
+            }
+
+            const resp = await fetch(`/api/procesos/${procesoId}/activar-recibo-con-tallas`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    tallas: seleccion.map(s => ({ genero: s.genero, talla: s.talla, cantidad: s.cantidad }))
+                })
+            });
+            const data = await resp.json();
+            if (!resp.ok || !data.success) {
+                throw new Error(data.message || `HTTP ${resp.status}`);
+            }
+
+            mostrarMensajeExito(data.message || 'Recibo activado correctamente');
+            cerrarModalActivarReciboTallas();
+
+            // Recargar lista para reflejar cambios
+            const pedidoId = window.selectorRecibosState.pedidoId;
+            try {
+                await cargarDatosRecibos(pedidoId);
+            } catch (recargaError) {
+                console.warn('Error al recargar datos:', recargaError);
+            }
+        } catch (e) {
+            if (error) {
+                error.style.display = 'block';
+                error.textContent = e.message || 'Error activando recibo';
+            }
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Activar Recibo';
+            }
+        }
+    };
+
     /**
      * Ejecuta la activación/desactivación del recibo
      */
-    async function ejecutarActivarRecibo(prendaId, tipoProceso, activar) {
+    async function ejecutarActivarRecibo(prendaId, tipoProceso, activar, procesoId = null) {
         try {
             // Buscar el proceso ID en los datos cargados
-            let procesoId = null;
-            const prenda = window.selectorRecibosState.prendas.find(p => p.id == prendaId);
-            
-            if (prenda && prenda.procesos) {
-                const proceso = prenda.procesos.find(p => 
-                    String(p.tipo_proceso || p.nombre_proceso || '') === tipoProceso
-                );
-                if (proceso) {
-                    procesoId = proceso.id;
+            if (!procesoId) {
+                const prenda = window.selectorRecibosState.prendas.find(p => p.id == prendaId);
+                const procesos = prenda ? (prenda.procesos || prenda.procesos_prenda || prenda.procesosPrenda || []) : [];
+                
+                if (prenda && procesos) {
+                    const tipoBuscado = String(tipoProceso || '').trim().toLowerCase();
+                    const proceso = procesos.find(p => {
+                        const tipoActual = String(p.tipo_proceso || p.nombre_proceso || '').trim().toLowerCase();
+                        return tipoActual === tipoBuscado;
+                    });
+                    if (proceso) {
+                        procesoId = proceso.id;
+                    }
                 }
             }
 

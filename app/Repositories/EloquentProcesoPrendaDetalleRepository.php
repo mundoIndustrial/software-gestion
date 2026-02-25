@@ -125,19 +125,55 @@ class EloquentProcesoPrendaDetalleRepository implements ProcesoPrendaDetalleRepo
      */
     private function mapToDomain(ProcesoPrendaDetalleModel $model): ProcesoPrendaDetalle
     {
+        $ubicaciones = $model->ubicaciones ?? [];
+        if (is_string($ubicaciones)) {
+            $decoded = json_decode($ubicaciones, true);
+            $ubicaciones = is_array($decoded) ? $decoded : [];
+        }
+        if (!is_array($ubicaciones)) {
+            $ubicaciones = [];
+        }
+
+        $tallasDama = $model->tallas_dama;
+        if (is_string($tallasDama)) {
+            $decoded = json_decode($tallasDama, true);
+            $tallasDama = is_array($decoded) ? $decoded : null;
+        }
+        if ($tallasDama !== null && !is_array($tallasDama)) {
+            $tallasDama = null;
+        }
+
+        $tallasCaballero = $model->tallas_caballero;
+        if (is_string($tallasCaballero)) {
+            $decoded = json_decode($tallasCaballero, true);
+            $tallasCaballero = is_array($decoded) ? $decoded : null;
+        }
+        if ($tallasCaballero !== null && !is_array($tallasCaballero)) {
+            $tallasCaballero = null;
+        }
+
+        $datosAdicionales = $model->datos_adicionales;
+        if (is_string($datosAdicionales)) {
+            $decoded = json_decode($datosAdicionales, true);
+            $datosAdicionales = is_array($decoded) ? $decoded : null;
+        }
+        if ($datosAdicionales !== null && !is_array($datosAdicionales)) {
+            $datosAdicionales = null;
+        }
+
         return new ProcesoPrendaDetalle(
             id: $model->id,
             prendaPedidoId: $model->prenda_pedido_id,
             tipoProcesoId: $model->tipo_proceso_id,
-            ubicaciones: $model->ubicaciones ?? [],
+            ubicaciones: $ubicaciones,
             observaciones: $model->observaciones,
-            tallasDama: $model->tallas_dama,
-            tallasCalabrero: $model->tallas_caballero,
+            tallasDama: $tallasDama,
+            tallasCalabrero: $tallasCaballero,
             estado: $model->estado,
             notasRechazo: $model->notas_rechazo,
             fechaAprobacion: $model->fecha_aprobacion,
             aprobadoPor: $model->aprobado_por,
-            datosAdicionales: $model->datos_adicionales
+            datosAdicionales: $datosAdicionales
         );
     }
 
