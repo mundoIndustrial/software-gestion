@@ -31,6 +31,19 @@ final class ProcesarLogoTecnicasCotizacionRequestService
             $logoTecnicasAgregadas = $dto->tecnicasAgregadas;
             $tecnicasAgregadasPresent = $dto->tecnicasAgregadasPresent;
 
+            // Importante:
+            // En edición, el frontend puede enviar tecnicas_agregadas = [] por defecto aun cuando
+            // el usuario NO editó el Paso 3. En ese caso, NO debemos sincronizar/limpiar técnicas,
+            // porque eso borra todo el Paso 3.
+            // Solo sincronizar cuando haya evidencia real de edición del Paso 3.
+            $shouldSyncPaso3 = false;
+            if ($tecnicasAgregadasPresent && !empty($logoTecnicasAgregadas)) {
+                $shouldSyncPaso3 = true;
+            }
+            if (!empty($dto->imagenesPaso3Archivos)) {
+                $shouldSyncPaso3 = true;
+            }
+
             $logoTieneInformacionValida = false;
 
             // IMPORTANTE: en update, puede venir sin imágenes (cuando el usuario las eliminó),
@@ -85,10 +98,9 @@ final class ProcesarLogoTecnicasCotizacionRequestService
                     ]);
                     $logoFueCreadoNuevo = true;
                 }
-            } elseif ($esUpdate) {
-                // En UPDATE, aunque no haya información válida (por ejemplo porque el usuario eliminó
-                // todas las técnicas/prendas del Paso 3), debemos cargar el LogoCotizacion existente
-                // para poder ejecutar el sync de limpieza y borrar registros huérfanos.
+            } elseif ($esUpdate && $shouldSyncPaso3) {
+                // En UPDATE, solo cargar para limpieza si realmente se está sincronizando el Paso 3.
+                // Si no hubo edición del Paso 3, NO tocar técnicas existentes.
                 $logoCotizacion = LogoCotizacion::where('cotizacion_id', $cotizacionId)->first();
             }
 
@@ -241,7 +253,7 @@ final class ProcesarLogoTecnicasCotizacionRequestService
 
             $prendasCotPorNombre = [];
 
-            if (!empty($tecnicasAgregadas)) {
+            if ($shouldSyncPaso3 && !empty($tecnicasAgregadas)) {
                 foreach ($tecnicasAgregadas as $tecnicaIndex => $tecnicaData) {
                     $tipoLogoId = $tecnicaData['tipo_logo']['id'] ?? null;
                     if (!$tipoLogoId) {
@@ -509,7 +521,7 @@ final class ProcesarLogoTecnicasCotizacionRequestService
             // Ejemplo típico: el usuario elimina una ubicación => cambia el JSON de ubicaciones,
             // entonces el registro viejo queda huérfano y debe eliminarse.
             // También cubre el caso donde tecnicas_agregadas viene vacío: se debe eliminar TODO lo existente.
-            if ($esUpdate) {
+            if ($esUpdate && $shouldSyncPaso3) {
                 $existentes = LogoCotizacionTecnicaPrenda::where('logo_cotizacion_id', $logoCotizacion->id)->get();
 
                 foreach ($existentes as $row) {

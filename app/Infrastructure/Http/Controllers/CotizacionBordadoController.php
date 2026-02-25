@@ -303,15 +303,49 @@ class CotizacionBordadoController extends Controller
                 }
 
                 // Sincronizar técnicas/prendas (Paso 3) en edición: eliminar faltantes y actualizar ubicaciones/tallas/obs
-                $tecnicas = $request->input('tecnicas', '[]');
-                if (is_string($tecnicas)) {
-                    $tecnicas = json_decode($tecnicas, true) ?? [];
-                }
-                if (is_array($tecnicas)) {
-                    $mapaPrendasTecnica = $this->syncTecnicasPrendasDesdeFormulario($tecnicas, (int) $logoCotizacion->id);
-                    $this->adjuntarNuevasFotosTecnicasDesdeRequest($tecnicas, (int) $logoCotizacion->id, $request, $mapaPrendasTecnica);
-                    if (!$esEnvio) {
-                        $this->vincularLogosCompartidosTecnicasDesdeRequest($tecnicas, (int) $logoCotizacion->id, $request, $mapaPrendasTecnica);
+                // IMPORTANTE: solo sincronizar si el request trae explícitamente 'tecnicas'.
+                // Si no viene (ej. editaste solo telas/imagenes), NO debemos interpretar eso como "vaciar técnicas".
+                $tecnicasCount = null;
+                if ($request->has('tecnicas')) {
+                    $tecnicas = $request->input('tecnicas', '[]');
+                    if (is_string($tecnicas)) {
+                        $tecnicas = json_decode($tecnicas, true) ?? [];
+                    }
+
+                    if (is_array($tecnicas)) {
+                        $tecnicasCount = count($tecnicas);
+
+                        $hasTecnicaFiles = false;
+                        foreach ($request->files->all() as $fieldName => $archivo) {
+                            if (is_string($fieldName) && preg_match('/^tecnica_\d+_/', $fieldName)) {
+                                $hasTecnicaFiles = true;
+                                break;
+                            }
+                        }
+
+                        $tecnicasFotosABorrarLocal = $request->input('tecnicas_fotos_a_borrar', '[]');
+                        if (is_string($tecnicasFotosABorrarLocal)) {
+                            $tecnicasFotosABorrarLocal = json_decode($tecnicasFotosABorrarLocal, true) ?? [];
+                        }
+                        $hasTecnicasFotosABorrar = is_array($tecnicasFotosABorrarLocal) && !empty($tecnicasFotosABorrarLocal);
+
+                        $hasLogoCompartidoMetadata = false;
+                        foreach ($request->all() as $k => $v) {
+                            if (is_string($k) && preg_match('/^logo_compartido_metadata_\d+$/', $k)) {
+                                $hasLogoCompartidoMetadata = true;
+                                break;
+                            }
+                        }
+
+                        $shouldSyncPaso3 = ($tecnicasCount > 0) || $hasTecnicaFiles || $hasTecnicasFotosABorrar || $hasLogoCompartidoMetadata;
+
+                        if ($shouldSyncPaso3) {
+                            $mapaPrendasTecnica = $this->syncTecnicasPrendasDesdeFormulario($tecnicas, (int) $logoCotizacion->id);
+                            $this->adjuntarNuevasFotosTecnicasDesdeRequest($tecnicas, (int) $logoCotizacion->id, $request, $mapaPrendasTecnica);
+                            if (!$esEnvio) {
+                                $this->vincularLogosCompartidosTecnicasDesdeRequest($tecnicas, (int) $logoCotizacion->id, $request, $mapaPrendasTecnica);
+                            }
+                        }
                     }
                 }
 
@@ -329,7 +363,7 @@ class CotizacionBordadoController extends Controller
                 Log::info(' Borrador de bordado actualizado', [
                     'cotizacion_id' => $id,
                     'descripcion' => $descripcion,
-                    'tecnicas_count' => count($tecnicas),
+                    'tecnicas_count' => $tecnicasCount,
                     'datos_guardados' => $cotizacionActualizada->toArray()
                 ]);
 

@@ -60,6 +60,174 @@ class PrendaPdfDesign
         return $html;
     }
 
+    private function renderDescripcion($prenda): string
+    {
+        $partes = [];
+
+        if ($prenda->descripcion) {
+            $partes[] = htmlspecialchars($prenda->descripcion);
+        }
+
+        $colorTelaRef = $this->buildColorTelaReferenciaText($prenda);
+        if ($colorTelaRef !== '') {
+            $partes[] = htmlspecialchars($colorTelaRef);
+        }
+
+        $variaciones = $this->buildVariacionesPrendaText($prenda);
+        foreach ($variaciones as $txt) {
+            $txt = trim((string) $txt);
+            if ($txt !== '') {
+                $partes[] = htmlspecialchars($txt);
+            }
+        }
+
+        // Observación de reflectivo desde variantes
+        if ($prenda->variantes && $prenda->variantes->isNotEmpty()) {
+            foreach ($prenda->variantes as $variante) {
+                if ($variante->obs_reflectivo && !empty($variante->obs_reflectivo)) {
+                    $partes[] = htmlspecialchars($variante->obs_reflectivo);
+                }
+            }
+        }
+
+        // Ubicaciones de logo para esta prenda (si existen)
+        try {
+            if ($this->cotizacion->logoCotizacion && $this->cotizacion->logoCotizacion->tecnicasPrendas) {
+                $tecnicasPrendaArray = $this->cotizacion->logoCotizacion->tecnicasPrendas
+                    ->filter(fn($tp) => $tp->prenda_cot_id === $prenda->id);
+
+                if ($tecnicasPrendaArray->isNotEmpty()) {
+                    $ubicacionesTexto = [];
+                    foreach ($tecnicasPrendaArray as $tp) {
+                        if (!$tp || !$tp->ubicaciones) {
+                            continue;
+                        }
+                        $ubicacionesArray = is_array($tp->ubicaciones) ? $tp->ubicaciones : [$tp->ubicaciones];
+                        $ubicacionesArray = array_map(fn($u) => is_array($u) ? $u['ubicacion'] ?? $u : $u, $ubicacionesArray);
+                        $ubicacionesArray = array_filter($ubicacionesArray, fn($u) => !empty($u));
+                        $ubicacionesArray = array_map(function($ubicacion) {
+                            $ubicacion = preg_replace('/^\[|\]$/', '', (string) $ubicacion);
+                            $ubicacion = preg_replace('/^["\']|["\']$/', '', (string) $ubicacion);
+                            return trim((string) $ubicacion);
+                        }, $ubicacionesArray);
+                        $ubicacionesArray = array_values(array_filter($ubicacionesArray, fn($u) => $u !== ''));
+                        if (!empty($ubicacionesArray)) {
+                            $ubicacionesTexto[] = implode(', ', $ubicacionesArray);
+                        }
+                    }
+                    if (!empty($ubicacionesTexto)) {
+                        $partes[] = htmlspecialchars(implode(', ', $ubicacionesTexto));
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // no-op
+        }
+
+        if (empty($partes)) {
+            return '';
+        }
+
+        return '<div style="background: #f5f5f5; border: 1px solid #ddd; padding: 8px; margin: 6px 0 6px 0; font-size: 9px; line-height: 1.4; border-radius: 3px;">'
+            . '<strong>DESCRIPCION:</strong> ' . implode(', ', $partes)
+            . '</div>';
+    }
+
+    private function buildColorTelaReferenciaText($prenda): string
+    {
+        $variantes = $prenda->variantes ?? [];
+        if ($variantes->isEmpty()) {
+            return '';
+        }
+
+        $variante = $variantes[0];
+        $color = $variante->color ?? 'N/A';
+        $tela = '';
+        $referencia = '';
+
+        if (isset($variante->telas_multiples)) {
+            $telasMultiples = is_string($variante->telas_multiples)
+                ? json_decode($variante->telas_multiples, true)
+                : $variante->telas_multiples;
+            if (is_array($telasMultiples) && !empty($telasMultiples)) {
+                $primeraTela = $telasMultiples[0];
+                $tela = $primeraTela['tela'] ?? '';
+                $referencia = $primeraTela['referencia'] ?? '';
+            }
+        }
+
+        if (!$tela && $prenda->telas && !$prenda->telas->isEmpty()) {
+            $primeraTela = $prenda->telas->first();
+            $tela = $primeraTela->tela?->nombre ?? $primeraTela->nombre_tela ?? '';
+            $referencia = $primeraTela->tela?->referencia ?? $primeraTela->referencia_tela ?? '';
+        }
+
+        $txt = 'Color: ' . (string) $color;
+        if ($tela !== '') {
+            $txt .= ', Tela: ' . (string) $tela;
+        }
+        if ($referencia !== '') {
+            $txt .= ', Ref: ' . (string) $referencia;
+        }
+        return trim($txt);
+    }
+
+    private function buildVariacionesPrendaText($prenda): array
+    {
+        $variantes = $prenda->variantes ?? [];
+        if ($variantes->isEmpty()) {
+            return [];
+        }
+
+        $out = [];
+
+        foreach ($variantes as $var) {
+            if ($var->tipo_manga_id || $var->tipo_manga) {
+                $tipoManga = $var->manga?->nombre ?? $var->tipo_manga ?? '';
+                $tipoManga = trim((string) $tipoManga);
+                if ($tipoManga !== '') {
+                    $mangaTxt = 'Manga: ' . $tipoManga;
+                    $obs = trim((string) ($var->obs_manga ?? ''));
+                    if ($obs !== '') {
+                        $mangaTxt .= ' (' . $obs . ')';
+                    }
+                    $out[] = $mangaTxt;
+                }
+            }
+
+            if ($var->tiene_bolsillos) {
+                $obs = trim((string) ($var->obs_bolsillos ?? ''));
+                if ($obs !== '') {
+                    $out[] = 'Bolsillo: ' . $obs;
+                } else {
+                    $out[] = 'Bolsillo: Sí';
+                }
+            }
+
+            if ($var->tipo_broche_id || $var->obs_broche) {
+                $tipoBroche = trim((string) ($var->broche?->nombre ?? ''));
+                $obs = trim((string) ($var->obs_broche ?? ''));
+                if ($tipoBroche !== '' && $obs !== '') {
+                    $out[] = $tipoBroche . ': ' . $obs;
+                } elseif ($tipoBroche !== '') {
+                    $out[] = 'Broche/Botón: ' . $tipoBroche;
+                } elseif ($obs !== '') {
+                    $out[] = 'Broche/Botón: ' . $obs;
+                }
+            }
+        }
+
+        $unique = [];
+        foreach ($out as $item) {
+            $k = mb_strtolower(trim((string) $item));
+            if ($k === '') continue;
+            if (!array_key_exists($k, $unique)) {
+                $unique[$k] = $item;
+            }
+        }
+        return array_values($unique);
+    }
+
     /**
      * Retorna todos los estilos CSS
      */
@@ -95,7 +263,7 @@ class PrendaPdfDesign
         .prenda-tallas { font-size: 10px; color: #0f172a; font-weight: bold; }
         
         /* Contenedor principal de la prenda */
-        .prenda-contenido { display: flex; gap: 10px; padding: 10px; }
+        .prenda-contenido { padding: 10px; }
         
         /* Columna izquierda: tabla de variaciones */
         .prenda-info { flex: 1; }
@@ -249,87 +417,16 @@ CSS;
         $html .= '<div class="prenda-header">';
         $html .= '<div class="prenda-nombre">' . htmlspecialchars($prenda->nombre_producto) . '</div>';
 
-        // Información de color, tela y referencia
-        $html .= $this->renderPrendaHeaderDetails($prenda);
+        // Descripción consolidada justo debajo del nombre (incluye color/tela/referencia + variaciones)
+        $html .= $this->renderDescripcion($prenda);
 
         // Tallas en rojo
         $html .= $this->renderPrendaTallas($prenda);
 
         $html .= '</div>';
 
-        // Contenido: tabla de variaciones + imágenes
+        // Contenido: imágenes
         $html .= '<div class="prenda-contenido">';
-
-        // Columna izquierda: descripción + tabla de variaciones
-        $html .= '<div class="prenda-info">';
-        
-        // Descripción concatenada de prenda y reflectivo
-        $descripciones = [];
-        
-        // Descripción de la prenda base
-        if ($prenda->descripcion) {
-            $descripciones[] = htmlspecialchars($prenda->descripcion);
-        }
-        
-        // Observación de reflectivo desde variantes
-        if ($prenda->variantes && $prenda->variantes->isNotEmpty()) {
-            foreach ($prenda->variantes as $variante) {
-                if ($variante->obs_reflectivo && !empty($variante->obs_reflectivo)) {
-                    $descripciones[] = htmlspecialchars($variante->obs_reflectivo);
-                }
-            }
-        }
-        
-        // Ubicaciones de logo para esta prenda
-        if ($this->cotizacion->logoCotizacion && $this->cotizacion->logoCotizacion->tecnicasPrendas) {
-            $tecnicasPrendaArray = $this->cotizacion->logoCotizacion->tecnicasPrendas
-                ->filter(fn($tp) => $tp->prenda_cot_id === $prenda->id);
-            
-            if ($tecnicasPrendaArray->isNotEmpty()) {
-                $ubicacionesPorTecnica = [];
-                foreach ($tecnicasPrendaArray as $tp) {
-                    $tecnicaNombre = $tp->tipoLogo ? $tp->tipoLogo->nombre : 'Logo';
-                    if ($tp->ubicaciones) {
-                        $ubicacionesArray = is_array($tp->ubicaciones) ? $tp->ubicaciones : [$tp->ubicaciones];
-                        $ubicacionesArray = array_map(fn($u) => is_array($u) ? $u['ubicacion'] ?? $u : $u, $ubicacionesArray);
-                        $ubicacionesArray = array_filter($ubicacionesArray, fn($u) => !empty($u));
-                        
-                        // Limpiar cada ubicación: quitar corchetes y comillas
-                        $ubicacionesArray = array_map(function($ubicacion) {
-                            // Quitar corchetes al inicio y final
-                            $ubicacion = preg_replace('/^\[|\]$/', '', $ubicacion);
-                            // Quitar comillas al inicio y final
-                            $ubicacion = preg_replace('/^["\']|["\']$/', '', $ubicacion);
-                            return trim($ubicacion);
-                        }, $ubicacionesArray);
-                        
-                        if (!empty($ubicacionesArray)) {
-                            $ubicacionesPorTecnica[$tecnicaNombre] = $ubicacionesArray;
-                        }
-                    }
-                }
-                
-                if (!empty($ubicacionesPorTecnica)) {
-                    $ubicacionesTexto = [];
-                    foreach ($ubicacionesPorTecnica as $tecnica => $ubicaciones) {
-                        $ubicacionesTexto[] = implode(', ', $ubicaciones);
-                    }
-                    $descripciones[] = implode(', ', $ubicacionesTexto);
-                }
-            }
-        }
-        
-        // Mostrar descripción concatenada
-        if (!empty($descripciones)) {
-            $html .= '<div style="background: #f5f5f5; border: 1px solid #ddd; padding: 8px; margin-bottom: 10px; font-size: 9px; line-height: 1.4; border-radius: 3px;">';
-            $html .= '<strong>DESCRIPCIÓN:</strong><br>';
-            $html .= nl2br(implode(' - ', $descripciones));
-            $html .= '</div>';
-        }
-        
-        // Tabla de variaciones
-        $html .= $this->renderVariacionesTable($prenda);
-        $html .= '</div>';
 
         // Columna derecha: imágenes
         $html .= '<div class="prenda-imagenes">';

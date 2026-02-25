@@ -372,46 +372,91 @@
             return (ubicacionesTexto || '-').replace(/\n/g, '<br>');
         }
 
-        let descripcionCompleta = prenda.descripcion_formateada || prenda.descripcion || '';
+        // Consolidado (como PDF): Descripción + Color/Tela/Ref + Variaciones + Ubicaciones Logo
+        const partes = [];
 
-        // LIMPIEZA: Remover Bolsillos y Broche/Botón de la descripción concatenada
-        // Patrón 1: Bolsillos: ... (sin viñeta, hasta siguiente palabra clave)
-        descripcionCompleta = descripcionCompleta.replace(/Bolsillos:\s*[^,]*(?:,\s*)?/gi, '');
-        // Patrón 2: Botón: ... o Broche: ... (sin viñeta, hasta siguiente palabra clave)
-        descripcionCompleta = descripcionCompleta.replace(/(Botón|Broche):\s*[^,]*(?:,\s*)?/gi, '');
-        // Patrón 3: • BOLSILLOS: ... (si tiene viñeta)
-        descripcionCompleta = descripcionCompleta.replace(/\s*•\s*BOLSILLOS:.*?(?=•|$)/gi, '');
-        // Patrón 4: • BROCHE: ... o • BOTÓN: ... (si tiene viñeta)
-        descripcionCompleta = descripcionCompleta.replace(/\s*•\s*(BROCHE|BOTÓN):.*?(?=•|$)/gi, '');
-        // Limpiar espacios múltiples y comas al inicio/final
-        descripcionCompleta = descripcionCompleta.replace(/\s+/g, ' ').replace(/^,\s*|,\s*$/g, '').trim();
+        const baseDesc = (prenda.descripcion || '').toString().trim();
+        if (baseDesc) {
+            partes.push(baseDesc);
+        }
 
-        // Agregar descripción y ubicaciones de prenda_cot_reflectivo SOLO en vista PRENDA.
-        if (prenda && prenda.prenda_cot_reflectivo) {
-            const pcrRef = prenda.prenda_cot_reflectivo;
+        const variante = (prenda.variantes && prenda.variantes.length > 0) ? prenda.variantes[0] : null;
+        const color = variante && variante.color ? String(variante.color).trim() : '';
 
-            // Agregar descripción del reflectivo
-            if (pcrRef.descripcion) {
-                if (descripcionCompleta) {
-                    descripcionCompleta += ', ';
-                }
-                descripcionCompleta += pcrRef.descripcion;
+        const tela0 = (prenda.telas && prenda.telas.length > 0) ? prenda.telas[0] : null;
+        const telaNombre = tela0 && tela0.nombre_tela ? String(tela0.nombre_tela).trim() : '';
+        const telaRef = tela0 && tela0.referencia ? String(tela0.referencia).trim() : '';
+
+        if (color) partes.push(`Color: ${color}`);
+        if (telaNombre) partes.push(`Tela: ${telaNombre}`);
+        if (telaRef) partes.push(`Ref: ${telaRef}`);
+
+        if (variante) {
+            const manga = (variante.tipo_manga_nombre || variante.tipo_manga || '').toString().trim();
+            if (manga) {
+                partes.push(`Manga: ${manga}`);
             }
 
-            // Agregar ubicaciones del reflectivo SIN negrita
-            if (pcrRef.ubicaciones && Array.isArray(pcrRef.ubicaciones)) {
-                if (descripcionCompleta) {
-                    descripcionCompleta += ', ';
-                }
-                const ubicacionesReflectivo = pcrRef.ubicaciones
-                    .map(u => u.ubicacion ? u.ubicacion + (u.descripcion ? ': ' + u.descripcion : '') : '')
-                    .filter(u => u)
-                    .join(', ');
-                descripcionCompleta += ubicacionesReflectivo;
+            const obsBolsillos = (variante.obs_bolsillos || '').toString().trim();
+            if (obsBolsillos) {
+                partes.push(`Bolsillo: ${obsBolsillos}`);
+            } else if (variante.tiene_bolsillos) {
+                partes.push('Bolsillo: Sí');
+            }
+
+            const tipoBroche = (variante.tipo_broche_nombre || '').toString().trim();
+            const obsBroche = (variante.obs_broche || '').toString().trim();
+            if (tipoBroche && obsBroche) {
+                partes.push(`${tipoBroche}: ${obsBroche}`);
+            } else if (tipoBroche) {
+                partes.push(`Broche/Botón: ${tipoBroche}`);
+            } else if (obsBroche) {
+                partes.push(`Broche/Botón: ${obsBroche}`);
+            }
+
+            const obsReflectivo = (variante.obs_reflectivo || '').toString().trim();
+            if (obsReflectivo) {
+                partes.push(obsReflectivo);
             }
         }
 
-        return descripcionCompleta.replace(/\n/g, '<br>') || '-';
+        // Ubicaciones de logo asociadas a la prenda (si existen)
+        try {
+            const tecnicasPrendaArray = (payload && payload.logo_cotizacion && Array.isArray(payload.logo_cotizacion.tecnicas_prendas))
+                ? payload.logo_cotizacion.tecnicas_prendas.filter(tp => tp && tp.prenda_id === prenda.id)
+                : [];
+            if (tecnicasPrendaArray.length > 0) {
+                const ubicacionesPorTecnica = {};
+                tecnicasPrendaArray.forEach(tp => {
+                    const tecnicaNombre = (tp && tp.tipo_logo_nombre) ? tp.tipo_logo_nombre : 'Logo';
+                    if (!tp || !tp.ubicaciones) return;
+                    let ubicacionesArray = Array.isArray(tp.ubicaciones) ? tp.ubicaciones : [String(tp.ubicaciones)];
+                    ubicacionesArray = ubicacionesArray
+                        .map(u => String(u).replace(/[\[\]"']/g, '').trim())
+                        .filter(Boolean);
+                    if (ubicacionesArray.length === 0) return;
+                    if (!ubicacionesPorTecnica[tecnicaNombre]) ubicacionesPorTecnica[tecnicaNombre] = [];
+                    ubicacionesPorTecnica[tecnicaNombre] = ubicacionesPorTecnica[tecnicaNombre].concat(ubicacionesArray);
+                });
+
+                const ubicacionesTexto = Object.entries(ubicacionesPorTecnica)
+                    .map(([_, ubicaciones]) => ubicaciones.join(', '))
+                    .filter(Boolean)
+                    .join(', ');
+                if (ubicacionesTexto) {
+                    partes.push(ubicacionesTexto);
+                }
+            }
+        } catch (e) {
+            // no-op
+        }
+
+        const texto = partes
+            .map(x => (x || '').toString().trim())
+            .filter(Boolean)
+            .join(', ');
+
+        return (texto || '-').replace(/\n/g, '<br>');
     }
 
     function renderTallasPrenda(payload, prenda) {
@@ -658,57 +703,13 @@
     function renderPrendaCard(payload, prenda, modo) {
         if (!prenda) return '';
 
-        // Construir atributos principales
-        let atributosLinea = [];
-
-        // Obtener color de variantes o telas
-        let color = '';
-        if (prenda.variantes && prenda.variantes.length > 0 && prenda.variantes[0].color) {
-            color = prenda.variantes[0].color;
-        }
-
-        // Obtener tela de telas o de logo_cotizacion.telas_prendas
-        let telaInfo = '';
         let imgTela = '';
-
-        // Si es cotización logo, buscar en telas_prendas
         if (payload && payload.logo_cotizacion && payload.logo_cotizacion.telas_prendas && payload.logo_cotizacion.telas_prendas.length > 0) {
             const telaPrenda = payload.logo_cotizacion.telas_prendas.find(tp => tp.prenda_cot_id === prenda.id);
-            if (telaPrenda) {
-                telaInfo = telaPrenda.tela || '';
-                if (telaPrenda.color) {
-                    telaInfo += telaPrenda.tela ? ` | ${telaPrenda.color}` : telaPrenda.color;
-                }
-                if (telaPrenda.ref) {
-                    telaInfo += ` REF:${telaPrenda.ref}`;
-                }
-                // Obtener la imagen de la tela
-                if (telaPrenda.img) {
-                    imgTela = telaPrenda.img;
-                }
+            if (telaPrenda && telaPrenda.img) {
+                imgTela = telaPrenda.img;
             }
         }
-        // Si no es logo, usar telas combinadas
-        else if (prenda.telas && prenda.telas.length > 0) {
-            const tela = prenda.telas[0];
-            telaInfo = tela.nombre_tela || '';
-            if (tela.referencia) {
-                telaInfo += ` REF:${tela.referencia}`;
-            }
-        }
-
-        // Obtener manga de variantes
-        let manguaInfo = '';
-        if (prenda.variantes && prenda.variantes.length > 0) {
-            const variante = prenda.variantes[0];
-            if (variante.manga && variante.manga.nombre) {
-                manguaInfo = variante.manga.nombre;
-            }
-        }
-
-        if (color) atributosLinea.push(`Color: ${color}`);
-        if (telaInfo) atributosLinea.push(`Tela: ${telaInfo}`);
-        if (manguaInfo) atributosLinea.push(`Manga: ${manguaInfo}`);
 
         // Construir HTML de la prenda
         let html = `
@@ -716,9 +717,6 @@
                             <h3 style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 1.1rem; font-weight: 700; text-transform: uppercase;">
                                 ${prenda.nombre_prenda || 'Sin nombre'}
                             </h3>
-                            <p style="margin: 0 0 0.75rem 0; color: #666; font-size: 0.9rem; font-weight: 500;">
-                                ${atributosLinea.join(' | ') || ''}
-                            </p>
                             <div style="margin: 0 0 1rem 0; color: #333; font-size: 0.85rem; line-height: 1.6;">
                                 <span style="color: #1e5ba8; font-weight: 700;">DESCRIPCION:</span> ${renderDescripcionPrenda(payload, prenda, modo)}
                             </div>
@@ -743,8 +741,7 @@
         }
 
         // Variaciones específicas + reflectivo
-        html += renderVariacionesEspecificas(prenda);
-        html += renderVariacionesReflectivo(prenda);
+        // Se consolidan en la descripción (no mostrar tablas adicionales)
 
         // ===== IMÁGENES LADO A LADO: LOGO | PRENDA | REFLECTIVO =====
         if (H && typeof H.buildImagenesParaMostrar === 'function' && typeof H.renderImagenesParaMostrar === 'function') {
@@ -759,13 +756,31 @@
     function renderPrendas(payload, ctx) {
         const prendas = ctx.prendasAll;
 
+        // Prendas creadas desde Paso 3 (logo): no deben aparecer en la vista "Cotización Prenda".
+        const esPrendaPaso3 = (p) => {
+            if (!p) return false;
+            if (!p.prenda_bodega) return false;
+
+            // Si tiene información típica de Paso 2, se considera prenda real y debe mostrarse en "Prenda"
+            const tieneTallas = Array.isArray(p.tallas) && p.tallas.length > 0;
+            const tieneVariantes = Array.isArray(p.variantes) && p.variantes.length > 0;
+            const tieneTelas = Array.isArray(p.telas) && p.telas.length > 0;
+            const tieneFotos = Array.isArray(p.fotos) && p.fotos.length > 0;
+            if (tieneTallas || tieneVariantes || tieneTelas || tieneFotos) {
+                return false;
+            }
+
+            // Prenda mínima (típica de Paso 3)
+            return true;
+        };
+
         const prendasFiltradas = ctx.esSoloLogoFinal
             ? prendas.filter(p => ctx.prendaTieneLogo(p))
             : (!ctx.esCombinada
                 ? prendas
                 : (ctx.modo === 'logo'
                     ? prendas.filter(p => ctx.prendaTieneLogo(p))
-                    : prendas));
+                    : prendas.filter(p => !esPrendaPaso3(p))));
 
         let html = '<div class="prendas-container" style="display: flex; flex-direction: column; gap: 1.5rem;">';
 

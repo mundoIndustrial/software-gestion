@@ -325,6 +325,7 @@ class ContadorController extends Controller
                         'id' => $prenda->id,
                         'nombre_prenda' => $prenda->nombre_producto ?? 'Prenda sin nombre',
                         'cantidad' => $prenda->cantidad ?? 0,
+                        'prenda_bodega' => (bool) ($prenda->prenda_bodega ?? false),
                         'descripcion' => $prenda->descripcion ?? null,
                         'descripcion_formateada' => $descripcionFormateada,
                         'detalles_proceso' => $prenda->descripcion ?? null,

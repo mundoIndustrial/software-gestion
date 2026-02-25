@@ -248,8 +248,8 @@ CSS;
         $html .= '<div class="prenda-header">';
         $html .= '<div class="prenda-nombre">' . htmlspecialchars($prenda->nombre_producto) . '</div>';
 
-        // Información de color, tela y referencia
-        $html .= $this->renderPrendaHeaderDetails($prenda);
+        // Descripción consolidada justo debajo del nombre (incluye color/tela/referencia + variaciones)
+        $html .= $this->renderDescripcion($prenda, $tecnicasPrendas);
 
         // Tallas en rojo
         $html .= $this->renderPrendaTallas($prenda);
@@ -258,20 +258,14 @@ CSS;
 
         // Contenido
         $html .= '<div class="prenda-contenido">';
-        
-        // Descripción concatenada (como en el modal)
-        $html .= $this->renderDescripcion($prenda, $tecnicasPrendas);
-        
+
         // Tabla de variaciones del logo (si existe)
         // NO usar toArray() aquí para mantener los objetos
         $tecnicasPrendaArray = collect($tecnicasPrendas)->filter(fn($tp) => $tp->prenda_cot_id === $prenda->id);
         if ($tecnicasPrendaArray->isNotEmpty()) {
             $html .= $this->renderVariacionesLogo($tecnicasPrendaArray);
         }
-        
-        // Tabla de variaciones específicas de la prenda
-        $html .= $this->renderVariacionesPrenda($prenda);
-        
+
         // Imágenes lado a lado
         $html .= $this->renderImagenes($prenda, $tecnicasPrendaArray);
 
@@ -511,6 +505,20 @@ CSS;
         if ($prenda->descripcion) {
             $descripciones[] = htmlspecialchars($prenda->descripcion);
         }
+
+        // Color / Tela / Referencia (antes iba en el header; ahora va concatenado a la descripción)
+        $colorTelaRef = $this->buildColorTelaReferenciaText($prenda);
+        if ($colorTelaRef !== '') {
+            $descripciones[] = htmlspecialchars($colorTelaRef);
+        }
+
+        // Variaciones de la prenda (antes iba como tabla; ahora va concatenado a la descripción)
+        $variacionesTexto = $this->buildVariacionesPrendaText($prenda);
+        if (!empty($variacionesTexto)) {
+            foreach ($variacionesTexto as $vtxt) {
+                $descripciones[] = htmlspecialchars($vtxt);
+            }
+        }
         
         // Observación de reflectivo desde variantes
         if ($prenda->variantes && $prenda->variantes->isNotEmpty()) {
@@ -566,6 +574,113 @@ CSS;
         $html .= '</div>';
 
         return $html;
+    }
+
+    private function buildColorTelaReferenciaText($prenda): string
+    {
+        $variantes = $prenda->variantes ?? [];
+        if ($variantes->isEmpty()) {
+            return '';
+        }
+
+        $variante = $variantes[0];
+        $color = $variante->color ?? 'N/A';
+        $tela = '';
+        $referencia = '';
+
+        // Obtener tela y referencia
+        if (isset($variante->telas_multiples)) {
+            $telasMultiples = is_string($variante->telas_multiples)
+                ? json_decode($variante->telas_multiples, true)
+                : $variante->telas_multiples;
+
+            if (is_array($telasMultiples) && !empty($telasMultiples)) {
+                $primeraTela = $telasMultiples[0];
+                $tela = $primeraTela['tela'] ?? '';
+                $referencia = $primeraTela['referencia'] ?? '';
+            }
+        }
+
+        if (!$tela && $prenda->telas && !$prenda->telas->isEmpty()) {
+            $primeraTela = $prenda->telas->first();
+            $tela = $primeraTela->tela?->nombre ?? $primeraTela->nombre_tela ?? '';
+            $referencia = $primeraTela->tela?->referencia ?? $primeraTela->referencia_tela ?? '';
+        }
+
+        $txt = 'Color: ' . (string) $color;
+        if ($tela !== '') {
+            $txt .= ', Tela: ' . (string) $tela;
+        }
+        if ($referencia !== '') {
+            $txt .= ', Ref: ' . (string) $referencia;
+        }
+
+        return trim($txt);
+    }
+
+    private function buildVariacionesPrendaText($prenda): array
+    {
+        $variantes = $prenda->variantes ?? [];
+        if ($variantes->isEmpty()) {
+            return [];
+        }
+
+        $out = [];
+
+        foreach ($variantes as $var) {
+            // Manga
+            if ($var->tipo_manga_id || $var->tipo_manga) {
+                $tipoManga = $var->manga?->nombre ?? $var->tipo_manga ?? '';
+                $tipoManga = trim((string) $tipoManga);
+                if ($tipoManga !== '') {
+                    $mangaTxt = 'Manga: ' . $tipoManga;
+                    $obs = trim((string) ($var->obs_manga ?? ''));
+                    if ($obs !== '') {
+                        $mangaTxt .= ' (' . $obs . ')';
+                    }
+                    $out[] = $mangaTxt;
+                }
+            }
+
+            // Bolsillos
+            if ($var->tiene_bolsillos) {
+                $obs = trim((string) ($var->obs_bolsillos ?? ''));
+                if ($obs !== '') {
+                    $out[] = 'Bolsillo: ' . $obs;
+                } else {
+                    $out[] = 'Bolsillo: Sí';
+                }
+            }
+
+            // Broche/Botón
+            if ($var->tipo_broche_id || $var->obs_broche) {
+                $tipoBroche = trim((string) ($var->broche?->nombre ?? ''));
+                $obs = trim((string) ($var->obs_broche ?? ''));
+
+                if ($tipoBroche !== '' && $obs !== '') {
+                    // Si el tipo es "Botón" queda: "Botón: metálico"
+                    $out[] = $tipoBroche . ': ' . $obs;
+                } elseif ($tipoBroche !== '') {
+                    $out[] = 'Broche/Botón: ' . $tipoBroche;
+                } elseif ($obs !== '') {
+                    $out[] = 'Broche/Botón: ' . $obs;
+                }
+            }
+        }
+
+        // Quitar duplicados conservando orden
+        $unique = [];
+        foreach ($out as $item) {
+            $k = mb_strtolower(trim((string) $item));
+            if ($k === '') {
+                continue;
+            }
+            if (!array_key_exists($k, $unique)) {
+                $unique[$k] = $item;
+            }
+        }
+
+        return array_values($unique);
     }
 
     /**
@@ -892,19 +1007,19 @@ CSS;
                 }
                 $colIdx++;
 
-                $html .= '<td style="width: 90px; vertical-align: top;">'
-                    . '<div class="imagen-container">'
-                    // Caja fija compatible con mPDF
-                    . '<table style="border-collapse: collapse; width: 80px; height: 80px; margin: 0 auto;">'
+                $html .= '<td style="width: 90px; vertical-align: top; text-align: center;">'
+                    // Tabla interna para asegurar alineación en mPDF (imagen + título)
+                    . '<table style="border-collapse: collapse; width: 80px; margin: 0 auto;">'
                     . '<tr>'
                     . '<td style="border: 2px solid #1e5ba8; background: #f9f9f9; width: 80px; height: 80px; text-align: center; vertical-align: middle; padding: 0;">'
                     // Forzar que nunca exceda el cuadro (mPDF respeta max-width/max-height mejor que object-fit)
                     . '<img src="data:' . $imageType . ';base64,' . $base64Image . '" alt="' . $label . '" style="max-width: 72px; max-height: 72px; width: auto; height: auto; display: inline-block;">'
                     . '</td>'
                     . '</tr>'
+                    . '<tr>'
+                    . '<td style="padding-top: 4px; text-align: center; font-size: 8px; font-weight: bold; color: #333; word-wrap: break-word;">' . $label . '</td>'
+                    . '</tr>'
                     . '</table>'
-                    . '<div class="imagen-label">' . $label . '</div>'
-                    . '</div>'
                     . '</td>';
             }
 
