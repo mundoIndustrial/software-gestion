@@ -1367,6 +1367,10 @@ function imprimirTablaVacia() {
                     <p style="margin: 6px 0; font-size: 14px; color: #000;"><strong>Cliente:</strong> {{ $pedido->cliente ?? '—' }}</p>
                     <p style="margin: 6px 0; font-size: 13px; color: #333;"><strong>Fecha de creación:</strong> {{ $pedido->created_at ? $pedido->created_at->format('d/m/Y H:i') : '—' }}</p>
                 </div>
+                <div style="text-align: center; flex: 1; margin: 0 20px;">
+                    <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #000;">Observaciones</h3>
+                    <div style="text-align: center; font-size: 12px; color: #000; line-height: 1.6; white-space: pre-wrap;">{{ $pedido->observaciones ?? 'Sin observaciones' }}</div>
+                </div>
                 <div style="text-align: right;">
                     <p style="margin: 0; font-size: 11px; color: #666;"><strong>Fecha de impresión:</strong></p>
                     <p style="margin: 0; font-size: 10px; color: #666;">` + new Date().toLocaleString('es-CO', { 
