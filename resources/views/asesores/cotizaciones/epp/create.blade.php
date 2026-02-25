@@ -433,6 +433,7 @@ NIT 1.093.738.433-3</textarea>
 <script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-state-manager.js') }}"></script>
 <script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-modal-manager.js') }}"></script>
 <script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-item-manager.js') }}?v={{ time() }}"></script>
+<script defer src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}"></script>
 <script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-imagen-manager.js') }}"></script>
 <script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-service.js') }}"></script>
 <script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-notification-service.js') }}"></script>
@@ -1429,6 +1430,15 @@ NIT 1.093.738.433-3</textarea>
                 console.log('✏️ [editarEPPAgregado] Botón finalizar ocultado');
             }
             
+            // Ocultar tabla de EPPs agregados (solo en modo add, no en modo edición)
+            const listaEPPAgregados = document.getElementById('listaEPPAgregados');
+            if (listaEPPAgregados) {
+                listaEPPAgregados.removeAttribute('style');
+                listaEPPAgregados.style.setProperty('display', 'none', 'important');
+                listaEPPAgregados.style.setProperty('visibility', 'hidden', 'important');
+                console.log('✏️ [editarEPPAgregado] Tabla listaEPPAgregados ocultada');
+            }
+            
             // Abrir modal
             if (window.abrirModalAgregarEPP) {
                 window.abrirModalAgregarEPP();
@@ -1539,6 +1549,22 @@ NIT 1.093.738.433-3</textarea>
             if (contenedorFotos) {
                 const imagenes = contenedorFotos.querySelectorAll('.foto-epp-item');
                 imagenes.forEach(img => img.remove());
+            }
+            
+            // Resetear visibilidad de tabla EPPs agregados (SOLO en modo agregar, NO en edición)
+            const listaEPPAgregados = document.getElementById('listaEPPAgregados');
+            if (listaEPPAgregados) {
+                // Si NO estamos editando, mostrar tabla; si estamos editando, mantenerla oculta
+                if (!window.eppEnEdicion) {
+                    console.log('🔄 [resetearModalAgregarEPP] Restaurando tabla EPPs agregados (modo agregar)');
+                    listaEPPAgregados.removeAttribute('style');
+                    listaEPPAgregados.style.setProperty('display', 'block', 'important');
+                    listaEPPAgregados.style.setProperty('visibility', 'visible', 'important');
+                } else {
+                    console.log('🔄 [resetearModalAgregarEPP] Manteniendo tabla oculta (modo edición)');
+                    listaEPPAgregados.style.setProperty('display', 'none', 'important');
+                    listaEPPAgregados.style.setProperty('visibility', 'hidden', 'important');
+                }
             }
             
             // Resetear state manager

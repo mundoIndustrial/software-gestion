@@ -6,6 +6,8 @@
 class EppItemManagerNuevo {
     constructor() {
         this.listaItemsId = 'lista-items-pedido';
+        // Cache para mantener referencias a las imágenes y archivos
+        this.imagenesCache = new Map();
     }
 
     _obtenerMiniatura(imagenes) {
@@ -13,9 +15,21 @@ class EppItemManagerNuevo {
 
         const img = imagenes[0];
         if (typeof img === 'string') return img;
-        if (img?.previewUrl) return img.previewUrl;
+        
+        // En modo cotización, usar previewUrl (blob URLs); en otros modos usar ruta_web
+        const esModoCotizacion = !!window.__EPP_COTIZACION_MODE__;
+        
+        if (esModoCotizacion) {
+            // Modo cotización: usar previewUrl (blob URLs), luego fallbacks
+            if (img?.previewUrl) return img.previewUrl;
+            if (img?.ruta_web && img.ruta_web.trim()) return img.ruta_web;
+        } else {
+            // Otros modos: priorizar ruta_web (URLs guardadas)
+            if (img?.ruta_web && img.ruta_web.trim()) return img.ruta_web;
+            if (img?.previewUrl) return img.previewUrl;
+        }
+        
         if (img?.url) return img.url;
-        if (img?.ruta_web) return img.ruta_web;
         if (img?.base64) return img.base64;
         return '';
     }
@@ -130,6 +144,12 @@ class EppItemManagerNuevo {
         
         listaItems.appendChild(card);
         
+        // Guardar referencia a las imágenes en cache para mantenerlas vivas
+        if (imagenes && imagenes.length > 0) {
+            this.imagenesCache.set(id, imagenes);
+            console.log(`[EppItemManagerNuevo] Imágenes cacheadas para item: ${id}, total: ${imagenes.length}`);
+        }
+        
         console.log('[EppItemManagerNuevo] Tarjeta EPP creada:', id);
         this._inicializarInteractividad();
     }
@@ -142,7 +162,20 @@ class EppItemManagerNuevo {
         
         if (item) {
             item.remove();
-            console.log('[EppItemManagerNuevo] Item eliminado:', id);
+            
+            // Limpiar y revocar blob URLs del cache
+            if (this.imagenesCache.has(id)) {
+                const imagenes = this.imagenesCache.get(id);
+                imagenes.forEach(imagen => {
+                    if (imagen.previewUrl && imagen.previewUrl.startsWith('blob:')) {
+                        URL.revokeObjectURL(imagen.previewUrl);
+                        console.log(`[EppItemManagerNuevo] Blob URL revocada: ${imagen.previewUrl}`);
+                    }
+                });
+            }
+            
+            this.imagenesCache.delete(id);
+            console.log('[EppItemManagerNuevo] Item eliminado:', id, '- cache limpiado y URLs revocadas');
         } else {
             console.warn('[EppItemManagerNuevo] Item no encontrado para eliminar:', id);
         }

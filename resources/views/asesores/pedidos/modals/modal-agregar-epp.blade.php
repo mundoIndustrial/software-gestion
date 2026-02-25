@@ -349,19 +349,12 @@ function cerrarModalAgregarEPP() {
  * Función para limpiar imágenes temporales del storage
  */
 function limpiarImagenesTemporales() {
-    // Eliminar URLs blob para liberar memoria
-    if (window.fotosEPP && Array.isArray(window.fotosEPP)) {
-        window.fotosEPP.forEach(imagen => {
-            if (imagen.previewUrl && imagen.previewUrl.startsWith('blob:')) {
-                URL.revokeObjectURL(imagen.previewUrl);
-            }
-        });
-    }
-    
-    // Limpiar array de fotos
+    // NO revocar URLs blob - se mantienen en cache global window._eppFilesCache
+    // Las URLs se revocarán cuando se elimine el item de la tabla
+    // Simplemente limpiar el array temporal de fotosEPP
     window.fotosEPP = [];
     
-    console.log('[limpiarImagenesTemporales] Imágenes temporales limpiadas');
+    console.log('[limpiarImagenesTemporales] Array de fotos temporales limpiado (URLs en cache global)');
 }
 
 function resetearModalAgregarEPP() {
@@ -394,15 +387,26 @@ function resetearModalAgregarEPP() {
     document.getElementById('btnGuardarCambiosEPP').disabled = true;
     document.getElementById('btnGuardarCambiosEPP').style.display = 'none';
     
-    // Restaurar sección de "EPP Agregados" al resetear
+    // Restaurar sección de "EPP Agregados" al resetear (SOLO si no estamos editando)
+    const enEdicion = !!eppEnEdicion || !!window.eppEnEdicion;
     const listaEPPAgregados = document.getElementById('listaEPPAgregados');
     if (listaEPPAgregados) {
         console.log('📖 [resetearModalAgregarEPP] Tabla encontrada - display ANTES:', window.getComputedStyle(listaEPPAgregados).display);
-        // Remover completamente el atributo style y luego establecer los valores correctos
-        listaEPPAgregados.removeAttribute('style');
-        listaEPPAgregados.style.setProperty('display', 'block', 'important');
-        listaEPPAgregados.style.setProperty('visibility', 'visible', 'important');
-        console.log('📖 [resetearModalAgregarEPP] Tabla listaEPPAgregados restaurada - estilo removido y reestablecido');
+        console.log('📖 [resetearModalAgregarEPP] En edición:', enEdicion);
+        
+        if (enEdicion) {
+            // Si estamos editando, mantener la tabla oculta
+            listaEPPAgregados.removeAttribute('style');
+            listaEPPAgregados.style.setProperty('display', 'none', 'important');
+            listaEPPAgregados.style.setProperty('visibility', 'hidden', 'important');
+            console.log('📖 [resetearModalAgregarEPP] Tabla ocultada (modo edición)');
+        } else {
+            // Si estamos en modo agregar, mostrar la tabla
+            listaEPPAgregados.removeAttribute('style');
+            listaEPPAgregados.style.setProperty('display', 'block', 'important');
+            listaEPPAgregados.style.setProperty('visibility', 'visible', 'important');
+            console.log('📖 [resetearModalAgregarEPP] Tabla restaurada (modo agregar)');
+        }
         console.log('📖 [resetearModalAgregarEPP] Tabla - display DESPUÉS:', window.getComputedStyle(listaEPPAgregados).display);
     } else {
         console.warn('📖 [resetearModalAgregarEPP] Tabla no encontrada');
@@ -516,6 +520,15 @@ function mostrarProductoEPP(producto) {
 
 
 // Función cargarTallasEPP removida - talla incluida en nombre_completo
+
+// Almacenar referencias globales a archivos para mantener blob URLs válidas
+window._eppFilesCache = new Map();
+
+// Función para guardar archivo en caché global
+function _guardarArchivoEnCache(blobUrl, file) {
+    window._eppFilesCache.set(blobUrl, file);
+    console.log(`[_guardarArchivoEnCache] Archivo cacheado para blob URL: ${blobUrl}`);
+}
 
 // Función para convertir URLs blob a archivos para envío como FormData (no base64 en JSON)
 async function convertirBlobAArchivos(imagenes) {
@@ -1384,14 +1397,18 @@ async function finalizarAgregarEPP() {
     const promesasEPP = eppAgregadosList.map(async (epp) => {
         console.log(`📌 [finalizarAgregarEPP] Procesando EPP: ${epp.nombre_completo}`);
         
-        // En modo edición, NO convertir imágenes a archivos - mantener solo URLs blob
+        // En modo edición O modo cotización, mantener blob URLs (NO convertir a base64)
+        // Las referencias a los archivos se guardan globalmente para mantener las blob URLs válidas
         let imagenesParaGuardar;
-        if (window.__EPP_MODO_EDICION__) {
-            console.log('[finalizarAgregarEPP] Modo edición - manteniendo URLs blob, sin conversión a archivos');
-            // En edición, mantener las imágenes como están (solo URLs blob)
+        const esModoCotizacion = !!window.__EPP_COTIZACION_MODE__;
+        const esModoEdicion = !!window.__EPP_MODO_EDICION__;
+        
+        if (esModoEdicion || esModoCotizacion) {
+            console.log(`[finalizarAgregarEPP] Modo ${esModoCotizacion ? 'cotización' : 'edición'} - manteniendo blob URLs`);
+            // Mantener las imágenes con blob URLs (los archivos están referenciados globalmente)
             imagenesParaGuardar = epp.imagenes || [];
         } else {
-            // En modo creación, convertir URLs blob a archivos para guardado
+            // En modo creación de pedido, convertir URLs blob a archivos para guardado
             imagenesParaGuardar = await convertirBlobAArchivos(epp.imagenes);
         }
         
@@ -1413,6 +1430,16 @@ async function finalizarAgregarEPP() {
                     null, // No hay valor unitario en nuevo pedido
                     null  // No hay total en nuevo pedido
                 );
+                
+                // Guardar referencias en cache global también para mantener blob URLs vivas
+                if (imagenesParaGuardar && imagenesParaGuardar.length > 0) {
+                    imagenesParaGuardar.forEach((imagen, idx) => {
+                        if (imagen.previewUrl && imagen.previewUrl.startsWith('blob:')) {
+                            _guardarArchivoEnCache(imagen.previewUrl, imagen.file || imagen);
+                        }
+                    });
+                }
+                
                 console.log(` [finalizarAgregarEPP] EPP agregado a tarjeta (nuevo): ${epp.nombre_completo}`);
             } else {
                 console.warn(' [finalizarAgregarEPP] eppItemManagerNuevo no disponible');
@@ -1431,6 +1458,16 @@ async function finalizarAgregarEPP() {
                     modoCotizacion ? epp.valor_unitario : null,
                     modoCotizacion ? epp.total : null
                 );
+                
+                // Guardar referencias en cache global también para mantener blob URLs vivas
+                if (imagenesParaGuardar && imagenesParaGuardar.length > 0) {
+                    imagenesParaGuardar.forEach((imagen, idx) => {
+                        if (imagen.previewUrl && imagen.previewUrl.startsWith('blob:')) {
+                            _guardarArchivoEnCache(imagen.previewUrl, imagen.file || imagen);
+                        }
+                    });
+                }
+                
                 console.log(` [finalizarAgregarEPP] EPP agregado a tarjeta (cotización): ${epp.nombre_completo}`);
             } else {
                 console.warn(' [finalizarAgregarEPP] eppItemManager no disponible');
@@ -1446,7 +1483,7 @@ async function finalizarAgregarEPP() {
             observaciones: epp.observaciones,
             valor_unitario: modoCotizacion ? epp.valor_unitario : null,
             total: modoCotizacion ? epp.total : null,
-            imagenes: window.__EPP_MODO_EDICION__ ? (epp.imagenes || []) : imagenesParaGuardar // En edición, usar blob URLs originales
+            imagenes: imagenesParaGuardar // Usar siempre las imágenes procesadas (base64 en cotización/edición, rutas en creación)
         };
         
         return eppData;
@@ -1536,6 +1573,9 @@ function manejarSubidaFotosEPP(input) {
         
         // Crear URL blob para la imagen
         const previewUrl = URL.createObjectURL(archivo);
+        
+        // Guardar referencia al archivo para mantener la blob URL válida
+        _guardarArchivoEnCache(previewUrl, archivo);
         
         // Crear objeto de imagen con URL blob
         const imagen = {
