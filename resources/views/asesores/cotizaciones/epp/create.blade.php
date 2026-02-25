@@ -562,17 +562,22 @@ NIT 1.093.738.433-3</textarea>
                 const filas = document.querySelectorAll('#tabla-items-pedido tr.item-epp');
                 let subtotal = 0;
                 
-                filas.forEach(fila => {
+                filas.forEach((fila, index) => {
                     const celdas = fila.querySelectorAll('td');
                     if (celdas.length >= 7) {
-                        const totalText = celdas[6]?.textContent?.trim() || '0';
+                        // Extraer el valor total desde la séptima columna (índice 6)
+                        // El total está en el primer <span> dentro de un <div> de flexbox
+                        const ultimaCelda = celdas[6];
+                        const spanTotal = ultimaCelda?.querySelector('div > span:first-child');
+                        const totalText = spanTotal?.textContent?.trim() || '0';
                         const totalMatch = totalText.match(/[\d.]+/);
                         const total = totalMatch ? parseFloat(totalMatch[0]) : 0;
                         subtotal += total;
-                        console.log('[calcularSubtotalEpp] Fila encontrada, total:', total, 'subtotal acumulado:', subtotal);
+                        console.log(`[calcularSubtotalEpp] Item ${index + 1} encontrado, total: ${total}, subtotal acumulado: ${subtotal}`);
                     }
                 });
                 
+                console.log('[calcularSubtotalEpp] Subtotal final del DOM:', subtotal);
                 return subtotal;
             }
             
@@ -594,6 +599,7 @@ NIT 1.093.738.433-3</textarea>
                 }
             }
 
+            console.log('[calcularSubtotalEpp] Subtotal final de itemsPedido:', subtotal);
             return subtotal;
         }
 
@@ -617,6 +623,9 @@ NIT 1.093.738.433-3</textarea>
             ivaCalculadoEl.value = formatearNumero(ivaValor);
             totalEl.value = formatearNumero(total);
         }
+
+        // Exponer syncTotales al objeto window para que sea accesible desde otros scripts
+        window.syncTotales = syncTotales;
 
         try {
             const clienteEl = document.getElementById('header-cliente');

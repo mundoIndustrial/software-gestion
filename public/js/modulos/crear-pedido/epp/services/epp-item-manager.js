@@ -65,6 +65,10 @@ class EppItemManager {
         };
         const estilos = colorPorTipo[tipo] || colorPorTipo['epp'];
         
+        // Calcular número consecutivo contando los items existentes
+        const filasExistentes = listaItems.querySelectorAll('tr.item-epp').length;
+        const numeroConsecutivo = filasExistentes + 1;
+        
         // Crear fila de tabla
         const row = document.createElement('tr');
         row.className = 'item-epp';
@@ -77,7 +81,7 @@ class EppItemManager {
         row.innerHTML = `
             <td style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #1f2937; border-bottom: 1px solid #e5e7eb;">
                 <div style="display: flex; align-items: center; gap: 6px;">
-                    <span>1</span>
+                    <span>${numeroConsecutivo}</span>
                     <span style="background: ${estilos.borde}; color: white; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 3px;">${estilos.etiqueta}</span>
                 </div>
             </td>
@@ -157,9 +161,36 @@ class EppItemManager {
             }
             
             this.imagenesCache.delete(id);
+            
+            // Renumerar los items restantes
+            this._renumerarItems();
+            
             console.log('[EppItemManager] Item eliminado:', id, '- cache limpiado y URLs revocadas');
         } else {
             console.warn('[EppItemManager]  Item no encontrado para eliminar:', id);
+        }
+    }
+
+    /**
+     * Renumerar los items después de una eliminación
+     */
+    _renumerarItems() {
+        const listaItems = document.getElementById(this.listaItemsId);
+        if (!listaItems) return;
+        
+        const filas = listaItems.querySelectorAll('tr.item-epp');
+        filas.forEach((fila, index) => {
+            const numeroSpan = fila.querySelector('td > div > span:first-child');
+            if (numeroSpan) {
+                numeroSpan.textContent = String(index + 1);
+                console.log(`[EppItemManager] Item renumerado a: ${index + 1}`);
+            }
+        });
+        
+        // Recalcular totales después de renumerar
+        if (typeof window.syncTotales === 'function') {
+            window.syncTotales();
+            console.log('[EppItemManager] Totales recalculados después de eliminar item');
         }
     }
 
@@ -191,136 +222,212 @@ class EppItemManager {
 
         console.log('[EppItemManager]  Actualizando item:', id, datos);
 
-        // Actualizar nombre
-        if (datos.nombre !== undefined && datos.nombre !== null) {
-            const h4 = item.querySelector('h4');
-            if (h4) {
-                h4.textContent = String(datos.nombre);
-            }
-        }
+        // Detectar tipo de estructura: tabla o tarjeta
+        const esTabla = item.tagName === 'TR';
+        const esTarjeta = item.classList.contains('item-epp-card');
+        
+        console.log('[EppItemManager] Tipo de estructura - tabla:', esTabla, 'tarjeta:', esTarjeta);
 
-        // Actualizar cantidad
-        if (datos.cantidad !== undefined) {
-            const detallesDiv = item.querySelector('.epp-detalles') || item.querySelector('div[style*="grid-template-columns"]');
-            if (detallesDiv) {
-                const etiquetas = detallesDiv.querySelectorAll('p');
-                // Primera columna: [0] = etiqueta "Cantidad", [1] = valor cantidad
-                // Segunda columna: [2] = etiqueta "Observaciones", [3] = valor observaciones
-                if (etiquetas[1]) {
-                    etiquetas[1].textContent = datos.cantidad;
-                    console.log('[EppItemManager] Cantidad actualizada:', datos.cantidad);
-                }
-            }
-        }
-
-        // Actualizar valor unitario / total (si vienen)
-        if (datos.valor_unitario !== undefined || datos.total !== undefined) {
-            const formatearNumero = (num) => {
-                if (!Number.isFinite(num)) return '0';
-                if (Number.isInteger(num)) return String(num);
-                const s = num.toFixed(2);
-                return s.replace(/\.00$/, '').replace(/(\.[0-9])0$/, '$1');
-            };
-
-            const vu = (datos.valor_unitario !== undefined && datos.valor_unitario !== null && String(datos.valor_unitario).trim() !== '')
-                ? Number(datos.valor_unitario)
-                : null;
-            const tot = (datos.total !== undefined && datos.total !== null && String(datos.total).trim() !== '')
-                ? Number(datos.total)
-                : null;
-
-            const cantidadActual = (datos.cantidad !== undefined)
-                ? Number(datos.cantidad)
-                : (() => {
-                    const detallesDiv = item.querySelector('.epp-detalles') || item.querySelector('div[style*="grid-template-columns"]');
-                    const etiquetas = detallesDiv ? detallesDiv.querySelectorAll('p') : [];
-                    return etiquetas && etiquetas[1] ? Number(etiquetas[1].textContent) : 0;
-                })();
-
-            const totalCalc = (tot !== null)
-                ? tot
-                : ((vu !== null && cantidadActual) ? (vu * Number(cantidadActual)) : 0);
-
-            // Buscar si ya existe la sección (la segunda .epp-detalles) dentro del bloque principal
-            const bloques = item.querySelectorAll('.epp-detalles');
-            let seccionVU = null;
-            if (bloques && bloques.length > 1) {
-                seccionVU = bloques[1];
-            }
-
-            if (!seccionVU) {
-                // Crear sección debajo del primer bloque de detalles
-                const primerBloque = bloques && bloques.length > 0 ? bloques[0] : null;
-                if (primerBloque && (vu !== null || tot !== null)) {
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'epp-detalles';
-                    wrapper.setAttribute('style', 'display: grid; grid-template-columns: 120px 1fr; gap: 0.6rem; align-items: start; margin-top: 0.45rem;');
-                    wrapper.innerHTML = `
-                        <div>
-                            <p style="margin: 0 0 0.1rem 0; font-size: 0.65rem; font-weight: 600; color: #9ca3af; text-transform: uppercase;">Valor Unitario</p>
-                            <p style="margin: 0; font-size: 0.85rem; font-weight: 600; color: #1f2937;">${vu !== null ? formatearNumero(vu) : 'N/A'}</p>
-                        </div>
-                        <div>
-                            <p style="margin: 0 0 0.1rem 0; font-size: 0.65rem; font-weight: 600; color: #9ca3af; text-transform: uppercase;">Total</p>
-                            <p style="margin: 0; font-size: 0.85rem; font-weight: 800; color: #1f2937;">${Number.isFinite(totalCalc) ? formatearNumero(totalCalc) : '0'}</p>
-                        </div>
-                    `;
-                    primerBloque.insertAdjacentElement('afterend', wrapper);
-                }
-            } else {
-                // Actualizar valores dentro de la sección existente
-                const ps = seccionVU.querySelectorAll('p');
-                // [0]=label vu, [1]=valor vu, [2]=label total, [3]=valor total
-                if (ps && ps[1]) ps[1].textContent = (vu !== null ? formatearNumero(vu) : 'N/A');
-                if (ps && ps[3]) ps[3].textContent = (Number.isFinite(totalCalc) ? formatearNumero(totalCalc) : '0');
-
-                // Si ya no hay datos, podrías ocultar; por ahora lo dejamos visible si existe.
-            }
-        }
-
-        // Actualizar observaciones
-        if (datos.observaciones !== undefined) {
-            const detallesDiv = item.querySelector('.epp-detalles') || item.querySelector('div[style*="grid-template-columns"]');
-            if (detallesDiv) {
-                const etiquetas = detallesDiv.querySelectorAll('p');
-                // Primera columna: [0] = etiqueta "Cantidad", [1] = valor cantidad
-                // Segunda columna: [2] = etiqueta "Observaciones", [3] = valor observaciones
-                if (etiquetas[3]) {
-                    etiquetas[3].textContent = datos.observaciones || 'N/A';
-                    console.log('[EppItemManager] Observaciones actualizadas:', datos.observaciones);
-                }
-            }
-        }
-
-        // Actualizar imágenes si existen
-        if (datos.imagenes !== undefined) {
-            console.log('[EppItemManager] 🖼️ Procesando imágenes:', datos.imagenes.length);
-
-            // Buscar y actualizar la sección de galería existente
-            const galeriaSeccion = item.querySelector('div[style*="border-top: 1px solid #bfdbfe"]');
+        if (esTabla) {
+            // ========== ACTUALIZAR ESTRUCTURA DE TABLA ==========
+            console.log('[EppItemManager] Actualizando item en TABLA');
+            const celdas = item.querySelectorAll('td');
             
-            if (galeriaSeccion) {
-                if (datos.imagenes.length > 0) {
-                    // Regenerar la galería con las nuevas imágenes
+            if (celdas.length >= 7) {
+                // Actualizar nombre (celda 2 - DESCRIPCIÓN)
+                if (datos.nombre !== undefined && datos.nombre !== null) {
+                    const descCell = celdas[2];
+                    const span = descCell.querySelector('span');
+                    if (span) {
+                        span.textContent = String(datos.nombre);
+                        console.log('[EppItemManager] Nombre actualizado en tabla:', datos.nombre);
+                    }
+                }
+                
+                // Actualizar cantidad (celda 3)
+                if (datos.cantidad !== undefined) {
+                    celdas[3].textContent = String(datos.cantidad);
+                    console.log('[EppItemManager] Cantidad actualizada en tabla:', datos.cantidad);
+                }
+                
+                // Actualizar observaciones (celda 4)
+                if (datos.observaciones !== undefined) {
+                    celdas[4].textContent = datos.observaciones || '-';
+                    console.log('[EppItemManager] Observaciones actualizadas en tabla:', datos.observaciones);
+                }
+                
+                // Actualizar valor unitario (celda 5)
+                if (datos.valor_unitario !== undefined) {
+                    const vu = datos.valor_unitario;
+                    const vuText = (vu !== undefined && vu !== null && String(vu).trim() !== '')
+                        ? String(vu)
+                        : 'N/A';
+                    celdas[5].textContent = vuText;
+                    console.log('[EppItemManager] Valor unitario actualizado en tabla:', vuText);
+                }
+                
+                // Actualizar total (celda 6)
+                if (datos.total !== undefined || datos.valor_unitario !== undefined || datos.cantidad !== undefined) {
+                    const formatearNumero = (num) => {
+                        if (!Number.isFinite(num)) return '0';
+                        if (Number.isInteger(num)) return String(num);
+                        const s = num.toFixed(2);
+                        return s.replace(/\.00$/, '').replace(/(\.[0-9])0$/, '$1');
+                    };
+
+                    const vu = (datos.valor_unitario !== undefined && datos.valor_unitario !== null && String(datos.valor_unitario).trim() !== '')
+                        ? Number(datos.valor_unitario)
+                        : null;
+                    const tot = (datos.total !== undefined && datos.total !== null && String(datos.total).trim() !== '')
+                        ? Number(datos.total)
+                        : null;
+                    const cantidad = (datos.cantidad !== undefined)
+                        ? Number(datos.cantidad)
+                        : Number(celdas[3].textContent.trim());
+                    
+                    const totalCalc = (tot !== null)
+                        ? tot
+                        : ((vu !== null && cantidad) ? (vu * cantidad) : 0);
+                    
+                    // Buscar el span del total dentro de la celda 6
+                    const spanTotal = celdas[6].querySelector('div > span:first-child');
+                    if (spanTotal) {
+                        spanTotal.textContent = formatearNumero(totalCalc);
+                        console.log('[EppItemManager] Total actualizado en tabla:', formatearNumero(totalCalc));
+                    }
+                }
+                
+                // Recalcular totales globales después de actualizar
+                if (typeof window.syncTotales === 'function') {
+                    setTimeout(() => {
+                        window.syncTotales();
+                        console.log('[EppItemManager] Totales recalculados después de actualizar item en tabla');
+                    }, 100);
+                }
+            }
+        } else if (esTarjeta) {
+            // ========== ACTUALIZAR ESTRUCTURA DE TARJETA ==========
+            console.log('[EppItemManager] Actualizando item en TARJETA');
+
+            // Actualizar nombre
+            if (datos.nombre !== undefined && datos.nombre !== null) {
+                const h4 = item.querySelector('h4');
+                if (h4) {
+                    h4.textContent = String(datos.nombre);
+                }
+            }
+
+            // Actualizar cantidad
+            if (datos.cantidad !== undefined) {
+                const detallesDiv = item.querySelector('.epp-detalles') || item.querySelector('div[style*="grid-template-columns"]');
+                if (detallesDiv) {
+                    const etiquetas = detallesDiv.querySelectorAll('p');
+                    if (etiquetas[1]) {
+                        etiquetas[1].textContent = datos.cantidad;
+                        console.log('[EppItemManager] Cantidad actualizada:', datos.cantidad);
+                    }
+                }
+            }
+
+            // Actualizar valor unitario / total (si vienen)
+            if (datos.valor_unitario !== undefined || datos.total !== undefined) {
+                const formatearNumero = (num) => {
+                    if (!Number.isFinite(num)) return '0';
+                    if (Number.isInteger(num)) return String(num);
+                    const s = num.toFixed(2);
+                    return s.replace(/\.00$/, '').replace(/(\.[0-9])0$/, '$1');
+                };
+
+                const vu = (datos.valor_unitario !== undefined && datos.valor_unitario !== null && String(datos.valor_unitario).trim() !== '')
+                    ? Number(datos.valor_unitario)
+                    : null;
+                const tot = (datos.total !== undefined && datos.total !== null && String(datos.total).trim() !== '')
+                    ? Number(datos.total)
+                    : null;
+
+                const cantidadActual = (datos.cantidad !== undefined)
+                    ? Number(datos.cantidad)
+                    : (() => {
+                        const detallesDiv = item.querySelector('.epp-detalles') || item.querySelector('div[style*="grid-template-columns"]');
+                        const etiquetas = detallesDiv ? detallesDiv.querySelectorAll('p') : [];
+                        return etiquetas && etiquetas[1] ? Number(etiquetas[1].textContent) : 0;
+                    })();
+
+                const totalCalc = (tot !== null)
+                    ? tot
+                    : ((vu !== null && cantidadActual) ? (vu * Number(cantidadActual)) : 0);
+
+                const bloques = item.querySelectorAll('.epp-detalles');
+                let seccionVU = null;
+                if (bloques && bloques.length > 1) {
+                    seccionVU = bloques[1];
+                }
+
+                if (!seccionVU) {
+                    const primerBloque = bloques && bloques.length > 0 ? bloques[0] : null;
+                    if (primerBloque && (vu !== null || tot !== null)) {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'epp-detalles';
+                        wrapper.setAttribute('style', 'display: grid; grid-template-columns: 120px 1fr; gap: 0.6rem; align-items: start; margin-top: 0.45rem;');
+                        wrapper.innerHTML = `
+                            <div>
+                                <p style="margin: 0 0 0.1rem 0; font-size: 0.65rem; font-weight: 600; color: #9ca3af; text-transform: uppercase;">Valor Unitario</p>
+                                <p style="margin: 0; font-size: 0.85rem; font-weight: 600; color: #1f2937;">${vu !== null ? formatearNumero(vu) : 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p style="margin: 0 0 0.1rem 0; font-size: 0.65rem; font-weight: 600; color: #9ca3af; text-transform: uppercase;">Total</p>
+                                <p style="margin: 0; font-size: 0.85rem; font-weight: 800; color: #1f2937;">${Number.isFinite(totalCalc) ? formatearNumero(totalCalc) : '0'}</p>
+                            </div>
+                        `;
+                        primerBloque.insertAdjacentElement('afterend', wrapper);
+                    }
+                } else {
+                    const ps = seccionVU.querySelectorAll('p');
+                    if (ps && ps[1]) ps[1].textContent = (vu !== null ? formatearNumero(vu) : 'N/A');
+                    if (ps && ps[3]) ps[3].textContent = (Number.isFinite(totalCalc) ? formatearNumero(totalCalc) : '0');
+                }
+            }
+
+            // Actualizar observaciones
+            if (datos.observaciones !== undefined) {
+                const detallesDiv = item.querySelector('.epp-detalles') || item.querySelector('div[style*="grid-template-columns"]');
+                if (detallesDiv) {
+                    const etiquetas = detallesDiv.querySelectorAll('p');
+                    if (etiquetas[3]) {
+                        etiquetas[3].textContent = datos.observaciones || 'N/A';
+                        console.log('[EppItemManager] Observaciones actualizadas:', datos.observaciones);
+                    }
+                }
+            }
+
+            // Actualizar imágenes si existen
+            if (datos.imagenes !== undefined) {
+                console.log('[EppItemManager] 🖼️ Procesando imágenes:', datos.imagenes.length);
+
+                // Buscar y actualizar la sección de galería existente
+                const galeriaSeccion = item.querySelector('div[style*="border-top: 1px solid #bfdbfe"]');
+                
+                if (galeriaSeccion) {
+                    if (datos.imagenes.length > 0) {
+                        // Regenerar la galería con las nuevas imágenes
+                        const nombreEPP = item.querySelector('h4')?.textContent || 'Imagen EPP';
+                        const nuevoHTML = this._crearGaleriaHTML(nombreEPP, datos.imagenes);
+                        galeriaSeccion.outerHTML = nuevoHTML;
+                        console.log('[EppItemManager] Galería actualizada con', datos.imagenes.length, 'imágenes');
+                    } else {
+                        // Si no hay imágenes, remover la sección de galería
+                        galeriaSeccion.remove();
+                        console.log('[EppItemManager] Sección de galería removida (sin imágenes)');
+                    }
+                } else if (datos.imagenes.length > 0) {
+                    // Si no existe la galería pero hay imágenes, crearla
                     const nombreEPP = item.querySelector('h4')?.textContent || 'Imagen EPP';
                     const nuevoHTML = this._crearGaleriaHTML(nombreEPP, datos.imagenes);
-                    galeriaSeccion.outerHTML = nuevoHTML;
-                    console.log('[EppItemManager] Galería actualizada con', datos.imagenes.length, 'imágenes');
-                } else {
-                    // Si no hay imágenes, remover la sección de galería
-                    galeriaSeccion.remove();
-                    console.log('[EppItemManager] Sección de galería removida (sin imágenes)');
+                    item.insertAdjacentHTML('beforeend', nuevoHTML);
+                    console.log('[EppItemManager] Galería creada con', datos.imagenes.length, 'imágenes');
                 }
-            } else if (datos.imagenes.length > 0) {
-                // Si no existe la galería pero hay imágenes, crearla
-                const nombreEPP = item.querySelector('h4')?.textContent || 'Imagen EPP';
-                const nuevoHTML = this._crearGaleriaHTML(nombreEPP, datos.imagenes);
-                item.insertAdjacentHTML('beforeend', nuevoHTML);
-                console.log('[EppItemManager] Galería creada con', datos.imagenes.length, 'imágenes');
             }
         }
-
-        console.log('[EppItemManager] Item actualizado correctamente');
     }
 
     /**
@@ -332,49 +439,43 @@ class EppItemManager {
             return '';
         }
 
+        const imagenesHTML = imagenes.map(img => {
+            // Soportar múltiples formatos de imagen
+            let imgUrl = '';
+            let imgAlt = nombre;
+            
+            if (typeof img === 'string') {
+                imgUrl = img;
+            } else if (img.previewUrl) {
+                imgUrl = img.previewUrl;
+                imgAlt = img.nombre || nombre;
+            } else if (img.url || img.ruta_web) {
+                if (img.previewUrl) {
+                    imgUrl = img.previewUrl;
+                    imgAlt = img.nombre || nombre;
+                } else {
+                    imgUrl = img.url || img.ruta_web;
+                    imgAlt = img.nombre || nombre;
+                }
+            } else if (img.base64) {
+                imgUrl = img.base64;
+                imgAlt = img.nombre || nombre;
+            }
+            
+            // Solo renderizar si tenemos una URL válida
+            if (imgUrl && !imgUrl.includes('placeholder')) {
+                return `<div style="position: relative; border-radius: 4px; overflow: hidden; background: #f3f4f6; border: 1px solid #e5e7eb; aspect-ratio: 1;">
+                    <img src="${imgUrl}" alt="${imgAlt}" style="width: 100%; height: 100%; object-fit: cover; display: block;" title="${imgAlt}">
+                </div>`;
+            }
+            return '';
+        }).filter(html => html !== '').join('');
+
         return `
             <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #bfdbfe;">
                 <p style="margin: 0 0 0.75rem 0; font-size: 0.8rem; font-weight: 600; color: #0066cc; text-transform: uppercase; letter-spacing: 0.5px;">Imágenes</p>
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 0.5rem;">
-                    ${imagenes.map(img => {
-                        // Soportar múltiples formatos de imagen
-                        // PRIORIZAR URLs DEL SERVIDOR con fallback a previewUrl
-                        let imgUrl = '';
-                        let imgAlt = nombre;
-                        
-                        if (typeof img === 'string') {
-                            imgUrl = img;
-                        } else if (img.previewUrl) {
-                            // PRIORIDAD 1: URL blob (funciona siempre)
-                            imgUrl = img.previewUrl;
-                            imgAlt = img.nombre || nombre;
-                        } else if (img.url || img.ruta_web) {
-                            // PRIORIDAD 2: URLs del servidor (si existen y funcionan)
-                            // TEMPORAL: Como las URLs simuladas no funcionan, usar previewUrl
-                            if (img.previewUrl) {
-                                imgUrl = img.previewUrl;
-                                imgAlt = img.nombre || nombre;
-                            } else {
-                                imgUrl = img.url || img.ruta_web;
-                                imgAlt = img.nombre || nombre;
-                            }
-                        } else if (img.base64) {
-                            // PRIORIDAD 3: Base64 (fallback)
-                            imgUrl = img.base64;
-                            imgAlt = img.nombre || nombre;
-                        }
-                        
-                        // Solo renderizar si tenemos una URL válida
-                        if (imgUrl && !imgUrl.includes('placeholder')) {
-                            return `
-                                <div style="position: relative; border-radius: 4px; overflow: hidden; background: #f3f4f6; border: 1px solid #e5e7eb; aspect-ratio: 1;">
-                                    <img src="${imgUrl}" alt="${imgAlt}" style="width: 100%; height: 100%; object-fit: cover; display: block;" title="${imgAlt}"
-                                         onerror="console.warn('Imagen no cargada, usando fallback'); this.src='${img.previewUrl || ''}';">
-                                </div>
-                            `;
-                        }
-                        return '';
-                    }).filter(html => html !== '').join('')}
+                    ${imagenesHTML}
                 </div>
             </div>
         `;

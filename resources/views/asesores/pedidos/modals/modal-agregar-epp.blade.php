@@ -1657,6 +1657,12 @@ async function finalizarAgregarEPP() {
         console.log(' [finalizarAgregarEPP] Todos los EPP han sido procesados y agregados');
         console.log(' [finalizarAgregarEPP] window.itemsPedido actual:', window.itemsPedido);
         
+        // Recalcular totales después de agregar los EPPs
+        if (typeof window.syncTotales === 'function') {
+            window.syncTotales();
+            console.log('[finalizarAgregarEPP] Totales recalculados');
+        }
+        
         cerrarModalAgregarEPP();
         
     } catch (error) {
@@ -2184,6 +2190,11 @@ function cerrarModalAgregarPrenda() {
         document.removeEventListener('paste', window.handlePastePrenda);
         console.log('[cerrarModalAgregarPrenda] Paste listener removido');
     }
+    
+    // Limpiar referencias de edición
+    window.prendaEnEdicion = null;
+    window.eppEnEdicion = null;
+    console.log('[cerrarModalAgregarPrenda] Referencias de edición limpiadas');
 }
 
 function actualizarTotalPrenda() {
@@ -2287,6 +2298,16 @@ function validarBotonesPrenda() {
 function finalizarAgregarPrenda() {
     console.log('[finalizarAgregarPrenda] Finalizando agregación de prenda');
     
+    // Verificar si estamos en modo edición
+    const enModoEdicion = !!(window.eppEnEdicion && typeof window.eppEnEdicion === 'object' && Object.keys(window.eppEnEdicion).length > 0);
+    const prendaEnEdicion = enModoEdicion ? window.eppEnEdicion : null;
+    
+    if (enModoEdicion) {
+        console.log('[finalizarAgregarPrenda] 📝 MODO EDICIÓN detectado:', prendaEnEdicion);
+    } else {
+        console.log('[finalizarAgregarPrenda] ➕ MODO CREACIÓN');
+    }
+    
     const descripcion = document.getElementById('descripcionPrenda').value.trim();
     const cantidad = parseInt(document.getElementById('cantidadPrenda').value) || 1;
     const valorUnitario = parseFloat(document.getElementById('valorUnitarioPrenda').value) || 0;
@@ -2323,7 +2344,20 @@ function finalizarAgregarPrenda() {
     if (!window.prendasAgregadas) {
         window.prendasAgregadas = [];
     }
-    window.prendasAgregadas.push(prenda);
+    
+    // Si estamos en modo edición, actualizar la prenda existente en prendasAgregadas
+    if (enModoEdicion) {
+        const targetId = prendaEnEdicion.id || prendaEnEdicion.prenda_id || prendaEnEdicion.epp_id;
+        const indexPrendas = window.prendasAgregadas.findIndex(p => 
+            String(p.id) === String(targetId) || String(p.prenda_id) === String(targetId)
+        );
+        if (indexPrendas !== -1) {
+            window.prendasAgregadas[indexPrendas] = prenda;
+            console.log('[finalizarAgregarPrenda] Prenda actualizada en prendasAgregadas');
+        }
+    } else {
+        window.prendasAgregadas.push(prenda);
+    }
     
     // Agregar a window.itemsPedido para envío
     if (!window.itemsPedido) {
@@ -2341,29 +2375,73 @@ function finalizarAgregarPrenda() {
         imagenes: fotos
     };
     
-    window.itemsPedido.push(prendaData);
-    
-    console.log('[finalizarAgregarPrenda] Prenda agregada a window.itemsPedido');
+    // Si estamos en modo edición, NO agregar a window.itemsPedido de nuevo
+    // Solo actualizar el existente
+    if (!enModoEdicion) {
+        window.itemsPedido.push(prendaData);
+        console.log('[finalizarAgregarPrenda] Prenda agregada a window.itemsPedido');
+    } else {
+        // Actualizar en window.itemsPedido si existe
+        const targetId = prendaEnEdicion.id || prendaEnEdicion.prenda_id || prendaEnEdicion.epp_id;
+        const index = window.itemsPedido.findIndex(item => 
+            String(item.id) === String(targetId) || String(item.epp_id) === String(targetId)
+        );
+        if (index !== -1) {
+            window.itemsPedido[index].nombre_epp = descripcion;
+            window.itemsPedido[index].nombre = descripcion;
+            window.itemsPedido[index].cantidad = cantidad;
+            window.itemsPedido[index].observaciones = observaciones || '-';
+            window.itemsPedido[index].valor_unitario = valorUnitario;
+            window.itemsPedido[index].total = total;
+            window.itemsPedido[index].imagenes = fotos;
+            console.log('[finalizarAgregarPrenda] Prenda actualizada en window.itemsPedido:', window.itemsPedido[index]);
+        }
+    }
     
     // Renderizar en la tabla principal usando eppItemManager
     if (window.eppItemManager && typeof window.eppItemManager.crearItem === 'function') {
-        console.log('[finalizarAgregarPrenda] Renderizando prenda en tabla principal');
-        window.eppItemManager.crearItem(
-            prenda.id,                // id
-            descripcion,               // nombre
-            'prenda',                  // categoria
-            cantidad,                  // cantidad
-            observaciones || '-',      // observaciones
-            fotos.map((src, idx) => ({  // imagenes
-                previewUrl: src,
-                base64: src,
-                nombre: `prenda_${prenda.id}_${idx}`
-            })),
-            prenda.id,                 // pedidoEppId
-            valorUnitario,             // valorUnitario
-            total,                     // total
-            'prenda'                   // tipo
-        );
+        if (enModoEdicion) {
+            // MODO EDICIÓN: Actualizar item existente
+            console.log('[finalizarAgregarPrenda] 📝 ACTUALIZANDO prenda en tabla principal');
+            const targetId = prendaEnEdicion.id || prendaEnEdicion.prenda_id || prendaEnEdicion.epp_id;
+            
+            if (typeof window.eppItemManager.actualizarItem === 'function') {
+                window.eppItemManager.actualizarItem(targetId, {
+                    nombre: descripcion,
+                    cantidad: cantidad,
+                    observaciones: observaciones || '-',
+                    valor_unitario: valorUnitario,
+                    total: total,
+                    imagenes: fotos.map((src, idx) => ({
+                        previewUrl: src,
+                        base64: src,
+                        nombre: `prenda_${prenda.id}_${idx}`
+                    }))
+                });
+                console.log('[finalizarAgregarPrenda] Prenda actualizada correctamente');
+            } else {
+                console.warn('[finalizarAgregarPrenda] actualizarItem no disponible');
+            }
+        } else {
+            // MODO CREACIÓN: Crear nuevo item
+            console.log('[finalizarAgregarPrenda] ➕ Creando nueva prenda en tabla principal');
+            window.eppItemManager.crearItem(
+                prenda.id,                // id
+                descripcion,               // nombre
+                'prenda',                  // categoria
+                cantidad,                  // cantidad
+                observaciones || '-',      // observaciones
+                fotos.map((src, idx) => ({  // imagenes
+                    previewUrl: src,
+                    base64: src,
+                    nombre: `prenda_${prenda.id}_${idx}`
+                })),
+                prenda.id,                 // pedidoEppId
+                valorUnitario,             // valorUnitario
+                total,                     // total
+                'prenda'                   // tipo
+            );
+        }
     } else {
         console.warn('[finalizarAgregarPrenda] eppItemManager no disponible');
     }
@@ -2372,6 +2450,12 @@ function finalizarAgregarPrenda() {
     if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPAlOrden === 'function') {
         window.gestionItemsUI.agregarEPPAlOrden(prendaData);
         console.log('[finalizarAgregarPrenda] Prenda registrada en gestionItemsUI');
+    }
+    
+    // Recalcular totales después de agregar la prenda
+    if (typeof window.syncTotales === 'function') {
+        window.syncTotales();
+        console.log('[finalizarAgregarPrenda] Totales recalculados');
     }
     
     // NOTA: El guardado en BD se realiza cuando se envía la cotización completa (junto con EPPs)

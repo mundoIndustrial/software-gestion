@@ -175,10 +175,32 @@ class EppItemManagerNuevo {
             }
             
             this.imagenesCache.delete(id);
+            
+            // Renumerar las tarjetas restantes
+            this._renumerarItems();
+            
             console.log('[EppItemManagerNuevo] Item eliminado:', id, '- cache limpiado y URLs revocadas');
         } else {
             console.warn('[EppItemManagerNuevo] Item no encontrado para eliminar:', id);
         }
+    }
+
+    /**
+     * Renumerar las tarjetas después de una eliminación
+     */
+    _renumerarItems() {
+        const listaItems = document.getElementById(this.listaItemsId);
+        if (!listaItems) return;
+        
+        const tarjetas = listaItems.querySelectorAll('.item-epp-card-nuevo');
+        tarjetas.forEach((tarjeta, index) => {
+            // Encontrar el span que contiene el número "EPP X"
+            const spanNumero = tarjeta.querySelector('span[style*="background: #e0f2fe"]');
+            if (spanNumero) {
+                spanNumero.textContent = `EPP ${index + 1}`;
+                console.log(`[EppItemManagerNuevo] Tarjeta renumerada a: EPP ${index + 1}`);
+            }
+        });
     }
 
     /**

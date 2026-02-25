@@ -583,9 +583,11 @@ window.EppMenuHandlers = {
                             });
                         }
                         
-                        // Guardar como prenda en edición
+                        // Guardar como prenda en edición (usar window.eppEnEdicion para estandarizar con EPP)
                         window.prendaEnEdicion = prendaDataTransformado;
+                        window.eppEnEdicion = prendaDataTransformado;  // Estandarizar con EPP
                         console.log(' [_procederAEditarPrenda] Datos cargados en el modal de prenda');
+                        console.log(' [_procederAEditarPrenda] window.eppEnEdicion configurado para prenda:', window.eppEnEdicion);
                     } else {
                         console.warn(' [_procederAEditarPrenda] No se encontraron todos los campos del modal');
                     }

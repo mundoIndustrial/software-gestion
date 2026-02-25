@@ -2520,7 +2520,7 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('ase
 // ========================================
 // RUTAS PARA CARTERA - PEDIDOS
 // ========================================
-Route::middleware(['auth', 'role:cartera,admin'])->prefix('cartera')->name('cartera.')->group(function () {
+Route::middleware(['auth', 'role:cartera,admin,supervisor_gerencia'])->prefix('cartera')->name('cartera.')->group(function () {
     // Gestión de pedidos por aprobar (pendientes)
     Route::get('/pedidos', function () {
         return view('cartera-pedidos.cartera-pedidos-supervisor');
@@ -2545,7 +2545,7 @@ Route::middleware(['auth', 'role:cartera,admin'])->prefix('cartera')->name('cart
 // ========================================
 // API CARTERA - PEDIDOS
 // ========================================
-Route::middleware(['auth', 'role:cartera,admin'])->prefix('api/cartera')->name('api.cartera.')->group(function () {
+Route::middleware(['auth', 'role:cartera,admin,supervisor_gerencia'])->prefix('api/cartera')->name('api.cartera.')->group(function () {
     // GET pedidos por estado (cartera) - principal para pendientes
     Route::get('/pedidos', [App\Http\Controllers\CarteraPedidosController::class, 'obtenerPedidos'])->name('list');
     

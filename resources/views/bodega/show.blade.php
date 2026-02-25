@@ -372,11 +372,20 @@
                                                 @endif
                                             </select>
 
-                                            @if(!($esReadOnly ?? false))
+                                            @if(!($esReadOnly ?? false) && !auth()->user()->hasRole('supervisor_gerencia'))
                                             <button
                                                 type="button"
                                                 onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}')"
                                                 class="w-full px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase rounded transition"
+                                            >
+                                                💾 Guardar
+                                            </button>
+                                            @elseif(auth()->user()->hasRole('supervisor_gerencia'))
+                                            <button
+                                                type="button"
+                                                disabled
+                                                class="w-full px-2 py-1 bg-gray-400 text-white text-xs font-bold uppercase rounded cursor-not-allowed opacity-60"
+                                                title="Solo usuarios autorizados pueden guardar cambios"
                                             >
                                                 💾 Guardar
                                             </button>
