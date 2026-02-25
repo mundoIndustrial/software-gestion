@@ -321,11 +321,20 @@ document.addEventListener('DOMContentLoaded', function() {
                                         </td>
                                         
                                         <td class="px-2 lg:px-4 py-3 text-center">
-                                            <button type="button" 
-                                                    class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded transition-colors"
-                                                    onclick="marcarEntregado(this)">
-                                                Entregar
-                                            </button>
+                                            @if(auth()->user()->hasRole('supervisor_gerencia'))
+                                                <button type="button" 
+                                                        class="px-3 py-1 bg-gray-400 text-white text-xs font-medium rounded cursor-not-allowed opacity-60"
+                                                        disabled
+                                                        title="Solo usuarios autorizados pueden marcar como entregado">
+                                                    Entregar
+                                                </button>
+                                            @else
+                                                <button type="button" 
+                                                        class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded transition-colors"
+                                                        onclick="marcarEntregado(this)">
+                                                    Entregar
+                                                </button>
+                                            @endif
                                         </td>
                                         <td class="px-2 lg:px-4 py-3 text-center">
                                             <input type="date" 
@@ -372,11 +381,20 @@ document.addEventListener('DOMContentLoaded', function() {
                                     </td>
                                     
                                     <td class="px-2 lg:px-4 py-3 text-center">
-                                        <button type="button" 
-                                                class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded transition-colors"
-                                                onclick="marcarEntregado(this)">
-                                            Entregado
-                                        </button>
+                                        @if(auth()->user()->hasRole('supervisor_gerencia'))
+                                            <button type="button" 
+                                                    class="px-3 py-1 bg-gray-400 text-white text-xs font-medium rounded cursor-not-allowed opacity-60"
+                                                    disabled
+                                                    title="Solo usuarios autorizados pueden marcar como entregado">
+                                                Entregado
+                                            </button>
+                                        @else
+                                            <button type="button" 
+                                                    class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded transition-colors"
+                                                    onclick="marcarEntregado(this)">
+                                                Entregado
+                                            </button>
+                                        @endif
                                     </td>
                                     <td class="px-2 lg:px-4 py-3 text-center">
                                         <input type="date" 

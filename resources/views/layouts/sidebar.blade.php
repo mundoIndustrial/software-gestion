@@ -230,6 +230,39 @@
       </ul>
     </div>
 
+    <div class="menu-section">
+      <span class="menu-section-title">Gestión de Cartera</span>
+      <ul class="menu-list" role="navigation">
+        <li class="menu-item">
+          <a href="{{ route('cartera.pedidos') }}"
+             class="menu-link {{ request()->routeIs('cartera.pedidos') ? 'active' : '' }}"
+             style="display:flex;align-items:center;gap:0.5rem;"
+             aria-label="Pedidos Pendientes">
+            <span class="material-symbols-rounded">assignment</span>
+            <span class="menu-label">Pedidos Pendientes</span>
+          </a>
+        </li>
+        <li class="menu-item">
+          <a href="{{ route('cartera.aprobados') }}"
+             class="menu-link {{ request()->routeIs('cartera.aprobados') ? 'active' : '' }}"
+             style="display:flex;align-items:center;gap:0.5rem;"
+             aria-label="Aprobados">
+            <span class="material-symbols-rounded">check_circle</span>
+            <span class="menu-label">Aprobados</span>
+          </a>
+        </li>
+        <li class="menu-item">
+          <a href="{{ route('cartera.rechazados') }}"
+             class="menu-link {{ request()->routeIs('cartera.rechazados') ? 'active' : '' }}"
+             style="display:flex;align-items:center;gap:0.5rem;"
+             aria-label="Cancelados">
+            <span class="material-symbols-rounded">block</span>
+            <span class="menu-label">Cancelados</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
     @else
     <!-- OTROS ROLES: Menú completo -->
     

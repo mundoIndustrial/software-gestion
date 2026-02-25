@@ -20,6 +20,10 @@ let filtroCliente = '';
 let filtroFechaDesde = '';
 let filtroFechaHasta = '';
 
+// ===== PERMISOS DE USUARIO =====
+// Detectar si el usuario tiene permisos de acción (no es supervisor_gerencia)
+const tienePermisosAccion = window.userRole !== 'supervisor_gerencia';
+
 // ===== FUNCIÓN PARA AGREGAR COLUMNA NÚMERO PEDIDO AL HEADER =====
 function agregarColumnaNumeroPedidoHeader() {
     const tableHead = document.getElementById('tableHead');
@@ -473,18 +477,31 @@ function renderizarTabla(pedidos) {
         let botonesHTML = '';
         
         if (currentPath.includes('/cartera/pedidos')) {
-            // Vista de pendientes: 3 botones (aprobar, rechazar, factura)
-            botonesHTML = `
-                <button class="btn-action-cartera btn-success-cartera" title="Aprobar pedido" onclick="abrirModalAprobacion(${pedido.id}, '${pedido.numero_pedido || pedido.numero || 'N/A'}')" style="padding: 8px 10px; display: flex; align-items: center; justify-content: center;">
-                    <span class="material-symbols-rounded" style="font-size: 1.3rem;">check_circle</span>
-                </button>
-                <button class="btn-action-cartera btn-danger-cartera" title="Rechazar pedido" onclick="abrirModalRechazo(${pedido.id}, '${pedido.numero_pedido || pedido.numero || 'N/A'}')" style="padding: 8px 10px; display: flex; align-items: center; justify-content: center;">
-                    <span class="material-symbols-rounded" style="font-size: 1.3rem;">cancel</span>
-                </button>
-                <button class="btn-action-cartera btn-info-cartera" title="Ver factura" onclick="verFactura(${pedido.id}, '${pedido.numero_pedido || pedido.numero || 'N/A'}')" style="padding: 8px 10px; display: flex; align-items: center; justify-content: center;">
-                    <span class="material-symbols-rounded" style="font-size: 1.3rem;">receipt</span>
-                </button>
-            `;
+            // Vista de pendientes: mostrar botones según permisos
+            if (tienePermisosAccion) {
+                // Usuario con permisos: 3 botones (aprobar, rechazar, factura)
+                botonesHTML = `
+                    <button class="btn-action-cartera btn-success-cartera" title="Aprobar pedido" onclick="abrirModalAprobacion(${pedido.id}, '${pedido.numero_pedido || pedido.numero || 'N/A'}')" style="padding: 8px 10px; display: flex; align-items: center; justify-content: center;">
+                        <span class="material-symbols-rounded" style="font-size: 1.3rem;">check_circle</span>
+                    </button>
+                    <button class="btn-action-cartera btn-danger-cartera" title="Rechazar pedido" onclick="abrirModalRechazo(${pedido.id}, '${pedido.numero_pedido || pedido.numero || 'N/A'}')" style="padding: 8px 10px; display: flex; align-items: center; justify-content: center;">
+                        <span class="material-symbols-rounded" style="font-size: 1.3rem;">cancel</span>
+                    </button>
+                    <button class="btn-action-cartera btn-info-cartera" title="Ver factura" onclick="verFactura(${pedido.id}, '${pedido.numero_pedido || pedido.numero || 'N/A'}')" style="padding: 8px 10px; display: flex; align-items: center; justify-content: center;">
+                        <span class="material-symbols-rounded" style="font-size: 1.3rem;">receipt</span>
+                    </button>
+                `;
+            } else {
+                // Usuario sin permisos (supervisor_gerencia): solo botón de factura (modo lectura)
+                botonesHTML = `
+                    <button class="btn-action-cartera btn-info-cartera" title="Ver factura" onclick="verFactura(${pedido.id}, '${pedido.numero_pedido || pedido.numero || 'N/A'}')" style="padding: 8px 10px; display: flex; align-items: center; justify-content: center;">
+                        <span class="material-symbols-rounded" style="font-size: 1.3rem;">receipt</span>
+                    </button>
+                    <div style="padding: 8px 10px; display: flex; align-items: center; justify-content: center; color: #6b7280; font-size: 0.8rem;">
+                        <span class="material-symbols-rounded" style="font-size: 1.3rem;">visibility</span>
+                    </div>
+                `;
+            }
         } else {
             // Vistas de estados (aprobados, rechazados, anulados): solo botón de factura
             botonesHTML = `
@@ -497,11 +514,18 @@ function renderizarTabla(pedidos) {
             `;
         }
         
+        let accionesHTML = '';
+        if (tienePermisosAccion) {
+            accionesHTML = `
+                <!-- Acciones -->
+                <div class="table-cell acciones-column" style="flex: 0 0 180px; justify-content: center; position: relative; display: flex; gap: 0.5rem;">
+                    ${botonesHTML}
+                </div>
+            `;
+        }
+        
         row.innerHTML = `
-            <!-- Acciones -->
-            <div class="table-cell acciones-column" style="flex: 0 0 180px; justify-content: center; position: relative; display: flex; gap: 0.5rem;">
-                ${botonesHTML}
-            </div>
+            ${accionesHTML}
 
             <!-- Número de Pedido -->
             <div class="table-cell" style="flex: 0 0 120px; justify-content: center;">

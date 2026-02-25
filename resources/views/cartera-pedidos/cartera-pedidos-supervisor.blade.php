@@ -478,14 +478,18 @@
             <div class="table-head" id="tableHead">
                 <div style="display: flex; align-items: center; width: 100%; gap: 12px; padding: 14px 12px;">
                     @php
+                        // Si es supervisor_gerencia, ocultar columna de acciones
+                        $showAcciones = !auth()->user()->hasRole('supervisor_gerencia');
+                        
                         $columns = [
-                            ['key' => 'acciones', 'label' => 'Acciones', 'flex' => '0 0 180px', 'justify' => 'flex-start'],
+                            ['key' => 'acciones', 'label' => 'Acciones', 'flex' => '0 0 180px', 'justify' => 'flex-start', 'show' => $showAcciones],
                             ['key' => 'cliente', 'label' => 'Cliente', 'flex' => '0 0 310px', 'justify' => 'center'],
                             ['key' => 'fecha', 'label' => 'Fecha', 'flex' => '0 0 150px', 'justify' => 'center'],
                         ];
                     @endphp
 
                     @foreach($columns as $column)
+                        @if($column['show'] ?? true)
                         <div class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}{{ $column['key'] !== 'acciones' ? ' sortable' : '' }}" style="flex: {{ $column['flex'] }}; justify-content: {{ $column['justify'] }};" @if($column['key'] !== 'acciones') data-sort="{{ $column['key'] }}" @endif>
                             <div class="th-wrapper" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; width: 100%;">
                                 <span class="header-text">{{ $column['label'] }}</span>
@@ -503,6 +507,7 @@
                                 @endif
                             </div>
                         </div>
+                        @endif
                     @endforeach
                 </div>
             </div>
@@ -592,6 +597,9 @@
 
 @push('scripts')
 <script>
+    // Rol del usuario para permisos
+    window.userRole = "{{ auth()->user()->role ? auth()->user()->role->name : 'unknown' }}";
+    
     // Flag para indicar que estamos en cartera
     const isCartera = true;
     
