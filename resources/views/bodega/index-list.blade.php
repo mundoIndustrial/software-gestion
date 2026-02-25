@@ -115,10 +115,20 @@
                             @foreach($pedidosPorPagina as $pedidoData)
                                 <tr class="hover:opacity-75 transition-opacity @if($pedidoData['tiene_pendientes'] ?? false) bg-yellow-100 @elseif($pedidoData['todos_entregados'] ?? false) bg-blue-100 @elseif(!empty($pedidoData['viewed_at'])) bg-gray-200 @else bg-white @endif">
                                     <td class="px-6 py-4 text-center">
-                                        <a href="{{ route('gestion-bodega.pedidos-show', $pedidoData['id']) }}"
-                                           class="inline-block px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition-colors">
-                                            Ver
-                                        </a>
+                                        <div class="flex gap-1 justify-center">
+                                            <a href="{{ route('gestion-bodega.pedidos-show', $pedidoData['id']) }}"
+                                               class="inline-block px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition-colors">
+                                                Ver
+                                            </a>
+                                            @if(!empty($pedidoData['viewed_at']) && !($pedidoData['tiene_pendientes'] ?? false) && !($pedidoData['todos_entregados'] ?? false))
+                                                <button type="button"
+                                                        onclick="desmarcarPedido({{ $pedidoData['id'] }}, this)"
+                                                        class="inline-block px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium rounded transition-colors"
+                                                        title="Desmarcar como no visto">
+                                                    ↶
+                                                </button>
+                                            @endif
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 font-medium text-black">
                                         {{ $pedidoData['numero_pedido'] }}
@@ -694,6 +704,40 @@ document.addEventListener('keydown', function(e) {
         cerrarModalFiltros();
     }
 });
+
+// Función para desmarcar un pedido como no visto
+async function desmarcarPedido(pedidoId, button) {
+    // Deshabilitar botón y mostrar estado de carga
+    const originalContent = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '⏳';
+    
+    try {
+        const response = await fetch(`/gestion-bodega/pedidos/${pedidoId}/desmarcar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Recargar la página para mostrar los cambios
+            window.location.reload();
+        } else {
+            // Error: restaurar botón
+            button.disabled = false;
+            button.innerHTML = originalContent;
+            console.error('Error al desmarcar el pedido:', data.message);
+        }
+    } catch (error) {
+        console.error('Error al desmarcar pedido:', error);
+        button.disabled = false;
+        button.innerHTML = originalContent;
+    }
+}
 
 // Sistema de tiempo real para actualizaciones de pedidos
 document.addEventListener('DOMContentLoaded', function() {

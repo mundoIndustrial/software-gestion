@@ -76,6 +76,10 @@ Route::middleware(['auth', 'bodega-access'])->prefix('gestion-bodega')->name('ge
     Route::get('/pedidos/{id}', [PedidosController::class, 'show'])
         ->name('pedidos-show');
 
+    // Desmarcar pedido como no visto
+    Route::post('/pedidos/{id}/desmarcar', [PedidosController::class, 'desmarcar'])
+        ->name('desmarcar-pedido');
+
     // Dashboard
     Route::get('/dashboard', [PedidosController::class, 'dashboard'])
         ->name('dashboard');

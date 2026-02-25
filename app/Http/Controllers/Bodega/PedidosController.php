@@ -401,6 +401,54 @@ class PedidosController extends Controller
     }
 
     /**
+     * Desmarcar pedido como no visto
+     */
+    public function desmarcar(Request $request, $pedidoId): JsonResponse
+    {
+        try {
+            // Validar que el usuario no sea de solo lectura
+            $rolesDelUsuario = auth()->user()->getRoleNames()->toArray();
+            $esReadOnly = $this->roleService->esReadOnly($rolesDelUsuario);
+            
+            if ($esReadOnly) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permisos para realizar esta acción.'
+                ], 403);
+            }
+            
+            // Obtener el ReciboPrenda para conseguir el numero_pedido
+            $reciboPrenda = ReciboPrenda::findOrFail($pedidoId);
+            
+            // Desmarcar pedido como visto (eliminar viewed_at)
+            $actualizado = PedidoProduccion::where('numero_pedido', $reciboPrenda->numero_pedido)
+                ->update(['viewed_at' => null]);
+            
+            if ($actualizado) {
+                \Log::info("Pedido #{$reciboPrenda->numero_pedido} desmarcado como no visto por usuario " . auth()->user()->name);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pedido desmarcado correctamente.'
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pudo desmarcar el pedido.'
+                ], 400);
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Error en PedidosController@desmarcar: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al desmarcar el pedido: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Mostrar pedidos pendientes de Costura
      */
     public function pendienteCostura(Request $request)
