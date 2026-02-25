@@ -263,7 +263,6 @@
                             step="0.01"
                             placeholder="0"
                             oninput="actualizarTotalEPP()"
-                            disabled
                             class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-100 text-gray-500 text-sm disabled:bg-gray-100 disabled:text-gray-400 focus:outline-none"
                         >
                     </div>
@@ -441,6 +440,12 @@ function abrirModalAgregarEPP() {
             console.log('📖 [abrirModalAgregarEPP] Estado tabla DESPUÉS (sin reset) - display:', window.getComputedStyle(listaControl).display);
         }
     }
+    
+    // Registrar listener de paste después de un pequeño delay
+    setTimeout(() => {
+        document.addEventListener('paste', window.handlePasteEPP);
+        console.log('[abrirModalAgregarEPP] Paste listener registrado');
+    }, 100);
 }
 
 function actualizarTotalEPP() {
@@ -468,6 +473,10 @@ function cerrarModalAgregarEPP() {
     console.log('🔒 [cerrarModalAgregarEPP] Cerrando modal');
     const modal = document.getElementById('modalAgregarEPP');
     modal.style.display = 'none';
+    
+    // Remover listener de paste
+    document.removeEventListener('paste', window.handlePasteEPP);
+    console.log('[cerrarModalAgregarEPP] Paste listener removido');
     document.body.style.overflow = 'auto';
     eppAgregadosList = []; // Limpiar lista al cerrar
 
@@ -1593,7 +1602,8 @@ async function finalizarAgregarEPP() {
                     imagenesParaGuardar,      // imagenes convertidas a archivos
                     null,
                     modoCotizacion ? epp.valor_unitario : null,
-                    modoCotizacion ? epp.total : null
+                    modoCotizacion ? epp.total : null,
+                    'epp'                      // tipo
                 );
                 
                 // Guardar referencias en cache global también para mantener blob URLs vivas
@@ -2155,6 +2165,12 @@ function abrirModalAgregarPrenda() {
         limpiarFotosPrenda();
         
         modal.style.display = 'flex';
+        
+        // Registrar listener de paste después de un pequeño delay
+        setTimeout(() => {
+            document.addEventListener('paste', window.handlePastePrenda);
+            console.log('[abrirModalAgregarPrenda] Paste listener registrado');
+        }, 100);
     }
 }
 
@@ -2163,6 +2179,10 @@ function cerrarModalAgregarPrenda() {
     const modal = document.getElementById('modalAgregarPrenda');
     if (modal) {
         modal.style.display = 'none';
+        
+        // Remover listener de paste
+        document.removeEventListener('paste', window.handlePastePrenda);
+        console.log('[cerrarModalAgregarPrenda] Paste listener removido');
     }
 }
 
@@ -2341,7 +2361,8 @@ function finalizarAgregarPrenda() {
             })),
             prenda.id,                 // pedidoEppId
             valorUnitario,             // valorUnitario
-            total                      // total
+            total,                     // total
+            'prenda'                   // tipo
         );
     } else {
         console.warn('[finalizarAgregarPrenda] eppItemManager no disponible');
@@ -2353,8 +2374,8 @@ function finalizarAgregarPrenda() {
         console.log('[finalizarAgregarPrenda] Prenda registrada en gestionItemsUI');
     }
     
-    // Guardar en la base de datos
-    guardarPrendaEnBD(prendaData);
+    // NOTA: El guardado en BD se realiza cuando se envía la cotización completa (junto con EPPs)
+    // No se intenta guardar la prenda individualmente aquí
     
     cerrarModalAgregarPrenda();
 }
@@ -2467,6 +2488,100 @@ window.mostrarVistaPreviaFoto = mostrarVistaPreviaFoto;
 window.limpiarImagenesTemporales = limpiarImagenesTemporales;
 
 console.log('[EPP Modal] Funciones exportadas al objeto window');
+
+// ========== MANEJADOR DE CTRL+V PARA PRENDAS ==========
+function handlePastePrenda(event) {
+    console.log('[handlePastePrenda] Paste detectado');
+    
+    if (!event.clipboardData || !event.clipboardData.items) {
+        console.warn('[handlePastePrenda] No hay datos en el clipboard');
+        return;
+    }
+    
+    const items = event.clipboardData.items;
+    const archivos = [];
+    
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].kind === 'file' && items[i].type.startsWith('image/')) {
+            archivos.push(items[i].getAsFile());
+            console.log('[handlePastePrenda] Imagen pegada del clipboard:', items[i].type);
+        }
+    }
+    
+    if (archivos.length > 0) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Crear un pseudo-evento con los archivos
+        const input = document.getElementById('inputFotosPrenda');
+        const dataTransfer = new DataTransfer();
+        
+        archivos.forEach(archivo => {
+            dataTransfer.items.add(archivo);
+        });
+        
+        input.files = dataTransfer.files;
+        manejarSubidaFotosPrenda(input);
+        console.log('[handlePastePrenda] Archivos pegados procesados:', archivos.length);
+    }
+}
+
+// ========== MANEJADOR DE CTRL+V PARA EPP ==========
+function handlePasteEPP(event) {
+    console.log('[handlePasteEPP] Paste detectado');
+    
+    if (!event.clipboardData || !event.clipboardData.items) {
+        console.warn('[handlePasteEPP] No hay datos en el clipboard');
+        return;
+    }
+    
+    const items = event.clipboardData.items;
+    const archivos = [];
+    
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].kind === 'file' && items[i].type.startsWith('image/')) {
+            archivos.push(items[i].getAsFile());
+            console.log('[handlePasteEPP] Imagen pegada del clipboard:', items[i].type);
+        }
+    }
+    
+    if (archivos.length > 0) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Crear un pseudo-evento con los archivos
+        const input = document.getElementById('inputFotosEPP');
+        const dataTransfer = new DataTransfer();
+        
+        archivos.forEach(archivo => {
+            dataTransfer.items.add(archivo);
+        });
+        
+        input.files = dataTransfer.files;
+        manejarSubidaFotosEPP(input);
+        console.log('[handlePasteEPP] Archivos pegados procesados:', archivos.length);
+    }
+}
+
+// Registrar listener de paste cuando se abre el modal de prenda
+function abrirModalAgregarPrendaConPasteListener() {
+    abrirModalAgregarPrenda();
+    setTimeout(() => {
+        document.addEventListener('paste', handlePastePrenda);
+        console.log('[handlePastePrenda] Listener de paste registrado');
+    }, 100);
+}
+
+function cerrarModalAgregarPrendaConPasteListener() {
+    document.removeEventListener('paste', handlePastePrenda);
+    cerrarModalAgregarPrenda();
+    console.log('[handlePastePrenda] Listener de paste removido');
+}
+
+window.handlePastePrenda = handlePastePrenda;
+window.abrirModalAgregarPrendaConPasteListener = abrirModalAgregarPrendaConPasteListener;
+window.cerrarModalAgregarPrendaConPasteListener = cerrarModalAgregarPrendaConPasteListener;
+window.handlePasteEPP = handlePasteEPP;
 
 // ========== CERRAR MODALES AL HACER CLIC EN EL FONDO ==========
 document.addEventListener('click', function(e) {

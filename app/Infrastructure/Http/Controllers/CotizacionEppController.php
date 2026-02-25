@@ -208,9 +208,22 @@ class CotizacionEppController extends Controller
                     $items = [];
                 }
 
-                $keptItemIds = [];
+                // Separar items por tipo
+                $epps = array_filter($items, function($item) {
+                    $tipo = strtolower($item['tipo'] ?? 'epp');
+                    return $tipo === 'epp';
+                });
+                
+                $prendas = array_filter($items, function($item) {
+                    $tipo = strtolower($item['tipo'] ?? 'epp');
+                    return $tipo === 'prenda';
+                });
 
-                foreach ($items as $idx => $item) {
+                $keptItemIds = [];
+                $keptPrendaIds = [];
+
+                // Procesar EPPs igual que antes
+                foreach ($epps as $idx => $item) {
                     $payloadItemId = $item['id'] ?? null;
                     $payloadItemId = is_numeric($payloadItemId) ? (int)$payloadItemId : null;
 
@@ -334,8 +347,136 @@ class CotizacionEppController extends Controller
                     }
                 }
 
+                // ==================== PROCESAR PRENDAS ====================
+                foreach ($prendas as $idx => $item) {
+                    $payloadItemId = $item['id'] ?? null;
+                    $payloadItemId = is_numeric($payloadItemId) ? (int)$payloadItemId : null;
+
+                    $nombre = $item['nombre'] ?? ($item['nombre_completo'] ?? 'Sin nombre');
+                    $cantidad = (int)($item['cantidad'] ?? 1);
+                    $observ = $item['observaciones'] ?? null;
+
+                    $prendaId = null;
+                    if ($cotizacionIdEdicion && $payloadItemId) {
+                        $exists = DB::table('prenda_items_cot')
+                            ->where('id', $payloadItemId)
+                            ->where('cotizacion_id', $cotizacion->id)
+                            ->exists();
+
+                        if ($exists) {
+                            DB::table('prenda_items_cot')
+                                ->where('id', $payloadItemId)
+                                ->update([
+                                    'descripcion' => $nombre,
+                                    'cantidad' => $cantidad,
+                                    'observaciones' => $observ,
+                                    'updated_at' => now(),
+                                ]);
+                            $prendaId = $payloadItemId;
+                        }
+                    }
+
+                    if (!$prendaId) {
+                        $prendaId = DB::table('prenda_items_cot')->insertGetId([
+                            'cotizacion_id' => $cotizacion->id,
+                            'descripcion' => $nombre,
+                            'cantidad' => $cantidad,
+                            'observaciones' => $observ,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+
+                    $keptPrendaIds[] = $prendaId;
+
+                    // Guardar valor unitario para la prenda
+                    $valorUnitario = $item['valor_unitario'] ?? null;
+                    if ($valorUnitario !== null && $valorUnitario !== '') {
+                        $valorUnitario = is_numeric($valorUnitario) ? (float)$valorUnitario : null;
+                    }
+
+                    if ($valorUnitario !== null) {
+                        DB::table('prenda_valor_unitario')->updateOrInsert(
+                            ['prenda_item_id' => $prendaId],
+                            [
+                                'valor_unitario' => $valorUnitario,
+                                'updated_at' => now(),
+                                'created_at' => now(),
+                            ]
+                        );
+                    } else {
+                        DB::table('prenda_valor_unitario')->where('prenda_item_id', $prendaId)->delete();
+                    }
+
+                    // Sincronizar imágenes en edición: borrar las que ya no están (y sus archivos)
+                    if ($cotizacionIdEdicion) {
+                        $keep = $item['imagenes_keep'] ?? [];
+                        if (is_string($keep)) {
+                            $keep = json_decode($keep, true) ?? [];
+                        }
+                        if (!is_array($keep)) {
+                            $keep = [];
+                        }
+                        $clear = (bool)($item['clear_imagenes'] ?? false);
+
+                        if ($clear || count($keep) > 0) {
+                            $existentes = DB::table('prenda_img_cot')
+                                ->where('prenda_item_id', $prendaId)
+                                ->get(['id', 'ruta']);
+
+                            foreach ($existentes as $row) {
+                                $ruta = $row->ruta ?? null;
+                                if (!$ruta) continue;
+                                $debeBorrar = $clear ? true : !in_array($ruta, $keep, true);
+                                if ($debeBorrar) {
+                                    Storage::disk('public')->delete($ruta);
+                                    DB::table('prenda_img_cot')->where('id', $row->id)->delete();
+                                }
+                            }
+                        }
+                    }
+
+                    // Procesar imágenes de la prenda
+                    $imagenes = $request->file("items.$idx.imagenes", []);
+                    if (is_array($imagenes) && count($imagenes) > 0) {
+                        // Si llegan archivos nuevos, reemplazar las imágenes actuales
+                        $existentes = DB::table('prenda_img_cot')->where('prenda_item_id', $prendaId)->get(['id', 'ruta']);
+                        foreach ($existentes as $row) {
+                            if ($row?->ruta) {
+                                Storage::disk('public')->delete($row->ruta);
+                            }
+                        }
+                        DB::table('prenda_img_cot')->where('prenda_item_id', $prendaId)->delete();
+
+                        foreach ($imagenes as $imgFile) {
+                            if (!$imgFile || !$imgFile->isValid()) {
+                                continue;
+                            }
+
+                            $originalName = $imgFile->getClientOriginalName();
+                            $safeName = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $originalName);
+                            $rutaRelativa = "cotizaciones/{$cotizacion->id}/PRENDA/{$safeName}";
+
+                            Storage::disk('public')->putFileAs(
+                                "cotizaciones/{$cotizacion->id}/PRENDA",
+                                $imgFile,
+                                $safeName
+                            );
+
+                            DB::table('prenda_img_cot')->insert([
+                                'prenda_item_id' => $prendaId,
+                                'ruta' => $rutaRelativa,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    }
+                }
+                // ==================== FIN PRENDAS ====================
+
                 // En edición: eliminar items que ya no vienen (con sus imágenes/valores)
                 if ($cotizacionIdEdicion) {
+                    // Eliminar EPPs que ya no vienen
                     $idsToDelete = DB::table('epp_items_cot')
                         ->where('cotizacion_id', $cotizacion->id)
                         ->when(count($keptItemIds) > 0, fn($q) => $q->whereNotIn('id', $keptItemIds))
@@ -353,6 +494,25 @@ class CotizacionEppController extends Controller
                         DB::table('epp_valor_unitario')->whereIn('epp_item_id', $idsToDelete)->delete();
                         DB::table('epp_items_cot')->whereIn('id', $idsToDelete)->delete();
                     }
+                    
+                    // Eliminar Prendas que ya no vienen
+                    $prendasToDelete = DB::table('prenda_items_cot')
+                        ->where('cotizacion_id', $cotizacion->id)
+                        ->when(count($keptPrendaIds) > 0, fn($q) => $q->whereNotIn('id', $keptPrendaIds))
+                        ->pluck('id');
+
+                    if ($prendasToDelete->isNotEmpty()) {
+                        // Borrar archivos físicos antes de borrar registros
+                        $rutasPrendas = DB::table('prenda_img_cot')->whereIn('prenda_item_id', $prendasToDelete)->pluck('ruta');
+                        foreach ($rutasPrendas as $ruta) {
+                            if ($ruta) {
+                                Storage::disk('public')->delete($ruta);
+                            }
+                        }
+                        DB::table('prenda_img_cot')->whereIn('prenda_item_id', $prendasToDelete)->delete();
+                        DB::table('prenda_valor_unitario')->whereIn('prenda_item_id', $prendasToDelete)->delete();
+                        DB::table('prenda_items_cot')->whereIn('id', $prendasToDelete)->delete();
+                    }
                 }
 
                 if (!$esBorrador) {
@@ -365,9 +525,10 @@ class CotizacionEppController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => $esBorrador
-                        ? 'Cotización EPP guardada como borrador'
-                        : 'Cotización EPP enviada - Número: ' . $numeroCotizacion,
+                        ? 'Cotización guardada como borrador'
+                        : 'Cotización enviada - Número: ' . $numeroCotizacion,
                     'cotizacionId' => $cotizacion->id,
+                    'numero_cotizacion' => $numeroCotizacion,
                     'redirect' => route('asesores.cotizaciones.index')
                         . '?'
                         . http_build_query([

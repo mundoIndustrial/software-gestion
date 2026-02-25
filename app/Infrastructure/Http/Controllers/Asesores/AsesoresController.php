@@ -289,6 +289,41 @@ class AsesoresController extends Controller
                     })->filter()->values()->all(),
                 ];
             })->values()->all();
+            
+            // Obtener también prendas de la cotización
+            $prendas = \DB::table('prenda_items_cot')->where('cotizacion_id', $cotizacion->id)->orderBy('id')->get();
+            $valoresPrendas = \DB::table('prenda_valor_unitario')
+                ->whereIn('prenda_item_id', $prendas->pluck('id')->all())
+                ->get()
+                ->keyBy('prenda_item_id');
+            $imagenesPrendas = \DB::table('prenda_img_cot')
+                ->whereIn('prenda_item_id', $prendas->pluck('id')->all())
+                ->orderBy('id')
+                ->get()
+                ->groupBy('prenda_item_id');
+
+            $prendasUi = $prendas->map(function ($prenda) use ($valoresPrendas, $imagenesPrendas) {
+                $vu = $valoresPrendas[$prenda->id] ?? null;
+                $imgs = $imagenesPrendas->get($prenda->id, collect());
+
+                return [
+                    'tipo' => 'prenda',
+                    'id' => (int)$prenda->id,
+                    'nombre' => $prenda->descripcion,
+                    'nombre_epp' => $prenda->descripcion,
+                    'cantidad' => (int)($prenda->cantidad ?? 1),
+                    'observaciones' => $prenda->observaciones,
+                    'valor_unitario' => $vu ? $vu->valor_unitario : null,
+                    'total' => ($vu && $prenda->cantidad) ? ((float)$vu->valor_unitario * (int)$prenda->cantidad) : null,
+                    'imagenes' => $imgs->map(function ($row) {
+                        if (!$row || !$row->ruta) return null;
+                        return \Storage::disk('public')->url($row->ruta);
+                    })->filter()->values()->all(),
+                ];
+            })->values()->all();
+            
+            // Combinar EPPs y prendas en un solo array
+            $itemsUi = array_merge($itemsUi, $prendasUi);
 
             // Obtener IVA directamente desde el campo de la cotización
             $iva = $cotizacion->iva ?? null;

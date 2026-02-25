@@ -502,6 +502,45 @@ class ContadorController extends Controller
                     $it['valor_unitario'] = $vu ? $vu->valor_unitario : null;
                     return $it;
                 })->values()->all();
+
+                // =============== AGREGAR PRENDAS TAMBIÉN ===============
+                $prendaItems = DB::table('prenda_items_cot')->where('cotizacion_id', $cotizacionModelo->id)->orderBy('id')->get();
+
+                $prendaValoresUnitarios = DB::table('prenda_valor_unitario')
+                    ->whereIn('prenda_item_id', $prendaItems->pluck('id')->all())
+                    ->get()
+                    ->keyBy('prenda_item_id');
+
+                $imagenesPrendas = DB::table('prenda_img_cot')
+                    ->whereIn('prenda_item_id', $prendaItems->pluck('id')->all())
+                    ->orderBy('id')
+                    ->get()
+                    ->groupBy('prenda_item_id');
+
+                $datos['prenda_items'] = $prendaItems->map(function ($it) use ($imagenesPrendas) {
+                    $imgs = $imagenesPrendas->get($it->id, collect());
+                    $urls = $imgs->map(function ($imgRow) {
+                        $ruta = $imgRow->ruta ?? null;
+                        if (!$ruta) return null;
+                        try {
+                            return Storage::disk('public')->url($ruta);
+                        } catch (\Exception $e) {
+                            return str_starts_with($ruta, '/') ? $ruta : ('/storage/' . ltrim($ruta, '/'));
+                        }
+                    })->filter()->values()->all();
+
+                    return [
+                        'id' => $it->id,
+                        'descripcion' => $it->descripcion ?? 'Sin nombre',
+                        'cantidad' => (int)($it->cantidad ?? 1),
+                        'observaciones' => $it->observaciones ?? null,
+                        'imagenes' => $urls,
+                    ];
+                })->map(function ($it) use ($prendaValoresUnitarios) {
+                    $vu = $prendaValoresUnitarios[$it['id']] ?? null;
+                    $it['valor_unitario'] = $vu ? $vu->valor_unitario : null;
+                    return $it;
+                })->values()->all();
             }
 
             return response()->json($datos);
