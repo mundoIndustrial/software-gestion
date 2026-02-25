@@ -190,22 +190,23 @@
             // Determinar clase CSS según estado
             $estadoClase = 'estado-' . strtolower(str_replace('_', '-', $estadoActual));
             
-            // Determinar color del badge según estado
-            $badgeColor = match($estadoActual) {
-                'Pendiente' => 'bg-gray-500',
-                'No iniciado' => 'bg-gray-500',
-                'En Ejecución' => 'bg-blue-500',
-                'Entregado' => 'bg-green-500',
-                'Anulada' => 'bg-amber-500',
-                'PENDIENTE_SUPERVISOR' => 'bg-orange-500',
-                'PENDIENTE_INSUMOS' => 'bg-purple-500',
-                'pendiente_cartera' => 'bg-indigo-500',
-                'RECHAZADO_CARTERA' => 'bg-red-500',
-                'DEVUELTO_A_ASESORA' => 'bg-yellow-500',
-                default => 'bg-gray-500'
+            // Determinar color del badge según estado (usando estilos CSS directos)
+            $badgeStyles = match($estadoActual) {
+                'Pendiente' => 'background: #6b7280;',
+                'No iniciado' => 'background: #6b7280;',
+                'En Ejecución' => 'background: #3b82f6;',
+                'Entregado' => 'background: #10b981;',
+                'Anulada' => 'background: #f59e0b;',
+                'PENDIENTE_SUPERVISOR' => 'background: #f97316;',
+                'PENDIENTE_INSUMOS' => 'background: #a855f7;',
+                'pendiente_cartera' => 'background: #6366f1;',
+                'RECHAZADO_CARTERA' => 'background: #ef4444;',
+                'DEVUELTO_A_ASESORA' => 'background: #eab308;',
+                default => 'background: #6b7280;'
             };
         @endphp
-        <span class="estado-badge {{ $badgeColor }}" style="
+        <span class="estado-badge" style="
+            {{ $badgeStyles }}
             color: white;
             padding: 0.375rem 0.75rem;
             border-radius: 9999px;
