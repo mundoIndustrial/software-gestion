@@ -1,6 +1,6 @@
 <!-- Modal Agregar EPP al Pedido -->
-<div id="modalAgregarEPP" class="fixed inset-0 bg-black/50 flex items-center justify-center" style="display: none; z-index: 999999;">
-    <div class="bg-white rounded-lg w-full max-w-2xl shadow-2xl overflow-hidden" style="z-index: 1000000; max-height: 90vh; display: flex; flex-direction: column;">
+<div id="modalAgregarEPP" class="fixed inset-0 bg-black/50 flex items-center justify-center" style="display: none; z-index: 9999999;">
+    <div class="bg-white rounded-lg w-full max-w-2xl shadow-2xl overflow-hidden" style="z-index: 10000000; max-height: 90vh; display: flex; flex-direction: column;">
         
         <!-- Header Azul -->
         <div class="bg-blue-600 px-6 py-4 flex justify-between items-center flex-shrink-0">
@@ -288,6 +288,13 @@ function abrirModalAgregarEPP() {
     console.log('📖 [abrirModalAgregarEPP] Tiene propiedades:', tienePropiedades);
     console.log('📖 [abrirModalAgregarEPP] En modo edición (final):', enModoEdicion);
     
+    // Actualizar título del modal según modo
+    const tituloModal = modal.querySelector('h2.text-white');
+    if (tituloModal) {
+        tituloModal.textContent = enModoEdicion ? 'Editar EPP' : 'Agregar EPP al Pedido';
+        console.log('📖 [abrirModalAgregarEPP] Título actualizado:', tituloModal.textContent);
+    }
+    
     // Verificar estado de la tabla
     const listaControl = document.getElementById('listaEPPAgregados');
     if (listaControl) {
@@ -296,7 +303,24 @@ function abrirModalAgregarEPP() {
     
     // Solo resetear si NO estamos en modo edición
     if (!enModoEdicion) {
-        console.log('📖 [abrirModalAgregarEPP] Modo normal - resetear modal');
+        console.log('📖 [abrirModalAgregarEPP] Modo normal - limpiar y resetear modal');
+        // ⭐ IMPORTANTE: Limpiar el array de EPPs agregados al abrir en modo normal
+        eppAgregadosList = [];
+        console.log('📖 [abrirModalAgregarEPP] eppAgregadosList limpiado');
+        
+        // Limpiar la tabla renderizada
+        const tbody = document.getElementById('cuerpoTablaEPP');
+        if (tbody) {
+            tbody.innerHTML = '';
+            console.log('📖 [abrirModalAgregarEPP] Tabla limpiada');
+        }
+        
+        // Ocultar la lista de EPP agregados
+        if (listaControl) {
+            listaControl.style.display = 'none';
+            console.log('📖 [abrirModalAgregarEPP] Lista de EPP agregados ocultada');
+        }
+        
         resetearModalAgregarEPP();
     } else {
         console.log('📖 [abrirModalAgregarEPP] Modo edición - NO resetear modal, manteniendo estado');
@@ -327,9 +351,89 @@ function actualizarTotalEPP() {
     totalInput.value = formatearNumero(total);
 }
 
+/**
+ * Valida si hay datos sin guardar en el modal
+ */
+function hayDatosNoGuardados() {
+    // Si hay EPPs en la lista, hay datos
+    if (eppAgregadosList.length > 0) {
+        return true;
+    }
+    
+    // Validar si hay producto seleccionado
+    if (productoSeleccionadoEPP) {
+        return true;
+    }
+    
+    // Validar si hay cantidad diferente de 1 (valor inicial)
+    const cantidadInput = document.getElementById('cantidadEPP');
+    if (cantidadInput && cantidadInput.value && parseInt(cantidadInput.value) !== 1) {
+        return true;
+    }
+    
+    // Validar si hay observaciones
+    const obsInput = document.getElementById('observacionesEPP');
+    if (obsInput && obsInput.value && obsInput.value.trim() !== '') {
+        return true;
+    }
+    
+    // Validar si hay fotos
+    if (window.fotosEPP && window.fotosEPP.length > 0) {
+        return true;
+    }
+    
+    // Validar si hay valor unitario (modo cotización)
+    const vuInput = document.getElementById('valorUnitarioEPP');
+    if (vuInput && vuInput.value && vuInput.value.trim() !== '' && vuInput.value !== '0') {
+        return true;
+    }
+    
+    return false;
+}
+
 function cerrarModalAgregarEPP() {
     console.log('🔒 [cerrarModalAgregarEPP] Cerrando modal');
+    
+    // Validar si hay datos sin guardar (excepto en modo edición)
+    const enModoEdicion = !!window.eppEnEdicion;
+    if (!enModoEdicion && hayDatosNoGuardados()) {
+        console.log('🔒 [cerrarModalAgregarEPP] Hay datos sin guardar - pidiendo confirmación');
+        Swal.fire({
+            icon: 'warning',
+            title: '¿Descartar cambios?',
+            text: 'Tienes datos sin guardar que se perderán. ¿Estás seguro de que deseas cerrar?',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, descartar',
+            cancelButtonText: 'No, continuar',
+            confirmButtonColor: '#dd3333',
+            cancelButtonColor: '#3085d6'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                console.log('🔒 [cerrarModalAgregarEPP] Usuario confirmó descartar cambios');
+                cerrarModalAgregarEPPConfirmado();
+            }
+        });
+        return; // No continuar si no está confirmado
+    }
+    
+    // Si no hay datos o está en modo edición, cerrar directo
+    cerrarModalAgregarEPPConfirmado();
+}
+
+/**
+ * Función auxiliar que realmente cierra el modal
+ */
+function cerrarModalAgregarEPPConfirmado() {
+    console.log('🔒 [cerrarModalAgregarEPPConfirmado] Cerrando modal confirmado');
     const modal = document.getElementById('modalAgregarEPP');
+    
+    // Resetear título del modal a estado por defecto
+    const tituloModal = modal.querySelector('h2.text-white');
+    if (tituloModal) {
+        tituloModal.textContent = 'Agregar EPP al Pedido';
+        console.log('🔒 [cerrarModalAgregarEPPConfirmado] Título reseteado a: Agregar EPP al Pedido');
+    }
+    
     modal.style.display = 'none';
     document.body.style.overflow = 'auto';
     eppAgregadosList = []; // Limpiar lista al cerrar
@@ -337,7 +441,7 @@ function cerrarModalAgregarEPP() {
     // Siempre limpiar estado de edición y formulario al cerrar/cancelar
     eppEnEdicion = null;
     window.eppEnEdicion = null;
-    console.log('🔒 [cerrarModalAgregarEPP] window.eppEnEdicion limpiado');
+    console.log('🔒 [cerrarModalAgregarEPPConfirmado] window.eppEnEdicion limpiado');
     
     // Limpiar imágenes temporales al cerrar
     limpiarImagenesTemporales();
@@ -358,42 +462,97 @@ function limpiarImagenesTemporales() {
 }
 
 function resetearModalAgregarEPP() {
-    console.log('📖 [resetearModalAgregarEPP] INICIANDO reset del modal');
-    // NO limpiar window.eppEnEdicion aquí, solo hacerlo cuando realmente terminamos
-    // eppEnEdicion = null;  // Comentado: no limpiar la variable local
-    // Limpiar imágenes temporales primero
+    console.log('📖 [resetearModalAgregarEPP] INICIANDO reset COMPLETO del modal');
+    
+    // Limpiar imágenes temporales
     limpiarImagenesTemporales();
     
-    document.getElementById('cantidadEPP').value = '1';
-    const vu = document.getElementById('valorUnitarioEPP');
-    const tot = document.getElementById('totalEPP');
-    const vuCont = document.getElementById('valorUnitarioTotalContainer');
-    if (vu) {
-        vu.disabled = true;
-        vu.value = '';
+    // Limpiar producto seleccionado
+    productoSeleccionadoEPP = null;
+    console.log('📖 [resetearModalAgregarEPP] Producto seleccionado limpiado');
+    
+    // ELEMENTOS PRINCIPALES - Ocultarlos todos
+    const elementosOcultar = [
+        'productoCardEPP',
+        'formularioAgregarEPP',
+        'observacionesContainer',
+        'seccionFotosEPP',
+        'btnAgregarALista',
+        'resultadosBuscadorEPP',
+        'valorUnitarioTotalContainer'
+    ];
+    
+    elementosOcultar.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.style.setProperty('display', 'none', 'important');
+            console.log(`📖 [resetearModalAgregarEPP] ${id} ocultado`);
+        }
+    });
+    
+    // CAMPOS DE FORMULARIO - Resetear valores y deshabilitar
+    const cantidadEPP = document.getElementById('cantidadEPP');
+    const observacionesEPP = document.getElementById('observacionesEPP');
+    const nombreProductoEPP = document.getElementById('nombreProductoEPP');
+    const inputBuscadorEPP = document.getElementById('inputBuscadorEPP');
+    
+    if (cantidadEPP) {
+        cantidadEPP.value = '1';
+        cantidadEPP.disabled = true;
     }
-    if (tot) {
-        tot.value = '0';
+    if (observacionesEPP) {
+        observacionesEPP.value = '';
+        observacionesEPP.disabled = true;
     }
-    if (vuCont) {
-        vuCont.style.display = 'none';
+    if (nombreProductoEPP) {
+        nombreProductoEPP.value = '';
     }
-    document.getElementById('observacionesEPP').disabled = true;
-    document.getElementById('observacionesEPP').value = '';
+    if (inputBuscadorEPP) {
+        inputBuscadorEPP.value = '';
+    }
+    
+    // VALOR UNITARIO Y TOTAL
+    const valorUnitarioEPP = document.getElementById('valorUnitarioEPP');
+    const totalEPP = document.getElementById('totalEPP');
+    
+    if (valorUnitarioEPP) {
+        valorUnitarioEPP.value = '';
+        valorUnitarioEPP.disabled = true;
+    }
+    if (totalEPP) {
+        totalEPP.value = '0';
+    }
+    
+    // LIMPIAR CONTAINER DE FOTOS
+    const contenedorFotosEPP = document.getElementById('contenedorFotosEPP');
+    const mensajeDragDrop = document.getElementById('mensajeDragDrop');
+    
+    if (contenedorFotosEPP) {
+        // Eliminar elementos de fotos pero mantener mensaje
+        const fotosItems = contenedorFotosEPP.querySelectorAll('.foto-epp-item');
+        fotosItems.forEach(item => item.remove());
+        console.log('📖 [resetearModalAgregarEPP] Fotos del contenedor limpiadas');
+    }
+    
+    if (mensajeDragDrop) {
+        mensajeDragDrop.style.display = 'flex';
+        console.log('📖 [resetearModalAgregarEPP] Mensaje inicial de drag-drop restaurado');
+    }
+    
+    // BOTONES DEL FOOTER
     document.getElementById('btnAgregarALista').disabled = true;
-    document.getElementById('btnAgregarALista').style.display = 'none';
     document.getElementById('btnFinalizarAgregarEPP').disabled = true;
-    document.getElementById('btnFinalizarAgregarEPP').style.display = 'flex';
+    document.getElementById('btnFinalizarAgregarEPP').style.setProperty('display', 'flex', 'important');
     document.getElementById('btnGuardarCambiosEPP').disabled = true;
-    document.getElementById('btnGuardarCambiosEPP').style.display = 'none';
+    document.getElementById('btnGuardarCambiosEPP').style.setProperty('display', 'none', 'important');
+    
+    console.log('📖 [resetearModalAgregarEPP] Botones reseteados');
     
     // Restaurar sección de "EPP Agregados" al resetear (SOLO si no estamos editando)
     const enEdicion = !!eppEnEdicion || !!window.eppEnEdicion;
     const listaEPPAgregados = document.getElementById('listaEPPAgregados');
+    
     if (listaEPPAgregados) {
-        console.log('📖 [resetearModalAgregarEPP] Tabla encontrada - display ANTES:', window.getComputedStyle(listaEPPAgregados).display);
-        console.log('📖 [resetearModalAgregarEPP] En edición:', enEdicion);
-        
         if (enEdicion) {
             // Si estamos editando, mantener la tabla oculta
             listaEPPAgregados.removeAttribute('style');
@@ -407,12 +566,10 @@ function resetearModalAgregarEPP() {
             listaEPPAgregados.style.setProperty('visibility', 'visible', 'important');
             console.log('📖 [resetearModalAgregarEPP] Tabla restaurada (modo agregar)');
         }
-        console.log('📖 [resetearModalAgregarEPP] Tabla - display DESPUÉS:', window.getComputedStyle(listaEPPAgregados).display);
-    } else {
-        console.warn('📖 [resetearModalAgregarEPP] Tabla no encontrada');
     }
     
     actualizarEstilosCampos();
+    console.log('📖 [resetearModalAgregarEPP] COMPLETADO - Modal reseteado completamente');
 }
 
 function filtrarEPPBuscador(valor) {
@@ -439,6 +596,32 @@ function filtrarEPPBuscador(valor) {
 function mostrarProductoEPP(producto) {
     console.log(' [mostrarProductoEPP] Llamado con producto:', producto);
     productoSeleccionadoEPP = producto;
+    
+    // Detectar si estamos en modo edición
+    const enModoEdicion = window.eppEnEdicion && typeof window.eppEnEdicion === 'object' && Object.keys(window.eppEnEdicion).length > 0;
+    console.log(' [mostrarProductoEPP] En modo edición:', enModoEdicion);
+    
+    // LIMPIAR FOTOS DEL PRODUCTO ANTERIOR - pero solo en modo NORMAL
+    // En modo edición, mantenemos las fotos que el usuario haya cargado
+    if (!enModoEdicion) {
+        window.fotosEPP = [];
+        const contenedorFotosEPP = document.getElementById('contenedorFotosEPP');
+        const mensajeDragDrop = document.getElementById('mensajeDragDrop');
+        
+        if (contenedorFotosEPP) {
+            // Eliminar elementos de fotos pero mantener mensaje
+            const fotosItems = contenedorFotosEPP.querySelectorAll('.foto-epp-item');
+            fotosItems.forEach(item => item.remove());
+            console.log(' [mostrarProductoEPP] Fotos del producto anterior limpiadas (modo normal)');
+        }
+        
+        if (mensajeDragDrop) {
+            mensajeDragDrop.style.display = 'flex';
+            console.log(' [mostrarProductoEPP] Mensaje inicial de drag-drop mostrado');
+        }
+    } else {
+        console.log(' [mostrarProductoEPP] Modo edición - mantienen las fotos actuales');
+    }
     
     // Mostrar tarjeta
     const tarjeta = document.getElementById('productoCardEPP');
@@ -1138,9 +1321,11 @@ function editarEPPAgregado(eppData) {
     // Mostrar los campos del formulario
     const formulario = document.getElementById('formularioAgregarEPP');
     const obsContainer = document.getElementById('observacionesContainer');
+    const seccionFotos = document.getElementById('seccionFotosEPP');
     const btnAgregar = document.getElementById('btnAgregarALista');
     const btnGuardarCambios = document.getElementById('btnGuardarCambiosEPP');
     const btnFinalizar = document.getElementById('btnFinalizarAgregarEPP');
+    const inputFotos = document.getElementById('inputFotosEPP');
     
     if (formulario) {
         formulario.style.display = 'grid';
@@ -1151,16 +1336,37 @@ function editarEPPAgregado(eppData) {
         console.log('✏️ [editarEPPAgregado] Contenedor observaciones mostrado');
     }
     
-    // Ocultar botón de agregar a lista (no se usa en modo edición)
-    if (btnAgregar) {
-        btnAgregar.style.display = 'none';
-        console.log('✏️ [editarEPPAgregado] Botón agregar a lista ocultado');
+    // Mostrar y habilitar la sección de fotos
+    if (seccionFotos) {
+        seccionFotos.style.display = 'block';
+        console.log('✏️ [editarEPPAgregado] Sección de fotos mostrada');
+        
+        // Encontrar y habilitar el botón de agregar foto dentro de la sección
+        const btnAgregarFoto = seccionFotos.querySelector('button');
+        if (btnAgregarFoto) {
+            btnAgregarFoto.disabled = false;
+            btnAgregarFoto.style.opacity = '1';
+            btnAgregarFoto.style.pointerEvents = 'auto';
+            console.log('✏️ [editarEPPAgregado] Botón agregar foto habilitado');
+        }
+    }
+    
+    // Habilitar el input de fotos
+    if (inputFotos) {
+        inputFotos.disabled = false;
+        console.log('✏️ [editarEPPAgregado] Input de fotos habilitado');
     }
     
     // Habilitar campos para edición
     if (cantidadInput) cantidadInput.disabled = false;
     if (obsInput) obsInput.disabled = false;
     console.log('✏️ [editarEPPAgregado] Campos habilitados');
+    
+    // Ocultar botón de agregar a lista (no se usa en modo edición)
+    if (btnAgregar) {
+        btnAgregar.style.display = 'none';
+        console.log('✏️ [editarEPPAgregado] Botón agregar a lista ocultado');
+    }
     
     // Configurar botones del footer
     if (btnFinalizar) {
@@ -1318,8 +1524,8 @@ function guardarEdicionEPP() {
         console.log(' [guardarEdicionEPP] Botón finalizar restaurado');
     }
     
-    // Cerrar modal
-    cerrarModalAgregarEPP();
+    // ⭐ Cerrar modal directamente sin confirmación (ya se guardó)
+    cerrarModalAgregarEPPConfirmado();
 
     // Mostrar toast de éxito pequeño
     Swal.fire({
@@ -1510,7 +1716,12 @@ async function finalizarAgregarEPP() {
         console.log(' [finalizarAgregarEPP] Todos los EPP han sido procesados y agregados');
         console.log(' [finalizarAgregarEPP] window.itemsPedido actual:', window.itemsPedido);
         
-        cerrarModalAgregarEPP();
+        // Limpiar lista de EPPs agregados ya que fueron guardados
+        eppAgregadosList = [];
+        console.log(' [finalizarAgregarEPP] Lista de EPPs agregados limpiada');
+        
+        // Cerrar modal sin validación (ya fue confirmado guardar)
+        cerrarModalAgregarEPPConfirmado();
         
     } catch (error) {
         console.error('[finalizarAgregarEPP] Error procesando EPPs:', error);
@@ -1632,8 +1843,8 @@ function mostrarVistaPreviaFoto(imagen) {
                  onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiBmaWxsPSIjRjRGNEY2Ii8+CjxwYXRoIGQ9Ik00OCA0OEg4MFY4MEg0OFY0OFoiIHN0cm9rZT0iIzlDQTNBIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz4KPHN2ZyB4PSI0OCIgeT0iNDgiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJTNi40OCAyMiAxMiAyMkMxNy41MiAyMiAyMiAxNy41MiAyMiAxMlMyMiA2LjQ4IDEyIDEyUzYuNDggMiAxMiAyWk0xMiA4QzEwLjkgOCA5IDguMSA5IDEwUzguMSAxMCAxMCAxMFMxMy45IDEwIDEzIDEwUzE0LjE4IDEwIDE0LjE4IDhTMTMuMSA2IDEyIDZaIiBmaWxsPSIjOUNDQTNBIi8+Cjwvc3ZnPgo8L3N2Zz4K'; this.style.opacity='0.5';" 
                  title="Imagen no disponible">
             <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <button type="button" onclick="eliminarFotoEPP('${imagen.id}')" class="bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                    <i class="mostrar-symbols-rounded text-sm">delete</i>
+                <button type="button" onclick="eliminarFotoEPP('${imagen.id}', event)" class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition" title="Eliminar imagen">
+                    <i class="material-symbols-rounded text-base">delete</i>
                 </button>
             </div>
             <div class="absolute bottom-0 right-0 bg-blue-600 text-white text-xs px-2 py-1 rounded-tl">
@@ -1650,65 +1861,109 @@ function mostrarVistaPreviaFoto(imagen) {
     document.getElementById('seccionFotosEPP').style.display = 'block';
 }
 
-function eliminarFotoEPP(fotoId) {
-    console.log(`[eliminarFotoEPP] Intentando eliminar foto con ID: ${fotoId}`);
-    console.log(`[eliminarFotoEPP] Fotos actuales:`, window.fotosEPP.map(f => ({ id: f.id, nombre: f.nombre })));
+function eliminarFotoEPP(fotoId, event) {
+    // Prevenir que el click se propague hacia el backdrop del modal
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    
+    console.log(`[eliminarFotoEPP] 🗑️ Intentando eliminar foto con ID: ${fotoId}`);
+    console.log(`[eliminarFotoEPP] Fotos en window.fotosEPP:`, window.fotosEPP.length);
     
     // Encontrar la foto para liberar la URL blob
-    const fotoAEliminar = window.fotosEPP.find(foto => foto.id === fotoId);
+    const fotoAEliminar = window.fotosEPP.find(foto => {
+        console.log(`[eliminarFotoEPP] Comparando: foto.id='${foto.id}' vs fotoId='${fotoId}' - Iguales: ${foto.id === fotoId}`);
+        return foto.id === fotoId;
+    });
+    
+    if (fotoAEliminar) {
+        console.log(`[eliminarFotoEPP] ✓ Foto encontrada en array: ${fotoAEliminar.nombre}`);
+    } else {
+        console.warn(`[eliminarFotoEPP] ⚠️ Foto NO encontrada en array para ID: ${fotoId}`);
+    }
+    
+    // Eliminar del DOM - MÚLTIPLES ESTRATEGIAS
+    let elementoEliminado = false;
+    
+    // ESTRATEGIA 1: Buscar por data-foto-id exacto
+    let elemento = document.querySelector(`[data-foto-id="${fotoId}"]`);
+    if (elemento && elemento.classList.contains('foto-epp-item')) {
+        console.log(`[eliminarFotoEPP] ✓ ESTRATEGIA 1: Encontrado por data-foto-id`);
+        elemento.remove();
+        elementoEliminado = true;
+    } else {
+        console.warn(`[eliminarFotoEPP] ⚠️ ESTRATEGIA 1 falló`);
+        
+        // ESTRATEGIA 2: Buscar dentro del contenedor de fotos
+        const contenedor = document.getElementById('contenedorFotosEPP');
+        if (contenedor) {
+            const elementosBuscados = contenedor.querySelectorAll('[data-foto-id]');
+            console.log(`[eliminarFotoEPP] ESTRATEGIA 2: Elementos con data-foto-id: ${elementosBuscados.length}`);
+            
+            for (let el of elementosBuscados) {
+                const idAttr = el.getAttribute('data-foto-id');
+                console.log(`[eliminarFotoEPP] - Comparando atributo: '${idAttr}' vs '${fotoId}'`);
+                
+                if (idAttr === fotoId) {
+                    console.log(`[eliminarFotoEPP] ✓ ESTRATEGIA 2: Encontrado por búsqueda en contenedor`);
+                    el.remove();
+                    elementoEliminado = true;
+                    break;
+                }
+            }
+        }
+        
+        // ESTRATEGIA 3: Iterar todas las fotos visibles y eliminar por lógica
+        if (!elementoEliminado) {
+            console.log(`[eliminarFotoEPP] ESTRATEGIA 3: Búsqueda exhaustiva de elementos .foto-epp-item`);
+            const todasLasFotos = document.querySelectorAll('.foto-epp-item');
+            console.log(`[eliminarFotoEPP] Total de elementos .foto-epp-item encontrados: ${todasLasFotos.length}`);
+            
+            for (let el of todasLasFotos) {
+                const dataId = el.getAttribute('data-foto-id');
+                console.log(`[eliminarFotoEPP] - Elemento encontrado con data-foto-id: '${dataId}'`);
+                
+                if (dataId && dataId.trim() === fotoId.trim()) {
+                    console.log(`[eliminarFotoEPP] ✓ ESTRATEGIA 3: Encontrado elemento con coincidencia exacta`);
+                    el.remove();
+                    elementoEliminado = true;
+                    break;
+                }
+            }
+        }
+    }
+    
+    if (!elementoEliminado) {
+        console.error(`[eliminarFotoEPP] ❌ No se pudo eliminar el elemento del DOM para ID: ${fotoId}`);
+    } else {
+        console.log(`[eliminarFotoEPP] ✓ Elemento eliminado exitosamente del DOM`);
+    }
     
     // Eliminar de la lista temporal
+    const longitudAntes = window.fotosEPP.length;
     window.fotosEPP = window.fotosEPP.filter(foto => foto.id !== fotoId);
-    
-    // Eliminar del DOM usando el selector más específico
-    const elemento = document.querySelector(`#contenedorFotosEPP div.foto-epp-item[data-foto-id="${fotoId}"]`);
-    console.log(`[eliminarFotoEPP] Buscando elemento con selector: #contenedorFotosEPP div.foto-epp-item[data-foto-id="${fotoId}"]`);
-    console.log(`[eliminarFotoEPP] Elemento encontrado:`, elemento);
-    console.log(`[eliminarFotoEPP] Elemento ID:`, elemento?.id);
-    console.log(`[eliminarFotoEPP] Elemento classes:`, elemento?.className);
-    console.log(`[eliminarFotoEPP] Elemento es contenedor principal:`, elemento?.id === 'contenedorFotosEPP');
-    
-    if (elemento) {
-        // Verificación extra de seguridad
-        if (elemento.id === 'contenedorFotosEPP') {
-            console.error(`[eliminarFotoEPP] ¡ERROR! Se encontró el contenedor principal en lugar de la imagen. Abortando eliminación.`);
-            return;
-        }
-        elemento.remove();
-        console.log(`[eliminarFotoEPP] Elemento DOM eliminado para ID: ${fotoId}`);
-    } else {
-        console.warn(`[eliminarFotoEPP] No se encontró elemento con ID: ${fotoId}`);
-        
-        // Intentar buscar por el nombre del archivo como fallback
-        const elementos = document.querySelectorAll('#contenedorFotosEPP div.foto-epp-item');
-        console.log(`[eliminarFotoEPP] Elementos con clase foto-epp-item encontrados:`, elementos.length);
-        elementos.forEach((elemento, index) => {
-            console.log(`[eliminarFotoEPP] Elemento ${index}:`, elemento.id, elemento.className);
-            const img = elemento.querySelector('img');
-            if (img && img.alt && img.alt.includes(fotoId)) {
-                console.log(`[eliminarFotoEPP] Eliminando elemento ${index} por nombre: ${img.alt}`);
-                elemento.remove();
-                return;
-            }
-        });
-    }
+    console.log(`[eliminarFotoEPP] Array actualizado: ${longitudAntes} → ${window.fotosEPP.length} fotos`);
     
     // Liberar la URL blob para liberar memoria
     if (fotoAEliminar && fotoAEliminar.previewUrl) {
-        URL.revokeObjectURL(fotoAEliminar.previewUrl);
-        console.log(`[eliminarFotoEPP] URL blob liberada para: ${fotoAEliminar.nombre}`);
+        try {
+            URL.revokeObjectURL(fotoAEliminar.previewUrl);
+            console.log(`[eliminarFotoEPP] ✓ URL blob liberada para: ${fotoAEliminar.nombre}`);
+        } catch (e) {
+            console.warn(`[eliminarFotoEPP] Advertencia al liberar URL blob:`, e);
+        }
     }
-    
-    console.log(`[eliminarFotoEPP] Fotos restantes: ${window.fotosEPP.length}`);
     
     // Si no hay más fotos, mostrar mensaje inicial
     if (window.fotosEPP.length === 0) {
         const mensajeDragDrop = document.getElementById('mensajeDragDrop');
         if (mensajeDragDrop) {
             mensajeDragDrop.style.display = 'flex';
+            console.log(`[eliminarFotoEPP] ✓ Mensaje de drag-drop mostrado (sin fotos)`);
         }
-        // No ocultar la sección completa, solo mostrar el mensaje inicial
-        // document.getElementById('seccionFotosEPP').style.display = 'none'; // Comentar esta línea
+    } else {
+        console.log(`[eliminarFotoEPP] Aún quedan ${window.fotosEPP.length} fotos restantes`);
     }
 }
 
@@ -1976,9 +2231,41 @@ function abrirModalEditarEPPNuevo(epp) {
 <style>
     /* Asegurar que los toasts EPP aparezcan encima de todo */
     .toast-epp-container {
-        z-index: 9999999 !important;
+        z-index: 10000001 !important;
+    }
+    
+    /* Asegurar que Swal2 dialogs aparezcan encima del modal */
+    .swal2-container {
+        z-index: 10000001 !important;
+    }
+    
+    .swal2-popup {
+        z-index: 10000001 !important;
     }
 </style>
+
+<script>
+// Agregar listener para detectar clicks en el backdrop (fondo oscuro)
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('modalAgregarEPP');
+    if (!modal) {
+        console.warn('[Modal EPP] Elemento modal no encontrado');
+        return;
+    }
+    
+    // Listener en el backdrop (el div con fixed inset-0)
+    modal.addEventListener('click', function(event) {
+        // Verificar si el click fue en el backdrop, no en el contenedor blanco
+        const contenedorBlanco = modal.querySelector('.bg-white');
+        if (contenedorBlanco && !contenedorBlanco.contains(event.target)) {
+            console.log('[Modal EPP] Click detectado en backdrop');
+            cerrarModalAgregarEPP();
+        }
+    });
+    
+    console.log('[Modal EPP] Listener de backdrop agregado');
+});
+</script>
 
 <script>
 // Exportar funciones necesarias al objeto window para que estén disponibles globalmente
@@ -1986,6 +2273,8 @@ window.abrirModalAgregarEPP = abrirModalAgregarEPP;
 window.abrirModalEditarEPPNuevo = abrirModalEditarEPPNuevo;
 window.resetearModalAgregarEPP = resetearModalAgregarEPP;
 window.cerrarModalAgregarEPP = cerrarModalAgregarEPP;
+window.cerrarModalAgregarEPPConfirmado = cerrarModalAgregarEPPConfirmado;
+window.hayDatosNoGuardados = hayDatosNoGuardados;
 window.mostrarProductoEPP = mostrarProductoEPP;
 window.agregarEPPALista = agregarEPPALista;
 window.finalizarAgregarEPP = finalizarAgregarEPP;
