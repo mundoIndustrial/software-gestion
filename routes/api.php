@@ -731,6 +731,23 @@ Route::prefix('cotizaciones')->name('cotizaciones.')->middleware(['auth'])->grou
 });
 
 /**
+ * Rutas API para Prendas en Cotizaciones
+ */
+Route::prefix('cotizacion')->name('cotizacion.')->middleware(['auth'])->group(function () {
+    // Guardar prenda nueva
+    Route::post('prendas', [\App\Http\Controllers\Api\CotizacionPrendaApiController::class, 'guardarPrenda'])
+        ->name('prendas.guardar');
+    
+    // Obtener prendas de una cotización
+    Route::get('{cotizacionId}/prendas', [\App\Http\Controllers\Api\CotizacionPrendaApiController::class, 'obtenerPrendas'])
+        ->name('prendas.obtener');
+    
+    // Eliminar una prenda
+    Route::delete('prendas/{prendaId}', [\App\Http\Controllers\Api\CotizacionPrendaApiController::class, 'eliminarPrenda'])
+        ->name('prendas.eliminar');
+});
+
+/**
  * API Routes for ColoresPorTalla System
  * Gestiona asignaciones de colores a tallas de prendas
  */
