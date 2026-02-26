@@ -270,8 +270,8 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
-     * Construir estructura de tallas: { GENERO: { TALLA: [{cantidad: X, color: Y}] } }
-     * Actualizado para soportar flujo 2 con colores por talla
+     * Construir estructura de tallas: { GENERO: { TALLA: cantidad } }
+     * Simplificado para que sea compatible con el frontend
      */
     private function construirEstructuraTallas($prenda): array
     {
@@ -293,25 +293,34 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
             )
             ->get();
             
-        foreach ($tallasColores as $tallaColor) {
-            $genero = strtoupper($tallaColor->genero);
-            $talla = $tallaColor->talla;
-            $color = $tallaColor->color_nombre;
-            $cantidad = $tallaColor->cantidad;
-            
-            if (!isset($tallasPorGenero[$genero][$talla])) {
-                $tallasPorGenero[$genero][$talla] = [];
+        if ($tallasColores->isNotEmpty()) {
+            // Agrupar por cantidad total por talla (sin desglose de colores dentro de la estructura)
+            $tallasAgrupadas = [];
+            foreach ($tallasColores as $tallaColor) {
+                $genero = strtoupper($tallaColor->genero);
+                $talla = $tallaColor->talla;
+                $cantidad = (int)$tallaColor->cantidad;
+                
+                $key = $genero . '|' . $talla;
+                if (!isset($tallasAgrupadas[$key])) {
+                    $tallasAgrupadas[$key] = [
+                        'genero' => $genero,
+                        'talla' => $talla,
+                        'cantidad' => 0
+                    ];
+                }
+                $tallasAgrupadas[$key]['cantidad'] += $cantidad;
             }
             
-            $tallasPorGenero[$genero][$talla][] = [
-                'cantidad' => $cantidad,
-                'color' => $color
-            ];
-        }
-        
-        // Si no hay datos en flujo 2, intentar desde prenda_pedido_tallas (flujo 1)
-        // NOTA: empty() en un Collection siempre retorna false, usar ->isEmpty()
-        if ($tallasColores->isEmpty()) {
+            // Construir estructura devolviendo cantidades simples
+            foreach ($tallasAgrupadas as $item) {
+                $genero = $item['genero'];
+                $talla = $item['talla'];
+                $cantidad = $item['cantidad'];
+                $tallasPorGenero[$genero][$talla] = $cantidad;
+            }
+        } else {
+            // Si no hay datos en flujo 2, intentar desde prenda_pedido_tallas (flujo 1)
             try {
                 if ($prenda->tallas) {
                     foreach ($prenda->tallas as $talla) {
@@ -319,10 +328,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                         $tallaPorGenero = $talla->talla;
                         $cantidad = (int)$talla->cantidad;
                         
-                        $tallasPorGenero[$genero][$tallaPorGenero][] = [
-                            'cantidad' => $cantidad,
-                            'color' => 'Sin color'
-                        ];
+                        $tallasPorGenero[$genero][$tallaPorGenero] = $cantidad;
                     }
                 }
             } catch (\Exception $e) {

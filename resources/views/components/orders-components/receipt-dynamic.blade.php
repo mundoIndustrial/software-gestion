@@ -274,16 +274,37 @@ class ReceiptManager {
             html += `<strong>Origen:</strong> ${origenTexto}<br>`;
         }
 
-        if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
-            html += `<br><strong>TALLAS:</strong><br>`;
-            const tallasArr = [];
-            prenda.tallas.forEach((tallaObj) => {
-                if (tallaObj.genero && tallaObj.talla && tallaObj.cantidad) {
-                    tallasArr.push(`${tallaObj.genero}-${tallaObj.talla}: ${tallaObj.cantidad}`);
+        // Procesar tallas: pueden venir como objeto {DAMA: {M: 5, L: 3}} o como array
+        if (prenda.tallas) {
+            let tallasFormateadas = [];
+            
+            if (typeof prenda.tallas === 'object' && !Array.isArray(prenda.tallas)) {
+                // Es un objeto con géneros como claves (estructura del backend)
+                for (let genero in prenda.tallas) {
+                    if (prenda.tallas.hasOwnProperty(genero)) {
+                        const tallasPorGenero = prenda.tallas[genero];
+                        for (let talla in tallasPorGenero) {
+                            if (tallasPorGenero.hasOwnProperty(talla)) {
+                                const cantidad = tallasPorGenero[talla];
+                                if (cantidad > 0) {
+                                    tallasFormateadas.push(`${genero} ${talla}: ${cantidad}`);
+                                }
+                            }
+                        }
+                    }
                 }
-            });
-            if (tallasArr.length > 0) {
-                html += tallasArr.join(' | ');
+            } else if (Array.isArray(prenda.tallas)) {
+                // Es un array de objetos
+                prenda.tallas.forEach((tallaObj) => {
+                    if (tallaObj.genero && tallaObj.talla && tallaObj.cantidad) {
+                        tallasFormateadas.push(`${tallaObj.genero}-${tallaObj.talla}: ${tallaObj.cantidad}`);
+                    }
+                });
+            }
+            
+            if (tallasFormateadas.length > 0) {
+                html += `<br><strong>TALLAS:</strong><br>`;
+                html += tallasFormateadas.join(' | ');
             }
         }
 

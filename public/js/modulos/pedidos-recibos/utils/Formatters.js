@@ -840,8 +840,23 @@ export class Formatters {
                     } else {
                         // Procesamiento original para objetos simples
                         console.log(`[Formatters._agregarTallasFormato]    🔍 Procesando objeto simple para género: ${genero}`);
-                        Object.entries(value).forEach(([tallaKey, cantidad]) => {
-                            console.log(`[Formatters._agregarTallasFormato]      → tallaKey="${tallaKey}", cantidad="${cantidad}"`);
+                        Object.entries(value).forEach(([tallaKey, cantidadRaw]) => {
+                            // Manejar ambas estructuras: objeto con cantidad/color o número directo
+                            let cantidad = cantidadRaw;
+                            
+                            // Si es array de objetos (estructura antigua)
+                            if (Array.isArray(cantidadRaw)) {
+                                cantidad = cantidadRaw.reduce((sum, item) => sum + (item.cantidad || 0), 0);
+                                console.log(`[Formatters._agregarTallasFormato]      → tallaKey="${tallaKey}", cantidadRaw es array, cantidad total="${cantidad}"`);
+                            } else if (typeof cantidadRaw === 'object' && cantidadRaw !== null) {
+                                // Si es objeto con cantidad
+                                cantidad = cantidadRaw.cantidad || 0;
+                                console.log(`[Formatters._agregarTallasFormato]      → tallaKey="${tallaKey}", cantidadRaw es objeto, cantidad="${cantidad}"`);
+                            } else {
+                                // Es número directo
+                                cantidad = parseInt(cantidadRaw, 10) || 0;
+                                console.log(`[Formatters._agregarTallasFormato]      → tallaKey="${tallaKey}", cantidad="${cantidad}"`);
+                            }
                             
                             if (genero === 'dama') {
                                 insertarTallaConColor(tallasDama, tallaKey, cantidad);

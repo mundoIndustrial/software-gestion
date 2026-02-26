@@ -41,7 +41,7 @@ class ObtenerPrendasRecibosService
         $query = ConsecutivoReciboPedido::where('activo', 1)
             ->whereIn('tipo_recibo', $tiposRecibo)
             ->whereIn('area', ['Corte', 'Costura', 'Control de Calidad'])
-            ->with(['prenda', 'prenda.pedidoProduccion', 'prenda.procesosPrenda', 'pedido', 'pedido.prendas']);
+            ->with(['prenda', 'prenda.pedidoProduccion', 'prenda.procesosPrenda', 'prenda.tallas', 'pedido', 'pedido.prendas', 'pedido.prendas.tallas']);
         
         // Para cortadores: excluir PENDIENTE_INSUMOS (misma lógica que /recibos-costura)
         if ($tipoOperario === 'cortador') {
@@ -276,6 +276,18 @@ class ObtenerPrendasRecibosService
                     'nombre_prenda' => $prenda->nombre_prenda,
                     'descripcion' => $prenda->descripcion,
                     'de_bodega' => $prenda->de_bodega,
+                    'tallas' => $prenda->tallas ? $prenda->tallas->map(function ($talla) {
+                        return [
+                            'id' => $talla->id,
+                            'genero' => $talla->genero,
+                            'talla' => $talla->talla,
+                            'cantidad' => $talla->cantidad,
+                            'tipo_talla' => $talla->tipo_talla,
+                            'es_sobremedida' => $talla->es_sobremedida,
+                            'tela' => $talla->tela,
+                            'colores' => $talla->colores,
+                        ];
+                    })->toArray() : [],
                     'recibos' => $recibosDelTipo->map(function ($recibo) {
                         return [
                             'id' => $recibo->id,
@@ -307,7 +319,7 @@ class ObtenerPrendasRecibosService
         $usuarioNormalizado = strtolower(trim($usuario->name));
 
         // Obtener todos los pedidos que tengan proceso de Corte asignado al usuario
-        $pedidos = \App\Models\PedidoProduccion::with(['prendas'])
+        $pedidos = \App\Models\PedidoProduccion::with(['prendas', 'prendas.tallas'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->filter(function ($pedido) use ($usuarioNormalizado) {
@@ -345,6 +357,7 @@ class ObtenerPrendasRecibosService
                     'nombre_prenda' => 'Pedido completo',
                     'descripcion' => $pedido->descripcion,
                     'de_bodega' => false,
+                    'tallas' => [],
                     'recibos' => [[
                         'id' => $pedido->id,
                         'tipo_recibo' => 'CORTE',
@@ -367,6 +380,18 @@ class ObtenerPrendasRecibosService
                     'nombre_prenda' => $prenda->nombre_prenda,
                     'descripcion' => $prenda->descripcion,
                     'de_bodega' => $prenda->de_bodega ?? false,
+                    'tallas' => $prenda->tallas ? $prenda->tallas->map(function ($talla) {
+                        return [
+                            'id' => $talla->id,
+                            'genero' => $talla->genero,
+                            'talla' => $talla->talla,
+                            'cantidad' => $talla->cantidad,
+                            'tipo_talla' => $talla->tipo_talla,
+                            'es_sobremedida' => $talla->es_sobremedida,
+                            'tela' => $talla->tela,
+                            'colores' => $talla->colores,
+                        ];
+                    })->toArray() : [],
                     'recibos' => [[
                         'id' => $pedido->id,
                         'tipo_recibo' => 'CORTE',
