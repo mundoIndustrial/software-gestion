@@ -23,6 +23,13 @@ class ObtenerPrendasRecibosService
         // Obtener tipo de operario
         $tipoOperario = $this->obtenerTipoOperario($usuario);
 
+        \Log::info('🔍 [obtenerPrendasConRecibos] TIPO OPERARIO DETECTADO', [
+            'usuario' => $usuario->name,
+            'usuario_id' => $usuario->id,
+            'tipo_operario' => $tipoOperario,
+            'es_costura_reflectivo' => $tipoOperario === 'costura-reflectivo' ? 'SI' : 'NO'
+        ]);
+
         // Determinar tipos de recibo según el rol
         $tiposRecibo = ['COSTURA', 'COSTURA-BODEGA'];
         if ($tipoOperario === 'costura-reflectivo') {
@@ -42,6 +49,61 @@ class ObtenerPrendasRecibosService
         }
         
         $recibos = $query->orderBy('created_at', 'desc')->get();
+
+        // Para costura-reflectivo: AGREGAR REFLECTIVO aprobados SIN validar encargado
+        if ($tipoOperario === 'costura-reflectivo') {
+            \Log::info('🔍 [REFLECTIVO APROBADOS] BUSCANDO prendas con estado APROBADO en pedidos_procesos_prenda_detalles', [
+                'usuario' => $usuario->name,
+                'recibos_costura_actuales' => $recibos->count()
+            ]);
+            
+            // Buscar TODAS las prendas con detalles en estado APROBADO
+            $prendasAprobadas = PedidosProcesosPrendaDetalle::where('estado', 'APROBADO')
+                ->with(['prenda', 'prenda.pedidoProduccion'])
+                ->get()
+                ->pluck('prenda')
+                ->unique('id');
+            
+            \Log::info('🔍 [REFLECTIVO APROBADOS] Prendas aprobadas encontradas', [
+                'total_prendas_aprobadas' => count($prendasAprobadas)
+            ]);
+            
+            // Para cada prenda aprobada, buscar si tiene recibo REFLECTIVO
+            foreach ($prendasAprobadas as $prendaAprobada) {
+                if (!$prendaAprobada || !$prendaAprobada->pedidoProduccion) {
+                    \Log::info('🔍 [REFLECTIVO] Prenda o pedido sin relación', [
+                        'prenda_id' => $prendaAprobada->id ?? 'null'
+                    ]);
+                    continue;
+                }
+
+                $reciboReflectivo = ConsecutivoReciboPedido::where('prenda_id', $prendaAprobada->id)
+                    ->where('tipo_recibo', 'REFLECTIVO')
+                    ->where('activo', 1)
+                    ->first();
+
+                // Si existe recibo REFLECTIVO, agregarlo SIN validar encargado
+                if ($reciboReflectivo) {
+                    $recibos->push($reciboReflectivo);
+                    
+                    \Log::info('✅ [REFLECTIVO APROBADO AGREGADO]', [
+                        'numero_pedido' => $prendaAprobada->pedidoProduccion->numero_pedido,
+                        'prenda_id' => $prendaAprobada->id,
+                        'recibo_id' => $reciboReflectivo->id,
+                        'consecutivo' => $reciboReflectivo->consecutivo_actual,
+                        'estado_aprobado' => 'YES'
+                    ]);
+                } else {
+                    \Log::info('❌ [REFLECTIVO NO ENCONTRADO] Prenda aprobada sin recibo REFLECTIVO', [
+                        'numero_pedido' => $prendaAprobada->pedidoProduccion->numero_pedido,
+                        'prenda_id' => $prendaAprobada->id
+                    ]);
+                }
+            }
+            
+            // Re-ordenar por fecha
+            $recibos = $recibos->sortByDesc('created_at');
+        }
 
         \Log::info(' [ObtenerPrendasRecibosService] Recibos encontrados', [
             'total_recibos' => $recibos->count(),
@@ -93,45 +155,14 @@ class ObtenerPrendasRecibosService
             foreach ($recibosPorTipo as $tipoRecibo => $recibosDelTipo) {
                 // Validaciones específicas por tipo de recibo
                 if (strtoupper($tipoRecibo) === 'REFLECTIVO') {
-                    // REFLECTIVO: Área debe ser "insumos" y estado PENDIENTE_INSUMOS
-                    if (strtolower($pedido->area) !== 'insumos') {
-                        \Log::info(' [Filtro REFLECTIVO] Área no es "insumos"', [
-                            'prenda_id' => $prenda->id,
-                            'numero_pedido' => $pedido->numero_pedido,
-                            'area_actual' => $pedido->area
-                        ]);
-                        continue; // Skip REFLECTIVO si área no es insumos
-                    }
-                    
-                    // Validar que el estado del pedido sea PENDIENTE_INSUMOS
-                    if ($pedido->estado !== 'PENDIENTE_INSUMOS') {
-                        \Log::info(' [Filtro REFLECTIVO] Estado del pedido no es PENDIENTE_INSUMOS', [
-                            'prenda_id' => $prenda->id,
-                            'numero_pedido' => $pedido->numero_pedido,
-                            'estado_actual' => $pedido->estado
-                        ]);
-                        continue; // Skip REFLECTIVO si el pedido no está en PENDIENTE_INSUMOS
-                    }
-                    
-                    // Validar que el detalle de proceso esté APROBADO
-                    $detalleAprobado = PedidosProcesosPrendaDetalle::where('prenda_pedido_id', $prenda->id)
-                        ->where('estado', 'APROBADO')
-                        ->first();
-                    
-                    if (!$detalleAprobado) {
-                        \Log::info(' [Filtro REFLECTIVO] Detalle no está APROBADO', [
-                            'prenda_id' => $prenda->id,
-                            'numero_pedido' => $pedido->numero_pedido
-                        ]);
-                        continue; // Skip REFLECTIVO si no tiene detalle APROBADO
-                    }
-                    
+                    // REFLECTIVO: Si está aprobado, se muestra sin validar encargado
+                    // Los recibos REFLECTIVO ya vienen filtrados desde pedidos_procesos_prenda_detalles
                     \Log::info(' [REFLECTIVO VÁLIDO]', [
                         'numero_pedido' => $pedido->numero_pedido,
                         'prenda_id' => $prenda->id,
-                        'area' => $pedido->area,
-                        'estado' => $pedido->estado,
-                        'detalle_aprobado' => true
+                        'tipo_recibo' => strtoupper($tipoRecibo),
+                        'estado' => $primeRecibo->estado,
+                        'sin_validacion_encargado' => true
                     ]);
                 } else if (strtoupper($tipoRecibo) === 'COSTURA' || strtoupper($tipoRecibo) === 'COSTURA-BODEGA') {
                     if ($tipoOperario === 'cortador') {
@@ -192,6 +223,41 @@ class ObtenerPrendasRecibosService
                             }
                             
                             \Log::info(' [Filtro COSTURERO] ✓ Usuario es encargado de esta prenda', [
+                                'prenda_id' => $prenda->id,
+                                'numero_pedido' => $pedido->numero_pedido,
+                                'usuario' => $usuario->name
+                            ]);
+                        } else if ($tipoOperario === 'costura-reflectivo') {
+                            $usuarioNombre = strtolower(trim($usuario->name));
+                            
+                            // Buscar proceso Costura específicamente para esta prenda
+                            $procesoCosturaDelaPrenda = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                                ->where('prenda_pedido_id', $prenda->id)
+                                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                                ->first();
+                            
+                            if (!$procesoCosturaDelaPrenda || !$procesoCosturaDelaPrenda->encargado) {
+                                \Log::info(' [Filtro COSTURA-REFLECTIVO] Prenda sin proceso Costura asignado', [
+                                    'prenda_id' => $prenda->id,
+                                    'numero_pedido' => $pedido->numero_pedido,
+                                    'usuario' => $usuario->name
+                                ]);
+                                continue;
+                            }
+                            
+                            $encargadoDelProceso = strtolower(trim($procesoCosturaDelaPrenda->encargado));
+                            
+                            if ($encargadoDelProceso !== $usuarioNombre) {
+                                \Log::info(' [Filtro COSTURA-REFLECTIVO] Usuario no es encargado de la prenda', [
+                                    'prenda_id' => $prenda->id,
+                                    'numero_pedido' => $pedido->numero_pedido,
+                                    'usuario_actual' => $usuario->name,
+                                    'encargado_prenda' => $procesoCosturaDelaPrenda->encargado
+                                ]);
+                                continue;
+                            }
+                            
+                            \Log::info(' [Filtro COSTURA-REFLECTIVO] ✓ Usuario es encargado de esta prenda', [
                                 'prenda_id' => $prenda->id,
                                 'numero_pedido' => $pedido->numero_pedido,
                                 'usuario' => $usuario->name
