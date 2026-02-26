@@ -1800,29 +1800,18 @@ function configurarListenersModalPrenda() {
         const clickDuration = performance.now() - clickStart;
         console.log(` [Debug] cerrarModalPrendaNueva() tardó ${clickDuration.toFixed(2)}ms`);
     };
-    
-    // LISTENER PARA CLICK FUERA DEL MODAL
+
+    // NOTA: Este modal NO debe cerrarse por click fuera ni por ESC.
+    // Solo debe cerrar con el botón X.
     if (modalOverlay) {
-        modalOverlay.addEventListener('click', function(e) {
-            if (e.target === modalOverlay) {
-                // console.log('[Modal] Click fuera del modal → Ejecutando cerrarModalPrendaNueva()');
-                cerrarModalPrendaNueva();
-            }
-        });
+        modalOverlay.setAttribute('data-close-on-outside', '0');
     }
-    
-    // LISTENER PARA ESC
-    window._escListenerModal = function(e) {
-        if (e.key === 'Escape') {
-            const modal = document.getElementById('modal-agregar-prenda-nueva');
-            if (modal && modal.style.display !== 'none') {
-                // console.log('⌨️ [Modal] ESC presionado → Ejecutando cerrarModalPrendaNueva()');
-                cerrarModalPrendaNueva();
-            }
-        }
-    };
-    document.addEventListener('keydown', window._escListenerModal);
-    // console.log('✓ Listener de ESC configurado');
+
+    // Si existía un listener previo de ESC (de versiones anteriores), removerlo.
+    if (window._escListenerModal) {
+        document.removeEventListener('keydown', window._escListenerModal);
+        window._escListenerModal = null;
+    }
     
     // console.log(' [Modal] Todos los listeners configurados exitosamente');
 }

@@ -15,7 +15,7 @@ class PrendaModalManager {
                 window.UI.abrirModal(modalId, {
                     display: 'flex',
                     closeOnClickOutside: false,
-                    closeOnEsc: true,
+                    closeOnEsc: false,
                     preventScroll: true
                 });
             } else {

@@ -112,6 +112,16 @@ class UIModalService {
             return false;
         }
 
+        // Limpiar listeners previos para evitar acumulación entre aperturas
+        if (modal.__uiModalOutsideClickHandler) {
+            modal.removeEventListener('click', modal.__uiModalOutsideClickHandler);
+            modal.__uiModalOutsideClickHandler = null;
+        }
+        if (modal.__uiModalEscHandler) {
+            document.removeEventListener('keydown', modal.__uiModalEscHandler);
+            modal.__uiModalEscHandler = null;
+        }
+
         modal.style.display = options.display || 'flex';
         
         if (options.class) {
@@ -125,11 +135,12 @@ class UIModalService {
 
         // Event listener para cerrar al hacer click fuera
         if (options.closeOnClickOutside !== false) {
-            modal.addEventListener('click', (e) => {
+            modal.__uiModalOutsideClickHandler = (e) => {
                 if (e.target === modal) {
                     this.cerrarModal(id, options);
                 }
-            });
+            };
+            modal.addEventListener('click', modal.__uiModalOutsideClickHandler);
         }
 
         // Event listener para ESC
@@ -138,8 +149,10 @@ class UIModalService {
                 if (e.key === 'Escape') {
                     this.cerrarModal(id, options);
                     document.removeEventListener('keydown', handleEsc);
+                    modal.__uiModalEscHandler = null;
                 }
             };
+            modal.__uiModalEscHandler = handleEsc;
             document.addEventListener('keydown', handleEsc);
         }
 
@@ -156,6 +169,16 @@ class UIModalService {
         
         if (!modal) {
             return false;
+        }
+
+        // Limpiar listeners (independiente de si hay animación)
+        if (modal.__uiModalOutsideClickHandler) {
+            modal.removeEventListener('click', modal.__uiModalOutsideClickHandler);
+            modal.__uiModalOutsideClickHandler = null;
+        }
+        if (modal.__uiModalEscHandler) {
+            document.removeEventListener('keydown', modal.__uiModalEscHandler);
+            modal.__uiModalEscHandler = null;
         }
 
         // Aplicar animación de salida
