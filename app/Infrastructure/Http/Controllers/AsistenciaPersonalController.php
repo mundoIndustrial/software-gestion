@@ -67,41 +67,40 @@ class AsistenciaPersonalController extends Controller
                         // Patrón 1: id_persona nombre fecha hora (ej: 2 Juan 2025-12-16 06:56:04)
                         if (preg_match('/^(\d+)\s+(.+?)\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})$/', $line, $matches)) {
                             $codigo_persona = intval($matches[1]);
+                            $nombreEnPdf = trim($matches[2]);
                             $timestamp = $matches[3];
                             $personal = Personal::where('codigo_persona', $codigo_persona)->first();
-                            if ($personal) {
-                                $registros[] = [
-                                    'id_persona' => $codigo_persona,
-                                    'nombre_persona' => $personal->nombre_persona,
-                                    'timestamp' => $timestamp
-                                ];
-                            }
+                            $registros[] = [
+                                'id_persona' => $codigo_persona,
+                                'nombre_persona' => $personal ? $personal->nombre_persona : null,
+                                'nombre_pdf' => $nombreEnPdf,
+                                'timestamp' => $timestamp
+                            ];
                         }
                         // Patrón 2: id_persona fecha hora nombre (ej: 2 2025-12-16 06:56:04 Juan)
                         elseif (preg_match('/^(\d+)\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})\s+(.+)$/', $line, $matches)) {
                             $codigo_persona = intval($matches[1]);
                             $timestamp = $matches[2];
+                            $nombreEnPdf = trim($matches[3]);
                             $personal = Personal::where('codigo_persona', $codigo_persona)->first();
-                            if ($personal) {
-                                $registros[] = [
-                                    'id_persona' => $codigo_persona,
-                                    'nombre_persona' => $personal->nombre_persona,
-                                    'timestamp' => $timestamp
-                                ];
-                            }
+                            $registros[] = [
+                                'id_persona' => $codigo_persona,
+                                'nombre_persona' => $personal ? $personal->nombre_persona : null,
+                                'nombre_pdf' => $nombreEnPdf,
+                                'timestamp' => $timestamp
+                            ];
                         }
                         // Patrón 3: Detectar cualquier línea con id_persona y timestamp
                         elseif (preg_match('/\b(\d+)\b.*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/', $line, $matches)) {
                             $codigo_persona = intval($matches[1]);
                             $timestamp = $matches[2];
                             $personal = Personal::where('codigo_persona', $codigo_persona)->first();
-                            if ($personal) {
-                                $registros[] = [
-                                    'id_persona' => $codigo_persona,
-                                    'nombre_persona' => $personal->nombre_persona,
-                                    'timestamp' => $timestamp
-                                ];
-                            }
+                            $registros[] = [
+                                'id_persona' => $codigo_persona,
+                                'nombre_persona' => $personal ? $personal->nombre_persona : null,
+                                'nombre_pdf' => null,
+                                'timestamp' => $timestamp
+                            ];
                         }
                     }
                 } catch (\Exception $pageError) {
@@ -168,12 +167,13 @@ class AsistenciaPersonalController extends Controller
                 $timestamp = $registro['timestamp'];
                 
                 // Validar que la persona existe
-                $personal = Personal::find($idPersona);
+                $personal = Personal::where('codigo_persona', $idPersona)->first();
                 if (!$personal) {
                     // Agregar a personas no encontradas (sin duplicar)
                     if (!in_array($idPersona, array_column($personasNoEncontradas, 'id_persona'))) {
                         $personasNoEncontradas[] = [
                             'id_persona' => $idPersona,
+                            'nombre_pdf' => isset($registro['nombre_pdf']) ? $registro['nombre_pdf'] : null,
                             'registros_intento' => 1
                         ];
                     } else {
@@ -253,6 +253,55 @@ class AsistenciaPersonalController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al validar registros: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function crearPersonalBatch(Request $request): JsonResponse
+    {
+        $request->validate([
+            'personas' => 'required|array',
+            'personas.*.codigo_persona' => 'required|integer|min:1',
+            'personas.*.nombre_persona' => 'required|string|min:2',
+            'personas.*.id_rol' => 'required|integer'
+        ]);
+
+        try {
+            $personas = $request->input('personas', []);
+
+            $creados = 0;
+            $existentes = 0;
+
+            \DB::transaction(function () use ($personas, &$creados, &$existentes) {
+                foreach ($personas as $persona) {
+                    $codigo = intval($persona['codigo_persona']);
+                    $nombre = trim($persona['nombre_persona']);
+                    $rol = intval($persona['id_rol']);
+
+                    $existing = Personal::where('codigo_persona', $codigo)->first();
+                    if ($existing) {
+                        $existentes++;
+                        continue;
+                    }
+
+                    Personal::create([
+                        'codigo_persona' => $codigo,
+                        'nombre_persona' => $nombre,
+                        'id_rol' => $rol,
+                    ]);
+                    $creados++;
+                }
+            });
+
+            return response()->json([
+                'success' => true,
+                'creados' => $creados,
+                'existentes' => $existentes,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear personal: ' . $e->getMessage(),
             ], 500);
         }
     }

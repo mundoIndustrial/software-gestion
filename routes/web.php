@@ -2444,6 +2444,8 @@ Route::middleware(['auth'])->prefix('asistencia-personal')->name('asistencia-per
         ->name('procesar-pdf');
     Route::post('/validar-registros', [AsistenciaPersonalController::class, 'validarRegistros'])
         ->name('validar-registros');
+    Route::post('/crear-personal-batch', [AsistenciaPersonalController::class, 'crearPersonalBatch'])
+        ->name('crear-personal-batch');
     Route::post('/guardar-registros', [AsistenciaPersonalController::class, 'guardarRegistros'])
         ->name('guardar-registros');
     Route::post('/calcular-horas', [AsistenciaPersonalController::class, 'calcularHoras'])

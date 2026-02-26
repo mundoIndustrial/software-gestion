@@ -7,6 +7,13 @@ const AsistenciaPDFHandler = (() => {
     let currentReportData = [];
     let insertReportBtn = null;
 
+    const rolesDisponibles = [
+        { id: 19, name: 'Producción' },
+        { id: 20, name: 'Administrativo' },
+        { id: 21, name: 'Mixto' },
+        { id: 22, name: 'Portería' }
+    ];
+
     /**
      * Inyectar estilos WinRAR
      */
@@ -277,8 +284,191 @@ const AsistenciaPDFHandler = (() => {
                 alert('Por favor carga un PDF primero');
                 return;
             }
-            saveReport();
+            validarYGuardarReport();
         });
+    }
+
+    function validarYGuardarReport() {
+        fetch('/asistencia-personal/validar-registros', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            },
+            body: JSON.stringify({ registros: currentReportData })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success) {
+                alert('Error al validar registros: ' + (data.message || 'Error desconocido'));
+                return;
+            }
+
+            const personasNuevas = Array.isArray(data.personas_no_encontradas) ? data.personas_no_encontradas : [];
+
+            if (personasNuevas.length === 0) {
+                saveReport();
+                return;
+            }
+
+            showCrearPersonalModal(personasNuevas, async (payloadPersonas) => {
+                try {
+                    await crearPersonalBatch(payloadPersonas);
+                    saveReport();
+                } catch (e) {
+                    alert(e.message || 'Error al crear el personal nuevo');
+                }
+            });
+        })
+        .catch(error => {
+            alert('Error al validar registros: ' + error.message);
+        });
+    }
+
+    function crearPersonalBatch(personas) {
+        return fetch('/asistencia-personal/crear-personal-batch', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            },
+            body: JSON.stringify({ personas })
+        })
+        .then(async response => {
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.success) {
+                const msg = data && data.message ? data.message : `HTTP error! status: ${response.status}`;
+                throw new Error(msg);
+            }
+            return data;
+        });
+    }
+
+    function showCrearPersonalModal(personasNuevas, onGuardar) {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+
+        const rolesOptions = rolesDisponibles.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 820px; width: 95%;">
+                <h3 style="margin-bottom: 8px;">Se encontraron personas nuevas</h3>
+                <p style="margin-top: 0; opacity: 0.8;">
+                    Antes de guardar el reporte, completa el nombre y rol de los siguientes IDs.
+                </p>
+                <div style="max-height: 55vh; overflow: auto; border: 1px solid rgba(0,0,0,0.08); border-radius: 8px;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th style="text-align:left; padding: 10px; border-bottom: 1px solid rgba(0,0,0,0.08);">ID</th>
+                                <th style="text-align:left; padding: 10px; border-bottom: 1px solid rgba(0,0,0,0.08);">Nombre</th>
+                                <th style="text-align:left; padding: 10px; border-bottom: 1px solid rgba(0,0,0,0.08);">Rol</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${personasNuevas.map((p, idx) => {
+                                const sugerido = (p && p.nombre_pdf) ? String(p.nombre_pdf) : '';
+                                return `
+                                    <tr data-index="${idx}">
+                                        <td style="padding: 10px; border-bottom: 1px solid rgba(0,0,0,0.06); font-family: monospace;">${p.id_persona}</td>
+                                        <td style="padding: 10px; border-bottom: 1px solid rgba(0,0,0,0.06);">
+                                            <input type="text" class="nuevo-personal-nombre" value="${escapeHtml(sugerido)}" style="width: 100%; padding: 8px; border: 1px solid rgba(0,0,0,0.15); border-radius: 6px;">
+                                        </td>
+                                        <td style="padding: 10px; border-bottom: 1px solid rgba(0,0,0,0.06);">
+                                            <select class="nuevo-personal-rol" style="width: 100%; padding: 8px; border: 1px solid rgba(0,0,0,0.15); border-radius: 6px;">
+                                                <option value="">-- Seleccionar --</option>
+                                                ${rolesOptions}
+                                            </select>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+                    <button class="btn btn-warning" id="btnCancelarCrearPersonal" type="button">Cancelar</button>
+                    <button class="btn btn-success" id="btnGuardarCrearPersonal" type="button">Guardar y continuar</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const btnCancelar = modal.querySelector('#btnCancelarCrearPersonal');
+        const btnGuardar = modal.querySelector('#btnGuardarCrearPersonal');
+
+        btnCancelar.addEventListener('click', () => modal.remove());
+
+        btnGuardar.addEventListener('click', () => {
+            const rows = modal.querySelectorAll('tbody tr');
+            const payload = [];
+            let tieneErrores = false;
+
+            rows.forEach((row, idx) => {
+                const codigo = parseInt(personasNuevas[idx].id_persona, 10);
+                const nombre = row.querySelector('.nuevo-personal-nombre')?.value?.trim() || '';
+                const idRolRaw = row.querySelector('.nuevo-personal-rol')?.value;
+                const idRol = idRolRaw ? parseInt(idRolRaw, 10) : null;
+
+                if (!codigo || codigo < 1) {
+                    tieneErrores = true;
+                    return;
+                }
+                if (!nombre || nombre.length < 2) {
+                    tieneErrores = true;
+                    return;
+                }
+                if (!idRol) {
+                    tieneErrores = true;
+                    return;
+                }
+
+                payload.push({
+                    codigo_persona: codigo,
+                    nombre_persona: nombre,
+                    id_rol: idRol
+                });
+            });
+
+            if (tieneErrores) {
+                alert('Completa nombre y rol para todas las personas nuevas.');
+                return;
+            }
+
+            btnGuardar.disabled = true;
+            Promise.resolve(onGuardar(payload))
+                .then(() => {
+                    modal.remove();
+                })
+                .catch(() => {
+                    btnGuardar.disabled = false;
+                });
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                modal.remove();
+            }
+        }, { once: true });
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
     }
 
     /**
