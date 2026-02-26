@@ -227,13 +227,124 @@ class InvoiceRenderer {
     renderizarTallas(prenda) {
         console.log('[InvoiceRenderer] renderizarTallas - Prenda completa:', prenda);
         console.log('[InvoiceRenderer] renderizarTallas - Variantes:', prenda.variantes);
+        console.log('[InvoiceRenderer] DEBUG CANTIDAD_TALLA:', prenda.cantidad_talla);
+        console.log('[InvoiceRenderer] DEBUG TALLAS:', prenda.tallas);
+        
+        // 🔴 NUEVO: Primero intentar con cantidad_talla (estructura del editor)
+        if (prenda.cantidad_talla && prenda.cantidad_talla.GENERICO) {
+            console.log('[InvoiceRenderer] ✅ DETECTADO SOLO CANTIDAD en cantidad_talla');
+            console.log('[InvoiceRenderer] cantidad_talla.GENERICO:', prenda.cantidad_talla.GENERICO);
+            
+            let cantidad = 0;
+            const generericoObj = prenda.cantidad_talla.GENERICO;
+            
+            if (typeof generericoObj === 'object') {
+                const valores = Object.values(generericoObj);
+                console.log('[InvoiceRenderer] Valores en GENERICO:', valores);
+                
+                if (valores.length > 0) {
+                    const primerValor = valores[0];
+                    console.log('[InvoiceRenderer] Primer valor:', primerValor, 'Tipo:', typeof primerValor);
+                    
+                    // Si es un número, usarlo directamente
+                    if (typeof primerValor === 'number') {
+                        cantidad = primerValor;
+                    } 
+                    // Si es un array, tomar el primer elemento y extraer cantidad
+                    else if (Array.isArray(primerValor) && primerValor.length > 0) {
+                        const primerElemento = primerValor[0];
+                        if (primerElemento && typeof primerElemento.cantidad === 'number') {
+                            cantidad = primerElemento.cantidad;
+                        }
+                    }
+                    // Si es un objeto, buscar cantidad dentro
+                    else if (typeof primerValor === 'object' && primerValor !== null && !Array.isArray(primerValor)) {
+                        if (typeof primerValor.cantidad === 'number') {
+                            cantidad = primerValor.cantidad;
+                        }
+                    }
+                }
+            }
+            
+            console.log('[InvoiceRenderer] CANTIDAD FINAL EXTRAIDA:', cantidad);
+            
+            return `
+                <div style="font-weight: 700; color: #2c3e50; margin-bottom: 6px; font-size: 11px;"> Cantidad</div>
+                <div style="font-weight: 600; color: #0369a1; font-size: 12px; background: #f0f9ff; padding: 4px 8px; border-radius: 3px; border-left: 3px solid #0ea5e9; display: inline-block;">
+                    ${cantidad}
+                </div>
+            `;
+        }
         
         if (prenda.tallas && typeof prenda.tallas === 'object' && Object.keys(prenda.tallas).length > 0) {
             const generosConTallas = Object.entries(prenda.tallas).filter(([gen, tallasObj]) => 
                 typeof tallasObj === 'object' && !Array.isArray(tallasObj) && Object.keys(tallasObj).length > 0
             );
             
-            if (generosConTallas.length > 0) {
+            // 🔴 NUEVO: Detectar si SOLO hay GENERICO (SOLO CANTIDAD)
+            const tieneGenerico = generosConTallas.some(([gen]) => gen.toUpperCase() === 'GENERICO');
+            const soloGenerico = tieneGenerico && generosConTallas.length === 1;
+            
+            // Si SOLO hay GENERICO, mostrar "Cantidad: X" de forma simple
+            if (soloGenerico) {
+                const [genero, tallasObj] = generosConTallas[0];
+                
+                // 🔴 FIX: Extraer cantidad de forma robusta
+                let cantidad = 0;
+                const valores = Object.values(tallasObj);
+                
+                if (valores.length > 0) {
+                    const primerValor = valores[0];
+                    
+                    // Si es un número, usarlo directamente
+                    if (typeof primerValor === 'number') {
+                        cantidad = primerValor;
+                    } 
+                    // Si es un array, tomar el primer elemento y extraer cantidad
+                    else if (Array.isArray(primerValor) && primerValor.length > 0) {
+                        const primerElemento = primerValor[0];
+                        if (primerElemento && typeof primerElemento.cantidad === 'number') {
+                            cantidad = primerElemento.cantidad;
+                        }
+                    }
+                    // Si es un objeto con cantidad
+                    else if (typeof primerValor === 'object' && primerValor !== null && !Array.isArray(primerValor)) {
+                        if (typeof primerValor.cantidad === 'number') {
+                            cantidad = primerValor.cantidad;
+                        } else {
+                            // Fallback: buscar valor numérico dentro
+                            const valoresNumericos = Object.values(primerValor).filter(v => typeof v === 'number');
+                            if (valoresNumericos.length > 0) {
+                                cantidad = valoresNumericos[0];
+                            }
+                        }
+                    }
+                }
+                
+                return `
+                    <div style="font-weight: 700; color: #2c3e50; margin-bottom: 6px; font-size: 11px;"> Cantidad</div>
+                    <div style="font-weight: 600; color: #0369a1; font-size: 12px; background: #f0f9ff; padding: 4px 8px; border-radius: 3px; border-left: 3px solid #0ea5e9; display: inline-block;">
+                        ${cantidad}
+                    </div>
+                `;
+            }
+            
+            // Filtrar GENERICO del mapeo normal (si hay más géneros además de GENERICO)
+            const generosParaMostrar = generosConTallas.filter(([gen]) => {
+                const generoUpper = String(gen || '').toUpperCase().trim();
+                return generoUpper !== 'GENERICO';
+            });
+            
+            if (generosParaMostrar.length > 0) {
+                // 🔴 REFUERZO: Filtrar GENERICO nuevamente como precaución extra
+                const generosFiltrados = generosParaMostrar.filter(([gen]) => {
+                    return gen && String(gen).toUpperCase().trim() !== 'GENERICO';
+                });
+                
+                if (generosFiltrados.length === 0) {
+                    return ''; // Si solo quedan GENERICOs, no mostrar tabla
+                }
+                
                 return `
                     <div style="font-weight: 700; color: #2c3e50; margin-bottom: 6px; font-size: 11px;"> Tallas</div>
                     <table style="width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed;">
@@ -244,7 +355,7 @@ class InvoiceRenderer {
                             </tr>
                         </thead>
                         <tbody>
-                            ${generosConTallas.map(([genero, tallasObj]) => {
+                            ${generosFiltrados.map(([genero, tallasObj]) => {
                                 const tallaRows = Object.entries(tallasObj).map(([talla, cant]) => {
                                     let coloresConCantidad = [];
                                     
@@ -390,7 +501,41 @@ class InvoiceRenderer {
                                         return coloresConCantidad.map(color => `<div style="margin-bottom: 2px;">${tallaFinal}:${color.cantidad} - <strong style="color: #0369a1;">Color:</strong> ${color.nombre}</div>`).join('');
                                     } else {
                                         // Si no hay colores, mostrar solo talla:cantidad
-                                        return `<div style="margin-bottom: 2px;">${tallaFinal}:${cant}</div>`;
+                                        // 🔴 FIX: Manejar cant como: número | objeto | array de objetos
+                                        let cantidadFinal = cant;
+                                        
+                                        if (typeof cant === 'number') {
+                                            cantidadFinal = cant;
+                                        }
+                                        // Si es un array, extraer cantidad del primer elemento si tiene propiedad cantidad
+                                        else if (Array.isArray(cant) && cant.length > 0) {
+                                            const primerElemento = cant[0];
+                                            if (primerElemento && typeof primerElemento.cantidad === 'number') {
+                                                cantidadFinal = primerElemento.cantidad;
+                                            } else if (typeof primerElemento === 'number') {
+                                                cantidadFinal = primerElemento;
+                                            }
+                                        }
+                                        // Si es un objeto
+                                        else if (typeof cant === 'object' && cant !== null && !Array.isArray(cant)) {
+                                            // Si tiene propiedad cantidad, usarla
+                                            if (typeof cant.cantidad === 'number') {
+                                                cantidadFinal = cant.cantidad;
+                                            } else {
+                                                // Si es un objeto numérico, intentar obtener el primer valor numérico
+                                                const valores = Object.values(cant).filter(v => typeof v === 'number');
+                                                if (valores.length > 0) {
+                                                    cantidadFinal = valores[0];
+                                                } else {
+                                                    // Si no hay valores numéricos, sumar todos los que sean números
+                                                    cantidadFinal = Object.values(cant).reduce((sum, v) => {
+                                                        return sum + (typeof v === 'number' ? v : 0);
+                                                    }, 0);
+                                                }
+                                            }
+                                        }
+                                        
+                                        return `<div style="margin-bottom: 2px;">${tallaFinal}:${cantidadFinal}</div>`;
                                     }
                                 }).join('');
                                 
@@ -404,6 +549,9 @@ class InvoiceRenderer {
                         </tbody>
                     </table>
                 `;
+            } else {
+                // Si solo hay GENERICO (soloGenerico) o no hay géneros para mostrar
+                return '';
             }
         }
         
@@ -513,8 +661,13 @@ class InvoiceRenderer {
         
         const tallasArray = [];
         
-        // Procesar cada género
+        // Procesar cada género (excluyendo GENERICO)
         Object.entries(tallas).forEach(([genero, tallasObj]) => {
+            // 🔴 NUEVO: NO mostrar GENERICO en ningún contexto
+            if (genero && String(genero).toUpperCase().trim() === 'GENERICO') {
+                return; // Saltar GENERICO
+            }
+            
             if (tallasObj && typeof tallasObj === 'object' && Object.keys(tallasObj).length > 0) {
                 const generoUpper = genero.toUpperCase();
                 const tallasGenero = Object.entries(tallasObj)

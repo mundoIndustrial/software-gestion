@@ -310,7 +310,7 @@
     padding: 15px !important;
     font-weight: 600 !important;
     display: grid !important;
-    grid-template-columns: 100px 120px 1fr 120px 120px !important;
+    grid-template-columns: 80px 100px 1fr 180px 110px !important;
     gap: 15px !important;
     align-items: center !important;
     position: relative;
@@ -347,7 +347,7 @@
 
 .table-header > div:hover .filter-icon {
     opacity: 1 !important;
-    grid-template-columns: 100px 120px 1fr 120px 120px !important;
+    grid-template-columns: 80px 100px 1fr 180px 110px !important;
     gap: 15px !important;
     align-items: center !important;
     position: relative;
@@ -355,7 +355,7 @@
 
 .table-row {
     display: grid !important;
-    grid-template-columns: 100px 120px 1fr 120px 120px !important;
+    grid-template-columns: 80px 100px 1fr 180px 110px !important;
     gap: 15px !important;
     padding: 15px !important;
     border-bottom: 1px solid #f3f4f6 !important;

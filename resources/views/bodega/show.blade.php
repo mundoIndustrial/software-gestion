@@ -227,7 +227,11 @@
                                                     $genero = $item['genero'];
                                                 }
                                             @endphp
-                                            {{ $genero ? ucfirst(strtolower($genero)) : '—' }}
+                                            @if($genero && strtoupper($genero) !== 'GENERICO')
+                                                {{ ucfirst(strtolower($genero)) }}
+                                            @else
+                                                —
+                                            @endif
                                         @endif
                                     </td>
                                     @endif
@@ -235,6 +239,8 @@
                                     <!-- TALLA -->
                                     <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
                                         @if(($item['tipo'] ?? null) === 'epp' || ($item['area'] ?? null) === 'EPP')
+                                            —
+                                        @elseif(($item['talla'] ?? null) === 'SIN_ESPECIFICAR')
                                             —
                                         @else
                                             {{ $item['talla'] ?? '—' }}

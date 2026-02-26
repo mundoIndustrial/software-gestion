@@ -482,6 +482,13 @@ window.crearTarjetaGenero = function(genero, tallas) {
     // Normalizar género a mayúsculas para consistencia
     genero = String(genero).toUpperCase();
     
+    // 🔴 NUEVO: Si es "GENERICO" (SOLO CANTIDAD), no crear tarjeta visual
+    // La tarjeta de solo cantidad se muestra en su propio contenedor (tarjeta-solo-cantidad)
+    if (genero === 'GENERICO') {
+        console.log('[crearTarjetaGenero]  GENERICO detectado - No creando tarjeta visual (se muestra en tarjeta-solo-cantidad)');
+        return;
+    }
+    
     const tallasDic = window.tallasRelacionales[genero] || {};
     
     if (Object.keys(tallasDic).length === 0) {

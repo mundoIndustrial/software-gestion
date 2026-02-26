@@ -106,7 +106,7 @@
                                                     @endif
                                                 </div>
                                             @endif
-                                            @if($genero)
+                                            @if($genero && strtoupper($genero) !== 'GENERICO')
                                                 <div class="text-black text-xs mb-1">
                                                     Género: <span class="font-semibold">{{ strtoupper($genero) }}</span>
                                                 </div>
@@ -158,6 +158,10 @@
                                                 elseif(isset($item['genero'])) {
                                                     $genero = $item['genero'];
                                                 }
+                                                // Ocultar GENERICO - mostrar "—"
+                                                if ($genero && strtoupper(trim($genero)) === 'GENERICO') {
+                                                    $genero = '';
+                                                }
                                             @endphp
                                             {{ $genero ? ucfirst(strtolower($genero)) : '—' }}
                                         </td>
@@ -171,8 +175,9 @@
                                                 // Detectar si es un UUID (formato de UUID estándar)
                                                 $es_uuid = preg_match('/^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i', $talla_valor) || 
                                                            preg_match('/^[0-9a-f]{32}$/i', $talla_valor);
+                                                $es_sin_especificar = strtoupper($talla_valor) === 'SIN_ESPECIFICAR';
                                             @endphp
-                                            {{ $es_epp || $es_uuid ? '—' : ($talla_valor ?: '—') }}
+                                            {{ $es_epp || $es_uuid || $es_sin_especificar ? '—' : ($talla_valor ?: '—') }}
                                         </td>
                                         
                                         <!-- CANTIDAD -->

@@ -39,6 +39,12 @@ class PrendaEditorTallas {
         
         // Cargar por género
         Object.entries(tallasData).forEach(([genero, tallas]) => {
+            // 🔴 NUEVO: SALTAR GENERICO (se maneja en tarjeta-solo-cantidad)
+            if (genero.toUpperCase() === 'GENERICO') {
+                console.log('[Tallas] ⏭️ Saltando GENERICO (se renderiza en tarjeta-solo-cantidad)');
+                return;
+            }
+            
             if (!tallas || typeof tallas !== 'object' || Object.keys(tallas).length === 0) {
                 console.log(`[Tallas] ${genero} sin datos`);
                 return;

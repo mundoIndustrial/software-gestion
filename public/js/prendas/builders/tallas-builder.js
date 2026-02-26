@@ -49,6 +49,9 @@ class TallasBuilder {
         let generoHTML = '';
         
         Object.keys(tallasByGeneroMap).forEach((genero) => {
+            // 🔴 NUEVO: NO RENDERIZAR GÉNERO "GENERICO" (SOLO CANTIDAD)
+            if (genero.toUpperCase() === 'GENERICO') return;
+            
             const tallas = tallasByGeneroMap[genero] || [];
             const cantidades = cantidadesPorGenero[genero] || {};
 

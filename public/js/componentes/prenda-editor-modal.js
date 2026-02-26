@@ -1246,6 +1246,27 @@ function cerrarModalPrendaNueva() {
         }
         console.log('✓ PASO 5 completado');
         
+        // PASO 5.5: Limpiar "SOLO CANTIDAD"
+        console.log('→ PASO 5.5: Limpiando opción "SOLO CANTIDAD"...');
+        window.cantidadSoloSeleccionada = null;
+        const btnSoloCantidad = document.getElementById('btn-genero-solo-cantidad');
+        const checkSoloCantidad = document.getElementById('check-solo-cantidad');
+        const seccionSoloCantidad = document.getElementById('seccion-solo-cantidad');
+        const tarjetaSoloCantidad = document.getElementById('tarjeta-solo-cantidad');
+        const cantidadInput = document.getElementById('cantidad-solo');
+        
+        if (btnSoloCantidad) {
+            btnSoloCantidad.style.background = 'white';
+            btnSoloCantidad.style.borderColor = '#d1d5db';
+            btnSoloCantidad.style.color = '#374151';
+            btnSoloCantidad.setAttribute('data-selected', 'false');
+        }
+        if (checkSoloCantidad) checkSoloCantidad.style.display = 'none';
+        if (seccionSoloCantidad) seccionSoloCantidad.style.display = 'none';
+        if (tarjetaSoloCantidad) tarjetaSoloCantidad.style.display = 'none';
+        if (cantidadInput) cantidadInput.value = '';
+        console.log('✓ PASO 5.5 completado');
+        
         const tiempoTotalMs = performance.now() - inicioTiempo;
         console.log(` [cerrarModalPrendaNueva] Modal cerrado SINCRONAMENTE en ${tiempoTotalMs.toFixed(2)}ms`);
         console.log(` Si ves este mensaje en menos de 100ms, el cierre fue instantáneo`);
@@ -1533,6 +1554,99 @@ function cargarPrendaEnFormularioModal(prendaData) {
                 `;
                 tbodyTelas.appendChild(row);
             });
+        }
+    }
+    
+    // 🔴 NUEVO: Cargar SOLO CANTIDAD si existe
+    const tieneGenerico = prendaData.generosConTallas && 
+                         Object.keys(prendaData.generosConTallas).some(g => g.toUpperCase() === 'GENERICO');
+    const tieneGenericoEnCantidadTalla = prendaData.cantidad_talla && 
+                                         prendaData.cantidad_talla.GENERICO;
+    
+    if (tieneGenerico || tieneGenericoEnCantidadTalla) {
+        console.log('[cargarPrendaEnFormularioModal] 📦 DETECTANDA PRENDA CON SOLO CANTIDAD');
+        
+        // LIMPIAR todas las tarjetas de géneros (DAMA, CABALLERO, SOBREMEDIDA)
+        const containerGeneros = document.getElementById('tarjetas-generos-container');
+        if (containerGeneros) {
+            containerGeneros.innerHTML = '';
+            console.log('[cargarPrendaEnFormularioModal]   ✓ Tarjetas de géneros limpiadas');
+        }
+        
+        // 🔴 NUEVO: Remover específicamente tarjeta de GENERICO si existe (por cualquier razón)
+        const tarjetaGenerico = document.querySelector('[data-genero="GENERICO"]');
+        if (tarjetaGenerico) {
+            tarjetaGenerico.remove();
+            console.log('[cargarPrendaEnFormularioModal]   ✓ Tarjeta GENERICO removida');
+        }
+        
+        // Resetear botones de géneros
+        const botonesGeneros = document.querySelectorAll('.btn-genero');
+        botonesGeneros.forEach(btn => {
+            btn.style.background = 'white';
+            btn.style.borderColor = '#d1d5db';
+            btn.style.color = '#374151';
+            btn.setAttribute('data-selected', 'false');
+            const check = btn.querySelector('.btn-genero-check');
+            if (check) check.style.display = 'none';
+        });
+        
+        // Obtener cantidad
+        let cantidadValue = 0;
+        
+        // Intentar obtener desde cantidad_talla
+        if (prendaData.cantidad_talla && prendaData.cantidad_talla.GENERICO) {
+            const genericoObj = prendaData.cantidad_talla.GENERICO;
+            cantidadValue = genericoObj.SIN_ESPECIFICAR || 
+                           genericoObj['sin_especificar'] ||
+                           Object.values(genericoObj)[0] || 0;
+            console.log('[cargarPrendaEnFormularioModal]   Cantidad desde cantidad_talla.GENERICO:', cantidadValue);
+        }
+        // Fallback: intentar desde generosConTallas
+        else if (prendaData.generosConTallas && prendaData.generosConTallas.GENERICO) {
+            const genericoData = prendaData.generosConTallas.GENERICO;
+            if (genericoData && typeof genericoData === 'object') {
+                const tallasArray = genericoData.tallas || [];
+                // Si el primer elemento de tallas tiene cantidad
+                if (tallasArray.length > 0) {
+                    cantidadValue = tallasArray[0];
+                }
+                console.log('[cargarPrendaEnFormularioModal]   Cantidad desde generosConTallas.GENERICO:', cantidadValue);
+            }
+        }
+        
+        if (cantidadValue > 0) {
+            // Establecer la cantidad en el input
+            const cantidadInput = document.getElementById('cantidad-solo');
+            if (cantidadInput) {
+                cantidadInput.value = cantidadValue;
+                console.log('[cargarPrendaEnFormularioModal]   Input cantidad-solo establecido a:', cantidadValue);
+            }
+            
+            // Guardar en variable global
+            window.cantidadSoloSeleccionada = cantidadValue;
+            
+            // Mostrar sección de SOLO CANTIDAD
+            const btnSoloCantidad = document.getElementById('btn-genero-solo-cantidad');
+            const checkSoloCantidad = document.getElementById('check-solo-cantidad');
+            const seccionSoloCantidad = document.getElementById('seccion-solo-cantidad');
+            const tarjetaSoloCantidad = document.getElementById('tarjeta-solo-cantidad');
+            const cantidadDisplay = document.getElementById('cantidad-solo-display');
+            
+            if (btnSoloCantidad) {
+                btnSoloCantidad.style.background = '#0066cc';
+                btnSoloCantidad.style.borderColor = '#0066cc';
+                btnSoloCantidad.style.color = 'white';
+                btnSoloCantidad.setAttribute('data-selected', 'true');
+            }
+            if (checkSoloCantidad) checkSoloCantidad.style.display = 'block';
+            if (seccionSoloCantidad) seccionSoloCantidad.style.display = 'block';
+            if (tarjetaSoloCantidad) {
+                tarjetaSoloCantidad.style.display = 'block';
+                if (cantidadDisplay) cantidadDisplay.textContent = cantidadValue;
+            }
+            
+            console.log('[cargarPrendaEnFormularioModal]   ✓ Sección SOLO CANTIDAD activada para edición');
         }
     }
 }

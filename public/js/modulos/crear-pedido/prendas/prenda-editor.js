@@ -193,6 +193,88 @@ class PrendaEditor {
 
         console.log(' [🔄 Carga] Datos cargados en formulario');
         
+        // 🔴 NUEVO: Cargar sección de SOLO CANTIDAD si existe DIRECTAMENTE aquí
+        const tieneGenerico = prenda.generosConTallas && 
+                             Object.keys(prenda.generosConTallas).some(g => g.toUpperCase() === 'GENERICO');
+        const tieneGenericoEnCantidadTalla = prenda.cantidad_talla && 
+                                             prenda.cantidad_talla.GENERICO;
+        
+        if (tieneGenerico || tieneGenericoEnCantidadTalla) {
+            console.log('[PrendaEditor] 📦 DETECTADA PRENDA CON SOLO CANTIDAD');
+            
+            // Limpiar tarjetas de géneros
+            const containerGeneros = document.getElementById('tarjetas-generos-container');
+            if (containerGeneros) {
+                containerGeneros.innerHTML = '';
+            }
+            
+            // Remover tarjeta GENERICO si existe
+            const tarjetaGenerico = document.querySelector('[data-genero="GENERICO"]');
+            if (tarjetaGenerico) {
+                tarjetaGenerico.remove();
+            }
+            
+            // Resetear botones de géneros
+            const botonesGeneros = document.querySelectorAll('.btn-genero');
+            botonesGeneros.forEach(btn => {
+                btn.style.background = 'white';
+                btn.style.borderColor = '#d1d5db';
+                btn.style.color = '#374151';
+                btn.setAttribute('data-selected', 'false');
+                const check = btn.querySelector('.btn-genero-check');
+                if (check) check.style.display = 'none';
+            });
+            
+            // Obtener cantidad
+            let cantidadValue = 0;
+            if (prenda.cantidad_talla && prenda.cantidad_talla.GENERICO) {
+                const genericoObj = prenda.cantidad_talla.GENERICO;
+                cantidadValue = genericoObj.SIN_ESPECIFICAR || 
+                               genericoObj['sin_especificar'] ||
+                               Object.values(genericoObj)[0] || 0;
+            } else if (prenda.generosConTallas && prenda.generosConTallas.GENERICO) {
+                const genericoData = prenda.generosConTallas.GENERICO;
+                if (genericoData && typeof genericoData === 'object') {
+                    const tallasArray = genericoData.tallas || [];
+                    if (tallasArray.length > 0) {
+                        cantidadValue = tallasArray[0];
+                    }
+                }
+            }
+            
+            if (cantidadValue > 0) {
+                // Establecer cantidad en input
+                const cantidadInput = document.getElementById('cantidad-solo');
+                if (cantidadInput) {
+                    cantidadInput.value = cantidadValue;
+                }
+                
+                window.cantidadSoloSeleccionada = cantidadValue;
+                
+                // Mostrar sección
+                const btnSoloCantidad = document.getElementById('btn-genero-solo-cantidad');
+                const checkSoloCantidad = document.getElementById('check-solo-cantidad');
+                const seccionSoloCantidad = document.getElementById('seccion-solo-cantidad');
+                const tarjetaSoloCantidad = document.getElementById('tarjeta-solo-cantidad');
+                const cantidadDisplay = document.getElementById('cantidad-solo-display');
+                
+                if (btnSoloCantidad) {
+                    btnSoloCantidad.style.background = '#0066cc';
+                    btnSoloCantidad.style.borderColor = '#0066cc';
+                    btnSoloCantidad.style.color = 'white';
+                    btnSoloCantidad.setAttribute('data-selected', 'true');
+                }
+                if (checkSoloCantidad) checkSoloCantidad.style.display = 'block';
+                if (seccionSoloCantidad) seccionSoloCantidad.style.display = 'block';
+                if (tarjetaSoloCantidad) {
+                    tarjetaSoloCantidad.style.display = 'block';
+                    if (cantidadDisplay) cantidadDisplay.textContent = cantidadValue;
+                }
+                
+                console.log('[PrendaEditor] ✓ Sección SOLO CANTIDAD activada');
+            }
+        }
+        
         // 🔴 CRÍTICO: Configurar drag & drop para prenda y procesos en modo edición
         this._configurarDragDropEnEdicion();
     }

@@ -642,12 +642,20 @@ class ObtenerPedidoDetalleService
             ->get(['talla', 'cantidad'])
             ->toArray();
 
+        // 🔴 NUEVO: Obtener SOLO CANTIDAD (genero='GENERICO')
+        $tallasGenerico = DB::table('prenda_pedido_tallas')
+            ->where('prenda_pedido_id', $prenda->id)
+            ->where('genero', 'GENERICO')
+            ->get(['talla', 'cantidad'])
+            ->toArray();
+
         $prendaArray['tallas_dama'] = $tallasDama;
         $prendaArray['tallas_caballero'] = $tallasCaballero;
         $prendaArray['tallas_unisex'] = $tallasUnisex;
         $prendaArray['tallas_sobremedida'] = $tallasSobremedida;
+        $prendaArray['tallas_generico'] = $tallasGenerico;  // 🔴 NUEVO: Para detectar SOLO CANTIDAD
 
-        Log::info('👗 [TALLAS-TRANSFORMADAS] Dama: ' . count($tallasDama) . ', Caballero: ' . count($tallasCaballero) . ', Unisex: ' . count($tallasUnisex) . ', Sobremedida: ' . count($tallasSobremedida));
+        Log::info('👗 [TALLAS-TRANSFORMADAS] Dama: ' . count($tallasDama) . ', Caballero: ' . count($tallasCaballero) . ', Unisex: ' . count($tallasUnisex) . ', Sobremedida: ' . count($tallasSobremedida) . ', GENERICO: ' . count($tallasGenerico));
 
         // === Colores por talla (prenda_pedido_talla_colores) ===
         $tallaColores = DB::table('prenda_pedido_talla_colores as ptc')

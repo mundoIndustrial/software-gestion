@@ -277,6 +277,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                                                 $genero = ucfirst(strtolower($variante['genero'] ?? ''));
                                                                 $talla = $variante['talla'] ?? '';
                                                                 
+                                                                // 🔴 NUEVO: No procesar GENERICO
+                                                                if (strtoupper($genero) === 'GENERICO') {
+                                                                    continue; // Saltar este género
+                                                                }
+                                                                
                                                                 foreach ($variante['colores_detalle'] as $colorDetalle) {
                                                                     $color = $colorDetalle['color'] ?? '';
                                                                     $cantidad = $colorDetalle['cantidad'] ?? 0;
@@ -308,12 +313,20 @@ document.addEventListener('DOMContentLoaded', function() {
                                             
                                             {{-- CELDA DE GÉNERO: Solo en la primera fila del grupo --}}
                                             <td class="px-2 lg:px-4 py-3 text-center text-slate-600 text-xs" rowspan="{{ $rowSpan }}">
-                                                {{ $primeraFila->genero ?? '—' }}
+                                                @if($primeraFila && strtoupper($primeraFila->genero ?? '') === 'GENERICO')
+                                                    —
+                                                @else
+                                                    {{ $primeraFila->genero ?? '—' }}
+                                                @endif
                                             </td>
                                         @endif
                                         
                                         <td class="px-2 lg:px-4 py-3 text-center text-slate-600">
-                                            {{ $fila->talla }}
+                                            @if(($fila->talla ?? null) === 'SIN_ESPECIFICAR')
+                                                —
+                                            @else
+                                                {{ $fila->talla }}
+                                            @endif
                                         </td>
                                         
                                         <td class="px-2 lg:px-4 py-3 text-center font-medium text-slate-900">
@@ -820,15 +833,52 @@ function generarHTMLFactura(datos) {
         // Usar TALLAS primero que es donde están los datos correctos
         let variantesHTML = '';
         if (prenda.tallas && typeof prenda.tallas === 'object' && Object.keys(prenda.tallas).length > 0) {
+            // 🔴 Detectar si SOLO hay GENERICO (SOLO CANTIDAD)
+            const generosEnTallas = Object.keys(prenda.tallas);
+            const tieneGenerico = generosEnTallas.some(g => g && String(g).toUpperCase().trim() === 'GENERICO');
+            const soloGenerico = tieneGenerico && generosEnTallas.length === 1;
+            
+            if (soloGenerico) {
+                // Extraer cantidad de GENERICO
+                let cantidad = 0;
+                const genericoObj = prenda.tallas.GENERICO;
+                if (genericoObj && typeof genericoObj === 'object') {
+                    const valores = Object.values(genericoObj);
+                    if (valores.length > 0) {
+                        const primerValor = valores[0];
+                        if (typeof primerValor === 'number') {
+                            cantidad = primerValor;
+                        } else if (Array.isArray(primerValor) && primerValor.length > 0 && primerValor[0].cantidad) {
+                            cantidad = primerValor[0].cantidad;
+                        }
+                    }
+                }
+                
+                variantesHTML = `
+                    <div style="font-weight: 700; color: #2c3e50; margin-bottom: 6px; font-size: 11px;">Cantidad</div>
+                    <div style="font-weight: 600; color: #0369a1; font-size: 12px; background: #f0f9ff; padding: 4px 8px; border-radius: 3px; border-left: 3px solid #0ea5e9; display: inline-block;">
+                        ${cantidad}
+                    </div>
+                `;
+            } else {
             // Convertir objeto de géneros a array de tallas con género y colores
             let todasLasTallas = [];
             Object.keys(prenda.tallas).forEach(genero => {
+                // 🔴 Excluir GENERICO completamente
+                if (genero && String(genero).toUpperCase().trim() === 'GENERICO') {
+                    return; // Saltar GENERICO
+                }
                 if (typeof prenda.tallas[genero] === 'object') {
                     Object.entries(prenda.tallas[genero]).forEach(([talla, cantidad]) => {
+                        // Extraer cantidad si viene como array de objetos
+                        let cantidadReal = cantidad;
+                        if (Array.isArray(cantidad) && cantidad.length > 0 && cantidad[0].cantidad !== undefined) {
+                            cantidadReal = cantidad[0].cantidad;
+                        }
                         todasLasTallas.push({ 
                             genero: genero.toUpperCase(), 
                             talla, 
-                            cantidad,
+                            cantidad: cantidadReal,
                             colores: [] // Se llenará con los colores de prenda_pedido_talla_colores
                         });
                     });
@@ -909,8 +959,14 @@ function generarHTMLFactura(datos) {
                     `;
                 }
             }
+            } // cierre del else de soloGenerico
         } else if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
-            // Fallback por si vienen como variantes
+            // 🔴 Filtrar GENERICO de variantes
+            const variantesFiltradas = prenda.variantes.filter(v => 
+                !(v.genero && String(v.genero).toUpperCase().trim() === 'GENERICO')
+            );
+            
+            if (variantesFiltradas.length > 0) {
             variantesHTML = `
                 <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
                     <thead>
@@ -921,7 +977,7 @@ function generarHTMLFactura(datos) {
                         </tr>
                     </thead>
                     <tbody>
-                        ${prenda.variantes.map((var_item, varIdx) => `
+                        ${variantesFiltradas.map((var_item, varIdx) => `
                             <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
                                 <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${(var_item.genero || 'N/A').toUpperCase()}</td>
                                 <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${var_item.talla || 'N/A'}</td>
@@ -931,6 +987,16 @@ function generarHTMLFactura(datos) {
                     </tbody>
                 </table>
             `;
+            } else {
+                // Todas eran GENERICO - mostrar badge de cantidad
+                const genVar = prenda.variantes.find(v => v.genero && String(v.genero).toUpperCase().trim() === 'GENERICO');
+                variantesHTML = `
+                    <div style="font-weight: 700; color: #2c3e50; margin-bottom: 6px; font-size: 11px;">Cantidad</div>
+                    <div style="font-weight: 600; color: #0369a1; font-size: 12px; background: #f0f9ff; padding: 4px 8px; border-radius: 3px; border-left: 3px solid #0ea5e9; display: inline-block;">
+                        ${genVar ? genVar.cantidad : 0}
+                    </div>
+                `;
+            }
         }
 
         // Tela y color

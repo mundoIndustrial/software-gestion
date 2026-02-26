@@ -298,6 +298,21 @@ class PrendaFormCollector {
                 
                 console.log('[prenda-form-collector]  Tallas recuperadas de StateManager:', tallasParaGuardar);
             }
+            
+            // 🟢 NUEVO: Si hay "SOLO CANTIDAD", agregarlo al objeto de tallas con género especial
+            if (window.cantidadSoloSeleccionada && window.cantidadSoloSeleccionada > 0) {
+                console.log('[prenda-form-collector] ✅ "SOLO CANTIDAD" detectado:', window.cantidadSoloSeleccionada);
+                
+                // Inicializar el género especial si no existe
+                if (!tallasParaGuardar['GENERICO']) {
+                    tallasParaGuardar['GENERICO'] = {};
+                }
+                
+                // Agregar la cantidad con talla especial "SIN_ESPECIFICAR"
+                tallasParaGuardar['GENERICO']['SIN_ESPECIFICAR'] = window.cantidadSoloSeleccionada;
+                
+                console.log('[prenda-form-collector] Tallas actualizadas con SOLO CANTIDAD:', tallasParaGuardar);
+            }
 
             const prendaData = {
                 tipo: 'prenda_nueva',

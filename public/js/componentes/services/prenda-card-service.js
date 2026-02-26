@@ -348,58 +348,87 @@ window.PrendaCardService = {
 
         let generoHTML = '';
         
-        Object.keys(tallasByGeneroMap).forEach((genero, idx) => {
-            const tallasList = tallasByGeneroMap[genero] || [];
-            const cantidadesGen = cantidadesPorGenero[genero] || {};
+        // ── Detectar si SOLO hay GENERICO (SOLO CANTIDAD) ──
+        const tieneGenerico = Object.keys(tallasByGeneroMap).some(g => g.toUpperCase() === 'GENERICO');
+        const soloGenerico = tieneGenerico && Object.keys(tallasByGeneroMap).length === 1;
+        
+        // Si SOLO hay GENERICO, mostrar la cantidad de forma simple
+        if (soloGenerico) {
+            const cantidadKey = Object.keys(tallasByGeneroMap).find(g => g.toUpperCase() === 'GENERICO');
+            const cantidadSolo = cantidadesPorGenero[cantidadKey]?.['SIN_ESPECIFICAR'] || 
+                                 cantidadesPorGenero[cantidadKey]?.['sin_especificar'] ||
+                                 Object.values(cantidadesPorGenero[cantidadKey] || {})[0] || 0;
             
-            if (tallasList.length === 0) return;
-            
-            // Obtener asignaciones de colores
-            const asignacionesColores = prenda.asignacionesColoresPorTalla || {};
-            
-            const tallasConCantidad = tallasList.map(talla => {
-                const cantidad = cantidadesGen[talla] || 0;
-                
-                // Buscar colores asignados para esta talla-género
-                let coloresHTML = '';
-                const asignacion = this._buscarAsignacionColor(asignacionesColores, genero, talla);
-                if (asignacion && asignacion.colores && asignacion.colores.length > 0) {
-                    const coloresItems = asignacion.colores.map(c => {
-                        const nombre = c.nombre || c.color || 'Sin nombre';
-                        const cant = c.cantidad || 0;
-                        return `<div style="font-size: 0.65rem; color: #475569; padding: 0.15rem 0.4rem; background: rgba(255,255,255,0.8); border-radius: 3px; display: flex; align-items: center; gap: 0.25rem;">
-                            <span style="display: inline-block; width: 6px; height: 6px; background: #0ea5e9; border-radius: 50%;"></span>
-                            <span>${nombre}</span>
-                            <span style="color: #6b7280; font-weight: 600;">×${cant}</span>
-                        </div>`;
-                    }).join('');
-                    coloresHTML = `<div style="margin-top: 0.4rem; border-top: 1px solid rgba(203,213,225,0.4); padding-top: 0.3rem;">${coloresItems}</div>`;
-                }
-                
-                return `
-                    <div style="background: #dbeafe; padding: 0.5rem 0.75rem; border-radius: 6px; font-weight: 600; color: #0369a1; border: 1px solid #7dd3fc; min-width: 80px;">
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <i class="fas fa-ruler" style="font-size: 0.85rem;"></i>
-                            ${talla}
-                            <span style="background: #0369a1; color: white; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-weight: 700;">${cantidad}</span>
+            generoHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; padding: 1rem; background: #f0f9ff; border-radius: 8px; border: 2px solid #0ea5e9;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 0.8rem; color: #475569; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 0.5rem;">
+                            Cantidad
                         </div>
-                        ${coloresHTML}
-                    </div>
-                `;
-            }).join('');
-            
-            generoHTML += `
-                <div style="margin-bottom: 1rem;">
-                    <div style="font-weight: 700; color: #1e293b; margin-bottom: 0.75rem; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 0.5rem;">
-                        <i class="fas fa-users" style="color: #0ea5e9; font-size: 0.9rem;"></i>
-                        ${genero}
-                    </div>
-                    <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
-                        ${tallasConCantidad}
+                        <div style="font-size: 2.5rem; font-weight: 700; color: #0369a1; line-height: 1;">
+                            ${cantidadSolo}
+                        </div>
                     </div>
                 </div>
             `;
-        });
+        } else {
+            // Flujo normal: iterar sobre géneros pero saltar GENERICO
+            Object.keys(tallasByGeneroMap).forEach((genero, idx) => {
+                // 🔴 NUEVO: NO RENDERIZAR GÉNERO "GENERICO" (SOLO CANTIDAD)
+                if (genero.toUpperCase() === 'GENERICO') return;
+                
+                const tallasList = tallasByGeneroMap[genero] || [];
+                const cantidadesGen = cantidadesPorGenero[genero] || {};
+                
+                if (tallasList.length === 0) return;
+                
+                // Obtener asignaciones de colores
+                const asignacionesColores = prenda.asignacionesColoresPorTalla || {};
+                
+                const tallasConCantidad = tallasList.map(talla => {
+                    const cantidad = cantidadesGen[talla] || 0;
+                    
+                    // Buscar colores asignados para esta talla-género
+                    let coloresHTML = '';
+                    const asignacion = this._buscarAsignacionColor(asignacionesColores, genero, talla);
+                    if (asignacion && asignacion.colores && asignacion.colores.length > 0) {
+                        const coloresItems = asignacion.colores.map(c => {
+                            const nombre = c.nombre || c.color || 'Sin nombre';
+                            const cant = c.cantidad || 0;
+                            return `<div style="font-size: 0.65rem; color: #475569; padding: 0.15rem 0.4rem; background: rgba(255,255,255,0.8); border-radius: 3px; display: flex; align-items: center; gap: 0.25rem;">
+                                <span style="display: inline-block; width: 6px; height: 6px; background: #0ea5e9; border-radius: 50%;"></span>
+                                <span>${nombre}</span>
+                                <span style="color: #6b7280; font-weight: 600;">×${cant}</span>
+                            </div>`;
+                        }).join('');
+                        coloresHTML = `<div style="margin-top: 0.4rem; border-top: 1px solid rgba(203,213,225,0.4); padding-top: 0.3rem;">${coloresItems}</div>`;
+                    }
+                    
+                    return `
+                        <div style="background: #dbeafe; padding: 0.5rem 0.75rem; border-radius: 6px; font-weight: 600; color: #0369a1; border: 1px solid #7dd3fc; min-width: 80px;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="fas fa-ruler" style="font-size: 0.85rem;"></i>
+                                ${talla}
+                                <span style="background: #0369a1; color: white; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-weight: 700;">${cantidad}</span>
+                            </div>
+                            ${coloresHTML}
+                        </div>
+                    `;
+                }).join('');
+                
+                generoHTML += `
+                    <div style="margin-bottom: 1rem;">
+                        <div style="font-weight: 700; color: #1e293b; margin-bottom: 0.75rem; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-users" style="color: #0ea5e9; font-size: 0.9rem;"></i>
+                            ${genero}
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+                            ${tallasConCantidad}
+                        </div>
+                    </div>
+                `;
+            });
+        }
         
         return `
             <div class="seccion-expandible tallas-y-cantidades-section">
@@ -570,54 +599,83 @@ window.PrendaCardService = {
             `;
         }
 
-        // ── Construir HTML de tallas por género con colores ──
+        // ── Detectar si SOLO hay GENERICO (SOLO CANTIDAD) ──
+        const tieneGenerico = Object.keys(tallasByGeneroMap).some(g => g.toUpperCase() === 'GENERICO');
+        const soloGenerico = tieneGenerico && Object.keys(tallasByGeneroMap).length === 1;
+        
         let generoHTML = '';
-        Object.keys(tallasByGeneroMap).forEach(genero => {
-            const tallasList = tallasByGeneroMap[genero] || [];
-            const cantidadesGen = cantidadesPorGenero[genero] || {};
-            if (tallasList.length === 0) return;
-
-            const tallasConCantidad = tallasList.map(talla => {
-                const cantidad = cantidadesGen[talla] || 0;
-                let coloresHTML = '';
-                const asignacion = this._buscarAsignacionColor(asignacionesColores, genero, talla);
-                if (asignacion && asignacion.colores && asignacion.colores.length > 0) {
-                    const coloresItems = asignacion.colores.map(c => {
-                        const nombre = c.nombre || c.color || 'Sin nombre';
-                        const cant = c.cantidad || 0;
-                        return `<div style="font-size: 0.65rem; color: #475569; padding: 0.15rem 0.4rem; background: rgba(255,255,255,0.8); border-radius: 3px; display: flex; align-items: center; gap: 0.25rem;">
-                            <span style="display: inline-block; width: 6px; height: 6px; background: #0ea5e9; border-radius: 50%;"></span>
-                            <span>${nombre}</span>
-                            <span style="color: #6b7280; font-weight: 600;">×${cant}</span>
-                        </div>`;
-                    }).join('');
-                    coloresHTML = `<div style="margin-top: 0.4rem; border-top: 1px solid rgba(203,213,225,0.4); padding-top: 0.3rem;">${coloresItems}</div>`;
-                }
-
-                return `
-                    <div style="background: #dbeafe; padding: 0.5rem 0.75rem; border-radius: 6px; font-weight: 600; color: #0369a1; border: 1px solid #7dd3fc; min-width: 80px;">
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <i class="fas fa-ruler" style="font-size: 0.85rem;"></i>
-                            ${talla}
-                            <span style="background: #0369a1; color: white; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-weight: 700;">${cantidad}</span>
+        
+        // Si SOLO hay GENERICO, mostrar la cantidad de forma simple
+        if (soloGenerico) {
+            const cantidadKey = Object.keys(tallasByGeneroMap).find(g => g.toUpperCase() === 'GENERICO');
+            const cantidadSolo = cantidadesPorGenero[cantidadKey]?.['SIN_ESPECIFICAR'] || 
+                                 cantidadesPorGenero[cantidadKey]?.['sin_especificar'] ||
+                                 Object.values(cantidadesPorGenero[cantidadKey] || {})[0] || 0;
+            
+            generoHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; padding: 1rem; background: #f0f9ff; border-radius: 8px; border: 2px solid #0ea5e9;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 0.8rem; color: #475569; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 0.5rem;">
+                            Cantidad
                         </div>
-                        ${coloresHTML}
-                    </div>
-                `;
-            }).join('');
-
-            generoHTML += `
-                <div style="margin-bottom: 0.75rem;">
-                    <div style="font-weight: 700; color: #1e293b; margin-bottom: 0.5rem; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 0.5rem;">
-                        <i class="fas fa-users" style="color: #0ea5e9; font-size: 0.9rem;"></i>
-                        ${genero}
-                    </div>
-                    <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
-                        ${tallasConCantidad}
+                        <div style="font-size: 2.5rem; font-weight: 700; color: #0369a1; line-height: 1;">
+                            ${cantidadSolo}
+                        </div>
                     </div>
                 </div>
             `;
-        });
+        } else {
+            // Flujo normal: iterar sobre géneros pero saltar GENERICO
+            Object.keys(tallasByGeneroMap).forEach(genero => {
+                // 🔴 NUEVO: NO RENDERIZAR GÉNERO "GENERICO" (SOLO CANTIDAD)
+                if (genero.toUpperCase() === 'GENERICO') return;
+                
+                const tallasList = tallasByGeneroMap[genero] || [];
+                const cantidadesGen = cantidadesPorGenero[genero] || {};
+                if (tallasList.length === 0) return;
+
+                const tallasConCantidad = tallasList.map(talla => {
+                    const cantidad = cantidadesGen[talla] || 0;
+                    let coloresHTML = '';
+                    const asignacion = this._buscarAsignacionColor(asignacionesColores, genero, talla);
+                    if (asignacion && asignacion.colores && asignacion.colores.length > 0) {
+                        const coloresItems = asignacion.colores.map(c => {
+                            const nombre = c.nombre || c.color || 'Sin nombre';
+                            const cant = c.cantidad || 0;
+                            return `<div style="font-size: 0.65rem; color: #475569; padding: 0.15rem 0.4rem; background: rgba(255,255,255,0.8); border-radius: 3px; display: flex; align-items: center; gap: 0.25rem;">
+                                <span style="display: inline-block; width: 6px; height: 6px; background: #0ea5e9; border-radius: 50%;"></span>
+                                <span>${nombre}</span>
+                                <span style="color: #6b7280; font-weight: 600;">×${cant}</span>
+                            </div>`;
+                        }).join('');
+                        coloresHTML = `<div style="margin-top: 0.4rem; border-top: 1px solid rgba(203,213,225,0.4); padding-top: 0.3rem;">${coloresItems}</div>`;
+                    }
+
+                    return `
+                        <div style="background: #dbeafe; padding: 0.5rem 0.75rem; border-radius: 6px; font-weight: 600; color: #0369a1; border: 1px solid #7dd3fc; min-width: 80px;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="fas fa-ruler" style="font-size: 0.85rem;"></i>
+                                ${talla}
+                                <span style="background: #0369a1; color: white; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-weight: 700;">${cantidad}</span>
+                            </div>
+                            ${coloresHTML}
+                        </div>
+                    `;
+                }).join('');
+
+                generoHTML += `
+                    <div style="margin-bottom: 0.75rem;">
+                        <div style="font-weight: 700; color: #1e293b; margin-bottom: 0.5rem; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-users" style="color: #0ea5e9; font-size: 0.9rem;"></i>
+                            ${genero}
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+                            ${tallasConCantidad}
+                        </div>
+                    </div>
+                `;
+            });
+        }
 
         // ── Sección expandible combinada ──
         return `

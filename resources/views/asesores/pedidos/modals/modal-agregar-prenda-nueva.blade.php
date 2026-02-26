@@ -188,10 +188,52 @@
                                 </div>
                                 <span id="check-sobremedida" class="btn-genero-check">✓</span>
                             </button>
+                            
+                            <!-- Botón SOLO CANTIDAD -->
+                            <button type="button" id="btn-genero-solo-cantidad" class="btn-genero" data-selected="false" onclick="abrirOpcionalSoloCantidad()">
+                                <div class="btn-genero-content">
+                                    <span class="material-symbols-rounded">shopping_cart</span>
+                                    <span>SOLO CANTIDAD</span>
+                                </div>
+                                <span id="check-solo-cantidad" class="btn-genero-check">✓</span>
+                            </button>
                         </div>
                         
                         <!-- Tarjetas de Géneros Seleccionados -->
                         <div id="tarjetas-generos-container" class="generos-container"></div>
+                        
+                        <!-- SECCIÓN SOLO CANTIDAD (Oculta por defecto) -->
+                        <div id="seccion-solo-cantidad" style="display: none; margin-top: 1.5rem; padding: 1rem; background: #f0f7ff; border: 2px solid #0066cc; border-radius: 8px;">
+                            <label class="form-label-primary" style="margin-bottom: 1rem;">
+                                <span class="material-symbols-rounded">shopping_cart</span>CANTIDAD SIN ESPECÍFICAR TALLA *
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div style="flex: 1;">
+                                    <label for="cantidad-solo" class="sr-only">Cantidad</label>
+                                    <input type="number" id="cantidad-solo" placeholder="Ingresa la cantidad total..." min="1" class="form-input" style="font-size: 1rem; padding: 0.75rem;">
+                                </div>
+                                <button type="button" id="btn-agregar-solo-cantidad" class="btn btn-primary" style="white-space: nowrap; padding: 0.75rem 1.5rem;" onclick="agregarSoloCantidad()">
+                                    <span class="material-symbols-rounded" style="vertical-align: middle;">add</span>
+                                    Agregar
+                                </button>
+                                <button type="button" id="btn-cancelar-solo-cantidad" class="btn btn-outline-secondary" style="white-space: nowrap; padding: 0.75rem 1.5rem;" onclick="cancelarSoloCantidad()">
+                                    <span class="material-symbols-rounded" style="vertical-align: middle;">close</span>
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Tarjeta de SOLO CANTIDAD (Si está activada) -->
+                        <div id="tarjeta-solo-cantidad" style="display: none; margin-top: 1rem; padding: 1rem; background: whitesmoke; border: 2px solid #0066cc; border-radius: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <p style="margin: 0; font-weight: 600; color: #0066cc;">CANTIDAD TOTAL: <span id="cantidad-solo-display" style="font-size: 1.2rem;">0</span> unidades</p>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-danger" onclick="eliminarSoloCantidad()" title="Eliminar">
+                                    <span class="material-symbols-rounded">delete</span>
+                                </button>
+                            </div>
+                        </div>
                         
                         <!-- Total general -->
                         <div class="total-box">
@@ -511,17 +553,170 @@ if (window.actualizarTablaTelas) {
         }, 50);
     };
 }
-</script>
 
-<script>
-// Funciones para drag & drop de imágenes de tela
-function handleDragOver(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    event.currentTarget.style.borderColor = '#3b82f6';
-    event.currentTarget.style.backgroundColor = '#eff6ff';
-}
+// ========== FUNCIONES PARA "SOLO CANTIDAD" ==========
+/**
+ * Variable global para almacenar la cantidad cuando se selecciona "SOLO CANTIDAD"
+ */
+window.cantidadSoloSeleccionada = null;
 
+/**
+ * Abre el campo de entrada para ingresar solo cantidad
+ */
+window.abrirOpcionalSoloCantidad = function() {
+    const btnSoloCantidad = document.getElementById('btn-genero-solo-cantidad');
+    const checkSoloCantidad = document.getElementById('check-solo-cantidad');
+    const seccionSoloCantidad = document.getElementById('seccion-solo-cantidad');
+    const tarjetaSoloCantidad = document.getElementById('tarjeta-solo-cantidad');
+    
+    // Verificar si ya está seleccionado
+    const estáSeleccionado = btnSoloCantidad.getAttribute('data-selected') === 'true';
+    
+    if (estáSeleccionado) {
+        // DESELECCIONAR
+        btnSoloCantidad.style.background = 'white';
+        btnSoloCantidad.style.borderColor = '#d1d5db';
+        btnSoloCantidad.style.color = '#374151';
+        btnSoloCantidad.setAttribute('data-selected', 'false');
+        checkSoloCantidad.style.display = 'none';
+        seccionSoloCantidad.style.display = 'none';
+        
+        // Limpiar la tarjeta si existe
+        eliminarSoloCantidad();
+    } else {
+        // SELECCIONAR
+        btnSoloCantidad.style.background = '#e0f2fe';
+        btnSoloCantidad.style.borderColor = '#0369a1';
+        btnSoloCantidad.style.color = '#0369a1';
+        btnSoloCantidad.setAttribute('data-selected', 'true');
+        checkSoloCantidad.style.display = 'inline-block';
+        seccionSoloCantidad.style.display = 'block';
+        
+        // Desseleccionar otros géneros
+        ['dama', 'caballero', 'sobremedida'].forEach(genero => {
+            const btn = document.getElementById(`btn-genero-${genero}`);
+            const check = document.getElementById(`check-${genero}`);
+            if (btn) {
+                btn.style.background = 'white';
+                btn.style.borderColor = '#d1d5db';
+                btn.style.color = '#374151';
+                btn.setAttribute('data-selected', 'false');
+                check.style.display = 'none';
+            }
+        });
+        
+        // Limpiar cualquier tarjeta de género anterior
+        const tarjetasGeneros = document.getElementById('tarjetas-generos-container');
+        if (tarjetasGeneros) {
+            tarjetasGeneros.innerHTML = '';
+        }
+        
+        // Enfocar en el campo de cantidad
+        setTimeout(() => {
+            document.getElementById('cantidad-solo').focus();
+        }, 100);
+    }
+};
+
+/**
+ * Agrega la cantidad ingresada
+ */
+window.agregarSoloCantidad = function() {
+    const cantidadInput = document.getElementById('cantidad-solo');
+    const cantidad = parseInt(cantidadInput.value, 10);
+    
+    // Validar
+    if (isNaN(cantidad) || cantidad <= 0) {
+        alert('Por favor ingresa una cantidad válida');
+        cantidadInput.focus();
+        return;
+    }
+    
+    // Guardar en variable global
+    window.cantidadSoloSeleccionada = cantidad;
+    
+    // Actualizar display
+    document.getElementById('cantidad-solo-display').textContent = cantidad;
+    
+    // Mostrar tarjeta
+    const tarjeta = document.getElementById('tarjeta-solo-cantidad');
+    tarjeta.style.display = 'block';
+    
+    // Ocultar formulario de entrada
+    document.getElementById('seccion-solo-cantidad').style.display = 'none';
+    
+    // Actualizar total
+    actualizarTotalPrendas();
+    
+    console.log('[SOLO CANTIDAD] Cantidad agregada:', cantidad);
+};
+
+/**
+ * Cancela la entrada de "SOLO CANTIDAD"
+ */
+window.cancelarSoloCantidad = function() {
+    document.getElementById('cantidad-solo').value = '';
+    document.getElementById('seccion-solo-cantidad').style.display = 'none';
+    
+    const btnSoloCantidad = document.getElementById('btn-genero-solo-cantidad');
+    btnSoloCantidad.style.background = 'white';
+    btnSoloCantidad.style.borderColor = '#d1d5db';
+    btnSoloCantidad.style.color = '#374151';
+    btnSoloCantidad.setAttribute('data-selected', 'false');
+    
+    document.getElementById('check-solo-cantidad').style.display = 'none';
+};
+
+/**
+ * Elimina la cantidad seleccionada
+ */
+window.eliminarSoloCantidad = function() {
+    window.cantidadSoloSeleccionada = null;
+    document.getElementById('cantidad-solo').value = '';
+    document.getElementById('tarjeta-solo-cantidad').style.display = 'none';
+    document.getElementById('seccion-solo-cantidad').style.display = 'none';
+    
+    const btnSoloCantidad = document.getElementById('btn-genero-solo-cantidad');
+    btnSoloCantidad.style.background = 'white';
+    btnSoloCantidad.style.borderColor = '#d1d5db';
+    btnSoloCantidad.style.color = '#374151';
+    btnSoloCantidad.setAttribute('data-selected', 'false');
+    
+    document.getElementById('check-solo-cantidad').style.display = 'none';
+    
+    actualizarTotalPrendas();
+};
+
+/**
+ * Actualiza el total de prendas (incluyendo la cantidad "SOLO CANTIDAD")
+ */
+window.actualizarTotalPrendasOriginal = window.actualizarTotalPrendas || function() {};
+
+window.actualizarTotalPrendas = function() {
+    let totalPrendas = 0;
+    
+    // Sumar cantidades de tallas por género
+    if (window.tallasRelacionales) {
+        Object.values(window.tallasRelacionales).forEach(genero => {
+            Object.values(genero).forEach(cantidad => {
+                totalPrendas += parseInt(cantidad) || 0;
+            });
+        });
+    }
+    
+    // Sumar cantidad "SOLO CANTIDAD"
+    if (window.cantidadSoloSeleccionada) {
+        totalPrendas += window.cantidadSoloSeleccionada;
+    }
+    
+    // Actualizar display
+    const totalSpan = document.getElementById('total-prendas');
+    if (totalSpan) {
+        totalSpan.textContent = totalPrendas;
+    }
+    
+    console.log('[Total Prendas] Total actualizado:', totalPrendas);
+};
 function handleDragLeave(event) {
     event.preventDefault();
     event.stopPropagation();

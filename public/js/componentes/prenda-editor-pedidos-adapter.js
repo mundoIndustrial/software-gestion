@@ -881,6 +881,12 @@
                 // Guardar prenda completa como referencia global
                 window.prendaActual = prendaCompleta;
                 await editor.cargarPrendaEnModal(prendaCompleta, prendaIndex);
+                
+                // 🔴 NUEVO: Cargar SOLO CANTIDAD si existe
+                if (typeof window.cargarPrendaEnFormularioModal === 'function') {
+                    console.log('[PedidosAdapter] 📦 Llamando cargarPrendaEnFormularioModal para detectar SOLO CANTIDAD...');
+                    window.cargarPrendaEnFormularioModal(prendaCompleta);
+                }
             } else {
                 console.error('[PedidosAdapter] prendaEditorGlobal no disponible, abriendo modal manualmente');
                 _abrirModalManual(prendaCompleta);
@@ -932,11 +938,12 @@
     function _normalizarDatosBD(prenda) {
         if (!prenda) return prenda;
 
-        // ---- 1. TALLAS: tallas_dama/tallas_caballero/tallas_unisex/tallas_sobremedida → cantidad_talla ----
+        // ---- 1. TALLAS: tallas_dama/tallas_caballero/tallas_unisex/tallas_sobremedida/tallas_generico → cantidad_talla ----
         if ((prenda.tallas_dama && prenda.tallas_dama.length > 0) || 
             (prenda.tallas_caballero && prenda.tallas_caballero.length > 0) ||
             (prenda.tallas_unisex && prenda.tallas_unisex.length > 0) ||
-            (prenda.tallas_sobremedida && prenda.tallas_sobremedida.length > 0)) {
+            (prenda.tallas_sobremedida && prenda.tallas_sobremedida.length > 0) ||
+            (prenda.tallas_generico && prenda.tallas_generico.length > 0)) {
             
             const cantidadTalla = {};
 
@@ -945,7 +952,8 @@
                 tallas_dama: 'DAMA',
                 tallas_caballero: 'CABALLERO',
                 tallas_unisex: 'UNISEX',
-                tallas_sobremedida: 'SOBREMEDIDA'
+                tallas_sobremedida: 'SOBREMEDIDA',
+                tallas_generico: 'GENERICO'  // 🔴 NUEVO: Para SOLO CANTIDAD
             };
 
             Object.entries(generosMap).forEach(([prop, genero]) => {
@@ -960,6 +968,31 @@
             prenda.cantidad_talla = cantidadTalla;
             prenda.tallasRelacionales = cantidadTalla;
             console.log('[PedidosAdapter] 📏 Tallas normalizadas:', cantidadTalla);
+        }
+        // ---- 1a. SOLO CANTIDAD: Si cantidad_talla viene como objeto desde BD (sin tallas_dama/caballero/etc) ----
+        else if (prenda.cantidad_talla && typeof prenda.cantidad_talla === 'object' && !Array.isArray(prenda.cantidad_talla)) {
+            console.log('[PedidosAdapter] 📏 cantidad_talla ya normalizada (SOLO CANTIDAD desde BD):', prenda.cantidad_talla);
+            // La BD ya tiene la estructura correcta {GENERICO: {SIN_ESPECIFICAR: qty}}
+            // No hacer nada, preservarla tal como está
+        }
+        // Fallback: Si cantidad_talla llega como array vacío, inicializar como objeto vacío
+        else if (Array.isArray(prenda.cantidad_talla) && prenda.cantidad_talla.length === 0) {
+            prenda.cantidad_talla = {};
+        }
+        // Si cantidad_talla no existe, inicializar
+        else if (!prenda.cantidad_talla) {
+            prenda.cantidad_talla = {};
+        }
+        
+        // ---- 1a2. Construir generosConTallas para que cargarPrendaEnFormularioModal pueda detectar SOLO CANTIDAD ----
+        if (!prenda.generosConTallas && prenda.cantidad_talla && typeof prenda.cantidad_talla === 'object') {
+            prenda.generosConTallas = {};
+            Object.keys(prenda.cantidad_talla).forEach(genero => {
+                prenda.generosConTallas[genero] = {
+                    tallas: Object.values(prenda.cantidad_talla[genero] || {}) 
+                };
+            });
+            console.log('[PedidosAdapter] 📏 generosConTallas construido para detección SOLO CANTIDAD:', Object.keys(prenda.generosConTallas));
         }
 
         // ---- 1b. COLORES POR TALLA (prenda_pedido_talla_colores) → asignaciones ----

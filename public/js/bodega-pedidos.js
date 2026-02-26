@@ -934,118 +934,197 @@ function generarHTMLFactura(datos) {
     const prendasHTML = datos.prendas.map((prenda, idx) => {
         // Usar TALLAS primero que es donde están los datos correctos
         let variantesHTML = '';
+        console.log(`📦 [BODEGA-FACTURA] Procesando prenda ${idx}:`, { 
+            nombre: prenda.descripcion,
+            tallas: prenda.tallas,
+            cantidad_talla: prenda.cantidad_talla,
+            variantes: prenda.variantes 
+        });
+        
         if (prenda.tallas && typeof prenda.tallas === 'object' && Object.keys(prenda.tallas).length > 0) {
-            // Convertir objeto de géneros a array de tallas con género y colores
-            let todasLasTallas = [];
-            Object.keys(prenda.tallas).forEach(genero => {
-                if (typeof prenda.tallas[genero] === 'object') {
-                    Object.entries(prenda.tallas[genero]).forEach(([talla, cantidad]) => {
-                        todasLasTallas.push({ 
-                            genero: genero.toUpperCase(), 
-                            talla, 
-                            cantidad,
-                            colores: [] // Se llenará con los colores de prenda_pedido_talla_colores
-                        });
-                    });
-                }
-            });
+            // 🔴 NUEVO: Detectar si SOLO hay GENERICO (SOLO CANTIDAD)
+            const generosEnTallas = Object.keys(prenda.tallas);
+            console.log(`📦 [BODEGA-FACTURA] Géneros en tallas para prenda ${idx}:`, generosEnTallas);
             
-            // Buscar colores por talla desde prenda_pedido_talla_colores
-            if (prenda.talla_colores && Array.isArray(prenda.talla_colores)) {
-                todasLasTallas.forEach(tallaItem => {
-                    const coloresEnTalla = prenda.talla_colores.filter(tc => 
-                        tc.genero && tc.genero.toLowerCase() === tallaItem.genero.toLowerCase() && 
-                        tc.talla === tallaItem.talla
-                    );
+            const tieneGenerico = generosEnTallas.some(g => g && String(g).toUpperCase().trim() === 'GENERICO');
+            const soloGenerico = tieneGenerico && generosEnTallas.length === 1;
+            
+            console.log(`📦 [BODEGA-FACTURA] tieneGenerico=${tieneGenerico}, soloGenerico=${soloGenerico}, generosEnTallas.length=${generosEnTallas.length}`);
+            
+            if (soloGenerico) {
+                // Extraer cantidad de GENERICO
+                let cantidad = 0;
+                const generericoObj = prenda.tallas.GENERICO;
+                if (generericoObj && typeof generericoObj === 'object') {
+                    const valores = Object.values(generericoObj);
+                    if (valores.length > 0) {
+                        const primerValor = valores[0];
+                        // Si es número, usarlo directo
+                        if (typeof primerValor === 'number') {
+                            cantidad = primerValor;
+                        }
+                        // Si es array, extraer cantidad
+                        else if (Array.isArray(primerValor) && primerValor.length > 0 && primerValor[0].cantidad) {
+                            cantidad = primerValor[0].cantidad;
+                        }
+                    }
+                }
+                
+                variantesHTML = `
+                    <div style="font-weight: 700; color: #2c3e50; margin-bottom: 6px; font-size: 11px;"> Cantidad</div>
+                    <div style="font-weight: 600; color: #0369a1; font-size: 12px; background: #f0f9ff; padding: 4px 8px; border-radius: 3px; border-left: 3px solid #0ea5e9; display: inline-block;">
+                        ${cantidad}
+                    </div>
+                `;
+            } else {
+                // PROCESAMIENTO NORMAL: Hay tallas con géneros específicos
+                // Convertir objeto de géneros a array de tallas con género y colores
+                let todasLasTallas = [];
+                Object.keys(prenda.tallas).forEach(genero => {
+                    // 🔴 NUEVO: Excluir GENERICO completamente
+                    if (genero && String(genero).toUpperCase().trim() === 'GENERICO') {
+                        return; // Saltar GENERICO
+                    }
                     
-                    if (coloresEnTalla.length > 0) {
-                        tallaItem.colores = coloresEnTalla.map(c => ({
-                            color: c.color_nombre || c.color || 'Sin color',
-                            cantidad: c.cantidad || 1
-                        }));
+                    if (typeof prenda.tallas[genero] === 'object') {
+                        Object.entries(prenda.tallas[genero]).forEach(([talla, cantidad]) => {
+                            todasLasTallas.push({ 
+                                genero: genero.toUpperCase(), 
+                                talla, 
+                                cantidad,
+                                colores: [] // Se llenará con los colores de prenda_pedido_talla_colores
+                            });
+                        });
                     }
                 });
-            }
-            
-            if (todasLasTallas.length > 0) {
-                // Verificar si hay colores para decidir qué tabla mostrar
-                const tieneColores = todasLasTallas.some(t => t.colores && t.colores.length > 0);
                 
-                if (tieneColores) {
-                    // Tabla con colores
-                    variantesHTML = `
-                        <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
-                            <thead>
-                                <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
-                                    <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Género</th>
-                                    <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
-                                    <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
-                                    <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Color</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${todasLasTallas.map((talla_item, varIdx) => `
-                                    <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
-                                        <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.genero || 'N/A'}</td>
-                                        <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.talla || 'N/A'}</td>
-                                        <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${talla_item.cantidad || 0}</td>
-                                        <td style="padding: 6px 8px; color: #374151;">
-                                            ${talla_item.colores && talla_item.colores.length > 0 
-                                                ? talla_item.colores.map(c => `${c.color}(${c.cantidad})`).join(', ')
-                                                : 'Sin color'
-                                            }
-                                        </td>
+                // Buscar colores por talla desde prenda_pedido_talla_colores
+                if (prenda.talla_colores && Array.isArray(prenda.talla_colores)) {
+                    todasLasTallas.forEach(tallaItem => {
+                        const coloresEnTalla = prenda.talla_colores.filter(tc => 
+                            tc.genero && tc.genero.toLowerCase() === tallaItem.genero.toLowerCase() && 
+                            tc.talla === tallaItem.talla
+                        );
+                        
+                        if (coloresEnTalla.length > 0) {
+                            tallaItem.colores = coloresEnTalla.map(c => ({
+                                color: c.color_nombre || c.color || 'Sin color',
+                                cantidad: c.cantidad || 1
+                            }));
+                        }
+                    });
+                }
+                
+                if (todasLasTallas.length > 0) {
+                    // Verificar si hay colores para decidir qué tabla mostrar
+                    const tieneColores = todasLasTallas.some(t => t.colores && t.colores.length > 0);
+                    
+                    if (tieneColores) {
+                        // Tabla con colores
+                        variantesHTML = `
+                            <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                                        <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Género</th>
+                                        <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
+                                        <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
+                                        <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Color</th>
                                     </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    `;
+                                </thead>
+                                <tbody>
+                                    ${todasLasTallas.map((talla_item, varIdx) => `
+                                        <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
+                                            <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.genero || 'N/A'}</td>
+                                            <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.talla || 'N/A'}</td>
+                                            <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${talla_item.cantidad || 0}</td>
+                                            <td style="padding: 6px 8px; color: #374151;">
+                                                ${talla_item.colores && talla_item.colores.length > 0 
+                                                    ? talla_item.colores.map(c => `${c.color}(${c.cantidad})`).join(', ')
+                                                    : 'Sin color'
+                                                }
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        `;
+                    } else {
+                        // Tabla normal sin colores
+                        variantesHTML = `
+                            <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                                        <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Género</th>
+                                        <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
+                                        <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${todasLasTallas.map((talla_item, varIdx) => `
+                                        <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
+                                            <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.genero || 'N/A'}</td>
+                                            <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.talla || 'N/A'}</td>
+                                            <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${talla_item.cantidad || 0}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        `;
+                    }
                 } else {
-                    // Tabla normal sin colores
+                    // 🔴 NUEVO: Si todasLasTallas está vacío (porque filtramos GENERICO), mostrar badge de cantidad
+                    // Esto es SOLO CANTIDAD disfrazado
+                    let cantidadSOLO = 0;
+                    const generericoObj = prenda.tallas.GENERICO;
+                    if (generericoObj && typeof generericoObj === 'object') {
+                        const valores = Object.values(generericoObj);
+                        if (valores.length > 0) {
+                            const primerValor = valores[0];
+                            if (typeof primerValor === 'number') {
+                                cantidadSOLO = primerValor;
+                            } else if (Array.isArray(primerValor) && primerValor.length > 0 && primerValor[0].cantidad) {
+                                cantidadSOLO = primerValor[0].cantidad;
+                            }
+                        }
+                    }
+                    
                     variantesHTML = `
-                        <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
-                            <thead>
-                                <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
-                                    <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Género</th>
-                                    <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
-                                    <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${todasLasTallas.map((talla_item, varIdx) => `
-                                    <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
-                                        <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.genero || 'N/A'}</td>
-                                        <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.talla || 'N/A'}</td>
-                                        <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${talla_item.cantidad || 0}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
+                        <div style="font-weight: 700; color: #2c3e50; margin-bottom: 6px; font-size: 11px;"> Cantidad</div>
+                        <div style="font-weight: 600; color: #0369a1; font-size: 12px; background: #f0f9ff; padding: 4px 8px; border-radius: 3px; border-left: 3px solid #0ea5e9; display: inline-block;">
+                            ${cantidadSOLO}
+                        </div>
                     `;
                 }
             }
         } else if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
-            // Fallback por si vienen como variantes
-            variantesHTML = `
-                <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
-                    <thead>
-                        <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
-                            <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Género</th>
-                            <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
-                            <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${prenda.variantes.map((var_item, varIdx) => `
-                            <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
-                                <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${(var_item.genero || 'N/A').toUpperCase()}</td>
-                                <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${var_item.talla || 'N/A'}</td>
-                                <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${var_item.cantidad || 0}</td>
+            // 🔴 NUEVO: Filtrar GENERICO de variantes también
+            const variantesFiltradas = prenda.variantes.filter(v => {
+                return !v.genero || String(v.genero).toUpperCase().trim() !== 'GENERICO';
+            });
+            
+            if (variantesFiltradas.length > 0) {
+                // Fallback por si vienen como variantes
+                variantesHTML = `
+                    <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                                <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Género</th>
+                                <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
+                                <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
                             </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
+                        </thead>
+                        <tbody>
+                            ${variantesFiltradas.map((var_item, varIdx) => `
+                                <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
+                                    <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${(var_item.genero || 'N/A').toUpperCase()}</td>
+                                    <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${var_item.talla || 'N/A'}</td>
+                                    <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${var_item.cantidad || 0}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
         }
 
         // Tela y color
@@ -1228,11 +1307,52 @@ function generarHTMLFactura(datos) {
         </div>
     ` : '';
 
-    // Totales
+    // Totales - Calcular suma correcta de todas las prendas y EPPs
+    let totalItems = 0;
+    
+    // Sumar prendas
+    if (datos.prendas && Array.isArray(datos.prendas)) {
+        datos.prendas.forEach(prenda => {
+            if (prenda.tallas && typeof prenda.tallas === 'object') {
+                // Sumar todas las cantidades de todas las tallas
+                Object.entries(prenda.tallas).forEach(([genero, tallasObj]) => {
+                    if (typeof tallasObj === 'object') {
+                        Object.entries(tallasObj).forEach(([talla, cantidad]) => {
+                            // Si cantidad es un array, extraer el número
+                            if (Array.isArray(cantidad)) {
+                                if (cantidad.length > 0 && typeof cantidad[0].cantidad === 'number') {
+                                    totalItems += cantidad[0].cantidad;
+                                }
+                            } else if (typeof cantidad === 'number') {
+                                totalItems += cantidad;
+                            }
+                        });
+                    }
+                });
+            } else if (prenda.variantes && Array.isArray(prenda.variantes)) {
+                // Fallback para variantes
+                prenda.variantes.forEach(v => {
+                    if (v.cantidad && typeof v.cantidad === 'number') {
+                        totalItems += v.cantidad;
+                    }
+                });
+            }
+        });
+    }
+    
+    // Sumar EPPs
+    if (datos.epps && Array.isArray(datos.epps)) {
+        datos.epps.forEach(epp => {
+            if (epp.cantidad && typeof epp.cantidad === 'number') {
+                totalItems += epp.cantidad;
+            }
+        });
+    }
+    
     const totalHTML = `
         <div style="margin: 12px 0; padding: 12px; background: #f3f4f6; border-radius: 6px; border: 2px solid #d1d5db; text-align: right;">
             <div style="font-size: 12px; margin-bottom: 8px;">
-                <strong>Total Ítems:</strong> ${datos.total_items || 0}
+                <strong>Total Ítems:</strong> ${totalItems}
             </div>
             ${datos.valor_total ? `
                 <div style="font-size: 12px; margin-bottom: 8px;">

@@ -100,7 +100,7 @@
                                                 @endif
                                             </div>
                                         @endif
-                                        @if($genero)
+                                        @if($genero && strtoupper($genero) !== 'GENERICO')
                                             <div class="text-black text-xs mb-1">
                                                 Género: <span class="font-semibold">{{ strtoupper($genero) }}</span>
                                             </div>
@@ -154,14 +154,20 @@
                                             elseif(isset($item['genero'])) {
                                                 $genero = $item['genero'];
                                             }
+                                            // 🔴 NUEVO: NO mostrar GENERICO (es SOLO CANTIDAD)
+                                            $esGenerico = $genero && strtoupper($genero) === 'GENERICO';
                                         @endphp
-                                        {{ $genero ? ucfirst(strtolower($genero)) : '—' }}
+                                        {{ ($esGenerico) ? '—' : ($genero ? ucfirst(strtolower($genero)) : '—') }}
                                     </td>
                                     @endif
                                     
                                     <!-- TALLA -->
                                     <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
-                                        {{ $item['talla'] ?? '—' }}
+                                        @if(($item['talla'] ?? null) === 'SIN_ESPECIFICAR')
+                                            —
+                                        @else
+                                            {{ $item['talla'] ?? '—' }}
+                                        @endif
                                     </td>
                                     
                                     <!-- CANTIDAD -->

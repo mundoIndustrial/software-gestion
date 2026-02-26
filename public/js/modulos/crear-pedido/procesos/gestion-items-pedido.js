@@ -586,23 +586,32 @@ class GestionItemsUI {
                 return;
             }
 
-            // Validar que al menos haya seleccionado tallas
+            // Validar que al menos haya seleccionado tallas O "SOLO CANTIDAD"
             const tieneTallas = prendaData.cantidad_talla && 
                 Object.values(prendaData.cantidad_talla).some(genero => 
                     Object.keys(genero).length > 0
                 );
+            
+            const tieneSoloCantidad = window.cantidadSoloSeleccionada && window.cantidadSoloSeleccionada > 0;
 
             console.log('[gestion-items-pedido]  Validación de tallas:');
             console.log('[gestion-items-pedido]   - prendaData.cantidad_talla:', prendaData.cantidad_talla);
             console.log('[gestion-items-pedido]   - tieneTallas:', tieneTallas);
+            console.log('[gestion-items-pedido]   - tieneSoloCantidad:', tieneSoloCantidad);
 
-            if (!tieneTallas) {
-                this.notificationService?.advertencia(' Por favor selecciona al menos una talla para la prenda');
-                console.log('[gestion-items-pedido]  Validación FALLIDA: No hay tallas');
+            if (!tieneTallas && !tieneSoloCantidad) {
+                this.notificationService?.advertencia('Por favor selecciona al menos una talla o utiliza la opción "SOLO CANTIDAD"');
+                console.log('[gestion-items-pedido]  Validación FALLIDA: No hay tallas ni cantidad');
                 return;
             }
+            
+            // Si solo tiene cantidad, agregar a los datos
+            if (tieneSoloCantidad) {
+                prendaData.cantidad_solo = window.cantidadSoloSeleccionada;
+                console.log('[gestion-items-pedido] Cantidad sin talla agregada:', window.cantidadSoloSeleccionada);
+            }
 
-            console.log('[gestion-items-pedido]  Validación EXITOSA: Hay tallas, procediendo a guardar');
+            console.log('[gestion-items-pedido]  Validación EXITOSA: Hay tallas o cantidad, procediendo a guardar');
 
             // PROCESAR TIPO DE MANGA: Crear si no existe
             if (prendaData.variantes?.tipo_manga_crear && prendaData.variantes?.tipo_manga) {
