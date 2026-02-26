@@ -722,6 +722,44 @@ export class Formatters {
         
         const tallasDama = {};
         const tallasCalballero = {};
+
+        const insertarTallaConColor = (destino, tallaKey, cantidad) => {
+            const qty = parseInt(cantidad, 10) || 0;
+            if (!tallaKey || qty <= 0) return;
+
+            const strKey = String(tallaKey);
+            if (strKey.includes('__')) {
+                const [tallaRaw, colorRaw] = strKey.split('__');
+                const talla = String(tallaRaw || '').trim().toUpperCase();
+                const color = String(colorRaw || '').trim().toUpperCase();
+                if (!talla) return;
+
+                if (!destino[talla] || !Array.isArray(destino[talla])) {
+                    destino[talla] = [];
+                }
+
+                const existente = destino[talla].find(d => (d?.color || '').toUpperCase() === color);
+                if (existente) {
+                    existente.cantidad = (parseInt(existente.cantidad, 10) || 0) + qty;
+                } else {
+                    destino[talla].push({ color: color || 'SIN COLOR', cantidad: qty });
+                }
+                return;
+            }
+
+            const talla = strKey.trim().toUpperCase();
+            if (!talla) return;
+            if (destino[talla] && Array.isArray(destino[talla])) {
+                const existente = destino[talla].find(d => (d?.color || '').toUpperCase() === 'SIN COLOR');
+                if (existente) {
+                    existente.cantidad = (parseInt(existente.cantidad, 10) || 0) + qty;
+                } else {
+                    destino[talla].push({ color: 'SIN COLOR', cantidad: qty });
+                }
+            } else {
+                destino[talla] = qty;
+            }
+        };
         
         // Si es array, convertir a estructura procesable
         if (Array.isArray(tallas)) {
@@ -748,10 +786,10 @@ export class Formatters {
                     console.log(`[Formatters._agregarTallasFormato]   → tallaFinal="${tallaFinal}"`);
                     
                     if (genero === 'dama') {
-                        tallasDama[tallaFinal] = cantidad;
+                        insertarTallaConColor(tallasDama, tallaFinal, cantidad);
                         console.log(`[Formatters._agregarTallasFormato]   → Agregado a DAMA: ${tallaFinal}=${cantidad}`);
                     } else if (genero === 'caballero') {
-                        tallasCalballero[tallaFinal] = cantidad;
+                        insertarTallaConColor(tallasCalballero, tallaFinal, cantidad);
                         console.log(`[Formatters._agregarTallasFormato]   → Agregado a CABALLERO: ${tallaFinal}=${cantidad}`);
                     }
                 } else {
@@ -806,9 +844,9 @@ export class Formatters {
                             console.log(`[Formatters._agregarTallasFormato]      → tallaKey="${tallaKey}", cantidad="${cantidad}"`);
                             
                             if (genero === 'dama') {
-                                tallasDama[tallaKey] = cantidad;
+                                insertarTallaConColor(tallasDama, tallaKey, cantidad);
                             } else if (genero === 'caballero') {
-                                tallasCalballero[tallaKey] = cantidad;
+                                insertarTallaConColor(tallasCalballero, tallaKey, cantidad);
                             }
                         });
                     }

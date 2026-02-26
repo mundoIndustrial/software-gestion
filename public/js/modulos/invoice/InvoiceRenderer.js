@@ -144,8 +144,8 @@ class InvoiceRenderer {
                 <!-- Procesos -->
                 ${procesosListaHTML ? `
                     <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">
-                        <div style="font-size: 11px; font-weight: 700; color: #2c3e50; margin-bottom: 4px;"> Procesos ${prenda.procesos && Array.isArray(prenda.procesos) ? `(${prenda.procesos.length})` : ''}</div>
-                        ${procesosListaHTML}
+                        <div style="font-size: 11px; font-weight: 700; color: #2c3e50; margin-bottom: 4px; text-align: center;"> Procesos ${prenda.procesos && Array.isArray(prenda.procesos) ? `(${prenda.procesos.length})` : ''}</div>
+                        <div style="text-align: left;">${procesosListaHTML}</div>
                     </div>
                 ` : ''}
             </div>
@@ -347,195 +347,187 @@ class InvoiceRenderer {
                 
                 return `
                     <div style="font-weight: 700; color: #2c3e50; margin-bottom: 6px; font-size: 11px;"> Tallas</div>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed;">
-                        <thead>
-                            <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
-                                <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Género</th>
-                                <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Tallas y Cantidades</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${generosFiltrados.map(([genero, tallasObj]) => {
-                                // Recopilar todos los colores con sus tallas
-                                const porColor = {};
-                                let hayColores = false;
+                    <div style="display: flex; flex-direction: column; gap: 10px; text-align: left;">
+                        ${generosFiltrados.map(([genero, tallasObj]) => {
+                            // Recopilar todos los colores con sus tallas
+                            const porColor = {};
+                            let hayColores = false;
+                            
+                            Object.entries(tallasObj).forEach(([talla, cant]) => {
+                                let coloresConCantidad = [];
                                 
-                                Object.entries(tallasObj).forEach(([talla, cant]) => {
-                                    let coloresConCantidad = [];
-                                    
-                                    // Detectar sobremedida
-                                    let tallaFinal = talla;
-                                    if (!talla || talla.trim() === '') {
-                                        if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
-                                            const varianteConTallaId = prenda.variantes.find(v => v.talla_id);
-                                            if (varianteConTallaId) {
-                                                tallaFinal = 'SOBREMEDIDA';
-                                            }
-                                        }
-                                        if (tallaFinal === talla && (!talla || talla.trim() === '')) {
+                                // Detectar sobremedida
+                                let tallaFinal = talla;
+                                if (!talla || talla.trim() === '') {
+                                    if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+                                        const varianteConTallaId = prenda.variantes.find(v => v.talla_id);
+                                        if (varianteConTallaId) {
                                             tallaFinal = 'SOBREMEDIDA';
                                         }
                                     }
-                                    
-                                    // Buscar colores en talla_colores
-                                    if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
-                                        const coloresEnTalla = prenda.talla_colores.filter(tc => 
-                                            tc.genero && tc.genero.toUpperCase() === genero.toUpperCase() && 
-                                            tc.talla === talla
-                                        );
-                                        if (coloresEnTalla.length > 0) {
-                                            coloresConCantidad = coloresEnTalla.map(c => ({
-                                                nombre: c.color_nombre || c.color || 'Sin color',
-                                                cantidad: c.cantidad || 1
-                                            }));
-                                        }
+                                    if (tallaFinal === talla && (!talla || talla.trim() === '')) {
+                                        tallaFinal = 'SOBREMEDIDA';
                                     }
-                                    
-                                    // Buscar en asignaciones
-                                    if (coloresConCantidad.length === 0 && prenda.asignaciones && Array.isArray(prenda.asignaciones) && prenda.asignaciones.length > 0) {
-                                        const coloresEnTalla = prenda.asignaciones.filter(a => 
-                                            a.genero && a.genero.toUpperCase() === genero.toUpperCase() && 
-                                            a.talla === talla
-                                        );
-                                        if (coloresEnTalla.length > 0) {
-                                            coloresConCantidad = coloresEnTalla.map(c => ({
-                                                nombre: c.color || c.color_nombre || 'Sin color',
-                                                cantidad: c.cantidad || 1
-                                            }));
-                                        }
+                                }
+                                
+                                // Buscar colores en talla_colores
+                                if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
+                                    const coloresEnTalla = prenda.talla_colores.filter(tc => 
+                                        tc.genero && tc.genero.toUpperCase() === genero.toUpperCase() && 
+                                        tc.talla === talla
+                                    );
+                                    if (coloresEnTalla.length > 0) {
+                                        coloresConCantidad = coloresEnTalla.map(c => ({
+                                            nombre: c.color_nombre || c.color || 'Sin color',
+                                            cantidad: c.cantidad || 1
+                                        }));
                                     }
-                                    
-                                    // Buscar en asignacionesColoresPorTalla (formato key)
-                                    if (coloresConCantidad.length === 0 && prenda.asignacionesColoresPorTalla && Object.keys(prenda.asignacionesColoresPorTalla).length > 0) {
-                                        const key = `${genero.toUpperCase()}-${prenda.telas_array?.[0]?.tela_nombre || 'DRILL'}-${talla}`;
-                                        const asignacion = prenda.asignacionesColoresPorTalla[key];
-                                        if (asignacion && asignacion.colores && Array.isArray(asignacion.colores)) {
+                                }
+                                
+                                // Buscar en asignaciones
+                                if (coloresConCantidad.length === 0 && prenda.asignaciones && Array.isArray(prenda.asignaciones) && prenda.asignaciones.length > 0) {
+                                    const coloresEnTalla = prenda.asignaciones.filter(a => 
+                                        a.genero && a.genero.toUpperCase() === genero.toUpperCase() && 
+                                        a.talla === talla
+                                    );
+                                    if (coloresEnTalla.length > 0) {
+                                        coloresConCantidad = coloresEnTalla.map(c => ({
+                                            nombre: c.color || c.color_nombre || 'Sin color',
+                                            cantidad: c.cantidad || 1
+                                        }));
+                                    }
+                                }
+                                
+                                // Buscar en asignacionesColoresPorTalla (formato key)
+                                if (coloresConCantidad.length === 0 && prenda.asignacionesColoresPorTalla && Object.keys(prenda.asignacionesColoresPorTalla).length > 0) {
+                                    const key = `${genero.toUpperCase()}-${prenda.telas_array?.[0]?.tela_nombre || 'DRILL'}-${talla}`;
+                                    const asignacion = prenda.asignacionesColoresPorTalla[key];
+                                    if (asignacion && asignacion.colores && Array.isArray(asignacion.colores)) {
+                                        coloresConCantidad = asignacion.colores.map(c => ({
+                                            nombre: c.nombre || c.color_nombre || 'Sin color',
+                                            cantidad: c.cantidad || 1
+                                        }));
+                                    }
+                                }
+                                
+                                // Buscar en variantes
+                                if (coloresConCantidad.length === 0 && prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+                                    const varianteColor = prenda.variantes.find(v => v.talla === talla);
+                                    if (varianteColor && varianteColor.colores_asignados && Array.isArray(varianteColor.colores_asignados) && varianteColor.colores_asignados.length > 0) {
+                                        coloresConCantidad = varianteColor.colores_asignados.map(c => ({
+                                            nombre: c.color_nombre || c.color || c.nombre || 'N/A',
+                                            cantidad: c.cantidad || 1
+                                        }));
+                                    }
+                                }
+                                
+                                // Buscar en asignacionesColoresPorTalla (formato objeto)
+                                if (coloresConCantidad.length === 0 && prenda.asignacionesColoresPorTalla && typeof prenda.asignacionesColoresPorTalla === 'object') {
+                                    const clavePorObjeto = Object.keys(prenda.asignacionesColoresPorTalla).find(clave => {
+                                        const asig = prenda.asignacionesColoresPorTalla[clave];
+                                        return asig && asig.genero && asig.genero.toLowerCase() === genero.toLowerCase() && asig.talla === talla;
+                                    });
+                                    if (clavePorObjeto) {
+                                        const asignacion = prenda.asignacionesColoresPorTalla[clavePorObjeto];
+                                        if (asignacion && asignacion.colores && Array.isArray(asignacion.colores) && asignacion.colores.length > 0) {
                                             coloresConCantidad = asignacion.colores.map(c => ({
-                                                nombre: c.nombre || c.color_nombre || 'Sin color',
+                                                nombre: c.nombre || c.color || c.color_nombre || 'N/A',
                                                 cantidad: c.cantidad || 1
                                             }));
                                         }
-                                    }
-                                    
-                                    // Buscar en variantes
-                                    if (coloresConCantidad.length === 0 && prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
-                                        const varianteColor = prenda.variantes.find(v => v.talla === talla);
-                                        if (varianteColor && varianteColor.colores_asignados && Array.isArray(varianteColor.colores_asignados) && varianteColor.colores_asignados.length > 0) {
-                                            coloresConCantidad = varianteColor.colores_asignados.map(c => ({
-                                                nombre: c.color_nombre || c.color || c.nombre || 'N/A',
-                                                cantidad: c.cantidad || 1
-                                            }));
-                                        }
-                                    }
-                                    
-                                    // Buscar en asignacionesColoresPorTalla (formato objeto)
-                                    if (coloresConCantidad.length === 0 && prenda.asignacionesColoresPorTalla && typeof prenda.asignacionesColoresPorTalla === 'object') {
-                                        const clavePorObjeto = Object.keys(prenda.asignacionesColoresPorTalla).find(clave => {
-                                            const asig = prenda.asignacionesColoresPorTalla[clave];
-                                            return asig && asig.genero && asig.genero.toLowerCase() === genero.toLowerCase() && asig.talla === talla;
+                                    } else {
+                                        const clavePorFormato = Object.keys(prenda.asignacionesColoresPorTalla).find(clave => {
+                                            const partes = clave.split('-');
+                                            if (partes.length >= 2) {
+                                                return partes[0].toLowerCase() === genero.toLowerCase() && partes[partes.length - 1] === talla;
+                                            }
+                                            return false;
                                         });
-                                        if (clavePorObjeto) {
-                                            const asignacion = prenda.asignacionesColoresPorTalla[clavePorObjeto];
-                                            if (asignacion && asignacion.colores && Array.isArray(asignacion.colores) && asignacion.colores.length > 0) {
-                                                coloresConCantidad = asignacion.colores.map(c => ({
+                                        if (clavePorFormato) {
+                                            const valor = prenda.asignacionesColoresPorTalla[clavePorFormato];
+                                            let coloresArr = [];
+                                            if (valor.colores && Array.isArray(valor.colores)) {
+                                                coloresArr = valor.colores;
+                                            } else if (Array.isArray(valor)) {
+                                                coloresArr = valor;
+                                            } else if (typeof valor === 'object') {
+                                                coloresArr = Object.values(valor).filter(v => v && typeof v === 'object');
+                                            }
+                                            if (coloresArr.length > 0) {
+                                                coloresConCantidad = coloresArr.map(c => ({
                                                     nombre: c.nombre || c.color || c.color_nombre || 'N/A',
                                                     cantidad: c.cantidad || 1
                                                 }));
                                             }
-                                        } else {
-                                            const clavePorFormato = Object.keys(prenda.asignacionesColoresPorTalla).find(clave => {
-                                                const partes = clave.split('-');
-                                                if (partes.length >= 2) {
-                                                    return partes[0].toLowerCase() === genero.toLowerCase() && partes[partes.length - 1] === talla;
-                                                }
-                                                return false;
-                                            });
-                                            if (clavePorFormato) {
-                                                const valor = prenda.asignacionesColoresPorTalla[clavePorFormato];
-                                                let coloresArr = [];
-                                                if (valor.colores && Array.isArray(valor.colores)) {
-                                                    coloresArr = valor.colores;
-                                                } else if (Array.isArray(valor)) {
-                                                    coloresArr = valor;
-                                                } else if (typeof valor === 'object') {
-                                                    coloresArr = Object.values(valor).filter(v => v && typeof v === 'object');
-                                                }
-                                                if (coloresArr.length > 0) {
-                                                    coloresConCantidad = coloresArr.map(c => ({
-                                                        nombre: c.nombre || c.color || c.color_nombre || 'N/A',
-                                                        cantidad: c.cantidad || 1
-                                                    }));
-                                                }
-                                            }
                                         }
                                     }
-                                    
-                                    // Agrupar por color
-                                    if (coloresConCantidad.length > 0) {
-                                        coloresConCantidad.forEach(color => {
-                                            const esColorValido = color.nombre && color.nombre.toLowerCase() !== 'sin color' && color.nombre.trim() !== '';
-                                            if (esColorValido) {
-                                                hayColores = true;
-                                                const nombreColor = color.nombre.toUpperCase();
-                                                if (!porColor[nombreColor]) porColor[nombreColor] = [];
-                                                porColor[nombreColor].push({ talla: tallaFinal, cantidad: color.cantidad });
-                                            } else {
-                                                if (!porColor['__SIN_COLOR__']) porColor['__SIN_COLOR__'] = [];
-                                                porColor['__SIN_COLOR__'].push({ talla: tallaFinal, cantidad: color.cantidad });
-                                            }
-                                        });
-                                    } else {
-                                        // Sin color, agrupar bajo "SIN COLOR"
-                                        let cantidadFinal = cant;
-                                        if (typeof cant === 'number') {
-                                            cantidadFinal = cant;
-                                        } else if (Array.isArray(cant) && cant.length > 0) {
-                                            const p = cant[0];
-                                            cantidadFinal = (p && typeof p.cantidad === 'number') ? p.cantidad : (typeof p === 'number' ? p : 0);
-                                        } else if (typeof cant === 'object' && cant !== null) {
-                                            cantidadFinal = typeof cant.cantidad === 'number' ? cant.cantidad : 
-                                                Object.values(cant).reduce((s, v) => s + (typeof v === 'number' ? v : 0), 0);
-                                        }
-                                        if (!porColor['__SIN_COLOR__']) porColor['__SIN_COLOR__'] = [];
-                                        porColor['__SIN_COLOR__'].push({ talla: tallaFinal, cantidad: cantidadFinal });
-                                    }
-                                });
-                                
-                                // Renderizar agrupado por color
-                                let tallaRows = '';
-                                const coloresReales = Object.entries(porColor).filter(([c]) => c !== '__SIN_COLOR__');
-                                const sinColorArr = porColor['__SIN_COLOR__'] || [];
-                                
-                                if (coloresReales.length > 0) {
-                                    tallaRows = coloresReales.map(([color, tallasArr]) => {
-                                            tallasArr.sort((a, b) => {
-                                                const nA = parseInt(a.talla), nB = parseInt(b.talla);
-                                                if (!isNaN(nA) && !isNaN(nB)) return nA - nB;
-                                                return a.talla.localeCompare(b.talla);
-                                            });
-                                            const tallasStr = tallasArr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
-                                            return `<div style="margin-bottom: 3px;"><strong style="color: #0369a1;">${color}:</strong> ${tallasStr}</div>`;
-                                        }).join('');
-                                } else if (sinColorArr.length > 0) {
-                                    sinColorArr.sort((a, b) => {
-                                        const nA = parseInt(a.talla), nB = parseInt(b.talla);
-                                        if (!isNaN(nA) && !isNaN(nB)) return nA - nB;
-                                        return a.talla.localeCompare(b.talla);
-                                    });
-                                    tallaRows = sinColorArr.map(t => 
-                                        `<div style="margin-bottom: 2px;">${t.talla}:${t.cantidad}</div>`
-                                    ).join('');
                                 }
                                 
-                                return `
-                                    <tr style="border-bottom: 1px solid #eee;">
-                                        <td style="padding: 4px 4px; font-weight: 600; color: #374151; width: 35%; word-break: break-word; font-size: 11px; overflow: hidden;">${genero}</td>
-                                        <td style="padding: 4px 4px; color: #374151; word-break: break-word; overflow: hidden; font-size: 11px; font-weight: 600;">${tallaRows}</td>
-                                    </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                    </table>
+                                // Agrupar por color
+                                if (coloresConCantidad.length > 0) {
+                                    coloresConCantidad.forEach(color => {
+                                        const esColorValido = color.nombre && color.nombre.toLowerCase() !== 'sin color' && color.nombre.trim() !== '';
+                                        if (esColorValido) {
+                                            hayColores = true;
+                                            const nombreColor = color.nombre.toUpperCase();
+                                            if (!porColor[nombreColor]) porColor[nombreColor] = [];
+                                            porColor[nombreColor].push({ talla: tallaFinal, cantidad: color.cantidad });
+                                        } else {
+                                            if (!porColor['__SIN_COLOR__']) porColor['__SIN_COLOR__'] = [];
+                                            porColor['__SIN_COLOR__'].push({ talla: tallaFinal, cantidad: color.cantidad });
+                                        }
+                                    });
+                                } else {
+                                    // Sin color, agrupar bajo "SIN COLOR"
+                                    let cantidadFinal = cant;
+                                    if (typeof cant === 'number') {
+                                        cantidadFinal = cant;
+                                    } else if (Array.isArray(cant) && cant.length > 0) {
+                                        const p = cant[0];
+                                        cantidadFinal = (p && typeof p.cantidad === 'number') ? p.cantidad : (typeof p === 'number' ? p : 0);
+                                    } else if (typeof cant === 'object' && cant !== null) {
+                                        cantidadFinal = typeof cant.cantidad === 'number' ? cant.cantidad : 
+                                            Object.values(cant).reduce((s, v) => s + (typeof v === 'number' ? v : 0), 0);
+                                    }
+                                    if (!porColor['__SIN_COLOR__']) porColor['__SIN_COLOR__'] = [];
+                                    porColor['__SIN_COLOR__'].push({ talla: tallaFinal, cantidad: cantidadFinal });
+                                }
+                            });
+                            
+                            // Renderizar agrupado por color
+                            let tallaRows = '';
+                            const coloresReales = Object.entries(porColor).filter(([c]) => c !== '__SIN_COLOR__');
+                            const sinColorArr = porColor['__SIN_COLOR__'] || [];
+                            
+                            if (coloresReales.length > 0) {
+                                tallaRows = coloresReales.map(([color, tallasArr]) => {
+                                        tallasArr.sort((a, b) => {
+                                            const nA = parseInt(a.talla), nB = parseInt(b.talla);
+                                            if (!isNaN(nA) && !isNaN(nB)) return nA - nB;
+                                            return a.talla.localeCompare(b.talla);
+                                        });
+                                        const tallasStr = tallasArr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
+                                        return `<div style="margin: 2px 0;"><strong style="color: #0369a1;">${color}:</strong> ${tallasStr}</div>`;
+                                    }).join('');
+                            } else if (sinColorArr.length > 0) {
+                                sinColorArr.sort((a, b) => {
+                                    const nA = parseInt(a.talla), nB = parseInt(b.talla);
+                                    if (!isNaN(nA) && !isNaN(nB)) return nA - nB;
+                                    return a.talla.localeCompare(b.talla);
+                                });
+                                tallaRows = sinColorArr.map(t => 
+                                    `<div style="margin: 2px 0;">${t.talla}:${t.cantidad}</div>`
+                                ).join('');
+                            }
+                            
+                            return `
+                                <div style="text-align: left;">
+                                    <div style="font-weight: 800; color: #111827; font-size: 11px; margin-bottom: 4px;">${String(genero).toUpperCase()}</div>
+                                    <div style="padding-left: 0; font-size: 11px; font-weight: 600; color: #374151;">${tallaRows}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
                 `;
             } else {
                 // Si solo hay GENERICO (soloGenerico) o no hay géneros para mostrar
@@ -597,27 +589,27 @@ class InvoiceRenderer {
     renderizarProcesos(prenda) {
         if (prenda.procesos && Array.isArray(prenda.procesos) && prenda.procesos.length > 0) {
             return prenda.procesos.map(proc => `
-                <div style="background: #f9f9f9; padding: 6px; margin: 4px 0; border-left: 3px solid #9ca3af; border-radius: 2px; font-size: 11px;">
-                    <div style="font-weight: 700; color: #3b82f6; margin-bottom: 4px; text-transform: uppercase;">Proceso: ${proc.tipo || proc.nombre || `(ID: ${proc.tipo_proceso_id})`}</div>
+                <div style="background: #f9f9f9; padding: 6px; margin: 4px 0; border-left: 3px solid #9ca3af; border-radius: 2px; font-size: 11px; text-align: left;">
+                    <div style="font-weight: 700; color: #3b82f6; margin-bottom: 4px; text-transform: uppercase; text-align: left;">Proceso: ${proc.tipo || proc.nombre || `(ID: ${proc.tipo_proceso_id})`}</div>
                     
                     ${(proc.ubicaciones?.length > 0 || proc.observaciones || proc.tallas) ? `
                         <table style="width: 100%; font-size: 11px; margin-bottom: 4px; border-collapse: collapse;">
                             ${proc.ubicaciones && proc.ubicaciones.length > 0 ? `
                                 <tr style="border-bottom: 1px solid #eee;">
-                                    <td style="padding: 2px 3px; font-weight: 600; color: #6b7280; width: 25%;">Ubicación:</td>
-                                    <td style="padding: 2px 3px;">${Array.isArray(proc.ubicaciones) ? proc.ubicaciones.join(', ') : (typeof proc.ubicaciones === 'string' ? proc.ubicaciones.replace(/[\[\]"]/g, '') : proc.ubicaciones)}</td>
+                                    <td style="padding: 2px 2px 2px 0; font-weight: 600; color: #6b7280; width: 18%; vertical-align: top; text-align: left;">Ubicación:</td>
+                                    <td style="padding: 2px 0; vertical-align: top; text-align: left;">${Array.isArray(proc.ubicaciones) ? proc.ubicaciones.join(', ') : (typeof proc.ubicaciones === 'string' ? proc.ubicaciones.replace(/[\[\]"]/g, '') : proc.ubicaciones)}</td>
                                 </tr>
                             ` : ''}
                             ${proc.observaciones ? `
                                 <tr style="border-bottom: 1px solid #eee;">
-                                    <td style="padding: 2px 3px; font-weight: 600; color: #6b7280; width: 25%;">Observaciones:</td>
-                                    <td style="padding: 2px 3px; font-size: 11px;">${proc.observaciones}</td>
+                                    <td style="padding: 2px 2px 2px 0; font-weight: 600; color: #6b7280; width: 18%; vertical-align: top; text-align: left;">Observaciones:</td>
+                                    <td style="padding: 2px 0; font-size: 11px; vertical-align: top; text-align: left;">${proc.observaciones}</td>
                                 </tr>
                             ` : ''}
                             ${proc.tallas && typeof proc.tallas === 'object' && Object.keys(proc.tallas).length > 0 ? `
                                 <tr>
-                                    <td style="padding: 2px 3px; font-weight: 600; color: #6b7280; width: 25%;">Tallas:</td>
-                                    <td style="padding: 2px 3px; font-size: 11px;">${this.renderizarTallasProceso(proc.tallas)}</td>
+                                    <td style="padding: 2px 2px 2px 0; font-weight: 600; color: #6b7280; width: 18%; vertical-align: top; text-align: left;">Tallas:</td>
+                                    <td style="padding: 2px 0; font-size: 11px; vertical-align: top; text-align: left;">${this.renderizarTallasProceso(proc.tallas)}</td>
                                 </tr>
                             ` : ''}
                         </table>
@@ -626,9 +618,9 @@ class InvoiceRenderer {
                     ${proc.imagenes && proc.imagenes.length > 0 ? `
                         <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #eee; display: flex; gap: 4px; position: relative;">
                             <div style="position: relative; cursor: pointer;" onclick="window._abrirGaleriaImagenes(${JSON.stringify(proc.imagenes).replace(/"/g, '&quot;')}, 'Imágenes de ${proc.tipo || 'Proceso'}')">
-                                <img src="${window._extraerURLImagen(proc.imagenes[0])}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd;">
+                                <img src="${window._extraerURLImagen(proc.imagenes[0])}" style="width: 68px; height: 68px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
                                 ${proc.imagenes.length > 1 ? `
-                                    <div style="position: absolute; top: 0; right: 0; background: #3b82f6; color: white; font-size: 11px; font-weight: 700; padding: 2px 4px; border-radius: 0 2px 0 2px; cursor: pointer;">
+                                    <div style="position: absolute; top: 0; right: 0; background: #3b82f6; color: white; font-size: 11px; font-weight: 700; padding: 2px 4px; border-radius: 0 4px 0 4px; cursor: pointer;">
                                         ${proc.imagenes.length}+
                                     </div>
                                 ` : ''}
@@ -646,31 +638,92 @@ class InvoiceRenderer {
         if (!tallas || typeof tallas !== 'object') {
             return '<span style="color: #999; font-size: 10px;">Sin tallas</span>';
         }
-        
-        const tallasArray = [];
-        
+
+        const generoToHTML = [];
+
+        const up = (v) => String(v ?? '').trim().toUpperCase();
+
+        const agregarKeyCantidad = (porColor, tallaKey, cantidad) => {
+            const qty = parseInt(cantidad, 10) || 0;
+            if (!tallaKey || qty <= 0) return;
+            const raw = String(tallaKey);
+            const parts = raw.split('__');
+            const talla = up(parts[0]);
+            const color = up(parts[1] || '') || '__SIN_COLOR__';
+            if (!talla) return;
+
+            if (!porColor[color]) porColor[color] = [];
+            const existente = porColor[color].find(t => t.talla === talla);
+            if (existente) {
+                existente.cantidad += qty;
+            } else {
+                porColor[color].push({ talla, cantidad: qty });
+            }
+        };
+
+        const agregarTallaConColoresArray = (porColor, talla, coloresArr) => {
+            const tallaUp = up(talla);
+            if (!tallaUp) return;
+
+            (coloresArr || []).forEach(c => {
+                const qty = parseInt(c?.cantidad, 10) || 0;
+                if (qty <= 0) return;
+                const color = up(c?.color) || '__SIN_COLOR__';
+                if (!porColor[color]) porColor[color] = [];
+                const existente = porColor[color].find(t => t.talla === tallaUp);
+                if (existente) {
+                    existente.cantidad += qty;
+                } else {
+                    porColor[color].push({ talla: tallaUp, cantidad: qty });
+                }
+            });
+        };
+
         // Procesar cada género (excluyendo GENERICO)
         Object.entries(tallas).forEach(([genero, tallasObj]) => {
-            // 🔴 NUEVO: NO mostrar GENERICO en ningún contexto
-            if (genero && String(genero).toUpperCase().trim() === 'GENERICO') {
-                return; // Saltar GENERICO
-            }
-            
-            if (tallasObj && typeof tallasObj === 'object' && Object.keys(tallasObj).length > 0) {
-                const generoUpper = genero.toUpperCase();
-                const tallasGenero = Object.entries(tallasObj)
-                    .filter(([talla, cantidad]) => cantidad > 0)
-                    .map(([talla, cantidad]) => `${talla}:${cantidad}`)
-                    .join(', ');
-                
-                if (tallasGenero) {
-                    tallasArray.push(`${generoUpper} (${tallasGenero})`);
+            if (genero && up(genero) === 'GENERICO') return;
+            if (!tallasObj || typeof tallasObj !== 'object') return;
+
+            const porColor = {};
+
+            Object.entries(tallasObj).forEach(([tallaKey, valor]) => {
+                if (Array.isArray(valor)) {
+                    // Formato: { talla: [{color,cantidad}, ...] }
+                    agregarTallaConColoresArray(porColor, tallaKey, valor);
+                    return;
                 }
-            }
+                agregarKeyCantidad(porColor, tallaKey, valor);
+            });
+
+            const coloresOrdenados = Object.keys(porColor);
+            if (coloresOrdenados.length === 0) return;
+
+            const generoUpper = up(genero);
+            const lineas = [];
+
+            // Primero colores reales, luego sin color
+            const reales = coloresOrdenados.filter(c => c !== '__SIN_COLOR__').sort();
+            const sinColor = coloresOrdenados.includes('__SIN_COLOR__') ? ['__SIN_COLOR__'] : [];
+
+            [...reales, ...sinColor].forEach(color => {
+                const arr = porColor[color] || [];
+                if (arr.length === 0) return;
+                arr.sort((a, b) => a.talla.localeCompare(b.talla));
+                const tallasStr = arr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
+                const labelColor = color === '__SIN_COLOR__' ? '' : `<span style="color: #d32f2f; font-weight: 700;">${color}:</span> `;
+                lineas.push(`<div style="margin: 1px 0;">${labelColor}${tallasStr}</div>`);
+            });
+
+            generoToHTML.push(`
+                <div style="margin-bottom: 4px;">
+                    <div style="font-weight: 700; color: #111827;">${generoUpper}</div>
+                    <div style="padding-left: 8px;">${lineas.join('')}</div>
+                </div>
+            `);
         });
-        
-        return tallasArray.length > 0 
-            ? tallasArray.join(' | ') 
+
+        return generoToHTML.length > 0
+            ? `<div style="text-align: left;">${generoToHTML.join('')}</div>`
             : '<span style="color: #999; font-size: 10px;">Sin tallas asignadas</span>';
     }
 

@@ -59,9 +59,9 @@
      data-prendas="{{ json_encode($pedido->prendas ?? []) }}"
      style="
     display: grid;
-    grid-template-columns: {{ request('tipo') === 'logo' ? '120px 120px 120px 140px 110px 120px 130px' : '120px 120px 120px 140px 110px 120px 130px 130px 130px' }};
-    gap: 1.2rem;
-    padding: 0.75rem 1rem;
+    grid-template-columns: {{ request('tipo') === 'logo' ? '140px 170px 170px 140px 170px 160px 170px' : '140px 170px 170px 140px 170px 200px 160px 170px 170px' }};
+    gap: 1.8rem;
+    padding: 0.75rem 1.25rem;
     align-items: center;
     transition: all 0.3s ease;
     min-width: min-content;

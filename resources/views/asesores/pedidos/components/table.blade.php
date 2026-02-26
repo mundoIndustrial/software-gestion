@@ -6,10 +6,10 @@
         <div style="
             background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
             color: white;
-            padding: 0.75rem 1rem;
+            padding: 0.75rem 1.25rem;
             display: grid;
-            grid-template-columns: {{ request('tipo') === 'logo' ? '120px 120px 120px 140px 110px 120px 130px' : '120px 120px 120px 140px 110px 120px 130px 130px 130px' }};
-            gap: 1.2rem;
+            grid-template-columns: {{ request('tipo') === 'logo' ? '140px 170px 170px 140px 170px 160px 170px' : '140px 170px 170px 140px 170px 200px 160px 170px 170px' }};
+            gap: 1.8rem;
             font-weight: 600;
             font-size: 0.8rem;
             text-transform: uppercase;
