@@ -76,7 +76,9 @@ window.cargarCatálogoTallas = async function() {
         // Fallback a constantes hardcodeadas si falla el fetch
         window.catálogoTallasDisponibles = {
             DAMA: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
-            CABALLERO: ['28', '30', '32', '34', '36', '38', '40', '42', '44', '46'],
+            CABALLERO: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
+            NUMEROS_DAMA: ['6', '8', '10', '12', '14', '16', '18', '28', '30', '32', '34', '36', '38', '40', '42', '44', '46', '48', '50'],
+            NUMEROS_CABALLERO: ['6', '8', '10', '12', '14', '16', '18', '20', '22', '24', '26', '28', '30', '32', '34', '36', '38', '40', '42', '44', '46', '48', '50'],
             UNISEX: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
         };
         console.warn('[gestion-tallas]  Usando catálogo hardcodeado como fallback');
@@ -144,11 +146,15 @@ window.mostrarTallasDisponibles = function(tipo) {
         // Usar catálogo cargado desde BD
         const genero = window.generoActualModal;
         if (tipo === 'letra') {
-            // Mostrar tallas de letra (XS, S, M, L, XL, etc.) - generalmente DAMA
-            tallasAMostrar = window.catálogoTallasDisponibles['DAMA'] || [];
+            // Mostrar tallas de letra (XS, S, M, L, XL, etc.)
+            tallasAMostrar = window.catálogoTallasDisponibles[genero] || window.catálogoTallasDisponibles['DAMA'] || [];
         } else if (tipo === 'numero') {
-            // Mostrar tallas de número (28, 30, 32, etc.) - generalmente CABALLERO
-            tallasAMostrar = window.catálogoTallasDisponibles['CABALLERO'] || [];
+            // Mostrar tallas de número diferenciadas por género
+            if (genero === 'DAMA') {
+                tallasAMostrar = window.catálogoTallasDisponibles['NUMEROS_DAMA'] || TALLAS_NUMEROS_DAMA || [];
+            } else {
+                tallasAMostrar = window.catálogoTallasDisponibles['NUMEROS_CABALLERO'] || TALLAS_NUMEROS_CABALLERO || [];
+            }
         }
     }
     
