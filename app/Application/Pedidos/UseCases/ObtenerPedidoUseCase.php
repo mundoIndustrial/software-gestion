@@ -776,14 +776,14 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                     
                     // Transformar tallas del proceso desde pedidos_procesos_prenda_tallas
                     $tallasTransformadas = [
-                        'dama' => [],
-                        'caballero' => [],
-                        'unisex' => []
+                        'DAMA' => [],
+                        'CABALLERO' => [],
+                        'UNISEX' => []
                     ];
                     
                     if ($proceso->tallas && $proceso->tallas->count() > 0) {
                         foreach ($proceso->tallas as $tallaProceso) {
-                            $genero = strtolower($tallaProceso->genero ?? 'dama');
+                            $genero = strtoupper($tallaProceso->genero ?? 'DAMA');
                             if (!isset($tallasTransformadas[$genero])) {
                                 $tallasTransformadas[$genero] = [];
                             }

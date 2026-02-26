@@ -802,8 +802,11 @@ export class Formatters {
             Object.entries(tallas).forEach(([key, value]) => {
                 console.log(`[Formatters._agregarTallasFormato]  Procesando: key=${key}, value=${value}, type=${typeof value}`);
                 
+                // Normalizar género a mayúsculas (vienen como "dama"/"DAMA", "caballero"/"CABALLERO", etc.)
+                const generoNormalizado = String(key).toUpperCase();
+                
                 if (typeof value === 'object' && value !== null) {
-                    const genero = key.toLowerCase();
+                    const genero = generoNormalizado.toLowerCase(); // Para logging
                     
                     // Si es array de objetos (estructura del backend)
                     if (Array.isArray(value)) {
@@ -818,9 +821,9 @@ export class Formatters {
                                     const cantidad = item.cantidad || 0;
                                     console.log(`[Formatters._agregarTallasFormato]      ✅ Sobremedida detectada: ${genero}=${cantidad}`);
                                     
-                                    if (genero === 'dama') {
+                                    if (generoNormalizado === 'DAMA') {
                                         tallasDama['SOBREMEDIDA'] = cantidad;
-                                    } else if (genero === 'caballero') {
+                                    } else if (generoNormalizado === 'CABALLERO') {
                                         tallasCalballero['SOBREMEDIDA'] = cantidad;
                                     }
                                 } else if (item.talla && item.cantidad) {
@@ -829,9 +832,9 @@ export class Formatters {
                                     const cantidad = item.cantidad || 0;
                                     console.log(`[Formatters._agregarTallasFormato]      ✅ Talla específica: ${genero}=${talla}=${cantidad}`);
                                     
-                                    if (genero === 'dama') {
+                                    if (generoNormalizado === 'DAMA') {
                                         tallasDama[talla] = cantidad;
-                                    } else if (genero === 'caballero') {
+                                    } else if (generoNormalizado === 'CABALLERO') {
                                         tallasCalballero[talla] = cantidad;
                                     }
                                 }
@@ -858,9 +861,9 @@ export class Formatters {
                                 console.log(`[Formatters._agregarTallasFormato]      → tallaKey="${tallaKey}", cantidad="${cantidad}"`);
                             }
                             
-                            if (genero === 'dama') {
+                            if (generoNormalizado === 'DAMA') {
                                 insertarTallaConColor(tallasDama, tallaKey, cantidad);
-                            } else if (genero === 'caballero') {
+                            } else if (generoNormalizado === 'CABALLERO') {
                                 insertarTallaConColor(tallasCalballero, tallaKey, cantidad);
                             }
                         });
