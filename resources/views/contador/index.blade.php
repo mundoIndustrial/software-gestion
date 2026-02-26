@@ -18,8 +18,44 @@
                     alert('Función abrirModalCalculoCostos no disponible');
                 }
             }
+
+            const pdfLink = event.target.closest('a.action-menu-item[data-action="pdf"]');
+            if (pdfLink) {
+                event.preventDefault();
+                const url = pdfLink.getAttribute('href');
+                if (url) {
+                    openPdfModal(url);
+                }
+            }
         });
     }
+
+    function openPdfModal(url) {
+        const modal = document.getElementById('pdfPreviewModal');
+        const frame = document.getElementById('pdfPreviewFrame');
+        if (!modal || !frame) return;
+        frame.setAttribute('src', url);
+        modal.style.display = 'flex';
+    }
+
+    function closePdfModal() {
+        const modal = document.getElementById('pdfPreviewModal');
+        const frame = document.getElementById('pdfPreviewFrame');
+        if (frame) frame.setAttribute('src', '');
+        if (modal) modal.style.display = 'none';
+    }
+
+    window.openPdfModal = openPdfModal;
+    window.closePdfModal = closePdfModal;
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            const modal = document.getElementById('pdfPreviewModal');
+            if (modal && modal.style.display === 'flex') {
+                closePdfModal();
+            }
+        }
+    });
     
     // Registrar listeners al cargar
     registrarEventListeners();
@@ -148,7 +184,7 @@ document.addEventListener('click', function(event) {
                                             <i class="fas fa-chart-bar"></i>
                                             <span>Ver Costos</span>
                                         </a>
-                                        <a href="/contador/cotizacion/{{ $cotizacion->id }}/pdf?tipo=prenda" class="action-menu-item" data-action="pdf" target="_blank">
+                                        <a href="/contador/cotizacion/{{ $cotizacion->id }}/pdf?tipo=prenda" class="action-menu-item" data-action="pdf">
                                             <i class="fas fa-file-pdf"></i>
                                             <span>Ver PDF</span>
                                         </a>
@@ -341,6 +377,32 @@ document.addEventListener('click', function(event) {
         background: #1a4a8f;
     }
 </style>
+
+<div id="pdfPreviewModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; padding: 0;">
+    <div style="background: white; border-radius: 0; width: 100vw; height: 100vh; display: flex; flex-direction: column; box-shadow: none; border: none; overflow: hidden;">
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: linear-gradient(135deg, #1e5ba8 0%, #1a4a8f 100%); color: white;">
+            <div style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; font-size: 0.9rem;">Vista previa PDF</div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" onclick="closePdfModal()" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.35); padding: 0.4rem 0.75rem; border-radius: 6px; cursor: pointer; font-weight: 700;">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+        <div style="flex: 1; background: #0b1220;">
+            <iframe id="pdfPreviewFrame" title="PDF" src="" style="width: 100%; height: 100%; border: 0; background: white;"></iframe>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('click', function (event) {
+        const modal = document.getElementById('pdfPreviewModal');
+        if (!modal || modal.style.display !== 'flex') return;
+        if (event.target === modal) {
+            closePdfModal();
+        }
+    });
+</script>
 
 <!-- Script de Tabla de Cotizaciones -->
 <script src="{{ asset('js/contador/tabla-cotizaciones.js') }}"></script>

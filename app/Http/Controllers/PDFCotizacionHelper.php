@@ -22,10 +22,10 @@ class PDFCotizacionHelper
                 'mode' => 'utf-8',
                 'format' => 'A4',
                 'orientation' => 'P',
-                'margin_left' => 0,
-                'margin_right' => 0,
-                'margin_top' => 0,
-                'margin_bottom' => 10,
+                'margin_left' => 5,
+                'margin_right' => 5,
+                'margin_top' => 5,
+                'margin_bottom' => 5,
                 'margin_header' => 0,
                 'margin_footer' => 0,
                 'tempDir' => storage_path('app/temp'), // Usar directorio temporal
@@ -47,6 +47,9 @@ class PDFCotizacionHelper
             
             // Crear PDF
             $mpdf = new Mpdf($config);
+
+            $mpdf->shrink_tables_to_fit = 1;
+            $mpdf->keep_table_proportions = true;
             
             try {
                 \Log::info("Instancia mPDF creada, escribiendo HTML...");

@@ -113,12 +113,17 @@ class EppPdfDesign
     {
         return <<<'CSS'
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        @page { margin: 0; }
+        @page { margin: 5mm; }
         html, body { width: 100%; margin: 0; padding: 0; height: auto; }
         body { font-family: Arial, sans-serif; font-size: 10px; line-height: 1.4; margin: 0; padding: 0; color: #0f172a; }
 
+        table, thead, tbody, tfoot, tr, td, th { page-break-inside: avoid; }
+        img, svg { page-break-inside: avoid; }
+
         .header-wrapper { width: 100%; margin: 0; padding: 0; }
-        .header { text-align: center; border-bottom: 2px solid #000; padding: 15px 12mm; background: #000; color: #fff; display: flex; align-items: flex-start; gap: 15px; }
+        .header { background: #1e5ba8; color: white; padding: 20px; text-align: center; }
+        .header h1 { font-size: 18px; margin-bottom: 5px; }
+        .header p { font-size: 10px; margin: 2px 0; }
         .header-logo { width: 120px; height: auto; flex-shrink: 0; }
         .header-content { flex: 1; text-align: center; }
         .header-title { font-size: 14px; font-weight: bold; margin: 0; }

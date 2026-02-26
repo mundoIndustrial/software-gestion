@@ -200,12 +200,12 @@ class PDFLogoController extends Controller
     {
         $filename = 'Cotizacion_' . $cotizacion->id . '_Logo_' . date('Y-m-d') . '.pdf';
 
-        return response()->streamDownload(
-            function () use ($pdfContent) {
-                echo $pdfContent;
-            },
-            $filename,
-            ['Content-Type' => 'application/pdf']
-        );
+        return response($pdfContent)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="' . $filename . '"')
+            ->header('Content-Length', strlen($pdfContent))
+            ->header('Cache-Control', 'private, max-age=0, must-revalidate')
+            ->header('Pragma', 'public')
+            ->header('Expires', '0');
     }
 }

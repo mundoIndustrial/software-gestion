@@ -68,26 +68,29 @@ class CombiadaPdfDesign
     {
         return <<<'CSS'
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        @page { margin: 0; }
+        @page { margin: 5mm; }
         html, body { width: 100%; margin: 0; padding: 0; height: auto; }
         body { font-family: Arial, sans-serif; font-size: 10px; line-height: 1.4; margin: 0; padding: 0; }
+
+        table, thead, tbody, tfoot, tr, td, th { page-break-inside: avoid; }
+        img, svg { page-break-inside: avoid; }
         
         .header-wrapper { width: 100%; margin: 0; padding: 0; margin-bottom: 0; }
-        .header { text-align: center; border-bottom: 2px solid #000; padding: 15px 12mm; background: #000; color: #fff; display: flex; align-items: flex-start; gap: 15px; }
+        .header { text-align: center; border-bottom: 2px solid #000; padding: 10px 5mm; background: #000; color: #fff; display: flex; align-items: flex-start; gap: 12px; }
         .header-logo { width: 120px; height: auto; flex-shrink: 0; }
         .header-content { flex: 1; text-align: center; }
         .header-title { font-size: 14px; font-weight: bold; margin: 0; }
         .header-subtitle { font-size: 10px; margin: 2px 0; }
         
         .info-wrapper { width: 100%; margin: 0; padding: 0; margin-bottom: 8px; }
-        .info-table { width: 100%; border-collapse: collapse; table-layout: fixed; padding: 0 12mm; }
+        .info-table { width: 100%; border-collapse: collapse; table-layout: fixed; padding: 0 5mm; }
         .info-table td { padding: 5px; border: 1px solid #000; word-wrap: break-word; }
         .info-table .label { background: #f0f0f0; font-weight: bold; }
         
         /* Estilos para prendas */
-        .prendas-wrapper { padding: 12mm; }
+        .prendas-wrapper { padding: 5mm; }
         
-        .prenda-card { border: 1px solid #000; margin-bottom: 15px; padding: 0; page-break-inside: avoid; }
+        .prenda-card { border: 1px solid #000; margin-bottom: 10px; padding: 0; page-break-inside: avoid; }
         
         /* Header del card con nombre y detalles */
         .prenda-header { background: #fff; padding: 8px 10px; border-bottom: 1px solid #000; }
@@ -126,7 +129,7 @@ class CombiadaPdfDesign
         .observacion-item { margin-bottom: 6px; padding: 6px; border-left: 3px solid #1e5ba8; background: white; }
         
         /* Tabla de especificaciones */
-        .especificaciones-wrapper { padding: 12mm; border-top: 2px solid #000; }
+        .especificaciones-wrapper { padding: 5mm; border-top: none; }
         .especificaciones-title { font-weight: bold; font-size: 11px; margin-bottom: 10px; color: #1e5ba8; text-transform: uppercase; }
         .especificaciones-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
         .especificaciones-table thead tr { background: #f5f5f5; border-bottom: 2px solid #1e5ba8; }

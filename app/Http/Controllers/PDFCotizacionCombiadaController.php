@@ -218,7 +218,7 @@ class PDFCotizacionCombiadaController extends Controller
 
         return response($pdfContent)
             ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->header('Content-Disposition', 'inline; filename="' . $filename . '"')
             ->header('Content-Length', strlen($pdfContent))
             ->header('Cache-Control', 'private, max-age=0, must-revalidate')
             ->header('Pragma', 'public')
