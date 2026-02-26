@@ -210,8 +210,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 @if($primeraFila->objetoPrenda && (isset($primeraFila->objetoPrenda['tela']) || isset($primeraFila->objetoPrenda['color'])))
                                                     @php
                                                         $tela = $primeraFila->objetoPrenda['tela'] ?? null;
-                                                        $color = $primeraFila->objetoPrenda['color'] ?? null;
+                                                        $rawColorPrenda = $primeraFila->objetoPrenda['color'] ?? null;
+                                                        $color = ($rawColorPrenda && !in_array(strtolower(trim($rawColorPrenda)), ['sin color', 'no color', ''])) ? $rawColorPrenda : null;
                                                     @endphp
+                                                    @if($tela || $color)
                                                     <div class="text-slate-900 mb-1 text-xs">
                                                         @if($tela && $color)
                                                             <div>• Tela: {{ $tela }} - Color: {{ $color }}</div>
@@ -221,6 +223,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                             <div>• Color: {{ $color }}</div>
                                                         @endif
                                                     </div>
+                                                    @endif
                                                 @endif
                                                 
                                                 @if($primeraFila->objetoPrenda && isset($primeraFila->objetoPrenda['variantes']) && is_array($primeraFila->objetoPrenda['variantes']) && count($primeraFila->objetoPrenda['variantes']) > 0)
@@ -269,44 +272,80 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 
                                                 {{-- COLORES POR TALLA --}}
                                                 @php
-                                                    // Agrupar colores por género y talla
-                                                    $coloresPorGeneroYTalla = [];
+                                                    // Agrupar colores por género + color
+                                                    $porGeneroColor = [];
                                                     if (isset($primeraFila->objetoPrenda['variantes']) && is_array($primeraFila->objetoPrenda['variantes'])) {
                                                         foreach ($primeraFila->objetoPrenda['variantes'] as $variante) {
                                                             if (isset($variante['colores_detalle']) && !empty($variante['colores_detalle'])) {
-                                                                $genero = ucfirst(strtolower($variante['genero'] ?? ''));
+                                                                $genero = strtoupper($variante['genero'] ?? '');
                                                                 $talla = $variante['talla'] ?? '';
                                                                 
-                                                                // 🔴 NUEVO: No procesar GENERICO
-                                                                if (strtoupper($genero) === 'GENERICO') {
-                                                                    continue; // Saltar este género
+                                                                // No procesar GENERICO
+                                                                if ($genero === 'GENERICO') {
+                                                                    continue;
                                                                 }
                                                                 
                                                                 foreach ($variante['colores_detalle'] as $colorDetalle) {
-                                                                    $color = $colorDetalle['color'] ?? '';
+                                                                    $rawColor = $colorDetalle['color'] ?? '';
+                                                                    $esColorValido = !empty($rawColor) && strtolower($rawColor) !== 'sin color';
+                                                                    $color = $esColorValido ? strtoupper($rawColor) : '__SIN_COLOR__';
                                                                     $cantidad = $colorDetalle['cantidad'] ?? 0;
                                                                     
-                                                                    if (!empty($genero) && !empty($talla) && !empty($color) && $cantidad > 0) {
-                                                                        $clave = "{$genero}: {$talla}:{$cantidad}-{$color}";
-                                                                        $coloresPorGeneroYTalla[] = $clave;
+                                                                    if (!empty($genero) && !empty($talla) && $cantidad > 0) {
+                                                                        $key = $genero . '||' . $color;
+                                                                        if (!isset($porGeneroColor[$key])) {
+                                                                            $porGeneroColor[$key] = [
+                                                                                'genero' => $genero,
+                                                                                'color' => $color,
+                                                                                'tallas' => []
+                                                                            ];
+                                                                        }
+                                                                        $porGeneroColor[$key]['tallas'][] = [
+                                                                            'talla' => $talla,
+                                                                            'cantidad' => $cantidad
+                                                                        ];
                                                                     }
                                                                 }
                                                             }
                                                         }
                                                     }
                                                     
-                                                    // Eliminar duplicados y ordenar
-                                                    $coloresPorGeneroYTalla = array_unique($coloresPorGeneroYTalla);
-                                                    sort($coloresPorGeneroYTalla);
+                                                    // Ordenar tallas dentro de cada grupo
+                                                    foreach($porGeneroColor as &$grupo) {
+                                                        usort($grupo['tallas'], function($a, $b) {
+                                                            $nA = is_numeric($a['talla']) ? (int)$a['talla'] : null;
+                                                            $nB = is_numeric($b['talla']) ? (int)$b['talla'] : null;
+                                                            if ($nA !== null && $nB !== null) return $nA - $nB;
+                                                            return strcmp($a['talla'], $b['talla']);
+                                                        });
+                                                    }
+                                                    unset($grupo);
                                                 @endphp
                                                 
-                                                @if(!empty($coloresPorGeneroYTalla))
+                                                @if(!empty($porGeneroColor))
+                                                    @php
+                                                        $coloresReales = array_filter($porGeneroColor, fn($g) => $g['color'] !== '__SIN_COLOR__');
+                                                        $sinColor = array_filter($porGeneroColor, fn($g) => $g['color'] === '__SIN_COLOR__');
+                                                    @endphp
                                                     <div class="text-slate-700 mt-2 text-xs font-medium">
-                                                        <div class="ml-2">
-                                                            @foreach($coloresPorGeneroYTalla as $colorInfo)
-                                                                <div>• {{ $colorInfo }}</div>
+                                                        @if(!empty($coloresReales))
+                                                            @php $currentGenero = ''; @endphp
+                                                            @foreach($coloresReales as $grupo)
+                                                                @if($grupo['genero'] !== $currentGenero)
+                                                                    @php $currentGenero = $grupo['genero']; @endphp
+                                                                    <div class="font-bold text-black mt-1">{{ $currentGenero }}:</div>
+                                                                @endif
+                                                                <div class="ml-2">• <span style="color: #0369a1; font-weight: 600;">{{ $grupo['color'] }}:</span> @foreach($grupo['tallas'] as $i => $t){{ $i > 0 ? ', ' : '' }}{{ $t['talla'] }}-{{ $t['cantidad'] }}@endforeach</div>
                                                             @endforeach
-                                                        </div>
+                                                        @elseif(!empty($sinColor))
+                                                            @php $currentGenero = ''; @endphp
+                                                            @foreach($sinColor as $grupo)
+                                                                @if($grupo['genero'] !== $currentGenero)
+                                                                    @php $currentGenero = $grupo['genero']; @endphp
+                                                                @endif
+                                                                <div class="ml-2">{{ $currentGenero }}: @foreach($grupo['tallas'] as $i => $t){{ $i > 0 ? ', ' : '' }}{{ $t['talla'] }}:{{ $t['cantidad'] }}@endforeach</div>
+                                                            @endforeach
+                                                        @endif
                                                     </div>
                                                 @endif
                                             </td>

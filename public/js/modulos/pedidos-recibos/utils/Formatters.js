@@ -59,7 +59,9 @@ export class Formatters {
                 .filter(t => t.tela_nombre || t.color_nombre) // Filtrar telas válidas
                 .map(t => {
                     const tela = t.tela_nombre || '';
-                    const color = t.color_nombre || '';
+                    const rawColor = t.color_nombre || '';
+                    // Si el color es "Sin color" o vacío, usar "-"
+                    const color = (!rawColor || rawColor.toLowerCase() === 'sin color') ? '' : rawColor;
                     const ref = t.referencia ? ` | REF: ${t.referencia}` : '';
                     if (tela && color) {
                         return `${tela} / ${color}${ref}`;
@@ -816,47 +818,81 @@ export class Formatters {
         
         console.log('[Formatters._agregarTallasFormato]  Resultado final:', { tallasDama, tallasCalballero });
         
-        // Renderizar DAMA
-        if (Object.keys(tallasDama).length > 0) {
-            const tallasStr = Object.entries(tallasDama)
-                .map(([talla, datos]) => {
-                    // Si datos es un array de objetos con cantidad y color (nuevo formato)
+        // Función helper para renderizar tallas agrupadas por color
+        const renderizarTallasGenero = (tallasObj, generoLabel) => {
+            if (Object.keys(tallasObj).length === 0) return;
+            
+            // Detectar si hay colores (datos son arrays de objetos)
+            const tieneColores = Object.values(tallasObj).some(datos => Array.isArray(datos));
+            
+            if (tieneColores) {
+                // Agrupar por color: { 'AZUL CELESTE': [{talla: 'S', cantidad: 3}, ...], ... }
+                const porColor = {};
+                
+                Object.entries(tallasObj).forEach(([talla, datos]) => {
                     if (Array.isArray(datos)) {
-                        return datos.map(d => {
-                            const colorPart = (d.color && d.color !== 'Sin color') ? `-${d.color}` : '';
-                            return `<span style="color: red;"><strong>${talla}: ${d.cantidad}${colorPart}</strong></span>`;
-                        }).join(', ');
+                        datos.forEach(d => {
+                            const esColorValido = d.color && d.color.toLowerCase() !== 'sin color' && d.color.trim() !== '';
+                            if (esColorValido) {
+                                const color = d.color.toUpperCase();
+                                if (!porColor[color]) porColor[color] = [];
+                                porColor[color].push({ talla, cantidad: d.cantidad || 0 });
+                            } else {
+                                if (!porColor['__SIN_COLOR__']) porColor['__SIN_COLOR__'] = [];
+                                porColor['__SIN_COLOR__'].push({ talla, cantidad: d.cantidad || 0 });
+                            }
+                        });
+                    } else {
+                        if (!porColor['__SIN_COLOR__']) porColor['__SIN_COLOR__'] = [];
+                        porColor['__SIN_COLOR__'].push({ talla, cantidad: datos });
                     }
-                    // Si es solo cantidad (formato antiguo)
-                    else {
-                        return `<span style="color: red;"><strong>${talla}: ${datos}</strong></span>`;
-                    }
-                })
-                .join(', ');
-            lineas.push(`DAMA: ${tallasStr}`);
-            console.log('[Formatters._agregarTallasFormato]  DAMA agregado');
-        }
+                });
+                
+                console.log(`[Formatters._agregarTallasFormato]  ${generoLabel} agrupado por color:`, porColor);
+                
+                // Renderizar agrupado por color
+                const coloresReales = Object.entries(porColor).filter(([c]) => c !== '__SIN_COLOR__');
+                const sinColor = porColor['__SIN_COLOR__'] || [];
+                
+                if (coloresReales.length > 0) {
+                    lineas.push(`<strong>${generoLabel}:</strong>`);
+                    coloresReales.forEach(([color, tallasArr]) => {
+                        tallasArr.sort((a, b) => {
+                            const numA = parseInt(a.talla);
+                            const numB = parseInt(b.talla);
+                            if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+                            return a.talla.localeCompare(b.talla);
+                        });
+                        const tallasStr = tallasArr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
+                        lineas.push(`<span style="color: red;"><strong>${color}:</strong> ${tallasStr}</span>`);
+                    });
+                } else if (sinColor.length > 0) {
+                    // Solo tallas sin color - formato simple
+                    sinColor.sort((a, b) => {
+                        const numA = parseInt(a.talla);
+                        const numB = parseInt(b.talla);
+                        if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+                        return a.talla.localeCompare(b.talla);
+                    });
+                    const tallasStr = sinColor.map(t => `<span style="color: red;"><strong>${t.talla}: ${t.cantidad}</strong></span>`).join(', ');
+                    lineas.push(`${generoLabel}: ${tallasStr}`);
+                }
+            } else {
+                // Sin colores - formato simple
+                const tallasStr = Object.entries(tallasObj)
+                    .map(([talla, cantidad]) => `<span style="color: red;"><strong>${talla}: ${cantidad}</strong></span>`)
+                    .join(', ');
+                lineas.push(`${generoLabel}: ${tallasStr}`);
+            }
+            
+            console.log(`[Formatters._agregarTallasFormato]  ${generoLabel} agregado`);
+        };
+        
+        // Renderizar DAMA
+        renderizarTallasGenero(tallasDama, 'DAMA');
         
         // Renderizar CABALLERO
-        if (Object.keys(tallasCalballero).length > 0) {
-            const tallasStr = Object.entries(tallasCalballero)
-                .map(([talla, datos]) => {
-                    // Si datos es un array de objetos con cantidad y color (nuevo formato)
-                    if (Array.isArray(datos)) {
-                        return datos.map(d => {
-                            const colorPart = (d.color && d.color !== 'Sin color') ? `-${d.color}` : '';
-                            return `<span style="color: red;"><strong>${talla}: ${d.cantidad}${colorPart}</strong></span>`;
-                        }).join(', ');
-                    }
-                    // Si es solo cantidad (formato antiguo)
-                    else {
-                        return `<span style="color: red;"><strong>${talla}: ${datos}</strong></span>`;
-                    }
-                })
-                .join(', ');
-            lineas.push(`CABALLERO: ${tallasStr}`);
-            console.log('[Formatters._agregarTallasFormato]  CABALLERO agregado');
-        }
+        renderizarTallasGenero(tallasCalballero, 'CABALLERO');
         
         console.log('[Formatters._agregarTallasFormato] 📄 Lineas después:', lineas);
     }

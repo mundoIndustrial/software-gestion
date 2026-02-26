@@ -1074,7 +1074,18 @@ window.llenarReciboCosturaMobile = function(data) {
             // 2. Telas completas con referencia (colores_telas tiene toda la info)
             if (prenda.colores_telas && Array.isArray(prenda.colores_telas) && prenda.colores_telas.length > 0) {
                 const telasTexto = prenda.colores_telas.map(function(ct) {
-                    return (ct.tela_nombre || '').toUpperCase() + ' / ' + (ct.color_nombre || '').toUpperCase() + ' | REF: ' + (ct.referencia || '');
+                    const tela = (ct.tela_nombre || '').toUpperCase();
+                    const color = (ct.color_nombre || '').toUpperCase();
+                    const esColorValido = color && color !== 'SIN COLOR' && color !== 'NO COLOR' && color !== '';
+                    const ref = ct.referencia || '';
+                    let parte = tela;
+                    if (esColorValido) {
+                        parte += ' / ' + color;
+                    }
+                    if (ref) {
+                        parte += ' | REF: ' + ref;
+                    }
+                    return parte;
                 }).join(' | ');
                 html += `<strong>TELAS:</strong> ${telasTexto}<br>`;
             } else {
@@ -1134,68 +1145,74 @@ window.llenarReciboCosturaMobile = function(data) {
             
             if (esReciboCostura) {
                 // === COSTURA: Tallas de la prenda + REFLECTIVO si aplica ===
-                // (Igual que Formatters.construirDescripcionCostura en recibos-costura)
+                // Agrupado por COLOR: AZUL CELESTE: L-3, M-3, S-3
                 
                 // Tallas a nivel de PRENDA (no de proceso)
                 if (prenda.tallas && typeof prenda.tallas === 'object') {
                     const tallasLineas = [];
                     
-                    // Si tallas es un objeto con géneros (dama, caballero, unisex)
                     const generos = Object.keys(prenda.tallas);
                     generos.forEach((genero) => {
                         const tallasGenero = prenda.tallas[genero] || {};
-                        const items = [];
                         
                         if (typeof tallasGenero === 'object' && !Array.isArray(tallasGenero)) {
+                            // Detectar si hay colores reales (no "SIN COLOR")
+                            let tieneColoresReales = false;
+                            const coloresMap = {}; // { COLOR: [{talla, cantidad}] }
+                            const sinColorItems = []; // Para tallas sin color
+                            
                             Object.entries(tallasGenero).forEach(([talla, val]) => {
-                                // Array de colores para esta talla con sus cantidades
-                                const coloresPorTalla = [];
-                                
                                 if (Array.isArray(val)) {
-                                    // Cada elemento del array tiene {cantidad, color}
                                     val.forEach((item) => {
                                         if (item && typeof item === 'object') {
                                             const c = parseInt(item.cantidad) || 0;
-                                            const color = (item.color || '').trim();
+                                            const color = (item.color || '').trim().toUpperCase();
                                             if (c > 0) {
-                                                // Si tiene color (y no es "SIN COLOR"), mostrarlo con el formato "cantidad-color"
-                                                if (color && color.toUpperCase() !== 'SIN COLOR') {
-                                                    coloresPorTalla.push(`${c}-${color.toUpperCase()}`);
+                                                if (color && color !== 'SIN COLOR' && color !== 'NO COLOR' && color !== '') {
+                                                    tieneColoresReales = true;
+                                                    if (!coloresMap[color]) coloresMap[color] = [];
+                                                    coloresMap[color].push({ talla, cantidad: c });
                                                 } else {
-                                                    // Si no tiene color o es "SIN COLOR", solo la cantidad
-                                                    coloresPorTalla.push(c.toString());
+                                                    sinColorItems.push({ talla, cantidad: c });
                                                 }
                                             }
                                         }
                                     });
                                 } else if (val && typeof val === 'object') {
-                                    // Objeto con cantidad y color
                                     const c = parseInt(val.cantidad) || 0;
-                                    const color = (val.color || '').trim();
+                                    const color = (val.color || '').trim().toUpperCase();
                                     if (c > 0) {
-                                        if (color && color.toUpperCase() !== 'SIN COLOR') {
-                                            coloresPorTalla.push(`${c}-${color.toUpperCase()}`);
+                                        if (color && color !== 'SIN COLOR' && color !== 'NO COLOR' && color !== '') {
+                                            tieneColoresReales = true;
+                                            if (!coloresMap[color]) coloresMap[color] = [];
+                                            coloresMap[color].push({ talla, cantidad: c });
                                         } else {
-                                            coloresPorTalla.push(c.toString());
+                                            sinColorItems.push({ talla, cantidad: c });
                                         }
                                     }
                                 } else {
-                                    // Número directo (fallback)
                                     const c = parseInt(val) || 0;
                                     if (c > 0) {
-                                        coloresPorTalla.push(c.toString());
+                                        sinColorItems.push({ talla, cantidad: c });
                                     }
                                 }
-                                
-                                // Si hay colores con sus cantidades, agregarlos
-                                if (coloresPorTalla.length > 0) {
-                                    items.push(`${talla}: <span style="color: #d32f2f; font-weight: bold;">${coloresPorTalla.join(', ')}</span>`);
-                                }
                             });
-                        }
-                        
-                        if (items.length > 0) {
-                            tallasLineas.push(`<strong>${(genero || '').toString().toUpperCase()}:</strong> ${items.join(', ')}`);
+                            
+                            if (tieneColoresReales) {
+                                // Agrupar por color: AZUL CELESTE: L-3, M-3, S-3
+                                const colorLineas = [];
+                                Object.entries(coloresMap).forEach(([color, tallasArr]) => {
+                                    const tallasTexto = tallasArr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
+                                    colorLineas.push(`<span style="color: #d32f2f; font-weight: bold;">${color}:</span> ${tallasTexto}`);
+                                });
+                                if (colorLineas.length > 0) {
+                                    tallasLineas.push(`<strong>${(genero || '').toString().toUpperCase()}:</strong><br>${colorLineas.join('<br>')}`);
+                                }
+                            } else if (sinColorItems.length > 0) {
+                                // Sin colores: mostrar tallas normalmente (L: 3, M: 3)
+                                const items = sinColorItems.map(t => `${t.talla}: <span style="color: #d32f2f; font-weight: bold;">${t.cantidad}</span>`);
+                                tallasLineas.push(`<strong>${(genero || '').toString().toUpperCase()}:</strong> ${items.join(', ')}`);
+                            }
                         }
                     });
                     

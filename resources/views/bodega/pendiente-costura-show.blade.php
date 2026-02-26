@@ -89,13 +89,13 @@
                                             $procesos = $desc['procesos'] ?? [];
                                         @endphp
                                         <div class="font-bold text-black mb-1">{{ $nombre }}</div>
-                                        @if($tela || $color)
+                                        @if($tela || ($color && strtolower($color) !== 'sin color'))
                                             <div class="text-black text-xs mb-1">
-                                                @if($tela && $color)
+                                                @if($tela && $color && strtolower($color) !== 'sin color')
                                                     Tela: {{ $tela }} - Color: {{ $color }}
                                                 @elseif($tela)
                                                     Tela: {{ $tela }}
-                                                @else
+                                                @elseif($color && strtolower($color) !== 'sin color')
                                                     Color: {{ $color }}
                                                 @endif
                                             </div>
@@ -104,6 +104,72 @@
                                             <div class="text-black text-xs mb-1">
                                                 Género: <span class="font-semibold">{{ strtoupper($genero) }}</span>
                                             </div>
+                                        @endif
+                                        
+                                        {{-- Colores por talla agrupados --}}
+                                        @if(!empty($variantes))
+                                            @php
+                                                $porGeneroColor = [];
+                                                foreach($variantes as $variante) {
+                                                    if(isset($variante['colores_detalle']) && is_array($variante['colores_detalle']) && !empty($variante['colores_detalle'])) {
+                                                        foreach($variante['colores_detalle'] as $colorDet) {
+                                                            $gen = strtoupper($variante['genero'] ?? '');
+                                                            $colorRaw = strtoupper(trim($colorDet['color'] ?? ''));
+                                                            $colorNombre = (!$colorRaw || $colorRaw === 'SIN COLOR') ? '__SIN_COLOR__' : $colorRaw;
+                                                            $tallaV = $variante['talla'] ?? '';
+                                                            $cantV = $colorDet['cantidad'] ?? 1;
+                                                            
+                                                            if ($gen === 'GENERICO') continue;
+                                                            
+                                                            $key = $gen . '||' . $colorNombre;
+                                                            if (!isset($porGeneroColor[$key])) {
+                                                                $porGeneroColor[$key] = [
+                                                                    'genero' => $gen,
+                                                                    'color' => $colorNombre,
+                                                                    'tallas' => []
+                                                                ];
+                                                            }
+                                                            $porGeneroColor[$key]['tallas'][] = [
+                                                                'talla' => $tallaV,
+                                                                'cantidad' => $cantV
+                                                            ];
+                                                        }
+                                                    }
+                                                }
+                                                // Ordenar tallas
+                                                foreach($porGeneroColor as &$grupoC) {
+                                                    usort($grupoC['tallas'], function($a, $b) {
+                                                        $nA = is_numeric($a['talla']) ? (int)$a['talla'] : null;
+                                                        $nB = is_numeric($b['talla']) ? (int)$b['talla'] : null;
+                                                        if ($nA !== null && $nB !== null) return $nA - $nB;
+                                                        return strcmp($a['talla'], $b['talla']);
+                                                    });
+                                                }
+                                                unset($grupoC);
+                                            @endphp
+                                            @if(!empty($porGeneroColor))
+                                                @php
+                                                    $coloresReales = array_filter($porGeneroColor, fn($g) => $g['color'] !== '__SIN_COLOR__');
+                                                    $sinColor = array_filter($porGeneroColor, fn($g) => $g['color'] === '__SIN_COLOR__');
+                                                @endphp
+                                                <div class="text-slate-700 mt-2 text-xs font-medium">
+                                                    @php $curGenero = ''; @endphp
+                                                    @foreach($coloresReales as $grupoC)
+                                                        @if($grupoC['genero'] !== $curGenero)
+                                                            @php $curGenero = $grupoC['genero']; @endphp
+                                                            <div class="font-bold text-black mt-1">{{ $curGenero }}:</div>
+                                                        @endif
+                                                        <div class="ml-2">• <span style="color: #0369a1; font-weight: 600;">{{ $grupoC['color'] }}:</span> @foreach($grupoC['tallas'] as $i => $t){{ $i > 0 ? ', ' : '' }}{{ $t['talla'] }}-{{ $t['cantidad'] }}@endforeach</div>
+                                                    @endforeach
+                                                    @foreach($sinColor as $grupoC)
+                                                        @if($grupoC['genero'] !== $curGenero)
+                                                            @php $curGenero = $grupoC['genero']; @endphp
+                                                            <div class="font-bold text-black mt-1">{{ $curGenero }}:</div>
+                                                        @endif
+                                                        <div class="ml-2">• @foreach($grupoC['tallas'] as $i => $t){{ $i > 0 ? ', ' : '' }}{{ $t['talla'] }}-{{ $t['cantidad'] }}@endforeach</div>
+                                                    @endforeach
+                                                </div>
+                                            @endif
                                         @endif
                                         @if(count($procesos) > 0)
                                             <div class="text-black text-xs mt-2 space-y-0.5">

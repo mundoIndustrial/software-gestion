@@ -356,51 +356,33 @@ class InvoiceRenderer {
                         </thead>
                         <tbody>
                             ${generosFiltrados.map(([genero, tallasObj]) => {
-                                const tallaRows = Object.entries(tallasObj).map(([talla, cant]) => {
+                                // Recopilar todos los colores con sus tallas
+                                const porColor = {};
+                                let hayColores = false;
+                                
+                                Object.entries(tallasObj).forEach(([talla, cant]) => {
                                     let coloresConCantidad = [];
                                     
-                                    // 🔴 NUEVO: Detectar si es sobremedida cuando la talla está vacía
+                                    // Detectar sobremedida
                                     let tallaFinal = talla;
                                     if (!talla || talla.trim() === '') {
-                                        console.log('[InvoiceRenderer] 🔍 Tallavacía detectada, verificando sobremedida...');
-                                        console.log('[InvoiceRenderer] 🔍 Variantes disponibles:', prenda.variantes);
-                                        
-                                        // MÉTODO 1: Verificar en variantes si tiene talla_id (indicador de sobremedida)
                                         if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
-                                            console.log('[InvoiceRenderer] 🔍 Procesando ${prenda.variantes.length} variantes...');
-                                            prenda.variantes.forEach((v, idx) => {
-                                                console.log(`[InvoiceRenderer]   Variante[${idx}]:`, v);
-                                                console.log(`[InvoiceRenderer]   Claves Variante[${idx}]:`, Object.keys(v));
-                                                console.log(`[InvoiceRenderer]   talla_id en Variante[${idx}]:`, v.talla_id);
-                                            });
-                                            
                                             const varianteConTallaId = prenda.variantes.find(v => v.talla_id);
-                                            console.log('[InvoiceRenderer] 🔍 Variante con talla_id encontrada:', varianteConTallaId);
-                                            
                                             if (varianteConTallaId) {
                                                 tallaFinal = 'SOBREMEDIDA';
-                                                console.log('[InvoiceRenderer] ✅ Detectado sobremedida por talla_id en variante');
-                                            } else {
-                                                console.log('[InvoiceRenderer] ❌ No se encontró variante con talla_id');
                                             }
-                                        } else {
-                                            console.log('[InvoiceRenderer] ❌ No hay variantes o no es array');
                                         }
-                                        
-                                        // MÉTODO 2: Si no hay talla_id, usar la talla vacía como indicador de sobremedida
                                         if (tallaFinal === talla && (!talla || talla.trim() === '')) {
                                             tallaFinal = 'SOBREMEDIDA';
-                                            console.log('[InvoiceRenderer] ✅ Detectado sobremedida por talla vacía (fallback)');
                                         }
                                     }
                                     
-                                    // 🔴 NUEVO: PRIMERO: Buscar en prenda.talla_colores (datos del servidor)
+                                    // Buscar colores en talla_colores
                                     if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
                                         const coloresEnTalla = prenda.talla_colores.filter(tc => 
                                             tc.genero && tc.genero.toUpperCase() === genero.toUpperCase() && 
                                             tc.talla === talla
                                         );
-                                        
                                         if (coloresEnTalla.length > 0) {
                                             coloresConCantidad = coloresEnTalla.map(c => ({
                                                 nombre: c.color_nombre || c.color || 'Sin color',
@@ -409,13 +391,12 @@ class InvoiceRenderer {
                                         }
                                     }
                                     
-                                    // 🔴 NUEVO: SEGUNDO: Buscar en prenda.asignaciones (datos del PedidosAdapter)
+                                    // Buscar en asignaciones
                                     if (coloresConCantidad.length === 0 && prenda.asignaciones && Array.isArray(prenda.asignaciones) && prenda.asignaciones.length > 0) {
                                         const coloresEnTalla = prenda.asignaciones.filter(a => 
                                             a.genero && a.genero.toUpperCase() === genero.toUpperCase() && 
                                             a.talla === talla
                                         );
-                                        
                                         if (coloresEnTalla.length > 0) {
                                             coloresConCantidad = coloresEnTalla.map(c => ({
                                                 nombre: c.color || c.color_nombre || 'Sin color',
@@ -424,11 +405,10 @@ class InvoiceRenderer {
                                         }
                                     }
                                     
-                                    // 🔴 NUEVO: TERCERO: Buscar en prenda.asignacionesColoresPorTalla (formato StateManager)
+                                    // Buscar en asignacionesColoresPorTalla (formato key)
                                     if (coloresConCantidad.length === 0 && prenda.asignacionesColoresPorTalla && Object.keys(prenda.asignacionesColoresPorTalla).length > 0) {
                                         const key = `${genero.toUpperCase()}-${prenda.telas_array?.[0]?.tela_nombre || 'DRILL'}-${talla}`;
                                         const asignacion = prenda.asignacionesColoresPorTalla[key];
-                                        
                                         if (asignacion && asignacion.colores && Array.isArray(asignacion.colores)) {
                                             coloresConCantidad = asignacion.colores.map(c => ({
                                                 nombre: c.nombre || c.color_nombre || 'Sin color',
@@ -437,7 +417,7 @@ class InvoiceRenderer {
                                         }
                                     }
                                     
-                                    // CUARTO: Si no encontró en talla_colores, buscar en prenda.variantes (si viene del servidor)
+                                    // Buscar en variantes
                                     if (coloresConCantidad.length === 0 && prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
                                         const varianteColor = prenda.variantes.find(v => v.talla === talla);
                                         if (varianteColor && varianteColor.colores_asignados && Array.isArray(varianteColor.colores_asignados) && varianteColor.colores_asignados.length > 0) {
@@ -448,14 +428,12 @@ class InvoiceRenderer {
                                         }
                                     }
                                     
-                                    // TERCERO: Si no encontró en variantes, buscar en asignacionesColoresPorTalla
+                                    // Buscar en asignacionesColoresPorTalla (formato objeto)
                                     if (coloresConCantidad.length === 0 && prenda.asignacionesColoresPorTalla && typeof prenda.asignacionesColoresPorTalla === 'object') {
-                                        // MÉTODO 1: Buscar por objeto con genero y talla
                                         const clavePorObjeto = Object.keys(prenda.asignacionesColoresPorTalla).find(clave => {
                                             const asig = prenda.asignacionesColoresPorTalla[clave];
                                             return asig && asig.genero && asig.genero.toLowerCase() === genero.toLowerCase() && asig.talla === talla;
                                         });
-                                        
                                         if (clavePorObjeto) {
                                             const asignacion = prenda.asignacionesColoresPorTalla[clavePorObjeto];
                                             if (asignacion && asignacion.colores && Array.isArray(asignacion.colores) && asignacion.colores.length > 0) {
@@ -465,7 +443,6 @@ class InvoiceRenderer {
                                                 }));
                                             }
                                         } else {
-                                            // MÉTODO 2: Buscar por formato de clave "genero-...-talla"
                                             const clavePorFormato = Object.keys(prenda.asignacionesColoresPorTalla).find(clave => {
                                                 const partes = clave.split('-');
                                                 if (partes.length >= 2) {
@@ -473,11 +450,9 @@ class InvoiceRenderer {
                                                 }
                                                 return false;
                                             });
-                                            
                                             if (clavePorFormato) {
                                                 const valor = prenda.asignacionesColoresPorTalla[clavePorFormato];
                                                 let coloresArr = [];
-                                                
                                                 if (valor.colores && Array.isArray(valor.colores)) {
                                                     coloresArr = valor.colores;
                                                 } else if (Array.isArray(valor)) {
@@ -485,7 +460,6 @@ class InvoiceRenderer {
                                                 } else if (typeof valor === 'object') {
                                                     coloresArr = Object.values(valor).filter(v => v && typeof v === 'object');
                                                 }
-                                                
                                                 if (coloresArr.length > 0) {
                                                     coloresConCantidad = coloresArr.map(c => ({
                                                         nombre: c.nombre || c.color || c.color_nombre || 'N/A',
@@ -496,48 +470,62 @@ class InvoiceRenderer {
                                         }
                                     }
                                     
-                                    // Si hay colores, mostrar M:cantidad - Color: NOMBRE para cada uno
+                                    // Agrupar por color
                                     if (coloresConCantidad.length > 0) {
-                                        return coloresConCantidad.map(color => `<div style="margin-bottom: 2px;">${tallaFinal}:${color.cantidad} - <strong style="color: #0369a1;">Color:</strong> ${color.nombre}</div>`).join('');
+                                        coloresConCantidad.forEach(color => {
+                                            const esColorValido = color.nombre && color.nombre.toLowerCase() !== 'sin color' && color.nombre.trim() !== '';
+                                            if (esColorValido) {
+                                                hayColores = true;
+                                                const nombreColor = color.nombre.toUpperCase();
+                                                if (!porColor[nombreColor]) porColor[nombreColor] = [];
+                                                porColor[nombreColor].push({ talla: tallaFinal, cantidad: color.cantidad });
+                                            } else {
+                                                if (!porColor['__SIN_COLOR__']) porColor['__SIN_COLOR__'] = [];
+                                                porColor['__SIN_COLOR__'].push({ talla: tallaFinal, cantidad: color.cantidad });
+                                            }
+                                        });
                                     } else {
-                                        // Si no hay colores, mostrar solo talla:cantidad
-                                        // 🔴 FIX: Manejar cant como: número | objeto | array de objetos
+                                        // Sin color, agrupar bajo "SIN COLOR"
                                         let cantidadFinal = cant;
-                                        
                                         if (typeof cant === 'number') {
                                             cantidadFinal = cant;
+                                        } else if (Array.isArray(cant) && cant.length > 0) {
+                                            const p = cant[0];
+                                            cantidadFinal = (p && typeof p.cantidad === 'number') ? p.cantidad : (typeof p === 'number' ? p : 0);
+                                        } else if (typeof cant === 'object' && cant !== null) {
+                                            cantidadFinal = typeof cant.cantidad === 'number' ? cant.cantidad : 
+                                                Object.values(cant).reduce((s, v) => s + (typeof v === 'number' ? v : 0), 0);
                                         }
-                                        // Si es un array, extraer cantidad del primer elemento si tiene propiedad cantidad
-                                        else if (Array.isArray(cant) && cant.length > 0) {
-                                            const primerElemento = cant[0];
-                                            if (primerElemento && typeof primerElemento.cantidad === 'number') {
-                                                cantidadFinal = primerElemento.cantidad;
-                                            } else if (typeof primerElemento === 'number') {
-                                                cantidadFinal = primerElemento;
-                                            }
-                                        }
-                                        // Si es un objeto
-                                        else if (typeof cant === 'object' && cant !== null && !Array.isArray(cant)) {
-                                            // Si tiene propiedad cantidad, usarla
-                                            if (typeof cant.cantidad === 'number') {
-                                                cantidadFinal = cant.cantidad;
-                                            } else {
-                                                // Si es un objeto numérico, intentar obtener el primer valor numérico
-                                                const valores = Object.values(cant).filter(v => typeof v === 'number');
-                                                if (valores.length > 0) {
-                                                    cantidadFinal = valores[0];
-                                                } else {
-                                                    // Si no hay valores numéricos, sumar todos los que sean números
-                                                    cantidadFinal = Object.values(cant).reduce((sum, v) => {
-                                                        return sum + (typeof v === 'number' ? v : 0);
-                                                    }, 0);
-                                                }
-                                            }
-                                        }
-                                        
-                                        return `<div style="margin-bottom: 2px;">${tallaFinal}:${cantidadFinal}</div>`;
+                                        if (!porColor['__SIN_COLOR__']) porColor['__SIN_COLOR__'] = [];
+                                        porColor['__SIN_COLOR__'].push({ talla: tallaFinal, cantidad: cantidadFinal });
                                     }
-                                }).join('');
+                                });
+                                
+                                // Renderizar agrupado por color
+                                let tallaRows = '';
+                                const coloresReales = Object.entries(porColor).filter(([c]) => c !== '__SIN_COLOR__');
+                                const sinColorArr = porColor['__SIN_COLOR__'] || [];
+                                
+                                if (coloresReales.length > 0) {
+                                    tallaRows = coloresReales.map(([color, tallasArr]) => {
+                                            tallasArr.sort((a, b) => {
+                                                const nA = parseInt(a.talla), nB = parseInt(b.talla);
+                                                if (!isNaN(nA) && !isNaN(nB)) return nA - nB;
+                                                return a.talla.localeCompare(b.talla);
+                                            });
+                                            const tallasStr = tallasArr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
+                                            return `<div style="margin-bottom: 3px;"><strong style="color: #0369a1;">${color}:</strong> ${tallasStr}</div>`;
+                                        }).join('');
+                                } else if (sinColorArr.length > 0) {
+                                    sinColorArr.sort((a, b) => {
+                                        const nA = parseInt(a.talla), nB = parseInt(b.talla);
+                                        if (!isNaN(nA) && !isNaN(nB)) return nA - nB;
+                                        return a.talla.localeCompare(b.talla);
+                                    });
+                                    tallaRows = sinColorArr.map(t => 
+                                        `<div style="margin-bottom: 2px;">${t.talla}:${t.cantidad}</div>`
+                                    ).join('');
+                                }
                                 
                                 return `
                                     <tr style="border-bottom: 1px solid #eee;">
