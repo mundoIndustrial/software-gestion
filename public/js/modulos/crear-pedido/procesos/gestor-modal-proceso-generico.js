@@ -169,8 +169,26 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
             // IMPORTANTE: Cargar las tallas del proceso existente en el window
             const procesoDatos = window.procesosSeleccionados[tipoProceso]?.datos;
             if (procesoDatos && procesoDatos.tallas) {
-                window.tallasCantidadesProceso = { ...procesoDatos.tallas };
-                console.log(' [EDICIÓN] Tallas del proceso cargadas en tallas CantidadesProceso:', window.tallasCantidadesProceso);
+                window.tallasCantidadesProceso = {
+                    dama: { ...(procesoDatos.tallas.dama || {}) },
+                    caballero: { ...(procesoDatos.tallas.caballero || {}) },
+                    sobremedida: { ...(procesoDatos.tallas.sobremedida || {}) }
+                };
+
+                const sobremedidaSel = (procesoDatos.tallas.sobremedida && Object.keys(procesoDatos.tallas.sobremedida).length > 0)
+                    ? { ...(procesoDatos.tallas.sobremedida || {}) }
+                    : null;
+
+                window.tallasSeleccionadasProceso = {
+                    dama: Object.keys(procesoDatos.tallas.dama || {}),
+                    caballero: Object.keys(procesoDatos.tallas.caballero || {}),
+                    sobremedida: sobremedidaSel
+                };
+
+                console.log(' [EDICIÓN] Tallas del proceso cargadas en tallasCantidadesProceso y tallasSeleccionadasProceso:', {
+                    tallasCantidadesProceso: window.tallasCantidadesProceso,
+                    tallasSeleccionadasProceso: window.tallasSeleccionadasProceso
+                });
             }
             
             if (window.renderizarListaUbicaciones) {
@@ -793,14 +811,70 @@ window.aplicarProcesoParaTodasTallas = function() {
 
 // Obtener tallas registradas en la prenda del modal
 function obtenerTallasDeLaPrenda() {
-    // NUEVO: Leer directamente del modelo relacional window.tallasRelacionales
+    // Si hay asignaciones de colores por talla, construir tallas por combinación TALLA__COLOR.
+    // Esto permite que los procesos (bordado/estampado/reflectivo/etc) apliquen a tallas con color.
+    // IMPORTANTE: la fuente puede ser window.ColoresPorTalla.datos o window.StateManager.getAsignaciones().
+    const obtenerAsignacionesColores = () => {
+        const datosColores = window.ColoresPorTalla?.datos;
+        if (datosColores && typeof datosColores === 'object' && Object.keys(datosColores).length > 0) {
+            return { fuente: 'ColoresPorTalla.datos', asignaciones: datosColores };
+        }
+
+        if (window.StateManager && typeof window.StateManager.getAsignaciones === 'function') {
+            const asignacionesState = window.StateManager.getAsignaciones();
+            if (asignacionesState && typeof asignacionesState === 'object' && Object.keys(asignacionesState).length > 0) {
+                return { fuente: 'StateManager.getAsignaciones()', asignaciones: asignacionesState };
+            }
+        }
+
+        return { fuente: null, asignaciones: null };
+    };
+
+    const normalizarGenero = (generoRaw) => {
+        const g = String(generoRaw || '').trim().toLowerCase();
+        if (!g) return null;
+        if (g === 'dama' || g.startsWith('dam')) return 'dama';
+        if (g === 'caballero' || g.startsWith('cab')) return 'caballero';
+        return null;
+    };
+
+    const { fuente, asignaciones } = obtenerAsignacionesColores();
+    const tieneColores = !!(asignaciones && typeof asignaciones === 'object' && Object.keys(asignaciones).length > 0);
+
+    if (tieneColores) {
+        const tallasConColor = { dama: {}, caballero: {}, sobremedida: null };
+        console.log(`[obtenerTallasDeLaPrenda] Leyendo asignaciones (talla+color) desde ${fuente}:`, asignaciones);
+
+        Object.values(asignaciones).forEach(asignacion => {
+            const genero = normalizarGenero(asignacion?.genero);
+            if (!genero) return;
+
+            const talla = String(asignacion?.talla || '').trim().toUpperCase();
+            if (!talla) return;
+
+            const colores = Array.isArray(asignacion?.colores) ? asignacion.colores : [];
+            colores.forEach(c => {
+                const color = String(c?.nombre || '').trim().toUpperCase();
+                const cantidad = parseInt(c?.cantidad, 10) || 0;
+                if (!color || cantidad <= 0) return;
+
+                const key = `${talla}__${color}`;
+                tallasConColor[genero][key] = (tallasConColor[genero][key] || 0) + cantidad;
+            });
+        });
+
+        console.log('[obtenerTallasDeLaPrenda] Resultado final (talla+color):', tallasConColor);
+        return tallasConColor;
+    }
+
+    // Fallback: Leer directamente del modelo relacional window.tallasRelacionales (solo talla)
     // Estructura: { DAMA: { S: 20, M: 20 }, CABALLERO: { 32: 10 }, SOBREMEDIDA: { UNISEX: 100 } }
     const tallasRelacionales = window.tallasRelacionales || { DAMA: {}, CABALLERO: {} };
-    
+
     const tallas = { dama: {}, caballero: {}, sobremedida: null };
-    
+
     console.log('[obtenerTallasDeLaPrenda] Leyendo de tallasRelacionales:', tallasRelacionales);
-    
+
     // Obtener tallas de DAMA CON CANTIDADES
     if (tallasRelacionales.DAMA && Object.keys(tallasRelacionales.DAMA).length > 0) {
         tallas.dama = { ...tallasRelacionales.DAMA };
@@ -808,7 +882,7 @@ function obtenerTallasDeLaPrenda() {
     } else {
         console.log('[obtenerTallasDeLaPrenda] No hay tallas DAMA');
     }
-    
+
     // Obtener tallas de CABALLERO CON CANTIDADES
     if (tallasRelacionales.CABALLERO && Object.keys(tallasRelacionales.CABALLERO).length > 0) {
         tallas.caballero = { ...tallasRelacionales.CABALLERO };
@@ -816,7 +890,7 @@ function obtenerTallasDeLaPrenda() {
     } else {
         console.log('[obtenerTallasDeLaPrenda] No hay tallas CABALLERO');
     }
-    
+
     // Obtener SOBREMEDIDA si existe
     if (tallasRelacionales.SOBREMEDIDA && Object.keys(tallasRelacionales.SOBREMEDIDA).length > 0) {
         tallas.sobremedida = { ...tallasRelacionales.SOBREMEDIDA };
@@ -824,7 +898,7 @@ function obtenerTallasDeLaPrenda() {
     } else {
         console.log('[obtenerTallasDeLaPrenda] No hay sobremedida');
     }
-    
+
     console.log('[obtenerTallasDeLaPrenda] Resultado final:', tallas);
     return tallas;
 }
@@ -909,7 +983,7 @@ window.abrirEditorTallasEspecificas = function() {
         return;
     }
     
-    // Obtener tallas registradas en la prenda (retorna objetos {talla: cantidad})
+    // Obtener tallas registradas en la prenda (retorna objetos {talla: cantidad} o {talla__color: cantidad})
     const tallasPrenda = obtenerTallasDeLaPrenda();
     
     // Validar que haya tallas seleccionadas - son OBJETOS, no arrays
@@ -929,49 +1003,59 @@ window.abrirEditorTallasEspecificas = function() {
     const containerDama = document.getElementById('tallas-dama-container');
     if (containerDama) {
         containerDama.innerHTML = '';
+        containerDama.style.display = 'grid';
+        containerDama.style.gridTemplateColumns = 'repeat(auto-fill, minmax(240px, 1fr))';
+        containerDama.style.gap = '0.75rem';
         
         if (tallasDamaArray.length === 0) {
             containerDama.innerHTML = '<p style="color: #9ca3af; font-size: 0.875rem;">No hay tallas DAMA seleccionadas en la prenda</p>';
         } else {
-            tallasDamaArray.forEach(talla => {
-                const isSelected = window.tallasSeleccionadasProceso.dama.includes(talla);
-                const cantidadPrenda = tallasPrenda.dama[talla] || 0;
-                const cantidadProceso = window.tallasCantidadesProceso?.dama?.[talla] || 0;
+            tallasDamaArray.forEach(tallaKey => {
+                const isSelected = window.tallasSeleccionadasProceso.dama.includes(tallaKey);
+                const cantidadPrenda = tallasPrenda.dama[tallaKey] || 0;
+                const cantidadProceso = window.tallasCantidadesProceso?.dama?.[tallaKey] || 0;
+
+                const parts = String(tallaKey).split('__');
+                const tallaDisplay = (parts[0] || tallaKey);
+                const colorDisplay = (parts[1] || null);
+                const etiquetaDisplay = colorDisplay ? `${tallaDisplay} - ${colorDisplay}` : tallaDisplay;
                 
                 // Calcular cuánto está asignado en otros procesos
-                const { totalAsignado, procesosDetalle } = calcularCantidadAsignadaOtrosProcesos(talla, 'dama', procesoActual);
+                const { totalAsignado, procesosDetalle } = calcularCantidadAsignadaOtrosProcesos(tallaKey, 'dama', procesoActual);
                 const cantidadDisponible = cantidadPrenda - totalAsignado;
                 
                 const label = document.createElement('label');
                 label.className = 'talla-checkbox-editor';
                 label.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 0.5rem; width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
-                        <input type="checkbox" value="${talla}" ${isSelected ? 'checked' : ''} class="form-checkbox" data-genero="dama" style="cursor: pointer;">
-                        <span style="font-weight: 600; min-width: 30px;">${talla}</span>
-                        <input type="number" 
-                            value="${cantidadProceso}" 
-                            data-talla="${talla}"
-                            data-genero="dama"
-                            data-max="${cantidadDisponible}"
-                            onchange="actualizarCantidadTallaProceso(this)"
-                            placeholder="0"
-                            style="width: 70px; padding: 0.25rem 0.5rem; border: 1px solid #be185d; border-radius: 4px; text-align: center; font-weight: 700; margin-left: auto; background: #fce7f3; color: #be185d;"
-                            min="0"
-                            max="${cantidadDisponible}">
-                        <div style="font-size: 0.75rem; color: #9ca3af; white-space: nowrap;">
-                            ${procesosDetalle.length > 0 ? `
-                                <div style="margin-left: 0.5rem; padding-left: 0.5rem; border-left: 1px solid #d1d5db;">
-                                    <strong style="color: #dc2626;">${totalAsignado}</strong> asignados
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 10px; cursor: pointer; transition: all 0.2s; background: #ffffff;">
+                        <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                            <input type="checkbox" value="${tallaKey}" ${isSelected ? 'checked' : ''} class="form-checkbox" data-genero="dama" style="cursor: pointer; margin-top: 0.2rem;">
+                            <div style="min-width: 0;">
+                                <div style="font-weight: 800; color: #111827; line-height: 1.2; word-break: break-word;">${etiquetaDisplay}</div>
+                                <div style="font-size: 0.75rem; color: #6b7280; margin-top: 0.2rem;">
+                                    ${procesosDetalle.length > 0 ? `
+                                        Asignados: <strong style="color: #dc2626;">${totalAsignado}</strong>
+                                    ` : `
+                                        Disponible: <strong>${cantidadDisponible}</strong>
+                                    `}
                                 </div>
-                            ` : `
-                                <div style="margin-left: 0.5rem; padding-left: 0.5rem; border-left: 1px solid #d1d5db;">
-                                    Disponible: <strong>${cantidadDisponible}</strong>
-                                </div>
-                            `}
+                            </div>
                         </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+                            <div style="font-size: 0.75rem; color: #9ca3af; white-space: nowrap;">Cantidad del proceso</div>
+                            <input type="number" 
+                                value="${cantidadProceso}" 
+                                data-talla="${tallaKey}"
+                                data-genero="dama"
+                                data-max="${cantidadDisponible}"
+                                onchange="actualizarCantidadTallaProceso(this)"
+                                placeholder="0"
+                                style="width: 88px; padding: 0.35rem 0.5rem; border: 1px solid #be185d; border-radius: 8px; text-align: center; font-weight: 800; background: #fce7f3; color: #be185d;"
+                                min="0"
+                                max="${cantidadDisponible}">
                     </div>
                 `;
-                label.style.cssText = 'display: flex; flex-direction: column; gap: 0.5rem; cursor: pointer;';
+                label.style.cssText = 'display: block; cursor: pointer; user-select: none;';
                 
                 // Agregar información sobre procesos previos si existen
                 if (procesosDetalle.length > 0) {
@@ -993,49 +1077,59 @@ window.abrirEditorTallasEspecificas = function() {
     const containerCaballero = document.getElementById('tallas-caballero-container');
     if (containerCaballero) {
         containerCaballero.innerHTML = '';
+        containerCaballero.style.display = 'grid';
+        containerCaballero.style.gridTemplateColumns = 'repeat(auto-fill, minmax(240px, 1fr))';
+        containerCaballero.style.gap = '0.75rem';
         
         if (tallasCaballeroArray.length === 0) {
             containerCaballero.innerHTML = '<p style="color: #9ca3af; font-size: 0.875rem;">No hay tallas CABALLERO seleccionadas en la prenda</p>';
         } else {
-            tallasCaballeroArray.forEach(talla => {
-                const isSelected = window.tallasSeleccionadasProceso.caballero.includes(talla);
-                const cantidadPrenda = tallasPrenda.caballero[talla] || 0;
-                const cantidadProceso = window.tallasCantidadesProceso?.caballero?.[talla] || 0;
+            tallasCaballeroArray.forEach(tallaKey => {
+                const isSelected = window.tallasSeleccionadasProceso.caballero.includes(tallaKey);
+                const cantidadPrenda = tallasPrenda.caballero[tallaKey] || 0;
+                const cantidadProceso = window.tallasCantidadesProceso?.caballero?.[tallaKey] || 0;
+
+                const parts = String(tallaKey).split('__');
+                const tallaDisplay = (parts[0] || tallaKey);
+                const colorDisplay = (parts[1] || null);
+                const etiquetaDisplay = colorDisplay ? `${tallaDisplay} - ${colorDisplay}` : tallaDisplay;
                 
                 // Calcular cuánto está asignado en otros procesos
-                const { totalAsignado, procesosDetalle } = calcularCantidadAsignadaOtrosProcesos(talla, 'caballero', procesoActual);
+                const { totalAsignado, procesosDetalle } = calcularCantidadAsignadaOtrosProcesos(tallaKey, 'caballero', procesoActual);
                 const cantidadDisponible = cantidadPrenda - totalAsignado;
                 
                 const label = document.createElement('label');
                 label.className = 'talla-checkbox-editor';
                 label.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 0.5rem; width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
-                        <input type="checkbox" value="${talla}" ${isSelected ? 'checked' : ''} class="form-checkbox" data-genero="caballero" style="cursor: pointer;">
-                        <span style="font-weight: 600; min-width: 30px;">${talla}</span>
-                        <input type="number" 
-                            value="${cantidadProceso}" 
-                            data-talla="${talla}"
-                            data-genero="caballero"
-                            data-max="${cantidadDisponible}"
-                            onchange="actualizarCantidadTallaProceso(this)"
-                            placeholder="0"
-                            style="width: 70px; padding: 0.25rem 0.5rem; border: 1px solid #1d4ed8; border-radius: 4px; text-align: center; font-weight: 700; margin-left: auto; background: #dbeafe; color: #1d4ed8;"
-                            min="0"
-                            max="${cantidadDisponible}">
-                        <div style="font-size: 0.75rem; color: #9ca3af; white-space: nowrap;">
-                            ${procesosDetalle.length > 0 ? `
-                                <div style="margin-left: 0.5rem; padding-left: 0.5rem; border-left: 1px solid #d1d5db;">
-                                    <strong style="color: #dc2626;">${totalAsignado}</strong> asignados
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 10px; cursor: pointer; transition: all 0.2s; background: #ffffff;">
+                        <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                            <input type="checkbox" value="${tallaKey}" ${isSelected ? 'checked' : ''} class="form-checkbox" data-genero="caballero" style="cursor: pointer; margin-top: 0.2rem;">
+                            <div style="min-width: 0;">
+                                <div style="font-weight: 800; color: #111827; line-height: 1.2; word-break: break-word;">${etiquetaDisplay}</div>
+                                <div style="font-size: 0.75rem; color: #6b7280; margin-top: 0.2rem;">
+                                    ${procesosDetalle.length > 0 ? `
+                                        Asignados: <strong style="color: #dc2626;">${totalAsignado}</strong>
+                                    ` : `
+                                        Disponible: <strong>${cantidadDisponible}</strong>
+                                    `}
                                 </div>
-                            ` : `
-                                <div style="margin-left: 0.5rem; padding-left: 0.5rem; border-left: 1px solid #d1d5db;">
-                                    Disponible: <strong>${cantidadDisponible}</strong>
-                                </div>
-                            `}
+                            </div>
                         </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+                            <div style="font-size: 0.75rem; color: #9ca3af; white-space: nowrap;">Cantidad del proceso</div>
+                            <input type="number" 
+                                value="${cantidadProceso}" 
+                                data-talla="${tallaKey}"
+                                data-genero="caballero"
+                                data-max="${cantidadDisponible}"
+                                onchange="actualizarCantidadTallaProceso(this)"
+                                placeholder="0"
+                                style="width: 88px; padding: 0.35rem 0.5rem; border: 1px solid #1d4ed8; border-radius: 8px; text-align: center; font-weight: 800; background: #dbeafe; color: #1d4ed8;"
+                                min="0"
+                                max="${cantidadDisponible}">
                     </div>
                 `;
-                label.style.cssText = 'display: flex; flex-direction: column; gap: 0.5rem; cursor: pointer;';
+                label.style.cssText = 'display: block; cursor: pointer; user-select: none;';
                 
                 // Agregar información sobre procesos previos si existen
                 if (procesosDetalle.length > 0) {
@@ -1422,7 +1516,8 @@ window.guardarTallasSeleccionadas = function() {
     if (procesoActual && window.procesosSeleccionados[procesoActual]?.datos) {
         window.procesosSeleccionados[procesoActual].datos.tallas = {
             dama: window.tallasCantidadesProceso.dama || {},
-            caballero: window.tallasCantidadesProceso.caballero || {}
+            caballero: window.tallasCantidadesProceso.caballero || {},
+            sobremedida: window.tallasCantidadesProceso.sobremedida || {}
         };
         
         console.log(` [guardarTallasSeleccionadas] Tallas guardadas en proceso "${procesoActual}":`, {
@@ -1478,6 +1573,13 @@ window.actualizarResumenTallasProceso = function() {
     // Obtener cantidades desde tallasCantidadesProceso (ESTRUCTURA DEL PROCESO, NO DE LA PRENDA)
     const tallasProceso = window.tallasCantidadesProceso || { dama: {}, caballero: {} };
     console.log('[actualizarResumenTallasProceso]  tallasProceso para renderizar:', tallasProceso);
+
+    const formatearTallaKey = (tallaKey) => {
+        const parts = String(tallaKey).split('__');
+        const talla = (parts[0] || tallaKey);
+        const color = (parts[1] || null);
+        return color ? `${talla} - ${color}` : talla;
+    };
     
     if (window.tallasSeleccionadasProceso.dama.length > 0) {
         console.log('[actualizarResumenTallasProceso] 👩 Renderizando DAMA:', window.tallasSeleccionadasProceso.dama);
@@ -1485,7 +1587,7 @@ window.actualizarResumenTallasProceso = function() {
             const cantidad = tallasProceso.dama?.[t] || 0;
             console.log(`[actualizarResumenTallasProceso] 📏 DAMA ${t}: cantidad=${cantidad}`);
             return `<span style="background: #fce7f3; color: #be185d; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem;">
-                ${t}
+                ${formatearTallaKey(t)}
                 <span style="background: #be185d; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
             </span>`;
         }).join('');
@@ -1508,7 +1610,7 @@ window.actualizarResumenTallasProceso = function() {
             const cantidad = tallasProceso.caballero?.[t] || 0;
             console.log(`[actualizarResumenTallasProceso] 📏 CABALLERO ${t}: cantidad=${cantidad}`);
             return `<span style="background: #dbeafe; color: #1d4ed8; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem;">
-                ${t}
+                ${formatearTallaKey(t)}
                 <span style="background: #1d4ed8; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
             </span>`;
         }).join('');
@@ -1736,9 +1838,16 @@ window.agregarProcesoAlPedido = function() {
         // 🔴 CRÍTICO: Usar storage de eliminadas, no nulls
         const imagenesEliminadasArray = window.imagenesEliminadasProcesoStorage || [];
         
+        const ubicacionesClonadas = (window.ubicacionesProcesoSeleccionadas || []).map(u => {
+            if (u && typeof u === 'object') {
+                return { ...u };
+            }
+            return u;
+        });
+
         const datos = {
             tipo: procesoActual,
-            ubicaciones: window.ubicacionesProcesoSeleccionadas,
+            ubicaciones: ubicacionesClonadas,
             observaciones: document.getElementById('proceso-observaciones')?.value || '',
             tallas: {
                 dama: { ...window.tallasCantidadesProceso?.dama } || {},
@@ -1813,7 +1922,10 @@ window.agregarProcesoAlPedido = function() {
             }
             
             // Asignar los datos capturados
-            window.procesosSeleccionados[procesoActual].datos = datos;
+            window.procesosSeleccionados[procesoActual].datos = {
+                ...datos,
+                ubicaciones: [...ubicacionesClonadas]
+            };
             window.procesosSeleccionados[procesoActual].indiceResultado = window.procesoActualIndex; // Garantizar que el índice está guardado
             
             console.log('[agregarProcesoAlPedido-GUARDADO] Proceso guardado en window.procesosSeleccionados:', {
@@ -1846,7 +1958,10 @@ window.agregarProcesoAlPedido = function() {
             window.procesosSeleccionados[procesoActual] = {
                 tipo: procesoActual,
                 indiceResultado: window.procesoActualIndex,
-                datos: datos
+                datos: {
+                    ...datos,
+                    ubicaciones: [...ubicacionesClonadas]
+                }
             };
             
             console.log(' [EDICIÓN] Datos actualizados en window.procesosSeleccionados:', {

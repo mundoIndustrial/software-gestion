@@ -133,6 +133,31 @@ window.renderizarTarjetasProcesos = function() {
 function generarTarjetaProceso(tipo, datos) {
     const icono = iconosProcesos[tipo] || '<span class="material-symbols-rounded">settings</span>';
     const nombre = nombresProcesos[tipo] || datos.nombre || datos.nombre_proceso || datos.descripcion || datos.tipo_proceso || tipo.toUpperCase();
+
+    const formatearTallaKey = (tallaKey) => {
+        const parts = String(tallaKey).split('__');
+        const talla = (parts[0] || tallaKey);
+        const color = (parts[1] || null);
+        return color ? `${talla} - ${color}` : talla;
+    };
+
+    const renderGrupoTallas = (tituloGrupo, entries, chipStyle) => {
+        if (!entries || entries.length === 0) return '';
+        const chips = entries.map(([tallaKey, cantidad]) => {
+            return `<span style="${chipStyle}">
+                ${formatearTallaKey(tallaKey)}: ${cantidad}
+            </span>`;
+        }).join('');
+
+        return `
+            <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                <div style="font-size: 0.75rem; font-weight: 800; color: #374151; letter-spacing: 0.02em;">${tituloGrupo}</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                    ${chips}
+                </div>
+            </div>
+        `;
+    };
     
     // Función auxiliar para agregar /storage/ a URLs
     const agregarStorage = (url) => {
@@ -205,31 +230,17 @@ function generarTarjetaProceso(tipo, datos) {
     // HTML de tallas
     let tallasHTML = '';
     if (totalTallas > 0) {
+        const damaEntries = Object.entries(damaObj);
+        const cabEntries = Object.entries(caballeroObj);
+        const sobreEntries = Object.entries(sobremedidaObj);
+
         tallasHTML = `
             <div style="margin-top: 0.75rem;">
                 <strong style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">TALLAS (${totalTallas})</strong>
-                <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
-                    ${datos.tallas.dama && Object.keys(datos.tallas.dama).length > 0 ? `
-                        ${Object.entries(datos.tallas.dama).map(([talla, cantidad]) => {
-                            return `<span style="background: #fce7f3; color: #be185d; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">
-                                DAMA ${talla}: ${cantidad}
-                            </span>`;
-                        }).join('')}
-                    ` : ''}
-                    ${datos.tallas.caballero && Object.keys(datos.tallas.caballero).length > 0 ? `
-                        ${Object.entries(datos.tallas.caballero).map(([talla, cantidad]) => {
-                            return `<span style="background: #dbeafe; color: #1d4ed8; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">
-                                CABALLERO ${talla}: ${cantidad}
-                            </span>`;
-                        }).join('')}
-                    ` : ''}
-                    ${datos.tallas.sobremedida && Object.keys(datos.tallas.sobremedida).length > 0 ? `
-                        ${Object.entries(datos.tallas.sobremedida).map(([talla, cantidad]) => {
-                            return `<span style="background: #fef3c7; color: #92400e; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">
-                                SOBREMEDIDA ${talla}: ${cantidad}
-                            </span>`;
-                        }).join('')}
-                    ` : ''}
+                <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                    ${renderGrupoTallas('DAMA', damaEntries, 'background: #fce7f3; color: #be185d; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;')}
+                    ${renderGrupoTallas('CABALLERO', cabEntries, 'background: #dbeafe; color: #1d4ed8; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;')}
+                    ${renderGrupoTallas('SOBREMEDIDA', sobreEntries, 'background: #fef3c7; color: #92400e; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;')}
                 </div>
             </div>
         `;
@@ -479,107 +490,122 @@ window.editarProcesoDesdeModal = function(tipo) {
         }
         
         window.abrirModalProcesoGenerico(tipo, true); // true = esEdicion
-        
-        //  NUEVO: Aplicar automáticamente tallas desde la prenda SI es una cotización
-        setTimeout(() => {
-            // Copiar tallas de window.tallasRelacionales a window.tallasCantidadesProceso
-            if (window.tallasRelacionales) {
-                console.log('[EDITAR-PROCESO-MODAL]  Sincronizando tallas desde prenda a proceso...');
-                console.log('[EDITAR-PROCESO-MODAL]  window.tallasRelacionales:', window.tallasRelacionales);
-                
-                // Inicializar si no existe
-                if (!window.tallasCantidadesProceso) {
-                    window.tallasCantidadesProceso = { dama: {}, caballero: {}, unisex: {}, sobremedida: {} };
-                }
-                
-                if (!window.tallasSeleccionadasProceso) {
-                    window.tallasSeleccionadasProceso = { dama: [], caballero: [], unisex: [], sobremedida: {} };
-                }
-                
-                // Copiar DAMA - PROCESAR CORRECTAMENTE si tiene SOBREMEDIDA anidada
-                if (window.tallasRelacionales.DAMA && Object.keys(window.tallasRelacionales.DAMA).length > 0) {
-                    window.tallasCantidadesProceso.dama = {};
-                    const tallasDama = [];
-                    
-                    // 🔥 FIX: Si DAMA tiene SOBREMEDIDA (número o objeto anidado), EXTRAERLA
-                    for (const [talla, valor] of Object.entries(window.tallasRelacionales.DAMA)) {
-                        if (talla === 'SOBREMEDIDA') {
-                            // SOBREMEDIDA puede ser:
-                            // 1. Un NÚMERO directo: 344 → significa DAMA sobremedida
-                            // 2. Un OBJETO anidado: {DAMA: 34} → extraer por género
-                            
-                            if (typeof valor === 'number') {
-                                // SOBREMEDIDA como número: es para DAMA (género actual)
-                                window.tallasCantidadesProceso.sobremedida['DAMA'] = valor;
-                                console.log('[EDITAR-PROCESO-MODAL] 🔧 DAMA SOBREMEDIDA (número) extraída:', valor);
-                            } else if (typeof valor === 'object' && valor !== null) {
-                                // SOBREMEDIDA anidada: {DAMA: 34, CABALLERO: 20}
-                                for (const [genero, cantidad] of Object.entries(valor)) {
-                                    window.tallasCantidadesProceso.sobremedida[genero] = cantidad;
-                                }
-                                console.log('[EDITAR-PROCESO-MODAL] 🔧 DAMA SOBREMEDIDA (objeto) extraída:', valor);
-                            }
-                        } else {
-                            // Otras tallas: copiar directamente
-                            window.tallasCantidadesProceso.dama[talla] = valor;
-                            tallasDama.push(talla);
-                        }
+
+        const procesoTieneTallasGuardadas = (() => {
+            const t = proceso?.datos?.tallas;
+            if (!t || typeof t !== 'object') return false;
+            const total = Object.keys(t.dama || {}).length + Object.keys(t.caballero || {}).length + Object.keys(t.sobremedida || {}).length;
+            return total > 0;
+        })();
+
+        // Sincronizar desde la prenda SOLO como fallback cuando el proceso NO tiene tallas guardadas.
+        // Si se ejecuta en edición con tallas (especialmente talla__color), pisa la configuración del proceso.
+        if (!procesoTieneTallasGuardadas) {
+            setTimeout(() => {
+                // Copiar tallas de window.tallasRelacionales a window.tallasCantidadesProceso
+                if (window.tallasRelacionales) {
+                    console.log('[EDITAR-PROCESO-MODAL]  Sincronizando tallas desde prenda a proceso (fallback sin tallas guardadas)...');
+                    console.log('[EDITAR-PROCESO-MODAL]  window.tallasRelacionales:', window.tallasRelacionales);
+
+                    // Inicializar si no existe
+                    if (!window.tallasCantidadesProceso) {
+                        window.tallasCantidadesProceso = { dama: {}, caballero: {}, unisex: {}, sobremedida: {} };
                     }
-                    window.tallasSeleccionadasProceso.dama = tallasDama;
-                    console.log('[EDITAR-PROCESO-MODAL] ✏️ Tallas DAMA copiadas al proceso:', window.tallasCantidadesProceso.dama);
-                }
-                
-                // Copiar CABALLERO
-                if (window.tallasRelacionales.CABALLERO && Object.keys(window.tallasRelacionales.CABALLERO).length > 0) {
-                    window.tallasCantidadesProceso.caballero = {};
-                    const tallasCaballero = [];
-                    
-                    // 🔥 FIX: Mismo tratamiento para CABALLERO (número o objeto anidado)
-                    for (const [talla, valor] of Object.entries(window.tallasRelacionales.CABALLERO)) {
-                        if (talla === 'SOBREMEDIDA') {
-                            // SOBREMEDIDA puede ser número o objeto
-                            if (typeof valor === 'number') {
-                                // SOBREMEDIDA como número: es para CABALLERO
-                                window.tallasCantidadesProceso.sobremedida['CABALLERO'] = valor;
-                                console.log('[EDITAR-PROCESO-MODAL] 🔧 CABALLERO SOBREMEDIDA (número) extraída:', valor);
-                            } else if (typeof valor === 'object' && valor !== null) {
-                                // SOBREMEDIDA anidada: extraer por género
-                                for (const [genero, cantidad] of Object.entries(valor)) {
-                                    window.tallasCantidadesProceso.sobremedida[genero] = cantidad;
-                                }
-                                console.log('[EDITAR-PROCESO-MODAL] 🔧 CABALLERO SOBREMEDIDA (objeto) extraída:', valor);
-                            }
-                        } else {
-                            window.tallasCantidadesProceso.caballero[talla] = valor;
-                            tallasCaballero.push(talla);
-                        }
+
+                    if (!window.tallasSeleccionadasProceso) {
+                        window.tallasSeleccionadasProceso = { dama: [], caballero: [], unisex: [], sobremedida: {} };
                     }
-                    window.tallasSeleccionadasProceso.caballero = tallasCaballero;
-                    console.log('[EDITAR-PROCESO-MODAL] ✏️ Tallas CABALLERO copiadas al proceso:', window.tallasCantidadesProceso.caballero);
+
+                    // Copiar DAMA - PROCESAR CORRECTAMENTE si tiene SOBREMEDIDA anidada
+                    if (window.tallasRelacionales.DAMA && Object.keys(window.tallasRelacionales.DAMA).length > 0) {
+                        window.tallasCantidadesProceso.dama = {};
+                        const tallasDama = [];
+
+                        // 🔥 FIX: Si DAMA tiene SOBREMEDIDA (número o objeto anidado), EXTRAERLA
+                        for (const [talla, valor] of Object.entries(window.tallasRelacionales.DAMA)) {
+                            if (talla === 'SOBREMEDIDA') {
+                                // SOBREMEDIDA puede ser:
+                                // 1. Un NÚMERO directo: 344 → significa DAMA sobremedida
+                                // 2. Un OBJETO anidado: {DAMA: 34} → extraer por género
+
+                                if (typeof valor === 'number') {
+                                    // SOBREMEDIDA como número: es para DAMA (género actual)
+                                    window.tallasCantidadesProceso.sobremedida['DAMA'] = valor;
+                                    console.log('[EDITAR-PROCESO-MODAL] 🔧 DAMA SOBREMEDIDA (número) extraída:', valor);
+                                } else if (typeof valor === 'object' && valor !== null) {
+                                    // SOBREMEDIDA anidada: {DAMA: 34, CABALLERO: 20}
+                                    for (const [genero, cantidad] of Object.entries(valor)) {
+                                        window.tallasCantidadesProceso.sobremedida[genero] = cantidad;
+                                    }
+                                    console.log('[EDITAR-PROCESO-MODAL] 🔧 DAMA SOBREMEDIDA (objeto) extraída:', valor);
+                                }
+                            } else {
+                                // Otras tallas: copiar directamente
+                                window.tallasCantidadesProceso.dama[talla] = valor;
+                                tallasDama.push(talla);
+                            }
+                        }
+                        window.tallasSeleccionadasProceso.dama = tallasDama;
+                        console.log('[EDITAR-PROCESO-MODAL] ✏️ Tallas DAMA copiadas al proceso:', window.tallasCantidadesProceso.dama);
+                    }
+
+                    // Copiar CABALLERO
+                    if (window.tallasRelacionales.CABALLERO && Object.keys(window.tallasRelacionales.CABALLERO).length > 0) {
+                        window.tallasCantidadesProceso.caballero = {};
+                        const tallasCaballero = [];
+
+                        // 🔥 FIX: Mismo tratamiento para CABALLERO (número o objeto anidado)
+                        for (const [talla, valor] of Object.entries(window.tallasRelacionales.CABALLERO)) {
+                            if (talla === 'SOBREMEDIDA') {
+                                // SOBREMEDIDA puede ser número o objeto
+                                if (typeof valor === 'number') {
+                                    // SOBREMEDIDA como número: es para CABALLERO
+                                    window.tallasCantidadesProceso.sobremedida['CABALLERO'] = valor;
+                                    console.log('[EDITAR-PROCESO-MODAL] 🔧 CABALLERO SOBREMEDIDA (número) extraída:', valor);
+                                } else if (typeof valor === 'object' && valor !== null) {
+                                    // SOBREMEDIDA anidada: extraer por género
+                                    for (const [genero, cantidad] of Object.entries(valor)) {
+                                        window.tallasCantidadesProceso.sobremedida[genero] = cantidad;
+                                    }
+                                    console.log('[EDITAR-PROCESO-MODAL] 🔧 CABALLERO SOBREMEDIDA (objeto) extraída:', valor);
+                                }
+                            } else {
+                                window.tallasCantidadesProceso.caballero[talla] = valor;
+                                tallasCaballero.push(talla);
+                            }
+                        }
+                        window.tallasSeleccionadasProceso.caballero = tallasCaballero;
+                        console.log('[EDITAR-PROCESO-MODAL] ✏️ Tallas CABALLERO copiadas al proceso:', window.tallasCantidadesProceso.caballero);
+                    }
+
+                    // Copiar UNISEX si existe
+                    if (window.tallasRelacionales.UNISEX && Object.keys(window.tallasRelacionales.UNISEX).length > 0) {
+                        window.tallasCantidadesProceso.unisex = { ...window.tallasRelacionales.UNISEX };
+                        window.tallasSeleccionadasProceso.unisex = Object.keys(window.tallasRelacionales.UNISEX);
+                        console.log('[EDITAR-PROCESO-MODAL] ✏️ Tallas UNISEX copiadas al proceso:', window.tallasCantidadesProceso.unisex);
+                    }
+
+                    console.log('[EDITAR-PROCESO-MODAL]  Tallas seleccionadas sincronizadas:', {
+                        dama: window.tallasSeleccionadasProceso.dama,
+                        caballero: window.tallasSeleccionadasProceso.caballero,
+                        unisex: window.tallasSeleccionadasProceso.unisex,
+                        sobremedida: window.tallasCantidadesProceso.sobremedida
+                    });
                 }
-                
-                // Copiar UNISEX si existe
-                if (window.tallasRelacionales.UNISEX && Object.keys(window.tallasRelacionales.UNISEX).length > 0) {
-                    window.tallasCantidadesProceso.unisex = { ...window.tallasRelacionales.UNISEX };
-                    window.tallasSeleccionadasProceso.unisex = Object.keys(window.tallasRelacionales.UNISEX);
-                    console.log('[EDITAR-PROCESO-MODAL] ✏️ Tallas UNISEX copiadas al proceso:', window.tallasCantidadesProceso.unisex);
+
+                // Renderizar el resumen con las tallas ya aplicadas
+                if (window.actualizarResumenTallasProceso && typeof window.actualizarResumenTallasProceso === 'function') {
+                    console.log('[EDITAR-PROCESO-MODAL]  Renderizando resumen de tallas automáticamente con "done_all"...');
+                    window.actualizarResumenTallasProceso();
+                    console.log('[EDITAR-PROCESO-MODAL]  Resumen de tallas renderizado con tallas aplicadas');
                 }
-                
-                console.log('[EDITAR-PROCESO-MODAL]  Tallas seleccionadas sincronizadas:', {
-                    dama: window.tallasSeleccionadasProceso.dama,
-                    caballero: window.tallasSeleccionadasProceso.caballero,
-                    unisex: window.tallasSeleccionadasProceso.unisex,
-                    sobremedida: window.tallasCantidadesProceso.sobremedida
-                });
-            }
-            
-            // Renderizar el resumen con las tallas ya aplicadas
-            if (window.actualizarResumenTallasProceso && typeof window.actualizarResumenTallasProceso === 'function') {
-                console.log('[EDITAR-PROCESO-MODAL]  Renderizando resumen de tallas automáticamente con "done_all"...');
-                window.actualizarResumenTallasProceso();
-                console.log('[EDITAR-PROCESO-MODAL]  Resumen de tallas renderizado con tallas aplicadas');
-            }
-        }, 200);
+            }, 100);
+        } else {
+            console.log('[EDITAR-PROCESO-MODAL] ✅ Se omite sync desde prenda: el proceso ya tiene tallas guardadas', {
+                tipo,
+                tallasGuardadas: proceso?.datos?.tallas
+            });
+        }
         
         // Verificar z-index después de abrir
         setTimeout(() => {
@@ -659,78 +685,26 @@ window.editarProceso = function(tipo) {
 function cargarDatosProcesoEnModal(tipo, datos) {
     console.log(' [CARGAR-DATOS-PROCESO] Cargando datos en modal para:', tipo, datos);
 
-    //  CRÍTICO: Inicializar window.imagenesProcesoActual SIEMPRE al cargar un proceso
+    //  CRÍTICO: Inicializar SIEMPRE al cargar un proceso (evita contaminación de otro proceso)
     window.imagenesProcesoActual = [null, null, null];
-    
-    //  CRÍTICO: Inicializar window.imagenesProcesoActual SIEMPRE al cargar un proceso
-    window.imagenesProcesoActual = [null, null, null];
+    window.imagenesProcesoExistentes = [];
+    window.imagenesEliminadasProcesoStorage = [];
     
     //  CRÍTICO: Inicializar ubicaciones si no existen
     if (!window.ubicacionesProcesoSeleccionadas) {
         window.ubicacionesProcesoSeleccionadas = [];
     }
     
-    // 🔴 IMPORTANTE: Inicializar imagenesProcesoExistentes desde el proceso actual
-    // Esto preserva el estado de eliminación (null) entre aperturas del modal
-    const procesoActual = window.procesosSeleccionados?.[tipo];
-    
-    console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - procesoActual:', procesoActual);
-    console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - procesoActual.datos:', procesoActual?.datos);
-    console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - procesoActual.datos.imagenesEliminadas:', procesoActual?.datos?.imagenesEliminadas);
-    console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - datos.imagenes:', datos.imagenes);
-    
-    if (procesoActual?.datos?.imagenesEliminadas && procesoActual.datos.imagenesEliminadas.length > 0) {
-        // Restaurar el estado de eliminación desde el proceso guardado
-        console.log('[cargarDatosProcesoEnModal] 🔍 USANDO RUTA: imagenesEliminadas');
-        window.imagenesProcesoExistentes = [...procesoActual.datos.imagenesEliminadas];
-        console.log('[cargarDatosProcesoEnModal] ✅ Restaurando imagenesProcesoExistentes desde proceso guardado:', {
-            length: window.imagenesProcesoExistentes.length,
-            contenido: window.imagenesProcesoExistentes.map((img, idx) => ({
-                index: idx,
-                esNull: img === null,
-                tipo: img === null ? 'null (eliminada)' : typeof img
-            }))
-        });
-    } else {
-        // Primera carga: inicializar desde las imágenes del proceso
-        // 🔴 CRÍTICO: Filtrar imágenes que tienen deleted_at (marcadas como eliminadas en BD)
-        console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - datos.imagenes:', datos.imagenes);
-        console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - tipo de datos.imagenes:', typeof datos.imagenes);
-        console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - longitud datos.imagenes:', datos.imagenes?.length || 0);
-        console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - window.imagenesProcesoExistentes ANTES de cargar:', window.imagenesProcesoExistentes);
-        
-        const imagenesValidas = (datos.imagenes || []).filter(img => {
-            // Marcar como null si tiene deleted_at
-            if (img && img.deleted_at) {
-                console.log('[cargarDatosProcesoEnModal] 🗑️ Imagen con deleted_at encontrada, marcando como null:', img);
-                return false; // Filtrar (no incluir)
-            }
-            return img !== null && img !== undefined && img !== '';
-        });
-        
-        console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - imagenesValidas después de filtrar:', imagenesValidas);
-        
-        window.imagenesProcesoExistentes = imagenesValidas.map(img => img || null);
-        console.log('[cargarDatosProcesoEnModal] 🔄 Primera carga: inicializando imagenesProcesoExistentes desde datos', {
-            length: window.imagenesProcesoExistentes.length,
-            imagenesConDeleted: (datos.imagenes || []).filter(img => img?.deleted_at).length,
-            windowImagenesProcesoExistentes: window.imagenesProcesoExistentes
-        });
-        
-        // 🔴 NUEVO: Verificar que las imágenes se carguen en el DOM
-        setTimeout(() => {
-            console.log('[cargarDatosProcesoEnModal] 🔍 VERIFICACIÓN POST-CARGA - Estado del DOM:');
-            for (let i = 1; i <= 3; i++) {
-                const preview = document.getElementById(`proceso-foto-preview-${i}`);
-                const tieneImagen = preview && preview.querySelector('img');
-                console.log(`  Preview ${i}:`, {
-                    existe: !!preview,
-                    tieneImagen: !!tieneImagen,
-                    innerHTML: tieneImagen ? 'IMG presente' : preview?.innerHTML?.substring(0, 50) + '...'
-                });
-            }
-        }, 100);
-    }
+    // Inicializar imágenes existentes SOLO desde `datos.imagenes` del proceso actual.
+    // ⚠️ No usar `imagenesEliminadas` como fuente de imágenes existentes: eso causa contaminación entre procesos.
+    const imagenesValidas = (datos.imagenes || []).filter(img => {
+        if (img && img.deleted_at) {
+            return false;
+        }
+        return img !== null && img !== undefined && img !== '';
+    });
+
+    window.imagenesProcesoExistentes = imagenesValidas.map(img => img || null);
     
     // 🔴 CRÍTICO: Limpiar previews antes de cargar nuevas imágenes
     // Esto asegura que las imágenes eliminadas no aparezcan
@@ -933,10 +907,10 @@ function cargarDatosProcesoEnModal(tipo, datos) {
 
     }
     
-    // Cargar observaciones
+    // Cargar observaciones (SIEMPRE limpiar primero)
     const obsInput = document.getElementById('proceso-observaciones');
-    if (obsInput && datos.observaciones) {
-        obsInput.value = datos.observaciones;
+    if (obsInput) {
+        obsInput.value = datos.observaciones || '';
     }
     
     // Cargar tallas

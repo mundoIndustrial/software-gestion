@@ -753,40 +753,84 @@ window.PrendaCardService = {
                 const caballeroHasTallas = Object.keys(caballeroObj).length > 0;
                 
                 if (damaHasTallas || caballeroHasTallas) {
+                    const parseTallas = (obj) => {
+                        const agrupado = {};
+                        Object.entries(obj || {}).forEach(([tallaKey, cantidad]) => {
+                            const parts = String(tallaKey).split('__');
+                            const talla = String(parts[0] || '').trim().toUpperCase();
+                            const color = parts[1] ? String(parts[1]).trim().toUpperCase() : null;
+                            const qty = parseInt(cantidad, 10) || 0;
+                            if (!talla || qty <= 0) return;
+
+                            if (!agrupado[talla]) {
+                                agrupado[talla] = { total: 0, colores: [] };
+                            }
+                            agrupado[talla].total += qty;
+                            if (color) {
+                                const existente = agrupado[talla].colores.find(c => c.color === color);
+                                if (existente) {
+                                    existente.cantidad += qty;
+                                } else {
+                                    agrupado[talla].colores.push({ color, cantidad: qty });
+                                }
+                            }
+                        });
+                        return agrupado;
+                    };
+
+                    const renderGenero = (titulo, iconHtml, colorTitulo, bgBadge, colorBadge, tallasObjAgrupado) => {
+                        const tallasEntries = Object.entries(tallasObjAgrupado || {});
+                        if (tallasEntries.length === 0) return '';
+
+                        const cards = tallasEntries.map(([talla, info]) => {
+                            const coloresHTML = (info.colores && info.colores.length > 0)
+                                ? info.colores.map(c => {
+                                    return `
+                                        <div style="display: flex; align-items: center; gap: 0.35rem; color: #1f2937; font-size: 0.75rem; font-weight: 600;">
+                                            <span style="width: 6px; height: 6px; border-radius: 999px; background: ${colorBadge}; display: inline-block;"></span>
+                                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;">${c.color}</span>
+                                            <span style="color: #6b7280; font-weight: 700;">×${c.cantidad}</span>
+                                        </div>
+                                    `;
+                                }).join('')
+                                : '';
+
+                            return `
+                                <div style="min-width: 140px; border: 1px solid #bfdbfe; border-radius: 8px; padding: 0.6rem; background: #ffffff;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.35rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.35rem;">
+                                            <span style="font-weight: 900; color: #0f172a;">${talla}</span>
+                                        </div>
+                                        <span style="background: ${bgBadge}; color: white; padding: 0.1rem 0.45rem; border-radius: 6px; font-weight: 900; font-size: 0.75rem;">${info.total}</span>
+                                    </div>
+                                    ${coloresHTML ? `
+                                        <div style="display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.25rem; padding-top: 0.35rem; border-top: 1px solid #e5e7eb;">
+                                            ${coloresHTML}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            `;
+                        }).join('');
+
+                        return `
+                            <div style="margin-top: 0.6rem;">
+                                <div style="display: flex; align-items: center; gap: 0.4rem; font-weight: 900; color: ${colorTitulo}; margin-bottom: 0.4rem;">
+                                    ${iconHtml}
+                                    <span>${titulo}</span>
+                                </div>
+                                <div style="display: flex; flex-wrap: wrap; gap: 0.6rem;">
+                                    ${cards}
+                                </div>
+                            </div>
+                        `;
+                    };
+
+                    const damaAgr = parseTallas(damaObj);
+                    const cabAgr = parseTallas(caballeroObj);
+
                     tallasHTML = '<div style="margin-top: 0.75rem;">';
-                    
-                    if (damaHasTallas) {
-                        tallasHTML += `
-                            <div style="margin-bottom: 0.5rem;">
-                                <span style="font-weight: 600; color: #be185d; margin-right: 0.5rem;">
-                                    <i class="fas fa-female" style="margin-right: 0.25rem;"></i>Dama:
-                                </span>
-                                ${Object.entries(damaObj).map(([talla, cantidad]) => {
-                                    return `<span style="background: #fce7f3; color: #be185d; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.85rem; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem;">
-                                        ${talla}
-                                        <span style="background: #be185d; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
-                                    </span>`;
-                                }).join('')}
-                            </div>
-                        `;
-                    }
-                    
-                    if (caballeroHasTallas) {
-                        tallasHTML += `
-                            <div>
-                                <span style="font-weight: 600; color: #1d4ed8; margin-right: 0.5rem;">
-                                    <i class="fas fa-male" style="margin-right: 0.25rem;"></i>Caballero:
-                                </span>
-                                ${Object.entries(caballeroObj).map(([talla, cantidad]) => {
-                                    return `<span style="background: #dbeafe; color: #1d4ed8; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.85rem; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem;">
-                                        ${talla}
-                                        <span style="background: #1d4ed8; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
-                                    </span>`;
-                                }).join('')}
-                            </div>
-                        `;
-                    }
-                    
+                    tallasHTML += renderGenero('DAMA', '<i class="fas fa-female" style="color: #be185d;"></i>', '#be185d', '#be185d', '#be185d', damaAgr);
+                    tallasHTML += renderGenero('CABALLERO', '<i class="fas fa-male" style="color: #1d4ed8;"></i>', '#1d4ed8', '#1d4ed8', '#1d4ed8', cabAgr);
                     tallasHTML += '</div>';
                 }
             }
