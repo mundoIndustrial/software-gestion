@@ -1316,7 +1316,7 @@ class DespachoController extends Controller
             }
             
             // Verificar que sea un pedido con estado permitido
-            $estadosPermitidos = ['Pendiente', 'Entregado', 'En Ejecución', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'];
+            $estadosPermitidos = ['Pendiente', 'Entregado', 'En Ejecución', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA', 'pendiente_cartera', 'RECHAZADO_CARTERA'];
             if (!in_array($pedidoData['estado'] ?? '', $estadosPermitidos)) {
                 return redirect()->route('despacho.pendientes')
                     ->with('error', 'Este pedido no tiene un estado válido para despacho');
