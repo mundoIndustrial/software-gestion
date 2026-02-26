@@ -45,6 +45,8 @@ use Carbon\Carbon;
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
  * @property \Carbon\Carbon|null $deleted_at
+ * @property \Carbon\Carbon|null $ocultado_en
+ * @property int|null $usuario_ocultado_por
  * @property string $descripcion_prendas
  */
 class PedidoProduccion extends Model
@@ -79,6 +81,8 @@ class PedidoProduccion extends Model
         'rechazado_por_usuario_cartera',
         'rechazado_por_cartera_en',
         'motivo_rechazo_cartera',
+        'ocultado_en',
+        'usuario_ocultado_por',
     ];
 
     protected $casts = [

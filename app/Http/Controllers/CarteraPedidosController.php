@@ -57,7 +57,8 @@ class CarteraPedidosController extends Controller
             
             // Construir query con doble seguridad: incluir permitidos Y excluir no deseados
             $query = PedidoProduccion::whereIn('estado', $estadosPendientes)
-                                   ->whereNotIn('estado', $estadosExcluidos);
+                                   ->whereNotIn('estado', $estadosExcluidos)
+                                   ->where('mostrado', true);  // Solo mostrar pedidos no ocultos
             
             // Aplicar búsqueda general
             if (!empty($search)) {

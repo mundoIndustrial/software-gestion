@@ -246,8 +246,27 @@
                                 </button>
                                 @endif
                             @endif
+
+                            <!-- Botón Ocultar -->
+                            <button onclick="abrirModalOcultar({{ $orden->id }}, '{{ str_replace('#', '', $numeroPedido) }}')" title="Ocultar Pedido" style="
+                                background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+                                color: white;
+                                border: none;
+                                padding: 0.5rem;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                font-size: 1rem;
+                                transition: all 0.3s ease;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                width: 36px;
+                                height: 36px;
+                                box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
+                            " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(139, 92, 246, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(139, 92, 246, 0.3)'">
+                                <i class="fas fa-eye-slash"></i>
+                            </button>
                         </div>
-                        
                         <!-- Número -->
                         <div>
                             <span style="font-weight: 600; color: #1e5ba8;">#{{ $orden->numero_pedido ?? '-' }}</span>
@@ -513,6 +532,61 @@
         <!-- Contenido de novedades formateado -->
         </div>
 
+    </div>
+</div>
+
+<!-- Modal Ocultar Pedido -->
+<div id="modalOcultar" class="modal-overlay" style="display: none;">
+    <div class="modal-content modal-anulacion" style="text-align: center; max-width: 400px;">
+        <div class="modal-header">
+            <div class="header-icon" style="background: #fef3c7; color: #d97706;">
+                <span class="material-symbols-rounded">visibility_off</span>
+            </div>
+            <h2>Ocultar Pedido <span id="ordenOcultarNumero"></span>?</h2>
+        </div>
+
+        <div class="modal-body">
+            <p style="color: #7f8c8d; font-size: 0.95rem; margin-bottom: 1.5rem;">
+                Al ocultar este pedido, dejará de aparecer en tu vista de supervisor-pedidos. Podrás mostrarlo nuevamente desde la vista de pedidos no filtrados si es necesario.
+            </p>
+
+            <div class="form-actions" style="justify-content: center; gap: 1rem;">
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalOcultar()">
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-warning" id="btnConfirmarOcultar" onclick="confirmarOcultar()">
+                    <span class="material-symbols-rounded">visibility_off</span>
+                    Ocultar Pedido
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Éxito para Ocultar -->
+<div id="modalExitoOcultar" class="modal-overlay" style="display: none;">
+    <div class="modal-content modal-anulacion" style="text-align: center; max-width: 400px;">
+        <div class="modal-header">
+            <div class="header-icon" style="background: #d4edda; color: #28a745;">
+                <span class="material-symbols-rounded">check_circle</span>
+            </div>
+            <h2>¡Pedido Oculto!</h2>
+        </div>
+
+        <div class="modal-body">
+            <p style="color: #28a745; font-weight: 500; margin-bottom: 1.5rem;">
+                El pedido ha sido ocultado correctamente
+            </p>
+            <p style="color: #7f8c8d; font-size: 0.9rem; margin-bottom: 1.5rem;">
+                El pedido será removido de tu vista de supervisor-pedidos.
+            </p>
+
+            <div class="form-actions" style="justify-content: center;">
+                <button type="button" class="btn btn-success" onclick="cerrarModalExitoOcultar()">
+                    Aceptar
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -982,6 +1056,76 @@
         setTimeout(() => location.reload(), 300);
     }
 
+    // ===== FUNCIONES PARA OCULTAR PEDIDO =====
+    let ordenIdOcultar = null;
+
+    function abrirModalOcultar(ordenId, numeroOrden) {
+        ordenIdOcultar = ordenId;
+        document.getElementById('ordenOcultarNumero').textContent = '#' + numeroOrden;
+        document.getElementById('modalOcultar').style.display = 'flex';
+    }
+
+    function cerrarModalOcultar() {
+        document.getElementById('modalOcultar').style.display = 'none';
+        ordenIdOcultar = null;
+    }
+
+    function confirmarOcultar() {
+        if (!ordenIdOcultar) return;
+
+        const btnConfirmar = document.getElementById('btnConfirmarOcultar');
+        btnConfirmar.disabled = true;
+        btnConfirmar.textContent = 'Ocultando...';
+
+        fetch(`/supervisor-pedidos/${ordenIdOcultar}/ocultar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            body: JSON.stringify({}),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Cerrar modal de confirmación
+                cerrarModalOcultar();
+                // Mostrar modal de éxito
+                document.getElementById('modalExitoOcultar').style.display = 'flex';
+                // Recargar notificaciones si la función existe
+                if (typeof cargarNotificacionesPendientes === 'function') {
+                    cargarNotificacionesPendientes();
+                }
+            } else {
+                alert('Error: ' + data.message);
+                btnConfirmar.disabled = false;
+                btnConfirmar.innerHTML = '<span class="material-symbols-rounded">visibility_off</span> Ocultar Pedido';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al ocultar el pedido');
+            btnConfirmar.disabled = false;
+            btnConfirmar.innerHTML = '<span class="material-symbols-rounded">visibility_off</span> Ocultar Pedido';
+        });
+    }
+
+    function cerrarModalExitoOcultar() {
+        document.getElementById('modalExitoOcultar').style.display = 'none';
+        // Recargar la página después de cerrar
+        setTimeout(() => location.reload(), 300);
+    }
+
+    // Cerrar modales al hacer clic fuera
+    document.getElementById('modalOcultar')?.addEventListener('click', function(e) {
+        if (e.target === this) cerrarModalOcultar();
+    });
+
+    document.getElementById('modalExitoOcultar')?.addEventListener('click', function(e) {
+        if (e.target === this) cerrarModalExitoOcultar();
+    });
+
+    // ===== FIN FUNCIONES PARA OCULTAR PEDIDO =====
 
     // Contador de caracteres
     document.getElementById('motivoAnulacion')?.addEventListener('input', function() {

@@ -199,6 +199,15 @@ class SupervisorPedidosController extends Controller
 
         // EXCLUIR pedidos en estado pendiente_cartera o RECHAZADO_CARTERA
         $query->whereNotIn('estado', ['pendiente_cartera', 'RECHAZADO_CARTERA']);
+        
+        // FILTRO DE OCULTOS: Si mostrar=ocultos, mostrar SOLO pedidos ocultos. Sino, excluir ocultos
+        if ($request->filled('mostrar') && $request->mostrar === 'ocultos') {
+            // Mostrar SOLO pedidos ocultos
+            $query->whereNotNull('ocultado_en');
+        } else {
+            // EXCLUIR pedidos OCULTOS (ocultado_en es NULL = visible)
+            $query->whereNull('ocultado_en');
+        }
 
         // EXCLUIR pedidos sin número de pedido
         $query->whereNotNull('numero_pedido')
@@ -485,6 +494,82 @@ class SupervisorPedidosController extends Controller
             'message' => 'Orden enviada a revisión correctamente',
             'orden' => $orden,
         ]);
+    }
+
+    /**
+     * Ocultar orden en la vista de supervisor-pedidos
+     */
+    public function ocultarPedido(Request $request, $id)
+    {
+        try {
+            $orden = PedidoProduccion::findOrFail($id);
+            $usuario = auth()->user();
+
+            // Actualizar el pedido para marcarlo como oculto
+            $orden->update([
+                'ocultado_en' => now(),
+                'usuario_ocultado_por' => $usuario->id ?? null,
+            ]);
+
+            // Log de auditoría
+            \Log::info("Pedido #{$orden->numero_pedido} ocultado en supervisor-pedidos por " . ($usuario->name ?? 'Sistema'), [
+                'fecha' => now(),
+                'usuario_id' => $usuario->id ?? null,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido ocultado correctamente',
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al ocultar pedido: ' . $e->getMessage(), [
+                'pedido_id' => $id,
+                'usuario_id' => auth()->user()->id ?? null,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al ocultar el pedido: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Mostrar (revelar) un pedido oculto en la vista de supervisor-pedidos
+     */
+    public function mostrarPedido(Request $request, $id)
+    {
+        try {
+            $orden = PedidoProduccion::findOrFail($id);
+            $usuario = auth()->user();
+
+            // Actualizar el pedido para mostrarlo nuevamente
+            $orden->update([
+                'ocultado_en' => null,
+                'usuario_ocultado_por' => null,
+            ]);
+
+            // Log de auditoría
+            \Log::info("Pedido #{$orden->numero_pedido} mostrado nuevamente en supervisor-pedidos por " . ($usuario->name ?? 'Sistema'), [
+                'fecha' => now(),
+                'usuario_id' => $usuario->id ?? null,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido mostrado correctamente',
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al mostrar pedido: ' . $e->getMessage(), [
+                'pedido_id' => $id,
+                'usuario_id' => auth()->user()->id ?? null,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al mostrar el pedido: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

@@ -43,6 +43,14 @@
                         <span class="menu-label">Pedidos Anulados</span>
                     </a>
                 </li>
+                <li class="menu-item">
+                    <a href="{{ route('supervisor-pedidos.index', ['mostrar' => 'ocultos']) }}"
+                       class="menu-link {{ request()->query('mostrar') === 'ocultos' ? 'active' : '' }}"
+                       style="display:flex;align-items:center;gap:0.5rem;">
+                        <span class="material-symbols-rounded">visibility_off</span>
+                        <span class="menu-label">Pedidos Ocultos</span>
+                    </a>
+                </li>
             </ul>
         </div>
     </div>
