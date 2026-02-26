@@ -40,7 +40,7 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
                 'prenda.pedidoProduccion.asesora',
             ])
             ->whereIn('tipo_proceso_id', $tipoProcesoIds)
-            ->where('estado', 'APROBADO')
+            ->where('pedidos_procesos_prenda_detalles.estado', 'APROBADO')
             ->whereNotNull('crp.consecutivo_actual');
 
         if ($soloMinimalRole && $areaFija) {
