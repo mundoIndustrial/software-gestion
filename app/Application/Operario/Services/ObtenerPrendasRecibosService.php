@@ -52,24 +52,26 @@ class ObtenerPrendasRecibosService
 
         // Para costura-reflectivo: AGREGAR REFLECTIVO aprobados SIN validar encargado
         if ($tipoOperario === 'costura-reflectivo') {
-            \Log::info('🔍 [REFLECTIVO APROBADOS] BUSCANDO prendas con estado APROBADO en pedidos_procesos_prenda_detalles', [
+            \Log::info('🔍 [REFLECTIVO APROBADOS] BUSCANDO prendas con PROCESO REFLECTIVO APROBADO en pedidos_procesos_prenda_detalles', [
                 'usuario' => $usuario->name,
                 'recibos_costura_actuales' => $recibos->count()
             ]);
             
-            // Buscar TODAS las prendas con detalles en estado APROBADO
-            $prendasAprobadas = PedidosProcesosPrendaDetalle::where('estado', 'APROBADO')
+            // Buscar PRENDAS con proceso REFLECTIVO (tipo_proceso_id = 1) en estado APROBADO
+            // tipo_proceso_id = 1 es Reflectivo según tipos_procesos tabla
+            $prendasReflectivoAprobadas = PedidosProcesosPrendaDetalle::where('tipo_proceso_id', 1)
+                ->where('estado', 'APROBADO')
                 ->with(['prenda', 'prenda.pedidoProduccion'])
                 ->get()
                 ->pluck('prenda')
                 ->unique('id');
             
-            \Log::info('🔍 [REFLECTIVO APROBADOS] Prendas aprobadas encontradas', [
-                'total_prendas_aprobadas' => count($prendasAprobadas)
+            \Log::info('🔍 [REFLECTIVO APROBADOS] Prendas con PROCESO REFLECTIVO aprobado encontradas', [
+                'total_prendas_reflectivo_aprobadas' => count($prendasReflectivoAprobadas)
             ]);
             
-            // Para cada prenda aprobada, buscar si tiene recibo REFLECTIVO
-            foreach ($prendasAprobadas as $prendaAprobada) {
+            // Para cada prenda con reflectivo aprobado, buscar si tiene recibo REFLECTIVO
+            foreach ($prendasReflectivoAprobadas as $prendaAprobada) {
                 if (!$prendaAprobada || !$prendaAprobada->pedidoProduccion) {
                     \Log::info('🔍 [REFLECTIVO] Prenda o pedido sin relación', [
                         'prenda_id' => $prendaAprobada->id ?? 'null'
@@ -91,10 +93,10 @@ class ObtenerPrendasRecibosService
                         'prenda_id' => $prendaAprobada->id,
                         'recibo_id' => $reciboReflectivo->id,
                         'consecutivo' => $reciboReflectivo->consecutivo_actual,
-                        'estado_aprobado' => 'YES'
+                        'tiene_proceso_reflectivo_aprobado' => 'SI'
                     ]);
                 } else {
-                    \Log::info('❌ [REFLECTIVO NO ENCONTRADO] Prenda aprobada sin recibo REFLECTIVO', [
+                    \Log::info('❌ [REFLECTIVO PROCESO APROBADO PERO SIN RECIBO] Prenda con proceso reflectivo aprobado pero sin recibo REFLECTIVO', [
                         'numero_pedido' => $prendaAprobada->pedidoProduccion->numero_pedido,
                         'prenda_id' => $prendaAprobada->id
                     ]);
