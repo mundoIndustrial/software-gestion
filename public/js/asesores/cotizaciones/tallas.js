@@ -38,6 +38,73 @@ function actualizarGeneroSeleccionado(checkbox) {
     console.log(`Géneros actualizados: ${generosIds.join(', ')} => IDs: [${generosIds.join(', ')}]`);
 }
 
+function asegurarTabsGeneroRango(container) {
+    const generoSelectors = container.querySelector('.talla-genero-selectores');
+    if (!generoSelectors) return;
+
+    const checkboxesMarcados = generoSelectors.querySelectorAll('.talla-genero-checkbox:checked');
+    const tabsExistentes = container.querySelector('.tabs-genero-container');
+
+    if (checkboxesMarcados.length <= 1) {
+        if (tabsExistentes) tabsExistentes.remove();
+        if (checkboxesMarcados.length === 1) {
+            container.dataset.generoActivoRango = checkboxesMarcados[0].value;
+        } else {
+            delete container.dataset.generoActivoRango;
+        }
+        return;
+    }
+
+    const tabsContainer = document.createElement('div');
+    tabsContainer.className = 'tabs-genero-container';
+    tabsContainer.style.cssText = 'display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #0066cc;';
+
+    const tabsData = [];
+    const generoActivoActual = (container.dataset.generoActivoRango || '').trim();
+    checkboxesMarcados.forEach((checkbox, index) => {
+        const genero = checkbox.value;
+        const esActivo = generoActivoActual ? generoActivoActual === genero : index === 0;
+
+        const tab = document.createElement('button');
+        tab.type = 'button';
+        tab.textContent = genero === 'dama' ? 'DAMA' : 'CABALLERO';
+        tab.style.cssText = `padding: 8px 16px; background: white; color: #0066cc; border: none; border-bottom: 3px solid ${esActivo ? '#0066cc' : 'white'}; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.2s;`;
+        tab.className = 'tab-genero' + (esActivo ? ' activo' : '');
+        tab.dataset.genero = genero;
+
+        tabsContainer.appendChild(tab);
+        tabsData.push({ tab, genero });
+
+        tab.onclick = function(e) {
+            e.preventDefault();
+
+            tabsData.forEach(({ tab: t }) => {
+                t.style.borderBottom = '3px solid white';
+                t.classList.remove('activo');
+            });
+            tab.style.borderBottom = '3px solid #0066cc';
+            tab.classList.add('activo');
+
+            container.dataset.generoActivoRango = genero;
+            actualizarSelectoresRango(container);
+        };
+    });
+
+    if (tabsExistentes) tabsExistentes.replaceWith(tabsContainer);
+    else {
+        const rangoSelectors = container.querySelector('.talla-rango-selectors');
+        if (rangoSelectors && rangoSelectors.parentElement) {
+            rangoSelectors.parentElement.insertBefore(tabsContainer, rangoSelectors);
+        } else {
+            container.insertBefore(tabsContainer, container.firstChild);
+        }
+    }
+
+    // Activar tab por defecto: el activo actual si existe, si no el primero
+    const tabInicial = tabsData.find(t => t.genero === generoActivoActual)?.tab || tabsData[0].tab;
+    tabInicial.click();
+}
+
 function actualizarTabsGeneroLetrasSinModo(container) {
     const generoSelectors = container.querySelector('.talla-genero-selectores');
     const botonesDiv = container.querySelector('.talla-botones-container');
@@ -76,7 +143,7 @@ function actualizarTabsGeneroLetrasSinModo(container) {
 
         const tab = document.createElement('button');
         tab.type = 'button';
-        tab.textContent = genero === 'dama' ? '👩 DAMA' : '👨 CABALLERO';
+        tab.textContent = genero === 'dama' ? 'DAMA' : 'CABALLERO';
         tab.style.cssText = `padding: 8px 16px; background: white; color: #0066cc; border: none; border-bottom: 3px solid ${esPrimero ? '#0066cc' : 'white'}; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.2s;`;
         tab.className = 'tab-genero' + (esPrimero ? ' activo' : '');
         tab.dataset.genero = genero;
@@ -323,7 +390,7 @@ function actualizarModoLetras(container, modo) {
                 
                 const tab = document.createElement('button');
                 tab.type = 'button';
-                tab.textContent = genero === 'dama' ? '👩 DAMA' : '👨 CABALLERO';
+                tab.textContent = genero === 'dama' ? 'DAMA' : 'CABALLERO';
                 tab.style.cssText = `padding: 8px 16px; background: white; color: #0066cc; border: none; border-bottom: 3px solid ${esPrimero ? '#0066cc' : 'white'}; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.2s;`;
                 tab.className = 'tab-genero' + (esPrimero ? ' activo' : '');
                 tab.dataset.genero = genero;
@@ -439,6 +506,7 @@ function actualizarModoTallas(select) {
         tallaRangoSelectors.style.display = 'flex';
         
 
+        asegurarTabsGeneroRango(container);
         actualizarSelectoresRango(container);
         
         const desdeSelect = container.querySelector('.talla-desde');
@@ -467,19 +535,23 @@ function actualizarSelectoresRango(container) {
     
     // Obtener géneros seleccionados
     const checkboxesMarcados = generoSelectors.querySelectorAll('.talla-genero-checkbox:checked');
+
+    const obtenerGeneroActivoRango = () => {
+        const activo = (container.dataset.generoActivoRango || '').trim();
+        if (activo === 'dama' || activo === 'caballero') return activo;
+        if (checkboxesMarcados.length > 0) return checkboxesMarcados[0].value;
+        return '';
+    };
+
+    const generoActivo = obtenerGeneroActivoRango();
     let tallas = [];
-    
-    // Combinar tallas de todos los géneros seleccionados
-    checkboxesMarcados.forEach(cb => {
-        if (cb.value === 'dama') {
-            tallas = tallas.concat(tallasDama);
-        } else if (cb.value === 'caballero') {
-            tallas = tallas.concat(tallasCaballero);
-        }
-    });
-    
-    // Eliminar duplicados y ordenar
-    tallas = [...new Set(tallas)].sort((a, b) => parseInt(a) - parseInt(b));
+    if (generoActivo === 'dama') {
+        tallas = tallasDama.slice();
+    } else if (generoActivo === 'caballero') {
+        tallas = tallasCaballero.slice();
+    } else {
+        tallas = [];
+    }
     
     desdeSelect.innerHTML = '<option value="">Desde</option>';
     hastaSelect.innerHTML = '<option value="">Hasta</option>';
@@ -525,18 +597,11 @@ function agregarTallasRango(btn) {
         tallas = tallasLetras;
         esLetra = true;
     } else {
-        // Obtener géneros seleccionados y combinar tallas
         const checkboxesMarcados = generoSelectors.querySelectorAll('.talla-genero-checkbox:checked');
-        checkboxesMarcados.forEach(cb => {
-            if (cb.value === 'dama') {
-                tallas = tallas.concat(tallasDama);
-            } else if (cb.value === 'caballero') {
-                tallas = tallas.concat(tallasCaballero);
-            }
-        });
-        
-        // Eliminar duplicados y ordenar
-        tallas = [...new Set(tallas)].sort((a, b) => parseInt(a) - parseInt(b));
+
+        const generoActivo = (container.dataset.generoActivoRango || '').trim() || (checkboxesMarcados.length > 0 ? checkboxesMarcados[0].value : '');
+        const tallasGenero = generoActivo === 'dama' ? tallasDama : generoActivo === 'caballero' ? tallasCaballero : [];
+        tallas = tallasGenero.slice();
     }
     
     const desdeIdx = tallas.indexOf(desde);
@@ -562,43 +627,27 @@ function agregarTallasRango(btn) {
     
     // Determinar género(s) para las tallas de rango
     if (esLetra) {
-        // Para letras, usar los géneros seleccionados
         const checkboxesMarcados = generoSelectors.querySelectorAll('.talla-genero-checkbox:checked');
-        if (checkboxesMarcados.length === 1) {
-            const genero = checkboxesMarcados[0].value;
-            if (!tallasExistentes[genero]) tallasExistentes[genero] = [];
+        const generoActivo = (container.dataset.generoActivoLetras || container.dataset.generoActivoRango || '').trim() || (checkboxesMarcados.length > 0 ? checkboxesMarcados[0].value : '');
+        if (generoActivo) {
+            if (!tallasExistentes[generoActivo]) tallasExistentes[generoActivo] = [];
             tallasRango.forEach(talla => {
-                if (!tallasExistentes[genero].includes(talla)) {
-                    tallasExistentes[genero].push(talla);
+                if (!tallasExistentes[generoActivo].includes(talla)) {
+                    tallasExistentes[generoActivo].push(talla);
                 }
-            });
-        } else if (checkboxesMarcados.length > 1) {
-            // Múltiples géneros - agregar a ambos
-            checkboxesMarcados.forEach(checkbox => {
-                const genero = checkbox.value;
-                if (!tallasExistentes[genero]) tallasExistentes[genero] = [];
-                tallasRango.forEach(talla => {
-                    if (!tallasExistentes[genero].includes(talla)) {
-                        tallasExistentes[genero].push(talla);
-                    }
-                });
             });
         }
     } else {
-        // Para números, las tallas ya vienen combinadas de múltiples géneros
-        // Asignar según el género de cada talla
-        checkboxesMarcados.forEach(checkbox => {
-            const genero = checkbox.value;
-            const tallasGenero = genero === 'dama' ? tallasDama : tallasCaballero;
-            
-            if (!tallasExistentes[genero]) tallasExistentes[genero] = [];
-            
+        const checkboxesMarcados = generoSelectors.querySelectorAll('.talla-genero-checkbox:checked');
+        const generoActivo = (container.dataset.generoActivoRango || '').trim() || (checkboxesMarcados.length > 0 ? checkboxesMarcados[0].value : '');
+        if (generoActivo) {
+            if (!tallasExistentes[generoActivo]) tallasExistentes[generoActivo] = [];
             tallasRango.forEach(talla => {
-                if (tallasGenero.includes(talla) && !tallasExistentes[genero].includes(talla)) {
-                    tallasExistentes[genero].push(talla);
+                if (!tallasExistentes[generoActivo].includes(talla)) {
+                    tallasExistentes[generoActivo].push(talla);
                 }
             });
-        });
+        }
     }
     
     // Limpiar y reconstruir la vista
@@ -615,7 +664,7 @@ function agregarTallasRango(btn) {
             // Título del género
             const titulo = document.createElement('div');
             titulo.style.cssText = 'font-weight: 600; color: #0066cc; margin-bottom: 0.5rem; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;';
-            titulo.innerHTML = genero === 'dama' ? '👩 Tallas Dama:' : genero === 'caballero' ? '👨 Tallas Caballero:' : '📏 Tallas:';
+            titulo.innerHTML = genero === 'dama' ? 'Tallas Dama:' : genero === 'caballero' ? 'Tallas Caballero:' : 'Tallas:';
             grupoDiv.appendChild(titulo);
             
             // Contenedor de tallas de este género
@@ -643,8 +692,24 @@ function agregarTallasRango(btn) {
     
     tallasSection.style.display = 'block';
     actualizarTallasHidden(container);
-    
 
+    // Si hay múltiples géneros seleccionados, avanzar al siguiente tab para facilitar
+    // la captura del rango del segundo género (p.ej. Dama -> Caballero).
+    const generoSelectorsTabs = container.querySelector('.talla-genero-selectores');
+    if (generoSelectorsTabs) {
+        const checkboxesMarcadosTabs = generoSelectorsTabs.querySelectorAll('.talla-genero-checkbox:checked');
+        if (checkboxesMarcadosTabs.length > 1) {
+            const generoActivo = (container.dataset.generoActivoRango || '').trim();
+            const tabs = Array.from(container.querySelectorAll('.tabs-genero-container .tab-genero'));
+            const idx = tabs.findIndex(t => t.dataset.genero === generoActivo);
+            if (idx !== -1 && tabs.length > 1) {
+                const siguiente = tabs[(idx + 1) % tabs.length];
+                if (siguiente) {
+                    siguiente.click();
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -740,7 +805,7 @@ function actualizarBotonesPorGenero(container) {
             
             const tab = document.createElement('button');
             tab.type = 'button';
-            tab.textContent = genero === 'dama' ? '👩 DAMA' : '👨 CABALLERO';
+            tab.textContent = genero === 'dama' ? 'DAMA' : 'CABALLERO';
             tab.style.cssText = `padding: 8px 16px; background: white; color: #0066cc; border: none; border-bottom: 3px solid ${esPrimero ? '#0066cc' : 'white'}; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.2s;`;
             tab.className = 'tab-genero' + (esPrimero ? ' activo' : '');
             tab.dataset.genero = genero;
@@ -947,7 +1012,7 @@ function agregarTallasSeleccionadas(btn) {
             // Título del género
             const titulo = document.createElement('div');
             titulo.style.cssText = 'font-weight: 600; color: #0066cc; margin-bottom: 0.5rem; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;';
-            titulo.innerHTML = genero === 'dama' ? '👩 Tallas Dama:' : genero === 'caballero' ? '👨 Tallas Caballero:' : '📏 Tallas:';
+            titulo.innerHTML = genero === 'dama' ? 'Tallas Dama:' : genero === 'caballero' ? 'Tallas Caballero:' : 'Tallas:';
             grupoDiv.appendChild(titulo);
             
             // Contenedor de tallas de este género
