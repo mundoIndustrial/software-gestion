@@ -439,6 +439,18 @@
     border: 1px solid #fbbf24;
 }
 
+.estado-pendiente-cartera {
+    background: linear-gradient(135deg, #d8b4fe 0%, #c084fc 100%);
+    color: #5b21b6;
+    border: 1px solid #c084fc;
+}
+
+.estado-rechazado-cartera {
+    background: linear-gradient(135deg, #fca5a5 0%, #f87171 100%);
+    color: #7f1d1d;
+    border: 1px solid #f87171;
+}
+
 .btn-action {
     padding: 6px 12px;
     border: none;
@@ -740,7 +752,9 @@ function formatEstado(estado) {
         'En Ejecución': 'En Ejecución',
         'Anulada': 'Anulada',
         'PENDIENTE_SUPERVISOR': 'Pendiente Supervisor',
-        'DEVUELTO_A_ASESORA': 'Devuelto a Asesora'
+        'DEVUELTO_A_ASESORA': 'Devuelto a Asesora',
+        'pendiente_cartera': 'Pendiente Cartera',
+        'RECHAZADO_CARTERA': 'Rechazado Cartera'
     };
     return estados[estado] || estado;
 }
@@ -1183,7 +1197,9 @@ function getEstadoClass(estado) {
         'En Ejecución': 'estado-en-ejecucion',
         'Anulada': 'estado-anulado',
         'PENDIENTE_SUPERVISOR': 'estado-pendiente-supervisor',
-        'DEVUELTO_A_ASESORA': 'estado-devuelto-asesora'
+        'DEVUELTO_A_ASESORA': 'estado-devuelto-asesora',
+        'pendiente_cartera': 'estado-pendiente-cartera',
+        'RECHAZADO_CARTERA': 'estado-rechazado-cartera'
     };
     return clases[estado] || '';
 }
@@ -1196,7 +1212,9 @@ function formatEstado(estado) {
         'En Ejecución': 'En Ejecución',
         'Anulada': 'Anulada',
         'PENDIENTE_SUPERVISOR': 'Pendiente Supervisor',
-        'DEVUELTO_A_ASESORA': 'Devuelto a Asesora'
+        'DEVUELTO_A_ASESORA': 'Devuelto a Asesora',
+        'pendiente_cartera': 'Pendiente Cartera',
+        'RECHAZADO_CARTERA': 'Rechazado Cartera'
     };
     return estados[estado] || estado;
 }
