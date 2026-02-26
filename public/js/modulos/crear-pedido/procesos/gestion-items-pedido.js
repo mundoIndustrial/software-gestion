@@ -94,6 +94,78 @@ class GestionItemsUI {
     }
 
     /**
+     * Eliminar EPP por posición visual de tarjeta en el DOM
+     * Se llama desde epp-item-manager-nuevo.js al eliminar una tarjeta EPP
+     */
+    eliminarEPPPorTarjetaId(tarjetaId) {
+        try {
+            // Encontrar la posición visual de esta tarjeta ANTES de que se elimine del DOM
+            const todasLasTarjetas = document.querySelectorAll('.item-epp-card-nuevo');
+            let posicionVisual = -1;
+            todasLasTarjetas.forEach((tarjeta, idx) => {
+                if (tarjeta.getAttribute('data-epp-id') === tarjetaId) {
+                    posicionVisual = idx;
+                }
+            });
+            
+            console.log(`[gestionItemsUI] 🗑️ eliminarEPPPorTarjetaId - tarjetaId: ${tarjetaId}, posicionVisual: ${posicionVisual}`);
+            
+            if (posicionVisual < 0) {
+                // Tarjeta ya eliminada del DOM, intentar por índice en arrays
+                // Buscar en ordenItems los EPPs y eliminar el último que coincida
+                console.warn('[gestionItemsUI] Tarjeta no encontrada en DOM, eliminando último EPP del array');
+                const lastEppIdx = this.ordenItems.map((item, i) => item.tipo === 'epp' ? i : -1).filter(i => i >= 0);
+                if (lastEppIdx.length > 0) {
+                    posicionVisual = lastEppIdx.length - 1; // Última posición
+                }
+            }
+            
+            if (posicionVisual >= 0 && posicionVisual < this.epps.length) {
+                // Eliminar del array de epps
+                this.epps.splice(posicionVisual, 1);
+                console.log(`[gestionItemsUI] 🗑️ EPP eliminado del array. Quedan: ${this.epps.length}`);
+                
+                // Eliminar de ordenItems - buscar el epp en la posición correcta
+                let eppCount = 0;
+                let ordenIdx = -1;
+                for (let i = 0; i < this.ordenItems.length; i++) {
+                    if (this.ordenItems[i].tipo === 'epp') {
+                        if (eppCount === posicionVisual) {
+                            ordenIdx = i;
+                            break;
+                        }
+                        eppCount++;
+                    }
+                }
+                
+                if (ordenIdx >= 0) {
+                    this.ordenItems.splice(ordenIdx, 1);
+                }
+                
+                // Reconstruir índices
+                let prendaIdx = 0, eppIdx = 0;
+                this.ordenItems.forEach(item => {
+                    if (item.tipo === 'prenda') {
+                        item.index = prendaIdx++;
+                    } else if (item.tipo === 'epp') {
+                        item.index = eppIdx++;
+                    }
+                });
+                
+                console.log(`[gestionItemsUI] 🗑️ ordenItems actualizado:`, JSON.stringify(this.ordenItems));
+                console.log(`[gestionItemsUI] 🗑️ EPPs restantes: ${this.epps.length}, Prendas: ${this.prendas.length}`);
+                return true;
+            }
+            
+            console.warn('[gestionItemsUI] No se pudo eliminar EPP - posición inválida:', posicionVisual);
+            return false;
+        } catch (error) {
+            console.error('[gestionItemsUI] Error eliminando EPP:', error);
+            return false;
+        }
+    }
+
+    /**
      * Método público para agregar EPP desde modal externo
      */
     async agregarEPPDesdeModal(eppData) {

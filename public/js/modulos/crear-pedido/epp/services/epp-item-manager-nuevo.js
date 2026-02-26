@@ -435,13 +435,65 @@ class EppItemManagerNuevo {
                     confirmButtonColor: '#dc3545'
                 }).then((result) => {
                     if (result.isConfirmed) {
+                        // 🔴 Obtener datos de la tarjeta ANTES de eliminar del DOM
+                        const card = document.querySelector(`.item-epp-card-nuevo[data-epp-id="${itemId}"]`);
+                        const eppOriginalId = card ? card.getAttribute('data-epp-original-id') : null;
+                        
+                        // Calcular posición visual de esta tarjeta entre todas las EPP cards
+                        let posicionVisual = -1;
+                        const todasLasTarjetas = document.querySelectorAll('.item-epp-card-nuevo');
+                        todasLasTarjetas.forEach((tarjeta, idx) => {
+                            if (tarjeta.getAttribute('data-epp-id') === itemId) {
+                                posicionVisual = idx;
+                            }
+                        });
+                        
+                        console.log(`[EppItemManagerNuevo] Eliminando EPP - tarjetaId: ${itemId}, eppOriginalId: ${eppOriginalId}, posición: ${posicionVisual}`);
+                        
+                        // 1. Eliminar de gestionItemsUI ANTES de eliminar del DOM
+                        if (window.gestionItemsUI && typeof window.gestionItemsUI.eliminarEPPPorTarjetaId === 'function') {
+                            window.gestionItemsUI.eliminarEPPPorTarjetaId(itemId);
+                            console.log('[EppItemManagerNuevo] EPP eliminado de gestionItemsUI');
+                        }
+                        
+                        // 2. Eliminar del DOM
                         window.eppItemManagerNuevo.eliminarItem(itemId);
                         
-                        // Eliminar del array global
+                        // 3. Eliminar del array global window.itemsPedido usando posición correcta
                         if (window.itemsPedido) {
-                            window.itemsPedido = window.itemsPedido.filter(item => 
-                                !(item.tipo === 'epp' && String(item.id) === String(itemId))
-                            );
+                            const longitudAntes = window.itemsPedido.length;
+                            
+                            if (posicionVisual >= 0) {
+                                // Encontrar el EPP en la posición visual correcta dentro de itemsPedido
+                                let eppCount = 0;
+                                const idxToRemove = window.itemsPedido.findIndex(item => {
+                                    if (item.tipo === 'epp') {
+                                        if (eppCount === posicionVisual) {
+                                            return true;
+                                        }
+                                        eppCount++;
+                                    }
+                                    return false;
+                                });
+                                
+                                if (idxToRemove >= 0) {
+                                    window.itemsPedido.splice(idxToRemove, 1);
+                                    console.log(`[EppItemManagerNuevo] EPP eliminado por posición ${posicionVisual}. Items: ${longitudAntes} → ${window.itemsPedido.length}`);
+                                }
+                            }
+                            
+                            // Fallback: si no se eliminó por posición, intentar por epp_id
+                            if (window.itemsPedido.length === longitudAntes && eppOriginalId) {
+                                const fallbackIdx = window.itemsPedido.findIndex(item => 
+                                    item.tipo === 'epp' && String(item.epp_id) === String(eppOriginalId)
+                                );
+                                if (fallbackIdx >= 0) {
+                                    window.itemsPedido.splice(fallbackIdx, 1);
+                                    console.log(`[EppItemManagerNuevo] EPP eliminado por epp_id fallback. Items: ${longitudAntes} → ${window.itemsPedido.length}`);
+                                }
+                            }
+                            
+                            console.log('[EppItemManagerNuevo] window.itemsPedido después de eliminar:', window.itemsPedido.length, 'items');
                         }
                         
                         Swal.fire('Eliminado', 'EPP eliminado correctamente', 'success');

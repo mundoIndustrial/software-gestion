@@ -720,30 +720,62 @@ class EppMenuHandlersNuevo {
             }
 
             const eppOriginalId = tarjeta.getAttribute('data-epp-original-id');
-            console.log(`[EppMenuHandlersNuevo] Eliminando EPP con tarjetaId: ${tarjetaId}, ID original: ${eppOriginalId}`);
+            
+            // Calcular posición visual ANTES de eliminar del DOM
+            let posicionVisual = -1;
+            const todasLasTarjetas = document.querySelectorAll('.item-epp-card-nuevo');
+            todasLasTarjetas.forEach((t, idx) => {
+                if (t.getAttribute('data-epp-id') === tarjetaId) {
+                    posicionVisual = idx;
+                }
+            });
+            
+            console.log(`[EppMenuHandlersNuevo] Eliminando EPP con tarjetaId: ${tarjetaId}, ID original: ${eppOriginalId}, posición: ${posicionVisual}`);
 
-            // Eliminar visualmente usando el tarjetaId
+            // 1. Eliminar de gestionItemsUI ANTES de eliminar del DOM
+            if (window.gestionItemsUI && typeof window.gestionItemsUI.eliminarEPPPorTarjetaId === 'function') {
+                window.gestionItemsUI.eliminarEPPPorTarjetaId(tarjetaId);
+                console.log('[EppMenuHandlersNuevo] EPP eliminado de gestionItemsUI');
+            }
+
+            // 2. Eliminar visualmente usando el tarjetaId
             if (window.eppItemManagerNuevo) {
                 window.eppItemManagerNuevo.eliminarItem(tarjetaId);
             }
 
-            // Eliminar del array global usando el ID original
+            // 3. Eliminar del array global window.itemsPedido usando posición correcta
             if (window.itemsPedido) {
                 const longitudAnterior = window.itemsPedido.length;
-                window.itemsPedido = window.itemsPedido.filter(item => 
-                    !(item.tipo === 'epp' && (String(item.epp_id) === String(eppOriginalId) || String(item.id) === String(eppOriginalId)))
-                );
+                
+                if (posicionVisual >= 0) {
+                    // Encontrar el EPP en la posición visual correcta
+                    let eppCount = 0;
+                    const idxToRemove = window.itemsPedido.findIndex(item => {
+                        if (item.tipo === 'epp') {
+                            if (eppCount === posicionVisual) {
+                                return true;
+                            }
+                            eppCount++;
+                        }
+                        return false;
+                    });
+                    
+                    if (idxToRemove >= 0) {
+                        window.itemsPedido.splice(idxToRemove, 1);
+                    }
+                }
+                
+                // Fallback: si no se eliminó por posición, intentar por epp_id
+                if (window.itemsPedido.length === longitudAnterior && eppOriginalId) {
+                    const fallbackIdx = window.itemsPedido.findIndex(item => 
+                        item.tipo === 'epp' && (String(item.epp_id) === String(eppOriginalId))
+                    );
+                    if (fallbackIdx >= 0) {
+                        window.itemsPedido.splice(fallbackIdx, 1);
+                    }
+                }
+                
                 console.log(`[EppMenuHandlersNuevo] EPP eliminado del array. Items: ${longitudAnterior} → ${window.itemsPedido.length}`);
-            }
-
-            // Actualizar gestión de items
-            if (window.gestionItemsUI) {
-                // Sincronizar el estado
-                window.gestionItemsUI.epps = window.itemsPedido.filter(item => item.tipo === 'epp');
-                window.gestionItemsUI.ordenItems = window.itemsPedido.map((item, index) => ({
-                    tipo: item.tipo,
-                    index: window.gestionItemsUI.epps.indexOf(item)
-                }));
             }
 
             // Mostrar mensaje de éxito
@@ -753,7 +785,7 @@ class EppMenuHandlersNuevo {
                 alert('EPP eliminado correctamente');
             }
 
-            console.log(`[EppMenuHandlersNuevo] EPP ${itemId} eliminado completamente`);
+            console.log(`[EppMenuHandlersNuevo] EPP ${tarjetaId} eliminado completamente`);
 
         } catch (error) {
             console.error('[EppMenuHandlersNuevo] Error al eliminar EPP:', error);
