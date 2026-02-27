@@ -185,14 +185,23 @@ export class Formatters {
             });
         }
 
-        // 5. Tallas
+        // 5. Tallas - Verificar ambas fuentes: prenda.tallas y prenda.talla_colores
         console.log('[Formatters]  Procesando tallas...');
         console.log('[Formatters]  Tipo de tallas:', typeof prenda.tallas, 'Es array:', Array.isArray(prenda.tallas));
+        console.log('[Formatters]  🎨 talla_colores disponible:', !!prenda.talla_colores, 'es array:', Array.isArray(prenda.talla_colores));
         
-        if (prenda.tallas) {
+        // Determinar qué estructura de tallas usar (prioridad: talla_colores > tallas)
+        let tallasParaRenderizar = null;
+        
+        // Primero verificar si hay talla_colores (flujo 2 - tallas con colores)
+        if (Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
+            console.log('[Formatters]  📊 Usando talla_colores (flujo 2 - tallas con colores)');
+            tallasParaRenderizar = this._transformarTallaColoresAEstructura(prenda.talla_colores);
+            console.log('[Formatters]  Estructura de tallas transformada:', tallasParaRenderizar);
+        } else if (prenda.tallas) {
+            // Fallback a prenda.tallas (flujo 1 - tallas simples)
             let tienesTallas = false;
             
-            // Si es array, contar elementos
             if (Array.isArray(prenda.tallas)) {
                 tienesTallas = prenda.tallas.length > 0;
                 console.log('[Formatters]  Tallas es ARRAY con', prenda.tallas.length, 'elementos');
@@ -202,15 +211,18 @@ export class Formatters {
             }
             
             if (tienesTallas) {
-                console.log('[Formatters]  Tallas encontradas');
-                lineas.push('');
-                lineas.push('<strong>TALLAS</strong>');
-                this._agregarTallasFormato(lineas, prenda.tallas, prenda.genero, prenda);
-            } else {
-                console.log('[Formatters]  No hay tallas (vacío)');
+                console.log('[Formatters]  📊 Usando tallas (flujo 1 - tallas simples)');
+                tallasParaRenderizar = prenda.tallas;
             }
+        }
+        
+        if (tallasParaRenderizar) {
+            console.log('[Formatters]  Tallas encontradas');
+            lineas.push('');
+            lineas.push('<strong>TALLAS</strong>');
+            this._agregarTallasFormato(lineas, tallasParaRenderizar, prenda.genero, prenda);
         } else {
-            console.log('[Formatters]  No hay tallas (undefined/null)');
+            console.log('[Formatters]  No hay tallas (vacío)');
         }
 
         // 6. REFLECTIVO - Si existe un proceso reflectivo, agregarlo después de tallas
@@ -842,6 +854,22 @@ export class Formatters {
                         // Procesamiento original para objetos simples
                         console.log(`[Formatters._agregarTallasFormato]    🔍 Procesando objeto simple para género: ${genero}`);
                         Object.entries(value).forEach(([tallaKey, cantidadRaw]) => {
+                            // ✅ NUEVO: Detectar si es array de colores
+                            if (Array.isArray(cantidadRaw) && cantidadRaw.length > 0 && cantidadRaw[0] && cantidadRaw[0].color) {
+                                // Es array de colores [{color: 'AZUL', cantidad: 1}, ...]
+                                console.log(`[Formatters._agregarTallasFormato]      → tallaKey="${tallaKey}", ES ARRAY DE COLORES, PRESERVAR`);
+                                
+                                const talla = String(tallaKey).trim().toUpperCase();
+                                if (!talla) return;
+                                
+                                if (generoNormalizado === 'DAMA') {
+                                    tallasDama[talla] = cantidadRaw;
+                                } else if (generoNormalizado === 'CABALLERO') {
+                                    tallasCalballero[talla] = cantidadRaw;
+                                }
+                                return;
+                            }
+                            
                             // Manejar ambas estructuras: objeto con cantidad/color o número directo
                             let cantidad = cantidadRaw;
                             
@@ -960,6 +988,80 @@ export class Formatters {
         renderizarTallasGenero(tallasCalballero, 'CABALLERO');
         
         console.log('[Formatters._agregarTallasFormato] 📄 Lineas después:', lineas);
+    }
+
+    /**
+     * Transformar array de talla_colores a estructura compatible con renderizado
+     * 
+     * Input: [{genero, talla, color_nombre, cantidad, ...}, ...]
+     * Output: { DAMA: { TALLA: [{color, cantidad}, ...] }, CABALLERO: {...} }
+     */
+    static _transformarTallaColoresAEstructura(tallasColoresArray) {
+        console.log('[Formatters._transformarTallaColoresAEstructura] 🎨 INPUT:', tallasColoresArray);
+        
+        if (!Array.isArray(tallasColoresArray) || tallasColoresArray.length === 0) {
+            console.warn('[Formatters._transformarTallaColoresAEstructura] ⚠️ Array vacío o inválido');
+            return {};
+        }
+
+        const estructura = {
+            DAMA: {},
+            CABALLERO: {},
+            UNISEX: {}
+        };
+
+        // Procesar cada registro de talla_colores
+        tallasColoresArray.forEach((registro, idx) => {
+            console.log(`[Formatters._transformarTallaColoresAEstructura] Procesando registro ${idx}:`, registro);
+            
+            const genero = String(registro.genero || '').toUpperCase();
+            const talla = String(registro.talla || '').trim().toUpperCase();
+            const colorNombre = String(registro.color_nombre || '').trim().toUpperCase();
+            const cantidad = parseInt(registro.cantidad || 0, 10);
+
+            console.log(`[Formatters._transformarTallaColoresAEstructura]   genero=${genero}, talla=${talla}, color=${colorNombre}, cantidad=${cantidad}`);
+
+            // Validar datos mínimos
+            if (!genero || !talla || cantidad <= 0) {
+                console.warn(`[Formatters._transformarTallaColoresAEstructura]   ⚠️ Saltando registro inválido`);
+                return;
+            }
+
+            // Verificar que el género sea válido
+            if (!estructura.hasOwnProperty(genero)) {
+                console.warn(`[Formatters._transformarTallaColoresAEstructura]   ⚠️ Género inválido: ${genero}`);
+                return;
+            }
+
+            // Inicializar talla si no existe
+            if (!estructura[genero][talla]) {
+                estructura[genero][talla] = [];
+            }
+
+            // Si la estructura de la talla es un array, agregar el color
+            if (Array.isArray(estructura[genero][talla])) {
+                // Buscar si el color ya existe
+                const colorExistente = estructura[genero][talla].find(c => 
+                    c.color === (colorNombre || 'SIN COLOR')
+                );
+
+                if (colorExistente) {
+                    // Sumar cantidad si el color ya existe
+                    colorExistente.cantidad += cantidad;
+                    console.log(`[Formatters._transformarTallaColoresAEstructura]   ✅ Color existente actualizado: ${colorNombre} → ${colorExistente.cantidad}`);
+                } else {
+                    // Agregar nuevo color
+                    estructura[genero][talla].push({
+                        color: colorNombre || 'SIN COLOR',
+                        cantidad: cantidad
+                    });
+                    console.log(`[Formatters._transformarTallaColoresAEstructura]   ✅ Nuevo color agregado: ${colorNombre || 'SIN COLOR'} = ${cantidad}`);
+                }
+            }
+        });
+
+        console.log('[Formatters._transformarTallaColoresAEstructura] 📊 Estructura final:', estructura);
+        return estructura;
     }
 
     /**

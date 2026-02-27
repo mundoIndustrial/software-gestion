@@ -237,6 +237,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                     'descripcion' => $prenda->descripcion,
                     'de_bodega' => (bool)$prenda->de_bodega,
                     'tallas' => $tallasEstructuradas,
+                    'talla_colores' => $this->obtenerTallaColoresDelaPrenda($prenda), // 🎨 NUEVO: Colores por talla
                     'variantes' => $variantes,
                     'imagenes' => $imagenes, // Array con estructura completa
                     'imagenes_tela' => $imagenesTela, // Array con estructura completa
@@ -913,5 +914,44 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
         }
 
         return $epps; // Retorna [] si hay error, nunca null
+    }
+
+    /**
+     * 🎨 NUEVO: Obtener tallas con colores desde prenda_pedido_talla_colores
+     * 
+     * Estructura: [{genero, talla, color_nombre, tela_nombre, cantidad}, ...]
+     * Para ser usada en Formatters.transformarTallaColoresAEstructura()
+     */
+    private function obtenerTallaColoresDelaPrenda($prenda): array
+    {
+        try {
+            $tallasColores = \DB::table('prenda_pedido_talla_colores as pptc')
+                ->join('prenda_pedido_tallas as ppt', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
+                ->where('ppt.prenda_pedido_id', $prenda->id)
+                ->select([
+                    'ppt.genero',
+                    'ppt.talla',
+                    'pptc.tela_nombre',
+                    'pptc.color_nombre',
+                    'pptc.cantidad'
+                ])
+                ->get()
+                ->toArray();
+                
+            Log::debug('[obtenerTallaColoresDelaPrenda] Tallas con colores obtenidas', [
+                'prenda_id' => $prenda->id,
+                'cantidad_registros' => count($tallasColores),
+                'datos' => $tallasColores
+            ]);
+            
+            return $tallasColores;
+            
+        } catch (\Exception $e) {
+            Log::warning('[obtenerTallaColoresDelaPrenda] Error obteniendo colores por talla', [
+                'prenda_id' => $prenda->id,
+                'error' => $e->getMessage()
+            ]);
+            return [];
+        }
     }
 }
