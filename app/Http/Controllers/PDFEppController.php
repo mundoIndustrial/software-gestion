@@ -109,9 +109,9 @@ class PDFEppController extends Controller
 
             $html = $design->build();
 
-            $pdfContent = $this->generatePdfContent($html);
+            $pdfContent = $this->generatePdfContentAutoScale($html, $request);
 
-            return $this->downloadPdf($pdfContent, $cotizacion);
+            return $this->downloadPdf($request, $pdfContent, $cotizacion);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
@@ -141,7 +141,33 @@ class PDFEppController extends Controller
         }
     }
 
-    private function generatePdfContent(string $html): string
+    private function parseScale(Request $request): float
+    {
+        $scale = $request->query('scale', 1);
+        $scale = is_numeric($scale) ? (float) $scale : 1.0;
+
+        if ($scale < 0.75) {
+            $scale = 0.75;
+        }
+        if ($scale > 1.0) {
+            $scale = 1.0;
+        }
+
+        return $scale;
+    }
+
+    private function generatePdfContentAutoScale(string $html, Request $request): string
+    {
+        if ($request->query->has('scale')) {
+            $scale = $this->parseScale($request);
+            return $this->generatePdfContent($html, $scale);
+        }
+
+        PDFCotizacionHelper::limpiarTemporales();
+        return PDFCotizacionHelper::generarPDFAutoScaleConLimpieza($html);
+    }
+
+    private function generatePdfContent(string $html, float $scale = 1.0): string
     {
         $memoriaOriginal = ini_get('memory_limit');
         $tiempoOriginal = ini_get('max_execution_time');
@@ -149,9 +175,21 @@ class PDFEppController extends Controller
         ini_set('memory_limit', '256M');
         ini_set('max_execution_time', '120');
 
+        $dpiBase = 96;
+        $dpi = (int) round($dpiBase / max(0.01, $scale));
+        if ($dpi < 96) {
+            $dpi = 96;
+        }
+        if ($dpi > 160) {
+            $dpi = 160;
+        }
+
         try {
             PDFCotizacionHelper::limpiarTemporales();
-            return PDFCotizacionHelper::generarPDFConLimpieza($html);
+            return PDFCotizacionHelper::generarPDFConLimpieza($html, [
+                'dpi' => $dpi,
+                'img_dpi' => $dpi,
+            ]);
         } finally {
             ini_set('memory_limit', $memoriaOriginal);
             ini_set('max_execution_time', $tiempoOriginal);
@@ -166,13 +204,14 @@ class PDFEppController extends Controller
         }
     }
 
-    private function downloadPdf(string $pdfContent, Cotizacion $cotizacion)
+    private function downloadPdf(Request $request, string $pdfContent, Cotizacion $cotizacion)
     {
         $filename = 'Cotizacion_' . $cotizacion->id . '_EPP_' . date('Y-m-d') . '.pdf';
+        $dispositionType = $request->boolean('download') ? 'attachment' : 'inline';
 
         return response($pdfContent)
             ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="' . $filename . '"')
+            ->header('Content-Disposition', $dispositionType . '; filename="' . $filename . '"')
             ->header('Content-Length', strlen($pdfContent))
             ->header('Cache-Control', 'private, max-age=0, must-revalidate')
             ->header('Pragma', 'public')

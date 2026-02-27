@@ -68,7 +68,7 @@ class LogoPdfDesign
     {
         return <<<'CSS'
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        @page { margin: 5mm; }
+        @page { margin: 0mm 5mm 5mm 5mm; }
         html, body { width: 100%; margin: 0; padding: 0; height: auto; }
         body { font-family: Arial, sans-serif; font-size: 10px; line-height: 1.4; margin: 0; padding: 0; }
 
@@ -90,10 +90,10 @@ class LogoPdfDesign
         /* Estilos para prendas */
         .prendas-wrapper { padding: 5mm; }
         
-        .prenda-card { border: 1px solid #000; margin-bottom: 15px; padding: 0; page-break-inside: avoid; }
+        .prenda-card { border: 1px solid #000; margin-bottom: 8px; padding: 0; page-break-inside: avoid; }
         
         /* Header del card con nombre y tallas */
-        .prenda-header { background: #fff; padding: 8px 10px; border-bottom: 1px solid #000; }
+        .prenda-header { background: #fff; padding: 6px 8px; border-bottom: 1px solid #000; }
         .prenda-nombre { font-weight: bold; font-size: 11px; margin-bottom: 3px; color: #1e5ba8; }
         .prenda-detalles { font-size: 9px; margin-bottom: 2px; }
         .prenda-tallas { font-size: 10px; color: #e74c3c; font-weight: bold; }
@@ -107,7 +107,7 @@ class LogoPdfDesign
         .tela-ref { color: #999; font-size: 8px; }
         
         /* Contenedor principal de la prenda */
-        .prenda-contenido { padding: 10px; }
+        .prenda-contenido { padding: 6px 8px; }
         
         /* Tabla de tallas */
         .tallas-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
@@ -124,11 +124,11 @@ class LogoPdfDesign
         .variaciones-table tr:nth-child(even) { background: #f9fafb; }
         
         /* Imágenes lado a lado */
-        .imagenes-grupo { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; margin-bottom: 10px; }
-        .imagen-container { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-        .imagen-box { border: 2px solid #1e5ba8; padding: 4px; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; background: #f9f9f9; flex-shrink: 0; border-radius: 4px; }
+        .imagenes-grupo { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; margin-bottom: 4px; }
+        .imagen-container { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .imagen-box { border: 2px solid #1e5ba8; padding: 2px; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; background: #f9f9f9; flex-shrink: 0; border-radius: 4px; }
         .imagen-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .imagen-label { font-size: 8px; font-weight: bold; text-align: center; color: #333; width: 80px; word-wrap: break-word; }
+        .imagen-label { font-size: 7px; font-weight: bold; text-align: center; color: #333; width: 80px; word-wrap: break-word; line-height: 1.1; }
         .imagen-placeholder { width: 80px; height: 80px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #999; font-size: 8px; text-align: center; border: 2px solid #999; flex-shrink: 0; border-radius: 4px; }
         
         /* Observaciones generales */

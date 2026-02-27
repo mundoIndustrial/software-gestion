@@ -24,7 +24,8 @@
                 event.preventDefault();
                 const url = pdfLink.getAttribute('href');
                 if (url) {
-                    openPdfModal(url);
+                    const urlWithDownload = setUrlQueryParam(url, 'download', '1');
+                    window.location.href = urlWithDownload;
                 }
             }
         });
@@ -34,7 +35,12 @@
         const modal = document.getElementById('pdfPreviewModal');
         const frame = document.getElementById('pdfPreviewFrame');
         if (!modal || !frame) return;
-        frame.setAttribute('src', url);
+        window.__pdfPreviewBaseUrl = url;
+        const scaleInput = document.getElementById('pdfScaleInput');
+        if (scaleInput) {
+            scaleInput.value = '1';
+        }
+        updatePdfScalePreview();
         modal.style.display = 'flex';
     }
 
@@ -42,11 +48,44 @@
         const modal = document.getElementById('pdfPreviewModal');
         const frame = document.getElementById('pdfPreviewFrame');
         if (frame) frame.setAttribute('src', '');
+        window.__pdfPreviewBaseUrl = null;
         if (modal) modal.style.display = 'none';
+    }
+
+    function setUrlQueryParam(url, key, value) {
+        try {
+            const u = new URL(url, window.location.origin);
+            if (value === null || value === undefined || value === '') {
+                u.searchParams.delete(key);
+            } else {
+                u.searchParams.set(key, String(value));
+            }
+            return u.toString();
+        } catch (e) {
+            return url;
+        }
+    }
+
+    function updatePdfScalePreview() {
+        const baseUrl = window.__pdfPreviewBaseUrl;
+        const frame = document.getElementById('pdfPreviewFrame');
+        if (!baseUrl || !frame) return;
+
+        const scaleInput = document.getElementById('pdfScaleInput');
+        const scaleLabel = document.getElementById('pdfScaleLabel');
+        const scale = scaleInput ? parseFloat(scaleInput.value || '1') : 1;
+
+        if (scaleLabel) {
+            scaleLabel.textContent = Math.round(scale * 100) + '%';
+        }
+
+        const url = setUrlQueryParam(baseUrl, 'scale', scale);
+        frame.setAttribute('src', url);
     }
 
     window.openPdfModal = openPdfModal;
     window.closePdfModal = closePdfModal;
+    window.updatePdfScalePreview = updatePdfScalePreview;
 
     document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
@@ -383,6 +422,11 @@ document.addEventListener('click', function(event) {
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: linear-gradient(135deg, #1e5ba8 0%, #1a4a8f 100%); color: white;">
             <div style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; font-size: 0.9rem;">Vista previa PDF</div>
             <div style="display: flex; gap: 0.5rem;">
+                <div style="display:flex; align-items:center; gap: 0.5rem; margin-right: 0.5rem;">
+                    <div style="font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.2px;">Escalar</div>
+                    <input id="pdfScaleInput" type="range" min="0.75" max="1" step="0.01" value="1" oninput="updatePdfScalePreview()" style="width: 180px;" />
+                    <div id="pdfScaleLabel" style="min-width: 44px; text-align: right; font-weight: 700;">100%</div>
+                </div>
                 <button type="button" onclick="closePdfModal()" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.35); padding: 0.4rem 0.75rem; border-radius: 6px; cursor: pointer; font-weight: 700;">
                     Cerrar
                 </button>

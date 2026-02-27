@@ -51,6 +51,13 @@ class PDFCotizacionController extends Controller
             default => "/cotizacion/{$id}/pdf/prenda",
         };
 
+        $query = $request->query();
+        unset($query['tipo']);
+
+        if (!empty($query)) {
+            $path .= (str_contains($path, '?') ? '&' : '?') . http_build_query($query);
+        }
+
         return redirect($path);
     }
 }

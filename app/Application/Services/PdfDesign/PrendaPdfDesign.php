@@ -235,7 +235,7 @@ class PrendaPdfDesign
     {
         return <<<'CSS'
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        @page { margin: 5mm; }
+        @page { margin: 0mm 5mm 5mm 5mm; }
         html, body { width: 100%; margin: 0; padding: 0; height: auto; }
         body { font-family: Arial, sans-serif; font-size: 10px; line-height: 1.4; margin: 0; padding: 0; }
 
@@ -257,16 +257,16 @@ class PrendaPdfDesign
         /* Estilos para prendas */
         .prendas-wrapper { padding: 5mm; }
         
-        .prenda-card { border: 1px solid #000; margin-bottom: 15px; padding: 0; page-break-inside: avoid; }
+        .prenda-card { border: 1px solid #000; margin-bottom: 8px; padding: 0; page-break-inside: avoid; }
         
         /* Header del card con nombre y detalles */
-        .prenda-header { background: #fff; padding: 8px 10px; border-bottom: 1px solid #000; }
+        .prenda-header { background: #fff; padding: 6px 8px; border-bottom: 1px solid #000; }
         .prenda-nombre { font-weight: bold; font-size: 11px; margin-bottom: 3px; }
         .prenda-detalles { font-size: 9px; margin-bottom: 2px; }
         .prenda-tallas { font-size: 10px; color: #0f172a; font-weight: bold; }
         
         /* Contenedor principal de la prenda */
-        .prenda-contenido { padding: 10px; }
+        .prenda-contenido { padding: 6px 8px; }
         
         /* Columna izquierda: tabla de variaciones */
         .prenda-info { flex: 1; }
@@ -276,12 +276,12 @@ class PrendaPdfDesign
         .variaciones-table .var-label { background: #f5f5f5; font-weight: bold; width: 35%; }
         
         /* Columna derecha: imágenes de variaciones */
-        .prenda-imagenes { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; width: 100%; }
-        .prenda-img-container { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-        .prenda-img { border: 2px solid #999; padding: 4px; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; background: #f9f9f9; flex-shrink: 0; }
+        .prenda-imagenes { display: flex; flex-wrap: wrap; gap: 4px; align-items: flex-start; width: 100%; }
+        .prenda-img-container { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .prenda-img { border: 2px solid #999; padding: 2px; width: 90px; height: 90px; display: flex; align-items: center; justify-content: center; background: #f9f9f9; flex-shrink: 0; }
         .prenda-img img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .prenda-img-label { font-size: 8px; font-weight: bold; text-align: center; color: #333; width: 100px; word-wrap: break-word; }
-        .prenda-img-placeholder { width: 100px; height: 100px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #999; font-size: 8px; text-align: center; border: 2px solid #999; flex-shrink: 0; }
+        .prenda-img-label { font-size: 7px; font-weight: bold; text-align: center; color: #333; width: 90px; word-wrap: break-word; line-height: 1.1; }
+        .prenda-img-placeholder { width: 90px; height: 90px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #999; font-size: 8px; text-align: center; border: 2px solid #999; flex-shrink: 0; }
         
         /* Tabla de ubicaciones */
         .ubicaciones-wrapper { width: 100%; border-top: 1px solid #000; padding: 10px; background: #f9f9f9; }

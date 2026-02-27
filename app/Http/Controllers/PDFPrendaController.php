@@ -65,10 +65,10 @@ class PDFPrendaController extends Controller
             $html = $design->build();
 
             // 4. Generar PDF (delegar a helper)
-            $pdfContent = $this->generatePdfContent($html);
+            $pdfContent = $this->generatePdfContentAutoScale($html, $request);
 
             // 5. Retornar descarga
-            return $this->downloadPdf($pdfContent, $cotizacion);
+            return $this->downloadPdf($request, $pdfContent, $cotizacion);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
@@ -115,10 +115,56 @@ class PDFPrendaController extends Controller
         }
     }
 
+    private function parseScale(Request $request): float
+    {
+        $scale = $request->query('scale', 1);
+        $scale = is_numeric($scale) ? (float) $scale : 1.0;
+
+        if ($scale < 0.75) {
+            $scale = 0.75;
+        }
+        if ($scale > 1.0) {
+            $scale = 1.0;
+        }
+
+        return $scale;
+    }
+
+    private function generatePdfContentAutoScale(string $html, Request $request): string
+    {
+        if ($request->query->has('scale')) {
+            $scale = $this->parseScale($request);
+            return $this->generatePdfContent($html, $scale);
+        }
+
+        $memoriaOriginal = ini_get('memory_limit');
+        $tiempoOriginal = ini_get('max_execution_time');
+
+        ini_set('memory_limit', '256M');
+        ini_set('max_execution_time', '120');
+
+        try {
+            PDFCotizacionHelper::limpiarTemporales();
+            return PDFCotizacionHelper::generarPDFAutoScaleConLimpieza($html);
+        } finally {
+            ini_set('memory_limit', $memoriaOriginal);
+            ini_set('max_execution_time', $tiempoOriginal);
+
+            if (function_exists('gc_collect_cycles')) {
+                gc_collect_cycles();
+                gc_collect_cycles();
+            }
+
+            if (function_exists('gc_mem_caches')) {
+                gc_mem_caches();
+            }
+        }
+    }
+
     /**
      * Genera el contenido PDF
      */
-    private function generatePdfContent(string $html): string
+    private function generatePdfContent(string $html, float $scale = 1.0): string
     {
         // Aumentar límite de memoria y tiempo
         $memoriaOriginal = ini_get('memory_limit');
@@ -127,15 +173,25 @@ class PDFPrendaController extends Controller
         ini_set('memory_limit', '256M');
         ini_set('max_execution_time', '120');
 
+        // mPDF escala “encogiendo” el contenido si subimos el DPI.
+        // scale=1.00 => dpi base
+        // scale=0.90 => dpi ~ base/0.90 (más dpi => más contenido por página)
+        $dpiBase = 96;
+        $dpi = (int) round($dpiBase / max(0.01, $scale));
+        if ($dpi < 96) {
+            $dpi = 96;
+        }
+        if ($dpi > 160) {
+            $dpi = 160;
+        }
+
         try {
-            // Limpiar temporales antes de generar
             PDFCotizacionHelper::limpiarTemporales();
 
-            // Generar PDF
-            $pdfContent = PDFCotizacionHelper::generarPDFConLimpieza($html);
-
-            return $pdfContent;
-
+            return PDFCotizacionHelper::generarPDFConLimpieza($html, [
+                'dpi' => $dpi,
+                'img_dpi' => $dpi,
+            ]);
         } finally {
             // Restaurar límites
             ini_set('memory_limit', $memoriaOriginal);
@@ -156,13 +212,14 @@ class PDFPrendaController extends Controller
     /**
      * Descarga el PDF
      */
-    private function downloadPdf(string $pdfContent, Cotizacion $cotizacion)
+    private function downloadPdf(Request $request, string $pdfContent, Cotizacion $cotizacion)
     {
         $filename = 'Cotizacion_' . $cotizacion->id . '_Prenda_' . date('Y-m-d') . '.pdf';
+        $dispositionType = $request->boolean('download') ? 'attachment' : 'inline';
 
         return response($pdfContent)
             ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="' . $filename . '"')
+            ->header('Content-Disposition', $dispositionType . '; filename="' . $filename . '"')
             ->header('Content-Length', strlen($pdfContent))
             ->header('Cache-Control', 'private, max-age=0, must-revalidate')
             ->header('Pragma', 'public')

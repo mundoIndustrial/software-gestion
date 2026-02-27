@@ -86,10 +86,10 @@ class PDFLogoController extends Controller
             ]);
 
             // 5. Generar PDF (delegar a helper)
-            $pdfContent = $this->generatePdfContent($html);
+            $pdfContent = $this->generatePdfContentAutoScale($html, $request);
 
             // 6. Retornar descarga
-            return $this->downloadPdf($pdfContent, $cotizacion);
+            return $this->downloadPdf($request, $pdfContent, $cotizacion);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
@@ -141,10 +141,36 @@ class PDFLogoController extends Controller
         }
     }
 
+    private function parseScale(Request $request): float
+    {
+        $scale = $request->query('scale', 1);
+        $scale = is_numeric($scale) ? (float) $scale : 1.0;
+
+        if ($scale < 0.75) {
+            $scale = 0.75;
+        }
+        if ($scale > 1.0) {
+            $scale = 1.0;
+        }
+
+        return $scale;
+    }
+
+    private function generatePdfContentAutoScale(string $html, Request $request): string
+    {
+        if ($request->query->has('scale')) {
+            $scale = $this->parseScale($request);
+            return $this->generatePdfContent($html, $scale);
+        }
+
+        PDFCotizacionHelper::limpiarTemporales();
+        return PDFCotizacionHelper::generarPDFAutoScaleConLimpieza($html);
+    }
+
     /**
      * Genera el contenido PDF
      */
-    private function generatePdfContent(string $html): string
+    private function generatePdfContent(string $html, float $scale = 1.0): string
     {
         // Aumentar límite de memoria y tiempo significativamente
         $memoriaOriginal = ini_get('memory_limit');
@@ -152,6 +178,15 @@ class PDFLogoController extends Controller
         
         ini_set('memory_limit', '2048M');
         ini_set('max_execution_time', '0'); // Sin límite
+
+        $dpiBase = 96;
+        $dpi = (int) round($dpiBase / max(0.01, $scale));
+        if ($dpi < 96) {
+            $dpi = 96;
+        }
+        if ($dpi > 160) {
+            $dpi = 160;
+        }
 
         try {
             \Log::info('PDFLogoController: Iniciando generación de PDF');
@@ -162,7 +197,10 @@ class PDFLogoController extends Controller
             \Log::info('PDFLogoController: Llamando generarPDFConLimpieza');
             
             // Generar PDF
-            $pdfContent = PDFCotizacionHelper::generarPDFConLimpieza($html);
+            $pdfContent = PDFCotizacionHelper::generarPDFConLimpieza($html, [
+                'dpi' => $dpi,
+                'img_dpi' => $dpi,
+            ]);
 
             \Log::info('PDFLogoController: PDF generado correctamente', [
                 'pdf_size' => strlen($pdfContent)
@@ -196,13 +234,14 @@ class PDFLogoController extends Controller
     /**
      * Descarga el PDF
      */
-    private function downloadPdf(string $pdfContent, Cotizacion $cotizacion)
+    private function downloadPdf(Request $request, string $pdfContent, Cotizacion $cotizacion)
     {
         $filename = 'Cotizacion_' . $cotizacion->id . '_Logo_' . date('Y-m-d') . '.pdf';
+        $dispositionType = $request->boolean('download') ? 'attachment' : 'inline';
 
         return response($pdfContent)
             ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="' . $filename . '"')
+            ->header('Content-Disposition', $dispositionType . '; filename="' . $filename . '"')
             ->header('Content-Length', strlen($pdfContent))
             ->header('Cache-Control', 'private, max-age=0, must-revalidate')
             ->header('Pragma', 'public')

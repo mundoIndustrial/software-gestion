@@ -102,13 +102,13 @@ class PDFCotizacionCombiadaController extends Controller
 
             // 5. Generar PDF (delegar a helper)
             \Log::info("Generando contenido PDF...");
-            $pdfContent = $this->generatePdfContent($html);
+            $pdfContent = $this->generatePdfContentAutoScale($html, $request);
             
             \Log::info("PDF generado, tamaño: " . strlen($pdfContent) . " bytes");
 
             // 6. Retornar descarga
             \Log::info("Retornando descarga...");
-            return $this->downloadPdf($pdfContent, $cotizacion);
+            return $this->downloadPdf($request, $pdfContent, $cotizacion);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             \Log::error('Cotización no encontrada', ['cotizacion_id' => $id]);
@@ -144,6 +144,32 @@ class PDFCotizacionCombiadaController extends Controller
         }
     }
 
+    private function parseScale(Request $request): float
+    {
+        $scale = $request->query('scale', 1);
+        $scale = is_numeric($scale) ? (float) $scale : 1.0;
+
+        if ($scale < 0.75) {
+            $scale = 0.75;
+        }
+        if ($scale > 1.0) {
+            $scale = 1.0;
+        }
+
+        return $scale;
+    }
+
+    private function generatePdfContentAutoScale(string $html, Request $request): string
+    {
+        if ($request->query->has('scale')) {
+            $scale = $this->parseScale($request);
+            return $this->generatePdfContent($html, $scale);
+        }
+
+        PDFCotizacionHelper::limpiarTemporales();
+        return PDFCotizacionHelper::generarPDFAutoScaleConLimpieza($html);
+    }
+
     /**
      * Valida si el usuario tiene acceso a este PDF
      */
@@ -172,7 +198,7 @@ class PDFCotizacionCombiadaController extends Controller
     /**
      * Genera el contenido PDF
      */
-    private function generatePdfContent(string $html): string
+    private function generatePdfContent(string $html, float $scale = 1.0): string
     {
         // Aumentar límite de memoria y tiempo
         $memoriaOriginal = ini_get('memory_limit');
@@ -181,12 +207,24 @@ class PDFCotizacionCombiadaController extends Controller
         ini_set('memory_limit', '256M');
         ini_set('max_execution_time', '120');
 
+        $dpiBase = 96;
+        $dpi = (int) round($dpiBase / max(0.01, $scale));
+        if ($dpi < 96) {
+            $dpi = 96;
+        }
+        if ($dpi > 160) {
+            $dpi = 160;
+        }
+
         try {
             // Limpiar temporales antes de generar
             PDFCotizacionHelper::limpiarTemporales();
 
             // Generar PDF
-            $pdfContent = PDFCotizacionHelper::generarPDFConLimpieza($html);
+            $pdfContent = PDFCotizacionHelper::generarPDFConLimpieza($html, [
+                'dpi' => $dpi,
+                'img_dpi' => $dpi,
+            ]);
 
             return $pdfContent;
 
@@ -210,15 +248,16 @@ class PDFCotizacionCombiadaController extends Controller
     /**
      * Descarga el PDF
      */
-    private function downloadPdf(string $pdfContent, Cotizacion $cotizacion)
+    private function downloadPdf(Request $request, string $pdfContent, Cotizacion $cotizacion)
     {
         $filename = 'pdf_cotizacion_combinada_' . $cotizacion->numero_cotizacion . '_' . date('Y-m-d') . '.pdf';
+        $dispositionType = $request->boolean('download') ? 'attachment' : 'inline';
 
         \Log::info("Iniciando descarga del PDF con nombre: {$filename}, tamaño: " . strlen($pdfContent) . " bytes");
 
         return response($pdfContent)
             ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="' . $filename . '"')
+            ->header('Content-Disposition', $dispositionType . '; filename="' . $filename . '"')
             ->header('Content-Length', strlen($pdfContent))
             ->header('Cache-Control', 'private, max-age=0, must-revalidate')
             ->header('Pragma', 'public')
