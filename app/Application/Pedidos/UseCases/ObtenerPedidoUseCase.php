@@ -357,10 +357,13 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
         try {
             // Obtener especificaciones globales de la PRIMERA variante
             $especificaciones = [
+                'tipo_manga_id' => null,  // ID que siempre se devuelve
                 'manga' => null,
                 'manga_obs' => '',
+                'tipo_broche_boton_id' => null,  // ID que siempre se devuelve
                 'broche' => null,
                 'broche_obs' => '',
+                'tiene_bolsillos' => false,  // Booleano que siempre se devuelve
                 'bolsillos' => false,
                 'bolsillos_obs' => '',
             ];
@@ -383,16 +386,25 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                     'tipoBroche_value' => $primeraVariante->tipoBroche ? $primeraVariante->tipoBroche->nombre : 'NULL',
                 ]);
                 
-                if ($primeraVariante->tipo_manga_id && $primeraVariante->tipoManga) {
-                    $especificaciones['manga'] = $primeraVariante->tipoManga->nombre;
+                // MANGA - Siempre incluir el ID si existe
+                if ($primeraVariante->tipo_manga_id) {
+                    $especificaciones['tipo_manga_id'] = $primeraVariante->tipo_manga_id;
+                    if ($primeraVariante->tipoManga) {
+                        $especificaciones['manga'] = $primeraVariante->tipoManga->nombre;
+                    }
                 }
 
-                if ($primeraVariante->tipo_broche_boton_id && $primeraVariante->tipoBroche) {
-                    $especificaciones['broche'] = $primeraVariante->tipoBroche->nombre;
+                // BROCHE - Siempre incluir el ID si existe
+                if ($primeraVariante->tipo_broche_boton_id) {
+                    $especificaciones['tipo_broche_boton_id'] = $primeraVariante->tipo_broche_boton_id;
+                    if ($primeraVariante->tipoBroche) {
+                        $especificaciones['broche'] = $primeraVariante->tipoBroche->nombre;
+                    }
                 }
                 
                 $especificaciones['manga_obs'] = $primeraVariante->manga_obs ?? '';
                 $especificaciones['broche_obs'] = $primeraVariante->broche_boton_obs ?? '';
+                $especificaciones['tiene_bolsillos'] = (bool)($primeraVariante->tiene_bolsillos ?? false);
                 $especificaciones['bolsillos'] = (bool)($primeraVariante->tiene_bolsillos ?? false);
                 $especificaciones['bolsillos_obs'] = $primeraVariante->bolsillos_obs ?? '';
                 
@@ -459,10 +471,13 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                         'cantidad' => (int)$talla->cantidad,
                         'color_info' => $colorInfo,  // NUEVO: información de colores por talla
                         'colores_detalle' => $coloresEspecificos,  // NUEVO: array detallado de colores
+                        'tipo_manga_id' => $especificaciones['tipo_manga_id'] ?? null,  // ID de manga SIEMPRE
                         'manga' => $especificaciones['manga'],
                         'manga_obs' => $especificaciones['manga_obs'],
+                        'tipo_broche_boton_id' => $especificaciones['tipo_broche_boton_id'] ?? null,  // ID de broche SIEMPRE
                         'broche' => $especificaciones['broche'],
                         'broche_obs' => $especificaciones['broche_obs'],
+                        'tiene_bolsillos' => $especificaciones['tiene_bolsillos'] ?? false,  // Booleano SIEMPRE
                         'bolsillos' => $especificaciones['bolsillos'],
                         'bolsillos_obs' => $especificaciones['bolsillos_obs'],
                     ];

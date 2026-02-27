@@ -153,18 +153,30 @@ export class Formatters {
             const primerVariante = prenda.variantes[0];
             console.log('[Formatters]  Detalles disponibles en variante:', {
                 bolsillos_obs: primerVariante.bolsillos_obs,
+                tiene_bolsillos: primerVariante.tiene_bolsillos,
                 broche_boton_obs: primerVariante.broche_boton_obs,
-                tipo_broche_boton_id: primerVariante.tipo_broche_boton_id
+                tipo_broche_boton_id: primerVariante.tipo_broche_boton_id,
+                manga_obs: primerVariante.manga_obs,
+                tipo_manga_id: primerVariante.tipo_manga_id
             });
             
-            if (primerVariante.bolsillos_obs && primerVariante.bolsillos_obs.trim()) {
-                detalles.push(`• <strong>BOLSILLOS:</strong> ${primerVariante.bolsillos_obs.toUpperCase()}`);
+            // BOLSILLOS - Mostrar si tiene_bolsillos=true O si existe observación
+            if (primerVariante.tiene_bolsillos === true || primerVariante.tiene_bolsillos === 1 || (primerVariante.bolsillos_obs && primerVariante.bolsillos_obs.trim())) {
+                const obsTexto = primerVariante.bolsillos_obs && primerVariante.bolsillos_obs.trim() ? primerVariante.bolsillos_obs.toUpperCase() : '';
+                if (obsTexto) {
+                    detalles.push(`• <strong>BOLSILLOS:</strong> ${obsTexto}`);
+                } else {
+                    detalles.push(`• <strong>BOLSILLOS:</strong>`);
+                }
                 console.log('[Formatters]  BOLSILLOS agregados');
             }
             
-            // Buscar BROCHE/BOTÓN en broche_obs o broche_boton_obs
-            const brocheObs = primerVariante.broche_obs || primerVariante.broche_boton_obs;
-            if (brocheObs && brocheObs.trim()) {
+            // BROCHE/BOTÓN - Mostrar si tipo_broche_boton_id existe O si existe observación
+            // Chequear ambos campos de observación (broche_obs y broche_boton_obs)
+            const brocheObs = (primerVariante.broche_obs && primerVariante.broche_obs.trim()) || 
+                              (primerVariante.broche_boton_obs && primerVariante.broche_boton_obs.trim());
+            
+            if (primerVariante.tipo_broche_boton_id || brocheObs) {
                 let etiqueta = primerVariante.broche || 'BROCHE/BOTÓN';
                 if (etiqueta.toLowerCase().includes('botón')) {
                     etiqueta = 'BOTÓN';
@@ -172,10 +184,12 @@ export class Formatters {
                     etiqueta = 'BROCHE';
                 }
                 
-                detalles.push(`• <strong>${etiqueta}:</strong> ${brocheObs.toUpperCase()}`);
+                if (brocheObs) {
+                    detalles.push(`• <strong>${etiqueta}:</strong> ${brocheObs.toUpperCase()}`);
+                } else {
+                    detalles.push(`• <strong>${etiqueta}:</strong>`);
+                }
                 console.log('[Formatters]  BROCHE/BOTÓN agregado:', etiqueta);
-            } else {
-                console.log('[Formatters]  No hay broche_obs o broche_boton_obs');
             }
         }
         
@@ -410,25 +424,39 @@ export class Formatters {
         }
 
         // 2.6. Variaciones de prenda (antes de ubicaciones)
-        // Incluye BOTÓN/BROCHE y BOLSILLOS desde prenda.variantes
+        // Incluye BOTÓN/BROCHE y BOLSILLOS desde prenda.variantes (chequea IDs, no solo observaciones)
         if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
             const primerVariante = prenda.variantes[0];
             const detalles = [];
 
-            if (primerVariante.bolsillos_obs && String(primerVariante.bolsillos_obs).trim()) {
-                detalles.push(`• <strong>BOLSILLOS:</strong> ${String(primerVariante.bolsillos_obs).toUpperCase()}`);
+            // BOLSILLOS - Mostrar si tiene_bolsillos=true O si existe observación
+            if (primerVariante.tiene_bolsillos === true || primerVariante.tiene_bolsillos === 1 || (primerVariante.bolsillos_obs && primerVariante.bolsillos_obs.trim())) {
+                const obsTexto = primerVariante.bolsillos_obs && primerVariante.bolsillos_obs.trim() ? primerVariante.bolsillos_obs.toUpperCase() : '';
+                if (obsTexto) {
+                    detalles.push(`• <strong>BOLSILLOS:</strong> ${obsTexto}`);
+                } else {
+                    detalles.push(`• <strong>BOLSILLOS:</strong>`);
+                }
             }
 
-            const brocheObs = primerVariante.broche_obs || primerVariante.broche_boton_obs;
-            if (brocheObs && String(brocheObs).trim()) {
+            // BROCHE/BOTÓN - Mostrar si tipo_broche_boton_id existe O si existe observación
+            // Chequear ambos campos de observación (broche_obs y broche_boton_obs)
+            const brocheObs = (primerVariante.broche_obs && primerVariante.broche_obs.trim()) || 
+                              (primerVariante.broche_boton_obs && primerVariante.broche_boton_obs.trim());
+            
+            if (primerVariante.tipo_broche_boton_id || brocheObs) {
                 let etiqueta = primerVariante.broche || 'BROCHE/BOTÓN';
-                etiqueta = String(etiqueta);
                 if (etiqueta.toLowerCase().includes('botón')) {
                     etiqueta = 'BOTÓN';
                 } else if (etiqueta.toLowerCase().includes('broche')) {
                     etiqueta = 'BROCHE';
                 }
-                detalles.push(`• <strong>${etiqueta.toUpperCase()}:</strong> ${String(brocheObs).toUpperCase()}`);
+                
+                if (brocheObs) {
+                    detalles.push(`• <strong>${etiqueta}:</strong> ${brocheObs.toUpperCase()}`);
+                } else {
+                    detalles.push(`• <strong>${etiqueta}:</strong>`);
+                }
             }
 
             if (detalles.length > 0) {

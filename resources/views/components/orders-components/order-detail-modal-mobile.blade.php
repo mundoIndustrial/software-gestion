@@ -499,6 +499,77 @@ window.llenarReciboCosturaMobile = function(data) {
             .filter((x) => x);
     };
     
+    /**
+     * 🎨 Transformar array de talla_colores a estructura compatible con renderizado
+     * Input: [{genero, talla, color_nombre, cantidad, ...}, ...]
+     * Output: { DAMA: { TALLA: [{color, cantidad}, ...] }, CABALLERO: {...} }
+     */
+    const transformarTallaColoresAEstructura = (tallasColoresArray) => {
+        console.log('[OPERARIO] Transformando talla_colores:', tallasColoresArray);
+        
+        if (!Array.isArray(tallasColoresArray) || tallasColoresArray.length === 0) {
+            console.warn('[OPERARIO] Array de talla_colores vacío o inválido');
+            return {};
+        }
+
+        const estructura = {
+            DAMA: {},
+            CABALLERO: {},
+            UNISEX: {}
+        };
+
+        // Procesar cada registro de talla_colores
+        tallasColoresArray.forEach((registro, idx) => {
+            const genero = (registro.genero || '').toUpperCase();
+            const talla = (registro.talla || '').trim().toUpperCase();
+            const colorNombre = (registro.color_nombre || '').trim().toUpperCase();
+            const cantidad = parseInt(registro.cantidad || 0, 10);
+
+            console.log(`[OPERARIO] Reg ${idx}: genero=${genero}, talla=${talla}, color=${colorNombre}, cant=${cantidad}`);
+
+            // Validar datos mínimos
+            if (!genero || !talla || cantidad <= 0) {
+                console.warn(`[OPERARIO] Registro inválido: saltando`);
+                return;
+            }
+
+            // Verificar que el género sea válido
+            if (!estructura.hasOwnProperty(genero)) {
+                console.warn(`[OPERARIO] Género inválido: ${genero}`);
+                return;
+            }
+
+            // Inicializar talla si no existe
+            if (!estructura[genero][talla]) {
+                estructura[genero][talla] = [];
+            }
+
+            // Si la estructura de la talla es un array, agregar el color
+            if (Array.isArray(estructura[genero][talla])) {
+                // Buscar si el color ya existe
+                const colorExistente = estructura[genero][talla].find(c => 
+                    c.color === (colorNombre || 'SIN COLOR')
+                );
+
+                if (colorExistente) {
+                    // Sumar cantidad si el color ya existe
+                    colorExistente.cantidad += cantidad;
+                    console.log(`[OPERARIO]   Color existente actualizado: ${colorNombre} → ${colorExistente.cantidad}`);
+                } else {
+                    // Agregar nuevo color
+                    estructura[genero][talla].push({
+                        color: colorNombre || 'SIN COLOR',
+                        cantidad: cantidad
+                    });
+                    console.log(`[OPERARIO]   Nuevo color: ${colorNombre || 'SIN COLOR'} = ${cantidad}`);
+                }
+            }
+        });
+
+        console.log('[OPERARIO] Estructura final:', JSON.stringify(estructura, null, 2));
+        return estructura;
+    };
+    
     // ===== NAVEGACIÓN DE PROCESOS =====
     // Inicializar índice de proceso si no existe
     if (!window.procesoCarouselIndex) {
@@ -1071,7 +1142,10 @@ window.llenarReciboCosturaMobile = function(data) {
             // 1. Nombre de la prenda (con estilo consistente)
             html += `<strong style="font-size: 13.4px;">PRENDA ${prenda.numero || prenda.numero_prenda || (startIndex + index + 1)}: ${(prenda.nombre || prenda.nombre_prenda || 'SIN NOMBRE').toUpperCase()}</strong><br>`;
 
-            // 2. Telas completas con referencia (colores_telas tiene toda la info)
+            // 2. Telas + Manga en la MISMA LÍNEA (separados por |)
+            const atributosLinea = [];
+            
+            // Agregar telas
             if (prenda.colores_telas && Array.isArray(prenda.colores_telas) && prenda.colores_telas.length > 0) {
                 const telasTexto = prenda.colores_telas.map(function(ct) {
                     const tela = (ct.tela_nombre || '').toUpperCase();
@@ -1087,31 +1161,33 @@ window.llenarReciboCosturaMobile = function(data) {
                     }
                     return parte;
                 }).join(' | ');
-                html += `<strong>TELAS:</strong> ${telasTexto}<br>`;
+                atributosLinea.push(`<strong>TELAS:</strong> ${telasTexto}`);
             } else {
                 // Fallback a campos individuales
-                const atributos = [];
                 if (prenda.color) {
-                    atributos.push(`<strong>Color:</strong> ${prenda.color.toUpperCase()}`);
+                    atributosLinea.push(`<strong>Color:</strong> ${prenda.color.toUpperCase()}`);
                 }
                 if (prenda.tela) {
                     let telaTexto = prenda.tela.toUpperCase();
                     if (prenda.ref || prenda.tela_referencia) {
                         telaTexto += ` REF:${(prenda.ref || prenda.tela_referencia).toString().toUpperCase()}`;
                     }
-                    atributos.push(`<strong>Tela:</strong> ${telaTexto}`);
-                }
-                if (atributos.length > 0) {
-                    html += atributos.join(' | ') + '<br>';
+                    atributosLinea.push(`<strong>Tela:</strong> ${telaTexto}`);
                 }
             }
-
-            // 3. Manga
-            if (prenda.manga) {
-                html += `<strong>MANGA:</strong> ${(prenda.manga || '').toUpperCase()}<br>`;
-            } else if (prenda.tipo_manga) {
-                let mangaTexto = prenda.tipo_manga.toUpperCase();
-                if (prenda.descripcion_variaciones) {
+            
+            // Agregar manga a la misma línea - Mostrar si existe tipo_manga_id O si existe manga
+            // Obtener datos de variantes para verificar tipo_manga_id
+            const variante = prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0 
+                ? prenda.variantes[0] 
+                : {};
+            
+            if (prenda.manga || prenda.tipo_manga || variante.manga || variante.tipo_manga_id) {
+                let mangaTexto = (prenda.manga || prenda.tipo_manga || variante.manga || variante.tipo_manga || 'MANGA').toUpperCase();
+                const mangaObs = prenda.manga_obs || variante.manga_obs || '';
+                if (mangaObs && mangaObs.trim()) {
+                    mangaTexto += ` (${mangaObs.toUpperCase()})`;
+                } else if (prenda.descripcion_variaciones) {
                     const mangaMatch = prenda.descripcion_variaciones.match(/Manga:\s*(.+?)(?:\s*\||$)/i);
                     if (mangaMatch) {
                         const observacionManga = mangaMatch[1].trim().toUpperCase();
@@ -1120,17 +1196,57 @@ window.llenarReciboCosturaMobile = function(data) {
                         }
                     }
                 }
-                html += `<strong>MANGA:</strong> ${mangaTexto}<br>`;
+                atributosLinea.push(`<strong>MANGA:</strong> ${mangaTexto}`);
+            }
+            
+            // Mostrar la línea de atributos combinados
+            if (atributosLinea.length > 0) {
+                html += atributosLinea.join(' | ') + '<br>';
             }
 
-            // 4. Bolsillos
-            if (prenda.obs_bolsillos) {
-                html += `• <strong>BOLSILLOS:</strong> ${prenda.obs_bolsillos}<br>`;
+            // 3. Descripción de la prenda
+            if (prenda.descripcion && prenda.descripcion.trim() && prenda.descripcion !== '-') {
+                html += `${prenda.descripcion.toUpperCase()}<br>`;
             }
 
-            // 5. Broche/Botón
-            if (prenda.obs_broche && prenda.broche) {
-                html += `• <strong>${prenda.broche.toUpperCase()}:</strong> ${prenda.obs_broche}<br>`;
+            // 4. Variaciones (Bolsillos, Broche, Manga) - SIEMPRE mostrar si existen, aunque no tengan observación
+            const variacionesLineas = [];
+            
+            // BOLSILLOS - Mostrar SI tiene_bolsillos=true (independientemente de observaciones)
+            if (variante.tiene_bolsillos === true || variante.tiene_bolsillos === 1) {
+                const bolsillosText = variante.bolsillos_obs || prenda.bolsillos_obs || '';
+                if (bolsillosText) {
+                    variacionesLineas.push(`• <strong>BOLSILLOS:</strong> ${bolsillosText.toUpperCase()}`);
+                } else {
+                    variacionesLineas.push(`• <strong>BOLSILLOS:</strong>`);
+                }
+            }
+            
+            // BROCHE/BOTÓN - Mostrar SI tipo_broche_boton_id existe (independientemente de observaciones)
+            if (variante.tipo_broche_boton_id) {
+                const tipoLabel = variante.broche || 'BROCHE/BOTÓN';
+                const obsTexto = variante.broche_obs || prenda.broche_boton_obs || prenda.obs_broche || '';
+                if (obsTexto) {
+                    variacionesLineas.push(`• <strong>${tipoLabel.toUpperCase()}:</strong> ${obsTexto.toUpperCase()}`);
+                } else {
+                    variacionesLineas.push(`• <strong>${tipoLabel.toUpperCase()}:</strong>`);
+                }
+            }
+            
+            // MANGA EN VARIACIONES - Mostrar SI tipo_manga_id existe pero NO fue mostrado en atributos
+            if (variante.tipo_manga_id && !atributosLinea.some(a => a.includes('MANGA'))) {
+                const mangaTexto = variante.manga || 'MANGA';
+                const mangaObs = variante.manga_obs || '';
+                if (mangaObs && mangaObs.trim()) {
+                    variacionesLineas.push(`• <strong>MANGA:</strong> ${mangaTexto.toUpperCase()} (${mangaObs.toUpperCase()})`);
+                } else {
+                    variacionesLineas.push(`• <strong>MANGA:</strong> ${mangaTexto.toUpperCase()}`);
+                }
+            }
+            
+            // Mostrar variaciones si existen
+            if (variacionesLineas.length > 0) {
+                html += variacionesLineas.join('<br>') + '<br><br>';
             }
             
             // =========================================================
@@ -1147,8 +1263,80 @@ window.llenarReciboCosturaMobile = function(data) {
                 // === COSTURA: Tallas de la prenda + REFLECTIVO si aplica ===
                 // Agrupado por COLOR: AZUL CELESTE: L-3, M-3, S-3
                 
-                // Tallas a nivel de PRENDA (no de proceso)
-                if (prenda.tallas && typeof prenda.tallas === 'object') {
+                // ✅ PRIORIDAD 1: Usar talla_colores si existe (estructura: array de {genero, talla, color_nombre, cantidad})
+                let tallasValidas = false;
+                if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
+                    console.log('📱 [TALLAS] Usando talla_colores (con colores):', prenda.talla_colores.length, 'registros');
+                    const tallasLineas = [];
+                    const generosProcesados = {};
+                    const porColor = {};
+                    
+                    // Procesar cada entrada de talla_colores
+                    prenda.talla_colores.forEach(item => {
+                        const genero = (item.genero || '').toUpperCase();
+                        const talla = (item.talla || '').toUpperCase();
+                        const colorNombre = (item.color_nombre || 'SIN COLOR').toUpperCase();
+                        const cantidad = parseInt(item.cantidad || 0, 10);
+                        
+                        if (genero && talla && cantidad > 0) {
+                            if (!generosProcesados[genero]) {
+                                generosProcesados[genero] = true;
+                            }
+                            const clave = `${genero}__${colorNombre}`;
+                            if (!porColor[clave]) {
+                                porColor[clave] = [];
+                            }
+                            porColor[clave].push({ talla, cantidad, genero, color: colorNombre });
+                        }
+                    });
+                    
+                    // Ordenar función para tallas
+                    const ordenTallas = ['XXXS', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '2XL', '3XL', '4XL', '5XL'];
+                    const compararTallas = (a, b) => {
+                        const idxA = ordenTallas.indexOf(a.talla);
+                        const idxB = ordenTallas.indexOf(b.talla);
+                        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+                        const numA = parseFloat(a.talla);
+                        const numB = parseFloat(b.talla);
+                        if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+                        return a.talla.localeCompare(b.talla);
+                    };
+                    
+                    // Renderizar por género
+                    Object.keys(generosProcesados).forEach(genero => {
+                        const colorLineas = [];
+                        const coloresDeGenero = {};
+                        
+                        // Agrupar colores de este género
+                        Object.entries(porColor).forEach(([clave, datos]) => {
+                            if (clave.startsWith(genero + '__')) {
+                                const color = datos[0].color;
+                                if (!coloresDeGenero[color]) {
+                                    coloresDeGenero[color] = [];
+                                }
+                                coloresDeGenero[color] = coloresDeGenero[color].concat(datos);
+                            }
+                        });
+                        
+                        // Mostrar colores
+                        Object.entries(coloresDeGenero).forEach(([color, tallasArr]) => {
+                            tallasArr.sort(compararTallas);
+                            const tallasStr = tallasArr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
+                            colorLineas.push(`<span style="color: #d32f2f;"><strong>${color}:</strong> ${tallasStr}</span>`);
+                        });
+                        
+                        if (colorLineas.length > 0) {
+                            tallasLineas.push(`<strong>${genero}:</strong><br>${colorLineas.join('<br>')}`);
+                        }
+                    });
+                    
+                    if (tallasLineas.length > 0) {
+                        html += `<br><strong>TALLAS</strong><br>${tallasLineas.join('<br>')}<br>`;
+                        tallasValidas = true;
+                    }
+                }
+                // ✅ FALLBACK: Usar prenda.tallas si no hay talla_colores
+                else if (prenda.tallas && typeof prenda.tallas === 'object') {
                     const tallasLineas = [];
                     
                     const generos = Object.keys(prenda.tallas);
@@ -1358,8 +1546,14 @@ window.llenarReciboCosturaMobile = function(data) {
                         }
                         
                         // TALLAS del proceso específico (SIEMPRE mostrar para procesos NO-COSTURA)
+                        // 🎨 NEW: Enriquecer con talla_colores si disponibles
                         let tallasObj = proceso.tallas;
-                        if (!tallasObj || Object.keys(tallasObj).length === 0) {
+                        
+                        // 🎨 Si el proceso tiene talla_colores, transformarlas a estructura enriquecida
+                        if (proceso.talla_colores && Array.isArray(proceso.talla_colores) && proceso.talla_colores.length > 0) {
+                            console.log('📱 [OPERARIO] Transformando talla_colores a estructura enriquecida:', proceso.talla_colores);
+                            tallasObj = transformarTallaColoresAEstructura(proceso.talla_colores);
+                        } else if (!tallasObj || Object.keys(tallasObj).length === 0) {
                             // Si no hay tallas en el proceso, usar fallback de la prenda
                             tallasObj = prenda.tallas;
                         }
@@ -1368,15 +1562,68 @@ window.llenarReciboCosturaMobile = function(data) {
                             const tallasLineas = [];
                             ['dama', 'caballero', 'unisex'].forEach((genero) => {
                                 if (tallasObj[genero] && typeof tallasObj[genero] === 'object') {
+                                    const tallasGenero = tallasObj[genero];
                                     const items = [];
-                                    Object.entries(tallasObj[genero]).forEach(([talla, cantidad]) => {
-                                        const c = parseInt(cantidad) || 0;
-                                        if (c > 0) {
-                                            items.push(`${talla}: <span style="color: #d32f2f; font-weight: bold;">${c}</span>`);
+                                    
+                                    // 🎨 Detectar si hay colores (datos son arrays de objetos)
+                                    const tieneColores = Object.values(tallasGenero).some(datos => Array.isArray(datos));
+                                    
+                                    if (tieneColores) {
+                                        // Agrupar por color: AZUL CELESTE: L-3, M-3, S-3
+                                        const porColor = {};
+                                        Object.entries(tallasGenero).forEach(([talla, datos]) => {
+                                            if (Array.isArray(datos)) {
+                                                datos.forEach(d => {
+                                                    const esColorValido = d.color && d.color.toLowerCase() !== 'sin color' && d.color.trim() !== '';
+                                                    const color = esColorValido ? d.color.toUpperCase() : '__SIN_COLOR__';
+                                                    if (!porColor[color]) porColor[color] = [];
+                                                    porColor[color].push({ talla, cantidad: d.cantidad || 0 });
+                                                });
+                                            } else {
+                                                if (!porColor['__SIN_COLOR__']) porColor['__SIN_COLOR__'] = [];
+                                                porColor['__SIN_COLOR__'].push({ talla, cantidad: datos });
+                                            }
+                                        });
+                                        
+                                        // Renderizar agrupado por color
+                                        const coloresReales = Object.entries(porColor).filter(([c]) => c !== '__SIN_COLOR__');
+                                        const sinColor = porColor['__SIN_COLOR__'] || [];
+                                        
+                                        if (coloresReales.length > 0) {
+                                            let colorTexto = `<strong>${genero.toUpperCase()}:</strong>`;
+                                            coloresReales.forEach(([color, tallasArr]) => {
+                                                const tallasStr = tallasArr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
+                                                colorTexto += `<br><span style="color: #d32f2f;"><strong>${color}:</strong> ${tallasStr}</span>`;
+                                            });
+                                            items.push(colorTexto);
+                                        } else if (sinColor.length > 0) {
+                                            const tallasStr = sinColor.map(t => `${t.talla}: <span style="color: #d32f2f; font-weight: bold;">${t.cantidad}</span>`).join(', ');
+                                            items.push(`<strong>${genero.toUpperCase()}:</strong> ${tallasStr}`);
                                         }
-                                    });
-                                    if (items.length > 0) {
-                                        tallasLineas.push(`<strong>${genero.toUpperCase()}:</strong> ${items.join(', ')}`);
+                                    } else {
+                                        // Sin colores - formato simple
+                                        Object.entries(tallasGenero).forEach(([talla, val]) => {
+                                            let cantidad = 0;
+                                            if (Array.isArray(val)) {
+                                                cantidad = val.reduce((acc, item) => {
+                                                    const c = (item && typeof item === 'object') ? (parseInt(item.cantidad) || 0) : (parseInt(item) || 0);
+                                                    return acc + c;
+                                                }, 0);
+                                            } else if (val && typeof val === 'object') {
+                                                cantidad = parseInt(val.cantidad) || 0;
+                                            } else {
+                                                cantidad = parseInt(val) || 0;
+                                            }
+                                            if (cantidad > 0) {
+                                                items.push(`${talla}: <span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
+                                            }
+                                        });
+                                        if (items.length > 0) {
+                                            tallasLineas.push(`<strong>${genero.toUpperCase()}:</strong> ${items.join(', ')}`);
+                                        }
+                                    }
+                                    if (items.length > 0 && !tieneColores) {
+                                        tallasLineas.push(items.join('<br>'));
                                     }
                                 }
                             });
