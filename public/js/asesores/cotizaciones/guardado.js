@@ -761,6 +761,17 @@ async function procederEnviarCotizacion(esBorrador = false) {
             return;
         }
         
+        // Diagnóstico útil para 4xx/5xx (especialmente 422)
+        try {
+            if (!response.ok) {
+                console.error('❌ Error HTTP al guardar cotización', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    response: data
+                });
+            }
+        } catch (_) {}
+
         if (data.success && (data.cotizacion_id !== undefined || (data.data && data.data.id !== undefined))) {
             const cotizacionId = data.cotizacion_id !== undefined ? data.cotizacion_id : (data.data && data.data.id);
 
@@ -812,9 +823,10 @@ async function procederEnviarCotizacion(esBorrador = false) {
             let htmlError = `<p>${mensajeError}</p>`;
             
             // Si hay errores de validación, mostrarlos
-            if (data.validation_errors) {
+            const validationErrors = data.validation_errors || data.errors;
+            if (validationErrors) {
                 htmlError += '<div style="text-align: left; margin-top: 10px;">';
-                for (const [campo, errores] of Object.entries(data.validation_errors)) {
+                for (const [campo, errores] of Object.entries(validationErrors)) {
                     if (Array.isArray(errores)) {
                         errores.forEach(error => {
                             htmlError += `<p style="margin: 5px 0; font-size: 0.9rem;"><strong>${campo}:</strong> ${error}</p>`;
@@ -823,6 +835,12 @@ async function procederEnviarCotizacion(esBorrador = false) {
                 }
                 htmlError += '</div>';
             }
+
+            try {
+                if (response && response.status) {
+                    htmlError += `<p style="margin-top: 10px; font-size: 0.8rem; color: #64748b;"><strong>HTTP:</strong> ${response.status}</p>`;
+                }
+            } catch (_) {}
             
 
             
