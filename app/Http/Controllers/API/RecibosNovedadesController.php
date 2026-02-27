@@ -446,7 +446,7 @@ class RecibosNovedadesController extends Controller
             // Buscar el recibo
             $recibo = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedido->id)
                 ->where('prenda_id', $prendaId)
-                ->where('area', 'Control Calidad')
+                ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
                 ->where('activo', 1)
                 ->first();
 

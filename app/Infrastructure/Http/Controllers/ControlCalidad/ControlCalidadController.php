@@ -36,9 +36,9 @@ class ControlCalidadController extends Controller
         $recibosQuery = ConsecutivoReciboPedido::where('activo', 1)
             ->whereIn('tipo_recibo', ['COSTURA', 'REFLECTIVO']);
 
-        // Si NO es líder, filtrar solo por área = 'control de calidad'
+        // Si NO es líder, filtrar solo por área de Control Calidad
         if (!$esLiderControlCalidad) {
-            $recibosQuery->where('area', 'control de calidad');
+            $recibosQuery->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad']);
         }
 
         $recibos = $recibosQuery
@@ -128,7 +128,7 @@ class ControlCalidadController extends Controller
         if (!$esLiderControlCalidad) {
             $tieneReciboEnControlCalidad = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedidoDB->id)
                 ->whereIn('tipo_recibo', ['COSTURA', 'REFLECTIVO'])
-                ->where('area', 'control de calidad')
+                ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
                 ->where('activo', 1)
                 ->exists();
 
@@ -154,7 +154,7 @@ class ControlCalidadController extends Controller
 
             // Si no es líder, filtrar por área
             if (!$esLiderControlCalidad) {
-                $queryRecibo->where('area', 'control de calidad');
+                $queryRecibo->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad']);
             }
 
             // Filtrar por prenda_id si se proporcionó
@@ -180,7 +180,7 @@ class ControlCalidadController extends Controller
 
             // Si no es líder, filtrar por área
             if (!$esLiderControlCalidad) {
-                $queryReciboCostura->where('area', 'control de calidad');
+                $queryReciboCostura->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad']);
             }
 
             $reciboCostura = $queryReciboCostura->first();

@@ -126,6 +126,7 @@
                                             $areaActual = $prenda['recibos'][0]['area'] ?? null;
                                             $procesoId = $prenda['recibos'][0]['proceso_id'] ?? null;
                                             $tipoRecibo = strtoupper($tiposUnicos->first() ?? 'COSTURA');
+                                            $esCC = in_array(strtolower(trim($areaActual ?? '')), ['control calidad', 'control de calidad']);
                                         @endphp
                                         <button class="btn-pasar-cc" 
                                                 id="btn-cc-{{ $prenda['prenda_id'] }}"
@@ -137,8 +138,8 @@
                                                 data-area="{{ $areaActual ?? 'COSTURA' }}"
                                                 data-proceso-id="{{ $procesoId }}"
                                                 onclick="pasarAControlCalidad(this)">
-                                            <span class="material-symbols-rounded">{{ $areaActual === 'Control Calidad' ? 'undo' : 'check_circle' }}</span>
-                                            {{ $areaActual === 'Control Calidad' ? 'DESHACER' : 'PASAR A C.C' }}
+                                            <span class="material-symbols-rounded">{{ $esCC ? 'undo' : 'check_circle' }}</span>
+                                            {{ $esCC ? 'DESHACER' : 'PASAR A C.C' }}
                                         </button>
                                     @endif
                                     
@@ -2133,6 +2134,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Función dinámica para pasar recibo a Control Calidad o Deshacer
+    function esAreaControlCalidad(area) {
+        const norm = (area || '').toLowerCase().trim().replace(/[-_]/g, ' ').replace(/\s+/g, ' ');
+        return norm === 'control calidad' || norm === 'control de calidad';
+    }
+
     function pasarAControlCalidad(btn) {
         const pedidoId = btn.dataset.pedidoId;
         const prendaId = btn.dataset.prendaId;
@@ -2143,7 +2149,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const procesoId = btn.dataset.procesoId;
         const btnId = btn.id;
 
-        if (area === 'Control Calidad') {
+        if (esAreaControlCalidad(area)) {
             // DESHACER
             fetch('/recibos-novedades/' + pedidoId + '/' + prendaId + '/deshacer-control-calidad', {
                 method: 'DELETE',

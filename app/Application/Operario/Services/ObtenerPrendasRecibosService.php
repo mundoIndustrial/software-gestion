@@ -120,7 +120,7 @@ class ObtenerPrendasRecibosService
         \Log::info(' [ObtenerPrendasRecibosService] Recibos encontrados', [
             'total_recibos' => $recibos->count(),
             'tipos_buscados' => $tiposRecibo,
-            'areas_permitidas' => ['Corte', 'Costura', 'Control de Calidad'],
+            'areas_permitidas' => ['Corte', 'Costura', 'Control de Calidad', 'Control Calidad'],
             'prenda_ids' => $recibos->pluck('prenda_id')->toArray(),
             'tipo_operario' => $tipoOperario,
             'incluye_reflectivos_aprobados' => ($tipoOperario === 'costura-reflectivo' || $tipoOperario === 'vista-costura') ? 'SI' : 'NO'
@@ -303,7 +303,7 @@ class ObtenerPrendasRecibosService
                     'recibos' => $recibosDelTipo->map(function ($recibo) {
                         // Buscar el proceso de Control Calidad más reciente para este recibo
                         $procesoCC = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
-                            ->where('proceso', 'Control de Calidad')
+                            ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
                             ->whereNull('deleted_at')
                             ->latest('created_at')
                             ->first();
