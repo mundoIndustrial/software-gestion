@@ -34,18 +34,62 @@ export class ModalManager {
 
     /**
      * Abre el modal (muestra elementos visuales)
+     * Resetea TODOS los estilos que pudieron ser modificados al cerrar
      */
     abrirModal() {
         const overlay = document.getElementById('modal-overlay');
         const modalWrapper = document.getElementById('order-detail-modal-wrapper');
         
-        if (overlay) overlay.style.display = 'block';
+        if (overlay) {
+            overlay.style.display = 'block';
+            overlay.style.opacity = '1';
+            overlay.style.visibility = 'visible';
+            overlay.style.zIndex = '9997';
+            overlay.style.pointerEvents = 'auto';
+        }
         if (modalWrapper) {
             modalWrapper.style.display = 'block';
+            modalWrapper.style.opacity = '1';
+            modalWrapper.style.visibility = 'visible';
+            modalWrapper.style.zIndex = '9998';
             modalWrapper.style.pointerEvents = 'none'; // Desactivar mientras carga
         }
-        
 
+        // Asegurar que el card sea visible (pudo quedar oculto por la galería)
+        if (modalWrapper) {
+            const card = modalWrapper.querySelector('.order-detail-card');
+            if (card) card.style.display = 'block';
+        }
+
+        // Limpiar galería residual
+        const galeriaResidual = document.getElementById('galeria-modal-costura');
+        if (galeriaResidual) galeriaResidual.remove();
+
+        // Limpiar botones de cierre residuales
+        const btnCerrarInsumos = document.getElementById('btn-cerrar-modal-insumos');
+        if (btnCerrarInsumos) btnCerrarInsumos.remove();
+
+        // Mostrar botones flotantes de galería
+        const floatingContainer = document.getElementById('floating-buttons-container');
+        if (floatingContainer) {
+            floatingContainer.style.display = 'flex';
+            // Resetear botones: mostrar btn-factura, ocultar btn-galeria
+            const btnFactura = document.getElementById('btn-factura');
+            const btnGaleria = document.getElementById('btn-galeria');
+            if (btnFactura) {
+                btnFactura.style.display = 'block';
+                btnFactura.style.visibility = 'visible';
+                btnFactura.style.zIndex = '10';
+                // Icono de galería (indica que al clickear se va a la galería)
+                const iconFactura = btnFactura.querySelector('i');
+                if (iconFactura) { iconFactura.className = 'fas fa-images'; btnFactura.title = 'Ver galería'; }
+            }
+            if (btnGaleria) {
+                btnGaleria.style.display = 'none';
+                btnGaleria.style.visibility = 'hidden';
+                btnGaleria.style.zIndex = '-1';
+            }
+        }
     }
 
     /**
@@ -64,12 +108,33 @@ export class ModalManager {
         const modalWrapperLogo = document.getElementById('order-detail-modal-wrapper-logo');
         const overlay = document.getElementById('modal-overlay');
         
-        if (modalWrapper) modalWrapper.style.display = 'none';
-        if (modalWrapperLogo) modalWrapperLogo.style.display = 'none';
-        if (overlay) overlay.style.display = 'none';
+        if (modalWrapper) {
+            modalWrapper.style.display = 'none';
+            modalWrapper.style.opacity = '0';
+            modalWrapper.style.visibility = 'hidden';
+            modalWrapper.style.pointerEvents = 'none';
+        }
+        if (modalWrapperLogo) {
+            modalWrapperLogo.style.display = 'none';
+        }
+        if (overlay) {
+            overlay.style.display = 'none';
+            overlay.style.opacity = '0';
+            overlay.style.visibility = 'hidden';
+            overlay.style.pointerEvents = 'none';
+        }
+
+        // Limpiar galería y botones flotantes
+        const galeria = document.getElementById('galeria-modal-costura');
+        if (galeria) galeria.remove();
+        const btnCerrarInsumos = document.getElementById('btn-cerrar-modal-insumos');
+        if (btnCerrarInsumos) btnCerrarInsumos.remove();
+        
+        // Ocultar botones flotantes de galería
+        const floatingContainer = document.getElementById('floating-buttons-container');
+        if (floatingContainer) floatingContainer.style.display = 'none';
         
         this.limpiarEstado();
-
     }
 
     /**

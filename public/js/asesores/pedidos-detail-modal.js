@@ -134,15 +134,36 @@ window.verFacturaLogo = async function verFacturaLogo(logoPedidoId) {
  * Cierra el modal de detalle y el overlay
  */
 window.closeModalOverlay = function closeModalOverlay() {
-    const overlay = document.getElementById('modal-overlay');
-    if (overlay) {
-        overlay.style.display = 'none';
+    // Si PedidosRecibosModule está disponible, delegar para limpiar estado correctamente
+    if (window.pedidosRecibosModule && typeof window.pedidosRecibosModule.cerrarRecibo === 'function') {
+        window.pedidosRecibosModule.cerrarRecibo();
+    } else {
+        const overlay = document.getElementById('modal-overlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+            overlay.style.opacity = '0';
+            overlay.style.visibility = 'hidden';
+            overlay.style.pointerEvents = 'none';
+        }
+        
+        const modalWrapper = document.getElementById('order-detail-modal-wrapper');
+        if (modalWrapper) {
+            modalWrapper.style.display = 'none';
+            modalWrapper.style.opacity = '0';
+            modalWrapper.style.visibility = 'hidden';
+            modalWrapper.style.pointerEvents = 'none';
+        }
     }
     
-    const modalWrapper = document.getElementById('order-detail-modal-wrapper');
-    if (modalWrapper) {
-        modalWrapper.style.display = 'none';
-    }
+    // Limpiar elementos residuales
+    const galeria = document.getElementById('galeria-modal-costura');
+    if (galeria) galeria.remove();
+    const btnCerrarInsumos = document.getElementById('btn-cerrar-modal-insumos');
+    if (btnCerrarInsumos) btnCerrarInsumos.remove();
+    const btnCerrarDinamico = document.getElementById('btn-cerrar-modal-dinamico');
+    if (btnCerrarDinamico) btnCerrarDinamico.remove();
+    const floatingContainer = document.getElementById('floating-buttons-container');
+    if (floatingContainer) floatingContainer.style.display = 'none';
     
     //  Recargar filtros desde localStorage al cerrar modal
     if (typeof loadFiltersFromLocalStorage === 'function') {

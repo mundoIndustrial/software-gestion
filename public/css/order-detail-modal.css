@@ -288,6 +288,20 @@
     margin-bottom: 2px;
 }
 
+/* ===== BOTONES FLOTANTES - SIEMPRE INTERACTUABLES ===== */
+#floating-buttons-container,
+#floating-buttons-container-logo {
+    pointer-events: auto !important;
+    position: fixed !important;
+    z-index: 10000 !important;
+}
+
+#floating-buttons-container button,
+#floating-buttons-container-logo button {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
 /* ===== REGLAS PARA IMPRESIÓN ===== */
 @media print {
     /* Ocultar contenedores de botones flotantes */

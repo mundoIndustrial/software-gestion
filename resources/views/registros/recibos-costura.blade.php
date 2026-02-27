@@ -1316,10 +1316,31 @@ async function cargarDatosParaAgregarProceso(pedidoId, prendaId, areaSeleccionad
 
 // Función para cerrar el modal overlay
 function closeModalOverlay() {
+    // Delegar al módulo de recibos si está disponible (limpia estado, galería, botones)
+    if (window.pedidosRecibosModule) {
+        console.log('[closeModalOverlay-recibos-costura] Delegando a pedidosRecibosModule.cerrarRecibo()');
+        window.pedidosRecibosModule.cerrarRecibo();
+    }
+
+    // Cerrar overlay y wrapper (por si el módulo no los cerró)
     const modal = document.getElementById('modal-overlay');
     if (modal) {
         modal.style.display = 'none';
     }
+    const wrapper = document.getElementById('order-detail-modal-wrapper');
+    if (wrapper) {
+        wrapper.style.display = 'none';
+    }
+
+    // Limpiar elementos residuales
+    const galeria = document.getElementById('galeria-modal-costura');
+    if (galeria) galeria.remove();
+    const btnCerrarInsumos = document.getElementById('btn-cerrar-modal-insumos');
+    if (btnCerrarInsumos) btnCerrarInsumos.remove();
+    const btnCerrarDinamico = document.getElementById('btn-cerrar-modal-dinamico');
+    if (btnCerrarDinamico) btnCerrarDinamico.remove();
+    const floatingContainer = document.getElementById('floating-buttons-container');
+    if (floatingContainer) floatingContainer.style.display = 'none';
 }
 
 // Función global para cerrar todos los dropdowns de recibos-costura

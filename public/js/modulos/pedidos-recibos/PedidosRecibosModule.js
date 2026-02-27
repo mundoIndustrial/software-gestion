@@ -314,9 +314,55 @@ window.cerrarModalRecibos = function() {
 
 // Compatibilidad: algunos templates aún llaman onclick="toggleFactura()"
 // (sin cargar public/js/asesores/pedidos.js en ciertos contextos como visualizador-logo)
+// Actúa como TOGGLE: si está en galería → vuelve al recibo, si está en recibo → abre galería
 if (typeof window.toggleFactura !== 'function') {
     window.toggleFactura = function() {
-        GalleryManager.cerrarGaleria();
+        console.log('[toggleFactura-PRM] Toggle entre recibo y galería');
+        const galeria = document.getElementById('galeria-modal-costura');
+        const estaEnGaleria = galeria && (galeria.style.display === 'flex' || galeria.style.display === 'block');
+        
+        const btnFactura = document.getElementById('btn-factura');
+        const btnGaleria = document.getElementById('btn-galeria');
+        
+        if (estaEnGaleria) {
+            // Estamos en galería → cerrar galería y mostrar recibo
+            console.log('[toggleFactura-PRM] Cerrando galería, mostrando recibo');
+            GalleryManager.cerrarGaleria();
+            // Mostrar btn-factura (con icono de galería para indicar que se puede ir a galería)
+            if (btnFactura) {
+                btnFactura.style.display = 'block';
+                btnFactura.style.visibility = 'visible';
+                btnFactura.style.zIndex = '10';
+                const icon = btnFactura.querySelector('i');
+                if (icon) { icon.className = 'fas fa-images'; btnFactura.title = 'Ver galería'; }
+            }
+            // Ocultar btn-galeria
+            if (btnGaleria) {
+                btnGaleria.style.display = 'none';
+                btnGaleria.style.visibility = 'hidden';
+                btnGaleria.style.zIndex = '-1';
+            }
+        } else {
+            // Estamos en recibo → abrir galería
+            console.log('[toggleFactura-PRM] Abriendo galería');
+            if (window.toggleGaleria) {
+                window.toggleGaleria();
+            }
+            // Ocultar btn-factura
+            if (btnFactura) {
+                btnFactura.style.display = 'none';
+                btnFactura.style.visibility = 'hidden';
+                btnFactura.style.zIndex = '-1';
+            }
+            // Mostrar btn-galeria (con icono de recibo para indicar que se puede volver)
+            if (btnGaleria) {
+                btnGaleria.style.display = 'block';
+                btnGaleria.style.visibility = 'visible';
+                btnGaleria.style.zIndex = '10';
+                const icon = btnGaleria.querySelector('i');
+                if (icon) { icon.className = 'fas fa-receipt'; btnGaleria.title = 'Ver recibos'; }
+            }
+        }
     };
 }
 

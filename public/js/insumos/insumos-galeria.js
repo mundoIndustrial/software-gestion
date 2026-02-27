@@ -24,7 +24,7 @@ class InsumosGaleria {
         }
         
         const card = modalWrapper.querySelector('.order-detail-card');
-        const galeria = document.getElementById('galeria-modal-costura');
+        let galeria = document.getElementById('galeria-modal-costura');
         
         console.log('[InsumosGaleria] Estado actual - Card:', card ? 'visible' : 'no encontrado');
         console.log('[InsumosGaleria] Estado actual - Galería:', galeria ? (galeria.style.display === 'flex' ? 'visible' : 'oculta') : 'no encontrado');
@@ -34,11 +34,7 @@ class InsumosGaleria {
         
         console.log('[InsumosGaleria] ¿Está en galería?:', estaEnGaleria);
         
-        // Agregar botón X en la carga inicial o cuando se muestra el recibo
-        if (!estaEnGaleria) {
-            // Estamos en recibo, asegurar que el botón X esté visible
-            this.agregarBotonCerrar(card);
-        }
+        // El botón X de cierre lo maneja CloseButtonManager (btn-cerrar-modal-dinamico)
         
         if (estaEnGaleria) {
             // Estamos en galería, volver al recibo
@@ -261,16 +257,26 @@ class InsumosGaleria {
     construirGaleria(container) {
         console.log('[construirGaleria] Iniciando construcción de galería');
         
-        // Obtener los datos del pedido actual
-        const datosActuales = window.receiptManager ? window.receiptManager.datosFactura : null;
+        // Obtener los datos del pedido actual - intentar múltiples fuentes
+        let datosActuales = window.receiptManager ? window.receiptManager.datosFactura : null;
+        
+        // Fallback: Si no hay receiptManager, intentar con PedidosRecibosModule
+        if (!datosActuales && window.pedidosRecibosModule) {
+            const estado = window.pedidosRecibosModule.getEstado();
+            if (estado && estado.datosCompletos) {
+                datosActuales = estado.datosCompletos;
+                console.log('[construirGaleria] Datos obtenidos desde PedidosRecibosModule:', datosActuales);
+            }
+        }
         
         console.log('[construirGaleria] Datos del ReceiptManager:', datosActuales);
         
         if (!datosActuales) {
-            console.error('[construirGaleria] No hay ReceiptManager disponible');
+            console.warn('[construirGaleria] No hay datos disponibles de ninguna fuente, mostrando mensaje simple');
             container.innerHTML = `
-                <div style="padding: 2rem; text-align: center;">
-                    <p style="color: #6b7280; font-size: 1rem;">No hay datos de prendas disponibles</p>
+                <div style="padding: 2rem; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%;">
+                    <i class="fas fa-image" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem;"></i>
+                    <p style="color: #6b7280; font-size: 1rem;">No hay imágenes disponibles para esta prenda</p>
                 </div>
             `;
             return;
@@ -279,7 +285,8 @@ class InsumosGaleria {
         if (!datosActuales.prendas || datosActuales.prendas.length === 0) {
             console.warn('[construirGaleria] No hay prendas en los datos');
             container.innerHTML = `
-                <div style="padding: 2rem; text-align: center;">
+                <div style="padding: 2rem; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%;">
+                    <i class="fas fa-inbox" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem;"></i>
                     <p style="color: #6b7280; font-size: 1rem;">No hay prendas disponibles en el pedido</p>
                 </div>
             `;
@@ -294,24 +301,26 @@ class InsumosGaleria {
         
         // Recorrer prendas y mostrar imágenes
         datosActuales.prendas.forEach((prenda, prendaIndex) => {
-            console.log(`[construirGaleria] Analizando prenda ${prendaIndex}:`, prenda.nombre);
+            const nombrePrenda = prenda.nombre || prenda.nombre_prenda || `Prenda ${prendaIndex + 1}`;
+            console.log(`[construirGaleria] Analizando prenda ${prendaIndex}:`, nombrePrenda);
             
             if (prenda.imagenes && prenda.imagenes.length > 0) {
                 tieneImagenes = true;
                 console.log(`[construirGaleria] Encontradas ${prenda.imagenes.length} imágenes en prenda ${prendaIndex}`);
                 html += `
                     <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
-                        <h3 style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 600; color: #1f2937;">${prenda.nombre}</h3>
+                        <h3 style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 600; color: #1f2937;">${nombrePrenda}</h3>
                         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
                 `;
                 
                 prenda.imagenes.forEach((imagen, index) => {
-                    console.log(`[construirGaleria] Agregando imagen ${index}:`, imagen.ruta_webp);
+                    const rutaImg = imagen.ruta_webp || imagen.ruta_original || '';
+                    console.log(`[construirGaleria] Agregando imagen ${index}:`, rutaImg);
                     this.imagenesActuales.push({
-                        src: imagen.ruta_webp,
-                        titulo: `${prenda.nombre} - Imagen ${index + 1}`,
+                        src: rutaImg,
+                        titulo: `${nombrePrenda} - Imagen ${index + 1}`,
                         tipo: 'prenda',
-                        prendaNombre: prenda.nombre,
+                        prendaNombre: nombrePrenda,
                         index: index
                     });
                     
@@ -327,7 +336,7 @@ class InsumosGaleria {
                         " onclick="window.insumosGaleria.mostrarImagen(${this.imagenesActuales.length - 1})"
                         onmouseover="this.style.borderColor='#3b82f6'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 16px rgba(59, 130, 246, 0.3)';"
                         onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.08)';">
-                            <img src="${imagen.ruta_webp}" alt="${prenda.nombre}" style="
+                            <img src="${rutaImg}" alt="${nombrePrenda}" style="
                                 width: 100%; 
                                 height: 220px; 
                                 object-fit: cover;
@@ -335,7 +344,58 @@ class InsumosGaleria {
                                 transition: all 0.3s ease;
                             ">
                             <div style="padding: 0.75rem; background: #f9fafb;">
-                                <div style="font-size: 0.875rem; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem;">${prenda.nombre}</div>
+                                <div style="font-size: 0.875rem; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem;">${nombrePrenda}</div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">Click para ver grande</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `</div></div>`;
+            }
+            
+            // Agregar imágenes de telas
+            if (prenda.imagenes_tela && prenda.imagenes_tela.length > 0) {
+                tieneImagenes = true;
+                console.log(`[construirGaleria] Encontradas ${prenda.imagenes_tela.length} imágenes de tela en prenda ${prendaIndex}`);
+                html += `
+                    <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
+                        <h3 style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 600; color: #1f2937;">${nombrePrenda} - Telas</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                `;
+                
+                prenda.imagenes_tela.forEach((imagen, index) => {
+                    const rutaImg = imagen.ruta_webp || imagen.ruta_original || '';
+                    console.log(`[construirGaleria] Agregando imagen de tela ${index}:`, rutaImg);
+                    this.imagenesActuales.push({
+                        src: rutaImg,
+                        titulo: `${nombrePrenda} - Tela ${index + 1}`,
+                        tipo: 'tela',
+                        prendaNombre: nombrePrenda,
+                        index: index
+                    });
+                    
+                    html += `
+                        <div style="
+                            border: 2px solid #e5e7eb; 
+                            border-radius: 12px; 
+                            overflow: hidden; 
+                            cursor: pointer; 
+                            transition: all 0.3s ease;
+                            background: white;
+                            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+                        " onclick="window.insumosGaleria.mostrarImagen(${this.imagenesActuales.length - 1})"
+                        onmouseover="this.style.borderColor='#3b82f6'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 16px rgba(59, 130, 246, 0.3)';"
+                        onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.08)';">
+                            <img src="${rutaImg}" alt="${nombrePrenda} - Tela" style="
+                                width: 100%; 
+                                height: 220px; 
+                                object-fit: cover;
+                                display: block;
+                                transition: all 0.3s ease;
+                            ">
+                            <div style="padding: 0.75rem; background: #f9fafb;">
+                                <div style="font-size: 0.875rem; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem;">Tela ${index + 1}</div>
                                 <div style="font-size: 0.75rem; color: #6b7280;">Click para ver grande</div>
                             </div>
                         </div>
@@ -355,17 +415,18 @@ class InsumosGaleria {
                         console.log(`[construirGaleria] Encontradas ${proceso.imagenes.length} imágenes en proceso: ${proceso.tipo_proceso}`);
                         html += `
                             <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
-                                <h3 style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 600; color: #1f2937;">${prenda.nombre} - ${proceso.tipo_proceso}</h3>
+                                <h3 style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 600; color: #1f2937;">${nombrePrenda} - ${proceso.tipo_proceso}</h3>
                                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
                         `;
                         
                         proceso.imagenes.forEach((imagen, index) => {
-                            console.log(`[construirGaleria] Agregando imagen ${index} de proceso:`, imagen.ruta_webp);
+                            const rutaImgProc = imagen.ruta_webp || imagen.ruta_original || '';
+                            console.log(`[construirGaleria] Agregando imagen ${index} de proceso:`, rutaImgProc);
                             this.imagenesActuales.push({
-                                src: imagen.ruta_webp,
-                                titulo: `${prenda.nombre} - ${proceso.tipo_proceso} - Imagen ${index + 1}`,
+                                src: rutaImgProc,
+                                titulo: `${nombrePrenda} - ${proceso.tipo_proceso} - Imagen ${index + 1}`,
                                 tipo: 'proceso',
-                                prendaNombre: prenda.nombre,
+                                prendaNombre: nombrePrenda,
                                 procesoTipo: proceso.tipo_proceso,
                                 index: index
                             });
@@ -382,7 +443,7 @@ class InsumosGaleria {
                                 " onclick="window.insumosGaleria.mostrarImagen(${this.imagenesActuales.length - 1})"
                                 onmouseover="this.style.borderColor='#3b82f6'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 16px rgba(59, 130, 246, 0.3)';"
                                 onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.08)';">
-                                    <img src="${imagen.ruta_webp}" alt="${prenda.nombre} - ${proceso.tipo_proceso}" style="
+                                    <img src="${rutaImgProc}" alt="${nombrePrenda} - ${proceso.tipo_proceso}" style="
                                         width: 100%; 
                                         height: 220px; 
                                         object-fit: cover;
@@ -422,9 +483,6 @@ class InsumosGaleria {
         
         container.innerHTML = html;
         
-        // Agregar botón de cerrar (X) en la esquina superior derecha
-        this.agregarBotonCerrar(container);
-        
         // Logs después de asignar el HTML
         setTimeout(() => {
             console.log('[construirGaleria] Container innerHTML después de asignar:', container.innerHTML.substring(0, 200) + '...');
@@ -438,142 +496,10 @@ class InsumosGaleria {
     }
     
     /**
-     * Agrega un botón de cerrar (X) flotante en el lado derecho en una esquina
+     * @deprecated El botón de cierre ahora lo maneja CloseButtonManager (btn-cerrar-modal-dinamico)
      */
     agregarBotonCerrar(container) {
-        // Verificar si ya existe un botón de cerrar para evitar duplicados
-        const btnExistente = document.getElementById('btn-cerrar-modal-insumos');
-        if (btnExistente) {
-            console.log('[agregarBotonCerrar] Botón de cerrar ya existe, no se duplica');
-            return;
-        }
-        
-        // Crear botón de cerrar flotante
-        const btnCerrar = document.createElement('button');
-        btnCerrar.id = 'btn-cerrar-modal-insumos';
-        btnCerrar.innerHTML = '×';
-        btnCerrar.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 50px;
-            height: 50px;
-            border: none;
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            font-size: 1.8rem;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 10000;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        `;
-        
-        btnCerrar.onmouseover = () => {
-            btnCerrar.style.background = 'rgba(0, 0, 0, 0.95)';
-            btnCerrar.style.transform = 'scale(1.1)';
-            btnCerrar.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.4)';
-        };
-        
-        btnCerrar.onmouseout = () => {
-            btnCerrar.style.background = 'rgba(0, 0, 0, 0.9)';
-            btnCerrar.style.transform = 'scale(1)';
-            btnCerrar.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
-        };
-        
-        // Usar addEventListener en lugar de onclick para evitar conflictos
-        // Guardar referencia a this para usarla dentro del evento
-        const self = this;
-        btnCerrar.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('[agregarBotonCerrar] Botón X clickeado con addEventListener');
-            console.log('[agregarBotonCerrar] Llamando a cerrarModal...');
-            console.log('[agregarBotonCerrar] Contexto self:', self);
-            console.log('[agregarBotonCerrar] ¿self.cerrarModal existe?', typeof self.cerrarModal);
-            console.log('[agregarBotonCerrar] ¿self tiene cerrarModal?', 'cerrarModal' in self);
-            console.log('[agregarBotonCerrar] ¿self es instancia de InsumosGaleria?', self instanceof InsumosGaleria);
-            console.log('[agregarBotonCerrar] Prototipo de self:', Object.getPrototypeOf(self));
-            console.log('[agregarBotonCerrar] Métodos en prototipo:', Object.getOwnPropertyNames(Object.getPrototypeOf(self)).filter(name => typeof Object.getPrototypeOf(self)[name] === 'function'));
-            console.log('[agregarBotonCerrar] Métodos en objeto:', Object.getOwnPropertyNames(self).filter(name => typeof self[name] === 'function'));
-            
-            if (typeof self.cerrarModal === 'function') {
-                console.log('[agregarBotonCerrar] Ejecutando código de cerrarModal directamente...');
-                try {
-                    // Ejecutar el código directamente en lugar de llamar al método
-                    console.log('[cerrarModal] ===== MÉTODO CERRAR MODAL EJECUTADO DIRECTAMENTE =====');
-                    console.log('[cerrarModal] Cerrando modal completamente');
-                    console.log('[cerrarModal] Buscando modal wrapper...');
-                    
-                    const modalWrapper = document.getElementById('order-detail-modal-wrapper');
-                    console.log('[cerrarModal] Modal wrapper encontrado:', !!modalWrapper);
-                    
-                    if (modalWrapper) {
-                        console.log('[cerrarModal] Ocultando modal wrapper...');
-                        modalWrapper.style.display = 'none';
-                        modalWrapper.style.zIndex = '-1';
-                        modalWrapper.style.opacity = '0';
-                        modalWrapper.style.visibility = 'hidden';
-                        modalWrapper.style.pointerEvents = 'none';
-                        console.log('[cerrarModal] Modal wrapper oculto');
-                    }
-                    
-                    // Eliminar el overlay (lámina gris)
-                    console.log('[cerrarModal] Buscando overlay...');
-                    const overlay = document.getElementById('modal-overlay');
-                    console.log('[cerrarModal] Overlay encontrado:', !!overlay);
-                    
-                    if (overlay) {
-                        console.log('[cerrarModal] Ocultando overlay...');
-                        overlay.style.display = 'none';
-                        overlay.style.zIndex = '-1';
-                        overlay.style.opacity = '0';
-                        overlay.style.visibility = 'hidden';
-                        overlay.style.pointerEvents = 'none';
-                        console.log('[cerrarModal] Overlay oculto');
-                    }
-                    
-                    // Eliminar el botón de cerrar flotante
-                    console.log('[cerrarModal] Buscando botón de cerrar...');
-                    const btnCerrar = document.getElementById('btn-cerrar-modal-insumos');
-                    console.log('[cerrarModal] Botón de cerrar encontrado:', !!btnCerrar);
-                    
-                    if (btnCerrar) {
-                        console.log('[cerrarModal] Eliminando botón de cerrar...');
-                        btnCerrar.remove();
-                        console.log('[cerrarModal] Botón de cerrar eliminado');
-                    }
-                    
-                    // Limpiar datos
-                    console.log('[cerrarModal] Limpiando datos...');
-                    window.receiptManager = null;
-                    self.imagenesActuales = [];
-                    self.estilosOriginalesCard = null;
-                    
-                    console.log('[cerrarModal] Modal cerrado y datos limpiados - COMPLETADO');
-                    console.log('[agregarBotonCerrar] ===== DESPUÉS DE EJECUTAR CERRAR MODAL =====');
-                } catch (error) {
-                    console.error('[agregarBotonCerrar] ERROR al ejecutar cerrarModal directamente:', error);
-                    console.error('[agregarBotonCerrar] Stack trace:', error.stack);
-                }
-            } else {
-                console.error('[agregarBotonCerrar] ERROR: self.cerrarModal no es una función');
-                console.error('[agregarBotonCerrar] Intentando llamar a cerrarModal global...');
-                if (typeof window.cerrarModal === 'function') {
-                    window.cerrarModal();
-                } else {
-                    console.error('[agregarBotonCerrar] ERROR: window.cerrarModal tampoco existe');
-                }
-            }
-        });
-        
-        // Agregar el botón al body (flotante)
-        document.body.appendChild(btnCerrar);
-        console.log('[agregarBotonCerrar] Botón de cerrar agregado al body');
+        // No-op: unificado en CloseButtonManager.js
     }
 
     /**
@@ -1054,20 +980,7 @@ window.cerrarModal = function() {
 };
 
 // Función global para inicializar el botón X cuando se carga el recibo
+// Botón X de cierre unificado en CloseButtonManager (btn-cerrar-modal-dinamico)
 window.inicializarBotonCerrarInsumos = function() {
-    console.log('[inicializarBotonCerrarInsumos] Inicializando botón X para recibo');
-    
-    const modalWrapper = document.getElementById('order-detail-modal-wrapper');
-    if (!modalWrapper) {
-        console.error('[inicializarBotonCerrarInsumos] No se encontró el modal wrapper');
-        return;
-    }
-    
-    const card = modalWrapper.querySelector('.order-detail-card');
-    if (card) {
-        window.insumosGaleria.agregarBotonCerrar(card);
-        console.log('[inicializarBotonCerrarInsumos] Botón X agregado al recibo');
-    } else {
-        console.warn('[inicializarBotonCerrarInsumos] No se encontró el card del recibo');
-    }
+    // No-op: el botón de cierre lo maneja CloseButtonManager
 };
