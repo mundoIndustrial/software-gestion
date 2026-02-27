@@ -1622,6 +1622,320 @@ class RegistroOrdenController extends Controller
             \Log::info('[recibosCostura] Filtro por encargado requiere procesamiento adicional');
         }
     }
+
+    /**
+     * Mostrar recibos de reflectivo aprobados
+     */
+    public function recibosReflectivo(Request $request)
+    {
+        try {
+            // Obtener todos los tipos de filtros desde la solicitud
+            $filtros = [];
+            $tiposFiltro = [
+                'estado', 'dia_entrega', 'total_dias', 'numero_recibo', 
+                'cliente', 'descripcion', 'cantidad', 'novedades', 
+                'fecha_creacion', 'fecha_estimada', 'encargado'
+            ];
+            
+            foreach ($tiposFiltro as $tipo) {
+                $valor = $request->input($tipo, []);
+                if (is_string($valor)) {
+                    $valor = json_decode($valor, true) ?? [];
+                }
+                if (!empty($valor)) {
+                    $filtros[$tipo] = $valor;
+                }
+            }
+            
+            \Log::info('[recibosReflectivo] Filtros aplicados', ['filtros' => $filtros]);
+            
+            // Obtener IDs de prendas con proceso REFLECTIVO (tipo_proceso_id=1) APROBADO
+            $prendasAprobadas = DB::table('pedidos_procesos_prenda_detalles')
+                ->where('tipo_proceso_id', 1)
+                ->where('estado', 'APROBADO')
+                ->whereNull('deleted_at')
+                ->pluck('prenda_pedido_id')
+                ->unique()
+                ->values()
+                ->toArray();
+            
+            \Log::info('[recibosReflectivo] Prendas con proceso REFLECTIVO aprobado', [
+                'total_prendas_aprobadas' => count($prendasAprobadas),
+                'prenda_ids' => $prendasAprobadas
+            ]);
+            
+            // Construir consulta base - solo REFLECTIVO activos con proceso APROBADO
+            // Se muestran independientemente del area o estado del recibo
+            $query = DB::table('consecutivos_recibos_pedidos')
+                ->where('tipo_recibo', 'REFLECTIVO')
+                ->where('activo', 1)
+                ->whereIn('prenda_id', $prendasAprobadas);
+            
+            // Aplicar solo filtros explícitos del usuario (NO el filtro por defecto de estado)
+            if (isset($filtros['estado']) && !empty($filtros['estado'])) {
+                $query->whereIn('estado', $filtros['estado']);
+            }
+            if (isset($filtros['numero_recibo']) && !empty($filtros['numero_recibo'])) {
+                $query->where(function($q) use ($filtros) {
+                    foreach ($filtros['numero_recibo'] as $numero) {
+                        $q->orWhere('consecutivo_actual', 'LIKE', '%' . $numero . '%');
+                    }
+                });
+            }
+            if (isset($filtros['cliente']) && !empty($filtros['cliente'])) {
+                $query->where(function($q) use ($filtros) {
+                    foreach ($filtros['cliente'] as $cliente) {
+                        $q->orWhereIn('pedido_produccion_id', function($subQuery) use ($cliente) {
+                            $subQuery->select('id')
+                                   ->from('pedidos_produccion')
+                                   ->where('cliente', 'LIKE', '%' . $cliente . '%');
+                        });
+                    }
+                });
+            }
+            if (isset($filtros['dia_entrega']) && !empty($filtros['dia_entrega'])) {
+                $query->whereIn('pedido_produccion_id', function($subQuery) use ($filtros) {
+                    $subQuery->select('id')
+                           ->from('pedidos_produccion')
+                           ->whereIn('dia_de_entrega', $filtros['dia_entrega']);
+                });
+            }
+            
+            $recibosReflectivo = $query->orderBy('consecutivo_actual', 'desc')->get();
+            
+            \Log::info('[recibosReflectivo] Recibos encontrados', [
+                'total' => $recibosReflectivo->count()
+            ]);
+
+            // Obtener festivos para cálculo de días
+            $currentYear = now()->year;
+            $nextYear = now()->addYear()->year;
+            $festivos = array_merge(
+                \App\Services\FestivosColombiaService::obtenerFestivos($currentYear),
+                \App\Services\FestivosColombiaService::obtenerFestivos($nextYear)
+            );
+
+            // Obtener información adicional de pedidos y prendas
+            $recibosConInfo = $recibosReflectivo->map(function ($recibo) use ($festivos) {
+                $pedido = PedidoProduccion::with([
+                    'prendas.coloresTelas.tela',
+                    'prendas.coloresTelas.color', 
+                    'prendas.tallas'
+                ])->find($recibo->pedido_produccion_id);
+                
+                // Calcular días para este pedido
+                $diasCalculados = 0;
+                if ($pedido && $pedido->fecha_de_creacion_de_orden) {
+                    try {
+                        $fechaInicio = $pedido->fecha_de_creacion_de_orden;
+                        $fechaFin = \Carbon\Carbon::now();
+                        
+                        $festivosArray = \App\Models\Festivo::pluck('fecha')->toArray();
+                        $festivosSet = [];
+                        foreach ($festivosArray as $f) {
+                            try {
+                                $festivosSet[\Carbon\Carbon::parse($f)->format('Y-m-d')] = true;
+                            } catch (\Exception $e) {}
+                        }
+                        
+                        $current = $fechaInicio->copy()->addDay();
+                        $totalDays = 0;
+                        $maxIterations = 365;
+                        $iterations = 0;
+                        
+                        while ($current <= $fechaFin && $iterations < $maxIterations) {
+                            $dateString = $current->format('Y-m-d');
+                            $isWeekend = $current->dayOfWeek === 0 || $current->dayOfWeek === 6;
+                            $isFestivo = isset($festivosSet[$dateString]);
+                            
+                            if (!$isWeekend && !$isFestivo) {
+                                $totalDays++;
+                            }
+                            
+                            $current->addDay();
+                            $iterations++;
+                        }
+                        
+                        $diasCalculados = max(0, $totalDays);
+                        
+                    } catch (\Exception $e) {
+                        \Log::warning('Error calculando días para recibo de reflectivo', [
+                            'recibo_id' => $recibo->id,
+                            'pedido_id' => $pedido->id ?? null,
+                            'error' => $e->getMessage()
+                        ]);
+                        $diasCalculados = 0;
+                    }
+                }
+                
+                $area = $recibo->area ?? 'Insumos';
+                
+                // Obtener información detallada de la prenda específica del recibo
+                $descripcionDetallada = '';
+                if ($pedido && $recibo->prenda_id) {
+                    $prendaRecibo = $pedido->prendas->where('id', $recibo->prenda_id)->first();
+                    if ($prendaRecibo) {
+                        $prendaInfo = "PRENDA: " . ($prendaRecibo->nombre_prenda ?? 'Sin nombre');
+                        
+                        if ($prendaRecibo->coloresTelas && $prendaRecibo->coloresTelas->count() > 0) {
+                            $telasInfo = [];
+                            foreach ($prendaRecibo->coloresTelas as $colorTela) {
+                                $telaNombre = $colorTela->tela ? $colorTela->tela->nombre : 'Sin tela';
+                                $colorNombre = $colorTela->color ? $colorTela->color->nombre : 'Sin color';
+                                $referencia = $colorTela->referencia ?? '';
+                                $telasInfo[] = "TELA: {$telaNombre} / COLOR: {$colorNombre}" . ($referencia ? " (REF: {$referencia})" : '');
+                            }
+                            if (!empty($telasInfo)) {
+                                $prendaInfo .= " | " . implode(' | ', $telasInfo);
+                            }
+                        }
+                        
+                        if ($prendaRecibo->tallas && $prendaRecibo->tallas->count() > 0) {
+                            $tallasInfo = [];
+                            foreach ($prendaRecibo->tallas as $talla) {
+                                $cantidad = $talla->cantidad ?? 0;
+                                if ($cantidad > 0) {
+                                    $tallasInfo[] = $talla->talla . ": " . $cantidad;
+                                }
+                            }
+                            if (!empty($tallasInfo)) {
+                                $prendaInfo .= " | TALLAS: " . implode(', ', $tallasInfo);
+                            }
+                        }
+                        
+                        $descripcionDetallada = $prendaInfo;
+                    }
+                }
+                
+                return [
+                    'id' => $recibo->id,
+                    'consecutivo_actual' => $recibo->consecutivo_actual,
+                    'pedido_produccion_id' => $recibo->pedido_produccion_id,
+                    'prenda_id' => $recibo->prenda_id,
+                    'tipo_recibo' => $recibo->tipo_recibo,
+                    'notas' => $recibo->notas,
+                    'estado' => $recibo->estado ?? 'PENDIENTE_INSUMOS',
+                    'area' => $recibo->area ?? 'Insumos',
+                    'created_at' => $recibo->created_at,
+                    'updated_at' => $recibo->updated_at,
+                    'dias_calculados' => $diasCalculados,
+                    'descripcion_detallada' => $descripcionDetallada,
+                    'pedido_info' => $pedido ? [
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'cliente' => $pedido->cliente,
+                        'estado' => $pedido->estado,
+                        'area' => $area,
+                        'dia_de_entrega' => $pedido->dia_de_entrega,
+                        'fecha_estimada_de_entrega' => $pedido->fecha_estimada_de_entrega ? $pedido->fecha_estimada_de_entrega->format('d/m/Y') : null,
+                        'fecha_creacion_orden' => $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('Y-m-d H:i:s') : null,
+                    ] : null,
+                ];
+            });
+
+            // Si es una solicitud AJAX, retornar JSON
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'recibos' => $recibosConInfo,
+                    'total' => $recibosConInfo->count(),
+                    'filtros_aplicados' => $filtros
+                ]);
+            }
+
+            return view('registros.recibos-reflectivo', [
+                'recibos' => $recibosConInfo,
+                'title' => 'Recibos de Reflectivo'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error en recibosReflectivo: ' . $e->getMessage());
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al cargar los recibos de reflectivo'
+                ], 500);
+            }
+            
+            return back()->with('error', 'Error al cargar los recibos de reflectivo');
+        }
+    }
+
+    /**
+     * Obtener datos de un recibo de reflectivo específico como JSON
+     */
+    public function getReciboReflectivoJson($reciboId)
+    {
+        try {
+            $recibo = DB::table('consecutivos_recibos_pedidos')
+                ->where('id', $reciboId)
+                ->where('tipo_recibo', 'REFLECTIVO')
+                ->where('activo', 1)
+                ->first();
+            
+            if (!$recibo) {
+                return response()->json(['success' => false, 'message' => 'Recibo no encontrado'], 404);
+            }
+            
+            $pedido = PedidoProduccion::find($recibo->pedido_produccion_id);
+            
+            $diasCalculados = 0;
+            if ($pedido && $pedido->fecha_de_creacion_de_orden) {
+                try {
+                    $fechaInicio = $pedido->fecha_de_creacion_de_orden;
+                    $fechaFin = \Carbon\Carbon::now();
+                    $festivosArray = \App\Models\Festivo::pluck('fecha')->toArray();
+                    $festivosSet = [];
+                    foreach ($festivosArray as $f) {
+                        try { $festivosSet[\Carbon\Carbon::parse($f)->format('Y-m-d')] = true; } catch (\Exception $e) {}
+                    }
+                    $current = $fechaInicio->copy()->addDay();
+                    $totalDays = 0;
+                    $maxIterations = 365;
+                    $iterations = 0;
+                    while ($current <= $fechaFin && $iterations < $maxIterations) {
+                        $dateString = $current->format('Y-m-d');
+                        $isWeekend = $current->dayOfWeek === 0 || $current->dayOfWeek === 6;
+                        $isFestivo = isset($festivosSet[$dateString]);
+                        if (!$isWeekend && !$isFestivo) { $totalDays++; }
+                        $current->addDay();
+                        $iterations++;
+                    }
+                    $diasCalculados = max(0, $totalDays);
+                } catch (\Exception $e) {
+                    $diasCalculados = 0;
+                }
+            }
+            
+            $nombrePrenda = 'Sin prendas';
+            if ($pedido && $pedido->prendas && $pedido->prendas->count() > 0) {
+                $primeraPrenda = $pedido->prendas->first();
+                $nombrePrenda = $primeraPrenda->nombre_prenda ?? $primeraPrenda->nombre ?? 'Prenda';
+            }
+            
+            return response()->json([
+                'success' => true,
+                'recibo' => [
+                    'id' => $recibo->id,
+                    'consecutivo_actual' => $recibo->consecutivo_actual,
+                    'pedido_produccion_id' => $recibo->pedido_produccion_id,
+                    'prenda_id' => $recibo->prenda_id,
+                    'tipo_recibo' => $recibo->tipo_recibo,
+                    'estado' => $recibo->estado ?? 'PENDIENTE_INSUMOS',
+                    'area' => $recibo->area ?? 'Insumos',
+                    'dias_calculados' => $diasCalculados,
+                    'nombre_prenda' => $nombrePrenda,
+                    'cliente' => $pedido ? $pedido->cliente : '',
+                    'numero_pedido' => $pedido ? $pedido->numero_pedido : '',
+                    'fecha_creacion' => $pedido && $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('d/m/Y') : '-',
+                    'created_at' => $recibo->created_at,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en getReciboReflectivoJson: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error interno'], 500);
+        }
+    }
     
     /**
      * Obtener datos de un recibo específico como JSON (para tiempo real)

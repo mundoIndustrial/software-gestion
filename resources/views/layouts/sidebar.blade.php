@@ -309,6 +309,14 @@
               <span class="menu-label">Recibos de Costura</span>
             </a>
           </li>
+          <li class="submenu-item">
+            <a href="/recibos-reflectivo"
+               class="menu-link {{ request()->is('recibos-reflectivo') ? 'active' : '' }}"
+               aria-label="Ver recibos de reflectivo">
+              <span class="material-symbols-rounded" aria-hidden="true">receipt_long</span>
+              <span class="menu-label">Recibos de Reflectivo</span>
+            </a>
+          </li>
         </ul>
       </li>
       </ul>

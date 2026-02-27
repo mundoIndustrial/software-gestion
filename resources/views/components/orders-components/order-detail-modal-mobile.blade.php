@@ -629,8 +629,8 @@ window.llenarReciboCosturaMobile = function(data) {
     console.log(' [FILTRO PROCESOS] Es vista operario:', esVistaOperario);
     console.log(' [FILTRO PROCESOS] Todos los procesos encontrados:', todosProcesos);
     
-    if (userRole === 'costura-reflectivo') {
-        // Para costura-reflectivo, mostrar COSTURA y REFLECTIVO en ese orden
+    if (userRole === 'costura-reflectivo' || userRole === 'vista-costura') {
+        // Para costura-reflectivo y vista-costura, mostrar COSTURA y REFLECTIVO en ese orden
         const tieneCostu = todosProcesos.includes('COSTURA');
         const tieneReflectivo = todosProcesos.includes('REFLECTIVO');
         procesosFiltrados = [];

@@ -256,7 +256,7 @@
                         </td>
                         
                         <!-- Estado del Recibo (Badge) -->
-                        <td>
+                        <td style="white-space: nowrap;">
                             @php
                                 $estadoRecibo = $recibo['estado'] ?? 'PENDIENTE_INSUMOS';
                                 $badgeClass = 'bg-secondary';
@@ -267,10 +267,10 @@
                                     $badgeClass = 'bg-warning';
                                 } elseif ($estadoRecibo === 'PENDIENTE_INSUMOS') {
                                     $badgeClass = 'bg-info';
-                                    $estadoTexto = 'Pendiente Insumos';
+                                    $estadoTexto = 'Pendiente';
                                 }
                             @endphp
-                            <span class="badge {{ $badgeClass }}">
+                            <span class="badge {{ $badgeClass }}" style="white-space: nowrap; display: inline-block;">
                                 {{ $estadoTexto }}
                             </span>
                         </td>

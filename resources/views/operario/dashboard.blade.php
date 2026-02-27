@@ -96,7 +96,7 @@
                                             <h4 class="orden-numero">#{{ $prenda['numero_pedido'] }}</h4>
                                         @endif
                                         <span class="estado-badge {{ $estadoClass }}" data-estado="recibo-costura">
-                                            {{ $prenda['total_recibos'] }} RECIBOS
+                                            {{ count(array_unique(array_map(fn($r) => strtoupper($r['tipo_recibo']), $prenda['recibos']))) }} RECIBOS
                                         </span>
                                     </div>
                                 </div>
@@ -124,11 +124,14 @@
                                         AGREGAR NOVEDAD
                                     </button>
                                     @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura'))
-                                        {{-- Para costura-reflectivo, crear un botón por cada tipo de recibo --}}
-                                        @foreach($prenda['recibos'] as $recibo)
-                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $recibo['tipo_recibo'] }}')">
+                                        {{-- Para costura-reflectivo/vista-costura, crear un botón por cada TIPO de recibo (sin duplicados) --}}
+                                        @php
+                                            $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
+                                        @endphp
+                                        @foreach($tiposUnicos as $tipoReciboUnico)
+                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $tipoReciboUnico }}')">
                                                 <span class="material-symbols-rounded">receipt</span>
-                                                {{ strtoupper($recibo['tipo_recibo']) }}
+                                                {{ $tipoReciboUnico }}
                                             </button>
                                         @endforeach
                                     @else

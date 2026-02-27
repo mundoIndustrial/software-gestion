@@ -1426,6 +1426,10 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/recibos-costura', [RegistroOrdenController::class, 'recibosCostura'])->name('registros.recibos-costura');
     Route::get('/recibos-costura/recibo/{reciboId}', [RegistroOrdenController::class, 'getReciboJson'])->name('registros.recibo-json');
     
+    // Rutas para recibos de reflectivo
+    Route::get('/recibos-reflectivo', [RegistroOrdenController::class, 'recibosReflectivo'])->name('registros.recibos-reflectivo');
+    Route::get('/recibos-reflectivo/recibo/{reciboId}', [RegistroOrdenController::class, 'getReciboReflectivoJson'])->name('registros.recibo-reflectivo-json');
+    
     // Rutas con parámetros {pedido} - IMPORTANTE: rutas más específicas PRIMERO
     Route::get('/registros/{id}/recibos-datos', [RegistroOrdenQueryController::class, 'getRecibosDatos'])->name('registros.recibos-datos');
     Route::get('/registros/{id}/consecutivo-costura', [RegistroOrdenQueryController::class, 'getConsecutivoCostura'])->name('registros.consecutivo-costura');

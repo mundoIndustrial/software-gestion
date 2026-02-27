@@ -85,7 +85,7 @@ class ObtenerPrendasRecibosService
                     ->where('activo', 1)
                     ->first();
 
-                // Si existe recibo REFLECTIVO, agregarlo SIN validar encargado
+                // Si existe recibo REFLECTIVO con proceso aprobado, agregarlo SIN validar encargado ni área
                 if ($reciboReflectivo) {
                     $recibos->push($reciboReflectivo);
                     
@@ -104,9 +104,18 @@ class ObtenerPrendasRecibosService
                 }
             }
             
-            // Re-ordenar por fecha
-            $recibos = $recibos->sortByDesc('created_at');
+            // Re-ordenar por fecha y eliminar duplicados (misma prenda_id + tipo_recibo)
+            $recibos = $recibos->sortByDesc('created_at')
+                ->unique(function ($recibo) {
+                    return $recibo->prenda_id . '_' . $recibo->tipo_recibo;
+                })
+                ->values();
         }
+
+        // Deduplicar: Si hay múltiples recibos con misma prenda_id + tipo_recibo, quedar con el más reciente
+        $recibos = $recibos->unique(function ($recibo) {
+            return ($recibo->prenda_id ?: ('pedido_' . $recibo->pedido_produccion_id)) . '_' . $recibo->tipo_recibo;
+        })->values();
 
         \Log::info(' [ObtenerPrendasRecibosService] Recibos encontrados', [
             'total_recibos' => $recibos->count(),
