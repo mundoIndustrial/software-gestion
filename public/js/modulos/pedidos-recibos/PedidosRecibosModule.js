@@ -312,59 +312,81 @@ window.cerrarModalRecibos = function() {
     window.pedidosRecibosModule.cerrarRecibo();
 };
 
-// Compatibilidad: algunos templates aún llaman onclick="toggleFactura()"
-// (sin cargar public/js/asesores/pedidos.js en ciertos contextos como visualizador-logo)
-// Actúa como TOGGLE: si está en galería → vuelve al recibo, si está en recibo → abre galería
-if (typeof window.toggleFactura !== 'function') {
-    window.toggleFactura = function() {
-        console.log('[toggleFactura-PRM] Toggle entre recibo y galería');
-        const galeria = document.getElementById('galeria-modal-costura');
-        const estaEnGaleria = galeria && (galeria.style.display === 'flex' || galeria.style.display === 'block');
-        
-        const btnFactura = document.getElementById('btn-factura');
-        const btnGaleria = document.getElementById('btn-galeria');
-        
-        if (estaEnGaleria) {
-            // Estamos en galería → cerrar galería y mostrar recibo
-            console.log('[toggleFactura-PRM] Cerrando galería, mostrando recibo');
-            GalleryManager.cerrarGaleria();
-            // Mostrar btn-factura (con icono de galería para indicar que se puede ir a galería)
-            if (btnFactura) {
-                btnFactura.style.display = 'block';
-                btnFactura.style.visibility = 'visible';
-                btnFactura.style.zIndex = '10';
-                const icon = btnFactura.querySelector('i');
-                if (icon) { icon.className = 'fas fa-images'; btnFactura.title = 'Ver galería'; }
-            }
-            // Ocultar btn-galeria
-            if (btnGaleria) {
-                btnGaleria.style.display = 'none';
-                btnGaleria.style.visibility = 'hidden';
-                btnGaleria.style.zIndex = '-1';
-            }
-        } else {
-            // Estamos en recibo → abrir galería
-            console.log('[toggleFactura-PRM] Abriendo galería');
-            if (window.toggleGaleria) {
-                window.toggleGaleria();
-            }
-            // Ocultar btn-factura
-            if (btnFactura) {
-                btnFactura.style.display = 'none';
-                btnFactura.style.visibility = 'hidden';
-                btnFactura.style.zIndex = '-1';
-            }
-            // Mostrar btn-galeria (con icono de recibo para indicar que se puede volver)
-            if (btnGaleria) {
-                btnGaleria.style.display = 'block';
-                btnGaleria.style.visibility = 'visible';
-                btnGaleria.style.zIndex = '10';
-                const icon = btnGaleria.querySelector('i');
-                if (icon) { icon.className = 'fas fa-receipt'; btnGaleria.title = 'Ver recibos'; }
-            }
-        }
+/**
+ * FUNCIÓN GLOBAL para abrir imagen en grande desde la galería
+ * Disponible en todas las vistas que usen PedidosRecibosModule
+ */
+if (typeof window.abrirModalImagenProcesoGrande !== 'function') {
+    window.abrirModalImagenProcesoGrande = function(indice, fotos) {
+        GalleryManager.abrirModalImagenProcesoGrande(indice, fotos);
     };
 }
+
+// Compatibilidad: algunos templates aún llaman onclick="toggleFactura()"
+// Siempre sobreescribir para que funcione en todas las vistas (supervisor-pedidos, recibos-costura, insumos, etc.)
+// Guarda la versión anterior como fallback para cuando NO hay estado activo de recibo
+const _originalToggleFactura = window.toggleFactura;
+
+window.toggleFactura = function() {
+    console.log('[toggleFactura-PRM] Toggle entre recibo y galería');
+    
+    // Verificar si PedidosRecibosModule tiene estado activo
+    const estado = window.pedidosRecibosModule ? window.pedidosRecibosModule.getEstado() : null;
+    const tieneEstadoActivo = estado && estado.pedidoId && (estado.imagenesActuales.length > 0 || estado.prendaPedidoId);
+    
+    if (!tieneEstadoActivo) {
+        // Sin estado activo → usar la implementación original si existe
+        console.log('[toggleFactura-PRM] Sin estado activo, delegando a implementación original');
+        if (_originalToggleFactura) return _originalToggleFactura.call(this);
+        return;
+    }
+    
+    const galeria = document.getElementById('galeria-modal-costura');
+    const estaEnGaleria = galeria && (galeria.style.display === 'flex' || galeria.style.display === 'block');
+    
+    const btnFactura = document.getElementById('btn-factura');
+    const btnGaleria = document.getElementById('btn-galeria');
+    
+    if (estaEnGaleria) {
+        // Estamos en galería → cerrar galería y mostrar recibo
+        console.log('[toggleFactura-PRM] Cerrando galería, mostrando recibo');
+        GalleryManager.cerrarGaleria();
+        // Mostrar btn-factura (con icono de galería para indicar que se puede ir a galería)
+        if (btnFactura) {
+            btnFactura.style.display = 'block';
+            btnFactura.style.visibility = 'visible';
+            btnFactura.style.zIndex = '10';
+            const icon = btnFactura.querySelector('i');
+            if (icon) { icon.className = 'fas fa-images'; btnFactura.title = 'Ver galería'; }
+        }
+        // Ocultar btn-galeria
+        if (btnGaleria) {
+            btnGaleria.style.display = 'none';
+            btnGaleria.style.visibility = 'hidden';
+            btnGaleria.style.zIndex = '-1';
+        }
+    } else {
+        // Estamos en recibo → abrir galería
+        console.log('[toggleFactura-PRM] Abriendo galería');
+        if (window.toggleGaleria) {
+            window.toggleGaleria();
+        }
+        // Ocultar btn-factura
+        if (btnFactura) {
+            btnFactura.style.display = 'none';
+            btnFactura.style.visibility = 'hidden';
+            btnFactura.style.zIndex = '-1';
+        }
+        // Mostrar btn-galeria (con icono de recibo para indicar que se puede volver)
+        if (btnGaleria) {
+            btnGaleria.style.display = 'block';
+            btnGaleria.style.visibility = 'visible';
+            btnGaleria.style.zIndex = '10';
+            const icon = btnGaleria.querySelector('i');
+            if (icon) { icon.className = 'fas fa-receipt'; btnGaleria.title = 'Ver recibos'; }
+        }
+    }
+};
 
 // Interceptar toggleGaleria original
 const originalToggleGaleria = window.toggleGaleria;

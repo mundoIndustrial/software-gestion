@@ -119,8 +119,9 @@ export class GalleryManager {
                 galeria = document.createElement('div');
                 galeria.id = 'galeria-modal-costura';
                 galeria.style.cssText = `
-                    width: 100%;
-                    margin: 0;
+                    width: 668px;
+                    max-width: 100%;
+                    margin: 0 auto;
                     padding: 0;
                     display: flex;
                     flex-direction: column;
@@ -176,7 +177,8 @@ export class GalleryManager {
                 // Renderizar galería
                 this._renderizarGaleria(galeria, fotosParaMostrar, puedeAdjuntarDisenoLogo, {
                     pedidoId,
-                    procesoPrendaDetalleId
+                    procesoPrendaDetalleId,
+                    datosCompletos: state.datosCompletos
                 });
             }
 
@@ -202,6 +204,10 @@ export class GalleryManager {
             window.__isVisualizadorCotizacionesLogoRole === true
         );
         const esSoloLecturaDisenoLogo = puedeVerDisenoLogo && !puedeGestionarDisenoLogo;
+        
+        // Guardar imágenes indexadas para lightbox
+        GalleryManager._imagenesGaleria = [];
+        
         let html = `
             <div style="background: #ffffff; display: flex; flex-direction: column; width: 100%; height: 100%; box-sizing: border-box; border-radius: 12px; overflow: hidden;">
                 <div style="background: linear-gradient(135deg, #2563eb, #1d4ed8); padding: 16px 12px; margin: 0; border-radius: 12px 12px 0 0; width: 100%; box-sizing: border-box; position: sticky; top: 0; z-index: 100;">
@@ -210,10 +216,20 @@ export class GalleryManager {
                 <div style="padding: 24px; flex: 1; overflow-y: auto; background: #ffffff;">
         `;
         
-        if (fotos.length > 0) {
+        // Intentar renderizar estilo insumos (por prendas categorizadas)
+        const datosCompletos = uploadCtx?.datosCompletos;
+        if (datosCompletos && datosCompletos.prendas && datosCompletos.prendas.length > 0) {
+            html += this._construirGaleriaEstiloInsumos(datosCompletos);
+        } else if (fotos.length > 0) {
             html += this._construirGridImagenes(fotos);
         } else {
-            html += '<p style="text-align: center; color: #999; padding: 2rem;">No hay fotos disponibles para este recibo</p>';
+            html += `
+                <div style="padding: 3rem; text-align: center;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem; color: #9ca3af;">📷</div>
+                    <p style="color: #6b7280; font-size: 1rem; margin-bottom: 1rem;">No hay fotos disponibles para este recibo</p>
+                    <p style="color: #9ca3af; font-size: 0.875rem;">Las imágenes se mostrarán aquí cuando estén disponibles</p>
+                </div>
+            `;
         }
 
         if (puedeVerDisenoLogo) {
@@ -626,8 +642,118 @@ export class GalleryManager {
     }
 
     /**
-     * Construye el grid de imágenes
+     * Construye galería estilo insumos: categorizada por prenda, telas y procesos
      */
+    static _construirGaleriaEstiloInsumos(datosCompletos) {
+        let html = '';
+        let tieneImagenes = false;
+        GalleryManager._imagenesGaleria = [];
+
+        datosCompletos.prendas.forEach((prenda, prendaIndex) => {
+            const nombrePrenda = prenda.nombre || prenda.nombre_prenda || `Prenda ${prendaIndex + 1}`;
+
+            // Imágenes de la prenda
+            if (prenda.imagenes && prenda.imagenes.length > 0) {
+                tieneImagenes = true;
+                html += `
+                    <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
+                        <h3 style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 600; color: #1f2937;">${nombrePrenda}</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                `;
+                prenda.imagenes.forEach((imagen, index) => {
+                    const rutaImg = imagen.ruta_webp || imagen.ruta_original || '';
+                    const globalIdx = GalleryManager._imagenesGaleria.length;
+                    GalleryManager._imagenesGaleria.push(rutaImg);
+                    html += GalleryManager._crearTarjetaImagen(rutaImg, nombrePrenda, `Imagen ${index + 1}`, globalIdx);
+                });
+                html += `</div></div>`;
+            }
+
+            // Imágenes de telas
+            if (prenda.imagenes_tela && prenda.imagenes_tela.length > 0) {
+                tieneImagenes = true;
+                html += `
+                    <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
+                        <h3 style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 600; color: #1f2937;">${nombrePrenda} - Telas</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                `;
+                prenda.imagenes_tela.forEach((imagen, index) => {
+                    const rutaImg = imagen.ruta_webp || imagen.ruta_original || '';
+                    const globalIdx = GalleryManager._imagenesGaleria.length;
+                    GalleryManager._imagenesGaleria.push(rutaImg);
+                    html += GalleryManager._crearTarjetaImagen(rutaImg, `Tela ${index + 1}`, 'Click para ver grande', globalIdx);
+                });
+                html += `</div></div>`;
+            }
+
+            // Imágenes de procesos
+            if (prenda.procesos && prenda.procesos.length > 0) {
+                prenda.procesos.forEach(proceso => {
+                    if (proceso.imagenes && proceso.imagenes.length > 0) {
+                        tieneImagenes = true;
+                        html += `
+                            <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
+                                <h3 style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 600; color: #1f2937;">${nombrePrenda} - ${proceso.tipo_proceso}</h3>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                        `;
+                        proceso.imagenes.forEach((imagen, index) => {
+                            const rutaImg = imagen.ruta_webp || imagen.ruta_original || '';
+                            const globalIdx = GalleryManager._imagenesGaleria.length;
+                            GalleryManager._imagenesGaleria.push(rutaImg);
+                            html += GalleryManager._crearTarjetaImagen(rutaImg, proceso.tipo_proceso, 'Click para ver grande', globalIdx);
+                        });
+                        html += `</div></div>`;
+                    }
+                });
+            }
+        });
+
+        if (!tieneImagenes) {
+            html = `
+                <div style="padding: 3rem; text-align: center;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem; color: #9ca3af;">📷</div>
+                    <p style="color: #6b7280; font-size: 1rem; margin-bottom: 1rem;">No hay fotos disponibles para este pedido</p>
+                    <p style="color: #9ca3af; font-size: 0.875rem;">Las imágenes se mostrarán aquí cuando estén disponibles</p>
+                </div>
+            `;
+        }
+
+        return html;
+    }
+
+    /**
+     * Crea una tarjeta de imagen individual estilo insumos
+     */
+    static _crearTarjetaImagen(rutaImg, titulo, subtitulo, globalIdx) {
+        // Exponer imágenes en window para acceso desde onclick inline
+        window.__galeriaImagenes = GalleryManager._imagenesGaleria;
+        return `
+            <div style="
+                border: 2px solid #e5e7eb; 
+                border-radius: 12px; 
+                overflow: hidden; 
+                cursor: pointer; 
+                transition: all 0.3s ease;
+                background: white;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            " onclick="if(typeof window.abrirModalImagenProcesoGrande==='function'){window.abrirModalImagenProcesoGrande(${globalIdx}, window.__galeriaImagenes||[]);}"
+            onmouseover="this.style.borderColor='#3b82f6'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 16px rgba(59, 130, 246, 0.3)';"
+            onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.08)';">
+                <img src="${rutaImg}" alt="${titulo}" style="
+                    width: 100%; 
+                    height: 220px; 
+                    object-fit: cover;
+                    display: block;
+                    transition: all 0.3s ease;
+                " onerror="this.style.display='none'; this.parentElement.style.background='#fee2e2'; this.parentElement.innerHTML='<div style=\'display: flex; align-items: center; justify-content: center; height: 100%; color: #dc2626; font-size: 0.8rem; text-align: center; padding: 4px;\'> Error al cargar imagen</div>';">
+                <div style="padding: 0.75rem; background: #f9fafb;">
+                    <div style="font-size: 0.875rem; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem;">${titulo}</div>
+                    <div style="font-size: 0.75rem; color: #6b7280;">${subtitulo}</div>
+                </div>
+            </div>
+        `;
+    }
+
     static _construirGridImagenes(fotos) {
         let html = `
             <div style="margin-bottom: 1.5rem; display: flex; gap: 12px; align-items: flex-start; padding: 0 20px;">
