@@ -41,7 +41,7 @@ class ObtenerPrendasRecibosService
         // Obtener todos los recibos de costura activos con relaciones (incluyendo procesos)
         $query = ConsecutivoReciboPedido::where('activo', 1)
             ->whereIn('tipo_recibo', $tiposRecibo)
-            ->whereIn('area', ['Corte', 'Costura', 'Control de Calidad'])
+            ->whereIn('area', ['Corte', 'Costura', 'Control de Calidad', 'Control Calidad'])
             ->with(['prenda', 'prenda.pedidoProduccion', 'prenda.procesosPrenda', 'prenda.tallas', 'pedido', 'pedido.prendas', 'pedido.prendas.tallas']);
         
         // Para cortadores: excluir PENDIENTE_INSUMOS (misma lógica que /recibos-costura)
@@ -301,6 +301,13 @@ class ObtenerPrendasRecibosService
                         ];
                     })->toArray() : [],
                     'recibos' => $recibosDelTipo->map(function ($recibo) {
+                        // Buscar el proceso de Control Calidad más reciente para este recibo
+                        $procesoCC = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
+                            ->where('proceso', 'Control de Calidad')
+                            ->whereNull('deleted_at')
+                            ->latest('created_at')
+                            ->first();
+                        
                         return [
                             'id' => $recibo->id,
                             'tipo_recibo' => $recibo->tipo_recibo,
@@ -308,6 +315,8 @@ class ObtenerPrendasRecibosService
                             'consecutivo_inicial' => $recibo->consecutivo_inicial,
                             'notas' => $recibo->notas,
                             'creado_en' => $recibo->created_at,
+                            'area' => $recibo->area,
+                            'proceso_id' => $procesoCC ? $procesoCC->id : null,
                         ];
                     })->toArray(),
                     'total_recibos' => $recibosDelTipo->count(),

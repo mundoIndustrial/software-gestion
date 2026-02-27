@@ -142,6 +142,7 @@ class ControlCalidadController extends Controller
 
         $tipoRecibo = strtoupper(trim((string) $request->query('tipo_recibo', '')));
         $tipoRecibo = $tipoRecibo === '' ? null : $tipoRecibo;
+        $prendaIdParam = $request->query('prenda_id', null);
 
         // Para reutilizar operario.ver-pedido sin cambios, inyectamos el consecutivo
         // del recibo seleccionado en el mismo campo que el blade espera.
@@ -154,6 +155,14 @@ class ControlCalidadController extends Controller
             // Si no es líder, filtrar por área
             if (!$esLiderControlCalidad) {
                 $queryRecibo->where('area', 'control de calidad');
+            }
+
+            // Filtrar por prenda_id si se proporcionó
+            if ($prendaIdParam) {
+                $queryRecibo->where(function ($q) use ($prendaIdParam) {
+                    $q->where('prenda_id', $prendaIdParam)
+                      ->orWhereNull('prenda_id');
+                });
             }
 
             $reciboSeleccionado = $queryRecibo->first();

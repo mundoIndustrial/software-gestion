@@ -119,6 +119,29 @@
 
                                 <!-- Contenedor de Botones -->
                                 <div class="orden-buttons" style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;">
+                                    {{-- Botón "Pasar a C.C" o "DESHACER" solo para vista-costura (PRIMERO) --}}
+                                    @if(auth()->user()->hasRole('vista-costura'))
+                                        @php
+                                            $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
+                                            $areaActual = $prenda['recibos'][0]['area'] ?? null;
+                                            $procesoId = $prenda['recibos'][0]['proceso_id'] ?? null;
+                                            $tipoRecibo = strtoupper($tiposUnicos->first() ?? 'COSTURA');
+                                        @endphp
+                                        <button class="btn-pasar-cc" 
+                                                id="btn-cc-{{ $prenda['prenda_id'] }}"
+                                                data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                data-tipo-recibo="{{ $tipoRecibo }}"
+                                                data-recibo="{{ isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'] }}"
+                                                data-area="{{ $areaActual ?? 'COSTURA' }}"
+                                                data-proceso-id="{{ $procesoId }}"
+                                                onclick="pasarAControlCalidad(this)">
+                                            <span class="material-symbols-rounded">{{ $areaActual === 'Control Calidad' ? 'undo' : 'check_circle' }}</span>
+                                            {{ $areaActual === 'Control Calidad' ? 'DESHACER' : 'PASAR A C.C' }}
+                                        </button>
+                                    @endif
+                                    
                                     <button class="btn-agregar-novedad" onclick="abrirModalNovedad('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', {{ isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'] }})">
                                         <span class="material-symbols-rounded">comment</span>
                                         AGREGAR NOVEDAD
@@ -676,6 +699,35 @@
     }
 
     .btn-ver-recibos .material-symbols-rounded {
+        font-size: 14px;
+    }
+
+    /* Botón Pasar a Control Calidad */
+    .btn-pasar-cc {
+        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 4px;
+        color: white;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: fit-content;
+        box-shadow: 0 2px 4px rgba(76, 175, 80, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-pasar-cc:hover {
+        background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+        box-shadow: 0 4px 8px rgba(76, 175, 80, 0.25);
+        transform: translateY(-1px);
+    }
+
+    .btn-pasar-cc .material-symbols-rounded {
         font-size: 14px;
     }
 
@@ -2078,6 +2130,87 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         
         modal.style.display = 'flex';
+    }
+
+    // Función dinámica para pasar recibo a Control Calidad o Deshacer
+    function pasarAControlCalidad(btn) {
+        const pedidoId = btn.dataset.pedidoId;
+        const prendaId = btn.dataset.prendaId;
+        const nombre = btn.dataset.nombre;
+        const tipoRecibo = btn.dataset.tipoRecibo;
+        const recibo = btn.dataset.recibo;
+        const area = btn.dataset.area;
+        const procesoId = btn.dataset.procesoId;
+        const btnId = btn.id;
+
+        if (area === 'Control Calidad') {
+            // DESHACER
+            fetch('/recibos-novedades/' + pedidoId + '/' + prendaId + '/deshacer-control-calidad', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    proceso_id: procesoId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar dinámicamente el botón
+                    const nuevoArea = data.data.area_nueva;
+                    const btn = document.getElementById(btnId);
+                    btn.dataset.area = nuevoArea;
+                    btn.dataset.procesoId = '';
+                    
+                    const icon = btn.querySelector('.material-symbols-rounded');
+                    icon.textContent = 'check_circle';
+                    btn.innerHTML = '<span class="material-symbols-rounded">check_circle</span> PASAR A C.C';
+                    
+                    console.log('✓ Control Calidad deshecho. Área restaurada a: ' + nuevoArea);
+                } else {
+                    console.error('❌ Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        } else {
+            // PASAR A C.C
+            fetch('/recibos-novedades/' + pedidoId + '/' + recibo + '/cambiar-area-control-calidad', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    prenda_id: prendaId,
+                    tipo_recibo: tipoRecibo
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar dinámicamente el botón
+                    const procesoId = data.data.proceso_id;
+                    const btn = document.getElementById(btnId);
+                    btn.dataset.area = 'Control Calidad';
+                    btn.dataset.procesoId = procesoId;
+                    
+                    const icon = btn.querySelector('.material-symbols-rounded');
+                    icon.textContent = 'undo';
+                    btn.innerHTML = '<span class="material-symbols-rounded">undo</span> DESHACER';
+                    
+                    console.log('✓ Prenda enviada a Control Calidad');
+                } else {
+                    console.error('❌ Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
     }
 
     // Cerrar modal al hacer click fuera

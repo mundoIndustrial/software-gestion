@@ -598,6 +598,29 @@ window.llenarReciboCosturaMobile = function(data) {
             arrowContainer.style.display = 'none';
             arrowContainer.innerHTML = '';
         }
+        
+        // IMPORTANTE: Aún sin navegación, debemos guardar los procesos disponibles
+        // para que el filtrado de prendas funcione correctamente con el tipo_recibo seleccionado
+        const tieneCostu = todosProcesos.includes('COSTURA');
+        const tieneReflectivo = todosProcesos.includes('REFLECTIVO');
+        let procesosCC = [];
+        if (tieneCostu) procesosCC.push('COSTURA');
+        if (tieneReflectivo) procesosCC.push('REFLECTIVO');
+        if (procesosCC.length === 0) procesosCC = todosProcesos;
+        
+        window.todosProcesosDisponibles = procesosCC;
+        
+        // Determinar procesoCarouselIndex basado en tipo_recibo de la URL
+        const tipoReciboCC = tipoReciboUpper;
+        if (tipoReciboCC && procesosCC.includes(tipoReciboCC)) {
+            window.procesoCarouselIndex = procesosCC.indexOf(tipoReciboCC);
+            window.procesoActualSeleccionado = tipoReciboCC;
+            console.log('📱 [CONTROL CALIDAD] procesoCarouselIndex fijado a', window.procesoCarouselIndex, 'para tipo_recibo:', tipoReciboCC);
+        } else {
+            window.procesoActualSeleccionado = procesosCC[window.procesoCarouselIndex || 0] || null;
+        }
+        console.log('📱 [CONTROL CALIDAD] todosProcesosDisponibles:', window.todosProcesosDisponibles);
+        console.log('📱 [CONTROL CALIDAD] procesoActualSeleccionado:', window.procesoActualSeleccionado);
     }
     
     if (data.prendas && Array.isArray(data.prendas)) {
@@ -639,6 +662,23 @@ window.llenarReciboCosturaMobile = function(data) {
         
         console.log(' [FILTRO PROCESOS] tieneCostu:', tieneCostu);
         console.log(' [FILTRO PROCESOS] tieneReflectivo:', tieneReflectivo);
+    } else if (esVistaControlCalidad || esRolControlCalidad) {
+        // Para control de calidad: mostrar COSTURA y REFLECTIVO (mismos tipos que costura-reflectivo)
+        const tieneCostu = todosProcesos.includes('COSTURA');
+        const tieneReflectivo = todosProcesos.includes('REFLECTIVO');
+        procesosFiltrados = [];
+        if (tieneCostu) procesosFiltrados.push('COSTURA');
+        if (tieneReflectivo) procesosFiltrados.push('REFLECTIVO');
+        
+        // Si el tipoRecibo es REFLECTIVO, ajustar el índice para mostrar ese proceso
+        if (tipoReciboUpper === 'REFLECTIVO' && tieneReflectivo) {
+            window.procesoCarouselIndex = procesosFiltrados.indexOf('REFLECTIVO');
+            console.log(' [FILTRO PROCESOS] Control Calidad: Ajustando índice a REFLECTIVO:', window.procesoCarouselIndex);
+        } else if (tipoReciboUpper === 'COSTURA' && tieneCostu) {
+            window.procesoCarouselIndex = procesosFiltrados.indexOf('COSTURA');
+        }
+        
+        console.log(' [FILTRO PROCESOS] Control Calidad - tieneCostu:', tieneCostu, 'tieneReflectivo:', tieneReflectivo);
     } else if (esVistaOperario) {
         // Vista operario = solo recibos de COSTURA (igual que /recibos-costura)
         // Los bodegueros ya tienen su filtro propio en el backend (COSTURA-BODEGA)
@@ -716,6 +756,9 @@ window.llenarReciboCosturaMobile = function(data) {
         if (processNavContainer) {
             processNavContainer.style.display = 'none';
         }
+        // Aún sin navegación visible, guardar procesos para filtrado
+        window.todosProcesosDisponibles = procesosFiltrados;
+        window.procesoActualSeleccionado = procesosFiltrados[window.procesoCarouselIndex || 0] || null;
     }
     
     // Fecha - parsear correctamente

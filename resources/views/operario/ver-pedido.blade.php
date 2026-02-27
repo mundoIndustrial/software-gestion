@@ -1473,7 +1473,12 @@
                 };
 
                 // Resetear índices del carrusel
+                // Para control-calidad y otros: ajustar procesoCarouselIndex según tipo_recibo
                 window.procesoCarouselIndex = 0;
+                if (tipoRecibo) {
+                    // Se ajustará dinámicamente en order-detail-modal-mobile cuando se conozcan los procesos disponibles
+                    console.log('📌 [CAROUSEL] tipo_recibo detectado:', tipoRecibo, '- el índice se ajustará después');
+                }
                 window.prendaCarouselIndex = 0;
                 
                 // Si se pasó prenda_id desde el dashboard, calcular el índice correcto

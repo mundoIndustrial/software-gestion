@@ -2769,6 +2769,14 @@ Route::middleware(['auth'])->prefix('recibos-novedades')->name('recibos-novedade
     Route::post('{pedidoId}/{numeroRecibo}', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'store'])
         ->name('store');
     
+    // Cambiar área de recibo a Control Calidad
+    Route::post('{pedidoId}/{numeroRecibo}/cambiar-area-control-calidad', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'cambiarAreaControlCalidad'])
+        ->name('cambiar-area-control-calidad');
+    
+    // Deshacer Control Calidad
+    Route::delete('{pedidoId}/{prendaId}/deshacer-control-calidad', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'deshacerControlCalidad'])
+        ->name('deshacer-control-calidad');
+    
     // Actualizar una novedad existente
     Route::put('{novedadId}', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'update'])
         ->name('update');
