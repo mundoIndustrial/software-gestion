@@ -119,7 +119,8 @@
 
         td {
             padding: 10px;
-            font-size: 11px;
+            font-size: 12px;
+            vertical-align: top;
             border-bottom: 1px solid #e2e8f0;
         }
 
@@ -149,6 +150,26 @@
             text-align: center;
             font-variant-numeric: tabular-nums;
             font-weight: bold;
+        }
+
+        /* Pendientes bodeguero (simple) */
+        .pendientes-simple {
+            margin-top: 10px;
+            page-break-inside: avoid;
+            font-size: 12px;
+            color: #1e293b;
+        }
+
+        .pendientes-simple strong {
+            color: #000;
+        }
+
+        .pendientes-simple pre {
+            margin-top: 6px;
+            white-space: pre-wrap;
+            font-family: inherit;
+            font-size: 11px;
+            color: #000;
         }
 
         /* Pie de página */
@@ -327,55 +348,153 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($prendas as $fila)
-                                <tr>
-                                    <td>
-                                        <div style="font-weight: bold; margin-bottom: 4px;">
-                                            {{ $fila->objetoPrenda['nombre'] ?? $fila->descripcion }}
-                                            @if(isset($fila->objetoPrenda['de_bodega']) && $fila->objetoPrenda['de_bodega'])
-                                                <span style="color: #ea580c; font-weight: bold;"> - SE SACA DE BODEGA</span>
+                            @php
+                                $prendasAgrupadas = $prendas->groupBy('id');
+                            @endphp
+
+                            @foreach($prendasAgrupadas as $filasGroup)
+                                @php
+                                    $primeraFila = $filasGroup->first();
+
+                                    $gruposPorColor = [];
+                                    if ($primeraFila->objetoPrenda && isset($primeraFila->objetoPrenda['variantes']) && is_array($primeraFila->objetoPrenda['variantes']) && count($primeraFila->objetoPrenda['variantes']) > 0) {
+                                        foreach ($primeraFila->objetoPrenda['variantes'] as $variante) {
+                                            $tallaVar = $variante['talla'] ?? null;
+                                            $tallaIdVar = $variante['talla_id'] ?? null;
+                                            $generoVar = strtoupper(trim($variante['genero'] ?? ''));
+
+                                            if ($generoVar === 'GENERICO') {
+                                                continue;
+                                            }
+
+                                            if (isset($variante['colores_detalle']) && is_array($variante['colores_detalle']) && !empty($variante['colores_detalle'])) {
+                                                foreach ($variante['colores_detalle'] as $colorDetalle) {
+                                                    $rawColor = $colorDetalle['color'] ?? '';
+                                                    $esColorValido = !empty($rawColor) && strtolower(trim($rawColor)) !== 'sin color';
+                                                    $colorKey = $esColorValido ? strtoupper($rawColor) : '__SIN_COLOR__';
+                                                    $cantidadColor = (int)($colorDetalle['cantidad'] ?? 0);
+
+                                                    if (!empty($tallaVar) && $cantidadColor > 0) {
+                                                        if (!isset($gruposPorColor[$colorKey])) {
+                                                            $gruposPorColor[$colorKey] = [
+                                                                'color' => $colorKey,
+                                                                'tallas' => [],
+                                                            ];
+                                                        }
+
+                                                        $gruposPorColor[$colorKey]['tallas'][] = [
+                                                            'talla' => $tallaVar,
+                                                            'tallaId' => $tallaIdVar,
+                                                            'genero' => $variante['genero'] ?? null,
+                                                            'cantidad' => $cantidadColor,
+                                                        ];
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    foreach ($gruposPorColor as &$grupoColor) {
+                                        usort($grupoColor['tallas'], function($a, $b) {
+                                            $nA = is_numeric($a['talla']) ? (int)$a['talla'] : null;
+                                            $nB = is_numeric($b['talla']) ? (int)$b['talla'] : null;
+                                            if ($nA !== null && $nB !== null) return $nA - $nB;
+                                            return strcmp($a['talla'], $b['talla']);
+                                        });
+                                    }
+                                    unset($grupoColor);
+
+                                    $tieneColoresPorTalla = !empty($gruposPorColor);
+                                    $rowSpan = $filasGroup->count();
+
+                                    $detallesHTML = '';
+                                    if ($primeraFila->objetoPrenda && isset($primeraFila->objetoPrenda['descripcion']) && $primeraFila->objetoPrenda['descripcion']) {
+                                        $detallesHTML .= '<div style="font-size: 11px; color: #334155; margin: 4px 0 6px 0; line-height: 1.3;">'
+                                            . e($primeraFila->objetoPrenda['descripcion'])
+                                            . '</div>';
+                                    }
+                                    if ($primeraFila->objetoPrenda && isset($primeraFila->objetoPrenda['variantes']) && is_array($primeraFila->objetoPrenda['variantes']) && count($primeraFila->objetoPrenda['variantes']) > 0) {
+                                        $primeraVariante = $primeraFila->objetoPrenda['variantes'][0];
+                                        $manga = $primeraVariante->manga ?? $primeraVariante['manga'] ?? null;
+                                        $manga_obs = $primeraVariante->manga_obs ?? $primeraVariante['manga_obs'] ?? '';
+                                        $broche = $primeraVariante->broche ?? $primeraVariante['broche'] ?? null;
+                                        $broche_obs = $primeraVariante->broche_obs ?? $primeraVariante['broche_obs'] ?? '';
+                                        $bolsillos = $primeraVariante->bolsillos ?? $primeraVariante['bolsillos'] ?? false;
+                                        $bolsillos_obs = $primeraVariante->bolsillos_obs ?? $primeraVariante['bolsillos_obs'] ?? '';
+
+                                        $detallesHTML .= '<div style="font-size: 11px; color: #64748b; line-height: 1.3; font-weight: bold;">';
+                                        if ($manga) {
+                                            $detallesHTML .= '<div>• Manga:' . $manga . (($manga_obs && trim($manga_obs) !== '') ? ' (' . $manga_obs . ')' : '') . '</div>';
+                                        }
+                                        if ($broche) {
+                                            $detallesHTML .= '<div>• ' . $broche . (($broche_obs && trim($broche_obs) !== '') ? ' (' . $broche_obs . ')' : '') . '</div>';
+                                        }
+                                        if ($bolsillos) {
+                                            $detallesHTML .= '<div>• Bolsillos' . (($bolsillos_obs && trim($bolsillos_obs) !== '') ? ' (' . $bolsillos_obs . ')' : '') . '</div>';
+                                        }
+                                        $detallesHTML .= '</div>';
+                                    }
+
+                                    if ($primeraFila->objetoPrenda && isset($primeraFila->objetoPrenda['procesos']) && is_array($primeraFila->objetoPrenda['procesos']) && count($primeraFila->objetoPrenda['procesos']) > 0) {
+                                        $detallesHTML .= '<div style="font-size: 11px; color: #64748b; margin-top: 4px; font-weight: bold;">';
+                                        foreach ($primeraFila->objetoPrenda['procesos'] as $proc) {
+                                            $ubicaciones = $proc->ubicaciones ?? $proc['ubicaciones'] ?? [];
+                                            $ubicacionesStr = is_array($ubicaciones) ? implode(', ', $ubicaciones) : $ubicaciones;
+                                            $nombreProc = $proc->nombre ?? $proc->tipo_proceso ?? $proc['tipo_proceso'] ?? 'Proceso';
+                                            $detallesHTML .= '<div>• ' . $nombreProc . (($ubicacionesStr && trim($ubicacionesStr) !== '') ? ' (' . $ubicacionesStr . ')' : '') . '</div>';
+                                        }
+                                        $detallesHTML .= '</div>';
+                                    }
+                                @endphp
+
+                                @if($tieneColoresPorTalla)
+                                    @foreach($gruposPorColor as $indexColor => $grupoColor)
+                                        @php
+                                            $rowSpanColor = count($grupoColor['tallas']);
+                                            $colorLabel = $grupoColor['color'] === '__SIN_COLOR__' ? null : $grupoColor['color'];
+                                        @endphp
+                                        @foreach($grupoColor['tallas'] as $indexTalla => $t)
+                                            <tr>
+                                                @if($indexTalla === 0)
+                                                    <td rowspan="{{ $rowSpanColor }}">
+                                                        <div style="font-weight: bold; margin-bottom: 4px;">
+                                                            {{ $primeraFila->objetoPrenda['nombre'] ?? $primeraFila->descripcion }}
+                                                            @if($colorLabel)
+                                                                <span> - <strong>{{ $colorLabel }}</strong></span>
+                                                            @endif
+                                                            @if(isset($primeraFila->objetoPrenda['de_bodega']) && $primeraFila->objetoPrenda['de_bodega'])
+                                                                <span style="color: #ea580c; font-weight: bold;"> - SE SACA DE BODEGA</span>
+                                                            @endif
+                                                        </div>
+                                                        {!! $detallesHTML !!}
+                                                    </td>
+                                                @endif
+                                                <td class="numeric">{{ $t['genero'] ?? '—' }}</td>
+                                                <td class="numeric">{{ $t['talla'] ?? '—' }}</td>
+                                                <td class="numeric">{{ $t['cantidad'] ?? 0 }}</td>
+                                            </tr>
+                                        @endforeach
+                                    @endforeach
+                                @else
+                                    @foreach($filasGroup as $indexFila => $fila)
+                                        <tr>
+                                            @if($indexFila === 0)
+                                                <td rowspan="{{ $rowSpan }}">
+                                                    <div style="font-weight: bold; margin-bottom: 4px;">
+                                                        {{ $primeraFila->objetoPrenda['nombre'] ?? $primeraFila->descripcion }}
+                                                        @if(isset($primeraFila->objetoPrenda['de_bodega']) && $primeraFila->objetoPrenda['de_bodega'])
+                                                            <span style="color: #ea580c; font-weight: bold;"> - SE SACA DE BODEGA</span>
+                                                        @endif
+                                                    </div>
+                                                    {!! $detallesHTML !!}
+                                                </td>
                                             @endif
-                                        </div>
-                                        @if($fila->objetoPrenda && isset($fila->objetoPrenda['variantes']) && is_array($fila->objetoPrenda['variantes']) && count($fila->objetoPrenda['variantes']) > 0)
-                                            @php
-                                                $primeraVariante = $fila->objetoPrenda['variantes'][0];
-                                                $manga = $primeraVariante->manga ?? $primeraVariante['manga'] ?? null;
-                                                $manga_obs = $primeraVariante->manga_obs ?? $primeraVariante['manga_obs'] ?? '';
-                                                $broche = $primeraVariante->broche ?? $primeraVariante['broche'] ?? null;
-                                                $broche_obs = $primeraVariante->broche_obs ?? $primeraVariante['broche_obs'] ?? '';
-                                                $bolsillos = $primeraVariante->bolsillos ?? $primeraVariante['bolsillos'] ?? false;
-                                                $bolsillos_obs = $primeraVariante->bolsillos_obs ?? $primeraVariante['bolsillos_obs'] ?? '';
-                                            @endphp
-                                            <div style="font-size: 11px; color: #64748b; line-height: 1.3; font-weight: bold;">
-                                                @if($manga)
-                                                    <div>• Manga:{{ $manga }}{{ $manga_obs && trim($manga_obs) !== '' ? " ($manga_obs)" : '' }}</div>
-                                                @endif
-                                                @if($broche)
-                                                    <div>• {{ $broche }}{{ $broche_obs && trim($broche_obs) !== '' ? " ($broche_obs)" : '' }}</div>
-                                                @endif
-                                                @if($bolsillos)
-                                                    <div>• Bolsillos{{ $bolsillos_obs && trim($bolsillos_obs) !== '' ? " ($bolsillos_obs)" : '' }}</div>
-                                                @endif
-                                            </div>
-                                            
-                                            @if($fila->objetoPrenda && isset($fila->objetoPrenda['procesos']) && is_array($fila->objetoPrenda['procesos']) && count($fila->objetoPrenda['procesos']) > 0)
-                                            <div style="font-size: 11px; color: #64748b; margin-top: 4px; font-weight: bold;">
-                                                @foreach($fila->objetoPrenda['procesos'] as $proc)
-                                                        @php
-                                                            $ubicaciones = $proc->ubicaciones ?? $proc['ubicaciones'] ?? [];
-                                                            $ubicacionesStr = is_array($ubicaciones) ? implode(', ', $ubicaciones) : $ubicaciones;
-                                                        @endphp
-                                                        <div>• {{ $proc->nombre ?? $proc->tipo_proceso ?? $proc['tipo_proceso'] ?? 'Proceso' }}{{ $ubicacionesStr && trim($ubicacionesStr) !== '' ? " ($ubicacionesStr)" : '' }}</div>
-                                                @endforeach
-                                            </div>
-                                                </div>
-                                            @endif
-                                        @endif
-                                    </td>
-                                    <td class="numeric">{{ $fila->genero ?? '—' }}</td>
-                                    <td class="numeric">{{ $fila->talla }}</td>
-                                    <td class="numeric">{{ $fila->cantidadTotal }}</td>
-                                </tr>
+                                            <td class="numeric">{{ $fila->genero ?? '—' }}</td>
+                                            <td class="numeric">{{ $fila->talla ?? '—' }}</td>
+                                            <td class="numeric">{{ $fila->cantidadTotal ?? 0 }}</td>
+                                        </tr>
+                                    @endforeach
+                                @endif
                             @endforeach
                         </tbody>
                     </table>
@@ -414,6 +533,18 @@
             </div>
         @endif
 
+        <div class="pendientes-simple">
+            <strong>Pendientes bodeguero:</strong>
+            <pre id="printPendientesBodegueroSimple">{{ $pendientesBodegueroText }}</pre>
+        </div>
+
+        @if(isset($observacionesAsesoraText) && trim($observacionesAsesoraText) !== '' && trim($observacionesAsesoraText) !== '— Sin observaciones')
+            <div class="pendientes-simple">
+                <strong>Observaciones asesora:</strong>
+                <pre id="printObservacionesAsesoraSimple">{{ $observacionesAsesoraText }}</pre>
+            </div>
+        @endif
+
         <!-- Pie de página con firmas -->
         <div class="footer">
             <div class="signature-box">
@@ -428,5 +559,6 @@
 
    
     </div>
+
 </body>
 </html>

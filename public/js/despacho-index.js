@@ -810,6 +810,25 @@
     window.guardarObservacionDespachoIndex = guardarObservacionDespachoIndex;
     window.editarObservacionDespachoIndex = editarObservacionDespachoIndex;
     window.eliminarObservacionDespachoIndex = eliminarObservacionDespachoIndex;
+
+    // Si el listado /despacho ya no incluye el modal/columna de observaciones,
+    // evita dejar funciones globales expuestas que solo generan warnings.
+    document.addEventListener('DOMContentLoaded', function () {
+        const enDespachoIndex = window.location.pathname === '/despacho' || window.location.pathname === '/despacho/';
+        const modal = document.getElementById('modalObservacionesDespachoIndex');
+        const tienePreview = !!document.querySelector('.despacho-observaciones-preview');
+        if (enDespachoIndex && !modal && !tienePreview) {
+            try {
+                delete window.abrirModalObservacionesDespachoIndex;
+                delete window.cerrarModalObservacionesDespachoIndex;
+                delete window.guardarObservacionDespachoIndex;
+                delete window.editarObservacionDespachoIndex;
+                delete window.eliminarObservacionDespachoIndex;
+            } catch (e) {
+                // no-op
+            }
+        }
+    });
     
     // Hacer funciones de localStorage disponibles globalmente
     window.getSeenBadges = getSeenBadges;

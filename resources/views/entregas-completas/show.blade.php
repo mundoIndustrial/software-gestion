@@ -195,13 +195,6 @@
                         <tr>
                             <th>Tipo Item</th>
                             <th>Género</th>
-                            <th>Pendiente Inicial</th>
-                            <th>Parcial 1</th>
-                            <th>Pendiente 1</th>
-                            <th>Parcial 2</th>
-                            <th>Pendiente 2</th>
-                            <th>Parcial 3</th>
-                            <th>Pendiente 3</th>
                             <th>Fecha Entrega</th>
                             <th>Entregado Por</th>
                             <th>Observaciones</th>
@@ -216,15 +209,8 @@
                                 <td>
                                     <span class="badge bg-secondary">{{ $detalle->genero }}</span>
                                 </td>
-                                <td>{{ $detalle->pendiente_inicial }}</td>
-                                <td>{{ $detalle->parcial_1 ?? '-' }}</td>
-                                <td>{{ $detalle->pendiente_1 ?? '-' }}</td>
-                                <td>{{ $detalle->parcial_2 ?? '-' }}</td>
-                                <td>{{ $detalle->pendiente_2 ?? '-' }}</td>
-                                <td>{{ $detalle->parcial_3 ?? '-' }}</td>
-                                <td>{{ $detalle->pendiente_3 ?? '-' }}</td>
                                 <td>{{ \Carbon\Carbon::parse($detalle->fecha_entrega)->format('d/m/Y H:i') }}</td>
-                                <td>{{ $detalle->nombre_usuario }}</td>
+                                <td>{{ $detalle->nombre_usuario ?? '-' }}</td>
                                 <td>{{ $detalle->observaciones ?? '-' }}</td>
                             </tr>
                         @endforeach

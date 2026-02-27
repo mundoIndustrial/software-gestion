@@ -38,8 +38,6 @@ class DeshacerEntregadoDespachoTest extends TestCase
             'tipo_item' => 'prenda',
             'item_id' => 1,
             'talla_id' => 1,
-            'pendiente_inicial' => 10,
-            'parcial_1' => 10,
             'entregado' => true,
             'fecha_entrega' => now(),
             'usuario_id' => $this->usuario->id
@@ -118,8 +116,6 @@ class DeshacerEntregadoDespachoTest extends TestCase
             'tipo_item' => 'epp',
             'item_id' => 5,
             'talla_id' => null, // EPP no tiene talla
-            'pendiente_inicial' => 5,
-            'parcial_1' => 5,
             'entregado' => true,
             'fecha_entrega' => now(),
             'usuario_id' => $this->usuario->id

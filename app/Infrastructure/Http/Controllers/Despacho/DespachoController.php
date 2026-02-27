@@ -100,8 +100,9 @@ class DespachoController extends Controller
             ->whereNotNull('fecha_entrega')
             ->get()
             ->keyBy(function($item) {
-                return ($item->tipo_item === 'epp' ? 'epp-' : '') . $item->item_id . 
-                       ($item->talla_id ? '-' . $item->talla_id : '');
+                return ($item->tipo_item === 'epp' ? 'epp-' : '') . $item->item_id
+                       . ($item->talla_id ? '-' . $item->talla_id : '')
+                       . ($item->talla_color_id ? '-' . $item->talla_color_id : '');
             });
         
         \Log::info('[DespachoController] Datos de despacho cargados', [
@@ -109,8 +110,10 @@ class DespachoController extends Controller
             'despachos_count' => $despachos->count(),
             'despachos_data' => $despachos->toArray(),
         ]);
+
+        [$pendientesBodegueroText, $observacionesAsesoraText] = $this->buildTextosPendientesYAsesora($pedido);
         
-        return view('despacho.show', compact('pedido', 'prendas', 'epps', 'despachos'));
+        return view('despacho.show', compact('pedido', 'prendas', 'epps', 'despachos', 'pendientesBodegueroText', 'observacionesAsesoraText'));
     }
 
     /**
@@ -125,13 +128,6 @@ class DespachoController extends Controller
                 'despachos.*.id' => 'required|integer',
                 'despachos.*.talla_id' => 'nullable|integer',
                 'despachos.*.genero' => 'nullable|string',
-                'despachos.*.pendiente_inicial' => 'required|integer|min:0',
-                'despachos.*.parcial_1' => 'nullable|integer|min:0',
-                'despachos.*.pendiente_1' => 'nullable|integer|min:0',
-                'despachos.*.parcial_2' => 'nullable|integer|min:0',
-                'despachos.*.pendiente_2' => 'nullable|integer|min:0',
-                'despachos.*.parcial_3' => 'nullable|integer|min:0',
-                'despachos.*.pendiente_3' => 'nullable|integer|min:0',
                 'cliente_empresa' => 'nullable|string',
                 'fecha_hora' => 'nullable|string',
             ]);
@@ -170,8 +166,50 @@ class DespachoController extends Controller
         $filas = $this->obtenerFilas->obtenerTodas($pedido->id);
         $prendas = $filas->where('tipo', 'prenda');
         $epps = $filas->where('tipo', 'epp');
+
+        [$pendientesBodegueroText, $observacionesAsesoraText] = $this->buildTextosPendientesYAsesora($pedido);
         
-        return view('despacho.print', compact('pedido', 'prendas', 'epps'));
+        return view('despacho.print', compact('pedido', 'prendas', 'epps', 'pendientesBodegueroText', 'observacionesAsesoraText'));
+    }
+
+    private function buildTextosPendientesYAsesora(PedidoProduccion $pedido): array
+    {
+        $rows = PedidoObservacionesDespacho::query()
+            ->where('pedido_produccion_id', $pedido->id)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $bodegaRows = BodegaNota::query()
+            ->where('pedido_produccion_id', $pedido->id)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $observacionesAsesora = $rows
+            ->filter(function ($row) {
+                $rol = strtolower((string) ($row->usuario_rol ?? ''));
+                return str_contains($rol, 'asesor');
+            })
+            ->values();
+
+        $pendientesBodegueroText = $bodegaRows->count() === 0
+            ? '— Sin observaciones'
+            : $bodegaRows->map(function ($row) {
+                $fechaISO = $row->updated_at ?: $row->created_at;
+                $fecha = $fechaISO ? \Carbon\Carbon::parse($fechaISO)->format('d/m/Y H:i') : '';
+                $contenido = (string) ($row->contenido ?? '');
+                return $contenido . ($fecha ? (' - ' . $fecha) : '');
+            })->implode("\n");
+
+        $observacionesAsesoraText = $observacionesAsesora->count() === 0
+            ? '— Sin observaciones'
+            : $observacionesAsesora->map(function ($row) {
+                $fechaISO = $row->updated_at ?: $row->created_at;
+                $fecha = $fechaISO ? \Carbon\Carbon::parse($fechaISO)->format('d/m/Y H:i') : '';
+                $contenido = (string) ($row->contenido ?? '');
+                return $contenido . ($fecha ? (' - ' . $fecha) : '');
+            })->implode("\n");
+
+        return [$pendientesBodegueroText, $observacionesAsesoraText];
     }
 
     /**
@@ -188,14 +226,8 @@ class DespachoController extends Controller
                         'tipo_item' => $despacho->tipo_item,
                         'item_id' => $despacho->item_id,
                         'talla_id' => $despacho->talla_id,
+                        'talla_color_id' => $despacho->talla_color_id,
                         'genero' => $despacho->genero,
-                        'pendiente_inicial' => $despacho->pendiente_inicial,
-                        'parcial_1' => $despacho->parcial_1,
-                        'pendiente_1' => $despacho->pendiente_1,
-                        'parcial_2' => $despacho->parcial_2,
-                        'pendiente_2' => $despacho->pendiente_2,
-                        'parcial_3' => $despacho->parcial_3,
-                        'pendiente_3' => $despacho->pendiente_3,
                         'observaciones' => $despacho->observaciones,
                         'entregado' => $despacho->entregado,
                         'fecha_entrega' => $despacho->fecha_entrega?->toISOString(),
@@ -258,6 +290,7 @@ class DespachoController extends Controller
                 'tipo_item' => 'required|string|in:prenda,epp',
                 'item_id' => 'required|integer',
                 'talla_id' => 'nullable|integer',
+                'talla_color_id' => 'nullable|integer',
             ]);
 
             $despacho = DesparChoParcialesModel::where('pedido_id', $pedido->id)
@@ -265,6 +298,9 @@ class DespachoController extends Controller
                 ->where('item_id', $validated['item_id'])
                 ->when($validated['talla_id'], function ($q) use ($validated) {
                     $q->where('talla_id', $validated['talla_id']);
+                })
+                ->when($validated['talla_color_id'], function ($q) use ($validated) {
+                    $q->where('talla_color_id', $validated['talla_color_id']);
                 })
                 ->first();
             
@@ -291,7 +327,7 @@ class DespachoController extends Controller
                     'tipo_item' => $validated['tipo_item'],
                     'item_id' => $validated['item_id'],
                     'talla_id' => $validated['talla_id'] ?? null,
-                    'pendiente_inicial' => 1, // Valor por defecto
+                    'talla_color_id' => $validated['talla_color_id'] ?? null,
                     'entregado' => false,
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -315,6 +351,7 @@ class DespachoController extends Controller
                 'success' => true,
                 'message' => 'Ítem marcado como entregado',
                 'despacho_id' => $despacho->id,
+                'fecha_entrega' => $despacho->fresh()->fecha_entrega?->format('Y-m-d'),
             ]);
         } catch (\Exception $e) {
             Log::error('Error al marcar como entregado', [
@@ -344,8 +381,9 @@ class DespachoController extends Controller
                         'tipo_item' => $entrega->tipo_item,
                         'item_id' => $entrega->item_id,
                         'talla_id' => $entrega->talla_id,
+                        'talla_color_id' => $entrega->talla_color_id,
                         'entregado' => true,
-                        'fecha_entrega' => $entrega->fecha_entrega,
+                        'fecha_entrega' => $entrega->fecha_entrega?->format('Y-m-d'),
                     ];
                 });
 
@@ -381,6 +419,7 @@ class DespachoController extends Controller
                 'tipo_item' => 'required|string|in:prenda,epp',
                 'item_id' => 'required|integer',
                 'talla_id' => 'nullable|integer',
+                'talla_color_id' => 'nullable|integer',
             ]);
 
             $despacho = DesparChoParcialesModel::where('pedido_id', $pedido->id)
@@ -389,6 +428,9 @@ class DespachoController extends Controller
                 ->when($validated['talla_id'], function ($q) use ($validated) {
                     $q->where('talla_id', $validated['talla_id']);
                 })
+                ->when($validated['talla_color_id'], function ($q) use ($validated) {
+                    $q->where('talla_color_id', $validated['talla_color_id']);
+                })
                 ->first();
             
             \Log::info('[DespachoController] Búsqueda para deshacer', [
@@ -396,6 +438,7 @@ class DespachoController extends Controller
                 'tipo_item' => $validated['tipo_item'],
                 'item_id' => $validated['item_id'],
                 'talla_id' => $validated['talla_id'],
+                'talla_color_id' => $validated['talla_color_id'],
                 'despacho_encontrado' => $despacho ? 'SI' : 'NO',
                 'despacho_id' => $despacho?->id,
                 'entregado_actual' => $despacho?->entregado,
@@ -407,6 +450,7 @@ class DespachoController extends Controller
                     'tipo_item' => $validated['tipo_item'],
                     'item_id' => $validated['item_id'],
                     'talla_id' => $validated['talla_id'],
+                    'talla_color_id' => $validated['talla_color_id'],
                 ]);
                 
                 return response()->json([

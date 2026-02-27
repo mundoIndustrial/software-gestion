@@ -46,8 +46,6 @@ class DespachoEstadoService
                         'despacho_id' => $despacho->id,
                         'tipo_item' => $despacho->tipo_item,
                         'item_id' => $despacho->item_id,
-                        'total_despachado' => $despacho->totalDespachado(),
-                        'pendiente_inicial' => $despacho->pendiente_inicial
                     ]);
                     return false;
                 }

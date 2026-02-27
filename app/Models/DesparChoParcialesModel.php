@@ -23,14 +23,8 @@ class DesparChoParcialesModel extends Model
         'tipo_item',
         'item_id',
         'talla_id',
+        'talla_color_id',
         'genero',
-        'pendiente_inicial',
-        'parcial_1',
-        'pendiente_1',
-        'parcial_2',
-        'pendiente_2',
-        'parcial_3',
-        'pendiente_3',
         'observaciones',
         'fecha_despacho',
         'usuario_id',
@@ -45,16 +39,6 @@ class DesparChoParcialesModel extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
-    ];
-
-    protected $attributes = [
-        'pendiente_inicial' => 0,
-        'parcial_1' => 0,
-        'pendiente_1' => 0,
-        'parcial_2' => 0,
-        'pendiente_2' => 0,
-        'parcial_3' => 0,
-        'pendiente_3' => 0,
     ];
 
     // ============ RELACIONES ============
@@ -117,7 +101,7 @@ class DesparChoParcialesModel extends Model
      */
     public function totalDespachado(): int
     {
-        return $this->parcial_1 + $this->parcial_2 + $this->parcial_3;
+        return 0;
     }
 
     /**

@@ -82,26 +82,14 @@ class DespachoParcialesTest extends TestCase
                     'tipo' => 'prenda',
                     'id' => $talla->id,  // ID de prenda_pedido_tallas
                     'talla_id' => $talla->id,
-                    'pendiente_inicial' => 100,
-                    'parcial_1' => 30,
-                    'pendiente_1' => 70,
-                    'parcial_2' => 40,
-                    'pendiente_2' => 30,
-                    'parcial_3' => 25,
-                    'pendiente_3' => 5,
+                    'genero' => $talla->genero,
                 ],
                 // EPP sin talla
                 [
                     'tipo' => 'epp',
                     'id' => $pedidoEpp->id,
                     'talla_id' => null,
-                    'pendiente_inicial' => 50,
-                    'parcial_1' => 15,
-                    'pendiente_1' => 35,
-                    'parcial_2' => 20,
-                    'pendiente_2' => 15,
-                    'parcial_3' => 15,
-                    'pendiente_3' => 0,
+                    'genero' => null,
                 ],
             ],
         ];
@@ -123,14 +111,8 @@ class DespachoParcialesTest extends TestCase
         ])->first();
 
         $this->assertNotNull($despachosPrenda);
-        $this->assertEquals(100, $despachosPrenda->pendiente_inicial);
-        $this->assertEquals(30, $despachosPrenda->parcial_1);
-        $this->assertEquals(70, $despachosPrenda->pendiente_1);
-        $this->assertEquals(40, $despachosPrenda->parcial_2);
-        $this->assertEquals(30, $despachosPrenda->pendiente_2);
-        $this->assertEquals(25, $despachosPrenda->parcial_3);
-        $this->assertEquals(5, $despachosPrenda->pendiente_3);
         $this->assertEquals($talla->id, $despachosPrenda->talla_id);
+        $this->assertEquals($talla->genero, $despachosPrenda->genero);
 
         // Validar EPP
         $despachoEpp = \App\Models\DesparChoParcialesModel::where([
@@ -139,13 +121,6 @@ class DespachoParcialesTest extends TestCase
         ])->first();
 
         $this->assertNotNull($despachoEpp);
-        $this->assertEquals(50, $despachoEpp->pendiente_inicial);
-        $this->assertEquals(15, $despachoEpp->parcial_1);
-        $this->assertEquals(35, $despachoEpp->pendiente_1);
-        $this->assertEquals(20, $despachoEpp->parcial_2);
-        $this->assertEquals(15, $despachoEpp->pendiente_2);
-        $this->assertEquals(15, $despachoEpp->parcial_3);
-        $this->assertEquals(0, $despachoEpp->pendiente_3);
         $this->assertNull($despachoEpp->talla_id);
     }
 
@@ -188,13 +163,7 @@ class DespachoParcialesTest extends TestCase
                     'tipo' => 'prenda',
                     'id' => $talla->id,
                     'talla_id' => $talla->id,
-                    'pendiente_inicial' => 100,  // Mayor que cantidad
-                    'parcial_1' => 200,          // Mayor que pendiente
-                    'pendiente_1' => 0,
-                    'parcial_2' => 0,
-                    'pendiente_2' => 0,
-                    'parcial_3' => 0,
-                    'pendiente_3' => 0,
+                    'genero' => $talla->genero,
                 ],
             ],
         ];
@@ -209,7 +178,7 @@ class DespachoParcialesTest extends TestCase
         $response->assertJson(['success' => true]);
 
         $despacho = \App\Models\DesparChoParcialesModel::first();
-        $this->assertEquals(100, $despacho->pendiente_inicial);
-        $this->assertEquals(200, $despacho->parcial_1);
+        $this->assertEquals($talla->id, $despacho->talla_id);
+        $this->assertEquals($talla->genero, $despacho->genero);
     }
 }

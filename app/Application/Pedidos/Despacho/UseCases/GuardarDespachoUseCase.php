@@ -54,13 +54,6 @@ class GuardarDespachoUseCase
                     id: $d['id'],
                     tallaId: $d['talla_id'] ?? null,
                     genero: $d['genero'] ?? null,  //  Agregar género
-                    pendienteInicial: $d['pendiente_inicial'] ?? 0,
-                    parcial1: $d['parcial_1'] ?? 0,
-                    pendiente1: $d['pendiente_1'] ?? 0,
-                    parcial2: $d['parcial_2'] ?? 0,
-                    pendiente2: $d['pendiente_2'] ?? 0,
-                    parcial3: $d['parcial_3'] ?? 0,
-                    pendiente3: $d['pendiente_3'] ?? 0,
                 );
             }, $control->despachos);
 
@@ -81,13 +74,6 @@ class GuardarDespachoUseCase
                         'item_id' => $despacho->tallaId ?? $despacho->id,  //  Para prendas: usar tallaId, para EPP: usar id
                         'talla_id' => $despacho->tallaId,
                         'genero' => $despacho->genero,  //  Agregar género
-                        'pendiente_inicial' => $despacho->pendienteInicial,
-                        'parcial_1' => $despacho->parcial1,
-                        'pendiente_1' => $despacho->pendiente1,
-                        'parcial_2' => $despacho->parcial2,
-                        'pendiente_2' => $despacho->pendiente2,
-                        'parcial_3' => $despacho->parcial3,
-                        'pendiente_3' => $despacho->pendiente3,
                         'observaciones' => "Cliente empresa: {$control->clienteEmpresa}",
                     ];
                 }, $despachos),

@@ -186,25 +186,93 @@ document.addEventListener('DOMContentLoaded', function() {
                             @foreach($prendasAgrupadas as $prendaId => $filasGroup)
                                 @php
                                     $primeraFila = $filasGroup->first();
+
+                                    // Si la prenda tiene colores por talla, separar visualmente en sub-items por color
+                                    $gruposPorColor = [];
+                                    if ($primeraFila->objetoPrenda && isset($primeraFila->objetoPrenda['variantes']) && is_array($primeraFila->objetoPrenda['variantes'])) {
+                                        foreach ($primeraFila->objetoPrenda['variantes'] as $variante) {
+                                            $generoVar = strtoupper($variante['genero'] ?? '');
+                                            $tallaVar = $variante['talla'] ?? '';
+                                            $tallaIdVar = $variante['talla_id'] ?? null;
+
+                                            if ($generoVar === 'GENERICO') {
+                                                continue;
+                                            }
+
+                                            if (isset($variante['colores_detalle']) && is_array($variante['colores_detalle']) && !empty($variante['colores_detalle'])) {
+                                                foreach ($variante['colores_detalle'] as $colorDetalle) {
+                                                    $rawColor = $colorDetalle['color'] ?? '';
+                                                    $esColorValido = !empty($rawColor) && strtolower(trim($rawColor)) !== 'sin color';
+                                                    $colorKey = $esColorValido ? strtoupper($rawColor) : '__SIN_COLOR__';
+                                                    $cantidadColor = (int)($colorDetalle['cantidad'] ?? 0);
+                                                    $tallaColorId = $colorDetalle['talla_color_id'] ?? null;
+
+                                                    if (!empty($tallaVar) && $cantidadColor > 0) {
+                                                        if (!isset($gruposPorColor[$colorKey])) {
+                                                            $gruposPorColor[$colorKey] = [
+                                                                'color' => $colorKey,
+                                                                'tallas' => [],
+                                                            ];
+                                                        }
+                                                        $gruposPorColor[$colorKey]['tallas'][] = [
+                                                            'talla' => $tallaVar,
+                                                            'tallaId' => $tallaIdVar,
+                                                            'tallaColorId' => $tallaColorId,
+                                                            'genero' => $variante['genero'] ?? null,
+                                                            'cantidad' => $cantidadColor,
+                                                        ];
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    foreach ($gruposPorColor as &$grupoColor) {
+                                        usort($grupoColor['tallas'], function ($a, $b) {
+                                            $nA = is_numeric($a['talla']) ? (int)$a['talla'] : null;
+                                            $nB = is_numeric($b['talla']) ? (int)$b['talla'] : null;
+                                            if ($nA !== null && $nB !== null) return $nA - $nB;
+                                            return strcmp($a['talla'], $b['talla']);
+                                        });
+                                    }
+                                    unset($grupoColor);
+
+                                    $tieneColoresPorTalla = !empty($gruposPorColor);
                                     $rowSpan = $filasGroup->count();
                                 @endphp
-                                @foreach($filasGroup as $indexFila => $fila)
-                                    <tr class="border-b border-slate-400 hover:bg-slate-50" 
-                                        data-tipo="prenda"
-                                        data-id="{{ $fila->id }}"
-                                        data-talla-id="{{ $fila->tallaId }}"
-                                        data-genero="{{ $fila->genero }}"
-                                        data-cantidad="{{ $fila->cantidadTotal }}">
-                                        
-                                        {{-- CELDA DE DESCRIPCIÓN: Solo en la primera fila del grupo --}}
-                                        @if($indexFila === 0)
-                                            <td class="px-2 lg:px-4 py-3 text-slate-900 text-xs" rowspan="{{ $rowSpan }}">
-                                                <div class="font-semibold text-slate-900 mb-1">
-                                                    {{ $primeraFila->objetoPrenda['nombre'] ?? $primeraFila->descripcion }}
-                                                    @if(isset($primeraFila->objetoPrenda['de_bodega']) && $primeraFila->objetoPrenda['de_bodega'])
-                                                        <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
-                                                    @endif
-                                                </div>
+                                @if($tieneColoresPorTalla)
+                                    @foreach($gruposPorColor as $indexColor => $grupoColor)
+                                        @php
+                                            $rowSpanColor = count($grupoColor['tallas']);
+                                            $colorLabel = $grupoColor['color'] === '__SIN_COLOR__' ? null : $grupoColor['color'];
+                                        @endphp
+                                        @foreach($grupoColor['tallas'] as $indexTalla => $t)
+                                            <tr class="border-b border-slate-400 hover:bg-slate-50"
+                                                data-tipo="prenda"
+                                                data-id="{{ $primeraFila->id }}"
+                                                data-talla-id="{{ $t['tallaId'] }}"
+                                                data-talla-color-id="{{ $t['tallaColorId'] }}"
+                                                data-genero="{{ $t['genero'] }}"
+                                                data-cantidad="{{ $t['cantidad'] }}">
+
+                                                {{-- CELDA DE DESCRIPCIÓN: Solo en la primera fila del grupo (por color) --}}
+                                                @if($indexTalla === 0)
+                                                    <td class="px-2 lg:px-4 py-3 text-slate-900 text-xs" rowspan="{{ $rowSpanColor }}">
+                                                        <div class="font-semibold text-slate-900 mb-1">
+                                                            {{ $primeraFila->objetoPrenda['nombre'] ?? $primeraFila->descripcion }}
+                                                            @if($colorLabel)
+                                                                <span class="text-slate-900"> - <strong>{{ $colorLabel }}</strong></span>
+                                                            @endif
+                                                            @if(isset($primeraFila->objetoPrenda['de_bodega']) && $primeraFila->objetoPrenda['de_bodega'])
+                                                                <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
+                                                            @endif
+                                                        </div>
+
+                                                        @if($primeraFila->objetoPrenda && isset($primeraFila->objetoPrenda['descripcion']) && $primeraFila->objetoPrenda['descripcion'])
+                                                            <div class="text-slate-700 mb-1 text-xs">
+                                                                {{ $primeraFila->objetoPrenda['descripcion'] }}
+                                                            </div>
+                                                        @endif
                                                 
                                                 <!-- Tela y Color -->
                                                 @if($primeraFila->objetoPrenda && (isset($primeraFila->objetoPrenda['tela']) || isset($primeraFila->objetoPrenda['color'])))
@@ -269,108 +337,30 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 @else
                                                     <div class="text-slate-400 text-xs mt-1">— Sin procesos</div>
                                                 @endif
-                                                
-                                                {{-- COLORES POR TALLA --}}
-                                                @php
-                                                    // Agrupar colores por género + color
-                                                    $porGeneroColor = [];
-                                                    if (isset($primeraFila->objetoPrenda['variantes']) && is_array($primeraFila->objetoPrenda['variantes'])) {
-                                                        foreach ($primeraFila->objetoPrenda['variantes'] as $variante) {
-                                                            if (isset($variante['colores_detalle']) && !empty($variante['colores_detalle'])) {
-                                                                $genero = strtoupper($variante['genero'] ?? '');
-                                                                $talla = $variante['talla'] ?? '';
-                                                                
-                                                                // No procesar GENERICO
-                                                                if ($genero === 'GENERICO') {
-                                                                    continue;
-                                                                }
-                                                                
-                                                                foreach ($variante['colores_detalle'] as $colorDetalle) {
-                                                                    $rawColor = $colorDetalle['color'] ?? '';
-                                                                    $esColorValido = !empty($rawColor) && strtolower($rawColor) !== 'sin color';
-                                                                    $color = $esColorValido ? strtoupper($rawColor) : '__SIN_COLOR__';
-                                                                    $cantidad = $colorDetalle['cantidad'] ?? 0;
-                                                                    
-                                                                    if (!empty($genero) && !empty($talla) && $cantidad > 0) {
-                                                                        $key = $genero . '||' . $color;
-                                                                        if (!isset($porGeneroColor[$key])) {
-                                                                            $porGeneroColor[$key] = [
-                                                                                'genero' => $genero,
-                                                                                'color' => $color,
-                                                                                'tallas' => []
-                                                                            ];
-                                                                        }
-                                                                        $porGeneroColor[$key]['tallas'][] = [
-                                                                            'talla' => $talla,
-                                                                            'cantidad' => $cantidad
-                                                                        ];
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                    
-                                                    // Ordenar tallas dentro de cada grupo
-                                                    foreach($porGeneroColor as &$grupo) {
-                                                        usort($grupo['tallas'], function($a, $b) {
-                                                            $nA = is_numeric($a['talla']) ? (int)$a['talla'] : null;
-                                                            $nB = is_numeric($b['talla']) ? (int)$b['talla'] : null;
-                                                            if ($nA !== null && $nB !== null) return $nA - $nB;
-                                                            return strcmp($a['talla'], $b['talla']);
-                                                        });
-                                                    }
-                                                    unset($grupo);
-                                                @endphp
-                                                
-                                                @if(!empty($porGeneroColor))
-                                                    @php
-                                                        $coloresReales = array_filter($porGeneroColor, fn($g) => $g['color'] !== '__SIN_COLOR__');
-                                                        $sinColor = array_filter($porGeneroColor, fn($g) => $g['color'] === '__SIN_COLOR__');
-                                                    @endphp
-                                                    <div class="text-slate-700 mt-2 text-xs font-medium">
-                                                        @if(!empty($coloresReales))
-                                                            @php $currentGenero = ''; @endphp
-                                                            @foreach($coloresReales as $grupo)
-                                                                @if($grupo['genero'] !== $currentGenero)
-                                                                    @php $currentGenero = $grupo['genero']; @endphp
-                                                                    <div class="font-bold text-black mt-1">{{ $currentGenero }}:</div>
-                                                                @endif
-                                                                <div class="ml-2">• <span style="color: #0369a1; font-weight: 600;">{{ $grupo['color'] }}:</span> @foreach($grupo['tallas'] as $i => $t){{ $i > 0 ? ', ' : '' }}{{ $t['talla'] }}-{{ $t['cantidad'] }}@endforeach</div>
-                                                            @endforeach
-                                                        @elseif(!empty($sinColor))
-                                                            @php $currentGenero = ''; @endphp
-                                                            @foreach($sinColor as $grupo)
-                                                                @if($grupo['genero'] !== $currentGenero)
-                                                                    @php $currentGenero = $grupo['genero']; @endphp
-                                                                @endif
-                                                                <div class="ml-2">{{ $currentGenero }}: @foreach($grupo['tallas'] as $i => $t){{ $i > 0 ? ', ' : '' }}{{ $t['talla'] }}:{{ $t['cantidad'] }}@endforeach</div>
-                                                            @endforeach
+
+                                                    </td>
+
+                                                    {{-- CELDA DE GÉNERO: Solo en la primera fila del grupo (por color) --}}
+                                                    <td class="px-2 lg:px-4 py-3 text-center text-slate-600 text-xs" rowspan="{{ $rowSpanColor }}">
+                                                        @if($primeraFila && strtoupper($t['genero'] ?? '') === 'GENERICO')
+                                                            —
+                                                        @else
+                                                            {{ $t['genero'] ?? '—' }}
                                                         @endif
-                                                    </div>
+                                                    </td>
                                                 @endif
-                                            </td>
-                                            
-                                            {{-- CELDA DE GÉNERO: Solo en la primera fila del grupo --}}
-                                            <td class="px-2 lg:px-4 py-3 text-center text-slate-600 text-xs" rowspan="{{ $rowSpan }}">
-                                                @if($primeraFila && strtoupper($primeraFila->genero ?? '') === 'GENERICO')
-                                                    —
-                                                @else
-                                                    {{ $primeraFila->genero ?? '—' }}
-                                                @endif
-                                            </td>
-                                        @endif
-                                        
-                                        <td class="px-2 lg:px-4 py-3 text-center text-slate-600">
-                                            @if(($fila->talla ?? null) === 'SIN_ESPECIFICAR')
-                                                —
-                                            @else
-                                                {{ $fila->talla }}
-                                            @endif
-                                        </td>
-                                        
-                                        <td class="px-2 lg:px-4 py-3 text-center font-medium text-slate-900">
-                                            {{ $fila->cantidadTotal }}
-                                        </td>
+
+                                                <td class="px-2 lg:px-4 py-3 text-center text-slate-600">
+                                                    @if(($t['talla'] ?? null) === 'SIN_ESPECIFICAR')
+                                                        —
+                                                    @else
+                                                        {{ $t['talla'] }}
+                                                    @endif
+                                                </td>
+
+                                                <td class="px-2 lg:px-4 py-3 text-center font-medium text-slate-900">
+                                                    {{ $t['cantidad'] }}
+                                                </td>
                                         
                                         <td class="px-2 lg:px-4 py-3 text-center">
                                             @if(auth()->user()->hasRole('supervisor_gerencia'))
@@ -391,12 +381,151 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <td class="px-2 lg:px-4 py-3 text-center">
                                             <input type="date" 
                                                    class="px-2 py-1 text-xs border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                   id="fecha-entrega-{{ $fila->id }}{{ $fila->tallaId ? '-' . $fila->tallaId : '' }}"
-                                                   value="{{ isset($despachos[$fila->id . ($fila->tallaId ? '-' . $fila->tallaId : '')]) ? $despachos[$fila->id . ($fila->tallaId ? '-' . $fila->tallaId : '')]->fecha_entrega->format('Y-m-d') : '' }}"
+                                                   id="fecha-entrega-{{ $primeraFila->id }}{{ $t['tallaId'] ? '-' . $t['tallaId'] : '' }}{{ $t['tallaColorId'] ? '-' . $t['tallaColorId'] : '' }}"
+                                                   value="{{ isset($despachos[$primeraFila->id . ($t['tallaId'] ? '-' . $t['tallaId'] : '') . ($t['tallaColorId'] ? '-' . $t['tallaColorId'] : '')]) ? $despachos[$primeraFila->id . ($t['tallaId'] ? '-' . $t['tallaId'] : '') . ($t['tallaColorId'] ? '-' . $t['tallaColorId'] : '')]->fecha_entrega->format('Y-m-d') : '' }}"
                                                    readonly>
                                         </td>
                                     </tr>
-                                @endforeach
+                                        @endforeach
+                                    @endforeach
+                                @else
+                                    @foreach($filasGroup as $indexFila => $fila)
+                                        <tr class="border-b border-slate-400 hover:bg-slate-50" 
+                                            data-tipo="prenda"
+                                            data-id="{{ $fila->id }}"
+                                            data-talla-id="{{ $fila->tallaId }}"
+                                            data-genero="{{ $fila->genero }}"
+                                            data-cantidad="{{ $fila->cantidadTotal }}">
+                                            
+                                            {{-- CELDA DE DESCRIPCIÓN: Solo en la primera fila del grupo --}}
+                                            @if($indexFila === 0)
+                                                <td class="px-2 lg:px-4 py-3 text-slate-900 text-xs" rowspan="{{ $rowSpan }}">
+                                                    <div class="font-semibold text-slate-900 mb-1">
+                                                        {{ $primeraFila->objetoPrenda['nombre'] ?? $primeraFila->descripcion }}
+                                                        @if(isset($primeraFila->objetoPrenda['de_bodega']) && $primeraFila->objetoPrenda['de_bodega'])
+                                                            <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
+                                                        @endif
+                                                    </div>
+
+                                                    @if($primeraFila->objetoPrenda && isset($primeraFila->objetoPrenda['descripcion']) && $primeraFila->objetoPrenda['descripcion'])
+                                                        <div class="text-slate-700 mb-1 text-xs">
+                                                            {{ $primeraFila->objetoPrenda['descripcion'] }}
+                                                        </div>
+                                                    @endif
+                                                    
+                                                    <!-- Tela y Color -->
+                                                    @if($primeraFila->objetoPrenda && (isset($primeraFila->objetoPrenda['tela']) || isset($primeraFila->objetoPrenda['color'])))
+                                                        @php
+                                                            $tela = $primeraFila->objetoPrenda['tela'] ?? null;
+                                                            $rawColorPrenda = $primeraFila->objetoPrenda['color'] ?? null;
+                                                            $color = ($rawColorPrenda && !in_array(strtolower(trim($rawColorPrenda)), ['sin color', 'no color', ''])) ? $rawColorPrenda : null;
+                                                        @endphp
+                                                        @if($tela || $color)
+                                                        <div class="text-slate-900 mb-1 text-xs">
+                                                            @if($tela && $color)
+                                                                <div>• Tela: {{ $tela }} - Color: {{ $color }}</div>
+                                                            @elseif($tela)
+                                                                <div>• Tela: {{ $tela }}</div>
+                                                            @elseif($color)
+                                                                <div>• Color: {{ $color }}</div>
+                                                            @endif
+                                                        </div>
+                                                        @endif
+                                                    @endif
+                                                    
+                                                    @if($primeraFila->objetoPrenda && isset($primeraFila->objetoPrenda['variantes']) && is_array($primeraFila->objetoPrenda['variantes']) && count($primeraFila->objetoPrenda['variantes']) > 0)
+                                                        @php
+                                                            // Obtener la primera variante para mostrar las características comunes
+                                                            $primeraVariante = $primeraFila->objetoPrenda['variantes'][0];
+                                                            $manga = $primeraVariante->manga ?? $primeraVariante['manga'] ?? null;
+                                                            $manga_obs = $primeraVariante->manga_obs ?? $primeraVariante['manga_obs'] ?? '';
+                                                            $broche = $primeraVariante->broche ?? $primeraVariante['broche'] ?? null;
+                                                            $broche_obs = $primeraVariante->broche_obs ?? $primeraVariante['broche_obs'] ?? '';
+                                                            $bolsillos = $primeraVariante->bolsillos ?? $primeraVariante['bolsillos'] ?? false;
+                                                            $bolsillos_obs = $primeraVariante->bolsillos_obs ?? $primeraVariante['bolsillos_obs'] ?? '';
+                                                        @endphp
+                                                        <div class="text-slate-900 mb-1 text-xs space-y-0.5">
+                                                            @if($manga)
+                                                                <div>• Manga:{{ $manga }}{{ $manga_obs && trim($manga_obs) !== '' ? " ($manga_obs)" : '' }}</div>
+                                                            @endif
+                                                            @if($broche)
+                                                                <div>• {{ $broche }}{{ $broche_obs && trim($broche_obs) !== '' ? " ($broche_obs)" : '' }}</div>
+                                                            @endif
+                                                            @if($bolsillos)
+                                                                <div>• Bolsillos{{ $bolsillos_obs && trim($bolsillos_obs) !== '' ? " ($bolsillos_obs)" : '' }}</div>
+                                                            @endif
+                                                        </div>
+                                                    @endif
+                                                    @if($primeraFila->objetoPrenda && isset($primeraFila->objetoPrenda['procesos']) && is_array($primeraFila->objetoPrenda['procesos']) && count($primeraFila->objetoPrenda['procesos']) > 0)
+                                                        <div class="text-slate-900 mt-1 text-xs">
+                                                            <div class="ml-2 mt-0.5">
+                                                                @foreach($primeraFila->objetoPrenda['procesos'] as $proc)
+                                                                    @php
+                                                                        $ubicaciones = $proc->ubicaciones ?? $proc['ubicaciones'] ?? [];
+                                                                        // Si es string, intenta decodificar como JSON
+                                                                        if (is_string($ubicaciones)) {
+                                                                            $decoded = json_decode($ubicaciones, true);
+                                                                            $ubicaciones = is_array($decoded) ? $decoded : [$ubicaciones];
+                                                                        }
+                                                                        $ubicacionesStr = is_array($ubicaciones) ? implode(', ', $ubicaciones) : $ubicaciones;
+                                                                    @endphp
+                                                                    <div>• {{ $proc->nombre ?? $proc->tipo_proceso ?? $proc['tipo_proceso'] ?? 'Proceso' }}{{ $ubicacionesStr && trim($ubicacionesStr) !== '' ? " ($ubicacionesStr)" : '' }}</div>
+                                                                @endforeach
+                                                            </div>
+                                                        </div>
+                                                    @else
+                                                        <div class="text-slate-400 text-xs mt-1">— Sin procesos</div>
+                                                    @endif
+                                                </td>
+                                                
+                                                {{-- CELDA DE GÉNERO: Solo en la primera fila del grupo --}}
+                                                <td class="px-2 lg:px-4 py-3 text-center text-slate-600 text-xs" rowspan="{{ $rowSpan }}">
+                                                    @if($primeraFila && strtoupper($primeraFila->genero ?? '') === 'GENERICO')
+                                                        —
+                                                    @else
+                                                        {{ $primeraFila->genero ?? '—' }}
+                                                    @endif
+                                                </td>
+                                            @endif
+                                            
+                                            <td class="px-2 lg:px-4 py-3 text-center text-slate-600">
+                                                @if(($fila->talla ?? null) === 'SIN_ESPECIFICAR')
+                                                    —
+                                                @else
+                                                    {{ $fila->talla }}
+                                                @endif
+                                            </td>
+                                            
+                                            <td class="px-2 lg:px-4 py-3 text-center font-medium text-slate-900">
+                                                {{ $fila->cantidadTotal }}
+                                            </td>
+                                            
+                                            <td class="px-2 lg:px-4 py-3 text-center">
+                                                @if(auth()->user()->hasRole('supervisor_gerencia'))
+                                                    <button type="button" 
+                                                            class="px-3 py-1 bg-gray-400 text-white text-xs font-medium rounded cursor-not-allowed opacity-60"
+                                                            disabled
+                                                            title="Solo usuarios autorizados pueden marcar como entregado">
+                                                        Entregar
+                                                    </button>
+                                                @else
+                                                    <button type="button" 
+                                                            class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded transition-colors"
+                                                            onclick="marcarEntregado(this)">
+                                                        Entregar
+                                                    </button>
+                                                @endif
+                                            </td>
+                                            <td class="px-2 lg:px-4 py-3 text-center">
+                                                <input type="date" 
+                                                       class="px-2 py-1 text-xs border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                       id="fecha-entrega-{{ $fila->id }}{{ $fila->tallaId ? '-' . $fila->tallaId : '' }}"
+                                                       value="{{ isset($despachos[$fila->id . ($fila->tallaId ? '-' . $fila->tallaId : '')]) ? $despachos[$fila->id . ($fila->tallaId ? '-' . $fila->tallaId : '')]->fecha_entrega->format('Y-m-d') : '' }}"
+                                                       readonly>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                @endif
                             @endforeach
                         @endif
 
@@ -480,6 +609,28 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 
+<div class="max-w-6xl mx-auto px-6 pb-10">
+    <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <div class="px-6 py-4 bg-slate-900 text-white font-semibold">
+            Pendientes bodeguero
+        </div>
+
+        <div class="p-6">
+            <div id="pendientesGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                    <div class="text-sm font-semibold text-slate-900 mb-3">Bodeguero</div>
+                    <div id="pendientesBodegueroHistorial" class="space-y-3"></div>
+                </div>
+
+                <div id="pendientesAsesoraCol">
+                    <div class="text-sm font-semibold text-slate-900 mb-3">Asesora</div>
+                    <div id="pendientesAsesoraHistorial" class="space-y-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal de Factura -->
 <div id="modalFactura" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-9999 overflow-auto" style="z-index: 9999;">
     <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full mx-4 my-8">
@@ -551,6 +702,98 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 console.log('✅ Script de despacho cargado correctamente');
 
+async function cargarPendientesBodeguero() {
+    const elBodega = document.getElementById('pendientesBodegueroHistorial');
+    const elAsesora = document.getElementById('pendientesAsesoraHistorial');
+    const elAsesoraCol = document.getElementById('pendientesAsesoraCol');
+    const elGrid = document.getElementById('pendientesGrid');
+    if (!elBodega || !elAsesora) return;
+
+    elBodega.innerHTML = '<div class="text-center text-slate-500 py-4 text-sm">Cargando...</div>';
+    elAsesora.innerHTML = '<div class="text-center text-slate-500 py-4 text-sm">Cargando...</div>';
+
+    try {
+        const r = await fetch('{{ route("despacho.observaciones.obtener", $pedido->id) }}', {
+            headers: {
+                'Accept': 'application/json',
+            }
+        });
+
+        const data = await r.json().catch(() => null);
+        if (!r.ok || !data || data.success === false) {
+            const msg = data?.message || 'No se pudieron cargar las observaciones';
+            elBodega.innerHTML = `<div class="text-red-600 text-sm">${msg}</div>`;
+            elAsesora.innerHTML = `<div class="text-red-600 text-sm">${msg}</div>`;
+            return;
+        }
+
+        const rows = Array.isArray(data.data) ? data.data : [];
+        const bodeguero = rows.filter(x => x && x.source === 'bodega');
+        const asesora = rows.filter(x => {
+            if (!x || x.source !== 'despacho') return false;
+            const rol = String(x.usuario_rol || '').toLowerCase();
+            return rol.includes('asesor');
+        });
+
+        if (elAsesoraCol && elGrid) {
+            if (asesora.length === 0) {
+                elAsesoraCol.style.display = 'none';
+                elGrid.style.gridTemplateColumns = '1fr';
+            } else {
+                elAsesoraCol.style.display = '';
+                elGrid.style.gridTemplateColumns = '';
+            }
+        }
+
+        const render = (items, target) => {
+            if (!items.length) {
+                target.innerHTML = '<div class="text-slate-500 text-sm">— Sin observaciones</div>';
+                return;
+            }
+
+            target.innerHTML = items.map(item => {
+                const source = (item.source || 'despacho').toString();
+                const contenido = (item.contenido || '').toString();
+                const usuario = (item.usuario_nombre || '—').toString();
+                const rol = (item.usuario_rol || '').toString();
+                const fechaISO = item.updated_at || item.created_at || '';
+                let fechaTexto = '';
+                try {
+                    if (fechaISO) {
+                        fechaTexto = new Date(fechaISO).toLocaleString('es-CO');
+                    }
+                } catch (e) {
+                    fechaTexto = '';
+                }
+
+                const esBodega = source === 'bodega';
+
+                return `
+                    <div class="border border-slate-200 rounded-lg p-3 bg-slate-50">
+                        <div class="text-xs text-slate-600">
+                            ${esBodega ? '' : `<span class="font-medium text-slate-900">${usuario}</span>`}
+                            ${!esBodega && rol ? `<span class="ml-2 px-2 py-0.5 rounded bg-slate-200 text-slate-700">${rol}</span>` : ''}
+                            ${fechaTexto ? `<span class="ml-2 text-slate-500">${fechaTexto}</span>` : ''}
+                        </div>
+                        <div class="mt-2 text-sm text-slate-800 whitespace-pre-wrap">${contenido.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        render(bodeguero, elBodega);
+        if (asesora.length > 0) {
+            render(asesora, elAsesora);
+        }
+    } catch (e) {
+        console.error('Error cargando pendientes bodeguero:', e);
+        elBodega.innerHTML = '<div class="text-red-600 text-sm">Error cargando observaciones</div>';
+        if (elAsesoraCol) elAsesoraCol.style.display = '';
+        if (elGrid) elGrid.style.gridTemplateColumns = '';
+        elAsesora.innerHTML = '<div class="text-red-600 text-sm">Error cargando observaciones</div>';
+    }
+}
+
 /**
  * Marcar ítem como entregado
  */
@@ -559,6 +802,7 @@ async function marcarEntregado(button) {
     const tipo = fila.dataset.tipo;
     const itemId = parseInt(fila.dataset.id);
     const tallaId = fila.dataset.tallaId ? parseInt(fila.dataset.tallaId) : null;
+    const tallaColorId = fila.dataset.tallaColorId ? parseInt(fila.dataset.tallaColorId) : null;
     const genero = fila.dataset.genero || null;
     
     // Mostrar la URL para debugging
@@ -580,6 +824,7 @@ async function marcarEntregado(button) {
                 tipo_item: tipo,
                 item_id: itemId,
                 talla_id: tallaId,
+                talla_color_id: tallaColorId,
                 genero: genero,
             }),
         });
@@ -588,11 +833,12 @@ async function marcarEntregado(button) {
         
         if (data.success) {
             // Establecer la fecha actual en el campo correspondiente
-            const fechaActual = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
-            const clave = tipo === 'epp' ? `epp-${itemId}` : `${itemId}${tallaId ? '-' + tallaId : ''}`;
+            const fechaActual = new Date().toISOString().split('T')[0]; // Fallback
+            const fechaEntrega = data.fecha_entrega || fechaActual;
+            const clave = tipo === 'epp' ? `epp-${itemId}` : `${itemId}${tallaId ? '-' + tallaId : ''}${tallaColorId ? '-' + tallaColorId : ''}`;
             const fechaCampo = document.getElementById(`fecha-entrega-${clave}`);
             if (fechaCampo) {
-                fechaCampo.value = fechaActual;
+                fechaCampo.value = fechaEntrega;
                 fechaCampo.readOnly = false; // Permitir edición si se necesita
             }
             
@@ -631,6 +877,7 @@ async function deshacerEntregado(button) {
     const tipo = fila.dataset.tipo;
     const itemId = parseInt(fila.dataset.id);
     const tallaId = fila.dataset.tallaId ? parseInt(fila.dataset.tallaId) : null;
+    const tallaColorId = fila.dataset.tallaColorId ? parseInt(fila.dataset.tallaColorId) : null;
     
     // Guardar referencia al botón y datos para usarlos después
     window.deshacerEntregadoData = {
@@ -638,7 +885,8 @@ async function deshacerEntregado(button) {
         fila: fila,
         tipo: tipo,
         itemId: itemId,
-        tallaId: tallaId
+        tallaId: tallaId,
+        tallaColorId: tallaColorId
     };
     
     // Mostrar modal de confirmación
@@ -674,7 +922,7 @@ function cerrarModalDeshacerEntregado() {
 async function confirmarDeshacerEntregado() {
     if (!window.deshacerEntregadoData) return;
     
-    const { button, fila, tipo, itemId, tallaId } = window.deshacerEntregadoData;
+    const { button, fila, tipo, itemId, tallaId, tallaColorId } = window.deshacerEntregadoData;
     
     // Cerrar modal
     cerrarModalDeshacerEntregado();
@@ -694,6 +942,7 @@ async function confirmarDeshacerEntregado() {
                 tipo_item: tipo,
                 item_id: itemId,
                 talla_id: tallaId,
+                talla_color_id: tallaColorId,
             }),
         });
         
@@ -701,7 +950,7 @@ async function confirmarDeshacerEntregado() {
         
         if (data.success) {
             // Limpiar el campo de fecha correspondiente
-            const clave = tipo === 'epp' ? `epp-${itemId}` : `${itemId}${tallaId ? '-' + tallaId : ''}`;
+            const clave = tipo === 'epp' ? `epp-${itemId}` : `${itemId}${tallaId ? '-' + tallaId : ''}${tallaColorId ? '-' + tallaColorId : ''}`;
             const fechaCampo = document.getElementById(`fecha-entrega-${clave}`);
             if (fechaCampo) {
                 fechaCampo.value = '';
@@ -758,6 +1007,9 @@ async function cargarEstadoEntregas() {
                 if (entrega.talla_id) {
                     selector += `[data-talla-id="${entrega.talla_id}"]`;
                 }
+                if (entrega.talla_color_id) {
+                    selector += `[data-talla-color-id="${entrega.talla_color_id}"]`;
+                }
                 
                 const fila = document.querySelector(selector);
                 if (fila) {
@@ -770,6 +1022,15 @@ async function cargarEstadoEntregas() {
                         button.onclick = function() { deshacerEntregado(this); };
                         fila.style.backgroundColor = '#DBEAFE'; // bg-blue-100 (azul pastel)
                     }
+
+                    // Establecer fecha desde BD en el input correspondiente
+                    const clave = entrega.tipo_item === 'epp'
+                        ? `epp-${entrega.item_id}`
+                        : `${entrega.item_id}${entrega.talla_id ? '-' + entrega.talla_id : ''}${entrega.talla_color_id ? '-' + entrega.talla_color_id : ''}`;
+                    const fechaCampo = document.getElementById(`fecha-entrega-${clave}`);
+                    if (fechaCampo && entrega.fecha_entrega) {
+                        fechaCampo.value = entrega.fecha_entrega;
+                    }
                 }
             });
             
@@ -781,7 +1042,10 @@ async function cargarEstadoEntregas() {
 }
 
 // Cargar estado de entregas al cargar la página
-document.addEventListener('DOMContentLoaded', cargarEstadoEntregas);
+document.addEventListener('DOMContentLoaded', function () {
+    cargarEstadoEntregas();
+    cargarPendientesBodeguero();
+});
 
 // ============ FUNCIONES GLOBALES PARA MODAL ============
 
@@ -1298,6 +1562,10 @@ function generarHTMLFactura(datos) {
  * Imprimir tabla de despacho con 11 columnas originales
  */
 function imprimirTablaVacia() {
+    const pendientesBodegueroText = @json($pendientesBodegueroText ?? '— Sin observaciones');
+    const observacionesAsesoraText = @json($observacionesAsesoraText ?? '— Sin observaciones');
+    const mostrarAsesora = String(observacionesAsesoraText ?? '').trim() !== '' && String(observacionesAsesoraText ?? '') !== '— Sin observaciones';
+
     // Construir tabla HTML con 11 columnas para impresión
     let tablaHTML = `
         <table style="width: 100%; border-collapse: collapse; border: 2px solid #000;">
@@ -1362,14 +1630,23 @@ function imprimirTablaVacia() {
             cloneCantidad.querySelectorAll('button').forEach(btn => btn.remove());
             const cantidad = cloneCantidad.textContent.trim() || '0';
 
-            // Contar cuántas filas más tienen el mismo id (para rowspan)
+            // Contar cuántas filas más pertenecen a ESTE subgrupo.
+            // IMPORTANTE: cuando hay prendas por color, el mismo item_id se repite en subgrupos,
+            // y cada subgrupo inicia con una fila que trae la descripción (rowspan por color).
+            // Por eso el rowspan debe cortar cuando aparezca otra fila con descripción.
             let rowspan = 1;
             for (let i = index + 1; i < filas.length; i++) {
-                if (filas[i].dataset.id === id && filas[i].dataset.tipo === tipo) {
-                    rowspan++;
-                } else {
+                if (filas[i].dataset.id !== id || filas[i].dataset.tipo !== tipo) {
                     break;
                 }
+
+                const tdsNext = filas[i].querySelectorAll('td');
+                const nextTieneDescripcion = tdsNext.length >= 5;
+                if (nextTieneDescripcion) {
+                    break;
+                }
+
+                rowspan++;
             }
 
             // Primera fila con descripción y género
@@ -1417,6 +1694,19 @@ function imprimirTablaVacia() {
     tablaHTML += `
             </tbody>
         </table>
+    `;
+
+    const pendientesHTML = `
+        <div style="margin-top: 10px; font-size: 12px; color: #000;">
+            <strong>Pendientes bodeguero:</strong>
+            <div style="margin-top: 6px; white-space: pre-wrap; font-size: 11px; color: #000;">${String(pendientesBodegueroText ?? '— Sin observaciones').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+        </div>
+        ${mostrarAsesora ? `
+            <div style="margin-top: 10px; font-size: 12px; color: #000;">
+                <strong>Observaciones asesora:</strong>
+                <div style="margin-top: 6px; white-space: pre-wrap; font-size: 11px; color: #000;">${String(observacionesAsesoraText).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+            </div>
+        ` : ''}
     `;
 
     // Crear ventana de impresión
@@ -1505,7 +1795,7 @@ function imprimirTablaVacia() {
                         hour12: true
                     }) + `</p>
                 </div>
-            </div>` + tablaHTML + `
+            </div>` + tablaHTML + pendientesHTML + `
             <script>
                 window.print();
                 window.onafterprint = function() { window.close(); };

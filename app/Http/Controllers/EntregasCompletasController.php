@@ -194,13 +194,6 @@ class EntregasCompletasController extends Controller
                     dp.item_id,
                     dp.talla_id,
                     dp.genero,
-                    dp.pendiente_inicial,
-                    dp.parcial_1,
-                    dp.pendiente_1,
-                    dp.parcial_2,
-                    dp.pendiente_2,
-                    dp.parcial_3,
-                    dp.pendiente_3,
                     dp.observaciones,
                     u.name as nombre_usuario
                 FROM despacho_parciales dp

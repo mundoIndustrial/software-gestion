@@ -70,13 +70,6 @@ class DesparChoParcialesPersistenceService
                     tipoItem: $despacho['tipo_item'],
                     itemId: $despacho['item_id'],
                     tallaId: $despacho['talla_id'] ?? null,
-                    pendienteInicial: $despacho['pendiente_inicial'] ?? 0,
-                    parcial1: $despacho['parcial_1'] ?? 0,
-                    pendiente1: $despacho['pendiente_1'] ?? 0,
-                    parcial2: $despacho['parcial_2'] ?? 0,
-                    pendiente2: $despacho['pendiente_2'] ?? 0,
-                    parcial3: $despacho['parcial_3'] ?? 0,
-                    pendiente3: $despacho['pendiente_3'] ?? 0,
                     observaciones: $despacho['observaciones'] ?? null,
                     usuarioId: $usuarioId,
                 );
@@ -132,9 +125,6 @@ class DesparChoParcialesPersistenceService
             'total_registros' => $despachos->count(),
             'total_prendas' => $despachos->where('tipoItem', 'prenda')->count(),
             'total_epp' => $despachos->where('tipoItem', 'epp')->count(),
-            'total_despachado_p1' => $despachos->sum(fn($d) => $d->parcial1()),
-            'total_despachado_p2' => $despachos->sum(fn($d) => $d->parcial2()),
-            'total_despachado_p3' => $despachos->sum(fn($d) => $d->parcial3()),
             'ultima_actualizacion' => $despachos->max(fn($d) => $d->updatedAt()) ?? $despachos->max(fn($d) => $d->createdAt()),
         ];
     }

@@ -40,10 +40,6 @@ class DespachoEstadoAutomaticoTest extends TestCase
             'tipo_item' => 'prenda',
             'item_id' => 1,
             'talla_id' => 1,
-            'pendiente_inicial' => 10,
-            'parcial_1' => 5,
-            'parcial_2' => 0,
-            'parcial_3' => 0,
             'entregado' => false
         ]);
 
@@ -68,10 +64,6 @@ class DespachoEstadoAutomaticoTest extends TestCase
             'tipo_item' => 'prenda',
             'item_id' => 1,
             'talla_id' => 1,
-            'pendiente_inicial' => 10,
-            'parcial_1' => 5,
-            'parcial_2' => 5,
-            'parcial_3' => 0,
             'entregado' => true,
             'fecha_entrega' => now()
         ]);
@@ -81,10 +73,6 @@ class DespachoEstadoAutomaticoTest extends TestCase
             'tipo_item' => 'epp',
             'item_id' => 2,
             'talla_id' => null,
-            'pendiente_inicial' => 5,
-            'parcial_1' => 5,
-            'parcial_2' => 0,
-            'parcial_3' => 0,
             'entregado' => true,
             'fecha_entrega' => now()
         ]);
@@ -110,8 +98,6 @@ class DespachoEstadoAutomaticoTest extends TestCase
             'tipo_item' => 'prenda',
             'item_id' => 1,
             'talla_id' => 1,
-            'pendiente_inicial' => 10,
-            'parcial_1' => 10,
             'entregado' => true,
             'fecha_entrega' => now()
         ]);
@@ -141,8 +127,6 @@ class DespachoEstadoAutomaticoTest extends TestCase
             'tipo_item' => 'prenda',
             'item_id' => 1,
             'talla_id' => 1,
-            'pendiente_inicial' => 10,
-            'parcial_1' => 5,
             'entregado' => false
         ]);
 
@@ -171,8 +155,6 @@ class DespachoEstadoAutomaticoTest extends TestCase
             'tipo_item' => 'prenda',
             'item_id' => 1,
             'talla_id' => 1,
-            'pendiente_inicial' => 10,
-            'parcial_1' => 10,
             'entregado' => true,
             'fecha_entrega' => now()
         ]);
@@ -298,8 +280,6 @@ class DespachoEstadoAutomaticoTest extends TestCase
             'tipo_item' => 'prenda',
             'item_id' => 1,
             'talla_id' => 1,
-            'pendiente_inicial' => 10,
-            'parcial_1' => 10,
             'entregado' => false
         ]);
 

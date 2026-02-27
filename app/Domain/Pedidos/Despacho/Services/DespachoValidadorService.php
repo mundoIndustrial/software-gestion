@@ -28,15 +28,8 @@ class DespachoValidadorService
      */
     public function validarDespacho(DespachoParcialesDTO $despacho): void
     {
-        // Validación mínima: solo valores negativos
-        if ($despacho->parcial1 < 0 || $despacho->parcial2 < 0 || $despacho->parcial3 < 0) {
-            throw new DespachoInvalidoException(
-                "Parciales no pueden ser negativos: P1={$despacho->parcial1}, P2={$despacho->parcial2}, P3={$despacho->parcial3}"
-            );
-        }
-
-        // NOTA: No validamos contra cantidad disponible porque los campos de pendiente
-        // se ingresan manualmente sin cálculos automáticos
+        // Sin validación de parciales: la tabla despacho_parciales ya no guarda campos
+        // de pendientes/parciales. Se valida lo mínimo (tipo) en el flujo superior.
     }
 
     /**
@@ -64,10 +57,6 @@ class DespachoValidadorService
         \Log::info('Despacho procesado', [
             'tipo' => $despacho->tipo,
             'id' => $despacho->id,
-            'parcial_1' => $despacho->parcial1,
-            'parcial_2' => $despacho->parcial2,
-            'parcial_3' => $despacho->parcial3,
-            'total_despachado' => $despacho->getTotalDespachado(),
             'cliente_empresa' => $clienteEmpresa,
             'timestamp' => now(),
         ]);

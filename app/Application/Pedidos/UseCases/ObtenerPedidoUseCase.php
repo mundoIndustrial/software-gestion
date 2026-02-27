@@ -418,6 +418,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                     ->join('prenda_pedido_tallas as ppt', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
                     ->where('ppt.prenda_pedido_id', $prenda->id)
                     ->select(
+                        'pptc.id as talla_color_id',
                         'ppt.id as talla_id',
                         'ppt.talla',
                         'ppt.genero',
@@ -432,6 +433,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                         $coloresPorTalla[$clave] = [];
                     }
                     $coloresPorTalla[$clave][] = [
+                        'talla_color_id' => $colorTalla->talla_color_id,
                         'color' => $colorTalla->color_nombre,
                         'cantidad' => $colorTalla->cantidad
                     ];
