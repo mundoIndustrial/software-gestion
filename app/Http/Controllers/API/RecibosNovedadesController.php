@@ -377,7 +377,7 @@ class RecibosNovedadesController extends Controller
                 'prenda_pedido_id' => $request->prenda_id,
                 'proceso' => 'Control de Calidad',
                 'fecha_inicio' => now(),
-                'encargado' => auth()->user()->name,
+                'encargado' => 'control',
                 'estado_proceso' => 'En Progreso',
                 'codigo_referencia' => 'CC-' . $recibo->consecutivo_actual . '-' . date('YmdHis')
             ]);
