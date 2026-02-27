@@ -27,13 +27,14 @@ class ObtenerPrendasRecibosService
             'usuario' => $usuario->name,
             'usuario_id' => $usuario->id,
             'tipo_operario' => $tipoOperario,
-            'es_costura_reflectivo' => $tipoOperario === 'costura-reflectivo' ? 'SI' : 'NO'
+            'es_costura_reflectivo' => $tipoOperario === 'costura-reflectivo' ? 'SI' : 'NO',
+            'es_vista_costura' => $tipoOperario === 'vista-costura' ? 'SI' : 'NO'
         ]);
 
         // Determinar tipos de recibo según el rol
         $tiposRecibo = ['COSTURA', 'COSTURA-BODEGA'];
-        if ($tipoOperario === 'costura-reflectivo') {
-            // Para costura-reflectivo, SOLO mostrar COSTURA y REFLECTIVO (sin COSTURA-BODEGA)
+        if ($tipoOperario === 'costura-reflectivo' || $tipoOperario === 'vista-costura') {
+            // Para costura-reflectivo y vista-costura: mostrar COSTURA y REFLECTIVO (sin COSTURA-BODEGA)
             $tiposRecibo = ['COSTURA', 'REFLECTIVO'];
         }
 
@@ -50,8 +51,8 @@ class ObtenerPrendasRecibosService
         
         $recibos = $query->orderBy('created_at', 'desc')->get();
 
-        // Para costura-reflectivo: AGREGAR REFLECTIVO aprobados SIN validar encargado
-        if ($tipoOperario === 'costura-reflectivo') {
+        // Para costura-reflectivo y vista-costura: AGREGAR REFLECTIVO aprobados SIN validar encargado
+        if ($tipoOperario === 'costura-reflectivo' || $tipoOperario === 'vista-costura') {
             \Log::info('🔍 [REFLECTIVO APROBADOS] BUSCANDO prendas con PROCESO REFLECTIVO APROBADO en pedidos_procesos_prenda_detalles', [
                 'usuario' => $usuario->name,
                 'recibos_costura_actuales' => $recibos->count()
@@ -111,7 +112,9 @@ class ObtenerPrendasRecibosService
             'total_recibos' => $recibos->count(),
             'tipos_buscados' => $tiposRecibo,
             'areas_permitidas' => ['Corte', 'Costura', 'Control de Calidad'],
-            'prenda_ids' => $recibos->pluck('prenda_id')->toArray()
+            'prenda_ids' => $recibos->pluck('prenda_id')->toArray(),
+            'tipo_operario' => $tipoOperario,
+            'incluye_reflectivos_aprobados' => ($tipoOperario === 'costura-reflectivo' || $tipoOperario === 'vista-costura') ? 'SI' : 'NO'
         ]);
 
         // Agrupar por prenda (o por pedido si es REFLECTIVO sin prenda_id)

@@ -43,8 +43,8 @@
             <span class="ordenes-count">{{ count($prendasConRecibos ?? []) }}</span>
         </div>
 
-        <!-- Filtros por tipo de recibo para costura-reflectivo -->
-        @if(auth()->user()->hasRole('costura-reflectivo'))
+        <!-- Filtros por tipo de recibo para costura-reflectivo y vista-costura -->
+        @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura'))
         <div class="filtros-badges">
             <button class="badge-filtro badge-filtro-active" data-filtro="costura" onclick="filtrarPrendasPorRecibo('costura')">
                 <span class="material-symbols-rounded">checkroom</span>
@@ -123,7 +123,7 @@
                                         <span class="material-symbols-rounded">comment</span>
                                         AGREGAR NOVEDAD
                                     </button>
-                                    @if(auth()->user()->hasRole('costura-reflectivo'))
+                                    @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura'))
                                         {{-- Para costura-reflectivo, crear un botón por cada tipo de recibo --}}
                                         @foreach($prenda['recibos'] as $recibo)
                                             <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $recibo['tipo_recibo'] }}')">
@@ -692,6 +692,53 @@
     .empty-state p {
         font-size: 0.9rem;
         margin: 0;
+    }
+
+    /* Filtros Badges */
+    .filtros-badges {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        padding: 0.5rem 0;
+    }
+
+    .badge-filtro {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 0.8rem;
+        background: #f5f5f5;
+        color: #666;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .badge-filtro:hover {
+        background: #e0e0e0;
+        border-color: #bbb;
+        transform: translateY(-1px);
+    }
+
+    .badge-filtro .material-symbols-rounded {
+        font-size: 16px;
+    }
+
+    .badge-filtro-active {
+        background: #1976D2;
+        color: white;
+        border-color: #1976D2;
+        box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2);
+    }
+
+    .badge-filtro-active:hover {
+        background: #1565C0;
+        border-color: #1565C0;
     }
 
     /* Responsive */
