@@ -467,11 +467,20 @@ export class Formatters {
             lineas.push(proceso.observaciones.toUpperCase());
         }
 
-        // 5. Tallas
-        if (proceso.tallas && Object.keys(proceso.tallas).length > 0) {
+        // 5. Tallas - ENRIQUECIDAS CON COLORES si disponibles
+        let tallasAMostrar = proceso.tallas || {};
+        
+        // 🎨 NUEVO: Si el proceso tiene talla_colores (colores por talla), transformar la estructura
+        if (proceso.talla_colores && Array.isArray(proceso.talla_colores) && proceso.talla_colores.length > 0) {
+            console.log('[Formatters.construirDescripcionProceso] 🎨 Transformando talla_colores a estructura enriquecida');
+            tallasAMostrar = this._transformarTallaColoresAEstructura(proceso.talla_colores);
+            console.log('[Formatters.construirDescripcionProceso] 🎨 Estructura enriquecida:', tallasAMostrar);
+        }
+        
+        if (tallasAMostrar && Object.keys(tallasAMostrar).length > 0) {
             lineas.push('');
             lineas.push('<strong>TALLAS</strong>');
-            this._agregarTallasFormato(lineas, proceso.tallas, prenda.genero, prenda);
+            this._agregarTallasFormato(lineas, tallasAMostrar, prenda.genero, prenda);
         } else if (prenda.tallas && Object.keys(prenda.tallas).length > 0) {
             // Fallback: usar tallas de la prenda si el proceso no tiene
             lineas.push('');

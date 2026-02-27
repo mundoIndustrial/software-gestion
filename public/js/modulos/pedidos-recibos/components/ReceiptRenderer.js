@@ -267,6 +267,7 @@ export class ReceiptRenderer {
         const descripcionText = document.getElementById('descripcion-text');
         
         console.log('[ReceiptRenderer._llenarDescripcion] prendaData completo:', prendaData);
+        console.log('[ReceiptRenderer._llenarDescripcion] prendaData.talla_colores:', prendaData.talla_colores);
         console.log('[ReceiptRenderer._llenarDescripcion] prendaData.tallas:', prendaData.tallas);
         console.log('[ReceiptRenderer._llenarDescripcion] typeof prendaData.tallas:', typeof prendaData.tallas);
         console.log('[ReceiptRenderer._llenarDescripcion] Array.isArray(prendaData.tallas):', Array.isArray(prendaData.tallas));
@@ -282,13 +283,19 @@ export class ReceiptRenderer {
         let html = '';
         const tipoProcesoBajo = String(tipoProceso || '').toLowerCase();
 
+        // Enriquecer recibo con colores por talla si disponibles
+        if (prendaData.talla_colores && Array.isArray(prendaData.talla_colores) && prendaData.talla_colores.length > 0) {
+            console.log('[ReceiptRenderer._llenarDescripcion] 🎨 Enriqueciendo recibo con colores por talla');
+            recibo.talla_colores = prendaData.talla_colores;
+        }
+
         // Determinar si es costura
         if (tipoProcesoBajo === 'costura' || tipoProcesoBajo === 'costura-bodega') {
             // Usar formateador directamente
             html = Formatters.construirDescripcionCostura(prendaData);
             console.log(' [ReceiptRenderer._llenarDescripcion] HTML de costura generado:', html);
         } else {
-            // Para otros procesos
+            // Para otros procesos - pasar prendaData para acceder a colores
             html = Formatters.construirDescripcionProceso(prendaData, recibo);
             console.log(' [ReceiptRenderer._llenarDescripcion] HTML de proceso generado:', html);
         }
