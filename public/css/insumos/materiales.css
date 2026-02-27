@@ -275,11 +275,42 @@ body.dark-theme .bg-blue-50 {
 
 /* Toast Container */
 #toastContainer {
-    z-index: 10000;
+    z-index: 99999;
 }
 
 #toastContainer > div {
-    animation: slideIn 0.3s ease-out;
+    animation: toastSlideIn 0.4s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+}
+
+@keyframes toastSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(120%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes toastSlideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(120%);
+    }
+}
+
+@keyframes toastProgress {
+    from {
+        width: 100%;
+    }
+    to {
+        width: 0%;
+    }
 }
 
 @keyframes slideIn {

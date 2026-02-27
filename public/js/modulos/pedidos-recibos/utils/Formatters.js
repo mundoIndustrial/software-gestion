@@ -122,7 +122,7 @@ export class Formatters {
             lineas.push(partes.join(' | '));
         }
 
-        // 3. Descripción base - Limpiar basura
+        // 3. Descripción base - pegada a la línea técnica sin título
         if (prenda.descripcion && prenda.descripcion.trim()) {
             let desc = prenda.descripcion.toUpperCase().trim();
             
@@ -392,10 +392,8 @@ export class Formatters {
             lineas.push(partes.join(' | '));
         }
 
-        // 2.5. Descripción de la prenda (antes de ubicaciones)
+        // 2.5. Descripción de la prenda (antes de ubicaciones) - pegado a la línea técnica
         if (prenda.descripcion && prenda.descripcion.trim()) {
-            lineas.push('');
-            lineas.push('<strong>DESCRIPCIÓN:</strong>');
             lineas.push(prenda.descripcion);
         }
 
@@ -874,6 +872,26 @@ export class Formatters {
         
         console.log('[Formatters._agregarTallasFormato]  Resultado final:', { tallasDama, tallasCalballero });
         
+        // Función helper para ordenar tallas de menor a mayor
+        const ordenTallasLetra = ['XXXS', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '2XL', '3XL', '4XL', '5XL'];
+        const compararTallas = (tallaA, tallaB) => {
+            const a = String(tallaA).toUpperCase().trim();
+            const b = String(tallaB).toUpperCase().trim();
+            const numA = parseFloat(a);
+            const numB = parseFloat(b);
+            // Ambas numéricas
+            if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+            // Ambas de letra
+            const idxA = ordenTallasLetra.indexOf(a);
+            const idxB = ordenTallasLetra.indexOf(b);
+            if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+            // Una conocida y otra no
+            if (idxA !== -1) return -1;
+            if (idxB !== -1) return 1;
+            // Fallback alfabético
+            return a.localeCompare(b);
+        };
+
         // Función helper para renderizar tallas agrupadas por color
         const renderizarTallasGenero = (tallasObj, generoLabel) => {
             if (Object.keys(tallasObj).length === 0) return;
@@ -913,29 +931,20 @@ export class Formatters {
                 if (coloresReales.length > 0) {
                     lineas.push(`<strong>${generoLabel}:</strong>`);
                     coloresReales.forEach(([color, tallasArr]) => {
-                        tallasArr.sort((a, b) => {
-                            const numA = parseInt(a.talla);
-                            const numB = parseInt(b.talla);
-                            if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
-                            return a.talla.localeCompare(b.talla);
-                        });
+                        tallasArr.sort((a, b) => compararTallas(a.talla, b.talla));
                         const tallasStr = tallasArr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
                         lineas.push(`<span style="color: red;"><strong>${color}:</strong> ${tallasStr}</span>`);
                     });
                 } else if (sinColor.length > 0) {
                     // Solo tallas sin color - formato simple
-                    sinColor.sort((a, b) => {
-                        const numA = parseInt(a.talla);
-                        const numB = parseInt(b.talla);
-                        if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
-                        return a.talla.localeCompare(b.talla);
-                    });
+                    sinColor.sort((a, b) => compararTallas(a.talla, b.talla));
                     const tallasStr = sinColor.map(t => `<span style="color: red;"><strong>${t.talla}: ${t.cantidad}</strong></span>`).join(', ');
                     lineas.push(`${generoLabel}: ${tallasStr}`);
                 }
             } else {
-                // Sin colores - formato simple
+                // Sin colores - formato simple (ordenado de menor a mayor)
                 const tallasStr = Object.entries(tallasObj)
+                    .sort(([tallaA], [tallaB]) => compararTallas(tallaA, tallaB))
                     .map(([talla, cantidad]) => `<span style="color: red;"><strong>${talla}: ${cantidad}</strong></span>`)
                     .join(', ');
                 lineas.push(`${generoLabel}: ${tallasStr}`);

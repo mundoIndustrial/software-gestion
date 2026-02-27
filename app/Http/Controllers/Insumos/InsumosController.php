@@ -1158,15 +1158,13 @@ class InsumosController extends Controller
             
             // Validar datos de entrada
             $validated = $request->validate([
-                'ancho' => 'required|numeric|min:0.01',
-                'metraje' => 'required|numeric|min:0.01',
+                'ancho' => 'nullable|numeric|min:0',
+                'metraje' => 'nullable|numeric|min:0',
             ], [
-                'ancho.required' => 'El ancho es requerido',
                 'ancho.numeric' => 'El ancho debe ser un número',
-                'ancho.min' => 'El ancho debe ser mayor que 0',
-                'metraje.required' => 'El metraje es requerido',
+                'ancho.min' => 'El ancho debe ser mayor o igual a 0',
                 'metraje.numeric' => 'El metraje debe ser un número',
-                'metraje.min' => 'El metraje debe ser mayor que 0',
+                'metraje.min' => 'El metraje debe ser mayor o igual a 0',
             ]);
 
             // Obtener el pedido por número
@@ -1324,8 +1322,8 @@ class InsumosController extends Controller
             // Validar datos
             $validated = $request->validate([
                 'prenda_id' => 'required|integer|exists:prendas_pedido,id',
-                'ancho' => 'required|numeric|min:0',
-                'metraje' => 'required|numeric|min:0'
+                'ancho' => 'nullable|numeric|min:0',
+                'metraje' => 'nullable|numeric|min:0'
             ]);
             
             // Buscar el pedido por ID primero (el frontend envía pedido_produccion_id),

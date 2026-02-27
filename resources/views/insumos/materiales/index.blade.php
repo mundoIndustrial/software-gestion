@@ -274,7 +274,7 @@
 </script>
 
 {{-- Toast Container --}}
-<div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px;"></div>
+<div id="toastContainer" style="position: fixed; top: 24px; right: 24px; z-index: 99999; display: flex; flex-direction: column; gap: 12px; pointer-events: none;"></div>
 
 {{-- Loading Overlay --}}
 <div id="loadingOverlay" class="loading-overlay">
@@ -572,41 +572,108 @@
 
 <script>
     /**
-     * Mostrar Toast Notification mejorado para mensajes multilínea
+     * Mostrar Toast Notification mejorado
      */
-    function showToast(message, type = 'success', duration = 5000) {
+    function showToast(message, type = 'success', duration = 6000) {
         const toastContainer = document.getElementById('toastContainer');
         
-        // Determinar colores según tipo
-        let bgColor = 'bg-green-500';
-        if (type === 'error') {
-            bgColor = 'bg-red-500';
-        } else if (type === 'warning') {
-            bgColor = 'bg-yellow-500';
-        } else if (type === 'info') {
-            bgColor = 'bg-blue-500';
-        }
+        // Configuración de estilos por tipo
+        const config = {
+            success: {
+                bg: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                icon: '<svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>',
+                title: 'Éxito',
+                progressColor: '#6ee7b7'
+            },
+            error: {
+                bg: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                icon: '<svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
+                title: 'Error',
+                progressColor: '#fca5a5'
+            },
+            warning: {
+                bg: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                icon: '<svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86l-8.6 14.86A1 1 0 002.54 20h18.92a1 1 0 00.85-1.28l-8.6-14.86a1 1 0 00-1.72 0z"/></svg>',
+                title: 'Advertencia',
+                progressColor: '#fcd34d'
+            },
+            info: {
+                bg: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                icon: '<svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>',
+                title: 'Información',
+                progressColor: '#93c5fd'
+            }
+        };
+        
+        const cfg = config[type] || config.success;
         
         // Crear elemento de toast
         const toast = document.createElement('div');
-        toast.className = `${bgColor} text-white px-6 py-4 rounded-lg shadow-lg flex items-start gap-3 max-w-md`;
-        toast.style.animation = 'slideIn 0.3s ease-out';
+        toast.style.cssText = `
+            background: ${cfg.bg};
+            color: white;
+            padding: 16px 20px 14px 16px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            min-width: 320px;
+            max-width: 420px;
+            pointer-events: auto;
+            position: relative;
+            overflow: hidden;
+            animation: toastSlideIn 0.4s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+            opacity: 0;
+            transform: translateX(100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        `;
         
-        // Convertir saltos de línea a <br> para HTML
+        // Convertir saltos de línea
         const formattedMessage = message.replace(/\n/g, '<br>');
         
-        // Usar white-space: pre-line para mantener formato
-        toast.innerHTML = `<span style="white-space: pre-line; line-height: 1.5;">${formattedMessage}</span>`;
+        toast.innerHTML = `
+            <div style="flex-shrink: 0; width: 36px; height: 36px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: 1px;">
+                ${cfg.icon}
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 700; font-size: 14px; margin-bottom: 3px; letter-spacing: 0.2px;">${cfg.title}</div>
+                <div style="font-size: 13px; line-height: 1.5; opacity: 0.95; white-space: pre-line; word-break: break-word;">${formattedMessage}</div>
+            </div>
+            <button onclick="this.closest('div[data-toast]').dispatchEvent(new Event('close'))" style="flex-shrink: 0; background: rgba(255,255,255,0.15); border: none; color: white; cursor: pointer; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.2s; margin-top: 1px;" onmouseenter="this.style.background='rgba(255,255,255,0.3)'" onmouseleave="this.style.background='rgba(255,255,255,0.15)'">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+            <div style="position: absolute; bottom: 0; left: 0; height: 3px; background: ${cfg.progressColor}; border-radius: 0 0 12px 12px; animation: toastProgress ${duration}ms linear forwards; width: 100%;"></div>
+        `;
+        
+        toast.setAttribute('data-toast', 'true');
+        
+        // Función para cerrar el toast
+        function closeToast() {
+            toast.style.animation = 'toastSlideOut 0.35s cubic-bezier(0.33, 0, 0.67, 0) forwards';
+            setTimeout(() => toast.remove(), 350);
+        }
+        
+        toast.addEventListener('close', closeToast);
         
         toastContainer.appendChild(toast);
         
-        // Remover después del tiempo especificado
-        setTimeout(() => {
-            toast.style.animation = 'slideOut 0.3s ease-out';
-            setTimeout(() => {
-                toast.remove();
-            }, 300);
-        }, duration);
+        // Auto-remover después del tiempo
+        const autoClose = setTimeout(closeToast, duration);
+        
+        // Pausar al hover
+        toast.addEventListener('mouseenter', () => {
+            clearTimeout(autoClose);
+            const progressBar = toast.querySelector('div[style*="toastProgress"]');
+            if (progressBar) progressBar.style.animationPlayState = 'paused';
+        });
+        
+        toast.addEventListener('mouseleave', () => {
+            const remaining = 2000;
+            const progressBar = toast.querySelector('div[style*="toastProgress"]');
+            if (progressBar) progressBar.style.animationPlayState = 'running';
+            setTimeout(closeToast, remaining);
+        });
     }
     
     /**
@@ -1000,6 +1067,37 @@
     }
 
     /* Toast Animations */
+    @keyframes toastSlideIn {
+        from {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes toastSlideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+    }
+
+    @keyframes toastProgress {
+        from {
+            width: 100%;
+        }
+        to {
+            width: 0%;
+        }
+    }
+
     @keyframes slideIn {
         from {
             transform: translateX(400px);
@@ -1306,20 +1404,22 @@
      * Guarda los valores de Ancho y Metraje
      */
     function guardarAnchoMetraje() {
-        const ancho = parseFloat(document.getElementById('anchoInput').value);
-        const metraje = parseFloat(document.getElementById('metrajeInput').value);
+        const anchoVal = document.getElementById('anchoInput').value.trim();
+        const metrajeVal = document.getElementById('metrajeInput').value.trim();
+        const ancho = anchoVal ? parseFloat(anchoVal) : null;
+        const metraje = metrajeVal ? parseFloat(metrajeVal) : null;
         const modal = document.getElementById('modalAnchoMetraje');
         const prendaId = modal.dataset.prendaId;  // Obtener prenda_id del modal
         const pedido = modal.dataset.pedido;  // Obtener pedido del modal
         
-        // Validar que los campos estén completos
-        if (!ancho || isNaN(ancho) || ancho <= 0) {
-            showToast('Por favor ingresa un ancho válido', 'warning');
+        // Validar que al menos un campo tenga valor válido
+        if (anchoVal && (isNaN(ancho) || ancho <= 0)) {
+            showToast('El ancho debe ser un número mayor a 0', 'warning');
             return;
         }
         
-        if (!metraje || isNaN(metraje) || metraje <= 0) {
-            showToast('Por favor ingresa un metraje válido', 'warning');
+        if (metrajeVal && (isNaN(metraje) || metraje <= 0)) {
+            showToast('El metraje debe ser un número mayor a 0', 'warning');
             return;
         }
         
@@ -1329,7 +1429,7 @@
         }
         
         // Guardar los datos globalmente usando la función universal
-        window.actualizarAnchoMetrajeUniversal(ancho, metraje, pedido);
+        window.actualizarAnchoMetrajeUniversal(ancho || 0, metraje || 0, pedido);
         
         console.log('[guardarAnchoMetraje] Datos guardados usando función universal');
         
@@ -1505,6 +1605,7 @@
         const row = document.createElement('tr');
         row.className = 'border-b border-gray-200 hover:bg-gray-50 transition';
         row.id = `row_${materialId}`;
+        row.setAttribute('data-guardado', 'true');
         
         const colores = ['bg-green-500', 'bg-yellow-500', 'bg-gray-400'];
         const colorPunto = colores[index % 3];
@@ -1709,6 +1810,8 @@
         row.className = 'border-b border-gray-200 hover:bg-gray-50 transition';
         row.id = `row_${materialId}`;
         
+        // Marcar como fila nueva (no guardada en BD)
+        row.setAttribute('data-nuevo', 'true');
         // Inicializar atributo data-observaciones vacío
         row.setAttribute('data-observaciones', '');
 
@@ -1806,12 +1909,15 @@
             const nombreMaterial = row.querySelector('td:first-child span').textContent.trim();
             const pedido = document.getElementById('modalPedido').textContent;
             
+            // Verificar si la fila es nueva (aún no guardada en BD)
+            const esFilaNueva = row.hasAttribute('data-nuevo') || !row.dataset.guardado;
+            
             // Mostrar confirmación
             Swal.fire({
                 title: '¿Eliminar Material?',
                 html: `<div style="text-align: left; margin: 20px 0;">
                     <p><strong>Material:</strong> ${nombreMaterial}</p>
-                    <p style="color: #ef4444; margin-top: 15px;"><strong><i class="fas fa-exclamation-triangle"></i> Se eliminará este registro permanentemente.</strong></p>
+                    <p style="color: #ef4444; margin-top: 15px;"><strong><i class="fas fa-exclamation-triangle"></i> Se eliminará este registro${esFilaNueva ? '' : ' permanentemente'}.</strong></p>
                 </div>`,
                 icon: 'warning',
                 showCancelButton: true,
@@ -1829,33 +1935,42 @@
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Eliminar del servidor
-                    fetch(`/insumos/materiales/${pedido}/eliminar`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        },
-                        body: JSON.stringify({ 
-                            nombre_material: nombreMaterial
-                        }),
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Eliminar fila con animación
-                            row.style.animation = 'slideOut 0.3s ease-out';
-                            setTimeout(() => {
-                                row.remove();
-                                showToast('Material eliminado correctamente', 'success');
-                            }, 300);
-                        } else {
-                            showToast('Error al eliminar: ' + data.message, 'error');
-                        }
-                    })
-                    .catch(error => {
-                        showToast('Error al eliminar el material', 'error');
-                    });
+                    if (esFilaNueva) {
+                        // Si es nueva, solo remover del DOM sin llamar al servidor
+                        row.style.animation = 'slideOut 0.3s ease-out';
+                        setTimeout(() => {
+                            row.remove();
+                            showToast('Material eliminado', 'success');
+                        }, 300);
+                    } else {
+                        // Eliminar del servidor
+                        fetch(`/insumos/materiales/${pedido}/eliminar`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            },
+                            body: JSON.stringify({ 
+                                nombre_material: nombreMaterial
+                            }),
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Eliminar fila con animación
+                                row.style.animation = 'slideOut 0.3s ease-out';
+                                setTimeout(() => {
+                                    row.remove();
+                                    showToast('Material eliminado', 'success');
+                                }, 300);
+                            } else {
+                                showToast('Error al eliminar: ' + data.message, 'error');
+                            }
+                        })
+                        .catch(error => {
+                            showToast('Error al eliminar el material', 'error');
+                        });
+                    }
                 }
             });
         }
@@ -2603,19 +2718,7 @@
             if (data.success) {
                 cerrarModalConfirmarProduccion();
                 
-                let mensaje = data.message || 'Recibo aprobado correctamente.';
-                if (data.procesos_creados > 0) {
-                    mensaje += `\nSe crearon ${data.procesos_creados} procesos automáticamente`;
-                    
-                    if (data.detalles_procesos && data.detalles_procesos.length > 0) {
-                        mensaje += '\n\nProcesos creados:';
-                        data.detalles_procesos.forEach((proceso, index) => {
-                            mensaje += `\n   ${index + 1}. ${proceso}`;
-                        });
-                    }
-                }
-                
-                showToast(mensaje, 'success');
+                showToast('Recibo aprobado', 'success');
                 
                 // Recargar la página después de 2 segundos
                 setTimeout(() => {
