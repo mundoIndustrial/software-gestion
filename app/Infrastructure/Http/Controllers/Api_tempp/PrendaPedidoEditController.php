@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Infrastructure\Http\Controllers\API;
+namespace App\Infrastructure\Http\Controllers\Api_tempp;
 
 use App\Http\Controllers\Controller;
 use App\DTOs\Edit\EditPrendaPedidoDTO;

@@ -16,6 +16,7 @@ class ProcesoPrenda extends Model
     protected $fillable = [
         'numero_pedido',
         'prenda_pedido_id',
+        'numero_recibo',
         'proceso',
         'fecha_inicio',
         'fecha_fin',

@@ -12,7 +12,7 @@ class PrendaPedidoEditControllerTest extends TestCase
     public function test_controller_class_exists(): void
     {
         $this->assertTrue(
-            class_exists(\App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class)
+            class_exists(\App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class)
         );
     }
 
@@ -22,7 +22,7 @@ class PrendaPedidoEditControllerTest extends TestCase
     public function test_controller_has_edit_prenda_method(): void
     {
         $reflection = new \ReflectionClass(
-            \App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class
+            \App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class
         );
         $this->assertTrue($reflection->hasMethod('editPrenda'));
     }
@@ -33,7 +33,7 @@ class PrendaPedidoEditControllerTest extends TestCase
     public function test_controller_has_edit_prenda_fields_method(): void
     {
         $reflection = new \ReflectionClass(
-            \App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class
+            \App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class
         );
         $this->assertTrue($reflection->hasMethod('editPrendaFields'));
     }
@@ -44,7 +44,7 @@ class PrendaPedidoEditControllerTest extends TestCase
     public function test_controller_has_edit_tallas_method(): void
     {
         $reflection = new \ReflectionClass(
-            \App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class
+            \App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class
         );
         $this->assertTrue($reflection->hasMethod('editTallas'));
     }
@@ -55,7 +55,7 @@ class PrendaPedidoEditControllerTest extends TestCase
     public function test_controller_has_edit_variante_method(): void
     {
         $reflection = new \ReflectionClass(
-            \App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class
+            \App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class
         );
         $this->assertTrue($reflection->hasMethod('editVariante'));
     }
@@ -66,7 +66,7 @@ class PrendaPedidoEditControllerTest extends TestCase
     public function test_controller_has_edit_variante_fields_method(): void
     {
         $reflection = new \ReflectionClass(
-            \App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class
+            \App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class
         );
         $this->assertTrue($reflection->hasMethod('editVarianteFields'));
     }
@@ -77,7 +77,7 @@ class PrendaPedidoEditControllerTest extends TestCase
     public function test_controller_has_edit_variante_colores_method(): void
     {
         $reflection = new \ReflectionClass(
-            \App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class
+            \App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class
         );
         $this->assertTrue($reflection->hasMethod('editVarianteColores'));
     }
@@ -88,7 +88,7 @@ class PrendaPedidoEditControllerTest extends TestCase
     public function test_controller_has_edit_variante_telas_method(): void
     {
         $reflection = new \ReflectionClass(
-            \App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class
+            \App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class
         );
         $this->assertTrue($reflection->hasMethod('editVarianteTelas'));
     }
@@ -99,7 +99,7 @@ class PrendaPedidoEditControllerTest extends TestCase
     public function test_controller_has_get_prenda_state_method(): void
     {
         $reflection = new \ReflectionClass(
-            \App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class
+            \App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class
         );
         $this->assertTrue($reflection->hasMethod('getPrendaState'));
     }
@@ -110,7 +110,7 @@ class PrendaPedidoEditControllerTest extends TestCase
     public function test_controller_has_get_variante_state_method(): void
     {
         $reflection = new \ReflectionClass(
-            \App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class
+            \App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class
         );
         $this->assertTrue($reflection->hasMethod('getVarianteState'));
     }
@@ -136,7 +136,7 @@ class PrendaPedidoEditControllerTest extends TestCase
     public function test_controller_methods_return_response(): void
     {
         $reflection = new \ReflectionClass(
-            \App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class
+            \App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class
         );
 
         $methods = [

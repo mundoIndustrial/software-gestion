@@ -107,9 +107,9 @@ class ProcesoPrendaObserver
 
                     // Actualizar el área en consecutivos_recibos_pedidos
                     if ($procesoPrenda->prenda_pedido_id) {
-                        $this->actualizarAreaEnConsecutivos($pedido->id, $procesoPrenda->prenda_pedido_id, $proceso->proceso);
+                        $this->actualizarAreaEnConsecutivos($pedido->id, $procesoPrenda->prenda_pedido_id, $proceso->proceso, $proceso->proceso);
                     } else {
-                        $this->actualizarAreaEnConsecutivos($pedido->id, null, $proceso->proceso);
+                        $this->actualizarAreaEnConsecutivos($pedido->id, null, $proceso->proceso, $proceso->proceso);
                     }
                     
                     return;
@@ -137,9 +137,9 @@ class ProcesoPrendaObserver
 
                     // Actualizar el área en consecutivos_recibos_pedidos
                     if ($procesoPrenda->prenda_pedido_id) {
-                        $this->actualizarAreaEnConsecutivos($pedido->id, $procesoPrenda->prenda_pedido_id, $proceso->proceso);
+                        $this->actualizarAreaEnConsecutivos($pedido->id, $procesoPrenda->prenda_pedido_id, $proceso->proceso, $proceso->proceso);
                     } else {
-                        $this->actualizarAreaEnConsecutivos($pedido->id, null, $proceso->proceso);
+                        $this->actualizarAreaEnConsecutivos($pedido->id, null, $proceso->proceso, $proceso->proceso);
                     }
                     
                     return;
@@ -163,10 +163,10 @@ class ProcesoPrendaObserver
 
                 // NUEVO: Actualizar el área en consecutivos_recibos_pedidos
                 if ($procesoPrenda->prenda_pedido_id) {
-                    $this->actualizarAreaEnConsecutivos($pedido->id, $procesoPrenda->prenda_pedido_id, $ultimoProceso->proceso);
+                    $this->actualizarAreaEnConsecutivos($pedido->id, $procesoPrenda->prenda_pedido_id, $ultimoProceso->proceso, $ultimoProceso->proceso);
                 } else {
                     // Si no tiene prenda específica, actualizar todos los consecutivos del pedido
-                    $this->actualizarAreaEnConsecutivos($pedido->id, null, $ultimoProceso->proceso);
+                    $this->actualizarAreaEnConsecutivos($pedido->id, null, $ultimoProceso->proceso, $ultimoProceso->proceso);
                 }
             }
         } catch (\Exception $e) {
@@ -238,10 +238,10 @@ class ProcesoPrendaObserver
 
                 // NUEVO: Actualizar el área en consecutivos_recibos_pedidos
                 if ($procesoPrenda->prenda_pedido_id) {
-                    $this->actualizarAreaEnConsecutivos($pedido->id, $procesoPrenda->prenda_pedido_id, $nuevaArea);
+                    $this->actualizarAreaEnConsecutivos($pedido->id, $procesoPrenda->prenda_pedido_id, $nuevaArea, $procesoPrenda->proceso);
                 } else {
                     // Si no tiene prenda específica, actualizar todos los consecutivos del pedido
-                    $this->actualizarAreaEnConsecutivos($pedido->id, null, $nuevaArea);
+                    $this->actualizarAreaEnConsecutivos($pedido->id, null, $nuevaArea, $procesoPrenda->proceso);
                 }
             } else {
                 \Log::warning(" No hay procesos restantes después de eliminar", [
@@ -259,9 +259,20 @@ class ProcesoPrendaObserver
     /**
      * Actualizar el área en la tabla consecutivos_recibos_pedidos
      */
-    private function actualizarAreaEnConsecutivos($pedidoProduccionId, $prendaId = null, $nuevaArea): void
+    private function actualizarAreaEnConsecutivos($pedidoProduccionId, $prendaId = null, $nuevaArea, $proceso = null): void
     {
         try {
+            // NO actualizar cuando el proceso es "Control de Calidad" 
+            // porque el ReciboCosturaController ya lo hace de forma específica
+            if ($proceso && strtolower(trim($proceso)) === 'control de calidad') {
+                \Log::info(" Observer ignorando Control de Calidad - será actualizado específicamente por el controlador", [
+                    'pedido_produccion_id' => $pedidoProduccionId,
+                    'prenda_id' => $prendaId,
+                    'proceso' => $proceso
+                ]);
+                return;
+            }
+
             $query = \DB::table('consecutivos_recibos_pedidos')
                 ->where('pedido_produccion_id', $pedidoProduccionId);
             
@@ -275,6 +286,7 @@ class ProcesoPrendaObserver
                 'pedido_produccion_id' => $pedidoProduccionId,
                 'prenda_id' => $prendaId,
                 'nueva_area' => $nuevaArea,
+                'proceso' => $proceso,
                 'registros_actualizados' => $actualizado
             ]);
         } catch (\Exception $e) {

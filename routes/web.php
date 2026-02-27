@@ -2074,35 +2074,35 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('api
     // ================================================
     Route::prefix('prendas-pedido')->group(function () {
         // Editar prenda completa (PATCH)
-        Route::patch('/{id}/editar', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'editPrenda'])->name('editar');
+        Route::patch('/{id}/editar', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'editPrenda'])->name('editar');
         
         // Editar solo campos simples de prenda
-        Route::patch('/{id}/editar/campos', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'editPrendaFields'])->name('editar-campos');
+        Route::patch('/{id}/editar/campos', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'editPrendaFields'])->name('editar-campos');
         
         // Editar solo tallas (MERGE)
-        Route::patch('/{id}/editar/tallas', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'editTallas'])->name('editar-tallas');
+        Route::patch('/{id}/editar/tallas', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'editTallas'])->name('editar-tallas');
         
         //  NUEVA RUTA: Actualizar un proceso específico de la prenda
         //  FIX: Acepta POST también (con _method=PATCH en FormData para mejor compatibilidad)
-        Route::match(['patch', 'post'], '/{prendaId}/procesos/{procesoId}', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'actualizarProcesoEspecifico'])->name('proceso-actualizar');
+        Route::match(['patch', 'post'], '/{prendaId}/procesos/{procesoId}', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'actualizarProcesoEspecifico'])->name('proceso-actualizar');
         
         // Obtener estado actual (para auditoría)
-        Route::get('/{id}/estado', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'getPrendaState'])->name('estado');
+        Route::get('/{id}/estado', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'getPrendaState'])->name('estado');
         
         // Editar variante específica
-        Route::patch('/{prendaId}/variantes/{varianteId}/editar', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'editVariante'])->name('variante-editar');
+        Route::patch('/{prendaId}/variantes/{varianteId}/editar', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'editVariante'])->name('variante-editar');
         
         // Editar solo campos simples de variante
-        Route::patch('/{prendaId}/variantes/{varianteId}/editar/campos', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'editVarianteFields'])->name('variante-editar-campos');
+        Route::patch('/{prendaId}/variantes/{varianteId}/editar/campos', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'editVarianteFields'])->name('variante-editar-campos');
         
         // Editar solo colores de variante (MERGE)
-        Route::patch('/{prendaId}/variantes/{varianteId}/colores', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'editVarianteColores'])->name('variante-colores');
+        Route::patch('/{prendaId}/variantes/{varianteId}/colores', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'editVarianteColores'])->name('variante-colores');
         
         // Editar solo telas de variante (MERGE)
-        Route::patch('/{prendaId}/variantes/{varianteId}/telas', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'editVarianteTelas'])->name('variante-telas');
+        Route::patch('/{prendaId}/variantes/{varianteId}/telas', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'editVarianteTelas'])->name('variante-telas');
         
         // Obtener estado de variante (para auditoría)
-        Route::get('/{prendaId}/variantes/{varianteId}/estado', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'getVarianteState'])->name('variante-estado');
+        Route::get('/{prendaId}/variantes/{varianteId}/estado', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'getVarianteState'])->name('variante-estado');
     });
 });
 
@@ -2328,7 +2328,7 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
     Route::post('/{id}/actualizar-prenda', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'actualizarPrendaCompleta'])->where('id', '[0-9]+')->name('pedidos.actualizar-prenda-completa');
     
     // Actualizar proceso específico de una prenda (para supervisor)
-    Route::match(['patch', 'post'], '/{prendaId}/procesos/{procesoId}', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'actualizarProcesoEspecifico'])->where(['prendaId' => '[0-9]+', 'procesoId' => '[0-9]+'])->name('procesos-actualizar');
+    Route::match(['patch', 'post'], '/{prendaId}/procesos/{procesoId}', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'actualizarProcesoEspecifico'])->where(['prendaId' => '[0-9]+', 'procesoId' => '[0-9]+'])->name('procesos-actualizar');
     
     // Eliminar imagen de prenda
     Route::delete('/imagen/{tipo}/{id}', [App\Http\Controllers\SupervisorPedidosController::class, 'deleteImage'])->name('imagen.eliminar');
@@ -2758,30 +2758,30 @@ Route::prefix('seguimiento-proceso')->name('seguimiento-proceso.')->group(functi
 Route::middleware(['auth'])->prefix('recibos-novedades')->name('recibos-novedades.')->group(function () {
     
     // Obtener novedades de prendas para un recibo específico
-    Route::get('{pedidoId}/{numeroRecibo}', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'index'])
+    Route::get('{pedidoId}/{numeroRecibo}', [App\Http\Controllers\Api_temp\RecibosNovedadesController::class, 'index'])
         ->name('index');
     
     // Obtener texto consolidado de novedades para mostrar en tabla
-    Route::get('{pedidoId}/{numeroRecibo}/consolidado', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'getConsolidado'])
+    Route::get('{pedidoId}/{numeroRecibo}/consolidado', [App\Http\Controllers\Api_temp\RecibosNovedadesController::class, 'getConsolidado'])
         ->name('consolidado');
     
     // Guardar novedades para prendas de un recibo
-    Route::post('{pedidoId}/{numeroRecibo}', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'store'])
+    Route::post('{pedidoId}/{numeroRecibo}', [App\Http\Controllers\Api_temp\RecibosNovedadesController::class, 'store'])
         ->name('store');
     
     // Cambiar área de recibo a Control Calidad
-    Route::post('{pedidoId}/{numeroRecibo}/cambiar-area-control-calidad', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'cambiarAreaControlCalidad'])
+    Route::post('{pedidoId}/{numeroRecibo}/cambiar-area-control-calidad', [App\Infrastructure\Http\Controllers\ReciboCosturaController::class, 'cambiarAreaControlCalidad'])
         ->name('cambiar-area-control-calidad');
     
     // Deshacer Control Calidad
-    Route::delete('{pedidoId}/{prendaId}/deshacer-control-calidad', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'deshacerControlCalidad'])
+    Route::delete('{pedidoId}/{prendaId}/deshacer-control-calidad', [App\Infrastructure\Http\Controllers\ReciboCosturaController::class, 'deshacerControlCalidad'])
         ->name('deshacer-control-calidad');
     
     // Actualizar una novedad existente
-    Route::put('{novedadId}', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'update'])
+    Route::put('{novedadId}', [App\Http\Controllers\Api_temp\RecibosNovedadesController::class, 'update'])
         ->name('update');
     
     // Eliminar una novedad
-    Route::delete('{novedadId}', [App\Http\Controllers\Api\RecibosNovedadesController::class, 'destroy'])
+    Route::delete('{novedadId}', [App\Http\Controllers\Api_temp\RecibosNovedadesController::class, 'destroy'])
         ->name('destroy');
 });

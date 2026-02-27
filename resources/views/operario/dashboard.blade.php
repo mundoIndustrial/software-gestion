@@ -2158,7 +2158,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
                 body: JSON.stringify({
-                    proceso_id: procesoId
+                    tipo_recibo: tipoRecibo
                 })
             })
             .then(response => response.json())
