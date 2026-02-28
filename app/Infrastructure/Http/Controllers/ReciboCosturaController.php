@@ -254,4 +254,224 @@ class ReciboCosturaController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Pasar recibo a Costura - crea proceso con encargado y actualiza área
+     */
+    public function pasarACostura(Request $request, $pedidoId, $numeroRecibo)
+    {
+        try {
+            if (!auth()->user()->hasRole('vista-costura')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permisos para realizar esta acción'
+                ], 403);
+            }
+
+            $request->validate([
+                'prenda_id' => 'required|integer|exists:prendas_pedido,id',
+                'tipo_recibo' => 'required|string',
+                'encargado' => 'required|string|max:100'
+            ]);
+
+            $pedido = PedidoProduccion::findOrFail($pedidoId);
+
+            Log::info('[COSTURA] Buscando recibo para pasar a Costura', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'prenda_id' => $request->prenda_id,
+                'tipo_recibo' => $request->tipo_recibo,
+                'numero_recibo' => $numeroRecibo,
+                'encargado' => $request->encargado
+            ]);
+
+            // Buscar el recibo específico
+            $recibo = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedido->id)
+                ->where('prenda_id', $request->prenda_id)
+                ->whereRaw('UPPER(tipo_recibo) = ?', [strtoupper($request->tipo_recibo)])
+                ->where('activo', 1)
+                ->first();
+
+            // Fallback por consecutivo
+            if (!$recibo) {
+                $recibo = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedido->id)
+                    ->where('consecutivo_actual', $numeroRecibo)
+                    ->whereRaw('UPPER(tipo_recibo) = ?', [strtoupper($request->tipo_recibo)])
+                    ->where('activo', 1)
+                    ->first();
+            }
+
+            if (!$recibo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recibo no encontrado'
+                ], 404);
+            }
+
+            DB::beginTransaction();
+
+            $areaAnterior = $recibo->area;
+
+            // Crear proceso de Costura en procesos_prenda
+            $nuevoProceso = ProcesoPrenda::create([
+                'numero_pedido'     => $pedido->numero_pedido,
+                'prenda_pedido_id'  => $request->prenda_id,
+                'numero_recibo'     => $recibo->consecutivo_actual,
+                'proceso'           => 'Costura',
+                'fecha_inicio'      => now(),
+                'encargado'         => $request->encargado,
+                'estado_proceso'    => 'En Progreso',
+                'codigo_referencia' => 'COS-' . $recibo->consecutivo_actual . '-' . date('YmdHis')
+            ]);
+
+            // Actualizar área del recibo a Costura
+            $recibo->update([
+                'area' => 'Costura'
+            ]);
+
+            DB::commit();
+
+            Log::info('Recibo enviado a Costura', [
+                'pedido_id' => $pedidoId,
+                'numero_pedido' => $pedido->numero_pedido,
+                'prenda_id' => $request->prenda_id,
+                'numero_recibo' => $recibo->consecutivo_actual,
+                'proceso_id' => $nuevoProceso->id,
+                'encargado' => $request->encargado,
+                'usuario_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Recibo enviado a Costura correctamente',
+                'data' => [
+                    'proceso_id' => $nuevoProceso->id,
+                    'proceso_nombre' => 'Costura',
+                    'encargado' => $request->encargado,
+                    'area_anterior' => $areaAnterior
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Error al pasar recibo a Costura', [
+                'pedido_id' => $pedidoId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al pasar a Costura: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Deshacer el proceso de Costura - eliminar proceso y restaurar área anterior
+     */
+    public function deshacerCostura(Request $request, $pedidoId, $prendaId)
+    {
+        try {
+            if (!auth()->user()->hasRole('vista-costura')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permisos para realizar esta acción'
+                ], 403);
+            }
+
+            $request->validate([
+                'tipo_recibo' => 'required|string'
+            ]);
+
+            $pedido = PedidoProduccion::findOrFail($pedidoId);
+
+            // Buscar recibo en área Costura
+            $recibo = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedido->id)
+                ->where('prenda_id', $prendaId)
+                ->whereRaw('UPPER(tipo_recibo) = ?', [strtoupper($request->tipo_recibo)])
+                ->whereRaw('LOWER(TRIM(area)) = ?', ['costura'])
+                ->where('activo', 1)
+                ->first();
+
+            if (!$recibo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recibo no encontrado o no está en Costura'
+                ], 404);
+            }
+
+            DB::beginTransaction();
+
+            // Buscar el proceso de Costura más reciente
+            $procesoCostura = ProcesoPrenda::where('prenda_pedido_id', $prendaId)
+                ->where('numero_pedido', $pedido->numero_pedido)
+                ->where('proceso', 'Costura')
+                ->where('numero_recibo', $recibo->consecutivo_actual)
+                ->whereNull('deleted_at')
+                ->latest('fecha_inicio')
+                ->first();
+
+            if (!$procesoCostura) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró proceso de Costura para eliminar'
+                ], 404);
+            }
+
+            // Buscar el proceso anterior más reciente (NO Costura y mismo recibo)
+            $procesoAnterior = ProcesoPrenda::where('prenda_pedido_id', $prendaId)
+                ->where('numero_pedido', $pedido->numero_pedido)
+                ->where('numero_recibo', $recibo->consecutivo_actual)
+                ->where('proceso', '!=', 'Costura')
+                ->whereNull('deleted_at')
+                ->latest('fecha_inicio')
+                ->first();
+
+            // Restaurar área al proceso anterior o vacío
+            $areaAnterior = $procesoAnterior ? $procesoAnterior->proceso : '';
+
+            $recibo->update([
+                'area' => $areaAnterior
+            ]);
+
+            // Soft delete del proceso de Costura
+            $procesoCostura->delete();
+
+            DB::commit();
+
+            Log::info('Proceso de Costura deshecho', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'proceso_id' => $procesoCostura->id,
+                'area_restaurada' => $areaAnterior,
+                'usuario_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Proceso de Costura deshecho correctamente',
+                'data' => [
+                    'area_nueva' => $areaAnterior,
+                    'proceso_anterior' => $procesoAnterior ? $procesoAnterior->proceso : null
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Error al deshacer Costura', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al deshacer Costura: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

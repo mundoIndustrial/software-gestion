@@ -119,7 +119,6 @@
 
                                 <!-- Contenedor de Botones -->
                                 <div class="orden-buttons" style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;">
-                                    {{-- Botón "Pasar a C.C" o "DESHACER" solo para vista-costura (PRIMERO) --}}
                                     @if(auth()->user()->hasRole('vista-costura'))
                                         @php
                                             $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
@@ -127,7 +126,28 @@
                                             $procesoId = $prenda['recibos'][0]['proceso_id'] ?? null;
                                             $tipoRecibo = strtoupper($tiposUnicos->first() ?? 'COSTURA');
                                             $esCC = in_array(strtolower(trim($areaActual ?? '')), ['control calidad', 'control de calidad']);
+                                            $esCosturaProceso = strtolower(trim($areaActual ?? '')) === 'costura';
+                                            $esTipoReciboCostura = in_array('COSTURA', $tiposUnicos->toArray());
                                         @endphp
+
+                                        {{-- Botón "Pasar a Costura" o "DESHACER COSTURA" solo para recibos tipo COSTURA --}}
+                                        @if($esTipoReciboCostura)
+                                            <button class="btn-pasar-costura {{ $esCosturaProceso ? 'btn-deshacer-costura' : '' }}" 
+                                                    id="btn-costura-{{ $prenda['prenda_id'] }}"
+                                                    data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                    data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                    data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                    data-tipo-recibo="COSTURA"
+                                                    data-recibo="{{ isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'] }}"
+                                                    data-area="{{ $areaActual ?? '' }}"
+                                                    data-proceso-id="{{ $procesoId }}"
+                                                    onclick="manejarPasarACostura(this)">
+                                                <span class="material-symbols-rounded">{{ $esCosturaProceso ? 'undo' : 'checkroom' }}</span>
+                                                {{ $esCosturaProceso ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
+                                            </button>
+                                        @endif
+
+                                        {{-- Botón "Pasar a C.C" o "DESHACER" --}}
                                         <button class="btn-pasar-cc" 
                                                 id="btn-cc-{{ $prenda['prenda_id'] }}"
                                                 data-pedido-id="{{ $prenda['pedido_id'] }}"
@@ -730,6 +750,182 @@
 
     .btn-pasar-cc .material-symbols-rounded {
         font-size: 14px;
+    }
+
+    /* Botón Pasar a Costura */
+    .btn-pasar-costura {
+        background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 4px;
+        color: white;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: fit-content;
+        box-shadow: 0 2px 4px rgba(33, 150, 243, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-pasar-costura:hover {
+        background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+        box-shadow: 0 4px 8px rgba(33, 150, 243, 0.25);
+        transform: translateY(-1px);
+    }
+
+    .btn-pasar-costura .material-symbols-rounded {
+        font-size: 14px;
+    }
+
+    .btn-pasar-costura.btn-deshacer-costura {
+        background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+        box-shadow: 0 2px 4px rgba(255, 152, 0, 0.15);
+    }
+
+    .btn-pasar-costura.btn-deshacer-costura:hover {
+        background: linear-gradient(135deg, #F57C00 0%, #EF6C00 100%);
+        box-shadow: 0 4px 8px rgba(255, 152, 0, 0.25);
+    }
+
+    /* Animación de cargando para botones deshacer */
+    @keyframes spin-loading {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .spin-icon {
+        animation: spin-loading 1s linear infinite;
+        display: inline-block;
+    }
+    button:disabled {
+        cursor: not-allowed !important;
+    }
+
+    /* Modal Costura Encargado */
+    .modal-costura-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-costura-content {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        width: 90%;
+        max-width: 400px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .modal-costura-header {
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .modal-costura-header .modal-icon {
+        font-size: 48px;
+        color: #2196F3;
+    }
+
+    .modal-costura-header h2 {
+        font-size: 1.1rem;
+        color: #333;
+        margin-top: 0.5rem;
+    }
+
+    .modal-costura-body .campo-grupo {
+        margin-bottom: 1rem;
+    }
+
+    .modal-costura-body .campo-grupo label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.4rem;
+    }
+
+    .modal-costura-body .campo-grupo input {
+        width: 100%;
+        padding: 0.7rem 1rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: border-color 0.3s ease;
+        box-sizing: border-box;
+    }
+
+    .modal-costura-body .campo-grupo input:focus {
+        border-color: #2196F3;
+        outline: none;
+    }
+
+    .modal-costura-body .info-prenda {
+        background: #f5f5f5;
+        padding: 0.8rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        font-size: 0.85rem;
+        color: #555;
+    }
+
+    .modal-costura-body .info-prenda strong {
+        color: #333;
+    }
+
+    .modal-costura-footer {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+    }
+
+    .modal-costura-footer .btn-cancelar-costura {
+        flex: 1;
+        padding: 0.7rem;
+        border: 2px solid #e0e0e0;
+        background: white;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition: all 0.3s ease;
+    }
+
+    .modal-costura-footer .btn-cancelar-costura:hover {
+        border-color: #bbb;
+        background: #f5f5f5;
+    }
+
+    .modal-costura-footer .btn-confirmar-costura {
+        flex: 1;
+        padding: 0.7rem;
+        border: none;
+        background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+        color: white;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition: all 0.3s ease;
+    }
+
+    .modal-costura-footer .btn-confirmar-costura:hover {
+        background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+        box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
     }
 
     /* Empty State */
@@ -1732,6 +1928,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 </style>
 
+<!-- Modal Pasar a Costura (Encargado) -->
+<div id="modalCostura" class="modal-costura-overlay">
+    <div class="modal-costura-content">
+        <div class="modal-costura-header">
+            <span class="material-symbols-rounded modal-icon">checkroom</span>
+            <h2>PASAR A COSTURA</h2>
+        </div>
+        <div class="modal-costura-body">
+            <div class="info-prenda">
+                <strong>Prenda:</strong> <span id="costuraPrendaNombre"></span><br>
+                <strong>Recibo:</strong> #<span id="costuraReciboNumero"></span>
+            </div>
+            <div class="campo-grupo">
+                <label for="costuraEncargado">Encargado del proceso</label>
+                <input type="text" id="costuraEncargado" placeholder="Nombre del encargado..." autocomplete="off" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
+            </div>
+        </div>
+        <div class="modal-costura-footer">
+            <button class="btn-cancelar-costura" onclick="cerrarModalCostura()">CANCELAR</button>
+            <button class="btn-confirmar-costura" onclick="confirmarPasarACostura()">CONFIRMAR</button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal de Mensajes -->
 <div id="modalMensaje" class="modal-mensaje-overlay">
     <div class="modal-mensaje-contenido" id="modalMensajeContenido" style="position: relative;">
@@ -2133,6 +2353,187 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.style.display = 'flex';
     }
 
+    // ==========================================
+    // PASAR A COSTURA - Funciones
+    // ==========================================
+    
+    // Variable global para datos temporales del modal costura
+    window.costuraPendiente = null;
+
+    function esAreaCostura(area) {
+        const norm = (area || '').toLowerCase().trim();
+        return norm === 'costura';
+    }
+
+    function manejarPasarACostura(btn) {
+        const pedidoId = btn.dataset.pedidoId;
+        const prendaId = btn.dataset.prendaId;
+        const nombre = btn.dataset.nombre;
+        const tipoRecibo = btn.dataset.tipoRecibo;
+        const recibo = btn.dataset.recibo;
+        const area = btn.dataset.area;
+        const procesoId = btn.dataset.procesoId;
+        const btnId = btn.id;
+
+        if (esAreaCostura(area)) {
+            // DESHACER COSTURA
+            deshacerCostura(pedidoId, prendaId, tipoRecibo, btnId);
+        } else {
+            // Abrir modal para pedir encargado
+            abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, btnId);
+        }
+    }
+
+    function abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, btnId) {
+        const modal = document.getElementById('modalCostura');
+        if (!modal) return;
+
+        document.getElementById('costuraPrendaNombre').textContent = nombre;
+        document.getElementById('costuraReciboNumero').textContent = recibo;
+        document.getElementById('costuraEncargado').value = '';
+
+        window.costuraPendiente = {
+            pedidoId: pedidoId,
+            prendaId: prendaId,
+            tipoRecibo: tipoRecibo,
+            recibo: recibo,
+            btnId: btnId
+        };
+
+        modal.style.display = 'flex';
+        setTimeout(() => document.getElementById('costuraEncargado').focus(), 100);
+    }
+
+    function cerrarModalCostura() {
+        const modal = document.getElementById('modalCostura');
+        if (modal) modal.style.display = 'none';
+        window.costuraPendiente = null;
+    }
+
+    function confirmarPasarACostura() {
+        const encargado = document.getElementById('costuraEncargado').value.trim();
+        if (!encargado) {
+            mostrarError('Error', 'Debes ingresar el nombre del encargado');
+            return;
+        }
+
+        if (!window.costuraPendiente) return;
+
+        const { pedidoId, prendaId, tipoRecibo, recibo, btnId } = window.costuraPendiente;
+
+        // Deshabilitar botón mientras se procesa
+        const btnConfirmar = document.querySelector('.btn-confirmar-costura');
+        if (btnConfirmar) {
+            btnConfirmar.disabled = true;
+            btnConfirmar.textContent = 'PROCESANDO...';
+        }
+
+        fetch('/recibos-novedades/' + pedidoId + '/' + recibo + '/pasar-a-costura', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                prenda_id: prendaId,
+                tipo_recibo: tipoRecibo,
+                encargado: encargado
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Actualizar dinámicamente el botón a DESHACER COSTURA
+                const btn = document.getElementById(btnId);
+                if (btn) {
+                    btn.dataset.area = 'Costura';
+                    btn.dataset.procesoId = data.data.proceso_id;
+                    btn.classList.add('btn-deshacer-costura');
+                    btn.innerHTML = '<span class="material-symbols-rounded">undo</span> DESHACER COSTURA';
+                }
+
+                cerrarModalCostura();
+                mostrarExito('Éxito', 'Recibo enviado a Costura correctamente');
+                console.log('✓ Prenda enviada a Costura. Encargado: ' + encargado);
+            } else {
+                mostrarError('Error', data.message || 'Error al pasar a Costura');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            mostrarError('Error', 'Error al procesar la solicitud');
+        })
+        .finally(() => {
+            if (btnConfirmar) {
+                btnConfirmar.disabled = false;
+                btnConfirmar.textContent = 'CONFIRMAR';
+            }
+        });
+    }
+
+    function deshacerCostura(pedidoId, prendaId, tipoRecibo, btnId) {
+        const btn = document.getElementById(btnId);
+        if (!btn || btn.disabled) return;
+
+        // Bloquear botón y mostrar cargando
+        btn.disabled = true;
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<span class="material-symbols-rounded spin-icon">sync</span> PROCESANDO...';
+        btn.style.opacity = '0.6';
+        btn.style.pointerEvents = 'none';
+
+        fetch('/recibos-novedades/' + pedidoId + '/' + prendaId + '/deshacer-costura', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                tipo_recibo: tipoRecibo
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Actualizar botón a PASAR A COSTURA
+                if (btn) {
+                    btn.dataset.area = data.data.area_nueva || '';
+                    btn.dataset.procesoId = '';
+                    btn.classList.remove('btn-deshacer-costura');
+                    btn.innerHTML = '<span class="material-symbols-rounded">checkroom</span> PASAR A COSTURA';
+                }
+
+                mostrarExito('Éxito', 'Proceso de Costura deshecho correctamente');
+                console.log('✓ Costura deshecha. Área restaurada a: ' + (data.data.area_nueva || 'sin área'));
+            } else {
+                btn.innerHTML = originalHTML;
+                mostrarError('Error', data.message || 'Error al deshacer Costura');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            btn.innerHTML = originalHTML;
+            mostrarError('Error', 'Error al procesar la solicitud');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = '';
+        });
+    }
+
+    // Cerrar modal costura al click fuera
+    window.addEventListener('click', function(event) {
+        const modalCostura = document.getElementById('modalCostura');
+        if (modalCostura && event.target === modalCostura) {
+            cerrarModalCostura();
+        }
+    });
+
+    // ==========================================
+    // CONTROL CALIDAD - Funciones
+    // ==========================================
+
     // Función dinámica para pasar recibo a Control Calidad o Deshacer
     function esAreaControlCalidad(area) {
         const norm = (area || '').toLowerCase().trim().replace(/[-_]/g, ' ').replace(/\s+/g, ' ');
@@ -2151,6 +2552,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (esAreaControlCalidad(area)) {
             // DESHACER
+            const btnCC = document.getElementById(btnId);
+            if (!btnCC || btnCC.disabled) return;
+
+            // Bloquear botón y mostrar cargando
+            btnCC.disabled = true;
+            const originalCCHTML = btnCC.innerHTML;
+            btnCC.innerHTML = '<span class="material-symbols-rounded spin-icon">sync</span> PROCESANDO...';
+            btnCC.style.opacity = '0.6';
+            btnCC.style.pointerEvents = 'none';
+
             fetch('/recibos-novedades/' + pedidoId + '/' + prendaId + '/deshacer-control-calidad', {
                 method: 'DELETE',
                 headers: {
@@ -2166,21 +2577,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.success) {
                     // Actualizar dinámicamente el botón
                     const nuevoArea = data.data.area_nueva;
-                    const btn = document.getElementById(btnId);
-                    btn.dataset.area = nuevoArea;
-                    btn.dataset.procesoId = '';
+                    btnCC.dataset.area = nuevoArea;
+                    btnCC.dataset.procesoId = '';
                     
-                    const icon = btn.querySelector('.material-symbols-rounded');
-                    icon.textContent = 'check_circle';
-                    btn.innerHTML = '<span class="material-symbols-rounded">check_circle</span> PASAR A C.C';
+                    btnCC.innerHTML = '<span class="material-symbols-rounded">check_circle</span> PASAR A C.C';
                     
                     console.log('✓ Control Calidad deshecho. Área restaurada a: ' + nuevoArea);
                 } else {
+                    btnCC.innerHTML = originalCCHTML;
                     console.error('❌ Error: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
+                btnCC.innerHTML = originalCCHTML;
+            })
+            .finally(() => {
+                btnCC.disabled = false;
+                btnCC.style.opacity = '1';
+                btnCC.style.pointerEvents = '';
             });
         } else {
             // PASAR A C.C

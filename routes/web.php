@@ -2777,6 +2777,14 @@ Route::middleware(['auth'])->prefix('recibos-novedades')->name('recibos-novedade
     Route::delete('{pedidoId}/{prendaId}/deshacer-control-calidad', [App\Infrastructure\Http\Controllers\ReciboCosturaController::class, 'deshacerControlCalidad'])
         ->name('deshacer-control-calidad');
     
+    // Pasar recibo a Costura (con encargado)
+    Route::post('{pedidoId}/{numeroRecibo}/pasar-a-costura', [App\Infrastructure\Http\Controllers\ReciboCosturaController::class, 'pasarACostura'])
+        ->name('pasar-a-costura');
+    
+    // Deshacer Costura
+    Route::delete('{pedidoId}/{prendaId}/deshacer-costura', [App\Infrastructure\Http\Controllers\ReciboCosturaController::class, 'deshacerCostura'])
+        ->name('deshacer-costura');
+    
     // Actualizar una novedad existente
     Route::put('{novedadId}', [App\Http\Controllers\Api_temp\RecibosNovedadesController::class, 'update'])
         ->name('update');
