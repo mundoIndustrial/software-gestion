@@ -135,13 +135,13 @@
     </div>
 </div>
 
-<!-- Modal Agregar EPP al Pedido -->
+<!-- Modal Agregar EPP al Pedido - REDISEÑO CON TABLA MÚLTIPLE -->
 <div id="modalAgregarEPP" class="fixed inset-0 bg-black/50 flex items-center justify-center" style="display: none; z-index: 9999999;">
-    <div class="bg-white rounded-lg w-full max-w-2xl shadow-2xl overflow-hidden" style="z-index: 10000000; max-height: 90vh; display: flex; flex-direction: column;">
+    <div class="bg-white rounded-lg w-full max-w-3xl shadow-2xl overflow-hidden" style="z-index: 10000000; max-height: 95vh; height: 95vh; display: flex; flex-direction: column; margin: 0 20px;">
         
         <!-- Header Azul -->
         <div class="bg-blue-600 px-6 py-4 flex justify-between items-center flex-shrink-0">
-            <h2 class="text-white text-lg font-bold">Agregar EPP al Pedido</h2>
+            <h2 class="text-white text-lg font-bold">Agregar EPP al Pedido - Selección Múltiple</h2>
             <button onclick="cerrarModalAgregarEPP()" class="text-white hover:bg-blue-700 p-1 rounded transition">
                 <i class="material-symbols-rounded">close</i>
             </button>
@@ -150,33 +150,40 @@
         <!-- Body con scroll -->
         <div class="p-6 space-y-4 overflow-y-auto flex-1" style="max-height: calc(90vh - 140px);">
             
-            <!-- Buscador -->
-            <div>
-                <label for="inputBuscadorEPP" class="text-sm font-medium text-gray-700 block mb-2">Buscar por Referencia o Nombre</label>
-                <div class="relative">
-                    <i class="material-symbols-rounded absolute left-3 top-2.5 text-gray-400 text-xl">search</i>
-                    <input 
-                        type="text" 
-                        id="inputBuscadorEPP"
-                        onkeyup="filtrarEPPBuscador(this.value)"
-                        placeholder="Ej. Casco, Nitrilo, Botas..." 
-                        class="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 text-sm"
+            <!-- Buscador con Dropdown Multi-Select -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="flex gap-3 items-end">
+                    <div class="flex-1 relative">
+                        <label for="inputBuscadorEPPTabla" class="text-sm font-medium text-gray-700 block mb-2">
+                            <i class="material-symbols-rounded inline text-base mr-1">search</i>
+                            Selecciona EPP (búsqueda y multi-select)
+                        </label>
+                        <input 
+                            type="text" 
+                            id="inputBuscadorEPPTabla"
+                            onkeyup="filtrarDropdownEPP(this.value)"
+                            placeholder="Escribe para buscar y selecciona..." 
+                            class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 text-sm"
+                        >
+                        <!-- Dropdown de opciones -->
+                        <div id="dropdownEPP" class="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg hidden z-50" style="max-height: 400px; overflow-y: auto;">
+                            <div class="p-2 space-y-1" id="opcionesDropdownEPP">
+                                <!-- Se llena dinámicamente -->
+                            </div>
+                            <div id="mensajeSinResultados" class="p-4 text-center text-gray-500 hidden">
+                                <p>Sin resultados</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button 
+                        type="button"
+                        onclick="abrirFormularioCrearEPP()"
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium flex items-center gap-2 hover:bg-green-700 transition text-sm"
                     >
+                        <i class="material-symbols-rounded">add_circle</i>
+                        Nuevo EPP
+                    </button>
                 </div>
-                <!-- Contenedor de resultados de búsqueda - DENTRO DEL FORMULARIO -->
-                <div id="resultadosBuscadorEPP" class="bg-white border border-gray-300 border-t-0 rounded-b-lg shadow max-h-64 overflow-y-auto mt-0" style="display: none;"></div>
-            </div>
-
-            <!-- Botón Crear Nuevo EPP -->
-            <div class="flex gap-2">
-                <button 
-                    type="button"
-                    onclick="abrirFormularioCrearEPP()"
-                    class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-blue-700 transition text-sm"
-                >
-                    <i class="material-symbols-rounded" style="font-size: 20px;">add_circle</i>
-                    Crear Nuevo EPP
-                </button>
             </div>
 
             <!-- Formulario para Crear Nuevo EPP (inicialmente oculto) -->
@@ -218,8 +225,31 @@
                 </div>
             </div>
 
+            <!-- TABLA DE EPP SELECCIONADOS -->
+            <div id="listaEPPAgregados" class="border border-gray-200 rounded-lg overflow-hidden" style="display: none;">
+                <h3 class="text-sm font-semibold text-gray-900 px-4 py-3 bg-gray-50 border-b flex items-center gap-2">
+                    <i class="material-symbols-rounded">list_alt</i>
+                    EPP Seleccionados (<span id="contadorEPP">0</span>)
+                </h3>
+                <div class="overflow-x-auto" style="max-height: 300px; overflow-y: auto;">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 border-b border-gray-200 sticky top-0">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-gray-700 font-semibold">EPP</th>
+                                <th class="px-4 py-2 text-center text-gray-700 font-semibold w-20">Cant.</th>
+                                <th class="px-4 py-2 text-left text-gray-700 font-semibold flex-1">Observaciones</th>
+                                <th class="px-4 py-2 text-center text-gray-700 font-semibold w-16">Fotos</th>
+                                <th class="px-4 py-2 text-center text-gray-700 font-semibold w-16">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaEPP">
+                            <!-- Se llena dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-            <!-- Tarjeta Producto (inicialmente oculta) -->
+            <!-- Tarjeta Producto (inicialmente oculta) - PARA MODO EDICIÓN -->
             <div id="productoCardEPP" class="bg-blue-50 border border-blue-200 rounded-lg p-4 animate-in fade-in" style="display: none;">
                 <div>
                     <label for="nombreProductoEPP" class="text-sm font-medium text-gray-700 block mb-2">Nombre del EPP</label>
@@ -233,8 +263,7 @@
                 </div>
             </div>
 
-            <!-- Cantidad y Talla -->
-            <!-- Solo Cantidad -->
+            <!-- Cantidad y Talla - PARA MODO EDICIÓN -->
             <div id="formularioAgregarEPP" style="display: none;">
                 <div>
                     <label for="cantidadEPP" class="text-sm font-medium text-gray-700 block mb-2">Cantidad</label>
@@ -251,7 +280,7 @@
                 </div>
             </div>
 
-            <!-- Valor Unitario (opcional) y Total -->
+            <!-- Valor Unitario (opcional) y Total - PARA MODO EDICIÓN -->
             <div id="valorUnitarioTotalContainer" style="display: none;">
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -279,7 +308,7 @@
                 </div>
             </div>
 
-            <!-- Observaciones -->
+            <!-- Observaciones - PARA MODO EDICIÓN -->
             <div id="observacionesContainer" style="display: none;">
                 <label for="observacionesEPP" class="text-sm font-medium text-gray-700 block mb-2">Observaciones (Opcional)</label>
                 <textarea 
@@ -291,50 +320,11 @@
                 ></textarea>
             </div>
 
-            <!-- Sección de Fotos (opcional) -->
-            <div id="seccionFotosEPP" style="display: none;">
-                <div class="flex items-center justify-between mb-3">
-                    <label class="text-sm font-medium text-gray-700">Fotos del EPP (Opcional)</label>
-                    <button type="button" onclick="agregarFotoEPP()" class="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg font-medium flex items-center gap-1 hover:bg-blue-700 transition">
-                        <i class="material-symbols-rounded" style="font-size: 16px;">add_photo_alternate</i>
-                        Agregar Foto
-                    </button>
-                </div>
-                
-                <!-- Contenedor de imágenes -->
-                <div id="contenedorFotosEPP" class="grid grid-cols-3 gap-3 mb-4 border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[120px] transition-all"
-                     tabindex="0" 
-                     style="outline: none;"
-                     data-zona="epp"
-                     onmouseover="this.focus()"
-                     onmouseleave="this.blur()"
-                     ondrop="handleDropEPP(event)"
-                     ondragover="handleDragOverEPP(event)"
-                     ondragleave="handleDragLeaveEPP(event)">
-                    
-                    <!-- Mensaje inicial -->
-                    <div id="mensajeDragDrop" class="col-span-3 flex flex-col items-center justify-center text-gray-400">
-                        <i class="material-symbols-rounded text-4xl mb-2">cloud_upload</i>
-                        <p class="text-sm">Arrastra imágenes aquí o haz clic en "Agregar Foto"</p>
-                        <p class="text-xs">También puedes pegar con Ctrl+V</p>
-                        <p class="text-xs">Formatos: JPG, PNG, GIF, WebP, JFIF</p>
-                    </div>
-                    
-                    <!-- Las imágenes se agregarán aquí dinámicamente -->
-                </div>
-                
-                <!-- Input oculto para subir archivos -->
-                <input 
-                    type="file" 
-                    id="inputFotosEPP" 
-                    multiple 
-                    accept="image/*" 
-                    style="display: none;"
-                    onchange="manejarSubidaFotosEPP(this)"
-                >
-            </div>
 
-            <!-- Botón Agregar a Lista -->
+            <!-- Sección de Fotos - PARA MODO EDICIÓN -->
+            <!-- Nota: La edición de EPPs se realiza en el modal-editar-epp.blade.php -->
+
+            <!-- Botón Agregar a Lista - PARA MODO EDICIÓN -->
             <button 
                 id="btnAgregarALista"
                 onclick="agregarEPPALista()"
@@ -345,58 +335,39 @@
                 <i class="material-symbols-rounded" style="font-size: 20px;">add</i>
                 Agregar a la Lista
             </button>
-
-            <!-- Lista de EPP agregados -->
-            <div id="listaEPPAgregados" style="display: none;">
-                <h3 class="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                    <i class="material-symbols-rounded">list</i>
-                    EPP Agregados
-                </h3>
-                <div class="border border-gray-200 rounded-lg overflow-hidden">
-                    <table class="w-full text-sm">
-                        <thead class="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th class="px-4 py-2 text-left text-gray-700 font-medium">Foto</th>
-                                <th class="px-4 py-2 text-left text-gray-700 font-medium">EPP</th>
-                                <th class="px-4 py-2 text-left text-gray-700 font-medium">Cantidad</th>
-                                <th class="px-4 py-2 text-left text-gray-700 font-medium">Observaciones</th>
-                                <th class="px-4 py-2 text-center text-gray-700 font-medium">Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="cuerpoTablaEPP">
-                            <!-- Se llena dinámicamente -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
 
         <!-- Footer fijo -->
-        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3 flex-shrink-0">
-            <button onclick="cerrarModalAgregarEPP()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 transition text-sm">
-                Cancelar
-            </button>
-            <!-- Botón Finalizar (visible en modo normal) -->
-            <button 
-                id="btnFinalizarAgregarEPP"
-                onclick="finalizarAgregarEPP()"
-                disabled
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium flex items-center gap-2 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition text-sm"
-            >
-                <i class="material-symbols-rounded" style="font-size: 20px;">check_circle</i>
-                Finalizar
-            </button>
-            <!-- Botón Guardar Cambios (visible en modo edición) -->
-            <button 
-                id="btnGuardarCambiosEPP"
-                onclick="guardarEdicionEPP()"
-                disabled
-                class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium flex items-center gap-2 hover:bg-green-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition text-sm"
-                style="display: none;"
-            >
-                <i class="material-symbols-rounded" style="font-size: 20px;">save</i>
-                Guardar Cambios
-            </button>
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center flex-shrink-0">
+            <div class="text-sm text-gray-600">
+                <span id="totalSeleccionados">0</span> EPP seleccionados
+            </div>
+            <div class="flex justify-end gap-3">
+                <button onclick="cerrarModalAgregarEPP()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 transition text-sm">
+                    Cancelar
+                </button>
+                <!-- Botón Finalizar (visible en modo normal) -->
+                <button 
+                    id="btnFinalizarAgregarEPP"
+                    onclick="finalizarAgregarEPP()"
+                    disabled
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium flex items-center gap-2 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition text-sm"
+                >
+                    <i class="material-symbols-rounded" style="font-size: 20px;">check_circle</i>
+                    Finalizar
+                </button>
+                <!-- Botón Guardar Cambios (visible en modo edición) -->
+                <button 
+                    id="btnGuardarCambiosEPP"
+                    onclick="guardarEdicionEPP()"
+                    disabled
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium flex items-center gap-2 hover:bg-green-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition text-sm"
+                    style="display: none;"
+                >
+                    <i class="material-symbols-rounded" style="font-size: 20px;">save</i>
+                    Guardar Cambios
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -406,70 +377,556 @@
 // Variables globales
 let productoSeleccionadoEPP = null;
 let eppAgregadosList = []; // Lista de EPP agregados
+let eppDisponiblesList = []; // Lista de EPP disponibles para mostrar en tabla
 
+/**
+ * Cargar EPP disponibles en la tabla de selección
+ */
+async function cargarEPPDisponibles() {
+    try {
+        console.log('[cargarEPPDisponibles] Iniciando carga de EPP...');
+        
+        // Llamar al endpoint API para obtener los primeros EPPs CON paginación
+        const response = await fetch('/api/epp/gestion');
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            eppDisponiblesList = result.data || [];
+            console.log('[cargarEPPDisponibles] EPPs cargados:', eppDisponiblesList.length, 'Total en BD:', result.total);
+        } else {
+            console.warn('[cargarEPPDisponibles] Error en la respuesta del API');
+            eppDisponiblesList = [];
+        }
+        
+        // Renderizar dropdown inicial
+        renderizarDropdownEPP(eppDisponiblesList);
+        
+    } catch (error) {
+        console.error('[cargarEPPDisponibles] Error:', error);
+        eppDisponiblesList = [];
+    }
+}
+
+/**
+ * Mostrar dropdown de EPP disponibles
+ */
+function mostrarDropdownEPP() {
+    const dropdown = document.getElementById('dropdownEPP');
+    dropdown.classList.remove('hidden');
+    console.log('[mostrarDropdownEPP] Dropdown mostrado');
+}
+
+/**
+ * Renderizar opciones en el dropdown
+ */
+function renderizarDropdownEPP(epps) {
+    const container = document.getElementById('opcionesDropdownEPP');
+    const mensajeSinResultados = document.getElementById('mensajeSinResultados');
+    
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (!epps || epps.length === 0) {
+        mensajeSinResultados.classList.remove('hidden');
+        return;
+    }
+    
+    mensajeSinResultados.classList.add('hidden');
+    
+    epps.forEach(epp => {
+        const label = document.createElement('label');
+        label.className = 'flex items-center p-2 hover:bg-blue-50 rounded cursor-pointer gap-2';
+        
+        const isChecked = eppAgregadosList.find(e => e.id == epp.id);
+        
+        label.innerHTML = `
+            <input 
+                type="checkbox" 
+                class="checkbox-epp-dropdown w-4 h-4" 
+                data-epp-id="${epp.id}" 
+                data-epp-nombre="${epp.nombre_completo || epp.nombre}"
+                ${isChecked ? 'checked' : ''}
+                onchange="agregarEPPDesdeDropdown(this)"
+            >
+            <div class="flex-1">
+                <p class="font-medium text-gray-900 text-sm">${epp.nombre_completo || epp.nombre}</p>
+                ${epp.marca ? `<p class="text-xs text-gray-500">${epp.marca}</p>` : ''}
+            </div>
+        `;
+        
+        container.appendChild(label);
+    });
+    
+    console.log('[renderizarDropdownEPP] Dropdown renderizado con', epps.length, 'opciones');
+}
+
+/**
+ * Filtrar dropdown según búsqueda (consulta al servidor sin límite)
+ */
+async function filtrarDropdownEPP(valor) {
+    const dropdown = document.getElementById('dropdownEPP');
+    const busqueda = valor.toLowerCase().trim();
+    
+    // Si no hay búsqueda, ocultar dropdown
+    if (!busqueda) {
+        dropdown.classList.add('hidden');
+        console.log('[filtrarDropdownEPP] Dropdown ocultado (sin búsqueda)');
+        return;
+    }
+    
+    try {
+        // Buscar en el servidor SIN límite de paginación
+        const response = await fetch(`/api/epp/gestion?q=${encodeURIComponent(busqueda)}&per_page=10000`);
+        const result = await response.json();
+        
+        let filtrados = [];
+        if (result.success && result.data) {
+            filtrados = result.data || [];
+        }
+        
+        console.log('[filtrarDropdownEPP] Búsqueda en servidor:', busqueda, '- Resultados:', filtrados.length);
+        
+        // Actualizar la lista local con los resultados de búsqueda
+        // Renderizar y mostrar
+        renderizarDropdownEPP(filtrados);
+        mostrarDropdownEPP();
+        
+    } catch (error) {
+        console.error('[filtrarDropdownEPP] Error en búsqueda:', error);
+    }
+}
+
+/**
+ * Agregar EPP desde el dropdown
+ */
+function agregarEPPDesdeDropdown(checkbox) {
+    const eppId = parseInt(checkbox.getAttribute('data-epp-id'));
+    const nombre = checkbox.getAttribute('data-epp-nombre');
+    
+    if (checkbox.checked) {
+        // Agregar a la lista si no existe
+        if (!eppAgregadosList.find(e => e.id == eppId)) {
+            const epp = eppDisponiblesList.find(e => e.id == eppId);
+            eppAgregadosList.push({
+                id: eppId,
+                epp_id: eppId,
+                nombre: nombre,
+                nombre_epp: nombre,
+                nombre_completo: nombre,
+                cantidad: 1,
+                observaciones: '-',
+                imagenes: [],
+                imagen: epp?.imagen || ''
+            });
+            console.log('[agregarEPPDesdeDropdown] EPP agregado:', eppId);
+        }
+    } else {
+        // Quitar de la lista
+        eppAgregadosList = eppAgregadosList.filter(e => e.id != eppId);
+        console.log('[agregarEPPDesdeDropdown] EPP removido:', eppId);
+    }
+    
+    actualizarSeleccionEPP();
+    renderizarTablaEPPAgregados();
+}
+
+
+
+/**
+ * Actualizar contador y estado de selección
+ */
+function actualizarSeleccionEPP() {
+    const total = eppAgregadosList.length;
+    document.getElementById('totalSeleccionados').textContent = total;
+    document.getElementById('btnFinalizarAgregarEPP').disabled = total === 0;
+    
+    // Mostrar/ocultar tabla de agregados
+    const tabla = document.getElementById('listaEPPAgregados');
+    if (total > 0) {
+        tabla.style.display = 'block';
+        document.getElementById('contadorEPP').textContent = total;
+    } else {
+        tabla.style.display = 'none';
+    }
+    
+    console.log('[actualizarSeleccionEPP] Total EPPs:', total);
+}
+
+/**
+ * Cerrar dropdown cuando se hace clic fuera
+ */
+document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('dropdownEPP');
+    const input = document.getElementById('inputBuscadorEPPTabla');
+    
+    if (!dropdown || !input) return;
+    
+    if (e.target !== input && !dropdown.contains(e.target)) {
+        dropdown.classList.add('hidden');
+    }
+});
+
+/**
+ * Manejo de Ctrl+V (paste) para agregar fotos en la tabla de EPP agregados
+ */
+document.addEventListener('paste', function(e) {
+    const modal = document.getElementById('modalAgregarEPP');
+    if (!modal || modal.style.display === 'none') return;
+    
+    const items = e.clipboardData.items;
+    if (!items) return;
+    
+    if (eppAgregadosList.length === 0) return;
+    
+    // Detectar cuál zona de fotos tiene foco
+    let eppId = null;
+    const focusedElement = document.activeElement;
+    
+    if (focusedElement && focusedElement.id && focusedElement.id.startsWith('fotoZona_')) {
+        // Si el elemento enfocado es una zona de fotos, extraer el EPP ID
+        eppId = parseInt(focusedElement.id.replace('fotoZona_', ''));
+    } else {
+        // Si no hay zona enfocada, buscar en el elemento más cercano con clase fotoZona
+        let parent = focusedElement;
+        while (parent && !parent.id?.startsWith('fotoZona_')) {
+            parent = parent.parentElement;
+        }
+        if (parent && parent.id?.startsWith('fotoZona_')) {
+            eppId = parseInt(parent.id.replace('fotoZona_', ''));
+        }
+    }
+    
+    // Si no logramos detectar, usar el último EPP
+    if (!eppId) {
+        eppId = eppAgregadosList[eppAgregadosList.length - 1].id;
+    }
+    
+    // Obtener el EPP con el ID detectado
+    const epp = eppAgregadosList.find(e => e.id == eppId);
+    if (!epp) return;
+    
+    if (!epp.imagenes) epp.imagenes = [];
+    
+    for (let item of items) {
+        if (item.type.startsWith('image/')) {
+            const file = item.getAsFile();
+            // Usar blob URL en lugar de base64
+            const blobUrl = URL.createObjectURL(file);
+            epp.imagenes.push({
+                file: file,
+                previewUrl: blobUrl,
+                nombre: file.name
+            });
+            renderizarTablaEPPAgregados();
+        }
+    }
+    
+    console.log('[paste] Imágenes pegadas en EPP:', eppId);
+});
+
+/**
+ * Soporte para click derecho en miniaturas de fotos para eliminar
+ */
+document.addEventListener('contextmenu', function(e) {
+    const miniatura = e.target.closest('.foto-miniatura');
+    if (miniatura) {
+        e.preventDefault();
+        const eppId = parseInt(miniatura.dataset.eppId);
+        const fotoIndex = parseInt(miniatura.dataset.fotoIndex);
+        
+        if (confirm('¿Eliminar esta imagen?')) {
+            eliminarFotoEPP(eppId, fotoIndex);
+        }
+    }
+});
+
+/**
+ * Soporte para tecla Delete cuando está enfocada una zona de fotos
+ */
+document.addEventListener('keydown', function(e) {
+    // Si se presiona Delete y hay una zona de fotos enfocada
+    if (e.key === 'Delete') {
+        const fotoZona = document.activeElement?.closest('[id^="fotoZona_"]');
+        if (fotoZona) {
+            e.preventDefault();
+            const eppId = parseInt(fotoZona.id.replace('fotoZona_', ''));
+            const epp = eppAgregadosList.find(e => e.id == eppId);
+            
+            // Eliminar la última foto agregada
+            if (epp && epp.imagenes && epp.imagenes.length > 0) {
+                const ultimaIndex = epp.imagenes.length - 1;
+                if (confirm('¿Eliminar la última imagen agregada?')) {
+                    eliminarFotoEPP(eppId, ultimaIndex);
+                }
+            }
+        }
+    }
+});
+
+/**
+ * Renderizar tabla de EPP agregados
+ */
+function renderizarTablaEPPAgregados() {
+    const tbody = document.getElementById('cuerpoTablaEPP');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    eppAgregadosList.forEach((epp, idx) => {
+        const row = document.createElement('tr');
+        row.className = idx % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+        
+        // Miniaturas de fotos
+        let fotosHtml = '';
+        if (epp.imagenes && epp.imagenes.length > 0) {
+            const fotosMostrar = epp.imagenes.slice(0, 3);
+            fotosHtml = fotosMostrar.map((foto, i) => 
+                `<div class="relative group foto-miniatura cursor-pointer" 
+                    data-epp-id="${epp.id}" 
+                    data-foto-index="${i}"
+                    title="Click para eliminar, Ctrl+Click para expandir">
+                    <img src="${foto.previewUrl || foto.base64}" alt="Foto ${i+1}" class="w-8 h-8 object-cover rounded border border-gray-200">
+                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 rounded transition flex items-center justify-center">
+                        <button type="button" 
+                            onclick="event.stopPropagation(); eliminarFotoEPP(${epp.id}, ${i})" 
+                            class="opacity-0 group-hover:opacity-100 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center transition transform hover:scale-110 hover:bg-red-600"
+                            title="Eliminar imagen">
+                            <i class="material-symbols-rounded" style="font-size: 14px;">delete</i>
+                        </button>
+                    </div>
+                </div>`
+            ).join('');
+            if (epp.imagenes.length > 3) {
+                fotosHtml += `<span class="text-xs text-gray-500 font-medium bg-gray-200 rounded px-2 py-1 cursor-pointer hover:bg-gray-300 transition" title="Haz clic para ver el resto">+${epp.imagenes.length - 3}</span>`;
+            }
+        }
+        
+        row.innerHTML = `
+            <td class="px-4 py-2 text-gray-900 font-medium">${epp.nombre_completo}</td>
+            <td class="px-4 py-2 text-center">
+                <input 
+                    type="number" 
+                    value="${epp.cantidad}" 
+                    min="1" 
+                    onchange="actualizarCantidadEPP(${epp.id}, this.value)"
+                    class="w-14 px-2 py-1 border border-gray-300 rounded text-center text-sm"
+                >
+            </td>
+            <td class="px-4 py-2 text-gray-700 text-xs">
+                <input 
+                    type="text" 
+                    value="${epp.observaciones}" 
+                    onchange="actualizarObservacionesEPP(${epp.id}, this.value)"
+                    class="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+                    placeholder="Observaciones..."
+                >
+            </td>
+            <td class="px-4 py-2 text-center">
+                <div class="flex gap-1 items-center justify-center flex-wrap border-2 border-dashed border-gray-300 rounded p-2 min-h-10 cursor-pointer bg-gray-50 hover:bg-gray-100 transition" 
+                    id="fotoZona_${epp.id}"
+                    tabindex="0"
+                    ondrop="manejarDropFotosEPP(event, ${epp.id})" 
+                    ondragover="manejarDragOverFotosEPP(event)" 
+                    ondragleave="manejarDragLeaveFotosEPP(event)"
+                    onclick="document.getElementById('inputFotos_${epp.id}').click()">
+                    ${fotosHtml ? `<div class="flex gap-1 items-center">${fotosHtml}</div>` : '<span class="text-gray-400 text-xs">Arrastra, pega (Ctrl+V) o haz clic</span>'}
+                </div>
+                <input type="file" id="inputFotos_${epp.id}" multiple accept="image/*" style="display: none;" onchange="manejarSeleccionFotosEPP(event, ${epp.id})">
+            </td>
+            <td class="px-4 py-2 text-center">
+                <button 
+                    type="button"
+                    onclick="eliminarEPPDeLista(${epp.id})"
+                    class="text-red-600 hover:text-red-800 font-medium transition"
+                >
+                    <i class="material-symbols-rounded" style="font-size: 18px;">delete</i>
+                </button>
+            </td>
+        `;
+        
+        tbody.appendChild(row);
+    });
+    
+    console.log('[renderizarTablaEPPAgregados] Tabla actualizada con', eppAgregadosList.length, 'EPPs');
+}
+
+/**
+ * Agregar fotos a un EPP desde selección de archivos
+ */
+function manejarSeleccionFotosEPP(event, eppId) {
+    const files = event.target.files;
+    const epp = eppAgregadosList.find(e => e.id == eppId);
+    if (!epp) return;
+    
+    if (!epp.imagenes) epp.imagenes = [];
+    
+    Array.from(files).forEach(file => {
+        // Usar blob URL en lugar de base64
+        const blobUrl = URL.createObjectURL(file);
+        epp.imagenes.push({
+            file: file,
+            previewUrl: blobUrl,
+            nombre: file.name
+        });
+        renderizarTablaEPPAgregados();
+    });
+    
+    console.log('[manejarSeleccionFotosEPP] Fotos agregadas para EPP', eppId);
+}
+
+/**
+ * Manejo de drag & drop para fotos
+ */
+function manejarDragOverFotosEPP(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.classList.add('bg-blue-100', 'border-blue-400');
+}
+
+function manejarDragLeaveFotosEPP(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.classList.remove('bg-blue-100', 'border-blue-400');
+}
+
+function manejarDropFotosEPP(event, eppId) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.classList.remove('bg-blue-100', 'border-blue-400');
+    
+    const files = event.dataTransfer.files;
+    const epp = eppAgregadosList.find(e => e.id == eppId);
+    if (!epp) return;
+    
+    if (!epp.imagenes) epp.imagenes = [];
+    
+    Array.from(files).forEach(file => {
+        if (file.type.startsWith('image/')) {
+            // Usar blob URL en lugar de base64
+            const blobUrl = URL.createObjectURL(file);
+            epp.imagenes.push({
+                file: file,
+                previewUrl: blobUrl,
+                nombre: file.name
+            });
+            renderizarTablaEPPAgregados();
+        }
+    });
+    
+    console.log('[manejarDropFotosEPP] Fotos agregadas por drag & drop para EPP', eppId);
+}
+
+/**
+ * Eliminar una foto de un EPP
+ * Opciones de eliminación:
+ * 1. Click en el botón X
+ * 2. Click derecho en la miniatura
+ * 3. Presionar Delete cuando está seleccionada
+ */
+function eliminarFotoEPP(eppId, indexFoto, event) {
+    // Prevenir propagación si viene de un evento
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    const epp = eppAgregadosList.find(e => e.id == eppId);
+    if (epp && epp.imagenes) {
+        const fotoEliminada = epp.imagenes[indexFoto];
+        
+        // Liberar la blob URL para ahorrar memoria
+        if (fotoEliminada && fotoEliminada.previewUrl) {
+            URL.revokeObjectURL(fotoEliminada.previewUrl);
+        }
+        
+        epp.imagenes.splice(indexFoto, 1);
+        renderizarTablaEPPAgregados();
+        console.log('[eliminarFotoEPP] Foto eliminada de EPP', eppId, '- Nombre:', fotoEliminada?.nombre);
+    }
+}
+
+/**
+ * Manejar eventos de las miniaturas (click derecho, etc.)
+ */
+function manejarEventoMiniatura(event) {
+    if (event.button === 2) { // Click derecho
+        event.preventDefault();
+        const miniatura = event.target.closest('.foto-miniatura');
+        if (miniatura) {
+            const eppId = parseInt(miniatura.dataset.eppId);
+            const fotoIndex = parseInt(miniatura.dataset.fotoIndex);
+            
+            // Mostrar confirmación simple
+            if (confirm('¿Eliminar esta imagen?')) {
+                eliminarFotoEPP(eppId, fotoIndex);
+            }
+        }
+    }
+}
+
+/**
+ * Actualizar cantidad de EPP agregado
+ */
+function actualizarCantidadEPP(eppId, cantidad) {
+    const index = eppAgregadosList.findIndex(e => e.id == eppId);
+    if (index !== -1) {
+        eppAgregadosList[index].cantidad = parseInt(cantidad) || 1;
+        console.log('[actualizarCantidadEPP] Cantidad actualizada para EPP', eppId);
+    }
+}
+
+/**
+ * Actualizar observaciones de EPP agregado
+ */
+function actualizarObservacionesEPP(eppId, observaciones) {
+    const index = eppAgregadosList.findIndex(e => e.id == eppId);
+    if (index !== -1) {
+        eppAgregadosList[index].observaciones = observaciones || '-';
+        console.log('[actualizarObservacionesEPP] Observaciones actualizadas para EPP', eppId);
+    }
+}
+
+/**
+ * Eliminar EPP de la lista agregada
+ */
+function eliminarEPPDeLista(eppId) {
+    const index = eppAgregadosList.findIndex(e => e.id == eppId);
+    if (index !== -1) {
+        eppAgregadosList.splice(index, 1);
+        
+        // Desmarcar checkbox
+        const checkbox = document.querySelector(`input[data-epp-id="${eppId}"]`);
+        if (checkbox) checkbox.checked = false;
+        
+        // Actualizar UI
+        actualizarSeleccionEPP();
+        renderizarTablaEPPAgregados();
+        
+        console.log('[eliminarEPPDeLista] EPP eliminado:', eppId);
+    }
+}
+
+/**
+ * Abrir modal y cargar EPP disponibles
+ */
 function abrirModalAgregarEPP() {
-    console.log('📖 [abrirModalAgregarEPP] Abriendo modal');
+    console.log('[abrirModalAgregarEPP] Abriendo modal con tabla de selección múltiple');
     const modal = document.getElementById('modalAgregarEPP');
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-
-    // Verificar si estamos en modo edición
-    // Buscar en window.eppEnEdicion que es donde se configura realmente
-    const esObjeto = typeof window.eppEnEdicion === 'object';
-    const tienePropiedades = window.eppEnEdicion && Object.keys(window.eppEnEdicion).length > 0;
-    const enModoEdicion = window.eppEnEdicion && esObjeto && tienePropiedades;
     
-    console.log('📖 [abrirModalAgregarEPP] window.eppEnEdicion:', window.eppEnEdicion);
-    console.log('📖 [abrirModalAgregarEPP] Es objeto:', esObjeto);
-    console.log('📖 [abrirModalAgregarEPP] Tiene propiedades:', tienePropiedades);
-    console.log('📖 [abrirModalAgregarEPP] En modo edición (final):', enModoEdicion);
+    // Limpiar estado previo
+    eppAgregadosList = [];
+    document.getElementById('inputBuscadorEPPTabla').value = '';
+    document.getElementById('contadorEPP').textContent = '0';
+    document.getElementById('listaEPPAgregados').style.display = 'none';
+    document.getElementById('btnFinalizarAgregarEPP').disabled = true;
     
-    // Actualizar título del modal según modo
-    const tituloModal = modal.querySelector('h2.text-white');
-    if (tituloModal) {
-        tituloModal.textContent = enModoEdicion ? 'Editar EPP' : 'Agregar EPP al Pedido';
-        console.log('📖 [abrirModalAgregarEPP] Título actualizado:', tituloModal.textContent);
-    }
+    // Cargar EPP disponibles
+    cargarEPPDisponibles();
     
-    // Verificar estado de la tabla
-    const listaControl = document.getElementById('listaEPPAgregados');
-    if (listaControl) {
-        console.log('📖 [abrirModalAgregarEPP] Estado actual tabla ANTES - display:', window.getComputedStyle(listaControl).display);
-    }
-    
-    // Solo resetear si NO estamos en modo edición
-    if (!enModoEdicion) {
-        console.log('📖 [abrirModalAgregarEPP] Modo normal - limpiar y resetear modal');
-        // ⭐ IMPORTANTE: Limpiar el array de EPPs agregados al abrir en modo normal
-        eppAgregadosList = [];
-        console.log('📖 [abrirModalAgregarEPP] eppAgregadosList limpiado');
-        
-        // Limpiar la tabla renderizada
-        const tbody = document.getElementById('cuerpoTablaEPP');
-        if (tbody) {
-            tbody.innerHTML = '';
-            console.log('📖 [abrirModalAgregarEPP] Tabla limpiada');
-        }
-        
-        // Ocultar la lista de EPP agregados
-        if (listaControl) {
-            listaControl.style.display = 'none';
-            console.log('📖 [abrirModalAgregarEPP] Lista de EPP agregados ocultada');
-        }
-        
-        resetearModalAgregarEPP();
-    } else {
-        console.log('📖 [abrirModalAgregarEPP] Modo edición - NO resetear modal, manteniendo estado');
-        if (listaControl) {
-            console.log('📖 [abrirModalAgregarEPP] Estado tabla DESPUÉS (sin reset) - display:', window.getComputedStyle(listaControl).display);
-        }
-    }
-    
-    // Registrar listener de paste después de un pequeño delay
-    setTimeout(() => {
-        document.addEventListener('paste', window.handlePasteEPP);
-        console.log('[abrirModalAgregarEPP] Paste listener registrado');
-    }, 100);
+    console.log('[abrirModalAgregarEPP] Modal abierto, EPP siendo cargados...');
 }
 
 function actualizarTotalEPP() {
@@ -622,7 +1079,6 @@ function resetearModalAgregarEPP() {
         'productoCardEPP',
         'formularioAgregarEPP',
         'observacionesContainer',
-        'seccionFotosEPP',
         'btnAgregarALista',
         'resultadosBuscadorEPP',
         'valorUnitarioTotalContainer'
@@ -782,14 +1238,6 @@ function mostrarProductoEPP(producto) {
     if (nombreElement) {
         nombreElement.value = producto.nombre_completo || producto.nombre;
         console.log(' [mostrarProductoEPP] Nombre actualizado:', nombreElement.value);
-    }
-
-    // Mostrar sección de fotos
-    const seccionFotos = document.getElementById('seccionFotosEPP');
-    console.log(' [mostrarProductoEPP] Sección fotos encontrada:', !!seccionFotos);
-    if (seccionFotos) {
-        seccionFotos.style.display = 'block';
-        console.log(' [mostrarProductoEPP] Sección fotos visible - display:', seccionFotos.style.display);
     }
 
     // Mostrar formulario
@@ -1044,7 +1492,6 @@ function agregarEPPALista() {
     document.getElementById('productoCardEPP').style.display = 'none';
     document.getElementById('formularioAgregarEPP').style.display = 'none';
     document.getElementById('observacionesContainer').style.display = 'none';
-    document.getElementById('seccionFotosEPP').style.display = 'none';
     
     // Limpiar buscador y desseleccionar producto
     document.getElementById('inputBuscadorEPP').value = '';
@@ -1077,9 +1524,6 @@ function limpiarFotosEPP() {
         if (mensajeDragDrop) {
             mensajeDragDrop.style.display = 'flex';
         }
-        
-        // Asegurar que la sección de fotos esté visible
-        document.getElementById('seccionFotosEPP').style.display = 'block';
         
         console.log('[limpiarFotosEPP] Contenedor limpiado y mensaje inicial restaurado');
     }
@@ -1326,215 +1770,26 @@ if (!window.eppEnEdicion) {
 let eppEnEdicion = null;  // Variable local para compatibilidad
 
 function editarEPPAgregado(eppData) {
-    console.log('✏️ [editarEPPAgregado] INICIANDO - Editando EPP:', eppData);
-    console.log('✏️ [editarEPPAgregado] Propiedades de eppData:', Object.keys(eppData));
+    console.log('✏️ [editarEPPAgregado] INICIANDO - Abriendo modal de edición para EPP:', eppData);
     
-    // Guardar referencia del EPP en edición TANTO en local como en window
-    eppEnEdicion = eppData;
-    window.eppEnEdicion = eppData;
-    console.log('✏️ [editarEPPAgregado] eppEnEdicion configurado (local):', !!eppEnEdicion);
-    console.log('✏️ [editarEPPAgregado] window.eppEnEdicion configurado (global):', !!window.eppEnEdicion);
-    console.log('✏️ [editarEPPAgregado] eppEnEdicion es objeto:', typeof eppEnEdicion === 'object');
-    console.log('✏️ [editarEPPAgregado] Claves en eppEnEdicion:', Object.keys(eppEnEdicion || {}));
-    
-    // Limpiar la lista de agregados para modo edición
-    eppAgregadosList = [];
-    productoSeleccionadoEPP = null;
-    console.log('✏️ [editarEPPAgregado] Lista de agregados y producto limpiados');
-    
-    // Limpiar buscador
-    const buscador = document.getElementById('inputBuscadorEPP');
-    if (buscador) buscador.value = '';
-    const resultados = document.getElementById('resultadosBuscadorEPP');
-    if (resultados) resultados.style.display = 'none';
-    console.log('✏️ [editarEPPAgregado] Buscador limpiado');
-    
-    // Limpiar elementos visuales previos
-    const tarjetaCard = document.getElementById('productoCardEPP');
-    if (tarjetaCard) tarjetaCard.style.display = 'none';
-    const lista = document.getElementById('listaEPPAgregados');
-    if (lista) {
-        console.log('✏️ [editarEPPAgregado] Tabla encontrada ANTES - display:', window.getComputedStyle(lista).display);
-        // Remover completamente el atributo style para que se oculte sin conflictos
-        lista.removeAttribute('style');
-        lista.style.setProperty('display', 'none', 'important');
-        lista.style.setProperty('visibility', 'hidden', 'important');
-        console.log('✏️ [editarEPPAgregado] Tabla listaEPPAgregados ocultada - estilo removido y reestablecido');
-        console.log('✏️ [editarEPPAgregado] Tabla DESPUÉS - display:', window.getComputedStyle(lista).display);
-        console.log('✏️ [editarEPPAgregado] Tabla style.display:', lista.style.display);
+    // Usar el modal de edición individual que ya existe
+    if (typeof abrirModalEditarEPP === 'function') {
+        // Preparar datos en formato compatible
+        const eppParaEditar = {
+            id: eppData.epp_id || eppData.id,
+            nombre: eppData.nombre_epp || eppData.nombre,
+            nombre_completo: eppData.nombre_epp || eppData.nombre,
+            cantidad: eppData.cantidad || 1,
+            observaciones: eppData.observaciones || '-',
+            imagenes: eppData.imagenes || [],
+            tarjetaId: eppData.tarjetaId  // Pasar ID de la tarjeta visual
+        };
+        
+        console.log('✏️ [editarEPPAgregado] Abriendo modal de edición con datos:', eppParaEditar);
+        abrirModalEditarEPP(eppParaEditar);
     } else {
-        console.warn('✏️ [editarEPPAgregado] Elemento listaEPPAgregados no encontrado');
+        console.error('✏️ [editarEPPAgregado] Función abrirModalEditarEPP no disponible');
     }
-    const cuerpo = document.getElementById('cuerpoTablaEPP');
-    if (cuerpo) cuerpo.innerHTML = '';
-    console.log('✏️ [editarEPPAgregado] Elementos visuales previos limpiados');
-    
-    // Mostrar el producto seleccionado
-    console.log('✏️ [editarEPPAgregado] Llamando a mostrarProductoEPP...');
-    mostrarProductoEPP({
-        id: eppData.epp_id || eppData.id,
-        nombre_completo: eppData.nombre_epp || eppData.nombre,
-        nombre: eppData.nombre_epp || eppData.nombre,
-        imagen: ''
-    });
-    console.log('✏️ [editarEPPAgregado] mostrarProductoEPP completado');
-    
-    // Cargar valores en el formulario
-    const cantidadInput = document.getElementById('cantidadEPP');
-    const obsInput = document.getElementById('observacionesEPP');
-    if (cantidadInput) cantidadInput.value = eppData.cantidad || 1;
-    if (obsInput) obsInput.value = eppData.observaciones || '';
-    console.log('✏️ [editarEPPAgregado] Valores cargados - cantidad:', eppData.cantidad, 'observaciones:', eppData.observaciones);
-
-    // Precargar valor unitario / total (modo cotización)
-    const modoCotizacion = !!window.__EPP_COTIZACION_MODE__;
-    const vuInput = document.getElementById('valorUnitarioEPP');
-    const totInput = document.getElementById('totalEPP');
-    const vuCont = document.getElementById('valorUnitarioTotalContainer');
-    if (modoCotizacion && vuCont) {
-        vuCont.style.display = 'block';
-    }
-    if (modoCotizacion && vuInput) {
-        vuInput.disabled = false;
-        vuInput.value = (eppData.valor_unitario !== undefined && eppData.valor_unitario !== null && String(eppData.valor_unitario).trim() !== '')
-            ? String(eppData.valor_unitario)
-            : '';
-    }
-    if (modoCotizacion && totInput) {
-        totInput.value = (eppData.total !== undefined && eppData.total !== null && String(eppData.total).trim() !== '')
-            ? String(eppData.total)
-            : '0';
-    }
-    if (modoCotizacion) {
-        actualizarTotalEPP();
-    }
-
-    // Precargar imágenes en el modal
-    try {
-        const imgs = Array.isArray(eppData.imagenes) ? eppData.imagenes : [];
-        console.log('✏️ [editarEPPAgregado] Imágenes recibidas:', imgs.length, imgs);
-        
-        // IMPORTANTE: Preservar referencias blob válidas
-        window.fotosEPP = [];
-        
-        const contenedor = document.getElementById('contenedorFotosEPP');
-        if (contenedor) {
-            const elementosFoto = contenedor.querySelectorAll('.foto-epp-item');
-            elementosFoto.forEach(el => el.remove());
-        }
-        const mensajeDragDrop = document.getElementById('mensajeDragDrop');
-        if (mensajeDragDrop) {
-            mensajeDragDrop.style.display = imgs.length > 0 ? 'none' : 'flex';
-        }
-        
-        imgs.forEach((img, idx) => {
-            // Detectar si es un blob/preview URL
-            const isBlob = img.previewUrl && (img.previewUrl.includes('blob:') || img.previewUrl.startsWith('blob:'));
-            
-            // Para URLs blob, mantener la referencia original exacta
-            let url = null;
-            if (isBlob && img.previewUrl) {
-                url = img.previewUrl;
-            } else {
-                url = (typeof img === 'string')
-                    ? img
-                    : (img.previewUrl || img.url || img.ruta_web || img.ruta_webp || img.ruta_original || null);
-            }
-            
-            if (!url) {
-                console.warn('✏️ [editarEPPAgregado] Imagen sin URL válida:', img);
-                return;
-            }
-            
-            const imagen = {
-                id: img?.id || `edit-${Date.now()}-${idx}`,
-                nombre: img?.nombre || `imagen-${idx + 1}`,
-                previewUrl: url,  // Mantener la referencia exacta
-                url: url,
-            };
-            window.fotosEPP.push(imagen);
-            console.log('✏️ [editarEPPAgregado] Imagen agregada - nombre:', imagen.nombre, 'URL:', url.substring(0, 50) + '...');
-            
-            if (typeof mostrarVistaPreviaFoto === 'function') {
-                mostrarVistaPreviaFoto(imagen);
-            }
-        });
-        console.log('✏️ [editarEPPAgregado] Total imágenes cargadas en window.fotosEPP:', window.fotosEPP.length);
-    } catch (e) {
-        console.error('✏️ [editarEPPAgregado] Error cargando imágenes:', e);
-    }
-    
-    // Mostrar los campos del formulario
-    const formulario = document.getElementById('formularioAgregarEPP');
-    const obsContainer = document.getElementById('observacionesContainer');
-    const seccionFotos = document.getElementById('seccionFotosEPP');
-    const btnAgregar = document.getElementById('btnAgregarALista');
-    const btnGuardarCambios = document.getElementById('btnGuardarCambiosEPP');
-    const btnFinalizar = document.getElementById('btnFinalizarAgregarEPP');
-    const inputFotos = document.getElementById('inputFotosEPP');
-    
-    if (formulario) {
-        formulario.style.display = 'grid';
-        console.log('✏️ [editarEPPAgregado] Formulario mostrado');
-    }
-    if (obsContainer) {
-        obsContainer.style.display = 'block';
-        console.log('✏️ [editarEPPAgregado] Contenedor observaciones mostrado');
-    }
-    
-    // Mostrar y habilitar la sección de fotos
-    if (seccionFotos) {
-        seccionFotos.style.display = 'block';
-        console.log('✏️ [editarEPPAgregado] Sección de fotos mostrada');
-        
-        // Encontrar y habilitar el botón de agregar foto dentro de la sección
-        const btnAgregarFoto = seccionFotos.querySelector('button');
-        if (btnAgregarFoto) {
-            btnAgregarFoto.disabled = false;
-            btnAgregarFoto.style.opacity = '1';
-            btnAgregarFoto.style.pointerEvents = 'auto';
-            console.log('✏️ [editarEPPAgregado] Botón agregar foto habilitado');
-        }
-    }
-    
-    // Habilitar el input de fotos
-    if (inputFotos) {
-        inputFotos.disabled = false;
-        console.log('✏️ [editarEPPAgregado] Input de fotos habilitado');
-    }
-    
-    // Habilitar campos para edición
-    if (cantidadInput) cantidadInput.disabled = false;
-    if (obsInput) obsInput.disabled = false;
-    console.log('✏️ [editarEPPAgregado] Campos habilitados');
-    
-    // Ocultar botón de agregar a lista (no se usa en modo edición)
-    if (btnAgregar) {
-        btnAgregar.style.display = 'none';
-        console.log('✏️ [editarEPPAgregado] Botón agregar a lista ocultado');
-    }
-    
-    // Configurar botones del footer
-    if (btnFinalizar) {
-        btnFinalizar.style.display = 'none';
-        btnFinalizar.disabled = true;
-        console.log('✏️ [editarEPPAgregado] Botón finalizar ocultado');
-    }
-    if (btnGuardarCambios) {
-        btnGuardarCambios.style.display = 'flex';
-        btnGuardarCambios.disabled = false;
-        console.log('✏️ [editarEPPAgregado] Botón guardar cambios mostrado y habilitado');
-    }
-    
-    // Actualizar estilos de campos
-    actualizarEstilosCampos();
-    
-    console.log('✏️ [editarEPPAgregado] Preparado para edición, abriendo modal...');
-    
-    // Mostrar modal
-    abrirModalAgregarEPP();
-    
-    console.log('✏️ [editarEPPAgregado] FINALIZADO - Modal abierto en modo edición');
 }
 
 function guardarEdicionEPP() {
@@ -2009,116 +2264,8 @@ function mostrarVistaPreviaFoto(imagen) {
     console.log('[mostrarVistaPreviaFoto] HTML creado, agregando al contenedor...');
     contenedor.appendChild(divImagen);
     console.log('[mostrarVistaPreviaFoto] Imagen agregada al DOM. Total elementos en contenedor:', contenedor.children.length);
-    
-    // Mostrar sección de fotos si no está visible
-    document.getElementById('seccionFotosEPP').style.display = 'block';
 }
 
-function eliminarFotoEPP(fotoId, event) {
-    // Prevenir que el click se propague hacia el backdrop del modal
-    if (event) {
-        event.stopPropagation();
-        event.preventDefault();
-    }
-    
-    console.log(`[eliminarFotoEPP] 🗑️ Intentando eliminar foto con ID: ${fotoId}`);
-    console.log(`[eliminarFotoEPP] Fotos en window.fotosEPP:`, window.fotosEPP.length);
-    
-    // Encontrar la foto para liberar la URL blob
-    const fotoAEliminar = window.fotosEPP.find(foto => {
-        console.log(`[eliminarFotoEPP] Comparando: foto.id='${foto.id}' vs fotoId='${fotoId}' - Iguales: ${foto.id === fotoId}`);
-        return foto.id === fotoId;
-    });
-    
-    if (fotoAEliminar) {
-        console.log(`[eliminarFotoEPP] ✓ Foto encontrada en array: ${fotoAEliminar.nombre}`);
-    } else {
-        console.warn(`[eliminarFotoEPP] ⚠️ Foto NO encontrada en array para ID: ${fotoId}`);
-    }
-    
-    // Eliminar del DOM - MÚLTIPLES ESTRATEGIAS
-    let elementoEliminado = false;
-    
-    // ESTRATEGIA 1: Buscar por data-foto-id exacto
-    let elemento = document.querySelector(`[data-foto-id="${fotoId}"]`);
-    if (elemento && elemento.classList.contains('foto-epp-item')) {
-        console.log(`[eliminarFotoEPP] ✓ ESTRATEGIA 1: Encontrado por data-foto-id`);
-        elemento.remove();
-        elementoEliminado = true;
-    } else {
-        console.warn(`[eliminarFotoEPP] ⚠️ ESTRATEGIA 1 falló`);
-        
-        // ESTRATEGIA 2: Buscar dentro del contenedor de fotos
-        const contenedor = document.getElementById('contenedorFotosEPP');
-        if (contenedor) {
-            const elementosBuscados = contenedor.querySelectorAll('[data-foto-id]');
-            console.log(`[eliminarFotoEPP] ESTRATEGIA 2: Elementos con data-foto-id: ${elementosBuscados.length}`);
-            
-            for (let el of elementosBuscados) {
-                const idAttr = el.getAttribute('data-foto-id');
-                console.log(`[eliminarFotoEPP] - Comparando atributo: '${idAttr}' vs '${fotoId}'`);
-                
-                if (idAttr === fotoId) {
-                    console.log(`[eliminarFotoEPP] ✓ ESTRATEGIA 2: Encontrado por búsqueda en contenedor`);
-                    el.remove();
-                    elementoEliminado = true;
-                    break;
-                }
-            }
-        }
-        
-        // ESTRATEGIA 3: Iterar todas las fotos visibles y eliminar por lógica
-        if (!elementoEliminado) {
-            console.log(`[eliminarFotoEPP] ESTRATEGIA 3: Búsqueda exhaustiva de elementos .foto-epp-item`);
-            const todasLasFotos = document.querySelectorAll('.foto-epp-item');
-            console.log(`[eliminarFotoEPP] Total de elementos .foto-epp-item encontrados: ${todasLasFotos.length}`);
-            
-            for (let el of todasLasFotos) {
-                const dataId = el.getAttribute('data-foto-id');
-                console.log(`[eliminarFotoEPP] - Elemento encontrado con data-foto-id: '${dataId}'`);
-                
-                if (dataId && dataId.trim() === fotoId.trim()) {
-                    console.log(`[eliminarFotoEPP] ✓ ESTRATEGIA 3: Encontrado elemento con coincidencia exacta`);
-                    el.remove();
-                    elementoEliminado = true;
-                    break;
-                }
-            }
-        }
-    }
-    
-    if (!elementoEliminado) {
-        console.error(`[eliminarFotoEPP] ❌ No se pudo eliminar el elemento del DOM para ID: ${fotoId}`);
-    } else {
-        console.log(`[eliminarFotoEPP] ✓ Elemento eliminado exitosamente del DOM`);
-    }
-    
-    // Eliminar de la lista temporal
-    const longitudAntes = window.fotosEPP.length;
-    window.fotosEPP = window.fotosEPP.filter(foto => foto.id !== fotoId);
-    console.log(`[eliminarFotoEPP] Array actualizado: ${longitudAntes} → ${window.fotosEPP.length} fotos`);
-    
-    // Liberar la URL blob para liberar memoria
-    if (fotoAEliminar && fotoAEliminar.previewUrl) {
-        try {
-            URL.revokeObjectURL(fotoAEliminar.previewUrl);
-            console.log(`[eliminarFotoEPP] ✓ URL blob liberada para: ${fotoAEliminar.nombre}`);
-        } catch (e) {
-            console.warn(`[eliminarFotoEPP] Advertencia al liberar URL blob:`, e);
-        }
-    }
-    
-    // Si no hay más fotos, mostrar mensaje inicial
-    if (window.fotosEPP.length === 0) {
-        const mensajeDragDrop = document.getElementById('mensajeDragDrop');
-        if (mensajeDragDrop) {
-            mensajeDragDrop.style.display = 'flex';
-            console.log(`[eliminarFotoEPP] ✓ Mensaje de drag-drop mostrado (sin fotos)`);
-        }
-    } else {
-        console.log(`[eliminarFotoEPP] Aún quedan ${window.fotosEPP.length} fotos restantes`);
-    }
-}
 
 // Funciones para Drag and Drop
 function handleDragOverEPP(event) {
@@ -2844,6 +2991,27 @@ window.handleDragOverPrenda = handleDragOverPrenda;
 window.handleDragLeavePrenda = handleDragLeavePrenda;
 window.validarBotonesPrenda = validarBotonesPrenda;
 window.finalizarAgregarPrenda = finalizarAgregarPrenda;
+
+// Funciones nuevas de selección múltiple con dropdown
+window.cargarEPPDisponibles = cargarEPPDisponibles;
+window.mostrarDropdownEPP = mostrarDropdownEPP;
+window.renderizarDropdownEPP = renderizarDropdownEPP;
+window.filtrarDropdownEPP = filtrarDropdownEPP;
+window.agregarEPPDesdeDropdown = agregarEPPDesdeDropdown;
+window.actualizarSeleccionEPP = actualizarSeleccionEPP;
+window.renderizarTablaEPPAgregados = renderizarTablaEPPAgregados;
+window.actualizarCantidadEPP = actualizarCantidadEPP;
+window.actualizarObservacionesEPP = actualizarObservacionesEPP;
+window.eliminarEPPDeLista = eliminarEPPDeLista;
+
+// Funciones de manejo de fotos en tabla EPP
+window.manejarSeleccionFotosEPP = manejarSeleccionFotosEPP;
+window.manejarDragOverFotosEPP = manejarDragOverFotosEPP;
+window.manejarDragLeaveFotosEPP = manejarDragLeaveFotosEPP;
+window.manejarDropFotosEPP = manejarDropFotosEPP;
+window.eliminarFotoEPP = eliminarFotoEPP;
+
+// Funciones principales del modal
 window.abrirModalAgregarEPP = abrirModalAgregarEPP;
 window.abrirModalEditarEPPNuevo = abrirModalEditarEPPNuevo;
 window.resetearModalAgregarEPP = resetearModalAgregarEPP;
@@ -2856,11 +3024,10 @@ window.finalizarAgregarEPP = finalizarAgregarEPP;
 window.guardarEdicionEPP = guardarEdicionEPP;
 window.filtrarEPPBuscador = filtrarEPPBuscador;
 window.agregarFotoEPP = agregarFotoEPP;
-window.eliminarFotoEPP = eliminarFotoEPP;
 window.mostrarVistaPreviaFoto = mostrarVistaPreviaFoto;
 window.limpiarImagenesTemporales = limpiarImagenesTemporales;
 
-console.log('[EPP Modal] Funciones exportadas al objeto window');
+console.log('[EPP Modal] Todas las funciones exportadas al objeto window');
 
 // ========== MANEJADOR DE CTRL+V PARA PRENDAS ==========
 function handlePastePrenda(event) {

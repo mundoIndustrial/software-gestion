@@ -555,6 +555,9 @@ class EppItemManagerNuevo {
                 }
             }
             
+            // Agregar tarjetaId para que el modal pueda actualizar la tarjeta visual
+            eppData.tarjetaId = itemId;
+            
             // Llamar función de edición si existe
             if (typeof window.editarEPPAgregado === 'function') {
                 window.editarEPPAgregado(eppData);
