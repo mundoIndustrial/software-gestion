@@ -981,18 +981,41 @@ class BodegaPedidoService
         // Agrupar por artículo para calcular rowspan
         $porArticulo = [];
         foreach ($items as $index => $item) {
-            $nombreArticulo = $item['descripcion']['nombre_prenda'] ?? $item['descripcion']['nombre'] ?? 'Sin nombre';
+            // Usar identificadores únicos y confiables
+            $idArticulo = null;
+            $nombreArticulo = '';
+            
+            // Intentar obtener un ID único
+            if (isset($item['prenda_id']) && !empty($item['prenda_id'])) {
+                // Para prendas, usar el ID de la prenda
+                $idArticulo = 'prenda_' . $item['prenda_id'];
+                $nombreArticulo = $item['descripcion']['nombre_prenda'] ?? $item['descripcion']['nombre'] ?? 'Sin nombre';
+            } elseif (isset($item['pedido_epp_id']) && !empty($item['pedido_epp_id'])) {
+                // Para EPPs, usar el ID del EPP
+                $idArticulo = 'epp_' . $item['pedido_epp_id'];
+                $nombreArticulo = $item['descripcion']['nombre'] ?? 'EPP';
+            } else {
+                // Fallback: usar el nombre
+                $nombreArticulo = $item['descripcion']['nombre_prenda'] ?? $item['descripcion']['nombre'] ?? 'Sin nombre';
+                $idArticulo = 'nombre_' . md5(strtolower(trim($nombreArticulo)));
+            }
+            
             $asesor = $item['asesor'];
-            $clave = $asesor . '|' . $nombreArticulo;
+            // Usar el ID del artículo como clave principal, el nombre solo para debugging
+            $clave = $asesor . '|' . $idArticulo;
             
             if (!isset($porArticulo[$clave])) {
-                $porArticulo[$clave] = [];
+                $porArticulo[$clave] = [
+                    'indices' => [],
+                    'nombre_articulo' => $nombreArticulo
+                ];
             }
-            $porArticulo[$clave][] = $index;
+            $porArticulo[$clave]['indices'][] = $index;
         }
         
         // Asignar rowspans para artículo
-        foreach ($porArticulo as $clave => $indices) {
+        foreach ($porArticulo as $claveArticulo => $grupo) {
+            $indices = $grupo['indices'];
             $rowspan = count($indices);
             foreach ($indices as $itemIndex) {
                 $items[$itemIndex]['descripcion_rowspan'] = $itemIndex === $indices[0] ? $rowspan : 0;

@@ -76,8 +76,15 @@
                                     @endif
                                 >
                                     <!-- DESCRIPCIÓN (PRENDA) -->
-                                    @if(($item['descripcion_rowspan'] ?? 0) > 0)
-                                    <td class="px-4 py-3 text-xs text-black border-r border-slate-300" rowspan="{{ $item['descripcion_rowspan'] }}" style="width: 22%;">
+                                    @php
+                                        $mostrarArticuloConRowspan = ($item['descripcion_rowspan'] ?? 0) > 0;
+                                        $rowspanArticulo = ($item['descripcion_rowspan'] ?? 0) > 0 ? $item['descripcion_rowspan'] : 1;
+                                    @endphp
+                                    @if($mostrarArticuloConRowspan)
+                                    <td class="px-4 py-3 text-xs text-black border-r border-slate-300" rowspan="{{ $rowspanArticulo }}" style="width: 22%;">
+                                    @else
+                                    <td class="px-4 py-3 text-xs text-black border-r border-slate-300" style="width: 22%;">
+                                    @endif
                                         @php
                                             $desc = $item['descripcion'];
                                             $nombre = $desc['nombre_prenda'] ?? $desc['nombre'] ?? 'Prenda sin nombre';
@@ -206,23 +213,28 @@
                                             </div>
                                         @endif
                                     </td>
-                                    @endif
                                     
                                     <!-- GÉNERO -->
-                                    @if(($item['descripcion_rowspan'] ?? 0) > 0)
-                                    <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" rowspan="{{ $item['descripcion_rowspan'] }}" style="width: 6%;">
-                                        @php
-                                            $genero = '';
-                                            if(isset($item['descripcion']['variantes']) && is_array($item['descripcion']['variantes']) && count($item['descripcion']['variantes']) > 0) {
-                                                $primeraVariante = $item['descripcion']['variantes'][0];
-                                                $genero = $primeraVariante['genero'] ?? '';
-                                            }
-                                            elseif(isset($item['genero'])) {
-                                                $genero = $item['genero'];
-                                            }
-                                            // 🔴 NUEVO: NO mostrar GENERICO (es SOLO CANTIDAD)
-                                            $esGenerico = $genero && strtoupper($genero) === 'GENERICO';
-                                        @endphp
+                                    @php
+                                        $genero = '';
+                                        if(isset($item['descripcion']['variantes']) && is_array($item['descripcion']['variantes']) && count($item['descripcion']['variantes']) > 0) {
+                                            $primeraVariante = $item['descripcion']['variantes'][0];
+                                            $genero = $primeraVariante['genero'] ?? '';
+                                        }
+                                        elseif(isset($item['genero'])) {
+                                            $genero = $item['genero'];
+                                        }
+                                        // 🔴 NUEVO: NO mostrar GENERICO (es SOLO CANTIDAD)
+                                        $esGenerico = $genero && strtoupper($genero) === 'GENERICO';
+                                        $rowspanGenero = ($item['descripcion_rowspan'] ?? 0) > 0 ? $item['descripcion_rowspan'] : 1;
+                                        $mostrarGeneroConRowspan = ($item['descripcion_rowspan'] ?? 0) > 0;
+                                    @endphp
+                                    @if($mostrarGeneroConRowspan)
+                                    <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" rowspan="{{ $rowspanGenero }}" style="width: 6%;">
+                                        {{ ($esGenerico) ? '—' : ($genero ? ucfirst(strtolower($genero)) : '—') }}
+                                    </td>
+                                    @else
+                                    <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" style="width: 6%;">
                                         {{ ($esGenerico) ? '—' : ($genero ? ucfirst(strtolower($genero)) : '—') }}
                                     </td>
                                     @endif
