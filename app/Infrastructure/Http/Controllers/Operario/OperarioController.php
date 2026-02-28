@@ -434,7 +434,7 @@ class OperarioController extends Controller
     {
         $request->validate([
             'numero_pedido' => 'required|numeric',
-            'novedad' => 'required|string|min:5',
+            'novedad' => 'required|string',
         ]);
 
         $usuario = Auth::user();
