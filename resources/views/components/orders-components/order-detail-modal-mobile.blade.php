@@ -1220,6 +1220,11 @@ window.llenarReciboCosturaMobile = function(data) {
                 }
             }
 
+            // 2.5. Descripción de la prenda (campo descripcion de prendas_pedido)
+            if (prenda.descripcion && prenda.descripcion.trim()) {
+                html += `<span style="display: block; margin-top: 2px; white-space: pre-line;">— ${prenda.descripcion.trim().toUpperCase()}</span>`;
+            }
+
             // 3. Manga
             if (prenda.manga) {
                 html += `<strong>MANGA:</strong> ${(prenda.manga || '').toUpperCase()}<br>`;
