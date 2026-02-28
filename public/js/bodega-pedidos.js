@@ -30,11 +30,12 @@ if (typeof window.usuarioActualId === 'undefined' || window.usuarioActualId === 
 }
 
 if (typeof window.abrirModalNotas !== 'function') {
-    window.abrirModalNotas = function(numeroPedido, talla, nombreItem, tipoItem, tallaReal) {
+    window.abrirModalNotas = function(numeroPedido, talla, nombreItem, tipoItem, tallaReal, tallaColorId) {
         try {
             window.__notasContext = {
                 numero_pedido: numeroPedido || '',
-                talla: talla || ''
+                talla: talla || '',
+                talla_color_id: (tallaColorId !== undefined && tallaColorId !== null && String(tallaColorId).trim() !== '') ? Number(tallaColorId) : null,
             };
 
             const modal = document.getElementById('modalNotas');
@@ -63,7 +64,7 @@ if (typeof window.abrirModalNotas !== 'function') {
             modal.style.display = 'flex';
 
             if (typeof window.cargarNotas === 'function') {
-                window.cargarNotas(numeroPedido, talla);
+                window.cargarNotas(numeroPedido, talla, window.__notasContext.talla_color_id);
             }
         } catch (e) {
             console.error('Error en abrirModalNotas fallback:', e);
@@ -144,9 +145,12 @@ window.confirmarEliminarNota = function(callback) {
 };
 
 if (typeof window.cargarNotas !== 'function') {
-    window.cargarNotas = async function(numeroPedido, talla) {
+    window.cargarNotas = async function(numeroPedido, talla, tallaColorId) {
         try {
-            const key = `${numeroPedido || ''}|${talla || ''}`;
+            const tallaColorIdNorm = (tallaColorId !== undefined && tallaColorId !== null && String(tallaColorId).trim() !== '')
+                ? String(Number(tallaColorId))
+                : '';
+            const key = `${numeroPedido || ''}|${talla || ''}|${tallaColorIdNorm}`;
 
             if (typeof window.__notasRequestSeq !== 'number') {
                 window.__notasRequestSeq = 0;
@@ -162,7 +166,8 @@ if (typeof window.cargarNotas !== 'function') {
             const modalVisible = !!(modal && !modal.classList.contains('hidden'));
             const ctx = window.__notasContext || {};
             const contextoCoincide = String(ctx.numero_pedido || '') === String(numeroPedido || '')
-                && String(ctx.talla || '') === String(talla || '');
+                && String(ctx.talla || '') === String(talla || '')
+                && String(ctx.talla_color_id ?? '') === String((tallaColorId !== undefined && tallaColorId !== null) ? tallaColorId : (ctx.talla_color_id ?? ''));
             const debeRenderizarHistorial = modalVisible && contextoCoincide;
 
             const historial = document.getElementById('notasHistorial');
@@ -181,6 +186,7 @@ if (typeof window.cargarNotas !== 'function') {
                 body: JSON.stringify({
                     numero_pedido: numeroPedido,
                     talla: talla,
+                    talla_color_id: (tallaColorId !== undefined && tallaColorId !== null && String(tallaColorId).trim() !== '') ? Number(tallaColorId) : null,
                 })
             });
 
@@ -247,9 +253,17 @@ if (typeof window.cargarNotas !== 'function') {
 
             // Mostrar notas en el textarea readonly (solo visual; NO se persiste en observaciones_bodega)
             const tallaNorm = String(talla ?? '').toLowerCase();
+            const tallaColorIdMatch = (tallaColorId !== undefined && tallaColorId !== null && String(tallaColorId).trim() !== '')
+                ? String(Number(tallaColorId))
+                : '';
             const observacionesInputs = Array.from(
                 document.querySelectorAll(`.observaciones-input[data-numero-pedido="${numeroPedido}"]`)
-            ).filter(input => String(input?.dataset?.talla ?? '').toLowerCase() === tallaNorm);
+            ).filter(input => {
+                const tallaOk = String(input?.dataset?.talla ?? '').toLowerCase() === tallaNorm;
+                const tc = String(input?.dataset?.tallaColorId ?? '');
+                const tcOk = tc === tallaColorIdMatch;
+                return tallaOk && tcOk;
+            });
 
             observacionesInputs.forEach(input => {
                 input.value = textAreaContent.trim();
@@ -281,17 +295,21 @@ document.addEventListener('DOMContentLoaded', function() {
         textareas.forEach(t => {
             const numeroPedido = t?.dataset?.numeroPedido;
             const talla = t?.dataset?.talla;
+            const tallaColorId = t?.dataset?.tallaColorId;
             if (!numeroPedido || !talla) return;
-            const key = `${numeroPedido}|${talla}`;
+            const tcNorm = (tallaColorId !== undefined && tallaColorId !== null && String(tallaColorId).trim() !== '')
+                ? String(Number(tallaColorId))
+                : '';
+            const key = `${numeroPedido}|${talla}|${tcNorm}`;
             if (seen.has(key)) return;
             seen.add(key);
-            claves.push({ numeroPedido, talla });
+            claves.push({ numeroPedido, talla, tallaColorId: tcNorm !== '' ? Number(tcNorm) : null });
         });
 
         // Ejecutar en serie con pequeños delays para evitar demasiadas requests simultáneas
         const ejecutar = async () => {
             for (const item of claves) {
-                await window.cargarNotas(item.numeroPedido, item.talla);
+                await window.cargarNotas(item.numeroPedido, item.talla, item.tallaColorId);
                 await new Promise(r => setTimeout(r, 30));
             }
         };
@@ -433,7 +451,8 @@ if (typeof window.editarNota !== 'function') {
                 }
 
                 if (typeof window.cargarNotas === 'function') {
-                    window.cargarNotas(numeroPedido, talla);
+                    const ctx = window.__notasContext || {};
+                    window.cargarNotas(numeroPedido, talla, ctx.talla_color_id ?? null);
                 }
             } catch (err) {
                 console.error('Error editarNota:', err);
@@ -520,6 +539,7 @@ if (typeof window.guardarNota !== 'function') {
             const ctx = window.__notasContext || {};
             const numeroPedido = ctx.numero_pedido || document.getElementById('modalNotasNumeroPedido')?.textContent || '';
             const talla = ctx.talla || '';
+            const tallaColorId = ctx.talla_color_id ?? null;
 
             const textarea = document.getElementById('notasNuevaContent') || document.getElementById('nuevaNota');
             const contenido = (textarea?.value || '').trim();
@@ -545,6 +565,7 @@ if (typeof window.guardarNota !== 'function') {
                 body: JSON.stringify({
                     numero_pedido: numeroPedido,
                     talla: talla,
+                    talla_color_id: tallaColorId,
                     contenido: contenido,
                 })
             });
@@ -714,6 +735,10 @@ async function guardarPedidoCompleto(numeroPedido) {
             
             // Obtener talla desde el data-talla del selector (más confiable)
             const talla = estadoSelect?.getAttribute('data-talla');
+            const tallaColorId = estadoSelect?.getAttribute('data-talla-color-id')
+                || areaSelect?.getAttribute('data-talla-color-id')
+                || fila.getAttribute('data-talla-color-id')
+                || null;
             
             // Saltar si no hay talla
             if (!talla) {
@@ -783,6 +808,7 @@ async function guardarPedidoCompleto(numeroPedido) {
                 
                 detalles.push({
                     talla: talla,  // Enviar talla tal como está (puede ser hash único para EPPs)
+                    talla_color_id: (tallaColorId !== null && String(tallaColorId).trim() !== '') ? Number(tallaColorId) : null,
                     asesor: asesor,  // Guardar asesor
                     empresa: empresa,  // Guardar empresa
                     cantidad: parseInt(cantidad) || 0,  // Guardar cantidad como número
@@ -911,6 +937,63 @@ function cerrarModalFactura() {
 }
 
 /**
+ * Imprimir el contenido del modal de Pedido
+ */
+function imprimirModalFactura() {
+    try {
+        const contenido = document.getElementById('facturaContenido');
+        if (!contenido) return;
+
+        const html = contenido.innerHTML || '';
+        const w = window.open('', '_blank', 'width=900,height=900');
+        if (!w) return;
+
+        w.document.open();
+        w.document.write(`
+            <html>
+                <head>
+                    <title>Imprimir Pedido</title>
+                    <meta charset="utf-8" />
+                    <meta name="viewport" content="width=device-width, initial-scale=1" />
+                    <style>
+                        @page { margin: 12mm; }
+                        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                        body { font-family: Arial, sans-serif; color: #0f172a; }
+                        img { max-width: 100%; height: auto; }
+
+                        @media print {
+                            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+                            /* Escala visual por defecto (no controla el "Scale" del diálogo, pero logra el mismo efecto) */
+                            body { margin: 0; }
+                            #printRoot {
+                                transform: scale(0.85);
+                                transform-origin: top left;
+                                width: 117.65%;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div id="printRoot">${html}</div>
+                    <script>
+                        window.onload = function() {
+                            setTimeout(function() {
+                                window.print();
+                                window.close();
+                            }, 50);
+                        };
+                    <\/script>
+                </body>
+            </html>
+        `);
+        w.document.close();
+    } catch (e) {
+        console.error('Error imprimiendo modalFactura:', e);
+    }
+}
+
+/**
  * Generar HTML de la factura
  */
 function generarHTMLFactura(datos) {
@@ -929,6 +1012,14 @@ function generarHTMLFactura(datos) {
     if (!datos || !datos.prendas || !Array.isArray(datos.prendas)) {
         return '<div style="color: #dc2626; padding: 1rem; border: 1px solid #fca5a5; border-radius: 6px; background: #fee2e2;"> Error: No se pudieron cargar las prendas del pedido.</div>';
     }
+
+    const normalizarUrlImagen = (url) => {
+        if (!url || typeof url !== 'string') return url;
+
+        // Normalizar bug común: ruta singular /prenda/ en vez de /prendas/
+        // Ej: /storage/pedidos/18/prenda/xxx.webp -> /storage/pedidos/18/prendas/xxx.webp
+        return url.replace(/\/storage\/pedidos\/(\d+)\/prenda\//i, '/storage/pedidos/$1/prendas/');
+    };
 
     // Generar las tarjetas de prendas
     const prendasHTML = datos.prendas.map((prenda, idx) => {
@@ -1226,7 +1317,7 @@ function generarHTMLFactura(datos) {
                 <!-- Imagen pequeña -->
                 ${(prenda.imagenes && prenda.imagenes.length > 0) ? `
                     <div style="float: right; margin-left: 12px; margin-bottom: 8px;">
-                        <img src="${prenda.imagenes[0].ruta || prenda.imagenes[0].url || prenda.imagenes[0]}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <img src="${normalizarUrlImagen(prenda.imagenes[0].ruta || prenda.imagenes[0].url || prenda.imagenes[0])}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb;">
                     </div>
                 ` : ''}
                 
@@ -1561,21 +1652,43 @@ function mostrarModalExito(mensaje) {
 /**
  * Guardar fila completa de bodega_detalles_talla
  */
-function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
+function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId) {
     // Obtener todos los valores de la fila
+    const tallaColorIdNorm = (tallaColorId !== undefined && tallaColorId !== null && String(tallaColorId).trim() !== '')
+        ? String(tallaColorId).trim()
+        : null;
+
+    const selectorSuffix = tallaColorIdNorm
+        ? `[data-talla-color-id="${CSS.escape(tallaColorIdNorm)}"]`
+        : '';
+
     const pendientesInput = document.querySelector(
+        `.pendientes-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]${selectorSuffix}`
+    ) || document.querySelector(
         `.pendientes-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
     );
+
     const fechaPedidoInput = document.querySelector(
+        `.fecha-pedido-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]${selectorSuffix}`
+    ) || document.querySelector(
         `.fecha-pedido-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
     );
+
     const fechaEntregaInput = document.querySelector(
+        `.fecha-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]${selectorSuffix}`
+    ) || document.querySelector(
         `.fecha-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
     );
+
     const areaSelect = document.querySelector(
+        `.area-select[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]${selectorSuffix}`
+    ) || document.querySelector(
         `.area-select[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
     );
+
     const estadoSelect = document.querySelector(
+        `.estado-select[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]${selectorSuffix}`
+    ) || document.querySelector(
         `.estado-select[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
     );
 
@@ -1619,6 +1732,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
     const datosAGuardar = {
         numero_pedido: numeroPedido,
         talla: talla,
+        talla_color_id: tallaColorIdNorm ? Number(tallaColorIdNorm) : null,
         prenda_nombre: prendaNombre || null,
         prenda_id: prendaId,
         pedido_epp_id: pedidoEppId,

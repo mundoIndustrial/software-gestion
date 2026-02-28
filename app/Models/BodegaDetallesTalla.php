@@ -17,6 +17,7 @@ class BodegaDetallesTalla extends Model
         'recibo_prenda_id',
         'numero_pedido',
         'talla',
+        'talla_color_id',
         'prenda_nombre',
         'asesor',
         'empresa',
@@ -31,6 +32,7 @@ class BodegaDetallesTalla extends Model
     ];
     
     protected $casts = [
+        'talla_color_id' => 'integer',
         'fecha_pedido' => 'datetime',
         'fecha_entrega' => 'datetime',
         'created_at' => 'datetime',

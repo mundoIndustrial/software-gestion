@@ -13,6 +13,7 @@ class BodegaNota extends Model
         'pedido_produccion_id',
         'numero_pedido',
         'talla',
+        'talla_color_id',
         'contenido',
         'usuario_id',
         'usuario_nombre',

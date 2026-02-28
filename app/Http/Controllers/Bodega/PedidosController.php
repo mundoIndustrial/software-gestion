@@ -1240,6 +1240,7 @@ class PedidosController extends Controller
             $validated = $request->validate([
                 'numero_pedido' => 'required|string',
                 'talla' => 'required|string',
+                'talla_color_id' => 'nullable|integer',
                 'prenda_nombre' => 'nullable|string',
                 'prenda_id' => 'nullable|integer',
                 'pedido_epp_id' => 'nullable|integer',
@@ -1300,20 +1301,21 @@ class PedidosController extends Controller
             $validated = $request->validate([
                 'numero_pedido' => 'required|string',
                 'detalles' => 'required|array',
-                'detalles.*.talla' => 'nullable|string',  // nullable para permitir EPPs sin talla
-                'detalles.*.asesor' => 'nullable|string',  // Guardar asesor
-                'detalles.*.empresa' => 'nullable|string',  // Guardar empresa
-                'detalles.*.cantidad' => 'nullable|integer',  // Guardar cantidad
-                'detalles.*.prenda_nombre' => 'nullable|string',  // Guardar nombre de la prenda
-                'detalles.*.prenda_id' => 'nullable|integer',  // Guardar ID de la prenda
-                'detalles.*.pedido_epp_id' => 'nullable|integer',  // Guardar ID del EPP
+                'detalles.*.talla' => 'nullable|string',
+                'detalles.*.talla_color_id' => 'nullable|integer',
+                'detalles.*.asesor' => 'nullable|string',
+                'detalles.*.empresa' => 'nullable|string',
+                'detalles.*.cantidad' => 'nullable|integer',
+                'detalles.*.prenda_nombre' => 'nullable|string',
+                'detalles.*.prenda_id' => 'nullable|integer',
+                'detalles.*.pedido_epp_id' => 'nullable|integer',
                 'detalles.*.pendientes' => 'nullable|string',
                 'detalles.*.observaciones_bodega' => 'nullable|string',
+                'detalles.*.fecha_pedido' => 'nullable|date',
                 'detalles.*.fecha_entrega' => 'nullable|date',
                 'detalles.*.area' => 'nullable|string|in:Costura,EPP,Otro',
                 'detalles.*.estado_bodega' => 'nullable|string|in:Pendiente,Entregado,Anulado,Homologar',
             ]);
-
             $usuario = auth()->user();
             $pedido = PedidoProduccion::where('numero_pedido', $validated['numero_pedido'])->first();
             
@@ -1343,6 +1345,7 @@ class PedidosController extends Controller
                 // - Talla real para prendas (S, M, L, etc)
                 // - Hash único para EPPs (md5 de nombre+cantidad)
                 $talla = $detalle['talla'];
+                $tallaColorId = $detalle['talla_color_id'] ?? null;
                 $nombrePrenda = $detalle['prenda_nombre'] ?? null;
                 $cantidad = $detalle['cantidad'] ?? 0;
                 
@@ -1351,6 +1354,7 @@ class PedidosController extends Controller
                 $detalleAnterior = \App\Models\BodegaDetallesTalla::where('pedido_produccion_id', $pedido->id)
                     ->where('numero_pedido', $validated['numero_pedido'])
                     ->where('talla', $talla)
+                    ->where('talla_color_id', $tallaColorId)
                     ->where('prenda_nombre', $nombrePrenda)
                     ->where('cantidad', $cantidad)
                     ->first();
@@ -1363,6 +1367,7 @@ class PedidosController extends Controller
                         'numero_pedido' => $validated['numero_pedido'],
                         'prenda_nombre' => $nombrePrenda,
                         'talla' => $talla,
+                        'talla_color_id' => $tallaColorId,
                         'cantidad' => $cantidad,
                     ],
                     [
@@ -1373,6 +1378,7 @@ class PedidosController extends Controller
                         'empresa' => $detalle['empresa'] ?? null,  // Guardar empresa
                         'pendientes' => $detalle['pendientes'] ?? null,
                         'observaciones_bodega' => $detalle['observaciones_bodega'] ?? null,
+                        'fecha_pedido' => $detalle['fecha_pedido'] ?? null,
                         'fecha_entrega' => $detalle['fecha_entrega'] ?? null,
                         'area' => $detalle['area'] ?? null,
                         'estado_bodega' => $detalle['estado_bodega'] ?? null,
@@ -1455,6 +1461,7 @@ class PedidosController extends Controller
             $validated = $request->validate([
                 'numero_pedido' => 'required|string',
                 'talla' => 'required|string',
+                'talla_color_id' => 'nullable|integer',
                 'contenido' => 'required|string|max:5000',
             ]);
 
@@ -1487,6 +1494,7 @@ class PedidosController extends Controller
                 $validated = $request->validate([
                     'numero_pedido' => 'required|string',
                     'talla' => 'required|string',
+                    'talla_color_id' => 'nullable|integer',
                 ]);
             }
 

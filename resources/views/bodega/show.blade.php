@@ -65,396 +65,715 @@
                         
                         <tbody id="pedidosTableBody" class="divide-y divide-slate-300">
                             @if($items && count($items) > 0)
-                                @foreach($items as $item)
-                                <tr class="hover:bg-slate-50 transition-colors"
-                                    data-numero-pedido="{{ $item['numero_pedido'] }}"
-                                    data-asesor="{{ is_string($item['asesor'] ?? null) && !empty($item['asesor']) ? $item['asesor'] : 'N/A' }}"
-                                    data-empresa="{{ is_string($item['empresa'] ?? null) && !empty($item['empresa']) ? $item['empresa'] : 'N/A' }}"
-                                    @if($item['estado_bodega'] === 'Homologar')
-                                        style="background-color: rgba(147, 51, 234, 0.08);"
-                                    @elseif($item['estado_bodega'] === 'Entregado')
-                                        style="background-color: rgba(37, 99, 235, 0.05);"
-                                    @endif
-                                >
-                                    <!-- DESCRIPCIÓN (PRENDA) -->
-                                    @if(($item['descripcion_rowspan'] ?? 0) > 0)
-                                    <td class="px-4 py-3 text-xs text-black border-r border-slate-300" rowspan="{{ $item['descripcion_rowspan'] }}" style="width: 22%;">
-                                        @php
-                                            $desc = $item['descripcion'];
-                                            $nombre = $desc['nombre_prenda'] ?? $desc['nombre'] ?? 'Prenda sin nombre';
-                                            $tela = $desc['tela'] ?? null;
-                                            $color = $desc['color'] ?? null;
-                                            $variantes = $desc['variantes'] ?? [];
-                                            $primeraVariante = count($variantes) > 0 ? $variantes[0] : null;
-                                            $genero = $primeraVariante['genero'] ?? null;
-                                            $procesos = $desc['procesos'] ?? [];
-                                            
-                                            // Debug logging
-                                            \Log::debug('[BODEGA-VARIANTES] Datos de variante', [
-                                                'item_id' => $item['id'] ?? 'unknown',
-                                                'primeraVariante' => $primeraVariante,
-                                                'tipo_manga_id' => $primeraVariante['tipo_manga_id'] ?? 'NULL',
-                                                'tipo_broche_boton_id' => $primeraVariante['tipo_broche_boton_id'] ?? 'NULL',
-                                                'bolsillos' => $primeraVariante['bolsillos'] ?? 'NULL',
-                                                'tipoManga_value' => $primeraVariante['tipoManga_value'] ?? 'NULL',
-                                                'tipoBroche_value' => $primeraVariante['tipoBroche_value'] ?? 'NULL'
-                                            ]);
-                                        @endphp
-                                        <div class="font-bold text-black mb-1">{{ $nombre }}</div>
-                                        @if($tela || ($color && strtolower($color) !== 'sin color'))
-                                            <div class="text-black text-xs mb-1">
-                                                @if($tela && $color && strtolower($color) !== 'sin color')
-                                                    Tela: {{ $tela }} - Color: {{ $color }}
-                                                @elseif($tela)
-                                                    Tela: {{ $tela }}
-                                                @elseif($color && strtolower($color) !== 'sin color')
-                                                    Color: {{ $color }}
-                                                @endif
-                                            </div>
-                                        @endif
-                                        
-                                        <!-- Variantes (manga, botón, bolsillos) -->
-                                        @if(isset($primeraVariante) && $primeraVariante)
-                                            @php
-                                                $variantesInfo = [];
-                                                
-                                                // Manga
-                                                if(!empty($primeraVariante['manga'])) {
-                                                    $mangaObs = !empty($primeraVariante['manga_obs']) ? $primeraVariante['manga_obs'] : '';
-                                                    $variantesInfo[] = 'Manga:' . $primeraVariante['manga'] . ' (' . $mangaObs . ')';
+                                @php
+                                    $itemsAgrupados = collect($items)->groupBy(function ($it) {
+                                        if (($it['tipo'] ?? null) === 'epp') {
+                                            return 'epp_' . ($it['pedido_epp_id'] ?? ($it['talla'] ?? ''));
+                                        }
+                                        return 'prenda_' . ($it['prenda_id'] ?? md5(($it['descripcion']['nombre_prenda'] ?? $it['descripcion']['nombre'] ?? 'sin_nombre')));
+                                    });
+                                @endphp
+
+                                @foreach($itemsAgrupados as $grupo)
+                                    @php
+                                        $primeraItem = $grupo->first();
+
+                                        $itemsPorTalla = [];
+                                        $itemsPorTallaColor = [];
+                                        foreach ($grupo as $it) {
+                                            if (isset($it['talla'])) {
+                                                $itemsPorTalla[$it['talla']] = $it;
+
+                                                $itTallaColorId = $it['talla_color_id'] ?? ($it['tallaColorId'] ?? null);
+                                                $itKey = $it['talla'] . '|' . ($itTallaColorId ?? '');
+                                                $itemsPorTallaColor[$itKey] = $it;
+                                            }
+                                        }
+
+                                        $desc = $primeraItem['descripcion'] ?? [];
+                                        $nombre = $desc['nombre_prenda'] ?? $desc['nombre'] ?? 'Prenda sin nombre';
+                                        $tela = $desc['tela'] ?? null;
+                                        $color = $desc['color'] ?? null;
+                                        $variantes = $desc['variantes'] ?? [];
+                                        $procesos = $desc['procesos'] ?? [];
+                                        $primeraVariante = count($variantes) > 0 ? $variantes[0] : null;
+
+                                        $gruposPorColor = [];
+                                        if (($primeraItem['tipo'] ?? null) === 'prenda' && is_array($variantes)) {
+                                            foreach ($variantes as $variante) {
+                                                $generoVar = strtoupper($variante['genero'] ?? '');
+                                                $tallaVar = $variante['talla'] ?? '';
+
+                                                if ($generoVar === 'GENERICO') {
+                                                    continue;
                                                 }
-                                                
-                                                // Botón
-                                                if(!empty($primeraVariante['broche'])) {
-                                                    $brocheObs = !empty($primeraVariante['broche_obs']) ? $primeraVariante['broche_obs'] : '';
-                                                    $variantesInfo[] = $primeraVariante['broche'] . ' (' . $brocheObs . ')';
-                                                }
-                                                
-                                                // Bolsillos
-                                                if(!empty($primeraVariante['bolsillos'])) {
-                                                    $bolsillosObs = !empty($primeraVariante['bolsillos_obs']) ? $primeraVariante['bolsillos_obs'] : '';
-                                                    $variantesInfo[] = 'Bolsillos (' . $bolsillosObs . ')';
-                                                }
-                                            @endphp
-                                            @if(!empty($variantesInfo))
-                                                <div class="text-slate-900 mb-1 text-xs space-y-0.5">
-                                                    @foreach($variantesInfo as $variante)
-                                                        <div>• {{ $variante }}</div>
-                                                    @endforeach
-                                                </div>
-                                            @endif
-                                        @endif
-                                        
-                                        @if(count($procesos) > 0)
-                                            <div class="text-black text-xs mt-2 space-y-0.5">
-                                                @foreach($procesos as $proceso)
-                                                    <div class="flex items-start gap-1">
-                                                        <span class="text-blue-600 font-bold">•</span>
-                                                        <span>
-                                                            {{ $proceso['tipo_proceso'] ?? 'Proceso' }}
-                                                            @if(!empty($proceso['ubicaciones']))
-                                                                @php
-                                                                    $ubicaciones = $proceso['ubicaciones'];
-                                                                    
-                                                                    // Si es un JSON string, decodificar
-                                                                    if (is_string($ubicaciones) && (strpos($ubicaciones, '[') === 0 || strpos($ubicaciones, '{') === 0)) {
-                                                                        $ubicacionesDecodificadas = json_decode($ubicaciones, true);
-                                                                        if (is_array($ubicacionesDecodificadas)) {
-                                                                            $ubicacionesStr = implode(', ', $ubicacionesDecodificadas);
-                                                                        } else {
-                                                                            $ubicacionesStr = $ubicaciones;
-                                                                        }
-                                                                    } elseif (is_array($ubicaciones)) {
-                                                                        $ubicacionesStr = implode(', ', $ubicaciones);
-                                                                    } else {
-                                                                        $ubicacionesStr = $ubicaciones;
-                                                                    }
-                                                                @endphp
-                                                                @if(!empty($ubicacionesStr))
-                                                                    ({{ $ubicacionesStr }})
-                                                                @endif
-                                                            @endif
-                                                        </span>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        @endif
-                                        
-                                        <!-- Colores por talla -->
-                                        @if(isset($item['descripcion']['variantes']) && is_array($item['descripcion']['variantes']))
-                                            @php
-                                                // Agrupar por género + color
-                                                $porGeneroColor = [];
-                                                
-                                                foreach($item['descripcion']['variantes'] as $variante) {
-                                                    if(isset($variante['colores_detalle']) && is_array($variante['colores_detalle'])) {
-                                                        foreach($variante['colores_detalle'] as $color) {
-                                                            $genero = strtoupper($variante['genero'] ?? '');
-                                                            $rawColor = $color['color'] ?? '';
-                                                            $esColorValido = !empty($rawColor) && strtolower($rawColor) !== 'sin color';
-                                                            $colorNombre = $esColorValido ? strtoupper($rawColor) : '__SIN_COLOR__';
-                                                            $talla = $variante['talla'] ?? '';
-                                                            $cantidad = $color['cantidad'] ?? 1;
-                                                            
-                                                            $key = $genero . '||' . $colorNombre;
-                                                            if (!isset($porGeneroColor[$key])) {
-                                                                $porGeneroColor[$key] = [
-                                                                    'genero' => $genero,
-                                                                    'color' => $colorNombre,
-                                                                    'tallas' => []
+
+                                                if (isset($variante['colores_detalle']) && is_array($variante['colores_detalle']) && !empty($variante['colores_detalle'])) {
+                                                    foreach ($variante['colores_detalle'] as $colorDetalle) {
+                                                        $rawColor = $colorDetalle['color'] ?? '';
+                                                        $esColorValido = !empty($rawColor) && strtolower(trim($rawColor)) !== 'sin color';
+                                                        $colorKey = $esColorValido ? strtoupper($rawColor) : '__SIN_COLOR__';
+                                                        $cantidadColor = (int)($colorDetalle['cantidad'] ?? 0);
+                                                        $tallaColorId = $colorDetalle['talla_color_id'] ?? ($colorDetalle['tallaColorId'] ?? null);
+
+                                                        if (!empty($tallaVar) && $cantidadColor > 0) {
+                                                            if (!isset($gruposPorColor[$colorKey])) {
+                                                                $gruposPorColor[$colorKey] = [
+                                                                    'color' => $colorKey,
+                                                                    'tallas' => [],
                                                                 ];
                                                             }
-                                                            $porGeneroColor[$key]['tallas'][] = [
-                                                                'talla' => $talla,
-                                                                'cantidad' => $cantidad
+                                                            $gruposPorColor[$colorKey]['tallas'][] = [
+                                                                'talla' => $tallaVar,
+                                                                'genero' => $variante['genero'] ?? null,
+                                                                'cantidad' => $cantidadColor,
+                                                                'tallaColorId' => $tallaColorId,
                                                             ];
                                                         }
                                                     }
                                                 }
-                                                
-                                                // Ordenar tallas dentro de cada grupo
-                                                foreach($porGeneroColor as &$grupo) {
-                                                    usort($grupo['tallas'], function($a, $b) {
-                                                        $nA = is_numeric($a['talla']) ? (int)$a['talla'] : null;
-                                                        $nB = is_numeric($b['talla']) ? (int)$b['talla'] : null;
-                                                        if ($nA !== null && $nB !== null) return $nA - $nB;
-                                                        return strcmp($a['talla'], $b['talla']);
-                                                    });
-                                                }
-                                                unset($grupo);
-                                            @endphp
-                                            @if(!empty($porGeneroColor))
-                                                @php
-                                                    $coloresReales = array_filter($porGeneroColor, fn($g) => $g['color'] !== '__SIN_COLOR__');
-                                                    $sinColor = array_filter($porGeneroColor, fn($g) => $g['color'] === '__SIN_COLOR__');
-                                                @endphp
-                                                <div class="text-slate-700 mt-2 text-xs font-medium">
-                                                    @if(!empty($coloresReales))
-                                                        @php $currentGenero = ''; @endphp
-                                                        @foreach($coloresReales as $grupo)
-                                                            @if($grupo['genero'] !== $currentGenero)
-                                                                @php $currentGenero = $grupo['genero']; @endphp
-                                                                <div class="font-bold text-black mt-1">{{ $currentGenero }}:</div>
-                                                            @endif
-                                                            <div class="ml-2">• <span style="color: #0369a1; font-weight: 600;">{{ $grupo['color'] }}:</span> @foreach($grupo['tallas'] as $i => $t){{ $i > 0 ? ', ' : '' }}{{ $t['talla'] }}-{{ $t['cantidad'] }}@endforeach</div>
-                                                        @endforeach
-                                                    @elseif(!empty($sinColor))
-                                                        @php $currentGenero = ''; @endphp
-                                                        @foreach($sinColor as $grupo)
-                                                            @if($grupo['genero'] !== $currentGenero)
-                                                                @php $currentGenero = $grupo['genero']; @endphp
-                                                            @endif
-                                                            <div class="ml-2">{{ $currentGenero }}: @foreach($grupo['tallas'] as $i => $t){{ $i > 0 ? ', ' : '' }}{{ $t['talla'] }}:{{ $t['cantidad'] }}@endforeach</div>
-                                                        @endforeach
-                                                    @endif
-                                                </div>
-                                            @endif
-                                        @endif
-                                    </td>
-                                    @endif
-                                    
-                                    <!-- GÉNERO -->
-                                    @if(($item['descripcion_rowspan'] ?? 0) > 0)
-                                    <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" rowspan="{{ $item['descripcion_rowspan'] }}" style="width: 6%;">
-                                        @if(($item['tipo'] ?? null) === 'epp' || ($item['area'] ?? null) === 'EPP')
-                                            —
-                                        @else
+                                            }
+                                        }
+
+                                        foreach ($gruposPorColor as &$grupoColor) {
+                                            usort($grupoColor['tallas'], function ($a, $b) {
+                                                $nA = is_numeric($a['talla']) ? (int)$a['talla'] : null;
+                                                $nB = is_numeric($b['talla']) ? (int)$b['talla'] : null;
+                                                if ($nA !== null && $nB !== null) return $nA - $nB;
+                                                return strcmp($a['talla'], $b['talla']);
+                                            });
+                                        }
+                                        unset($grupoColor);
+
+                                        $tieneColoresPorTalla = !empty($gruposPorColor);
+                                    @endphp
+
+                                    @if($tieneColoresPorTalla)
+                                        @foreach($gruposPorColor as $indexColor => $grupoColor)
                                             @php
-                                                $genero = '';
-                                                if(isset($item['descripcion']['variantes']) && is_array($item['descripcion']['variantes']) && count($item['descripcion']['variantes']) > 0) {
-                                                    $primeraVariante = $item['descripcion']['variantes'][0];
-                                                    $genero = $primeraVariante['genero'] ?? '';
-                                                }
-                                                elseif(isset($item['genero'])) {
-                                                    $genero = $item['genero'];
-                                                }
+                                                $rowSpanColor = count($grupoColor['tallas']);
+                                                $colorLabel = $grupoColor['color'] === '__SIN_COLOR__' ? null : $grupoColor['color'];
                                             @endphp
-                                            @if($genero && strtoupper($genero) !== 'GENERICO')
-                                                {{ ucfirst(strtolower($genero)) }}
-                                            @else
-                                                —
-                                            @endif
-                                        @endif
-                                    </td>
-                                    @endif
-                                    
-                                    <!-- TALLA -->
-                                    <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
-                                        @if(($item['tipo'] ?? null) === 'epp' || ($item['area'] ?? null) === 'EPP')
-                                            —
-                                        @elseif(($item['talla'] ?? null) === 'SIN_ESPECIFICAR')
-                                            —
-                                        @else
-                                            {{ $item['talla'] ?? '—' }}
-                                        @endif
-                                    </td>
-                                    
-                                    <!-- CANTIDAD -->
-                                    <td class="px-4 py-3 text-center text-xs font-bold text-black border-r border-slate-300" style="width: 6%;">
-                                        {{ $item['cantidad_total'] ?? 0 }}
-                                    </td>
-                                    
-                                    <!-- PENDIENTES -->
-                                    <td class="px-2 py-3 border-r border-slate-300" style="width: 8%;">
-                                        <textarea
-                                            class="pendientes-input w-full px-1.5 py-1 border-2 border-slate-300 text-[10px] focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none
-                                                @if($item['estado_bodega'] === 'Entregado')
-                                                    bg-blue-50
-                                                @else
-                                                    bg-slate-50
-                                                @endif"
-                                            style="font-family: 'Poppins', sans-serif;"
-                                            data-numero-pedido="{{ $item['numero_pedido'] }}"
-                                            data-talla="{{ $item['talla'] }}"
-                                            data-pedido-produccion-id="{{ $item['pedido_produccion_id'] }}"
-                                            data-recibo-prenda-id="{{ $item['recibo_prenda_id'] }}"
-                                            placeholder="Pendientes..."
-                                            rows="1"
-                                            @if($esReadOnly ?? false) disabled @endif
-                                        >{{ $item['pendientes'] ?? '' }}</textarea>
-                                    </td>
-                                    
-                                    <!-- OBSERVACIONES -->
-                                    <td class="px-4 py-3 border-r border-slate-300" style="width: 16%;">
-                                        <div class="flex gap-1">
-                                            <textarea
-                                                class="observaciones-input flex-1 px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none rounded
-                                                    @if($item['estado_bodega'] === 'Entregado')
-                                                        bg-blue-50
-                                                    @else
-                                                        bg-slate-50
-                                                    @endif"
-                                                data-numero-pedido="{{ $item['numero_pedido'] }}"
-                                                data-talla="{{ $item['talla'] }}"
-                                                placeholder="Notas..."
-                                                rows="1"
-                                                readonly
-                                            >{{ $item['observaciones'] ?? '' }}</textarea>
-                                            <button
-                                                type="button"
-                                                onclick="abrirModalNotas('{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}', '{{ addslashes($nombre) }}', 'prenda', '{{ $item['talla'] }}')"
-                                                class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded transition whitespace-nowrap"
-                                                title="Ver/agregar notas"
-                                            >
-                                                💬
-                                            </button>
-                                        </div>
-                                    </td>
-                                    
-                                    <!-- FECHA PEDIDO -->
-                                    <td class="px-4 py-3 border-r border-slate-300" style="width: 12%;">
-                                        <input
-                                            type="date"
-                                            class="fecha-pedido-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded
-                                                @if($item['estado_bodega'] === 'Entregado')
-                                                    bg-blue-50
-                                                @else
-                                                    bg-slate-50
-                                                @endif"
-                                            value="{{ $item['fecha_pedido'] ? $item['fecha_pedido'] : '' }}"
-                                            data-numero-pedido="{{ $item['numero_pedido'] }}"
-                                            data-talla="{{ $item['talla'] }}"
-                                            data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
-                                            data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}"
-                                            @if($esReadOnly ?? false) disabled @endif
-                                        >
-                                    </td>
-                                    
-                                    <!-- FECHA ENTREGA -->
-                                    <td class="px-4 py-3 border-r border-slate-300" style="width: 12%;">
-                                        <input
-                                            type="date"
-                                            class="fecha-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded
-                                                @if($item['estado_bodega'] === 'Entregado')
-                                                    bg-blue-50
-                                                @else
-                                                    bg-slate-50
-                                                @endif"
-                                            value="{{ $item['fecha_entrega'] ? $item['fecha_entrega'] : '' }}"
-                                            data-numero-pedido="{{ $item['numero_pedido'] }}"
-                                            data-talla="{{ $item['talla'] }}"
-                                            data-pedido-produccion-id="{{ $item['pedido_produccion_id'] }}"
-                                            data-recibo-prenda-id="{{ $item['recibo_prenda_id'] }}"
-                                            @if($item['estado_bodega'] === 'Entregado' || ($esReadOnly ?? false))
-                                                disabled
-                                            @endif
-                                        >
-                                    </td>
-                                    
-                                    <!-- ÁREA / ESTADO -->
-                                    <td class="px-4 py-3" style="width: 18%;">
-                                        <div class="space-y-2">
-                                            <select
-                                                class="area-select w-full px-2 py-1 border border-slate-300 bg-white text-black text-xs font-semibold uppercase rounded"
-                                                data-numero-pedido="{{ $item['numero_pedido'] }}"
-                                                data-talla="{{ $item['talla'] }}"
-                                                data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
-                                                data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}"
-                                                data-original-area="{{ $item['area'] ?? '' }}"
-                                                @if($esReadOnly ?? false) disabled @endif
-                                            >
-                                                <option value="">ÁREA</option>
-                                                <option value="Costura" {{ ($item['area'] ?? null) === 'Costura' ? 'selected' : '' }}>COSTURA</option>
-                                                <option value="EPP" {{ ($item['area'] ?? null) === 'EPP' ? 'selected' : '' }}>EPP</option>
-                                            </select>
+                                            @foreach($grupoColor['tallas'] as $indexTalla => $t)
+                                                @php
+                                                    $tKey = ($t['talla'] ?? '') . '|' . (($t['tallaColorId'] ?? null) ?? '');
+                                                    $baseItem = $itemsPorTallaColor[$tKey] ?? ($itemsPorTalla[$t['talla']] ?? $primeraItem);
+                                                @endphp
+                                                <tr class="hover:bg-slate-50 transition-colors"
+                                                    data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
+                                                    data-asesor="{{ is_string($baseItem['asesor'] ?? null) && !empty($baseItem['asesor']) ? $baseItem['asesor'] : 'N/A' }}"
+                                                    data-empresa="{{ is_string($baseItem['empresa'] ?? null) && !empty($baseItem['empresa']) ? $baseItem['empresa'] : 'N/A' }}"
+                                                    data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
+                                                    @if(($baseItem['estado_bodega'] ?? '') === 'Homologar')
+                                                        style="background-color: rgba(147, 51, 234, 0.08);"
+                                                    @elseif(($baseItem['estado_bodega'] ?? '') === 'Entregado')
+                                                        style="background-color: rgba(37, 99, 235, 0.05);"
+                                                    @endif
+                                                >
+                                                    <!-- DESCRIPCIÓN (PRENDA) - por grupo de color -->
+                                                    @if($indexTalla === 0)
+                                                    <td class="px-4 py-3 text-xs text-black border-r border-slate-300" rowspan="{{ $rowSpanColor }}" style="width: 22%;">
+                                                        <div class="font-bold text-black mb-1">
+                                                            {{ $nombre }}
+                                                            @if($colorLabel)
+                                                                <span class="text-black"> - <strong>{{ $colorLabel }}</strong></span>
+                                                            @endif
+                                                            @if(($baseItem['de_bodega'] ?? ($baseItem['descripcion']['de_bodega'] ?? ($baseItem['objetoPrenda']['de_bodega'] ?? false))) )
+                                                                <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
+                                                            @endif
+                                                        </div>
+                                                        @if($tela || ($color && strtolower($color) !== 'sin color'))
+                                                            <div class="text-black text-xs mb-1">
+                                                                @if($tela && $color && strtolower($color) !== 'sin color')
+                                                                    Tela: {{ $tela }} - Color: {{ $color }}
+                                                                @elseif($tela)
+                                                                    Tela: {{ $tela }}
+                                                                @elseif($color && strtolower($color) !== 'sin color')
+                                                                    Color: {{ $color }}
+                                                                @endif
+                                                            </div>
+                                                        @endif
 
-                                            <select
-                                                class="estado-select w-full px-2 py-1 border border-slate-300 bg-white text-black text-xs font-semibold uppercase rounded"
+                                                        @if(isset($primeraVariante) && $primeraVariante)
+                                                            @php
+                                                                $variantesInfo = [];
+
+                                                                if(!empty($primeraVariante['manga'])) {
+                                                                    $mangaObs = !empty($primeraVariante['manga_obs']) ? $primeraVariante['manga_obs'] : '';
+                                                                    $variantesInfo[] = 'Manga:' . $primeraVariante['manga'] . ' (' . $mangaObs . ')';
+                                                                }
+
+                                                                if(!empty($primeraVariante['broche'])) {
+                                                                    $brocheObs = !empty($primeraVariante['broche_obs']) ? $primeraVariante['broche_obs'] : '';
+                                                                    $variantesInfo[] = $primeraVariante['broche'] . ' (' . $brocheObs . ')';
+                                                                }
+
+                                                                if(!empty($primeraVariante['bolsillos'])) {
+                                                                    $bolsillosObs = !empty($primeraVariante['bolsillos_obs']) ? $primeraVariante['bolsillos_obs'] : '';
+                                                                    $variantesInfo[] = 'Bolsillos (' . $bolsillosObs . ')';
+                                                                }
+                                                            @endphp
+                                                            @if(!empty($variantesInfo))
+                                                                <div class="text-slate-900 mb-1 text-xs space-y-0.5">
+                                                                    @foreach($variantesInfo as $variante)
+                                                                        <div>• {{ $variante }}</div>
+                                                                    @endforeach
+                                                                </div>
+                                                            @endif
+                                                        @endif
+
+                                                        @if(count($procesos) > 0)
+                                                            <div class="text-black text-xs mt-2 space-y-0.5">
+                                                                @foreach($procesos as $proceso)
+                                                                    <div class="flex items-start gap-1">
+                                                                        <span class="text-blue-600 font-bold">•</span>
+                                                                        <span>
+                                                                            {{ $proceso['tipo_proceso'] ?? 'Proceso' }}
+                                                                            @if(!empty($proceso['ubicaciones']))
+                                                                                @php
+                                                                                    $ubicaciones = $proceso['ubicaciones'];
+
+                                                                                    if (is_string($ubicaciones) && (strpos($ubicaciones, '[') === 0 || strpos($ubicaciones, '{') === 0)) {
+                                                                                        $ubicacionesDecodificadas = json_decode($ubicaciones, true);
+                                                                                        if (is_array($ubicacionesDecodificadas)) {
+                                                                                            $ubicacionesStr = implode(', ', $ubicacionesDecodificadas);
+                                                                                        } else {
+                                                                                            $ubicacionesStr = $ubicaciones;
+                                                                                        }
+                                                                                    } elseif (is_array($ubicaciones)) {
+                                                                                        $ubicacionesStr = implode(', ', $ubicaciones);
+                                                                                    } else {
+                                                                                        $ubicacionesStr = $ubicaciones;
+                                                                                    }
+                                                                                @endphp
+                                                                                @if(!empty($ubicacionesStr))
+                                                                                    ({{ $ubicacionesStr }})
+                                                                                @endif
+                                                                            @endif
+                                                                        </span>
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+                                                        @endif
+                                                    </td>
+                                                    @endif
+
+                                                    <!-- GÉNERO (por grupo de color) -->
+                                                    @if($indexTalla === 0)
+                                                    <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" rowspan="{{ $rowSpanColor }}" style="width: 6%;">
+                                                        @php
+                                                            $gen = $t['genero'] ?? '';
+                                                            $gen = (is_string($gen) && strtoupper(trim($gen)) === 'GENERICO') ? '' : $gen;
+                                                        @endphp
+                                                        {{ $gen ? ucfirst(strtolower($gen)) : '—' }}
+                                                    </td>
+                                                    @endif
+
+                                                    <!-- TALLA -->
+                                                    <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
+                                                        @if(($t['talla'] ?? null) === 'SIN_ESPECIFICAR')
+                                                            —
+                                                        @else
+                                                            {{ $t['talla'] ?? '—' }}
+                                                        @endif
+                                                    </td>
+
+                                                    <!-- CANTIDAD (por color) -->
+                                                    <td class="px-4 py-3 text-center text-xs font-bold text-black border-r border-slate-300" style="width: 6%;">
+                                                        {{ $t['cantidad'] ?? 0 }}
+                                                    </td>
+
+                                                    <!-- PENDIENTES -->
+                                                    <td class="px-2 py-3 border-r border-slate-300" style="width: 8%;">
+                                                        <textarea
+                                                            class="pendientes-input w-full px-1.5 py-1 border-2 border-slate-300 text-[10px] focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none
+                                                                @if(($baseItem['estado_bodega'] ?? '') === 'Entregado')
+                                                                    bg-blue-50
+                                                                @else
+                                                                    bg-slate-50
+                                                                @endif"
+                                                            style="font-family: 'Poppins', sans-serif;"
+                                                            data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
+                                                            data-talla="{{ $baseItem['talla'] }}"
+                                                            data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
+                                                            data-pedido-produccion-id="{{ $baseItem['pedido_produccion_id'] }}"
+                                                            data-recibo-prenda-id="{{ $baseItem['recibo_prenda_id'] }}"
+                                                            placeholder="Pendientes..."
+                                                            rows="1"
+                                                            @if($esReadOnly ?? false) disabled @endif
+                                                        >{{ $baseItem['pendientes'] ?? '' }}</textarea>
+                                                    </td>
+
+                                                    <!-- OBSERVACIONES -->
+                                                    <td class="px-4 py-3 border-r border-slate-300" style="width: 16%;">
+                                                        <div class="flex gap-1">
+                                                            <textarea
+                                                                class="observaciones-input flex-1 px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none rounded
+                                                                    @if(($baseItem['estado_bodega'] ?? '') === 'Entregado')
+                                                                        bg-blue-50
+                                                                    @else
+                                                                        bg-slate-50
+                                                                    @endif"
+                                                                data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
+                                                                data-talla="{{ $baseItem['talla'] }}"
+                                                                data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
+                                                                placeholder="Notas..."
+                                                                rows="1"
+                                                                readonly
+                                                            >{{ $baseItem['observaciones'] ?? '' }}</textarea>
+                                                            <button
+                                                                type="button"
+                                                                onclick="abrirModalNotas('{{ $baseItem['numero_pedido'] }}', '{{ $baseItem['talla'] }}', '{{ addslashes($nombre) }}', 'prenda', '{{ $baseItem['talla'] }}', '{{ $t['tallaColorId'] ?? '' }}')"
+                                                                class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded transition whitespace-nowrap"
+                                                                title="Ver/agregar notas"
+                                                            >
+                                                                💬
+                                                            </button>
+                                                        </div>
+                                                    </td>
+
+                                                    <!-- FECHA PEDIDO -->
+                                                    <td class="px-4 py-3 border-r border-slate-300" style="width: 12%;">
+                                                        <input
+                                                            type="date"
+                                                            class="fecha-pedido-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded
+                                                                @if(($baseItem['estado_bodega'] ?? '') === 'Entregado')
+                                                                    bg-blue-50
+                                                                @else
+                                                                    bg-slate-50
+                                                                @endif"
+                                                            value="{{ $baseItem['fecha_pedido'] ? $baseItem['fecha_pedido'] : '' }}"
+                                                            data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
+                                                            data-talla="{{ $baseItem['talla'] }}"
+                                                            data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
+                                                            data-pedido-produccion-id="{{ $baseItem['pedido_produccion_id'] ?? '' }}"
+                                                            data-recibo-prenda-id="{{ $baseItem['recibo_prenda_id'] ?? '' }}"
+                                                            @if($esReadOnly ?? false) disabled @endif
+                                                        >
+                                                    </td>
+
+                                                    <!-- FECHA ENTREGA -->
+                                                    <td class="px-4 py-3 border-r border-slate-300" style="width: 12%;">
+                                                        <input
+                                                            type="date"
+                                                            class="fecha-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded
+                                                                @if(($baseItem['estado_bodega'] ?? '') === 'Entregado')
+                                                                    bg-blue-50
+                                                                @else
+                                                                    bg-slate-50
+                                                                @endif"
+                                                            value="{{ $baseItem['fecha_entrega'] ? $baseItem['fecha_entrega'] : '' }}"
+                                                            data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
+                                                            data-talla="{{ $baseItem['talla'] }}"
+                                                            data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
+                                                            data-pedido-produccion-id="{{ $baseItem['pedido_produccion_id'] }}"
+                                                            data-recibo-prenda-id="{{ $baseItem['recibo_prenda_id'] }}"
+                                                            @if(($baseItem['estado_bodega'] ?? '') === 'Entregado' || ($esReadOnly ?? false))
+                                                                disabled
+                                                            @endif
+                                                        >
+                                                    </td>
+
+                                                    <!-- ÁREA / ESTADO -->
+                                                    <td class="px-4 py-3" style="width: 18%;">
+                                                        <div class="space-y-2">
+                                                            <select
+                                                                class="area-select w-full px-2 py-1 border border-slate-300 bg-white text-black text-xs font-semibold uppercase rounded"
+                                                                data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
+                                                                data-talla="{{ $baseItem['talla'] }}"
+                                                                data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
+                                                                data-pedido-produccion-id="{{ $baseItem['pedido_produccion_id'] ?? '' }}"
+                                                                data-recibo-prenda-id="{{ $baseItem['recibo_prenda_id'] ?? '' }}"
+                                                                data-original-area="{{ $baseItem['area'] ?? '' }}"
+                                                                @if($esReadOnly ?? false) disabled @endif
+                                                            >
+                                                                <option value="">ÁREA</option>
+                                                                <option value="Costura" {{ ($baseItem['area'] ?? null) === 'Costura' ? 'selected' : '' }}>COSTURA</option>
+                                                                <option value="EPP" {{ ($baseItem['area'] ?? null) === 'EPP' ? 'selected' : '' }}>EPP</option>
+                                                            </select>
+
+                                                            <select
+                                                                class="estado-select w-full px-2 py-1 border border-slate-300 bg-white text-black text-xs font-semibold uppercase rounded"
+                                                                data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
+                                                                data-talla="{{ $baseItem['talla'] }}"
+                                                                data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
+                                                                data-pedido-produccion-id="{{ $baseItem['pedido_produccion_id'] ?? '' }}"
+                                                                data-recibo-prenda-id="{{ $baseItem['recibo_prenda_id'] ?? '' }}"
+                                                                data-prenda-nombre="{{ $baseItem['descripcion']['nombre_prenda'] ?? $baseItem['descripcion']['nombre'] ?? '' }}"
+                                                                data-prenda-id="{{ $baseItem['prenda_id'] ?? '' }}"
+                                                                data-pedido-epp-id="{{ $baseItem['pedido_epp_id'] ?? '' }}"
+                                                                data-cantidad="{{ $baseItem['cantidad_total'] }}"
+                                                                data-original-estado="{{ $baseItem['estado_bodega'] ?? '' }}"
+                                                                @if($esReadOnly ?? false) disabled @endif
+                                                            >
+                                                                <option value="">ESTADO</option>
+                                                                <option value="Pendiente" {{ ($baseItem['estado_bodega'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
+                                                                <option value="Entregado" {{ ($baseItem['estado_bodega'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
+                                                                <option value="Homologar" {{ ($baseItem['estado_bodega'] ?? null) === 'Homologar' ? 'selected' : '' }}>HOMOLOGAR</option>
+                                                                @if(auth()->user()->hasRole(['Bodeguero', 'Admin', 'SuperAdmin']))
+                                                                <option value="Anulado" {{ ($baseItem['estado_bodega'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
+                                                                @endif
+                                                            </select>
+
+                                                            @if(!($esReadOnly ?? false) && !auth()->user()->hasRole('supervisor_gerencia'))
+                                                            <button
+                                                                type="button"
+                                                                onclick="guardarFilaCompleta(this, '{{ $baseItem['numero_pedido'] }}', '{{ $baseItem['talla'] }}', '{{ $t['tallaColorId'] ?? '' }}')"
+                                                                class="w-full px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase rounded transition"
+                                                            >
+                                                                💾 Guardar
+                                                            </button>
+                                                            @elseif(auth()->user()->hasRole('supervisor_gerencia'))
+                                                            <button
+                                                                type="button"
+                                                                disabled
+                                                                class="w-full px-2 py-1 bg-gray-400 text-white text-xs font-bold uppercase rounded cursor-not-allowed opacity-60"
+                                                                title="Solo usuarios autorizados pueden guardar cambios"
+                                                            >
+                                                                💾 Guardar
+                                                            </button>
+                                                            @else
+                                                            <div class="w-full px-2 py-1 bg-slate-100 text-slate-500 text-xs font-medium text-center rounded">
+                                                                Guardado deshabilitado
+                                                            </div>
+                                                            @endif
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        @endforeach
+                                    @else
+                                        @foreach($grupo as $item)
+                                            <tr class="hover:bg-slate-50 transition-colors"
                                                 data-numero-pedido="{{ $item['numero_pedido'] }}"
-                                                data-talla="{{ $item['talla'] }}"
-                                                data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
-                                                data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}"
-                                                data-prenda-nombre="{{ $item['descripcion']['nombre_prenda'] ?? $item['descripcion']['nombre'] ?? '' }}"
-                                                data-prenda-id="{{ $item['prenda_id'] ?? '' }}"
-                                                data-pedido-epp-id="{{ $item['pedido_epp_id'] ?? '' }}"
-                                                data-cantidad="{{ $item['cantidad_total'] }}"
-                                                data-original-estado="{{ $item['estado_bodega'] ?? '' }}"
-                                                @if($esReadOnly ?? false) disabled @endif
-                                            >
-                                                <option value="">ESTADO</option>
-                                                <option value="Pendiente" {{ ($item['estado_bodega'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
-                                                <option value="Entregado" {{ ($item['estado_bodega'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
-                                                <option value="Homologar" {{ ($item['estado_bodega'] ?? null) === 'Homologar' ? 'selected' : '' }}>HOMOLOGAR</option>
-                                                @if(auth()->user()->hasRole(['Bodeguero', 'Admin', 'SuperAdmin']))
-                                                <option value="Anulado" {{ ($item['estado_bodega'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
+                                                data-asesor="{{ is_string($item['asesor'] ?? null) && !empty($item['asesor']) ? $item['asesor'] : 'N/A' }}"
+                                                data-empresa="{{ is_string($item['empresa'] ?? null) && !empty($item['empresa']) ? $item['empresa'] : 'N/A' }}"
+                                                @if($item['estado_bodega'] === 'Homologar')
+                                                    style="background-color: rgba(147, 51, 234, 0.08);"
+                                                @elseif($item['estado_bodega'] === 'Entregado')
+                                                    style="background-color: rgba(37, 99, 235, 0.05);"
                                                 @endif
-                                            </select>
+                                            >
+                                                <!-- DESCRIPCIÓN (PRENDA) -->
+                                                @if(($item['descripcion_rowspan'] ?? 0) > 0)
+                                                <td class="px-4 py-3 text-xs text-black border-r border-slate-300" rowspan="{{ $item['descripcion_rowspan'] }}" style="width: 22%;">
+                                                    @php
+                                                        $desc = $item['descripcion'];
+                                                        $nombre = $desc['nombre_prenda'] ?? $desc['nombre'] ?? 'Prenda sin nombre';
+                                                        $tela = $desc['tela'] ?? null;
+                                                        $color = $desc['color'] ?? null;
+                                                        $variantes = $desc['variantes'] ?? [];
+                                                        $primeraVariante = count($variantes) > 0 ? $variantes[0] : null;
+                                                        $genero = $primeraVariante['genero'] ?? null;
+                                                        $procesos = $desc['procesos'] ?? [];
+                                                        
+                                                        // Debug logging
+                                                        \Log::debug('[BODEGA-VARIANTES] Datos de variante', [
+                                                            'item_id' => $item['id'] ?? 'unknown',
+                                                            'primeraVariante' => $primeraVariante,
+                                                            'tipo_manga_id' => $primeraVariante['tipo_manga_id'] ?? 'NULL',
+                                                            'tipo_broche_boton_id' => $primeraVariante['tipo_broche_boton_id'] ?? 'NULL',
+                                                            'bolsillos' => $primeraVariante['bolsillos'] ?? 'NULL',
+                                                            'tipoManga_value' => $primeraVariante['tipoManga_value'] ?? 'NULL',
+                                                            'tipoBroche_value' => $primeraVariante['tipoBroche_value'] ?? 'NULL'
+                                                        ]);
+                                                    @endphp
+                                                    <div class="font-bold text-black mb-1">
+                                                        {{ $nombre }}
+                                                        @if(($item['de_bodega'] ?? ($desc['de_bodega'] ?? ($item['objetoPrenda']['de_bodega'] ?? false))) )
+                                                            <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
+                                                        @endif
+                                                    </div>
+                                                    @if($tela || ($color && strtolower($color) !== 'sin color'))
+                                                        <div class="text-black text-xs mb-1">
+                                                            @if($tela && $color && strtolower($color) !== 'sin color')
+                                                                Tela: {{ $tela }} - Color: {{ $color }}
+                                                            @elseif($tela)
+                                                                Tela: {{ $tela }}
+                                                            @elseif($color && strtolower($color) !== 'sin color')
+                                                                Color: {{ $color }}
+                                                            @endif
+                                                        </div>
+                                                    @endif
+                                                    
+                                                    <!-- Variantes (manga, botón, bolsillos) -->
+                                                    @if(isset($primeraVariante) && $primeraVariante)
+                                                        @php
+                                                            $variantesInfo = [];
+                                                            
+                                                            // Manga
+                                                            if(!empty($primeraVariante['manga'])) {
+                                                                $mangaObs = !empty($primeraVariante['manga_obs']) ? $primeraVariante['manga_obs'] : '';
+                                                                $variantesInfo[] = 'Manga:' . $primeraVariante['manga'] . ' (' . $mangaObs . ')';
+                                                            }
+                                                            
+                                                            // Botón
+                                                            if(!empty($primeraVariante['broche'])) {
+                                                                $brocheObs = !empty($primeraVariante['broche_obs']) ? $primeraVariante['broche_obs'] : '';
+                                                                $variantesInfo[] = $primeraVariante['broche'] . ' (' . $brocheObs . ')';
+                                                            }
+                                                            
+                                                            // Bolsillos
+                                                            if(!empty($primeraVariante['bolsillos'])) {
+                                                                $bolsillosObs = !empty($primeraVariante['bolsillos_obs']) ? $primeraVariante['bolsillos_obs'] : '';
+                                                                $variantesInfo[] = 'Bolsillos (' . $bolsillosObs . ')';
+                                                            }
+                                                        @endphp
+                                                        @if(!empty($variantesInfo))
+                                                            <div class="text-slate-900 mb-1 text-xs space-y-0.5">
+                                                                @foreach($variantesInfo as $variante)
+                                                                    <div>• {{ $variante }}</div>
+                                                                @endforeach
+                                                            </div>
+                                                        @endif
+                                                    @endif
+                                                    
+                                                    @if(count($procesos) > 0)
+                                                        <div class="text-black text-xs mt-2 space-y-0.5">
+                                                            @foreach($procesos as $proceso)
+                                                                <div class="flex items-start gap-1">
+                                                                    <span class="text-blue-600 font-bold">•</span>
+                                                                    <span>
+                                                                        {{ $proceso['tipo_proceso'] ?? 'Proceso' }}
+                                                                        @if(!empty($proceso['ubicaciones']))
+                                                                            @php
+                                                                                $ubicaciones = $proceso['ubicaciones'];
+                                                                                
+                                                                                // Si es un JSON string, decodificar
+                                                                                if (is_string($ubicaciones) && (strpos($ubicaciones, '[') === 0 || strpos($ubicaciones, '{') === 0)) {
+                                                                                    $ubicacionesDecodificadas = json_decode($ubicaciones, true);
+                                                                                    if (is_array($ubicacionesDecodificadas)) {
+                                                                                        $ubicacionesStr = implode(', ', $ubicacionesDecodificadas);
+                                                                                    } else {
+                                                                                        $ubicacionesStr = $ubicaciones;
+                                                                                    }
+                                                                                } elseif (is_array($ubicaciones)) {
+                                                                                    $ubicacionesStr = implode(', ', $ubicaciones);
+                                                                                } else {
+                                                                                    $ubicacionesStr = $ubicaciones;
+                                                                                }
+                                                                            @endphp
+                                                                            @if(!empty($ubicacionesStr))
+                                                                                ({{ $ubicacionesStr }})
+                                                                            @endif
+                                                                        @endif
+                                                                    </span>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
+                                                </td>
+                                                @endif
+                                                
+                                                <!-- GÉNERO -->
+                                                @if(($item['descripcion_rowspan'] ?? 0) > 0)
+                                                <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" rowspan="{{ $item['descripcion_rowspan'] }}" style="width: 6%;">
+                                                    @if(($item['tipo'] ?? null) === 'epp' || ($item['area'] ?? null) === 'EPP')
+                                                        —
+                                                    @else
+                                                        @php
+                                                            $genero = '';
+                                                            if(isset($item['descripcion']['variantes']) && is_array($item['descripcion']['variantes']) && count($item['descripcion']['variantes']) > 0) {
+                                                                $primeraVariante = $item['descripcion']['variantes'][0];
+                                                                $genero = $primeraVariante['genero'] ?? '';
+                                                            }
+                                                            elseif(isset($item['genero'])) {
+                                                                $genero = $item['genero'];
+                                                            }
+                                                        @endphp
+                                                        @if($genero && strtoupper($genero) !== 'GENERICO')
+                                                            {{ ucfirst(strtolower($genero)) }}
+                                                        @else
+                                                            —
+                                                        @endif
+                                                    @endif
+                                                </td>
+                                                @endif
+                                                
+                                                <!-- TALLA -->
+                                                <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
+                                                    @if(($item['tipo'] ?? null) === 'epp' || ($item['area'] ?? null) === 'EPP')
+                                                        —
+                                                    @elseif(($item['talla'] ?? null) === 'SIN_ESPECIFICAR')
+                                                        —
+                                                    @else
+                                                        {{ $item['talla'] ?? '—' }}
+                                                    @endif
+                                                </td>
+                                                
+                                                <!-- CANTIDAD -->
+                                                <td class="px-4 py-3 text-center text-xs font-bold text-black border-r border-slate-300" style="width: 6%;">
+                                                    {{ $item['cantidad_total'] ?? 0 }}
+                                                </td>
+                                                
+                                                <!-- PENDIENTES -->
+                                                <td class="px-2 py-3 border-r border-slate-300" style="width: 8%;">
+                                                    <textarea
+                                                        class="pendientes-input w-full px-1.5 py-1 border-2 border-slate-300 text-[10px] focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none
+                                                            @if($item['estado_bodega'] === 'Entregado')
+                                                                bg-blue-50
+                                                            @else
+                                                                bg-slate-50
+                                                            @endif"
+                                                        style="font-family: 'Poppins', sans-serif;"
+                                                        data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                                        data-talla="{{ $item['talla'] }}"
+                                                        data-pedido-produccion-id="{{ $item['pedido_produccion_id'] }}"
+                                                        data-recibo-prenda-id="{{ $item['recibo_prenda_id'] }}"
+                                                        placeholder="Pendientes..."
+                                                        rows="1"
+                                                        @if($esReadOnly ?? false) disabled @endif
+                                                    >{{ $item['pendientes'] ?? '' }}</textarea>
+                                                </td>
+                                                
+                                                <!-- OBSERVACIONES -->
+                                                <td class="px-4 py-3 border-r border-slate-300" style="width: 16%;">
+                                                    <div class="flex gap-1">
+                                                        <textarea
+                                                            class="observaciones-input flex-1 px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none rounded
+                                                                @if($item['estado_bodega'] === 'Entregado')
+                                                                    bg-blue-50
+                                                                @else
+                                                                    bg-slate-50
+                                                                @endif"
+                                                            data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                                            data-talla="{{ $item['talla'] }}"
+                                                            placeholder="Notas..."
+                                                            rows="1"
+                                                            readonly
+                                                        >{{ $item['observaciones'] ?? '' }}</textarea>
+                                                        <button
+                                                            type="button"
+                                                            onclick="abrirModalNotas('{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}', '{{ addslashes($nombre) }}', 'prenda', '{{ $item['talla'] }}')"
+                                                            class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded transition whitespace-nowrap"
+                                                            title="Ver/agregar notas"
+                                                        >
+                                                            💬
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                                
+                                                <!-- FECHA PEDIDO -->
+                                                <td class="px-4 py-3 border-r border-slate-300" style="width: 12%;">
+                                                    <input
+                                                        type="date"
+                                                        class="fecha-pedido-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded
+                                                            @if($item['estado_bodega'] === 'Entregado')
+                                                                bg-blue-50
+                                                            @else
+                                                                bg-slate-50
+                                                            @endif"
+                                                        value="{{ $item['fecha_pedido'] ? $item['fecha_pedido'] : '' }}"
+                                                        data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                                        data-talla="{{ $item['talla'] }}"
+                                                        data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
+                                                        data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}"
+                                                        @if($esReadOnly ?? false) disabled @endif
+                                                    >
+                                                </td>
+                                                
+                                                <!-- FECHA ENTREGA -->
+                                                <td class="px-4 py-3 border-r border-slate-300" style="width: 12%;">
+                                                    <input
+                                                        type="date"
+                                                        class="fecha-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded
+                                                            @if($item['estado_bodega'] === 'Entregado')
+                                                                bg-blue-50
+                                                            @else
+                                                                bg-slate-50
+                                                            @endif"
+                                                        value="{{ $item['fecha_entrega'] ? $item['fecha_entrega'] : '' }}"
+                                                        data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                                        data-talla="{{ $item['talla'] }}"
+                                                        data-pedido-produccion-id="{{ $item['pedido_produccion_id'] }}"
+                                                        data-recibo-prenda-id="{{ $item['recibo_prenda_id'] }}"
+                                                        @if($item['estado_bodega'] === 'Entregado' || ($esReadOnly ?? false))
+                                                            disabled
+                                                        @endif
+                                                    >
+                                                </td>
+                                                
+                                                <!-- ÁREA / ESTADO -->
+                                                <td class="px-4 py-3" style="width: 18%;">
+                                                    <div class="space-y-2">
+                                                        <select
+                                                            class="area-select w-full px-2 py-1 border border-slate-300 bg-white text-black text-xs font-semibold uppercase rounded"
+                                                            data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                                            data-talla="{{ $item['talla'] }}"
+                                                            data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
+                                                            data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}"
+                                                            data-original-area="{{ $item['area'] ?? '' }}"
+                                                            @if($esReadOnly ?? false) disabled @endif
+                                                        >
+                                                            <option value="">ÁREA</option>
+                                                            <option value="Costura" {{ ($item['area'] ?? null) === 'Costura' ? 'selected' : '' }}>COSTURA</option>
+                                                            <option value="EPP" {{ ($item['area'] ?? null) === 'EPP' ? 'selected' : '' }}>EPP</option>
+                                                        </select>
 
-                                            @if(!($esReadOnly ?? false) && !auth()->user()->hasRole('supervisor_gerencia'))
-                                            <button
-                                                type="button"
-                                                onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}')"
-                                                class="w-full px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase rounded transition"
-                                            >
-                                                💾 Guardar
-                                            </button>
-                                            @elseif(auth()->user()->hasRole('supervisor_gerencia'))
-                                            <button
-                                                type="button"
-                                                disabled
-                                                class="w-full px-2 py-1 bg-gray-400 text-white text-xs font-bold uppercase rounded cursor-not-allowed opacity-60"
-                                                title="Solo usuarios autorizados pueden guardar cambios"
-                                            >
-                                                💾 Guardar
-                                            </button>
-                                            @else
-                                            <div class="w-full px-2 py-1 bg-slate-100 text-slate-500 text-xs font-medium text-center rounded">
-                                                Solo lectura
-                                            </div>
-                                            @endif
-                                        </div>
-                                    </td>
-                                </tr>
+                                                        <select
+                                                            class="estado-select w-full px-2 py-1 border border-slate-300 bg-white text-black text-xs font-semibold uppercase rounded"
+                                                            data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                                            data-talla="{{ $item['talla'] }}"
+                                                            data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
+                                                            data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}"
+                                                            data-prenda-nombre="{{ $item['descripcion']['nombre_prenda'] ?? $item['descripcion']['nombre'] ?? '' }}"
+                                                            data-prenda-id="{{ $item['prenda_id'] ?? '' }}"
+                                                            data-pedido-epp-id="{{ $item['pedido_epp_id'] ?? '' }}"
+                                                            data-cantidad="{{ $item['cantidad_total'] }}"
+                                                            data-original-estado="{{ $item['estado_bodega'] ?? '' }}"
+                                                            @if($esReadOnly ?? false) disabled @endif
+                                                        >
+                                                            <option value="">ESTADO</option>
+                                                            <option value="Pendiente" {{ ($item['estado_bodega'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
+                                                            <option value="Entregado" {{ ($item['estado_bodega'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
+                                                            <option value="Homologar" {{ ($item['estado_bodega'] ?? null) === 'Homologar' ? 'selected' : '' }}>HOMOLOGAR</option>
+                                                            @if(auth()->user()->hasRole(['Bodeguero', 'Admin', 'SuperAdmin']))
+                                                            <option value="Anulado" {{ ($item['estado_bodega'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
+                                                            @endif
+                                                        </select>
+
+                                                        @if(!($esReadOnly ?? false) && !auth()->user()->hasRole('supervisor_gerencia'))
+                                                        <button
+                                                            type="button"
+                                                            onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}')"
+                                                            class="w-full px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase rounded transition"
+                                                        >
+                                                            💾 Guardar
+                                                        </button>
+                                                        @elseif(auth()->user()->hasRole('supervisor_gerencia'))
+                                                        <button
+                                                            type="button"
+                                                            disabled
+                                                            class="w-full px-2 py-1 bg-gray-400 text-white text-xs font-bold uppercase rounded cursor-not-allowed opacity-60"
+                                                            title="Solo usuarios autorizados pueden guardar cambios"
+                                                        >
+                                                            💾 Guardar
+                                                        </button>
+                                                        @else
+                                                        <div class="w-full px-2 py-1 bg-slate-100 text-slate-500 text-xs font-medium text-center rounded">
+                                                            Guardado deshabilitado
+                                                        </div>
+                                                        @endif
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    @endif
                                 @endforeach
                             @else
-                                <tr>
-                                    <td colspan="8" class="px-6 py-12 text-center">
-                                        <p class="text-slate-500 font-bold text-sm">No hay ítems en este pedido</p>
-                                    </td>
-                                </tr>
+                                    <tr>
+                                        <td colspan="9" class="px-6 py-12 text-center">
+                                            <div class="flex flex-col items-center">
+                                                <span class="material-symbols-rounded text-slate-300 text-5xl">inventory_2</span>
+                                                <p class="text-slate-500 font-medium mt-3">No hay artículos</p>
+                                                <p class="text-slate-400 text-sm mt-1">Este pedido no tiene artículos</p>
+                                            </div>
+                                        </td>
+                                    </tr>
                             @endif
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -474,7 +793,10 @@
     <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full mx-4 my-8">
         <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center sticky top-0">
             <h2 class="text-lg font-semibold text-white"> Pedido</h2>
-            <button onclick="cerrarModalFactura()" class="text-white hover:text-slate-200 text-2xl leading-none">✕</button>
+            <div class="flex items-center gap-3">
+                <button onclick="imprimirModalFactura()" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded transition">Imprimir</button>
+                <button onclick="cerrarModalFactura()" class="text-white hover:text-slate-200 text-2xl leading-none">✕</button>
+            </div>
         </div>
         <div id="facturaContenido" class="px-6 py-6 overflow-y-auto" style="max-height: calc(100vh - 200px)">
             <div class="flex justify-center items-center py-12">

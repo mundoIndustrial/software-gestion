@@ -7,6 +7,7 @@ use App\Events\BodegaNotasGuardada;
 use App\Events\BodegaNotaCreada;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Schema;
 
 class BodegaNotaService
 {
@@ -25,6 +26,8 @@ class BodegaNotaService
         try {
             $usuario = auth()->user();
             $roleNames = $usuario->getRoleNames()->toArray();
+
+            $tieneTallaColorId = Schema::hasColumn('bodega_notas', 'talla_color_id');
             
             // Obtener el pedido
             $pedido = \App\Models\PedidoProduccion::where('numero_pedido', $validatedData['numero_pedido'])->first();
@@ -40,7 +43,7 @@ class BodegaNotaService
             $rolActual = $this->roleService->determinarRolActual($roleNames);
 
             // Guardar la nota
-            $nota = BodegaNota::create([
+            $datosCrear = [
                 'pedido_produccion_id' => $pedido->id,
                 'numero_pedido' => $validatedData['numero_pedido'],
                 'talla' => $validatedData['talla'],
@@ -49,7 +52,13 @@ class BodegaNotaService
                 'usuario_nombre' => $usuario->name,
                 'usuario_rol' => $rolActual,
                 'ip_address' => $request->ip(),
-            ]);
+            ];
+
+            if ($tieneTallaColorId) {
+                $datosCrear['talla_color_id'] = $validatedData['talla_color_id'] ?? null;
+            }
+
+            $nota = BodegaNota::create($datosCrear);
 
             BodegaNotaCreada::dispatch($nota);
 
@@ -90,8 +99,18 @@ class BodegaNotaService
     {
         try {
             // Obtener notas ordenadas por fecha más reciente
+            $tieneTallaColorId = Schema::hasColumn('bodega_notas', 'talla_color_id');
+            $tallaColorId = $validatedData['talla_color_id'] ?? null;
+
             $notas = BodegaNota::where('numero_pedido', $validatedData['numero_pedido'])
                 ->where('talla', $validatedData['talla'])
+                ->when($tieneTallaColorId, function ($q) use ($tallaColorId) {
+                    return $q->when($tallaColorId !== null, function ($qq) use ($tallaColorId) {
+                        return $qq->where('talla_color_id', $tallaColorId);
+                    }, function ($qq) {
+                        return $qq->whereNull('talla_color_id');
+                    });
+                })
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($nota) {
@@ -109,6 +128,7 @@ class BodegaNotaService
                         'contenido' => $nota->contenido,
                         'usuario_nombre' => $nota->usuario_nombre,
                         'usuario_rol' => $nota->usuario_rol,
+                        'talla_color_id' => $nota->talla_color_id,
                         'fecha' => $fechaMostrar->format('d/m/Y'),
                         'hora' => $fechaMostrar->format('H:i:s'),
                         'fecha_completa' => $fechaMostrar->format('d/m/Y H:i:s'),

@@ -647,7 +647,30 @@ class BodegaPedidoService
             $variantes = $prendaEnriquecida['variantes'] ?? [];
             
             foreach ($variantes as $variante) {
-                $items[] = $this->crearItemPrenda($variante, $prendaEnriquecida, $recibo, $rolesDelUsuario, $areasPermitidas, $pedidoProduccion);
+                $coloresDetalle = $variante['colores_detalle'] ?? null;
+                if (is_array($coloresDetalle) && !empty($coloresDetalle)) {
+                    foreach ($coloresDetalle as $colorDetalle) {
+                        $tallaColorId = $colorDetalle['talla_color_id'] ?? ($colorDetalle['tallaColorId'] ?? null);
+                        $cantidadColor = (int)($colorDetalle['cantidad'] ?? 0);
+
+                        if ($cantidadColor <= 0) {
+                            continue;
+                        }
+
+                        $items[] = $this->crearItemPrenda(
+                            $variante,
+                            $prendaEnriquecida,
+                            $recibo,
+                            $rolesDelUsuario,
+                            $areasPermitidas,
+                            $pedidoProduccion,
+                            $tallaColorId,
+                            $cantidadColor
+                        );
+                    }
+                } else {
+                    $items[] = $this->crearItemPrenda($variante, $prendaEnriquecida, $recibo, $rolesDelUsuario, $areasPermitidas, $pedidoProduccion);
+                }
             }
         }
         
@@ -733,14 +756,14 @@ class BodegaPedidoService
         ];
     }
 
-    private function crearItemPrenda(array $variante, array $prendaEnriquecida, $recibo, array $rolesDelUsuario, array $areasPermitidas, $pedidoProduccion): array
+    private function crearItemPrenda(array $variante, array $prendaEnriquecida, $recibo, array $rolesDelUsuario, array $areasPermitidas, $pedidoProduccion, $tallaColorId = null, $cantidadOverride = null): array
     {
         $talla = $variante['talla'] ?? '';
         $prendaNombre = $prendaEnriquecida['nombre'] ?? null;
-        $cantidad = $variante['cantidad'] ?? 0;
+        $cantidad = $cantidadOverride !== null ? (int)$cantidadOverride : ($variante['cantidad'] ?? 0);
         
         // Obtener datos de bodega
-        $bodegaData = $this->obtenerDatosBodega($recibo->numero_pedido, $talla, $prendaNombre, $cantidad, $rolesDelUsuario);
+        $bodegaData = $this->obtenerDatosBodega($recibo->numero_pedido, $talla, $prendaNombre, $cantidad, $rolesDelUsuario, $tallaColorId);
         
         // Obtener asesor de forma segura
         $asesor = 'N/A';
@@ -766,6 +789,7 @@ class BodegaPedidoService
             'pedido_produccion_id' => $pedidoProduccion?->id,
             'recibo_prenda_id' => $recibo->id,
             'prenda_id' => $prendaEnriquecida['id'] ?? null,
+            'talla_color_id' => $tallaColorId,
             'asesor' => $asesor,
             'empresa' => $empresa,
             'descripcion' => $prendaEnriquecida,
@@ -891,7 +915,7 @@ class BodegaPedidoService
         ];
     }
 
-    private function obtenerDatosBodega(string $numeroPedido, string $talla, ?string $prendaNombre, int $cantidad, array $rolesDelUsuario): array
+    private function obtenerDatosBodega(string $numeroPedido, string $talla, ?string $prendaNombre, int $cantidad, array $rolesDelUsuario, $tallaColorId = null): array
     {
         // Para EPPs, el talla es un identificador único MD5, buscarlo directamente
         $bodegaDataBase = null;
@@ -907,6 +931,11 @@ class BodegaPedidoService
             // Para prendas, buscar por talla tradicional
             $bodegaDataBase = BodegaDetallesTalla::where('numero_pedido', $numeroPedido)
                 ->where('talla', $talla)
+                ->when($tallaColorId !== null, function ($q) use ($tallaColorId) {
+                    return $q->where('talla_color_id', $tallaColorId);
+                }, function ($q) {
+                    return $q->whereNull('talla_color_id');
+                })
                 ->when($prendaNombre, fn($q) => $q->where('prenda_nombre', $prendaNombre))
                 ->first();
         }
@@ -1035,6 +1064,7 @@ class BodegaPedidoService
                 'prenda_id' => $validatedData['prenda_id'] ?? null,
                 'pedido_epp_id' => $validatedData['pedido_epp_id'] ?? null,
                 'prenda_nombre' => $validatedData['prenda_nombre'] ?? null,
+                'talla_color_id' => $validatedData['talla_color_id'] ?? null,
                 'asesor' => $validatedData['asesor'] ?? null,
                 'empresa' => $validatedData['empresa'] ?? null,
                 'cantidad' => $validatedData['cantidad'] ?? 0,
@@ -1061,6 +1091,7 @@ class BodegaPedidoService
                 $areaExistente = BodegaDetallesTalla::where('pedido_produccion_id', $pedido->id)
                     ->where('numero_pedido', $validatedData['numero_pedido'])
                     ->where('talla', $validatedData['talla'])
+                    ->where('talla_color_id', $validatedData['talla_color_id'] ?? null)
                     ->when(isset($validatedData['prenda_nombre']), fn($q) => $q->where('prenda_nombre', $validatedData['prenda_nombre']))
                     ->when(isset($validatedData['cantidad']), fn($q) => $q->where('cantidad', $validatedData['cantidad']))
                     ->value('area');
@@ -1124,6 +1155,7 @@ class BodegaPedidoService
                 'pedido_produccion_id' => $pedido->id,
                 'numero_pedido' => $validatedData['numero_pedido'],
                 'talla' => $validatedData['talla'],
+                'talla_color_id' => $validatedData['talla_color_id'] ?? null,
                 'prenda_nombre' => $validatedData['prenda_nombre'] ?? null,
                 'cantidad' => $validatedData['cantidad'] ?? 0,
             ]);
@@ -1167,6 +1199,7 @@ class BodegaPedidoService
                 $detalleExistente->pedido_produccion_id = $pedido->id;
                 $detalleExistente->numero_pedido = $validatedData['numero_pedido'];
                 $detalleExistente->talla = $validatedData['talla'];
+                $detalleExistente->talla_color_id = $validatedData['talla_color_id'] ?? null;
                 $detalleExistente->prenda_nombre = $validatedData['prenda_nombre'] ?? null;
                 $detalleExistente->cantidad = $validatedData['cantidad'] ?? 0;
             }
@@ -1379,6 +1412,7 @@ class BodegaPedidoService
                 'pedido_produccion_id' => $pedido->id,
                 'numero_pedido' => $validatedData['numero_pedido'],
                 'talla' => $validatedData['talla'],
+                'talla_color_id' => $validatedData['talla_color_id'] ?? null,
                 'prenda_nombre' => $validatedData['prenda_nombre'] ?? null,
                 'cantidad' => $validatedData['cantidad'] ?? 0,
             ],
@@ -1438,6 +1472,7 @@ class BodegaPedidoService
                 'pedido_produccion_id' => $pedido->id,
                 'numero_pedido' => $validatedData['numero_pedido'],
                 'talla' => $validatedData['talla'],
+                'talla_color_id' => $validatedData['talla_color_id'] ?? null,
                 'prenda_nombre' => $validatedData['prenda_nombre'] ?? null,
                 'cantidad' => $validatedData['cantidad'] ?? 0,
             ],

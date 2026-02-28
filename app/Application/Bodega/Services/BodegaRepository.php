@@ -99,7 +99,7 @@ class BodegaRepository
     {
         return BodegaNota::all()
             ->groupBy(function ($item) {
-                return $item->numero_pedido . '|' . $item->talla;
+                return $item->numero_pedido . '|' . $item->talla . '|' . ($item->talla_color_id ?? '');
             })
             ->map(function ($notas) {
                 return $notas->map(function ($nota) {
@@ -110,6 +110,7 @@ class BodegaRepository
                         'usuario_rol' => $nota->usuario_rol,
                         'usuario_id' => $nota->usuario_id,
                         'ip_address' => $nota->ip_address,
+                        'talla_color_id' => $nota->talla_color_id,
                         'fecha' => $nota->created_at->format('d/m/Y'),
                         'hora' => $nota->created_at->format('H:i:s'),
                         'fecha_completa' => $nota->created_at->format('d/m/Y H:i:s'),
