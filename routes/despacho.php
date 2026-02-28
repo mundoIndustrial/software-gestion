@@ -136,6 +136,20 @@ Route::prefix('despacho')
             ]);
         });
 
+        Route::post('/notas/obtener', [DespachoController::class, 'obtenerNotasBodega'])
+            ->name('despacho.notas.obtener');
+
+        Route::post('/notas/guardar', [DespachoController::class, 'guardarNotaBodega'])
+            ->name('despacho.notas.guardar');
+
+        Route::post('/notas/{notaId}/actualizar', [DespachoController::class, 'actualizarNotaBodega'])
+            ->name('despacho.notas.actualizar')
+            ->where('notaId', '[0-9]+');
+
+        Route::post('/notas/{notaId}/eliminar', [DespachoController::class, 'eliminarNotaBodega'])
+            ->name('despacho.notas.eliminar')
+            ->where('notaId', '[0-9]+');
+
         // Mostrar detalles de pedido pendiente (unificado)
         Route::get('/pendientes/{id}', [DespachoController::class, 'showPendienteUnificado'])
             ->name('despacho.pendientes-show')

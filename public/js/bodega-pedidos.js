@@ -147,6 +147,10 @@ window.confirmarEliminarNota = function(callback) {
 if (typeof window.cargarNotas !== 'function') {
     window.cargarNotas = async function(numeroPedido, talla, tallaColorId) {
         try {
+            const baseNotas = (window.location && window.location.pathname && window.location.pathname.startsWith('/despacho'))
+                ? '/despacho/notas'
+                : '/gestion-bodega/notas';
+
             const tallaColorIdNorm = (tallaColorId !== undefined && tallaColorId !== null && String(tallaColorId).trim() !== '')
                 ? String(Number(tallaColorId))
                 : '';
@@ -176,7 +180,7 @@ if (typeof window.cargarNotas !== 'function') {
             }
 
             const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-            const response = await fetch('/gestion-bodega/notas/obtener', {
+            const response = await fetch(`${baseNotas}/obtener`, {
                 method: 'POST',
                 cache: 'no-store',
                 headers: {
@@ -321,7 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 if (typeof window.editarNota !== 'function') {
-    window.editarNota = function(notaId, numeroPedido, talla) {
+    window.editarNota = async function(notaId, numeroPedido, talla) {
         const card = document.querySelector(`[data-nota-id="${notaId}"]`);
         if (!card) return;
 
@@ -429,11 +433,14 @@ if (typeof window.editarNota !== 'function') {
             }
 
             const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const baseNotas = (window.location && window.location.pathname && window.location.pathname.startsWith('/despacho'))
+                ? '/despacho/notas'
+                : '/gestion-bodega/notas';
             btnGuardar.disabled = true;
             btnCancelar.disabled = true;
 
             try {
-                const r = await fetch(`/gestion-bodega/notas/${notaId}/actualizar`, {
+                const r = await fetch(`${baseNotas}/${notaId}/actualizar`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -468,12 +475,15 @@ if (typeof window.eliminarNota !== 'function') {
     window.eliminarNota = function(notaId, numeroPedido, talla) {
         confirmarEliminarNota(function() {
             const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-            fetch(`/gestion-bodega/notas/${notaId}/eliminar`, {
+            const baseNotas = (window.location && window.location.pathname && window.location.pathname.startsWith('/despacho'))
+                ? '/despacho/notas'
+                : '/gestion-bodega/notas';
+            fetch(`${baseNotas}/${notaId}/eliminar`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': csrf,
-                }
+                },
             })
         .then(r => r.json())
         .then(data => {
@@ -541,6 +551,10 @@ if (typeof window.guardarNota !== 'function') {
             const talla = ctx.talla || '';
             const tallaColorId = ctx.talla_color_id ?? null;
 
+            const baseNotas = (window.location && window.location.pathname && window.location.pathname.startsWith('/despacho'))
+                ? '/despacho/notas'
+                : '/gestion-bodega/notas';
+
             const textarea = document.getElementById('notasNuevaContent') || document.getElementById('nuevaNota');
             const contenido = (textarea?.value || '').trim();
 
@@ -556,7 +570,7 @@ if (typeof window.guardarNota !== 'function') {
 
             const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-            const response = await fetch('/gestion-bodega/notas/guardar', {
+            const response = await fetch(`${baseNotas}/guardar`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -878,10 +892,12 @@ async function guardarPedidoCompleto(numeroPedido) {
 async function abrirModalFactura(pedidoId) {
     const modal = document.getElementById('modalFactura');
     const contenido = document.getElementById('facturaContenido');
+    const esDespacho = (window.location && window.location.pathname && window.location.pathname.startsWith('/despacho'));
+    const basePedido = esDespacho ? '/despacho' : '/gestion-bodega/pedidos';
     
     // Si el modal no existe en esta vista, abrir en nueva pestaña
     if (!modal || !contenido) {
-        window.open(`/gestion-bodega/pedidos/${pedidoId}`, '_blank');
+        window.open(`${basePedido}/${pedidoId}`, '_blank');
         return;
     }
     
@@ -890,7 +906,7 @@ async function abrirModalFactura(pedidoId) {
     contenido.innerHTML = '<div class="flex justify-center items-center py-12"><span class="text-slate-500">⏳ Cargando factura...</span></div>';
     
     try {
-        const response = await fetch(`/gestion-bodega/pedidos/${pedidoId}/factura-datos`, {
+        const response = await fetch(`${basePedido}/${pedidoId}/factura-datos`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -1019,6 +1035,17 @@ function generarHTMLFactura(datos) {
         // Normalizar bug común: ruta singular /prenda/ en vez de /prendas/
         // Ej: /storage/pedidos/18/prenda/xxx.webp -> /storage/pedidos/18/prendas/xxx.webp
         return url.replace(/\/storage\/pedidos\/(\d+)\/prenda\//i, '/storage/pedidos/$1/prendas/');
+    };
+
+    const urlFallbackPrenda = (url) => {
+        if (!url || typeof url !== 'string') return url;
+        if (url.includes('/storage/pedidos/') && url.includes('/prendas/')) {
+            return url.replace('/prendas/', '/prenda/');
+        }
+        if (url.includes('/storage/pedidos/') && url.includes('/prenda/')) {
+            return url.replace('/prenda/', '/prendas/');
+        }
+        return url;
     };
 
     // Generar las tarjetas de prendas
@@ -1317,7 +1344,10 @@ function generarHTMLFactura(datos) {
                 <!-- Imagen pequeña -->
                 ${(prenda.imagenes && prenda.imagenes.length > 0) ? `
                     <div style="float: right; margin-left: 12px; margin-bottom: 8px;">
-                        <img src="${normalizarUrlImagen(prenda.imagenes[0].ruta || prenda.imagenes[0].url || prenda.imagenes[0])}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <img 
+                            src="${normalizarUrlImagen(prenda.imagenes[0].ruta || prenda.imagenes[0].url || prenda.imagenes[0])}" 
+                            style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb;"
+                            onerror="if(!this.dataset.fallback){this.dataset.fallback='1';this.src='${urlFallbackPrenda(normalizarUrlImagen(prenda.imagenes[0].ruta || prenda.imagenes[0].url || prenda.imagenes[0]))}';}else{this.style.display='none';}">
                     </div>
                 ` : ''}
                 

@@ -718,9 +718,7 @@ function renderizarPedidos(pedidos) {
                     <strong>${pedido.cliente}</strong>
                 </div>
                 <div>
-                    <span class="estado-badge ${getEstadoClass(pedido.estado)}">
-                        ${formatEstado(pedido.estado)}
-                    </span>
+                    <span class="estado-badge estado-pendiente">Pendiente</span>
                 </div>
                 <div>
                     ${pedido.fecha_creacion}

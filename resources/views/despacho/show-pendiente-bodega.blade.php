@@ -88,27 +88,25 @@
                                                 $desc = $item['descripcion'];
                                                 $nombre = $desc['nombre_prenda'] ?? $desc['nombre'] ?? 'Prenda sin nombre';
                                                 $tela = $desc['tela'] ?? null;
-                                                $color = $desc['color'] ?? null;
+                                                $color = $desc['color'] ?? $item['color'] ?? $desc['color_prenda'] ?? $desc['color_tela'] ?? null;
                                                 $variantes = $desc['variantes'] ?? [];
                                                 $primeraVariante = count($variantes) > 0 ? $variantes[0] : null;
                                                 $genero = $primeraVariante['genero'] ?? null;
                                                 $procesos = $desc['procesos'] ?? [];
+                                                $deBodega = (bool) ($item['de_bodega'] ?? ($desc['de_bodega'] ?? ($item['objetoPrenda']['de_bodega'] ?? false)));
                                             @endphp
-                                            <div class="font-bold text-black mb-1">{{ $nombre }}</div>
-                                            @if($tela || $color)
+                                            <div class="font-bold text-black mb-1">
+                                                {{ $nombre }}
+                                                @if($color)
+                                                    <span class="font-bold"> - {{ strtoupper($color) }}</span>
+                                                @endif
+                                                @if($deBodega)
+                                                    <span class="font-bold" style="color: rgb(234, 88, 12);"> - SE SACA DE BODEGA</span>
+                                                @endif
+                                            </div>
+                                            @if($tela)
                                                 <div class="text-black text-xs mb-1">
-                                                    @if($tela && $color)
-                                                        Tela: {{ $tela }} - Color: {{ $color }}
-                                                    @elseif($tela)
-                                                        Tela: {{ $tela }}
-                                                    @else
-                                                        Color: {{ $color }}
-                                                    @endif
-                                                </div>
-                                            @endif
-                                            @if($genero && strtoupper($genero) !== 'GENERICO')
-                                                <div class="text-black text-xs mb-1">
-                                                    Género: <span class="font-semibold">{{ strtoupper($genero) }}</span>
+                                                    Tela: {{ $tela }}
                                                 </div>
                                             @endif
                                             @if(count($procesos) > 0)
@@ -192,27 +190,28 @@
                                                 style="font-family: 'Poppins', sans-serif; height: 32px;"
                                                 data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                 data-talla="{{ $talla['talla'] }}"
+                                                data-talla-color-id="{{ $talla['talla_color_id'] ?? '' }}"
                                                 placeholder="Pendientes..."
                                                 rows="1"
                                             >{{ $talla['pendientes'] ?? '' }}</textarea>
                                         </td>
                                         
-                                        <!-- OBSERVACIONES - Solo en primera talla -->
-                                        @if($indexTalla === 0)
-                                        <td class="px-4 py-3 border-r border-slate-300" rowspan="{{ $rowspanPrenda }}" style="width: 16%;">
+                                        <!-- OBSERVACIONES (por talla) -->
+                                        <td class="px-4 py-3 border-r border-slate-300" style="width: 16%;">
                                             <div class="flex gap-1">
                                                 <textarea
                                                     class="observaciones-input flex-1 px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none rounded bg-slate-50"
                                                     data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                     data-talla="{{ $talla['talla'] }}"
+                                                    data-talla-color-id="{{ $talla['talla_color_id'] ?? '' }}"
                                                     placeholder="Notas..."
                                                     rows="1"
                                                     readonly
                                                     style="height: 40px;"
-                                                >{{ $item['observaciones'] ?? '' }}</textarea>
+                                                >{{ $talla['observaciones_bodega'] ?? '' }}</textarea>
                                                 <button
                                                     type="button"
-                                                    onclick="abrirModalNotas('{{ $item['numero_pedido'] }}', '{{ $talla['talla'] }}', '{{ addslashes($item['descripcion']['nombre_prenda'] ?? 'Prenda') }}', 'prenda', '{{ $talla['talla'] }}')"
+                                                    onclick="abrirModalNotas('{{ $item['numero_pedido'] }}', '{{ $talla['talla'] }}', '{{ addslashes($item['descripcion']['nombre_prenda'] ?? 'Prenda') }}', 'prenda', '{{ $talla['talla'] }}', '{{ $talla['talla_color_id'] ?? '' }}')"
                                                     class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded transition whitespace-nowrap"
                                                     title="Ver/agregar notas"
                                                 >
@@ -220,7 +219,6 @@
                                                 </button>
                                             </div>
                                         </td>
-                                        @endif
                                         
                                         <!-- FECHA PEDIDO - Solo en primera talla -->
                                         @if($indexTalla === 0)
@@ -435,200 +433,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }, 1000);
 });
-
-function abrirModalFactura(pedidoId) {
-    alert('🔍 DEBUG: La función abrirModalFactura se ejecutó con pedidoId: ' + pedidoId);
-    
-    const modal = document.getElementById('modalFactura');
-    const content = document.getElementById('facturaContent');
-    
-    // Mostrar modal con mensaje de carga
-    modal.style.display = 'flex';
-    modal.classList.remove('hidden');
-    content.innerHTML = '<div class="flex justify-center items-center py-12"><span class="text-slate-500">⏳ Cargando factura...</span></div>';
-    
-    // Cargar contenido de la factura
-    fetch(`/despacho/${pedidoId}/factura-datos`)
-        .then(response => {
-            alert('🔍 DEBUG: Response status: ' + response.status);
-            return response.json();
-        })
-        .then(data => {
-            alert('🔍 DEBUG: Datos recibidos: ' + JSON.stringify(data, null, 2));
-            
-            // DEBUG: Ver qué datos vienen
-            console.log('📋 [FACTURA] Datos recibidos:', data);
-            console.log('📋 [FACTURA] Prendas:', data.prendas);
-            console.log('📋 [FACTURA] Primera prenda:', data.prendas?.[0]);
-            console.log('📋 [FACTURA] Tallas:', data.prendas?.[0]?.tallas);
-            console.log('📋 [FACTURA] Variantes:', data.prendas?.[0]?.variantes);
-            console.log('📋 [FACTURA] Todas las claves de la primera prenda:', data.prendas?.[0] ? Object.keys(data.prendas[0]) : 'null');
-            
-            // ALERTA para ver la estructura exacta
-            if (data && data.prendas && data.prendas[0]) {
-                alert('📋 ESTRUCTURA DE DATOS:\n\n' + JSON.stringify(data.prendas[0], null, 2));
-            } else {
-                alert('📋 ERROR: No hay datos de prendas\n\nDatos completos: ' + JSON.stringify(data, null, 2));
-            }
-            
-            // Si vienen datos JSON, generar HTML
-            if (data && typeof data === 'object' && !data.html) {
-                content.innerHTML = generarHTMLFacturaDesdeDatos(data);
-            } else if (data.html) {
-                content.innerHTML = data.html;
-            } else {
-                content.innerHTML = '<p class="text-red-500 text-center py-8">Error: No se encontraron datos</p>';
-            }
-        })
-        .catch(error => {
-            console.error('Error al cargar factura:', error);
-            content.innerHTML = '<p class="text-red-500 text-center py-8">Error al cargar la factura</p>';
-        });
-}
-
-function generarHTMLFacturaDesdeDatos(datos) {
-    let html = '<div>';
-    
-    // Header
-    html += '<div style="background: #1e3a8a; color: white; padding: 16px; border-radius: 6px; margin-bottom: 12px; text-align: center;">';
-    html += '<div style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">FACTURA DE PEDIDO</div>';
-    html += '<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 12px; margin-top: 12px;">';
-    html += '<div><div style="font-size: 10px; opacity: 0.8;">Número</div><div style="font-weight: 600;">' + (datos.pedido?.numero_pedido || 'N/A') + '</div></div>';
-    html += '<div><div style="font-size: 10px; opacity: 0.8;">Cliente</div><div style="font-weight: 600;">' + (datos.pedido?.cliente || 'N/A') + '</div></div>';
-    html += '<div><div style="font-size: 10px; opacity: 0.8;">Asesora</div><div style="font-weight: 600;">' + (datos.pedido?.asesor || 'N/A') + '</div></div>';
-    html += '</div>';
-    html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 12px; margin-top: 8px;">';
-    html += '<div><div style="font-size: 10px; opacity: 0.8;">Forma de Pago</div><div style="font-weight: 600;">' + (datos.pedido?.forma_pago || 'N/A') + '</div></div>';
-    html += '<div><div style="font-size: 10px; opacity: 0.8;">Fecha</div><div style="font-weight: 600;">' + (datos.pedido?.fecha || new Date().toLocaleDateString('es-ES')) + '</div></div>';
-    html += '</div></div>';
-    
-    // Prendas
-    if (datos.prendas && datos.prendas.length > 0) {
-        datos.prendas.forEach((prenda, index) => {
-            html += '<div style="background: white; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 16px; padding: 16px;">';
-            html += '<div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 12px;">';
-            html += '<div style="font-size: 14px; font-weight: 600; color: #374151;">';
-            html += 'PRENDA ' + (index + 1) + ': ' + (prenda.nombre_prenda || 'Sin nombre');
-            if (prenda.estado === 'SE SACA DE BODEGA') {
-                html += ' <span style="color: #ea580c; font-weight: bold;">- SE SACA DE BODEGA</span>';
-            }
-            html += '</div>';
-            html += '<div style="font-size: 12px; color: #6b7280; margin-top: 2px;">' + (prenda.descripcion || 'Sin descripción') + '</div>';
-            html += '</div>';
-            
-            // Telas
-            if (prenda.colores_telas && prenda.colores_telas.length > 0) {
-                html += '<div style="margin-bottom: 12px;">';
-                prenda.colores_telas.forEach(colorTela => {
-                    html += '<div style="padding: 6px 0; border-bottom: 1px solid #f3f4f6;">';
-                    html += '<span style="font-size: 11px; color: #374151;">';
-                    html += '<strong>Tela:</strong> ' + (colorTela.tela_nombre || 'N/A');
-                    if (colorTela.color_nombre) {
-                        html += ' <strong style="margin-left: 12px;">Color:</strong> ' + colorTela.color_nombre;
-                    }
-                    html += '</span></div>';
-                });
-                html += '</div>';
-            }
-            
-            // Imagen
-            if (prenda.imagenes && prenda.imagenes.length > 0) {
-                html += '<div style="float: right; margin-left: 12px; margin-bottom: 8px;">';
-                prenda.imagenes.forEach(imagen => {
-                    html += '<img src="' + (imagen.ruta_webp || imagen.ruta_original) + '" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb;">';
-                });
-                html += '</div>';
-            }
-            
-            // Contenido
-            html += '<div style="margin-right: 100px;">';
-            
-            // Variantes/Tallas
-            if (prenda.tallas && prenda.tallas.length > 0) {
-                html += '<table style="width: 100%; font-size: 11px; border-collapse: collapse;">';
-                html += '<thead><tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">';
-                html += '<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>';
-                html += '<th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>';
-                html += '</tr></thead><tbody>';
-                prenda.tallas.forEach(talla => {
-                    html += '<tr style="background: #ffffff; border-bottom: 1px solid #f3f4f6;">';
-                    html += '<td style="padding: 6px 8px; font-weight: 600; color: #374151;">' + (talla.talla || 'N/A') + '</td>';
-                    html += '<td style="padding: 6px 8px; text-align: center; color: #6b7280;">' + (talla.cantidad || 0) + '</td>';
-                    html += '</tr>';
-                });
-                html += '</tbody></table>';
-            } else if (prenda.variantes && prenda.variantes.length > 0) {
-                // Fallback por si vienen como variantes
-                html += '<table style="width: 100%; font-size: 11px; border-collapse: collapse;">';
-                html += '<thead><tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">';
-                html += '<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>';
-                html += '<th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>';
-                html += '</tr></thead><tbody>';
-                prenda.variantes.forEach(variante => {
-                    html += '<tr style="background: #ffffff; border-bottom: 1px solid #f3f4f6;">';
-                    html += '<td style="padding: 6px 8px; font-weight: 600; color: #374151;">' + (variante.talla || 'N/A') + '</td>';
-                    html += '<td style="padding: 6px 8px; text-align: center; color: #6b7280;">' + (variante.cantidad || 0) + '</td>';
-                    html += '</tr>';
-                });
-                html += '</tbody></table>';
-            }
-            
-            // Procesos
-            if (prenda.procesos && prenda.procesos.length > 0) {
-                html += '<div style="margin-bottom: 0;">';
-                prenda.procesos.forEach(proceso => {
-                    html += '<div style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">';
-                    html += '<div style="font-weight: 600; color: #374151; margin-bottom: 4px; font-size: 11px;">' + (proceso.tipo_proceso || 'N/A') + '</div>';
-                    if (proceso.observaciones) {
-                        html += '<div style="font-size: 10px; color: #6b7280; margin-bottom: 2px;">' + proceso.observaciones + '</div>';
-                    }
-                    if (proceso.tallas && proceso.tallas.caballero) {
-                        Object.entries(proceso.tallas.caballero).forEach(([talla, cantidad]) => {
-                            html += '<div style="font-size: 10px; color: #6b7280; margin-bottom: 2px;">Caballero: ' + talla + '(' + cantidad + ')</div>';
-                        });
-                    }
-                    html += '</div>';
-                });
-                html += '</div>';
-            }
-            
-            html += '</div><div style="clear: both;"></div></div>';
-        });
-    }
-    
-    // EPPs
-    if (datos.epps && datos.epps.length > 0) {
-        html += '<div style="background: white; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 16px; padding: 16px;">';
-        html += '<div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 12px;">';
-        html += '<div style="font-size: 14px; font-weight: 600; color: #374151;">EPPS</div></div>';
-        datos.epps.forEach(epp => {
-            html += '<div style="margin-bottom: 12px;">';
-            html += '<div style="font-weight: 600; color: #374151; margin-bottom: 4px;">' + (epp.nombre || 'N/A') + '</div>';
-            html += '<div style="font-size: 12px; color: #6b7280;">Cantidad: ' + (epp.cantidad || 0) + '</div>';
-            if (epp.observaciones) {
-                html += '<div style="font-size: 10px; color: #6b7280; margin-top: 4px;">Observaciones: ' + epp.observaciones + '</div>';
-            }
-            html += '</div>';
-        });
-        html += '</div>';
-    }
-    
-    // Totales
-    html += '<div style="margin: 12px 0; padding: 12px; background: #f3f4f6; border-radius: 6px; border: 2px solid #d1d5db; text-align: right;">';
-    html += '<div style="font-size: 12px; margin-bottom: 8px;"><strong>Total Ítems:</strong> ' + (datos.total_items || 0) + '</div>';
-    html += '</div>';
-    
-    html += '</div>';
-    return html;
-}
-
-function cerrarModalFactura() {
-    const modal = document.getElementById('modalFactura');
-    if (modal) {
-        modal.style.display = 'none';
-        modal.classList.add('hidden');
-    }
-}
 </script>
 
 <!-- Modal de Notas -->

@@ -15,6 +15,7 @@ use App\Application\Pedidos\Despacho\UseCases\GuardarDespachoUseCase;
 use App\Application\Pedidos\Despacho\DTOs\ControlEntregasDTO;
 use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
 use App\Application\Bodega\Services\BodegaPedidoService;
+use App\Application\Bodega\Services\BodegaNotaService;
 use App\Domain\Pedidos\Despacho\Services\DespachoEstadoService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -31,8 +32,74 @@ class DespachoController extends Controller
         private GuardarDespachoUseCase $guardarDespacho,
         private PedidoProduccionRepository $pedidoRepository,
         private BodegaPedidoService $bodegaPedidoService,
+        private BodegaNotaService $bodegaNotaService,
         private DespachoEstadoService $despachoEstadoService,
     ) {}
+
+    public function obtenerNotasBodega(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'numero_pedido' => 'required|string',
+                'talla' => 'required|string',
+                'talla_color_id' => 'nullable|integer',
+            ]);
+
+            return $this->bodegaNotaService->obtenerNotas($validated);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener las notas'
+            ], 500);
+        }
+    }
+
+    public function guardarNotaBodega(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'numero_pedido' => 'required|string',
+                'talla' => 'required|string',
+                'talla_color_id' => 'nullable|integer',
+                'contenido' => 'required|string|max:5000',
+            ]);
+
+            return $this->bodegaNotaService->guardarNota($validated, $request);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar la nota: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function actualizarNotaBodega(Request $request, int $notaId): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'contenido' => 'required|string|max:5000',
+            ]);
+
+            return $this->bodegaNotaService->actualizarNota($notaId, $validated);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar la nota'
+            ], 500);
+        }
+    }
+
+    public function eliminarNotaBodega(Request $request, int $notaId): JsonResponse
+    {
+        try {
+            return $this->bodegaNotaService->eliminarNota($notaId);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar la nota'
+            ], 500);
+        }
+    }
 
     /**
      * Listar pedidos disponibles para despacho
@@ -152,6 +219,66 @@ class DespachoController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al guardar: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * API para obtener pedidos con prendas que se sacan de bodega y NO tienen ningún proceso
+     */
+    public function obtenerPendientesBodegaSinProcesos(Request $request)
+    {
+        try {
+            $search = $request->query('search', '');
+
+            $query = PedidoProduccion::query()
+                ->join('prendas_pedido', 'prendas_pedido.pedido_produccion_id', '=', 'pedidos_produccion.id')
+                ->leftJoin('pedidos_procesos_prenda_detalles', 'pedidos_procesos_prenda_detalles.prenda_pedido_id', '=', 'prendas_pedido.id')
+                ->whereNotNull('pedidos_produccion.numero_pedido')
+                ->where('pedidos_produccion.numero_pedido', '!=', '')
+                ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'Entregado', 'Anulada', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
+                ->where('pedidos_produccion.estado', '!=', 'Anulada')
+                ->where('pedidos_produccion.estado', '!=', 'Entregado')
+                ->where('prendas_pedido.de_bodega', 1)
+                ->whereNull('prendas_pedido.deleted_at')
+                ->whereNull('pedidos_procesos_prenda_detalles.id')
+                // Solo listar si existe al menos una talla marcada como Pendiente en bodega_detalles_talla.
+                // Evita casos donde se cumple "de_bodega sin procesos" pero ya no hay pendientes.
+                ->whereExists(function ($q) {
+                    $q->select(DB::raw(1))
+                        ->from('bodega_detalles_talla')
+                        ->whereColumn('bodega_detalles_talla.pedido_produccion_id', 'pedidos_produccion.id')
+                        ->where('bodega_detalles_talla.estado_bodega', 'Pendiente');
+                })
+                ->select('pedidos_produccion.*')
+                ->distinct();
+
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('numero_pedido', 'like', "%{$search}%")
+                      ->orWhere('cliente', 'like', "%{$search}%");
+                });
+            }
+
+            $pedidos = $query->orderBy('created_at', 'desc')->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $pedidos->map(function ($pedido) {
+                    return [
+                        'id' => $pedido->id,
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'cliente' => $pedido->cliente,
+                        'estado' => $pedido->estado,
+                        'fecha_creacion' => $pedido->created_at->format('d/m/Y'),
+                        'tipo' => 'costura'
+                    ];
+                })
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener pedidos de bodega sin procesos: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -881,6 +1008,8 @@ class DespachoController extends Controller
                 ->whereNotNull('pedidos_produccion.numero_pedido')
                 ->where('pedidos_produccion.numero_pedido', '!=', '')
                 ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'Entregado', 'Anulada', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
+                ->where('pedidos_produccion.estado', '!=', 'Anulada')
+                ->where('pedidos_produccion.estado', '!=', 'Entregado')
                 ->where('bodega_detalles_talla.area', 'EPP')
                 ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
                 ->select('pedidos_produccion.*') // Evitar columnas duplicadas
@@ -976,40 +1105,40 @@ class DespachoController extends Controller
             $pendientes = collect();
             $pedidosProcesados = [];
             
-            // Obtener pendientes de costura
+            // Obtener pedidos con prendas de bodega sin procesos
             if ($tipo === 'todos' || $tipo === 'costura') {
-                \Log::info('[DEBUG] Obteniendo pendientes de costura');
+                \Log::info('[DEBUG] Obteniendo prendas de bodega sin procesos');
                 try {
-                    $costuraResponse = $this->obtenerPendientesCostura($request);
-                    $costuraData = $costuraResponse->getData();
-                    \Log::info('[DEBUG] Respuesta costura:', [
-                        'success' => $costuraData->success ?? 'NO_DATA',
-                        'data_count' => $costuraData->data ? count($costuraData->data) : 0
+                    $bodegaResponse = $this->obtenerPendientesBodegaSinProcesos($request);
+                    $bodegaData = $bodegaResponse->getData();
+                    \Log::info('[DEBUG] Respuesta bodega sin procesos:', [
+                        'success' => $bodegaData->success ?? 'NO_DATA',
+                        'data_count' => $bodegaData->data ? count($bodegaData->data) : 0
                     ]);
-                    
-                    if ($costuraData->success) {
-                        $costuraPedidos = collect($costuraData->data);
-                        
+
+                    if ($bodegaData->success) {
+                        $bodegaPedidos = collect($bodegaData->data);
+
                         // Aplicar filtros si existen
                         if ($filter) {
-                            $costuraPedidos = $this->aplicarFiltros($costuraPedidos, $filter);
-                            \Log::info('[DEBUG] Costura después de filtros:', [
-                                'total_antes' => count($costuraData->data),
-                                'total_despues' => $costuraPedidos->count()
+                            $bodegaPedidos = $this->aplicarFiltros($bodegaPedidos, $filter);
+                            \Log::info('[DEBUG] Bodega sin procesos después de filtros:', [
+                                'total_antes' => count($bodegaData->data),
+                                'total_despues' => $bodegaPedidos->count()
                             ]);
                         }
-                        
-                        foreach ($costuraPedidos as $pedido) {
+
+                        foreach ($bodegaPedidos as $pedido) {
                             $pedidoId = $pedido->id;
                             if (!isset($pedidosProcesados[$pedidoId])) {
                                 $pendientes->push($pedido);
                                 $pedidosProcesados[$pedidoId] = true;
                             }
                         }
-                        \Log::info('[DEBUG] Pendientes costura agregados, total: ' . $pendientes->count());
+                        \Log::info('[DEBUG] Pedidos bodega sin procesos agregados, total: ' . $pendientes->count());
                     }
                 } catch (\Exception $e) {
-                    \Log::error('[ERROR] Error obteniendo pendientes de costura:', [
+                    \Log::error('[ERROR] Error obteniendo pedidos bodega sin procesos:', [
                         'error' => $e->getMessage(),
                         'file' => $e->getFile(),
                         'line' => $e->getLine()
@@ -1299,11 +1428,28 @@ class DespachoController extends Controller
             // Usar el servicio para obtener todos los detalles del pedido con información completa
             $datosCompletos = $this->bodegaPedidoService->obtenerDetallePedido($pedidoProduccion->id);
             
-            // Filtrar solo items de Despacho con estado_bodega 'Pendiente' y agrupar por prenda
+            // Filtrar solo:
+            // - EPP pendientes (area=EPP, estado_bodega=Pendiente)
+            // - Prendas que se sacan de bodega y NO tienen procesos
             $itemsPendientes = [];
             if (isset($datosCompletos['items']) && is_array($datosCompletos['items'])) {
                 foreach ($datosCompletos['items'] as $item) {
-                    if (($item['estado_bodega'] ?? '') === 'Pendiente') {
+                    $tipo = $item['tipo'] ?? null;
+                    $area = $item['area'] ?? null;
+                    $estadoBodega = $item['estado_bodega'] ?? null;
+                    $deBodega = (bool) ($item['de_bodega'] ?? ($item['descripcion']['de_bodega'] ?? ($item['objetoPrenda']['de_bodega'] ?? false)));
+                    $procesos = $item['descripcion']['procesos'] ?? [];
+
+                    $esEppPendiente = ($tipo === 'epp') && ($area === 'EPP') && ($estadoBodega === 'Pendiente');
+                    // IMPORTANTE:
+                    // Para prendas "de bodega" sin procesos, el item viene por talla.
+                    // Solo debemos mostrar las tallas marcadas como Pendiente, no todas las tallas de la prenda.
+                    $esPrendaDeBodegaSinProcesos = ($tipo === 'prenda')
+                        && $deBodega
+                        && ($estadoBodega === 'Pendiente')
+                        && (empty($procesos) || (is_array($procesos) && count($procesos) === 0));
+
+                    if ($esEppPendiente || $esPrendaDeBodegaSinProcesos) {
                         $itemsPendientes[] = $item;
                     }
                 }
@@ -1314,7 +1460,31 @@ class DespachoController extends Controller
             $prendasAgrupadas = [];
             
             foreach ($itemsPendientes as $item) {
-                $prendaKey = $item['descripcion']['nombre_prenda'] ?? $item['prenda_nombre'] ?? '';
+                $prendaNombre = $item['descripcion']['nombre_prenda'] ?? $item['prenda_nombre'] ?? '';
+                $colorKey = $item['descripcion']['color'] ?? ($item['color'] ?? '');
+                if (empty($colorKey)) {
+                    $tallaColorId = $item['talla_color_id'] ?? null;
+                    $variantes = $item['descripcion']['variantes'] ?? [];
+                    if ($tallaColorId !== null && is_array($variantes) && !empty($variantes)) {
+                        foreach ($variantes as $var) {
+                            $coloresDetalle = $var['colores_detalle'] ?? null;
+                            if (!is_array($coloresDetalle) || empty($coloresDetalle)) {
+                                continue;
+                            }
+                            foreach ($coloresDetalle as $cd) {
+                                $tcId = $cd['talla_color_id'] ?? ($cd['tallaColorId'] ?? null);
+                                if ($tcId !== null && (string)$tcId === (string)$tallaColorId) {
+                                    $colorKey = $cd['color'] ?? ($cd['color_nombre'] ?? '');
+                                    break 2;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (!empty($colorKey) && (!isset($item['descripcion']['color']) || empty($item['descripcion']['color']))) {
+                    $item['descripcion']['color'] = $colorKey;
+                }
+                $prendaKey = trim($prendaNombre . '|' . $colorKey);
                 if (!isset($prendasAgrupadas[$prendaKey])) {
                     $prendasAgrupadas[$prendaKey] = [];
                 }
@@ -1322,7 +1492,9 @@ class DespachoController extends Controller
             }
             
             // Convertir agrupado a items con estructura esperada
-            foreach ($prendasAgrupadas as $prendaNombre => $tallasDeProenda) {
+            foreach ($prendasAgrupadas as $prendaKey => $tallasDeProenda) {
+                $primerItem = $tallasDeProenda[0];
+                $prendaNombre = $primerItem['descripcion']['nombre_prenda'] ?? $primerItem['prenda_nombre'] ?? '';
                 $es_epp = strpos(strtoupper($prendaNombre), 'EPP') !== false;
                 $primerItem = $tallasDeProenda[0];
                 
@@ -1346,6 +1518,7 @@ class DespachoController extends Controller
                     'tallas' => array_map(function($taItem) {
                         return [
                             'talla' => $taItem['talla'] ?? '',
+                            'talla_color_id' => $taItem['talla_color_id'] ?? null,
                             'cantidad' => $taItem['cantidad'] ?? 0,
                             'pendientes' => $taItem['pendientes'] ?? '',
                             'estado_bodega' => $taItem['estado_bodega'] ?? 'Pendiente',
