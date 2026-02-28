@@ -174,7 +174,7 @@
                                 <i class="fas fa-eye"></i>
                             </button>
 
-                            <!-- Botón Editar -->
+                            {{-- <!-- Botón Editar -->
                             <button onclick="editarPedido({{ $orden->id }})" title="Editar Pedido" style="
                                 background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
                                 color: white;
@@ -192,7 +192,7 @@
                                 box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
                             " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(59, 130, 246, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(59, 130, 246, 0.3)'">
                                 <i class="fas fa-edit"></i>
-                            </button>
+                            </button> --}}
 
                             <!-- Botón Aprobar (solo si está pendiente de aprobación Y no es solo EPP) -->
                             @if($estado === 'PENDIENTE_SUPERVISOR')

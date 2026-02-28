@@ -287,6 +287,25 @@
         transform: translateY(-1px);
     }
 
+    .btn-recibo-parcial {
+        background: #8b5cf6;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-recibo-parcial:hover {
+        background: #7c3aed;
+        transform: translateY(-1px);
+    }
+
     .recibo-activo {
         background: #dcfce7;
         border-left: 3px solid #10b981;
@@ -338,6 +357,10 @@
         esSupervisorPedidos: {{ auth()->user()?->hasRole('supervisor_pedidos') ? 'true' : 'false' }},
         esSupervisor: {{ auth()->user()?->hasRole('supervisor') ? 'true' : 'false' }}
     };
+    
+    // DEBUG: Mostrar roles en consola
+    console.log('🔐 User Roles:', window.selectorRecibosState.usuarioRoles);
+    console.log('🔐 esSupervisorPedidos:', window.selectorRecibosState.esSupervisorPedidos);
     
     // Contadores de clics para debugging
     let prendaAccordionClickCount = 0;
@@ -489,9 +512,13 @@
                 
                 recibos.push({
                     tipo: tipoProceso,
-                    nombre: `${tipoProceso}`,
+                    nombre: proc.nombre_proceso || tipoProceso,  // Usar nombre_proceso para anexos (ej: "BORDADO ANEXO 1")
                     estado: proc.estado || "",
-                    es_base: false
+                    es_base: false,
+                    // Copiar propiedades de anexos si existen
+                    es_parcial: proc.es_parcial || false,
+                    pedido_parcial_id: proc.pedido_parcial_id || null,
+                    numero_recibo: proc.numero_recibo || null
                 });
             });
 
@@ -602,8 +629,14 @@
                     //  CRÍTICO: Pasar tipo como STRING puro
                     const tipoString = String(recibo.tipo);
                     
-                    // Determinar si el recibo está activo (solo para procesos reales)
-                    const estaActivo = !recibo.es_base && recibo.estado === 'APROBADO' && recibo.numero_recibo;
+                    // Determinar si es un anexo (recibo parcial)
+                    const esParcial = recibo.es_parcial || false;
+                    const parcialId = recibo.pedido_parcial_id || null;
+                    
+                    // Determinar si el recibo está activo
+                    // Para procesos normales: estado APROBADO + numero_recibo
+                    // Para parciales/anexos: estado APROBADO
+                    const estaActivo = !recibo.es_base && recibo.estado === 'APROBADO' && (recibo.numero_recibo || esParcial);
                     const puedeActivar = !recibo.es_base && recibo.estado === 'PENDIENTE';
                     
                     //  CRÍTICO: Solo supervisor_pedidos puede activar/desactivar recibos
@@ -613,17 +646,40 @@
                     
                     const reciboClass = estaActivo ? 'recibo-activo' : '';
                     
+                    // Verificar si el usuario puede crear recibos por talla (supervisor_pedidos o admin)
+                    const esSupervisorRecibos = window.selectorRecibosState?.usuarioRoles?.includes('supervisor_pedidos') ||
+                                               window.selectorRecibosState?.esSupervisorPedidos === 'true';
+                    
+                    // DEBUG: Mostrar decisión de visibilidad del botón
+                    console.log(`🔘 Prenda ${prenda.id}: esSupervisorRecibos=${esSupervisorRecibos}, esSupervisorPedidos=${window.selectorRecibosState?.esSupervisorPedidos}`);
+                    
+                    const pedidoId = window.selectorRecibosState?.pedidoId;
+                    
                     html += `
-                        <div class="proceso-item ${reciboClass}" onclick="seleccionarProceso(${prenda.id}, '${tipoString}')">
+                        <div class="proceso-item ${reciboClass}" 
+                             data-prenda-id="${prenda.id}" 
+                             data-tipo-string="${tipoString}"
+                             data-es-parcial="${esParcial}"
+                             data-pedido-parcial-id="${parcialId || ''}"
+                             data-nombre-proceso="${(recibo.nombre || '').replace(/"/g, '&quot;')}"
+                             onclick="seleccionarProcesoConDataAttributes(this)">
                             <div class="proceso-info">
                                 <p class="proceso-name">${recibo.nombre}</p>
                                 ${recibo.estado ? `<span class="proceso-estado ${estadoClass}">${estadoLabel}</span>` : ''}
                                 ${recibo.numero_recibo ? `<span class="numero-recibo">${recibo.numero_recibo}</span>` : ''}
                             </div>
                             <div class="proceso-acciones">
+                                ${esSupervisorRecibos ? `
+                                    <button class="btn-recibo-parcial" 
+                                            onclick="event.stopPropagation(); abrirModalReciboParcial(${prenda.id}, '${tipoString}', ${pedidoId})"
+                                            title="Crear recibo por talla">
+                                        <i class="fas fa-layer-group"></i>
+                                        Por Talla
+                                    </button>
+                                ` : ''}
                                 ${puedeModificarRecibo ? `
                                     <button class="btn-activar-recibo" 
-                                            onclick="event.stopPropagation(); toggleActivarRecibo(${prenda.id}, '${tipoString}', ${!estaActivo})"
+                                            onclick="event.stopPropagation(); toggleActivarRecibo(${prenda.id}, '${tipoString}', ${!estaActivo}, ${esParcial ? parcialId : 'null'})"
                                             title="Activar recibo">
                                         <i class="fas fa-check"></i>
                                         Activar
@@ -720,12 +776,49 @@
     };
 
     /**
+     * Selecciona un proceso leyendo datos desde data-* attributes
+     * Wrapper seguro para evitar problemas de sintaxis en JSON inline
+     * @param {HTMLElement} element - Elemento con los data-* attributes
+     */
+    window.seleccionarProcesoConDataAttributes = function(element) {
+        try {
+            const prendaId = parseInt(element.getAttribute('data-prenda-id'));
+            const tipoString = element.getAttribute('data-tipo-string');
+            const esParcial = element.getAttribute('data-es-parcial') === 'true';
+            const pedidoParcialId = element.getAttribute('data-pedido-parcial-id');
+            const nombreProceso = element.getAttribute('data-nombre-proceso')?.replace(/&quot;/g, '"') || '';
+
+            console.log(`[seleccionarProcesoConDataAttributes] Leyendo datos:`, {
+                prendaId,
+                tipoString,
+                esParcial,
+                pedidoParcialId,
+                nombreProceso
+            });
+
+            // Construir datosAdicionales
+            const datosAdicionales = {
+                es_parcial: esParcial,
+                pedido_parcial_id: esParcial && pedidoParcialId ? parseInt(pedidoParcialId) : null,
+                nombre_proceso: nombreProceso
+            };
+
+            // Llamar a la función original con los datos extraídos
+            window.seleccionarProceso(prendaId, tipoString, datosAdicionales);
+
+        } catch (error) {
+            console.error('[seleccionarProcesoConDataAttributes] Error:', error);
+            alert('Error al procesar la selección: ' + error.message);
+        }
+    };
+
+    /**
      * Selecciona un proceso específico
      *  GARANTIZA que tipoProceso siempre sea STRING
      * @param {number} prendaId - ID de la prenda (DEBE ser número)
      * @param {string} tipoProceso - Tipo/nombre del proceso (DEBE ser STRING)
      */
-    window.seleccionarProceso = function(prendaId, tipoProceso) {
+    window.seleccionarProceso = function(prendaId, tipoProceso, datosAdicionales) {
         // Incrementar contador de clics
         procesoClickCount++;
         const currentTime = Date.now();
@@ -755,12 +848,24 @@
         // Cerrar selector
         cerrarSelectorRecibos();
 
-        // Abrir modal de recibo con el proceso específico
-        //  Pasar como STRING puro
-        window.openOrderDetailModalWithProcess(pedidoId, prendaId, tipoString);
+        // Si es un anexo (recibo parcial), usar datos diferentes
+        if (datosAdicionales && datosAdicionales.es_parcial) {
+            console.log(`[PRENDA-DEBUG] Abriendo anexo: pedido_parcial_id=${datosAdicionales.pedido_parcial_id}, nombre=${datosAdicionales.nombre_proceso}`);
+            // Guardar nombre del proceso en estado
+            window.selectorRecibosState.nombreProcesoAnexo = datosAdicionales.nombre_proceso;
+            // Cargar datos del parcial desde endpoint específico
+            // Pasar también prendaId y tipoString para generar HTML del proceso
+            window.openOrderDetailModalWithParcial(datosAdicionales.pedido_parcial_id, prendaId, tipoString);
+        } else {
+            // Abrir modal de recibo normal
+            window.openOrderDetailModalWithProcess(pedidoId, prendaId, tipoString);
+        }
         
         console.log(`[PRENDA-DEBUG] Proceso Click #${procesoClickCount} - Modal de recibo solicitado`);
     };
+
+    // openOrderDetailModalWithParcial ahora se define en PedidosRecibosModule.js
+    // usando la pipeline de renderizado completa (sin hacks de DOM)
 
     /**
      * Cierra el selector de recibos
@@ -793,16 +898,22 @@
      * @param {string} tipoProceso - Tipo de proceso
      * @param {boolean} activar - true para activar, false para desactivar
      */
-    window.toggleActivarRecibo = async function(prendaId, tipoProceso, activar) {
+    window.toggleActivarRecibo = async function(prendaId, tipoProceso, activar, parcialId = null) {
         try {
             // Mostrar modal de confirmación
             const accion = activar ? 'activar' : 'desactivar';
             const titulo = activar ? 'Activar Recibo' : 'Desactivar Recibo';
-            const mensaje = `¿Está seguro de que desea ${accion} el recibo de ${tipoProceso}?`;
+            const esParcial = parcialId !== null && parcialId !== 'null';
+            const tipoLabel = esParcial ? `anexo de ${tipoProceso}` : tipoProceso;
+            const mensaje = `¿Está seguro de que desea ${accion} el recibo de ${tipoLabel}?`;
             const colorBoton = activar ? '#10b981' : '#ef4444';
             
             mostrarModalConfirmar(titulo, mensaje, colorBoton, async () => {
-                await ejecutarActivarRecibo(prendaId, tipoProceso, activar);
+                if (esParcial && activar) {
+                    await ejecutarActivarParcial(parcialId);
+                } else {
+                    await ejecutarActivarRecibo(prendaId, tipoProceso, activar);
+                }
             });
 
         } catch (error) {
@@ -902,6 +1013,56 @@
             } else {
                 mostrarMensajeExito('Recibo actualizado correctamente');
             }
+        }
+    }
+
+    /**
+     * Ejecuta la activación de un recibo parcial (anexo)
+     * Llama al endpoint específico para parciales que genera el consecutivo
+     */
+    async function ejecutarActivarParcial(parcialId) {
+        try {
+            console.log('[ejecutarActivarParcial] Activando parcial:', parcialId);
+
+            const response = await fetch(`/api/recibos-parciales/${parcialId}/activar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            });
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const textResponse = await response.text();
+                console.error('[ejecutarActivarParcial] Respuesta no es JSON:', textResponse.substring(0, 200));
+                throw new Error('El servidor devolvió HTML en lugar de JSON. Posible problema de autenticación.');
+            }
+
+            const result = await response.json();
+            console.log('[ejecutarActivarParcial] Respuesta:', result);
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Error al activar el recibo parcial');
+            }
+
+            const consecutivoMsg = result.data?.consecutivo 
+                ? ` (Consecutivo: ${result.data.consecutivo})` 
+                : '';
+            mostrarMensajeExito(result.message + consecutivoMsg);
+
+            // Recargar datos para actualizar la vista
+            const pedidoId = window.selectorRecibosState.pedidoId;
+            try {
+                await cargarDatosRecibos(pedidoId);
+            } catch (recargaError) {
+                console.warn('Error al recargar datos (pero la activación tuvo éxito):', recargaError);
+                mostrarMensajeExito('Anexo activado correctamente' + consecutivoMsg);
+            }
+
+        } catch (error) {
+            console.error('[ejecutarActivarParcial] Error:', error);
+            alert('Error al activar el anexo: ' + error.message);
         }
     }
 
@@ -1122,4 +1283,7 @@
     }, true); // Usar capture phase para mayor prioridad
 
 </script>
+
+<!-- Incluir modal de recibos parciales por talla -->
+@include('components.modals.recibos-parcial-por-talla')
 

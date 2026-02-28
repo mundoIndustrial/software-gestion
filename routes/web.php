@@ -2676,6 +2676,91 @@ Route::middleware(['auth'])->post('procesos/{procesoId}/activar-recibo', functio
                     'fecha_aprobacion' => now(),
                     'aprobado_por' => auth()->id()
                 ]);
+
+            // === GENERAR CONSECUTIVO para procesos no-costura ===
+            // Obtener tipo de proceso
+            $tipoProceso = \DB::table('tipos_procesos')
+                ->where('id', $proceso->tipo_proceso_id)
+                ->first();
+            $nombreTipo = strtoupper(trim($tipoProceso->nombre ?? ''));
+
+            // Solo generar consecutivo para tipos que NO se generan al aprobar
+            $tiposConActivacion = ['BORDADO', 'ESTAMPADO', 'DTF', 'SUBLIMADO', 'REFLECTIVO'];
+            $consecutivoGenerado = null;
+
+            if (in_array($nombreTipo, $tiposConActivacion)) {
+                // Obtener pedido_produccion_id desde la prenda
+                $prenda = \DB::table('prendas_pedido')
+                    ->where('id', $proceso->prenda_pedido_id)
+                    ->first();
+
+                if ($prenda) {
+                    $pedidoProduccionId = $prenda->pedido_produccion_id;
+                    $prendaPedidoId = $prenda->id;
+
+                    // Verificar que no exista ya un consecutivo para esta prenda+tipo
+                    $existe = \DB::table('consecutivos_recibos_pedidos')
+                        ->where('pedido_produccion_id', $pedidoProduccionId)
+                        ->where('tipo_recibo', $nombreTipo)
+                        ->where('prenda_id', $prendaPedidoId)
+                        ->exists();
+
+                    if (!$existe) {
+                        \DB::transaction(function () use ($pedidoProduccionId, $prendaPedidoId, $nombreTipo, &$consecutivoGenerado) {
+                            // Obtener siguiente consecutivo de tabla maestra
+                            $registroMaestro = \DB::table('consecutivos_recibos')
+                                ->where('tipo_recibo', $nombreTipo)
+                                ->where('activo', 1)
+                                ->lockForUpdate()
+                                ->first();
+
+                            if (!$registroMaestro) {
+                                \Log::warning('[Activar] No existe registro maestro para tipo: ' . $nombreTipo);
+                                return;
+                            }
+
+                            $nuevoConsecutivo = $registroMaestro->consecutivo_actual + 1;
+
+                            // Actualizar tabla maestra
+                            \DB::table('consecutivos_recibos')
+                                ->where('id', $registroMaestro->id)
+                                ->update([
+                                    'consecutivo_actual' => $nuevoConsecutivo,
+                                    'updated_at' => now()
+                                ]);
+
+                            // Insertar en consecutivos_recibos_pedidos
+                            \DB::table('consecutivos_recibos_pedidos')->insert([
+                                'pedido_produccion_id' => $pedidoProduccionId,
+                                'prenda_id' => $prendaPedidoId,
+                                'tipo_recibo' => $nombreTipo,
+                                'consecutivo_inicial' => $nuevoConsecutivo,
+                                'consecutivo_actual' => $nuevoConsecutivo,
+                                'activo' => 1,
+                                'notas' => "Generado al activar recibo por supervisor",
+                                'created_at' => now(),
+                                'updated_at' => now()
+                            ]);
+
+                            $consecutivoGenerado = $nuevoConsecutivo;
+
+                            \Log::info('[Activar] Consecutivo generado', [
+                                'tipo' => $nombreTipo,
+                                'consecutivo' => $nuevoConsecutivo,
+                                'pedido_id' => $pedidoProduccionId,
+                                'prenda_id' => $prendaPedidoId,
+                                'usuario' => auth()->user()->name ?? 'sistema'
+                            ]);
+                        });
+                    } else {
+                        \Log::info('[Activar] Consecutivo ya existe, omitiendo', [
+                            'tipo' => $nombreTipo,
+                            'pedido_id' => $pedidoProduccionId,
+                            'prenda_id' => $prendaPedidoId
+                        ]);
+                    }
+                }
+            }
         } else {
             \DB::table('pedidos_procesos_prenda_detalles')
                 ->where('id', $procesoId)
@@ -2688,10 +2773,12 @@ Route::middleware(['auth'])->post('procesos/{procesoId}/activar-recibo', functio
         
         return response()->json([
             'success' => true,
-            'message' => $activar ? 'Recibo activado correctamente' : 'Recibo desactivado correctamente'
+            'message' => $activar ? 'Recibo activado correctamente' : 'Recibo desactivado correctamente',
+            'consecutivo' => $consecutivoGenerado ?? null
         ]);
         
     } catch (\Exception $e) {
+        \Log::error('[Activar] Error:', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
         return response()->json([
             'success' => false,
             'message' => 'Error al actualizar estado: ' . $e->getMessage()
@@ -2796,5 +2883,28 @@ Route::middleware(['auth'])->prefix('recibos-novedades')->name('recibos-novedade
     
     // Eliminar una novedad
     Route::delete('{novedadId}', [App\Http\Controllers\Api_temp\RecibosNovedadesController::class, 'destroy'])
+        ->name('destroy');
+});
+
+/**
+ * Routes for Recibos Parciales (Supervisor de Recibos)
+ * Gestiona la creación de recibos parciales por talla
+ */
+Route::middleware(['auth'])->prefix('api/recibos-parciales')->name('recibos-parciales.')->group(function () {
+    
+    // Crear recibo parcial sin consecutivo
+    Route::post('', [App\Infrastructure\Http\Controllers\RecibosParcialesController::class, 'store'])
+        ->name('store');
+    
+    // Activar recibo parcial (asignar consecutivo)
+    Route::post('{reciboId}/activar', [App\Infrastructure\Http\Controllers\RecibosParcialesController::class, 'activar'])
+        ->name('activar');
+    
+    // Obtener detalles de recibo parcial
+    Route::get('{reciboId}', [App\Infrastructure\Http\Controllers\RecibosParcialesController::class, 'show'])
+        ->name('show');
+    
+    // Eliminar recibo parcial
+    Route::delete('{reciboId}', [App\Infrastructure\Http\Controllers\RecibosParcialesController::class, 'destroy'])
         ->name('destroy');
 });

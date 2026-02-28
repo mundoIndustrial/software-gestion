@@ -26,7 +26,7 @@ export class ReceiptRenderer {
         this._llenarDescripcion(prendaData, recibo, tipoProceso);
 
         // Actualizar ancho y metraje para esta prenda
-        this._actualizarAnchoMetraje(prendaData);
+        this._actualizarAnchoMetraje(prendaData, tipoProceso);
 
         // Guardar datos en estado
         modalManager.setState({
@@ -42,11 +42,20 @@ export class ReceiptRenderer {
     /**
      * Actualiza los valores de ancho y metraje para la prenda actual
      */
-    static _actualizarAnchoMetraje(prendaData) {
+    static _actualizarAnchoMetraje(prendaData, tipoProceso = '') {
+        const contenedor = document.getElementById('order-ancho-metraje');
         const anchoSpan = document.getElementById('ancho-valor');
         const metrajeSpan = document.getElementById('metraje-valor');
 
-        if (anchoSpan && metrajeSpan) {
+        // Solo mostrar ancho/metraje para costura y costura-bodega
+        const tipoBajo = String(tipoProceso || '').toLowerCase();
+        const esCostura = tipoBajo === 'costura' || tipoBajo === 'costura-bodega';
+
+        if (contenedor) {
+            contenedor.style.display = esCostura ? '' : 'none';
+        }
+
+        if (anchoSpan && metrajeSpan && esCostura) {
             if (prendaData.ancho_metraje && (prendaData.ancho_metraje.ancho || prendaData.ancho_metraje.metraje)) {
                 anchoSpan.textContent = prendaData.ancho_metraje.ancho + ' m';
                 metrajeSpan.textContent = prendaData.ancho_metraje.metraje + ' m';

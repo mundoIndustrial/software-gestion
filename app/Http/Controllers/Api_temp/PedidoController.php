@@ -404,6 +404,43 @@ class PedidoController extends Controller
             // Transformar datos a array
             $datos = $response->toArray();
             
+            // Enriquecer procesos con tallas_transformadas para que el modal pueda accederlas
+            if (isset($datos['prendas']) && is_array($datos['prendas'])) {
+                foreach ($datos['prendas'] as &$prenda) {
+                    if (isset($prenda['procesos']) && is_array($prenda['procesos'])) {
+                        foreach ($prenda['procesos'] as &$proceso) {
+                            if (isset($proceso['id'])) {
+                                // Obtener tallas del proceso
+                                $tallas = \DB::table('pedidos_procesos_prenda_tallas')
+                                    ->where('proceso_prenda_detalle_id', $proceso['id'])
+                                    ->get();
+                                
+                                // Transformar a formato por género
+                                $talasTransformadas = [
+                                    'dama' => [],
+                                    'caballero' => [],
+                                    'unisex' => []
+                                ];
+                                
+                                foreach ($tallas as $talla) {
+                                    $genero = strtolower($talla->genero ?? 'caballero');
+                                    if ($genero === 'dama') $genero = 'dama';
+                                    else if ($genero === 'caballero') $genero = 'caballero';
+                                    else $genero = 'unisex';
+                                    
+                                    $talasTransformadas[$genero][$talla->talla] = $talla->cantidad;
+                                }
+                                
+                                // Agregar al proceso
+                                $proceso['tallas_transformadas'] = $talasTransformadas;
+                            }
+                        }
+                        unset($proceso);
+                    }
+                }
+                unset($prenda);
+            }
+            
             // Agregar fecha de creación si no existe
             if (!isset($datos['fecha_creacion'])) {
                 $pedido = \App\Models\PedidoProduccion::find($id);
@@ -425,6 +462,85 @@ class PedidoController extends Controller
                             'fecha_entrega' => $entrega->fecha_entrega?->format('Y-m-d H:i:s'),
                             'usuario' => $entrega->usuario?->name,
                         ] : null;
+                        
+                        // Agregar recibos parciales (ANEXOS) a cada prenda
+                        try {
+                            $recibosParciales = \DB::table('pedidos_parciales')
+                                ->where('pedido_produccion_id', $id)
+                                ->where('prenda_pedido_id', $prenda['id'])
+                                ->orderBy('tipo_recibo', 'asc')
+                                ->orderBy('id', 'asc')
+                                ->get();
+                            
+                            if ($recibosParciales->count() > 0) {
+                                // Agrupar por tipo_recibo para asignar números de anexo
+                                $anexosPorTipo = [];
+                                $procesosAdicionales = [];
+                                
+                                foreach ($recibosParciales as $reciboParcial) {
+                                    $tipoRecibo = $reciboParcial->tipo_recibo;
+                                    
+                                    // Contar anexos del mismo tipo
+                                    if (!isset($anexosPorTipo[$tipoRecibo])) {
+                                        $anexosPorTipo[$tipoRecibo] = 0;
+                                    }
+                                    $anexosPorTipo[$tipoRecibo]++;
+                                    
+                                    // Obtener las tallas del recibo parcial
+                                    $tallas = \DB::table('pedidos_parciales_tallas')
+                                        ->where('pedido_parcial_id', $reciboParcial->id)
+                                        ->get();
+                                    
+                                    $tallasList = [];
+                                    $talasTransformadas = [
+                                        'dama' => [],
+                                        'caballero' => [],
+                                        'unisex' => []
+                                    ];
+                                    
+                                    foreach ($tallas as $talla) {
+                                        $tallasList[] = [
+                                            'talla' => $talla->talla,
+                                            'cantidad' => $talla->cantidad,
+                                            'genero' => $talla->genero ?? 'General'
+                                        ];
+                                        
+                                        // Transformar a formato por género para el modal
+                                        $genero = strtolower($talla->genero ?? 'caballero');
+                                        if ($genero === 'dama') $genero = 'dama';
+                                        else if ($genero === 'caballero') $genero = 'caballero';
+                                        else $genero = 'unisex';
+                                        
+                                        $talasTransformadas[$genero][$talla->talla] = $talla->cantidad;
+                                    }
+                                    
+                                    $procesosAdicionales[] = [
+                                        'tipo_proceso' => $tipoRecibo,  // Mantener el tipo real para el API
+                                        'nombre_proceso' => $tipoRecibo . ' ANEXO ' . $anexosPorTipo[$tipoRecibo],  // Solo para mostrar
+                                        'estado' => $reciboParcial->estado ?? 'PENDIENTE',
+                                        'numero_recibo' => $reciboParcial->numero_recibo ?? null,
+                                        'es_parcial' => true,
+                                        'numero_anexo' => $anexosPorTipo[$tipoRecibo],
+                                        'pedido_parcial_id' => $reciboParcial->id,
+                                        'tallas' => $tallasList,
+                                        'tallas_transformadas' => $talasTransformadas,  // Para que el modal lo encuentre
+                                        'created_at' => $reciboParcial->created_at,
+                                    ];
+                                }
+                                
+                                // Agregar los procesos adicionales al array de procesos de la prenda
+                                if (!isset($prenda['procesos'])) {
+                                    $prenda['procesos'] = [];
+                                }
+                                $prenda['procesos'] = array_merge($prenda['procesos'], $procesosAdicionales);
+                            }
+                        } catch (\Exception $e) {
+                            \Log::error('[PedidoController::show] Error cargando recibos parciales', [
+                                'prenda_id' => $prenda['id'],
+                                'pedido_id' => $id,
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
                     }
                 }
                 unset($prenda); // Romper referencia

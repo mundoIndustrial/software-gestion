@@ -829,3 +829,5 @@ Route::withoutMiddleware(['api'])
     Route::get('{prendaPedidoId}/estado', [App\Http\Controllers\PrendaEntregaController::class, 'obtenerEstado'])
         ->name('estado');
 });
+
+

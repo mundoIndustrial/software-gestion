@@ -1,0 +1,445 @@
+{{-- Modal para crear recibos parciales por talla y cantidad --}}
+
+<div id="modal-recibo-parcial-overlay" 
+     style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9998; animation: fadeIn 0.3s ease-in-out;"
+     onclick="if(event.target === this) cerrarModalReciboParcial()">
+</div>
+
+<div id="modal-recibo-parcial" 
+     style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); z-index: 9999;">
+    
+    <!-- Header -->
+    <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; padding: 24px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10;">
+        <div>
+            <h2 style="margin: 0; font-size: 20px; font-weight: 700;">Crear Recibo Parcial</h2>
+            <p style="margin: 4px 0 0 0; opacity: 0.9; font-size: 14px;">Selecciona tallas y cantidades</p>
+        </div>
+        <button onclick="cerrarModalReciboParcial()" style="background: rgba(255,255,255,0.3); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+            ✕
+        </button>
+    </div>
+
+    <!-- Contenido -->
+    <div style="padding: 24px;">
+        
+        <!-- Información de la prenda -->
+        <div style="background: #f3f4f6; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+            <p style="margin: 0 0 8px 0; font-size: 12px; color: #6b7280; text-transform: uppercase; font-weight: 600;">Prenda</p>
+            <h3 id="parcial-prenda-nombre" style="margin: 0; font-size: 16px; color: #1f2937; font-weight: 600;">-</h3>
+            <p id="parcial-proceso-nombre" style="margin: 8px 0 0 0; font-size: 13px; color: #6b7280;">-</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="parcial-error" style="display: none; background: #fee2e2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; color: #991b1b; margin-bottom: 16px;">
+            <p style="margin: 0; font-weight: 600;">Error</p>
+            <p id="parcial-error-message" style="margin: 8px 0 0 0; font-size: 14px;"></p>
+        </div>
+
+        <!-- Loading State -->
+        <div id="parcial-loading" style="display: none; text-align: center; padding: 40px;">
+            <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #e5e7eb; border-top: 4px solid #8b5cf6; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+            <p style="margin-top: 16px; color: #6b7280; font-size: 14px;">Cargando información...</p>
+        </div>
+
+        <!-- Selector de Tallas -->
+        <div id="parcial-content" style="display: none;">
+            <div style="margin-bottom: 24px;">
+                <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 12px; font-size: 14px;">
+                    Selecciona tallas:
+                </label>
+                <div id="parcial-tallas-list" style="display: grid; gap: 8px;">
+                    <!-- Se llenará dinámicamente -->
+                </div>
+            </div>
+
+            <!-- Cantidad por talla -->
+            <div style="margin-bottom: 24px; background: #f9fafb; border-radius: 8px; padding: 16px; border: 1px solid #e5e7eb;">
+                <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 12px; font-size: 14px;">
+                    Cantidades:
+                </label>
+                <div id="parcial-cantidades-list" style="display: grid; gap: 12px;">
+                    <!-- Se llenará dinámicamente -->
+                </div>
+                <div id="parcial-total-info" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-weight: 600; color: #1f2937; font-size: 13px;">
+                    Total a enviar: <span id="parcial-total-cantidad">0</span>
+                </div>
+            </div>
+
+            <!-- Notas adicionales -->
+            <div style="margin-bottom: 24px;">
+                <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 8px; font-size: 14px;">
+                    Notas (opcional):
+                </label>
+                <textarea id="parcial-notas" placeholder="Agrega notas específicas para este recibo parcial..." style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; font-size: 13px; resize: vertical; min-height: 80px;"></textarea>
+            </div>
+        </div>
+
+        <!-- Botones de acción -->
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+            <button onclick="cerrarModalReciboParcial()" 
+                    style="background: #e5e7eb; color: #374151; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s;">
+                Cancelar
+            </button>
+            <button id="parcial-guardar-btn" 
+                    onclick="guardarReciboParcial()"
+                    style="background: #8b5cf6; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: none;">
+                <i class="fas fa-check"></i> Crear Recibo
+            </button>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    /**
+     * Estado global del modal de recibo parcial
+     */
+    window.modalReciboParcialState = {
+        prendaId: null,
+        tipoProceso: null,
+        prendaNombre: null,
+        tallas: [],
+        tallasCantidad: {},
+        pedidoId: null
+    };
+
+    /**
+     * Abre el modal de recibo parcial
+     * @param {number} prendaId - ID de la prenda
+     * @param {string} tipoProceso - Tipo de proceso (Costura, Bordado, etc.)
+     * @param {number} pedidoId - ID del pedido
+     */
+    window.abrirModalReciboParcial = async function(prendaId, tipoProceso, pedidoId) {
+        // Encontrar datos de la prenda en el estado global
+        const penda = window.selectorRecibosState.prendas.find(p => p.id === prendaId);
+        if (!penda) {
+            alert('Prenda no encontrada');
+            return;
+        }
+
+        window.modalReciboParcialState.prendaId = prendaId;
+        window.modalReciboParcialState.tipoProceso = tipoProceso;
+        window.modalReciboParcialState.prendaNombre = penda.nombre;
+        window.modalReciboParcialState.pedidoId = pedidoId;
+        window.modalReciboParcialState.tallas = [];
+        window.modalReciboParcialState.tallasCantidad = {};
+
+        const overlay = document.getElementById('modal-recibo-parcial-overlay');
+        const modal = document.getElementById('modal-recibo-parcial');
+        const loading = document.getElementById('parcial-loading');
+        const content = document.getElementById('parcial-content');
+        const error = document.getElementById('parcial-error');
+
+        // Mostrar modal con loading
+        overlay.style.display = 'block';
+        modal.style.display = 'block';
+        loading.style.display = 'block';
+        content.style.display = 'none';
+        error.style.display = 'none';
+
+        // Actualizar información de la prenda
+        document.getElementById('parcial-prenda-nombre').textContent = penda.nombre || '-';
+        document.getElementById('parcial-proceso-nombre').textContent = `RECIBO DE ${tipoProceso.toUpperCase()}`;
+
+        // Cargar tallas disponibles
+        try {
+            // Extraer tallas del proceso específico (no de la prenda)
+            let tallas = [];
+            
+            // Buscar el proceso que coincide con tipoProceso
+            if (penda.procesos && Array.isArray(penda.procesos)) {
+                const procesoEncontrado = penda.procesos.find(p => {
+                    // Comparar con tipo_proceso (STRING) o tipo_recibo
+                    const tipo = String(p.tipo_proceso || p.nombre_proceso || '').toUpperCase();
+                    const tipoParam = String(tipoProceso).toUpperCase();
+                    return tipo === tipoParam;
+                });
+                
+                if (procesoEncontrado) {
+                    // Obtener tallas del proceso (pueden estar en diferentes formatos)
+                    if (procesoEncontrado.tallas_transformadas) {
+                        // Formato transformado: {dama: {...}, caballero: {...}, unisex: {...}}
+                        const generos = ['DAMA', 'CABALLERO', 'UNISEX'];
+                        generos.forEach(genero => {
+                            const tallasPorGenero = procesoEncontrado.tallas_transformadas[genero.toLowerCase()] || {};
+                            Object.entries(tallasPorGenero).forEach(([talla, cantidad]) => {
+                                tallas.push({
+                                    talla: talla,
+                                    cantidad: cantidad,
+                                    genero: genero
+                                });
+                            });
+                        });
+                    } else if (procesoEncontrado.tallas && Array.isArray(procesoEncontrado.tallas)) {
+                        // Formato array directo
+                        tallas = procesoEncontrado.tallas;
+                    }
+                }
+            }
+            
+            // Si no encontró tallas en procesos, usar las de la prenda como fallback
+            if (tallas.length === 0 && penda.tallas && Array.isArray(penda.tallas)) {
+                tallas = penda.tallas;
+            }
+
+            if (tallas.length === 0) {
+                throw new Error('No se encontraron tallas para esta prenda');
+            }
+
+            window.modalReciboParcialState.tallas = tallas;
+            
+            // Renderizar tallas
+            renderizarTallasEnModal(tallas);
+
+            loading.style.display = 'none';
+            content.style.display = 'block';
+            document.getElementById('parcial-guardar-btn').style.display = 'inline-flex';
+
+        } catch (err) {
+            loading.style.display = 'none';
+            error.style.display = 'block';
+            document.getElementById('parcial-error-message').textContent = err.message || 'Error al cargar tallas';
+        }
+    };
+
+    /**
+     * Renderiza las tallas disponibles en el modal
+     * @param {Array} tallas - Lista de tallas
+     */
+    function renderizarTallasEnModal(tallas) {
+        const container = document.getElementById('parcial-tallas-list');
+        container.innerHTML = '';
+
+        tallas.forEach((talla, idx) => {
+            const tallaId = `parcial-talla-${idx}`;
+            const labelText = talla.talla + (talla.genero ? ` (${talla.genero})` : '') + (talla.cantidad ? ` - Disponible: ${talla.cantidad}` : '');
+            
+            const html = `
+                <label style="display: flex; align-items: center; padding: 12px; background: white; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s; position: relative;">
+                    <input type="checkbox" id="${tallaId}" class="parcial-talla-checkbox" data-talla-index="${idx}" 
+                           style="width: 18px; height: 18px; margin-right: 12px; cursor: pointer;"
+                           onchange="actualizarCantidadTalla(${idx})">
+                    <span style="flex: 1; font-weight: 500; color: #1f2937;">${labelText}</span>
+                    <span style="color: #8b5cf6; font-weight: 600; font-size: 14px;">
+                        ${talla.cantidad || 0}
+                    </span>
+                </label>
+            `;
+            container.innerHTML += html;
+        });
+    }
+
+    /**
+     * Actualiza la sección de cantidades según las tallas seleccionadas
+     * @param {number} tallaIndex - Índice de la talla
+     */
+    window.actualizarCantidadTalla = function(tallaIndex) {
+        const checkbox = document.querySelector(`.parcial-talla-checkbox[data-talla-index="${tallaIndex}"]`);
+        const talla = window.modalReciboParcialState.tallas[tallaIndex];
+        const cantidadesContainer = document.getElementById('parcial-cantidades-list');
+
+        if (!checkbox) return;
+
+        if (checkbox.checked) {
+            // Agregar campo de cantidad
+            window.modalReciboParcialState.tallasCantidad[tallaIndex] = talla.cantidad || 0;
+        } else {
+            // Remover campo de cantidad
+            delete window.modalReciboParcialState.tallasCantidad[tallaIndex];
+        }
+
+        // Re-renderizar campos de cantidad
+        renderizarCantidadesEnModal();
+    };
+
+    /**
+     * Renderiza los campos de cantidad para las tallas seleccionadas
+     */
+    function renderizarCantidadesEnModal() {
+        const container = document.getElementById('parcial-cantidades-list');
+        container.innerHTML = '';
+
+        let totalCantidad = 0;
+        const tallas = window.modalReciboParcialState.tallas;
+        const tallasCantidad = window.modalReciboParcialState.tallasCantidad;
+
+        Object.keys(tallasCantidad).forEach(tallaIndex => {
+            const idx = parseInt(tallaIndex);
+            const talla = tallas[idx];
+            const cantidadActual = tallasCantidad[idx];
+            const maxCantidad = talla.cantidad || 0;
+
+            const html = `
+                <div style="display: grid; grid-template-columns: 1fr 120px; gap: 12px; align-items: center;">
+                    <label style="font-weight: 500; color: #1f2937; font-size: 13px;">
+                        ${talla.talla} (${talla.genero || 'General'}):
+                    </label>
+                    <input type="number" 
+                           id="parcial-cantidad-${idx}" 
+                           class="parcial-cantidad-input"
+                           data-talla-index="${idx}"
+                           min="1" 
+                           max="${maxCantidad}" 
+                           value="${cantidadActual}"
+                           placeholder="Cantidad"
+                           onchange="actualizarCantidadInput(${idx})"
+                           style="padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-weight: 500; width: 100%; box-sizing: border-box;">
+                </div>
+            `;
+            container.innerHTML += html;
+            totalCantidad += cantidadActual;
+        });
+
+        // Actualizar total
+        document.getElementById('parcial-total-cantidad').textContent = totalCantidad;
+
+        // Si no hay tallas seleccionadas
+        if (Object.keys(tallasCantidad).length === 0) {
+            container.innerHTML = '<p style="color: #9ca3af; text-align: center; padding: 12px;">Selecciona tallas para ver cantidades editable</p>';
+        }
+    };
+
+    /**
+     * Actualiza el valor de cantidad en el estado
+     * @param {number} tallaIndex - Índice de la talla
+     */
+    window.actualizarCantidadInput = function(tallaIndex) {
+        const input = document.getElementById(`parcial-cantidad-${tallaIndex}`);
+        if (input) {
+            const valor = Math.max(1, Math.min(parseInt(input.value) || 0, parseInt(input.max) || 999));
+            window.modalReciboParcialState.tallasCantidad[tallaIndex] = valor;
+            renderizarCantidadesEnModal();
+        }
+    };
+
+    /**
+     * Guarda el recibo parcial
+     */
+    window.guardarReciboParcial = async function() {
+        const tallasCantidad = window.modalReciboParcialState.tallasCantidad;
+
+        // Validar que hay tallas seleccionadas
+        if (Object.keys(tallasCantidad).length === 0) {
+            alert('Por favor selecciona al menos una talla');
+            return;
+        }
+
+        // Validar que todas las cantidades son mayores a 0
+        for (let tallaIndex in tallasCantidad) {
+            if (tallasCantidad[tallaIndex] <= 0) {
+                alert('Todas las cantidades deben ser mayores a 0');
+                return;
+            }
+        }
+
+        const btn = document.getElementById('parcial-guardar-btn');
+        const loading = document.getElementById('parcial-loading');
+        const content = document.getElementById('parcial-content');
+
+        btn.disabled = true;
+        loading.style.display = 'block';
+        content.style.display = 'none';
+
+        try {
+            // Construir datos de las tallas seleccionadas
+            const tallasSeleccionadas = [];
+            Object.keys(tallasCantidad).forEach(tallaIndex => {
+                const idx = parseInt(tallaIndex);
+                const talla = window.modalReciboParcialState.tallas[idx];
+                tallasSeleccionadas.push({
+                    talla: talla.talla,
+                    cantidad: tallasCantidad[idx],
+                    genero: talla.genero
+                });
+            });
+
+            const payload = {
+                pedido_id: window.modalReciboParcialState.pedidoId,
+                prenda_id: window.modalReciboParcialState.prendaId,
+                tipo_proceso: window.modalReciboParcialState.tipoProceso,
+                tallas: tallasSeleccionadas,
+                notas: document.getElementById('parcial-notas').value || null
+            };
+
+            console.log('[Recibo Parcial] Guardando:', payload);
+
+            const response = await fetch('/api/recibos-parciales', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                console.log('[Recibo Parcial] Creado exitosamente:', result.data);
+                mostrarMensajeExito(`Recibo ${result.data.tipo_recibo} parcial creado. Recarga el modal para verlo actualizado.`);
+                const pedidoId = result.data.pedido_id; // Guardar antes de limpiar estado
+                cerrarModalReciboParcial();
+                
+                // Recargar datos del selector con el pedido_id de la respuesta
+                cargarDatosRecibos(pedidoId);
+            } else {
+                throw new Error(result.message || 'Error al crear recibo parcial');
+            }
+
+        } catch (error) {
+            console.error('[Recibo Parcial] Error:', error);
+            document.getElementById('parcial-error').style.display = 'block';
+            document.getElementById('parcial-error-message').textContent = error.message;
+            content.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            loading.style.display = 'none';
+        }
+    };
+
+    /**
+     * Cierra el modal de recibo parcial
+     */
+    window.cerrarModalReciboParcial = function() {
+        const overlay = document.getElementById('modal-recibo-parcial-overlay');
+        const modal = document.getElementById('modal-recibo-parcial');
+        
+        if (overlay) overlay.style.display = 'none';
+        if (modal) modal.style.display = 'none';
+
+        // Limpiar estado
+        window.modalReciboParcialState = {
+            prendaId: null,
+            tipoProceso: null,
+            prendaNombre: null,
+            tallas: [],
+            tallasCantidad: {},
+            pedidoId: null
+        };
+    };
+
+    // Cerrar al presionar ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('modal-recibo-parcial').style.display === 'block') {
+            cerrarModalReciboParcial();
+        }
+    });
+</script>
+
+<style>
+    /* Estilos específicos para spinners */
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+</style>

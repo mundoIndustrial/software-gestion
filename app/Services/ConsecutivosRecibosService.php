@@ -196,58 +196,10 @@ class ConsecutivosRecibosService
             }
         }
 
-        // Para ESTAMPADO, BORDADO, REFLECTIVO, DTF, SUBLIMADO: se generan por cada prenda que tenga el proceso
-        foreach ($pedidoCompleto->prendas as $prenda) {
-            foreach ($prenda->procesos as $proceso) {
-                // Obtener el nombre del tipo de proceso desde la relación
-                $nombreTipoProceso = strtoupper(trim($proceso->tipoProceso->nombre ?? ''));
-                
-                // Si no hay relación, intentar obtener directamente desde la BD
-                if (!$proceso->tipoProceso) {
-                    $tipoDirecto = DB::table('tipos_procesos')
-                        ->where('id', $proceso->tipo_proceso_id)
-                        ->first();
-                    $nombreTipoProceso = strtoupper(trim($tipoDirecto->nombre ?? ''));
-                }
-                
-                // Mapear tipos de proceso a tipos de recibo (uno por cada prenda)
-                switch ($nombreTipoProceso) {
-                    case 'BORDADO':
-                        $tiposRecibo["BORDADO_{$prenda->id}"] = [
-                            'tipo_recibo' => 'BORDADO',
-                            'prenda_pedido_id' => $prenda->id
-                        ];
-                        break;
-                    case 'ESTAMPADO':
-                        $tiposRecibo["ESTAMPADO_{$prenda->id}"] = [
-                            'tipo_recibo' => 'ESTAMPADO',
-                            'prenda_pedido_id' => $prenda->id
-                        ];
-                        break;
-                    case 'DTF':
-                        $tiposRecibo["DTF_{$prenda->id}"] = [
-                            'tipo_recibo' => 'DTF',
-                            'prenda_pedido_id' => $prenda->id
-                        ];
-                        break;
-                    case 'SUBLIMADO':
-                        $tiposRecibo["SUBLIMADO_{$prenda->id}"] = [
-                            'tipo_recibo' => 'SUBLIMADO',
-                            'prenda_pedido_id' => $prenda->id
-                        ];
-                        break;
-                    case 'REFLECTIVO':
-                        // REFLECTIVO: un consecutivo por cada prenda con de_bodega = true
-                        if ($prenda->de_bodega) {
-                            $tiposRecibo["REFLECTIVO_{$prenda->id}"] = [
-                                'tipo_recibo' => 'REFLECTIVO',
-                                'prenda_pedido_id' => $prenda->id
-                            ];
-                        }
-                        break;
-                }
-            }
-        }
+        // BORDADO, ESTAMPADO, DTF, SUBLIMADO, REFLECTIVO:
+        // NO se generan consecutivos al aprobar el pedido.
+        // Se generan cuando el supervisor hace clic en "Activar" en el selector de recibos.
+        // Ver ruta: procesos/{procesoId}/activar-recibo
 
         Log::info(' Tipos de recibo determinados', [
             'pedido_id' => $pedido->id,

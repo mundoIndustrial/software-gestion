@@ -209,6 +209,164 @@ export class PedidosRecibosModule {
     }
 
     /**
+     * Abre un recibo parcial (anexo) reutilizando la misma pipeline de renderizado.
+     * Sigue el mismo flujo que abrirRecibo() pero inyecta las tallas del parcial
+     * en el objeto recibo ANTES de renderizar.
+     *
+     * @param {number} pedidoId    - ID del pedido de producción
+     * @param {number} prendaId    - ID de la prenda
+     * @param {string} tipoRecibo  - Tipo del proceso base (ej: "BORDADO")
+     * @param {number} parcialId   - ID del recibo parcial (pedidos_parciales)
+     * @param {string} nombreAnexo - Nombre para mostrar (ej: "BORDADO ANEXO 2")
+     */
+    async abrirReciboParcial(pedidoId, prendaId, tipoRecibo, parcialId, nombreAnexo) {
+        // Validaciones
+        if (typeof tipoRecibo !== 'string') {
+            alert('Error: tipo de recibo debe ser texto');
+            return;
+        }
+        if (typeof prendaId !== 'number') {
+            alert('Error: ID de prenda debe ser número');
+            return;
+        }
+        if (!parcialId) {
+            alert('Error: ID de recibo parcial requerido');
+            return;
+        }
+
+        try {
+            // Resetear estado
+            GalleryManager.resetGaleria(this.modalManager);
+            this.modalManager.limpiarEstado();
+            this.modalManager.setState({
+                pedidoId,
+                prendaId,
+                tipoProceso: tipoRecibo,
+                prendaIndex: null
+            });
+
+            // Mostrar modal
+            this.modalManager.abrirModal();
+
+            // Determinar endpoint de datos del pedido (misma lógica que abrirRecibo)
+            let endpoint;
+            if (window.location.pathname.includes('/registros')) {
+                endpoint = `/registros/${pedidoId}/recibos-datos`;
+            } else if (window.location.pathname.includes('insumos/materiales')) {
+                endpoint = `/registros/${pedidoId}/recibos-datos`;
+            } else {
+                endpoint = `/pedidos-public/${pedidoId}/recibos-datos`;
+            }
+
+            console.log('[PedidosRecibosModule.abrirReciboParcial] Cargando datos en paralelo:', {
+                endpoint,
+                parcialEndpoint: `/api/recibos-parciales/${parcialId}`
+            });
+
+            // Fetch en paralelo: datos del pedido + datos del parcial
+            const [pedidoResponse, parcialResponse] = await Promise.all([
+                fetch(endpoint),
+                fetch(`/api/recibos-parciales/${parcialId}`)
+            ]);
+
+            if (!pedidoResponse.ok) throw new Error(`HTTP ${pedidoResponse.status} al cargar pedido`);
+            if (!parcialResponse.ok) throw new Error(`HTTP ${parcialResponse.status} al cargar parcial`);
+
+            let datos = await pedidoResponse.json();
+            const parcialResult = await parcialResponse.json();
+
+            if (!parcialResult.success) {
+                throw new Error(parcialResult.message || 'Error al cargar recibo parcial');
+            }
+
+            // Desempaquetar datos del pedido
+            if (datos.data && typeof datos.data === 'object') {
+                datos = datos.data;
+            }
+
+            this.modalManager.setState({ datosCompletos: datos });
+
+            // Validar prendas
+            if (!datos.prendas || !Array.isArray(datos.prendas)) {
+                throw new Error('No se encontraron prendas en los datos del pedido');
+            }
+
+            // Encontrar la prenda
+            const prendaData = datos.prendas.find(p => p.id == prendaId);
+            if (!prendaData) {
+                throw new Error(`Prenda ${prendaId} no encontrada`);
+            }
+
+            // Construir recibos normalmente
+            const recibos = ReceiptBuilder.construirListaRecibos(prendaData);
+            const reciboIndice = ReceiptBuilder.encontrarReceibo(recibos, tipoRecibo);
+
+            if (reciboIndice === -1) {
+                throw new Error(`Recibo "${tipoRecibo}" no encontrado`);
+            }
+
+            // === INYECCIÓN DE TALLAS DEL PARCIAL (antes de renderizar) ===
+            const recibo = recibos[reciboIndice];
+            const tallasFormato = parcialResult.data.tallas_formato;
+
+            console.log('[PedidosRecibosModule.abrirReciboParcial] Inyectando tallas del parcial:', {
+                tallasOriginales: recibo.tallas,
+                tallasDelParcial: tallasFormato,
+                nombreAnexo
+            });
+
+            // Sobrescribir tallas del recibo con las del parcial
+            recibo.tallas = tallasFormato;
+
+            // Eliminar talla_colores para evitar que el Formatter use colores
+            // (los parciales no tienen asignación de colores por talla)
+            delete recibo.talla_colores;
+
+            // Marcar como parcial para que el renderer sepa limpiar consecutivo
+            recibo._esParcial = true;
+            recibo._nombreAnexo = nombreAnexo || tipoRecibo;
+
+            this.modalManager.setState({
+                procesosActuales: recibos,
+                procesoActualIndice: reciboIndice
+            });
+
+            // Temporalmente limpiar talla_colores de prendaData para que el renderer
+            // NO re-inyecte colores en el recibo (los parciales usan solo tallas planas)
+            const tallaColoresOriginal = prendaData.talla_colores;
+            prendaData.talla_colores = null;
+
+            // Renderizar con la pipeline normal (tallas ya están inyectadas)
+            this._renderizarRecibo(prendaData, reciboIndice, tipoRecibo, datos, recibos);
+
+            // Restaurar talla_colores para no mutar el estado permanentemente
+            prendaData.talla_colores = tallaColoresOriginal;
+
+            // Post-renderizado: ajustar título y consecutivo para el anexo
+            const titleEl = document.querySelector('.receipt-title');
+            if (titleEl) {
+                titleEl.textContent = 'RECIBO DE ' + tipoRecibo.toUpperCase();
+            }
+
+            const pedidoNumberEl = document.querySelector('#order-pedido') || document.querySelector('.pedido-number');
+            if (pedidoNumberEl) {
+                pedidoNumberEl.textContent = '#-';
+            }
+
+            console.log('[PedidosRecibosModule.abrirReciboParcial] ✓ Renderizado completo con tallas del parcial');
+
+            // Habilitación final
+            this.modalManager.habilitarInteraccion();
+            this.modalManager.configurarZIndex();
+
+        } catch (err) {
+            console.error('[PedidosRecibosModule.abrirReciboParcial] Error:', err);
+            alert('Error al cargar el recibo parcial: ' + err.message);
+            this.modalManager.cerrarModal();
+        }
+    }
+
+    /**
      * Renderiza el recibo y configura componentes
      */
     _renderizarRecibo(prendaData, reciboIndice, tipoProceso, datosPedido, recibos) {
@@ -303,6 +461,25 @@ window.pedidosRecibosModule = new PedidosRecibosModule();
  */
 window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipoRecibo, prendaIndex = null) {
     return window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, tipoRecibo, prendaIndex);
+};
+
+/**
+ * FUNCIÓN GLOBAL para abrir recibo parcial (anexo)
+ * Usa la pipeline de renderizado completa, inyectando tallas del parcial
+ */
+window.openOrderDetailModalWithParcial = async function(parcialId, prendaId, tipoString) {
+    const pedidoId = window.selectorRecibosState?.pedidoId;
+    const nombreAnexo = window.selectorRecibosState?.nombreProcesoAnexo || tipoString;
+
+    if (!pedidoId) {
+        console.error('[openOrderDetailModalWithParcial] pedidoId no disponible en selectorRecibosState');
+        alert('Error: No se pudo determinar el pedido');
+        return;
+    }
+
+    return window.pedidosRecibosModule.abrirReciboParcial(
+        pedidoId, prendaId, tipoString, parcialId, nombreAnexo
+    );
 };
 
 /**
