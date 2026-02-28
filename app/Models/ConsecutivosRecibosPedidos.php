@@ -16,11 +16,15 @@ class ConsecutivosRecibosPedidos extends Model
         'consecutivo_actual',
         'consecutivo_inicial',
         'activo',
+        'estado',
+        'area',
         'notas',
+        'marcar_plooter',
     ];
 
     protected $casts = [
         'activo' => 'boolean',
+        'marcar_plooter' => 'boolean',
     ];
 
     /**

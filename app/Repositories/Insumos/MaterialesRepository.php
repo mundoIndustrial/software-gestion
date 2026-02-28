@@ -153,4 +153,14 @@ class MaterialesRepository
     {
         return MaterialesOrdenInsumos::where('estado', $estado)->get();
     }
+
+    /**
+     * Actualizar el estado de marcado de un material
+     */
+    public function actualizarMarcado($materialId, $marcado)
+    {
+        $material = MaterialesOrdenInsumos::findOrFail($materialId);
+        $material->update(['marcado' => $marcado]);
+        return $material;
+    }
 }

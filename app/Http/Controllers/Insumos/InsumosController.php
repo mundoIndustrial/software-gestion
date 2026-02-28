@@ -209,6 +209,7 @@ class InsumosController extends Controller
             ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id')
             ->select(
                 'consecutivos_recibos_pedidos.*',
+                'consecutivos_recibos_pedidos.marcar_plooter',
                 'pedidos_produccion.numero_pedido',
                 'pedidos_produccion.numero_pedido as numero_pedido_original',
                 'pedidos_produccion.cliente',
@@ -371,6 +372,7 @@ class InsumosController extends Controller
                 'prenda_id' => $recibo->prenda_id,
                 'consecutivo_actual' => $recibo->consecutivo_actual,
                 'tipo_recibo' => $recibo->tipo_recibo,
+                'marcar_plooter' => $recibo->marcar_plooter ?? false,
                 'created_at' => $recibo->created_at,
                 'updated_at' => $recibo->updated_at,
             ];

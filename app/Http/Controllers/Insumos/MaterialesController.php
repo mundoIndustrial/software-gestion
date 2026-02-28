@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Insumos;
 
 use App\Http\Controllers\Controller;
+use App\Models\ConsecutivosRecibosPedidos;
 use App\Services\Insumos\MaterialesService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -228,6 +229,34 @@ class MaterialesController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al cambiar estado'
+            ], 500);
+        }
+    }
+
+    /**
+     * Alternar el estado de marcado de un recibo (marcar_plooter)
+     */
+    public function toggleMarcado(Request $request, $reciboId)
+    {
+        try {
+            $request->validate([
+                'marcado' => 'required|boolean',
+            ]);
+
+            $recibo = ConsecutivosRecibosPedidos::findOrFail($reciboId);
+            $recibo->update(['marcar_plooter' => $request->boolean('marcado')]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Estado de marcado actualizado',
+                'data' => $recibo,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al actualizar marcado: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar estado de marcado'
             ], 500);
         }
     }

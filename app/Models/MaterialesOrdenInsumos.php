@@ -15,12 +15,14 @@ class MaterialesOrdenInsumos extends Model
         'fecha_llegada',
         'recibido',
         'numero_pedido',
+        'numero_recibo',
         'prenda_id',
         'fecha_orden',
         'fecha_pago',
         'fecha_despacho',
         'observaciones',
         'dias_demora',
+        'marcado',
     ];
 
     protected $casts = [
@@ -30,6 +32,7 @@ class MaterialesOrdenInsumos extends Model
         'fecha_pago' => 'datetime',
         'fecha_despacho' => 'datetime',
         'recibido' => 'boolean',
+        'marcado' => 'boolean',
     ];
 
     protected $appends = ['dias_demora'];

@@ -189,6 +189,53 @@
             padding: 0.25rem !important;
         }
     }
+
+    /* Estilos para el botón de check (marca) */
+    .btn-check-row {
+        position: relative;
+        transition: all 0.3s ease;
+        min-width: 40px;
+        flex-shrink: 0;
+    }
+
+    .btn-check-row.checked {
+        background-color: #a78bfa !important;
+        color: white !important;
+    }
+
+    /* Estilos para filas marcadas - aplicar color a toda la fila */
+    tr.row-checked {
+        background-color: #ede9fe !important;
+    }
+
+    tr.row-checked:hover {
+        background-color: #ddd6fe !important;
+    }
+
+    /* Asegurar que la celda de acciones también tenga el color en filas marcadas */
+    tr.row-checked td:first-child {
+        background-color: #ede9fe !important;
+    }
+
+    tr.row-checked:hover td:first-child {
+        background-color: #ddd6fe !important;
+    }
+
+    /* Optimizar espaciado de botones en acciones */
+    td:first-child .flex {
+        gap: 0.25rem !important;
+        flex-wrap: nowrap !important;
+        min-width: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    td:first-child .flex button {
+        flex-shrink: 0;
+        min-width: 40px;
+        min-height: 40px;
+        padding: 0.5rem !important;
+    }
 </style>
 
 @if(app()->isLocal())
@@ -270,6 +317,79 @@
             diasSpan.textContent = '-';
             diasSpan.className = 'inline-block px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-600';
         }
+    }
+
+    /**
+     * Alterna el estado de una fila (marcada/sin marcar) con color púrpura claro
+     */
+    function toggleRowCheck(button, event) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Encontrar la fila (tr) del botón
+        const row = button.closest('tr');
+        if (!row) return;
+        
+        // Alternar clase de marcado en el botón
+        button.classList.toggle('checked');
+        
+        // Alternar clase de marcado en la fila
+        row.classList.toggle('row-checked');
+        
+        // Obtener el estado marcado actual
+        const isMarcado = button.classList.contains('checked');
+        
+        // Aquí podemos obtener el ID del material desde algún atributo del row
+        // Por ahora usamos un data-id que debemos agregar en la tabla
+        const materialId = row.dataset.materialId || row.dataset.reciboId;
+        
+        if (materialId) {
+            // Enviar petición AJAX para guardar el estado
+            guardarEstadoMarcado(materialId, isMarcado, button);
+        }
+    }
+
+    /**
+     * Envía el estado de marcado al servidor
+     */
+    function guardarEstadoMarcado(materialId, marcado, button) {
+        if (!materialId) {
+            console.error('Material ID no disponible');
+            return;
+        }
+        
+        const url = `/insumos/materiales/${materialId}/toggle-marcado`;
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                marcado: marcado
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Estado de marcado guardado correctamente', data);
+            } else {
+                console.error('Error al guardar el estado:', data.message);
+                // Revertir si hay error
+                button.classList.toggle('checked');
+                button.closest('tr').classList.toggle('row-checked');
+                alert('Error al guardar: ' + (data.message || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error en la petición:', error);
+            // Revertir si hay error
+            button.classList.toggle('checked');
+            button.closest('tr').classList.toggle('row-checked');
+            alert('Error al guardar el estado');
+        });
     }
 </script>
 
@@ -417,14 +537,25 @@
                                 @elseif($orden->dias_calculados >= 10) dias-10-15
                                 @elseif($orden->dias_calculados >= 5) dias-5-9
                                 @else dias-0-4 @endif
-                            @endif" 
+                            @endif @if(isset($orden->marcar_plooter) && $orden->marcar_plooter) row-checked @endif" 
                             data-pedido="{{ strtoupper($orden->numero_pedido ?? '') }}" 
                             data-cliente="{{ strtoupper($orden->cliente ?? '') }}" 
                             data-orden-pedido="{{ $orden->numero_pedido }}"
                             data-recibo="{{ $orden->id ?? '' }}"
+                            data-material-id="{{ $orden->id ?? '' }}"
                             data-pedido-produccion-id="{{ $orden->pedido_produccion_id ?? '' }}">
                                 <td class="py-4 px-6 text-center" style="min-width: 250px; overflow: visible; background: white; position: relative; z-index: 5;">
                                     <div class="flex items-center justify-center gap-3" style="display: flex !important; flex-wrap: wrap; overflow: visible;">
+                                        {{-- Botón Check (marca) en purple --}}
+                                        <button 
+                                            class="btn-check-row btn-tooltip p-2 text-purple-600 hover:bg-purple-50 rounded transition @if(isset($orden->marcar_plooter) && $orden->marcar_plooter) checked @endif"
+                                            onclick="toggleRowCheck(this, event)"
+                                            data-tooltip="Marcar fila"
+                                            title="Marcar fila"
+                                        >
+                                            <i class="fas fa-check text-lg"></i>
+                                        </button>
+
                                         {{-- Botón Ver (con dropdown) --}}
                                         @php
                                             $numeroRecibo = $orden->numero_pedido; // Este es el consecutivo del recibo

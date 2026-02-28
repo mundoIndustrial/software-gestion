@@ -241,4 +241,12 @@ class MaterialesService
             ];
         }
     }
+
+    /**
+     * Actualizar el estado de marcado de un material
+     */
+    public function actualizarMarcado($materialId, $marcado)
+    {
+        return $this->repository->actualizarMarcado($materialId, $marcado);
+    }
 }
