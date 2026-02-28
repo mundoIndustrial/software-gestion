@@ -7,7 +7,7 @@
     <div class="row">
         <div class="col-12">
             <!-- Table Component (reutiliza el componente de costura, los datos son genéricos) -->
-            <x-recibos.recibos-costura-table :recibos="$recibos" />
+            <x-recibos.recibos-costura-table :recibos="$recibos" :totalCantidadGlobal="$totalCantidadGlobal ?? 0" />
         </div>
     </div>
 </div>
@@ -740,7 +740,8 @@ function abrirModalSeguimientoDirecto(pedidoId, prendaIdTarget) {
     }
 }
 
-function abrirModalAgregarProcesoDesdeArea(areaSeleccionada, pedidoId, prendaId) {
+// Función para abrir el modal de agregar proceso desde el badge del área
+window.abrirModalAgregarProcesoDesdeArea = function(areaSeleccionada, pedidoId, prendaId) {
     closeDropdownRecibos();
     
     if (!pedidoId) {
@@ -748,12 +749,15 @@ function abrirModalAgregarProcesoDesdeArea(areaSeleccionada, pedidoId, prendaId)
         return;
     }
     
+    // ✅ Cargar datos ANTES de abrir el modal (esperar a que termine)
     cargarDatosParaAgregarProceso(pedidoId, prendaId, areaSeleccionada)
         .then(() => {
+            // ✅ Verificar que los datos se cargaron correctamente
             if (!window.currentOrderData || !window.currentPrendaData) {
                 throw new Error('No se pudieron cargar los datos necesarios');
             }
             
+            // ✅ AHORA sí, abrir el modal
             const modal = document.getElementById('addProcesoModal');
             if (!modal) {
                 alert('Modal de agregar proceso no disponible');
@@ -778,16 +782,18 @@ function abrirModalAgregarProcesoDesdeArea(areaSeleccionada, pedidoId, prendaId)
                 inputEncargado.focus();
             }
             
+            // ✅ Configurar evento del botón guardar
             const btnConfirm = document.getElementById('btnConfirmAddProceso');
             if (btnConfirm) {
-                btnConfirm.removeEventListener('click', verificarDatosAntesDeGuardar);
-                btnConfirm.addEventListener('click', verificarDatosAntesDeGuardar);
+                btnConfirm.removeEventListener('click', handleAgregarProcesoDesdeBadge);
+                btnConfirm.addEventListener('click', handleAgregarProcesoDesdeBadge);
             }
         })
         .catch(error => {
+            console.error('[abrirModalAgregarProcesoDesdeArea] Error:', error);
             alert('Error al cargar los datos del pedido: ' + error.message);
         });
-}
+    };
 
 function verificarDatosAntesDeGuardar(event) {
     if (!window.currentOrderData || !window.currentPrendaData) {
@@ -844,7 +850,7 @@ async function handleAgregarProcesoDesdeBadge() {
         }
 
         const area = document.getElementById('procesoArea').value;
-        const encargado = document.getElementById('procesoEncargado').value;
+        const encargado = document.getElementById('procesoEncargado').value.toUpperCase();
 
         if (!area) {
             showError('Por favor selecciona un área/proceso');
@@ -891,22 +897,30 @@ async function handleAgregarProcesoDesdeBadge() {
             })
         });
 
-        if (!response.ok) throw new Error('Error al agregar proceso');
+        if (!response.ok) throw new Error('Error al guardar proceso');
 
         const result = await response.json();
+        
+        // ✅ Mostrar mensaje diferente según si fue creado o actualizado
+        const mensaje = result.action === 'actualizado' 
+            ? 'Proceso actualizado correctamente' 
+            : 'Proceso agregado correctamente';
+        showSuccess(mensaje);
+        
+        // Limpiar formulario
         limpiarFormularioProceso();
 
+        // Cerrar modal de agregar proceso
         const modal = document.getElementById('addProcesoModal');
         if (modal) {
             modal.classList.remove('show');
             modal.style.display = 'none';
         }
-
-        showSuccess('Proceso agregado correctamente');
+        
         setTimeout(() => { window.location.reload(); }, 1500);
 
     } catch (error) {
-        showError('Error al agregar proceso: ' + error.message);
+        showError('Error al guardar proceso: ' + error.message);
     } finally {
         const btnContent = document.getElementById('addProcesoButtonContent');
         const btnLoading = document.getElementById('addProcesoButtonLoading');

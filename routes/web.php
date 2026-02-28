@@ -2277,6 +2277,10 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
     // Pendientes Bordados-Estampado
     Route::get('/pendientes-bordado-estampado', [App\Http\Controllers\SupervisorPedidosController::class, 'pendientesBordadoEstampado'])->name('pendientes-bordado-estampado');
     
+    // Pendientes Costura
+    Route::get('/pendientes-costura', [App\Http\Controllers\SupervisorPedidosController::class, 'pendientesCostura'])->name('pendientes-costura');
+    Route::post('/guardar-color-costura', [App\Http\Controllers\SupervisorPedidosController::class, 'guardarColorCostura'])->name('guardar-color-costura');
+    
     // Detalles y aprobación de procesos
     Route::get('/procesos/{id}/detalles', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDetallesProceso'])->name('procesos.detalles');
     Route::post('/procesos/{id}/aprobar', [App\Http\Controllers\SupervisorPedidosController::class, 'aprobarProceso'])->name('procesos.aprobar');

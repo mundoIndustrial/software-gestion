@@ -1505,18 +1505,53 @@ class RegistroOrdenController extends Controller
                 ];
             });
 
+            // Calcular cantidad total para cada recibo y suma global
+            $totalCantidadGlobal = 0;
+            $recibosConCantidad = $recibosConInfo->map(function ($recibo) use (&$totalCantidadGlobal) {
+                $cantidadTotal = 0;
+                
+                // Obtener la prenda específica del recibo
+                if ($recibo['pedido_produccion_id'] && $recibo['prenda_id']) {
+                    try {
+                        $pedido = PedidoProduccion::find($recibo['pedido_produccion_id']);
+                        if ($pedido && $pedido->prendas) {
+                            $prendaRecibo = $pedido->prendas->where('id', $recibo['prenda_id'])->first();
+                            if ($prendaRecibo && $prendaRecibo->tallas) {
+                                // Sumar cantidades usando el método del modelo
+                                foreach ($prendaRecibo->tallas as $talla) {
+                                    $cantidadTotal += $talla->obtenerCantidadTotal();
+                                }
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        \Log::warning('Error calculando cantidad para recibo', [
+                            'recibo_id' => $recibo['id'],
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+                
+                // Agregar la cantidad calculada al recibo
+                $recibo['cantidad_total'] = $cantidadTotal;
+                $totalCantidadGlobal += $cantidadTotal;
+                
+                return $recibo;
+            });
+
             // Si es una solicitud AJAX, retornar JSON
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => true,
-                    'recibos' => $recibosConInfo,
-                    'total' => $recibosConInfo->count(),
+                    'recibos' => $recibosConCantidad,
+                    'total' => $recibosConCantidad->count(),
+                    'total_cantidad' => $totalCantidadGlobal,
                     'filtros_aplicados' => $filtros
                 ]);
             }
 
             return view('registros.recibos-costura', [
-                'recibos' => $recibosConInfo,
+                'recibos' => $recibosConCantidad,
+                'totalCantidadGlobal' => $totalCantidadGlobal,
                 'title' => 'Recibos de Costura'
             ]);
 
@@ -1832,18 +1867,53 @@ class RegistroOrdenController extends Controller
                 ];
             });
 
+            // Calcular cantidad total para cada recibo y suma global
+            $totalCantidadGlobal = 0;
+            $recibosConCantidad = $recibosConInfo->map(function ($recibo) use (&$totalCantidadGlobal) {
+                $cantidadTotal = 0;
+                
+                // Obtener la prenda específica del recibo
+                if ($recibo['pedido_produccion_id'] && $recibo['prenda_id']) {
+                    try {
+                        $pedido = PedidoProduccion::find($recibo['pedido_produccion_id']);
+                        if ($pedido && $pedido->prendas) {
+                            $prendaRecibo = $pedido->prendas->where('id', $recibo['prenda_id'])->first();
+                            if ($prendaRecibo && $prendaRecibo->tallas) {
+                                // Sumar cantidades usando el método del modelo
+                                foreach ($prendaRecibo->tallas as $talla) {
+                                    $cantidadTotal += $talla->obtenerCantidadTotal();
+                                }
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        \Log::warning('Error calculando cantidad para recibo de reflectivo', [
+                            'recibo_id' => $recibo['id'],
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+                
+                // Agregar la cantidad calculada al recibo
+                $recibo['cantidad_total'] = $cantidadTotal;
+                $totalCantidadGlobal += $cantidadTotal;
+                
+                return $recibo;
+            });
+
             // Si es una solicitud AJAX, retornar JSON
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => true,
-                    'recibos' => $recibosConInfo,
-                    'total' => $recibosConInfo->count(),
+                    'recibos' => $recibosConCantidad,
+                    'total' => $recibosConCantidad->count(),
+                    'total_cantidad' => $totalCantidadGlobal,
                     'filtros_aplicados' => $filtros
                 ]);
             }
 
             return view('registros.recibos-reflectivo', [
-                'recibos' => $recibosConInfo,
+                'recibos' => $recibosConCantidad,
+                'totalCantidadGlobal' => $totalCantidadGlobal,
                 'title' => 'Recibos de Reflectivo'
             ]);
 

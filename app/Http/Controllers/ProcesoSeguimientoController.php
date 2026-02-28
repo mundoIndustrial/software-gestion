@@ -72,7 +72,7 @@ class ProcesoSeguimientoController extends Controller
 
         try {
             // Debug: Ver datos antes de crear
-            \Log::info('[ProcesoSeguimientoController] Creando proceso con datos:', [
+            \Log::info('[ProcesoSeguimientoController] Iniciando guardar proceso con datos:', [
                 'pedido_produccion_id' => $request->pedido_produccion_id,
                 'prenda_id' => $request->prenda_id,
                 'area' => $request->area,
@@ -81,23 +81,68 @@ class ProcesoSeguimientoController extends Controller
                 'observaciones' => $request->observaciones,
             ]);
 
-            // Generar código de referencia único
-            $codigoReferencia = $this->generarCodigoReferencia($request->area, $request->prenda_id);
-            \Log::info('[ProcesoSeguimientoController] Código generado:', ['codigo_referencia' => $codigoReferencia]);
+            // ✅ VERIFICAR SI EL PROCESO YA EXISTE PARA ESTA ÁREA ESPECÍFICA
+            // Buscar si ya existe un proceso de CORTE, COSTURA, BORDADO, etc. para esta prenda
+            // Si existe, reutilizarlo (no crear duplicado de la misma área)
+            // Ignora procesos completados
+            $procesoExistente = ProcesoPrenda::where([
+                ['numero_pedido', '=', $request->pedido_produccion_id],
+                ['prenda_pedido_id', '=', $request->prenda_id],
+                ['proceso', '=', $request->area],  // ← Busca por ÁREA específica
+                ['estado_proceso', '!=', 'Completado']
+            ])->first();
 
-            // Crear el proceso de seguimiento
-            $proceso = ProcesoPrenda::create([
-                'numero_pedido' => $request->pedido_produccion_id,
-                'prenda_pedido_id' => $request->prenda_id,
-                'proceso' => $request->area,
-                'fecha_inicio' => now(),
-                'estado_proceso' => $request->estado,
-                'encargado' => $request->encargado,
-                'observaciones' => $request->observaciones,
-                'codigo_referencia' => $codigoReferencia,
+            \Log::info('[ProcesoSeguimientoController] Búsqueda de proceso existente:', [
+                'area_buscada' => $request->area,
+                'proceso_existente' => $procesoExistente ? 'SÍ ENCONTRADO' : 'NO ENCONTRADO',
+                'proceso_id' => $procesoExistente?->id,
+                'encargado_anterior' => $procesoExistente?->encargado,
+                'estado_actual' => $procesoExistente?->estado_proceso
             ]);
 
-            \Log::info('[ProcesoSeguimientoController] Proceso creado:', ['proceso_id' => $proceso->id]);
+            // Generar código de referencia único
+            $codigoReferencia = $procesoExistente ? $procesoExistente->codigo_referencia : $this->generarCodigoReferencia($request->area, $request->prenda_id);
+            \Log::info('[ProcesoSeguimientoController] Código referencia:', ['codigo_referencia' => $codigoReferencia]);
+
+            if ($procesoExistente) {
+                // ✅ ACTUALIZAR PROCESO EXISTENTE DE ESTA ÁREA (reutilizar, no crear)
+                \Log::info('[ProcesoSeguimientoController] ACTUALIZANDO proceso existente con ID: ' . $procesoExistente->id);
+                
+                $procesoExistente->update([
+                    'estado_proceso' => $request->estado,
+                    'encargado' => $request->encargado,
+                    'observaciones' => $request->observaciones ?? $procesoExistente->observaciones,
+                    'fecha_inicio' => $procesoExistente->fecha_inicio, // Mantener fecha original
+                ]);
+                
+                $proceso = $procesoExistente;
+                $accion = 'actualizado';
+                
+                \Log::info('[ProcesoSeguimientoController] Proceso actualizado:', [
+                    'proceso_id' => $proceso->id,
+                    'area' => $proceso->proceso,
+                    'nuevo_encargado' => $proceso->encargado
+                ]);
+            } else {
+                // ✅ CREAR NUEVO PROCESO si no existe para ESTA ÁREA
+                // Permite múltiples procesos de diferentes áreas para la misma prenda
+                \Log::info('[ProcesoSeguimientoController] CREANDO nuevo proceso para área: ' . $request->area);
+                
+                $proceso = ProcesoPrenda::create([
+                    'numero_pedido' => $request->pedido_produccion_id,
+                    'prenda_pedido_id' => $request->prenda_id,
+                    'proceso' => $request->area,
+                    'fecha_inicio' => now(),
+                    'estado_proceso' => $request->estado,
+                    'encargado' => $request->encargado,
+                    'observaciones' => $request->observaciones,
+                    'codigo_referencia' => $codigoReferencia,
+                ]);
+                
+                $accion = 'creado';
+                
+                \Log::info('[ProcesoSeguimientoController] Proceso creado:', ['proceso_id' => $proceso->id, 'area' => $request->area]);
+            }
 
             // Actualizar el area en consecutivos_recibos_pedidos
             try {
@@ -110,12 +155,23 @@ class ProcesoSeguimientoController extends Controller
                         ->first();
 
                     if ($consecutivo) {
-                        $consecutivo->update([
+                        // ✅ Preparar datos a actualizar
+                        $datosActualizar = [
                             'area' => $request->area
-                        ]);
+                        ];
+                        
+                        // ✅ Si el área es "Insumos", cambiar el estado a "Pendiente_Insumos"
+                        if ($request->area === 'Insumos') {
+                            $datosActualizar['estado'] = 'Pendiente_Insumos';
+                            \Log::info('[ProcesoSeguimientoController] INSUMOS detectado - Cambiando estado a Pendiente_Insumos');
+                        }
+                        
+                        $consecutivo->update($datosActualizar);
+                        
                         \Log::info('[ProcesoSeguimientoController] Consecutivo actualizado:', [
                             'consecutivo_id' => $consecutivo->id,
-                            'area' => $request->area
+                            'area' => $request->area,
+                            'estado' => $consecutivo->estado
                         ]);
                     } else {
                         \Log::warning('[ProcesoSeguimientoController] No se encontró consecutivo para actualizar:', [
@@ -166,7 +222,8 @@ class ProcesoSeguimientoController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Proceso de seguimiento guardado correctamente',
+                'message' => 'Proceso de seguimiento ' . $accion . ' correctamente',
+                'action' => $accion,
                 'data' => [
                     'proceso' => $proceso,
                     'prenda' => $prendaActualizada,

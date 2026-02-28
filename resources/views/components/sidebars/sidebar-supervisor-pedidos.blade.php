@@ -36,6 +36,22 @@
                     </a>
                 </li>
                 <li class="menu-item">
+                    <a href="{{ route('supervisor-pedidos.pendientes-costura') }}"
+                       class="menu-link {{ request()->routeIs('supervisor-pedidos.pendientes-costura') ? 'active' : '' }}"
+                       style="display:flex;align-items:center;gap:0.5rem;">
+                        <i class="fas fa-needle-thread"></i>
+                        <span class="menu-label">Pendiente Costura</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="http://localhost:8000/gestion-bodega/pendiente-costura"
+                       class="menu-link"
+                       style="display:flex;align-items:center;gap:0.5rem;">
+                        <i class="fas fa-box"></i>
+                        <span class="menu-label">Pendiente Bodega</span>
+                    </a>
+                </li>
+                <li class="menu-item">
                     <a href="{{ route('supervisor-pedidos.index', ['estado' => 'Anulada']) }}"
                        class="menu-link {{ request()->query('estado') === 'Anulada' ? 'active' : '' }}"
                        style="display:flex;align-items:center;gap:0.5rem;">

@@ -4,7 +4,11 @@
 
 @section('body')
 <div class="app-container">
-    @include('layouts.sidebar')
+    @if(auth()->check() && auth()->user()->hasRole('supervisor_pedidos'))
+        @include('components.sidebars.sidebar-supervisor-pedidos')
+    @else
+        @include('layouts.sidebar')
+    @endif
 
     <div class="main-content" id="mainContent">
         <!-- Top Navigation Moderna -->

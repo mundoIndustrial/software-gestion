@@ -459,7 +459,7 @@
                                                 <i class="fas fa-ruler text-lg"></i>
                                             </button>
                                             {{-- Botón enviar a producción: solo visible para estado Pendiente o PENDIENTE_INSUMOS --}}
-                                            @if($orden->estado === 'Pendiente' || $orden->estado === 'PENDIENTE_INSUMOS')
+                                            @if($orden->estado === 'Pendiente' || $orden->estado === 'PENDIENTE_INSUMOS' || $orden->estado === 'Pendiente_Insumos')
                                                 <button 
                                                     class="btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
                                                     onclick="cambiarEstadoRecibo('{{ $reciboId }}', '{{ $orden->consecutivo_actual }}')"
@@ -490,12 +490,12 @@
                                             $estadoClass = 'bg-blue-100 text-blue-800';
                                         } elseif ($orden->estado === 'Anulada') {
                                             $estadoClass = 'bg-amber-100 text-amber-800';
-                                        } elseif ($orden->estado === 'PENDIENTE_INSUMOS') {
+                                        } elseif ($orden->estado === 'PENDIENTE_INSUMOS' || $orden->estado === 'Pendiente_Insumos') {
                                             $estadoClass = 'bg-green-500 text-white';
                                         }
                                     @endphp
                                     <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold {{ $estadoClass }}">
-                                        {{ $orden->estado === 'PENDIENTE_INSUMOS' ? 'Pendiente Insumos' : ($orden->estado ?? 'N/A') }}
+                                        {{ ($orden->estado === 'PENDIENTE_INSUMOS' || $orden->estado === 'Pendiente_Insumos') ? 'Pendiente Insumos' : ($orden->estado ?? 'N/A') }}
                                     </span>
                                 </td>
                                 <td class="py-4 px-6 text-center">

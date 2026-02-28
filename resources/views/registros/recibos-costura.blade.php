@@ -7,7 +7,7 @@
     <div class="row">
         <div class="col-12">
             <!-- Table Component -->
-            <x-recibos.recibos-costura-table :recibos="$recibos" />
+            <x-recibos.recibos-costura-table :recibos="$recibos" :totalCantidadGlobal="$totalCantidadGlobal ?? 0" />
         </div>
     </div>
 </div>
@@ -881,7 +881,7 @@ function abrirModalSeguimientoDirecto(pedidoId, prendaIdTarget) {
 }
 
 // Función para abrir el modal de agregar proceso desde el badge del área
-function abrirModalAgregarProcesoDesdeArea(areaSeleccionada, pedidoId, prendaId) {
+window.abrirModalAgregarProcesoDesdeArea = function(areaSeleccionada, pedidoId, prendaId) {
     console.log('[abrirModalAgregarProcesoDesdeArea] 📌 Área seleccionada:', areaSeleccionada, 'Pedido:', pedidoId, 'Prenda:', prendaId);
     
     // Cerrar cualquier dropdown abierto
@@ -955,7 +955,7 @@ function abrirModalAgregarProcesoDesdeArea(areaSeleccionada, pedidoId, prendaId)
             console.error('[abrirModalAgregarProcesoDesdeArea] Error al cargar datos:', error);
             alert('Error al cargar los datos del pedido: ' + error.message);
         });
-}
+};
 
 // Función de verificación antes de guardar
 function verificarDatosAntesDeGuardar(event) {
@@ -1040,7 +1040,7 @@ async function handleAgregarProcesoDesdeBadge() {
         }
 
         const area = document.getElementById('procesoArea').value;
-        const encargado = document.getElementById('procesoEncargado').value;
+        const encargado = document.getElementById('procesoEncargado').value.toUpperCase();
 
         if (!area) {
             showError('Por favor selecciona un área/proceso');
@@ -1104,8 +1104,15 @@ async function handleAgregarProcesoDesdeBadge() {
         }
 
         const result = await response.json();
-        console.log('[handleAgregarProcesoDesdeBadge] Proceso agregado:', result);
 
+        // ✅ Mostrar mensaje diferente según si fue creado o actualizado
+        const mensaje = result.action === 'actualizado' 
+            ? 'Proceso actualizado correctamente' 
+            : 'Proceso agregado correctamente';
+        
+        console.log('[handleAgregarProcesoDesdeBadge] Mostrando mensaje:', mensaje);
+        showSuccess(mensaje);
+        
         // Limpiar formulario
         limpiarFormularioProceso();
 
@@ -1115,11 +1122,8 @@ async function handleAgregarProcesoDesdeBadge() {
             modal.classList.remove('show');
             modal.style.display = 'none';
         }
-
-        // Mostrar mensaje de éxito
-        showSuccess('Proceso agregado correctamente');
         
-        // Recargar la página para mostrar el nuevo proceso
+        // Recargar la página para mostrar el proceso (creado o actualizado)
         setTimeout(() => {
             window.location.reload();
         }, 1500);

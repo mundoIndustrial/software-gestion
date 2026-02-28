@@ -337,27 +337,7 @@
                         <!-- Descripción (Recibo de Costura) -->
                         <td data-descripcion-detallada="{{ $recibo['descripcion_detallada'] ?? '' }}">
                             @php
-                                // Preparar datos de la prenda específica del recibo
-                                $cantidadTotal = 0;
                                 $nombreMostrar = $recibo['descripcion_detallada'] ?? '';
-                                
-                                // Si no hay descripción detallada, buscar la prenda específica
-                                if (empty($nombreMostrar) && $recibo['prenda_id']) {
-                                    $pedido = \App\Models\PedidoProduccion::find($recibo['pedido_produccion_id']);
-                                    if ($pedido && $pedido->prendas && $pedido->prendas->count() > 0) {
-                                        $prendaRecibo = $pedido->prendas->where('id', $recibo['prenda_id'])->first();
-                                        if ($prendaRecibo) {
-                                            $nombreMostrar = $prendaRecibo->nombre_prenda ?? 'Sin nombre';
-                                            
-                                            // Calcular cantidad total de tallas para esta prenda
-                                            if ($prendaRecibo->tallas && $prendaRecibo->tallas->count() > 0) {
-                                                foreach ($prendaRecibo->tallas as $talla) {
-                                                    $cantidadTotal += $talla->cantidad ?? 0;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
                                 
                                 // Truncar si es muy largo para la vista en tabla
                                 if (strlen($nombreMostrar) > 50) {
@@ -376,8 +356,8 @@
                         
                         <!-- Cantidad -->
                         <td>
-                            @if($cantidadTotal > 0)
-                                <span style="font-weight: 600; color: #059669;">{{ $cantidadTotal }}</span>
+                            @if(isset($recibo['cantidad_total']) && $recibo['cantidad_total'] > 0)
+                                <span style="font-weight: 600; color: #059669;">{{ $recibo['cantidad_total'] }}</span>
                             @else
                                 <span class="text-muted">-</span>
                             @endif

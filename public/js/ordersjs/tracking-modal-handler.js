@@ -890,9 +890,6 @@ const trackingTableStyles = `
 (function() {
   'use strict';
 
-  let currentOrderData = null;
-  let currentPrendaData = null;
-
   // Inyectar estilos CSS para tabla estilo TNS
   function injectTrackingTableStyles() {
     if (!document.getElementById('tracking-table-styles')) {
@@ -1069,7 +1066,7 @@ const trackingTableStyles = `
       const data = result.data || result;
       console.log('[loadOrderBasicData] Datos extraídos:', data);
       
-      currentOrderData = data;
+      window.currentOrderData = data;
       
       // Actualizar información del pedido en el modal
       updateOrderInfo(data);
@@ -1370,10 +1367,10 @@ const trackingTableStyles = `
   // Actualizar fecha estimada de entrega del pedido
   function updateEstimatedDeliveryDate() {
     const fechaEstimadaElement = document.getElementById('selectorOrderEstimatedDate');
-    if (!fechaEstimadaElement || !currentOrderData) return;
+    if (!fechaEstimadaElement || !window.currentOrderData) return;
     
     // Obtener fecha estimada del pedido (campo correcto)
-    let fechaEstimada = currentOrderData.fecha_estimada_de_entrega;
+    let fechaEstimada = window.currentOrderData.fecha_estimada_de_entrega;
     
     if (fechaEstimada) {
       // Formatear fecha datetime
@@ -1483,7 +1480,7 @@ const trackingTableStyles = `
       }
       
       // Usar el estado del pedido en lugar del estado calculado de procesos
-      const estadoPedido = currentOrderData?.estado || 'Sin estado';
+      const estadoPedido = window.currentOrderData?.estado || 'Sin estado';
       const estadoFormateado = estadoPedido.replace(/_/g, ' ').toUpperCase();
       
       // Determinar si el botón debe estar desactivado (para prendas de bodega)
@@ -1703,7 +1700,7 @@ const trackingTableStyles = `
     try {
       console.log('[showPrendaTracking] INICIO - Mostrando seguimiento para prenda:', prenda);
       
-      currentPrendaData = prenda;
+      window.currentPrendaData = prenda;
       
       // Cerrar overlay de prendas
       const overlaySelector = document.getElementById('trackingPrendasSelectorOverlay');
@@ -2046,24 +2043,24 @@ const trackingTableStyles = `
       closeConfirmDeleteModal();
 
       // Recargar seguimientos de la prenda
-      console.log('[executeDeleteProcess] Recargando seguimientos para orden:', currentOrderData.id);
-      await loadPrendasWithTracking(currentOrderData.id);
+      console.log('[executeDeleteProcess] Recargando seguimientos para orden:', window.currentOrderData.id);
+      await loadPrendasWithTracking(window.currentOrderData.id);
       
       console.log('[executeDeleteProcess] Seguimientos recargados');
       
       // Buscar la prenda actualizada en los datos recargados
-      if (window.prendasData && window.prendasData.length > 0 && currentPrendaData) {
-        const prendaActualizada = window.prendasData.find(p => p.id == currentPrendaData.id);
+      if (window.prendasData && window.prendasData.length > 0 && window.currentPrendaData) {
+        const prendaActualizada = window.prendasData.find(p => p.id == window.currentPrendaData.id);
         if (prendaActualizada) {
-          currentPrendaData = prendaActualizada;
-          console.log('[executeDeleteProcess] Prenda actualizada encontrada:', currentPrendaData);
+          window.currentPrendaData = prendaActualizada;
+          console.log('[executeDeleteProcess] Prenda actualizada encontrada:', window.currentPrendaData);
         }
       }
       
       // Actualizar vista actual
-      if (currentPrendaData && currentPrendaData.id) {
-        console.log('[executeDeleteProcess] Actualizando timeline con prenda actualizada:', currentPrendaData);
-        renderPrendaTrackingTimeline(currentPrendaData);
+      if (window.currentPrendaData && window.currentPrendaData.id) {
+        console.log('[executeDeleteProcess] Actualizando timeline con prenda actualizada:', window.currentPrendaData);
+        renderPrendaTrackingTimeline(window.currentPrendaData);
       } else {
         console.log('[executeDeleteProcess] No hay currentPrendaData válida, intentando obtener del DOM');
         // Si no hay currentPrendaData, intentar obtener la primera prenda del DOM
@@ -2080,7 +2077,7 @@ const trackingTableStyles = `
           
           if (prendaParaRender) {
             console.log('[executeDeleteProcess] Usando prendaData de prendasData:', prendaParaRender);
-            currentPrendaData = prendaParaRender;
+            window.currentPrendaData = prendaParaRender;
             renderPrendaTrackingTimeline(prendaParaRender);
           } else {
             // Fallback: crear objeto con el ID
@@ -2130,13 +2127,13 @@ const trackingTableStyles = `
       }
       
       // Obtener el área más reciente del pedido actual
-      if (!currentOrderData || !currentOrderData.id) {
+      if (!window.currentOrderData || !window.currentOrderData.id) {
         console.warn('[actualizarAreaEnTablaRecibos] No hay currentOrderData disponible');
         return;
       }
       
       // Llamar a un endpoint para obtener el área más reciente
-      fetch(`/api/pedido/${currentOrderData.id}/area-reciente`)
+      fetch(`/api/pedido/${window.currentOrderData.id}/area-reciente`)
         .then(response => {
           if (!response.ok) {
             throw new Error('Error al obtener área reciente');
@@ -2509,7 +2506,7 @@ const trackingTableStyles = `
       }
 
       const area = document.getElementById('procesoArea').value;
-      const encargado = document.getElementById('procesoEncargado').value;
+      const encargado = document.getElementById('procesoEncargado').value.toUpperCase();
 
       if (!area) {
         showError('Por favor selecciona un área/proceso');
@@ -2533,7 +2530,7 @@ const trackingTableStyles = `
         return;
       }
 
-      if (!currentPrendaData || !currentOrderData) {
+      if (!window.currentPrendaData || !window.currentOrderData) {
         showError('No hay datos de la prenda o pedido');
         // Ocultar indicador de carga
         if (btnContent && btnLoading && btnConfirm) {
@@ -2547,22 +2544,22 @@ const trackingTableStyles = `
       console.log('[handleAgregarProceso] Agregando proceso:', {
         area,
         encargado,
-        prenda_id: currentPrendaData.id,
-        currentOrderData: currentOrderData
+        prenda_id: window.currentPrendaData.id,
+        currentOrderData: window.currentOrderData
       });
 
       // Verificar que los datos necesarios existan
       console.log('[handleAgregarProceso] Verificando estructura de datos:', {
-        currentOrderData: currentOrderData,
-        'currentOrderData.numero_pedido': currentOrderData?.numero_pedido,
-        'currentOrderData.pedido': currentOrderData?.pedido
+        currentOrderData: window.currentOrderData,
+        'currentOrderData.numero_pedido': window.currentOrderData?.numero_pedido,
+        'currentOrderData.pedido': window.currentOrderData?.pedido
       });
       
-      if (!currentOrderData) {
+      if (!window.currentOrderData) {
         throw new Error('No hay datos del pedido');
       }
       
-      if (!currentOrderData.numero_pedido) {
+      if (!window.currentOrderData.numero_pedido) {
         throw new Error('No hay número de pedido');
       }
 
@@ -2575,8 +2572,8 @@ const trackingTableStyles = `
           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
         },
         body: JSON.stringify({
-          pedido_produccion_id: currentOrderData.numero_pedido,
-          prenda_id: currentPrendaData.id,
+          pedido_produccion_id: window.currentOrderData.numero_pedido,
+          prenda_id: window.currentPrendaData.id,
           area: area,
           encargado: encargado,
           estado: 'Pendiente'
@@ -2588,7 +2585,7 @@ const trackingTableStyles = `
       }
 
       const result = await response.json();
-      console.log('[handleAgregarProceso] Proceso agregado:', result);
+      console.log('[handleAgregarProceso] Proceso guardado:', result);
 
       // Limpiar formulario
       limpiarFormularioProceso();
@@ -2622,8 +2619,11 @@ const trackingTableStyles = `
         }
       }
 
-      // Mostrar mensaje de éxito
-      showSuccess('Proceso agregado correctamente');
+      // ✅ Mostrar mensaje diferente según si fue creado o actualizado
+      const mensaje = result.action === 'actualizado' 
+        ? 'Proceso actualizado correctamente' 
+        : 'Proceso agregado correctamente';
+      showSuccess(mensaje);
 
     } catch (error) {
       console.error('[handleAgregarProceso] Error:', error);

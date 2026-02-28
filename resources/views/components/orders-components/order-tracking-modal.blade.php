@@ -282,11 +282,12 @@
                             <option value="Control de Calidad">Control de Calidad</option>
                             <option value="Despacho">Despacho</option>
                             <option value="Entrega">Entrega</option>
+                            <option value="Insumos">Insumos</option>
                         </select>
                     </div>
                     <div class="add-proceso-form-group">
                         <label for="procesoEncargado">Encargado:</label>
-                        <input type="text" id="procesoEncargado" class="add-proceso-input" placeholder="Nombre del encargado">
+                        <input type="text" id="procesoEncargado" class="add-proceso-input" placeholder="Nombre del encargado" style="text-transform: uppercase;">
                     </div>
                 </div>
             </div>

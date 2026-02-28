@@ -1551,6 +1551,90 @@ class SupervisorPedidosController extends Controller
     }
 
     /**
+     * Pendientes de Costura
+     */
+    public function pendientesCostura()
+    {
+        try {
+            // Obtener pedidos con recibos de COSTURA
+            $pedidosConCostura = \DB::table('consecutivos_recibos_pedidos as crp')
+                ->join('pedidos_produccion as p', 'crp.pedido_produccion_id', '=', 'p.id')
+                ->join('users as u', 'p.asesor_id', '=', 'u.id')
+                ->select([
+                    'p.created_at as fecha_creacion',
+                    'crp.consecutivo_actual as numero_recibo',
+                    'p.cliente',
+                    'p.id as pedido_id',
+                    'u.name as asesor',
+                    'crp.color_costura',
+                ])
+                ->where('crp.tipo_recibo', 'COSTURA')
+                ->where('crp.activo', 1)
+                ->orderBy('p.created_at', 'desc')
+                ->distinct('p.id')
+                ->get();
+
+            \Log::info('DEBUG - Pedidos COSTURA encontrados:', ['count' => $pedidosConCostura->count()]);
+
+            // Agrupar prendas por pedido
+            $recibosPorPedido = [];
+            
+            foreach($pedidosConCostura as $pedido) {
+                $pedidoId = $pedido->pedido_id;
+                
+                $recibosPorPedido[$pedidoId] = [
+                    'fecha_creacion' => $pedido->fecha_creacion,
+                    'numero_recibo' => $pedido->numero_recibo,
+                    'cliente' => $pedido->cliente,
+                    'pedido_id' => $pedido->pedido_id,
+                    'asesor' => $pedido->asesor,
+                    'color_costura' => $pedido->color_costura,
+                    'prendas' => []
+                ];
+                
+                // Obtener prendas del pedido con colores
+                $prendasConColores = \DB::table('prendas_pedido as pp')
+                    ->join('prenda_pedido_tallas as ppt', 'pp.id', '=', 'ppt.prenda_pedido_id')
+                    ->join('prenda_pedido_talla_colores as pptc', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
+                    ->select([
+                        'pp.nombre_prenda',
+                        'pptc.color_nombre',
+                        'pptc.cantidad as cantidad_color',
+                        \DB::raw('null as cantidad_talla')
+                    ])
+                    ->where('pp.pedido_produccion_id', $pedidoId)
+                    ->get();
+
+                // Obtener prendas del pedido sin colores
+                $prendasSinColores = \DB::table('prendas_pedido as pp')
+                    ->join('prenda_pedido_tallas as ppt', 'pp.id', '=', 'ppt.prenda_pedido_id')
+                    ->leftJoin('prenda_pedido_talla_colores as pptc', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
+                    ->select([
+                        'pp.nombre_prenda',
+                        'ppt.tela',
+                        'ppt.cantidad as cantidad_talla',
+                        \DB::raw('null as color_nombre')
+                    ])
+                    ->where('pp.pedido_produccion_id', $pedidoId)
+                    ->whereNull('pptc.id')
+                    ->get();
+
+                // Combinar las dos colecciones
+                $todasLasPrendas = $prendasConColores->merge($prendasSinColores);
+                $recibosPorPedido[$pedidoId]['prendas'] = $todasLasPrendas;
+            }
+
+            $procesosConCantidad = collect($recibosPorPedido)->values();
+
+            return view('supervisor-pedidos.pendientes-costura', compact('procesosConCantidad'));
+
+        } catch (\Exception $e) {
+            \Log::error('Error al cargar pendientes costura: ' . $e->getMessage());
+            return back()->with('error', 'Error al cargar los datos: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Obtener detalles de un recibo específico
      */
     public function obtenerDetallesProceso($id)
@@ -1758,6 +1842,39 @@ class SupervisorPedidosController extends Controller
             \Log::error(' Error al convertir imagen a webp: ' . $e->getMessage());
             // Fallback: guardar sin conversión en carpeta del pedido
             return $file->store("pedidos/{$numeroPedido}/{$tipo}", 'public');
+        }
+    }
+
+    /**
+     * Guardar el color de costura para un recibo
+     */
+    public function guardarColorCostura(Request $request)
+    {
+        try {
+            $numeroRecibo = $request->input('numero_recibo');
+            $color = $request->input('color');
+
+            $actualizado = \DB::table('consecutivos_recibos_pedidos')
+                ->where('consecutivo_actual', $numeroRecibo)
+                ->update(['color_costura' => $color]);
+
+            if ($actualizado) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Color guardado correctamente'
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró el recibo'
+                ], 404);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error al guardar color de costura: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar el color'
+            ], 500);
         }
     }
 }
