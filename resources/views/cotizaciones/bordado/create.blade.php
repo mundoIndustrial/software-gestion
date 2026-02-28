@@ -982,6 +982,20 @@ function eliminarTecnica(index) {
     renderizarTecnicas();
 }
 
+function guardarEspecificacionesReflectivo() {
+    if (typeof guardarEspecificaciones === 'function') {
+        guardarEspecificaciones();
+    }
+    const textarea = document.getElementById('especificaciones');
+    if (textarea) {
+        try {
+            textarea.value = JSON.stringify(window.especificacionesSeleccionadas || {});
+        } catch (_) {
+            textarea.value = '';
+        }
+    }
+}
+
 // ============ OBSERVACIONES ============
 
 function agregarObservacion() {
@@ -1052,6 +1066,11 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         }
     }
 
+    // Sincronizar especificaciones aunque el modal esté cerrado
+    if (typeof guardarEspecificacionesReflectivo === 'function') {
+        guardarEspecificacionesReflectivo();
+    }
+
     // Desactivar botones durante el envío
     document.querySelectorAll('button[type="submit"]').forEach(btn => {
         btn.disabled = true;
@@ -1116,11 +1135,16 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         if (inputTexto && inputTexto.value.trim()) {
             const esCheckbox = inputCheck && inputCheck.checked;
             const esTexto = inputValor && inputValor.style.display !== 'none';
+
+            const valorTexto = (inputValor && typeof inputValor.value === 'string') ? inputValor.value.trim() : '';
+            const valorFinal = esCheckbox
+                ? (esTexto && valorTexto ? valorTexto : (inputCheck ? inputCheck.checked : true))
+                : (inputValor ? inputValor.value : '');
             
             const obs = {
                 texto: inputTexto.value.trim(),
                 tipo: esCheckbox ? 'checkbox' : 'texto',
-                valor: esCheckbox ? inputCheck.checked : (inputValor ? inputValor.value : '')
+                valor: valorFinal
             };
             
             observacionesDelDOM.push(obs);

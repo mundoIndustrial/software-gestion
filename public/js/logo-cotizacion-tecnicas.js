@@ -13,6 +13,152 @@ let tecnicasAgregadas = [];
 let tiposDisponibles = [];
 let logoCotizacionId = null;
 
+const DROPZONE_PASTE_HINT_TEXT_LOGO = 'Pega la imagen con Ctrl+V';
+let dropzoneDestinoPegadoLogo = null;
+let pasteListenerRegistradoLogo = false;
+let __logoUltimoPasteTs = 0;
+let __logoUltimoPasteSig = '';
+
+function clipboardTieneImagenLogo() {
+    try {
+        if (!navigator.clipboard || typeof navigator.clipboard.read !== 'function') {
+            return Promise.resolve(false);
+        }
+        return navigator.clipboard.read().then((items) => {
+            for (const item of items) {
+                if (!item || !item.types) continue;
+                if (item.types.some(t => typeof t === 'string' && t.startsWith('image/'))) {
+                    return true;
+                }
+            }
+            return false;
+        }).catch(() => false);
+    } catch (_) {
+        return Promise.resolve(false);
+    }
+}
+
+function aplicarPasteHintVisualLogo(dropzone) {
+    if (!dropzone) return;
+    if (!dropzone.style.position || dropzone.style.position === 'static') {
+        dropzone.style.position = 'relative';
+    }
+    let overlay = dropzone.querySelector('[data-dropzone-paste-overlay="1"]');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.setAttribute('data-dropzone-paste-overlay', '1');
+        overlay.style.cssText = [
+            'position:absolute',
+            'inset:0',
+            'display:flex',
+            'align-items:center',
+            'justify-content:center',
+            'background:rgba(16,185,129,0.10)',
+            'border-radius:6px',
+            'font-weight:800',
+            'color:#047857',
+            'letter-spacing:0.3px',
+            'pointer-events:none',
+            'text-transform:uppercase',
+            'font-size:0.78rem'
+        ].join(';');
+        overlay.textContent = DROPZONE_PASTE_HINT_TEXT_LOGO;
+        dropzone.appendChild(overlay);
+    }
+}
+
+function limpiarPasteHintVisualLogo(dropzone) {
+    if (!dropzone) return;
+    const overlay = dropzone.querySelector('[data-dropzone-paste-overlay="1"]');
+    if (overlay) overlay.remove();
+}
+
+function adjuntarPasteHintEnDropzoneLogo(dropzone) {
+    if (!dropzone) return;
+    if (dropzone.getAttribute('data-paste-hint-bound') === '1') return;
+    dropzone.setAttribute('data-paste-hint-bound', '1');
+
+    dropzone.addEventListener('mouseenter', () => {
+        dropzoneDestinoPegadoLogo = dropzone;
+        clipboardTieneImagenLogo().then((tiene) => {
+            if (!dropzone.matches(':hover')) return;
+            const tieneDragOverlay = !!dropzone.querySelector('[data-dropzone-overlay="1"]');
+            if (tieneDragOverlay) return;
+            if (tiene) {
+                aplicarPasteHintVisualLogo(dropzone);
+            }
+        });
+    });
+
+    dropzone.addEventListener('mouseleave', () => {
+        if (dropzoneDestinoPegadoLogo === dropzone) {
+            dropzoneDestinoPegadoLogo = null;
+        }
+        limpiarPasteHintVisualLogo(dropzone);
+    });
+
+    dropzone.addEventListener('dragover', () => {
+        limpiarPasteHintVisualLogo(dropzone);
+    });
+
+    if (!pasteListenerRegistradoLogo) {
+        pasteListenerRegistradoLogo = true;
+        document.addEventListener('paste', (e) => {
+            try {
+                if (e && e.__logoPasteHandled) return;
+                if (e) e.__logoPasteHandled = true;
+
+                if (!dropzoneDestinoPegadoLogo) return;
+
+                const dtItems = e.clipboardData && e.clipboardData.items ? Array.from(e.clipboardData.items) : [];
+                let archivos = dtItems
+                    .filter(i => i && i.kind === 'file')
+                    .map(i => i.getAsFile && i.getAsFile())
+                    .filter(f => f && f.type && f.type.startsWith('image/'));
+
+                if (archivos.length === 0) return;
+
+                const vistos = new Set();
+                archivos = archivos.filter((f) => {
+                    const sig = `${f.type}|${f.size}|${f.lastModified || 0}`;
+                    if (vistos.has(sig)) return false;
+                    vistos.add(sig);
+                    return true;
+                });
+
+                const sigEvento = archivos.map(f => `${f.type}|${f.size}|${f.lastModified || 0}`).join(';;');
+                const ahora = Date.now();
+                if (__logoUltimoPasteSig === sigEvento && (ahora - __logoUltimoPasteTs) < 500) {
+                    return;
+                }
+                __logoUltimoPasteSig = sigEvento;
+                __logoUltimoPasteTs = ahora;
+
+                const input = dropzoneDestinoPegadoLogo.querySelector('input[type="file"]')
+                    || (dropzoneDestinoPegadoLogo.closest('label') ? dropzoneDestinoPegadoLogo.closest('label').querySelector('input[type="file"]') : null);
+                if (!input) return;
+
+                try {
+                    if (typeof e.preventDefault === 'function') e.preventDefault();
+                    if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+                    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                } catch (_) {}
+
+                try { input.value = ''; } catch (_) {}
+
+                const dataTransfer = new DataTransfer();
+                archivos.forEach((f) => dataTransfer.items.add(f));
+                input.files = dataTransfer.files;
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+
+                try {
+                    limpiarPasteHintVisualLogo(dropzoneDestinoPegadoLogo);
+                } catch (_) {}
+            } catch (_) {}
+        });
+    }
+}
+
 // IDs de fotos (tabla logo_cotizacion_tecnica_prendas_fotos) a eliminar al guardar/enviar
 window.tecnicasFotosAEliminar = window.tecnicasFotosAEliminar || [];
 
@@ -143,75 +289,150 @@ function guardarEdicionPrenda() {
     }
 
     const originalNombre = window.prendaNombreOriginalEdicion || (window.datosPrendaEdicion ? window.datosPrendaEdicion.nombre_prenda : null);
-    const indices = Array.isArray(window.tecnicaIndicesEdicion) ? window.tecnicaIndicesEdicion : [];
+    const indicesPrevios = Array.isArray(window.tecnicaIndicesEdicion) ? window.tecnicaIndicesEdicion : [];
     const tecnicasEditData = (window.datosPrendaEdicion && window.datosPrendaEdicion.tecnicas_imagenes) ? window.datosPrendaEdicion.tecnicas_imagenes : {};
     const logoCompartidoEnabled = !!(window.datosPrendaEdicion && window.datosPrendaEdicion.logoCompartido && window.datosPrendaEdicion.logoCompartido.enabled);
     const logoCompartidoData = (window.datosPrendaEdicion && window.datosPrendaEdicion.logoCompartido) ? window.datosPrendaEdicion.logoCompartido : { enabled: false, items: {}, files: {} };
 
-    indices.forEach((tecnicaIndex) => {
-        const tecnica = tecnicasAgregadas[tecnicaIndex];
-        if (!tecnica || !Array.isArray(tecnica.prendas)) return;
+    // Técnicas seleccionadas actualmente en el modal (por tipo_logo_id)
+    const selectedIds = Array.isArray(window.tecnicasSeleccionadasEdicionIds)
+        ? window.tecnicasSeleccionadasEdicionIds
+        : [];
+    const selectedSet = new Set(selectedIds.map(n => Number(n)).filter(n => !Number.isNaN(n)));
 
-        const nombreTecnica = tecnica.tipo_logo ? tecnica.tipo_logo.nombre : null;
+    if (selectedSet.size === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Técnica requerida',
+            text: 'Debes seleccionar al menos una técnica para guardar los cambios.'
+        });
+        return;
+    }
+
+    // 1) Remover la prenda de técnicas deseleccionadas
+    tecnicasAgregadas.forEach((tecnicaData) => {
+        const tipoId = tecnicaData && tecnicaData.tipo_logo ? Number(tecnicaData.tipo_logo.id) : NaN;
+        if (Number.isNaN(tipoId)) return;
+        if (selectedSet.has(tipoId)) return;
+        if (!Array.isArray(tecnicaData.prendas)) return;
+        tecnicaData.prendas = tecnicaData.prendas.filter((p) => {
+            if (!p) return false;
+            if (originalNombre && p.nombre_prenda === originalNombre) return false;
+            if (!originalNombre && p.nombre_prenda === nuevoNombre) return false;
+            return true;
+        });
+    });
+
+    // Limpiar técnicas vacías
+    for (let i = tecnicasAgregadas.length - 1; i >= 0; i--) {
+        const t = tecnicasAgregadas[i];
+        if (t && Array.isArray(t.prendas) && t.prendas.length === 0) {
+            tecnicasAgregadas.splice(i, 1);
+        }
+    }
+
+    // 2) Upsert de la prenda en cada técnica seleccionada
+    selectedSet.forEach((tipoId) => {
+        const tipoFromCatalogo = (Array.isArray(tiposDisponibles) ? tiposDisponibles : []).find(t => Number(t.id) === Number(tipoId));
+        if (!tipoFromCatalogo) return;
+
+        // Crear técnica si no existe
+        let tecnicaData = (Array.isArray(tecnicasAgregadas) ? tecnicasAgregadas : [])
+            .find(t => t && t.tipo_logo && Number(t.tipo_logo.id) === Number(tipoId));
+        if (!tecnicaData) {
+            tecnicaData = {
+                tipo_logo: { id: tipoFromCatalogo.id, nombre: tipoFromCatalogo.nombre, color: tipoFromCatalogo.color },
+                prendas: [],
+                observacionesGenerales: ''
+            };
+            tecnicasAgregadas.push(tecnicaData);
+        }
+        if (!Array.isArray(tecnicaData.prendas)) tecnicaData.prendas = [];
+
+        const nombreTecnica = tecnicaData.tipo_logo ? tecnicaData.tipo_logo.nombre : null;
         const dataTecnica = nombreTecnica ? tecnicasEditData[nombreTecnica] : null;
+
+        // Capturar estado previo de esta prenda en esta técnica (para conservar imágenes si no se tocaron)
+        const prendaPrev = tecnicaData.prendas.find((p) => {
+            if (!p) return false;
+            if (originalNombre) return p.nombre_prenda === originalNombre;
+            return p.nombre_prenda === nuevoNombre;
+        }) || null;
 
         // Actualizar logos compartidos a nivel de técnica
         if (logoCompartidoEnabled) {
-            tecnica.logosCompartidos = tecnica.logosCompartidos || {};
+            tecnicaData.logosCompartidos = tecnicaData.logosCompartidos || {};
             Object.keys(logoCompartidoData.items || {}).forEach((clave) => {
                 const file = (logoCompartidoData.files && logoCompartidoData.files[clave]) ? logoCompartidoData.files[clave] : null;
                 if (file instanceof File) {
-                    tecnica.logosCompartidos[clave] = file;
+                    tecnicaData.logosCompartidos[clave] = file;
                 }
             });
         } else {
-            tecnica.logosCompartidos = {};
+            tecnicaData.logosCompartidos = {};
         }
 
-        tecnica.prendas.forEach((p) => {
-            if (!p) return;
-            if (originalNombre && p.nombre_prenda !== originalNombre) return;
+        // Data base para guardar
+        const ubicaciones = dataTecnica && Array.isArray(dataTecnica.ubicaciones)
+            ? dataTecnica.ubicaciones
+            : (prendaPrev && Array.isArray(prendaPrev.ubicaciones) ? prendaPrev.ubicaciones : []);
 
-            p.nombre_prenda = nuevoNombre;
-            p.observaciones = nuevasObs;
-            p.talla_cantidad = [];
+        const touchedImagenes = !!(dataTecnica && dataTecnica.__touchedImagenes);
+        const imgsFromModal = dataTecnica && Array.isArray(dataTecnica.imagenes_data_urls) ? dataTecnica.imagenes_data_urls : [];
+        const imgsPrev = prendaPrev && Array.isArray(prendaPrev.imagenes_data_urls) ? prendaPrev.imagenes_data_urls : [];
+        const imgs = (touchedImagenes || imgsFromModal.length > 0)
+            ? imgsFromModal
+            : imgsPrev;
 
-            if (dataTecnica) {
-                const ubicaciones = Array.isArray(dataTecnica.ubicaciones) ? dataTecnica.ubicaciones : [];
-                p.ubicaciones = ubicaciones;
+        // Mantener objetos si vienen con metadata (id), o convertir strings a {data_url}
+        const imagenesPropias = imgs.map((u) => (u && typeof u === 'object') ? u : ({ data_url: u }));
 
-                const imgs = Array.isArray(dataTecnica.imagenes_data_urls) ? dataTecnica.imagenes_data_urls : [];
-                // Mantener objetos si vienen con metadata (id), o convertir strings a {data_url}
-                const imagenesPropias = imgs.map((u) => (u && typeof u === 'object') ? u : ({ data_url: u }));
+        // Mantener Files reales (solo imágenes NUEVAS agregadas en el modal)
+        // Usar imagenes_files_meta porque es la fuente de verdad y se actualiza al eliminar.
+        const filesMeta = dataTecnica && Array.isArray(dataTecnica.imagenes_files_meta) ? dataTecnica.imagenes_files_meta : [];
+        const imagenesFiles = filesMeta
+            .map(m => (m && m.file) ? m.file : null)
+            .filter(f => f instanceof File);
 
-                // Mantener Files reales (solo imágenes nuevas agregadas en el modal)
-                // Esto es lo que el submit usa para adjuntar archivos en FormData.
-                const filesActuales = Array.isArray(dataTecnica.imagenes_files) ? dataTecnica.imagenes_files : [];
-                p.imagenes_files = filesActuales.filter(f => f instanceof File);
+        // Si hay logo compartido activo, agregar imágenes compartidas que correspondan a esta técnica
+        let imagenesCompartidas = [];
+        if (logoCompartidoEnabled && nombreTecnica) {
+            Object.entries(logoCompartidoData.items || {}).forEach(([clave, item]) => {
+                const tecnicasCompartidas = Array.isArray(item.tecnicasCompartidas) ? item.tecnicasCompartidas : [];
+                if (!tecnicasCompartidas.includes(nombreTecnica)) return;
+                const dataUrl = item.previewUrl || null;
+                if (!dataUrl) return;
+                imagenesCompartidas.push({
+                    data_url: dataUrl,
+                    esCompartida: true,
+                    nombreCompartido: clave,
+                    tecnicasCompartidas
+                });
+            });
+        }
 
-                // Si hay logo compartido activo, agregar imágenes compartidas que correspondan a esta técnica
-                let imagenesCompartidas = [];
-                if (logoCompartidoEnabled) {
-                    Object.entries(logoCompartidoData.items || {}).forEach(([clave, item]) => {
-                        const tecnicasCompartidas = Array.isArray(item.tecnicasCompartidas) ? item.tecnicasCompartidas : [];
-                        if (nombreTecnica && tecnicasCompartidas.includes(nombreTecnica)) {
-                            const dataUrl = item.previewUrl || null;
-                            if (dataUrl) {
-                                imagenesCompartidas.push({
-                                    data_url: dataUrl,
-                                    esCompartida: true,
-                                    nombreCompartido: clave,
-                                    tecnicasCompartidas
-                                });
-                            }
-                        }
-                    });
-                }
+        const prendaNueva = {
+            // Preservar ID de la prenda técnica para que backend haga UPDATE y no CREATE
+            // (si se crea una nueva, las fotos existentes quedan vinculadas al ID anterior y "desaparecen").
+            id: (dataTecnica && dataTecnica.id_prenda_tecnica) ? dataTecnica.id_prenda_tecnica : (prendaPrev ? (prendaPrev.id || null) : null),
+            nombre_prenda: nuevoNombre,
+            observaciones: nuevasObs,
+            talla_cantidad: [],
+            ubicaciones: ubicaciones,
+            imagenes_files: imagenesFiles,
+            imagenes_data_urls: [...imagenesPropias, ...imagenesCompartidas]
+        };
 
-                // Reconstruir imagenes_data_urls sin duplicar
-                p.imagenes_data_urls = [...imagenesPropias, ...imagenesCompartidas];
-            }
+        // Si se renombra, evitar que queden prendas duplicadas con el nombre anterior
+        // dentro de técnicas seleccionadas. El render agrupa por nombre.
+        tecnicaData.prendas = tecnicaData.prendas.filter((p) => {
+            if (!p) return false;
+            if (originalNombre && p.nombre_prenda === originalNombre) return false;
+            if (p.nombre_prenda === nuevoNombre) return false;
+            return true;
         });
+
+        tecnicaData.prendas.push(prendaNueva);
     });
 
     // Reset flags de edición
@@ -220,8 +441,12 @@ function guardarEdicionPrenda() {
     window.tecnicasInfoEdicion = null;
     window.tecnicaIndicesEdicion = null;
     window.prendaNombreOriginalEdicion = null;
+    window.tecnicasSeleccionadasEdicionIds = null;
 
     cerrarModalAgregarTecnica();
+    try {
+        window.tecnicasAgregadas = tecnicasAgregadas;
+    } catch (_) {}
     renderizarTecnicasAgregadas();
 }
 
@@ -985,6 +1210,16 @@ function abrirModalLogoCompartido(tecnicas, logosCompartidos) {
         // Procesar
         const clave = tecnicasSeleccionadas.sort().join('-');
         logosCompartidos[clave] = imagenSeleccionada;
+
+        try {
+            document.dispatchEvent(new CustomEvent('logoCompartido:guardado', {
+                detail: {
+                    clave,
+                    file: imagenSeleccionada,
+                    tecnicas: tecnicasSeleccionadas
+                }
+            }));
+        } catch (_) {}
         
         console.log(' DEBUG - Logo guardado en modal:', {
             clave: clave,
@@ -1004,6 +1239,61 @@ function abrirModalLogoCompartido(tecnicas, logosCompartidos) {
     btnCancelar.addEventListener('click', cerrarModal);
     btnGuardar.addEventListener('click', guardarYCerrar);
     backdropElement.addEventListener('click', cerrarModal);
+
+    // Soportar pegar Ctrl+V dentro del dropzone de logo compartido
+    try {
+        adjuntarPasteHintEnDropzoneLogo(dropzone);
+    } catch (_) {}
+}
+
+function renderizarLogosCompartidosEdicion(prendaDiv, datosPrenda) {
+    if (!prendaDiv || !datosPrenda || !datosPrenda.logoCompartido) return;
+    const seccion = prendaDiv.querySelector('#editSeccionLogoCompartido');
+    if (!seccion) return;
+
+    // Mantener el botón + Agregar
+    const btnAgregar = seccion.querySelector('#editBtnAgregarLogoCompartido');
+
+    // Eliminar filas actuales
+    seccion.querySelectorAll('.edit-logo-compartido-row').forEach(el => el.remove());
+
+    const items = datosPrenda.logoCompartido.items || {};
+    Object.entries(items).forEach(([clave, item]) => {
+        const tecnicasTxt = (item.tecnicasCompartidas || []).join(' + ');
+        const previewUrl = item.previewUrl || '';
+
+        const row = document.createElement('div');
+        row.className = 'edit-logo-compartido-row';
+        row.setAttribute('data-logo-clave', clave);
+        row.style.cssText = 'border: 1px solid #dbeafe; background: #f0f7ff; border-radius: 6px; padding: 10px;';
+        row.innerHTML = `
+            <div style="display:flex; justify-content: space-between; gap: 10px; align-items: flex-start; margin-bottom: 6px;">
+                <div style="font-weight: 700; color: #0369a1;">Logo compartido: ${tecnicasTxt}</div>
+                <button type="button" class="edit-logo-compartido-del" data-logo-clave="${clave}" style="background: #fee2e2; color:#991b1b; border:1px solid #fecaca; padding: 6px 10px; border-radius: 6px; cursor:pointer; font-weight: 800;">Eliminar</button>
+            </div>
+            <div style="display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: center;">
+                <div class="edit-logo-compartido-preview" data-logo-clave="${clave}" style="width: 110px; height: 110px; border-radius: 6px; overflow: hidden; border: 1px solid #bfdbfe; background: white; display: flex; align-items: center; justify-content: center;">
+                    ${previewUrl ? `<img src="${previewUrl}" style="width: 100%; height: 100%; object-fit: cover;" />` : `<span style="color:#64748b; font-size:0.8rem;">Sin imagen</span>`}
+                </div>
+                <div class="edit-logo-compartido-inputwrap" data-logo-clave="${clave}" style="position: relative;">
+                    <input type="file" class="edit-input-logo-compartido" data-logo-clave="${clave}" accept="image/*" style="width: 100%; padding: 8px; border: 1px dashed #0284c7; border-radius: 4px; cursor: pointer; box-sizing: border-box; font-size: 0.85rem;">
+                    <div style="margin-top: 6px; color: #64748b; font-size: 0.8rem;">Reemplazar logo compartido (o pega con Ctrl+V)</div>
+                </div>
+            </div>
+        `;
+
+        seccion.appendChild(row);
+    });
+
+    if (btnAgregar && btnAgregar.parentNode === seccion) {
+        // Asegurar que el botón quede arriba
+        seccion.insertBefore(btnAgregar, seccion.firstChild);
+    }
+
+    // Re-bind listeners (reusa los existentes)
+    try {
+        agregarEventListenersEdicionPrenda(prendaDiv, datosPrenda);
+    } catch (_) {}
 }
 
 function mostrarLogosCompartidosAgregados(logosCompartidos, tecnicasNuevas) {
@@ -2452,6 +2742,7 @@ function abrirModalEditarPrenda(tecnicaIndices, nombrePrenda) {
 
                 // Almacenar imágenes por técnica (SOLO PROPIAS)
                 datosPrenda.tecnicas_imagenes[tecnica.tipo_logo.nombre] = {
+                    id_prenda_tecnica: prenda.id || null,
                     imagenes_data_urls: imagenesPropias,
                     imagenes_files: prenda.imagenes_files || [],
                     tipo_logo: tecnica.tipo_logo,
@@ -2561,9 +2852,9 @@ function agregarFilaPrendaConDatos(datosPrenda) {
                         <div class="edit-logo-compartido-preview" data-logo-clave="${clave}" style="width: 110px; height: 110px; border-radius: 6px; overflow: hidden; border: 1px solid #bfdbfe; background: white; display: flex; align-items: center; justify-content: center;">
                             ${previewUrl ? `<img src="${previewUrl}" style="width: 100%; height: 100%; object-fit: cover;" />` : `<span style="color:#64748b; font-size:0.8rem;">Sin imagen</span>`}
                         </div>
-                        <div>
+                        <div class="edit-logo-compartido-inputwrap" data-logo-clave="${clave}" style="position: relative;">
                             <input type="file" class="edit-input-logo-compartido" data-logo-clave="${clave}" accept="image/*" style="width: 100%; padding: 8px; border: 1px dashed #0284c7; border-radius: 4px; cursor: pointer; box-sizing: border-box; font-size: 0.85rem;">
-                            <div style="margin-top: 6px; color: #64748b; font-size: 0.8rem;">Reemplazar logo compartido</div>
+                            <div style="margin-top: 6px; color: #64748b; font-size: 0.8rem;">Reemplazar logo compartido (o pega con Ctrl+V)</div>
                         </div>
                     </div>
                 </div>
@@ -2578,45 +2869,49 @@ function agregarFilaPrendaConDatos(datosPrenda) {
                     <span style="font-weight:700; color:#0369a1;">Usar logo compartido</span>
                 </label>
                 <div id="editSeccionLogoCompartido" style="display: ${enabled ? 'grid' : 'none'}; gap: 10px;">
+                    <button type="button" id="editBtnAgregarLogoCompartido" style="background:#0284c7; color:white; border:none; padding:10px 14px; border-radius:6px; cursor:pointer; font-weight:800; width: 100%;">+ Agregar Logo Compartido</button>
                     ${filas}
+                </div>
+            </div>
+        `;
+    } else {
+        const enabled = !!(datosPrenda && datosPrenda.logoCompartido && datosPrenda.logoCompartido.enabled);
+        logoCompartidoHTML = `
+            <div style="margin-bottom: 16px; padding: 12px; border: 2px solid #dbeafe; border-radius: 8px; background: #f8fbff;">
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin-bottom: 10px;">
+                    <input type="checkbox" id="editUsarLogoCompartido" ${enabled ? 'checked' : ''} style="width:18px; height:18px; cursor:pointer;" />
+                    <span style="font-weight:700; color:#0369a1;">Usar logo compartido</span>
+                </label>
+                <div id="editSeccionLogoCompartido" style="display: ${enabled ? 'grid' : 'none'}; gap: 10px;">
+                    <button type="button" id="editBtnAgregarLogoCompartido" style="background:#0284c7; color:white; border:none; padding:10px 14px; border-radius:6px; cursor:pointer; font-weight:800; width: 100%;">+ Agregar Logo Compartido</button>
                 </div>
             </div>
         `;
     }
 
-    // Generar HTML por técnica: Ubicaciones + Imágenes
-    let tecnicasHTML = '';
-    if (datosPrenda.tecnicas_imagenes) {
-        Object.entries(datosPrenda.tecnicas_imagenes).forEach(([nombreTecnica, datosTecnica]) => {
-            const color = (datosTecnica.tipo_logo && datosTecnica.tipo_logo.color) ? datosTecnica.tipo_logo.color : '#333';
-            const imagenesTecnica = (datosTecnica.imagenes_data_urls || []).map(img => (img && typeof img === 'object' && img.data_url) ? img.data_url : img);
-            const ubicacionesTecnica = Array.isArray(datosTecnica.ubicaciones) ? datosTecnica.ubicaciones : [];
-            const ocultarImagenes = !!(datosPrenda.logoCompartido && datosPrenda.logoCompartido.enabled);
-            tecnicasHTML += `
-                <div class="tecnica-edit-block" data-tecnica="${nombreTecnica}" style="margin-bottom: 18px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 6px; background: white;">
-                    <div style="font-weight: 700; margin-bottom: 10px; color: ${color};">${nombreTecnica}</div>
+    // ==============================================
+    // Selector de técnicas (editar): permite agregar/quitar técnicas dinámicamente
+    // ==============================================
+    const tecnicasInicialesNombres = datosPrenda && datosPrenda.tecnicas_imagenes
+        ? Object.keys(datosPrenda.tecnicas_imagenes)
+        : [];
 
-                    <div style="margin-bottom: 12px;">
-                        <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333;">Ubicaciones (${nombreTecnica})</label>
-                        <textarea class="ubicaciones-tecnica" data-tecnica="${nombreTecnica}" rows="2" placeholder="Ej: PECHO, ESPALDA, MANGA" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; resize: vertical;">${ubicacionesTecnica.join(', ')}</textarea>
-                    </div>
+    const idsIniciales = (Array.isArray(tiposDisponibles) ? tiposDisponibles : [])
+        .filter(t => tecnicasInicialesNombres.includes(String(t.nombre)))
+        .map(t => Number(t.id))
+        .filter(n => !Number.isNaN(n));
 
-                    <div class="tecnica-imagenes-block" style="margin-bottom: 6px; display: ${ocultarImagenes ? 'none' : 'block'};">
-                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: ${color};">Imágenes - ${nombreTecnica}</label>
-                        <div class="imagenes-preview" data-tecnica="${nombreTecnica}" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px;">
-                            ${imagenesTecnica.map((img, idx) => `
-                                <div style="position: relative;" class="imagen-item" data-tecnica="${nombreTecnica}" data-idx="${idx}">
-                                    <img src="${img}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
-                                    <button type="button" class="btn-eliminar-imagen" data-tecnica="${nombreTecnica}" data-idx="${idx}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
-                                </div>
-                            `).join('')}
-                        </div>
-                        <input type="file" class="input-imagenes" data-tecnica="${nombreTecnica}" accept="image/*" multiple style="width: 100%; padding: 6px; border: 1px dashed #0369a1; border-radius: 4px; cursor: pointer; box-sizing: border-box; font-size: 0.85rem;">
-                    </div>
-                </div>
-            `;
-        });
-    }
+    window.tecnicasSeleccionadasEdicionIds = Array.isArray(window.tecnicasSeleccionadasEdicionIds)
+        ? window.tecnicasSeleccionadasEdicionIds
+        : idsIniciales;
+
+    const selectorTecnicasHTML = `
+        <div style="margin-bottom: 16px; padding: 12px; border: 1px solid #e2e8f0; background: #ffffff; border-radius: 8px;">
+            <div style="font-weight: 800; color: #0f172a; margin-bottom: 10px;">Técnicas</div>
+            <div id="editTecnicasSelector" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;"></div>
+            <div id="editTecnicasError" style="display:none; margin-top: 8px; color:#b91c1c; font-weight:800; font-size: 0.85rem;"></div>
+        </div>
+    `;
     
     prendaDiv.innerHTML = `
         <div style="margin-bottom: 16px;">
@@ -2630,18 +2925,288 @@ function agregarFilaPrendaConDatos(datosPrenda) {
         </div>
         
         ${logoCompartidoHTML}
-        ${tecnicasHTML}
+        ${selectorTecnicasHTML}
+        <div class="edit-tecnicas-dinamicas"></div>
     `;
     
     listaPrendas.appendChild(prendaDiv);
     
-    // Agregar event listeners para la funcionalidad de edición
-    agregarEventListenersEdicionPrenda(prendaDiv, datosPrenda);
+    // Render inicial de técnicas dinámicas + listeners
+    renderizarBloquesTecnicasEdicion(prendaDiv, datosPrenda);
+    agregarEventListenersSelectorTecnicasEdicion(prendaDiv, datosPrenda);
+
+    // Mantener lógica existente de logo compartido (reemplazo/eliminar/toggle) y precargas,
+    // pero evitando duplicar listeners (ver guards en agregarEventListenersEdicionPrenda)
+    try {
+        agregarEventListenersEdicionPrenda(prendaDiv, datosPrenda);
+    } catch (_) {}
+}
+
+function agregarEventListenersSelectorTecnicasEdicion(prendaDiv, datosPrenda) {
+    const root = prendaDiv ? prendaDiv.querySelector('#editTecnicasSelector') : null;
+    const err = prendaDiv ? prendaDiv.querySelector('#editTecnicasError') : null;
+    if (!root || root.getAttribute('data-bound') === '1') return;
+    root.setAttribute('data-bound', '1');
+
+    const setErr = (msg) => {
+        if (!err) return;
+        if (!msg) {
+            err.style.display = 'none';
+            err.textContent = '';
+            return;
+        }
+        err.style.display = 'block';
+        err.textContent = msg;
+    };
+
+    const renderSelector = () => {
+        root.innerHTML = '';
+        const seleccionadas = new Set(Array.isArray(window.tecnicasSeleccionadasEdicionIds)
+            ? window.tecnicasSeleccionadasEdicionIds.map(n => Number(n)).filter(n => !Number.isNaN(n))
+            : []);
+
+        (Array.isArray(tiposDisponibles) ? tiposDisponibles : []).forEach((tipo) => {
+            if (!tipo || tipo.id === undefined || tipo.id === null) return;
+            const id = Number(tipo.id);
+            const nombre = String(tipo.nombre || '').trim();
+            if (!nombre || Number.isNaN(id)) return;
+
+            const label = document.createElement('label');
+            label.style.cssText = 'display:flex; align-items:center; gap:8px; padding: 8px 10px; border: 1px solid #e5e7eb; border-radius: 8px; cursor:pointer; user-select:none; font-weight: 800; color:#0f172a; background:#f8fafc;';
+
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.className = 'edit-tecnica-checkbox';
+            cb.value = String(id);
+            cb.checked = seleccionadas.has(id);
+            cb.style.cssText = 'width: 18px; height: 18px; cursor:pointer;';
+
+            cb.addEventListener('change', () => {
+                const ids = Array.from(root.querySelectorAll('input.edit-tecnica-checkbox:checked'))
+                    .map(x => parseInt(x.value, 10))
+                    .filter(n => !Number.isNaN(n));
+                window.tecnicasSeleccionadasEdicionIds = ids;
+                if (ids.length > 0) setErr('');
+                renderizarBloquesTecnicasEdicion(prendaDiv, datosPrenda);
+            });
+
+            const span = document.createElement('span');
+            span.textContent = nombre;
+
+            label.appendChild(cb);
+            label.appendChild(span);
+            root.appendChild(label);
+        });
+    };
+
+    renderSelector();
+
+    // Validación inicial
+    const ids0 = Array.isArray(window.tecnicasSeleccionadasEdicionIds) ? window.tecnicasSeleccionadasEdicionIds : [];
+    if (ids0.length === 0) {
+        setErr('Debes seleccionar al menos una técnica.');
+    }
+}
+
+function renderizarBloquesTecnicasEdicion(prendaDiv, datosPrenda) {
+    const cont = prendaDiv ? prendaDiv.querySelector('.edit-tecnicas-dinamicas') : null;
+    if (!cont || !datosPrenda) return;
+
+    const selectedIds = Array.isArray(window.tecnicasSeleccionadasEdicionIds)
+        ? window.tecnicasSeleccionadasEdicionIds.map(n => Number(n)).filter(n => !Number.isNaN(n))
+        : [];
+
+    const selectedTipos = (Array.isArray(tiposDisponibles) ? tiposDisponibles : [])
+        .filter(t => t && selectedIds.includes(Number(t.id)));
+
+    // Asegurar estructura por técnica (no borrar estado al deseleccionar)
+    datosPrenda.tecnicas_imagenes = datosPrenda.tecnicas_imagenes || {};
+    selectedTipos.forEach((tipo) => {
+        const nombre = String(tipo.nombre || '').trim();
+        if (!nombre) return;
+        if (!datosPrenda.tecnicas_imagenes[nombre]) {
+            datosPrenda.tecnicas_imagenes[nombre] = {
+                imagenes_data_urls: [],
+                imagenes_files: [],
+                tipo_logo: { id: tipo.id, nombre: tipo.nombre, color: tipo.color },
+                ubicaciones: []
+            };
+        }
+    });
+
+    const ocultarImagenes = !!(datosPrenda.logoCompartido && datosPrenda.logoCompartido.enabled);
+
+    cont.innerHTML = selectedTipos.map((tipo) => {
+        const nombreTecnica = String(tipo.nombre || '').trim();
+        if (!nombreTecnica) return '';
+        const datosTecnica = datosPrenda.tecnicas_imagenes[nombreTecnica] || {};
+        const color = (datosTecnica.tipo_logo && datosTecnica.tipo_logo.color) ? datosTecnica.tipo_logo.color : (tipo.color || '#333');
+        const imagenesTecnica = (datosTecnica.imagenes_data_urls || []).map(img => (img && typeof img === 'object' && img.data_url) ? img.data_url : img);
+        const ubicacionesTecnica = Array.isArray(datosTecnica.ubicaciones) ? datosTecnica.ubicaciones : [];
+
+        return `
+            <div class="tecnica-edit-block" data-tecnica="${nombreTecnica}" style="margin-bottom: 18px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 6px; background: white;">
+                <div style="font-weight: 700; margin-bottom: 10px; color: ${color};">${nombreTecnica}</div>
+
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333;">Ubicaciones (${nombreTecnica})</label>
+                    <textarea class="ubicaciones-tecnica" data-tecnica="${nombreTecnica}" rows="2" placeholder="Ej: PECHO, ESPALDA, MANGA" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; resize: vertical;">${ubicacionesTecnica.join(', ')}</textarea>
+                </div>
+
+                <div class="tecnica-imagenes-block" style="margin-bottom: 6px; display: ${ocultarImagenes ? 'none' : 'block'};">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: ${color};">Imágenes - ${nombreTecnica}</label>
+                    <div class="imagenes-preview" data-tecnica="${nombreTecnica}" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px;">
+                        ${imagenesTecnica.map((img, idx) => `
+                            <div style="position: relative;" class="imagen-item" data-tecnica="${nombreTecnica}" data-idx="${idx}">
+                                <img src="${img}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                                <button type="button" class="btn-eliminar-imagen" data-tecnica="${nombreTecnica}" data-idx="${idx}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="edit-dropzone" data-tecnica="${nombreTecnica}" style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 14px; text-align: center; background: #ffffff; cursor: pointer;">
+                        <div style="font-size: 1.2rem; margin-bottom: 6px;">📁</div>
+                        <div style="font-weight: 700; color: #334155;">Arrastra imágenes aquí o haz clic</div>
+                        <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">(solo imágenes, máximo 3)</div>
+                        <input type="file" class="input-imagenes" data-tecnica="${nombreTecnica}" accept="image/*" multiple style="display:none;" />
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Bind listeners de estas secciones (re-render -> re-bind)
+    agregarEventListenersEdicionPrendaTecnicas(prendaDiv, datosPrenda);
+}
+
+function agregarEventListenersEdicionPrendaTecnicas(prendaDiv, datosPrenda) {
+    if (!prendaDiv || !datosPrenda) return;
+
+    // Ubicaciones
+    prendaDiv.querySelectorAll('.ubicaciones-tecnica').forEach((textarea) => {
+        if (textarea.getAttribute('data-bound') === '1') return;
+        textarea.setAttribute('data-bound', '1');
+        textarea.addEventListener('input', () => {
+            const tecnica = textarea.getAttribute('data-tecnica');
+            if (!tecnica || !datosPrenda.tecnicas_imagenes || !datosPrenda.tecnicas_imagenes[tecnica]) return;
+            const ubicaciones = (textarea.value || '')
+                .split(',')
+                .map(u => u.trim().toUpperCase())
+                .filter(u => u.length > 0);
+            datosPrenda.tecnicas_imagenes[tecnica].ubicaciones = ubicaciones;
+        });
+    });
+
+    // Inputs imágenes (solo files)
+    prendaDiv.querySelectorAll('.input-imagenes').forEach((input) => {
+        if (input.getAttribute('data-bound') === '1') return;
+        input.setAttribute('data-bound', '1');
+
+        const nombreTecnica = input.getAttribute('data-tecnica');
+        const dropzone = prendaDiv.querySelector(`.edit-dropzone[data-tecnica="${nombreTecnica}"]`);
+
+        if (dropzone && dropzone.getAttribute('data-bound') !== '1') {
+            dropzone.setAttribute('data-bound', '1');
+            dropzone.addEventListener('click', () => input.click());
+
+            try {
+                adjuntarPasteHintEnDropzoneLogo(dropzone);
+            } catch (_) {}
+
+            dropzone.addEventListener('dragover', (ev) => {
+                ev.preventDefault();
+                dropzone.style.background = '#eff6ff';
+                dropzone.style.borderColor = '#2563eb';
+                try { limpiarPasteHintVisualLogo(dropzone); } catch (_) {}
+            });
+            dropzone.addEventListener('dragleave', () => {
+                dropzone.style.background = '#ffffff';
+                dropzone.style.borderColor = '#cbd5e1';
+            });
+            dropzone.addEventListener('drop', (ev) => {
+                ev.preventDefault();
+                dropzone.style.background = '#ffffff';
+                dropzone.style.borderColor = '#cbd5e1';
+                try { limpiarPasteHintVisualLogo(dropzone); } catch (_) {}
+                const files = Array.from((ev.dataTransfer && ev.dataTransfer.files) ? ev.dataTransfer.files : []);
+                if (files.length > 0) {
+                    try { input.value = ''; } catch (_) {}
+                    const dt = new DataTransfer();
+                    files.forEach(f => dt.items.add(f));
+                    input.files = dt.files;
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        }
+
+        input.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files || []);
+            files.forEach((file) => {
+                if (!file || !file.type || !file.type.startsWith('image/')) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    if (!datosPrenda.tecnicas_imagenes || !datosPrenda.tecnicas_imagenes[nombreTecnica]) return;
+                    const datosT = datosPrenda.tecnicas_imagenes[nombreTecnica];
+
+                    if (!Array.isArray(datosT.imagenes_data_urls)) datosT.imagenes_data_urls = [];
+                    if (!Array.isArray(datosT.imagenes_files_meta)) datosT.imagenes_files_meta = [];
+
+                    const dataUrl = event.target.result;
+                    datosT.imagenes_data_urls.push(dataUrl);
+                    datosT.imagenes_files_meta.push({ file, data_url: dataUrl });
+                    datosT.imagenes_files = (datosT.imagenes_files_meta || []).map(x => x.file).filter(f => f instanceof File);
+                    datosT.__touchedImagenes = true;
+
+                    renderizarBloquesTecnicasEdicion(prendaDiv, datosPrenda);
+                };
+                reader.readAsDataURL(file);
+            });
+            e.target.value = '';
+        });
+    });
+
+    // Botones eliminar imagen
+    prendaDiv.querySelectorAll('.btn-eliminar-imagen').forEach((btn) => {
+        if (btn.getAttribute('data-bound') === '1') return;
+        btn.setAttribute('data-bound', '1');
+
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const tecnica = btn.getAttribute('data-tecnica');
+            const idx = parseInt(btn.getAttribute('data-idx'), 10);
+            if (!tecnica || Number.isNaN(idx)) return;
+            if (!datosPrenda.tecnicas_imagenes || !datosPrenda.tecnicas_imagenes[tecnica]) return;
+            const datosT = datosPrenda.tecnicas_imagenes[tecnica];
+            const removed = (Array.isArray(datosT.imagenes_data_urls) ? datosT.imagenes_data_urls : [])[idx];
+            if (Array.isArray(datosT.imagenes_data_urls)) {
+                datosT.imagenes_data_urls.splice(idx, 1);
+            }
+
+            const removedId = removed && typeof removed === 'object' ? (removed.id || null) : null;
+            if (removedId) {
+                window.tecnicasFotosAEliminar = window.tecnicasFotosAEliminar || [];
+                if (!window.tecnicasFotosAEliminar.includes(removedId)) {
+                    window.tecnicasFotosAEliminar.push(removedId);
+                }
+            }
+
+            if (removed && Array.isArray(datosT.imagenes_files_meta)) {
+                const removedDataUrl = (removed && typeof removed === 'object') ? (removed.data_url || '') : removed;
+                datosT.imagenes_files_meta = datosT.imagenes_files_meta.filter(m => m && m.data_url !== removedDataUrl);
+                datosT.imagenes_files = (datosT.imagenes_files_meta || []).map(m => m.file).filter(f => f instanceof File);
+            }
+
+            datosT.__touchedImagenes = true;
+
+            renderizarBloquesTecnicasEdicion(prendaDiv, datosPrenda);
+        });
+    });
 }
 
 function agregarEventListenersEdicionPrenda(prendaDiv, datosPrenda) {
     // Ubicaciones por técnica (textarea por técnica)
     prendaDiv.querySelectorAll('.ubicaciones-tecnica').forEach(textarea => {
+        if (textarea.getAttribute('data-bound') === '1') return;
+        textarea.setAttribute('data-bound', '1');
         textarea.addEventListener('input', (e) => {
             const tecnica = textarea.getAttribute('data-tecnica');
             if (!tecnica || !datosPrenda.tecnicas_imagenes || !datosPrenda.tecnicas_imagenes[tecnica]) return;
@@ -2657,6 +3222,8 @@ function agregarEventListenersEdicionPrenda(prendaDiv, datosPrenda) {
     const inputsImagenes = prendaDiv.querySelectorAll('.input-imagenes');
     
     inputsImagenes.forEach(input => {
+        if (input.getAttribute('data-bound') === '1') return;
+        input.setAttribute('data-bound', '1');
         const nombreTecnica = input.getAttribute('data-tecnica');
         const bloque = input.closest('.tecnica-edit-block');
         const imagenesPreview = bloque ? bloque.querySelector(`.imagenes-preview[data-tecnica="${nombreTecnica}"]`) : null;
@@ -2721,6 +3288,8 @@ function agregarEventListenersEdicionPrenda(prendaDiv, datosPrenda) {
                 
                 // Agregar listeners a los nuevos botones de eliminar imagen
                 previewContainer.querySelectorAll('.btn-eliminar-imagen').forEach(btn => {
+                    if (btn.getAttribute('data-bound') === '1') return;
+                    btn.setAttribute('data-bound', '1');
                     btn.addEventListener('click', (e) => {
                         e.preventDefault();
                         const tecnica = btn.getAttribute('data-tecnica');
@@ -2758,6 +3327,8 @@ function agregarEventListenersEdicionPrenda(prendaDiv, datosPrenda) {
         const imagenesPreviewContainer = bloque ? bloque.querySelector(`.imagenes-preview[data-tecnica="${nombreTecnica}"]`) : null;
         if (imagenesPreviewContainer) {
             imagenesPreviewContainer.querySelectorAll('.btn-eliminar-imagen').forEach(btn => {
+                if (btn.getAttribute('data-bound') === '1') return;
+                btn.setAttribute('data-bound', '1');
                 btn.addEventListener('click', (e) => {
                     e.preventDefault();
                     const tecnica = btn.getAttribute('data-tecnica');
@@ -2803,6 +3374,80 @@ function agregarEventListenersEdicionPrenda(prendaDiv, datosPrenda) {
             });
         });
     }
+
+    // Agregar nuevo logo compartido desde edición
+    const btnAgregarLogoCompartidoEd = prendaDiv.querySelector('#editBtnAgregarLogoCompartido');
+    if (btnAgregarLogoCompartidoEd && btnAgregarLogoCompartidoEd.getAttribute('data-bound') !== '1') {
+        btnAgregarLogoCompartidoEd.setAttribute('data-bound', '1');
+        btnAgregarLogoCompartidoEd.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            if (typeof abrirModalLogoCompartido !== 'function') {
+                return;
+            }
+
+            // Armar lista de técnicas seleccionadas actuales (por tiposDisponibles)
+            const selectedIds = Array.isArray(window.tecnicasSeleccionadasEdicionIds)
+                ? window.tecnicasSeleccionadasEdicionIds.map(n => Number(n)).filter(n => !Number.isNaN(n))
+                : [];
+            const tecnicasSel = (Array.isArray(tiposDisponibles) ? tiposDisponibles : [])
+                .filter(t => t && selectedIds.includes(Number(t.id)))
+                .map(t => ({ id: t.id, nombre: t.nombre, color: t.color }));
+
+            // Contexto de logos compartidos (mismo formato que creación)
+            datosPrenda.logoCompartido = datosPrenda.logoCompartido || { enabled: true, items: {}, files: {} };
+            datosPrenda.logoCompartido.items = datosPrenda.logoCompartido.items || {};
+            datosPrenda.logoCompartido.files = datosPrenda.logoCompartido.files || {};
+            datosPrenda.logoCompartido.enabled = true;
+
+            const handler = (evt) => {
+                try {
+                    const d = evt && evt.detail ? evt.detail : null;
+                    if (!d || !d.clave || !(d.file instanceof File)) return;
+
+                    datosPrenda.logoCompartido.files[d.clave] = d.file;
+                    const tecnicasCompartidas = Array.isArray(d.tecnicas) ? d.tecnicas : d.clave.split('-').map(t => t.trim()).filter(Boolean);
+
+                    const reader = new FileReader();
+                    reader.onload = (e2) => {
+                        const url = e2.target.result;
+                        datosPrenda.logoCompartido.items[d.clave] = {
+                            tecnicasCompartidas,
+                            previewUrl: url
+                        };
+
+                        // Asegurar UI visible
+                        const chk = prendaDiv.querySelector('#editUsarLogoCompartido');
+                        const sec = prendaDiv.querySelector('#editSeccionLogoCompartido');
+                        if (chk) chk.checked = true;
+                        if (sec) sec.style.display = 'grid';
+                        datosPrenda.logoCompartido.enabled = true;
+
+                        renderizarLogosCompartidosEdicion(prendaDiv, datosPrenda);
+                    };
+                    reader.readAsDataURL(d.file);
+                } catch (_) {}
+            };
+
+            try {
+                document.addEventListener('logoCompartido:guardado', handler, { once: true });
+            } catch (_) {
+                // fallback
+                document.addEventListener('logoCompartido:guardado', handler);
+            }
+
+            // Pasar el DESTINO correcto (files) para que el modal guarde el archivo
+            abrirModalLogoCompartido(tecnicasSel, datosPrenda.logoCompartido.files);
+        });
+    }
+
+    // Permitir Ctrl+V en el input de reemplazo de cada logo compartido
+    prendaDiv.querySelectorAll('.edit-logo-compartido-inputwrap').forEach((wrap) => {
+        if (!wrap || wrap.getAttribute('data-paste-bound') === '1') return;
+        wrap.setAttribute('data-paste-bound', '1');
+        try {
+            adjuntarPasteHintEnDropzoneLogo(wrap);
+        } catch (_) {}
+    });
 
     // Reemplazo de logo compartido
     prendaDiv.querySelectorAll('.edit-input-logo-compartido').forEach(input => {

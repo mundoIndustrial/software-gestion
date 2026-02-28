@@ -175,6 +175,14 @@ class CotizacionBordadoController extends Controller
                 $clienteId = $request->input('cliente_id');
                 $nombreCliente = $request->input('cliente');
 
+                $especificaciones = $request->input('especificaciones', null);
+                if (is_string($especificaciones)) {
+                    $especificaciones = json_decode($especificaciones, true) ?? [];
+                }
+                if ($especificaciones !== null && !is_array($especificaciones)) {
+                    $especificaciones = [];
+                }
+
                 Log::info('Cliente recibido en updateBorrador', [
                     'cliente_id' => $clienteId,
                     'nombre_cliente' => $nombreCliente,
@@ -208,6 +216,17 @@ class CotizacionBordadoController extends Controller
                 if ($clienteId) {
                     $datosActualizar['cliente_id'] = $clienteId;
                 }
+
+                if ($request->has('especificaciones')) {
+                    $categoriasRequeridas = ['forma_pago', 'disponibilidad', 'regimen', 'se_ha_vendido', 'ultima_venta', 'flete'];
+                    foreach ($categoriasRequeridas as $categoria) {
+                        if (!isset($especificaciones[$categoria])) {
+                            $especificaciones[$categoria] = [];
+                        }
+                    }
+                    $datosActualizar['especificaciones'] = $especificaciones;
+                }
+
                 if ($esEnvio) {
                     $datosActualizar['numero_cotizacion'] = $numeroCotizacion;
                     $datosActualizar['es_borrador'] = false;
@@ -612,7 +631,7 @@ class CotizacionBordadoController extends Controller
                         'logo_cotizacion_id' => $logoCotizacionId,
                         'tipo_logo_id' => (int) $tipoLogoId,
                         'prenda_cot_id' => (int) $prendaCotId,
-                        'observaciones' => $p['observaciones'] ?? null,
+                        'observaciones' => (string) ($p['observaciones'] ?? ''),
                         'ubicaciones' => $p['ubicaciones'] ?? [],
                         'talla_cantidad' => $p['talla_cantidad'] ?? [],
                         'variaciones_prenda' => $p['variaciones_prenda'] ?? null,

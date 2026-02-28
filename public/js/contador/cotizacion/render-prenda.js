@@ -3,6 +3,14 @@
 
     const H = window.CotizacionModalHelpers;
 
+    const getPrendaIds = (prenda) => {
+        if (!prenda) return [];
+        if (Array.isArray(prenda.__prendaIds) && prenda.__prendaIds.length > 0) {
+            return prenda.__prendaIds.filter(Boolean);
+        }
+        return (prenda.id !== undefined && prenda.id !== null) ? [prenda.id] : [];
+    };
+
     function renderSelector({ esCombinada, esSoloLogoFinal, modo, hideSelector }) {
         if (!esCombinada || hideSelector || esSoloLogoFinal) return '';
 
@@ -53,9 +61,11 @@
             ? H.normalizarUrlLogo
             : ((u) => (u ? String(u).trim() : ''));
 
+        const prendaIds = getPrendaIds(prenda);
+
         if (payload && payload.logo_cotizacion && Array.isArray(payload.logo_cotizacion.tecnicas_prendas)) {
             payload.logo_cotizacion.tecnicas_prendas.forEach(tp => {
-                if (tp && tp.prenda_id === prenda.id && tp.fotos && tp.fotos.length > 0) {
+                if (tp && prendaIds.includes(tp.prenda_id) && tp.fotos && tp.fotos.length > 0) {
                     tp.fotos.forEach((foto) => {
                         if (!foto || !foto.url) return;
                         const urlKey = normalizarUrlLogo(foto.url) || String(foto.url);
@@ -112,7 +122,8 @@
             return '';
         }
 
-        const tecnicasPrendaArray = payload.logo_cotizacion.tecnicas_prendas.filter(tp => tp && tp.prenda_id === prenda.id);
+        const prendaIds = getPrendaIds(prenda);
+        const tecnicasPrendaArray = payload.logo_cotizacion.tecnicas_prendas.filter(tp => tp && prendaIds.includes(tp.prenda_id));
         if (!tecnicasPrendaArray || tecnicasPrendaArray.length === 0) {
             return '';
         }
@@ -335,8 +346,9 @@
         // En vista LOGO: mostrar SOLO las ubicaciones/técnicas de logo.
         // No usar la descripción concatenada de la prenda porque puede incluir reflectivo u otros textos.
         if (modo === 'logo') {
+            const prendaIds = getPrendaIds(prenda);
             const tecnicasPrendaArray = (payload.logo_cotizacion && Array.isArray(payload.logo_cotizacion.tecnicas_prendas))
-                ? payload.logo_cotizacion.tecnicas_prendas.filter(tp => tp && tp.prenda_id === prenda.id)
+                ? payload.logo_cotizacion.tecnicas_prendas.filter(tp => tp && prendaIds.includes(tp.prenda_id))
                 : [];
 
             if (!tecnicasPrendaArray || tecnicasPrendaArray.length === 0) {
@@ -422,8 +434,9 @@
 
         // Ubicaciones de logo asociadas a la prenda (si existen)
         try {
+            const prendaIds = getPrendaIds(prenda);
             const tecnicasPrendaArray = (payload && payload.logo_cotizacion && Array.isArray(payload.logo_cotizacion.tecnicas_prendas))
-                ? payload.logo_cotizacion.tecnicas_prendas.filter(tp => tp && tp.prenda_id === prenda.id)
+                ? payload.logo_cotizacion.tecnicas_prendas.filter(tp => tp && prendaIds.includes(tp.prenda_id))
                 : [];
             if (tecnicasPrendaArray.length > 0) {
                 const ubicacionesPorTecnica = {};
@@ -774,13 +787,31 @@
             return true;
         };
 
-        const prendasFiltradas = ctx.esSoloLogoFinal
+        let prendasFiltradas = ctx.esSoloLogoFinal
             ? prendas.filter(p => ctx.prendaTieneLogo(p))
             : (!ctx.esCombinada
                 ? prendas
                 : (ctx.modo === 'logo'
                     ? prendas.filter(p => ctx.prendaTieneLogo(p))
                     : prendas.filter(p => !esPrendaPaso3(p))));
+
+        if (ctx.modo === 'logo' && Array.isArray(prendasFiltradas) && prendasFiltradas.length > 0) {
+            const map = new Map();
+            prendasFiltradas.forEach((p) => {
+                if (!p) return;
+                const key = (p.nombre_prenda || '').toString().trim() || `__prenda_${p.id}`;
+                if (!map.has(key)) {
+                    const base = Object.assign({}, p);
+                    base.__prendaIds = getPrendaIds(p);
+                    map.set(key, base);
+                } else {
+                    const agg = map.get(key);
+                    const ids = new Set([...(agg.__prendaIds || []), ...getPrendaIds(p)]);
+                    agg.__prendaIds = Array.from(ids);
+                }
+            });
+            prendasFiltradas = Array.from(map.values());
+        }
 
         let html = '<div class="prendas-container" style="display: flex; flex-direction: column; gap: 1.5rem;">';
 
