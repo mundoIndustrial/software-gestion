@@ -44,7 +44,7 @@
                     </a>
                 </li>
                 <li class="menu-item">
-                    <a href="http://localhost:8000/gestion-bodega/pendiente-costura"
+                    <a href="{{ route('gestion-bodega.pendientes-costura') }}"
                        class="menu-link"
                        style="display:flex;align-items:center;gap:0.5rem;">
                         <i class="fas fa-box"></i>
