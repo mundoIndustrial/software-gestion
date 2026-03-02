@@ -27,11 +27,13 @@ final class AgregarPrendaCompletaDTO
         public readonly ?array $asignaciones_colores = null, // Colores por talla-género
         public readonly ?array $telas = null,                // Array de telas con detalles
         public readonly ?array $procesos = null,             // Procesos (bordado, estampado, etc)
+        public readonly ?array $variantes = null,            // Variantes (manga, broche, bolsillos)
+        public readonly ?array $fotosProcesoNuevo = null,    // Fotos de procesos nuevos [{idx => [{ruta_webp, ruta_original}]}]
         public readonly ?string $origen = null,              // Origen de la prenda
         public readonly ?string $novedad = null,              // Novedad/justificación del cambio
     ) {}
 
-    public static function fromRequest(int|string $pedidoId, array $data, ?array $imagenes = null, ?array $imagenesExistentes = null): self
+    public static function fromRequest(int|string $pedidoId, array $data, ?array $imagenes = null, ?array $imagenesExistentes = null, ?array $fotosProcesoNuevo = null): self
     {
         // Decodificar cantidad_talla si viene como JSON string
         $cantidadTalla = $data['cantidad_talla'] ?? null;
@@ -51,6 +53,12 @@ final class AgregarPrendaCompletaDTO
             $procesos = json_decode($procesos, true);
         }
 
+        // Decodificar variantes si viene como JSON string
+        $variantes = $data['variantes'] ?? null;
+        if (is_string($variantes)) {
+            $variantes = json_decode($variantes, true);
+        }
+
         return new self(
             pedidoId: $pedidoId,
             nombre_prenda: $data['nombre_prenda'] ?? throw new \InvalidArgumentException('nombre_prenda requerido'),
@@ -62,6 +70,8 @@ final class AgregarPrendaCompletaDTO
             asignaciones_colores: $asignacionesColores,
             telas: $data['telas'] ?? null,
             procesos: $procesos,
+            variantes: $variantes,
+            fotosProcesoNuevo: $fotosProcesoNuevo,
             origen: $data['origen'] ?? null,
             novedad: $data['novedad'] ?? null,
         );

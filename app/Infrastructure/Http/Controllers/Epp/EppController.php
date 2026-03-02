@@ -451,6 +451,7 @@ class EppController extends Controller
                 'epp_id' => 'required|integer|exists:epps,id',
                 'cantidad' => 'required|integer|min:1',
                 'observaciones' => 'nullable|string|max:1000',
+                'novedad' => 'nullable|string|max:2000',
                 'imagenes' => 'nullable|array|max:5',
                 'imagenes.*' => 'nullable|string',
             ]);
@@ -476,6 +477,60 @@ class EppController extends Controller
             );
 
             $resultado = $this->commandBus->execute($command);
+
+            // Guardar novedad si se proporcionó
+            if (!empty($validated['novedad'])) {
+                try {
+                    $usuario = null;
+                    
+                    // Intenta obtener usuario de múltiples formas
+                    if (auth('web')->check()) {
+                        $usuario = auth('web')->user();
+                    } elseif (auth()->check()) {
+                        $usuario = auth()->user();
+                    } elseif (\Illuminate\Support\Facades\Auth::user()) {
+                        $usuario = \Illuminate\Support\Facades\Auth::user();
+                    }
+                    
+                    $nombreUsuario = 'Sistema';
+                    $rol = 'Usuario';
+                    
+                    if ($usuario) {
+                        $nombreUsuario = $usuario->name ?? $usuario->email ?? 'Sistema';
+                        
+                        if (method_exists($usuario, 'getRoleNames')) {
+                            $roles = $usuario->getRoleNames();
+                            if ($roles && count($roles) > 0) {
+                                $rol = ucfirst($roles[0]);
+                            }
+                        } elseif (method_exists($usuario, 'roles')) {
+                            $primerRol = $usuario->roles()->first();
+                            if ($primerRol) {
+                                $rol = ucfirst($primerRol->name ?? 'Usuario');
+                            }
+                        }
+                    }
+
+                    $fechaFormato = now()->format('d/m/Y h:i A');
+                    $linea_novedad = "{$rol}-{$nombreUsuario}-{$fechaFormato} - AGREGAR EPP: {$validated['novedad']}";
+
+                    $pedido = \App\Models\PedidoProduccion::find($pedidoId);
+                    if ($pedido) {
+                        $pedido->novedades = !empty($pedido->novedades)
+                            ? $pedido->novedades . "\n\n" . $linea_novedad
+                            : $linea_novedad;
+                        $pedido->save();
+                        \Log::info('[EppController] Novedad de agregar EPP registrada', [
+                            'pedidoId' => $pedidoId,
+                            'novedad' => $linea_novedad,
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('[EppController] Error guardando novedad al agregar EPP', [
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
 
             return response()->json($resultado, 201);
         } catch (\DomainException $e) {

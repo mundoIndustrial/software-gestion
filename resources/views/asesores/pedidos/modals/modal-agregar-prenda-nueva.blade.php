@@ -26,7 +26,7 @@
                                 <label for="nueva-prenda-nombre" class="form-label-primary">
                                     <span class="material-symbols-rounded">checkroom</span>NOMBRE DE LA PRENDA *
                                 </label>
-                                <input type="text" id="nueva-prenda-nombre" required placeholder="Ej: CAMISA DRILL, POLO, PANTALÓN..." class="form-input" onkeyup="this.value = this.value.toUpperCase(); cargarPrendasDatalist();" style="text-transform: uppercase;" list="lista-prendas-autocomplete">
+                                <input type="text" id="nueva-prenda-nombre" required placeholder="Ej: CAMISA DRILL, POLO, PANTALÓN..." class="form-input" onkeyup="this.value = this.value.toUpperCase(); if(typeof cargarPrendasDatalist==='function') cargarPrendasDatalist();" style="text-transform: uppercase;" list="lista-prendas-autocomplete">
                                 <datalist id="lista-prendas-autocomplete">
                                     <!-- Las opciones se cargarán dinámicamente desde el JavaScript -->
                                 </datalist>

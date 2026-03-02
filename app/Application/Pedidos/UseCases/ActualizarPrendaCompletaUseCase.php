@@ -5,6 +5,7 @@ namespace App\Application\Pedidos\UseCases;
 use App\Application\Pedidos\DTOs\ActualizarPrendaCompletaDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\PrendaPedido;
+use App\Models\PrendaVariantePed;
 use App\Models\PedidosProcesosPrendaDetalle;
 use App\Models\TipoProceso;
 
@@ -302,15 +303,15 @@ final class ActualizarPrendaCompletaUseCase
             'tallas_nuevas' => $tallasNuevas
         ]);
 
-        // SELECTIVO: Solo eliminar tallas de géneros que el usuario envió con datos
-        // Tallas de géneros no enviados se preservan intactas
+        // FULL REPLACE: El frontend siempre envía el estado COMPLETO de tallas.
+        // Cualquier talla existente que NO esté en el nuevo set debe eliminarse,
+        // incluyendo tallas de géneros que el usuario eliminó del formulario.
         foreach ($tallasExistentes as $key => $tallaRecord) {
-            $generoExistente = $tallaRecord->genero;
-            // Solo tocar si el género fue enviado con datos
-            if (in_array($generoExistente, $generosConDatos) && !isset($tallasNuevas[$key])) {
-                \Log::debug('[ActualizarPrendaCompletaUseCase] Eliminando talla de género modificado', [
+            if (!isset($tallasNuevas[$key])) {
+                \Log::debug('[ActualizarPrendaCompletaUseCase] Eliminando talla no presente en payload', [
                     'key' => $key,
                     'talla_id' => $tallaRecord->id,
+                    'genero' => $tallaRecord->genero,
                     'colores_asociados_count' => $tallaRecord->coloresAsignados()->count()
                 ]);
                 
@@ -577,34 +578,49 @@ final class ActualizarPrendaCompletaUseCase
             'variantes' => $variantes,
         ]);
 
-        // ACTUALIZACIÓN SELECTIVA
+        // ACTUALIZACIÓN DIRECTA con DB::table para evitar problemas de dirty-checking de Eloquent
         $varianteExistente = $prenda->variantes()->first();
-        if ($varianteExistente) {
-            foreach ($variantes as $variante) {
-                if (!is_array($variante)) continue;
-                // Usar array_key_exists para detectar campos enviados (incluso si son null)
-                // Si el campo existe en el payload → actualizarlo (incluso a null = usuario lo desmarcó)
-                // Si el campo NO existe en el payload → no tocarlo
-                $upd = [];
-                if (array_key_exists("tipo_manga_id", $variante)) $upd["tipo_manga_id"] = $variante["tipo_manga_id"];
-                if (array_key_exists("tipo_broche_boton_id", $variante)) $upd["tipo_broche_boton_id"] = $variante["tipo_broche_boton_id"];
-                if (array_key_exists("manga_obs", $variante)) $upd["manga_obs"] = $variante["manga_obs"];
-                if (array_key_exists("broche_boton_obs", $variante)) $upd["broche_boton_obs"] = $variante["broche_boton_obs"];
-                if (array_key_exists("tiene_bolsillos", $variante)) $upd["tiene_bolsillos"] = $variante["tiene_bolsillos"];
-                if (array_key_exists("bolsillos_obs", $variante)) $upd["bolsillos_obs"] = $variante["bolsillos_obs"];
-                if (!empty($upd)) $varianteExistente->update($upd);
-            }
-        } else {
-            foreach ($variantes as $variante) {
-                if (!is_array($variante)) continue;
-                $prenda->variantes()->create([
-                    'tipo_manga_id' => $variante['tipo_manga_id'] ?? null,
-                    'tipo_broche_boton_id' => $variante['tipo_broche_boton_id'] ?? null,
-                    'manga_obs' => $variante['manga_obs'] ?? null,
-                    'broche_boton_obs' => $variante['broche_boton_obs'] ?? null,
-                    'tiene_bolsillos' => $variante['tiene_bolsillos'] ?? false,
-                    'bolsillos_obs' => $variante['bolsillos_obs'] ?? null,
+        foreach ($variantes as $variante) {
+            if (!is_array($variante)) continue;
+
+            $upd = [];
+            if (array_key_exists('tipo_manga_id', $variante))        $upd['tipo_manga_id']        = $variante['tipo_manga_id'];
+            if (array_key_exists('tipo_broche_boton_id', $variante)) $upd['tipo_broche_boton_id'] = $variante['tipo_broche_boton_id'];
+            if (array_key_exists('manga_obs', $variante))            $upd['manga_obs']            = $variante['manga_obs'];
+            if (array_key_exists('broche_boton_obs', $variante))     $upd['broche_boton_obs']     = $variante['broche_boton_obs'];
+            if (array_key_exists('tiene_bolsillos', $variante))      $upd['tiene_bolsillos']      = $variante['tiene_bolsillos'];
+            if (array_key_exists('bolsillos_obs', $variante))        $upd['bolsillos_obs']        = $variante['bolsillos_obs'];
+
+            if (empty($upd)) continue;
+
+            $upd['updated_at'] = now();
+
+            if ($varianteExistente) {
+                // UPDATE directo a DB para garantizar persistencia
+                $filasAfectadas = \DB::table('prenda_pedido_variantes')
+                    ->where('id', $varianteExistente->id)
+                    ->update($upd);
+
+                \Log::info('[ActualizarPrendaCompletaUseCase] Variante ACTUALIZADA via DB::table', [
+                    'variante_id'    => $varianteExistente->id,
+                    'prenda_id'      => $prenda->id,
+                    'campos'         => array_keys($upd),
+                    'valores'        => $upd,
+                    'filas_afectadas' => $filasAfectadas,
                 ]);
+            } else {
+                // CREAR nueva variante
+                $upd['prenda_pedido_id'] = $prenda->id;
+                $upd['created_at'] = now();
+                $nuevoId = \DB::table('prenda_pedido_variantes')->insertGetId($upd);
+
+                \Log::info('[ActualizarPrendaCompletaUseCase] Variante CREADA via DB::table', [
+                    'nuevo_id'  => $nuevoId,
+                    'prenda_id' => $prenda->id,
+                    'campos'    => array_keys($upd),
+                ]);
+                // Usar esta nueva variante para siguientes iteraciones
+                $varianteExistente = PrendaVariantePed::find($nuevoId);
             }
         }
     }

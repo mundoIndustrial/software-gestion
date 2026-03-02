@@ -576,7 +576,9 @@ class InvoiceRenderer {
                 specs.push(`<div><strong>Manga:</strong> ${manga}${mangaObs ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${mangaObs})</span>` : ''}</div>`);
             }
             if (broche) {
-                specs.push(`<div><strong>Botón:</strong> Sí${brocheObs ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${brocheObs})</span>` : ''}</div>`);
+                // Usar el nombre real del tipo (Broche/Botón) en vez de hardcodear "Botón"
+                const brocheLabel = typeof broche === 'string' ? broche : 'Broche/Botón';
+                specs.push(`<div><strong>${brocheLabel}:</strong> Sí${brocheObs ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${brocheObs})</span>` : ''}</div>`);
             }
             if (tieneBolsillos) {
                 specs.push(`<div><strong>Bolsillo:</strong> Sí${bolsillosObs ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${bolsillosObs})</span>` : ''}</div>`);

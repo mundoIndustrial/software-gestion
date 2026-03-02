@@ -524,7 +524,7 @@ Route::middleware('api')->prefix('pedidos/{pedido}/epps')->name('pedidos.epps.')
 Route::middleware('api')->get('pedidos/{pedidoId}/epp', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'obtenerDelPedido'])
     ->name('pedidos.epp.obtener');
 
-Route::middleware('api')->post('pedidos/{pedidoId}/epp/agregar', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'agregar'])
+Route::middleware(['web'])->post('pedidos/{pedidoId}/epp/agregar', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'agregar'])
     ->name('pedidos.epp.agregar');
 
 Route::middleware('api')->delete('pedidos/{pedidoId}/epp/{eppId}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'eliminar'])

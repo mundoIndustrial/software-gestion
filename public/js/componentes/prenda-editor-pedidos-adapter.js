@@ -169,7 +169,7 @@
         // Limpiar arrays temporales
         window.telasAgregadas = [];
         window.telasCreacion = [];
-        window.tallasRelacionales = null;
+        window.tallasRelacionales = { DAMA: {}, CABALLERO: {}, UNISEX: {}, SOBREMEDIDA: {} };
         window.procesosSeleccionados = [];
 
         // Resetear formulario
@@ -271,123 +271,26 @@
      * @private
      */
     function _recolectarDatosFormulario(prendaIndex) {
-        // Intentar usar PrendaFormCollector si está disponible
-        if (typeof PrendaFormCollector !== 'undefined') {
-            try {
-                const collector = new PrendaFormCollector();
-                // Crear un notificationService simple basado en SweetAlert
-                collector.setNotificationService({
-                    error: function(msg) {
-                        if (typeof Swal !== 'undefined') {
-                            Swal.fire('Validación', msg, 'warning');
-                        }
-                    }
-                });
-                const datos = collector.construirPrendaDesdeFormulario(
-                    prendaIndex,
-                    window.datosEdicionPedido?.prendas || []
-                );
-                return datos;
-            } catch (e) {
-                console.error('[PedidosAdapter] Error en PrendaFormCollector:', e);
-            }
-        }
-
-        // Fallback: recolectar TODOS los campos manualmente
-        const nombre = document.getElementById('nueva-prenda-nombre')?.value?.trim();
-        const descripcion = document.getElementById('nueva-prenda-descripcion')?.value?.trim();
-        const origenSelect = document.getElementById('nueva-prenda-origen-select')?.value || 'bodega';
-
-        if (!nombre) {
+        if (typeof PrendaFormCollector === 'undefined') {
+            console.error('[PedidosAdapter] PrendaFormCollector no está cargado. Es una dependencia requerida.');
             if (typeof Swal !== 'undefined') {
-                Swal.fire('Validación', 'El nombre de la prenda es requerido', 'warning');
+                Swal.fire('Error', 'Componente PrendaFormCollector no disponible. Recarga la página.', 'error');
             }
             return null;
         }
 
-        // Recolectar variantes del DOM
-        const variantes = _recolectarVariantesDelDOM();
-
-        // Recolectar imágenes del storage
-        let imagenesStorage = window.imagenesPrendaStorage?.obtenerImagenes?.() || [];
-        
-        // FALLBACK: Si el storage está vacío pero hay snapshot (imágenes originales de BD),
-        // usar el snapshot. Esto protege contra resets accidentales del storage.
-        if (imagenesStorage.length === 0 && window.imagenesPrendaStorage?.snapshotOriginal?.length > 0) {
-            console.log('[PedidosAdapter] ⚠️ Storage vacío pero snapshot tiene', window.imagenesPrendaStorage.snapshotOriginal.length, 'imágenes - usando snapshot como fallback');
-            imagenesStorage = window.imagenesPrendaStorage.snapshotOriginal;
-        }
-        
-        const imagenes = imagenesStorage.map(img => {
-            if (img instanceof File) return img;
-            if (img?.file instanceof File) return { file: img.file, previewUrl: img.previewUrl, nombre: img.nombre };
-            if (img?.url?.startsWith('/')) return { url: img.url, id: img.id, urlDesdeDB: true };
-            if (img?.ruta?.startsWith('/')) return { ruta: img.ruta, id: img.id, urlDesdeDB: true };
-            if (img?.previewUrl?.startsWith('/storage/')) return { url: img.previewUrl, id: img.id, urlDesdeDB: true };
-            return img;
-        });
-
-        // Deep copy de procesos
-        let procesos = {};
-        if (window.procesosSeleccionados && typeof window.procesosSeleccionados === 'object') {
-            Object.entries(window.procesosSeleccionados).forEach(([tipo, proc]) => {
-                procesos[tipo] = { ...proc };
-            });
-        }
-
-        return {
-            nombre_prenda: nombre,
-            nombre: nombre,
-            descripcion: descripcion,
-            origen: origenSelect,
-            de_bodega: origenSelect === 'bodega' ? 1 : 0,
-            tallas: window.tallasRelacionales || {},
-            procesos: procesos,
-            telas: window.telasCreacion || window.telasAgregadas || [],
-            variantes: variantes,
-            imagenes: imagenes
-        };
-    }
-
-    /**
-     * Recolectar variantes (manga, bolsillos, broche) directamente del DOM
-     * @private
-     */
-    function _recolectarVariantesDelDOM() {
-        const variantes = {};
-        const checkManga = document.getElementById('aplica-manga');
-        if (checkManga && checkManga.checked) {
-            const mangaInput = document.getElementById('manga-input');
-            const mangaObs = document.getElementById('manga-obs');
-            variantes.tipo_manga = mangaInput?.value?.trim() || '';
-            variantes.obs_manga = mangaObs?.value || '';
-            if (variantes.tipo_manga) {
-                const datalist = document.getElementById('opciones-manga');
-                if (datalist) {
-                    for (let opt of datalist.options) {
-                        if (opt.value.toLowerCase() === variantes.tipo_manga.toLowerCase()) {
-                            variantes.tipo_manga_id = parseInt(opt.dataset.id);
-                            break;
-                        }
-                    }
+        const collector = new PrendaFormCollector();
+        collector.setNotificationService({
+            error: function(msg) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Validación', msg, 'warning');
                 }
             }
-        }
-        const checkBolsillos = document.getElementById('aplica-bolsillos');
-        if (checkBolsillos && checkBolsillos.checked) {
-            variantes.tiene_bolsillos = true;
-            variantes.obs_bolsillos = document.getElementById('bolsillos-obs')?.value || '';
-        }
-        const checkBroche = document.getElementById('aplica-broche');
-        if (checkBroche && checkBroche.checked) {
-            const brocheInput = document.getElementById('broche-input');
-            variantes.tipo_broche = brocheInput?.value || '';
-            variantes.obs_broche = document.getElementById('broche-obs')?.value || '';
-            const bVal = brocheInput?.value?.toLowerCase() || '';
-            if (bVal === 'broche') variantes.tipo_broche_boton_id = 1;
-            else if (bVal === 'boton') variantes.tipo_broche_boton_id = 2;
-        }
-        return variantes;
+        });
+        return collector.construirPrendaDesdeFormulario(
+            prendaIndex,
+            window.datosEdicionPedido?.prendas || []
+        );
     }
 
     /**

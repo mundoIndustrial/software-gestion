@@ -249,7 +249,7 @@
             window.telasAgregadas = [];
             window.telasCreacion = [];
             window.imagenesTelaModalNueva = [];
-            window.tallasRelacionales = null;
+            window.tallasRelacionales = { DAMA: {}, CABALLERO: {}, UNISEX: {}, SOBREMEDIDA: {} };
             window.procesosSeleccionados = {};
             window.cantidadSoloSeleccionada = null;
             if (window.imagenesPrendaStorage && typeof window.imagenesPrendaStorage.limpiar === 'function') {

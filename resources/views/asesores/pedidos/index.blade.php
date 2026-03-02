@@ -162,6 +162,9 @@
 <!-- Componente: Modal Editar Prenda Específica -->
 @include('asesores.pedidos.components.modal-editar-prenda')
 
+<!-- Componente: Modal Agregar EPP (mismo modal que en creación) -->
+@include('asesores.pedidos.modals.modal-agregar-epp')
+
 <!-- Componente: Modal Editar EPP -->
 @include('asesores.pedidos.components.modal-editar-epp')
 

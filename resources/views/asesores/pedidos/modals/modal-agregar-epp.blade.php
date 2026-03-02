@@ -1292,6 +1292,9 @@ function cerrarModalAgregarEPPConfirmado() {
     document.body.style.overflow = 'auto';
     eppAgregadosList = []; // Limpiar lista al cerrar
 
+    // Limpiar flag de agregar EPP a pedido existente
+    window.__EPP_AGREGAR_PEDIDO_EXISTENTE__ = null;
+
     // Siempre limpiar estado de edición y formulario al cerrar/cancelar
     eppEnEdicion = null;
     window.eppEnEdicion = null;
@@ -1392,12 +1395,13 @@ function resetearModalAgregarEPP() {
         console.log('📖 [resetearModalAgregarEPP] Mensaje inicial de drag-drop restaurado');
     }
     
-    // BOTONES DEL FOOTER
-    document.getElementById('btnAgregarALista').disabled = true;
-    document.getElementById('btnFinalizarAgregarEPP').disabled = true;
-    document.getElementById('btnFinalizarAgregarEPP').style.setProperty('display', 'flex', 'important');
-    document.getElementById('btnGuardarCambiosEPP').disabled = true;
-    document.getElementById('btnGuardarCambiosEPP').style.setProperty('display', 'none', 'important');
+    // BOTONES DEL FOOTER (con null checks para evitar crash en contexto de edición)
+    const btnAgregar = document.getElementById('btnAgregarALista');
+    const btnFinalizar = document.getElementById('btnFinalizarAgregarEPP');
+    const btnGuardar = document.getElementById('btnGuardarCambiosEPP');
+    if (btnAgregar) btnAgregar.disabled = true;
+    if (btnFinalizar) { btnFinalizar.disabled = true; btnFinalizar.style.setProperty('display', 'flex', 'important'); }
+    if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.style.setProperty('display', 'none', 'important'); }
     
     console.log('📖 [resetearModalAgregarEPP] Botones reseteados');
     
@@ -2262,6 +2266,63 @@ async function finalizarAgregarEPP() {
         return;
     }
 
+    // ==========================================
+    // MODO EDICIÓN: Guardar directamente vía API
+    // ==========================================
+    const pedidoIdExistente = window.__EPP_AGREGAR_PEDIDO_EXISTENTE__;
+    if (pedidoIdExistente) {
+        console.log('[finalizarAgregarEPP] MODO EDICIÓN - Pidiendo novedad antes de guardar');
+        
+        // Pedir novedad/justificación del cambio
+        // Inyectar CSS para z-index encima del modal EPP (z-index 9999999)
+        let novedadStyle = document.getElementById('swal-epp-novedad-zindex');
+        if (!novedadStyle) {
+            novedadStyle = document.createElement('style');
+            novedadStyle.id = 'swal-epp-novedad-zindex';
+            novedadStyle.textContent = `
+                .swal-epp-novedad-container {
+                    z-index: 20000000 !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    position: fixed !important;
+                }
+                .swal-epp-novedad-container .swal2-popup {
+                    margin: auto !important;
+                }
+            `;
+            document.head.appendChild(novedadStyle);
+        }
+
+        const novedadResult = await Swal.fire({
+            title: 'Novedad del cambio',
+            input: 'textarea',
+            inputLabel: '¿Por qué agregaste estos EPP?',
+            inputPlaceholder: 'Describe brevemente el motivo...',
+            inputAttributes: { 'aria-label': 'Novedad del cambio' },
+            showCancelButton: true,
+            confirmButtonText: '💾 Guardar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#10b981',
+            customClass: { container: 'swal-epp-novedad-container' },
+            inputValidator: (value) => {
+                if (!value || !value.trim()) {
+                    return 'Debes ingresar una novedad del cambio';
+                }
+            }
+        });
+
+        if (!novedadResult.isConfirmed) {
+            console.log('[finalizarAgregarEPP] Usuario canceló la novedad');
+            return;
+        }
+
+        const novedad = novedadResult.value.trim();
+        console.log('[finalizarAgregarEPP] MODO EDICIÓN - Guardando vía API para pedido:', pedidoIdExistente, 'novedad:', novedad);
+        await _guardarEPPsViaAPI(pedidoIdExistente, novedad);
+        return;
+    }
+
     console.log(' [finalizarAgregarEPP] Finalizando con EPP:', eppAgregadosList);
     
     // Inicializar window.itemsPedido si no existe
@@ -2418,6 +2479,127 @@ async function finalizarAgregarEPP() {
                 container: 'toast-epp-container'
             }
         });
+    }
+}
+
+/**
+ * Guardar EPPs directamente vía API cuando se edita un pedido existente
+ * Se llama desde finalizarAgregarEPP() cuando __EPP_AGREGAR_PEDIDO_EXISTENTE__ está activo
+ */
+async function _guardarEPPsViaAPI(pedidoId, novedad = '') {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    let exitosos = 0;
+    let errores = [];
+
+    // Mostrar indicador de carga
+    Swal.fire({
+        title: 'Guardando EPPs...',
+        text: `Guardando ${eppAgregadosList.length} EPP(s) en el pedido`,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    for (let idx = 0; idx < eppAgregadosList.length; idx++) {
+        const epp = eppAgregadosList[idx];
+        try {
+            const formData = new FormData();
+            formData.append('epp_id', epp.id);
+            formData.append('cantidad', epp.cantidad || 1);
+            formData.append('observaciones', epp.observaciones || '');
+            // Solo enviar novedad en el PRIMER EPP para no duplicar
+            if (novedad && idx === 0) {
+                formData.append('novedad', novedad);
+            }
+
+            // Adjuntar imágenes como archivos si existen
+            if (epp.imagenes && epp.imagenes.length > 0) {
+                for (let i = 0; i < epp.imagenes.length; i++) {
+                    const img = epp.imagenes[i];
+                    if (img.file instanceof File) {
+                        formData.append(`imagenes[${i}]`, img.file, img.file.name);
+                    } else if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
+                        // Intentar obtener el archivo desde el cache global
+                        const cachedFile = window._eppFilesCache?.[img.previewUrl];
+                        if (cachedFile instanceof File) {
+                            formData.append(`imagenes[${i}]`, cachedFile, cachedFile.name);
+                        }
+                    }
+                }
+            }
+
+            console.log(`[_guardarEPPsViaAPI] Enviando EPP "${epp.nombre_completo}" al pedido ${pedidoId}`);
+
+            const response = await fetch(`/api/pedidos/${pedidoId}/epp/agregar`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `Error HTTP ${response.status}`);
+            }
+
+            const resultado = await response.json();
+            console.log(`[_guardarEPPsViaAPI] ✅ EPP "${epp.nombre_completo}" guardado:`, resultado);
+            exitosos++;
+        } catch (error) {
+            console.error(`[_guardarEPPsViaAPI] ❌ Error guardando EPP "${epp.nombre_completo}":`, error);
+            errores.push({ nombre: epp.nombre_completo, error: error.message });
+        }
+    }
+
+    // Cerrar loading
+    Swal.close();
+
+    // Limpiar flag y lista
+    window.__EPP_AGREGAR_PEDIDO_EXISTENTE__ = null;
+    eppAgregadosList = [];
+
+    // Cerrar modal
+    cerrarModalAgregarEPPConfirmado();
+
+    if (errores.length > 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Guardado parcial',
+            html: `Se guardaron ${exitosos} EPP(s) correctamente.<br>Errores: ${errores.map(e => e.nombre + ': ' + e.error).join('<br>')}`,
+        });
+    } else {
+        Swal.fire({
+            icon: 'success',
+            title: 'EPP(s) agregado(s)',
+            text: `Se agregaron ${exitosos} EPP(s) al pedido correctamente`,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000
+        });
+    }
+
+    // Recargar datos del pedido para reflejar los EPPs agregados
+    try {
+        if (window.datosEdicionPedido && typeof window.abrirEditarEPP === 'function') {
+            // Recargar datos del pedido vía fetch
+            const pedidoResponse = await fetch(`/api/pedidos/${pedidoId}`, {
+                headers: { 'Accept': 'application/json' }
+            });
+            if (pedidoResponse.ok) {
+                const pedidoData = await pedidoResponse.json();
+                if (pedidoData.epps || pedidoData.epps_transformados) {
+                    window.datosEdicionPedido.epps = pedidoData.epps_transformados || pedidoData.epps || [];
+                }
+                console.log('[_guardarEPPsViaAPI] Datos del pedido actualizados');
+            }
+            // Re-abrir la vista de EPPs del pedido
+            abrirEditarEPP();
+        }
+    } catch (e) {
+        console.warn('[_guardarEPPsViaAPI] No se pudieron recargar los datos del pedido:', e);
     }
 }
 

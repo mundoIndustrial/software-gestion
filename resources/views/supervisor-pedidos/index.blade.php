@@ -1432,6 +1432,9 @@
 @include('asesores.pedidos.components.modal-agregar-prenda')
 @include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
 @include('asesores.pedidos.components.modal-editar-prenda')
+<!-- Modal Agregar EPP (mismo modal que en creación) -->
+@include('asesores.pedidos.modals.modal-agregar-epp')
+
 @include('asesores.pedidos.components.modal-editar-epp')
 
 <!-- Modal para Seleccionar Tallas -->

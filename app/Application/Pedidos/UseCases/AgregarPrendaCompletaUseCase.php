@@ -6,6 +6,7 @@ use App\Application\Pedidos\DTOs\AgregarPrendaCompletaDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Domain\Pedidos\Repositories\PedidoRepository;
 use App\Models\PrendaPedido;
+use App\Models\TipoProceso;
 
 /**
  * Use Case para agregar una prenda al pedido con fotos y tallas
@@ -83,18 +84,119 @@ final class AgregarPrendaCompletaUseCase
             }
         }
 
-        // 3. Agregar tallas si existen
-        if (!empty($dto->tallas)) {
-            foreach ($dto->tallas as $talla) {
-                $prenda->tallas()->create([
-                    'genero' => $talla['genero'],
-                    'talla' => $talla['talla'],
-                    'cantidad' => $talla['cantidad'] ?? 0,
+        // 3. Agregar tallas si existen (cantidad_talla viene como estructura relacional)
+        // Estructura: { "DAMA": {"S": 20, "M": 15}, "CABALLERO": {"20": 10}, ... }
+        if (!empty($dto->cantidad_talla)) {
+            foreach ($dto->cantidad_talla as $genero => $tallasDelGenero) {
+                if (!is_array($tallasDelGenero) || empty($tallasDelGenero)) {
+                    continue;
+                }
+                foreach ($tallasDelGenero as $talla => $cantidad) {
+                    $cantidadInt = (int)($cantidad ?? 0);
+                    if ($cantidadInt > 0) {
+                        $prenda->tallas()->create([
+                            'genero' => $genero,
+                            'talla' => (string)$talla,
+                            'cantidad' => $cantidadInt,
+                        ]);
+                    }
+                }
+            }
+        }
+
+        // 4. Agregar variantes si existen (manga, broche/botón, bolsillos)
+        if (!empty($dto->variantes) && is_array($dto->variantes)) {
+            $variantes = $dto->variantes;
+            $varianteData = [
+                'tipo_manga_id'        => $variantes['tipo_manga_id'] ?? null,
+                'tipo_broche_boton_id' => $variantes['tipo_broche_boton_id'] ?? $variantes['tipo_broche_id'] ?? null,
+                'manga_obs'            => $variantes['obs_manga'] ?? $variantes['manga_obs'] ?? null,
+                'broche_boton_obs'     => $variantes['obs_broche'] ?? $variantes['broche_boton_obs'] ?? null,
+                'tiene_bolsillos'      => $variantes['tiene_bolsillos'] ?? false,
+                'bolsillos_obs'        => $variantes['obs_bolsillos'] ?? $variantes['bolsillos_obs'] ?? null,
+            ];
+
+            $prenda->variantes()->create($varianteData);
+
+            \Log::info('[AgregarPrendaCompletaUseCase] Variante creada', [
+                'prenda_id' => $prenda->id,
+                'variante' => $varianteData,
+            ]);
+        }
+
+        // 5. Agregar procesos si existen (bordado, estampado, reflectivo, etc.)
+        if (!empty($dto->procesos) && is_array($dto->procesos)) {
+            foreach ($dto->procesos as $procesoIdx => $proceso) {
+                // Resolver tipo_proceso_id: puede venir directo o buscarse por slug/nombre
+                $tipoProceso = $proceso['tipo_proceso_id'] ?? null;
+
+                if (!$tipoProceso && isset($proceso['tipo'])) {
+                    $tipoProcesoModel = TipoProceso::where('slug', strtolower($proceso['tipo']))
+                        ->orWhere('nombre', $proceso['tipo'])
+                        ->first();
+                    if ($tipoProcesoModel) {
+                        $tipoProceso = $tipoProcesoModel->id;
+                    } else {
+                        \Log::warning('[AgregarPrendaCompletaUseCase] Tipo de proceso no encontrado', [
+                            'tipo_buscado' => $proceso['tipo'],
+                            'prenda_id' => $prenda->id,
+                        ]);
+                        continue;
+                    }
+                }
+
+                if (!$tipoProceso) continue;
+
+                // Decodificar ubicaciones
+                $ubicaciones = $proceso['ubicaciones'] ?? null;
+                if (is_string($ubicaciones)) {
+                    $ubicaciones = json_decode($ubicaciones, true);
+                }
+
+                $procesoCreado = $prenda->procesos()->create([
+                    'tipo_proceso_id' => $tipoProceso,
+                    'ubicaciones' => !empty($ubicaciones) ? json_encode($ubicaciones) : json_encode([]),
+                    'observaciones' => $proceso['observaciones'] ?? '',
+                    'estado' => $proceso['estado'] ?? 'PENDIENTE',
+                ]);
+
+                // Crear tallas del proceso si existen
+                if (isset($proceso['tallas']) && is_array($proceso['tallas']) && !empty($proceso['tallas'])) {
+                    foreach ($proceso['tallas'] as $genero => $tallas) {
+                        if (!is_array($tallas)) continue;
+                        foreach ($tallas as $talla => $cantidad) {
+                            if ((int)$cantidad > 0) {
+                                $procesoCreado->tallas()->create([
+                                    'genero' => strtoupper($genero),
+                                    'talla' => strtoupper((string)$talla),
+                                    'cantidad' => (int)$cantidad,
+                                ]);
+                            }
+                        }
+                    }
+                }
+
+                // Agregar fotos del proceso si existen
+                if (!empty($dto->fotosProcesoNuevo) && isset($dto->fotosProcesoNuevo[$procesoIdx])) {
+                    foreach ($dto->fotosProcesoNuevo[$procesoIdx] as $rutasFoto) {
+                        $procesoCreado->imagenes()->create([
+                            'ruta_original' => $rutasFoto['ruta_original'] ?? null,
+                            'ruta_webp' => $rutasFoto['ruta_webp'] ?? $rutasFoto['ruta_original'] ?? null,
+                            'orden' => 1,
+                        ]);
+                    }
+                }
+
+                \Log::info('[AgregarPrendaCompletaUseCase] Proceso creado', [
+                    'prenda_id' => $prenda->id,
+                    'proceso_id' => $procesoCreado->id,
+                    'tipo_proceso_id' => $tipoProceso,
+                    'tipo' => $proceso['tipo'] ?? 'N/A',
                 ]);
             }
         }
 
-        // 4. Guardar novedad en pedidos_produccion.novedades
+        // 6. Guardar novedad en pedidos_produccion.novedades
         $this->guardarNovedad($prenda, $dto);
 
         return $prenda;

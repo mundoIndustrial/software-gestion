@@ -23,10 +23,10 @@ interface PedidoEppRepositoryInterface
     public function agregarEppAlPedido(
         int $pedidoId,
         int $eppId,
-        string $talla,
         int $cantidad,
-        ?string $observaciones = null
-    ): void;
+        ?string $observaciones = null,
+        array $imagenes = []
+    ): array;
 
     /**
      * Actualizar EPP en pedido

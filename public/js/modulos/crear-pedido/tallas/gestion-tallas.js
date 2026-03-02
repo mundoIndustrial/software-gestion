@@ -21,12 +21,21 @@ window.tallasRelacionales = window.tallasRelacionales || {
     SOBREMEDIDA: {}
 };
 
-// Cache de catálogo de tallas desde BD
-window.catálogoTallasDisponibles = null;
+// Cache de catálogo de tallas desde BD (no resetear si ya cargado)
+if (window.catálogoTallasDisponibles === undefined) {
+    window.catálogoTallasDisponibles = null;
+}
 
 // Variables para rastrear el estado del modal
 window.generoActualModal = null;
 window.tipoTallaSeleccionado = null;
+
+// Helper: asegurar que tallasRelacionales nunca sea null
+function _ensureTallasRelacionales() {
+    if (!window.tallasRelacionales || typeof window.tallasRelacionales !== 'object') {
+        window.tallasRelacionales = { DAMA: {}, CABALLERO: {}, UNISEX: {}, SOBREMEDIDA: {} };
+    }
+}
 
 // ========== FUNCIONES PARA CARGAR TALLAS DESDE BD ==========
 
@@ -93,6 +102,7 @@ window.cargarCatálogoTallas = async function() {
 window.guardarCantidadTalla = function(genero, talla, cantidad) {
     // Normalizar género a mayúsculas para consistencia
     genero = String(genero).toUpperCase();
+    _ensureTallasRelacionales();
     
     const cantInt = parseInt(cantidad) || 0;
     
@@ -116,6 +126,7 @@ window.guardarCantidadTalla = function(genero, talla, cantidad) {
  * Obtener cantidad de una talla en estructura relacional
  */
 window.obtenerCantidadTalla = function(genero, talla) {
+    _ensureTallasRelacionales();
     return window.tallasRelacionales[genero] ? (window.tallasRelacionales[genero][talla] || 0) : 0;
 };
 
@@ -123,7 +134,7 @@ window.obtenerCantidadTalla = function(genero, talla) {
  * Mostrar las tallas disponibles según el tipo seleccionado
  */
 window.mostrarTallasDisponibles = function(tipo) {
-
+    _ensureTallasRelacionales();
     
     const container = document.getElementById('container-tallas-disponibles');
     if (!container) return;
@@ -133,27 +144,28 @@ window.mostrarTallasDisponibles = function(tipo) {
     let tallasAMostrar = [];
     
     // Usar catálogo cargado desde BD, con fallback a constantes
-    if (!window.catálogoTallasDisponibles) {
+    const catalogo = window.catálogoTallasDisponibles;
+    const genero = window.generoActualModal;
+    
+    if (!catalogo) {
         console.warn('[gestion-tallas]  Catálogo no cargado, usando constantes');
         // Fallback a constantes si no se cargó el catálogo
         if (tipo === 'letra') {
             tallasAMostrar = TALLAS_LETRAS || [];
         } else if (tipo === 'numero') {
-            const genero = window.generoActualModal;
             tallasAMostrar = genero === 'DAMA' ? (TALLAS_NUMEROS_DAMA || []) : (TALLAS_NUMEROS_CABALLERO || []);
         }
     } else {
         // Usar catálogo cargado desde BD
-        const genero = window.generoActualModal;
         if (tipo === 'letra') {
             // Mostrar tallas de letra (XS, S, M, L, XL, etc.)
-            tallasAMostrar = window.catálogoTallasDisponibles[genero] || window.catálogoTallasDisponibles['DAMA'] || [];
+            tallasAMostrar = (genero && catalogo[genero]) || catalogo['DAMA'] || catalogo['UNISEX'] || [];
         } else if (tipo === 'numero') {
             // Mostrar tallas de número diferenciadas por género
             if (genero === 'DAMA') {
-                tallasAMostrar = window.catálogoTallasDisponibles['NUMEROS_DAMA'] || TALLAS_NUMEROS_DAMA || [];
+                tallasAMostrar = catalogo['NUMEROS_DAMA'] || TALLAS_NUMEROS_DAMA || [];
             } else {
-                tallasAMostrar = window.catálogoTallasDisponibles['NUMEROS_CABALLERO'] || TALLAS_NUMEROS_CABALLERO || [];
+                tallasAMostrar = catalogo['NUMEROS_CABALLERO'] || TALLAS_NUMEROS_CABALLERO || [];
             }
         }
     }
@@ -162,7 +174,7 @@ window.mostrarTallasDisponibles = function(tipo) {
     const grid = document.createElement('div');
     grid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 0.75rem;';
     
-    const tallasDic = window.tallasRelacionales[window.generoActualModal] || {};
+    const tallasDic = (window.tallasRelacionales && window.tallasRelacionales[window.generoActualModal]) || {};
     
     tallasAMostrar.forEach(talla => {
         const btn = document.createElement('button');
@@ -443,7 +455,10 @@ window.abrirModalSeleccionarTallas = async function(genero) {
     btnConfirmar.onmouseover = () => btnConfirmar.style.background = '#0052a3';
     btnConfirmar.onmouseout = () => btnConfirmar.style.background = '#0066cc';
     btnConfirmar.onclick = () => {
-        // Asegurar que el género existe en el objeto, sino crear un objeto vacío
+        // Asegurar que tallasRelacionales y el género existen
+        if (!window.tallasRelacionales) {
+            window.tallasRelacionales = { DAMA: {}, CABALLERO: {}, UNISEX: {}, SOBREMEDIDA: {} };
+        }
         if (!window.tallasRelacionales[genero]) {
             window.tallasRelacionales[genero] = {};
         }
@@ -495,6 +510,7 @@ window.crearTarjetaGenero = function(genero, tallas) {
         return;
     }
     
+    _ensureTallasRelacionales();
     const tallasDic = window.tallasRelacionales[genero] || {};
     
     if (Object.keys(tallasDic).length === 0) {

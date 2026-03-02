@@ -709,6 +709,7 @@ class PedidosProduccionController
                 'cantidad_talla' => 'nullable|json',
                 'asignaciones_colores' => 'nullable|json',  //  NUEVO: colores por talla
                 'procesos' => 'nullable|json',
+                'variantes' => 'nullable|json',
                 'novedad' => 'required|string|max:500',
                 'imagenes' => 'nullable|array',
                 'imagenes.*' => 'nullable|image|max:5120',
@@ -716,18 +717,16 @@ class PedidosProduccionController
                 'telas' => 'nullable|array',
             ]);
 
-            // Procesar imágenes de prenda con sistema centralizado
+            // Procesar imágenes de prenda directamente en carpeta final
             $imagenesGuardadas = [];
-            $tempUuid = \Illuminate\Support\Str::uuid()->toString();
             
             if ($request->hasFile('imagenes')) {
-                $imageUploadService = app(\App\Application\Services\ImageUploadService::class);
+                $prendaFotoService = new \App\Domain\Pedidos\Services\PrendaFotoService();
                 
                 foreach ($request->file('imagenes') as $imagen) {
-                    // Usar ImageUploadService para guardar en temp/{uuid}/prendas/
-                    $rutas = $imageUploadService->processAndSaveImage($imagen, 'prendas', $tempUuid);
-                    // Guardar ruta WebP para relocalizar después
-                    $imagenesGuardadas[] = $rutas['webp'] ?? $rutas[0];
+                    // Guardar directamente en pedidos/{id}/prenda/ (no en temp/)
+                    $rutas = $prendaFotoService->procesarFoto($imagen, (int)$id);
+                    $imagenesGuardadas[] = $rutas['ruta_webp'] ?? $rutas['ruta_original'];
                 }
             }
 
@@ -798,9 +797,36 @@ class PedidosProduccionController
                 $validated['asignaciones_colores'] = $asigColoresTemp;
             }
 
+            // Procesar imágenes de procesos nuevos (fotosProcesoNuevo_0[], fotosProcesoNuevo_1[], etc.)
+            $fotosProcesoNuevo = [];
+            $procesoFotoService = new \App\Domain\Pedidos\Services\ProcesoFotoService();
+            foreach ($request->allFiles() as $key => $files) {
+                if (strpos($key, 'fotosProcesoNuevo_') === 0) {
+                    preg_match('/fotosProcesoNuevo_(\d+)/', $key, $matches);
+                    if (!isset($matches[1])) continue;
+                    $indice = (int)$matches[1];
+                    $archivos = is_array($files) ? $files : [$files];
+                    if (!isset($fotosProcesoNuevo[$indice])) {
+                        $fotosProcesoNuevo[$indice] = [];
+                    }
+                    foreach ($archivos as $archivo) {
+                        if ($archivo && $archivo->isValid()) {
+                            try {
+                                $rutas = $procesoFotoService->procesarFoto($archivo, (int)$id);
+                                $fotosProcesoNuevo[$indice][] = $rutas;
+                            } catch (\Exception $e) {
+                                Log::warning('[PedidosProduccionController] Error procesando imagen de proceso nuevo', [
+                                    'key' => $key, 'error' => $e->getMessage()
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
+
             // Usar Use Case DDD
-            $dto = AgregarPrendaCompletaDTO::fromRequest($id, $validated, $imagenesGuardadas, $imagenesExistentes);
-            $prenda = $this->agregarPrendaCompletaUseCase->ejecutar($dto);
+            $dto = AgregarPrendaCompletaDTO::fromRequest($id, $validated, $imagenesGuardadas, $imagenesExistentes, $fotosProcesoNuevo);
+            $prenda = $this->agregarPrendaCompletaUseCase->execute($dto);
 
             Log::info('[PedidosProduccionController] Prenda completa agregada exitosamente', [
                 'pedido_id' => $id,

@@ -64,9 +64,9 @@ class PrendaFotoService
         
         // Guardar en carpeta específica del pedido si existe
         if ($pedidoId) {
-            $carpeta = "pedidos/{$pedidoId}/prendas";
+            $carpeta = "pedidos/{$pedidoId}/prenda";
         } else {
-            $carpeta = "prendas";
+            $carpeta = "prenda";
         }
         
         return $archivo->storeAs($carpeta, $nombreOriginal, 'public');
@@ -145,9 +145,9 @@ class PrendaFotoService
             
             // Determinar carpeta
             if ($pedidoId) {
-                $carpeta = "pedidos/{$pedidoId}/prendas";
+                $carpeta = "pedidos/{$pedidoId}/prenda";
             } else {
-                $carpeta = "prendas";
+                $carpeta = "prenda";
             }
             
             // Ruta completa donde guardar
