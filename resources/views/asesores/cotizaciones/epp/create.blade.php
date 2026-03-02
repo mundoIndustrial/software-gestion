@@ -182,14 +182,14 @@
             <div style="display: flex; align-items: center; gap: 0.75rem; grid-column: 1 / -1;">
                 <span class="material-symbols-rounded" style="font-size: 1.75rem; color: white;">engineering</span>
                 <div>
-                    <h2 style="margin: 0; color: white; font-size: 1.25rem; font-weight: 700;">Cotización EPP</h2>
+                    <h2 style="margin: 0; color: white; font-size: 1.25rem; font-weight: 700;">Cotización Cliente</h2>
                     <p style="margin: 0.2rem 0 0 0; color: rgba(255,255,255,0.85); font-size: 0.8rem;">Completa los datos de la cotización</p>
                 </div>
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; grid-column: 1 / -1;">
                 <div>
-                    <label style="display: block; color: rgba(255,255,255,0.8); font-size: 0.7rem; font-weight: 700; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.4px;">Cliente</label>
+                    <label style="display: block; color: rgba(255,255,255,0.8); font-size: 0.7rem; font-weight: 700; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.4px;">Cotización Cliente</label>
                     <input type="text" id="header-cliente" placeholder="Nombre del cliente" style="width: 100%; background: white; border: 2px solid transparent; padding: 0.6rem 0.75rem; border-radius: 6px; font-weight: 600; color: #1e40af; font-size: 0.9rem; transition: all 0.2s;">
                 </div>
 
@@ -414,7 +414,7 @@ NIT 1.093.738.433-3</textarea>
                         <i class="fas fa-save" style="font-size: 0.9rem;"></i> Guardar Borrador
                     </button>
                     <button id="btnEnviarCotizacionEpp" type="button" class="btn btn-primary" style="padding: 0.5rem 1.2rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); border: 2px solid #003d7a; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; font-size: 0.85rem; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='linear-gradient(135deg, #0052a3 0%, #003d7a 100%)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 12px rgba(0, 102, 204, 0.3)';" onmouseout="this.style.background='linear-gradient(135deg, #0066cc 0%, #0052a3 100%)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-                        <i class="fas fa-paper-plane" style="font-size: 0.9rem;"></i> Enviar
+                        <i class="fas fa-paper-plane" style="font-size: 0.9rem;"></i> Crear
                     </button>
                 </div>
             </div>
@@ -429,6 +429,7 @@ NIT 1.093.738.433-3</textarea>
 <script defer src="{{ asset('js/utilidades/dom-utils.js') }}?v={{ time() }}"></script>
 <script defer src="{{ asset('js/services/epp/EppHttpService.js') }}"></script>
 
+<script defer src="{{ asset('js/modulos/crear-pedido/epp/epp-store.js') }}?v={{ time() }}"></script>
 <script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-api-service.js') }}"></script>
 <script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-state-manager.js') }}"></script>
 <script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-modal-manager.js') }}"></script>
@@ -544,7 +545,7 @@ NIT 1.093.738.433-3</textarea>
 
     document.addEventListener('DOMContentLoaded', function () {
         const emptySelector = '#prendas-container-editable .empty-state';
-        const listSelector = '#lista-items-pedido';
+        const listSelector = '#tabla-items-pedido';
 
         const formatearNumero = (num) => {
             if (!Number.isFinite(num)) return '0';
@@ -554,53 +555,16 @@ NIT 1.093.738.433-3</textarea>
         };
 
         function calcularSubtotalEpp() {
-            const itemsPedido = Array.isArray(window.itemsPedido) ? window.itemsPedido : [];
-            
-            // Si window.itemsPedido está vacío, intentar leer directamente del DOM
-            if (itemsPedido.length === 0) {
-                console.log('[calcularSubtotalEpp] window.itemsPedido vacío, leyendo del DOM...');
-                const filas = document.querySelectorAll('#tabla-items-pedido tr.item-epp');
-                let subtotal = 0;
-                
-                filas.forEach((fila, index) => {
-                    const celdas = fila.querySelectorAll('td');
-                    if (celdas.length >= 7) {
-                        // Extraer el valor total desde la séptima columna (índice 6)
-                        // El total está en el primer <span> dentro de un <div> de flexbox
-                        const ultimaCelda = celdas[6];
-                        const spanTotal = ultimaCelda?.querySelector('div > span:first-child');
-                        const totalText = spanTotal?.textContent?.trim() || '0';
-                        const totalMatch = totalText.match(/[\d.]+/);
-                        const total = totalMatch ? parseFloat(totalMatch[0]) : 0;
-                        subtotal += total;
-                        console.log(`[calcularSubtotalEpp] Item ${index + 1} encontrado, total: ${total}, subtotal acumulado: ${subtotal}`);
-                    }
-                });
-                
-                console.log('[calcularSubtotalEpp] Subtotal final del DOM:', subtotal);
-                return subtotal;
-            }
-            
-            // Si window.itemsPedido tiene datos, usarlo (original)
-            let subtotal = 0;
-            for (const it of itemsPedido) {
-                const cantidad = Number(it?.cantidad || 0);
-                const vu = (it?.valor_unitario !== undefined && it?.valor_unitario !== null && String(it.valor_unitario).trim() !== '' && !isNaN(Number(it.valor_unitario)))
-                    ? Number(it.valor_unitario)
-                    : null;
-                const total = (it?.total !== undefined && it?.total !== null && String(it.total).trim() !== '' && !isNaN(Number(it.total)))
-                    ? Number(it.total)
-                    : null;
-
-                if (total !== null) {
-                    subtotal += total;
-                } else if (vu !== null && cantidad > 0) {
-                    subtotal += (vu * cantidad);
-                }
-            }
-
-            console.log('[calcularSubtotalEpp] Subtotal final de itemsPedido:', subtotal);
-            return subtotal;
+            // Leer TODOS los items (EPP + Prendas) desde window.itemsPedido
+            const items = Array.isArray(window.itemsPedido) ? window.itemsPedido : [];
+            return items.reduce((sum, it) => {
+                const t = Number(it.total);
+                if (isFinite(t) && t > 0) return sum + t;
+                const vu = Number(it.valor_unitario);
+                const c = Number(it.cantidad);
+                if (isFinite(vu) && isFinite(c) && c > 0) return sum + (vu * c);
+                return sum;
+            }, 0);
         }
 
         function syncTotales() {
@@ -626,6 +590,15 @@ NIT 1.093.738.433-3</textarea>
 
         // Exponer syncTotales al objeto window para que sea accesible desde otros scripts
         window.syncTotales = syncTotales;
+
+        // Registrar syncTotales como listener del store para auto-actualización
+        if (window.eppStore) {
+            window.eppStore.onChange(function() {
+                syncTotales();
+                syncEmptyState();
+            });
+            console.log('[EPP Form] syncTotales registrado como listener de eppStore');
+        }
 
         try {
             const clienteEl = document.getElementById('header-cliente');
@@ -733,35 +706,39 @@ NIT 1.093.738.433-3</textarea>
 
         try {
             const items = Array.isArray(window.__EPP_COTIZACION_ITEMS__) ? window.__EPP_COTIZACION_ITEMS__ : [];
-            if (!window.itemsPedido) window.itemsPedido = [];
 
             if (items.length > 0) {
-                window.itemsPedido = items;
+                // Cargar items al store (fuente única de verdad)
+                if (window.eppStore) {
+                    window.eppStore.cargarItems(items);
+                } else {
+                    if (!window.itemsPedido) window.itemsPedido = [];
+                    window.itemsPedido = items;
+                }
+
                 if (window.eppItemManager && typeof window.eppItemManager.crearItem === 'function') {
                     const lista = document.getElementById('tabla-items-pedido');
                     if (lista) lista.innerHTML = '';
 
                     items.forEach((it) => {
+                        const eppId = it.epp_id || it.id;
                         window.eppItemManager.crearItem(
-                            it.id,
+                            eppId,
                             it.nombre_epp || it.nombre || 'Sin nombre',
                             it.categoria || null,
                             it.cantidad || 1,
                             it.observaciones || null,
                             it.imagenes || [],
-                            it.id,
+                            eppId,
                             it.valor_unitario ?? null,
                             it.total ?? null,
-                            it.tipo || 'epp'  // ✨ Agregar tipo para diferenciar EPP/Prenda
+                            it.tipo || 'epp'
                         );
                     });
-                    
-                    // Recalcular totales después de cargar los items
-                    setTimeout(() => {
-                        syncTotales();
-                        console.log('[EPP Form] Totales recalculados después de cargar items');
-                    }, 100);
                 }
+                // syncTotales se dispara automáticamente via eppStore.onChange
+                // Llamar manualmente por si el store ya notificó antes de que el DOM estuviera listo
+                syncTotales();
             }
         } catch (e) {
             // noop
@@ -1170,7 +1147,7 @@ NIT 1.093.738.433-3</textarea>
             window.finalizarAgregarEPP = async function (...args) {
                 const result = await original.apply(this, args);
                 syncEmptyState();
-                syncTotales();
+                // syncTotales se dispara automáticamente via eppStore.onChange
                 return result;
             };
             window.__eppCotizacionFinalizarWrapped = true;
@@ -1216,15 +1193,16 @@ NIT 1.093.738.433-3</textarea>
                 
                 console.log('✏️ [guardarEdicionEPP] Imágenes finales a guardar:', imagenes.length);
                 
-                // Obtener el ID del EPP en edición
+                // Obtener el ID del EPP en edición (puede venir como epp_id o id)
                 const eppEnEdicion = window.eppEnEdicion;
-                if (!eppEnEdicion || !eppEnEdicion.id) {
+                const eppId = eppEnEdicion ? (eppEnEdicion.epp_id || eppEnEdicion.id) : null;
+                if (!eppEnEdicion || !eppId) {
                     console.error('✏️ [guardarEdicionEPP] No hay EPP en edición');
                     return;
                 }
                 
                 console.log('✏️ [guardarEdicionEPP] Datos a guardar:', {
-                    id: eppEnEdicion.id,
+                    id: eppId,
                     nombre,
                     cantidad,
                     observaciones,
@@ -1234,7 +1212,7 @@ NIT 1.093.738.433-3</textarea>
                 });
                 
                 // Actualizar la fila en la tabla
-                const fila = document.querySelector(`tr.item-epp[data-item-id="${eppEnEdicion.id}"]`);
+                const fila = document.querySelector(`tr.item-epp[data-item-id="${eppId}"]`);
                 if (fila) {
                     console.log('✏️ [guardarEdicionEPP] Fila encontrada, actualizando...');
                     const cells = fila.querySelectorAll('td');
@@ -1249,7 +1227,7 @@ NIT 1.093.738.433-3</textarea>
                                 console.log('✏️ [guardarEdicionEPP] Agregando imagen principal a la tabla:', imagenPrincipal.nombre);
                                 cells[1].innerHTML = `
                                     <img src="${imagenPrincipal.previewUrl || imagenPrincipal.ruta}" alt="${imagenPrincipal.nombre}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; cursor: pointer;" 
-                                         onclick="event.preventDefault(); event.stopPropagation(); if (window.mostrarImagenProcesoGrande) window.mostrarImagenProcesoGrande('${imagenPrincipal.previewUrl || imagenPrincipal.ruta}'); else if (window.abrirImagenGrande) window.abrirImagenGrande('${imagenPrincipal.previewUrl || imagenPrincipal.ruta}', 'galeria-epp-${eppEnEdicion.id}', 0);">
+                                         onclick="event.preventDefault(); event.stopPropagation(); if (window.mostrarImagenProcesoGrande) window.mostrarImagenProcesoGrande('${imagenPrincipal.previewUrl || imagenPrincipal.ruta}'); else if (window.abrirImagenGrande) window.abrirImagenGrande('${imagenPrincipal.previewUrl || imagenPrincipal.ruta}', 'galeria-epp-${eppId}', 0);">
                                 `;
                                 console.log('✏️ [guardarEdicionEPP] Imagen agregada al DOM de la tabla');
                             }
@@ -1311,25 +1289,39 @@ NIT 1.093.738.433-3</textarea>
                     
                     console.log('✏️ [guardarEdicionEPP] Fila actualizada correctamente en memoria');
                 } else {
-                    console.error('✏️ [guardarEdicionEPP] No se encontró la fila para actualizar:', eppEnEdicion.id);
+                    console.error('✏️ [guardarEdicionEPP] No se encontró la fila para actualizar:', eppId);
                 }
                 
-                // Actualizar el item en window.itemsPedido
-                if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
-                    const itemIndex = window.itemsPedido.findIndex(item => item.id == eppEnEdicion.id);
-                    if (itemIndex !== -1) {
-                        window.itemsPedido[itemIndex] = {
-                            ...window.itemsPedido[itemIndex],
-                            nombre_epp: nombre,
-                            nombre: nombre,
-                            cantidad: cantidad,
-                            observaciones: observaciones,
-                            valor_unitario: valorUnitario,
-                            total: total,
-                            imagenes: imagenes
-                        };
-                        console.log('✏️ [guardarEdicionEPP] Item actualizado en window.itemsPedido (memoria)');
+                // Actualizar el item via eppStore (fuente única de verdad)
+                if (window.eppStore) {
+                    // eppStore.actualizarItem notifica listeners → syncTotales se ejecuta automáticamente
+                    const actualizado = window.eppStore.actualizarItem(eppId, {
+                        nombre_epp: nombre,
+                        nombre: nombre,
+                        cantidad: cantidad,
+                        observaciones: observaciones,
+                        valor_unitario: valorUnitario,
+                        total: total,
+                        imagenes: imagenes
+                    });
+                    if (!actualizado) {
+                        console.warn('✏️ [guardarEdicionEPP] Item NO encontrado en eppStore');
                     }
+                } else {
+                    // Fallback sin store
+                    if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
+                        const itemIndex = window.itemsPedido.findIndex(item => 
+                            String(item.epp_id || item.id) === String(eppId)
+                        );
+                        if (itemIndex !== -1) {
+                            Object.assign(window.itemsPedido[itemIndex], {
+                                nombre_epp: nombre, nombre, cantidad,
+                                observaciones, valor_unitario: valorUnitario,
+                                total, imagenes
+                            });
+                        }
+                    }
+                    syncTotales();
                 }
                 
                 // Cerrar modal
@@ -1339,11 +1331,6 @@ NIT 1.093.738.433-3</textarea>
                 
                 // Resetear estado de edición
                 window.eppEnEdicion = null;
-                
-                // Sincronizar totales
-                if (typeof syncTotales === 'function') {
-                    syncTotales();
-                }
                 
                 console.log('✏️ [guardarEdicionEPP] Cambios actualizados en memoria exitosamente');
                 console.log('✏️ [guardarEdicionEPP] Para guardar en BD, use "Enviar Cotización"');
@@ -1393,74 +1380,60 @@ NIT 1.093.738.433-3</textarea>
                 totalInput.value = eppData.total;
             }
             
+            // Limpiar contenedor de fotos y array antes de cargar
+            window.fotosEPP = [];
+            const contenedorFotosEdit = document.getElementById('contenedorFotosEPP');
+            if (contenedorFotosEdit) {
+                const fotosExistentes = contenedorFotosEdit.querySelectorAll('.foto-epp-item');
+                fotosExistentes.forEach(el => el.remove());
+            }
+            const mensajeDragDropEdit = document.getElementById('mensajeDragDrop');
+            
             // Cargar imágenes existentes si hay
             if (eppData.imagenes && Array.isArray(eppData.imagenes) && eppData.imagenes.length > 0) {
                 console.log('✏️ [editarEPPAgregado] Cargando imágenes existentes:', eppData.imagenes.length);
-                console.log('✏️ [editarEPPAgregado] Detalle imágenes existentes:', eppData.imagenes.map(img => ({id: img.id, nombre: img.nombre, ruta: img.ruta})));
+                
+                // Ocultar mensaje drag-drop
+                if (mensajeDragDropEdit) mensajeDragDropEdit.style.display = 'none';
                 
                 eppData.imagenes.forEach((imagen, index) => {
-                    console.log(`✏️ [editarEPPAgregado] Procesando imagen existente ${index + 1}:`, imagen);
-                    console.log(`✏️ [editarEPPAgregado] Estructura completa de imagen:`, imagen);
-                    
                     // Determinar la URL correcta para mostrar
-                    let imageUrl = null;
-                    if (imagen.previewUrl) {
-                        imageUrl = imagen.previewUrl;
-                        console.log(`✏️ [editarEPPAgregado] Usando previewUrl:`, imageUrl);
-                    } else if (imagen.ruta_webp) {
-                        imageUrl = imagen.ruta_webp;
-                        console.log(`✏️ [editarEPPAgregado] Usando ruta_webp:`, imageUrl);
-                    } else if (imagen.ruta_original) {
-                        imageUrl = imagen.ruta_original;
-                        console.log(`✏️ [editarEPPAgregado] Usando ruta_original:`, imageUrl);
-                    } else {
-                        console.warn(`✏️ [editarEPPAgregado] Imagen sin URL válida, usando fallback`);
-                        imageUrl = imagen.url || null;
-                    }
+                    let imageUrl = imagen.previewUrl || imagen.ruta_webp || imagen.ruta_original || imagen.url || null;
                     
                     if (imageUrl) {
-                        console.log(`✏️ [editarEPPAgregado] URL final para imagen: ${imagen.nombre}:`, imageUrl);
+                        // Crear objeto para window.fotosEPP
+                        const imagenObj = {
+                            id: imagen.id || `existing-${index}`,
+                            previewUrl: imageUrl,
+                            nombre: imagen.nombre || `Foto ${index + 1}`,
+                            file: imagen.file || null,
+                            extension: (imagen.nombre || '').split('.').pop().toLowerCase() || 'jpg',
+                            tamaño: imagen.tamaño || 0,
+                            pedido_epp_id: imagen.pedido_epp_id || null,
+                            ruta_original: imagen.ruta_original || null,
+                            ruta_webp: imagen.ruta_webp || null,
+                            principal: imagen.principal || 0,
+                            orden: imagen.orden || 0
+                        };
+                        window.fotosEPP.push(imagenObj);
                         
-                        // Crear elemento de imagen en el contenedor
-                        const contenedorFotos = document.getElementById('contenedorFotosEPP');
-                        if (contenedorFotos) {
-                            const fotoElement = document.createElement('div');
-                            fotoElement.className = 'relative group foto-epp-item';
-                            fotoElement.setAttribute('data-foto-id', imagen.id || `existing-${index}`);
-                            
-                            fotoElement.innerHTML = `
-                                <div class="relative overflow-hidden rounded-lg border-2 border-gray-200">
-                                    <img src="${imageUrl}" alt="Foto EPP" class="w-full h-32 object-cover">
-                                    <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button type="button" onclick="eliminarFotoEPP('${imagen.id || `existing-${index}`}')" class="bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <i class="material-symbols-rounded text-sm">delete</i>
-                                        </button>
-                                    </div>
-                                    <div class="absolute bottom-0 right-0 bg-blue-600 text-white text-xs px-2 py-1 rounded-tl">
-                                        ${imagen.nombre || `Foto ${index + 1}`}
-                                    </div>
-                                </div>
-                            `;
-                            
-                            // Ocultar mensaje inicial si está visible
-                            const mensajeDragDrop = document.getElementById('mensajeDragDrop');
-                            if (mensajeDragDrop) {
-                                mensajeDragDrop.style.display = 'none';
-                            }
-                            
-                            contenedorFotos.appendChild(fotoElement);
-                            console.log(`✏️ [editarEPPAgregado] Imagen existente agregada al DOM: ${imagen.nombre}`);
+                        // Usar mostrarVistaPreviaFoto si existe, sino crear manualmente
+                        if (typeof mostrarVistaPreviaFoto === 'function') {
+                            mostrarVistaPreviaFoto(imagenObj);
                         }
-                    } else {
-                        console.warn(`✏️ [editarEPPAgregado] Imagen existente sin URL válida:`, imagen);
+                        console.log(`✏️ [editarEPPAgregado] Imagen cargada: ${imagenObj.nombre}`);
                     }
                 });
+                
+                console.log('✏️ [editarEPPAgregado] Total imágenes cargadas en window.fotosEPP:', window.fotosEPP.length);
             } else {
                 console.log('✏️ [editarEPPAgregado] No hay imágenes existentes para cargar');
-                console.log('✏️ [editarEPPAgregado] eppData.imagenes:', eppData.imagenes);
-                console.log('✏️ [editarEPPAgregado] es array:', Array.isArray(eppData.imagenes));
-                console.log('✏️ [editarEPPAgregado] longitud:', eppData.imagenes?.length);
+                if (mensajeDragDropEdit) mensajeDragDropEdit.style.display = 'flex';
             }
+            
+            // Actualizar contador de fotos
+            const contadorFotosEdit = document.getElementById('contadorFotosEPP');
+            if (contadorFotosEdit) contadorFotosEdit.textContent = window.fotosEPP.length;
             
             // Mostrar los contenedores de campos que están ocultos por defecto
             const formularioContainer = document.getElementById('formularioAgregarEPP');
@@ -1521,6 +1494,24 @@ NIT 1.093.738.433-3</textarea>
                 console.log('✏️ [editarEPPAgregado] Tabla listaEPPAgregados ocultada');
             }
             
+            // OCULTAR buscador en modo edición (no se busca, se edita un EPP existente)
+            const buscadorSection = document.getElementById('buscadorEPPSection');
+            if (buscadorSection) {
+                buscadorSection.style.display = 'none';
+                console.log('✏️ [editarEPPAgregado] Buscador ocultado en modo edición');
+            }
+            const formularioCrearEPP = document.getElementById('formularioCrearEPP');
+            if (formularioCrearEPP) {
+                formularioCrearEPP.style.display = 'none';
+            }
+            
+            // MOSTRAR sección de fotos en modo edición
+            const seccionFotosEPPEdit = document.getElementById('seccionFotosEPP');
+            if (seccionFotosEPPEdit) {
+                seccionFotosEPPEdit.style.display = 'block';
+                console.log('✏️ [editarEPPAgregado] Sección de fotos habilitada');
+            }
+            
             // Abrir modal
             if (window.abrirModalAgregarEPP) {
                 window.abrirModalAgregarEPP();
@@ -1536,6 +1527,12 @@ NIT 1.093.738.433-3</textarea>
             if (modal) {
                 modal.style.display = 'flex';
                 document.body.style.overflow = 'hidden';
+            }
+
+            // IMPORTANTE: Obtener EPPs ya agregados en el formulario para filtrarlos
+            if (typeof obtenerEPPsYaAgregadosEnFormulario === 'function') {
+                obtenerEPPsYaAgregadosEnFormulario();
+                console.log('📖 [abrirModalAgregarEPP] EPPs en formulario a excluir:', eppYaAgregadosEnFormulario);
             }
 
             // Solo resetear si no estamos en modo edición
@@ -1567,11 +1564,40 @@ NIT 1.093.738.433-3</textarea>
         function resetearModalAgregarEPP() {
             console.log('🔄 [resetearModalAgregarEPP] Resetear formulario');
             
-            // Limpiar buscador
+            // CRÍTICO: Limpiar las listas globales del modal
+            if (typeof eppAgregadosList !== 'undefined') {
+                eppAgregadosList = [];
+            }
+            if (typeof eppDisponiblesList !== 'undefined') {
+                eppDisponiblesList = [];
+            }
+            
+            // CRÍTICO: Limpiar la tabla interna del modal (cuerpoTablaEPP)
+            const cuerpoTabla = document.getElementById('cuerpoTablaEPP');
+            if (cuerpoTabla) {
+                cuerpoTabla.innerHTML = '';
+                console.log('🔄 [resetearModalAgregarEPP] cuerpoTablaEPP limpiado');
+            }
+            
+            // Limpiar buscador (nuevo formato con inputBuscadorEPPTabla)
+            const buscadorTabla = document.getElementById('inputBuscadorEPPTabla');
+            if (buscadorTabla) buscadorTabla.value = '';
+            
+            // Limpiar buscador antiguo por si existe
             const buscador = document.getElementById('inputBuscadorEPP');
             if (buscador) buscador.value = '';
             const resultados = document.getElementById('resultadosBuscadorEPP');
             if (resultados) resultados.style.display = 'none';
+            
+            // Limpiar dropdown
+            const opcionesContainer = document.getElementById('opcionesDropdownEPP');
+            if (opcionesContainer) opcionesContainer.innerHTML = '';
+            const dropdown = document.getElementById('dropdownEPP');
+            if (dropdown) dropdown.classList.add('hidden');
+            
+            // Mostrar mensaje sin resultados
+            const mensajeSinResultados = document.getElementById('mensajeSinResultados');
+            if (mensajeSinResultados) mensajeSinResultados.classList.remove('hidden');
             
             // Ocultar tarjeta de producto
             const tarjeta = document.getElementById('productoCardEPP');
@@ -1608,6 +1634,12 @@ NIT 1.093.738.433-3</textarea>
             if (valorContainer) valorContainer.style.display = 'none';
             if (obsContainer) obsContainer.style.display = 'none';
             
+            // Resetear contadores
+            const contadorEPP = document.getElementById('contadorEPP');
+            if (contadorEPP) contadorEPP.textContent = '0';
+            const totalSeleccionados = document.getElementById('totalSeleccionados');
+            if (totalSeleccionados) totalSeleccionados.textContent = '0';
+            
             // Resetear botones
             const btnAgregar = document.getElementById('btnAgregarALista');
             const btnFinalizar = document.getElementById('btnFinalizarAgregarEPP');
@@ -1633,15 +1665,12 @@ NIT 1.093.738.433-3</textarea>
                 imagenes.forEach(img => img.remove());
             }
             
-            // Resetear visibilidad de tabla EPPs agregados (SOLO en modo agregar, NO en edición)
+            // Resetear visibilidad de tabla EPPs agregados
             const listaEPPAgregados = document.getElementById('listaEPPAgregados');
             if (listaEPPAgregados) {
-                // Si NO estamos editando, mostrar tabla; si estamos editando, mantenerla oculta
                 if (!window.eppEnEdicion) {
-                    console.log('🔄 [resetearModalAgregarEPP] Restaurando tabla EPPs agregados (modo agregar)');
-                    listaEPPAgregados.removeAttribute('style');
-                    listaEPPAgregados.style.setProperty('display', 'block', 'important');
-                    listaEPPAgregados.style.setProperty('visibility', 'visible', 'important');
+                    console.log('🔄 [resetearModalAgregarEPP] Ocultando tabla (vacía - sin EPPs seleccionados)');
+                    listaEPPAgregados.style.display = 'none';
                 } else {
                     console.log('🔄 [resetearModalAgregarEPP] Manteniendo tabla oculta (modo edición)');
                     listaEPPAgregados.style.setProperty('display', 'none', 'important');
@@ -1653,6 +1682,33 @@ NIT 1.093.738.433-3</textarea>
             if (window.eppStateManager && typeof window.eppStateManager.limpiarImagenes === 'function') {
                 window.eppStateManager.limpiarImagenes();
             }
+            
+            // Restaurar visibilidad del buscador (oculto en modo edición)
+            const buscadorSection = document.getElementById('buscadorEPPSection');
+            if (buscadorSection) {
+                buscadorSection.style.display = '';
+            }
+            
+            // Ocultar sección de fotos (solo para modo edición)
+            const seccionFotos = document.getElementById('seccionFotosEPP');
+            if (seccionFotos) {
+                seccionFotos.style.display = 'none';
+            }
+            
+            // Limpiar fotosEPP array
+            window.fotosEPP = [];
+            
+            // Restaurar mensaje drag-drop
+            const mensajeDragDrop = document.getElementById('mensajeDragDrop');
+            if (mensajeDragDrop) {
+                mensajeDragDrop.style.display = 'flex';
+            }
+            
+            // Resetear contador de fotos
+            const contadorFotos = document.getElementById('contadorFotosEPP');
+            if (contadorFotos) contadorFotos.textContent = '0';
+            
+            console.log('🔄 [resetearModalAgregarEPP] Reset COMPLETO');
         }
 
         // Función para manejar la subida de fotos de EPP
@@ -1799,7 +1855,7 @@ NIT 1.093.738.433-3</textarea>
             window.guardarEdicionEPP = function (...args) {
                 const result = original.apply(this, args);
                 syncEmptyState();
-                syncTotales();
+                // syncTotales se dispara automáticamente via eppStore.onChange
                 return result;
             };
             window.__eppCotizacionGuardarEdicionWrapped = true;
@@ -1811,9 +1867,14 @@ NIT 1.093.738.433-3</textarea>
             observer.observe(list, { childList: true, subtree: true, characterData: true });
         }
 
+        // MutationObserver para totales: detecta cambios de prendas (que no pasan por eppStore)
         const listTot = document.querySelector(listSelector);
         if (listTot && typeof MutationObserver !== 'undefined') {
-            const observerTot = new MutationObserver(syncTotales);
+            let totDebounce = null;
+            const observerTot = new MutationObserver(function() {
+                clearTimeout(totDebounce);
+                totDebounce = setTimeout(syncTotales, 150);
+            });
             observerTot.observe(listTot, { childList: true, subtree: true, characterData: true });
         }
 

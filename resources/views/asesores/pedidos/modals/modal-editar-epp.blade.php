@@ -13,17 +13,16 @@
         <!-- Body con scroll -->
         <div class="p-6 space-y-6 overflow-y-auto flex-1">
             
-            <!-- Nombre del EPP con Buscador -->
+            <!-- Nombre del EPP - READONLY (No editable) -->
             <div>
                 <label for="modalEditarEPPBuscador" class="block text-sm font-medium text-gray-700 mb-2">Nombre del EPP</label>
                 <div class="relative">
                     <input 
                         type="text" 
                         id="modalEditarEPPBuscador" 
-                        placeholder="Buscar EPP..." 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
-                        onkeyup="filtrarEPPsEnEdicion(this.value)"
-                        autocomplete="off"
+                        placeholder="EPP" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
+                        readonly
                     >
                     <div id="modalEditarEPPDropdown" class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto hidden z-50"></div>
                 </div>
@@ -146,46 +145,106 @@ function abrirModalEditarEPP(eppData) {
     const eppId = eppData.id || eppData.epp_id || eppData.data_epp_original_id;
     console.log('[abrirModalEditarEPP] ID normalizado:', eppId, 'Tarjeta ID:', tarjetaEppIdEnEdicion);
     
-    // Buscar el índice del EPP en eppAgregadosList con múltiples criterios
-    indiceEPPEnEdicion = eppAgregadosList.findIndex(e => {
-        // Criterio 1: Coincidir ID directo
-        if (e.id === eppId || String(e.id) === String(eppId)) return true;
-        
-        // Criterio 2: Coincidir por nombre si está disponible
-        if (eppData.nombre && (e.nombre === eppData.nombre || e.nombre_completo === eppData.nombre)) return true;
-        if (eppData.nombre_completo && e.nombre_completo === eppData.nombre_completo) return true;
-        
-        // Criterio 3: Coincidir por nombre_epp (como aparece en las tarjetas)
-        if (eppData.nombre_epp && e.nombre_epp === eppData.nombre_epp) return true;
-        
-        return false;
-    });
+    // PRIMERO: Buscar en window.itemsPedido (donde están realmente los EPPs agregados)
+    let eppEncontrado = null;
+    indiceEPPEnEdicion = -1;
     
-    console.log('[abrirModalEditarEPP] Índice encontrado:', indiceEPPEnEdicion, 'Total EPPs en lista:', eppAgregadosList.length);
-    
-    if (indiceEPPEnEdicion !== -1) {
-        // Usar directamente el objeto de eppAgregadosList
-        eppEnEdicionIndividual = { ...eppAgregadosList[indiceEPPEnEdicion] };
-        fotosEnEdicionIndividual = eppAgregadosList[indiceEPPEnEdicion].imagenes ? [...eppAgregadosList[indiceEPPEnEdicion].imagenes] : [];
+    if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
+        console.log('[abrirModalEditarEPP] Buscando en window.itemsPedido...');
         
-        console.log('[abrirModalEditarEPP] EPP encontrado en lista:', eppEnEdicionIndividual);
+        indiceEPPEnEdicion = window.itemsPedido.findIndex(e => {
+            // Criterio 1: Coincidir ID directo
+            if (e.epp_id === eppId || e.epp_id === parseInt(eppId)) return true;
+            if (e.id === eppId || String(e.id) === String(eppId)) return true;
+            
+            // Criterio 2: Coincidir por nombre_epp (como aparece en las tarjetas)
+            if (eppData.nombre && (e.nombre_epp === eppData.nombre || e.nombre_epp === eppData.nombre_completo)) return true;
+            if (eppData.nombre_epp && e.nombre_epp === eppData.nombre_epp) return true;
+            
+            // Criterio 3: Coincidir por tarjeta ID (Si está disponible)
+            if (tarjetaEppIdEnEdicion && e.tarjetaId === tarjetaEppIdEnEdicion) return true;
+            
+            return false;
+        });
+        
+        if (indiceEPPEnEdicion !== -1) {
+            eppEncontrado = { ...window.itemsPedido[indiceEPPEnEdicion] };
+            console.log('[abrirModalEditarEPP] ✅ EPP encontrado en window.itemsPedido:', eppEncontrado);
+        }
+    }
+    
+    // FALLBACK: Si no encontró en window.itemsPedido, buscar en eppAgregadosList
+    if (indiceEPPEnEdicion === -1 && eppAgregadosList.length > 0) {
+        console.log('[abrirModalEditarEPP] EPP no encontrado en window.itemsPedido, buscando en eppAgregadosList...');
+        
+        indiceEPPEnEdicion = eppAgregadosList.findIndex(e => {
+            // Criterio 1: Coincidir ID directo
+            if (e.id === eppId || String(e.id) === String(eppId)) return true;
+            
+            // Criterio 2: Coincidir por nombre si está disponible
+            if (eppData.nombre && (e.nombre === eppData.nombre || e.nombre_completo === eppData.nombre)) return true;
+            if (eppData.nombre_completo && e.nombre_completo === eppData.nombre_completo) return true;
+            
+            // Criterio 3: Coincidir por nombre_epp (como aparece en las tarjetas)
+            if (eppData.nombre_epp && e.nombre_epp === eppData.nombre_epp) return true;
+            
+            return false;
+        });
+        
+        if (indiceEPPEnEdicion !== -1) {
+            eppEncontrado = { ...eppAgregadosList[indiceEPPEnEdicion] };
+            console.log('[abrirModalEditarEPP] ✅ EPP encontrado en eppAgregadosList:', eppEncontrado);
+        }
+    }
+    
+    console.log('[abrirModalEditarEPP] Búsqueda completada - Índice encontrado:', indiceEPPEnEdicion);
+    
+    if (eppEncontrado) {
+        // Usar directamente el objeto encontrado
+        eppEnEdicionIndividual = eppEncontrado;
+        
+        // Cargar imágenes con validación
+        fotosEnEdicionIndividual = [];
+        if (eppEncontrado.imagenes && Array.isArray(eppEncontrado.imagenes)) {
+            // Filtrar solo imágenes válidas (descartar blob URLs revocadas)
+            fotosEnEdicionIndividual = eppEncontrado.imagenes.filter(img => {
+                // Validar que la imagen tiene una URL válida
+                if (!img) return false;
+                const hasValidUrl = img.previewUrl || img.url || img.src || img.ruta_webp || img.ruta_original;
+                return !!hasValidUrl;
+            });
+            console.log('[abrirModalEditarEPP] Imágenes cargadas:', fotosEnEdicionIndividual.length, '/', eppEncontrado.imagenes.length);
+        }
+        
+        console.log('[abrirModalEditarEPP] EPP cargado para edición:', eppEnEdicionIndividual);
     } else {
         // Fallback: crear uno nuevo con los datos recibidos
-        console.warn('[abrirModalEditarEPP] EPP no encontrado en lista, usando datos recibidos');
+        console.warn('[abrirModalEditarEPP] EPP no encontrado en ninguna lista, usando datos recibidos como fallback');
         eppEnEdicionIndividual = { 
             id: eppId,
+            epp_id: eppId,
             nombre: eppData.nombre || eppData.nombre_epp || eppData.nombre_completo || 'EPP',
             nombre_completo: eppData.nombre_completo || eppData.nombre_epp || eppData.nombre || 'EPP',
+            nombre_epp: eppData.nombre_epp || eppData.nombre_completo || eppData.nombre || 'EPP',
             cantidad: eppData.cantidad || 1,
             observaciones: eppData.observaciones || '-',
             imagenes: eppData.imagenes || []
         };
-        fotosEnEdicionIndividual = eppData.imagenes ? [...eppData.imagenes] : [];
+        
+        // Cargar imágenes del fallback con validación
+        fotosEnEdicionIndividual = [];
+        if (eppData.imagenes && Array.isArray(eppData.imagenes)) {
+            fotosEnEdicionIndividual = eppData.imagenes.filter(img => {
+                if (!img) return false;
+                const hasValidUrl = img.previewUrl || img.url || img.src || img.ruta_webp || img.ruta_original;
+                return !!hasValidUrl;
+            });
+        }
     }
     
     // Llenar formulario
-    document.getElementById('modalEditarEPPBuscador').value = eppEnEdicionIndividual.nombre_completo || eppEnEdicionIndividual.nombre || 'EPP';
-    document.getElementById('modalEditarEPPNombre').textContent = eppEnEdicionIndividual.nombre_completo || eppEnEdicionIndividual.nombre || 'EPP';
+    document.getElementById('modalEditarEPPBuscador').value = eppEnEdicionIndividual.nombre_completo || eppEnEdicionIndividual.nombre_epp || eppEnEdicionIndividual.nombre || 'EPP';
+    document.getElementById('modalEditarEPPNombre').textContent = eppEnEdicionIndividual.nombre_completo || eppEnEdicionIndividual.nombre_epp || eppEnEdicionIndividual.nombre || 'EPP';
     document.getElementById('modalEditarEPPCantidad').value = eppEnEdicionIndividual.cantidad || 1;
     document.getElementById('modalEditarEPPObservaciones').value = eppEnEdicionIndividual.observaciones || '-';
     
@@ -257,26 +316,75 @@ async function filtrarEPPsEnEdicion(valor) {
 function seleccionarEPPEnEdicion(epp) {
     console.log('[seleccionarEPPEnEdicion] EPP seleccionado:', epp);
     
-    // Actualizar EPP en edición
-    eppEnEdicionIndividual.id = epp.id;
-    eppEnEdicionIndividual.epp_id = epp.id;
-    eppEnEdicionIndividual.nombre = epp.nombre;
-    eppEnEdicionIndividual.nombre_completo = epp.nombre_completo || epp.nombre;
+    // Buscar el EPP en window.itemsPedido - DEBE estar en el pedido
+    let eppEncontrado = null;
+    let indiceEncontrado = -1;
     
-    // Resetear índice porque cambió el EPP
-    indiceEPPEnEdicion = -1;
-    tarjetaEppIdEnEdicion = null;  // Resetear tarjeta porque es otro EPP
+    if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
+        indiceEncontrado = window.itemsPedido.findIndex(item => 
+            (item.epp_id === epp.id || item.epp_id === parseInt(epp.id) ||
+             item.id === epp.id || String(item.id) === String(epp.id))
+        );
+        
+        if (indiceEncontrado !== -1) {
+            eppEncontrado = window.itemsPedido[indiceEncontrado];
+            console.log('[seleccionarEPPEnEdicion] ✅ EPP encontrado en window.itemsPedido:', eppEncontrado);
+        }
+    }
+    
+    // Si el EPP NO está en el pedido, mostrar error
+    if (!eppEncontrado) {
+        console.warn('[seleccionarEPPEnEdicion] ❌ El EPP seleccionado no está agregado al pedido');
+        
+        // Mostrar alerta amigable
+        if (window.Swal) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'EPP no disponible',
+                text: 'El EPP seleccionado no está agregado a este pedido. Solo puedes editar EPPs que ya están incluidos en el pedido.',
+                confirmButtonText: 'Ok',
+                confirmButtonColor: '#3b82f6'
+            });
+        } else {
+            alert('El EPP seleccionado no está agregado al pedido. Solo puedes editar EPPs que ya están incluidos en el pedido.');
+        }
+        
+        // Resetear el selector al EPP anterior
+        document.getElementById('modalEditarEPPBuscador').value = eppEnEdicionIndividual.nombre_completo || eppEnEdicionIndividual.nombre_epp || eppEnEdicionIndividual.nombre;
+        document.getElementById('modalEditarEPPDropdown').classList.add('hidden');
+        return;
+    }
+    
+    // EPP encontrado en el pedido - cargar sus datos
+    eppEnEdicionIndividual = eppEncontrado;
+    indiceEPPEnEdicion = indiceEncontrado;
+    
+    // Cargar imágenes con validación
+    fotosEnEdicionIndividual = [];
+    if (eppEncontrado.imagenes && Array.isArray(eppEncontrado.imagenes)) {
+        fotosEnEdicionIndividual = eppEncontrado.imagenes.filter(img => {
+            if (!img) return false;
+            const hasValidUrl = img.previewUrl || img.url || img.src || img.ruta_webp || img.ruta_original;
+            return !!hasValidUrl;
+        });
+    }
+    
+    console.log('[seleccionarEPPEnEdicion] EPP cargado correctamente, imágenes:', fotosEnEdicionIndividual.length);
+    
+    // Resetear tarjeta porque es otro EPP
+    tarjetaEppIdEnEdicion = null;
     
     // Actualizar UI
-    document.getElementById('modalEditarEPPBuscador').value = epp.nombre_completo || epp.nombre;
-    document.getElementById('modalEditarEPPNombre').textContent = epp.nombre_completo || epp.nombre;
+    document.getElementById('modalEditarEPPBuscador').value = eppEnEdicionIndividual.nombre_completo || eppEnEdicionIndividual.nombre_epp || eppEnEdicionIndividual.nombre;
+    document.getElementById('modalEditarEPPNombre').textContent = eppEnEdicionIndividual.nombre_completo || eppEnEdicionIndividual.nombre_epp || eppEnEdicionIndividual.nombre;
+    document.getElementById('modalEditarEPPCantidad').value = eppEnEdicionIndividual.cantidad || 1;
+    document.getElementById('modalEditarEPPObservaciones').value = eppEnEdicionIndividual.observaciones || '-';
+    
+    // Actualizar galería
+    mostrarFotosEnModalEditar();
     
     // Ocultar dropdown
     document.getElementById('modalEditarEPPDropdown').classList.add('hidden');
-    
-    // Limpiar fotos al cambiar EPP
-    fotosEnEdicionIndividual = [];
-    mostrarFotosEnModalEditar();
 }
 
 /**
@@ -299,14 +407,23 @@ function mostrarFotosEnModalEditar() {
     const galeria = document.getElementById('modalEditarEPPFotosGaleria');
     galeria.innerHTML = '';
     
+    console.log('[mostrarFotosEnModalEditar] Mostrando fotos. Total en array:', fotosEnEdicionIndividual.length);
+    
     fotosEnEdicionIndividual.forEach((foto, index) => {
+        // Obtener URL válida de la foto
+        const fotoUrl = foto.previewUrl || foto.url || foto.src || foto.ruta_webp || foto.ruta_original || (foto.file ? URL.createObjectURL(foto.file) : '');
+        
+        // Validar que la URL sea válida
+        if (!fotoUrl) {
+            console.warn(`[mostrarFotosEnModalEditar] Foto ${index} no tiene URL válida, omitiendo`);
+            return;
+        }
+        
         const div = document.createElement('div');
         div.className = 'relative group rounded-lg overflow-hidden bg-gray-100 aspect-square';
         
-        const fotoUrl = foto.previewUrl || foto.url || (foto.file ? URL.createObjectURL(foto.file) : '');
-        
         div.innerHTML = `
-            <img src="${fotoUrl}" alt="Foto ${index + 1}" class="w-full h-full object-cover">
+            <img src="${fotoUrl}" alt="Foto ${index + 1}" class="w-full h-full object-cover" onerror="console.warn('Error cargando imagen:', this.src); this.parentElement.parentElement.style.display='none';">
             <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition flex items-center justify-center">
                 <button 
                     type="button"
@@ -322,6 +439,7 @@ function mostrarFotosEnModalEditar() {
     });
     
     document.getElementById('modalEditarEPPFotosCount').textContent = fotosEnEdicionIndividual.length;
+    console.log('[mostrarFotosEnModalEditar] Galería actualizada con', galeria.children.length, 'imágenes');
 }
 
 /**
@@ -385,14 +503,28 @@ function manejarDropEnModalEditar(event) {
  */
 function eliminarFotoEnModalEditar(index) {
     const foto = fotosEnEdicionIndividual[index];
-    console.log('[eliminarFotoEnModalEditar] Eliminando foto en índice:', index, '- Nombre:', foto.nombre);
+    console.log('[eliminarFotoEnModalEditar] Eliminando foto en índice:', index, '- Nombre:', foto.nombre || 'sin nombre');
     
-    if (foto && foto.previewUrl) {
+    // Solo revocar blob URLs que creamos en esta sesión (que tienen un File object)
+    if (foto && foto.file && foto.previewUrl && foto.previewUrl.startsWith('blob:')) {
+        console.log('[eliminarFotoEnModalEditar] Revocando blob URL de archivo temporal');
         URL.revokeObjectURL(foto.previewUrl);
     }
     
     fotosEnEdicionIndividual.splice(index, 1);
     mostrarFotosEnModalEditar();
+    
+    // Actualizar la tarjeta visual inmediatamente después de eliminar
+    if (tarjetaEppIdEnEdicion) {
+        actualizarTarjetaEPPEnDOM(tarjetaEppIdEnEdicion, {
+            nombre: eppEnEdicionIndividual.nombre_epp || eppEnEdicionIndividual.nombre_completo || eppEnEdicionIndividual.nombre,
+            cantidad: document.getElementById('modalEditarEPPCantidad')?.value || (eppEnEdicionIndividual.cantidad || 1),
+            observaciones: document.getElementById('modalEditarEPPObservaciones')?.value || (eppEnEdicionIndividual.observaciones || '-'),
+            imagenes: fotosEnEdicionIndividual
+        });
+        console.log('[eliminarFotoEnModalEditar] Tarjeta visual actualizada inmediatamente');
+    }
+    
     console.log('[eliminarFotoEnModalEditar] Foto eliminada, total restantes:', fotosEnEdicionIndividual.length);
 }
 
@@ -452,15 +584,44 @@ function guardarEdicionEnModalEditarEPP() {
         nombre: eppEnEdicionIndividual.nombre,
         indiceGuardado: indiceEPPEnEdicion,
         tarjetaId: tarjetaEppIdEnEdicion,
-        totalEPPsEnLista: eppAgregadosList.length
+        totalEPPsEnLista: eppAgregadosList.length,
+        itemsPedidoDisponible: !!window.itemsPedido,
+        totalItemsPedido: window.itemsPedido ? window.itemsPedido.length : 0
     });
     
-    // Usar el índice guardado si es válido
-    let index = indiceEPPEnEdicion;
+    // PRIMERO: Intentar buscar en window.itemsPedido (donde realmente están los EPPs agregados)
+    let index = -1;
+    let targetList = null;
     
-    // Si el índice no es válido o está fuera de rango, buscar nuevamente
-    if (index === -1 || index === undefined || index >= eppAgregadosList.length) {
-        console.log('[guardarEdicionEnModalEditarEPP] Índice inválido o fuera de rango, buscando nuevamente...');
+    if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
+        console.log('[guardarEdicionEnModalEditarEPP] Buscando en window.itemsPedido...');
+        
+        index = window.itemsPedido.findIndex(e => {
+            // Criterio 1: Coincidir ID directo
+            if (e.epp_id === eppEnEdicionIndividual.id || e.epp_id === parseInt(eppEnEdicionIndividual.id)) return true;
+            if (e.id === eppEnEdicionIndividual.id || String(e.id) === String(eppEnEdicionIndividual.id)) return true;
+            
+            // Criterio 2: Coincidir por nombre_epp (como aparece en las tarjetas)
+            if (e.nombre_epp && (e.nombre_epp === eppEnEdicionIndividual.nombre_completo || e.nombre_epp === eppEnEdicionIndividual.nombre)) return true;
+            
+            // Criterio 3: Coincidir por tarjeta ID (Si está disponible)
+            if (tarjetaEppIdEnEdicion && e.tarjetaId === tarjetaEppIdEnEdicion) return true;
+            
+            return false;
+        });
+        
+        if (index !== -1) {
+            targetList = window.itemsPedido;
+            console.log('[guardarEdicionEnModalEditarEPP] ✅ EPP encontrado en window.itemsPedido, índice:', index);
+        } else {
+            console.log('[guardarEdicionEnModalEditarEPP] EPP no encontrado en window.itemsPedido, buscando en eppAgregadosList...');
+        }
+    }
+    
+    // FALLBACK: Si no encontró en window.itemsPedido, intentar en eppAgregadosList
+    if (index === -1 && eppAgregadosList.length > 0) {
+        console.log('[guardarEdicionEnModalEditarEPP] Buscando en eppAgregadosList...');
+        
         index = eppAgregadosList.findIndex(e => {
             // Criterio 1: Coincidir ID
             if (e.id === eppEnEdicionIndividual.id || String(e.id) === String(eppEnEdicionIndividual.id)) return true;
@@ -471,54 +632,104 @@ function guardarEdicionEnModalEditarEPP() {
             
             return false;
         });
-        console.log('[guardarEdicionEnModalEditarEPP] Nuevo índice encontrado:', index);
+        
+        if (index !== -1) {
+            targetList = eppAgregadosList;
+            console.log('[guardarEdicionEnModalEditarEPP] ✅ EPP encontrado en eppAgregadosList, índice:', index);
+        }
     }
     
-    // Actualizar datos en eppAgregadosList
-    if (index !== -1 && index < eppAgregadosList.length) {
-        const eppAntes = { ...eppAgregadosList[index] };
+    // Actualizar datos en la lista encontrada
+    if (index !== -1 && targetList && index < targetList.length) {
+        const eppAntes = { ...targetList[index] };
         
-        eppAgregadosList[index].cantidad = cantidad;
-        eppAgregadosList[index].observaciones = observaciones;
-        eppAgregadosList[index].imagenes = fotosEnEdicionIndividual;
-        eppAgregadosList[index].nombre = eppEnEdicionIndividual.nombre;
-        eppAgregadosList[index].nombre_epp = eppEnEdicionIndividual.nombre_completo || eppEnEdicionIndividual.nombre;
-        eppAgregadosList[index].nombre_completo = eppEnEdicionIndividual.nombre_completo || eppEnEdicionIndividual.nombre;
+        // Actualizar propiedades
+        targetList[index].cantidad = cantidad;
+        targetList[index].observaciones = observaciones;
+        targetList[index].imagenes = fotosEnEdicionIndividual;
         
-        console.log('[guardarEdicionEnModalEditarEPP] ✅ EPP actualizado en eppAgregadosList, índice:', index, {
+        // Mantener nombres sincronizados
+        if (eppEnEdicionIndividual.nombre_completo) {
+            targetList[index].nombre = eppEnEdicionIndividual.nombre_completo;
+            targetList[index].nombre_epp = eppEnEdicionIndividual.nombre_completo;
+            targetList[index].nombre_completo = eppEnEdicionIndividual.nombre_completo;
+        }
+        
+        console.log('[guardarEdicionEnModalEditarEPP] ✅ EPP actualizado correctamente:', {
+            lista: targetList === window.itemsPedido ? 'window.itemsPedido' : 'eppAgregadosList',
+            indice: index,
             antes: eppAntes,
-            ahora: eppAgregadosList[index]
+            ahora: targetList[index]
         });
         
-        // Actualizar tarjeta visual si existe el manager y el tarjetaId
-        if (tarjetaEppIdEnEdicion && window.eppManager && typeof window.eppManager.actualizarItem === 'function') {
-            window.eppManager.actualizarItem(tarjetaEppIdEnEdicion, {
-                nombre: eppEnEdicionIndividual.nombre_completo || eppEnEdicionIndividual.nombre,
+        // Actualizar tarjeta visual directamente en el DOM
+        if (tarjetaEppIdEnEdicion) {
+            actualizarTarjetaEPPEnDOM(tarjetaEppIdEnEdicion, {
+                nombre: eppEnEdicionIndividual.nombre_epp || eppEnEdicionIndividual.nombre_completo || eppEnEdicionIndividual.nombre,
                 cantidad: cantidad,
                 observaciones: observaciones,
                 imagenes: fotosEnEdicionIndividual
             });
-            console.log('[guardarEdicionEnModalEditarEPP] ✅ Tarjeta visual actualizada:', tarjetaEppIdEnEdicion);
+            console.log('[guardarEdicionEnModalEditarEPP] ✅ Tarjeta visual actualizada en DOM:', tarjetaEppIdEnEdicion);
         } else {
-            console.warn('[guardarEdicionEnModalEditarEPP] ⚠️ No se pudo actualizar la tarjeta visual', {
-                tarjetaId: tarjetaEppIdEnEdicion,
-                managerDisponible: !!window.eppManager,
-                actualizarItemDisponible: window.eppManager ? typeof window.eppManager.actualizarItem : 'N/A'
-            });
+            console.warn('[guardarEdicionEnModalEditarEPP] ⚠️ No hay tarjetaId para actualizar la tarjeta visual');
         }
         
-        // Cerrar modal
+        // Cerrar modal silenciosamente sin alertas
         cerrarModalEditarEPP();
-        
-        // Mostrar confirmación
-        alert('✅ Cambios guardados correctamente');
     } else {
-        console.error('[guardarEdicionEnModalEditarEPP] ❌ No se encontró el EPP en la lista', {
+        console.error('[guardarEdicionEnModalEditarEPP] ❌ No se encontró el EPP en ninguna lista', {
             indiceCalculado: index,
             eppEnEdicion: eppEnEdicionIndividual,
-            eppAgregadosList: eppAgregadosList
+            eppAgregadosListLength: eppAgregadosList.length,
+            itemsPedidoLength: window.itemsPedido ? window.itemsPedido.length : 0,
+            itemsPedidoContent: window.itemsPedido ? JSON.stringify(window.itemsPedido.map(e => ({id: e.id, epp_id: e.epp_id, nombre_epp: e.nombre_epp}))) : 'N/A',
+            buscandoPor: {
+                id: eppEnEdicionIndividual.id,
+                epp_id: eppEnEdicionIndividual.epp_id,
+                nombre: eppEnEdicionIndividual.nombre,
+                nombre_completo: eppEnEdicionIndividual.nombre_completo
+            }
         });
-        alert('❌ Error: No se pudo encontrar el EPP para guardar los cambios. Intenta nuevamente.');
+        
+        // Intentar una vez más con criterios más flexibles
+        if (window.itemsPedido && Array.isArray(window.itemsPedido) && window.itemsPedido.length > 0) {
+            console.log('[guardarEdicionEnModalEditarEPP] Reintentando búsqueda con criterios flexibles...');
+            
+            index = window.itemsPedido.findIndex(e => {
+                // Búsqueda muy flexible por nombre
+                if (eppEnEdicionIndividual.nombre_completo && 
+                    e.nombre_epp && 
+                    e.nombre_epp.toLowerCase().includes(eppEnEdicionIndividual.nombre_completo.toLowerCase())) {
+                    return true;
+                }
+                return false;
+            });
+            
+            if (index !== -1) {
+                console.log('[guardarEdicionEnModalEditarEPP] ✅ EPP encontrado en reintento por nombre flexible');
+                targetList = window.itemsPedido;
+                
+                // Actualizar datos en la lista encontrada
+                if (targetList && index < targetList.length) {
+                    const eppAntes = { ...targetList[index] };
+                    
+                    targetList[index].cantidad = cantidad;
+                    targetList[index].observaciones = observaciones;
+                    targetList[index].imagenes = fotosEnEdicionIndividual;
+                    
+                    console.log('[guardarEdicionEnModalEditarEPP] ✅ EPP actualizado correctamente en reintento:', {
+                        lista: 'window.itemsPedido',
+                        indice: index,
+                        antes: eppAntes,
+                        ahora: targetList[index]
+                    });
+                }
+                
+                cerrarModalEditarEPP();
+                return;
+            }
+        }
     }
 }
 
@@ -531,4 +742,113 @@ window.manejarDropEnModalEditar = manejarDropEnModalEditar;
 window.eliminarFotoEnModalEditar = eliminarFotoEnModalEditar;
 window.filtrarEPPsEnEdicion = filtrarEPPsEnEdicion;
 window.seleccionarEPPEnEdicion = seleccionarEPPEnEdicion;
+
+/**
+ * Actualizar tarjeta EPP en el DOM
+ * Busca la tarjeta visual y actualiza su contenido sin depender del manager
+ */
+function actualizarTarjetaEPPEnDOM(tarjetaId, datos) {
+    try {
+        console.log('[actualizarTarjetaEPPEnDOM] Iniciando actualización de tarjeta:', {
+            tarjetaId: tarjetaId,
+            datos: datos
+        });
+        
+        // Buscar la tarjeta por su data-epp-id
+        const tarjeta = document.querySelector(`[data-epp-id="${tarjetaId}"]`);
+        
+        if (!tarjeta) {
+            console.warn('[actualizarTarjetaEPPEnDOM] Tarjeta no encontrada con ID:', tarjetaId);
+            return;
+        }
+        
+        console.log('[actualizarTarjetaEPPEnDOM] Tarjeta encontrada, actualizando...');
+        
+        // Actualizar nombre - buscar el h4 dentro del header
+        const nombreElemento = tarjeta.querySelector('h4');
+        if (nombreElemento) {
+            nombreElemento.textContent = datos.nombre || '-';
+            console.log('[actualizarTarjetaEPPEnDOM] Nombre actualizado a:', datos.nombre);
+        } else {
+            console.warn('[actualizarTarjetaEPPEnDOM] ⚠️ No se encontró elemento h4 para el nombre');
+        }
+        
+        // Actualizar cantidad y observaciones
+        // La estructura es: Detalles principales con grid de 2 columnas
+        // Columna 1: Cantidad label + cantidad valor
+        // Columna 2: Observaciones label + observaciones valor
+        
+        const parrafos = Array.from(tarjeta.querySelectorAll('p'));
+        
+        // Buscar y actualizar cantidad
+        for (let i = 0; i < parrafos.length; i++) {
+            const parrafo = parrafos[i];
+            if (parrafo.textContent.includes('Cantidad')) {
+                // El siguiente p debe tener la cantidad
+                if (i + 1 < parrafos.length) {
+                    parrafos[i + 1].textContent = datos.cantidad || 1;
+                    console.log('[actualizarTarjetaEPPEnDOM] Cantidad actualizada a:', datos.cantidad);
+                }
+                break;
+            }
+        }
+        
+        // Buscar y actualizar observaciones
+        for (let i = 0; i < parrafos.length; i++) {
+            const parrafo = parrafos[i];
+            if (parrafo.textContent.includes('Observaciones')) {
+                // El siguiente p debe tener las observaciones
+                if (i + 1 < parrafos.length) {
+                    parrafos[i + 1].textContent = datos.observaciones || '-';
+                    console.log('[actualizarTarjetaEPPEnDOM] Observaciones actualizadas a:', datos.observaciones);
+                }
+                break;
+            }
+        }
+        
+        // Actualizar imágenes
+        if (datos.imagenes && datos.imagenes.length > 0) {
+            // Buscar o crear el contenedor de imágenes
+            let containerImagenes = tarjeta.querySelector('.epp-imagenes-container');
+            
+            // Crear HTML para las imágenes
+            let htmlImagenes = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 0.5rem; margin-top: 1rem;">';
+            
+            for (let i = 0; i < datos.imagenes.length; i++) {
+                const img = datos.imagenes[i];
+                const src = img.previewUrl || img.url || img.src || (typeof img === 'string' ? img : '');
+                
+                if (src) {
+                    htmlImagenes += `
+                        <div style="width: 80px; height: 80px; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                            <img src="${src}" alt="EPP" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none';">
+                        </div>
+                    `;
+                }
+            }
+            
+            htmlImagenes += '</div>';
+            
+            if (!containerImagenes) {
+                containerImagenes = document.createElement('div');
+                containerImagenes.className = 'epp-imagenes-container';
+                tarjeta.appendChild(containerImagenes);
+            }
+            
+            containerImagenes.innerHTML = htmlImagenes;
+            console.log('[actualizarTarjetaEPPEnDOM] Imágenes actualizadas:', datos.imagenes.length);
+        } else {
+            // Si no hay imágenes, limpiar el contenedor
+            const containerImagenes = tarjeta.querySelector('.epp-imagenes-container');
+            if (containerImagenes) {
+                containerImagenes.innerHTML = '';
+                console.log('[actualizarTarjetaEPPEnDOM] Contenedor de imágenes limpiado (0 imágenes)');
+            }
+        }
+        
+        console.log('[actualizarTarjetaEPPEnDOM] ✅ Tarjeta actualizada correctamente');
+    } catch (error) {
+        console.error('[actualizarTarjetaEPPEnDOM] Error actualizando tarjeta:', error);
+    }
+}
 </script>

@@ -660,9 +660,11 @@ window.EppMenuHandlers = {
             // noop
         }
 
-        // Eliminar del estado (para que al guardar borrador se elimine en BD)
+        // Eliminar del estado via eppStore o fallback directo
         try {
-            if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
+            if (window.eppStore) {
+                window.eppStore.eliminarItem(itemId);
+            } else if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
                 const before = window.itemsPedido.length;
                 window.itemsPedido = window.itemsPedido.filter(it => {
                     const id = it?.id ?? it?.epp_id ?? it?.pedidoEppId ?? null;

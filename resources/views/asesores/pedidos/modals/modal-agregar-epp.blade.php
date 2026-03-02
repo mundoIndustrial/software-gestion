@@ -137,7 +137,7 @@
 
 <!-- Modal Agregar EPP al Pedido - REDISEÑO CON TABLA MÚLTIPLE -->
 <div id="modalAgregarEPP" class="fixed inset-0 bg-black/50 flex items-center justify-center" style="display: none; z-index: 9999999;">
-    <div class="bg-white rounded-lg w-full max-w-3xl shadow-2xl overflow-hidden" style="z-index: 10000000; max-height: 95vh; height: 95vh; display: flex; flex-direction: column; margin: 0 20px;">
+    <div id="modalAgregarEPPContent" class="bg-white rounded-lg w-full max-w-3xl shadow-2xl overflow-hidden" style="z-index: 10000000; max-height: 95vh; height: 95vh; display: flex; flex-direction: column; margin: 0 20px;">
         
         <!-- Header Azul -->
         <div class="bg-blue-600 px-6 py-4 flex justify-between items-center flex-shrink-0">
@@ -151,7 +151,7 @@
         <div class="p-6 space-y-4 overflow-y-auto flex-1" style="max-height: calc(90vh - 140px);">
             
             <!-- Buscador con Dropdown Multi-Select -->
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div id="buscadorEPPSection" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div class="flex gap-3 items-end">
                     <div class="flex-1 relative">
                         <label for="inputBuscadorEPPTabla" class="text-sm font-medium text-gray-700 block mb-2">
@@ -233,11 +233,13 @@
                 </h3>
                 <div class="overflow-x-auto" style="max-height: 300px; overflow-y: auto;">
                     <table class="w-full text-sm">
-                        <thead class="bg-gray-50 border-b border-gray-200 sticky top-0">
+                        <thead class="bg-gray-50 border-b border-gray-200 sticky top-0" id="headerTablaEPPAgregados">
                             <tr>
                                 <th class="px-4 py-2 text-left text-gray-700 font-semibold">EPP</th>
                                 <th class="px-4 py-2 text-center text-gray-700 font-semibold w-20">Cant.</th>
-                                <th class="px-4 py-2 text-left text-gray-700 font-semibold flex-1">Observaciones</th>
+                                <th class="px-4 py-2 text-left text-gray-700 font-semibold">Observaciones</th>
+                                <th class="px-4 py-2 text-center text-gray-700 font-semibold w-24 columna-cotizacion" style="display:none;">V. Unitario</th>
+                                <th class="px-4 py-2 text-center text-gray-700 font-semibold w-24 columna-cotizacion" style="display:none;">Total</th>
                                 <th class="px-4 py-2 text-center text-gray-700 font-semibold w-16">Fotos</th>
                                 <th class="px-4 py-2 text-center text-gray-700 font-semibold w-16">Acción</th>
                             </tr>
@@ -322,19 +324,47 @@
 
 
             <!-- Sección de Fotos - PARA MODO EDICIÓN -->
-            <!-- Nota: La edición de EPPs se realiza en el modal-editar-epp.blade.php -->
+            <div id="seccionFotosEPP" style="display: none;">
+                <div class="flex items-center justify-between mb-3">
+                    <label class="text-sm font-semibold text-gray-900">Fotos del EPP</label>
+                    <span class="text-xs text-gray-500">(<span id="contadorFotosEPP">0</span> foto/s)</span>
+                </div>
 
-            <!-- Botón Agregar a Lista - PARA MODO EDICIÓN -->
-            <button 
-                id="btnAgregarALista"
-                onclick="agregarEPPALista()"
-                disabled
-                class="w-full px-4 py-2 bg-green-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-green-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition text-sm"
-                style="display: none;"
-            >
-                <i class="material-symbols-rounded" style="font-size: 20px;">add</i>
-                Agregar a la Lista
-            </button>
+                <!-- Zona de carga -->
+                <div class="space-y-3">
+                    <!-- Zona Drag & Drop -->
+                    <div id="contenedorFotosEPP" 
+                        class="grid grid-cols-3 gap-3 border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[120px] transition-all"
+                        ondrop="handleDropEPP(event)" 
+                        ondragover="handleDragOverEPP(event)"
+                        ondragleave="handleDragLeaveEPP(event)">
+                        <div id="mensajeDragDrop" class="col-span-3 flex flex-col items-center justify-center text-gray-400">
+                            <i class="material-symbols-rounded text-3xl">cloud_upload</i>
+                            <p class="text-sm mt-1">Arrastra imágenes aquí</p>
+                            <p class="text-xs">También puedes usar Ctrl+V o hacer clic en "Agregar Foto"</p>
+                        </div>
+                    </div>
+
+                    <!-- Botón para agregar fotos -->
+                    <button 
+                        type="button"
+                        onclick="document.getElementById('inputFotosEPP').click()"
+                        class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-sm flex items-center justify-center gap-2">
+                        <i class="material-symbols-rounded" style="font-size: 18px;">add_photo_alternate</i>
+                        Agregar Fotos
+                    </button>
+                </div>
+
+                <!-- Input file oculto -->
+                <input 
+                    type="file" 
+                    id="inputFotosEPP" 
+                    multiple 
+                    accept="image/*" 
+                    style="display: none !important;"
+                    onchange="manejarSubidaFotosEPP(this)"
+                >
+            </div>
         </div>
 
         <!-- Footer fijo -->
@@ -376,8 +406,41 @@
 <script>
 // Variables globales
 let productoSeleccionadoEPP = null;
-let eppAgregadosList = []; // Lista de EPP agregados
+let eppAgregadosList = []; // Lista de EPP agregados en el modal
 let eppDisponiblesList = []; // Lista de EPP disponibles para mostrar en tabla
+let eppYaAgregadosEnFormulario = []; // IDs de EPPs ya en el formulario
+
+/**
+ * Obtener los EPP IDs ya agregados en el formulario
+ */
+function obtenerEPPsYaAgregadosEnFormulario() {
+    eppYaAgregadosEnFormulario = [];
+    
+    // Buscar la tabla en el formulario de cotizacion/pedido
+    const tablaItems = document.getElementById('tabla-items-pedido');
+    console.log('[obtenerEPPsYaAgregadosEnFormulario] Buscando tabla:', tablaItems);
+    
+    if (tablaItems) {
+        // Buscar todas las filas con clase item-epp (estas tienen data-item-id)
+        const filas = tablaItems.querySelectorAll('tr.item-epp');
+        console.log('[obtenerEPPsYaAgregadosEnFormulario] Filas encontradas:', filas.length);
+        
+        filas.forEach((fila, idx) => {
+            // Intentar primero con data-item-id (el ID del EPP)
+            let eppId = fila.getAttribute('data-item-id');
+            console.log(`[obtenerEPPsYaAgregadosEnFormulario] Fila ${idx}: data-item-id=${eppId}`);
+            
+            if (eppId) {
+                eppYaAgregadosEnFormulario.push(parseInt(eppId));
+            }
+        });
+    } else {
+        console.warn('[obtenerEPPsYaAgregadosEnFormulario] tabla-items-pedido NO ENCONTRADA');
+    }
+    
+    console.log('[obtenerEPPsYaAgregadosEnFormulario] EPPs totales encontrados:', eppYaAgregadosEnFormulario);
+    return eppYaAgregadosEnFormulario;
+}
 
 /**
  * Cargar EPP disponibles en la tabla de selección
@@ -425,20 +488,41 @@ function renderizarDropdownEPP(epps) {
     
     if (!container) return;
     
+    console.log('[renderizarDropdownEPP] Renderizando con:', {
+        eppsCounts: epps ? epps.length : 0,
+        eppAgregadosModal: eppAgregadosList.length,
+        eppEnFormulario: eppYaAgregadosEnFormulario.length
+    });
+    
     container.innerHTML = '';
     
-    if (!epps || epps.length === 0) {
+    // Filtrar EPPs que ya están agregados (EN EL MODAL O EN EL FORMULARIO)
+    const eppsFiltrados = (epps || []).filter(epp => {
+        const enModal = eppAgregadosList.find(item => item.id == epp.id);
+        const enFormulario = eppYaAgregadosEnFormulario.includes(epp.id);
+        
+        if (enModal) {
+            console.log(`  - EPP ${epp.id} (${epp.nombre_completo}) EXCLUIDO: en modal`);
+        }
+        if (enFormulario) {
+            console.log(`  - EPP ${epp.id} (${epp.nombre_completo}) EXCLUIDO: en formulario`);
+        }
+        
+        return !enModal && !enFormulario;
+    });
+    
+    console.log('[renderizarDropdownEPP] EPPs después de filtrado:', eppsFiltrados.length);
+    
+    if (!eppsFiltrados || eppsFiltrados.length === 0) {
         mensajeSinResultados.classList.remove('hidden');
         return;
     }
     
     mensajeSinResultados.classList.add('hidden');
     
-    epps.forEach(epp => {
+    eppsFiltrados.forEach(epp => {
         const label = document.createElement('label');
         label.className = 'flex items-center p-2 hover:bg-blue-50 rounded cursor-pointer gap-2';
-        
-        const isChecked = eppAgregadosList.find(e => e.id == epp.id);
         
         label.innerHTML = `
             <input 
@@ -446,7 +530,6 @@ function renderizarDropdownEPP(epps) {
                 class="checkbox-epp-dropdown w-4 h-4" 
                 data-epp-id="${epp.id}" 
                 data-epp-nombre="${epp.nombre_completo || epp.nombre}"
-                ${isChecked ? 'checked' : ''}
                 onchange="agregarEPPDesdeDropdown(this)"
             >
             <div class="flex-1">
@@ -476,16 +559,33 @@ async function filtrarDropdownEPP(valor) {
     }
     
     try {
+        console.log('[filtrarDropdownEPP] Buscando:', busqueda, 'con EPPs en formulario:', eppYaAgregadosEnFormulario);
+        
         // Buscar en el servidor SIN límite de paginación
         const response = await fetch(`/api/epp/gestion?q=${encodeURIComponent(busqueda)}&per_page=10000`);
         const result = await response.json();
         
         let filtrados = [];
         if (result.success && result.data) {
-            filtrados = result.data || [];
+            console.log('[filtrarDropdownEPP] Resultados del servidor:', result.data.length);
+            
+            // Filtrar EPPs que ya están agregados (EN EL MODAL O EN EL FORMULARIO)
+            filtrados = (result.data || []).filter(epp => {
+                const enModal = eppAgregadosList.find(item => item.id == epp.id);
+                const enFormulario = eppYaAgregadosEnFormulario.includes(epp.id);
+                
+                if (enModal) {
+                    console.log(`  - EPP ${epp.id} EXCLUIDO (búsqueda): en modal`);
+                }
+                if (enFormulario) {
+                    console.log(`  - EPP ${epp.id} EXCLUIDO (búsqueda): en formulario (${epp.nombre_completo})`);
+                }
+                
+                return !enModal && !enFormulario;
+            });
         }
         
-        console.log('[filtrarDropdownEPP] Búsqueda en servidor:', busqueda, '- Resultados:', filtrados.length);
+        console.log('[filtrarDropdownEPP] Búsqueda:', busqueda, '- Resultados finales:', filtrados.length, 'de', (result.data || []).length);
         
         // Actualizar la lista local con los resultados de búsqueda
         // Renderizar y mostrar
@@ -516,6 +616,8 @@ function agregarEPPDesdeDropdown(checkbox) {
                 nombre_completo: nombre,
                 cantidad: 1,
                 observaciones: '-',
+                valor_unitario: 0,
+                total: 0,
                 imagenes: [],
                 imagen: epp?.imagen || ''
             });
@@ -569,6 +671,7 @@ document.addEventListener('click', function(e) {
 
 /**
  * Manejo de Ctrl+V (paste) para agregar fotos en la tabla de EPP agregados
+ * y en el modo edición (contenedorFotosEPP)
  */
 document.addEventListener('paste', function(e) {
     const modal = document.getElementById('modalAgregarEPP');
@@ -577,6 +680,61 @@ document.addEventListener('paste', function(e) {
     const items = e.clipboardData.items;
     if (!items) return;
     
+    // ========== MODO EDICIÓN: pegar en contenedorFotosEPP ==========
+    const seccionFotos = document.getElementById('seccionFotosEPP');
+    if (seccionFotos && seccionFotos.style.display !== 'none') {
+        let tieneImagen = false;
+        
+        for (let item of items) {
+            if (item.type.startsWith('image/')) {
+                tieneImagen = true;
+                const file = item.getAsFile();
+                if (!file) continue;
+                
+                const previewUrl = URL.createObjectURL(file);
+                const nombreArchivo = file.name || 'pegado_' + Date.now() + '.png';
+                const extension = nombreArchivo.split('.').pop().toLowerCase();
+                
+                const imagen = {
+                    id: Date.now() + '_paste_' + Math.random().toString(36).substr(2, 5),
+                    file: file,
+                    previewUrl: previewUrl,
+                    nombre: nombreArchivo,
+                    extension: extension,
+                    tamaño: file.size,
+                    pedido_epp_id: null,
+                    ruta_original: null,
+                    ruta_webp: null,
+                    principal: 0,
+                    orden: 0
+                };
+                
+                if (!window.fotosEPP) window.fotosEPP = [];
+                window.fotosEPP.push(imagen);
+                
+                if (typeof mostrarVistaPreviaFoto === 'function') {
+                    mostrarVistaPreviaFoto(imagen);
+                }
+                
+                console.log('[paste] Imagen pegada en modo edición:', nombreArchivo);
+            }
+        }
+        
+        if (tieneImagen) {
+            // Actualizar contador
+            const contadorFotos = document.getElementById('contadorFotosEPP');
+            if (contadorFotos) contadorFotos.textContent = window.fotosEPP ? window.fotosEPP.length : 0;
+            
+            // Ocultar mensaje drag-drop
+            const mensajeDragDrop = document.getElementById('mensajeDragDrop');
+            if (mensajeDragDrop && window.fotosEPP && window.fotosEPP.length > 0) {
+                mensajeDragDrop.style.display = 'none';
+            }
+            return; // Ya procesamos, no continuar con lógica de tabla
+        }
+    }
+    
+    // ========== MODO TABLA: pegar en eppAgregadosList ==========
     if (eppAgregadosList.length === 0) return;
     
     // Detectar cuál zona de fotos tiene foco
@@ -671,11 +829,34 @@ function renderizarTablaEPPAgregados() {
     const tbody = document.getElementById('cuerpoTablaEPP');
     if (!tbody) return;
     
+    const esCotizacion = !!window.__EPP_COTIZACION_MODE__;
+    
+    // Mostrar/ocultar columnas de cotización en el header
+    document.querySelectorAll('.columna-cotizacion').forEach(col => {
+        col.style.display = esCotizacion ? '' : 'none';
+    });
+    
+    // Ajustar ancho del modal según modo
+    const modalContent = document.getElementById('modalAgregarEPPContent');
+    if (modalContent) {
+        if (esCotizacion) {
+            modalContent.classList.remove('max-w-3xl');
+            modalContent.classList.add('max-w-5xl');
+        } else {
+            modalContent.classList.remove('max-w-5xl');
+            modalContent.classList.add('max-w-3xl');
+        }
+    }
+    
     tbody.innerHTML = '';
     
     eppAgregadosList.forEach((epp, idx) => {
         const row = document.createElement('tr');
         row.className = idx % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+        
+        // Inicializar valores si no existen
+        if (epp.valor_unitario === undefined) epp.valor_unitario = 0;
+        if (epp.total === undefined) epp.total = 0;
         
         // Miniaturas de fotos
         let fotosHtml = '';
@@ -702,6 +883,26 @@ function renderizarTablaEPPAgregados() {
             }
         }
         
+        // Columnas de cotización (valor unitario y total)
+        const columnasCotizacion = esCotizacion ? `
+            <td class="px-4 py-2 text-center columna-cotizacion">
+                <input 
+                    type="number" 
+                    value="${epp.valor_unitario || ''}" 
+                    min="0" 
+                    step="0.01"
+                    onchange="actualizarValorUnitarioEPP(${epp.id}, this.value)"
+                    class="w-24 px-2 py-1 border border-gray-300 rounded text-center text-sm"
+                    placeholder="0"
+                >
+            </td>
+            <td class="px-4 py-2 text-center columna-cotizacion">
+                <span id="totalEPPItem_${epp.id}" class="font-semibold text-gray-900 text-sm">
+                    ${((epp.cantidad || 1) * (epp.valor_unitario || 0)).toLocaleString('es-CO', {minimumFractionDigits: 0, maximumFractionDigits: 2})}
+                </span>
+            </td>
+        ` : '';
+        
         row.innerHTML = `
             <td class="px-4 py-2 text-gray-900 font-medium">${epp.nombre_completo}</td>
             <td class="px-4 py-2 text-center">
@@ -722,6 +923,7 @@ function renderizarTablaEPPAgregados() {
                     placeholder="Observaciones..."
                 >
             </td>
+            ${columnasCotizacion}
             <td class="px-4 py-2 text-center">
                 <div class="flex gap-1 items-center justify-center flex-wrap border-2 border-dashed border-gray-300 rounded p-2 min-h-10 cursor-pointer bg-gray-50 hover:bg-gray-100 transition" 
                     id="fotoZona_${epp.id}"
@@ -737,7 +939,7 @@ function renderizarTablaEPPAgregados() {
             <td class="px-4 py-2 text-center">
                 <button 
                     type="button"
-                    onclick="eliminarEPPDeLista(${epp.id})"
+                    onclick="event.stopPropagation(); eliminarEPPDeLista(${epp.id})"
                     class="text-red-600 hover:text-red-800 font-medium transition"
                 >
                     <i class="material-symbols-rounded" style="font-size: 18px;">delete</i>
@@ -748,7 +950,7 @@ function renderizarTablaEPPAgregados() {
         tbody.appendChild(row);
     });
     
-    console.log('[renderizarTablaEPPAgregados] Tabla actualizada con', eppAgregadosList.length, 'EPPs');
+    console.log('[renderizarTablaEPPAgregados] Tabla actualizada con', eppAgregadosList.length, 'EPPs', esCotizacion ? '(modo cotización)' : '');
 }
 
 /**
@@ -872,7 +1074,34 @@ function actualizarCantidadEPP(eppId, cantidad) {
     const index = eppAgregadosList.findIndex(e => e.id == eppId);
     if (index !== -1) {
         eppAgregadosList[index].cantidad = parseInt(cantidad) || 1;
+        // Recalcular total si estamos en modo cotización
+        if (window.__EPP_COTIZACION_MODE__) {
+            const vu = parseFloat(eppAgregadosList[index].valor_unitario) || 0;
+            eppAgregadosList[index].total = eppAgregadosList[index].cantidad * vu;
+            const spanTotal = document.getElementById(`totalEPPItem_${eppId}`);
+            if (spanTotal) {
+                spanTotal.textContent = eppAgregadosList[index].total.toLocaleString('es-CO', {minimumFractionDigits: 0, maximumFractionDigits: 2});
+            }
+        }
         console.log('[actualizarCantidadEPP] Cantidad actualizada para EPP', eppId);
+    }
+}
+
+/**
+ * Actualizar valor unitario de EPP agregado (solo en modo cotización)
+ */
+function actualizarValorUnitarioEPP(eppId, valor) {
+    const index = eppAgregadosList.findIndex(e => e.id == eppId);
+    if (index !== -1) {
+        eppAgregadosList[index].valor_unitario = parseFloat(valor) || 0;
+        const cant = parseInt(eppAgregadosList[index].cantidad) || 1;
+        eppAgregadosList[index].total = cant * eppAgregadosList[index].valor_unitario;
+        
+        const spanTotal = document.getElementById(`totalEPPItem_${eppId}`);
+        if (spanTotal) {
+            spanTotal.textContent = eppAgregadosList[index].total.toLocaleString('es-CO', {minimumFractionDigits: 0, maximumFractionDigits: 2});
+        }
+        console.log('[actualizarValorUnitarioEPP] V.Unitario actualizado para EPP', eppId, '=> Total:', eppAgregadosList[index].total);
     }
 }
 
@@ -916,17 +1145,39 @@ function abrirModalAgregarEPP() {
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     
-    // Limpiar estado previo
+    // IMPORTANTE: Obtener los EPPs ya agregados en el formulario
+    console.log('[abrirModalAgregarEPP] Llamando a obtenerEPPsYaAgregadosEnFormulario...');
+    const eppEnFormulario = obtenerEPPsYaAgregadosEnFormulario();
+    console.log('[abrirModalAgregarEPP] Variable global actualizada:', eppYaAgregadosEnFormulario);
+    
+    // Limpiar estado previo COMPLETAMENTE (sin conexión a EPPs anteriores)
     eppAgregadosList = [];
+    eppDisponiblesList = []; // Vaciar lista de disponibles
     document.getElementById('inputBuscadorEPPTabla').value = '';
     document.getElementById('contadorEPP').textContent = '0';
     document.getElementById('listaEPPAgregados').style.display = 'none';
     document.getElementById('btnFinalizarAgregarEPP').disabled = true;
     
-    // Cargar EPP disponibles
-    cargarEPPDisponibles();
+    // Limpiar dropdown - no cargar EPPs disponibles
+    const opcionesContainer = document.getElementById('opcionesDropdownEPP');
+    if (opcionesContainer) {
+        opcionesContainer.innerHTML = '';
+    }
     
-    console.log('[abrirModalAgregarEPP] Modal abierto, EPP siendo cargados...');
+    // Ocultar el dropdown
+    const dropdown = document.getElementById('dropdownEPP');
+    if (dropdown) {
+        dropdown.classList.add('hidden');
+    }
+    
+    // Mostrar mensaje "sin resultados"
+    const mensajeSinResultados = document.getElementById('mensajeSinResultados');
+    if (mensajeSinResultados) {
+        mensajeSinResultados.classList.remove('hidden');
+    }
+    
+    console.log('[abrirModalAgregarEPP] Modal abierto VACÍO - usuario debe buscar EPPs');
+    console.log('[abrirModalAgregarEPP] EPPs a EXCLUIR:', eppYaAgregadosEnFormulario);
 }
 
 function actualizarTotalEPP() {
@@ -1079,7 +1330,7 @@ function resetearModalAgregarEPP() {
         'productoCardEPP',
         'formularioAgregarEPP',
         'observacionesContainer',
-        'btnAgregarALista',
+
         'resultadosBuscadorEPP',
         'valorUnitarioTotalContainer'
     ];
@@ -1171,6 +1422,23 @@ function resetearModalAgregarEPP() {
     }
     
     actualizarEstilosCampos();
+    
+    // Restaurar visibilidad del buscador (oculto en modo edición)
+    const buscadorSection = document.getElementById('buscadorEPPSection');
+    if (buscadorSection) {
+        buscadorSection.style.display = '';
+    }
+    
+    // Ocultar sección de fotos (solo para modo edición)
+    const seccionFotosResetEl = document.getElementById('seccionFotosEPP');
+    if (seccionFotosResetEl) {
+        seccionFotosResetEl.style.display = 'none';
+    }
+    
+    // Resetear contador de fotos
+    const contadorFotosReset = document.getElementById('contadorFotosEPP');
+    if (contadorFotosReset) contadorFotosReset.textContent = '0';
+    
     console.log('📖 [resetearModalAgregarEPP] COMPLETADO - Modal reseteado completamente');
 }
 
@@ -1573,7 +1841,7 @@ function renderizarTablaEPP() {
             <td class="px-4 py-2 text-center">
                 <button 
                     type="button"
-                    onclick="eliminarEPPDeLista(${idx})"
+                    onclick="event.stopPropagation(); eliminarEPPDeLista(${epp.id})"
                     class="text-red-600 hover:text-red-800 font-medium transition"
                 >
                     <i class="material-symbols-rounded" style="font-size: 18px;">delete</i>
@@ -1584,16 +1852,6 @@ function renderizarTablaEPP() {
     });
     
     console.log(' [renderizarTablaEPP] Completado. Filas renderizadas:', eppAgregadosList.length);
-}
-
-function eliminarEPPDeLista(idx) {
-    eppAgregadosList.splice(idx, 1);
-    renderizarTablaEPP();
-
-    if (eppAgregadosList.length === 0) {
-        document.getElementById('listaEPPAgregados').style.display = 'none';
-        document.getElementById('btnFinalizarAgregarEPP').disabled = true;
-    }
 }
 
 function resetearFormularioEPP() {
@@ -1841,25 +2099,36 @@ function guardarEdicionEPP() {
         observaciones: observaciones
     });
 
-    // Actualizar en window.itemsPedido
+    // Actualizar en store o window.itemsPedido
     const targetId = window.eppEnEdicion.epp_id || window.eppEnEdicion.id;
-    const index = window.itemsPedido.findIndex(item =>
-        (item.id !== undefined && item.id !== null && String(item.id) === String(targetId))
-        || (item.epp_id !== undefined && item.epp_id !== null && String(item.epp_id) === String(targetId))
-    );
-    if (index !== -1) {
-        window.itemsPedido[index].nombre_epp = nombre;
-        window.itemsPedido[index].nombre = nombre;
-        window.itemsPedido[index].cantidad = parseInt(cantidad);
-        window.itemsPedido[index].observaciones = observaciones || '-';
-        if (modoCotizacion) {
-            window.itemsPedido[index].valor_unitario = vu;
-            window.itemsPedido[index].total = total;
+    const datosActualizados = {
+        nombre_epp: nombre,
+        nombre: nombre,
+        cantidad: parseInt(cantidad),
+        observaciones: observaciones || '-',
+        imagenes: imagenes
+    };
+    if (modoCotizacion) {
+        datosActualizados.valor_unitario = vu;
+        datosActualizados.total = total;
+    }
+
+    if (window.eppStore) {
+        const ok = window.eppStore.actualizarItem(targetId, datosActualizados);
+        if (!ok) {
+            console.warn('💾 [guardarEdicionEPP] No se encontró EPP en eppStore para actualizar');
         }
-        window.itemsPedido[index].imagenes = imagenes;
-        console.log(' [guardarEdicionEPP] EPP actualizado en window.itemsPedido:', window.itemsPedido[index]);
     } else {
-        console.warn(' [guardarEdicionEPP] No se encontró EPP en window.itemsPedido para actualizar');
+        // Fallback sin store
+        const index = window.itemsPedido.findIndex(item =>
+            String(item.epp_id || item.id) === String(targetId)
+        );
+        if (index !== -1) {
+            Object.assign(window.itemsPedido[index], datosActualizados);
+            console.log(' [guardarEdicionEPP] EPP actualizado en window.itemsPedido:', window.itemsPedido[index]);
+        } else {
+            console.warn(' [guardarEdicionEPP] No se encontró EPP en window.itemsPedido para actualizar');
+        }
     }
 
     // Actualizar visualmente en la tarjeta (usar el item manager correspondiente)
@@ -2101,10 +2370,14 @@ async function finalizarAgregarEPP() {
     try {
         const eppsProcesados = await Promise.all(promesasEPP);
         
-        // Agregar todos los EPPs procesados a window.itemsPedido
+        // Agregar todos los EPPs procesados via eppStore o window.itemsPedido
         eppsProcesados.forEach((eppData) => {
-            window.itemsPedido.push(eppData);
-            console.log(` [finalizarAgregarEPP] EPP guardado en window.itemsPedido:`, eppData);
+            if (window.eppStore) {
+                window.eppStore.agregarItem(eppData);
+            } else {
+                window.itemsPedido.push(eppData);
+            }
+            console.log(` [finalizarAgregarEPP] EPP guardado:`, eppData);
             
             //  CRÍTICO: También registrar en gestionItemsUI para mantener sincronizado
             if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPAlOrden === 'function') {
@@ -2122,10 +2395,10 @@ async function finalizarAgregarEPP() {
         eppAgregadosList = [];
         console.log(' [finalizarAgregarEPP] Lista de EPPs agregados limpiada');
         
-        // Recalcular totales después de agregar los EPPs
-        if (typeof window.syncTotales === 'function') {
+        // Recalcular totales (eppStore.onChange ya lo hace, esto es para vistas sin store)
+        if (!window.eppStore && typeof window.syncTotales === 'function') {
             window.syncTotales();
-            console.log('[finalizarAgregarEPP] Totales recalculados');
+            console.log('[finalizarAgregarEPP] Totales recalculados (fallback)');
         }
         
         // Cerrar modal
@@ -2220,6 +2493,10 @@ function manejarSubidaFotosEPP(input) {
         console.log(`📸 [manejarSubidaFotosEPP] Foto agregada: ${nombreArchivo} (${(archivo.size / 1024).toFixed(2)} KB)`);
     });
     
+    // Actualizar contador de fotos
+    const contadorFotos = document.getElementById('contadorFotosEPP');
+    if (contadorFotos) contadorFotos.textContent = window.fotosEPP.length;
+    
     // Limpiar input para permitir seleccionar el mismo archivo nuevamente
     input.value = '';
 }
@@ -2251,7 +2528,7 @@ function mostrarVistaPreviaFoto(imagen) {
                  onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiBmaWxsPSIjRjRGNEY2Ii8+CjxwYXRoIGQ9Ik00OCA0OEg4MFY4MEg0OFY0OFoiIHN0cm9rZT0iIzlDQTNBIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz4KPHN2ZyB4PSI0OCIgeT0iNDgiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJTNi40OCAyMiAxMiAyMkMxNy41MiAyMiAyMiAxNy41MiAyMiAxMlMyMiA2LjQ4IDEyIDEyUzYuNDggMiAxMiAyWk0xMiA4QzEwLjkgOCA5IDguMSA5IDEwUzguMSAxMCAxMCAxMFMxMy45IDEwIDEzIDEwUzE0LjE4IDEwIDE0LjE4IDhTMTMuMSA2IDEyIDZaIiBmaWxsPSIjOUNDQTNBIi8+Cjwvc3ZnPgo8L3N2Zz4K'; this.style.opacity='0.5';" 
                  title="Imagen no disponible">
             <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <button type="button" onclick="eliminarFotoEPP('${imagen.id}', event)" class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition" title="Eliminar imagen">
+                <button type="button" onclick="eliminarFotoEPPEdicion('${imagen.id}', event)" class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition" title="Eliminar imagen">
                     <i class="material-symbols-rounded text-base">delete</i>
                 </button>
             </div>
@@ -2266,6 +2543,57 @@ function mostrarVistaPreviaFoto(imagen) {
     console.log('[mostrarVistaPreviaFoto] Imagen agregada al DOM. Total elementos en contenedor:', contenedor.children.length);
 }
 
+
+/**
+ * Eliminar una foto del modo edición (contenedorFotosEPP / window.fotosEPP)
+ */
+function eliminarFotoEPPEdicion(fotoId, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    console.log('[eliminarFotoEPPEdicion] Eliminando foto con ID:', fotoId);
+    
+    // Eliminar del array window.fotosEPP
+    if (window.fotosEPP && Array.isArray(window.fotosEPP)) {
+        const idx = window.fotosEPP.findIndex(f => String(f.id) === String(fotoId));
+        if (idx !== -1) {
+            const foto = window.fotosEPP[idx];
+            // Liberar blob URL si existe
+            if (foto.previewUrl && foto.previewUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(foto.previewUrl);
+            }
+            window.fotosEPP.splice(idx, 1);
+            console.log('[eliminarFotoEPPEdicion] Foto eliminada del array. Restantes:', window.fotosEPP.length);
+        }
+    }
+    
+    // Eliminar del DOM
+    const contenedor = document.getElementById('contenedorFotosEPP');
+    if (contenedor) {
+        const elemento = contenedor.querySelector(`[data-foto-id="${fotoId}"]`);
+        if (elemento) {
+            elemento.remove();
+            console.log('[eliminarFotoEPPEdicion] Elemento DOM eliminado');
+        }
+    }
+    
+    // Mostrar mensaje drag-drop si no quedan fotos
+    if (!window.fotosEPP || window.fotosEPP.length === 0) {
+        const mensajeDragDrop = document.getElementById('mensajeDragDrop');
+        if (mensajeDragDrop) {
+            mensajeDragDrop.style.display = 'flex';
+        }
+    }
+    
+    // Actualizar contador
+    const contadorFotos = document.getElementById('contadorFotosEPP');
+    if (contadorFotos) {
+        contadorFotos.textContent = window.fotosEPP ? window.fotosEPP.length : 0;
+    }
+}
+window.eliminarFotoEPPEdicion = eliminarFotoEPPEdicion;
 
 // Funciones para Drag and Drop
 function handleDragOverEPP(event) {
@@ -2360,6 +2688,10 @@ function handleDropEPP(event) {
         
         console.log(`[handleDropEPP] Foto arrastrada: ${nombreArchivo} (${(archivo.size / 1024).toFixed(2)} KB)`);
     });
+    
+    // Actualizar contador de fotos
+    const contadorFotosD = document.getElementById('contadorFotosEPP');
+    if (contadorFotosD) contadorFotosD.textContent = window.fotosEPP.length;
 }
 </script>
 
@@ -2409,6 +2741,23 @@ function abrirModalEditarEPPNuevo(epp) {
     if (listaEPPAgregados) {
         listaEPPAgregados.style.display = 'none';
         console.log('[abrirModalEditarEPPNuevo] Lista EPP Agregados oculta');
+    }
+    
+    // Ocultar buscador en modo edición
+    const buscadorSection = document.getElementById('buscadorEPPSection');
+    if (buscadorSection) {
+        buscadorSection.style.display = 'none';
+        console.log('[abrirModalEditarEPPNuevo] Buscador ocultado en modo edición');
+    }
+    const formularioCrearEPPEl = document.getElementById('formularioCrearEPP');
+    if (formularioCrearEPPEl) {
+        formularioCrearEPPEl.style.display = 'none';
+    }
+    
+    // Mostrar sección de fotos
+    const seccionFotosEPPEl = document.getElementById('seccionFotosEPP');
+    if (seccionFotosEPPEl) {
+        seccionFotosEPPEl.style.display = 'block';
     }
     
     // Cargar datos del EPP
@@ -3001,8 +3350,10 @@ window.agregarEPPDesdeDropdown = agregarEPPDesdeDropdown;
 window.actualizarSeleccionEPP = actualizarSeleccionEPP;
 window.renderizarTablaEPPAgregados = renderizarTablaEPPAgregados;
 window.actualizarCantidadEPP = actualizarCantidadEPP;
+window.actualizarValorUnitarioEPP = actualizarValorUnitarioEPP;
 window.actualizarObservacionesEPP = actualizarObservacionesEPP;
 window.eliminarEPPDeLista = eliminarEPPDeLista;
+window.obtenerEPPsYaAgregadosEnFormulario = obtenerEPPsYaAgregadosEnFormulario;
 
 // Funciones de manejo de fotos en tabla EPP
 window.manejarSeleccionFotosEPP = manejarSeleccionFotosEPP;

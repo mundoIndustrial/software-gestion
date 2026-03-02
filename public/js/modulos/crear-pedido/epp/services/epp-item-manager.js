@@ -187,10 +187,10 @@ class EppItemManager {
             }
         });
         
-        // Recalcular totales después de renumerar
-        if (typeof window.syncTotales === 'function') {
+        // Recalcular totales después de renumerar (solo si no hay store activo)
+        if (!window.eppStore && typeof window.syncTotales === 'function') {
             window.syncTotales();
-            console.log('[EppItemManager] Totales recalculados después de eliminar item');
+            console.log('[EppItemManager] Totales recalculados después de eliminar item (fallback)');
         }
     }
 
@@ -298,11 +298,10 @@ class EppItemManager {
                 }
                 
                 // Recalcular totales globales después de actualizar
-                if (typeof window.syncTotales === 'function') {
-                    setTimeout(() => {
-                        window.syncTotales();
-                        console.log('[EppItemManager] Totales recalculados después de actualizar item en tabla');
-                    }, 100);
+                // (solo fallback si no hay store — el store notifica automáticamente)
+                if (!window.eppStore && typeof window.syncTotales === 'function') {
+                    window.syncTotales();
+                    console.log('[EppItemManager] Totales recalculados después de actualizar item en tabla (fallback)');
                 }
             }
         } else if (esTarjeta) {
