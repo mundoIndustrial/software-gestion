@@ -64,290 +64,338 @@
                         </thead>
                         
                         <tbody id="pedidosTableBody" class="divide-y divide-slate-300">
-                            @forelse($items as $item)
-                                <tr class="hover:bg-slate-50 transition-colors"
-                                    data-numero-pedido="{{ $item['numero_pedido'] }}"
-                                    data-asesor="{{ $item['asesor'] ?? ($pedido['asesor'] ?? '') }}"
-                                    data-empresa="{{ $item['empresa'] ?? ($pedido['cliente'] ?? '') }}"
-                                    @if(($item['costura_estado'] ?? null) === 'Homologar')
-                                        style="background-color: rgba(147, 51, 234, 0.08);"
-                                    @elseif($item['estado_bodega'] === 'Entregado')
-                                        style="background-color: rgba(37, 99, 235, 0.05);"
-                                    @endif
-                                >
-                                    <!-- DESCRIPCIÓN (PRENDA) -->
+                            @if($items && count($items) > 0)
+                                @php
+                                    $itemsAgrupados = collect($items)->groupBy(function ($it) {
+                                        return 'prenda_' . ($it['prenda_id'] ?? md5(($it['descripcion']['nombre_prenda'] ?? $it['descripcion']['nombre'] ?? 'sin_nombre')));
+                                    });
+                                @endphp
+
+                                @foreach($itemsAgrupados as $grupo)
                                     @php
-                                        $mostrarArticuloConRowspan = ($item['descripcion_rowspan'] ?? 0) > 0;
-                                        $rowspanArticulo = ($item['descripcion_rowspan'] ?? 0) > 0 ? $item['descripcion_rowspan'] : 1;
-                                    @endphp
-                                    @if($mostrarArticuloConRowspan)
-                                    <td class="px-4 py-3 text-xs text-black border-r border-slate-300" rowspan="{{ $rowspanArticulo }}" style="width: 22%;">
-                                    @else
-                                    <td class="px-4 py-3 text-xs text-black border-r border-slate-300" style="width: 22%;">
-                                    @endif
-                                        @php
-                                            $desc = $item['descripcion'];
-                                            $nombre = $desc['nombre_prenda'] ?? $desc['nombre'] ?? 'Prenda sin nombre';
-                                            $tela = $desc['tela'] ?? null;
-                                            $color = $desc['color'] ?? null;
-                                            $variantes = $desc['variantes'] ?? [];
-                                            $primeraVariante = count($variantes) > 0 ? $variantes[0] : null;
-                                            $genero = $primeraVariante['genero'] ?? null;
-                                            $procesos = $desc['procesos'] ?? [];
-                                        @endphp
-                                        <div class="font-bold text-black mb-1">{{ $nombre }}</div>
-                                        @if($tela || ($color && strtolower($color) !== 'sin color'))
-                                            <div class="text-black text-xs mb-1">
-                                                @if($tela && $color && strtolower($color) !== 'sin color')
-                                                    Tela: {{ $tela }} - Color: {{ $color }}
-                                                @elseif($tela)
-                                                    Tela: {{ $tela }}
-                                                @elseif($color && strtolower($color) !== 'sin color')
-                                                    Color: {{ $color }}
-                                                @endif
-                                            </div>
-                                        @endif
-                                        @if($genero && strtoupper($genero) !== 'GENERICO')
-                                            <div class="text-black text-xs mb-1">
-                                                Género: <span class="font-semibold">{{ strtoupper($genero) }}</span>
-                                            </div>
-                                        @endif
-                                        
-                                        {{-- Colores por talla agrupados --}}
-                                        @if(!empty($variantes))
-                                            @php
-                                                $porGeneroColor = [];
-                                                foreach($variantes as $variante) {
-                                                    if(isset($variante['colores_detalle']) && is_array($variante['colores_detalle']) && !empty($variante['colores_detalle'])) {
-                                                        foreach($variante['colores_detalle'] as $colorDet) {
-                                                            $gen = strtoupper($variante['genero'] ?? '');
-                                                            $colorRaw = strtoupper(trim($colorDet['color'] ?? ''));
-                                                            $colorNombre = (!$colorRaw || $colorRaw === 'SIN COLOR') ? '__SIN_COLOR__' : $colorRaw;
-                                                            $tallaV = $variante['talla'] ?? '';
-                                                            $cantV = $colorDet['cantidad'] ?? 1;
-                                                            
-                                                            if ($gen === 'GENERICO') continue;
-                                                            
-                                                            $key = $gen . '||' . $colorNombre;
-                                                            if (!isset($porGeneroColor[$key])) {
-                                                                $porGeneroColor[$key] = [
-                                                                    'genero' => $gen,
-                                                                    'color' => $colorNombre,
-                                                                    'tallas' => []
+                                        $primeraItem = $grupo->first();
+
+                                        $itemsPorTalla = [];
+                                        $itemsPorTallaColor = [];
+                                        foreach ($grupo as $it) {
+                                            if (isset($it['talla'])) {
+                                                $itemsPorTalla[$it['talla']] = $it;
+
+                                                $itTallaColorId = $it['talla_color_id'] ?? ($it['tallaColorId'] ?? null);
+                                                $itKey = $it['talla'] . '|' . ($itTallaColorId ?? '');
+                                                $itemsPorTallaColor[$itKey] = $it;
+                                            }
+                                        }
+
+                                        $desc = $primeraItem['descripcion'] ?? [];
+                                        $nombre = $desc['nombre_prenda'] ?? $desc['nombre'] ?? 'Prenda sin nombre';
+                                        $tela = $desc['tela'] ?? null;
+                                        $color = $desc['color'] ?? null;
+                                        $variantes = $desc['variantes'] ?? [];
+                                        $procesos = $desc['procesos'] ?? [];
+                                        $primeraVariante = count($variantes) > 0 ? $variantes[0] : null;
+
+                                        $gruposPorColor = [];
+                                        if (is_array($variantes)) {
+                                            foreach ($variantes as $variante) {
+                                                $generoVar = strtoupper($variante['genero'] ?? '');
+                                                $tallaVar = $variante['talla'] ?? '';
+
+                                                if ($generoVar === 'GENERICO') {
+                                                    continue;
+                                                }
+
+                                                if (isset($variante['colores_detalle']) && is_array($variante['colores_detalle']) && !empty($variante['colores_detalle'])) {
+                                                    foreach ($variante['colores_detalle'] as $colorDetalle) {
+                                                        $rawColor = $colorDetalle['color'] ?? '';
+                                                        $esColorValido = !empty($rawColor) && strtolower(trim($rawColor)) !== 'sin color';
+                                                        $colorKey = $esColorValido ? strtoupper($rawColor) : '__SIN_COLOR__';
+                                                        $cantidadColor = (int)($colorDetalle['cantidad'] ?? 0);
+                                                        $tallaColorId = $colorDetalle['talla_color_id'] ?? ($colorDetalle['tallaColorId'] ?? null);
+
+                                                        if (!empty($tallaVar) && $cantidadColor > 0) {
+                                                            if (!isset($gruposPorColor[$colorKey])) {
+                                                                $gruposPorColor[$colorKey] = [
+                                                                    'color' => $colorKey,
+                                                                    'tallas' => [],
                                                                 ];
                                                             }
-                                                            $porGeneroColor[$key]['tallas'][] = [
-                                                                'talla' => $tallaV,
-                                                                'cantidad' => $cantV
+                                                            $gruposPorColor[$colorKey]['tallas'][] = [
+                                                                'talla' => $tallaVar,
+                                                                'genero' => $variante['genero'] ?? null,
+                                                                'cantidad' => $cantidadColor,
+                                                                'tallaColorId' => $tallaColorId,
                                                             ];
                                                         }
                                                     }
                                                 }
-                                                // Ordenar tallas
-                                                foreach($porGeneroColor as &$grupoC) {
-                                                    usort($grupoC['tallas'], function($a, $b) {
-                                                        $nA = is_numeric($a['talla']) ? (int)$a['talla'] : null;
-                                                        $nB = is_numeric($b['talla']) ? (int)$b['talla'] : null;
-                                                        if ($nA !== null && $nB !== null) return $nA - $nB;
-                                                        return strcmp($a['talla'], $b['talla']);
-                                                    });
-                                                }
-                                                unset($grupoC);
-                                            @endphp
-                                            @if(!empty($porGeneroColor))
-                                                @php
-                                                    $coloresReales = array_filter($porGeneroColor, fn($g) => $g['color'] !== '__SIN_COLOR__');
-                                                    $sinColor = array_filter($porGeneroColor, fn($g) => $g['color'] === '__SIN_COLOR__');
-                                                @endphp
-                                                <div class="text-slate-700 mt-2 text-xs font-medium">
-                                                    @php $curGenero = ''; @endphp
-                                                    @foreach($coloresReales as $grupoC)
-                                                        @if($grupoC['genero'] !== $curGenero)
-                                                            @php $curGenero = $grupoC['genero']; @endphp
-                                                            <div class="font-bold text-black mt-1">{{ $curGenero }}:</div>
-                                                        @endif
-                                                        <div class="ml-2">• <span style="color: #0369a1; font-weight: 600;">{{ $grupoC['color'] }}:</span> @foreach($grupoC['tallas'] as $i => $t){{ $i > 0 ? ', ' : '' }}{{ $t['talla'] }}-{{ $t['cantidad'] }}@endforeach</div>
-                                                    @endforeach
-                                                    @foreach($sinColor as $grupoC)
-                                                        @if($grupoC['genero'] !== $curGenero)
-                                                            @php $curGenero = $grupoC['genero']; @endphp
-                                                            <div class="font-bold text-black mt-1">{{ $curGenero }}:</div>
-                                                        @endif
-                                                        <div class="ml-2">• @foreach($grupoC['tallas'] as $i => $t){{ $i > 0 ? ', ' : '' }}{{ $t['talla'] }}-{{ $t['cantidad'] }}@endforeach</div>
-                                                    @endforeach
-                                                </div>
-                                            @endif
-                                        @endif
-                                        @if(count($procesos) > 0)
-                                            <div class="text-black text-xs mt-2 space-y-0.5">
-                                                @foreach($procesos as $proceso)
-                                                    <div class="flex items-start gap-1">
-                                                        <span class="text-blue-600 font-bold">•</span>
-                                                        <span>
-                                                            {{ $proceso['tipo_proceso'] ?? 'Proceso' }}
-                                                            @if(!empty($proceso['ubicaciones']))
-                                                                @php
-                                                                    $ubicaciones = $proceso['ubicaciones'];
-                                                                    
-                                                                    // Si es un JSON string, decodificar
-                                                                    if (is_string($ubicaciones) && (strpos($ubicaciones, '[') === 0 || strpos($ubicaciones, '{') === 0)) {
-                                                                        $ubicacionesDecodificadas = json_decode($ubicaciones, true);
-                                                                        if (is_array($ubicacionesDecodificadas)) {
-                                                                            $ubicacionesStr = implode(', ', $ubicacionesDecodificadas);
-                                                                        } else {
-                                                                            $ubicacionesStr = $ubicaciones;
-                                                                        }
-                                                                    } elseif (is_array($ubicaciones)) {
-                                                                        $ubicacionesStr = implode(', ', $ubicaciones);
-                                                                    } else {
-                                                                        $ubicacionesStr = $ubicaciones;
-                                                                    }
-                                                                @endphp
-                                                                @if(!empty($ubicacionesStr))
-                                                                    ({{ $ubicacionesStr }})
-                                                                @endif
-                                                            @endif
-                                                        </span>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        @endif
-                                    </td>
-                                    
-                                    <!-- GÉNERO -->
-                                    @php
-                                        $genero = '';
-                                        if(isset($item['descripcion']['variantes']) && is_array($item['descripcion']['variantes']) && count($item['descripcion']['variantes']) > 0) {
-                                            $primeraVariante = $item['descripcion']['variantes'][0];
-                                            $genero = $primeraVariante['genero'] ?? '';
+                                            }
                                         }
-                                        elseif(isset($item['genero'])) {
-                                            $genero = $item['genero'];
-                                        }
-                                        // 🔴 NUEVO: NO mostrar GENERICO (es SOLO CANTIDAD)
-                                        $esGenerico = $genero && strtoupper($genero) === 'GENERICO';
-                                        $rowspanGenero = ($item['descripcion_rowspan'] ?? 0) > 0 ? $item['descripcion_rowspan'] : 1;
-                                        $mostrarGeneroConRowspan = ($item['descripcion_rowspan'] ?? 0) > 0;
-                                    @endphp
-                                    @if($mostrarGeneroConRowspan)
-                                    <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" rowspan="{{ $rowspanGenero }}" style="width: 6%;">
-                                        {{ ($esGenerico) ? '—' : ($genero ? ucfirst(strtolower($genero)) : '—') }}
-                                    </td>
-                                    @else
-                                    <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" style="width: 6%;">
-                                        {{ ($esGenerico) ? '—' : ($genero ? ucfirst(strtolower($genero)) : '—') }}
-                                    </td>
-                                    @endif
-                                    
-                                    <!-- TALLA -->
-                                    <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
-                                        @if(($item['talla'] ?? null) === 'SIN_ESPECIFICAR')
-                                            —
-                                        @else
-                                            {{ $item['talla'] ?? '—' }}
-                                        @endif
-                                    </td>
-                                    
-                                    <!-- CANTIDAD -->
-                                    <td class="px-4 py-3 text-center text-xs font-bold text-black border-r border-slate-300" style="width: 6%;">
-                                        {{ $item['cantidad'] ?? 0 }}
-                                    </td>
-                                    
-                                    <!-- PENDIENTES -->
-                                    <td class="px-2 py-3 border-r border-slate-300" style="width: 8%;">
-                                        <textarea
-                                            class="pendientes-input w-full px-1.5 py-1 border-2 border-slate-300 text-[10px] focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none bg-slate-50"
-                                            style="font-family: 'Poppins', sans-serif;"
-                                            data-numero-pedido="{{ $item['numero_pedido'] }}"
-                                            data-talla="{{ $item['talla'] }}"
-                                            placeholder="Pendientes..."
-                                            rows="1"
-                                            @if($esReadOnly ?? false) disabled @endif
-                                        >{{ $item['pendientes'] ?? '' }}</textarea>
-                                    </td>
-                                    
-                                    <!-- OBSERVACIONES -->
-                                    <td class="px-4 py-3 border-r border-slate-300" style="width: 16%;">
-                                        <div class="flex gap-1">
-                                            <textarea
-                                                class="observaciones-input flex-1 px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none rounded bg-slate-50"
-                                                data-numero-pedido="{{ $item['numero_pedido'] }}"
-                                                data-talla="{{ $item['talla'] }}"
-                                                placeholder="Notas..."
-                                                rows="1"
-                                                readonly
-                                            >{{ $item['observaciones_bodega'] ?? '' }}</textarea>
-                                            <button
-                                                type="button"
-                                                onclick="abrirModalNotas('{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}', '{{ addslashes($item['prenda_nombre'] ?? 'Prenda') }}', 'prenda', '{{ $item['talla'] }}')"
-                                                class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded transition whitespace-nowrap"
-                                                title="Ver/agregar notas"
-                                            >
-                                                💬
-                                            </button>
-                                        </div>
-                                    </td>
-                                    
-                                    <!-- FECHA PEDIDO -->
-                                    <td class="px-4 py-3 border-r border-slate-300" style="width: 12%;">
-                                        <input
-                                            type="date"
-                                            class="fecha-pedido-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded bg-slate-50"
-                                            value="{{ $item['fecha_pedido'] ? \Carbon\Carbon::parse($item['fecha_pedido'])->format('Y-m-d') : '' }}"
-                                            data-numero-pedido="{{ $item['numero_pedido'] }}"
-                                            data-talla="{{ $item['talla'] }}"
-                                            @if($esReadOnly ?? false) disabled @endif
-                                        >
-                                    </td>
-                                    
-                                    <!-- FECHA ENTREGA -->
-                                    <td class="px-4 py-3 border-r border-slate-300" style="width: 12%;">
-                                        <input
-                                            type="date"
-                                            class="fecha-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded bg-slate-50"
-                                            value="{{ $item['fecha_entrega'] ? \Carbon\Carbon::parse($item['fecha_entrega'])->format('Y-m-d') : '' }}"
-                                            data-numero-pedido="{{ $item['numero_pedido'] }}"
-                                            data-talla="{{ $item['talla'] }}"
-                                            @if($esReadOnly ?? false) disabled @endif
-                                        >
-                                    </td>
-                                    
-                                    {{-- Comentada columna de estado
-                                    <!-- ESTADO -->
-                                    <td class="px-4 py-3" style="width: 18%;">
-                                        <select
-                                            class="estado-select w-full px-2 py-1 border border-slate-300 bg-white text-black text-xs font-semibold uppercase rounded"
-                                            data-numero-pedido="{{ $item['numero_pedido'] }}"
-                                            data-talla="{{ $item['talla'] }}"
-                                            data-prenda-nombre="{{ $item['prenda_nombre'] ?? ($item['descripcion']['nombre_prenda'] ?? $item['descripcion']['nombre'] ?? '') }}"
-                                            data-cantidad="{{ $item['cantidad'] ?? 0 }}"
-                                            data-original-estado="{{ $item['costura_estado'] ?? '' }}"
-                                            @if($esReadOnly ?? false) disabled @endif
-                                        >
-                                            <option value="">ESTADO</option>
-                                            <option value="Pendiente" {{ ($item['costura_estado'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
-                                            <option value="Entregado" {{ ($item['costura_estado'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
-                                            <option value="Homologar" {{ ($item['costura_estado'] ?? null) === 'Homologar' ? 'selected' : '' }}>HOMOLOGAR</option>
-                                            <option value="Anulado" {{ ($item['costura_estado'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
-                                        </select>
 
-                                        @if(!($esReadOnly ?? false))
-                                        <button
-                                            type="button"
-                                            onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}')"
-                                            class="w-full px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase rounded transition"
-                                        >
-                                            💾 Guardar
-                                        </button>
-                                        @else
-                                        <div class="w-full px-2 py-1 bg-slate-100 text-slate-500 text-xs font-medium text-center rounded">
-                                            Solo lectura
-                                        </div>
-                                        @endif
-                                    </td>
-                                    --}}
-                                </tr>
-                            @empty
+                                        foreach ($gruposPorColor as &$grupoColor) {
+                                            usort($grupoColor['tallas'], function ($a, $b) {
+                                                $nA = is_numeric($a['talla']) ? (int)$a['talla'] : null;
+                                                $nB = is_numeric($b['talla']) ? (int)$b['talla'] : null;
+                                                if ($nA !== null && $nB !== null) return $nA - $nB;
+                                                return strcmp($a['talla'], $b['talla']);
+                                            });
+                                        }
+                                        unset($grupoColor);
+
+                                        $tieneColoresPorTalla = !empty($gruposPorColor);
+                                    @endphp
+
+                                    @if($tieneColoresPorTalla)
+                                        @foreach($gruposPorColor as $indexColor => $grupoColor)
+                                            @php
+                                                $rowSpanColor = count($grupoColor['tallas']);
+                                                $colorLabel = $grupoColor['color'] === '__SIN_COLOR__' ? null : $grupoColor['color'];
+                                            @endphp
+                                            @foreach($grupoColor['tallas'] as $indexTalla => $t)
+                                                @php
+                                                    $tKey = ($t['talla'] ?? '') . '|' . (($t['tallaColorId'] ?? null) ?? '');
+                                                    $baseItem = $itemsPorTallaColor[$tKey] ?? ($itemsPorTalla[$t['talla']] ?? $primeraItem);
+                                                @endphp
+                                                <tr class="hover:bg-slate-50 transition-colors"
+                                                    data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
+                                                    data-asesor="{{ $baseItem['asesor'] ?? ($pedido['asesor'] ?? '') }}"
+                                                    data-empresa="{{ $baseItem['empresa'] ?? ($pedido['cliente'] ?? '') }}"
+                                                    data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
+                                                    @if(($baseItem['costura_estado'] ?? null) === 'Homologar')
+                                                        style="background-color: rgba(147, 51, 234, 0.08);"
+                                                    @elseif(($baseItem['estado_bodega'] ?? '') === 'Entregado')
+                                                        style="background-color: rgba(37, 99, 235, 0.05);"
+                                                    @endif
+                                                >
+                                                    @if($indexTalla === 0)
+                                                    <td class="px-4 py-3 text-xs text-black border-r border-slate-300" rowspan="{{ $rowSpanColor }}" style="width: 22%;">
+                                                        <div class="font-bold text-black mb-1">
+                                                            {{ $nombre }}
+                                                            @if($colorLabel)
+                                                                <span class="text-black"> - <strong>{{ $colorLabel }}</strong></span>
+                                                            @endif
+                                                            @if(($baseItem['de_bodega'] ?? ($baseItem['descripcion']['de_bodega'] ?? ($baseItem['objetoPrenda']['de_bodega'] ?? false))) )
+                                                                <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
+                                                            @endif
+                                                        </div>
+                                                        @if($tela || ($color && strtolower($color) !== 'sin color'))
+                                                            <div class="text-black text-xs mb-1">
+                                                                @if($tela && $color && strtolower($color) !== 'sin color')
+                                                                    Tela: {{ $tela }} - Color: {{ $color }}
+                                                                @elseif($tela)
+                                                                    Tela: {{ $tela }}
+                                                                @elseif($color && strtolower($color) !== 'sin color')
+                                                                    Color: {{ $color }}
+                                                                @endif
+                                                            </div>
+                                                        @endif
+                                                        @if(count($procesos) > 0)
+                                                            <div class="text-black text-xs mt-2 space-y-0.5">
+                                                                @foreach($procesos as $proceso)
+                                                                    <div class="flex items-start gap-1">
+                                                                        <span class="text-blue-600 font-bold">•</span>
+                                                                        <span>
+                                                                            {{ $proceso['tipo_proceso'] ?? 'Proceso' }}
+                                                                            @if(!empty($proceso['ubicaciones']))
+                                                                                @php
+                                                                                    $ubicaciones = $proceso['ubicaciones'];
+
+                                                                                    if (is_string($ubicaciones) && (strpos($ubicaciones, '[') === 0 || strpos($ubicaciones, '{') === 0)) {
+                                                                                        $ubicacionesDecodificadas = json_decode($ubicaciones, true);
+                                                                                        if (is_array($ubicacionesDecodificadas)) {
+                                                                                            $ubicacionesStr = implode(', ', $ubicacionesDecodificadas);
+                                                                                        } else {
+                                                                                            $ubicacionesStr = $ubicaciones;
+                                                                                        }
+                                                                                    } elseif (is_array($ubicaciones)) {
+                                                                                        $ubicacionesStr = implode(', ', $ubicaciones);
+                                                                                    } else {
+                                                                                        $ubicacionesStr = $ubicaciones;
+                                                                                    }
+                                                                                @endphp
+                                                                                @if(!empty($ubicacionesStr))
+                                                                                    ({{ $ubicacionesStr }})
+                                                                                @endif
+                                                                            @endif
+                                                                        </span>
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+                                                        @endif
+                                                    </td>
+                                                    @endif
+
+                                                    @if($indexTalla === 0)
+                                                    <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" rowspan="{{ $rowSpanColor }}" style="width: 6%;">
+                                                        @php
+                                                            $gen = $t['genero'] ?? '';
+                                                            $gen = (is_string($gen) && strtoupper(trim($gen)) === 'GENERICO') ? '' : $gen;
+                                                        @endphp
+                                                        {{ $gen ? ucfirst(strtolower($gen)) : '—' }}
+                                                    </td>
+                                                    @endif
+
+                                                    <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
+                                                        @if(($t['talla'] ?? null) === 'SIN_ESPECIFICAR')
+                                                            —
+                                                        @else
+                                                            {{ $t['talla'] ?? '—' }}
+                                                        @endif
+                                                    </td>
+
+                                                    <td class="px-4 py-3 text-center text-xs font-bold text-black border-r border-slate-300" style="width: 6%;">
+                                                        {{ $t['cantidad'] ?? 0 }}
+                                                    </td>
+
+                                                    <td class="px-2 py-3 border-r border-slate-300" style="width: 8%;">
+                                                        <textarea
+                                                            class="pendientes-input w-full px-1.5 py-1 border-2 border-slate-300 text-[10px] focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none bg-slate-50"
+                                                            style="font-family: 'Poppins', sans-serif;"
+                                                            data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
+                                                            data-talla="{{ $baseItem['talla'] }}"
+                                                            data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
+                                                            placeholder="Pendientes..."
+                                                            rows="1"
+                                                            @if($esReadOnly ?? false) disabled @endif
+                                                        >{{ $baseItem['pendientes'] ?? '' }}</textarea>
+                                                    </td>
+
+                                                    <td class="px-4 py-3 border-r border-slate-300" style="width: 16%;">
+                                                        <div class="flex gap-1">
+                                                            <textarea
+                                                                class="observaciones-input flex-1 px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none rounded bg-slate-50"
+                                                                data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
+                                                                data-talla="{{ $baseItem['talla'] }}"
+                                                                data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
+                                                                placeholder="Notas..."
+                                                                rows="1"
+                                                                readonly
+                                                            >{{ $baseItem['observaciones_bodega'] ?? '' }}</textarea>
+                                                            <button
+                                                                type="button"
+                                                                onclick="abrirModalNotas('{{ $baseItem['numero_pedido'] }}', '{{ $baseItem['talla'] }}', '{{ addslashes($nombre) }}', 'prenda', '{{ $baseItem['talla'] }}', '{{ $t['tallaColorId'] ?? '' }}')"
+                                                                class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded transition whitespace-nowrap"
+                                                                title="Ver/agregar notas"
+                                                            >
+                                                                💬
+                                                            </button>
+                                                        </div>
+                                                    </td>
+
+                                                    <td class="px-4 py-3 border-r border-slate-300" style="width: 12%;">
+                                                        <input
+                                                            type="date"
+                                                            class="fecha-pedido-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded bg-slate-50"
+                                                            value="{{ $baseItem['fecha_pedido'] ? \Carbon\Carbon::parse($baseItem['fecha_pedido'])->format('Y-m-d') : '' }}"
+                                                            data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
+                                                            data-talla="{{ $baseItem['talla'] }}"
+                                                            data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
+                                                            @if($esReadOnly ?? false) disabled @endif
+                                                        >
+                                                    </td>
+
+                                                    <td class="px-4 py-3 border-r border-slate-300" style="width: 12%;">
+                                                        <input
+                                                            type="date"
+                                                            class="fecha-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded bg-slate-50"
+                                                            value="{{ $baseItem['fecha_entrega'] ? \Carbon\Carbon::parse($baseItem['fecha_entrega'])->format('Y-m-d') : '' }}"
+                                                            data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
+                                                            data-talla="{{ $baseItem['talla'] }}"
+                                                            data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
+                                                            @if($esReadOnly ?? false) disabled @endif
+                                                        >
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        @endforeach
+                                    @else
+                                        @foreach($grupo as $item)
+                                            <tr class="hover:bg-slate-50 transition-colors"
+                                                data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                                data-asesor="{{ $item['asesor'] ?? ($pedido['asesor'] ?? '') }}"
+                                                data-empresa="{{ $item['empresa'] ?? ($pedido['cliente'] ?? '') }}"
+                                                data-talla-color-id="{{ $item['talla_color_id'] ?? '' }}"
+                                                @if(($item['costura_estado'] ?? null) === 'Homologar')
+                                                    style="background-color: rgba(147, 51, 234, 0.08);"
+                                                @elseif(($item['estado_bodega'] ?? '') === 'Entregado')
+                                                    style="background-color: rgba(37, 99, 235, 0.05);"
+                                                @endif
+                                            >
+                                                <td class="px-4 py-3 text-xs text-black border-r border-slate-300" style="width: 22%;">
+                                                    <div class="font-bold text-black mb-1">
+                                                        {{ $nombre }}
+                                                        @if(($item['de_bodega'] ?? ($item['descripcion']['de_bodega'] ?? ($item['objetoPrenda']['de_bodega'] ?? false))) )
+                                                            <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
+                                                        @endif
+                                                    </div>
+                                                </td>
+                                                <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" style="width: 6%;">—</td>
+                                                <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
+                                                    {{ $item['talla'] ?? '—' }}
+                                                </td>
+                                                <td class="px-4 py-3 text-center text-xs font-bold text-black border-r border-slate-300" style="width: 6%;">
+                                                    {{ $item['cantidad'] ?? 0 }}
+                                                </td>
+                                                <td class="px-2 py-3 border-r border-slate-300" style="width: 8%;">
+                                                    <textarea
+                                                        class="pendientes-input w-full px-1.5 py-1 border-2 border-slate-300 text-[10px] focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none bg-slate-50"
+                                                        style="font-family: 'Poppins', sans-serif;"
+                                                        data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                                        data-talla="{{ $item['talla'] }}"
+                                                        data-talla-color-id="{{ $item['talla_color_id'] ?? '' }}"
+                                                        placeholder="Pendientes..."
+                                                        rows="1"
+                                                        @if($esReadOnly ?? false) disabled @endif
+                                                    >{{ $item['pendientes'] ?? '' }}</textarea>
+                                                </td>
+                                                <td class="px-4 py-3 border-r border-slate-300" style="width: 16%;">
+                                                    <div class="flex gap-1">
+                                                        <textarea
+                                                            class="observaciones-input flex-1 px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none rounded bg-slate-50"
+                                                            data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                                            data-talla="{{ $item['talla'] }}"
+                                                            data-talla-color-id="{{ $item['talla_color_id'] ?? '' }}"
+                                                            placeholder="Notas..."
+                                                            rows="1"
+                                                            readonly
+                                                        >{{ $item['observaciones_bodega'] ?? '' }}</textarea>
+                                                        <button
+                                                            type="button"
+                                                            onclick="abrirModalNotas('{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}', '{{ addslashes($item['prenda_nombre'] ?? 'Prenda') }}', 'prenda', '{{ $item['talla'] }}', '{{ $item['talla_color_id'] ?? '' }}')"
+                                                            class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded transition whitespace-nowrap"
+                                                            title="Ver/agregar notas"
+                                                        >
+                                                            💬
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-3 border-r border-slate-300" style="width: 12%;">
+                                                    <input
+                                                        type="date"
+                                                        class="fecha-pedido-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded bg-slate-50"
+                                                        value="{{ $item['fecha_pedido'] ? \Carbon\Carbon::parse($item['fecha_pedido'])->format('Y-m-d') : '' }}"
+                                                        data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                                        data-talla="{{ $item['talla'] }}"
+                                                        data-talla-color-id="{{ $item['talla_color_id'] ?? '' }}"
+                                                        @if($esReadOnly ?? false) disabled @endif
+                                                    >
+                                                </td>
+                                                <td class="px-4 py-3 border-r border-slate-300" style="width: 12%;">
+                                                    <input
+                                                        type="date"
+                                                        class="fecha-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded bg-slate-50"
+                                                        value="{{ $item['fecha_entrega'] ? \Carbon\Carbon::parse($item['fecha_entrega'])->format('Y-m-d') : '' }}"
+                                                        data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                                        data-talla="{{ $item['talla'] }}"
+                                                        data-talla-color-id="{{ $item['talla_color_id'] ?? '' }}"
+                                                        @if($esReadOnly ?? false) disabled @endif
+                                                    >
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    @endif
+                                @endforeach
+                            @else
                                 <tr>
                                     <td colspan="8" class="px-6 py-12 text-center">
                                         <div class="flex flex-col items-center">
@@ -357,7 +405,7 @@
                                         </div>
                                     </td>
                                 </tr>
-                            @endforelse
+                            @endif
                         </tbody>
                     </table>
                 </div>
