@@ -422,28 +422,18 @@ class DragDropManager {
     _inicializarTelas() {
         
         // Configurar drag & drop en el botón
+        // La zona de drop de telas ya no existe en el flujo unificado
+        // (se maneja dentro del wizard o del formulario simple)
         const dropZone = document.getElementById('nueva-prenda-tela-drop-zone');
         if (dropZone) {
             this.telaHandler.configurarDropZone(dropZone);
             UIHelperService.log('DragDropManager', '✅ Drop zone de telas configurada');
-        } else {
-            UIHelperService.log('DragDropManager', '❌ Drop zone de telas no encontrada', 'warn');
         }
         
-        // Configurar drag & drop en el preview si ya hay imágenes
         const preview = document.getElementById('nueva-prenda-tela-preview');
-        if (preview) {
-            UIHelperService.log('DragDropManager', '✅ Preview de telas encontrado');
-            // En el modal de prendas, el preview de telas está oculto por defecto
-            // No mostrar warning ya que es comportamiento normal
-            if (preview.style.display !== 'none') {
-                this.telaHandler.configurarPreview(preview);
-                UIHelperService.log('DragDropManager', '✅ Preview de telas configurado');
-            } else {
-                UIHelperService.log('DragDropManager', 'ℹ️ Preview de telas oculto (comportamiento normal en modal de prendas)');
-            }
-        } else {
-            UIHelperService.log('DragDropManager', '❌ Preview de telas no encontrado', 'warn');
+        if (preview && preview.style.display !== 'none') {
+            this.telaHandler.configurarPreview(preview);
+            UIHelperService.log('DragDropManager', '✅ Preview de telas configurado');
         }
         
         UIHelperService.log('DragDropManager', '✅ Sistema de telas inicializado');

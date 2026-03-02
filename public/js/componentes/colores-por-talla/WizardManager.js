@@ -232,12 +232,18 @@ window.WizardManager = (function() {
          * Métodos privados de validación (Arquitectura cleaner)
          */
         _validarPaso0() {
-            const tela = StateManager.getTelaSeleccionada();
-            if (!tela) {
-                console.log('[WizardManager] ⏸️ PASO 0: Sin tela seleccionada');
+            // Leer desde el input de tela del wizard
+            const telaInput = document.getElementById('wizard-tela-input');
+            const telaValor = telaInput ? telaInput.value.trim().toUpperCase() : '';
+            
+            if (!telaValor) {
+                console.log('[WizardManager] ⏸️ PASO 0: Sin tela ingresada');
                 return false;
             }
-            console.log('[WizardManager] ✅ PASO 0: Tela validada -', tela);
+            
+            // Guardar en StateManager
+            StateManager.setTelaSeleccionada(telaValor);
+            console.log('[WizardManager] ✅ PASO 0: Tela validada -', telaValor);
             return true;
         },
 
@@ -335,10 +341,20 @@ window.WizardManager = (function() {
         },
 
         _procesarPaso0() {
-            console.log('[WizardManager] ↪️ PASO 0 - Seleccionar tela...');
+            console.log('[WizardManager] ↪️ PASO 0 - Validar tela ingresada...');
             if (!this._validarPaso0()) {
-                console.warn('[WizardManager] No hay tela seleccionada');
-                alert('Por favor selecciona una tela antes de continuar');
+                console.warn('[WizardManager] No hay tela ingresada');
+                // Resaltar el input
+                const telaInput = document.getElementById('wizard-tela-input');
+                if (telaInput) {
+                    telaInput.style.borderColor = '#ef4444';
+                    telaInput.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                    telaInput.focus();
+                    setTimeout(() => {
+                        telaInput.style.borderColor = '#d1d5db';
+                        telaInput.style.boxShadow = 'none';
+                    }, 2000);
+                }
                 return false;
             }
             console.log('[WizardManager] ➜ Avanzando a PASO 1...');
@@ -395,8 +411,6 @@ window.WizardManager = (function() {
 
             try {
                 const pasoActual = StateManager.getPasoActual();
-                const telas = window.telasCreacion || [];
-                const hayMultiplesTelas = telas.length > 1;
                 
                 console.log('[WizardManager] pasoAnterior() - Paso actual:', pasoActual);
                 
@@ -406,16 +420,6 @@ window.WizardManager = (function() {
                 }
                 
                 let pasoPrevio = pasoActual - 1;
-                
-                // Si hay una sola tela, saltar paso 0
-                if (!hayMultiplesTelas && pasoPrevio === 0) {
-                    console.log('[WizardManager] Una sola tela, no ir a paso 0. Cerrando wizard.');
-                    // Cerrar el modal
-                    if (typeof cerrarModalAsignarColores === 'function') {
-                        cerrarModalAsignarColores();
-                    }
-                    return;
-                }
                 
                 console.log(`[WizardManager] ⬅️ Navegando de paso ${pasoActual} a paso ${pasoPrevio}`);
                 this.irPaso(pasoPrevio);
@@ -428,51 +432,29 @@ window.WizardManager = (function() {
          * Obtener el número total de pasos (4 siempre)
          */
         obtenerTotalPasos() {
-            // Siempre devolvemos 4 porque los pasos son:
-            // 0: Selección de tela (solo si hay múltiples telas)
+            // Flujo unificado - siempre 4 pasos:
+            // 0: Ingresar Tela
             // 1: Género
             // 2: Tallas  
-            // 3: Colores
+            // 3: Colores (con referencia, imagen, observaciones)
             return 4;
         },
 
         /**
          * Inicializar el wizard y determinar paso inicial
+         * Flujo unificado: siempre empieza en Paso 0 (ingresar tela)
          */
         inicializarWizard() {
             console.log('[WizardManager]  Inicializando wizard...');
-            const telas = window.telasCreacion || [];
-            const totalPasos = this.obtenerTotalPasos();
             
-            console.log('[WizardManager]  Total de telas:', telas.length, '| Total pasos:', totalPasos);
-            
-            // Mostrar/ocultar indicador paso 0 y su contenedor
+            // Paso 0 siempre visible como primer paso
             const paso0Wrapper = document.getElementById('paso-0-wrapper');
             const paso0Linea = document.getElementById('paso-0-linea');
+            if (paso0Wrapper) paso0Wrapper.style.display = 'block';
+            if (paso0Linea) paso0Linea.style.display = 'block';
             
-            if (telas.length > 1) {
-                // FLUJO 2: Múltiples telas: mostrar paso 0 y empezar ahí
-                console.log('[WizardManager]  🌊 FLUJO 2 - Múltiples telas detectadas - mostrar paso 0');
-                if (paso0Wrapper) paso0Wrapper.style.display = 'block';
-                if (paso0Linea) paso0Linea.style.display = 'block';
-                this.irPaso(0);
-            } else {
-                // FLUJO 1: Una sola tela: ocultar paso 0 y empezar en paso 1
-                console.log('[WizardManager]  🌊 FLUJO 1 - Una sola tela - ocultar paso 0, empezar en paso 1');
-                if (paso0Wrapper) paso0Wrapper.style.display = 'none';
-                if (paso0Linea) paso0Linea.style.display = 'none';
-                
-                // Auto-seleccionar la tela única
-                if (telas.length === 1) {
-                    const nombreTela = telas[0].tela_nombre || telas[0].nombre_tela || telas[0].tela;
-                    StateManager.setTelaSeleccionada(nombreTela);
-                    console.log('[WizardManager]  Tela única auto-seleccionada:', nombreTela);
-                }
-                
-                // Forzar ir a Paso 1 (aunque el estado anterior sea Paso 0)
-                console.log('[WizardManager]  Forzando transición a Paso 1 en FLUJO 1');
-                this.irPaso(1);
-            }
+            console.log('[WizardManager]  Flujo unificado - siempre empezar en Paso 0 (tela)');
+            this.irPaso(0);
         },
 
         /**
@@ -580,21 +562,21 @@ window.WizardManager = (function() {
          */
         cargarTelasDisponibles() {
             try {
-                const contenedor = document.getElementById('wizard-telas-selector');
-                if (!contenedor) {
-                    console.error('[WizardManager] wizard-telas-selector no encontrado');
-                    return;
-                }
+                const selectorSection = document.getElementById('wizard-telas-selector');
+                const contenedor = document.getElementById('wizard-telas-botones');
+                const inputTela = document.getElementById('wizard-tela-input');
                 
                 const telas = window.telasCreacion || [];
                 console.log('[WizardManager] Cargando telas disponibles, total:', telas.length);
                 
-                if (telas.length <= 1) {
-                    console.warn('[WizardManager] No hay múltiples telas para mostrar selector (Expected, paso 0 no debería estar visible)');
-                    contenedor.innerHTML = '<div style="text-align: center; padding: 1rem; color: #9ca3af;">No hay múltiples telas disponibles</div>';
+                // Si no hay telas existentes, ocultar sección de acceso rápido
+                if (!telas.length || !selectorSection || !contenedor) {
+                    if (selectorSection) selectorSection.style.display = 'none';
                     return;
                 }
                 
+                // Mostrar sección y poblar botones
+                selectorSection.style.display = 'block';
                 contenedor.innerHTML = '';
                 
                 telas.forEach((tela, index) => {
@@ -603,36 +585,31 @@ window.WizardManager = (function() {
                     const btn = document.createElement('button');
                     btn.type = 'button';
                     btn.className = 'wizard-tela-btn';
-                    btn.style.padding = '1rem';
-                    btn.style.border = '1px solid #d1d5db';
-                    btn.style.background = 'white';
-                    btn.style.borderRadius = '4px';
-                    btn.style.cursor = 'pointer';
-                    btn.style.fontWeight = '500';
-                    btn.style.fontSize = '0.85rem';
-                    btn.style.color = '#374151';
-                    btn.style.transition = 'all 0.2s';
-                    btn.style.textAlign = 'center';
-                    btn.innerHTML = `
-                        <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.5rem;">TELA ${index + 1}</div>
-                        <div style="font-weight: 600; color: #111827;">${nombreTela}</div>
-                    `;
+                    btn.style.cssText = 'padding:0.6rem 1rem;border:1px solid #d1d5db;background:white;border-radius:4px;cursor:pointer;font-weight:500;font-size:0.85rem;color:#374151;transition:all 0.2s;text-align:center;';
+                    btn.textContent = nombreTela;
                     
                     btn.addEventListener('click', () => {
                         try {
-                            console.log('[WizardManager] 🎯 Tela seleccionada:', nombreTela);
-                            this.seleccionarTela(nombreTela);
-                            // Avanzar al siguiente paso
-                            this.pasoSiguiente();
+                            console.log('[WizardManager] Tela rápida seleccionada:', nombreTela);
+                            // Rellenar el input y validar (sin auto-avanzar para que el usuario confirme)
+                            if (inputTela) {
+                                inputTela.value = nombreTela.toUpperCase();
+                                // Disparar validación visual
+                                if (typeof wizardValidarTelaInput === 'function') {
+                                    wizardValidarTelaInput(inputTela);
+                                } else {
+                                    this.seleccionarTela(nombreTela);
+                                }
+                            }
                         } catch (e) {
-                            console.error('[WizardManager] Error en evento click de tela:', e);
+                            console.error('[WizardManager] Error en click tela rápida:', e);
                         }
                     });
                     
                     contenedor.appendChild(btn);
                 });
                 
-                console.log('[WizardManager] Telas cargadas exitosamente');
+                console.log('[WizardManager] Telas rápidas cargadas exitosamente');
             } catch (error) {
                 console.error('[WizardManager] Error cargando telas disponibles:', error);
             }
@@ -644,10 +621,10 @@ window.WizardManager = (function() {
         actualizarIndicadoresProgreso(pasoActual) {
             const totalPasos = this.obtenerTotalPasos();
             
-            // Paso 0 (solo si tenemos 4 pasos)
+            // Paso 0 (siempre visible en flujo unificado)
             const paso0 = document.getElementById('paso-0-indicator');
             if (paso0) {
-                if (pasoActual >= 0 && totalPasos > 3) {
+                if (pasoActual >= 0) {
                     paso0.style.background = '#3b82f6';
                     paso0.style.color = 'white';
                 } else {
@@ -721,15 +698,19 @@ window.WizardManager = (function() {
             
             console.log('[WizardManager] Paso:', pasoActual);
             
-            // PASO 0: Seleccionar Tela
+            // PASO 0: Ingresar Tela
             if (pasoActual === 0) {
                 if (btnAtras) {
                     btnAtras.style.display = 'none';
                     console.log('[WizardManager] Botón Atrás oculto (paso 0)');
                 }
                 if (btnSiguiente) {
-                    btnSiguiente.style.display = 'none';
-                    console.log('[WizardManager] Botón Siguiente oculto (se presiona al seleccionar tela)');
+                    btnSiguiente.style.display = 'flex';
+                    btnSiguiente.style.alignItems = 'center';
+                    btnSiguiente.style.justifyContent = 'center';
+                    btnSiguiente.style.gap = '0.25rem';
+                    btnSiguiente.disabled = false;
+                    console.log('[WizardManager] Botón Siguiente visible (paso 0)');
                 }
                 if (btnGuardar) {
                     btnGuardar.style.display = 'none';
@@ -738,21 +719,11 @@ window.WizardManager = (function() {
             }
             // PASO 1: Seleccionar Género
             else if (pasoActual === 1) {
-                const telas = window.telasCreacion || [];
-                const tienePaso0 = telas.length > 1;
-                
                 if (btnAtras) {
-                    if (tienePaso0) {
-                        btnAtras.style.display = 'flex';
-                        btnAtras.style.alignItems = 'center';
-                        btnAtras.style.justifyContent = 'center';
-                        btnAtras.style.gap = '0.25rem';
-                    } else {
-                        btnAtras.style.display = 'flex';
-                        btnAtras.style.alignItems = 'center';
-                        btnAtras.style.justifyContent = 'center';
-                        btnAtras.style.gap = '0.25rem';
-                    }
+                    btnAtras.style.display = 'flex';
+                    btnAtras.style.alignItems = 'center';
+                    btnAtras.style.justifyContent = 'center';
+                    btnAtras.style.gap = '0.25rem';
                 }
                 if (btnSiguiente) {
                     btnSiguiente.style.display = 'flex';

@@ -135,16 +135,10 @@ class WizardBootstrap {
         // Los listeners se registran una sola vez desde los hooks de registerListeners
         // Llamar aquí causa listeners duplicados
 
-        // Validar que la tela está seleccionada (verificar en StateManager o window)
-        const telaDelStateManager = window.StateManager ? window.StateManager.getTelaSeleccionada() : null;
-        const telasCreacion = window.telasCreacion || [];
-        
-        // Acepta si hay al menos una tela en StateManager O en window.telasCreacion
-        const hayTela = telaDelStateManager || telasCreacion.length > 0;
-        
-        if (!hayTela) {
-            throw new Error('No hay telas seleccionadas para asignar colores');
-        }
+        // En flujo unificado, la tela se ingresa en el paso 0 del wizard,
+        // por lo que no es necesario validar que exista previamente.
+        // La validación se hace al avanzar del paso 0 al paso 1.
+        console.log('[WizardBootstrap] Pre-initialize: flujo unificado, sin validación de telas previa');
     }
 
     /**

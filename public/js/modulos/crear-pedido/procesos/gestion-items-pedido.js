@@ -454,6 +454,11 @@ class GestionItemsUI {
                 window.imagenesTelaModalNueva = [];
                 console.log('[abrirModalAgregarPrendaNueva]   DESPUÉS:', window.telasCreacion);
                 
+                // Actualizar chips de telas (vaciar)
+                if (typeof window.renderizarTelasChips === 'function') {
+                    window.renderizarTelasChips();
+                }
+                
                 if (this.prendaEditor) {
                     this.prendaEditor.abrirModal(false, null);
                 }

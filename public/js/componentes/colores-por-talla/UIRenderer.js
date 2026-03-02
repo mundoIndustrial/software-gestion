@@ -698,121 +698,12 @@ window.UIRenderer = (function() {
 
         /**
          * Actualizar el resumen de asignaciones
+         * Delega a ColoresPorTalla.actualizarTablaResumen() que maneja la tabla unificada
          */
         actualizarResumenAsignaciones() {
-            // console.log('[UIRenderer.actualizarResumenAsignaciones]  Iniciando actualización de resumen...');
-            
-            const tbodyResumen = document.getElementById('tabla-resumen-asignaciones-cuerpo');
-            const msgResumenVacio = document.getElementById('msg-resumen-vacio');
-            const totalResumen = document.getElementById('total-asignaciones-resumen');
-            
-            
-            if (!tbodyResumen) {
-                console.error('[UIRenderer.actualizarResumenAsignaciones]  No se encontró tabla-resumen-asignaciones-cuerpo');
-                return;
+            if (window.ColoresPorTalla && typeof window.ColoresPorTalla.actualizarTablaResumen === 'function') {
+                window.ColoresPorTalla.actualizarTablaResumen();
             }
-            
-            // Limpiar tabla
-            tbodyResumen.innerHTML = '';
-            // console.log('[UIRenderer.actualizarResumenAsignaciones] 🧹 Tabla limpiada');
-            
-            const asignaciones = StateManager.getAsignaciones();
-            const asignacionesArray = Object.values(asignaciones);
-            
-            // console.log('[UIRenderer.actualizarResumenAsignaciones]  Asignaciones en StateManager:', {
-            //     cantidad: asignacionesArray.length,
-            //     datos: asignacionesArray
-            // });
-            
-            if (asignacionesArray.length === 0) {
-                // console.log('[UIRenderer.actualizarResumenAsignaciones]  Sin asignaciones - mostrando mensaje vacío');
-                if (msgResumenVacio) msgResumenVacio.style.display = 'block';
-                if (totalResumen) totalResumen.textContent = '0';
-                return;
-            }
-            
-            // console.log('[UIRenderer.actualizarResumenAsignaciones]  Hay asignaciones - ocultando mensaje vacío');
-            if (msgResumenVacio) msgResumenVacio.style.display = 'none';
-            
-            let totalUnidades = 0;
-            let filaCount = 0;
-            
-            asignacionesArray.forEach((asignacion, asigIndex) => {
-                // console.log(`[UIRenderer.actualizarResumenAsignaciones]  Procesando asignación #${asigIndex}:`, asignacion);
-                
-                if (!asignacion.colores || asignacion.colores.length === 0) {
-                    // console.log(`[UIRenderer.actualizarResumenAsignaciones] ⏭️ Sin colores en asignación #${asigIndex}, saltando`);
-                    return;
-                }
-                
-                asignacion.colores.forEach((color, colorIndex) => {
-                    const cantidad = parseInt(color.cantidad) || 0;
-                    totalUnidades += cantidad;
-                    filaCount++;
-                    
-                    // console.log(`[UIRenderer.actualizarResumenAsignaciones] 📝 Fila #${filaCount}: ${asignacion.tela} | ${asignacion.genero} | ${asignacion.talla} | ${color.nombre} | ${cantidad}`);
-                    
-                    const tr = document.createElement('tr');
-                    Object.assign(tr.style, { borderBottom: '1px solid #e5e7eb;' });
-                    
-                    const tallaDisplay = asignacion.talla; // Solo mostrar la talla, sin el tipo
-                    const tela = asignacion.tela || '--';
-                    
-                    const generoKey = asignacion.genero || '';
-                    const claveResumen = `${generoKey.toLowerCase()}-Letra-${tallaDisplay}`;
-                    
-                    tr.innerHTML = `
-                        <td style="padding: 0.75rem; text-align: left; color: #1f2937; font-weight: 500;" data-field="tela">
-                            ${tela}
-                        </td>
-                        <td style="padding: 0.75rem; text-align: left; color: #1f2937; font-weight: 500;" data-field="genero">
-                            ${asignacion.genero.toUpperCase()}
-                        </td>
-                        <td style="padding: 0.75rem; text-align: left; color: #1f2937; font-weight: 500;" data-field="talla">
-                            ${tallaDisplay}
-                        </td>
-                        <td style="padding: 0.75rem; text-align: left; color: #1f2937;" data-field="color">
-                            ${color.nombre}
-                        </td>
-                        <td style="padding: 0.75rem; text-align: center; font-weight: 500;" data-field="cantidad">
-                            ${cantidad}
-                        </td>
-                        <td style="padding: 0.75rem; text-align: center;">
-                            <div style="display: flex; gap: 0.25rem; justify-content: center;">
-                                <button type="button" class="btn-editar-asignacion" 
-                                    data-clave="${claveResumen}" data-color="${color.nombre}"
-                                    style="background: #dbeafe; border: none; color: #2563eb; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600;"
-                                    title="Editar fila">
-                                    ✎
-                                </button>
-                                <button type="button" class="btn btn-danger btn-xs btn-eliminar-asignacion" 
-                                    data-genero="${asignacion.genero}" 
-                                    data-talla="${asignacion.talla}" 
-                                    data-color="${color.nombre}" 
-                                    style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
-                                    <span class="material-symbols-rounded" style="font-size: 1rem;">close</span>
-                                </button>
-                            </div>
-                        </td>
-                    `;
-                    
-                    tbodyResumen.appendChild(tr);
-                    // console.log(`[UIRenderer.actualizarResumenAsignaciones]  Fila #${filaCount} añadida a la tabla`);
-                });
-            });
-            
-            if (totalResumen) {
-                totalResumen.textContent = totalUnidades;
-                // console.log('[UIRenderer.actualizarResumenAsignaciones] 🎯 Total actualizado a:', totalUnidades);
-            }
-            
-            // console.log('[UIRenderer.actualizarResumenAsignaciones]  COMPLETADO - Tabla actualizada con', filaCount, 'filas y', totalUnidades, 'unidades totales');
-            
-            // Configurar edición inline para botones ✎
-            this._configurarEdicionInlineResumen(tbodyResumen);
-            
-            // Configurar event delegation para los botones de eliminar
-            this.configurarEventosEliminarAsignacion();
         },
 
         /**
@@ -950,18 +841,19 @@ window.UIRenderer = (function() {
             const seccionTallasCantidades = document.getElementById('seccion-tallas-cantidades');
             const seccionResumenAsignaciones = document.getElementById('seccion-resumen-asignaciones');
             const tieneAsignaciones = StateManager.tieneAsignaciones();
+            const tieneTelasSimples = (window.telasCreacion && window.telasCreacion.length > 0);
     
             
-            if (tieneAsignaciones) {
-                // Si hay asignaciones, mostrar resumen y ocultar TALLAS Y CANTIDADES
-                if (seccionTallasCantidades) {
+            if (tieneAsignaciones || tieneTelasSimples) {
+                // Si hay asignaciones o telas simples, mostrar resumen
+                if (tieneAsignaciones && seccionTallasCantidades) {
                     seccionTallasCantidades.style.display = 'none';
                 }
                 if (seccionResumenAsignaciones) {
                     seccionResumenAsignaciones.style.display = 'block';
                 }
             } else {
-                // Si no hay asignaciones, mostrar TALLAS Y CANTIDADES y ocultar resumen
+                // Si no hay nada, mostrar TALLAS Y CANTIDADES y ocultar resumen
                 if (seccionTallasCantidades) {
                     seccionTallasCantidades.style.display = 'block';
                 }

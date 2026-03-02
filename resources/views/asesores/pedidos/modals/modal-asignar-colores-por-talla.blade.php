@@ -19,43 +19,54 @@
                 <!-- INDICADOR DE PROGRESO -->
                 <div id="wizard-indicador-progreso" style="margin-bottom: 2rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-                        <!-- PASO 0: TELA (solo visible si hay múltiples telas) -->
-                        <div id="paso-0-wrapper" style="flex: 1; text-align: center; display: none;">
-                            <div id="paso-0-indicator" style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #3b82f6; color: white; border-radius: 50%; font-weight: bold; margin: 0 auto 0.5rem;">0</div>
+                        <!-- PASO 0: TELA (siempre visible) -->
+                        <div id="paso-0-wrapper" style="flex: 1; text-align: center;">
+                            <div id="paso-0-indicator" style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #3b82f6; color: white; border-radius: 50%; font-weight: bold; margin: 0 auto 0.5rem;">1</div>
                             <div style="font-size: 0.875rem; font-weight: 500; color: #1f2937;">Tela</div>
                         </div>
-                        <div id="paso-0-linea" style="flex-grow: 1; height: 2px; background: #3b82f6; margin-bottom: 1.5rem; display: none;"></div>
+                        <div id="paso-0-linea" style="flex-grow: 1; height: 2px; background: #3b82f6; margin-bottom: 1.5rem;"></div>
 
                         <!-- PASO 1: GÉNERO -->
                         <div style="flex: 1; text-align: center;">
-                            <div id="paso-1-indicator" style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #3b82f6; color: white; border-radius: 50%; font-weight: bold; margin: 0 auto 0.5rem;">1</div>
-                            <div style="font-size: 0.875rem; font-weight: 500; color: #1f2937;">Género</div>
+                            <div id="paso-1-indicator" style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #d1d5db; color: #6b7280; border-radius: 50%; font-weight: bold; margin: 0 auto 0.5rem;">2</div>
+                            <div style="font-size: 0.875rem; font-weight: 500; color: #6b7280;">Género</div>
                         </div>
-                        <div style="flex-grow: 1; height: 2px; background: #3b82f6; margin-bottom: 1.5rem;"></div>
+                        <div style="flex-grow: 1; height: 2px; background: #d1d5db; margin-bottom: 1.5rem;"></div>
                         
                         <!-- PASO 2: TALLA -->
                         <div style="flex: 1; text-align: center;">
-                            <div id="paso-2-indicator" style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #d1d5db; color: #6b7280; border-radius: 50%; font-weight: bold; margin: 0 auto 0.5rem;">2</div>
+                            <div id="paso-2-indicator" style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #d1d5db; color: #6b7280; border-radius: 50%; font-weight: bold; margin: 0 auto 0.5rem;">3</div>
                             <div style="font-size: 0.875rem; font-weight: 500; color: #6b7280;">Talla</div>
                         </div>
                         <div style="flex-grow: 1; height: 2px; background: #d1d5db; margin-bottom: 1.5rem;"></div>
                         
                         <!-- PASO 3: COLORES -->
                         <div style="flex: 1; text-align: center;">
-                            <div id="paso-3-indicator" style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #d1d5db; color: #6b7280; border-radius: 50%; font-weight: bold; margin: 0 auto 0.5rem;">3</div>
+                            <div id="paso-3-indicator" style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #d1d5db; color: #6b7280; border-radius: 50%; font-weight: bold; margin: 0 auto 0.5rem;">4</div>
                             <div style="font-size: 0.875rem; font-weight: 500; color: #6b7280;">Colores</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- PASO 0: SELECCIONAR TELA (solo visible si hay múltiples telas) -->
-                <div id="wizard-paso-0" style="display: none;">
+                <!-- PASO 0: INGRESAR TELA (siempre visible como primer paso) -->
+                <div id="wizard-paso-0" style="display: block;">
                     <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; text-align: center;">
-                        <h3 style="color: #111827; margin: 0 0 0.25rem 0; font-size: 1.1rem; font-weight: 600;">Selecciona Tela</h3>
-                        <p style="color: #6b7280; margin: 0 0 1.5rem 0; font-size: 0.85rem;">¿Qué tela deseas asignar?</p>
+                        <h3 style="color: #111827; margin: 0 0 0.25rem 0; font-size: 1.1rem; font-weight: 600;">
+                            <span class="material-symbols-rounded" style="vertical-align: middle; margin-right: 0.5rem; color: #3b82f6;">texture</span>
+                            Ingresa la Tela
+                        </h3>
+                        <p style="color: #6b7280; margin: 0 0 1.5rem 0; font-size: 0.85rem;">¿Con qué tela trabajarás?</p>
                         
-                        <div id="wizard-telas-selector" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem;">
-                            <!-- Botones de tela dinámicos -->
+                        <div style="max-width: 400px; margin: 0 auto;">
+                            <input type="text" id="wizard-tela-input" placeholder="Escribe el nombre de la tela..." list="opciones-telas" class="form-input" style="width: 100%; padding: 0.75rem 1rem; font-size: 1rem; text-transform: uppercase; border: 2px solid #d1d5db; border-radius: 8px; text-align: center;" onkeyup="this.value = this.value.toUpperCase();" oninput="wizardValidarTelaInput(this)">
+                        </div>
+
+                        <!-- Selector rápido de telas existentes (si hay en telasCreacion) -->
+                        <div id="wizard-telas-selector" style="display: none; margin-top: 1rem;">
+                            <p style="color: #6b7280; font-size: 0.8rem; margin: 0 0 0.5rem 0;">O selecciona una tela existente:</p>
+                            <div id="wizard-telas-botones" style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center;">
+                                <!-- Botones dinámicos de telas existentes -->
+                            </div>
                         </div>
                     </div>
                 </div>

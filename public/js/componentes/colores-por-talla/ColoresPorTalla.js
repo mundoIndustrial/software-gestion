@@ -17,6 +17,48 @@ window.ColoresPorTalla = (function() {
     let isInitialized = false;
 
     /**
+     * ALMACENAMIENTO DE IMÁGENES (BLOB URLs)
+     * Centraliza la gestión de imágenes para evitar duplicados y fugas de memoria
+     */
+    const _imageStore = new Map();
+
+    /**
+     * Guarda una imagen en el almacén temporal y devuelve un ID único
+     * @param {File|Blob} file
+     * @returns {string|null} ID de la imagen
+     */
+    function _storeImage(file) {
+        if (!file) return null;
+        const id = 'img_' + Math.random().toString(36).substr(2, 9);
+        const blobUrl = URL.createObjectURL(file);
+        _imageStore.set(id, { id, file, blobUrl, nombre: file.name });
+        return id;
+    }
+
+    /**
+     * Obtiene una imagen del almacén
+     * @param {string} id
+     * @returns {Object|null} {id, file, blobUrl, nombre}
+     */
+    function _getImage(id) {
+        if (!id) return null;
+        return _imageStore.get(id) || null;
+    }
+
+    /**
+     * Elimina una imagen del almacén y libera el Blob URL
+     * @param {string} id
+     */
+    function _removeImage(id) {
+        if (!id) return;
+        const data = _imageStore.get(id);
+        if (data) {
+            if (data.blobUrl) URL.revokeObjectURL(data.blobUrl);
+            _imageStore.delete(id);
+        }
+    }
+
+    /**
      * INICIALIZACIÓN: Crear la instancia del wizard
      */
     async function init() {
@@ -426,14 +468,9 @@ window.ColoresPorTalla = (function() {
                         colorData.observaciones = observaciones;
                     }
                     
-                    // Procesar imagen si existe
+                    // Procesar imagen si existe — guardar en store global
                     if (imagenFile) {
-                        // Convertir archivo a Base64 para almacenamiento temporal
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            colorData.imagen_base64 = e.target.result;
-                        };
-                        reader.readAsDataURL(imagenFile);
+                        colorData.imagen_id = _storeImage(imagenFile);
                         colorData.imagen_nombre = imagenFile.name;
                     }
                     
@@ -462,6 +499,29 @@ window.ColoresPorTalla = (function() {
             );
             
             if (resultado) {
+                // Asegurar que la tela quede registrada en telasCreacion
+                if (!window.telasCreacion) {
+                    window.telasCreacion = [];
+                }
+                const telaYaExiste = window.telasCreacion.some(t => 
+                    (t.tela || t.nombreTela || t.nombre || '').toUpperCase() === tela.toUpperCase()
+                );
+                if (!telaYaExiste) {
+                    window.telasCreacion.push({
+                        tela: tela.toUpperCase(),
+                        color: '',
+                        referencia: '',
+                        imagenes: [],
+                        fechaCreacion: new Date().toISOString()
+                    });
+                    console.log('[wizardGuardarAsignacion] Tela agregada a telasCreacion:', tela);
+                }
+                
+                // Actualizar chips de telas agregadas en el modal prenda
+                if (typeof window.renderizarTelasChips === 'function') {
+                    window.renderizarTelasChips();
+                }
+                
                 return true;
             } else {
                 alert('Error al guardar asignaciones. Verifica que todas las tallas tengan colores.');
@@ -555,74 +615,204 @@ window.ColoresPorTalla = (function() {
 
         const asignaciones = window.StateManager ? window.StateManager.getAsignaciones() : {};
         const asignacionesArray = Object.entries(asignaciones);
+        const telasSimples = window.telasCreacion || [];
 
-        if (asignacionesArray.length === 0) {
-            // Ocultar sección de resumen y mostrar original
-            if (seccionResumen) {
-                seccionResumen.style.display = 'none';
-            }
-            if (seccionTallasOriginal) {
-                seccionTallasOriginal.style.display = 'block';
-            }
+        // Determinar si hay datos para mostrar
+        const hayDatos = asignacionesArray.length > 0 || telasSimples.length > 0;
+
+        if (!hayDatos) {
+            if (seccionResumen) seccionResumen.style.display = 'none';
+            if (seccionTallasOriginal) seccionTallasOriginal.style.display = 'block';
             return;
         }
 
-        // Mostrar sección de resumen y ocultar original
-        if (seccionResumen) {
-            seccionResumen.style.display = 'block';
-        }
-        if (seccionTallasOriginal) {
+        // Mostrar sección de resumen
+        if (seccionResumen) seccionResumen.style.display = 'block';
+        if (asignacionesArray.length > 0 && seccionTallasOriginal) {
             seccionTallasOriginal.style.display = 'none';
         }
-        if (msgVacio) {
-            msgVacio.style.display = 'none';
-        }
+        if (msgVacio) msgVacio.style.display = 'none';
 
-        // Construir filas de la tabla con nuevo formato: TELA | GÉNERO | TALLA | COLOR | CANTIDAD | ACCIÓN
+        // Construir filas: TELA | COLOR | REFERENCIA | IMAGEN | OBS | GÉNERO | TALLA | CANTIDAD | ACCIÓN
         let html = '';
         let totalAsignaciones = 0;
+        const cellStyle = 'padding: 0.75rem; color: #374151;';
+        const cellMuted = 'padding: 0.75rem; color: #9ca3af; font-size: 0.8rem;';
 
-        asignacionesArray.forEach(([clave, asignacion]) => {
+        // --- 1) Filas de asignaciones wizard ---
+        // Recopilar telas que ya están en wizard para excluirlas de las simples
+        const telasEnWizard = new Set();
+
+        asignacionesArray.forEach(([clave, asignacion], rowIdx) => {
             const { genero, talla, tela, colores } = asignacion;
+            if (tela) telasEnWizard.add(tela.toUpperCase());
             
-            if (colores && Array.isArray(colores)) {
-                colores.forEach((color, index) => {
-                    const cantidad = typeof color.cantidad === 'number' ? color.cantidad : 1;
-                    const colorNombre = color.nombre || color || '--';
-                    const backgroundColor = (index % 2 === 0) ? '#ffffff' : '#f9fafb';
-                    
-                    totalAsignaciones += cantidad;
-                    
-                    html += `
-                        <tr style="background: ${backgroundColor}; border-bottom: 1px solid #e5e7eb;" data-clave="${clave}" data-color-nombre="${colorNombre}">
-                            <td style="padding: 0.75rem; color: #374151; font-weight: 500;" data-field="tela">${tela || '--'}</td>
-                            <td style="padding: 0.75rem; color: #374151;" data-field="genero">${genero ? genero.toUpperCase() : '--'}</td>
-                            <td style="padding: 0.75rem; color: #374151; font-weight: 500;" data-field="talla">${talla || '--'}</td>
-                            <td style="padding: 0.75rem; color: #374151;" data-field="color">${colorNombre}</td>
-                            <td style="padding: 0.75rem; text-align: center; color: #374151; font-weight: 600;" data-field="cantidad">${cantidad}</td>
-                            <td style="padding: 0.75rem; text-align: center;">
-                                <div style="display: flex; gap: 0.25rem; justify-content: center;">
-                                    <button type="button" class="btn-editar-asignacion" data-clave="${clave}" data-color="${colorNombre}"
-                                        style="background: #dbeafe; border: none; color: #2563eb; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600;"
-                                        title="Editar fila">
-                                        ✎
-                                    </button>
-                                    <button type="button" class="btn-eliminar-asignacion" data-clave="${clave}" data-color="${colorNombre}" 
-                                            style="background: #fee2e2; border: none; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600;">
-                                        ✕
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                });
+            if (!colores || !Array.isArray(colores) || colores.length === 0) return;
+            
+            // Calcular cantidad total para esta asignación
+            const totalCant = colores.reduce((sum, c) => sum + (typeof c.cantidad === 'number' ? c.cantidad : 1), 0);
+            totalAsignaciones += totalCant;
+            
+            const bg = (rowIdx % 2 === 0) ? '#ffffff' : '#f9fafb';
+            
+            // Chips de colores con cantidad
+            const coloresChipsHtml = colores.map(c => {
+                const nombre = c.nombre || '--';
+                const cant = typeof c.cantidad === 'number' ? c.cantidad : 1;
+                return `<span style="display:inline-block;background:#dbeafe;color:#1e40af;padding:0.15rem 0.5rem;border-radius:12px;font-size:0.73rem;font-weight:500;margin:0.1rem;white-space:nowrap;">${nombre} (${cant})</span>`;
+            }).join('');
+            
+            // Combinar referencias (únicas, no vacías)
+            const refs = [...new Set(colores.map(c => c.referencia).filter(Boolean))];
+            const refHtml = refs.length > 0 ? refs.join(', ') : '-';
+            
+            // Combinar imágenes
+            let imgsHtml = '<span style="color:#9ca3af;font-size:0.75rem;">—</span>';
+            const conImagen = colores.filter(c => c.imagen_id && _getImage(c.imagen_id));
+            if (conImagen.length > 0) {
+                imgsHtml = conImagen.map(c => {
+                    const imgData = _getImage(c.imagen_id);
+                    if (imgData && imgData.blobUrl) {
+                        return '<img src="' + imgData.blobUrl + '" style="width:28px;height:28px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;margin:1px;" alt="img">';
+                    }
+                    return '';
+                }).join('') || '<span style="color:#9ca3af;font-size:0.75rem;">—</span>';
             }
+            
+            // Combinar observaciones (únicas, no vacías)
+            const obs = [...new Set(colores.map(c => c.observaciones).filter(Boolean))];
+            const obsText = obs.length > 0 ? obs.join(' | ') : '-';
+            
+            html += `
+                <tr style="background: ${bg}; border-bottom: 1px solid #e5e7eb;" data-clave="${clave}" data-tipo="wizard">
+                    <td style="${cellStyle} font-weight: 500;" data-field="tela">${tela || '--'}</td>
+                    <td style="${cellStyle}" data-field="color"><div style="display:flex;flex-wrap:wrap;gap:0.15rem;">${coloresChipsHtml}</div></td>
+                    <td style="${cellStyle} font-size:0.8rem;" data-field="referencia">${refHtml}</td>
+                    <td style="${cellStyle}" data-field="imagen"><div style="display:flex;flex-wrap:wrap;gap:2px;">${imgsHtml}</div></td>
+                    <td style="${cellStyle} font-size:0.8rem; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" data-field="observaciones" title="${obsText}">${obsText}</td>
+                    <td style="${cellStyle}" data-field="genero">${genero ? genero.toUpperCase() : '--'}</td>
+                    <td style="${cellStyle} font-weight: 500;" data-field="talla">${talla || '--'}</td>
+                    <td style="${cellStyle} text-align: center; font-weight: 600;" data-field="cantidad">${totalCant}</td>
+                    <td style="padding: 0.75rem; text-align: center;">
+                        <div style="display: flex; gap: 0.25rem; justify-content: center;">
+                            <button type="button" class="btn-editar-asignacion" data-clave="${clave}"
+                                style="background: #dbeafe; border: none; color: #2563eb; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600;"
+                                title="Editar asignación">✎</button>
+                            <button type="button" class="btn-eliminar-asignacion" data-clave="${clave}"
+                                style="background: #fee2e2; border: none; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600;"
+                                title="Eliminar asignación">✕</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+
+        // Determinar si hay wizard rows para mostrar/ocultar columnas wizard-only
+        const hayWizard = asignacionesArray.length > 0;
+
+        // --- 2) Filas de telas simples (sin wizard) ---
+        telasSimples.forEach((t, idx) => {
+            const telaName = (t.tela || '').toUpperCase();
+            // Saltar si esta tela ya está representada por wizard
+            if (telasEnWizard.has(telaName)) return;
+
+            const bg = (idx % 2 === 0) ? '#ffffff' : '#f9fafb';
+            const color = t.color || '-';
+            const referencia = t.referencia || '-';
+            const observaciones = t.observaciones || '-';
+
+            // Imagen thumbnail
+            let imgHtml = '<span style="color:#9ca3af;font-size:0.75rem;">—</span>';
+            if (t.imagenes && t.imagenes.length > 0) {
+                const img = t.imagenes[0];
+                if (img instanceof File || img instanceof Blob) {
+                    imgHtml = '<img src="' + URL.createObjectURL(img) + '" style="width:32px;height:32px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;" alt="img">';
+                } else if (typeof img === 'string') {
+                    imgHtml = '<img src="' + img + '" style="width:32px;height:32px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;" alt="img">';
+                }
+            }
+
+            // Columnas wizard-only: solo si hay wizard rows
+            const wizardCols = hayWizard ? `
+                    <td style="${cellMuted}" data-field="genero" data-col="wizard-only">—</td>
+                    <td style="${cellMuted}" data-field="talla" data-col="wizard-only">—</td>
+                    <td style="${cellMuted} text-align:center;" data-field="cantidad" data-col="wizard-only">—</td>` : '';
+            
+            html += `
+                <tr style="background: ${bg}; border-bottom: 1px solid #e5e7eb;" data-tipo="simple" data-tela-idx="${idx}">
+                    <td style="${cellStyle} font-weight: 500;" data-field="tela">${telaName || '--'}</td>
+                    <td style="${cellStyle}" data-field="color">${color}</td>
+                    <td style="${cellStyle}" data-field="referencia">${referencia}</td>
+                    <td style="${cellStyle}" data-field="imagen">${imgHtml}</td>
+                    <td style="${cellStyle} font-size:0.8rem; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" data-field="observaciones" title="${observaciones}">${observaciones}</td>${wizardCols}
+                    <td style="padding: 0.75rem; text-align: center;">
+                        <div style="display: flex; gap: 0.25rem; justify-content: center;">
+                            <button type="button" class="btn-editar-tela-simple" data-tela-idx="${idx}"
+                                style="background: #dbeafe; border: none; color: #2563eb; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600;"
+                                title="Editar tela">✎</button>
+                            <button type="button" class="btn-eliminar-tela-simple" data-tela-idx="${idx}"
+                                style="background: #fee2e2; border: none; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600;"
+                                title="Eliminar tela">✕</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
         });
 
         tablaBody.innerHTML = html;
+
+        // Mostrar/ocultar columnas wizard-only en el thead
+        const tabla = tablaBody.closest('table');
+        if (tabla) {
+            tabla.querySelectorAll('th[data-col="wizard-only"]').forEach(th => {
+                th.style.display = hayWizard ? '' : 'none';
+            });
+        }
         
-        // Configurar edición inline para botones ✎
-        _configurarEdicionInlineResumen(tablaBody);
+        // Configurar edición modal para wizard rows
+        tablaBody.querySelectorAll('.btn-editar-asignacion').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault(); e.stopPropagation();
+                const clave = btn.getAttribute('data-clave');
+                if (clave) _abrirModalEditarWizard(clave);
+            });
+        });
+
+        // Configurar eliminación de asignaciones wizard
+        tablaBody.querySelectorAll('.btn-eliminar-asignacion').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault(); e.stopPropagation();
+                const clave = btn.getAttribute('data-clave');
+                if (clave && window.StateManager) {
+                    const asignaciones = window.StateManager.getAsignaciones();
+                    delete asignaciones[clave];
+                    window.StateManager.setAsignaciones(asignaciones);
+                    actualizarTablaResumen();
+                }
+            });
+        });
+
+        // Configurar edición inline para telas simples
+        tablaBody.querySelectorAll('.btn-editar-tela-simple').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault(); e.stopPropagation();
+                const idx = parseInt(btn.getAttribute('data-tela-idx'));
+                if (!window.telasCreacion || isNaN(idx) || !window.telasCreacion[idx]) return;
+                _activarEdicionTelaSimple(btn.closest('tr'), idx);
+            });
+        });
+
+        // Configurar eliminación de telas simples
+        tablaBody.querySelectorAll('.btn-eliminar-tela-simple').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const idx = parseInt(btn.getAttribute('data-tela-idx'));
+                if (window.telasCreacion && !isNaN(idx)) {
+                    window.telasCreacion.splice(idx, 1);
+                    actualizarTablaResumen();
+                }
+            });
+        });
         
         // Actualizar total
         const totalElement = document.getElementById('total-asignaciones-resumen');
@@ -630,85 +820,300 @@ window.ColoresPorTalla = (function() {
             totalElement.textContent = totalAsignaciones;
         }
         
-        console.log('[ColoresPorTalla] ✅ Tabla de resumen actualizada con', asignacionesArray.length, 'asignaciones, total:', totalAsignaciones);
+        console.log('[ColoresPorTalla] ✅ Tabla unificada actualizada - wizard:', asignacionesArray.length, 'asignaciones, simples:', telasSimples.length, 'telas, total:', totalAsignaciones);
     }
 
     /**
-     * Configurar edición inline en la tabla resumen
-     * Permite editar tela, género, talla, color y cantidad directamente en la fila
+     * Activar edición de una tela simple: abre el modal precargado
      */
-    function _configurarEdicionInlineResumen(tablaBody) {
-        tablaBody.querySelectorAll('.btn-editar-asignacion').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                const fila = btn.closest('tr');
-                const clave = btn.getAttribute('data-clave');
-                const colorNombre = btn.getAttribute('data-color');
-                _activarEdicionFila(fila, clave, colorNombre);
-            });
-        });
+    function _activarEdicionTelaSimple(fila, idx) {
+        if (typeof abrirModalTelaSimple === 'function') {
+            abrirModalTelaSimple(idx);
+        } else {
+            console.error('[ColoresPorTalla] abrirModalTelaSimple no disponible');
+        }
     }
 
-    function _activarEdicionFila(fila, clave, colorNombreOriginal) {
-        const tdTela = fila.querySelector('[data-field="tela"]');
-        const tdGenero = fila.querySelector('[data-field="genero"]');
-        const tdTalla = fila.querySelector('[data-field="talla"]');
-        const tdColor = fila.querySelector('[data-field="color"]');
-        const tdCantidad = fila.querySelector('[data-field="cantidad"]');
-        const tdAccion = fila.querySelector('td:last-child');
-        if (!tdTela) return;
+    /**
+     * Abre el modal de edición para una asignación wizard (agrupada)
+     */
+    function _abrirModalEditarWizard(clave) {
+        const asignaciones = window.StateManager ? window.StateManager.getAsignaciones() : {};
+        const asig = asignaciones[clave];
+        if (!asig) return;
 
-        const original = {
-            tela: tdTela.textContent.trim(),
-            genero: tdGenero.textContent.trim(),
-            talla: tdTalla.textContent.trim(),
-            color: tdColor.textContent.trim(),
-            cantidad: parseInt(tdCantidad.textContent.trim()) || 0
+        // Almacenar IDs de imagen por color para el modal de edición
+        window._wizardEditImagenes = asig.colores.map(c => c.imagen_id || null);
+
+        // Eliminar modal previo si existe
+        const existing = document.getElementById('modal-editar-asignacion-wizard');
+        if (existing) { jQuery(existing).modal('hide'); existing.remove(); }
+
+        // Construir tarjetas de color
+        const coloresCardsHtml = asig.colores.map((color, idx) => {
+            const nombre = color.nombre || '';
+            const cantidad = typeof color.cantidad === 'number' ? color.cantidad : 1;
+            const referencia = color.referencia || '';
+            const observaciones = color.observaciones || '';
+            const hasImg = !!(color.imagen_id && _getImage(color.imagen_id));
+            let previewSrc = '';
+            if (hasImg) {
+                const imgData = _getImage(color.imagen_id);
+                previewSrc = imgData ? imgData.blobUrl : '';
+            }
+
+            return `
+            <div class="wizard-edit-color-card" data-color-idx="${idx}" style="border:1px solid #e5e7eb;border-radius:8px;padding:0.75rem;margin-bottom:0.5rem;background:#f9fafb;">
+                <div style="display:grid;grid-template-columns:1fr 100px;gap:0.5rem;margin-bottom:0.5rem;">
+                    <div>
+                        <label style="font-size:0.7rem;font-weight:600;color:#374151;display:block;margin-bottom:0.2rem;">COLOR</label>
+                        <input type="text" class="wz-edit-color form-control" value="${nombre}" list="opciones-colores" style="text-transform:uppercase;font-size:0.85rem;" onkeyup="this.value=this.value.toUpperCase()">
+                    </div>
+                    <div>
+                        <label style="font-size:0.7rem;font-weight:600;color:#374151;display:block;margin-bottom:0.2rem;">CANT.</label>
+                        <input type="number" class="wz-edit-cantidad form-control" min="0" value="${cantidad}" style="font-size:0.85rem;text-align:center;font-weight:600;">
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem;">
+                    <div>
+                        <label style="font-size:0.7rem;font-weight:600;color:#374151;display:block;margin-bottom:0.2rem;">REFERENCIA</label>
+                        <input type="text" class="wz-edit-ref form-control" value="${referencia}" style="text-transform:uppercase;font-size:0.85rem;" onkeyup="this.value=this.value.toUpperCase()">
+                    </div>
+                    <div>
+                        <label style="font-size:0.7rem;font-weight:600;color:#374151;display:block;margin-bottom:0.2rem;">OBSERVACIONES</label>
+                        <input type="text" class="wz-edit-obs form-control" value="${observaciones}" style="font-size:0.85rem;">
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size:0.7rem;font-weight:600;color:#374151;display:block;margin-bottom:0.2rem;">IMAGEN</label>
+                    <input type="file" class="wz-edit-file-input" data-cidx="${idx}" accept="image/*" style="display:none;">
+                    <div class="wz-edit-dropzone" data-cidx="${idx}" tabindex="0" style="display:${hasImg ? 'none' : 'flex'};flex-direction:column;align-items:center;justify-content:center;gap:0.3rem;padding:0.75rem;border:2px dashed #d1d5db;border-radius:6px;background:#fafafa;color:#6b7280;cursor:pointer;transition:all 0.15s;outline:none;text-align:center;font-size:0.75rem;">
+                        <span class="material-symbols-rounded" style="font-size:1.5rem;color:#9ca3af;">add_photo_alternate</span>
+                        <span>Click, arrastra o <strong>Ctrl+V</strong></span>
+                    </div>
+                    <div class="wz-edit-preview" data-cidx="${idx}" style="display:${hasImg ? 'block' : 'none'};position:relative;border-radius:6px;overflow:hidden;border:1px solid #d1d5db;">
+                        <img class="wz-edit-preview-img" src="${previewSrc}" alt="Preview" style="width:100%;max-height:120px;object-fit:cover;display:block;">
+                        <button type="button" class="wz-edit-preview-del" data-cidx="${idx}" style="position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:none;background:#ef4444;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.3);">
+                            <span class="material-symbols-rounded" style="font-size:0.85rem;">close</span>
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+
+        const modalHtml = `
+        <div id="modal-editar-asignacion-wizard" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false" style="z-index:1060000;">
+            <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:560px;">
+                <div class="modal-content" style="border-radius:12px;overflow:hidden;border:none;box-shadow:0 25px 50px rgba(0,0,0,0.25);">
+                    <div style="background:linear-gradient(135deg,#7c3aed 0%,#5b21b6 100%);padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;">
+                        <h5 style="margin:0;color:white;font-size:1rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;">
+                            <span class="material-symbols-rounded" style="font-size:1.2rem;">edit</span>Editar Asignación
+                        </h5>
+                        <button type="button" class="btn-cerrar-wizard-edit" style="background:none;border:none;color:rgba(255,255,255,0.8);cursor:pointer;padding:0.25rem;line-height:1;">
+                            <span class="material-symbols-rounded" style="font-size:1.3rem;">close</span>
+                        </button>
+                    </div>
+                    <div style="padding:1.25rem;max-height:70vh;overflow-y:auto;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr 80px;gap:0.75rem;margin-bottom:1rem;">
+                            <div>
+                                <label style="font-size:0.75rem;font-weight:600;color:#374151;display:block;margin-bottom:0.3rem;">TELA</label>
+                                <input type="text" id="wz-edit-tela" list="opciones-telas" value="${asig.tela || ''}" class="form-control" style="text-transform:uppercase;font-size:0.9rem;" onkeyup="this.value=this.value.toUpperCase();">
+                            </div>
+                            <div>
+                                <label style="font-size:0.75rem;font-weight:600;color:#374151;display:block;margin-bottom:0.3rem;">GÉNERO</label>
+                                <select id="wz-edit-genero" class="form-control" style="font-size:0.9rem;">
+                                    <option value="dama" ${(asig.genero||'').toLowerCase()==='dama'?'selected':''}>DAMA</option>
+                                    <option value="caballero" ${(asig.genero||'').toLowerCase()==='caballero'?'selected':''}>CABALLERO</option>
+                                    <option value="unisex" ${(asig.genero||'').toLowerCase()==='unisex'?'selected':''}>UNISEX</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:0.75rem;font-weight:600;color:#374151;display:block;margin-bottom:0.3rem;">TALLA</label>
+                                <input type="text" id="wz-edit-talla" value="${asig.talla || ''}" class="form-control" style="text-transform:uppercase;font-size:0.9rem;text-align:center;" onkeyup="this.value=this.value.toUpperCase();">
+                            </div>
+                        </div>
+                        <div style="border-bottom:1px solid #e5e7eb;margin-bottom:0.75rem;padding-bottom:0.5rem;">
+                            <span style="font-size:0.8rem;font-weight:600;color:#6b7280;">COLORES (${asig.colores.length})</span>
+                        </div>
+                        <div id="wz-edit-colores-container">
+                            ${coloresCardsHtml}
+                        </div>
+                    </div>
+                    <div style="padding:0.75rem 1.25rem;background:#f9fafb;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;gap:0.5rem;">
+                        <button type="button" class="btn btn-secondary btn-cerrar-wizard-edit" style="padding:0.5rem 1.25rem;font-size:0.85rem;">Cancelar</button>
+                        <button type="button" class="btn btn-primary btn-guardar-wizard-edit" style="padding:0.5rem 1.5rem;font-size:0.85rem;font-weight:600;display:inline-flex;align-items:center;gap:0.35rem;">
+                            <span class="material-symbols-rounded" style="font-size:1.1rem;">save</span>Guardar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = document.getElementById('modal-editar-asignacion-wizard');
+
+        // Configurar drop zones de imagen por cada color
+        asig.colores.forEach((color, idx) => {
+            _setupWizardEditDropZone(modal, idx);
+        });
+
+        // Cerrar
+        modal.querySelectorAll('.btn-cerrar-wizard-edit').forEach(btn => {
+            btn.addEventListener('click', () => jQuery(modal).modal('hide'));
+        });
+
+        // Guardar
+        modal.querySelector('.btn-guardar-wizard-edit').addEventListener('click', () => {
+            _guardarEdicionWizard(clave, modal);
+        });
+
+        // Limpieza al cerrar
+        jQuery(modal).on('hidden.bs.modal', function() {
+            modal.remove();
+            window._wizardEditImagenes = [];
+        });
+
+        jQuery(modal).modal('show');
+    }
+
+    /**
+     * Configura eventos de drag-drop/paste/click para una zona de imagen en el modal de edición wizard
+     */
+    function _setupWizardEditDropZone(modal, idx) {
+        const dropzone = modal.querySelector(`.wz-edit-dropzone[data-cidx="${idx}"]`);
+        const preview = modal.querySelector(`.wz-edit-preview[data-cidx="${idx}"]`);
+        const previewImg = preview ? preview.querySelector('.wz-edit-preview-img') : null;
+        const btnDel = modal.querySelector(`.wz-edit-preview-del[data-cidx="${idx}"]`);
+        const fileInput = modal.querySelector(`.wz-edit-file-input[data-cidx="${idx}"]`);
+        if (!dropzone || !preview || !previewImg || !btnDel || !fileInput) return;
+
+        const cargar = (file) => {
+            if (!file || !file.type.startsWith('image/')) return;
+            const id = _storeImage(file);
+            window._wizardEditImagenes[idx] = id;
+            const imgData = _getImage(id);
+            previewImg.src = imgData.blobUrl;
+            dropzone.style.display = 'none';
+            preview.style.display = 'block';
         };
 
-        fila.style.background = '#eff6ff';
+        const eliminar = () => {
+            const oldId = window._wizardEditImagenes[idx];
+            if (oldId) _removeImage(oldId);
+            window._wizardEditImagenes[idx] = null;
+            previewImg.src = '';
+            fileInput.value = '';
+            preview.style.display = 'none';
+            dropzone.style.display = 'flex';
+            dropzone.style.borderColor = '#d1d5db';
+            dropzone.style.background = '#fafafa';
+        };
 
-        tdTela.innerHTML = `<input type="text" list="opciones-telas" value="${original.tela}" style="width:100%;padding:0.35rem;border:1px solid #93c5fd;border-radius:4px;font-size:0.8rem;text-transform:uppercase;" onkeyup="this.value=this.value.toUpperCase()">`;
-        tdGenero.innerHTML = `<select style="width:100%;padding:0.35rem;border:1px solid #93c5fd;border-radius:4px;font-size:0.8rem;"><option value="DAMA" ${original.genero==='DAMA'?'selected':''}>DAMA</option><option value="CABALLERO" ${original.genero==='CABALLERO'?'selected':''}>CABALLERO</option><option value="UNISEX" ${original.genero==='UNISEX'?'selected':''}>UNISEX</option></select>`;
-        tdTalla.innerHTML = `<input type="text" value="${original.talla}" style="width:100%;padding:0.35rem;border:1px solid #93c5fd;border-radius:4px;font-size:0.8rem;text-transform:uppercase;text-align:center;" onkeyup="this.value=this.value.toUpperCase()">`;
-        tdColor.innerHTML = `<input type="text" list="opciones-colores" value="${original.color}" style="width:100%;padding:0.35rem;border:1px solid #93c5fd;border-radius:4px;font-size:0.8rem;text-transform:uppercase;" onkeyup="this.value=this.value.toUpperCase()">`;
-        tdCantidad.innerHTML = `<input type="number" min="0" value="${original.cantidad}" style="width:70px;padding:0.35rem;border:1px solid #93c5fd;border-radius:4px;font-size:0.8rem;text-align:center;font-weight:600;">`;
+        dropzone.addEventListener('click', () => fileInput.click());
+        previewImg.addEventListener('click', () => fileInput.click());
+        btnDel.addEventListener('click', (e) => { e.stopPropagation(); eliminar(); });
+        fileInput.addEventListener('change', () => { if (fileInput.files.length) cargar(fileInput.files[0]); });
 
-        tdAccion.innerHTML = `<div style="display:flex;gap:0.25rem;justify-content:center;"><button type="button" class="btn-guardar-edicion" style="background:#dcfce7;border:none;color:#16a34a;padding:0.25rem 0.5rem;border-radius:4px;cursor:pointer;font-size:0.75rem;font-weight:600;" title="Guardar">✓</button><button type="button" class="btn-cancelar-edicion" style="background:#f3f4f6;border:none;color:#6b7280;padding:0.25rem 0.5rem;border-radius:4px;cursor:pointer;font-size:0.75rem;font-weight:600;" title="Cancelar">✕</button></div>`;
-
-        tdAccion.querySelector('.btn-guardar-edicion').addEventListener('click', function(e) {
+        // Drag & Drop
+        dropzone.addEventListener('dragover', (e) => {
             e.preventDefault(); e.stopPropagation();
-            const nTela = tdTela.querySelector('input').value.trim().toUpperCase();
-            const nGenero = tdGenero.querySelector('select').value;
-            const nTalla = tdTalla.querySelector('input').value.trim().toUpperCase();
-            const nColor = tdColor.querySelector('input').value.trim().toUpperCase();
-            const nCantidad = parseInt(tdCantidad.querySelector('input').value) || 0;
+            dropzone.style.borderColor = '#3b82f6'; dropzone.style.background = '#eff6ff'; dropzone.style.borderStyle = 'solid';
+        });
+        dropzone.addEventListener('dragleave', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            dropzone.style.borderColor = '#d1d5db'; dropzone.style.background = '#fafafa'; dropzone.style.borderStyle = 'dashed';
+        });
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            dropzone.style.borderColor = '#d1d5db'; dropzone.style.background = '#fafafa'; dropzone.style.borderStyle = 'dashed';
+            const files = e.dataTransfer.files;
+            if (files.length && files[0].type.startsWith('image/')) cargar(files[0]);
+        });
 
-            // Actualizar StateManager: eliminar vieja, agregar nueva
-            if (window.StateManager) {
-                const asignaciones = window.StateManager.getAsignaciones();
-                // Eliminar color viejo de la clave original
-                if (asignaciones[clave] && asignaciones[clave].colores) {
-                    asignaciones[clave].colores = asignaciones[clave].colores.filter(c => c.nombre !== colorNombreOriginal);
-                    if (asignaciones[clave].colores.length === 0) delete asignaciones[clave];
-                }
-                // Agregar en la nueva clave
-                const nuevaClave = `${nGenero.toLowerCase()}-Letra-${nTalla}`;
-                if (!asignaciones[nuevaClave]) {
-                    asignaciones[nuevaClave] = { genero: nGenero.toLowerCase(), tela: nTela, tipo: 'Letra', talla: nTalla, colores: [] };
-                }
-                asignaciones[nuevaClave].colores.push({ nombre: nColor, cantidad: nCantidad });
-                window.StateManager.setAsignaciones(asignaciones);
+        // Ctrl+V (paste)
+        dropzone.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.startsWith('image/')) { cargar(items[i].getAsFile()); break; }
             }
-            actualizarTablaResumen();
-            console.log('[ColoresPorTalla] ✅ Fila editada:', { tela: nTela, genero: nGenero, talla: nTalla, color: nColor, cantidad: nCantidad });
         });
 
-        tdAccion.querySelector('.btn-cancelar-edicion').addEventListener('click', function(e) {
-            e.preventDefault(); e.stopPropagation();
-            actualizarTablaResumen();
+        // Hover
+        dropzone.addEventListener('mouseover', () => {
+            if (preview.style.display === 'none') { dropzone.style.borderColor = '#3b82f6'; dropzone.style.color = '#3b82f6'; dropzone.style.background = '#eff6ff'; }
         });
+        dropzone.addEventListener('mouseout', () => {
+            if (preview.style.display === 'none') { dropzone.style.borderColor = '#d1d5db'; dropzone.style.color = '#6b7280'; dropzone.style.background = '#fafafa'; }
+        });
+
+        // Focus para Ctrl+V
+        dropzone.addEventListener('focus', () => { dropzone.style.borderColor = '#3b82f6'; dropzone.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.15)'; });
+        dropzone.addEventListener('blur', () => { if (preview.style.display === 'none') dropzone.style.borderColor = '#d1d5db'; dropzone.style.boxShadow = 'none'; });
+    }
+
+    /**
+     * Guarda los cambios del modal de edición wizard
+     */
+    function _guardarEdicionWizard(claveOriginal, modal) {
+        const nTela = (modal.querySelector('#wz-edit-tela').value || '').trim().toUpperCase();
+        const nGenero = modal.querySelector('#wz-edit-genero').value;
+        const nTalla = (modal.querySelector('#wz-edit-talla').value || '').trim().toUpperCase();
+
+        if (!nTela) { modal.querySelector('#wz-edit-tela').style.borderColor = '#ef4444'; return; }
+        if (!nTalla) { modal.querySelector('#wz-edit-talla').style.borderColor = '#ef4444'; return; }
+
+        // Leer todas las tarjetas de color
+        const cards = modal.querySelectorAll('.wizard-edit-color-card');
+        const nuevosColores = [];
+        cards.forEach((card, idx) => {
+            const colorNombre = (card.querySelector('.wz-edit-color').value || '').trim().toUpperCase();
+            const cantidad = parseInt(card.querySelector('.wz-edit-cantidad').value) || 0;
+            const referencia = (card.querySelector('.wz-edit-ref').value || '').trim().toUpperCase();
+            const observaciones = (card.querySelector('.wz-edit-obs').value || '').trim();
+
+            if (!colorNombre) return; // omitir colores vacíos
+
+            const colorData = { nombre: colorNombre, cantidad: cantidad };
+            if (referencia) colorData.referencia = referencia;
+            if (observaciones) colorData.observaciones = observaciones;
+            if (window._wizardEditImagenes && window._wizardEditImagenes[idx]) {
+                const imgId = window._wizardEditImagenes[idx];
+                const imgData = _getImage(imgId);
+                if (imgData) {
+                    colorData.imagen_id = imgId;
+                    colorData.imagen_nombre = imgData.nombre;
+                }
+            }
+            nuevosColores.push(colorData);
+        });
+
+        if (nuevosColores.length === 0) {
+            alert('Debe haber al menos un color.');
+            return;
+        }
+
+        // Actualizar StateManager
+        if (window.StateManager) {
+            const asignaciones = window.StateManager.getAsignaciones();
+            delete asignaciones[claveOriginal];
+
+            const tipo = 'Letra';
+            const nuevaClave = `${nGenero.toLowerCase()}-${tipo}-${nTalla}`;
+            asignaciones[nuevaClave] = {
+                genero: nGenero.toLowerCase(),
+                tela: nTela,
+                tipo: tipo,
+                talla: nTalla,
+                colores: nuevosColores
+            };
+            window.StateManager.setAsignaciones(asignaciones);
+        }
+
+        jQuery(modal).modal('hide');
+        actualizarTablaResumen();
+        console.log('[ColoresPorTalla] ✅ Asignación wizard editada:', claveOriginal, '→', nTela, nGenero, nTalla, nuevosColores);
     }
 
     /**

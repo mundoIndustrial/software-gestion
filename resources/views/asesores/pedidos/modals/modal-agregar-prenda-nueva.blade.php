@@ -80,81 +80,93 @@
                     </div>
                 </div>
 
-                <!-- Color, Tela, Referencia e Imágenes de Tela -->
+                <!-- Color, Tela y Asignación por Talla -->
                 <div class="form-section">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                         <label class="form-label-primary">
                             <span class="material-symbols-rounded">palette</span>COLOR, TELA Y REFERENCIA
                         </label>
-                        <button type="button" id="btn-asignar-colores-tallas" class="btn btn-primary btn-sm" style="font-size: 0.85rem; padding: 0.5rem 1rem;" onclick="abrirModalAsignarColores();">
-                            <span class="material-symbols-rounded" style="font-size: 1.1rem;">color_lens</span>Asignar por Talla
-                        </button>
                     </div>
                     
-                    <!-- VISTA 1: Tabla de telas (Por defecto visible) -->
-                    <div id="vista-tabla-telas" style="overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; table-layout: fixed;">
-                            <thead>
-                                <tr style="background: #0066cc; border-bottom: 2px solid #0066cc;">
-                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: white; width: 20%;">Tela</th>
-                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: white; width: 20%;">Color</th>
-                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: white; width: 20%;">Referencia</th>
-                                    <th style="padding: 0.75rem; text-align: center; font-weight: 600; font-size: 0.875rem; color: white; width: 20%;">Imagen Tela</th>
-                                    <th style="padding: 0.75rem; text-align: center; font-weight: 600; font-size: 0.875rem; color: white; width: 20%;"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="tbody-telas">
-                                <!-- Fila para agregar nueva tela -->
-                                <tr style="border-bottom: 1px solid #e5e7eb;">
-                                    <td style="padding: 0.5rem; width: 20%;">
-                                        <label for="nueva-prenda-tela" class="sr-only">Tela</label>
-                                        <input type="text" id="nueva-prenda-tela" placeholder="TELA..." class="form-input" list="opciones-telas" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
-                                        <datalist id="opciones-telas">
-                                            <!-- Opciones cargadas desde /asesores/api/telas -->
-                                        </datalist>
-                                    </td>
-                                    <td style="padding: 0.5rem; width: 20%;">
-                                        <label for="nueva-prenda-color" class="sr-only">Color</label>
-                                        <input type="text" id="nueva-prenda-color" placeholder="COLOR..." class="form-input" list="opciones-colores" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
-                                        <datalist id="opciones-colores">
-                                            <!-- Opciones cargadas desde /asesores/api/colores -->
-                                        </datalist>
-                                    </td>
-                                    <td style="padding: 0.5rem; width: 20%;">
-                                        <label for="nueva-prenda-referencia" class="sr-only">Referencia</label>
-                                        <input type="text" id="nueva-prenda-referencia" placeholder="REF..." class="form-input" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
-                                    </td>
-                                    <td style="padding: 0.5rem; text-align: center; vertical-align: top; width: 20%; position: relative; overflow: visible;">
-                                        <!-- Botón para seleccionar imagen -->
-                                        <button type="button" class="btn btn-success btn-flex" style="font-size: 0.75rem; padding: 0.5rem 1rem; transition: all 0.2s ease; margin-bottom: 8px; pointer-events: auto; background: rgb(37, 99, 235); transform: scale(1.05); box-shadow: rgba(59, 130, 246, 0.3) 0px 4px 12px;" title="Click para seleccionar imagen" onclick="event.stopPropagation(); event.preventDefault(); document.getElementById('modal-agregar-prenda-nueva-file-input').click(); return false;">
-                                            <span class="material-symbols-rounded" style="font-size: 1.2rem; margin-right: 0.5rem;">image</span>
-                                            <span style="font-size: 0.7rem;">Agregar imagen</span>
-                                        </button>
-                                        <input type="file" id="modal-agregar-prenda-nueva-file-input" accept="image/*" style="display: none;" aria-label="Imagen de la tela" onchange="manejarImagenTela(this)">
-                                        
-                                        <div id="nueva-prenda-tela-drop-zone" class="tela-drop-zone" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; width: 100%; transition: all 0.2s ease; border: 2px dashed #0066cc; border-radius: 6px; padding: 8px; cursor: pointer; background: #f0f7ff;" data-zona="tela" data-estado="inicial" tabindex="0">
-                                            <!-- Texto de ayuda -->
-                                            <div style="text-align: center; color: #0066cc; font-size: 0.7rem; margin-top: 4px; pointer-events: none; font-weight: 500;">
-                                                <div class="material-symbols-rounded" style="font-size: 1.2rem;">cloud_upload</div>
-                                                <div>📸 TELA: Arrastra aquí o pega Ctrl+V</div>
-                                            </div>
-                                        </div>
-                                        <!-- Preview temporal dentro de la celda -->
-                                        <div id="nueva-prenda-tela-preview" style="display: none;"></div>
-                                    </td>
-                                    <td style="padding: 0.5rem; text-align: center; width: 20%;">
-                                        <button type="button" onclick="agregarTelaNueva()" class="btn btn-success btn-flex" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;" title="Agregar esta tela">
-                                            <span class="material-symbols-rounded" style="font-size: 1.2rem;">add</span>Agregar
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <!-- Botones CTA: Agregar Tela (simple) y Asignar por Talla (wizard) -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                        <!-- CTA Simple -->
+                        <button type="button" onclick="abrirModalTelaSimple()" style="padding: 1.25rem 1rem; background: #f9fafb; border: 2px solid #d1d5db; border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;" onmouseover="this.style.borderColor='#0066cc';this.style.background='#f0f7ff'" onmouseout="this.style.borderColor='#d1d5db';this.style.background='#f9fafb'">
+                            <span class="material-symbols-rounded" style="font-size: 1.8rem; color: #0066cc;">add_circle</span>
+                            <span style="font-weight: 600; color: #374151; font-size: 0.9rem;">Agregar Tela</span>
+                            <span style="font-size: 0.75rem; color: #6b7280;">Tela, color, referencia, imagen</span>
+                        </button>
+                        <!-- CTA Wizard -->
+                        <button type="button" onclick="abrirModalAsignarColores()" style="padding: 1.25rem 1rem; background: #f9fafb; border: 2px solid #d1d5db; border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;" onmouseover="this.style.borderColor='#7c3aed';this.style.background='#f5f3ff'" onmouseout="this.style.borderColor='#d1d5db';this.style.background='#f9fafb'">
+                            <span class="material-symbols-rounded" style="font-size: 1.8rem; color: #7c3aed;">color_lens</span>
+                            <span style="font-weight: 600; color: #374151; font-size: 0.9rem;">Asignar por Talla</span>
+                            <span style="font-size: 0.75rem; color: #6b7280;">Género, talla, colores y cantidades</span>
+                        </button>
+                    </div>
+
+                    <!-- (Tabla de telas unificada: se muestra abajo en seccion-resumen-asignaciones) -->
+
+                    <!-- Datalists ocultos (necesarios para autocompletar en otros JS) -->
+                    <div style="display: none;">
+                        <datalist id="opciones-telas">
+                            <!-- Opciones cargadas desde /asesores/api/telas -->
+                        </datalist>
+                        <datalist id="opciones-colores">
+                            <!-- Opciones cargadas desde /asesores/api/colores -->
+                        </datalist>
                     </div>
                     
 
-                    <!-- Tallas y Cantidades -->
-                    <!-- SECCIÓN 1: SELECCIONAR TALLAS POR GÉNERO -->
+                    <!-- SECCIÓN: RESUMEN DE ASIGNACIONES (tabla unificada) -->
+                    <div id="seccion-resumen-asignaciones" style="display: none; margin-top: 1.5rem;">
+                        <label class="form-label-primary">
+                            <span class="material-symbols-rounded">checklist</span>RESUMEN DE ASIGNACIONES *
+                        </label>
+                        
+                        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                                <thead>
+                                    <tr style="background: #f3f4f6; border-bottom: 2px solid #d1d5db;">
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">TELA</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">COLOR</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">REFERENCIA</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">IMAGEN</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">OBSERVACIONES</th>
+                                        <th data-col="wizard-only" style="padding: 0.75rem; text-align: left; font-weight: 600;">GÉNERO</th>
+                                        <th data-col="wizard-only" style="padding: 0.75rem; text-align: left; font-weight: 600;">TALLA</th>
+                                        <th data-col="wizard-only" style="padding: 0.75rem; text-align: center; font-weight: 600; width: 80px;">CANT.</th>
+                                        <th style="padding: 0.75rem; text-align: center; font-weight: 600; width: 60px;">ACCIÓN</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-resumen-asignaciones-cuerpo"></tbody>
+                            </table>
+                        </div>
+                        
+                        <div id="msg-resumen-vacio" style="text-align: center; padding: 2rem; color: rgb(156, 163, 175); background: rgb(249, 250, 251); border-radius: 8px; border: 1px dashed rgb(209, 213, 219); margin-top: 1rem; display: none;">
+                            <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;">inbox</span>
+                            Sin asignaciones aún. Accede a "Asignar por Talla" para agregar.
+                        </div>
+                        
+                        <div style="margin-top: 1rem; padding: 1rem; background: #e0f2fe; border-left: 4px solid #0369a1; border-radius: 4px;">
+                            <p style="margin: 0; font-size: 0.875rem; color: #075985;">
+                                <strong>Total asignado:</strong> <span id="total-asignaciones-resumen">0</span> unidades
+                            </p>
+                        </div>
+                        
+                        <!-- Botones de acción -->
+                        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem;">
+                            <button type="button" id="btn-asignar-colores-prenda" class="btn btn-primary" style="flex: 1; min-width: 250px; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 600;">
+                                <span class="material-symbols-rounded">palette</span>
+                                ASIGNAR MÁS COLORES A LAS TALLAS
+                            </button>
+                            <button type="button" id="btn-limpiar-asignaciones" class="btn btn-outline-secondary" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem; font-weight: 600;">
+                                <span class="material-symbols-rounded">delete_outline</span>
+                                Limpiar Todo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN: SELECCIONAR TALLAS POR GÉNERO -->
                     <div id="seccion-tallas-cantidades" style="margin-top: 1.5rem;">
                         <label class="form-label-primary">
                             <span class="material-symbols-rounded">straighten</span>TALLAS Y CANTIDADES *
@@ -239,52 +251,6 @@
                         <div class="total-box">
                             <span class="material-symbols-rounded">shopping_cart</span>
                             Total: <span id="total-prendas">0</span> unidades
-                        </div>
-                    </div>
-
-                    <!-- SECCIÓN 2: RESUMEN DE ASIGNACIONES DE COLORES (Reemplaza la anterior) -->
-                    <div id="seccion-resumen-asignaciones" style="display: none; margin-top: 1.5rem;">
-                        <label class="form-label-primary">
-                            <span class="material-symbols-rounded">checklist</span>RESUMEN DE ASIGNACIONES *
-                        </label>
-                        
-                        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; overflow-x: auto;">
-                            <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
-                                <thead>
-                                    <tr style="background: #f3f4f6; border-bottom: 2px solid #d1d5db;">
-                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">TELA</th>
-                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">GÉNERO</th>
-                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">TALLA</th>
-                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">COLOR</th>
-                                        <th style="padding: 0.75rem; text-align: center; font-weight: 600; width: 100px;">CANTIDAD</th>
-                                        <th style="padding: 0.75rem; text-align: center; font-weight: 600; width: 60px;">ACCIÓN</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabla-resumen-asignaciones-cuerpo"></tbody>
-                            </table>
-                        </div>
-                        
-                        <div id="msg-resumen-vacio" style="text-align: center; padding: 2rem; color: rgb(156, 163, 175); background: rgb(249, 250, 251); border-radius: 8px; border: 1px dashed rgb(209, 213, 219); margin-top: 1rem; display: none;">
-                            <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;">inbox</span>
-                            Sin asignaciones aún. Accede a "Asignar por Talla" para agregar.
-                        </div>
-                        
-                        <div style="margin-top: 1rem; padding: 1rem; background: #e0f2fe; border-left: 4px solid #0369a1; border-radius: 4px;">
-                            <p style="margin: 0; font-size: 0.875rem; color: #075985;">
-                                <strong>Total asignado:</strong> <span id="total-asignaciones-resumen">0</span> unidades
-                            </p>
-                        </div>
-                        
-                        <!-- Botones de acción -->
-                        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem;">
-                            <button type="button" id="btn-asignar-colores-prenda" class="btn btn-primary" style="flex: 1; min-width: 250px; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 600;">
-                                <span class="material-symbols-rounded">palette</span>
-                                ASIGNAR MÁS COLORES A LAS TALLAS
-                            </button>
-                            <button type="button" id="btn-limpiar-asignaciones" class="btn btn-outline-secondary" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem; font-weight: 600;">
-                                <span class="material-symbols-rounded">delete_outline</span>
-                                Limpiar Todo
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -818,6 +784,71 @@ document.addEventListener('paste', function(event) {
 <!-- NOTA: Estos módulos tienen protección interna contra redeclaración (typeof guard),
      por lo que es seguro que se carguen tanto aquí como desde prenda-editor-loader-modular.js -->
 
+<!-- MODAL SIMPLE: Agregar Tela -->
+<div id="modal-agregar-tela-simple" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalTelaSimpleLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false" style="z-index: 1060000;">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 520px;">
+        <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 25px 50px rgba(0,0,0,0.25);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+                <h5 id="modal-tela-simple-titulo" style="margin: 0; color: white; font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">add_circle</span>Agregar Tela
+                </h5>
+                <button type="button" onclick="cerrarModalTelaSimple()" style="background: none; border: none; color: rgba(255,255,255,0.8); cursor: pointer; padding: 0.25rem; line-height: 1;">
+                    <span class="material-symbols-rounded" style="font-size: 1.3rem;">close</span>
+                </button>
+            </div>
+            <!-- Body -->
+            <div style="padding: 1.25rem;">
+                <!-- Tela y Color -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <div>
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #374151; display: block; margin-bottom: 0.3rem;">TELA *</label>
+                        <input type="text" id="simple-tela-input" placeholder="Ej: DRILL, OXFORD..." list="opciones-telas" class="form-control" style="text-transform: uppercase; font-size: 0.9rem;" onkeyup="this.value = this.value.toUpperCase();">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #374151; display: block; margin-bottom: 0.3rem;">COLOR</label>
+                        <input type="text" id="simple-color-input" placeholder="Ej: AZUL, ROJO..." list="opciones-colores" class="form-control" style="text-transform: uppercase; font-size: 0.9rem;" onkeyup="this.value = this.value.toUpperCase();">
+                    </div>
+                </div>
+                <!-- Referencia -->
+                <div style="margin-bottom: 0.75rem;">
+                    <label style="font-size: 0.75rem; font-weight: 600; color: #374151; display: block; margin-bottom: 0.3rem;">REFERENCIA</label>
+                    <input type="text" id="simple-referencia-input" placeholder="Ref..." class="form-control" style="text-transform: uppercase; font-size: 0.9rem;" onkeyup="this.value = this.value.toUpperCase();">
+                </div>
+                <!-- Imagen - Drop Zone -->
+                <div style="margin-bottom: 0.75rem;">
+                    <label style="font-size: 0.75rem; font-weight: 600; color: #374151; display: block; margin-bottom: 0.3rem;">IMAGEN (opcional)</label>
+                    <input type="file" id="simple-tela-img-input" accept="image/*" style="display: none;">
+                    <!-- Drop zone (sin imagen) -->
+                    <div id="simple-tela-dropzone" tabindex="0" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.4rem; padding: 1.25rem; border: 2px dashed #d1d5db; border-radius: 8px; background: #fafafa; color: #6b7280; cursor: pointer; transition: all 0.15s; outline: none; text-align: center;">
+                        <span class="material-symbols-rounded" style="font-size: 2rem; color: #9ca3af;">add_photo_alternate</span>
+                        <span style="font-size: 0.8rem;">Click, arrastra o <strong>Ctrl+V</strong> para agregar imagen</span>
+                    </div>
+                    <!-- Preview (con imagen) -->
+                    <div id="simple-tela-preview" style="display: none; position: relative; border-radius: 8px; overflow: hidden; border: 1px solid #d1d5db;">
+                        <img id="simple-tela-preview-img" src="" alt="Preview" style="width: 100%; max-height: 180px; object-fit: cover; display: block;">
+                        <button type="button" id="simple-tela-preview-del" style="position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border-radius: 50%; border: none; background: #ef4444; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
+                            <span class="material-symbols-rounded" style="font-size: 1rem;">close</span>
+                        </button>
+                    </div>
+                </div>
+                <!-- Observaciones -->
+                <div style="margin-bottom: 0.25rem;">
+                    <label style="font-size: 0.75rem; font-weight: 600; color: #374151; display: block; margin-bottom: 0.3rem;">OBSERVACIONES</label>
+                    <textarea id="simple-observaciones-input" placeholder="Observaciones adicionales..." class="form-control" rows="2" style="font-size: 0.9rem; resize: vertical;"></textarea>
+                </div>
+            </div>
+            <!-- Footer -->
+            <div style="padding: 0.75rem 1.25rem; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <button type="button" onclick="cerrarModalTelaSimple()" class="btn btn-secondary" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;">Cancelar</button>
+                <button type="button" id="btn-modal-tela-simple-accion" onclick="agregarTelaSimple()" class="btn btn-primary" style="padding: 0.5rem 1.5rem; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem;">
+                    <span class="material-symbols-rounded" style="font-size: 1.1rem;">add</span>Agregar Tela
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- INCLUIR MODAL WIZARD DEDICADO -->
 @include('asesores.pedidos.modals.modal-asignar-colores-por-talla')
 
@@ -829,6 +860,7 @@ document.addEventListener('paste', function(event) {
 <script>
     /**
      * Abre el modal de "Asignar Colores por Talla"
+     * Flujo unificado: siempre empieza en Paso 0 (tela)
      */
     function abrirModalAsignarColores() {
         // Verificar que jQuery está disponible
@@ -851,49 +883,17 @@ document.addEventListener('paste', function(event) {
         }
         
         try {
-            // PASO 1: Obtener la tela seleccionada de la tabla
-            let telaSeleccionada = null;
-            
-            // Buscar primera fila de DATOS del tbody con tela (OPCIÓN 1)
-            // NOTA: La primera fila es la fila de inputs (tiene botón "agregarTelaNueva()"), hay que saltarla
-            const tbody = document.getElementById('tbody-telas');
-            if (tbody) {
-                const filas = Array.from(tbody.querySelectorAll('tr'));
-                // Buscar la primera fila que NO sea la fila de inputs
-                const filaDatos = filas.find(tr => !tr.querySelector('button[onclick="agregarTelaNueva()"]') && !tr.querySelector('#nueva-prenda-tela'));
-                if (filaDatos) {
-                    const tdTela = filaDatos.querySelector('td:first-child');
-                    if (tdTela) {
-                        telaSeleccionada = tdTela.textContent.trim().toUpperCase();
-                    }
-                }
-            }
-            
-            // OPCIÓN 2: Desde telasCreacion (cuando se crea nueva prenda)
-            if (!telaSeleccionada && window.telasCreacion && window.telasCreacion.length > 0) {
-                telaSeleccionada = window.telasCreacion[0].tela || window.telasCreacion[0].nombreTela || window.telasCreacion[0].nombre;
-            }
-            
-            // OPCIÓN 3: Desde telasAgregadas (cuando se edita prenda)
-            if (!telaSeleccionada && window.telasAgregadas && window.telasAgregadas.length > 0) {
-                telaSeleccionada = window.telasAgregadas[0].tela || window.telasAgregadas[0].nombreTela || window.telasAgregadas[0].nombre;
-            }
-            
-            // OPCIÓN 4: Desde telasEdicion (cuando se edita prenda)
-            if (!telaSeleccionada && window.telasEdicion && window.telasEdicion.length > 0) {
-                telaSeleccionada = window.telasEdicion[0].tela || window.telasEdicion[0].nombreTela || window.telasEdicion[0].nombre;
-            }
-            
-            // VALIDACIÓN: Si no hay tela agregada, mostrar modal de advertencia
-            if (!telaSeleccionada) {
-                mostrarModalAdvertenciaTela();
-                return;
-            }
-
-            // PASO 2: Resetear wizard state y UI al paso 1 (género)
+            // Resetear wizard state
             if (window.StateManager) {
                 window.StateManager.resetWizardState();
-                window.StateManager.setTelaSeleccionada(telaSeleccionada);
+            }
+            
+            // Limpiar input de tela del paso 0
+            const wizardTelaInput = document.getElementById('wizard-tela-input');
+            if (wizardTelaInput) {
+                wizardTelaInput.value = '';
+                wizardTelaInput.style.borderColor = '#d1d5db';
+                wizardTelaInput.style.boxShadow = 'none';
             }
             
             // Resetear botones de género visualmente
@@ -916,16 +916,323 @@ document.addEventListener('paste', function(event) {
                 }
             });
             
+            // Siempre empezar en Paso 0 (tela)
             if (typeof WizardManager !== 'undefined' && typeof WizardManager.irPaso === 'function') {
-                WizardManager.irPaso(1);
+                WizardManager.irPaso(0);
             }
             
-            // PASO 4: Abrir el modal
+            // Abrir el modal
             $modal.modal('show');
         } catch (error) {
             alert('Error al abrir el modal: ' + error.message);
         }
     }
+    
+    /**
+     * Valida el input de tela en el wizard paso 0
+     */
+    function wizardValidarTelaInput(input) {
+        const valor = input.value.trim();
+        if (valor.length > 0) {
+            input.style.borderColor = '#10b981';
+            input.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+            // Establecer tela en StateManager
+            if (window.StateManager) {
+                window.StateManager.setTelaSeleccionada(valor.toUpperCase());
+            }
+            // Habilitar botón siguiente
+            const btnSiguiente = document.getElementById('wzd-btn-siguiente');
+            if (btnSiguiente) {
+                btnSiguiente.style.display = 'flex';
+                btnSiguiente.disabled = false;
+            }
+        } else {
+            input.style.borderColor = '#d1d5db';
+            input.style.boxShadow = 'none';
+        }
+    }
+
+    // ============================================
+    // MODAL SIMPLE TELA - Abrir, cerrar y agregar
+    // ============================================
+
+    /** Imagen temporal para modal simple */
+    window._imagenTelaSimple = null;
+    window._simpleDropInitialized = false;
+    /** Índice de tela que se está editando (null = agregar nueva) */
+    window._editandoTelaIdx = null;
+
+    /**
+     * Abre el modal simple de agregar/editar tela
+     * @param {number|undefined} editIdx - Si se pasa, entra en modo edición con ese índice
+     */
+    function abrirModalTelaSimple(editIdx) {
+        const $modal = jQuery('#modal-agregar-tela-simple');
+        if (!$modal.length) { alert('Modal no encontrado'); return; }
+
+        const titulo = document.getElementById('modal-tela-simple-titulo');
+        const btnAccion = document.getElementById('btn-modal-tela-simple-accion');
+        const isEdit = (editIdx !== undefined && editIdx !== null && window.telasCreacion && window.telasCreacion[editIdx]);
+        window._editandoTelaIdx = isEdit ? editIdx : null;
+
+        // Actualizar título y botón según modo
+        if (titulo) {
+            titulo.innerHTML = isEdit
+                ? '<span class="material-symbols-rounded" style="font-size: 1.2rem;">edit</span>Editar Tela'
+                : '<span class="material-symbols-rounded" style="font-size: 1.2rem;">add_circle</span>Agregar Tela';
+        }
+        if (btnAccion) {
+            btnAccion.innerHTML = isEdit
+                ? '<span class="material-symbols-rounded" style="font-size: 1.1rem;">save</span>Guardar Cambios'
+                : '<span class="material-symbols-rounded" style="font-size: 1.1rem;">add</span>Agregar Tela';
+        }
+
+        // Limpiar campos
+        ['simple-tela-input','simple-color-input','simple-referencia-input','simple-observaciones-input'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.value = '';
+        });
+        const imgInput = document.getElementById('simple-tela-img-input');
+        if (imgInput) imgInput.value = '';
+        window._imagenTelaSimple = null;
+
+        // Resetear dropzone visual
+        const dz = document.getElementById('simple-tela-dropzone');
+        const pv = document.getElementById('simple-tela-preview');
+        const pvImg = document.getElementById('simple-tela-preview-img');
+        if (dz) dz.style.display = 'flex';
+        if (pv) pv.style.display = 'none';
+
+        // Si es modo edición, pre-llenar campos con datos existentes
+        if (isEdit) {
+            const t = window.telasCreacion[editIdx];
+            const telaInput = document.getElementById('simple-tela-input');
+            const colorInput = document.getElementById('simple-color-input');
+            const refInput = document.getElementById('simple-referencia-input');
+            const obsInput = document.getElementById('simple-observaciones-input');
+
+            if (telaInput) telaInput.value = (t.tela || '').toUpperCase();
+            if (colorInput) colorInput.value = (t.color || '').toUpperCase();
+            if (refInput) refInput.value = (t.referencia || '').toUpperCase();
+            if (obsInput) obsInput.value = t.observaciones || '';
+
+            // Pre-cargar imagen existente
+            if (t.imagenes && t.imagenes.length > 0) {
+                const img = t.imagenes[0];
+                window._imagenTelaSimple = img;
+                if (img instanceof File || img instanceof Blob) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        if (pvImg) pvImg.src = e.target.result;
+                        if (dz) dz.style.display = 'none';
+                        if (pv) pv.style.display = 'block';
+                    };
+                    reader.readAsDataURL(img);
+                } else if (typeof img === 'string') {
+                    if (pvImg) pvImg.src = img;
+                    if (dz) dz.style.display = 'none';
+                    if (pv) pv.style.display = 'block';
+                }
+            }
+        }
+
+        // Inicializar drag-drop events (una sola vez)
+        if (!window._simpleDropInitialized) {
+            _initSimpleDropZone();
+            window._simpleDropInitialized = true;
+        }
+
+        $modal.modal('show');
+    }
+
+    /**
+     * Cierra el modal simple
+     */
+    function cerrarModalTelaSimple() {
+        jQuery('#modal-agregar-tela-simple').modal('hide');
+    }
+
+    /**
+     * Inicializa eventos de la drop zone de imagen (drag, click, paste, delete)
+     */
+    function _initSimpleDropZone() {
+        const dropzone = document.getElementById('simple-tela-dropzone');
+        const preview = document.getElementById('simple-tela-preview');
+        const previewImg = document.getElementById('simple-tela-preview-img');
+        const btnDel = document.getElementById('simple-tela-preview-del');
+        const fileInput = document.getElementById('simple-tela-img-input');
+        if (!dropzone || !preview || !previewImg || !btnDel || !fileInput) return;
+
+        // Cargar imagen y mostrar preview
+        const cargar = (file) => {
+            if (!file || !file.type.startsWith('image/')) return;
+            window._imagenTelaSimple = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                dropzone.style.display = 'none';
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        };
+
+        // Eliminar imagen
+        const eliminar = () => {
+            window._imagenTelaSimple = null;
+            previewImg.src = '';
+            fileInput.value = '';
+            preview.style.display = 'none';
+            dropzone.style.display = 'flex';
+            dropzone.style.borderColor = '#d1d5db';
+            dropzone.style.background = '#fafafa';
+        };
+
+        // Click abre file picker
+        dropzone.addEventListener('click', () => fileInput.click());
+        previewImg.addEventListener('click', () => fileInput.click());
+        btnDel.addEventListener('click', (e) => { e.stopPropagation(); eliminar(); });
+        fileInput.addEventListener('change', () => { if (fileInput.files.length) cargar(fileInput.files[0]); });
+
+        // Drag & Drop
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            dropzone.style.borderColor = '#3b82f6';
+            dropzone.style.background = '#eff6ff';
+            dropzone.style.borderStyle = 'solid';
+        });
+        dropzone.addEventListener('dragleave', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            dropzone.style.borderColor = '#d1d5db';
+            dropzone.style.background = '#fafafa';
+            dropzone.style.borderStyle = 'dashed';
+        });
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            dropzone.style.borderColor = '#d1d5db';
+            dropzone.style.background = '#fafafa';
+            dropzone.style.borderStyle = 'dashed';
+            const files = e.dataTransfer.files;
+            if (files.length && files[0].type.startsWith('image/')) cargar(files[0]);
+        });
+
+        // Ctrl+V (paste)
+        dropzone.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.startsWith('image/')) {
+                    const file = items[i].getAsFile();
+                    if (file) cargar(file);
+                    break;
+                }
+            }
+        });
+
+        // Hover
+        dropzone.addEventListener('mouseover', () => {
+            if (preview.style.display === 'none') {
+                dropzone.style.borderColor = '#3b82f6'; dropzone.style.color = '#3b82f6'; dropzone.style.background = '#eff6ff';
+            }
+        });
+        dropzone.addEventListener('mouseout', () => {
+            if (preview.style.display === 'none') {
+                dropzone.style.borderColor = '#d1d5db'; dropzone.style.color = '#6b7280'; dropzone.style.background = '#fafafa';
+            }
+        });
+
+        // Focus para Ctrl+V
+        dropzone.addEventListener('focus', () => { dropzone.style.borderColor = '#3b82f6'; dropzone.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.15)'; });
+        dropzone.addEventListener('blur', () => { if (preview.style.display === 'none') dropzone.style.borderColor = '#d1d5db'; dropzone.style.boxShadow = 'none'; });
+    }
+
+    /**
+     * Agrega una tela desde el modal simple
+     */
+    function agregarTelaSimple() {
+        const telaInput = document.getElementById('simple-tela-input');
+        const colorInput = document.getElementById('simple-color-input');
+        const refInput = document.getElementById('simple-referencia-input');
+        const obsInput = document.getElementById('simple-observaciones-input');
+
+        const tela = (telaInput?.value || '').trim().toUpperCase();
+        const color = (colorInput?.value || '').trim().toUpperCase();
+        const referencia = (refInput?.value || '').trim().toUpperCase();
+        const observaciones = (obsInput?.value || '').trim();
+
+        if (!tela) {
+            telaInput.style.borderColor = '#ef4444';
+            telaInput.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+            telaInput.focus();
+            setTimeout(() => { telaInput.style.borderColor = ''; telaInput.style.boxShadow = ''; }, 2000);
+            return;
+        }
+
+        if (!window.telasCreacion) window.telasCreacion = [];
+
+        const editIdx = window._editandoTelaIdx;
+        const isEdit = (editIdx !== null && editIdx !== undefined && window.telasCreacion[editIdx]);
+
+        // Verificar duplicado (excluir el propio registro en modo edición)
+        const existe = window.telasCreacion.some((t, i) => {
+            if (isEdit && i === editIdx) return false;
+            return (t.tela || '').toUpperCase() === tela && (t.color || '').toUpperCase() === color;
+        });
+        if (existe) {
+            telaInput.style.borderColor = '#f59e0b';
+            telaInput.style.boxShadow = '0 0 0 3px rgba(245, 158, 11, 0.15)';
+            setTimeout(() => { telaInput.style.borderColor = ''; telaInput.style.boxShadow = ''; }, 2000);
+            alert('Esta combinación tela + color ya está agregada.');
+            return;
+        }
+
+        if (isEdit) {
+            // --- Modo Edición: actualizar registro existente ---
+            window.telasCreacion[editIdx].tela = tela;
+            window.telasCreacion[editIdx].color = color;
+            window.telasCreacion[editIdx].referencia = referencia;
+            window.telasCreacion[editIdx].observaciones = observaciones;
+            window.telasCreacion[editIdx].imagenes = window._imagenTelaSimple ? [window._imagenTelaSimple] : [];
+            console.log('[agregarTelaSimple] Tela editada idx:', editIdx, window.telasCreacion[editIdx]);
+        } else {
+            // --- Modo Agregar: crear nuevo registro ---
+            const nuevaTela = {
+                tela: tela,
+                color: color,
+                referencia: referencia,
+                observaciones: observaciones,
+                imagenes: window._imagenTelaSimple ? [window._imagenTelaSimple] : [],
+                fechaCreacion: new Date().toISOString()
+            };
+            window.telasCreacion.push(nuevaTela);
+            console.log('[agregarTelaSimple] Tela agregada:', nuevaTela, 'Total:', window.telasCreacion.length);
+        }
+
+        window._editandoTelaIdx = null;
+
+        // Cerrar modal y actualizar tabla
+        cerrarModalTelaSimple();
+        renderizarTelasChips();
+    }
+
+    /**
+     * Renderiza la tabla de telas agregadas debajo del formulario
+     */
+    /**
+     * Renderiza telas en la tabla unificada de resumen.
+     * Delega a ColoresPorTalla.actualizarTablaResumen() que maneja AMBOS
+     * tipos de datos: asignaciones wizard + telas simples.
+     */
+    function renderizarTelasChips() {
+        if (window.ColoresPorTalla && typeof window.ColoresPorTalla.actualizarTablaResumen === 'function') {
+            window.ColoresPorTalla.actualizarTablaResumen();
+        } else {
+            console.warn('[renderizarTelasChips] ColoresPorTalla no disponible, reintentando...');
+            setTimeout(renderizarTelasChips, 300);
+        }
+    }
+
+    // Exponer para uso desde wizard
+    window.renderizarTelasChips = renderizarTelasChips;
     
     /**
      * Cierra el modal de "Asignar Colores por Talla"
@@ -943,52 +1250,6 @@ document.addEventListener('paste', function(event) {
         try {
             $modal.modal('hide');
         } catch (error) {
-        }
-    }
-    
-    /**
-     * Muestra modal de advertencia cuando no hay tela agregada
-     */
-    function mostrarModalAdvertenciaTela() {
-        // Remover modal previo si existe
-        const previo = document.getElementById('modal-advertencia-tela');
-        if (previo) previo.remove();
-
-        const overlay = document.createElement('div');
-        overlay.id = 'modal-advertencia-tela';
-        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:1070000;animation:fadeInOverlay 0.2s ease;';
-
-        overlay.innerHTML = `
-            <div style="background:#fff;border-radius:12px;padding:2rem 2.5rem;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center;animation:scaleInModal 0.25s ease;">
-                <div style="width:64px;height:64px;border-radius:50%;background:#FEF3C7;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
-                    <span class="material-symbols-rounded" style="font-size:2rem;color:#D97706;">warning</span>
-                </div>
-                <h3 style="margin:0 0 0.5rem;font-size:1.15rem;font-weight:700;color:#1f2937;">Tela requerida</h3>
-                <p style="margin:0 0 1.5rem;font-size:0.9rem;color:#6b7280;line-height:1.5;">
-                    Debes <strong>agregar al menos una tela</strong> antes de asignar cantidades por talla y color.
-                </p>
-                <button type="button" onclick="cerrarModalAdvertenciaTela()" style="background:#0066cc;color:#fff;border:none;padding:0.6rem 2rem;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;transition:background 0.2s;">
-                    Entendido
-                </button>
-            </div>
-        `;
-
-        // Cerrar al hacer click en el fondo
-        overlay.addEventListener('click', function(e) {
-            if (e.target === overlay) cerrarModalAdvertenciaTela();
-        });
-
-        document.body.appendChild(overlay);
-    }
-
-    /**
-     * Cierra el modal de advertencia de tela
-     */
-    function cerrarModalAdvertenciaTela() {
-        const modal = document.getElementById('modal-advertencia-tela');
-        if (modal) {
-            modal.style.animation = 'fadeOutOverlay 0.2s ease';
-            setTimeout(() => modal.remove(), 200);
         }
     }
 
