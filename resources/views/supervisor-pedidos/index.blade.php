@@ -70,6 +70,8 @@
 @section('content')
 <div class="supervisor-pedidos-container">
 
+    <div id="supervisorPedidosIndexContent">
+
     <!-- Tabla de Órdenes - Diseño asesores/pedidos -->
     <div style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
         <!-- Contenedor con Scroll -->
@@ -400,6 +402,8 @@
             </span>
         </div>
     @endif
+    </div>
+
 </div>
 
 <!-- Modal Filtro Dinámico -->
@@ -653,6 +657,91 @@
 
     // ===== FILTROS DE COLUMNAS =====
 
+    function getValoresFiltroDesdeURL(columna) {
+        const url = new URL(window.location.href);
+
+        if (columna === 'numero' || columna === 'id-orden') {
+            const raw = url.searchParams.get('numero') || '';
+            return raw.split(',').map(v => v.trim()).filter(Boolean);
+        }
+        if (columna === 'cliente') {
+            const raw = url.searchParams.get('cliente') || '';
+            return raw.split(',').map(v => v.trim()).filter(Boolean);
+        }
+        if (columna === 'estado') {
+            const raw = url.searchParams.get('estado') || '';
+            return raw.split(',').map(v => v.trim()).filter(Boolean);
+        }
+        if (columna === 'asesora') {
+            const raw = url.searchParams.get('asesora') || '';
+            return raw.split(',').map(v => v.trim()).filter(Boolean);
+        }
+        if (columna === 'forma_pago' || columna === 'forma-pago') {
+            const raw = url.searchParams.get('forma_pago') || '';
+            return raw.split(',').map(v => v.trim()).filter(Boolean);
+        }
+        if (columna === 'fecha') {
+            const desde = url.searchParams.get('fecha_desde') || '';
+            const hasta = url.searchParams.get('fecha_hasta') || '';
+            return [desde, hasta].filter(Boolean);
+        }
+
+        return [];
+    }
+
+    function asegurarBadgeEnBoton(btn) {
+        if (!btn) return null;
+        let badge = btn.querySelector('.filter-badge');
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'filter-badge';
+            badge.textContent = '0';
+            btn.appendChild(badge);
+        }
+        return badge;
+    }
+
+    function actualizarIndicadoresFiltros() {
+        const botones = document.querySelectorAll('#supervisorPedidosIndexContent .btn-filter-column');
+        if (!botones || botones.length === 0) return;
+
+        botones.forEach(btn => {
+            const title = btn.getAttribute('title') || '';
+            let columna = '';
+            switch(title) {
+                case 'Filtrar Número':
+                    columna = 'numero';
+                    break;
+                case 'Filtrar Cliente':
+                    columna = 'cliente';
+                    break;
+                case 'Filtrar Estado':
+                    columna = 'estado';
+                    break;
+                case 'Filtrar Asesora':
+                    columna = 'asesora';
+                    break;
+                case 'Filtrar Forma Pago':
+                    columna = 'forma_pago';
+                    break;
+                default:
+                    columna = '';
+            }
+
+            const valores = columna ? getValoresFiltroDesdeURL(columna) : [];
+            const cantidad = valores.length;
+            const badge = asegurarBadgeEnBoton(btn);
+
+            if (cantidad > 0) {
+                btn.classList.add('has-filter');
+                if (badge) badge.textContent = String(cantidad);
+            } else {
+                btn.classList.remove('has-filter');
+                if (badge) badge.textContent = '0';
+            }
+        });
+    }
+
     function abrirModalFiltro(columna) {
         filtroActual = columna;
         const modalTitulo = document.getElementById('modalFiltroTitulo');
@@ -684,6 +773,17 @@
                     <label for="filtroHasta" style="margin-top: 1rem;">Hasta:</label>
                     <input type="date" id="filtroHasta" name="fecha_hasta" class="form-control">
                 `;
+
+                // Precargar valores desde la URL
+                {
+                    const url = new URL(window.location.href);
+                    const desde = url.searchParams.get('fecha_desde') || '';
+                    const hasta = url.searchParams.get('fecha_hasta') || '';
+                    const desdeEl = document.getElementById('filtroDesde');
+                    const hastaEl = document.getElementById('filtroHasta');
+                    if (desdeEl) desdeEl.value = desde;
+                    if (hastaEl) hastaEl.value = hasta;
+                }
                 modal.style.display = 'flex';
                 return;
             case 'estado':
@@ -705,6 +805,14 @@
                         </div>
                     </div>
                 `;
+
+                // Precargar valores desde la URL
+                {
+                    const seleccionados = new Set(getValoresFiltroDesdeURL('estado'));
+                    document.querySelectorAll('#listaEstados .filtro-checkbox').forEach(cb => {
+                        cb.checked = seleccionados.has(cb.value);
+                    });
+                }
                 
                 // Agregar funcionalidad de búsqueda
                 setTimeout(() => {
@@ -749,31 +857,75 @@
                 modalTitulo = document.getElementById('modalFiltroTitulo');
                 modalTitulo.textContent = titulo;
                 
-                // Crear HTML con buscador y checkboxes
+                // Crear HTML con buscador y lista (render dinámico)
                 filtroContenido.innerHTML = `
                     <div class="form-group">
                         <input type="text" id="buscadorFiltro" class="form-control" placeholder="Buscar..." style="margin-bottom: 1rem;">
-                        <div id="listaOpciones" style="max-height: 300px; overflow-y: auto;">
-                            ${data.opciones.map(opcion => `
-                                <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; cursor: pointer; border-radius: 4px; transition: background 0.2s;">
-                                    <input type="checkbox" name="${campo}" value="${opcion}" class="filtro-checkbox">
-                                    <span>${opcion || '(Sin especificar)'}</span>
-                                </label>
-                            `).join('')}
-                        </div>
+                        <div id="listaOpciones" style="max-height: 300px; overflow-y: auto;"></div>
                     </div>
                 `;
-                
-                // Agregar funcionalidad de búsqueda
-                setTimeout(() => {
-                    document.getElementById('buscadorFiltro')?.addEventListener('input', function(e) {
-                        const valor = e.target.value.toLowerCase();
-                        document.querySelectorAll('#listaOpciones label').forEach(label => {
-                            const texto = label.textContent.toLowerCase();
-                            label.style.display = texto.includes(valor) ? 'flex' : 'none';
-                        });
+
+                const buscador = document.getElementById('buscadorFiltro');
+                const lista = document.getElementById('listaOpciones');
+
+                const columnaMap = (campo === 'forma_pago') ? 'forma_pago' : campo;
+                const seleccionados = new Set(getValoresFiltroDesdeURL(columnaMap));
+
+                function normalizarTexto(v) {
+                    return String(v || '').toLowerCase();
+                }
+
+                function renderOpciones(query) {
+                    const q = normalizarTexto(query).trim();
+                    const opciones = Array.isArray(data.opciones) ? data.opciones : [];
+
+                    let list = [];
+
+                    if (q === '') {
+                        const limit = (campo === 'cliente') ? 5 : opciones.length;
+                        list = opciones.slice(0, limit);
+                    } else {
+                        list = opciones.filter(op => normalizarTexto(op).includes(q));
+                    }
+
+                    if (!lista) {
+                        return;
+                    }
+
+                    lista.innerHTML = list.map(opcion => {
+                        const safeValue = (opcion === null || opcion === undefined) ? '' : String(opcion);
+                        const labelText = safeValue || '(Sin especificar)';
+                        const checked = seleccionados.has(safeValue) ? 'checked' : '';
+
+                        return `
+                            <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; cursor: pointer; border-radius: 4px; transition: background 0.2s;">
+                                <input type="checkbox" name="${campo}" value="${safeValue}" class="filtro-checkbox" ${checked}>
+                                <span>${labelText}</span>
+                            </label>
+                        `;
+                    }).join('');
+                }
+
+                if (lista) {
+                    lista.addEventListener('change', function(e) {
+                        const cb = e.target;
+                        if (!cb || !cb.classList || !cb.classList.contains('filtro-checkbox')) return;
+                        const val = String(cb.value ?? '');
+                        if (cb.checked) {
+                            seleccionados.add(val);
+                        } else {
+                            seleccionados.delete(val);
+                        }
                     });
-                }, 0);
+                }
+
+                renderOpciones('');
+
+                if (buscador) {
+                    buscador.addEventListener('input', function(e) {
+                        renderOpciones(e.target.value);
+                    });
+                }
                 
                 modal.style.display = 'flex';
             })
@@ -788,21 +940,64 @@
         filtroActual = null;
     }
 
+    async function navegarSupervisorPedidos(urlString, options = {}) {
+        const { pushState = true } = options;
+
+        const container = document.getElementById('supervisorPedidosIndexContent');
+        if (!container) {
+            window.location.href = urlString;
+            return;
+        }
+
+        try {
+            container.style.opacity = '0.6';
+            container.style.pointerEvents = 'none';
+
+            const res = await fetch(urlString, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                cache: 'no-store'
+            });
+
+            const html = await res.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const next = doc.getElementById('supervisorPedidosIndexContent');
+
+            if (!res.ok || !next) {
+                window.location.href = urlString;
+                return;
+            }
+
+            container.innerHTML = next.innerHTML;
+
+            if (pushState) {
+                window.history.pushState({ url: urlString }, '', urlString);
+            }
+
+            // Recalcular badges/estado activo de filtros tras swap
+            actualizarIndicadoresFiltros();
+            window.dispatchEvent(new Event('supervisorPedidos:filtersUpdated'));
+        } catch (e) {
+            window.location.href = urlString;
+            return;
+        } finally {
+            container.style.opacity = '';
+            container.style.pointerEvents = '';
+        }
+    }
+
     function aplicarFiltroColumna(event) {
         event.preventDefault();
-        
-        // Construir URL con parámetros actuales
-        const url = new URL(window.location);
-        
-        // Obtener todos los checkboxes seleccionados
+
+        const url = new URL(window.location.href);
+
         const checkboxes = document.querySelectorAll('.filtro-checkbox:checked');
         const valoresSeleccionados = Array.from(checkboxes).map(cb => cb.value);
-        
-        // Limpiar parámetros anteriores según el filtro actual
+
         if (filtroActual === 'id-orden') {
-            url.searchParams.delete('numero');
-            if (valoresSeleccionados.length > 0) url.searchParams.set('numero', valoresSeleccionados.join(','));
-        } else if (filtroActual === 'numero') {
             url.searchParams.delete('numero');
             if (valoresSeleccionados.length > 0) url.searchParams.set('numero', valoresSeleccionados.join(','));
         } else if (filtroActual === 'cliente') {
@@ -828,9 +1023,14 @@
             url.searchParams.delete('forma_pago');
             if (valoresSeleccionados.length > 0) url.searchParams.set('forma_pago', valoresSeleccionados.join(','));
         }
-        
-        window.location.href = url.toString();
+
+        cerrarModalFiltro();
+        navegarSupervisorPedidos(url.toString());
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        actualizarIndicadoresFiltros();
+    });
 
     // Cerrar modal al hacer clic fuera
     document.getElementById('modalFiltro')?.addEventListener('click', function(e) {
@@ -1117,6 +1317,85 @@
             alert('Error: openOrderTrackingModal no está disponible. Intenta nuevamente.');
         }
     }
+
+    document.addEventListener('click', function(e) {
+        const btnNovedades = e.target.closest('.btn-novedades');
+        if (btnNovedades) {
+            e.preventDefault();
+            const ordenId = btnNovedades.dataset.ordenId;
+            const novedadesJson = btnNovedades.getAttribute('data-novedades');
+            try {
+                const novedades = JSON.parse(novedadesJson);
+                abrirNovedades(ordenId, novedades);
+            } catch (err) {
+                console.error('[Novedades] Error al parsear JSON:', err);
+                console.log('[Novedades] JSON raw:', novedadesJson);
+            }
+            return;
+        }
+
+        const btnFiltro = e.target.closest('.btn-filter-column');
+        if (btnFiltro) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const title = btnFiltro.getAttribute('title');
+            let columna = '';
+
+            switch(title) {
+                case 'Filtrar Número':
+                    columna = 'numero';
+                    break;
+                case 'Filtrar Cliente':
+                    columna = 'cliente';
+                    break;
+                case 'Filtrar Estado':
+                    columna = 'estado';
+                    break;
+                case 'Filtrar Asesora':
+                    columna = 'asesora';
+                    break;
+                case 'Filtrar Forma Pago':
+                    columna = 'forma_pago';
+                    break;
+                default:
+                    columna = 'cliente';
+            }
+
+            console.log('[Filtro] Abriendo filtro para columna:', columna);
+            abrirModalFiltro(columna);
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        const a = e.target.closest('#supervisorPedidosIndexContent a');
+        if (!a) return;
+
+        const href = a.getAttribute('href');
+        if (!href) return;
+        if (href.startsWith('#')) return;
+        if (a.target && a.target !== '_self') return;
+        if (a.hasAttribute('download')) return;
+        if (!href.startsWith(window.location.origin) && !href.startsWith('/')) return;
+
+        const urlAbs = href.startsWith('http') ? href : (window.location.origin + href);
+        let path = '';
+        try {
+            path = new URL(urlAbs).pathname || '';
+        } catch (e) {
+            return;
+        }
+
+        if (!path.startsWith('/supervisor-pedidos')) return;
+
+        e.preventDefault();
+        navegarSupervisorPedidos(urlAbs);
+    });
+
+    window.addEventListener('popstate', function() {
+        navegarSupervisorPedidos(window.location.href, { pushState: false });
+        window.dispatchEvent(new Event('supervisorPedidos:filtersUpdated'));
+    });
 </script>
 
 <!-- Modal Overlay y Wrapper para Detalles de Orden -->
@@ -1563,6 +1842,9 @@
                             break;
                         case 'Filtrar Cliente':
                             columna = 'cliente';
+                            break;
+                        case 'Filtrar Estado':
+                            columna = 'estado';
                             break;
                         case 'Filtrar Asesora':
                             columna = 'asesora';

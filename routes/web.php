@@ -2280,6 +2280,7 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
     
     // Pendientes Costura
     Route::get('/pendientes-costura', [App\Http\Controllers\SupervisorPedidosController::class, 'pendientesCostura'])->name('pendientes-costura');
+    Route::get('/pendientes-costura/filtro-opciones/{campo}', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerOpcionesFiltroPendientesCostura'])->name('pendientes-costura.filtro-opciones');
     Route::post('/guardar-color-costura', [App\Http\Controllers\SupervisorPedidosController::class, 'guardarColorCostura'])->name('guardar-color-costura');
     
     // Detalles y aprobación de procesos

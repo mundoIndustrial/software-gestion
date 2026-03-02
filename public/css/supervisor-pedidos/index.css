@@ -563,6 +563,14 @@ body.dark-theme .action-menu-item:hover {
   transform: scale(1.15);
 }
 
+/* Ayuda visual cuando hay filtro activo */
+.btn-filter-column.has-filter {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
+}
+
 .btn-filter-column .material-symbols-rounded {
   font-size: 1.2rem;
 }
@@ -825,5 +833,46 @@ body.dark-theme .action-menu-item:hover {
   background: #2980b9;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+/* Modal filtro - alinear opciones (checkbox + texto) */
+#modalFiltro #listaOpciones,
+#modalFiltro #listaEstados {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#modalFiltro #listaOpciones label,
+#modalFiltro #listaEstados label {
+  display: grid !important;
+  grid-template-columns: 18px 1fr;
+  align-items: center;
+  column-gap: 12px;
+  padding: 10px 10px;
+  margin: 0;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+#modalFiltro #listaOpciones label:hover,
+#modalFiltro #listaEstados label:hover {
+  background: #f1f5f9;
+}
+
+#modalFiltro #listaOpciones input[type="checkbox"],
+#modalFiltro #listaEstados input[type="checkbox"] {
+  margin: 0;
+  justify-self: start;
+}
+
+#modalFiltro #listaOpciones span,
+#modalFiltro #listaEstados span {
+  text-align: left;
+  justify-self: start;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.2;
 }
 

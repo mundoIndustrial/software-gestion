@@ -966,6 +966,63 @@ class SupervisorPedidosController extends Controller
         ]);
     }
 
+    public function obtenerOpcionesFiltroPendientesCostura($campo)
+    {
+        $opciones = [];
+
+        $base = \DB::table('consecutivos_recibos_pedidos as crp')
+            ->join('pedidos_produccion as p', 'crp.pedido_produccion_id', '=', 'p.id')
+            ->leftJoin('users as u', 'p.asesor_id', '=', 'u.id')
+            ->where('crp.tipo_recibo', 'COSTURA')
+            ->where('crp.activo', 1);
+
+        switch ($campo) {
+            case 'numero_recibo':
+                $opciones = (clone $base)
+                    ->distinct()
+                    ->pluck('crp.consecutivo_actual')
+                    ->filter()
+                    ->sort()
+                    ->values()
+                    ->toArray();
+                break;
+            case 'cliente':
+                $opciones = (clone $base)
+                    ->distinct()
+                    ->pluck('p.cliente')
+                    ->filter()
+                    ->sort()
+                    ->values()
+                    ->toArray();
+                break;
+            case 'asesor':
+                $opciones = (clone $base)
+                    ->distinct()
+                    ->pluck('u.name')
+                    ->filter()
+                    ->unique()
+                    ->sort()
+                    ->values()
+                    ->toArray();
+                break;
+            case 'prendas':
+                // Opciones de prenda por recibo (prenda asociada al recibo)
+                $opciones = (clone $base)
+                    ->leftJoin('prendas_pedido as pp', 'crp.prenda_id', '=', 'pp.id')
+                    ->distinct()
+                    ->pluck('pp.nombre_prenda')
+                    ->filter()
+                    ->sort()
+                    ->values()
+                    ->toArray();
+                break;
+        }
+
+        return response()->json([
+            'opciones' => $opciones,
+        ]);
+    }
+
     /**
      * Obtener notificaciones del supervisor
      */
@@ -1553,16 +1610,17 @@ class SupervisorPedidosController extends Controller
     /**
      * Pendientes de Costura
      */
-    public function pendientesCostura()
+    public function pendientesCostura(Request $request)
     {
         try {
             // Obtener pedidos con recibos de COSTURA
-            $pedidosConCostura = \DB::table('consecutivos_recibos_pedidos as crp')
+            $query = \DB::table('consecutivos_recibos_pedidos as crp')
                 ->join('pedidos_produccion as p', 'crp.pedido_produccion_id', '=', 'p.id')
                 ->join('users as u', 'p.asesor_id', '=', 'u.id')
                 ->select([
                     'p.created_at as fecha_creacion',
                     'crp.consecutivo_actual as numero_recibo',
+                    'crp.prenda_id as prenda_id',
                     'p.cliente',
                     'p.id as pedido_id',
                     'u.name as asesor',
@@ -1570,29 +1628,69 @@ class SupervisorPedidosController extends Controller
                 ])
                 ->where('crp.tipo_recibo', 'COSTURA')
                 ->where('crp.activo', 1)
-                ->orderBy('p.created_at', 'desc')
-                ->distinct('p.id')
-                ->get();
+                ->orderBy('p.created_at', 'desc');
 
-            \Log::info('DEBUG - Pedidos COSTURA encontrados:', ['count' => $pedidosConCostura->count()]);
+            if ($request->filled('numero_recibo')) {
+                $numeros = array_filter(array_map('trim', explode(',', $request->numero_recibo)));
+                if (count($numeros) > 0) {
+                    $query->whereIn('crp.consecutivo_actual', $numeros);
+                }
+            }
 
-            // Agrupar prendas por pedido
-            $recibosPorPedido = [];
-            
-            foreach($pedidosConCostura as $pedido) {
-                $pedidoId = $pedido->pedido_id;
-                
-                $recibosPorPedido[$pedidoId] = [
-                    'fecha_creacion' => $pedido->fecha_creacion,
-                    'numero_recibo' => $pedido->numero_recibo,
-                    'cliente' => $pedido->cliente,
-                    'pedido_id' => $pedido->pedido_id,
-                    'asesor' => $pedido->asesor,
-                    'color_costura' => $pedido->color_costura,
-                    'prendas' => []
+            if ($request->filled('cliente')) {
+                $clientes = array_filter(array_map('trim', explode(',', $request->cliente)));
+                if (count($clientes) > 0) {
+                    $query->whereIn('p.cliente', $clientes);
+                }
+            }
+
+            if ($request->filled('asesor')) {
+                $asesores = array_filter(array_map('trim', explode(',', $request->asesor)));
+                if (count($asesores) > 0) {
+                    $query->whereIn('u.name', $asesores);
+                }
+            }
+
+            if ($request->filled('prendas')) {
+                $prendas = array_filter(array_map('trim', explode(',', $request->prendas)));
+                if (count($prendas) > 0) {
+                    $query->whereExists(function ($q) use ($prendas) {
+                        $q->select(\DB::raw(1))
+                          ->from('prendas_pedido as pp')
+                          ->whereColumn('pp.id', 'crp.prenda_id')
+                          ->whereIn('pp.nombre_prenda', $prendas);
+                    });
+                }
+            }
+
+            if ($request->filled('fecha_creacion')) {
+                // Se espera formato Y-m-d
+                $fecha = trim($request->fecha_creacion);
+                if ($fecha !== '') {
+                    $query->whereDate('p.created_at', $fecha);
+                }
+            }
+
+            $recibosCostura = $query->get();
+
+            \Log::info('DEBUG - Recibos COSTURA encontrados:', ['count' => $recibosCostura->count()]);
+
+            $procesosConCantidad = $recibosCostura->map(function ($recibo) {
+                $proceso = [
+                    'fecha_creacion' => $recibo->fecha_creacion,
+                    'numero_recibo' => $recibo->numero_recibo,
+                    'cliente' => $recibo->cliente,
+                    'pedido_id' => $recibo->pedido_id,
+                    'asesor' => $recibo->asesor,
+                    'color_costura' => $recibo->color_costura,
+                    'prendas' => collect(),
                 ];
-                
-                // Obtener prendas del pedido con colores
+
+                if (empty($recibo->prenda_id)) {
+                    return $proceso;
+                }
+
+                // Obtener SOLO la prenda asociada a este recibo (con colores)
                 $prendasConColores = \DB::table('prendas_pedido as pp')
                     ->join('prenda_pedido_tallas as ppt', 'pp.id', '=', 'ppt.prenda_pedido_id')
                     ->join('prenda_pedido_talla_colores as pptc', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
@@ -1600,12 +1698,13 @@ class SupervisorPedidosController extends Controller
                         'pp.nombre_prenda',
                         'pptc.color_nombre',
                         'pptc.cantidad as cantidad_color',
-                        \DB::raw('null as cantidad_talla')
+                        \DB::raw('null as cantidad_talla'),
+                        \DB::raw('null as tela')
                     ])
-                    ->where('pp.pedido_produccion_id', $pedidoId)
+                    ->where('pp.id', $recibo->prenda_id)
                     ->get();
 
-                // Obtener prendas del pedido sin colores
+                // Obtener SOLO la prenda asociada a este recibo (sin colores)
                 $prendasSinColores = \DB::table('prendas_pedido as pp')
                     ->join('prenda_pedido_tallas as ppt', 'pp.id', '=', 'ppt.prenda_pedido_id')
                     ->leftJoin('prenda_pedido_talla_colores as pptc', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
@@ -1613,18 +1712,16 @@ class SupervisorPedidosController extends Controller
                         'pp.nombre_prenda',
                         'ppt.tela',
                         'ppt.cantidad as cantidad_talla',
-                        \DB::raw('null as color_nombre')
+                        \DB::raw('null as color_nombre'),
+                        \DB::raw('null as cantidad_color')
                     ])
-                    ->where('pp.pedido_produccion_id', $pedidoId)
+                    ->where('pp.id', $recibo->prenda_id)
                     ->whereNull('pptc.id')
                     ->get();
 
-                // Combinar las dos colecciones
-                $todasLasPrendas = $prendasConColores->merge($prendasSinColores);
-                $recibosPorPedido[$pedidoId]['prendas'] = $todasLasPrendas;
-            }
-
-            $procesosConCantidad = collect($recibosPorPedido)->values();
+                $proceso['prendas'] = $prendasConColores->merge($prendasSinColores);
+                return $proceso;
+            });
 
             return view('supervisor-pedidos.pendientes-costura', compact('procesosConCantidad'));
 

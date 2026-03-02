@@ -93,26 +93,36 @@
     }
 
     .btn-filter-column.has-filter {
-        color: #f59e0b;
+        opacity: 1;
+        background: rgba(255, 255, 255, 0.18);
+        border-radius: 8px;
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
     }
 
     .filter-badge {
         position: absolute;
-        top: -6px;
-        right: -6px;
-        min-width: 16px;
-        height: 16px;
-        padding: 0 4px;
+        top: -8px;
+        right: -8px;
+        background: #ef4444;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 10px;
-        line-height: 1;
-        background: #f59e0b;
-        color: #111827;
-        border-radius: 999px;
-        font-weight: 800;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+        font-size: 0.7rem;
+        font-weight: 700;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        opacity: 0;
+        transform: scale(0);
+        transition: all 0.3s ease;
+    }
+
+    .btn-filter-column.has-filter .filter-badge {
+        opacity: 1;
+        transform: scale(1);
     }
 </style>
 @endpush
@@ -122,6 +132,7 @@
     <div class="row">
         <div class="col-12">
             <div class="supervisor-pedidos-container">
+                <div id="supervisorPendientesCosturaContent">
                 <!-- Tabla de Órdenes -->
                 <div style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
                     <!-- Contenedor con Scroll -->
@@ -274,14 +285,11 @@
                         </div>
                     </div>
                 </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
-
-<button id="btnLimpiarFiltrosFlotante" type="button" onclick="limpiarTodosLosFiltrosPendientes()" style="display: none; position: fixed; right: 18px; bottom: 18px; z-index: 9998; background: #111827; color: #ffffff; border: 1px solid rgba(255,255,255,0.15); border-radius: 999px; padding: 10px 14px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.25); cursor: pointer;">
-    Limpiar filtros
-</button>
 
 <!-- Modal Filtro Dinámico -->
 <div id="modalFiltro" class="modal-overlay">
@@ -304,47 +312,65 @@
 @push('scripts')
 <script>
 let filtroActual = null;
-const filtrosPendientes = {};
 
-function hayFiltrosActivosPendientes() {
-    return Object.values(filtrosPendientes).some((regla) => {
-        const values = regla?.values || [];
-        return values.length > 0;
-    });
+function getValoresFiltroDesdeURL(columna) {
+    const url = new URL(window.location.href);
+
+    if (columna === 'fecha_creacion') {
+        const raw = url.searchParams.get('fecha_creacion') || '';
+        return raw ? [raw] : [];
+    }
+    if (columna === 'numero_recibo') {
+        const raw = url.searchParams.get('numero_recibo') || '';
+        return raw.split(',').map(v => v.trim()).filter(Boolean);
+    }
+    if (columna === 'cliente') {
+        const raw = url.searchParams.get('cliente') || '';
+        return raw.split(',').map(v => v.trim()).filter(Boolean);
+    }
+    if (columna === 'prendas') {
+        const raw = url.searchParams.get('prendas') || '';
+        return raw.split(',').map(v => v.trim()).filter(Boolean);
+    }
+    if (columna === 'asesor') {
+        const raw = url.searchParams.get('asesor') || '';
+        return raw.split(',').map(v => v.trim()).filter(Boolean);
+    }
+
+    return [];
 }
 
-function actualizarIndicadoresFiltrosPendientes() {
-    document.querySelectorAll('.btn-filter-column').forEach((btn) => {
-        btn.classList.remove('has-filter');
-        const badge = btn.querySelector('.filter-badge');
-        if (badge) badge.remove();
+function asegurarBadgeEnBoton(btn) {
+    if (!btn) return null;
+    return btn.querySelector('.filter-badge');
+}
 
+function actualizarIndicadoresFiltros() {
+    document.querySelectorAll('.btn-filter-column').forEach((btn) => {
         const col = btn.getAttribute('data-col');
-        const values = filtrosPendientes[col]?.values || [];
-        if (values.length > 0) {
+        const valores = col ? getValoresFiltroDesdeURL(col) : [];
+
+        const cantidad = valores.length;
+        let badge = asegurarBadgeEnBoton(btn);
+
+        if (cantidad > 0) {
             btn.classList.add('has-filter');
-            const b = document.createElement('span');
-            b.className = 'filter-badge';
-            b.textContent = values.length;
-            btn.style.position = 'relative';
-            btn.appendChild(b);
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'filter-badge';
+                btn.appendChild(badge);
+            }
+            badge.textContent = String(cantidad);
+        } else {
+            btn.classList.remove('has-filter');
+            if (badge) badge.remove();
         }
     });
 
-    const flotante = document.getElementById('btnLimpiarFiltrosFlotante');
-    if (flotante) {
-        flotante.style.display = hayFiltrosActivosPendientes() ? 'block' : 'none';
-    }
+    window.dispatchEvent(new Event('supervisorPedidos:filtersUpdated'));
 }
 
-function limpiarTodosLosFiltrosPendientes() {
-    Object.keys(filtrosPendientes).forEach((k) => delete filtrosPendientes[k]);
-    aplicarFiltrosEnVista();
-    actualizarIndicadoresFiltrosPendientes();
-    cerrarModalFiltro();
-}
-
-function abrirModalFiltroPendientes(columna) {
+function abrirModalFiltro(columna) {
     filtroActual = columna;
     const modal = document.getElementById('modalFiltro');
     const modalTitulo = document.getElementById('modalFiltroTitulo');
@@ -360,38 +386,62 @@ function abrirModalFiltroPendientes(columna) {
 
     modalTitulo.textContent = tituloMap[columna] || 'Filtrar';
 
-    const opciones = obtenerOpcionesDesdeFilas(columna);
-    const seleccionadas = (filtrosPendientes[columna]?.values) || [];
-
-    filtroContenido.innerHTML = `
-        <div class="form-group">
-            <input type="text" id="buscadorFiltro" class="form-control" placeholder="Buscar..." style="margin-bottom: 1rem;" />
-            <div id="listaOpciones" style="max-height: 300px; overflow-y: auto;">
-                ${opciones.map(opcion => {
-                    const checked = seleccionadas.includes(opcion) ? 'checked' : '';
-                    const label = opcion || '(Sin especificar)';
-                    return `
-                        <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; cursor: pointer; border-radius: 4px;">
-                            <input type="checkbox" class="filtro-checkbox" value="${escapeHtml(opcion)}" ${checked} />
-                            <span>${escapeHtml(label)}</span>
-                        </label>
-                    `;
-                }).join('')}
+    if (columna === 'fecha_creacion') {
+        const actual = (getValoresFiltroDesdeURL('fecha_creacion')[0] || '');
+        filtroContenido.innerHTML = `
+            <div class="form-group">
+                <label for="filtroFecha" style="display:block; margin-bottom:0.5rem;">Fecha (YYYY-MM-DD)</label>
+                <input type="date" id="filtroFecha" class="form-control" value="${actual}">
             </div>
-        </div>
-    `;
+        `;
+        modal.style.display = 'flex';
+        return;
+    }
 
-    setTimeout(() => {
-        document.getElementById('buscadorFiltro')?.addEventListener('input', function(e) {
-            const valor = e.target.value.toLowerCase();
-            document.querySelectorAll('#listaOpciones label').forEach(label => {
-                const texto = label.textContent.toLowerCase();
-                label.style.display = texto.includes(valor) ? 'flex' : 'none';
-            });
+    const endpoint = `/supervisor-pedidos/pendientes-costura/filtro-opciones/${columna}`;
+    filtroContenido.innerHTML = `<p style="color:#6b7280;">Cargando...</p>`;
+
+    fetch(endpoint)
+        .then(r => r.json())
+        .then(data => {
+            const opciones = Array.isArray(data.opciones) ? data.opciones : [];
+            const seleccionados = new Set(getValoresFiltroDesdeURL(columna));
+
+            filtroContenido.innerHTML = `
+                <div class="form-group">
+                    <input type="text" id="buscadorFiltro" class="form-control" placeholder="Buscar..." style="margin-bottom: 1rem;" />
+                    <div id="listaOpciones" style="max-height: 300px; overflow-y: auto;">
+                        ${opciones.map(opcion => {
+                            const safeValue = (opcion === null || opcion === undefined) ? '' : String(opcion);
+                            const label = safeValue || '(Sin especificar)';
+                            const checked = seleccionados.has(safeValue) ? 'checked' : '';
+                            return `
+                                <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; cursor: pointer; border-radius: 4px;">
+                                    <input type="checkbox" class="filtro-checkbox" value="${escapeHtml(safeValue)}" ${checked} />
+                                    <span>${escapeHtml(label)}</span>
+                                </label>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+
+            setTimeout(() => {
+                document.getElementById('buscadorFiltro')?.addEventListener('input', function(e) {
+                    const valor = e.target.value.toLowerCase();
+                    document.querySelectorAll('#listaOpciones label').forEach(label => {
+                        const texto = label.textContent.toLowerCase();
+                        label.style.display = texto.includes(valor) ? 'flex' : 'none';
+                    });
+                });
+            }, 0);
+
+            modal.style.display = 'flex';
+        })
+        .catch(() => {
+            filtroContenido.innerHTML = `<p style="color: red;">Error cargando opciones de filtro</p>`;
+            modal.style.display = 'flex';
         });
-    }, 0);
-
-    modal.style.display = 'flex';
 }
 
 function cerrarModalFiltro() {
@@ -401,9 +451,9 @@ function cerrarModalFiltro() {
 
 function limpiarFiltroActual() {
     if (!filtroActual) return;
-    delete filtrosPendientes[filtroActual];
-    aplicarFiltrosEnVista();
-    actualizarIndicadoresFiltrosPendientes();
+    const url = new URL(window.location.href);
+    url.searchParams.delete(filtroActual);
+    window.location.href = url.toString();
     cerrarModalFiltro();
 }
 
@@ -411,68 +461,23 @@ function aplicarFiltroColumna(event) {
     event.preventDefault();
     if (!filtroActual) return;
 
-    const checkboxes = document.querySelectorAll('.filtro-checkbox:checked');
-    const values = Array.from(checkboxes).map(cb => cb.value);
-    if (values.length > 0) {
-        filtrosPendientes[filtroActual] = { values };
+    const url = new URL(window.location.href);
+
+    if (filtroActual === 'fecha_creacion') {
+        url.searchParams.delete('fecha_creacion');
+        const fecha = document.getElementById('filtroFecha')?.value;
+        if (fecha) url.searchParams.set('fecha_creacion', fecha);
     } else {
-        delete filtrosPendientes[filtroActual];
+        const checkboxes = document.querySelectorAll('.filtro-checkbox:checked');
+        const values = Array.from(checkboxes).map(cb => cb.value);
+        url.searchParams.delete(filtroActual);
+        if (values.length > 0) {
+            url.searchParams.set(filtroActual, values.join(','));
+        }
     }
 
-    aplicarFiltrosEnVista();
-    actualizarIndicadoresFiltrosPendientes();
     cerrarModalFiltro();
-}
-
-function aplicarFiltrosEnVista() {
-    const filas = document.querySelectorAll('[data-row="proceso"]');
-
-    filas.forEach((fila) => {
-        let visible = true;
-
-        for (const [col, regla] of Object.entries(filtrosPendientes)) {
-            if (!regla) continue;
-
-            const valor = leerValorColumnaFila(fila, col);
-            const values = regla.values || [];
-            if (values.length > 0) {
-                if (!values.includes(valor)) {
-                    visible = false;
-                    break;
-                }
-            }
-        }
-
-        fila.style.display = visible ? 'grid' : 'none';
-    });
-}
-
-function obtenerOpcionesDesdeFilas(col) {
-    const filas = document.querySelectorAll('[data-row="proceso"]');
-    const set = new Set();
-
-    filas.forEach((fila) => {
-        set.add(leerValorColumnaFila(fila, col));
-    });
-
-    return Array.from(set).sort((a, b) => String(a).localeCompare(String(b)));
-}
-
-function leerValorColumnaFila(fila, col) {
-    const map = {
-        fecha_creacion: 0,
-        numero_recibo: 1,
-        cliente: 2,
-        prendas: 3,
-        asesor: 4,
-    };
-
-    const idx = map[col];
-    const cell = fila.children[idx];
-    if (!cell) return '';
-
-    const text = cell.textContent.trim();
-    return text;
+    navegarPendientesCostura(url.toString());
 }
 
 function escapeHtml(str) {
@@ -484,10 +489,13 @@ function escapeHtml(str) {
         .replace(/'/g, '&#039;');
 }
 
-document.querySelectorAll('.btn-filter-column').forEach((btn) => {
-    btn.addEventListener('click', function() {
-        abrirModalFiltroPendientes(btn.getAttribute('data-col'));
-    });
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('#supervisorPendientesCosturaContent .btn-filter-column');
+    if (!btn) return;
+    const col = btn.getAttribute('data-col');
+    if (!col) return;
+    e.preventDefault();
+    abrirModalFiltro(col);
 });
 
 const overlay = document.getElementById('modalFiltro');
@@ -499,7 +507,90 @@ if (overlay) {
     });
 }
 
-actualizarIndicadoresFiltrosPendientes();
+actualizarIndicadoresFiltros();
+
+window.navegarPendientesCostura = async function navegarPendientesCostura(urlString, options = {}) {
+    const { pushState = true } = options;
+    const container = document.getElementById('supervisorPendientesCosturaContent');
+    if (!container) {
+        window.location.href = urlString;
+        return;
+    }
+
+    try {
+        container.style.opacity = '0.6';
+        container.style.pointerEvents = 'none';
+
+        const res = await fetch(urlString, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            cache: 'no-store'
+        });
+
+        const html = await res.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const next = doc.getElementById('supervisorPendientesCosturaContent');
+
+        if (!res.ok || !next) {
+            window.location.href = urlString;
+            return;
+        }
+
+        container.innerHTML = next.innerHTML;
+
+        if (pushState) {
+            window.history.pushState({ url: urlString }, '', urlString);
+        }
+
+        actualizarIndicadoresFiltros();
+        inicializarSelectorColores();
+        window.dispatchEvent(new Event('supervisorPedidos:filtersUpdated'));
+    } catch (e) {
+        window.location.href = urlString;
+        return;
+    } finally {
+        container.style.opacity = '';
+        container.style.pointerEvents = '';
+    }
+}
+
+function limpiarFiltroActual() {
+    if (!filtroActual) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete(filtroActual);
+    cerrarModalFiltro();
+    navegarPendientesCostura(url.toString());
+}
+
+window.addEventListener('popstate', function() {
+    navegarPendientesCostura(window.location.href, { pushState: false });
+});
+
+document.addEventListener('click', function(e) {
+    const a = e.target.closest('#supervisorPendientesCosturaContent a');
+    if (!a) return;
+    const href = a.getAttribute('href');
+    if (!href) return;
+    if (href.startsWith('#')) return;
+    if (a.target && a.target !== '_self') return;
+    if (a.hasAttribute('download')) return;
+    if (!href.startsWith(window.location.origin) && !href.startsWith('/')) return;
+
+    const urlAbs = href.startsWith('http') ? href : (window.location.origin + href);
+    let path = '';
+    try {
+        path = new URL(urlAbs).pathname || '';
+    } catch (e) {
+        return;
+    }
+
+    if (!path.startsWith('/supervisor-pedidos/pendientes-costura')) return;
+    e.preventDefault();
+    navegarPendientesCostura(urlAbs);
+});
 
 // Funcionalidad de selector de colores con persistencia en BD
 function mostrarHoverFila(elemento) {

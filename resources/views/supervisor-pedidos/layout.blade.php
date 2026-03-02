@@ -236,6 +236,64 @@
             margin-left: auto;
             flex-shrink: 0;
         }
+
+        .floating-clear-filters {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            transition: all 0.3s ease;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transform: scale(0) translateY(20px);
+        }
+
+        .floating-clear-filters.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1) translateY(0);
+        }
+
+        .floating-clear-filters:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+            transform: scale(1.08) translateY(0);
+        }
+
+        .floating-clear-filters:active {
+            transform: scale(0.95) translateY(0);
+        }
+
+        .floating-clear-filters-tooltip {
+            position: absolute;
+            bottom: 70px;
+            right: 0;
+            background: #1f2937;
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .floating-clear-filters:hover .floating-clear-filters-tooltip {
+            opacity: 1;
+        }
     </style>
 
     @stack('styles')
@@ -293,12 +351,6 @@
                                placeholder="Buscar por pedido o cliente..." 
                                value="{{ request('busqueda') }}"
                                style="flex: 1; padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 20px; font-size: 0.9rem; background: var(--bg-color);">
-                        @if(request()->hasAny(['busqueda', 'numero', 'cliente', 'asesora', 'forma_pago', 'estado', 'fecha_desde', 'fecha_hasta']))
-                            <button type="button" onclick="limpiarTodosLosFiltros()" class="btn-limpiar" style="padding: 0 1rem; border-radius: 20px; display: flex; align-items: center; background: #ef4444; color: white; border: none; cursor: pointer; font-size: 0.8rem; transition: all 0.3s ease;" title="Limpiar todos los filtros" onmouseover="this.style.background='#dc2626'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='#ef4444'; this.style.transform='scale(1)';">
-                                <span class="material-symbols-rounded" style="font-size: 1rem;">clear</span>
-                                <span style="margin-left: 0.25rem;">Limpiar</span>
-                            </button>
-                        @endif
                     </div>
                 </form>
             </div>
@@ -384,6 +436,11 @@
         <!-- Content Area -->
         <div class="content-area">
             @yield('content')
+
+            <button id="clearFiltersBtn" class="floating-clear-filters" type="button" onclick="limpiarTodosLosFiltros()" title="Limpiar todos los filtros">
+                <span class="material-symbols-rounded">filter_alt_off</span>
+                <div class="floating-clear-filters-tooltip">Limpiar filtros</div>
+            </button>
         </div>
     </div>
 
@@ -642,6 +699,55 @@
         if (typeof isCartera === 'undefined' || !isCartera) {
             // setInterval(cargarContadorOrdenesPendientes, 30000);
         }
+
+        // ===== FUNCIÓN PARA LIMPIAR TODOS LOS FILTROS =====
+        function limpiarTodosLosFiltros() {
+            const baseUrl = window.location.origin + window.location.pathname;
+
+            if (typeof window.navegarSupervisorPedidos === 'function') {
+                window.navegarSupervisorPedidos(baseUrl);
+                return;
+            }
+
+            if (typeof window.navegarPendientesCostura === 'function') {
+                window.navegarPendientesCostura(baseUrl);
+                return;
+            }
+
+            window.location.href = baseUrl;
+        }
+
+        function supervisorPedidosHayFiltrosActivos() {
+            try {
+                const url = new URL(window.location.href);
+                const keys = ['busqueda', 'numero', 'cliente', 'asesora', 'forma_pago', 'estado', 'fecha_desde', 'fecha_hasta', 'numero_recibo', 'asesor', 'prendas', 'fecha_creacion'];
+                return keys.some(k => {
+                    const v = url.searchParams.get(k);
+                    return v !== null && String(v).trim() !== '';
+                });
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function updateClearButtonVisibility() {
+            const btn = document.getElementById('clearFiltersBtn');
+            if (!btn) return;
+            const visible = supervisorPedidosHayFiltrosActivos();
+            btn.classList.toggle('visible', visible);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateClearButtonVisibility();
+        });
+
+        window.addEventListener('popstate', function() {
+            updateClearButtonVisibility();
+        });
+
+        window.addEventListener('supervisorPedidos:filtersUpdated', function() {
+            updateClearButtonVisibility();
+        });
     </script>
 
     @stack('scripts')
@@ -732,21 +838,19 @@
 
         // ===== FUNCIÓN PARA LIMPIAR TODOS LOS FILTROS =====
         function limpiarTodosLosFiltros() {
-            // Obtener la URL base sin parámetros
-            const baseUrl = '{{ route("supervisor-pedidos.index") }}';
-            
-            // Mantener solo el parámetro aprobacion si existe (para no cambiar el modo de vista)
-            const urlParams = new URLSearchParams(window.location.search);
-            const aprobacion = urlParams.get('aprobacion');
-            
-            // Construir URL limpia
-            let finalUrl = baseUrl;
-            if (aprobacion) {
-                finalUrl += '?aprobacion=' + aprobacion;
+            const baseUrl = window.location.origin + window.location.pathname;
+
+            if (typeof window.navegarSupervisorPedidos === 'function') {
+                window.navegarSupervisorPedidos(baseUrl);
+                return;
             }
-            
-            console.log('[Limpiar] Redirigiendo a:', finalUrl);
-            window.location.href = finalUrl;
+
+            if (typeof window.navegarPendientesCostura === 'function') {
+                window.navegarPendientesCostura(baseUrl);
+                return;
+            }
+
+            window.location.href = baseUrl;
         }
     </script>
 
