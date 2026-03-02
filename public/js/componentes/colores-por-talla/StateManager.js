@@ -69,6 +69,13 @@ window.StateManager = (function() {
                     if (yaExiste) {
                         // Si el color ya existe, sumar la cantidad
                         yaExiste.cantidad = (parseInt(yaExiste.cantidad) || 0) + (parseInt(colorNuevo.cantidad) || 0);
+                        // Actualizar referencia, imagen y observaciones si vienen con datos nuevos
+                        if (colorNuevo.referencia) yaExiste.referencia = colorNuevo.referencia;
+                        if (colorNuevo.imagen_id) {
+                            yaExiste.imagen_id = colorNuevo.imagen_id;
+                            yaExiste.imagen_nombre = colorNuevo.imagen_nombre || yaExiste.imagen_nombre;
+                        }
+                        if (colorNuevo.observaciones) yaExiste.observaciones = colorNuevo.observaciones;
                     } else {
                         existente.colores.push(colorNuevo);
                     }

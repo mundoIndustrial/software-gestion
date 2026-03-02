@@ -7,13 +7,9 @@ use App\Models\PrendaPedido;
 use App\Models\PrendaPedidoTalla;
 use App\Models\PrendaVariantePed;
 use App\Models\PrendaPedidoColorTela;
-use App\Models\PrendaFotoPedido;
-use App\Models\PrendaFotoTelaPedido;
 use App\Models\PedidosProcesosPrendaDetalle;
 use App\Models\PedidosProcesosPrendaTalla;
-use App\Models\PedidosProcessImagenes;
 use App\Models\PedidoEpp;
-use App\Models\PedidoEppImagen;
 use App\Models\TipoPrenda;
 use App\Models\ColorPrenda;
 use App\Models\TelaPrenda;
@@ -24,7 +20,6 @@ use App\Domain\Pedidos\Services\ImagenRelocalizadorService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * PedidoWebService
@@ -182,6 +177,7 @@ class PedidoWebService
         // Crear tallas
         if (isset($itemData['cantidad_talla']) && is_array($itemData['cantidad_talla'])) {
             $asignacionesColores = $itemData['asignacionesColoresPorTalla'] ?? [];
+            $flujoTallas = $itemData['flujo'] ?? 'simple';
             
             // DIAGNÓSTICO: Verificar asignaciones recibidas
             \Log::info('[PedidoWebService] 🔍 DIAGNÓSTICO - Asignaciones en crearTallasPrenda:', [
@@ -189,9 +185,10 @@ class PedidoWebService
                 'asignacionesColores_count' => count($asignacionesColores),
                 'asignacionesColores_keys' => array_keys($asignacionesColores),
                 'asignacionesColores_data' => $asignacionesColores,
+                'flujo' => $flujoTallas,
             ]);
             
-            $this->crearTallasPrenda($prenda, $itemData['cantidad_talla'], $asignacionesColores);
+            $this->crearTallasPrenda($prenda, $itemData['cantidad_talla'], $asignacionesColores, $flujoTallas);
         }
 
         // Crear variantes
@@ -203,8 +200,19 @@ class PedidoWebService
         $tieneTelas = isset($itemData['telas']) && is_array($itemData['telas']) && count($itemData['telas']) > 0;
         $tieneTelasAntiguo = isset($itemData['prenda_pedido_colores_telas']) && is_array($itemData['prenda_pedido_colores_telas']) && count($itemData['prenda_pedido_colores_telas']) > 0;
         
-        if ($tieneTelas || $tieneTelasAntiguo) {
-            \Log::info('[PedidoWebService] 🧵 Creando telas', [
+        // SEPARACIÓN DE FLUJOS: Si el flujo es 'wizard', las telas ya están guardadas
+        // dentro de prenda_pedido_talla_colores (vía asignacionesColoresPorTalla).
+        // NO crear registros adicionales en prenda_pedido_colores_telas para evitar duplicación.
+        $flujo = $itemData['flujo'] ?? 'simple';
+        $esWizard = $flujo === 'wizard';
+        
+        if ($esWizard) {
+            \Log::info('[PedidoWebService] 🔄 FLUJO WIZARD - Telas ya incluidas en asignaciones de colores por talla, saltando creación de prenda_pedido_colores_telas', [
+                'prenda_id' => $prenda->id,
+                'telas_omitidas' => $tieneTelas ? count($itemData['telas']) : ($tieneTelasAntiguo ? count($itemData['prenda_pedido_colores_telas']) : 0),
+            ]);
+        } elseif ($tieneTelas || $tieneTelasAntiguo) {
+            \Log::info('[PedidoWebService] 🧵 Creando telas (flujo simple)', [
                 'prenda_id' => $prenda->id,
                 'telas_count' => $tieneTelas ? count($itemData['telas']) : ($tieneTelasAntiguo ? count($itemData['prenda_pedido_colores_telas']) : 0),
                 'tipo' => $tieneTelasAntiguo ? 'ANTIGUO' : 'NUEVO',
@@ -213,11 +221,13 @@ class PedidoWebService
             \Log::warning('[PedidoWebService]  SIN TELAS para prenda ' . $prenda->id);
         }
 
-        // Crear colores y telas - intenta tanto del formulario antiguo como del nuevo
-        if (isset($itemData['prenda_pedido_colores_telas']) && is_array($itemData['prenda_pedido_colores_telas'])) {
-            $this->crearColoresTelas($prenda, $itemData['prenda_pedido_colores_telas']);
-        } elseif (isset($itemData['telas']) && is_array($itemData['telas'])) {
-            $this->crearTelasDesdeFormulario($prenda, $itemData['telas']);
+        // Crear colores y telas SOLO en flujo simple (en wizard ya están en prenda_pedido_talla_colores)
+        if (!$esWizard) {
+            if (isset($itemData['prenda_pedido_colores_telas']) && is_array($itemData['prenda_pedido_colores_telas'])) {
+                $this->crearColoresTelas($prenda, $itemData['prenda_pedido_colores_telas']);
+            } elseif (isset($itemData['telas']) && is_array($itemData['telas'])) {
+                $this->crearTelasDesdeFormulario($prenda, $itemData['telas']);
+            }
         }
 
         //  DESHABILITADO: Imágenes se procesan en CrearPedidoEditableController::procesarYAsignarImagenes()
@@ -240,7 +250,9 @@ class PedidoWebService
 
         // Crear procesos
         if (isset($itemData['procesos']) && is_array($itemData['procesos'])) {
-            $this->crearProcesosCompletos($prenda, $itemData['procesos']);
+            $asignacionesProcesos = $itemData['asignacionesColoresPorTalla'] ?? [];
+            $flujoProcesos = $itemData['flujo'] ?? 'simple';
+            $this->crearProcesosCompletos($prenda, $itemData['procesos'], $asignacionesProcesos, $flujoProcesos);
         }
 
         return $prenda;
@@ -251,7 +263,7 @@ class PedidoWebService
      * 
      * Ahora también procesa asignacionesColoresPorTalla para guardar tela y colores
      */
-    private function crearTallasPrenda(PrendaPedido $prenda, array $cantidadTalla, array $asignacionesColores = []): void
+    private function crearTallasPrenda(PrendaPedido $prenda, array $cantidadTalla, array $asignacionesColores = [], string $flujo = 'simple'): void
     {
         // cantidadTalla puede ser:
         // 1. Normal: { DAMA: {S: 10, M: 20}, CABALLERO: {...} }
@@ -259,6 +271,9 @@ class PedidoWebService
         // 3. Mixta: { DAMA: {S: 10}, SOBREMEDIDA: {CABALLERO: 100} }
         
         // asignacionesColores estructura: { "dama-Letra-S": { genero, tela, colores: [...] }, ... }
+        // flujo: 'wizard' → cantidad en prenda_pedido_tallas = null (las cantidades reales están en prenda_pedido_talla_colores)
+        //        'simple' → cantidad se guarda normalmente
+        $esWizard = $flujo === 'wizard';
         
         foreach ($cantidadTalla as $generoOEspecial => $contenido) {
             if (!is_array($contenido) || empty($contenido)) {
@@ -349,11 +364,15 @@ class PedidoWebService
                         }
                         
                         //  CREAR TALLA (colores guardan en tabla relacional)
+                        // En flujo wizard: cantidad = null (las cantidades reales están en prenda_pedido_talla_colores)
+                        // En flujo simple: cantidad = valor del formulario
+                        $cantidadGuardar = ($esWizard && $claveEncontrada) ? null : (int)$cantidad;
+                        
                         $prendaPedidoTalla = PrendaPedidoTalla::create([
                             'prenda_pedido_id' => $prenda->id,
                             'genero' => strtoupper($generoOEspecial),
                             'talla' => $talla,
-                            'cantidad' => (int)$cantidad,
+                            'cantidad' => $cantidadGuardar,
                         ]);
                         
                         //  NUEVO: If we have color assignments, save them to the relational table
@@ -379,12 +398,15 @@ class PedidoWebService
                                         $colorRecord = ColorPrenda::where('nombre', $colorNombre)->first();
                                         $colorId = $colorRecord?->id;
                                         
+                                        $colorObservaciones = $colorItem['observaciones'] ?? null;
+                                        
                                         $prendaPedidoTalla->coloresAsignados()->create([
                                             'tela_id' => $telaId,
                                             'tela_nombre' => $telaGuardar,
                                             'color_id' => $colorId,
                                             'color_nombre' => $colorNombre,
                                             'cantidad' => (int)$colorCantidad,
+                                            'observaciones' => $colorObservaciones,
                                         ]);
                                         
                                         Log::info('[PedidoWebService] Color guardado en tabla relacional', [
@@ -769,7 +791,7 @@ class PedidoWebService
      * Los procesos llegan ya deserializados desde CrearPedidoCompletoRequest
      * Estructura esperada: { reflectivo: { tipo: 'reflectivo', datos: { ubicaciones, tallas, imagenes, ... } } }
      */
-    private function crearProcesosCompletos(PrendaPedido $prenda, array $procesos): void
+    private function crearProcesosCompletos(PrendaPedido $prenda, array $procesos, array $asignacionesColores = [], string $flujo = 'simple'): void
     {
         \Log::info('[PedidoWebService]  crearProcesosCompletos INICIADA', [
             'prenda_id' => $prenda->id,
@@ -898,8 +920,9 @@ class PedidoWebService
                 \Log::info('[PedidoWebService]  Llamando crearTallasProceso', [
                     'proceso_id' => $procesoPrenda->id,
                     'tallas_estructura' => array_keys($datosProceso['tallas']),
+                    'flujo' => $flujo,
                 ]);
-                $this->crearTallasProceso($procesoPrenda, $datosProceso['tallas']);
+                $this->crearTallasProceso($procesoPrenda, $datosProceso['tallas'], $asignacionesColores, $flujo);
             } else {
                 \Log::warning('[PedidoWebService]  NO HAY TALLAS para proceso ' . $tipoProceso, [
                     'tiene_tallas_key' => isset($datosProceso['tallas']) ? 'SÍ' : 'NO',
@@ -945,14 +968,17 @@ class PedidoWebService
      *   "sobremedida": { "CABALLERO": 100, "DAMA": 50 }
      * }
      */
-    private function crearTallasProceso(PedidosProcesosPrendaDetalle $proceso, array $tallas): void
+    private function crearTallasProceso(PedidosProcesosPrendaDetalle $proceso, array $tallas, array $asignacionesColores = [], string $flujo = 'simple'): void
     {
         \Log::info('[PedidoWebService]  crearTallasProceso INICIADA', [
             'proceso_id' => $proceso->id,
             'tallas_estructura' => json_encode($tallas),
+            'flujo' => $flujo,
+            'asignaciones_count' => count($asignacionesColores),
         ]);
 
         $tallasCreadas = 0;
+        $esWizard = $flujo === 'wizard';
         $generoMap = ['dama' => 'DAMA', 'caballero' => 'CABALLERO', 'unisex' => 'UNISEX'];
 
         foreach ($tallas as $generoBD => $tallasCant) {
@@ -986,17 +1012,161 @@ class PedidoWebService
                     continue;
                 }
 
-                foreach ($tallasCant as $talla => $cantidad) {
-                    $cantidad = (int)$cantidad;
-                    
-                    if ($cantidad > 0) {
-                        PedidosProcesosPrendaTalla::create([
+                // ====================================================================
+                // Detectar si las claves vienen en formato TALLA__COLOR (ej: M__ARENA)
+                // Si es así, agrupar por talla real y crear colores en tabla relacional
+                // ====================================================================
+                $tieneFormatoTallaColor = false;
+                foreach (array_keys($tallasCant) as $key) {
+                    if (str_contains((string)$key, '__')) {
+                        $tieneFormatoTallaColor = true;
+                        break;
+                    }
+                }
+
+                if ($tieneFormatoTallaColor) {
+                    // FLUJO CON COLORES EMBEBIDOS: TALLA__COLOR => cantidad
+                    // Agrupar por talla real
+                    $tallasAgrupadas = [];
+                    foreach ($tallasCant as $tallaColorKey => $cantidad) {
+                        $cantidad = (int)$cantidad;
+                        if ($cantidad <= 0) continue;
+
+                        $partes = explode('__', (string)$tallaColorKey, 2);
+                        $tallaReal = trim($partes[0]);
+                        $colorNombre = isset($partes[1]) ? trim($partes[1]) : null;
+
+                        if (!isset($tallasAgrupadas[$tallaReal])) {
+                            $tallasAgrupadas[$tallaReal] = [
+                                'totalCantidad' => 0,
+                                'colores' => [],
+                            ];
+                        }
+                        $tallasAgrupadas[$tallaReal]['totalCantidad'] += $cantidad;
+                        if ($colorNombre) {
+                            $tallasAgrupadas[$tallaReal]['colores'][] = [
+                                'nombre' => $colorNombre,
+                                'cantidad' => $cantidad,
+                            ];
+                        }
+                    }
+
+                    // Obtener tela desde asignaciones si existe
+                    $telaGuardar = null;
+                    $generoNormalizado = strtolower(trim($generoBD));
+                    foreach ($asignacionesColores as $clave => $asignacion) {
+                        if (is_array($asignacion) && 
+                            isset($asignacion['genero']) && 
+                            strtolower(trim($asignacion['genero'])) === $generoNormalizado &&
+                            isset($asignacion['tela'])) {
+                            $telaGuardar = $asignacion['tela'];
+                            break;
+                        }
+                    }
+
+                    \Log::info('[PedidoWebService]  crearTallasProceso - Formato TALLA__COLOR detectado', [
+                        'proceso_id' => $proceso->id,
+                        'genero' => $generoEnum,
+                        'tallas_agrupadas' => array_keys($tallasAgrupadas),
+                        'tela_detectada' => $telaGuardar,
+                    ]);
+
+                    foreach ($tallasAgrupadas as $tallaReal => $data) {
+                        $tallaProceso = PedidosProcesosPrendaTalla::create([
                             'proceso_prenda_detalle_id' => $proceso->id,
                             'genero' => $generoEnum,
-                            'talla' => $talla,
-                            'cantidad' => $cantidad,
+                            'talla' => $tallaReal,
+                            'cantidad' => null, // cantidad se desglosa en colores
                         ]);
+
+                        foreach ($data['colores'] as $colorItem) {
+                            $tallaProceso->coloresAsignados()->create([
+                                'color_nombre' => $colorItem['nombre'],
+                                'tela_nombre' => $telaGuardar,
+                                'cantidad' => (int)$colorItem['cantidad'],
+                            ]);
+                        }
+
+                        \Log::info('[PedidoWebService]  Talla proceso creada con colores', [
+                            'talla_id' => $tallaProceso->id,
+                            'talla' => $tallaReal,
+                            'genero' => $generoEnum,
+                            'colores_count' => count($data['colores']),
+                            'total_cantidad' => $data['totalCantidad'],
+                        ]);
+
                         $tallasCreadas++;
+                    }
+                } else {
+                    // FLUJO NORMAL: talla => cantidad (sin colores embebidos)
+                    foreach ($tallasCant as $talla => $cantidad) {
+                        $cantidad = (int)$cantidad;
+                        
+                        if ($cantidad > 0) {
+                            // Buscar asignación de colores para esta talla
+                            $generoNormalizado = strtolower(trim($generoBD));
+                            $tallaNormalizada = trim((string) $talla);
+                            
+                            $claveEncontrada = null;
+                            $posiblesClaves = [
+                                "{$generoNormalizado}-Letra-{$tallaNormalizada}",
+                                "{$generoNormalizado}-Número-{$tallaNormalizada}",
+                                "{$generoNormalizado}-{$tallaNormalizada}",
+                            ];
+                            
+                            foreach ($posiblesClaves as $clave) {
+                                if (isset($asignacionesColores[$clave])) {
+                                    $claveEncontrada = $clave;
+                                    break;
+                                }
+                            }
+                            
+                            if (!$claveEncontrada) {
+                                foreach ($asignacionesColores as $clave => $asignacion) {
+                                    if (is_array($asignacion) && 
+                                        isset($asignacion['genero']) && 
+                                        isset($asignacion['talla']) &&
+                                        strtolower(trim($asignacion['genero'])) === $generoNormalizado &&
+                                        trim((string)$asignacion['talla']) === $tallaNormalizada) {
+                                        $claveEncontrada = $clave;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            // En flujo wizard con asignación: cantidad = null
+                            $cantidadGuardar = ($esWizard && $claveEncontrada) ? null : $cantidad;
+                            
+                            $tallaProceso = PedidosProcesosPrendaTalla::create([
+                                'proceso_prenda_detalle_id' => $proceso->id,
+                                'genero' => $generoEnum,
+                                'talla' => $talla,
+                                'cantidad' => $cantidadGuardar,
+                            ]);
+                            
+                            // Crear colores asignados si hay asignación wizard
+                            if ($claveEncontrada && isset($asignacionesColores[$claveEncontrada])) {
+                                $asignacion = $asignacionesColores[$claveEncontrada];
+                                $telaGuardar = $asignacion['tela'] ?? null;
+                                
+                                if (isset($asignacion['colores']) && is_array($asignacion['colores'])) {
+                                    foreach ($asignacion['colores'] as $colorItem) {
+                                        $colorNombre = $colorItem['nombre'] ?? null;
+                                        $colorCantidad = $colorItem['cantidad'] ?? 1;
+                                        
+                                        if ($colorNombre) {
+                                            $tallaProceso->coloresAsignados()->create([
+                                                'color_nombre' => $colorNombre,
+                                                'tela_nombre' => $telaGuardar,
+                                                'cantidad' => (int)$colorCantidad,
+                                            ]);
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            $tallasCreadas++;
+                        }
                     }
                 }
             }
@@ -1058,49 +1228,7 @@ class PedidoWebService
 
             return;
             
-            //  CÓDIGO OBSOLETO COMENTADO - NO USAR
-            // Procesar cada imagen
-            /*
-            foreach ($imagenes as $index => $imagen) {
-                // Si es UploadedFile, guardar directamente
-                if ($imagen instanceof UploadedFile) {
-                    $resultado = $this->imageUploadService->guardarImagenDirecta(
-                        $imagen,
-                        $pedidoId,
-                        'procesos',
-                        $nombreProceso, // subcarpeta: ESTAMPADO, BORDADO, etc.
-                        null // filename autogenerado
-                    );
-
-                    PedidosProcessImagenes::create([
-                        'proceso_prenda_detalle_id' => $proceso->id,
-                        'ruta_original' => $resultado['original'],
-                        'ruta_webp' => $resultado['webp'],
-                        'orden' => $index + 1,
-                        'es_principal' => $index === 0 ? 1 : 0,
-                    ]);
-                }
-                // Si es string (ruta ya guardada), solo guardar en BD
-                elseif (is_string($imagen)) {
-                    $rutaWebp = str_replace(['.jpg', '.png', '.jpeg'], '.webp', $imagen);
-                    
-                    PedidosProcessImagenes::create([
-                        'proceso_prenda_detalle_id' => $proceso->id,
-                        'ruta_original' => $imagen,
-                        'ruta_webp' => $rutaWebp,
-                        'orden' => $index + 1,
-                        'es_principal' => $index === 0 ? 1 : 0,
-                    ]);
-                }
-            }
-
-            Log::info('[PedidoWebService] Imágenes proceso guardadas directamente', [
-                'proceso_id' => $proceso->id,
-                'pedido_id' => $pedidoId,
-                'nombre_proceso' => $nombreProceso,
-                'cantidad' => count($imagenes),
-            ]);
-            */
+        
         } catch (\Exception $e) {
             Log::error('[PedidoWebService] Error guardando imágenes proceso', [
                 'proceso_id' => $proceso->id,

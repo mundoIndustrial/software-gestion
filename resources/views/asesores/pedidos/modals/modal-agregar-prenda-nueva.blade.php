@@ -153,17 +153,7 @@
                             </p>
                         </div>
                         
-                        <!-- Botones de acción -->
-                        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem;">
-                            <button type="button" id="btn-asignar-colores-prenda" class="btn btn-primary" style="flex: 1; min-width: 250px; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 600;">
-                                <span class="material-symbols-rounded">palette</span>
-                                ASIGNAR MÁS COLORES A LAS TALLAS
-                            </button>
-                            <button type="button" id="btn-limpiar-asignaciones" class="btn btn-outline-secondary" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem; font-weight: 600;">
-                                <span class="material-symbols-rounded">delete_outline</span>
-                                Limpiar Todo
-                            </button>
-                        </div>
+
                     </div>
 
                     <!-- SECCIÓN: SELECCIONAR TALLAS POR GÉNERO -->
@@ -1074,6 +1064,11 @@ document.addEventListener('paste', function(event) {
             };
             reader.readAsDataURL(file);
         };
+
+        // Exponer al DragDropManager vía registro de sub-modales (arquitectura limpia)
+        if (window.DragDropManager && typeof window.DragDropManager.registrarSubModal === 'function') {
+            window.DragDropManager.registrarSubModal('modal-agregar-tela-simple', cargar);
+        }
 
         // Eliminar imagen
         const eliminar = () => {

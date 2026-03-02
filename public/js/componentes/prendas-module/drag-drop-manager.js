@@ -24,6 +24,42 @@ class DragDropManager {
         // Rastrear posición actual del mouse
         this.mousePosition = { x: 0, y: 0 };
         this._setupMouseTracking();
+
+        /**
+         * Registro de sub-modales que deben interceptar paste antes del handler principal.
+         * Cada entrada: { modalId: string, handler: (file: File) => void }
+         * Los sub-modales registrados tienen prioridad sobre el flujo normal
+         * cuando están visibles. Esto permite que modales secundarios (ej: "Agregar Tela")
+         * capturen Ctrl+V sin conflictos con el modal padre.
+         * @type {Map<string, function(File): void>}
+         */
+        this._subModalHandlers = new Map();
+    }
+
+    /**
+     * Registrar un sub-modal para que intercepte paste de imágenes cuando esté visible.
+     * @param {string} modalId - ID del elemento DOM del modal
+     * @param {function(File): void} handler - Función que recibe el File de la imagen
+     * @returns {DragDropManager} Para encadenamiento
+     */
+    registrarSubModal(modalId, handler) {
+        if (typeof handler !== 'function') {
+            console.error(`[DragDropManager] registrarSubModal: handler debe ser una función (modal: ${modalId})`);
+            return this;
+        }
+        this._subModalHandlers.set(modalId, handler);
+        UIHelperService.log('DragDropManager', `📌 Sub-modal registrado: #${modalId}`);
+        return this;
+    }
+
+    /**
+     * Desregistrar un sub-modal.
+     * @param {string} modalId - ID del modal a desregistrar
+     * @returns {DragDropManager}
+     */
+    desregistrarSubModal(modalId) {
+        this._subModalHandlers.delete(modalId);
+        return this;
     }
 
     /**
@@ -97,7 +133,33 @@ class DragDropManager {
         document.addEventListener('paste', (e) => {
             UIHelperService.log('DragDropManager', '📋 EVENTO PASTE DETECTADO');
             
-            // 🔴 CRÍTICO: Verificar si el elemento activo es un campo de texto que debe permitir pegar texto
+            // ── PASO 0: Sub-modales registrados tienen prioridad ──
+            // Verificar ANTES del check de campo de texto para que Ctrl+V funcione
+            // aunque el usuario tenga focus en un input de texto del sub-modal
+            for (const [modalId, handler] of this._subModalHandlers) {
+                const modalEl = document.getElementById(modalId);
+                if (modalEl && UIHelperService.isModalVisible(modalEl)) {
+                    const items = e.clipboardData?.items;
+                    if (items) {
+                        for (let i = 0; i < items.length; i++) {
+                            if (items[i].kind === 'file' && items[i].type.startsWith('image/')) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const file = items[i].getAsFile();
+                                if (file) {
+                                    UIHelperService.log('DragDropManager', `🎯 Paste redirigido a sub-modal #${modalId}`);
+                                    handler(file);
+                                }
+                                return;
+                            }
+                        }
+                    }
+                    // Sin imagen → permitir pegado normal de texto dentro del sub-modal
+                    return;
+                }
+            }
+
+            // ── PASO 1: Verificar si el elemento activo es un campo de texto ──
             const elementoActivo = document.activeElement;
             const esCampoTexto = elementoActivo && (
                 elementoActivo.tagName === 'TEXTAREA' ||
@@ -116,7 +178,7 @@ class DragDropManager {
                 UIHelperService.log('DragDropManager', `📝 Campo de texto detectado (${elementoActivo.tagName}${elementoActivo.type ? ':' + elementoActivo.type : ''}), permitiendo pegado normal`);
                 return; // No interceptar, dejar que el navegador maneje el pegado
             }
-            
+
             // 🔴 CRÍTICO: Soportar AMBOS modales (creación nueva Y edición) Y EPP
             // Verificar TODOS los modales disponibles y sus visibilidad
             let contenedorEPP = document.getElementById('contenedorFotosEPP');

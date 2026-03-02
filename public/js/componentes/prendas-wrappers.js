@@ -82,6 +82,15 @@ window.manejarImagenesPrenda = function(input) {
     }
 };
 
+// Fallback inmediato para agregarPrendaNueva (se reemplaza cuando modal-wrappers.js carga)
+window.agregarPrendaNueva = function() {
+    if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarPrendaNueva === 'function') {
+        return window.gestionItemsUI.agregarPrendaNueva();
+    }
+    console.warn('[prendas-wrappers] GestionItemsUI no disponible aún para agregarPrendaNueva');
+    return null;
+};
+
 // Escuchar cuando el módulo completo cargue para reemplazar con funciones avanzadas
 document.addEventListener('prendasModuleLoaded', (event) => {
     const exported = event.detail;

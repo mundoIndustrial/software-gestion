@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $genero
  * @property string|null $talla
  * @property string|null $tipo_talla
- * @property int $cantidad
+ * @property int|null $cantidad
  * @property bool $es_sobremedida
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
@@ -30,6 +30,7 @@ class PrendaPedidoTalla extends Model
         'tipo_talla',
         'cantidad',
         'es_sobremedida',
+        'observaciones',
     ];
 
     protected $casts = [

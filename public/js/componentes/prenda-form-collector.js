@@ -80,15 +80,7 @@ class PrendaFormCollector {
                     fileType: img?.file?.type,
                     fileSize: img?.file?.size
                 }, null, 2));
-                console.log(`[prenda-form-collector]   Tipo:`, typeof img);
-                console.log(`[prenda-form-collector]   Es File?:`, img instanceof File);
-                console.log(`[prenda-form-collector]   Constructor:`, img?.constructor?.name);
-                console.log(`[prenda-form-collector]   Propiedades (keys):`, Object.keys(img || {}));
-                console.log(`[prenda-form-collector]   Propiedades (getOwnPropertyNames):`, Object.getOwnPropertyNames(img || {}).slice(0, 10));
-                console.log(`[prenda-form-collector]   🔴 VALOR ACTUAL DE previewUrl:`, img?.previewUrl);
-                console.log(`[prenda-form-collector]   🔴 VALOR ACTUAL DE url:`, img?.url?.substring(0, 60) || 'undefined');
-                console.log(`[prenda-form-collector]   🔴 VALOR ACTUAL DE ruta_original:`, img?.ruta_original?.substring(0, 60) || 'undefined');
-                
+
                 // 1️⃣ Si img es directamente un File object, usarlo (imagen nueva)
                 if (img instanceof File) {
                     console.log(`[prenda-form-collector]   ✅ DECISIÓN: Es File object directo, RETORNANDO`);
@@ -717,6 +709,43 @@ class PrendaFormCollector {
             
             prendaData.asignacionesColoresPorTalla = asignacionesColores;
             console.log('[prenda-form-collector]  prendaData.asignacionesColoresPorTalla asignado:', prendaData.asignacionesColoresPorTalla);
+
+            // ============================================
+            // 7. SEPARACIÓN DE FLUJOS: SIMPLE vs WIZARD
+            // ============================================
+            // Si hay asignaciones del wizard (colores por talla), recalcular cantidad_talla
+            // con las cantidades reales en vez de los "1" que ColoresPorTalla.js pone en tallasRelacionales
+            // para display. También marcar que las telas ya están en las asignaciones (no duplicar).
+            const tieneAsignacionesWizard = Object.keys(asignacionesColores || {}).length > 0;
+            
+            if (tieneAsignacionesWizard) {
+                console.log('[prenda-form-collector] 🔄 FLUJO WIZARD DETECTADO - Recalculando cantidad_talla desde asignaciones...');
+                
+                const tallasRecalculadas = {};
+                Object.values(asignacionesColores).forEach(asignacion => {
+                    const genero = (asignacion.genero || 'UNISEX').toUpperCase();
+                    if (!tallasRecalculadas[genero]) {
+                        tallasRecalculadas[genero] = {};
+                    }
+                    const talla = asignacion.talla;
+                    // Sumar cantidades reales de colores para esta talla
+                    const totalCantidad = (asignacion.colores || []).reduce((sum, c) => sum + (parseInt(c.cantidad) || 0), 0);
+                    if (totalCantidad > 0 && talla) {
+                        tallasRecalculadas[genero][talla] = totalCantidad;
+                    }
+                });
+                
+                console.log('[prenda-form-collector] 🔄 cantidad_talla ANTES (tallasRelacionales):', prendaData.cantidad_talla);
+                console.log('[prenda-form-collector] 🔄 cantidad_talla DESPUÉS (recalculado):', tallasRecalculadas);
+                prendaData.cantidad_talla = tallasRecalculadas;
+                
+                // Marcar flujo wizard para que el backend NO cree prenda_pedido_colores_telas (duplicado)
+                prendaData.flujo = 'wizard';
+            } else {
+                prendaData.flujo = 'simple';
+            }
+            
+            console.log('[prenda-form-collector] 📋 Flujo detectado:', prendaData.flujo);
 
             console.log('[prenda-form-collector]  Retornando prendaData completa:');
             console.log('[prenda-form-collector]  VERIFICACIÓN FINAL DE TELAS EN prendaData:', {
