@@ -631,4 +631,77 @@ class ProcesosController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Anular recibo de proceso
+     * POST /api/procesos/{id}/anular-recibo
+     */
+    public function anularRecibo(Request $request, $procesoId)
+    {
+        \Log::info('[ProcesosController::anularRecibo] Iniciando', [
+            'proceso_id' => $procesoId,
+            'user_authenticated' => auth()->check(),
+            'user_id' => auth()->id(),
+        ]);
+
+        if (!auth()->check()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Debe estar autenticado para realizar esta acción',
+            ], 401);
+        }
+
+        $usuario = auth()->user();
+        if (!$usuario || (!$usuario->hasRole('supervisor') && !$usuario->hasRole('supervisor_pedidos'))) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tiene permisos para realizar esta acción',
+            ], 403);
+        }
+
+        try {
+            $proceso = $this->procesoRepository->obtenerPorId($procesoId);
+
+            if (!$proceso) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Proceso no encontrado',
+                ], 404);
+            }
+
+            // Cambiar estado a ANULADO usando reflection para evitar acoplarse a un método inexistente en la entidad
+            $reflection = new \ReflectionClass($proceso);
+            $estadoProperty = $reflection->getProperty('estado');
+            $estadoProperty->setAccessible(true);
+            $estadoProperty->setValue($proceso, 'ANULADO');
+
+            $fechaProperty = $reflection->getProperty('fechaAprobacion');
+            $fechaProperty->setAccessible(true);
+            $fechaProperty->setValue($proceso, null);
+
+            $aprobadoProperty = $reflection->getProperty('aprobadoPor');
+            $aprobadoProperty->setAccessible(true);
+            $aprobadoProperty->setValue($proceso, null);
+
+            $procesoActualizado = $this->procesoRepository->actualizar($proceso);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Recibo anulado correctamente',
+                'data' => $procesoActualizado->toArray(),
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('[ProcesosController::anularRecibo] Error', [
+                'proceso_id' => $procesoId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al anular el recibo',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

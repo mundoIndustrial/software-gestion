@@ -386,6 +386,9 @@ Route::middleware('auth')->prefix('procesos')->name('procesos.')->group(function
 Route::middleware(['api'])->prefix('api/procesos')->group(function () {
     Route::post('{procesoId}/activar-recibo', [ProcesosController::class, 'activarRecibo'])
         ->name('procesos.activar-recibo');
+
+    Route::post('{procesoId}/anular-recibo', [ProcesosController::class, 'anularRecibo'])
+        ->name('procesos.anular-recibo');
 });
 
 // Gestión de imágenes de EPP

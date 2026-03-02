@@ -398,9 +398,31 @@ export class Formatters {
 
         // 2. Línea técnica
         const partes = [];
-        if (prenda.tela) partes.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
-        if (prenda.color) partes.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
-        if (prenda.ref) partes.push(`<strong>REF:</strong> ${prenda.ref.toUpperCase()}`);
+
+        if (prenda.telas_array && Array.isArray(prenda.telas_array) && prenda.telas_array.length > 0) {
+            const telasInfo = prenda.telas_array
+                .filter(t => t.tela_nombre || t.color_nombre)
+                .map(t => {
+                    const tela = t.tela_nombre || '';
+                    const rawColor = t.color_nombre || '';
+                    const color = (!rawColor || rawColor.toLowerCase() === 'sin color') ? '' : rawColor;
+                    const ref = t.referencia ? ` | REF: ${t.referencia}` : '';
+                    if (tela && color) return `${tela} / ${color}${ref}`;
+                    if (tela) return `${tela}${ref}`;
+                    if (color) return `${color}${ref}`;
+                    return '';
+                })
+                .filter(t => t)
+                .join(' | ');
+
+            if (telasInfo) {
+                partes.push(`<strong>TELAS:</strong> ${telasInfo.toUpperCase()}`);
+            }
+        } else {
+            if (prenda.tela) partes.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
+            if (prenda.color) partes.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
+            if (prenda.ref) partes.push(`<strong>REF:</strong> ${prenda.ref.toUpperCase()}`);
+        }
         
         // Manga desde variantes
         if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {

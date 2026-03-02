@@ -146,13 +146,17 @@
         try {
             // Extraer tallas del proceso específico (no de la prenda)
             let tallas = [];
+            const tipoProcesoUpper = String(tipoProceso || '').toUpperCase();
+            const esCosturaBase = tipoProcesoUpper === 'COSTURA' || tipoProcesoUpper === 'COSTURA-BODEGA';
             
             // Buscar el proceso que coincide con tipoProceso
-            if (penda.procesos && Array.isArray(penda.procesos)) {
+            // Importante: para COSTURA/COSTURA-BODEGA NO usar penda.procesos, porque ahí pueden venir anexos
+            // con tallas parciales y eso haría que el modal muestre solo esas tallas.
+            if (!esCosturaBase && penda.procesos && Array.isArray(penda.procesos)) {
                 const procesoEncontrado = penda.procesos.find(p => {
                     // Comparar con tipo_proceso (STRING) o tipo_recibo
                     const tipo = String(p.tipo_proceso || p.nombre_proceso || '').toUpperCase();
-                    const tipoParam = String(tipoProceso).toUpperCase();
+                    const tipoParam = tipoProcesoUpper;
                     return tipo === tipoParam;
                 });
                 
@@ -181,6 +185,55 @@
             // Si no encontró tallas en procesos, usar las de la prenda como fallback
             if (tallas.length === 0 && penda.tallas && Array.isArray(penda.tallas)) {
                 tallas = penda.tallas;
+            }
+
+            // Caso especial: COSTURA/COSTURA-BODEGA (recibo base) suele traer tallas como objeto
+            // Formatos soportados:
+            // - { dama: { S: 2 }, caballero: { M: 3 } }
+            // - { 'dama-S': 2, 'caballero-M': 3 }
+            // - { S: 5, M: 3 }
+            if (tallas.length === 0 && esCosturaBase && penda.tallas && typeof penda.tallas === 'object' && !Array.isArray(penda.tallas)) {
+                const normalizadas = [];
+                const origen = penda.tallas;
+
+                const pushTalla = (tallaKey, cantidad, genero = null) => {
+                    const tallaStr = String(tallaKey || '').trim();
+                    const qty = parseInt(cantidad) || 0;
+                    if (!tallaStr || qty <= 0) return;
+                    normalizadas.push({ talla: tallaStr, cantidad: qty, genero: genero });
+                };
+
+                // Detectar estructura anidada por género
+                const keys = Object.keys(origen);
+                const puedeSerAnidado = keys.some(k => ['dama', 'caballero', 'unisex'].includes(String(k).toLowerCase()));
+                if (puedeSerAnidado) {
+                    keys.forEach(k => {
+                        const generoLower = String(k).toLowerCase();
+                        const genero = generoLower === 'dama' ? 'DAMA' : (generoLower === 'caballero' ? 'CABALLERO' : (generoLower === 'unisex' ? 'UNISEX' : null));
+                        const value = origen[k];
+                        if (value && typeof value === 'object' && !Array.isArray(value)) {
+                            Object.entries(value).forEach(([tallaKey, qty]) => pushTalla(tallaKey, qty, genero));
+                        }
+                    });
+                } else {
+                    // Claves planas: S, M o dama-S, caballero-M
+                    Object.entries(origen).forEach(([tallaKey, qty]) => {
+                        const rawKey = String(tallaKey);
+                        const match = rawKey.match(/^(dama|caballero|unisex)[-_](.+)$/i);
+                        if (match) {
+                            const generoLower = String(match[1]).toLowerCase();
+                            const genero = generoLower === 'dama' ? 'DAMA' : (generoLower === 'caballero' ? 'CABALLERO' : 'UNISEX');
+                            const tallaReal = match[2];
+                            pushTalla(tallaReal, qty, genero);
+                        } else {
+                            pushTalla(rawKey, qty, null);
+                        }
+                    });
+                }
+
+                if (normalizadas.length > 0) {
+                    tallas = normalizadas;
+                }
             }
 
             if (tallas.length === 0) {

@@ -78,7 +78,14 @@ export class ReceiptRenderer {
     static _actualizarTitulo(tipoProceso, recibo, prendaData) {
         const titleElement = document.querySelector('.receipt-title');
         if (titleElement) {
-            const nombreRecibo = String(tipoProceso || recibo.tipo_proceso || recibo.nombre_proceso || 'Recibo').toUpperCase();
+            const tipoProcesoLower = String(tipoProceso || '').toLowerCase();
+            const esParcial = !!(recibo && recibo._esParcial);
+
+            // Caso especial: anexos de costura en prenda de bodega se renderizan sobre "costura-bodega"
+            // pero el título debe mostrarse como COSTURA.
+            const nombreRecibo = String(
+                (esParcial && tipoProcesoLower === 'costura-bodega') ? 'costura' : (tipoProceso || recibo.tipo_proceso || recibo.nombre_proceso || 'Recibo')
+            ).toUpperCase();
             
             // Debug: Verificar qué datos llegan
             console.log(' [ReceiptRenderer] Datos recibidos:', {
@@ -300,9 +307,15 @@ export class ReceiptRenderer {
 
         // Determinar si es costura
         if (tipoProcesoBajo === 'costura' || tipoProcesoBajo === 'costura-bodega') {
-            // Usar formateador directamente
-            html = Formatters.construirDescripcionCostura(prendaData);
-            console.log(' [ReceiptRenderer._llenarDescripcion] HTML de costura generado:', html);
+            // Para parciales/anexos: usar el formateador de proceso para que tome las tallas inyectadas en el recibo
+            if (recibo && recibo._esParcial) {
+                html = Formatters.construirDescripcionProceso(prendaData, recibo);
+                console.log(' [ReceiptRenderer._llenarDescripcion] HTML de costura-parcial (proceso) generado:', html);
+            } else {
+                // Recibo base de costura: usar formateador de costura (toma datos de la prenda)
+                html = Formatters.construirDescripcionCostura(prendaData);
+                console.log(' [ReceiptRenderer._llenarDescripcion] HTML de costura generado:', html);
+            }
         } else {
             // Para otros procesos - pasar prendaData para acceder a colores
             html = Formatters.construirDescripcionProceso(prendaData, recibo);

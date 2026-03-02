@@ -268,21 +268,20 @@
         transform: translateY(-1px);
     }
 
-    .btn-desactivar-recibo {
+    .btn-anular-recibo {
         background: #ef4444;
         color: white;
         border: none;
         padding: 6px 12px;
-        border-radius: 4px;
+        border-radius: 6px;
         font-size: 12px;
         cursor: pointer;
-        transition: all 0.2s;
         display: flex;
         align-items: center;
         gap: 4px;
     }
 
-    .btn-desactivar-recibo:hover {
+    .btn-anular-recibo:hover {
         background: #dc2626;
         transform: translateY(-1px);
     }
@@ -356,6 +355,27 @@
         usuarioRoles: {!! json_encode(auth()->user()?->roles->pluck('name')->toArray() ?? []) !!},
         esSupervisorPedidos: {{ auth()->user()?->hasRole('supervisor_pedidos') ? 'true' : 'false' }},
         esSupervisor: {{ auth()->user()?->hasRole('supervisor') ? 'true' : 'false' }}
+    };
+
+    window.generarReciboCosturaBodega = function(prendaId, pedidoId) {
+        try {
+            const resolvedPedidoId = pedidoId || window.selectorRecibosState?.pedidoId;
+            if (!resolvedPedidoId) {
+                alert('Error: no se pudo determinar el pedido');
+                return;
+            }
+
+            if (typeof window.abrirModalReciboParcial !== 'function') {
+                alert('Error: modal de recibo por talla no disponible');
+                return;
+            }
+
+            // Forzar creación de parcial de COSTURA (sin consecutivo). Aplica solo a prendas de bodega.
+            return window.abrirModalReciboParcial(prendaId, 'costura', resolvedPedidoId);
+        } catch (e) {
+            console.error('[generarReciboCosturaBodega] Error:', e);
+            alert('Error al abrir el modal de recibo por talla');
+        }
     };
     
     // DEBUG: Mostrar roles en consola
@@ -605,6 +625,12 @@
                             <span>${textoBoton}</span>
                         </button>`;
 
+            const botonGenerarReciboCosturaHtml = (ocultarBotonEntregar || prenda.de_bodega != 1) ? '' : `
+                        <button class="btn-recibo-parcial" onclick="event.stopPropagation(); generarReciboCosturaBodega(${prenda.id || prendaIdx}, ${window.selectorRecibosState?.pedidoId})" title="Generar recibo de costura por talla">
+                            <i class="fas fa-scissors"></i>
+                            Generar recibo costura
+                        </button>`;
+
             html += `
                 <div class="prenda-accordion">
                     <div class="prenda-header ${claseEntregada}" onclick="togglePrendaAccordion(this, '${idAccordion}')" data-prenda-id="${prenda.id || prendaIdx}">
@@ -613,6 +639,7 @@
                             <p class="prenda-subtitle">${totalRecibos} recibo(s)</p>
                         </div>
                         ${botonEntregarHtml}
+                        ${botonGenerarReciboCosturaHtml}
                         ${fechaEntregaHtml}
                         <div class="prenda-chevron">▼</div>
                     </div>
@@ -649,6 +676,10 @@
                     // Verificar si el usuario puede crear recibos por talla (supervisor_pedidos o admin)
                     const esSupervisorRecibos = window.selectorRecibosState?.usuarioRoles?.includes('supervisor_pedidos') ||
                                                window.selectorRecibosState?.esSupervisorPedidos === 'true';
+
+                    // No permitir recibo por talla en Costura (ni costura-bodega)
+                    const tipoStringLower = String(tipoString || '').toLowerCase();
+                    const puedeCrearPorTalla = esSupervisorRecibos && (tipoStringLower !== 'costura' && tipoStringLower !== 'costura-bodega');
                     
                     // DEBUG: Mostrar decisión de visibilidad del botón
                     console.log(`🔘 Prenda ${prenda.id}: esSupervisorRecibos=${esSupervisorRecibos}, esSupervisorPedidos=${window.selectorRecibosState?.esSupervisorPedidos}`);
@@ -666,10 +697,10 @@
                             <div class="proceso-info">
                                 <p class="proceso-name">${recibo.nombre}</p>
                                 ${recibo.estado ? `<span class="proceso-estado ${estadoClass}">${estadoLabel}</span>` : ''}
-                                ${recibo.numero_recibo ? `<span class="numero-recibo">${recibo.numero_recibo}</span>` : ''}
+                                ${''}
                             </div>
                             <div class="proceso-acciones">
-                                ${esSupervisorRecibos ? `
+                                ${puedeCrearPorTalla ? `
                                     <button class="btn-recibo-parcial" 
                                             onclick="event.stopPropagation(); abrirModalReciboParcial(${prenda.id}, '${tipoString}', ${pedidoId})"
                                             title="Crear recibo por talla">
@@ -686,11 +717,11 @@
                                     </button>
                                 ` : ''}
                                 ${puedeDesactivarRecibo ? `
-                                    <button class="btn-desactivar-recibo" 
-                                            onclick="event.stopPropagation(); toggleActivarRecibo(${prenda.id}, '${tipoString}', ${!estaActivo})"
-                                            title="Desactivar recibo">
-                                        <i class="fas fa-times"></i>
-                                        Desactivar
+                                    <button class="btn-anular-recibo" 
+                                            onclick="event.stopPropagation(); anularRecibo(${prenda.id}, '${tipoString}', ${esParcial ? parcialId : 'null'})"
+                                            title="Anular recibo">
+                                        <i class="fas fa-ban"></i>
+                                        Anular
                                     </button>
                                 ` : ''}
                                 <span class="proceso-arrow">→</span>
@@ -921,6 +952,133 @@
             alert('Error al actualizar el recibo: ' + error.message);
         }
     };
+
+    /**
+     * Anula un recibo activo (cambia estado a ANULADA)
+     * @param {number} prendaId
+     * @param {string} tipoProceso
+     * @param {number|null} parcialId
+     */
+    window.anularRecibo = async function(prendaId, tipoProceso, parcialId = null) {
+        try {
+            const esParcial = parcialId !== null && parcialId !== 'null';
+            const tipoLabel = esParcial ? `anexo de ${tipoProceso}` : tipoProceso;
+            const titulo = 'Anular Recibo';
+            const mensaje = `¿Está seguro de que desea anular el recibo de ${tipoLabel}?`;
+            const colorBoton = '#ef4444';
+
+            mostrarModalConfirmar(titulo, mensaje, colorBoton, async () => {
+                if (esParcial) {
+                    await ejecutarAnularParcial(parcialId);
+                } else {
+                    await ejecutarAnularRecibo(prendaId, tipoProceso);
+                }
+            });
+
+        } catch (error) {
+            console.error('Error al anular recibo:', error);
+            alert('Error al anular el recibo: ' + error.message);
+        }
+    };
+
+    /**
+     * Ejecuta la anulación de un recibo normal
+     */
+    async function ejecutarAnularRecibo(prendaId, tipoProceso) {
+        try {
+            let procesoId = null;
+            const prenda = window.selectorRecibosState.prendas.find(p => p.id == prendaId);
+
+            if (prenda && prenda.procesos) {
+                const proceso = prenda.procesos.find(p =>
+                    String(p.tipo_proceso || p.nombre_proceso || '') === tipoProceso
+                );
+                if (proceso) {
+                    procesoId = proceso.id;
+                }
+            }
+
+            if (!procesoId) {
+                alert('Error: No se encontró el proceso para anular');
+                return;
+            }
+
+            const response = await fetch(`/api/procesos/${procesoId}/anular-recibo`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            });
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const textResponse = await response.text();
+                console.error('[ejecutarAnularRecibo] Respuesta no es JSON:', textResponse.substring(0, 200));
+                throw new Error('El servidor devolvió HTML en lugar de JSON. Posible problema de autenticación.');
+            }
+
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.message || 'Error al anular el recibo');
+            }
+
+            mostrarMensajeExito(result.message);
+
+            const pedidoId = window.selectorRecibosState.pedidoId;
+            try {
+                await cargarDatosRecibos(pedidoId);
+            } catch (recargaError) {
+                console.warn('Error al recargar datos (pero la operación principal tuvo éxito):', recargaError);
+                mostrarMensajeExito('Recibo anulado correctamente (la vista se actualizará en la próxima recarga)');
+            }
+
+        } catch (error) {
+            console.error('[ejecutarAnularRecibo] Error:', error);
+            alert('Error al anular el recibo: ' + error.message);
+        }
+    }
+
+    /**
+     * Ejecuta la anulación de un recibo parcial (anexo)
+     */
+    async function ejecutarAnularParcial(parcialId) {
+        try {
+            const response = await fetch(`/api/recibos-parciales/${parcialId}/anular`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            });
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const textResponse = await response.text();
+                console.error('[ejecutarAnularParcial] Respuesta no es JSON:', textResponse.substring(0, 200));
+                throw new Error('El servidor devolvió HTML en lugar de JSON. Posible problema de autenticación.');
+            }
+
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.message || 'Error al anular el anexo');
+            }
+
+            mostrarMensajeExito(result.message);
+
+            const pedidoId = window.selectorRecibosState.pedidoId;
+            try {
+                await cargarDatosRecibos(pedidoId);
+            } catch (recargaError) {
+                console.warn('Error al recargar datos (pero la operación principal tuvo éxito):', recargaError);
+                mostrarMensajeExito('Anexo anulado correctamente (la vista se actualizará en la próxima recarga)');
+            }
+
+        } catch (error) {
+            console.error('[ejecutarAnularParcial] Error:', error);
+            alert('Error al anular el anexo: ' + error.message);
+        }
+    }
 
     /**
      * Ejecuta la activación/desactivación del recibo

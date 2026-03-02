@@ -434,4 +434,108 @@ class RecibosParcialesController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Anula un recibo parcial
+     * POST /api/recibos-parciales/{id}/anular
+     */
+    public function anular($id)
+    {
+        try {
+            if (!auth()->user()->hasRole(['supervisor_pedidos', 'admin'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permisos para anular recibos'
+                ], 403);
+            }
+
+            $parcial = DB::table('pedidos_parciales')
+                ->where('id', $id)
+                ->whereNull('deleted_at')
+                ->first();
+
+            if (!$parcial) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recibo parcial no encontrado',
+                ], 404);
+            }
+
+            // Solo permitir anular si ya estaba aprobado/activo
+            if (strtoupper((string)($parcial->estado ?? '')) !== 'APROBADO') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Solo se pueden anular anexos en estado APROBADO',
+                ], 422);
+            }
+
+            // Anulación: estado visible del recibo se controla en consecutivos_recibos_pedidos.
+            // El parcial también debe quedar en estado ANULADO.
+            $tipoRecibo = strtoupper((string)($parcial->tipo_recibo ?? ''));
+            $notaNeedle = 'parcial_id:' . $id;
+
+            $consecutivo = DB::table('consecutivos_recibos_pedidos')
+                ->where('pedido_produccion_id', $parcial->pedido_produccion_id)
+                ->where('tipo_recibo', $tipoRecibo)
+                ->where('prenda_id', $parcial->prenda_pedido_id)
+                ->where('notas', 'LIKE', '%' . $notaNeedle . '%')
+                ->orderByDesc('id')
+                ->first();
+
+            if (!$consecutivo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró el consecutivo del anexo para anular',
+                ], 404);
+            }
+
+            DB::beginTransaction();
+
+            try {
+                DB::table('consecutivos_recibos_pedidos')
+                    ->where('id', $consecutivo->id)
+                    ->update([
+                        'estado' => 'ANULADO',
+                        'activo' => 0,
+                        'updated_at' => now(),
+                    ]);
+
+                // Marcar parcial como ANULADO y no-activo
+                DB::table('pedidos_parciales')
+                    ->where('id', $id)
+                    ->update([
+                        'estado' => 'ANULADO',
+                        'activo' => 0,
+                        'updated_at' => now(),
+                    ]);
+
+                DB::commit();
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Anexo anulado correctamente',
+                'data' => [
+                    'id' => (int) $id,
+                    'estado' => 'ANULADO',
+                    'consecutivo_id' => (int) $consecutivo->id,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('[RecibosParcialesController@anular] Error:', [
+                'message' => $e->getMessage(),
+                'id' => $id,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al anular anexo',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

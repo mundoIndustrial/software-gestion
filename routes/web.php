@@ -2902,6 +2902,10 @@ Route::middleware(['auth'])->prefix('api/recibos-parciales')->name('recibos-parc
     // Activar recibo parcial (asignar consecutivo)
     Route::post('{reciboId}/activar', [App\Infrastructure\Http\Controllers\RecibosParcialesController::class, 'activar'])
         ->name('activar');
+
+    // Anular recibo parcial
+    Route::post('{reciboId}/anular', [App\Infrastructure\Http\Controllers\RecibosParcialesController::class, 'anular'])
+        ->name('anular');
     
     // Obtener detalles de recibo parcial
     Route::get('{reciboId}', [App\Infrastructure\Http\Controllers\RecibosParcialesController::class, 'show'])
