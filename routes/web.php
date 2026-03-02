@@ -2422,12 +2422,10 @@ Route::middleware(['auth', 'verified'])->name('pedidos.estado.')->group(function
 // RUTA PARA SERVIR IMÁGENES DE STORAGE
 // ========================================
 
-Route::get('/storage-serve/{path}', function($path) {
-    $path = str_replace('..', '', $path);
-    return redirect('/storage/' . ltrim($path, '/'));
-})
+Route::get('/storage-serve/{path}', [App\Http\Controllers\StorageController::class, 'serve'])
     ->where('path', '.*')
     ->name('storage.serve');
+
 // ========================================
 // RUTAS DEL MÓDULO ASISTENCIA PERSONAL
 // ========================================

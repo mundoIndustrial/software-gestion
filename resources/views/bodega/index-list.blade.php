@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Gestión de Pedidos - Bodega')
-@section('page-title', 'Gestión de Bodega')
+@section('page-title', Route::currentRouteName() === 'gestion-bodega.pedidos-anulados' ? 'Pedidos Anulados' : 'Gestión de Bodega')
 
 @section('content')
 <div class="min-h-screen bg-white">
