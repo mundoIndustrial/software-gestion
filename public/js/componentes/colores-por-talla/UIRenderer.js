@@ -21,17 +21,15 @@ window.UIRenderer = (function() {
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '1.5rem',
-                alignItems: 'center',
                 width: '100%'
             });
             
             // Crear tabla profesional
             const tablaDiv = document.createElement('div');
             Object.assign(tablaDiv.style, {
-                display: 'grid',
+                display: 'flex',
+                flexDirection: 'column',
                 gap: '1.5rem',
-                gridTemplateColumns: '1fr',
-                maxWidth: '600px',
                 width: '100%'
             });
             
@@ -53,35 +51,54 @@ window.UIRenderer = (function() {
             const seccion = document.createElement('div');
             Object.assign(seccion.style, {
                 border: '1px solid #e5e7eb',
-                borderRadius: '6px',
+                borderRadius: '8px',
                 overflow: 'hidden',
-                background: '#f9fafb'
+                background: 'white'
             });
             
             // Encabezado de la sección (talla)
             const header = document.createElement('div');
             Object.assign(header.style, {
-                background: '#f3f4f6',
-                padding: '0.75rem 1rem',
-                borderBottom: '1px solid #e5e7eb',
+                background: '#3b82f6',
+                padding: '0.5rem 1rem',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem',
-                fontWeight: '600',
-                color: '#374151',
-                fontSize: '0.95rem'
+                justifyContent: 'space-between'
             });
-            header.innerHTML = `<span style="font-weight: 700; color: #111827;">${talla}</span>`;
+            header.innerHTML = `<span style="font-weight: 700; color: white; font-size: 0.95rem;">Talla ${talla}</span>`;
             seccion.appendChild(header);
+            
+            // Encabezados de columna
+            const headerRow = document.createElement('div');
+            Object.assign(headerRow.style, {
+                display: 'grid',
+                gridTemplateColumns: '1fr 120px 80px 140px 1fr 36px',
+                gap: '0.5rem',
+                padding: '0.5rem 0.75rem',
+                background: '#f9fafb',
+                borderBottom: '1px solid #e5e7eb',
+                fontSize: '0.7rem',
+                fontWeight: '600',
+                color: '#6b7280',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+            });
+            headerRow.innerHTML = `
+                <span>Color</span>
+                <span>Referencia</span>
+                <span style="text-align:center">Cant.</span>
+                <span>Imagen</span>
+                <span>Observaciones</span>
+                <span></span>
+            `;
+            seccion.appendChild(headerRow);
             
             // Contenedor del contenido (filas de color y cantidad)
             const contenedor = document.createElement('div');
             contenedor.className = 'contenedor-colores-' + idx;
             Object.assign(contenedor.style, {
-                display: 'grid',
-                gridTemplateColumns: '1fr',
-                gap: '0',
-                padding: '0.75rem 1rem'
+                display: 'flex',
+                flexDirection: 'column'
             });
             
             // Primera fila
@@ -137,32 +154,50 @@ window.UIRenderer = (function() {
         },
 
         /**
-         * Agregar una fila de color + cantidad con diseño profesional y datalist
+         * Agregar una fila de color + cantidad con diseño limpio tipo tabla
          */
         agregarFilaColorCantidad(contenedor, talla, tipo, tallaIdx, colorIdx) {
+            // ID único para el datalist
+            const datalistId = `colores-list-${tallaIdx}-${colorIdx}`;
+            
+            // Fila única horizontal con todos los campos
             const fila = document.createElement('div');
             fila.className = `fila-color-${tallaIdx}-${colorIdx}`;
             Object.assign(fila.style, {
                 display: 'grid',
-                gridTemplateColumns: '1fr 70px 32px',
-                gap: '0.75rem',
+                gridTemplateColumns: '1fr 120px 80px 140px 1fr 36px',
+                gap: '0.5rem',
                 alignItems: 'center',
-                padding: '0.5rem 0',
-                borderBottom: '1px solid #f3f4f6'
+                padding: '0.5rem 0.75rem',
+                borderBottom: '1px solid #f3f4f6',
+                transition: 'background 0.15s'
             });
             
-            // ID único para el datalist
-            const datalistId = `colores-list-${tallaIdx}-${colorIdx}`;
+            // Hover effect
+            fila.addEventListener('mouseover', () => { fila.style.background = '#f9fafb'; });
+            fila.addEventListener('mouseout', () => { fila.style.background = 'transparent'; });
             
-            // Input de color (texto con datalist)
+            // 1. Input de color
             const inputColor = this.crearInputColor(talla, tipo, datalistId);
             fila.appendChild(inputColor);
             
-            // Input de cantidad
+            // 2. Input de referencia
+            const inputReferencia = this.crearInputReferenciaColor();
+            fila.appendChild(inputReferencia);
+            
+            // 3. Input de cantidad
             const inputCantidad = this.crearInputCantidad();
             fila.appendChild(inputCantidad);
             
-            // Botón eliminar
+            // 4. Input de imagen (botón estilizado)
+            const imgWrapper = this.crearBotonImagenTela();
+            fila.appendChild(imgWrapper);
+            
+            // 5. Input de observaciones (inline)
+            const inputObs = this.crearInputObservaciones();
+            fila.appendChild(inputObs);
+            
+            // 6. Botón eliminar
             const btnEliminar = this.crearBotonEliminarFila(fila);
             fila.appendChild(btnEliminar);
             
@@ -179,15 +214,17 @@ window.UIRenderer = (function() {
             const inputColor = document.createElement('input');
             inputColor.type = 'text';
             inputColor.className = 'color-input-wizard';
-            inputColor.setAttribute('list', datalistId);  //  Usar setAttribute en lugar de .list
-            inputColor.placeholder = 'ROJO, AZUL, VERDE...';
+            inputColor.setAttribute('list', datalistId);
+            inputColor.placeholder = 'Ej: ROJO';
             Object.assign(inputColor.style, {
-                padding: '0.5rem 0.75rem',
+                padding: '0.4rem 0.5rem',
                 border: '1px solid #d1d5db',
                 borderRadius: '4px',
-                fontSize: '0.85rem',
+                fontSize: '0.8rem',
                 textTransform: 'uppercase',
-                background: 'white'
+                background: 'white',
+                width: '100%',
+                boxSizing: 'border-box'
             });
             
             inputColor.dataset.talla = talla;
@@ -210,15 +247,290 @@ window.UIRenderer = (function() {
             inputCantidad.min = '0';
             inputCantidad.value = '1';
             Object.assign(inputCantidad.style, {
-                padding: '0.5rem 0.5rem',
+                padding: '0.4rem 0.25rem',
                 border: '1px solid #d1d5db',
                 borderRadius: '4px',
                 textAlign: 'center',
-                fontSize: '0.85rem',
-                background: 'white'
+                fontSize: '0.8rem',
+                background: 'white',
+                width: '100%',
+                boxSizing: 'border-box'
             });
             
             return inputCantidad;
+        },
+
+        /**
+         * Crear input de referencia del color
+         */
+        crearInputReferenciaColor() {
+            const inputReferencia = document.createElement('input');
+            inputReferencia.type = 'text';
+            inputReferencia.className = 'referencia-input-wizard';
+            inputReferencia.placeholder = 'REF-001';
+            Object.assign(inputReferencia.style, {
+                padding: '0.4rem 0.5rem',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                fontSize: '0.8rem',
+                textTransform: 'uppercase',
+                background: 'white',
+                width: '100%',
+                boxSizing: 'border-box'
+            });
+            
+            inputReferencia.addEventListener('keyup', function() {
+                this.value = this.value.toUpperCase();
+            });
+            
+            return inputReferencia;
+        },
+
+        /**
+         * Crear widget de imagen con preview, drag & drop, Ctrl+V y eliminar
+         */
+        crearBotonImagenTela() {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'imagen-tela-wrapper';
+            Object.assign(wrapper.style, {
+                position: 'relative',
+                width: '100%'
+            });
+            
+            // Input file oculto
+            const inputImagen = document.createElement('input');
+            inputImagen.type = 'file';
+            inputImagen.className = 'imagen-tela-wizard';
+            inputImagen.accept = 'image/*';
+            Object.assign(inputImagen.style, {
+                position: 'absolute',
+                width: '0',
+                height: '0',
+                opacity: '0',
+                overflow: 'hidden'
+            });
+            
+            // --- ESTADO: Sin imagen (drop zone + botón) ---
+            const dropZone = document.createElement('div');
+            dropZone.tabIndex = 0;
+            Object.assign(dropZone.style, {
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.25rem',
+                width: '100%',
+                padding: '0.35rem 0.5rem',
+                border: '1px dashed #d1d5db',
+                borderRadius: '4px',
+                background: '#fafafa',
+                color: '#6b7280',
+                fontSize: '0.75rem',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                boxSizing: 'border-box',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                outline: 'none'
+            });
+            dropZone.innerHTML = '<span class="material-symbols-rounded" style="font-size: 0.9rem;">add_photo_alternate</span><span>Subir / Pegar</span>';
+            
+            // --- ESTADO: Con imagen (preview) ---
+            const previewContainer = document.createElement('div');
+            Object.assign(previewContainer.style, {
+                display: 'none',
+                position: 'relative',
+                width: '100%',
+                borderRadius: '4px',
+                overflow: 'hidden',
+                border: '1px solid #d1d5db'
+            });
+            
+            const previewImg = document.createElement('img');
+            Object.assign(previewImg.style, {
+                width: '100%',
+                height: '60px',
+                objectFit: 'cover',
+                display: 'block',
+                cursor: 'pointer',
+                borderRadius: '3px'
+            });
+            previewImg.alt = 'Preview tela';
+            
+            // Botón eliminar imagen (X rojo)
+            const btnRemove = document.createElement('button');
+            btnRemove.type = 'button';
+            Object.assign(btnRemove.style, {
+                position: 'absolute',
+                top: '2px',
+                right: '2px',
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                border: 'none',
+                background: '#ef4444',
+                color: 'white',
+                fontSize: '0.65rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0',
+                lineHeight: '1',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                zIndex: '2'
+            });
+            btnRemove.innerHTML = '<span class="material-symbols-rounded" style="font-size: 0.75rem;">close</span>';
+            
+            previewContainer.appendChild(previewImg);
+            previewContainer.appendChild(btnRemove);
+            
+            // === FUNCIÓN: Cargar imagen y mostrar preview ===
+            const cargarImagen = (file) => {
+                if (!file || !file.type.startsWith('image/')) return;
+                
+                // Guardar archivo en un DataTransfer para que el input file lo tenga
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                inputImagen.files = dt.files;
+                
+                // Mostrar preview
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImg.src = e.target.result;
+                    dropZone.style.display = 'none';
+                    previewContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            };
+            
+            // === FUNCIÓN: Eliminar imagen ===
+            const eliminarImagen = () => {
+                const dt = new DataTransfer();
+                inputImagen.files = dt.files;
+                previewImg.src = '';
+                previewContainer.style.display = 'none';
+                dropZone.style.display = 'flex';
+                dropZone.style.borderColor = '#d1d5db';
+                dropZone.style.background = '#fafafa';
+            };
+            
+            // --- EVENTO: Click en drop zone abre file dialog ---
+            dropZone.addEventListener('click', () => inputImagen.click());
+            
+            // --- EVENTO: Click en preview abre file dialog para cambiar ---
+            previewImg.addEventListener('click', () => inputImagen.click());
+            
+            // --- EVENTO: Botón eliminar ---
+            btnRemove.addEventListener('click', (e) => {
+                e.stopPropagation();
+                eliminarImagen();
+            });
+            
+            // --- EVENTO: Input file change ---
+            inputImagen.addEventListener('change', () => {
+                if (inputImagen.files.length) {
+                    cargarImagen(inputImagen.files[0]);
+                }
+            });
+            
+            // --- EVENTO: Drag & Drop ---
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.style.borderColor = '#3b82f6';
+                dropZone.style.background = '#eff6ff';
+                dropZone.style.borderStyle = 'solid';
+            });
+            
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.style.borderColor = '#d1d5db';
+                dropZone.style.background = '#fafafa';
+                dropZone.style.borderStyle = 'dashed';
+            });
+            
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.style.borderColor = '#d1d5db';
+                dropZone.style.background = '#fafafa';
+                dropZone.style.borderStyle = 'dashed';
+                
+                const files = e.dataTransfer.files;
+                if (files.length && files[0].type.startsWith('image/')) {
+                    cargarImagen(files[0]);
+                }
+            });
+            
+            // --- EVENTO: Ctrl+V (paste) ---
+            dropZone.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const items = e.clipboardData?.items;
+                if (!items) return;
+                
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.startsWith('image/')) {
+                        const file = items[i].getAsFile();
+                        if (file) cargarImagen(file);
+                        break;
+                    }
+                }
+            });
+            
+            // --- EVENTO: Hover en drop zone ---
+            dropZone.addEventListener('mouseover', () => {
+                if (previewContainer.style.display === 'none') {
+                    dropZone.style.borderColor = '#3b82f6';
+                    dropZone.style.color = '#3b82f6';
+                    dropZone.style.background = '#eff6ff';
+                }
+            });
+            dropZone.addEventListener('mouseout', () => {
+                if (previewContainer.style.display === 'none') {
+                    dropZone.style.borderColor = '#d1d5db';
+                    dropZone.style.color = '#6b7280';
+                    dropZone.style.background = '#fafafa';
+                }
+            });
+            
+            // --- EVENTO: Focus para Ctrl+V ---
+            dropZone.addEventListener('focus', () => {
+                dropZone.style.borderColor = '#3b82f6';
+                dropZone.style.boxShadow = '0 0 0 2px rgba(59,130,246,0.2)';
+            });
+            dropZone.addEventListener('blur', () => {
+                if (previewContainer.style.display === 'none') {
+                    dropZone.style.borderColor = '#d1d5db';
+                }
+                dropZone.style.boxShadow = 'none';
+            });
+            
+            wrapper.appendChild(inputImagen);
+            wrapper.appendChild(dropZone);
+            wrapper.appendChild(previewContainer);
+            return wrapper;
+        },
+
+        /**
+         * Crear input de observaciones (compacto, una línea)
+         */
+        crearInputObservaciones() {
+            const inputObs = document.createElement('input');
+            inputObs.type = 'text';
+            inputObs.className = 'observaciones-input-wizard';
+            inputObs.placeholder = 'Notas...';
+            Object.assign(inputObs.style, {
+                padding: '0.4rem 0.5rem',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                fontSize: '0.8rem',
+                background: 'white',
+                width: '100%',
+                boxSizing: 'border-box'
+            });
+            
+            return inputObs;
         },
 
         /**

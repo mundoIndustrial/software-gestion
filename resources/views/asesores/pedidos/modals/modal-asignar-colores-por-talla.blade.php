@@ -1,6 +1,6 @@
 <!-- MODAL: Asignar Colores por Talla (Wizard Dedicado) -->
 <div id="modal-asignar-colores-por-talla" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modal-asignar-colores-titulo" aria-hidden="true" data-backdrop="static" data-keyboard="false" style="z-index: 1060000 !important;">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog modal-xl" role="document" style="max-width: 98vw; width: 98vw; margin: 1vh auto;">
         <div class="modal-content">
             <!-- Header -->
             <div class="modal-header modal-header-primary" style="border-bottom: 2px solid #0066cc;">
@@ -174,6 +174,23 @@
     #modal-asignar-colores-por-talla.modal.show {
         z-index: 99999 !important;
         display: flex !important;
+    }
+
+    #modal-asignar-colores-por-talla .modal-dialog {
+        max-width: 98vw !important;
+        width: 98vw !important;
+        margin: 1vh auto !important;
+    }
+
+    #modal-asignar-colores-por-talla .modal-content {
+        max-height: 96vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    #modal-asignar-colores-por-talla .modal-body {
+        overflow-y: auto !important;
+        flex: 1 !important;
     }
     
     /* Backdrop del modal */

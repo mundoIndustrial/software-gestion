@@ -519,6 +519,17 @@ table textarea {
     width: 95%;
 }
 
+/* ====================== MODAL AGREGAR PRENDA - FULL SCREEN ====================== */
+#modal-agregar-prenda-nueva {
+    padding: 1vh 1vw !important;
+}
+
+#modal-agregar-prenda-nueva .modal-container {
+    max-width: 98vw !important;
+    width: 98vw !important;
+    max-height: 98vh !important;
+}
+
 .modal-header {
     padding: 1.5rem;
     border-bottom: 2px solid #e5e7eb;

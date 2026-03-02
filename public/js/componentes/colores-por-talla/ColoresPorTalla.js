@@ -392,23 +392,52 @@ window.ColoresPorTalla = (function() {
             const asignacionesPorTalla = {};
             const coloresInput = document.querySelectorAll('.color-input-wizard');
             const cantidadInput = document.querySelectorAll('.cantidad-input-wizard');
+            const referenciaInput = document.querySelectorAll('.referencia-input-wizard');
+            const imagenInput = document.querySelectorAll('.imagen-tela-wizard');
+            const observacionesInput = document.querySelectorAll('.observaciones-input-wizard');
             
-            // Agrupar colores por talla (con objeto {nombre, cantidad})
+            // Agrupar colores por talla (con objeto {nombre, cantidad, referencia, imagen, observaciones})
             coloresInput.forEach((inputColor, i) => {
                 const talla = inputColor.dataset.talla;
                 const cantidad = cantidadInput[i] ? parseInt(cantidadInput[i].value) || 0 : 0;
                 const color = inputColor.value.trim().toUpperCase();
+                const referencia = referenciaInput[i] ? referenciaInput[i].value.trim().toUpperCase() : '';
+                const observaciones = observacionesInput[i] ? observacionesInput[i].value.trim() : '';
+                const imagenFile = imagenInput[i] ? imagenInput[i].files[0] : null;
                 
                 // Solo procesar si hay color y cantidad > 0, y si la talla está en nuestra lista
                 if (color && cantidad > 0 && talla && tallas.includes(talla)) {
                     if (!asignacionesPorTalla[talla]) {
                         asignacionesPorTalla[talla] = [];
                     }
-                    // Guardar como objeto con nombre y cantidad
-                    asignacionesPorTalla[talla].push({
+                    // Guardar como objeto con nombre, cantidad, referencia, observaciones e imagen
+                    const colorData = {
                         nombre: color,
                         cantidad: cantidad
-                    });
+                    };
+                    
+                    // Agregar referencia si existe
+                    if (referencia) {
+                        colorData.referencia = referencia;
+                    }
+                    
+                    // Agregar observaciones si existen
+                    if (observaciones) {
+                        colorData.observaciones = observaciones;
+                    }
+                    
+                    // Procesar imagen si existe
+                    if (imagenFile) {
+                        // Convertir archivo a Base64 para almacenamiento temporal
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            colorData.imagen_base64 = e.target.result;
+                        };
+                        reader.readAsDataURL(imagenFile);
+                        colorData.imagen_nombre = imagenFile.name;
+                    }
+                    
+                    asignacionesPorTalla[talla].push(colorData);
                 }
             });
             
