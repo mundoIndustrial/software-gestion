@@ -1460,6 +1460,7 @@
     <script src="{{ asset('js/lazy-loaders/prenda-editor-preloader.js') }}"></script>
     <script src="{{ asset('js/lazy-loaders/prenda-editor-loader-modular.js') }}"></script>
     <script src="{{ asset('js/lazy-loaders/epp-manager-loader.js') }}"></script>
+    <script defer src="{{ asset('js/componentes/epp-agregar-pedido.js') }}"></script>
 
     <!-- Scripts para edición de prendas desde lista de pedidos (requeridos por editarPrendaDePedido) -->
     <script defer src="{{ asset('js/modulos/crear-pedido/prendas/prenda-editor.js') }}"></script>
@@ -1467,6 +1468,7 @@
     <script defer src="{{ asset('js/modulos/crear-pedido/telas/telas-module/manejo-imagenes.js') }}"></script>
     <script defer src="{{ asset('js/componentes/prenda-form-collector.js') }}"></script>
     <script defer src="{{ asset('js/componentes/prenda-editor-pedidos-adapter.js') }}"></script>
+    <script defer src="{{ asset('js/componentes/prenda-agregar-pedido.js') }}"></script>
     
     <!-- Inicializador de servicios de imágenes -->
     <script src="{{ asset('js/modulos/crear-pedido/inicializadores/init-storage-servicios.js') }}"></script>

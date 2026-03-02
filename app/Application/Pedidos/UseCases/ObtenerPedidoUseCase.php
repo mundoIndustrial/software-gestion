@@ -950,7 +950,10 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                     'ppt.talla',
                     'pptc.tela_nombre',
                     'pptc.color_nombre',
-                    'pptc.cantidad'
+                    'pptc.cantidad',
+                    'pptc.referencia',
+                    'pptc.observaciones',
+                    'pptc.imagen_ruta'
                 ])
                 ->get()
                 ->toArray();

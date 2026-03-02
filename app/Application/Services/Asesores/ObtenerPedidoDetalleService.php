@@ -670,13 +670,74 @@ class ObtenerPedidoDetalleService
                 'ptc.tela_nombre',
                 'ptc.color_id',
                 'ptc.color_nombre',
-                'ptc.cantidad'
+                'ptc.cantidad',
+                'ptc.referencia',
+                'ptc.observaciones',
+                'ptc.imagen_ruta'
             ])
             ->get()
             ->toArray();
 
+        // Asignar talla_colores al array de la prenda
         $prendaArray['talla_colores'] = $tallaColores;
+
+        // NUEVO: Normalizar imagen_ruta para agregar /storage/ si no lo tiene
+        if (!empty($prendaArray['talla_colores'])) {
+            $prendaArray['talla_colores'] = array_map(function($color) {
+                if ($color->imagen_ruta) {
+                    $ruta = str_replace('\\', '/', $color->imagen_ruta);
+                    if (!str_starts_with($ruta, '/storage/')) {
+                        if (str_starts_with($ruta, 'storage/')) {
+                            $ruta = '/' . $ruta;
+                        } elseif (!str_starts_with($ruta, '/')) {
+                            $ruta = '/storage/' . $ruta;
+                        }
+                    }
+                    $color->imagen_ruta = $ruta;
+                }
+                return $color;
+            }, $prendaArray['talla_colores']);
+        }
+        
         Log::info('🎨 [TALLA-COLORES] Encontrados ' . count($tallaColores) . ' registros de colores por talla');
+        
+        // NUEVO: Construir asignacionesColoresPorTalla desde talla_colores para compatibilidad con invoice y edit
+        $asignacionesColoresPorTalla = [];
+        if (!empty($prendaArray['talla_colores'])) {
+            foreach ($prendaArray['talla_colores'] as $color) {
+                // Determinar tipo de talla (IGUAL AL FRONTEND: "Letra" o "Número")
+                $tipoTalla = preg_match('/^\d+$/', $color->talla) ? 'Número' : 'Letra';
+                
+                // Clave: genero-tipoTalla-talla (ej: dama-Letra-L o caballero-Número-36)
+                // ESTO DEBE COINCIDIR CON EL FRONTEND (cargar-prendas-cotizacion.js)
+                $generoLower = strtolower($color->genero);
+                $clave = $generoLower . '-' . $tipoTalla . '-' . $color->talla;
+                
+                if (!isset($asignacionesColoresPorTalla[$clave])) {
+                    $asignacionesColoresPorTalla[$clave] = [
+                        'genero' => $generoLower,
+                        'tela' => $color->tela_nombre ?? 'SIN_TELA',
+                        'tipo' => $tipoTalla,
+                        'talla' => $color->talla,
+                        'colores' => []
+                    ];
+                }
+                
+                $asignacionesColoresPorTalla[$clave]['colores'][] = [
+                    'nombre' => $color->color_nombre,
+                    'cantidad' => $color->cantidad,
+                    'referencia' => $color->referencia,
+                    'observaciones' => $color->observaciones,
+                    'imagen_ruta' => $color->imagen_ruta  // ← CRUCIAL: Incluir imagen_ruta
+                ];
+            }
+        }
+        $prendaArray['asignacionesColoresPorTalla'] = $asignacionesColoresPorTalla;
+        
+        Log::info('🎨 [ASIGNACIONES-COLORES-CONSTRUIDAS] Construido desde talla_colores', [
+            'cantidad_claves' => count($asignacionesColoresPorTalla),
+            'claves' => array_keys($asignacionesColoresPorTalla)
+        ]);
         
         // DEBUG: Log detallado de talla_colores para supervisor-pedidos
         Log::info('🐛 [DEBUG-TALLA-COLORES] Estructura completa de talla_colores', [

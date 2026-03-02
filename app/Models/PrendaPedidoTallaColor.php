@@ -19,6 +19,8 @@ class PrendaPedidoTallaColor extends Model
         'color_nombre',
         'cantidad',
         'observaciones',
+        'referencia',
+        'imagen_ruta',
     ];
 
     protected $casts = [

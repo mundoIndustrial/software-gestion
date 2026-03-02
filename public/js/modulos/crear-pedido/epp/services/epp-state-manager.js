@@ -10,6 +10,7 @@ class EppStateManager {
             imagenesSubidas: [],
             editandoId: null,
             pedidoEppId: null,
+            pedidoId: null,
             editandoDesdeDB: false,
             itemsData: {}
         };
@@ -84,6 +85,27 @@ class EppStateManager {
     }
 
     /**
+     * Establecer pedido ID (para agregar EPP a pedido existente)
+     */
+    setPedidoId(pedidoId) {
+        this.estado.pedidoId = pedidoId;
+    }
+
+    /**
+     * Obtener pedido ID
+     */
+    getPedidoId() {
+        return this.estado.pedidoId;
+    }
+
+    /**
+     * Obtener EPP ID seleccionado (producto seleccionado o editando)
+     */
+    getEppIdSeleccionado() {
+        return this.estado.productoSeleccionado?.id || this.estado.editandoId;
+    }
+
+    /**
      * Obtener ID siendo editado
      */
     getEditandoId() {
@@ -145,6 +167,7 @@ class EppStateManager {
             imagenesSubidas: [],
             editandoId: null,
             pedidoEppId: null,
+            pedidoId: null,
             editandoDesdeDB: false,
             itemsData: {}
         };

@@ -148,6 +148,36 @@ class FacturaPedidoService
         // 🔴 NUEVO: Obtener colores asignados por talla desde BD
         $tallaColores = $this->obtenerTallaColoresDesdeDB($prenda->id);
 
+        // 🔴 NUEVO: Construir asignacionesColoresPorTalla para compatibilidad con invoice renderer
+        $asignacionesColoresPorTalla = [];
+        foreach ($tallaColores as $color) {
+            // Determinar tipo de talla (IGUAL AL FRONTEND: "Letra" o "Número")
+            $tipoTalla = preg_match('/^\d+$/', $color->talla) ? 'Número' : 'Letra';
+            
+            // Clave: genero-tipoTalla-talla (ej: dama-Letra-L o caballero-Número-36)
+            // ESTO DEBE COINCIDIR CON EL FRONTEND (cargar-prendas-cotizacion.js)
+            $generoLower = strtolower($color->genero);
+            $clave = $generoLower . '-' . $tipoTalla . '-' . $color->talla;
+            
+            if (!isset($asignacionesColoresPorTalla[$clave])) {
+                $asignacionesColoresPorTalla[$clave] = [
+                    'genero' => $generoLower,
+                    'tela' => $color->tela_nombre ?? 'SIN_TELA',
+                    'tipo' => $tipoTalla,
+                    'talla' => $color->talla,
+                    'colores' => []
+                ];
+            }
+            
+            $asignacionesColoresPorTalla[$clave]['colores'][] = [
+                'nombre' => $color->color_nombre,
+                'cantidad' => $color->cantidad,
+                'referencia' => $color->referencia,
+                'observaciones' => $color->observaciones,
+                'imagen_ruta' => $color->imagen_ruta
+            ];
+        }
+
         // Construir prenda formateada
         return [
             'id' => $prenda->id,
@@ -167,6 +197,7 @@ class FacturaPedidoService
             'referencias_array' => $datosTelas['referencias'],
             'tallas' => $this->construirTallasPorGenero($prenda),
             'talla_colores' => $tallaColores,  // 🔴 NUEVO: Colores asignados por talla
+            'asignacionesColoresPorTalla' => $asignacionesColoresPorTalla,  // 🔴 NUEVO: Para invoice renderer
             'variantes' => $variantesArray,  // 🔴 AHORA: Array de variantes (manga, broche, bolsillos)
             'procesos' => $procesos,
             'generosConTallas' => $this->construirGenerosConTallas($prenda),
@@ -178,7 +209,7 @@ class FacturaPedidoService
      */
     private function obtenerTallaColoresDesdeDB(int $prendaId): array
     {
-        return \DB::table('prenda_pedido_talla_colores as ptc')
+        $tallaColores = \DB::table('prenda_pedido_talla_colores as ptc')
             ->join('prenda_pedido_tallas as pt', 'ptc.prenda_pedido_talla_id', '=', 'pt.id')
             ->where('pt.prenda_pedido_id', $prendaId)
             ->select([
@@ -190,10 +221,29 @@ class FacturaPedidoService
                 'ptc.tela_nombre',
                 'ptc.color_id',
                 'ptc.color_nombre',
-                'ptc.cantidad'
+                'ptc.cantidad',
+                'ptc.referencia',
+                'ptc.observaciones',
+                'ptc.imagen_ruta'
             ])
             ->get()
             ->toArray();
+
+        // Normalizar imagen_ruta para agregar /storage/ si no lo tiene
+        return array_map(function($color) {
+            if ($color->imagen_ruta) {
+                $ruta = str_replace('\\', '/', $color->imagen_ruta);
+                if (!str_starts_with($ruta, '/storage/')) {
+                    if (str_starts_with($ruta, 'storage/')) {
+                        $ruta = '/' . $ruta;
+                    } elseif (!str_starts_with($ruta, '/')) {
+                        $ruta = '/storage/' . $ruta;
+                    }
+                }
+                $color->imagen_ruta = $ruta;
+            }
+            return $color;
+        }, $tallaColores);
     }
 
     /**

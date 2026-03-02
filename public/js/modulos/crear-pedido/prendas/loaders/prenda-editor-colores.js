@@ -31,8 +31,33 @@ class PrendaEditorColores {
         // Guardar referencia interna de asignaciones agrupadas
         this._asignacionesAgrupadas = JSON.parse(JSON.stringify(prenda.asignacionesColoresPorTalla));
         
-        // Renderizar tabla agrupada (igual que ColoresPorTalla.js)
-        this._renderizarTablaAgrupada();
+        //  Replicar a global para que sea editable
+        window.ColoresPorTalla = window.ColoresPorTalla || {};
+        window.ColoresPorTalla.datos = JSON.parse(JSON.stringify(prenda.asignacionesColoresPorTalla));
+        console.log('[Carga]  Asignaciones de colores replicadas en ColoresPorTalla');
+        
+        // Poblar StateManager PRIMERO (para que actualizarTablaResumen lo lea)
+        if (window.StateManager && typeof window.StateManager.agregarAsignacion === 'function') {
+            // Limpiar asignaciones previas antes de cargar nuevas
+            if (typeof window.StateManager.limpiarAsignaciones === 'function') {
+                window.StateManager.limpiarAsignaciones();
+            }
+            Object.entries(prenda.asignacionesColoresPorTalla).forEach(([clave, asignacion]) => {
+                window.StateManager.agregarAsignacion(clave, JSON.parse(JSON.stringify(asignacion)));
+            });
+            console.log('[Carga]  Asignaciones replicadas en StateManager');
+        }
+        
+        // Usar ColoresPorTalla.actualizarTablaResumen() para renderizar Y vincular eventos
+        // Esto garantiza que los botones editar/eliminar funcionen (misma lógica que en creación)
+        if (window.ColoresPorTalla && typeof window.ColoresPorTalla.actualizarTablaResumen === 'function') {
+            window.ColoresPorTalla.actualizarTablaResumen();
+            console.log('[Carga]  Tabla renderizada via ColoresPorTalla.actualizarTablaResumen()');
+        } else {
+            // Fallback: renderizar manualmente si ColoresPorTalla no está listo
+            console.warn('[Carga]  ColoresPorTalla no disponible, renderizado manual');
+            this._renderizarTablaAgrupada();
+        }
         
         // Mostrar sección
         this._mostrarSeccion();
@@ -40,19 +65,6 @@ class PrendaEditorColores {
         // Flujo 2: Ocultar tarjetas de tallas individuales
         this._ocultarTarjetasTallas();
         console.log('[Colores]  Flujo 2 detectado - tarjetas de tallas ocultadas');
-        
-        //  Replicar a global para que sea editable
-        window.ColoresPorTalla = window.ColoresPorTalla || {};
-        window.ColoresPorTalla.datos = JSON.parse(JSON.stringify(prenda.asignacionesColoresPorTalla));
-        console.log('[Carga]  Asignaciones de colores replicadas en ColoresPorTalla');
-        
-        // También poblar StateManager si existe (para que el wizard lo reconozca)
-        if (window.StateManager && typeof window.StateManager.agregarAsignacion === 'function') {
-            Object.entries(prenda.asignacionesColoresPorTalla).forEach(([clave, asignacion]) => {
-                window.StateManager.agregarAsignacion(clave, JSON.parse(JSON.stringify(asignacion)));
-            });
-            console.log('[Carga]  Asignaciones replicadas en StateManager');
-        }
         
         console.log(' [Colores] Completado');
     }
@@ -100,11 +112,14 @@ class PrendaEditorColores {
             const refs = [...new Set(colores.map(c => c.referencia).filter(Boolean))];
             const refHtml = refs.length > 0 ? refs.join(', ') : '-';
             
-            // Combinar imágenes
+            // Combinar imágenes (soporta blob local via imagen_id O ruta del servidor via imagen_ruta)
             let imgsHtml = '<span style="color:#9ca3af;font-size:0.75rem;">—</span>';
-            const conImagen = colores.filter(c => c.imagen_id);
-            if (conImagen.length > 0) {
-                const imgParts = conImagen.map(c => {
+            const conImagenBlob = colores.filter(c => c.imagen_id);
+            const conImagenServidor = colores.filter(c => c.imagen_ruta && !c.imagen_id);
+            if (conImagenBlob.length > 0 || conImagenServidor.length > 0) {
+                let partsHtml = '';
+                // Imágenes locales (blob)
+                partsHtml += conImagenBlob.map(c => {
                     const blobUrl = this._getBlobUrl(c.imagen_id);
                     if (blobUrl) {
                         return `<img src="${blobUrl}" style="width:28px;height:28px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;margin:1px;" alt="img">`;
@@ -112,10 +127,20 @@ class PrendaEditorColores {
                         return `<span style="color:#6b7280;font-size:0.7rem;">${c.imagen_nombre}</span>`;
                     }
                     return '';
-                }).filter(Boolean);
-                if (imgParts.length > 0) {
-                    imgsHtml = imgParts.join('');
-                }
+                }).filter(Boolean).join('');
+                // Imágenes del servidor (guardadas en storage)
+                partsHtml += conImagenServidor.map(c => {
+                    let src = c.imagen_ruta;
+                    if (src.startsWith('/storage/')) {
+                        // ya OK
+                    } else if (src.startsWith('storage/')) {
+                        src = '/' + src;
+                    } else if (!src.startsWith('/')) {
+                        src = '/storage/' + src;
+                    }
+                    return `<img src="${src}" style="width:28px;height:28px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;margin:1px;" alt="img">`;
+                }).join('');
+                imgsHtml = partsHtml || '<span style="color:#9ca3af;font-size:0.75rem;">—</span>';
             }
             
             // Combinar observaciones (únicas, no vacías)

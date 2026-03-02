@@ -399,6 +399,8 @@ class PedidoWebService
                                         $colorId = $colorRecord?->id;
                                         
                                         $colorObservaciones = $colorItem['observaciones'] ?? null;
+                                        $colorReferencia = $colorItem['referencia'] ?? null;
+                                        $colorImagenRuta = $colorItem['imagen_ruta'] ?? null;
                                         
                                         $prendaPedidoTalla->coloresAsignados()->create([
                                             'tela_id' => $telaId,
@@ -407,6 +409,8 @@ class PedidoWebService
                                             'color_nombre' => $colorNombre,
                                             'cantidad' => (int)$colorCantidad,
                                             'observaciones' => $colorObservaciones,
+                                            'referencia' => $colorReferencia,
+                                            'imagen_ruta' => $colorImagenRuta,
                                         ]);
                                         
                                         Log::info('[PedidoWebService] Color guardado en tabla relacional', [

@@ -123,12 +123,20 @@
                         <h3 style="margin: 0; color: white; font-size: 20px; font-weight: 700; flex: 1;">
                             Selecciona una Prenda para Editar
                         </h3>
-                        <button onclick="abrirModalEditarPedido(window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido, window.datosEdicionPedido, 'editar');" 
-                            style="background: #ef4444; border: none; cursor: pointer; color: white; padding: 10px 16px; line-height: 1; transition: all 0.2s; font-weight: bold; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; white-space: nowrap; flex-shrink: 0;"
-                            onmouseover="this.style.opacity='0.8'; this.style.transform='scale(1.05)'"
-                            onmouseout="this.style.opacity='1'; this.style.transform='scale(1)'">
-                            ← Volver
-                        </button>
+                        <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
+                            <button onclick="agregarNuevaPrendaAPedido();" 
+                                style="background: #16a34a; border: none; cursor: pointer; color: white; padding: 10px 16px; line-height: 1; transition: all 0.2s; font-weight: bold; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; white-space: nowrap;"
+                                onmouseover="this.style.opacity='0.8'; this.style.transform='scale(1.05)'"
+                                onmouseout="this.style.opacity='1'; this.style.transform='scale(1)'">
+                                ＋ Agregar Prenda
+                            </button>
+                            <button onclick="abrirModalEditarPedido(window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido, window.datosEdicionPedido, 'editar');" 
+                                style="background: #ef4444; border: none; cursor: pointer; color: white; padding: 10px 16px; line-height: 1; transition: all 0.2s; font-weight: bold; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; white-space: nowrap;"
+                                onmouseover="this.style.opacity='0.8'; this.style.transform='scale(1.05)'"
+                                onmouseout="this.style.opacity='1'; this.style.transform='scale(1)'">
+                                ← Volver
+                            </button>
+                        </div>
                     </div>
                     
                     <!-- Content -->

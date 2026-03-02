@@ -126,16 +126,16 @@
                         <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; overflow-x: auto;">
                             <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
                                 <thead>
-                                    <tr style="background: #f3f4f6; border-bottom: 2px solid #d1d5db;">
-                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">TELA</th>
-                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">COLOR</th>
-                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">REFERENCIA</th>
-                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">IMAGEN</th>
-                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">OBSERVACIONES</th>
-                                        <th data-col="wizard-only" style="padding: 0.75rem; text-align: left; font-weight: 600;">GÉNERO</th>
-                                        <th data-col="wizard-only" style="padding: 0.75rem; text-align: left; font-weight: 600;">TALLA</th>
-                                        <th data-col="wizard-only" style="padding: 0.75rem; text-align: center; font-weight: 600; width: 80px;">CANT.</th>
-                                        <th style="padding: 0.75rem; text-align: center; font-weight: 600; width: 60px;">ACCIÓN</th>
+                                    <tr style="background: #0066cc; border-bottom: 2px solid #004d99;">
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: white;">TELA</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: white;">COLOR</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: white;">REFERENCIA</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: white;">IMAGEN</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: white;">OBSERVACIONES</th>
+                                        <th data-col="wizard-only" style="padding: 0.75rem; text-align: left; font-weight: 600; color: white;">GÉNERO</th>
+                                        <th data-col="wizard-only" style="padding: 0.75rem; text-align: left; font-weight: 600; color: white;">TALLA</th>
+                                        <th data-col="wizard-only" style="padding: 0.75rem; text-align: center; font-weight: 600; width: 80px; color: white;">CANT.</th>
+                                        <th style="padding: 0.75rem; text-align: center; font-weight: 600; width: 60px; color: white;">ACCIÓN</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabla-resumen-asignaciones-cuerpo"></tbody>

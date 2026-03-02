@@ -220,6 +220,8 @@
 
     // ====================================================
     // 3. agregarPrendaNueva — Guardar prenda editada (POST API)
+    //    Nota: El modo "agregar nueva prenda" se maneja en
+    //    prenda-agregar-pedido.js que wrappea esta función
     // ====================================================
     window.agregarPrendaNueva = function() {
         console.log('[PedidosAdapter] Guardando prenda editada');
@@ -445,6 +447,35 @@
             if (datos.asignacionesColoresPorTalla !== undefined && datos.asignacionesColoresPorTalla !== null) {
                 formData.append('asignaciones_colores', JSON.stringify(datos.asignacionesColoresPorTalla));
                 console.log('[PedidosAdapter] 🎨 asignaciones_colores enviado:', JSON.stringify(datos.asignacionesColoresPorTalla));
+
+                // 🔴 NUEVO: Extraer File objects de imágenes de color desde _imageStore
+                // Las imágenes están en ColoresPorTalla._imageStore referenciadas por imagen_id
+                if (window.ColoresPorTalla && typeof window.ColoresPorTalla.getImage === 'function') {
+                    let colorImgIdx = 0;
+                    Object.entries(datos.asignacionesColoresPorTalla).forEach(([clave, asignacion]) => {
+                        if (asignacion.colores && Array.isArray(asignacion.colores)) {
+                            asignacion.colores.forEach((colorItem) => {
+                                if (colorItem.imagen_id) {
+                                    const imgData = window.ColoresPorTalla.getImage(colorItem.imagen_id);
+                                    if (imgData && imgData.file) {
+                                        formData.append(`fotos_color[${colorImgIdx}]`, imgData.file);
+                                        formData.append(`fotos_color_meta[${colorImgIdx}]`, JSON.stringify({
+                                            clave: clave,
+                                            color_nombre: colorItem.nombre,
+                                            imagen_id: colorItem.imagen_id,
+                                            imagen_nombre: imgData.nombre || imgData.file.name
+                                        }));
+                                        console.log(`[PedidosAdapter] 📸 Imagen de color adjuntada: idx=${colorImgIdx}, clave=${clave}, color=${colorItem.nombre}, file=${imgData.nombre}`);
+                                        colorImgIdx++;
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    if (colorImgIdx > 0) {
+                        console.log(`[PedidosAdapter] 📸 Total imágenes de color adjuntadas: ${colorImgIdx}`);
+                    }
+                }
             }
 
             // Telas (JSON) - usar telasAgregadas o telas
@@ -1018,16 +1049,19 @@
             // Construir asignacionesColoresPorTalla (formato StateManager)
             const coloresPorTalla = {};
             prenda.talla_colores.forEach(tc => {
-                const genero = tc.genero || '';
+                const genero = (tc.genero || '').toLowerCase();
                 const talla = tc.talla || '';
                 const tela = tc.tela_nombre || '';
-                const key = `${genero}-${tela}-${talla}`;
+                // Determinar tipo de talla (IGUAL que cargar-prendas-cotizacion.js)
+                const tipoTalla = /^\d+$/.test(talla) ? 'Número' : 'Letra';
+                // Clave: genero-tipoTalla-talla (ej: dama-Letra-L)
+                const key = `${genero}-${tipoTalla}-${talla}`;
 
                 if (!coloresPorTalla[key]) {
                     coloresPorTalla[key] = {
                         genero: genero,
                         tela: tela,
-                        tipo: genero,
+                        tipo: tipoTalla,
                         talla: talla,
                         colores: []
                     };
@@ -1035,7 +1069,10 @@
 
                 coloresPorTalla[key].colores.push({
                     nombre: tc.color_nombre || '',
-                    cantidad: parseInt(tc.cantidad) || 0
+                    cantidad: parseInt(tc.cantidad) || 0,
+                    referencia: tc.referencia || '',
+                    observaciones: tc.observaciones || '',
+                    imagen_ruta: tc.imagen_ruta || null
                 });
             });
 

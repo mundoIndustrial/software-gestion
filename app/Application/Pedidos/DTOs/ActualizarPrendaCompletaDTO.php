@@ -36,9 +36,10 @@ final class ActualizarPrendaCompletaDTO
         public readonly ?array $fotosProcesoNuevo = null,              // [ indice => { ruta_original, ruta_webp } ] para procesos nuevos
         public readonly ?string $novedad = null,                       // Descripción de cambios realizados
         public readonly ?array $asignacionesColores = null,              // [ { genero, talla, tela, color, cantidad } ] → prenda_pedido_talla_colores
+        public readonly ?array $fotosColorProcesadas = null,            // [ idx => { ruta_original, ruta_webp, clave, color_nombre } ] imágenes de color
     ) {}
 
-    public static function fromRequest(int|string $prendaId, array $data, ?array $imagenes = null, ?array $imagenesExistentes = null, ?array $fotosTelasProcesadas = null, ?array $fotosProcesoNuevo = null): self
+    public static function fromRequest(int|string $prendaId, array $data, ?array $imagenes = null, ?array $imagenesExistentes = null, ?array $fotosTelasProcesadas = null, ?array $fotosProcesoNuevo = null, ?array $fotosColorProcesadas = null): self
     {
         // Parsear tallas - soporta 2 formatos:
         // Formato A (edición): { "DAMA": {"M": 30}, "CABALLERO": {} }  → ya es cantidadTalla
@@ -224,6 +225,7 @@ final class ActualizarPrendaCompletaDTO
             fotosProcesoNuevo: $fotosProcesoNuevo,
             novedad: $data['novedad'] ?? null,
             asignacionesColores: $asignacionesColores,
+            fotosColorProcesadas: $fotosColorProcesadas,
         );
     }
 }

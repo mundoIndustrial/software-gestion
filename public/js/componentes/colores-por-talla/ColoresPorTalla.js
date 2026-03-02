@@ -666,17 +666,34 @@ window.ColoresPorTalla = (function() {
             const refs = [...new Set(colores.map(c => c.referencia).filter(Boolean))];
             const refHtml = refs.length > 0 ? refs.join(', ') : '-';
             
-            // Combinar imágenes
+            // Combinar imágenes (soporta blob local via _imageStore O ruta del servidor via imagen_ruta)
             let imgsHtml = '<span style="color:#9ca3af;font-size:0.75rem;">—</span>';
-            const conImagen = colores.filter(c => c.imagen_id && _getImage(c.imagen_id));
-            if (conImagen.length > 0) {
-                imgsHtml = conImagen.map(c => {
+            const conImagenBlob = colores.filter(c => c.imagen_id && _getImage(c.imagen_id));
+            const conImagenServidor = colores.filter(c => c.imagen_ruta && !(c.imagen_id && _getImage(c.imagen_id)));
+            if (conImagenBlob.length > 0 || conImagenServidor.length > 0) {
+                let partsHtml = '';
+                // Imágenes locales (blob)
+                partsHtml += conImagenBlob.map(c => {
                     const imgData = _getImage(c.imagen_id);
                     if (imgData && imgData.blobUrl) {
                         return '<img src="' + imgData.blobUrl + '" style="width:28px;height:28px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;margin:1px;" alt="img">';
                     }
                     return '';
-                }).join('') || '<span style="color:#9ca3af;font-size:0.75rem;">—</span>';
+                }).join('');
+                // Imágenes del servidor (guardadas en storage)
+                partsHtml += conImagenServidor.map(c => {
+                    let src = c.imagen_ruta;
+                    // Normalizar: asegurar que empiece con /storage/ sin duplicar
+                    if (src.startsWith('/storage/')) {
+                        // ya tiene prefijo correcto
+                    } else if (src.startsWith('storage/')) {
+                        src = '/' + src;
+                    } else if (!src.startsWith('/')) {
+                        src = '/storage/' + src;
+                    }
+                    return '<img src="' + src + '" style="width:28px;height:28px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;margin:1px;" alt="img">';
+                }).join('');
+                imgsHtml = partsHtml || '<span style="color:#9ca3af;font-size:0.75rem;">—</span>';
             }
             
             // Combinar observaciones (únicas, no vacías)
@@ -843,7 +860,9 @@ window.ColoresPorTalla = (function() {
         if (!asig) return;
 
         // Almacenar IDs de imagen por color para el modal de edición
+        // Soporta tanto blobs locales (imagen_id) como imágenes del servidor (imagen_ruta)
         window._wizardEditImagenes = asig.colores.map(c => c.imagen_id || null);
+        window._wizardEditImagenesRuta = asig.colores.map(c => c.imagen_ruta || null);
 
         // Eliminar modal previo si existe
         const existing = document.getElementById('modal-editar-asignacion-wizard');
@@ -855,11 +874,24 @@ window.ColoresPorTalla = (function() {
             const cantidad = typeof color.cantidad === 'number' ? color.cantidad : 1;
             const referencia = color.referencia || '';
             const observaciones = color.observaciones || '';
-            const hasImg = !!(color.imagen_id && _getImage(color.imagen_id));
+            // Soportar blob local (imagen_id) O imagen guardada en servidor (imagen_ruta)
+            const hasBlobImg = !!(color.imagen_id && _getImage(color.imagen_id));
+            const hasServerImg = !!(color.imagen_ruta);
+            const hasImg = hasBlobImg || hasServerImg;
             let previewSrc = '';
-            if (hasImg) {
+            if (hasBlobImg) {
                 const imgData = _getImage(color.imagen_id);
                 previewSrc = imgData ? imgData.blobUrl : '';
+            } else if (hasServerImg) {
+                previewSrc = color.imagen_ruta;
+                // Normalizar ruta
+                if (!previewSrc.startsWith('/storage/')) {
+                    if (previewSrc.startsWith('storage/')) {
+                        previewSrc = '/' + previewSrc;
+                    } else if (!previewSrc.startsWith('/')) {
+                        previewSrc = '/storage/' + previewSrc;
+                    }
+                }
             }
 
             return `
@@ -957,6 +989,34 @@ window.ColoresPorTalla = (function() {
             _setupWizardEditDropZone(modal, idx);
         });
 
+        // Registrar como sub-modal en DragDropManager para interceptar Ctrl+V
+        if (window.DragDropManager && typeof window.DragDropManager.registrarSubModal === 'function') {
+            window.DragDropManager.registrarSubModal('modal-editar-asignacion-wizard', (file) => {
+                // Buscar el dropzone con foco, o el primero visible
+                const focusedDz = modal.querySelector('.wz-edit-dropzone:focus');
+                let targetIdx = null;
+                if (focusedDz) {
+                    targetIdx = parseInt(focusedDz.getAttribute('data-cidx'));
+                } else {
+                    // Usar el primer dropzone visible
+                    const visibleDz = modal.querySelector('.wz-edit-dropzone[style*="display:flex"], .wz-edit-dropzone[style*="display: flex"]');
+                    if (visibleDz) targetIdx = parseInt(visibleDz.getAttribute('data-cidx'));
+                }
+                if (targetIdx !== null && !isNaN(targetIdx)) {
+                    const id = _storeImage(file);
+                    window._wizardEditImagenes[targetIdx] = id;
+                    const imgData = _getImage(id);
+                    const preview = modal.querySelector(`.wz-edit-preview[data-cidx="${targetIdx}"]`);
+                    const dropzone = modal.querySelector(`.wz-edit-dropzone[data-cidx="${targetIdx}"]`);
+                    const previewImg = preview ? preview.querySelector('.wz-edit-preview-img') : null;
+                    if (previewImg) previewImg.src = imgData.blobUrl;
+                    if (dropzone) dropzone.style.display = 'none';
+                    if (preview) preview.style.display = 'block';
+                    console.log(`[ColoresPorTalla] ✅ Imagen pegada via DragDropManager en color idx=${targetIdx}`);
+                }
+            });
+        }
+
         // Cerrar
         modal.querySelectorAll('.btn-cerrar-wizard-edit').forEach(btn => {
             btn.addEventListener('click', () => jQuery(modal).modal('hide'));
@@ -969,8 +1029,13 @@ window.ColoresPorTalla = (function() {
 
         // Limpieza al cerrar
         jQuery(modal).on('hidden.bs.modal', function() {
+            // Desregistrar sub-modal
+            if (window.DragDropManager && typeof window.DragDropManager.desregistrarSubModal === 'function') {
+                window.DragDropManager.desregistrarSubModal('modal-editar-asignacion-wizard');
+            }
             modal.remove();
             window._wizardEditImagenes = [];
+            window._wizardEditImagenesRuta = [];
         });
 
         jQuery(modal).modal('show');
@@ -991,6 +1056,8 @@ window.ColoresPorTalla = (function() {
             if (!file || !file.type.startsWith('image/')) return;
             const id = _storeImage(file);
             window._wizardEditImagenes[idx] = id;
+            // Al subir nueva imagen, descartar la del servidor
+            if (window._wizardEditImagenesRuta) window._wizardEditImagenesRuta[idx] = null;
             const imgData = _getImage(id);
             previewImg.src = imgData.blobUrl;
             dropzone.style.display = 'none';
@@ -1001,6 +1068,7 @@ window.ColoresPorTalla = (function() {
             const oldId = window._wizardEditImagenes[idx];
             if (oldId) _removeImage(oldId);
             window._wizardEditImagenes[idx] = null;
+            if (window._wizardEditImagenesRuta) window._wizardEditImagenesRuta[idx] = null;
             previewImg.src = '';
             fileInput.value = '';
             preview.style.display = 'none';
@@ -1085,6 +1153,9 @@ window.ColoresPorTalla = (function() {
                     colorData.imagen_id = imgId;
                     colorData.imagen_nombre = imgData.nombre;
                 }
+            } else if (window._wizardEditImagenesRuta && window._wizardEditImagenesRuta[idx]) {
+                // Preservar imagen del servidor si no se cambió
+                colorData.imagen_ruta = window._wizardEditImagenesRuta[idx];
             }
             nuevosColores.push(colorData);
         });
@@ -1157,7 +1228,9 @@ window.ColoresPorTalla = (function() {
         actualizarTablaResumen,
         getWizardStatus,
         cleanupWizard,
-        getWizardInstance: () => wizardInstance
+        getWizardInstance: () => wizardInstance,
+        // Acceso a imágenes del almacén para enviar al backend
+        getImage: _getImage
     };
 })();
 

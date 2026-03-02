@@ -175,6 +175,8 @@
 <script defer src="{{ js_asset('js/modulos/crear-pedido/telas/telas-module/manejo-imagenes.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prenda-form-collector.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-adapter.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-agregar-pedido.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/epp-agregar-pedido.js') }}?v={{ $v }}"></script>
 
 <!-- Sistema de Actualización en Tiempo Real con WebSockets -->
 <!-- Nota: Los scripts de WebSockets se cargan automáticamente en el layout base para usuarios autenticados -->

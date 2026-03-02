@@ -418,10 +418,26 @@ final class ActualizarPrendaCompletaUseCase
         // O formato array plano: [ { genero, talla, tela, tela_id, color, color_id, cantidad } ]
         $asignacionesPlanas = [];
 
+        // Construir índice de fotos de color procesadas: "clave|color_nombre" => ruta_webp
+        $fotosColorIndex = [];
+        if (!empty($dto->fotosColorProcesadas)) {
+            foreach ($dto->fotosColorProcesadas as $fotoColor) {
+                $fKey = ($fotoColor['clave'] ?? '') . '|' . strtoupper($fotoColor['color_nombre'] ?? '');
+                $fotosColorIndex[$fKey] = $fotoColor['ruta_webp'] ?? null;
+            }
+            \Log::info('[ActualizarPrendaCompletaUseCase] Índice fotos color construido', [
+                'keys' => array_keys($fotosColorIndex)
+            ]);
+        }
+
         foreach ($dto->asignacionesColores as $key => $asignacion) {
             if (isset($asignacion['colores']) && is_array($asignacion['colores'])) {
                 // Formato objeto con colores anidados
                 foreach ($asignacion['colores'] as $colorData) {
+                    // Buscar imagen procesada para este color
+                    $fKey = $key . '|' . strtoupper($colorData['nombre'] ?? '');
+                    $imagenRuta = $fotosColorIndex[$fKey] ?? null;
+
                     $asignacionesPlanas[] = [
                         'genero' => strtoupper($asignacion['genero'] ?? ''),
                         'talla' => $asignacion['talla'] ?? '',
@@ -430,6 +446,9 @@ final class ActualizarPrendaCompletaUseCase
                         'color_nombre' => $colorData['nombre'] ?? '',
                         'color_id' => $colorData['color_id'] ?? null,
                         'cantidad' => (int)($colorData['cantidad'] ?? 0),
+                        'referencia' => $colorData['referencia'] ?? null,
+                        'observaciones' => $colorData['observaciones'] ?? null,
+                        'imagen_ruta' => $imagenRuta,
                     ];
                 }
             } else {
@@ -442,6 +461,9 @@ final class ActualizarPrendaCompletaUseCase
                     'color_nombre' => $asignacion['color'] ?? $asignacion['color_nombre'] ?? '',
                     'color_id' => $asignacion['color_id'] ?? null,
                     'cantidad' => (int)($asignacion['cantidad'] ?? 0),
+                    'referencia' => $asignacion['referencia'] ?? null,
+                    'observaciones' => $asignacion['observaciones'] ?? null,
+                    'imagen_ruta' => null,
                 ];
             }
         }
@@ -485,16 +507,28 @@ final class ActualizarPrendaCompletaUseCase
                 $colorId = $color?->id;
             }
 
-            \DB::table('prenda_pedido_talla_colores')->insert([
+            $insertData = [
                 'prenda_pedido_talla_id' => $tallaRecord->id,
                 'tela_id' => $telaId ?? 0,
                 'tela_nombre' => $asig['tela_nombre'],
                 'color_id' => $colorId ?? 0,
                 'color_nombre' => $asig['color_nombre'],
                 'cantidad' => $asig['cantidad'],
+                'referencia' => $asig['referencia'] ?? null,
+                'observaciones' => $asig['observaciones'] ?? null,
+                'imagen_ruta' => $asig['imagen_ruta'] ?? null,
                 'created_at' => now(),
                 'updated_at' => now(),
-            ]);
+            ];
+
+            \DB::table('prenda_pedido_talla_colores')->insert($insertData);
+
+            if (!empty($asig['imagen_ruta'])) {
+                \Log::info('[ActualizarPrendaCompletaUseCase] Color con imagen guardado', [
+                    'color' => $asig['color_nombre'],
+                    'imagen_ruta' => $asig['imagen_ruta'],
+                ]);
+            }
             $insertados++;
         }
 

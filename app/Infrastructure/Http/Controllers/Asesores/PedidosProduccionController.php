@@ -4,28 +4,14 @@ namespace App\Infrastructure\Http\Controllers\Asesores;
 
 use App\Domain\Shared\CQRS\QueryBus;
 use App\Domain\Shared\CQRS\CommandBus;
-use App\Domain\Pedidos\Queries\ObtenerPedidoQuery;
-use App\Domain\Pedidos\Queries\ListarPedidosQuery;
-use App\Domain\Pedidos\Queries\FiltrarPedidosPorEstadoQuery;
-use App\Domain\Pedidos\Queries\BuscarPedidoPorNumeroQuery;
-use App\Domain\Pedidos\Queries\ObtenerPrendasPorPedidoQuery;
-use App\Domain\Pedidos\Commands\CrearPedidoCommand;
-use App\Domain\Pedidos\Commands\ActualizarPedidoCommand;
-use App\Domain\Pedidos\Commands\CambiarEstadoPedidoCommand;
-use App\Domain\Pedidos\Commands\AgregarPrendaAlPedidoCommand;
 use App\Domain\Pedidos\Commands\EliminarPedidoCommand;
 use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
-use App\Models\ProcesoPrenda;
-use App\Models\Cotizacion;
-use App\Models\TipoProceso;
-use App\Models\Festivo;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 use App\Application\Pedidos\UseCases\ListarProduccionPedidosUseCase;
 use App\Application\Pedidos\UseCases\ObtenerProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
@@ -50,7 +36,6 @@ use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
 use App\Application\Pedidos\DTOs\ObtenerProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\ActualizarProduccionPedidoDTO;
-use App\Application\Pedidos\DTOs\AnularProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\CambiarEstadoPedidoDTO;
 use App\Application\Pedidos\DTOs\AgregarPrendaAlPedidoDTO;
 use App\Application\Pedidos\DTOs\FiltrarPedidosPorEstadoDTO;
@@ -756,6 +741,63 @@ class PedidosProduccionController
                 }
             }
 
+            // Procesar imágenes de colores: $request->file('fotos_color') retorna array de UploadedFile
+            $fotosColorFiles = $request->file('fotos_color') ?? [];
+            $fotosColorMetaAll = $request->input('fotos_color_meta') ?? [];
+            $colorFotoServiceCrear = new \App\Domain\Pedidos\Services\TelaFotoService();
+            $fotosColorMeta = [];
+
+            foreach ($fotosColorFiles as $indice => $archivo) {
+                if ($archivo && $archivo->isValid()) {
+                    try {
+                        $rutas = $colorFotoServiceCrear->procesarFoto($archivo, (int)$id, true);
+                        $metaRaw = $fotosColorMetaAll[$indice] ?? null;
+                        $meta = is_string($metaRaw) ? json_decode($metaRaw, true) : $metaRaw;
+
+                        $fotosColorMeta[] = [
+                            'ruta_webp' => $rutas['ruta_webp'] ?? $rutas['ruta_original'],
+                            'clave' => $meta['clave'] ?? '',
+                            'color_nombre' => $meta['color_nombre'] ?? '',
+                        ];
+
+                        Log::info('[PedidosProduccionController] Imagen de color (crear) procesada WebP', [
+                            'indice' => $indice,
+                            'ruta_webp' => $fotosColorMeta[count($fotosColorMeta)-1]['ruta_webp'],
+                            'clave' => $fotosColorMeta[count($fotosColorMeta)-1]['clave'],
+                            'color' => $fotosColorMeta[count($fotosColorMeta)-1]['color_nombre'],
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::warning('[PedidosProduccionController] Error procesando imagen color (crear)', [
+                            'indice' => $indice, 'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+            }
+            
+            // Inyectar rutas de imagen en asignaciones_colores antes de pasar al DTO
+            if (!empty($fotosColorMeta) && !empty($validated['asignaciones_colores'])) {
+                $asigColoresTemp = is_string($validated['asignaciones_colores']) 
+                    ? json_decode($validated['asignaciones_colores'], true) 
+                    : $validated['asignaciones_colores'];
+                
+                foreach ($fotosColorMeta as $fotoMeta) {
+                    $clave = $fotoMeta['clave'];
+                    $colorNombre = strtoupper($fotoMeta['color_nombre']);
+                    
+                    if (isset($asigColoresTemp[$clave]) && !empty($asigColoresTemp[$clave]['colores'])) {
+                        foreach ($asigColoresTemp[$clave]['colores'] as &$colorItem) {
+                            if (strtoupper($colorItem['nombre'] ?? '') === $colorNombre) {
+                                $colorItem['imagen_ruta'] = $fotoMeta['ruta_webp'];
+                                break;
+                            }
+                        }
+                        unset($colorItem);
+                    }
+                }
+                
+                $validated['asignaciones_colores'] = $asigColoresTemp;
+            }
+
             // Usar Use Case DDD
             $dto = AgregarPrendaCompletaDTO::fromRequest($id, $validated, $imagenesGuardadas, $imagenesExistentes);
             $prenda = $this->agregarPrendaCompletaUseCase->ejecutar($dto);
@@ -1149,6 +1191,50 @@ class PedidosProduccionController
                 }
             }
 
+            // Procesar imágenes de colores: $request->file('fotos_color') retorna array de UploadedFile
+            $fotosColorProcesadas = [];
+            $colorFotoService = new \App\Domain\Pedidos\Services\TelaFotoService();
+            $fotosColorFiles = $request->file('fotos_color') ?? [];
+            $fotosColorMetaAll = $request->input('fotos_color_meta') ?? [];
+
+            foreach ($fotosColorFiles as $indice => $archivo) {
+                if ($archivo && $archivo->isValid()) {
+                    try {
+                        // soloWebp=true: siempre guardar en WebP
+                        $rutas = $colorFotoService->procesarFoto($archivo, (int)$id, true);
+
+                        // Obtener meta asociada por índice
+                        $metaRaw = $fotosColorMetaAll[$indice] ?? null;
+                        $meta = is_string($metaRaw) ? json_decode($metaRaw, true) : $metaRaw;
+
+                        $fotosColorProcesadas[$indice] = [
+                            'ruta_webp' => $rutas['ruta_webp'] ?? $rutas['ruta_original'],
+                            'clave' => $meta['clave'] ?? '',
+                            'color_nombre' => $meta['color_nombre'] ?? '',
+                        ];
+
+                        Log::info('[PedidosProduccionController] Imagen de color procesada (WebP)', [
+                            'indice' => $indice,
+                            'archivo' => $archivo->getClientOriginalName(),
+                            'ruta_webp' => $fotosColorProcesadas[$indice]['ruta_webp'],
+                            'clave' => $fotosColorProcesadas[$indice]['clave'],
+                            'color_nombre' => $fotosColorProcesadas[$indice]['color_nombre'],
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::warning('[PedidosProduccionController] Error procesando imagen de color', [
+                            'indice' => $indice,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+            }
+            
+            if (!empty($fotosColorProcesadas)) {
+                Log::info('[PedidosProduccionController] Total imágenes de color procesadas', [
+                    'cantidad' => count($fotosColorProcesadas)
+                ]);
+            }
+
             // Usar Use Case DDD
             Log::info('[PedidosProduccionController] Datos validados para actualizar prenda', [
                 'origen_recibido' => $validated['origen'] ?? 'N/A',
@@ -1162,6 +1248,7 @@ class PedidosProduccionController
                 'fotos_telas_procesadas' => count($fotosTelasProcesadas),
                 'fotos_telas_detalles' => $fotosTelasProcesadas,
                 'fotos_proceso_nuevo_count' => count($fotosProcesoNuevo),
+                'fotos_color_procesadas' => count($fotosColorProcesadas),
                 'novedad_recibida' => $validated['novedad'] ?? 'SIN NOVEDAD',
             ]);
             
@@ -1185,7 +1272,7 @@ class PedidosProduccionController
             }
             
             // IMPORTANTE: Usar $validated['prenda_id'], NO $id (que es pedido_id)
-            $dto = ActualizarPrendaCompletaDTO::fromRequest($validated['prenda_id'], $validated, $imagenesGuardadas, $imagenesExistentes, $fotosTelasProcesadas, $fotosProcesoNuevo);
+            $dto = ActualizarPrendaCompletaDTO::fromRequest($validated['prenda_id'], $validated, $imagenesGuardadas, $imagenesExistentes, $fotosTelasProcesadas, $fotosProcesoNuevo, $fotosColorProcesadas);
             $prenda = $this->actualizarPrendaCompletaUseCase->ejecutar($dto);
 
             Log::info('[PedidosProduccionController] Prenda completa actualizada exitosamente', [

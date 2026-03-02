@@ -185,7 +185,16 @@ function abrirModalAgregarEPP() {
     inicializarEppService();
     const modal = document.getElementById('modal-agregar-epp');
     if (!modal) crearModalAgregarEPP();
-    if (window.eppService) window.eppService.abrirModalAgregar();
+    // Abrir modal directamente sin pasar por eppService.abrirModalAgregar()
+    // para evitar recursión infinita (eppService llama a abrirModalAgregarEPP)
+    const modalEl = document.getElementById('modal-agregar-epp');
+    if (modalEl) {
+        modalEl.style.display = 'flex';
+        // Inicializar el servicio si existe
+        if (window.eppService && !window.eppService.modalManager) {
+            window.eppService.inicializar();
+        }
+    }
 }
 
 function cerrarModalAgregarEPP() {

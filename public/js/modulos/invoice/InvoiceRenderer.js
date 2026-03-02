@@ -379,7 +379,8 @@ class InvoiceRenderer {
                                     if (coloresEnTalla.length > 0) {
                                         coloresConCantidad = coloresEnTalla.map(c => ({
                                             nombre: c.color_nombre || c.color || 'Sin color',
-                                            cantidad: c.cantidad || 1
+                                            cantidad: c.cantidad || 1,
+                                            imagen_ruta: c.imagen_ruta || null
                                         }));
                                     }
                                 }
@@ -393,7 +394,8 @@ class InvoiceRenderer {
                                     if (coloresEnTalla.length > 0) {
                                         coloresConCantidad = coloresEnTalla.map(c => ({
                                             nombre: c.color || c.color_nombre || 'Sin color',
-                                            cantidad: c.cantidad || 1
+                                            cantidad: c.cantidad || 1,
+                                            imagen_ruta: c.imagen_ruta || null
                                         }));
                                     }
                                 }
@@ -405,7 +407,8 @@ class InvoiceRenderer {
                                     if (asignacion && asignacion.colores && Array.isArray(asignacion.colores)) {
                                         coloresConCantidad = asignacion.colores.map(c => ({
                                             nombre: c.nombre || c.color_nombre || 'Sin color',
-                                            cantidad: c.cantidad || 1
+                                            cantidad: c.cantidad || 1,
+                                            imagen_ruta: c.imagen_ruta || null
                                         }));
                                     }
                                 }
@@ -416,7 +419,8 @@ class InvoiceRenderer {
                                     if (varianteColor && varianteColor.colores_asignados && Array.isArray(varianteColor.colores_asignados) && varianteColor.colores_asignados.length > 0) {
                                         coloresConCantidad = varianteColor.colores_asignados.map(c => ({
                                             nombre: c.color_nombre || c.color || c.nombre || 'N/A',
-                                            cantidad: c.cantidad || 1
+                                            cantidad: c.cantidad || 1,
+                                            imagen_ruta: c.imagen_ruta || null
                                         }));
                                     }
                                 }
@@ -432,7 +436,8 @@ class InvoiceRenderer {
                                         if (asignacion && asignacion.colores && Array.isArray(asignacion.colores) && asignacion.colores.length > 0) {
                                             coloresConCantidad = asignacion.colores.map(c => ({
                                                 nombre: c.nombre || c.color || c.color_nombre || 'N/A',
-                                                cantidad: c.cantidad || 1
+                                                cantidad: c.cantidad || 1,
+                                                imagen_ruta: c.imagen_ruta || null
                                             }));
                                         }
                                     } else {
@@ -456,7 +461,8 @@ class InvoiceRenderer {
                                             if (coloresArr.length > 0) {
                                                 coloresConCantidad = coloresArr.map(c => ({
                                                     nombre: c.nombre || c.color || c.color_nombre || 'N/A',
-                                                    cantidad: c.cantidad || 1
+                                                    cantidad: c.cantidad || 1,
+                                                    imagen_ruta: c.imagen_ruta || null
                                                 }));
                                             }
                                         }
@@ -471,7 +477,7 @@ class InvoiceRenderer {
                                             hayColores = true;
                                             const nombreColor = color.nombre.toUpperCase();
                                             if (!porColor[nombreColor]) porColor[nombreColor] = [];
-                                            porColor[nombreColor].push({ talla: tallaFinal, cantidad: color.cantidad });
+                                            porColor[nombreColor].push({ talla: tallaFinal, cantidad: color.cantidad, imagen_ruta: color.imagen_ruta || null });
                                         } else {
                                             if (!porColor['__SIN_COLOR__']) porColor['__SIN_COLOR__'] = [];
                                             porColor['__SIN_COLOR__'].push({ talla: tallaFinal, cantidad: color.cantidad });
@@ -507,7 +513,17 @@ class InvoiceRenderer {
                                             return a.talla.localeCompare(b.talla);
                                         });
                                         const tallasStr = tallasArr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
-                                        return `<div style="margin: 2px 0;"><strong style="color: #0369a1;">${color}:</strong> ${tallasStr}</div>`;
+                                        // Buscar imagen_ruta del color (primera no nula)
+                                        const imgRutaRaw = tallasArr.find(t => t.imagen_ruta)?.imagen_ruta || null;
+                                        // Normalizar ruta: Si no comienza con /storage/, agregarlo
+                                        let imgRuta = imgRutaRaw;
+                                        if (imgRuta && !imgRuta.startsWith('/storage/')) {
+                                            imgRuta = '/storage/' + (imgRuta.startsWith('/') ? imgRuta.slice(1) : imgRuta);
+                                        }
+                                        const imgHtml = imgRuta 
+                                            ? `<div style="margin: 3px 0 2px 0;"><img src="${imgRuta}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 3px; border: 1px solid #ddd;" onerror="this.style.display='none'"></div>` 
+                                            : '';
+                                        return `<div style="margin: 2px 0;"><strong style="color: #0369a1;">${color}:</strong> ${tallasStr}${imgHtml}</div>`;
                                     }).join('');
                             } else if (sinColorArr.length > 0) {
                                 sinColorArr.sort((a, b) => {
