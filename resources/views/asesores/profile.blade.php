@@ -8,6 +8,11 @@
 @endpush
 
 @section('content')
+@if(!$user)
+    <div class="alert alert-warning">
+        <p>No autorizado. Por favor, <a href="{{ route('login') }}">inicia sesión</a> nuevamente.</p>
+    </div>
+@else
 <div class="profile-container">
     <!-- Mensajes de éxito/error -->
     <div id="profileMessage" class="profile-message" style="display: none;">
@@ -19,7 +24,7 @@
     <div class="profile-header">
         <div class="profile-header-avatar">
             <div class="avatar-preview" id="avatarPreview">
-                @if($user->avatar)
+                @if($user && $user->avatar)
                     <img src="{{ asset('storage/avatars/' . $user->avatar) }}" alt="Avatar" id="avatarImage" class="avatar-img">
                 @else
                     <div class="avatar-placeholder-large">
@@ -259,6 +264,7 @@
         <!-- Fin de Tarjeta Principal Unificada -->
     </div>
 </div>
+@endif
 @endsection
 
 @push('scripts')

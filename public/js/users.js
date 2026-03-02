@@ -5,9 +5,11 @@ document.getElementById('buscarUsuario').addEventListener('input', function(e) {
     
     rows.forEach(row => {
         const name = row.querySelector('.user-info span')?.textContent.toLowerCase() || '';
-        const email = row.querySelectorAll('.table-cell')[2]?.textContent.toLowerCase() || '';
+        const cells = row.querySelectorAll('.table-cell');
+        const email = cells[1]?.textContent.toLowerCase() || '';
+        const telefono = cells[2]?.textContent.toLowerCase() || '';
         
-        if (name.includes(searchTerm) || email.includes(searchTerm)) {
+        if (name.includes(searchTerm) || email.includes(searchTerm) || telefono.includes(searchTerm)) {
             row.style.display = '';
         } else {
             row.style.display = 'none';
@@ -30,7 +32,13 @@ function closeCreateModal() {
     // Limpiar formulario
     document.getElementById('create_name').value = '';
     document.getElementById('create_email').value = '';
+    document.getElementById('create_telefono').value = '';
+    document.getElementById('create_avatar').value = '';
     document.getElementById('create_password').value = '';
+    
+    // Resetear preview de avatar
+    const previewDiv = document.getElementById('create_avatar_preview');
+    previewDiv.innerHTML = '<i class="fas fa-user" style="font-size: 40px; color: #999;"></i>';
     
     // Desmarcar todos los checkboxes de roles
     document.querySelectorAll('input[name="roles_ids[]"]').forEach(checkbox => {
@@ -46,33 +54,50 @@ function openEditModal(userId, name, email) {
     // Configurar la acción del formulario
     form.action = `/users/${userId}`;
     
-    // Llenar los campos
-    document.getElementById('edit_name').value = name;
-    document.getElementById('edit_email').value = email;
-    
     // Desmarcar todos los checkboxes primero
     document.querySelectorAll('input[name="roles_ids[]"]').forEach(checkbox => {
         checkbox.checked = false;
     });
     
-    // Obtener los roles del usuario desde la fila de la tabla
-    const row = document.querySelector(`tr[data-user-id="${userId}"]`);
-    
-    if (row) {
-        // Obtener todos los badges de rol
-        const badges = row.querySelectorAll('.badge:not(.badge-default)');
-        badges.forEach(badge => {
-            const roleName = badge.textContent.trim();
+    // Fetch de datos del usuario
+    fetch(`/users/${userId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error al cargar datos del usuario');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Llenar los campos
+            document.getElementById('edit_name').value = data.name;
+            document.getElementById('edit_email').value = data.email;
+            document.getElementById('edit_telefono').value = data.telefono || '';
             
-            // Encontrar el checkbox correspondiente
-            document.querySelectorAll('input[name="roles_ids[]"]').forEach(checkbox => {
-                const label = checkbox.parentElement.querySelector('span');
-                if (label && label.textContent.trim() === roleName) {
-                    checkbox.checked = true;
-                }
-            });
+            // Mostrar avatar si existe
+            const previewDiv = document.getElementById('edit_avatar_preview');
+            if (data.avatar) {
+                previewDiv.innerHTML = `<img src="${data.avatar}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            } else {
+                previewDiv.innerHTML = '<i class="fas fa-user" style="font-size: 40px; color: #999;"></i>';
+            }
+            
+            // Limpiar input de archivo
+            document.getElementById('edit_avatar').value = '';
+            
+            // Pre-seleccionar los roles usando IDs
+            if (data.roles_ids && data.roles_ids.length > 0) {
+                data.roles_ids.forEach(roleId => {
+                    const checkbox = document.getElementById(`edit_role_${roleId}`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cargar los datos del usuario');
         });
-    }
     
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -150,6 +175,29 @@ document.addEventListener('keydown', function(event) {
         }
     }
 });
+
+// ===== PREVIEW DE AVATARES =====
+function previewCreateAvatar(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('create_avatar_preview');
+            preview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function previewEditAvatar(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('edit_avatar_preview');
+            preview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
 
 // ===== AUTO-CERRAR ALERTAS DESPUÉS DE 5 SEGUNDOS =====
 document.addEventListener('DOMContentLoaded', function() {

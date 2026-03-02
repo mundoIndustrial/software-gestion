@@ -83,6 +83,16 @@ class CotizacionEppController extends Controller
                     $especificaciones = json_decode($especificaciones, true) ?? [];
                 }
                 
+                // En modo edición, SIEMPRE preservar las especificaciones existentes primero
+                if ($cotizacionIdEdicion) {
+                    $cotizacionExistente = Cotizacion::find($cotizacionIdEdicion);
+                    if ($cotizacionExistente && !empty($cotizacionExistente->especificaciones)) {
+                        $especificacionesExistentes = json_decode($cotizacionExistente->especificaciones, true) ?? [];
+                        // Mantener campos existentes que no se envían en la solicitud
+                        $especificaciones = array_merge($especificacionesExistentes, $especificaciones);
+                    }
+                }
+                
                 // Agregar información adicional a especificaciones
                 if (!empty($informacionAdicional)) {
                     $especificaciones['informacion_adicional'] = $informacionAdicional;
@@ -93,14 +103,26 @@ class CotizacionEppController extends Controller
                 $tiempoEntrega = $request->input('tiempo_entrega');
                 $cuentasAutorizadas = $request->input('cuentas_autorizadas');
                 
+                // Solo actualizar si vienen nuevos valores explícitamente
                 if (!empty($condicionesPago)) {
                     $especificaciones['condiciones_pago'] = $condicionesPago;
+                } elseif (!$cotizacionIdEdicion) {
+                    // Solo remover en nueva cotización, no en edición
+                    unset($especificaciones['condiciones_pago']);
                 }
+                
                 if (!empty($tiempoEntrega)) {
                     $especificaciones['tiempo_entrega'] = $tiempoEntrega;
+                } elseif (!$cotizacionIdEdicion) {
+                    // Solo remover en nueva cotización, no en edición
+                    unset($especificaciones['tiempo_entrega']);
                 }
+                
                 if (!empty($cuentasAutorizadas)) {
                     $especificaciones['cuentas_autorizadas'] = $cuentasAutorizadas;
+                } elseif (!$cotizacionIdEdicion) {
+                    // Solo remover en nueva cotización, no en edición
+                    unset($especificaciones['cuentas_autorizadas']);
                 }
 
                 // Obtener observaciones generales del textarea
@@ -474,45 +496,17 @@ class CotizacionEppController extends Controller
                 }
                 // ==================== FIN PRENDAS ====================
 
-                // En edición: eliminar items que ya no vienen (con sus imágenes/valores)
-                if ($cotizacionIdEdicion) {
-                    // Eliminar EPPs que ya no vienen
-                    $idsToDelete = DB::table('epp_items_cot')
-                        ->where('cotizacion_id', $cotizacion->id)
-                        ->when(count($keptItemIds) > 0, fn($q) => $q->whereNotIn('id', $keptItemIds))
-                        ->pluck('id');
-
-                    if ($idsToDelete->isNotEmpty()) {
-                        // Borrar archivos físicos antes de borrar registros
-                        $rutas = DB::table('epp_img_cot')->whereIn('epp_item_id', $idsToDelete)->pluck('ruta');
-                        foreach ($rutas as $ruta) {
-                            if ($ruta) {
-                                Storage::disk('public')->delete($ruta);
-                            }
-                        }
-                        DB::table('epp_img_cot')->whereIn('epp_item_id', $idsToDelete)->delete();
-                        DB::table('epp_valor_unitario')->whereIn('epp_item_id', $idsToDelete)->delete();
-                        DB::table('epp_items_cot')->whereIn('id', $idsToDelete)->delete();
-                    }
+                // En edición: SOLO eliminar items si viene un payload completo (detectar por items total)
+                // Si solo vienen algunos items en edición (ej: un solo EPP a editar), NO eliminar los que falten
+                // Solo eliminar cuando vindividualmente se reciba un comando de borrado explícito
+                if ($cotizacionIdEdicion && count($items) > 0) {
+                    // Solo eliminar si el usuario envió EXPRESAMENTE la lista (con clear_imagenes o payload completo)
+                    // Por ahora: NO eliminar items en modo edición a menos que sea una sincronización completa
+                    // Esto evita perder prendas cuando se edita solo un EPP
                     
-                    // Eliminar Prendas que ya no vienen
-                    $prendasToDelete = DB::table('prenda_items_cot')
-                        ->where('cotizacion_id', $cotizacion->id)
-                        ->when(count($keptPrendaIds) > 0, fn($q) => $q->whereNotIn('id', $keptPrendaIds))
-                        ->pluck('id');
-
-                    if ($prendasToDelete->isNotEmpty()) {
-                        // Borrar archivos físicos antes de borrar registros
-                        $rutasPrendas = DB::table('prenda_img_cot')->whereIn('prenda_item_id', $prendasToDelete)->pluck('ruta');
-                        foreach ($rutasPrendas as $ruta) {
-                            if ($ruta) {
-                                Storage::disk('public')->delete($ruta);
-                            }
-                        }
-                        DB::table('prenda_img_cot')->whereIn('prenda_item_id', $prendasToDelete)->delete();
-                        DB::table('prenda_valor_unitario')->whereIn('prenda_item_id', $prendasToDelete)->delete();
-                        DB::table('prenda_items_cot')->whereIn('id', $prendasToDelete)->delete();
-                    }
+                    // Se podría mejorar con un flag del cliente que indique "sincronización completa" vs "edición parcial"
+                    // Por ahora, mantener todos los items existentes
+                    Log::info('[CotizacionEppController] Modo edición: preservando items existentes que no vienen en payload');
                 }
 
                 if (!$esBorrador) {

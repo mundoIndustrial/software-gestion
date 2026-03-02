@@ -410,9 +410,11 @@ NIT 1.093.738.433-3</textarea>
 
             <div class="form-actions">
                 <div style="display: flex; gap: 0.5rem; flex: 1; justify-content: flex-end;">
+                    @if(!isset($cotizacion) || !$cotizacion)
                     <button id="btnGuardarBorradorEpp" type="button" class="btn btn-primary" style="padding: 0.5rem 1.2rem; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); border: 2px solid #3d8b40; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; font-size: 0.85rem; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='linear-gradient(135deg, #45a049 0%, #3d8b40 100%)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(76, 175, 80, 0.2)';" onmouseout="this.style.background='linear-gradient(135deg, #4CAF50 0%, #45a049 100%)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
                         <i class="fas fa-save" style="font-size: 0.9rem;"></i> Guardar Borrador
                     </button>
+                    @endif
                     <button id="btnEnviarCotizacionEpp" type="button" class="btn btn-primary" style="padding: 0.5rem 1.2rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); border: 2px solid #003d7a; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; font-size: 0.85rem; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='linear-gradient(135deg, #0052a3 0%, #003d7a 100%)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 12px rgba(0, 102, 204, 0.3)';" onmouseout="this.style.background='linear-gradient(135deg, #0066cc 0%, #0052a3 100%)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
                         <i class="fas fa-paper-plane" style="font-size: 0.9rem;"></i> Crear
                     </button>
@@ -828,12 +830,8 @@ NIT 1.093.738.433-3</textarea>
                 return;
             }
 
-            if (!tipoVenta) {
-                if (window.Swal) {
-                    Swal.fire({ icon: 'warning', title: 'Tipo requerido', text: 'Por favor selecciona el tipo para cotizar (M/D/X)' });
-                }
-                return;
-            }
+            // Tipo de venta es OPCIONAL
+            // Si no se selecciona, se guardará como null en la BD
 
             if (items.length === 0) {
                 if (window.Swal) {
@@ -978,14 +976,30 @@ NIT 1.093.738.433-3</textarea>
             formData.append('items', JSON.stringify(itemsPayload));
 
             // Archivos: items[i][imagenes][]
+            // SOLO subir imágenes NUEVAS (que tienen file object)
+            // Las URLs existentes (imagenes_keep) se mantienen automáticamente en el backend
             for (let idx = 0; idx < items.length; idx++) {
                 const item = items[idx];
                 const imagenes = Array.isArray(item.imagenes) ? item.imagenes : [];
                 for (let j = 0; j < imagenes.length; j++) {
-                    const file = await convertirImagenAFile(imagenes[j], `epp_${idx + 1}_${j + 1}.webp`);
-                    if (file) {
-                        formData.append(`items[${idx}][imagenes][]`, file, file.name);
+                    const img = imagenes[j];
+                    
+                    // SOLO procesar si es nuevas (tiene file object) o es data URL
+                    if (img instanceof File) {
+                        // Ya es un File, agregar directo
+                        formData.append(`items[${idx}][imagenes][]`, img, img.name);
+                    } else if (img?.file && img.file instanceof File) {
+                        // Tiene file object guardado, es nueva
+                        formData.append(`items[${idx}][imagenes][]`, img.file, img.file.name);
+                    } else if (typeof img === 'string' && img.startsWith('data:')) {
+                        // Es DataURL, convertir a File
+                        const file = await convertirImagenAFile(img, `epp_${idx + 1}_${j + 1}.webp`);
+                        if (file) {
+                            formData.append(`items[${idx}][imagenes][]`, file, file.name);
+                        }
                     }
+                    // Si es solo URL o ruta (imagenes_keep), NO hacer nada aquí
+                    // El backend ya la mantiene automáticamente
                 }
             }
 

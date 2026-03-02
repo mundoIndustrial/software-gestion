@@ -4,6 +4,7 @@ namespace App\Application\Services\Asesores;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
 
 /**
  * PerfilService
@@ -81,7 +82,7 @@ class PerfilService
     }
 
     /**
-     * Guardar archivo de avatar
+     * Guardar archivo de avatar convertido a WebP
      */
     private function guardarAvatar($user, $archivoAvatar): ?string
     {
@@ -102,25 +103,47 @@ class PerfilService
                 \Log::info('Directorio de avatars creado');
             }
 
-            // Generar nombre único
-            $filename = time() . '_' . uniqid() . '.' . $archivoAvatar->getClientOriginalExtension();
+            // Usar Intervention Image de forma compatible
+            $image = ImageManager::gd()
+                ->read($archivoAvatar->getPathname());
             
-            // Guardar archivo
-            $path = $archivoAvatar->storeAs('avatars', $filename, 'public');
+            // Redimensionar a 300x300 si es necesario
+            if ($image->width() > 300 || $image->height() > 300) {
+                $image->scale(width: 300, height: 300);
+            }
             
-            if ($path) {
+            // Generar nombre único CON EXTENSIÓN .webp
+            $filename = 'avatar_' . time() . '_' . uniqid() . '.webp';
+            
+            // Codificar a WebP con calidad 80
+            $encoded = $image->encodeByMediaType('image/webp', quality: 80);
+            
+            // Guardar en storage
+            $path = 'avatars/' . $filename;
+            Storage::disk('public')->put($path, (string)$encoded);
+            
+            // Verificar que se guardó
+            $size = Storage::disk('public')->size($path);
+            
+            if ($size > 0) {
                 $user->avatar = $filename;
                 $avatarUrl = asset('storage/avatars/' . $filename);
                 
-                \Log::info('Avatar guardado exitosamente: ' . $filename);
-                \Log::info('Avatar URL: ' . $avatarUrl);
+                \Log::info('Avatar guardado exitosamente en WebP', [
+                    'filename' => $filename,
+                    'size' => $size . ' bytes',
+                    'url' => $avatarUrl,
+                ]);
                 
                 return $avatarUrl;
             } else {
-                throw new \Exception('No se pudo guardar el archivo de avatar');
+                throw new \Exception('El archivo guardado está vacío');
             }
         } catch (\Exception $e) {
-            \Log::error('Error al guardar avatar: ' . $e->getMessage());
+            \Log::error('Error al guardar avatar: ' . $e->getMessage(), [
+                'original_name' => $archivoAvatar?->getClientOriginalName(),
+                'exception' => $e->getMessage(),
+            ]);
             throw new \Exception('Error al guardar la imagen: ' . $e->getMessage());
         }
     }

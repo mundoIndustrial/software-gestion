@@ -19,7 +19,8 @@ class ObtenerPerfilAsesorUseCase
     public function ejecutar(ObtenerPerfilAsesorDTO $dto): mixed
     {
         $user = Auth::user();
-        return $this->validarObjetoExiste($user, 'Usuario', 'autenticado');
+        $this->validarObjetoExiste($user, 'Usuario', 'autenticado');
+        return $user;
     }
 }
 

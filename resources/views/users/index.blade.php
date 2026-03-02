@@ -59,6 +59,7 @@
                         <tr>
                             <th class="table-header-cell">Nombre</th>
                             <th class="table-header-cell">Email</th>
+                            <th class="table-header-cell">Teléfono</th>
                             <th class="table-header-cell">Rol</th>
                             <th class="table-header-cell">Fecha Registro</th>
                             <th class="table-header-cell acciones-column">Acciones</th>
@@ -76,6 +77,7 @@
                                     </div>
                                 </td>
                                 <td class="table-cell">{{ $user->email }}</td>
+                                <td class="table-cell">{{ $user->telefono ?? '—' }}</td>
                                 <td class="table-cell">
                                     @if($user->roles_ids && count($user->roles_ids) > 0)
                                         <div style="display: flex; gap: 5px; flex-wrap: wrap;">
@@ -133,9 +135,23 @@
                 <h2><i class="fas fa-user-plus"></i> Crear Nuevo Usuario</h2>
                 <button class="modal-close" onclick="closeCreateModal()">&times;</button>
             </div>
-            <form action="{{ route('users.store') }}" method="POST">
+            <form action="{{ route('users.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-body">
+                    <div class="form-group">
+                        <label for="create_avatar">Avatar</label>
+                        <div style="display: flex; gap: 15px; align-items: flex-start;">
+                            <div style="flex-shrink: 0;">
+                                <div id="create_avatar_preview" style="width: 100px; height: 100px; border-radius: 50%; background: #e0e0e0; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                    <i class="fas fa-user" style="font-size: 40px; color: #999;"></i>
+                                </div>
+                            </div>
+                            <div style="flex-grow: 1;">
+                                <input type="file" id="create_avatar" name="avatar" accept="image/*" class="form-input" onchange="previewCreateAvatar(this)">
+                                <small style="color: #666;">JPG, PNG o GIF. Máx 5MB. Se convertirá a WebP automáticamente.</small>
+                            </div>
+                        </div>
+                    </div>
                     <div class="form-group">
                         <label for="create_name">Nombre</label>
                         <input type="text" id="create_name" name="name" class="form-input" required>
@@ -143,6 +159,10 @@
                     <div class="form-group">
                         <label for="create_email">Email</label>
                         <input type="email" id="create_email" name="email" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="create_telefono">Teléfono</label>
+                        <input type="tel" id="create_telefono" name="telefono" class="form-input">
                     </div>
                     <div class="form-group">
                         <label for="create_password">Contraseña</label>
@@ -177,10 +197,24 @@
                 <h2><i class="fas fa-user-edit"></i> Editar Usuario</h2>
                 <button class="modal-close" onclick="closeEditModal()">&times;</button>
             </div>
-            <form id="editForm" method="POST">
+            <form id="editForm" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PATCH')
                 <div class="modal-body">
+                    <div class="form-group">
+                        <label for="edit_avatar">Avatar</label>
+                        <div style="display: flex; gap: 15px; align-items: flex-start;">
+                            <div style="flex-shrink: 0;">
+                                <div id="edit_avatar_preview" style="width: 100px; height: 100px; border-radius: 50%; background: #e0e0e0; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                    <i class="fas fa-user" style="font-size: 40px; color: #999;"></i>
+                                </div>
+                            </div>
+                            <div style="flex-grow: 1;">
+                                <input type="file" id="edit_avatar" name="avatar" accept="image/*" class="form-input" onchange="previewEditAvatar(this)">
+                                <small style="color: #666;">JPG, PNG o GIF. Máx 5MB. Se convertirá a WebP automáticamente.</small>
+                            </div>
+                        </div>
+                    </div>
                     <div class="form-group">
                         <label for="edit_name">Nombre</label>
                         <input type="text" id="edit_name" name="name" class="form-input" required>
@@ -188,6 +222,10 @@
                     <div class="form-group">
                         <label for="edit_email">Email</label>
                         <input type="email" id="edit_email" name="email" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_telefono">Teléfono</label>
+                        <input type="tel" id="edit_telefono" name="telefono" class="form-input">
                     </div>
                     <div class="form-group">
                         <label for="edit_roles">Roles</label>

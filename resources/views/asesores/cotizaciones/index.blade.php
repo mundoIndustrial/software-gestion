@@ -290,19 +290,19 @@
         // Construir la URL según el tipo de PDF
         switch(tipoPDF) {
             case 'combinada':
-                url = `/asesores/cotizacion/${cotizacionId}/pdf/combinada`;
+                url = `/asesores/cotizacion/${cotizacionId}/pdf/combinada?download=true`;
                 break;
             case 'prenda':
-                url = `/asesores/cotizacion/${cotizacionId}/pdf/prenda`;
+                url = `/asesores/cotizacion/${cotizacionId}/pdf/prenda?download=true`;
                 break;
             case 'logo':
-                url = `/asesores/cotizacion/${cotizacionId}/pdf/logo`;
+                url = `/asesores/cotizacion/${cotizacionId}/pdf/logo?download=true`;
                 break;
             case 'epp':
-                url = `/asesores/cotizacion/${cotizacionId}/pdf/epp`;
+                url = `/asesores/cotizacion/${cotizacionId}/pdf/epp?download=true`;
                 break;
             default:
-                url = `/asesores/cotizacion/${cotizacionId}/pdf/prenda`;
+                url = `/asesores/cotizacion/${cotizacionId}/pdf/prenda?download=true`;
         }
         
         window.open(url, '_blank');

@@ -41,31 +41,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
-                // Crear preview local
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const dataUrl = e.target.result;
-                    
-                    // Actualizar avatar en el header
-                    if (avatarImage) {
-                        avatarImage.src = dataUrl;
-                    } else {
-                        // Si no existe, crear nueva imagen
-                        avatarPreview.innerHTML = `<img src="${dataUrl}" alt="Avatar Preview" id="avatarImage" class="avatar-img">`;
-                        // Re-agregar el botón flotante
-                        const editBtn = document.querySelector('.avatar-edit-btn');
-                        if (editBtn) {
-                            avatarPreview.appendChild(editBtn);
-                        }
+                // Crear preview local usando Blob URL
+                const blobUrl = URL.createObjectURL(file);
+                
+                // Actualizar avatar en el header
+                if (avatarImage) {
+                    avatarImage.src = blobUrl;
+                } else {
+                    // Si no existe, crear nueva imagen
+                    avatarPreview.innerHTML = `<img src="${blobUrl}" alt="Avatar Preview" id="avatarImage" class="avatar-img">`;
+                    // Re-agregar el botón flotante
+                    const editBtn = document.querySelector('.avatar-edit-btn');
+                    if (editBtn) {
+                        avatarPreview.appendChild(editBtn);
                     }
-                    
-                    // Mostrar mensaje de carga
-                    showMessage('Subiendo tu foto de perfil...', 'info');
-                    
-                    // Subir automáticamente
-                    uploadAvatar(file);
-                };
-                reader.readAsDataURL(file);
+                }
+                
+                // Mostrar mensaje de carga
+                showMessage('Subiendo tu foto de perfil...', 'info');
+                
+                // Subir automáticamente
+                uploadAvatar(file, blobUrl);
             }
         });
     }
@@ -208,7 +204,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // FUNCIONES AUXILIARES
     // ========================================
     
-    function uploadAvatar(file) {
+    function uploadAvatar(file, blobUrl) {
         const formData = new FormData();
         formData.append('avatar', file);
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
@@ -231,7 +227,10 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
-
+            // Limpiar el blob URL después de usar
+            if (blobUrl) {
+                URL.revokeObjectURL(blobUrl);
+            }
             
             if (data.success) {
                 // Actualizar la URL de la imagen con la URL correcta del servidor
@@ -239,7 +238,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Agregar un parámetro de cache para forzar la recarga
                     const timestamp = new Date().getTime();
                     avatarImage.src = data.avatar_url + '?t=' + timestamp;
-
                 }
                 
                 showMessage('✓ Foto de perfil actualizada exitosamente', 'success');
@@ -253,7 +251,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
-
+            // Limpiar el blob URL en caso de error
+            if (blobUrl) {
+                URL.revokeObjectURL(blobUrl);
+            }
             showMessage('Error de conexión al subir la foto', 'error');
         });
     }

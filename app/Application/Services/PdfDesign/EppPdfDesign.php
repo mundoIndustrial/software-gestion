@@ -81,22 +81,34 @@ class EppPdfDesign
     private function renderFooter(): string
     {
         try {
-            // Obtener email del asesor logueado
+            // Obtener email y teléfono del asesor logueado
             $asesorEmail = '';
+            $asesorTelefono = '';
             $asesor = $this->cotizacion->asesor ?? null;
             if ($asesor && !empty($asesor->email)) {
                 $asesorEmail = $asesor->email;
-            } else {
-                // Si no hay asesor, usar email del usuario
+            }
+            if ($asesor && !empty($asesor->telefono)) {
+                $asesorTelefono = $asesor->telefono;
+            }
+            
+            // Si no hay asesor, usar datos del usuario
+            if (empty($asesorEmail) || empty($asesorTelefono)) {
                 $usuario = $this->cotizacion->usuario ?? null;
-                if ($usuario && !empty($usuario->email)) {
+                if ($usuario && !empty($usuario->email) && empty($asesorEmail)) {
                     $asesorEmail = $usuario->email;
+                }
+                if ($usuario && !empty($usuario->telefono) && empty($asesorTelefono)) {
+                    $asesorTelefono = $usuario->telefono;
                 }
             }
             
+            // Si aún no hay teléfono, usar valor por defecto
+            $asesorTelefono = !empty($asesorTelefono) ? $asesorTelefono : '3163853956';
+            
             $html = '<div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">';
             $html .= '<p style="margin: 0; color: #6b7280; font-size: 9px; font-weight: bold;">';
-            $html .= 'Avenida 3 No. 4-34 B. Latino – Celular: 3163853956 – Cúcuta – Col.<br>';
+            $html .= 'Avenida 3 No. 4-34 B. Latino – Celular: ' . htmlspecialchars($asesorTelefono) . ' – Cúcuta – Col.<br>';
             $html .= 'Email: ' . htmlspecialchars($asesorEmail) . ' - www.mundoindustrial.co';
             $html .= '</p>';
             $html .= '</div>';
@@ -121,7 +133,7 @@ class EppPdfDesign
         img, svg { page-break-inside: avoid; }
 
         .header-wrapper { width: 100%; margin: 0; padding: 0; }
-        .header { background: #1e5ba8; color: white; padding: 20px; text-align: center; }
+        .header { background: #000; color: white; padding: 20px; text-align: center; }
         .header h1 { font-size: 18px; margin-bottom: 5px; }
         .header p { font-size: 10px; margin: 2px 0; }
         .header-logo { width: 120px; height: auto; flex-shrink: 0; }
@@ -184,7 +196,7 @@ CSS;
                     <div class="header-title">Uniformes Mundo Industrial</div>
                     <div class="header-subtitle">Lenis Ruth Mahecha Acosta</div>
                     <div class="header-subtitle">NIT: 1.093.738.433-3 Régimen Común</div>
-                    <div style="font-size: 12px; font-weight: bold; margin-top: 4px;">COTIZACIÓN EPP</div>
+                    <div style="font-size: 12px; font-weight: bold; margin-top: 4px;">COTIZACIÓN</div>
                 </div>
             </div>
         </div>
@@ -270,9 +282,22 @@ CSS;
                 // Alternar colores de fila
                 $rowColor = ($itemIndex % 2 === 0) ? '#f8fafc' : '#ffffff';
                 
+                // Construir celda de descripción con imágenes si existen
+                $descripcionCell = '<div>' . $nombre;
+                if (!empty($item['imagenes']) && is_array($item['imagenes'])) {
+                    $descripcionCell .= '<div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px;">';
+                    foreach ($item['imagenes'] as $img) {
+                        if ($img && file_exists($img)) {
+                            $descripcionCell .= '<img src="' . $img . '" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb;" />';
+                        }
+                    }
+                    $descripcionCell .= '</div>';
+                }
+                $descripcionCell .= '</div>';
+                
                 $html .= '<tr style="background: ' . $rowColor . ';">';
                 $html .= '<td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 9px; text-align: center; font-weight: 500;">' . $itemIndex . '</td>';
-                $html .= '<td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 9px; font-weight: 500;">' . $nombre . '</td>';
+                $html .= '<td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 9px; font-weight: 500; vertical-align: top;">' . $descripcionCell . '</td>';
                 $html .= '<td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 9px; text-align: center; font-weight: 500;">' . $cantidad . '</td>';
                 $html .= '<td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 9px; font-style: italic;">' . ($observaciones !== '' ? $observaciones : 'N/A') . '</td>';
                 $html .= '<td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 9px; text-align: right; font-weight: 600;">';
