@@ -486,6 +486,10 @@ class PedidoController extends Controller
                                     }
                                     $anexosPorTipo[$tipoRecibo]++;
                                     
+                                    // El consecutivo real del anexo se guarda en consecutivo_actual.
+                                    // Algunos flujos antiguos pudieron haber usado numero_recibo.
+                                    $numeroReciboAnexo = $reciboParcial->consecutivo_actual ?? $reciboParcial->numero_recibo ?? null;
+                                    
                                     // Obtener las tallas del recibo parcial
                                     $tallas = \DB::table('pedidos_parciales_tallas')
                                         ->where('pedido_parcial_id', $reciboParcial->id)
@@ -518,7 +522,7 @@ class PedidoController extends Controller
                                         'tipo_proceso' => $tipoRecibo,  // Mantener el tipo real para el API
                                         'nombre_proceso' => $tipoRecibo . ' ANEXO ' . $anexosPorTipo[$tipoRecibo],  // Solo para mostrar
                                         'estado' => $reciboParcial->estado ?? 'PENDIENTE',
-                                        'numero_recibo' => $reciboParcial->numero_recibo ?? null,
+                                        'numero_recibo' => $numeroReciboAnexo,
                                         'es_parcial' => true,
                                         'numero_anexo' => $anexosPorTipo[$tipoRecibo],
                                         'pedido_parcial_id' => $reciboParcial->id,
@@ -1092,12 +1096,41 @@ class PedidoController extends Controller
                 'COSTURA-BODEGA' => null
             ];
 
-            foreach ($consecutivos as $consecutivo) {
-                $tipo = $consecutivo->tipo_recibo;
-                if (array_key_exists($tipo, $recibos)) {
-                    $recibos[$tipo] = $consecutivo->consecutivo_actual;
-                }
-            }
+			// Cuando existen anexos (recibos parciales), también se insertan en consecutivos_recibos_pedidos
+			// con el mismo tipo_recibo. Eso NO debe sobrescribir el consecutivo del recibo base.
+			// Regla:
+			// - Priorizar registro "base" (notas NO contiene 'parcial_id:')
+			// - Si todos son anexos, usar el menor consecutivo_actual (más antiguo)
+			$agrupados = [];
+			foreach ($consecutivos as $c) {
+				$tipo = $c->tipo_recibo;
+				if (!isset($agrupados[$tipo])) {
+					$agrupados[$tipo] = [];
+				}
+				$agrupados[$tipo][] = $c;
+			}
+
+			foreach ($agrupados as $tipo => $items) {
+				if (!array_key_exists($tipo, $recibos)) {
+					continue;
+				}
+
+				$base = collect($items)->first(function ($item) {
+					$notas = (string) ($item->notas ?? '');
+					return stripos($notas, 'parcial_id:') === false;
+				});
+
+				if ($base && !empty($base->consecutivo_actual)) {
+					$recibos[$tipo] = $base->consecutivo_actual;
+					continue;
+				}
+
+				$menor = collect($items)
+					->filter(fn ($item) => !empty($item->consecutivo_actual))
+					->sortBy(fn ($item) => (int) $item->consecutivo_actual)
+					->first();
+				$recibos[$tipo] = $menor ? $menor->consecutivo_actual : null;
+			}
 
             \Log::info('[PedidoController] Consecutivos estructurados para prenda', [
                 'pedido_id' => $pedidoId,

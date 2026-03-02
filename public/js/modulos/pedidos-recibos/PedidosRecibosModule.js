@@ -284,6 +284,10 @@ export class PedidosRecibosModule {
                 datos = datos.data;
             }
 
+            // Consecutivo real del ANEXO (viene del recibo parcial)
+            const parcialData = parcialResult.data?.parcial || parcialResult.data || null;
+            const consecutivoAnexo = parcialData?.consecutivo_actual ?? parcialData?.numero_recibo ?? null;
+
             this.modalManager.setState({ datosCompletos: datos });
 
             // Validar prendas
@@ -325,6 +329,10 @@ export class PedidosRecibosModule {
             // Marcar como parcial para que el renderer sepa limpiar consecutivo
             recibo._esParcial = true;
             recibo._nombreAnexo = nombreAnexo || tipoRecibo;
+            // Asegurar consecutivo del anexo como fuente de verdad para el renderer
+            if (consecutivoAnexo) {
+                recibo.numero_recibo = consecutivoAnexo;
+            }
 
             this.modalManager.setState({
                 procesosActuales: recibos,
@@ -350,7 +358,7 @@ export class PedidosRecibosModule {
 
             const pedidoNumberEl = document.querySelector('#order-pedido') || document.querySelector('.pedido-number');
             if (pedidoNumberEl) {
-                pedidoNumberEl.textContent = '#-';
+                pedidoNumberEl.textContent = consecutivoAnexo ? ('#' + consecutivoAnexo) : '#-';
             }
 
             console.log('[PedidosRecibosModule.abrirReciboParcial] ✓ Renderizado completo con tallas del parcial');

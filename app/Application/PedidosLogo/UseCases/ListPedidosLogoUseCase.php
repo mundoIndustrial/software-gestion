@@ -75,6 +75,8 @@ final class ListPedidosLogoUseCase
                     'prenda_id' => $proceso->prenda_pedido_id,
                     'tipo_proceso' => $proceso->tipoProceso?->nombre,
                     'tipo_proceso_id' => $proceso->tipo_proceso_id,
+                    'es_parcial' => (bool)($proceso->es_parcial ?? false),
+                    'pedido_parcial_id' => $proceso->pedido_parcial_id ?? null,
                 ];
             }
 
@@ -94,6 +96,8 @@ final class ListPedidosLogoUseCase
                 'novedades' => $proceso->novedades,
                 'total_dias' => (int) $totalDias,
                 'asesora' => $asesoraNombre,
+                'es_parcial' => (bool)($proceso->es_parcial ?? false),
+                'pedido_parcial_id' => $proceso->pedido_parcial_id ?? null,
             ];
         });
 

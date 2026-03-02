@@ -146,13 +146,28 @@
 
 <script>
 // Función global para ver recibo directamente (sin selector)
-window.verRecibo = function(pedidoId, prendaId, tipoProceso) {
-    if (typeof window.openOrderDetailModalWithProcess === 'function') {
-        window.openOrderDetailModalWithProcess(pedidoId, prendaId, String(tipoProceso));
-    } else {
-        console.error('La función openOrderDetailModalWithProcess no está disponible');
-        alert('Error: El módulo de recibos no está disponible. Por favor recargue la página.');
+window.verRecibo = function(pedidoId, prendaId, tipoProceso, esParcial = false, pedidoParcialId = null, nombreProceso = null) {
+    const tipo = String(tipoProceso);
+
+    // Si es anexo (recibo parcial), abrir usando el flujo de parcial para que cargue sus tallas/consecutivo.
+    if (esParcial && pedidoParcialId) {
+        if (window.pedidosRecibosModule && typeof window.pedidosRecibosModule.abrirReciboParcial === 'function') {
+            const nombre = nombreProceso ? String(nombreProceso) : tipo;
+            return window.pedidosRecibosModule.abrirReciboParcial(pedidoId, prendaId, tipo, Number(pedidoParcialId), nombre);
+        }
+
+        console.error('PedidosRecibosModule no está disponible para abrir anexos');
+        alert('Error: No se pudo abrir el anexo. Por favor recargue la página.');
+        return;
     }
+
+    // Caso normal: abrir recibo base
+    if (typeof window.openOrderDetailModalWithProcess === 'function') {
+        return window.openOrderDetailModalWithProcess(pedidoId, prendaId, tipo);
+    }
+
+    console.error('La función openOrderDetailModalWithProcess no está disponible');
+    alert('Error: El módulo de recibos no está disponible. Por favor recargue la página.');
 };
 
 window.__areasPermitidasLogo = [
@@ -677,6 +692,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const pedidoId = recibo.pedido_id;
             const prendaId = recibo.prenda_id;
             const tipoProceso = recibo.tipo_proceso;
+            const esParcial = !!recibo.es_parcial;
+            const pedidoParcialId = recibo.pedido_parcial_id || null;
+            const nombreProceso = recibo.nombre_proceso || recibo.tipo_proceso || '';
             const procesoPrendaDetalleId = recibo.id;
 
             if (window.__isDisenadorLogos) {
@@ -695,7 +713,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     ">
                         <div style="display: flex; justify-content: center; gap: 0.5rem;">
                             <button 
-                               onclick="verRecibo(${pedidoId}, ${prendaId}, '${String(tipoProceso || '').replace(/'/g, "\\'")}')"
+                               onclick="verRecibo(${pedidoId}, ${prendaId}, '${String(tipoProceso || '').replace(/'/g, "\\'")}', ${esParcial ? 'true' : 'false'}, ${pedidoParcialId ? Number(pedidoParcialId) : 'null'}, '${String(nombreProceso || '').replace(/'/g, "\\'")}')"
                                title="Ver detalles"
                                style="
                                    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
@@ -760,7 +778,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     <div style="display: flex; justify-content: center; gap: 0.5rem;">
                         <button 
-                           onclick="verRecibo(${pedidoId}, ${prendaId}, '${String(tipoProceso || '').replace(/'/g, "\\'")}')"
+                           onclick="verRecibo(${pedidoId}, ${prendaId}, '${String(tipoProceso || '').replace(/'/g, "\\'")}', ${esParcial ? 'true' : 'false'}, ${pedidoParcialId ? Number(pedidoParcialId) : 'null'}, '${String(nombreProceso || '').replace(/'/g, "\\'")}')"
                            title="Ver detalles"
                            style="
                                background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);

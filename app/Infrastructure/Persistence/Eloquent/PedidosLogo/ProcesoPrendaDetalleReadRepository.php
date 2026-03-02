@@ -25,6 +25,8 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
                 'palp.novedades as novedades',
                 'palp.fechas_areas as fechas_areas',
                 DB::raw('crp.consecutivo_actual as numero_recibo_consecutivo'),
+                DB::raw("CASE WHEN crp.notas LIKE '%parcial_id:%' THEN 1 ELSE 0 END as es_parcial"),
+                DB::raw("CASE WHEN crp.notas LIKE '%parcial_id:%' THEN CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(crp.notas, 'parcial_id:', -1), ')', 1) AS UNSIGNED) ELSE NULL END as pedido_parcial_id"),
             ])
             ->leftJoin('prenda_areas_logo_pedido as palp', 'palp.proceso_prenda_detalle_id', '=', 'pedidos_procesos_prenda_detalles.id')
             ->leftJoin('prendas_pedido as pp', 'pp.id', '=', 'pedidos_procesos_prenda_detalles.prenda_pedido_id')
