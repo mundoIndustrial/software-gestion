@@ -5,6 +5,14 @@
 
 @push('styles')
 <style>
+    .hidden { display: none !important; }
+
+    /* Asegurar ocultamiento por defecto aunque existan clases display conflictivas */
+    #novedadesEditModal.hidden,
+    #modalConfirmarEliminar.hidden {
+        display: none !important;
+    }
+
     .modal-overlay {
         display: none;
         position: fixed;
@@ -143,8 +151,8 @@
                             color: white;
                             padding: 0.75rem 1rem;
                             display: grid;
-                            grid-template-columns: 170px 110px 200px 300px 130px 100px;
-                            gap: 0.6rem;
+                            grid-template-columns: 170px 110px 200px 200px 160px 130px 100px;
+                            gap: 0.15rem;
                             font-weight: 600;
                             font-size: 0.8rem;
                             text-transform: uppercase;
@@ -177,6 +185,9 @@
                                 </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span>Novedades</span>
+                            </div>
+                            <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Asesora</span>
                                 <button type="button" class="btn-filter-column" data-col="asesor" title="Filtrar Asesora" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                                     <i class="fas fa-filter" style="font-size: 1rem;"></i>
@@ -198,8 +209,8 @@
                                 @foreach($procesosConCantidad as $proceso)
                                     <div data-row="processo" data-color-stored="{{ $proceso['color_costura'] ?? '' }}" style="
                                         display: grid;
-                                        grid-template-columns: 170px 110px 200px 300px 130px 100px;
-                                        gap: 0.6rem;
+                                        grid-template-columns: 170px 110px 200px 200px 160px 130px 100px;
+                                        gap: 0.15rem;
                                         padding: 1rem;
                                         border-bottom: 1px solid #e5e7eb;
                                         align-items: start;
@@ -266,6 +277,71 @@
                                             </div>
                                         </div>
 
+                                        <!-- Novedades -->
+                                        <div style="display: flex; align-items: center; font-size: 0.85rem; color: #374151;">
+                                            @php
+                                                $novedadesTexto = '';
+                                                try {
+                                                    $pedido = \App\Models\PedidoProduccion::find($proceso['pedido_id']);
+                                                    if ($pedido && $pedido->prendas && $pedido->prendas->count() > 0) {
+                                                        $prendaTarget = $pedido->prendas->firstWhere('id', $proceso['prenda_id'] ?? null);
+                                                        $prendasIter = $prendaTarget ? collect([$prendaTarget]) : $pedido->prendas;
+
+                                                        $novedadesRecibo = [];
+                                                        foreach ($prendasIter as $prenda) {
+                                                            $novedadesPrenda = $prenda->novedadesRecibo()
+                                                                ->where('numero_recibo', $proceso['numero_recibo'])
+                                                                ->orderBy('creado_en', 'desc')
+                                                                ->get();
+
+                                                            foreach ($novedadesPrenda as $novedad) {
+                                                                $textoLimpio = str_replace(["\r", "\n", "'", '"'], ' ', $novedad->novedad_texto);
+                                                                $novedadesRecibo[] = $textoLimpio;
+                                                            }
+                                                        }
+
+                                                        if (!empty($novedadesRecibo)) {
+                                                            $novedadesTexto = implode(' | ', $novedadesRecibo);
+                                                        }
+                                                    }
+                                                } catch (\Exception $e) {
+                                                    $novedadesTexto = '';
+                                                }
+                                            @endphp
+
+                                            <button
+                                                type="button"
+                                                data-pedido-id="{{ $proceso['pedido_id'] }}"
+                                                data-numero-recibo="{{ $proceso['numero_recibo'] }}"
+                                                data-novedades="{{ addslashes(str_replace(["\r", "\n"], ' ', $novedadesTexto)) }}"
+                                                onclick="event.stopPropagation(); openNovedadesModalRecibo(this)"
+                                                title="Ver novedades del recibo"
+                                                style="
+                                                    width: 100%;
+                                                    text-align: left;
+                                                    background: #f9fafb;
+                                                    border: 1px solid #e5e7eb;
+                                                    border-radius: 8px;
+                                                    padding: 6px 10px;
+                                                    display: flex;
+                                                    align-items: center;
+                                                    justify-content: space-between;
+                                                    gap: 8px;
+                                                    cursor: pointer;
+                                                    transition: background 0.2s ease;
+                                                "
+                                                onmouseover="this.style.background='#f3f4f6'"
+                                                onmouseout="this.style.background='#f9fafb'"
+                                            >
+                                                @if($novedadesTexto)
+                                                    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;">{{ \Illuminate\Support\Str::limit(str_replace(["\r", "\n"], ' ', $novedadesTexto), 28, '...') }}</span>
+                                                @else
+                                                    <span style="color:#9ca3af;">Sin novedades</span>
+                                                @endif
+                                                <i class="fas fa-edit" style="color:#6b7280;"></i>
+                                            </button>
+                                        </div>
+
                                         <!-- Asesora -->
                                         <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">
                                             {{ $proceso['asesor'] }}
@@ -291,6 +367,9 @@
     </div>
 </div>
 
+<!-- Modal de Novedades (mismo componente de /recibos-costura) -->
+<x-modals.novedades-edit-modal />
+
 <!-- Modal Filtro Dinámico -->
 <div id="modalFiltro" class="modal-overlay">
     <div class="modal-content">
@@ -310,8 +389,30 @@
 </div>
 
 @push('scripts')
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="{{ asset('js/recibos-novedades.js') }}?v={{ time() }}"></script>
 <script>
 let filtroActual = null;
+
+// Wrapper igual que en /recibos-costura
+function openNovedadesModalRecibo(button) {
+    const pedidoId = button.getAttribute('data-pedido-id');
+    const numeroRecibo = button.getAttribute('data-numero-recibo');
+    const novedadesActuales = button.getAttribute('data-novedades') || '';
+
+    if (typeof abrirModalNovedadesRecibo === 'function') {
+        abrirModalNovedadesRecibo(pedidoId, numeroRecibo);
+        return;
+    }
+
+    setTimeout(() => {
+        if (typeof abrirModalNovedadesRecibo === 'function') {
+            abrirModalNovedadesRecibo(pedidoId, numeroRecibo);
+        } else {
+            alert(`Novedades del recibo ${numeroRecibo}:\n\n${novedadesActuales || 'Sin novedades'}`);
+        }
+    }, 100);
+}
 
 function getValoresFiltroDesdeURL(columna) {
     const url = new URL(window.location.href);
