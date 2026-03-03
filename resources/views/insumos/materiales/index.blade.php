@@ -562,7 +562,7 @@
                                             $reciboId = $orden->id;
                                             $pedidoProduccionId = $orden->pedido_produccion_id;
                                         @endphp
-                                        <button class="btn-ver-dropdown btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition" data-menu-id="menu-ver-{{ str_replace('#', '', $numeroRecibo) }}" data-pedido="{{ str_replace('#', '', $numeroRecibo) }}" data-pedido-id="{{ $pedidoProduccionId }}" data-prenda-id="{{ $orden->prenda_id ?? '' }}" title="Ver Opciones">
+                                        <button class="btn-ver-dropdown btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition" data-menu-id="menu-ver-{{ str_replace('#', '', $numeroRecibo) }}" data-pedido="{{ str_replace('#', '', $numeroRecibo) }}" data-pedido-id="{{ $pedidoProduccionId }}" data-prenda-id="{{ $orden->prenda_id ?? '' }}" data-tipo-recibo="{{ $orden->tipo_recibo ?? 'COSTURA' }}" data-es-parcial="{{ !empty($orden->es_parcial) ? 'true' : 'false' }}" data-pedido-parcial-id="{{ $orden->pedido_parcial_id ?? '' }}" title="Ver Opciones">
                                             <i class="fas fa-eye text-lg"></i>
                                         </button>
 

@@ -355,6 +355,13 @@ class InsumosController extends Controller
                     $diasCalculados = 0;
                 }
             }
+
+            $parcialId = null;
+            $notas = isset($recibo->notas) ? (string) $recibo->notas : '';
+            if ($notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
+                $parcialId = (int) $matches[1];
+            }
+            $esParcial = $parcialId !== null;
             
             // Crear objeto compatible con la vista
             return (object)[
@@ -374,6 +381,8 @@ class InsumosController extends Controller
                 'consecutivo_actual' => $recibo->consecutivo_actual,
                 'tipo_recibo' => $recibo->tipo_recibo,
                 'marcar_plooter' => $recibo->marcar_plooter ?? false,
+                'es_parcial' => $esParcial,
+                'pedido_parcial_id' => $parcialId,
                 'created_at' => $recibo->created_at,
                 'updated_at' => $recibo->updated_at,
             ];

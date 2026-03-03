@@ -250,7 +250,10 @@
                                 title="Ver Opciones" 
                                 data-menu-id="menu-recibo-{{ $recibo['id'] }}"
                                 data-pedido-id="{{ $recibo['pedido_produccion_id'] ?? '' }}"
-                                data-prenda-id="{{ $recibo['prenda_id'] ?? '' }}">
+                                data-prenda-id="{{ $recibo['prenda_id'] ?? '' }}"
+                                data-tipo-recibo="{{ $recibo['tipo_recibo'] ?? 'COSTURA' }}"
+                                data-es-parcial="{{ !empty($recibo['es_parcial']) ? 'true' : 'false' }}"
+                                data-pedido-parcial-id="{{ $recibo['pedido_parcial_id'] ?? '' }}">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </td>

@@ -840,18 +840,30 @@ function abrirModalSeguimientoDirecto(pedidoId, prendaIdTarget) {
                 return response.json();
             })
             .then(data => {
+                // Guardar para que tracking-modal-handler.js pueda usar encargado/area como fallback
+                window.currentConsecutivoCosturaData = data;
                 if (data.success && data.consecutivo) {
                     const reciboElement = document.getElementById('trackingOrderRecibo');
                     if (reciboElement) reciboElement.textContent = data.consecutivo;
                     
                     const headerSubtitleElement = document.getElementById('trackingPrendaReciboHeader');
-                    if (headerSubtitleElement) headerSubtitleElement.textContent = `COSTURA #${data.consecutivo}`;
+                    if (headerSubtitleElement) {
+                        const area = data.area ? String(data.area) : '';
+                        headerSubtitleElement.textContent = area
+                            ? `COSTURA #${data.consecutivo} - ${area}`
+                            : `COSTURA #${data.consecutivo}`;
+                    }
                 } else {
                     const reciboElement = document.getElementById('trackingOrderRecibo');
                     if (reciboElement) reciboElement.textContent = '-';
                     
                     const headerSubtitleElement = document.getElementById('trackingPrendaReciboHeader');
-                    if (headerSubtitleElement) headerSubtitleElement.textContent = 'COSTURA #?';
+                    if (headerSubtitleElement) {
+                        const area = data?.area ? String(data.area) : '';
+                        headerSubtitleElement.textContent = area
+                            ? `COSTURA #? - ${area}`
+                            : 'COSTURA #?';
+                    }
                 }
                 
                 if (data.fecha_creacion) {
@@ -1364,6 +1376,10 @@ function crearDropdownRecibos(button) {
     const pedidoId = button.getAttribute('data-pedido-id');
     const prendaId = button.getAttribute('data-prenda-id');
 
+    const tipoRecibo = button.getAttribute('data-tipo-recibo') || 'COSTURA';
+    const esParcial = String(button.getAttribute('data-es-parcial') || '').toLowerCase() === 'true';
+    const parcialId = button.getAttribute('data-pedido-parcial-id');
+
     // Verificar si ya existe
     const existing = document.getElementById(menuId);
     if (existing) return existing;
@@ -1390,8 +1406,16 @@ function crearDropdownRecibos(button) {
         pointer-events: auto;
     `;
 
+    let onclickVerDetalles;
+    if (esParcial && parcialId) {
+        // Importante: pasar pedidoId explícito porque esta vista no usa selectorRecibosState
+        onclickVerDetalles = `openOrderDetailModalWithParcial(${parcialId}, ${prendaId || 'null'}, '${tipoRecibo}', ${pedidoId}); closeDropdownRecibos()`;
+    } else {
+        onclickVerDetalles = `openOrderDetailModalWithProcess(${pedidoId}, ${prendaId || 'null'}, '${tipoRecibo}'); closeDropdownRecibos()`;
+    }
+
     dropdown.innerHTML = `
-        <button onclick="openOrderDetailModalWithProcess(${pedidoId}, ${prendaId || 'null'}, 'COSTURA'); closeDropdownRecibos()" style="
+        <button onclick="${onclickVerDetalles}" style="
             width: 100%;
             text-align: left;
             padding: 0.875rem 1rem;

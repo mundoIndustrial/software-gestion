@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\TipoCotizacion;
+use Illuminate\Http\JsonResponse;
 
 class SupervisorPedidosController extends Controller
 {
@@ -29,11 +30,124 @@ class SupervisorPedidosController extends Controller
             if (!$user) {
                 return redirect()->route('login')->with('error', 'Por favor inicia sesión para ver tu perfil.');
             }
-            
             return view('supervisor-pedidos.profile', compact('user'));
             
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Error al cargar el perfil: ' . $e->getMessage());
+        }
+    }
+
+    public function activarReciboCostura(Request $request, int $pedidoId, int $prendaId): JsonResponse
+    {
+        try {
+            $pedido = PedidoProduccion::findOrFail($pedidoId);
+
+            if ($pedido->estado === 'PENDIENTE_SUPERVISOR') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El pedido aún no está aprobado'
+                ], 400);
+            }
+
+            $prenda = PrendaPedido::where('id', $prendaId)
+                ->where('pedido_produccion_id', $pedidoId)
+                ->first();
+
+            if (!$prenda) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Prenda no encontrada en el pedido'
+                ], 404);
+            }
+
+            $existente = \DB::table('consecutivos_recibos_pedidos')
+                ->where('pedido_produccion_id', $pedidoId)
+                ->where('tipo_recibo', 'COSTURA')
+                ->where('prenda_id', $prendaId)
+                ->orderByDesc('id')
+                ->first();
+
+            if ($existente && (int) ($existente->activo ?? 0) === 1 && !empty($existente->consecutivo_actual)) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Recibo COSTURA ya está activo',
+                    'data' => [
+                        'consecutivo' => $existente->consecutivo_actual,
+                        'id' => $existente->id,
+                    ]
+                ]);
+            }
+
+            $nuevo = \DB::transaction(function () use ($pedido, $pedidoId, $prendaId, $existente) {
+                $registroMaestro = \DB::table('consecutivos_recibos')
+                    ->where('tipo_recibo', 'COSTURA')
+                    ->where('activo', 1)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$registroMaestro) {
+                    throw new \RuntimeException('No existe consecutivo maestro para COSTURA');
+                }
+
+                $nuevoConsecutivo = (int) $registroMaestro->consecutivo_actual + 1;
+
+                \DB::table('consecutivos_recibos')
+                    ->where('id', $registroMaestro->id)
+                    ->update([
+                        'consecutivo_actual' => $nuevoConsecutivo,
+                        'updated_at' => now(),
+                    ]);
+
+                if ($existente) {
+                    \DB::table('consecutivos_recibos_pedidos')
+                        ->where('id', $existente->id)
+                        ->update([
+                            'consecutivo_inicial' => $existente->consecutivo_inicial ?: $nuevoConsecutivo,
+                            'consecutivo_actual' => $nuevoConsecutivo,
+                            'activo' => 1,
+                            'updated_at' => now(),
+                        ]);
+
+                    return [
+                        'id' => $existente->id,
+                        'consecutivo' => $nuevoConsecutivo,
+                    ];
+                }
+
+                \DB::table('consecutivos_recibos_pedidos')->insert([
+                    'pedido_produccion_id' => $pedidoId,
+                    'tipo_recibo' => 'COSTURA',
+                    'prenda_id' => $prendaId,
+                    'consecutivo_inicial' => $nuevoConsecutivo,
+                    'consecutivo_actual' => $nuevoConsecutivo,
+                    'activo' => 1,
+                    'notas' => "Activado manualmente para pedido #{$pedido->numero_pedido} - prenda #{$prendaId}",
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $id = (int) (\DB::getPdo()->lastInsertId());
+
+                return [
+                    'id' => $id,
+                    'consecutivo' => $nuevoConsecutivo,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Recibo COSTURA activado correctamente',
+                'data' => $nuevo,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[activarReciboCostura] Error: ' . $e->getMessage(), [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al activar recibo COSTURA: ' . $e->getMessage(),
+            ], 500);
         }
     }
 

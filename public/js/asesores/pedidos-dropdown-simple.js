@@ -65,9 +65,22 @@ window.crearDropdownVer = function(button) {
         const esRutaInsumos = window.location.pathname.includes('insumos/materiales');
         
         if (esRutaInsumos) {
-            // Para insumos, abrir directamente el recibo de costura sin selector
+            // Para insumos, abrir recibo normal o anexo según data-* del botón
+            const prendaIdInsumos = button.getAttribute('data-prenda-id');
+            const tipoReciboInsumos = button.getAttribute('data-tipo-recibo') || 'COSTURA';
+            const esParcialInsumos = String(button.getAttribute('data-es-parcial') || '').toLowerCase() === 'true';
+            const parcialIdInsumos = button.getAttribute('data-pedido-parcial-id');
+
+            let onclickRecibos;
+            if (esParcialInsumos && parcialIdInsumos) {
+                // Importante: pasar pedidoId explícito porque insumos no usa selectorRecibosState
+                onclickRecibos = `(window.cerrarModalFactura && window.cerrarModalFactura()); openOrderDetailModalWithParcial(${parcialIdInsumos}, ${prendaIdInsumos}, '${tipoReciboInsumos}', ${pedidoId}); closeDropdown()`;
+            } else {
+                onclickRecibos = `(window.cerrarModalFactura && window.cerrarModalFactura()); openOrderDetailModalWithProcess(${pedidoId}, ${prendaIdInsumos}, '${tipoReciboInsumos}'); closeDropdown()`;
+            }
+
             dropdownHTML = `
-                <button onclick="(window.cerrarModalFactura && window.cerrarModalFactura()); openOrderDetailModalWithProcess(${pedidoId}, ${button.getAttribute('data-prenda-id')}, 'COSTURA'); closeDropdown()" style="
+                <button onclick="${onclickRecibos}" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;

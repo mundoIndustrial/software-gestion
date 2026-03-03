@@ -380,6 +380,55 @@
     
     // DEBUG: Mostrar roles en consola
     console.log('🔐 User Roles:', window.selectorRecibosState.usuarioRoles);
+    window.activarReciboCosturaBase = async function(prendaId) {
+        try {
+            const pedidoId = window.selectorRecibosState?.pedidoId;
+            if (!pedidoId) {
+                alert('Error: No se pudo determinar el pedido');
+                return;
+            }
+
+            const titulo = 'Activar Recibo COSTURA';
+            const mensaje = '¿Está seguro de que desea activar el recibo de COSTURA para esta prenda?';
+            const colorBoton = '#10b981';
+
+            mostrarModalConfirmar(titulo, mensaje, colorBoton, async () => {
+                const response = await fetch(`/supervisor-pedidos/${pedidoId}/costura/${prendaId}/activar-recibo`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                    }
+                });
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const textResponse = await response.text();
+                    console.error('[activarReciboCosturaBase] Respuesta no es JSON:', textResponse.substring(0, 200));
+                    throw new Error('El servidor devolvió HTML en lugar de JSON. Posible problema de autenticación.');
+                }
+
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || 'Error al activar el recibo de COSTURA');
+                }
+
+                const consecutivoMsg = result.data?.consecutivo ? ` (Consecutivo: ${result.data.consecutivo})` : '';
+                mostrarMensajeExito((result.message || 'Recibo activado') + consecutivoMsg);
+
+                try {
+                    await cargarDatosRecibos(pedidoId);
+                } catch (recargaError) {
+                    console.warn('Error al recargar datos (pero la activación tuvo éxito):', recargaError);
+                }
+            });
+
+        } catch (error) {
+            console.error('[activarReciboCosturaBase] Error:', error);
+            alert('Error al activar el recibo: ' + error.message);
+        }
+    };
+
     console.log('🔐 esSupervisorPedidos:', window.selectorRecibosState.esSupervisorPedidos);
     
     // Contadores de clics para debugging
@@ -444,6 +493,7 @@
             console.log('[abrirSelectorRecibos] prendas array:', datos.prendas);
             
             window.selectorRecibosState.prendas = datos.prendas || [];
+            window.selectorRecibosState.pedidoEstado = datos.estado || null;
 
             // Actualizar número de pedido (puede ser null)
             const numeroPedido = datos.numero || datos.numero_pedido || datos.id;
@@ -506,11 +556,13 @@
             
             if (!esVistaVisualizadorLogo && !excluirCosturaBodega) {
                 //  RECIBO BASE - SOLO EN OTRAS VISTAS
+                const reciboCosturaActual = prenda?.recibos?.COSTURA || prenda?.consecutivos?.COSTURA || null;
                 const reciboBase = {
                     tipo: prenda.de_bodega == 1 ? "costura-bodega" : "costura",
                     nombre: prenda.de_bodega == 1 ? "Bodega" : "Costura",
-                    estado: "",
-                    es_base: true
+                    estado: reciboCosturaActual ? 'APROBADO' : 'PENDIENTE',
+                    es_base: true,
+                    numero_recibo: reciboCosturaActual
                 };
                 
                 // Agregar recibo base (permite tanto costura como costura-bodega)
@@ -688,6 +740,11 @@
                     // No permitir recibo por talla en Costura (ni costura-bodega)
                     const tipoStringLower = String(tipoString || '').toLowerCase();
                     const puedeCrearPorTalla = esSupervisorRecibos && (tipoStringLower !== 'costura' && tipoStringLower !== 'costura-bodega');
+
+                    const pedidoEstado = window.selectorRecibosState?.pedidoEstado;
+                    const pedidoYaAprobado = pedidoEstado && String(pedidoEstado).toUpperCase() !== 'PENDIENTE_SUPERVISOR';
+
+                    const puedeActivarBaseCostura = recibo.es_base && tipoStringLower === 'costura' && !recibo.numero_recibo && pedidoYaAprobado && usuarioEsSupervisor;
                     
                     // DEBUG: Mostrar decisión de visibilidad del botón
                     console.log(`🔘 Prenda ${prenda.id}: esSupervisorRecibos=${esSupervisorRecibos}, esSupervisorPedidos=${window.selectorRecibosState?.esSupervisorPedidos}`);
@@ -719,6 +776,14 @@
                                 ${puedeModificarRecibo ? `
                                     <button class="btn-activar-recibo" 
                                             onclick="event.stopPropagation(); toggleActivarRecibo(${prenda.id}, '${tipoString}', ${!estaActivo}, ${esParcial ? parcialId : 'null'})"
+                                            title="Activar recibo">
+                                        <i class="fas fa-check"></i>
+                                        Activar
+                                    </button>
+                                ` : ''}
+                                ${puedeActivarBaseCostura ? `
+                                    <button class="btn-activar-recibo" 
+                                            onclick="event.stopPropagation(); activarReciboCosturaBase(${prenda.id})"
                                             title="Activar recibo">
                                         <i class="fas fa-check"></i>
                                         Activar

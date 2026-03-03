@@ -1479,6 +1479,13 @@ class RegistroOrdenController extends Controller
                         $descripcionDetallada = $prendaInfo;
                     }
                 }
+
+                $parcialId = null;
+                $notas = isset($recibo->notas) ? (string) $recibo->notas : '';
+                if ($notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
+                    $parcialId = (int) $matches[1];
+                }
+                $esParcial = $parcialId !== null;
                 
                 return [
                     'id' => $recibo->id,
@@ -1493,6 +1500,8 @@ class RegistroOrdenController extends Controller
                     'updated_at' => $recibo->updated_at,
                     'dias_calculados' => $diasCalculados,
                     'descripcion_detallada' => $descripcionDetallada, // Nuevo campo para filtro
+                    'es_parcial' => $esParcial,
+                    'pedido_parcial_id' => $parcialId,
                     'pedido_info' => $pedido ? [
                         'numero_pedido' => $pedido->numero_pedido,
                         'cliente' => $pedido->cliente,

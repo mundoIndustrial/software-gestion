@@ -414,7 +414,8 @@ class ProcesoSeguimientoController extends Controller
             $prendaId = $proceso->prenda_pedido_id;
             $numeroPedido = $proceso->numero_pedido;
             
-            $proceso->delete();
+            // Eliminación definitiva (no soft delete)
+            $proceso->forceDelete();
 
             // Obtener el ID del pedido a través de la prenda
             $prenda = PrendaPedido::find($prendaId);

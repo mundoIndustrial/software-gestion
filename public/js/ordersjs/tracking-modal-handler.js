@@ -976,7 +976,19 @@ const trackingTableStyles = `
     console.log('[openAddProcesoModal] Modal encontrado:', !!modal);
     
     if (modal) {
+      // Si no estamos editando, abrir limpio para agregar una nueva área
+      if (!window.editingProcessId) {
+        if (typeof resetFormButton === 'function') {
+          resetFormButton();
+        }
+        if (typeof limpiarFormularioProceso === 'function') {
+          limpiarFormularioProceso();
+        }
+      }
+
       modal.classList.add('show');
+      
+      // FORZAR ESTILO DIRECTAMENTE CON JAVASCRIPT
       modal.style.setProperty('display', 'flex', 'important');
       modal.style.setProperty('visibility', 'visible', 'important');
       modal.style.setProperty('opacity', '1', 'important');
@@ -1628,6 +1640,43 @@ const trackingTableStyles = `
     return card;
   }
 
+  // Permite editar el área actual incluso si no existe proceso (creación rápida con prefill)
+  window.handleCrearProcesoDesdeArea = function(areaName, event, encargadoPrefill = '') {
+    try {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      if (typeof openAddProcesoModal !== 'function') {
+        console.warn('[handleCrearProcesoDesdeArea] openAddProcesoModal no disponible');
+        return;
+      }
+
+      // Asegurar que sea modo "agregar" (no edición)
+      if (typeof resetFormButton === 'function') {
+        resetFormButton();
+      } else {
+        window.editingProcessId = null;
+      }
+
+      openAddProcesoModal();
+
+      const procesoArea = document.getElementById('procesoArea');
+      if (procesoArea) procesoArea.value = areaName || '';
+
+      // En modo "editar área actual" (sin id) prellenar encargado si lo tenemos
+      const procesoEncargado = document.getElementById('procesoEncargado');
+      const encargadoFallback = window.currentConsecutivoCosturaData?.encargado || '';
+      const encargadoFinal = String(encargadoPrefill || encargadoFallback || '').trim();
+      if (procesoEncargado) {
+        procesoEncargado.value = encargadoFinal ? encargadoFinal.toUpperCase() : '';
+      }
+    } catch (e) {
+      console.error('[handleCrearProcesoDesdeArea] Error:', e);
+    }
+  };
+
   // Renderizar badges de seguimientos por tipo de recibo
   function renderSeguimientosBadges(seguimientos) {
     if (Object.keys(seguimientos).length === 0) {
@@ -1770,20 +1819,38 @@ const trackingTableStyles = `
       // Actualizar el header del recibo con el número más reciente
       const reciboHeaderElement = document.getElementById('trackingPrendaReciboHeader');
       if (reciboHeaderElement) {
+        // Resolver área actual (prioridad: último proceso > área en prenda > área del pedido)
+        let areaActual = '-';
+        if (prenda.ultimo_proceso_area) {
+          areaActual = prenda.ultimo_proceso_area;
+        } else if (prenda.area && String(prenda.area).trim() !== '') {
+          areaActual = prenda.area;
+        } else if (window.currentOrderData?.area && String(window.currentOrderData.area).trim() !== '') {
+          areaActual = window.currentOrderData.area;
+        }
+
+        // Resolver encargado real (solo desde proceso)
+        const encargadoActual = prenda.ultimo_proceso_encargado || null;
+
         // Debug: Ver qué datos tenemos
         console.log('[DEBUG] Datos de prenda para recibo:', {
           'ultimo_recibo_numero': prenda.ultimo_recibo_numero,
           'consecutivos': prenda.consecutivos,
-          'consecutivos_length': prenda.consecutivos ? prenda.consecutivos.length : 'undefined'
+          'consecutivos_length': prenda.consecutivos ? prenda.consecutivos.length : 'undefined',
+          'area_actual_resuelta': areaActual
         });
         
         // Mostrar el número de recibo más reciente
         const numeroRecibo = prenda.ultimo_recibo_numero;
         if (numeroRecibo && numeroRecibo !== '-') {
-          reciboHeaderElement.textContent = `Recibo #${numeroRecibo}`;
+          reciboHeaderElement.textContent = areaActual && areaActual !== '-'
+            ? `Recibo #${numeroRecibo} - ${areaActual}`
+            : `Recibo #${numeroRecibo}`;
           console.log('[DEBUG] Usando ultimo_recibo_numero:', numeroRecibo);
         } else {
-          reciboHeaderElement.textContent = 'Sin recibo';
+          reciboHeaderElement.textContent = areaActual && areaActual !== '-'
+            ? `Sin recibo - ${areaActual}`
+            : 'Sin recibo';
           console.log('[DEBUG] ultimo_recibo_numero vacío o inválido');
         }
       }
@@ -1810,7 +1877,12 @@ const trackingTableStyles = `
       
       // Actualizar tanto el subtítulo del header como el del timeline
       if (reciboHeaderElement) {
-        reciboHeaderElement.textContent = numeroRecibo;
+        // Mantener el área en el header (si existe)
+        const match = String(numeroRecibo || '');
+        const areaActual = prenda?.ultimo_proceso_area || prenda?.area || window.currentOrderData?.area || '';
+        reciboHeaderElement.textContent = areaActual && String(areaActual).trim() !== ''
+          ? `${match} - ${areaActual}`
+          : match;
         console.log('[DEBUG] Header actualizado con:', numeroRecibo);
       }
       
@@ -1875,26 +1947,15 @@ const trackingTableStyles = `
       
       // Mover el botón original al header
       const originalBtn = document.getElementById('btnOpenAddProcesoModal');
-      const addAreaBtn = originalBtn.cloneNode(true);
-      
-      // Reasignar el event listener al botón clonado
-      addAreaBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        if (typeof openAddProcesoModal === 'function') {
-          openAddProcesoModal();
-        }
-      });
-      
+
       headerContainer.appendChild(seguimientosTitle);
-      headerContainer.appendChild(addAreaBtn);
-      container.appendChild(headerContainer);
-      
-      // Ocultar el botón original
       if (originalBtn) {
-        originalBtn.style.display = 'none';
+        // Mover el botón original (evita duplicados)
+        originalBtn.style.display = '';
+        headerContainer.appendChild(originalBtn);
       }
-      
+      container.appendChild(headerContainer);
+
       Object.entries(seguimientosPorArea).forEach(([area, data]) => {
         const areaCard = createAreaCard(area, data);
         container.appendChild(areaCard);
@@ -1922,8 +1983,48 @@ const trackingTableStyles = `
   function renderNoSeguimiento(container) {
     const noSeguimiento = document.createElement('div');
     noSeguimiento.className = 'tracking-no-seguimiento';
+
+    // Mantener el mensaje original
     noSeguimiento.innerHTML = '<p>No hay seguimientos registrados para esta prenda</p>';
     container.appendChild(noSeguimiento);
+
+    // Usar la UI original del tracking para mostrar el área actual y encargado si se puede
+    // (sin inventar una vista nueva). La edición/creación se hace con el botón "Agregar Área".
+    const prenda = window.currentPrendaData || {};
+    const areaActual = prenda?.ultimo_proceso_area
+      || (prenda?.area && String(prenda.area).trim() !== '' ? prenda.area : null)
+      || (window.currentOrderData?.area && String(window.currentOrderData.area).trim() !== '' ? window.currentOrderData.area : null)
+      || null;
+
+    // Encargado real solo desde procesos_prenda; fallback a /consecutivo-costura si está disponible
+    const encargadoActual = prenda?.ultimo_proceso_encargado
+      || window.currentConsecutivoCosturaData?.encargado
+      || null;
+
+    // Si hay algo que mostrar, renderizar una tarjeta estándar de área.
+    if (areaActual && typeof createAreaCard === 'function') {
+      const estadoUltimo = prenda?.ultimo_proceso_estado || 'Pendiente';
+      const estaActivo = estadoUltimo !== 'Completado';
+
+      const fechaInicioFallback = window.currentConsecutivoCosturaData?.fecha_inicio || null;
+      const fechaFinFallback = window.currentConsecutivoCosturaData?.fecha_fin || null;
+      const procesoIdFallback = window.currentConsecutivoCosturaData?.proceso_id || null;
+
+      const card = createAreaCard(areaActual, {
+        id: prenda?.ultimo_proceso_id || procesoIdFallback,
+        can_edit: true,
+        area: areaActual,
+        estado: estadoUltimo,
+        fecha_inicio: prenda?.ultimo_proceso_fecha_inicio || fechaInicioFallback,
+        fecha_fin: prenda?.ultimo_proceso_fecha_fin || fechaFinFallback,
+        encargado: encargadoActual || 'No asignado',
+        observaciones: prenda?.ultimo_proceso_observaciones || '',
+        codigo_referencia: prenda?.ultimo_proceso_codigo_referencia || null,
+        dias_duracion: prenda?.ultimo_proceso_dias_duracion || null,
+        esta_activo: estaActivo,
+      });
+      container.appendChild(card);
+    }
   }
 
   // Manejar eliminación de proceso
@@ -2045,6 +2146,19 @@ const trackingTableStyles = `
       // Recargar seguimientos de la prenda
       console.log('[executeDeleteProcess] Recargando seguimientos para orden:', window.currentOrderData.id);
       await loadPrendasWithTracking(window.currentOrderData.id);
+
+      // Refrescar consecutivo/area/encargado/fechas (fallback del modal)
+      try {
+        if (window.location.pathname.includes('/recibos-costura') && window.currentOrderData?.id && window.currentPrendaData?.id) {
+          const url = `/registros/${window.currentOrderData.id}/consecutivo-costura?prenda_id=${window.currentPrendaData.id}`;
+          const resp = await fetch(url);
+          if (resp.ok) {
+            window.currentConsecutivoCosturaData = await resp.json();
+          }
+        }
+      } catch (e) {
+        console.warn('[executeDeleteProcess] No se pudo refrescar consecutivo-costura:', e);
+      }
       
       console.log('[executeDeleteProcess] Seguimientos recargados');
       
@@ -2317,17 +2431,19 @@ const trackingTableStyles = `
         ${iconSvg}
         ${area}
         <div class="tracking-action-buttons">
-          ${data.id ? `
-          <button class="tracking-edit-btn" onclick="handleEditarProceso(${data.id}, '${area}', ${JSON.stringify(data).replace(/"/g, '&quot;')}, event)" title="Editar proceso">
+          ${(data.id || data.can_edit) ? `
+          <button class="tracking-edit-btn" onclick="${data.id ? `handleEditarProceso(${data.id}, '${area}', ${JSON.stringify(data).replace(/"/g, '&quot;')}, event)` : `handleCrearProcesoDesdeArea('${area}', event, '${String(data.encargado || '').replace(/'/g, "\\'")}')`}" title="Editar proceso">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
           </button>
+          ${data.id ? `
           <button class="tracking-delete-btn" onclick="handleEliminarProceso(${data.id}, '${area}', event)" title="Eliminar proceso">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"/>
             </svg>
           </button>
+          ` : ''}
           ` : ''}
         </div>
       </div>

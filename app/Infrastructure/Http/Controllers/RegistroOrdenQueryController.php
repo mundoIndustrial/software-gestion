@@ -1600,6 +1600,15 @@ class RegistroOrdenQueryController extends Controller
     {
         try {
             $prendaId = request()->query('prenda_id');
+
+            $pedidoModel = null;
+            if (is_numeric($pedido)) {
+                $pedidoModel = \App\Models\PedidoProduccion::where('id', $pedido)->first();
+            }
+            if (!$pedidoModel) {
+                $pedidoModel = \App\Models\PedidoProduccion::where('numero_pedido', $pedido)->first();
+            }
+            $numeroPedido = $pedidoModel ? (int) $pedidoModel->numero_pedido : (int) $pedido;
             
             \Log::info(' [getConsecutivoCostura] Obteniendo consecutivo de costura para pedido', [
                 'pedido' => $pedido,
@@ -1615,8 +1624,35 @@ class RegistroOrdenQueryController extends Controller
             if ($prendaId) {
                 $query->where('prenda_id', $prendaId);
             }
-            
-            $consecutivo = $query->value('consecutivo_actual');
+
+            $registro = $query->orderByDesc('id')->first();
+            $consecutivo = $registro->consecutivo_actual ?? null;
+            $area = $registro->area ?? null;
+
+            // Encargado real desde procesos_prenda (último proceso registrado)
+            $encargado = null;
+            $fechaInicioProceso = null;
+            $fechaFinProceso = null;
+            $procesoId = null;
+            if ($consecutivo) {
+                $procesoQuery = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
+                    ->whereNull('deleted_at')
+                    ->where(function ($q) use ($prendaId, $consecutivo) {
+                        if ($prendaId) {
+                            $q->where('prenda_pedido_id', $prendaId);
+                        }
+                        $q->orWhere('numero_recibo', (int) $consecutivo);
+                    })
+                    ->orderByDesc('created_at');
+
+                $ultimoProceso = $procesoQuery->first();
+                if ($ultimoProceso) {
+                    $procesoId = $ultimoProceso->id;
+                    $encargado = $ultimoProceso->encargado;
+                    $fechaInicioProceso = $ultimoProceso->fecha_inicio;
+                    $fechaFinProceso = $ultimoProceso->fecha_fin;
+                }
+            }
             
             // Obtener la fecha de creación del pedido
             $fechaCreacion = \DB::table('pedidos_produccion')
@@ -1628,12 +1664,21 @@ class RegistroOrdenQueryController extends Controller
                     'pedido' => $pedido, 
                     'prenda_id' => $prendaId,
                     'consecutivo' => $consecutivo,
+                    'area' => $area,
+                    'encargado' => $encargado,
+                    'fecha_inicio' => $fechaInicioProceso,
+                    'fecha_fin' => $fechaFinProceso,
                     'fecha_creacion' => $fechaCreacion
                 ]);
                 
                 return response()->json([
                     'success' => true,
                     'consecutivo' => $consecutivo,
+                    'area' => $area,
+                    'encargado' => $encargado,
+                    'proceso_id' => $procesoId,
+                    'fecha_inicio' => $fechaInicioProceso,
+                    'fecha_fin' => $fechaFinProceso,
                     'fecha_creacion' => $fechaCreacion
                 ]);
             } else {
@@ -1645,6 +1690,11 @@ class RegistroOrdenQueryController extends Controller
                 return response()->json([
                     'success' => false,
                     'consecutivo' => null,
+                    'area' => null,
+                    'encargado' => null,
+                    'proceso_id' => null,
+                    'fecha_inicio' => null,
+                    'fecha_fin' => null,
                     'fecha_creacion' => null,
                     'message' => 'No se encontraron datos para este pedido'
                 ]);
@@ -1659,6 +1709,11 @@ class RegistroOrdenQueryController extends Controller
             return response()->json([
                 'success' => false,
                 'consecutivo' => null,
+                'area' => null,
+                'encargado' => null,
+                'proceso_id' => null,
+                'fecha_inicio' => null,
+                'fecha_fin' => null,
                 'fecha_creacion' => null,
                 'message' => 'Error al obtener datos del pedido'
             ], 500);
@@ -1712,13 +1767,45 @@ class RegistroOrdenQueryController extends Controller
                     ->where('pedido_produccion_id', $pedidoId)
                     ->where('activo', 1)
                     ->get();
+
+                // Derivar numero_recibo COSTURA (consecutivo_actual) para poder vincular procesos_prenda
+                // cuando prenda_pedido_id viene NULL en procesos_prenda.
+                $numeroReciboCostura = null;
+                foreach ($consecutivos as $c) {
+                    if (($c->tipo_recibo ?? null) === 'COSTURA' && !empty($c->consecutivo_actual)) {
+                        $numeroReciboCostura = (int) $c->consecutivo_actual;
+                        break;
+                    }
+                }
                 
                 // Obtener procesos de seguimiento por área
-                $procesosSeguimiento = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $prenda->id)
-                    ->where('numero_pedido', $pedidoModel->numero_pedido)  // Usar el número de pedido correcto
+                $procesosSeguimientoOriginal = \App\Models\ProcesoPrenda::where('numero_pedido', $pedidoModel->numero_pedido)
                     ->whereNull('deleted_at')  // Excluir procesos eliminados (soft delete)
+                    ->where(function ($q) use ($prenda, $numeroReciboCostura) {
+                        $q->where('prenda_pedido_id', $prenda->id);
+                        if ($numeroReciboCostura) {
+                            $q->orWhere('numero_recibo', $numeroReciboCostura);
+                        }
+                    })
                     ->orderBy('created_at', 'asc')
                     ->get();
+
+                // Calcular fechas de inicio/fin reales según el cambio de área
+                // inicio = created_at del proceso; fin = created_at del siguiente proceso
+                $procesosSeguimientoCalculados = [];
+                if ($procesosSeguimientoOriginal && $procesosSeguimientoOriginal->count() > 0) {
+                    $total = $procesosSeguimientoOriginal->count();
+                    for ($i = 0; $i < $total; $i++) {
+                        $actual = $procesosSeguimientoOriginal[$i];
+                        $siguiente = ($i + 1 < $total) ? $procesosSeguimientoOriginal[$i + 1] : null;
+
+                        $clone = clone $actual;
+                        $clone->fecha_inicio = $actual->created_at;
+                        $clone->fecha_fin = $siguiente ? $siguiente->created_at : null;
+                        $procesosSeguimientoCalculados[] = $clone;
+                    }
+                }
+                $procesosSeguimiento = collect($procesosSeguimientoCalculados);
                 
                 // Agrupar consecutivos por tipo de recibo
                 $seguimientosPorTipo = [];
@@ -1759,15 +1846,39 @@ class RegistroOrdenQueryController extends Controller
                     ];
                 }
                 
-                // Obtener el área y número de recibo del proceso más reciente
+                // Obtener el área, encargado y número de recibo del proceso más reciente
                 $ultimoProcesoArea = '-';
+                $ultimoProcesoEncargado = null;
+                $ultimoProcesoId = null;
+                $ultimoProcesoEstado = null;
+                $ultimoProcesoFechaInicio = null;
+                $ultimoProcesoFechaFin = null;
+                $ultimoProcesoObservaciones = null;
+                $ultimoProcesoCodigoReferencia = null;
+                $ultimoProcesoDiasDuracion = null;
                 $ultimoReciboNumero = '-';
-                if (!empty($procesosSeguimiento)) {
-                    // Ordenar por fecha de creación descendente para obtener el más reciente
-                    $procesosOrdenados = $procesosSeguimiento->sortByDesc('created_at');
-                    $ultimoProceso = $procesosOrdenados->first();
-                    if ($ultimoProceso) {
-                        $ultimoProcesoArea = $ultimoProceso->proceso;
+                if ($procesosSeguimientoOriginal && $procesosSeguimientoOriginal->count() > 0) {
+                    // El último proceso real es el más reciente por created_at
+                    $ultimoProcesoReal = $procesosSeguimientoOriginal->sortByDesc('created_at')->first();
+                    if ($ultimoProcesoReal) {
+                        $ultimoProcesoArea = $ultimoProcesoReal->proceso;
+                        $ultimoProcesoEncargado = $ultimoProcesoReal->encargado;
+                        $ultimoProcesoId = $ultimoProcesoReal->id;
+                        $ultimoProcesoEstado = $ultimoProcesoReal->estado_proceso;
+                        $ultimoProcesoObservaciones = $ultimoProcesoReal->observaciones;
+                        $ultimoProcesoCodigoReferencia = $ultimoProcesoReal->codigo_referencia;
+                        $ultimoProcesoDiasDuracion = $ultimoProcesoReal->dias_duracion;
+
+                        // Fechas calculadas: inicio = created_at del proceso; fin = created_at del siguiente proceso
+                        $procesosOrdenadosAsc = $procesosSeguimientoOriginal->sortBy('created_at')->values();
+                        $idxUltimo = $procesosOrdenadosAsc->search(function ($p) use ($ultimoProcesoReal) {
+                            return $p->id === $ultimoProcesoReal->id;
+                        });
+                        $ultimoProcesoFechaInicio = $ultimoProcesoReal->created_at;
+                        $ultimoProcesoFechaFin = null;
+                        if (is_int($idxUltimo) && ($idxUltimo + 1) < $procesosOrdenadosAsc->count()) {
+                            $ultimoProcesoFechaFin = $procesosOrdenadosAsc[$idxUltimo + 1]->created_at;
+                        }
                         
                         // Obtener el número de recibo más reciente para esta prenda
                         \Log::info('[getSeguimientoPorPrenda] Buscando consecutivos para prenda', [
@@ -1869,6 +1980,14 @@ class RegistroOrdenQueryController extends Controller
                     'total_procesos' => $prenda->procesos->count(),
                     'total_variantes' => $prenda->variantes->count(),
                     'ultimo_proceso_area' => $ultimoProcesoArea, // Área del proceso más reciente
+                    'ultimo_proceso_encargado' => $ultimoProcesoEncargado,
+                    'ultimo_proceso_id' => $ultimoProcesoId,
+                    'ultimo_proceso_estado' => $ultimoProcesoEstado,
+                    'ultimo_proceso_fecha_inicio' => $ultimoProcesoFechaInicio,
+                    'ultimo_proceso_fecha_fin' => $ultimoProcesoFechaFin,
+                    'ultimo_proceso_observaciones' => $ultimoProcesoObservaciones,
+                    'ultimo_proceso_codigo_referencia' => $ultimoProcesoCodigoReferencia,
+                    'ultimo_proceso_dias_duracion' => $ultimoProcesoDiasDuracion,
                     'ultimo_recibo_numero' => $ultimoReciboNumero, // Número de recibo más reciente
                     'ancho_metraje' => $anchoMetrajeData,
                 ];

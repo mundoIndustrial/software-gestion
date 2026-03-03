@@ -349,6 +349,38 @@ export class PedidosRecibosModule {
                 }
             }
 
+            // Caso especial: en /recibos-costura ReceiptBuilder puede excluir el recibo base
+            // (ej: costura-bodega cuando prenda.de_bodega == 1). Para anexos de costura
+            // necesitamos un recibo objetivo para inyectar tallas y renderizar.
+            if (reciboIndice === -1) {
+                const tipoLower = String(tipoRecibo || '').toLowerCase();
+                const esCostura = tipoLower === 'costura' || tipoLower === 'costura-bodega';
+                const esVistaRecibosCostura = window.location.pathname.includes('/recibos-costura');
+                if (esCostura && esVistaRecibosCostura) {
+                    const tipoSintetico = prendaData?.de_bodega == 1 ? 'costura-bodega' : 'costura';
+                    console.warn('[PedidosRecibosModule.abrirReciboParcial] Recibo base no encontrado; creando recibo sintético para renderizar anexo', {
+                        solicitado: tipoRecibo,
+                        tipo_sintetico: tipoSintetico,
+                        de_bodega: prendaData?.de_bodega
+                    });
+
+                    recibos.unshift({
+                        tipo: tipoSintetico,
+                        tipo_proceso: tipoSintetico === 'costura-bodega' ? 'Bodega' : 'Costura',
+                        nombre_proceso: tipoSintetico === 'costura-bodega' ? 'Bodega' : 'Costura',
+                        estado: 'Pendiente',
+                        es_base: true,
+                        ubicaciones: [],
+                        observaciones: '',
+                        imagenes: Array.isArray(prendaData?.imagenes) ? prendaData.imagenes : [],
+                        tallas: prendaData?.tallas || {}
+                    });
+
+                    reciboIndice = 0;
+                    tipoRecibo = tipoSintetico;
+                }
+            }
+
             if (reciboIndice === -1) {
                 throw new Error(`Recibo "${tipoRecibo}" no encontrado`);
             }
@@ -531,9 +563,9 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
  * FUNCIÓN GLOBAL para abrir recibo parcial (anexo)
  * Usa la pipeline de renderizado completa, inyectando tallas del parcial
  */
-window.openOrderDetailModalWithParcial = async function(parcialId, prendaId, tipoString) {
-    const pedidoId = window.selectorRecibosState?.pedidoId;
-    const nombreAnexo = window.selectorRecibosState?.nombreProcesoAnexo || tipoString;
+window.openOrderDetailModalWithParcial = async function(parcialId, prendaId, tipoString, pedidoIdOverride = null, nombreAnexoOverride = null) {
+    const pedidoId = pedidoIdOverride || window.selectorRecibosState?.pedidoId;
+    const nombreAnexo = nombreAnexoOverride || window.selectorRecibosState?.nombreProcesoAnexo || tipoString;
 
     if (!pedidoId) {
         console.error('[openOrderDetailModalWithParcial] pedidoId no disponible en selectorRecibosState');
