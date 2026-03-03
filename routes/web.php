@@ -1713,6 +1713,8 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
     Route::post('/buscar', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'buscarPedido'])->name('buscar');
     Route::post('/reportar-pendiente', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'reportarPendiente'])->name('reportar-pendiente');
     Route::post('/api/completar-proceso/{numeroPedido}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'completarProceso'])->name('api.completar-proceso');
+    Route::post('/api/recibos/{idRecibo}/completar', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'completarRecibo'])->name('api.recibos.completar');
+    Route::delete('/api/recibos/{idRecibo}/deshacer', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'deshacerRecibo'])->name('api.recibos.deshacer');
     Route::get('/debug', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'debug'])->name('debug');
     Route::get('/debug/prendas-recibos', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'debugPrendasRecibos'])->name('debug.prendas-recibos');
 });
@@ -1723,6 +1725,8 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
 Route::middleware(['auth', 'control-calidad-access'])->prefix('control-calidad')->name('control-calidad.')->group(function () {
     Route::get('/dashboard', [App\Infrastructure\Http\Controllers\ControlCalidad\ControlCalidadController::class, 'dashboard'])->name('dashboard');
     Route::get('/pedido/{numeroPedido}', [App\Infrastructure\Http\Controllers\ControlCalidad\ControlCalidadController::class, 'verPedido'])->name('ver-pedido');
+    Route::post('/api/recibos/{idRecibo}/completar', [App\Infrastructure\Http\Controllers\ControlCalidad\ControlCalidadController::class, 'completarRecibo'])->name('api.recibos.completar');
+    Route::delete('/api/recibos/{idRecibo}/deshacer', [App\Infrastructure\Http\Controllers\ControlCalidad\ControlCalidadController::class, 'deshacerRecibo'])->name('api.recibos.deshacer');
 });
 
 // ========================================

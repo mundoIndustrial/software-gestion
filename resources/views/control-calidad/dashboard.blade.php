@@ -44,6 +44,7 @@
                         $recibo = $prenda['recibos'][0] ?? null;
                         $tipoRecibo = $recibo['tipo_recibo'] ?? '';
                         $consecutivoActual = $recibo['consecutivo_actual'] ?? null;
+                        $reciboCompletadoArea = (bool) ($recibo['completado_area'] ?? false);
                     @endphp
                     <div class="orden-card-simple"
                          data-numero="{{ $prenda['numero_pedido'] }}"
@@ -53,7 +54,7 @@
 
                         <div class="orden-border {{ $estadoClass }}"></div>
 
-                        <div class="orden-body">
+                        <div class="orden-body {{ $reciboCompletadoArea ? 'recibo-completado-area' : '' }}">
                             <div class="orden-left">
                                 <div class="orden-top">
                                     <div class="orden-numero-section">
@@ -102,6 +103,25 @@
                                     </a>
                                 </div>
                             </div>
+
+                            @if($recibo)
+                                <div class="orden-right-actions">
+                                    <button class="btn-completar-recibo"
+                                            data-recibo-id="{{ $recibo['id'] ?? '' }}"
+                                            data-completado="{{ $reciboCompletadoArea ? '1' : '0' }}"
+                                            onclick="toggleCompletarRecibo(this); event.stopPropagation();">
+                                        <span class="material-symbols-rounded">done</span>
+                                        {{ $reciboCompletadoArea ? 'COMPLETADO' : 'COMPLETAR' }}
+                                    </button>
+                                    <button class="btn-deshacer-recibo"
+                                            data-recibo-id="{{ $recibo['id'] ?? '' }}"
+                                            style="{{ $reciboCompletadoArea ? '' : 'display: none;' }}"
+                                            onclick="deshacerCompletarRecibo(this); event.stopPropagation();">
+                                        <span class="material-symbols-rounded">undo</span>
+                                        DESHACER
+                                    </button>
+                                </div>
+                            @endif
 
                             <div class="orden-right">
                                 <div class="orden-fecha">
@@ -281,6 +301,71 @@
         background: #4CAF50;
     }
 
+    .recibo-completado-area {
+        background: #E3F2FD;
+    }
+
+    .orden-body {
+        position: relative;
+        padding-bottom: 56px;
+    }
+
+    .orden-right {
+        padding-bottom: 44px;
+    }
+
+    .orden-right-actions {
+        position: absolute;
+        right: 12px;
+        bottom: 10px;
+        display: flex;
+        gap: 0.45rem;
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+    }
+
+    .btn-completar-recibo {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        border: none;
+        border-radius: 10px;
+        padding: 0.45rem 0.75rem;
+        font-size: 0.66rem;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        cursor: pointer;
+        background: #EEF2F7;
+        color: #334155;
+        transition: all 0.2s ease;
+    }
+
+    .btn-completar-recibo[data-completado="1"] {
+        background: #BBDEFB;
+        color: #0F172A;
+    }
+
+    .btn-deshacer-recibo {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        border: none;
+        border-radius: 10px;
+        padding: 0.45rem 0.75rem;
+        font-size: 0.66rem;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        cursor: pointer;
+        background: #E2E8F0;
+        color: #0F172A;
+        transition: all 0.2s ease;
+    }
+
+    .btn-completar-recibo .material-symbols-rounded,
+    .btn-deshacer-recibo .material-symbols-rounded {
+        font-size: 16px;
+    }
+
     .orden-body {
         flex: 1;
         padding: 0.9rem 1rem;
@@ -418,8 +503,9 @@
 
     .orden-pedido-footer {
         position: absolute;
-        bottom: 8px;
+        top: 8px;
         right: 12px;
+        bottom: auto;
         font-size: 0.65rem;
         color: #bbb;
         background: rgba(255, 255, 255, 0.7);
@@ -598,6 +684,88 @@
         }
         window.abrirModalRecibo(pedidoId, prendaId, 'control calidad');
     }
+
+    window.toggleCompletarRecibo = async function(btn) {
+        const reciboId = btn.dataset.reciboId;
+        if (!reciboId) {
+            return;
+        }
+
+        const yaCompletado = btn.dataset.completado === '1';
+        if (yaCompletado) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/control-calidad/api/recibos/${reciboId}/completar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            });
+
+            const data = await response.json();
+            if (!data.success) {
+                return;
+            }
+
+            btn.dataset.completado = '1';
+            btn.setAttribute('data-completado', '1');
+            btn.innerHTML = '<span class="material-symbols-rounded">done</span>COMPLETADO';
+
+            const body = btn.closest('.orden-body');
+            if (body) {
+                body.classList.add('recibo-completado-area');
+            }
+
+            const btnDeshacer = btn.parentElement?.querySelector('.btn-deshacer-recibo');
+            if (btnDeshacer) {
+                btnDeshacer.style.display = '';
+            }
+        } catch (error) {
+            return;
+        }
+    };
+
+    window.deshacerCompletarRecibo = async function(btn) {
+        const reciboId = btn.dataset.reciboId;
+        if (!reciboId) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/control-calidad/api/recibos/${reciboId}/deshacer`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            });
+
+            const data = await response.json();
+            if (!data.success) {
+                return;
+            }
+
+            const container = btn.parentElement;
+            const btnCompletar = container?.querySelector('.btn-completar-recibo');
+            if (btnCompletar) {
+                btnCompletar.dataset.completado = '0';
+                btnCompletar.setAttribute('data-completado', '0');
+                btnCompletar.innerHTML = '<span class="material-symbols-rounded">done</span>COMPLETAR';
+            }
+
+            const body = btn.closest('.orden-body');
+            if (body) {
+                body.classList.remove('recibo-completado-area');
+            }
+
+            btn.style.display = 'none';
+        } catch (error) {
+            return;
+        }
+    };
 </script>
 @endpush
 @endsection

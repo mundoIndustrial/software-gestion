@@ -93,6 +93,7 @@ class ControlCalidadController extends Controller
                     'consecutivo_inicial' => $recibo->consecutivo_inicial,
                     'notas' => $recibo->notas,
                     'creado_en' => $recibo->created_at,
+                    'area' => $recibo->area,
                 ]],
                 'total_recibos' => 1,
                 'fecha_creacion' => $recibo->created_at,
@@ -100,10 +101,111 @@ class ControlCalidadController extends Controller
             ];
         });
 
+        $idsRecibos = $prendasConRecibos
+            ->flatMap(fn($p) => collect($p['recibos'] ?? [])->pluck('id'))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $completadosPorId = !empty($idsRecibos)
+            ? DB::table('prenda_recibo_completado')
+                ->where('area', 'Control de Calidad')
+                ->whereIn('id_recibo', $idsRecibos)
+                ->pluck('fecha_completado', 'id_recibo')
+            : collect();
+
+        if (!empty($idsRecibos)) {
+            $prendasConRecibos = $prendasConRecibos->map(function ($prenda) use ($completadosPorId) {
+                $prenda['recibos'] = array_map(function ($recibo) use ($completadosPorId) {
+                    $idRecibo = $recibo['id'] ?? null;
+                    $recibo['completado_area'] = $idRecibo ? $completadosPorId->has($idRecibo) : false;
+                    return $recibo;
+                }, $prenda['recibos'] ?? []);
+
+                return $prenda;
+            });
+        }
+
         return view('control-calidad.dashboard', [
             'usuario' => $usuario,
             'prendasConRecibos' => $prendasConRecibos,
         ]);
+    }
+
+    public function completarRecibo(Request $request, $idRecibo)
+    {
+        try {
+            $usuario = Auth::user();
+
+            $recibo = ConsecutivoReciboPedido::where('id', $idRecibo)
+                ->where('activo', 1)
+                ->first();
+
+            if (!$recibo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recibo no encontrado'
+                ], 404);
+            }
+
+            $areaRecibo = strtolower(trim((string) ($recibo->area ?? '')));
+            if (!in_array($areaRecibo, ['control calidad', 'control de calidad'], true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Este recibo no está en Control de Calidad'
+                ], 403);
+            }
+
+            DB::table('prenda_recibo_completado')->updateOrInsert(
+                ['id_recibo' => (int) $recibo->id, 'area' => 'Control de Calidad'],
+                [
+                    'numero_recibo' => (int) ($recibo->consecutivo_actual ?? 0),
+                    'nombre_operario' => (string) $usuario->name,
+                    'fecha_completado' => now(),
+                ]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Recibo marcado como completado'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al completar recibo C.C: ' . $e->getMessage(), [
+                'id_recibo' => $idRecibo,
+                'exception' => $e,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al completar el recibo'
+            ], 500);
+        }
+    }
+
+    public function deshacerRecibo(Request $request, $idRecibo)
+    {
+        try {
+            DB::table('prenda_recibo_completado')
+                ->where('id_recibo', (int) $idRecibo)
+                ->where('area', 'Control de Calidad')
+                ->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Marca de completado eliminada'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al deshacer recibo C.C: ' . $e->getMessage(), [
+                'id_recibo' => $idRecibo,
+                'exception' => $e,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al deshacer el recibo'
+            ], 500);
+        }
     }
 
     /**

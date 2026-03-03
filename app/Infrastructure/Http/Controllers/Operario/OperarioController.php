@@ -11,6 +11,7 @@ use App\Models\PedidoAnchoGeneral;
 use App\Models\PedidoMetrajeColor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Controller: OperarioController
@@ -96,6 +97,67 @@ class OperarioController extends Controller
 
         // Obtener prendas con recibos de costura
         $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibos($usuario);
+
+        $areaOperario = $usuario->hasRole('cortador') ? 'Corte' : ($usuario->hasRole('costurero') ? 'Costura' : null);
+        if ($areaOperario) {
+            $idsRecibos = $prendasConRecibos
+                ->flatMap(fn($p) => collect($p['recibos'] ?? [])->pluck('id'))
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+
+            $completadosPorId = DB::table('prenda_recibo_completado')
+                ->where('area', $areaOperario)
+                ->whereIn('id_recibo', $idsRecibos)
+                ->pluck('fecha_completado', 'id_recibo');
+
+            $prendasConRecibos = $prendasConRecibos->map(function ($prenda) use ($completadosPorId) {
+                $prenda['recibos'] = array_map(function ($recibo) use ($completadosPorId) {
+                    $idRecibo = $recibo['id'] ?? null;
+                    $recibo['completado_area'] = $idRecibo ? $completadosPorId->has($idRecibo) : false;
+                    return $recibo;
+                }, $prenda['recibos'] ?? []);
+
+                return $prenda;
+            });
+        }
+
+        if ($usuario->hasRole('vista-costura')) {
+            $idsRecibos = $prendasConRecibos
+                ->flatMap(fn($p) => collect($p['recibos'] ?? [])->pluck('id'))
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+
+            $completadosCortePorId = DB::table('prenda_recibo_completado')
+                ->where('area', 'Corte')
+                ->whereIn('id_recibo', $idsRecibos)
+                ->pluck('fecha_completado', 'id_recibo');
+
+            $completadosCosturaPorId = DB::table('prenda_recibo_completado')
+                ->where('area', 'Costura')
+                ->whereIn('id_recibo', $idsRecibos)
+                ->pluck('fecha_completado', 'id_recibo');
+
+            $completadosControlCalidadPorId = DB::table('prenda_recibo_completado')
+                ->where('area', 'Control de Calidad')
+                ->whereIn('id_recibo', $idsRecibos)
+                ->pluck('fecha_completado', 'id_recibo');
+
+            $prendasConRecibos = $prendasConRecibos->map(function ($prenda) use ($completadosCortePorId, $completadosCosturaPorId, $completadosControlCalidadPorId) {
+                $prenda['recibos'] = array_map(function ($recibo) use ($completadosCortePorId, $completadosCosturaPorId, $completadosControlCalidadPorId) {
+                    $idRecibo = $recibo['id'] ?? null;
+                    $recibo['completado_corte'] = $idRecibo ? $completadosCortePorId->has($idRecibo) : false;
+                    $recibo['completado_costura'] = $idRecibo ? $completadosCosturaPorId->has($idRecibo) : false;
+                    $recibo['completado_control_calidad'] = $idRecibo ? $completadosControlCalidadPorId->has($idRecibo) : false;
+                    return $recibo;
+                }, $prenda['recibos'] ?? []);
+
+                return $prenda;
+            });
+        }
         
         // También obtener los pedidos para mantener compatibilidad
         $datosOperario = $this->obtenerPedidosService->obtenerPedidosDelOperario($usuario);
@@ -853,6 +915,99 @@ class OperarioController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al completar el proceso'
+            ], 500);
+        }
+    }
+
+    public function completarRecibo(Request $request, $idRecibo)
+    {
+        try {
+            $usuario = Auth::user();
+
+            $areaOperario = $usuario->hasRole('cortador') ? 'Corte' : ($usuario->hasRole('costurero') ? 'Costura' : null);
+            if (!$areaOperario) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Rol no autorizado'
+                ], 403);
+            }
+
+            $recibo = \App\Models\ConsecutivoReciboPedido::where('id', $idRecibo)
+                ->where('activo', 1)
+                ->first();
+
+            if (!$recibo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recibo no encontrado'
+                ], 404);
+            }
+
+            $areaRecibo = trim((string) ($recibo->area ?? ''));
+            if (strcasecmp($areaRecibo, $areaOperario) !== 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Este recibo no está en tu área actual'
+                ], 403);
+            }
+
+            DB::table('prenda_recibo_completado')->updateOrInsert(
+                ['id_recibo' => (int) $recibo->id, 'area' => $areaOperario],
+                [
+                    'numero_recibo' => (int) ($recibo->consecutivo_actual ?? 0),
+                    'nombre_operario' => (string) $usuario->name,
+                    'fecha_completado' => now(),
+                ]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Recibo marcado como completado',
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al completar recibo: ' . $e->getMessage(), [
+                'id_recibo' => $idRecibo,
+                'exception' => $e,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al completar el recibo'
+            ], 500);
+        }
+    }
+
+    public function deshacerRecibo(Request $request, $idRecibo)
+    {
+        try {
+            $usuario = Auth::user();
+
+            $areaOperario = $usuario->hasRole('cortador') ? 'Corte' : ($usuario->hasRole('costurero') ? 'Costura' : null);
+            if (!$areaOperario) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Rol no autorizado'
+                ], 403);
+            }
+
+            DB::table('prenda_recibo_completado')
+                ->where('id_recibo', (int) $idRecibo)
+                ->where('area', $areaOperario)
+                ->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Marca de completado eliminada',
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al deshacer recibo: ' . $e->getMessage(), [
+                'id_recibo' => $idRecibo,
+                'exception' => $e,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al deshacer el recibo'
             ], 500);
         }
     }

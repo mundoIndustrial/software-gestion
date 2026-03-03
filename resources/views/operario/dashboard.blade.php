@@ -18,7 +18,7 @@
 @endphp
 
 @section('content')
-<div class="operario-dashboard">
+<div class="operario-dashboard {{ auth()->user()->hasRole('vista-costura') ? 'is-vista-costura' : '' }}">
     <!-- Usuario Logueado en Variable Global -->
     <script>
         window.USUARIO_ACTUAL = {
@@ -86,7 +86,35 @@
                         <div class="orden-border {{ $estadoClass }}"></div>
 
                         <!-- Contenido Izquierdo -->
-                        <div class="orden-body">
+                        @php
+                            $reciboPrincipal = $prenda['recibos'][0] ?? null;
+                            $reciboCompletadoArea = (bool) ($reciboPrincipal['completado_area'] ?? false);
+                            $reciboCompletadoCorte = (bool) ($reciboPrincipal['completado_corte'] ?? false);
+                            $areaReciboActual = (string) ($reciboPrincipal['area'] ?? '');
+                            $reciboCompletadoCostura = (bool) ($reciboPrincipal['completado_costura'] ?? false);
+                            $reciboCompletadoControlCalidad = (bool) ($reciboPrincipal['completado_control_calidad'] ?? false);
+                            $areaReciboNormalizada = strtolower(trim($areaReciboActual));
+                            $completadoVistaSegunArea = $areaReciboNormalizada === 'costura'
+                                ? $reciboCompletadoCostura
+                                : ($areaReciboNormalizada === 'corte'
+                                    ? $reciboCompletadoCorte
+                                    : (in_array($areaReciboNormalizada, ['control calidad', 'control de calidad'], true)
+                                        ? $reciboCompletadoControlCalidad
+                                        : false));
+                            $labelAreaVista = $areaReciboActual ?: '—';
+                            $labelEstadoVista = $completadoVistaSegunArea
+                                ? ('COMPLETADO ' . strtoupper($labelAreaVista))
+                                : ('PENDIENTE ' . strtoupper($labelAreaVista));
+                        @endphp
+                        <div class="orden-body {{ ($reciboCompletadoArea || (auth()->user()->hasRole('vista-costura') && $completadoVistaSegunArea)) ? 'recibo-completado-area' : '' }}">
+                            @if(auth()->user()->hasRole('vista-costura'))
+                                <div class="orden-top-badges" onclick="event.stopPropagation();">
+                                    <span class="badge-area">{{ strtoupper($labelAreaVista) }}</span>
+                                    <span class="badge-completado-corte {{ $completadoVistaSegunArea ? 'is-on' : '' }}">
+                                        {{ $labelEstadoVista }}
+                                    </span>
+                                </div>
+                            @endif
                             <div class="orden-left">
                                 <div class="orden-top">
                                     <div class="orden-numero-section">
@@ -118,7 +146,7 @@
 
 
                                 <!-- Contenedor de Botones -->
-                                <div class="orden-buttons" style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;">
+                                <div class="orden-buttons" style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-start;">
                                     @if(auth()->user()->hasRole('vista-costura'))
                                         @php
                                             $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
@@ -190,31 +218,52 @@
 
                             <!-- Contenido Derecho -->
                             <div class="orden-right">
-                                @if(isset($prenda['recibos'][0]['consecutivo_actual']))
-                                    {{-- Mostrar número del recibo --}}
-                                    <div class="orden-fecha">
-                                        <span class="orden-fecha-label">RECIBO</span>
-                                        <span>#{{ $prenda['recibos'][0]['consecutivo_actual'] }}</span>
-                                    </div>
-                                @else
-                                    {{-- Para otros roles, mostrar número del pedido --}}
-                                    <div class="orden-fecha">
-                                        <span class="orden-fecha-label">PEDIDO</span>
-                                        <span>#{{ $prenda['numero_pedido'] }}</span>
-                                    </div>
-                                @endif
-                                <div class="orden-fecha">
-                                    <span class="orden-fecha-label">REGISTRO</span>
-                                    <span>{{ $prenda['fecha_creacion']->format('d/m/Y') }}</span>
-                                </div>
-                                <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $prenda['recibos'][0]['tipo_recibo'] ?? '' }}'); return false;">
-                                    <span class="material-symbols-rounded">arrow_forward</span>
-                                </a>
-                                
                                 {{-- Pie de página con número de pedido --}}
                                 <div class="orden-pedido-footer">
                                     <small>PEDIDO #{{ $prenda['numero_pedido'] }}</small>
                                 </div>
+
+                                <div class="orden-right-center">
+                                    @if(isset($prenda['recibos'][0]['consecutivo_actual']))
+                                        {{-- Mostrar número del recibo --}}
+                                        <div class="orden-fecha">
+                                            <span class="orden-fecha-label">RECIBO</span>
+                                            <span>#{{ $prenda['recibos'][0]['consecutivo_actual'] }}</span>
+                                        </div>
+                                    @else
+                                        {{-- Para otros roles, mostrar número del pedido --}}
+                                        <div class="orden-fecha">
+                                            <span class="orden-fecha-label">PEDIDO</span>
+                                            <span>#{{ $prenda['numero_pedido'] }}</span>
+                                        </div>
+                                    @endif
+                                    <div class="orden-fecha">
+                                        <span class="orden-fecha-label">REGISTRO</span>
+                                        <span>{{ $prenda['fecha_creacion']->format('d/m/Y') }}</span>
+                                    </div>
+                                    <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $prenda['recibos'][0]['tipo_recibo'] ?? '' }}'); return false;">
+                                        <span class="material-symbols-rounded">arrow_forward</span>
+                                    </a>
+                                </div>
+
+                                @if(auth()->user()->hasRole('cortador') || auth()->user()->hasRole('costurero'))
+                                    <div class="orden-right-actions">
+                                        <button class="btn-completar-recibo" 
+                                                data-recibo-id="{{ $reciboPrincipal['id'] ?? '' }}"
+                                                data-completado="{{ $reciboCompletadoArea ? '1' : '0' }}"
+                                                onclick="toggleCompletarRecibo(this); event.stopPropagation();">
+                                            <span class="material-symbols-rounded">done</span>
+                                            {{ $reciboCompletadoArea ? 'COMPLETADO' : 'COMPLETAR' }}
+                                        </button>
+                                        <button class="btn-deshacer-recibo" 
+                                                data-recibo-id="{{ $reciboPrincipal['id'] ?? '' }}"
+                                                style="{{ $reciboCompletadoArea ? '' : 'display: none;' }}"
+                                                onclick="deshacerCompletarRecibo(this); event.stopPropagation();">
+                                            <span class="material-symbols-rounded">undo</span>
+                                            DESHACER
+                                        </button>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -596,6 +645,124 @@
 
     .btn-completar-proceso .material-symbols-rounded {
         font-size: 14px;
+    }
+
+    .recibo-completado-area {
+        background: #E3F2FD;
+    }
+
+    .orden-body {
+        position: relative;
+    }
+
+    .orden-top-badges {
+        position: absolute;
+        top: 8px;
+        right: 12px;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        z-index: 2;
+    }
+
+    .orden-top-badges span {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 0.3px;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        background: rgba(255, 255, 255, 0.65);
+        color: #0F172A;
+        backdrop-filter: blur(2px);
+    }
+
+    .badge-completado-corte.is-on {
+        background: #BBDEFB;
+        border-color: rgba(25, 118, 210, 0.25);
+    }
+
+    .orden-right {
+        position: relative;
+        padding-top: 24px;
+        padding-bottom: 56px;
+        min-width: 230px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .orden-right-center {
+        display: flex;
+        align-items: center;
+        gap: 1.1rem;
+        margin-top: 10px;
+    }
+
+    .btn-completar-recibo {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        border: none;
+        border-radius: 10px;
+        padding: 0.45rem 0.75rem;
+        font-size: 0.66rem;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        cursor: pointer;
+        background: #EEF2F7;
+        color: #334155;
+        transition: all 0.2s ease;
+    }
+
+    .orden-right-actions {
+        position: absolute;
+        right: 12px;
+        bottom: 2px;
+        display: flex;
+        gap: 0.45rem;
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+    }
+
+    .orden-pedido-footer {
+        position: absolute;
+        top: 34px;
+        right: 12px;
+        bottom: auto;
+    }
+
+    .is-vista-costura .orden-right .orden-pedido-footer {
+        top: auto;
+        bottom: 8px;
+    }
+
+    .btn-completar-recibo .material-symbols-rounded,
+    .btn-deshacer-recibo .material-symbols-rounded {
+        font-size: 16px;
+    }
+
+    .btn-completar-recibo[data-completado="1"] {
+        background: #BBDEFB;
+        color: #0F172A;
+    }
+
+    .btn-deshacer-recibo {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        border: none;
+        border-radius: 10px;
+        padding: 0.45rem 0.75rem;
+        font-size: 0.66rem;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        cursor: pointer;
+        background: #E2E8F0;
+        color: #0F172A;
+        transition: all 0.2s ease;
     }
 
     /* Botón Agregar Novedad */
@@ -1343,6 +1510,98 @@
             setTimeout(() => {
                 location.reload();
             }, 500);
+        }
+    };
+
+    window.toggleCompletarRecibo = async function(btn) {
+        const reciboId = btn.dataset.reciboId;
+        if (!reciboId) {
+            return;
+        }
+
+        const yaCompletado = btn.dataset.completado === '1';
+        if (yaCompletado) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/operario/api/recibos/${reciboId}/completar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            });
+
+            const data = await response.json();
+            if (!data.success) {
+                document.getElementById('exitoTitulo').textContent = ' Error';
+                document.getElementById('exitoMensaje').textContent = data.message || 'No se pudo completar el recibo';
+                document.getElementById('modalExito').style.display = 'flex';
+                return;
+            }
+
+            btn.dataset.completado = '1';
+            btn.innerHTML = '<span class="material-symbols-rounded">done</span>COMPLETADO';
+            btn.setAttribute('data-completado', '1');
+
+            const cardBody = btn.closest('.orden-body');
+            if (cardBody) {
+                cardBody.classList.add('recibo-completado-area');
+            }
+
+            const btnDeshacer = btn.parentElement?.querySelector('.btn-deshacer-recibo');
+            if (btnDeshacer) {
+                btnDeshacer.style.display = '';
+            }
+        } catch (error) {
+            document.getElementById('exitoTitulo').textContent = ' Error';
+            document.getElementById('exitoMensaje').textContent = 'Error al completar el recibo';
+            document.getElementById('modalExito').style.display = 'flex';
+        }
+    };
+
+    window.deshacerCompletarRecibo = async function(btn) {
+        const reciboId = btn.dataset.reciboId;
+        if (!reciboId) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/operario/api/recibos/${reciboId}/deshacer`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            });
+
+            const data = await response.json();
+            if (!data.success) {
+                document.getElementById('exitoTitulo').textContent = ' Error';
+                document.getElementById('exitoMensaje').textContent = data.message || 'No se pudo deshacer';
+                document.getElementById('modalExito').style.display = 'flex';
+                return;
+            }
+
+            const container = btn.parentElement;
+            const btnCompletar = container?.querySelector('.btn-completar-recibo');
+            if (btnCompletar) {
+                btnCompletar.dataset.completado = '0';
+                btnCompletar.setAttribute('data-completado', '0');
+                btnCompletar.innerHTML = '<span class="material-symbols-rounded">done</span>COMPLETAR';
+            }
+
+            const cardBody = btn.closest('.orden-body');
+            if (cardBody) {
+                cardBody.classList.remove('recibo-completado-area');
+            }
+
+            btn.style.display = 'none';
+        } catch (error) {
+            document.getElementById('exitoTitulo').textContent = ' Error';
+            document.getElementById('exitoMensaje').textContent = 'Error al deshacer el recibo';
+            document.getElementById('modalExito').style.display = 'flex';
         }
     };
 </script>
@@ -2450,6 +2709,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     btn.dataset.procesoId = data.data.proceso_id;
                     btn.classList.add('btn-deshacer-costura');
                     btn.innerHTML = '<span class="material-symbols-rounded">undo</span> DESHACER COSTURA';
+
+                    const dashboard = document.querySelector('.operario-dashboard');
+                    if (dashboard && dashboard.classList.contains('is-vista-costura')) {
+                        const card = btn.closest('.orden-card-simple');
+                        const body = card ? card.querySelector('.orden-body') : null;
+                        const badgeArea = body ? body.querySelector('.orden-top-badges .badge-area') : null;
+                        const badgeEstado = body ? body.querySelector('.orden-top-badges .badge-completado-corte') : null;
+
+                        if (badgeArea) {
+                            badgeArea.textContent = 'COSTURA';
+                        }
+
+                        if (badgeEstado) {
+                            badgeEstado.textContent = 'PENDIENTE COSTURA';
+                            badgeEstado.classList.remove('is-on');
+                        }
+
+                        if (body) {
+                            body.classList.remove('recibo-completado-area');
+                        }
+                    }
                 }
 
                 cerrarModalCostura();
@@ -2501,6 +2781,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     btn.dataset.procesoId = '';
                     btn.classList.remove('btn-deshacer-costura');
                     btn.innerHTML = '<span class="material-symbols-rounded">checkroom</span> PASAR A COSTURA';
+
+                    const dashboard = document.querySelector('.operario-dashboard');
+                    if (dashboard && dashboard.classList.contains('is-vista-costura')) {
+                        const card = btn.closest('.orden-card-simple');
+                        const body = card ? card.querySelector('.orden-body') : null;
+                        const badgeArea = body ? body.querySelector('.orden-top-badges .badge-area') : null;
+                        const badgeEstado = body ? body.querySelector('.orden-top-badges .badge-completado-corte') : null;
+
+                        const areaNueva = (data.data.area_nueva || '—').toString().trim().toUpperCase();
+
+                        if (badgeArea) {
+                            badgeArea.textContent = areaNueva;
+                        }
+
+                        if (badgeEstado) {
+                            badgeEstado.textContent = 'PENDIENTE ' + areaNueva;
+                            badgeEstado.classList.remove('is-on');
+                        }
+
+                        if (body) {
+                            body.classList.remove('recibo-completado-area');
+                        }
+                    }
                 }
 
                 mostrarExito('Éxito', 'Proceso de Costura deshecho correctamente');
