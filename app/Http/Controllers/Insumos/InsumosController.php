@@ -1620,6 +1620,58 @@ class InsumosController extends Controller
     }
 
     /**
+     * Elimina ancho general y/o metraje por color de una prenda
+     */
+    public function eliminarAnchoMetrajePrenda(Request $request, $numeroPedido)
+    {
+        try {
+            $user = Auth::user();
+            $this->verificarRolInsumos($user);
+            
+            // Validar datos
+            $validated = $request->validate([
+                'prenda_id' => 'required|integer|exists:prendas_pedido,id'
+            ]);
+            
+            // Buscar el pedido
+            $pedido = PedidoProduccion::find($numeroPedido)
+                ?? PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+            
+            // Eliminar ancho general
+            PedidoAnchoGeneral::where('pedido_produccion_id', $pedido->id)
+                ->where('prenda_pedido_id', $validated['prenda_id'])
+                ->delete();
+            
+            // Eliminar metrajes por color
+            PedidoMetrajeColor::where('pedido_produccion_id', $pedido->id)
+                ->where('prenda_pedido_id', $validated['prenda_id'])
+                ->delete();
+            
+            \Log::info("Ancho y metraje eliminados para pedido {$numeroPedido}, prenda {$validated['prenda_id']}", [
+                'usuario_id' => $user->id,
+                'usuario_nombre' => $user->name
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Ancho y metraje eliminados correctamente'
+            ]);
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación: ' . $e->getMessage()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error al eliminar ancho y metraje de prenda: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar ancho y metraje de prenda'
+            ], 500);
+        }
+    }
+
+    /**
      * Obtener el número de recibo para una prenda en un pedido
      */
     public function obtenerReciboPrenda($numeroPedido, $prendaId)

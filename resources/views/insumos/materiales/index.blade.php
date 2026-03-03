@@ -1493,6 +1493,13 @@
 
             <div class="flex gap-3 justify-end border-t border-gray-200 p-6 flex-shrink-0">
                 <button 
+                    id="btnEliminarAnchoMetraje"
+                    onclick="abrirModalConfirmacionEliminar()" 
+                    class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg flex items-center gap-2 hidden"
+                >
+                    <i class="fas fa-trash-alt"></i> Eliminar
+                </button>
+                <button 
                     onclick="guardarAnchoMetraje()" 
                     class="px-6 py-2 text-white font-semibold rounded-lg flex items-center gap-2"
                     style="background: linear-gradient(to right, #111827, #1e3a8a) !important; color: white !important;"
@@ -1504,6 +1511,34 @@
                     class="px-6 py-2 bg-gray-400 text-white font-semibold rounded-lg flex items-center gap-2"
                 >
                     <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE CONFIRMACIÓN PARA ELIMINAR ANCHO/METRAJE -->
+<div id="modalConfirmacionEliminar" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center" style="z-index: 10002;">
+    <div class="bg-white rounded-lg shadow-2xl w-96">
+        <div class="bg-gradient-to-r from-red-600 to-red-700 text-white p-4 rounded-t-lg flex items-center gap-3">
+            <i class="fas fa-exclamation-triangle text-2xl"></i>
+            <h2 class="text-lg font-bold">Eliminar Datos</h2>
+        </div>
+        <div class="p-6">
+            <p class="text-gray-700 text-base font-semibold mb-2">¿Estás seguro?</p>
+            <p class="text-gray-600 text-sm mb-6">Se eliminará todo el registro de ancho/metraje para esta prenda. Esta acción no se puede deshacer.</p>
+            <div class="flex gap-3 justify-end">
+                <button 
+                    onclick="cerrarModalConfirmacionEliminar()" 
+                    class="px-4 py-2 bg-gray-400 text-white font-semibold rounded-lg hover:bg-gray-500 flex items-center gap-2"
+                >
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button 
+                    onclick="confirmarEliminarAnchoMetraje()" 
+                    class="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 flex items-center gap-2"
+                >
+                    <i class="fas fa-trash-alt"></i> Eliminar
                 </button>
             </div>
         </div>
@@ -1665,6 +1700,9 @@
                 // Ejecutar cambio de modo inicial
                 cambiarModoAnchoMetraje();
                 
+                // Mostrar/ocultar botón eliminar
+                mostrarBotonesAnchoMetraje();
+                
                 // Agregar event listeners a los radio buttons para cambiar de vista dinámicamente
                 document.querySelectorAll('input[name="modoAnchoMetraje"]').forEach(radio => {
                     radio.addEventListener('change', cambiarModoAnchoMetraje);
@@ -1677,6 +1715,9 @@
                 document.getElementById('modoSelector').classList.remove('hidden');
                 document.querySelector('input[name="modoAnchoMetraje"][value="normal"]').checked = true;
                 cambiarModoAnchoMetraje();
+                
+                // Mostrar/ocultar botón eliminar
+                mostrarBotonesAnchoMetraje();
                 
                 // Agregar event listeners mismo en fallback
                 document.querySelectorAll('input[name="modoAnchoMetraje"]').forEach(radio => {
@@ -2127,6 +2168,81 @@
         document.getElementById('metrajeInput').value = '';
         document.getElementById('colorInputsContainer').innerHTML = '';
         document.getElementById('piezaInputsContainer').innerHTML = '';
+    }
+
+    /**
+     * Mostrar/ocultar botón eliminar basado en si hay datos guardados
+     */
+    function mostrarBotonesAnchoMetraje() {
+        const modal = document.getElementById('modalAnchoMetraje');
+        const btnEliminar = document.getElementById('btnEliminarAnchoMetraje');
+        
+        if (modal.tieneDatosGuardados) {
+            btnEliminar.classList.remove('hidden');
+        } else {
+            btnEliminar.classList.add('hidden');
+        }
+    }
+
+    /**
+     * Abre el modal de confirmación para eliminar ancho/metraje
+     */
+    function abrirModalConfirmacionEliminar() {
+        const modalConfirmacion = document.getElementById('modalConfirmacionEliminar');
+        modalConfirmacion.classList.remove('hidden');
+    }
+
+    /**
+     * Cierra el modal de confirmación para eliminar ancho/metraje
+     */
+    function cerrarModalConfirmacionEliminar() {
+        const modalConfirmacion = document.getElementById('modalConfirmacionEliminar');
+        modalConfirmacion.classList.add('hidden');
+    }
+
+    /**
+     * Confirma y ejecuta la eliminación de ancho/metraje
+     */
+    function confirmarEliminarAnchoMetraje() {
+        const modal = document.getElementById('modalAnchoMetraje');
+        const prendaId = modal.dataset.prendaId;
+        const pedido = modal.dataset.pedido;
+        
+        if (!prendaId) {
+            showToast('Error: No se encontró la información de la prenda', 'error');
+            return;
+        }
+
+        // Llamar al backend para eliminar
+        fetch(`/insumos/materiales/${pedido}/eliminar-ancho-metraje-prenda`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            },
+            body: JSON.stringify({
+                prenda_id: prendaId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Datos eliminados correctamente', 'success');
+                cerrarModalConfirmacionEliminar();
+                
+                // Recargar el modal (vacío)
+                setTimeout(() => {
+                    cerrarModalAnchoMetraje();
+                    abrirModalAnchoMetraje(pedido, prendaId);
+                }, 800);
+            } else {
+                showToast('Error al eliminar los datos: ' + (data.message || ''), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error al eliminar ancho y metraje:', error);
+            showToast('Error al eliminar los datos', 'error');
+        });
     }
 
     /**
