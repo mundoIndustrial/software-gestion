@@ -23,7 +23,7 @@ Route::get('/pedidos-test', function() {
 // Ruta temporal para acceso sin restricciones (solo para diagnóstico)
 Route::get('/pedidos-temp', [PedidosController::class, 'index']);
 
-Route::middleware(['auth', 'role:bodeguero,supervisor_pedidos,admin,despacho'])->prefix('gestion-bodega')->name('gestion-bodega.')->group(function () {
+Route::middleware(['auth', 'role:bodeguero,supervisor_pedidos,supervisor_gerencia,admin,despacho'])->prefix('gestion-bodega')->name('gestion-bodega.')->group(function () {
     
     // Ruta de diagnóstico
     Route::get('/diagnostico', function() {

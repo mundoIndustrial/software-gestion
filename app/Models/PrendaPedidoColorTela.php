@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $color_id
  * @property int|null $tela_id
  * @property string|null $referencia
+ * @property string|null $observaciones
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
  */
@@ -26,6 +27,7 @@ class PrendaPedidoColorTela extends Model
         'color_id',
         'tela_id',
         'referencia',
+        'observaciones',
     ];
 
     /**

@@ -224,6 +224,7 @@ final class AgregarPrendaCompletaUseCase
                     'color_id' => $telaData['color_id'],
                     'tela_id' => $telaData['tela_id'],
                     'referencia' => $telaData['referencia'] ?? null,
+                    'observaciones' => $telaData['observaciones'] ?? null,
                 ]);
                 $telasCreadasCount++;
                 $this->guardarFotoTela($colorTela, $telaIdx, $fotosTelaRutas);
@@ -298,6 +299,7 @@ final class AgregarPrendaCompletaUseCase
                         'color_id' => $colorId ?? null,
                         'tela_id' => $telaId ?? null,
                         'referencia' => $telaData['referencia'] ?? null,
+                        'observaciones' => $telaData['observaciones'] ?? null,
                     ]);
                     $telasCreadasCount++;
                     $this->guardarFotoTela($colorTela, $telaIdx, $fotosTelaRutas);

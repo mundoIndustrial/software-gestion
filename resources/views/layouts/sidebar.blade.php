@@ -166,8 +166,8 @@
       <span class="menu-section-title">Gestión de Bodega</span>
       <ul class="menu-list" role="navigation">
       <li class="menu-item">
-        <a href="{{ route('registros.index') }}"
-           class="menu-link {{ request()->routeIs('registros.index') ? 'active' : '' }}"
+        <a href="/supervisor-asesores/pedidos"
+           class="menu-link {{ request()->is('supervisor-asesores/pedidos') ? 'active' : '' }}"
            aria-label="Ver todos los pedidos">
           <span class="material-symbols-rounded" aria-hidden="true">list</span>
           <span class="menu-label">Todos los Pedidos</span>
@@ -179,14 +179,6 @@
            aria-label="Despacho">
           <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
           <span class="menu-label">Despacho</span>
-        </a>
-      </li>
-      <li class="menu-item">
-        <a href="{{ route('gestion-bodega.pedidos') }}"
-           class="menu-link {{ request()->routeIs('gestion-bodega.pedidos') ? 'active' : '' }}"
-           aria-label="Pendientes Pedidos">
-          <span class="material-symbols-rounded" aria-hidden="true">cancel</span>
-          <span class="menu-label">Pendientes Pedidos</span>
         </a>
       </li>
       <li class="menu-item">

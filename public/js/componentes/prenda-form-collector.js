@@ -504,6 +504,7 @@ class PrendaFormCollector {
                         tela: tela.tela || '',
                         color: tela.color || '',
                         referencia: tela.referencia || '',
+                        observaciones: tela.observaciones || '',
                         tela_id: tela.tela_id || 0,
                         color_id: tela.color_id || 0,
                         nombre_tela: tela.nombre_tela || tela.tela || '',
@@ -553,6 +554,7 @@ class PrendaFormCollector {
                         tela: tela.nombre_tela || tela.tela || '',
                         color: tela.color_nombre || tela.color || '',
                         referencia: tela.referencia || '',
+                        observaciones: tela.observaciones || '',
                         color_id: tela.color_id,  // Preservar para MERGE
                         tela_id: tela.tela_id,    // Preservar para MERGE
                         imagenes: imagenesCopia

@@ -2127,7 +2127,7 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('api
 // ========================================
 // RUTAS PARA SUPERVISOR DE ASESORES
 // ========================================
-Route::middleware(['auth', 'role:supervisor_asesores,admin'])->prefix('supervisor-asesores')->name('supervisor-asesores.')->group(function () {
+Route::middleware(['auth', 'role:supervisor_asesores,supervisor_gerencia,admin'])->prefix('supervisor-asesores')->name('supervisor-asesores.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [App\Http\Controllers\SupervisorAsesoresController::class, 'dashboard'])->name('dashboard');
     Route::get('/dashboard-stats', [App\Http\Controllers\SupervisorAsesoresController::class, 'dashboardStats'])->name('dashboard-stats');

@@ -1,4 +1,4 @@
-@extends('layouts.supervisor-asesores')
+@extends('layouts.app')
 
 @section('title', 'Pedidos')
 @section('page-title', 'Todos los Pedidos')
