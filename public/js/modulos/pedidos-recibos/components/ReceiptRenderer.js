@@ -48,32 +48,15 @@ export class ReceiptRenderer {
      */
     static _actualizarAnchoMetraje(prendaData, tipoProceso = '') {
         const contenedor = document.getElementById('order-ancho-metraje');
-        const anchoSpan = document.getElementById('ancho-valor');
-        const metrajeSpan = document.getElementById('metraje-valor');
+        const metrajesContainer = document.getElementById('metrajes-por-color-container');
 
-        // Solo mostrar ancho/metraje para costura y costura-bodega
-        const tipoBajo = String(tipoProceso || '').toLowerCase();
-        const esCostura = tipoBajo === 'costura' || tipoBajo === 'costura-bodega';
-
+        // Limpiar datos residuales del recibo anterior y ocultar por defecto
+        if (metrajesContainer) metrajesContainer.innerHTML = '';
         if (contenedor) {
-            contenedor.style.display = esCostura ? '' : 'none';
+            contenedor.style.display = 'none';
         }
-
-        if (anchoSpan && metrajeSpan && esCostura) {
-            if (prendaData.ancho_metraje && (prendaData.ancho_metraje.ancho || prendaData.ancho_metraje.metraje)) {
-                anchoSpan.textContent = prendaData.ancho_metraje.ancho + ' m';
-                metrajeSpan.textContent = prendaData.ancho_metraje.metraje + ' m';
-                console.log(' [ReceiptRenderer] Ancho/Metraje actualizado:', {
-                    prenda: prendaData.nombre,
-                    ancho: prendaData.ancho_metraje.ancho,
-                    metraje: prendaData.ancho_metraje.metraje
-                });
-            } else {
-                anchoSpan.textContent = '--';
-                metrajeSpan.textContent = '--';
-                console.log(' [ReceiptRenderer] Sin datos de ancho/metraje para prenda:', prendaData.nombre);
-            }
-        }
+        
+        // La lógica de mostrar/llenar datos la maneja _cargarYAgregarMetrajesPorColor
     }
 
     /**
@@ -360,6 +343,14 @@ export class ReceiptRenderer {
             prendaNombre: prendaData.nombre_prenda
         });
 
+        // Limpiar y ocultar contenedor de ancho/metraje inicialmente
+        const contenedorInicial = document.getElementById('order-ancho-metraje');
+        if (contenedorInicial) {
+            contenedorInicial.style.display = 'none';
+            const metrajesContainer = document.getElementById('metrajes-por-color-container');
+            if (metrajesContainer) metrajesContainer.innerHTML = '';
+        }
+
         // Fetch async para obtener metrajes
         fetch(`/insumos/materiales/${pedidoId}/obtener-ancho-metraje-prenda/${prendaData.prenda_pedido_id}`)
             .then(response => {
@@ -380,8 +371,18 @@ export class ReceiptRenderer {
                     return;
                 }
 
-                const tipoModo = data.tipo_modo || 'normal';
                 const contenedor = document.getElementById('order-ancho-metraje');
+                
+                // Si no hay tipo_modo ni datos, ocultar contenedor
+                if (!data.tipo_modo || (Array.isArray(data.data) && data.data.length === 0 && !data.ancho && !data.metraje)) {
+                    if (contenedor) {
+                        contenedor.style.display = 'none';
+                    }
+                    console.log('[ReceiptRenderer] Sin datos de ancho/metraje para mostrar');
+                    return;
+                }
+
+                const tipoModo = data.tipo_modo;
                 const anchoSpan = document.getElementById('ancho-valor');
                 const metrajeSpan = document.getElementById('metraje-valor');
                 
@@ -398,6 +399,8 @@ export class ReceiptRenderer {
                     if (metrajeSpan) {
                         const metrajeGeneral = data.metraje || null;
                         metrajeSpan.textContent = metrajeGeneral ? metrajeGeneral + ' m' : '--';
+                        // Mostrar metraje en modo normal
+                        metrajeSpan.closest('span').style.display = '';
                     }
                     
                     console.log('[ReceiptRenderer] Modo NORMAL: Ancho + Metraje en barra inferior');
@@ -418,37 +421,33 @@ export class ReceiptRenderer {
                     console.log('[ReceiptRenderer] Modo COLOR: Metraje inyectado en descripción por color');
                     
                 } else if (tipoModo === 'pieza') {
-                    // MODO POR PIEZA: Ancho en barra inferior + lista de metrajes por color abajo
+                    // MODO POR PIEZA: Ancho en columna izquierda + metrajes por color en columna derecha
                     if (contenedor) {
                         contenedor.style.display = '';
-                        // Ocultar metraje general
+                        // Ocultar metraje general (está escondido en el HTML)
                         if (metrajeSpan) {
                             metrajeSpan.closest('span').style.display = 'none';
                         }
                         
-                        // Agregar lista de metrajes por color debajo del ancho
+                        // Agregar lista de metrajes por color en el contenedor dedicado
                         const metrajesValidos = (data.data || []).filter(item => item.color && item.metraje);
-                        if (metrajesValidos.length > 0) {
-                            // Eliminar lista anterior si existe
-                            const existente = contenedor.querySelector('.metrajes-pieza-list');
-                            if (existente) existente.remove();
+                        const contenedorMetrajes = document.getElementById('metrajes-por-color-container');
+                        
+                        if (contenedorMetrajes) {
+                            contenedorMetrajes.innerHTML = '';
                             
-                            const listaDiv = document.createElement('div');
-                            listaDiv.className = 'metrajes-pieza-list';
-                            listaDiv.style.cssText = 'margin-top: 8px; text-align: left; font-size: 0.85rem;';
-                            
-                            let listaHTML = '<strong style="display: block; margin-bottom: 4px;">Metraje por Color:</strong>';
-                            metrajesValidos.forEach(item => {
-                                listaHTML += `<span style="display: block; color: red; font-weight: bold;">${item.color.toUpperCase()}: Metraje: ${item.metraje} m</span>`;
-                            });
-                            
-                            listaDiv.innerHTML = listaHTML;
-                            contenedor.appendChild(listaDiv);
+                            if (metrajesValidos.length > 0) {
+                                metrajesValidos.forEach(item => {
+                                    const span = document.createElement('span');
+                                    span.textContent = `${item.color.toUpperCase()}: ${item.metraje} m`;
+                                    contenedorMetrajes.appendChild(span);
+                                });
+                            }
                         }
                     }
                     
                     // NO inyectar metrajes en la descripción para modo pieza
-                    console.log('[ReceiptRenderer] Modo PIEZA: Metrajes listados en barra inferior');
+                    console.log('[ReceiptRenderer] Modo PIEZA: Metrajes en columna derecha');
                 }
             })
             .catch(error => {

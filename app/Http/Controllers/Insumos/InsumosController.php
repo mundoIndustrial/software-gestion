@@ -1550,12 +1550,21 @@ class InsumosController extends Controller
             }
             
             if ($tipoModoExistente && $tipoModoNuevo !== $tipoModoExistente) {
+                // Auto-limpiar datos del modo anterior cuando el usuario cambia de modo
                 $nombres = ['normal' => 'Normal', 'color' => 'Por Color', 'pieza' => 'Por Pieza'];
-                return response()->json([
-                    'success' => false,
-                    'message' => "Ya existen datos guardados en modo \"{$nombres[$tipoModoExistente]}\". No se puede guardar en modo \"{$nombres[$tipoModoNuevo]}\".",
-                    'tipo_modo_existente' => $tipoModoExistente
-                ], 409);
+                
+                PedidoAnchoGeneral::where('pedido_produccion_id', $pedido->id)
+                    ->where('prenda_pedido_id', $validated['prenda_id'])
+                    ->delete();
+                
+                PedidoMetrajeColor::where('pedido_produccion_id', $pedido->id)
+                    ->where('prenda_pedido_id', $validated['prenda_id'])
+                    ->delete();
+                
+                \Log::info("Modo cambiado de '{$tipoModoExistente}' ({$nombres[$tipoModoExistente]}) a '{$tipoModoNuevo}' ({$nombres[$tipoModoNuevo]}) para pedido {$numeroPedido}, prenda {$validated['prenda_id']}. Datos anteriores eliminados automáticamente.", [
+                    'usuario_id' => $user->id,
+                    'usuario_nombre' => $user->name
+                ]);
             }
             
             // Guardar ancho general (sin color)

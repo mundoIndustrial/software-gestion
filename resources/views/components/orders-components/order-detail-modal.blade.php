@@ -3,48 +3,66 @@
 /* Estilos específicos para ancho y metraje */
 .order-ancho-metraje {
     position: absolute !important;
-    top: 555px !important;
+    top: 500px !important;
     left: 30px !important;
     right: 30px !important;
     padding: 8px !important;
-    text-align: center !important;
     font-family: 'Courier New', monospace !important;
     font-weight: bold !important;
     font-size: 0.9rem !important;
     letter-spacing: 2px !important;
-    clear: both !important;
     color: #333 !important;
     background: transparent !important;
     z-index: 5 !important;
-    /* Separación visual clara */
     border-top: 1px solid #e5e5e5 !important;
     padding-top: 15px !important;
-    /* Evitar que cubra elementos anteriores */
-    min-height: auto !important;
-    height: auto !important;
     box-sizing: border-box !important;
+}
+
+.ancho-metraje-container {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 60px !important;
+    width: 100% !important;
+}
+
+.ancho-column {
+    flex: 0 0 auto !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+}
+
+.metraje-column {
+    flex: 1 !important;
+    text-align: right !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+}
+
+.metraje-label {
+    display: block !important;
+    margin-bottom: 4px !important;
+}
+
+#metrajes-por-color-container {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    gap: 2px !important;
+}
+
+#metrajes-por-color-container span {
+    display: block !important;
+    color: red !important;
+    font-weight: bold !important;
+    white-space: nowrap !important;
 }
 
 .order-ancho-metraje .ancho-valor,
 .order-ancho-metraje .metraje-valor {
     margin-left: 5px !important;
     font-weight: bold !important;
-}
-
-.order-ancho-metraje > div {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-}
-
-.order-ancho-metraje > div > span:first-child {
-    flex: 1 !important;
-    text-align: left !important;
-}
-
-.order-ancho-metraje > div > span:last-child {
-    flex: 1 !important;
-    text-align: right !important;
 }
 </style>
 
@@ -89,11 +107,16 @@
 
         <div class="separator-line"></div>
 
-        <!-- Línea de ancho y metraje - ESCONDIDA (ahora se muestra en la descripción por color) -->
+        <!-- Línea de ancho y metraje con dos columnas separadas -->
         <div id="order-ancho-metraje" class="order-ancho-metraje" style="display: none;">
-            <div>
-                <span>Ancho: <span id="ancho-valor" class="ancho-valor">--</span></span>
-                <span>Metraje: <span id="metraje-valor" class="metraje-valor">--</span></span>
+            <div class="ancho-metraje-container">
+                <div class="ancho-column">
+                    <span>Ancho: <span id="ancho-valor" class="ancho-valor">--</span></span>
+                </div>
+                <div class="metraje-column">
+                    <span class="metraje-label">Metraje: <span id="metraje-valor" class="metraje-valor">--</span></span>
+                    <div id="metrajes-por-color-container"></div>
+                </div>
             </div>
         </div>
 

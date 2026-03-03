@@ -1858,7 +1858,7 @@
                 <label class="block text-sm font-semibold text-gray-700 mb-1">Ancho (m):</label>
                 <input 
                     type="number" 
-                    id="anchoGeneralInput"
+                    id="anchoGeneralPiezaInput"
                     class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="0.00"
                     step="0.01"
@@ -2068,18 +2068,12 @@
             const modoGuardadoNombre = nombresMode[tipoModoGuardado] || tipoModoGuardado;
             const modoNuevoNombre = nombresMode[modo] || modo;
             
-            // Revertir selección al modo guardado
-            document.querySelector(`input[name="modoAnchoMetraje"][value="${tipoModoGuardado}"]`).checked = true;
-            
+            // Mostrar advertencia pero permitir el cambio de modo
             showToast(
-                `Ya existen datos guardados en modo "${modoGuardadoNombre}".\n` +
-                `Para cambiar a "${modoNuevoNombre}", primero elimine los datos existentes.`,
+                `Cambiando de modo "${modoGuardadoNombre}" a "${modoNuevoNombre}". Al guardar, los datos anteriores se reemplazarán.`,
                 'warning',
-                5000
+                4000
             );
-            
-            // No cambiar la vista
-            return;
         }
         
         const normalView = document.getElementById('normalView');
@@ -2445,8 +2439,8 @@
             const promises = [];
             let erroresValidacion = false;
             
-            // Si existe ancho general, guardarlo primero
-            const anchoGeneralInput = document.getElementById('anchoGeneralInput');
+            // Si existe ancho general, guardarlo primero (usar ID específico de pieza)
+            const anchoGeneralInput = document.getElementById('anchoGeneralPiezaInput');
             if (anchoGeneralInput) {
                 const anchoGeneralVal = anchoGeneralInput.value.trim();
                 const anchoGeneral = anchoGeneralVal ? parseFloat(anchoGeneralVal) : null;
