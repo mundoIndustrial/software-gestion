@@ -23,7 +23,7 @@ export class ReceiptRenderer {
         this._llenarInformacionBasica(datosPedido);
 
         // Llenar descripción de la prenda
-        this._llenarDescripcion(prendaData, recibo, tipoProceso);
+        this._llenarDescripcion(prendaData, recibo, tipoProceso, datosPedido);
 
         // Actualizar ancho y metraje para esta prenda
         this._actualizarAnchoMetraje(prendaData, tipoProceso);
@@ -41,6 +41,10 @@ export class ReceiptRenderer {
 
     /**
      * Actualiza los valores de ancho y metraje para la prenda actual
+     * Comportamiento según tipo_modo:
+     * - normal: Muestra Ancho + Metraje en barra inferior
+     * - color: Muestra solo Ancho en barra inferior (metraje va en descripción por color)
+     * - pieza: Muestra Ancho + metraje por color en barra inferior (NO en descripción)
      */
     static _actualizarAnchoMetraje(prendaData, tipoProceso = '') {
         const contenedor = document.getElementById('order-ancho-metraje');
@@ -279,7 +283,7 @@ export class ReceiptRenderer {
     /**
      * Llena la descripción de la prenda
      */
-    static _llenarDescripcion(prendaData, recibo, tipoProceso) {
+    static _llenarDescripcion(prendaData, recibo, tipoProceso, datosPedido) {
         const descripcionText = document.getElementById('descripcion-text');
         
         console.log('[ReceiptRenderer._llenarDescripcion] prendaData completo:', prendaData);
@@ -324,6 +328,174 @@ export class ReceiptRenderer {
 
         descripcionText.innerHTML = html;
         console.log(' [ReceiptRenderer._llenarDescripcion] Descripción actualizada en el DOM');
+        
+        // Cargar metrajes por color desde la API
+        if (prendaData.prenda_pedido_id && datosPedido) {
+            this._cargarYAgregarMetrajesPorColor(prendaData, datosPedido);
+        }
+    }
+
+    /**
+     * Cargar metrajes por color desde la API y renderizar según tipo_modo
+     * - normal: Muestra Ancho + Metraje en barra inferior, NO en descripción
+     * - color: Muestra solo Ancho en barra inferior, metraje en descripción por color
+     * - pieza: Muestra Ancho en barra inferior + lista metraje por color abajo, NO en descripción
+     */
+    static _cargarYAgregarMetrajesPorColor(prendaData, datosPedido) {
+        // Obtener ID de pedido desde prendaData (más confiable) o datosPedido
+        let pedidoId = prendaData?.pedido_produccion_id || datosPedido?.pedido_id || datosPedido?.id;
+        
+        if (!pedidoId || !prendaData.prenda_pedido_id) {
+            console.log('[ReceiptRenderer._cargarYAgregarMetrajesPorColor] Sin ID de pedido o ID de prenda:', {
+                pedidoId,
+                pedidoProduccionId: prendaData?.pedido_produccion_id,
+                prendaId: prendaData.prenda_pedido_id
+            });
+            return;
+        }
+
+        console.log('[ReceiptRenderer._cargarYAgregarMetrajesPorColor] Iniciando carga de metrajes:', {
+            pedidoId,
+            prendaId: prendaData.prenda_pedido_id,
+            prendaNombre: prendaData.nombre_prenda
+        });
+
+        // Fetch async para obtener metrajes
+        fetch(`/insumos/materiales/${pedidoId}/obtener-ancho-metraje-prenda/${prendaData.prenda_pedido_id}`)
+            .then(response => {
+                console.log('[ReceiptRenderer._cargarYAgregarMetrajesPorColor] Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('[ReceiptRenderer._cargarYAgregarMetrajesPorColor] Response recibido:', {
+                    success: data.success,
+                    tipo_modo: data.tipo_modo,
+                    dataLength: data.data?.length,
+                    dataContent: data.data,
+                    ancho: data.ancho
+                });
+
+                if (!data.success) {
+                    console.log('[ReceiptRenderer._cargarYAgregarMetrajesPorColor] Success es false');
+                    return;
+                }
+
+                const tipoModo = data.tipo_modo || 'normal';
+                const contenedor = document.getElementById('order-ancho-metraje');
+                const anchoSpan = document.getElementById('ancho-valor');
+                const metrajeSpan = document.getElementById('metraje-valor');
+                
+                // Actualizar ancho en la barra inferior (aplica a todos los modos)
+                if (anchoSpan && data.ancho) {
+                    anchoSpan.textContent = data.ancho + ' m';
+                }
+
+                if (tipoModo === 'normal') {
+                    // MODO NORMAL: Ancho + Metraje general en barra inferior
+                    // Metraje viene directo de pedido_ancho_general (top-level en response)
+                    if (contenedor) contenedor.style.display = '';
+                    
+                    if (metrajeSpan) {
+                        const metrajeGeneral = data.metraje || null;
+                        metrajeSpan.textContent = metrajeGeneral ? metrajeGeneral + ' m' : '--';
+                    }
+                    
+                    console.log('[ReceiptRenderer] Modo NORMAL: Ancho + Metraje en barra inferior');
+                    
+                } else if (tipoModo === 'color') {
+                    // MODO POR COLOR: Solo Ancho en barra inferior, metraje en descripción por color
+                    if (contenedor) {
+                        contenedor.style.display = '';
+                        // Ocultar metraje de la barra inferior
+                        if (metrajeSpan) {
+                            metrajeSpan.closest('span').style.display = 'none';
+                        }
+                    }
+                    
+                    // Inyectar metrajes en la descripción (junto a cada color)
+                    this._inyectarMetrajesEnDescripcion(data.data);
+                    
+                    console.log('[ReceiptRenderer] Modo COLOR: Metraje inyectado en descripción por color');
+                    
+                } else if (tipoModo === 'pieza') {
+                    // MODO POR PIEZA: Ancho en barra inferior + lista de metrajes por color abajo
+                    if (contenedor) {
+                        contenedor.style.display = '';
+                        // Ocultar metraje general
+                        if (metrajeSpan) {
+                            metrajeSpan.closest('span').style.display = 'none';
+                        }
+                        
+                        // Agregar lista de metrajes por color debajo del ancho
+                        const metrajesValidos = (data.data || []).filter(item => item.color && item.metraje);
+                        if (metrajesValidos.length > 0) {
+                            // Eliminar lista anterior si existe
+                            const existente = contenedor.querySelector('.metrajes-pieza-list');
+                            if (existente) existente.remove();
+                            
+                            const listaDiv = document.createElement('div');
+                            listaDiv.className = 'metrajes-pieza-list';
+                            listaDiv.style.cssText = 'margin-top: 8px; text-align: left; font-size: 0.85rem;';
+                            
+                            let listaHTML = '<strong style="display: block; margin-bottom: 4px;">Metraje por Color:</strong>';
+                            metrajesValidos.forEach(item => {
+                                listaHTML += `<span style="display: block; color: red; font-weight: bold;">${item.color.toUpperCase()}: Metraje: ${item.metraje} m</span>`;
+                            });
+                            
+                            listaDiv.innerHTML = listaHTML;
+                            contenedor.appendChild(listaDiv);
+                        }
+                    }
+                    
+                    // NO inyectar metrajes en la descripción para modo pieza
+                    console.log('[ReceiptRenderer] Modo PIEZA: Metrajes listados en barra inferior');
+                }
+            })
+            .catch(error => {
+                console.warn('[ReceiptRenderer._cargarYAgregarMetrajesPorColor] Error al cargar metrajes:', error);
+            });
+    }
+
+    /**
+     * Inyecta metrajes junto a cada color en la descripción (usado en modo "color")
+     */
+    static _inyectarMetrajesEnDescripcion(dataArray) {
+        if (!Array.isArray(dataArray) || dataArray.length === 0) return;
+
+        // Agrupar metrajes por color
+        const metrajesPorColor = {};
+        dataArray.forEach(item => {
+            if (item.color && item.metraje) {
+                metrajesPorColor[item.color] = item.metraje;
+            }
+        });
+
+        if (Object.keys(metrajesPorColor).length === 0) return;
+
+        const descripcionEl = document.getElementById('descripcion-text');
+        if (!descripcionEl) return;
+
+        let html = descripcionEl.innerHTML;
+
+        // Para cada color, buscar en el HTML y agregar el metraje
+        Object.entries(metrajesPorColor).forEach(([color, metraje]) => {
+            if (!metraje) return;
+            
+            const colorUpperCase = color.toUpperCase();
+            
+            const regex = new RegExp(
+                `(<strong>${colorUpperCase}:</strong>\\s*[^<]*?\\d[^<]*)(<br|<\\/span>|<\\/div>|$)`,
+                'gi'
+            );
+            
+            html = html.replace(regex, (match, contenido, cierre) => {
+                if (!contenido.includes('Metraje:')) {
+                    return `${contenido.trim()} - Metraje: ${metraje} m${cierre}`;
+                }
+                return match;
+            });
+        });
+
+        descripcionEl.innerHTML = html;
     }
 }
-

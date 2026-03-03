@@ -1246,25 +1246,26 @@ function cerrarModalPrendaNueva() {
         }
         console.log('✓ PASO 5 completado');
         
-        // PASO 5.5: Limpiar "SOLO CANTIDAD"
-        console.log('→ PASO 5.5: Limpiando opción "SOLO CANTIDAD"...');
+        // PASO 5.5: Limpiar "UNISEX" (antes "SOLO CANTIDAD")
+        console.log('→ PASO 5.5: Limpiando opción "UNISEX"...');
         window.cantidadSoloSeleccionada = null;
-        const btnSoloCantidad = document.getElementById('btn-genero-solo-cantidad');
-        const checkSoloCantidad = document.getElementById('check-solo-cantidad');
-        const seccionSoloCantidad = document.getElementById('seccion-solo-cantidad');
-        const tarjetaSoloCantidad = document.getElementById('tarjeta-solo-cantidad');
-        const cantidadInput = document.getElementById('cantidad-solo');
+        const btnUnisex = document.getElementById('btn-genero-unisex');
+        const checkUnisex = document.getElementById('check-unisex');
         
-        if (btnSoloCantidad) {
-            btnSoloCantidad.style.background = 'white';
-            btnSoloCantidad.style.borderColor = '#d1d5db';
-            btnSoloCantidad.style.color = '#374151';
-            btnSoloCantidad.setAttribute('data-selected', 'false');
+        // Eliminar tarjeta de unisex del contenedor
+        const containerGeneros55 = document.getElementById('tarjetas-generos-container');
+        if (containerGeneros55) {
+            const tarjetaUnisex = containerGeneros55.querySelector('[data-unisex="true"]');
+            if (tarjetaUnisex) tarjetaUnisex.remove();
         }
-        if (checkSoloCantidad) checkSoloCantidad.style.display = 'none';
-        if (seccionSoloCantidad) seccionSoloCantidad.style.display = 'none';
-        if (tarjetaSoloCantidad) tarjetaSoloCantidad.style.display = 'none';
-        if (cantidadInput) cantidadInput.value = '';
+        
+        if (btnUnisex) {
+            btnUnisex.style.background = 'white';
+            btnUnisex.style.borderColor = '#d1d5db';
+            btnUnisex.style.color = '#374151';
+            btnUnisex.setAttribute('data-selected', 'false');
+        }
+        if (checkUnisex) checkUnisex.style.display = 'none';
         console.log('✓ PASO 5.5 completado');
         
         const tiempoTotalMs = performance.now() - inicioTiempo;
@@ -1557,14 +1558,14 @@ function cargarPrendaEnFormularioModal(prendaData) {
         }
     }
     
-    // 🔴 NUEVO: Cargar SOLO CANTIDAD si existe
+    // 🔴 NUEVO: Cargar UNISEX (antes SOLO CANTIDAD) si existe
     const tieneGenerico = prendaData.generosConTallas && 
                          Object.keys(prendaData.generosConTallas).some(g => g.toUpperCase() === 'GENERICO');
     const tieneGenericoEnCantidadTalla = prendaData.cantidad_talla && 
                                          prendaData.cantidad_talla.GENERICO;
     
     if (tieneGenerico || tieneGenericoEnCantidadTalla) {
-        console.log('[cargarPrendaEnFormularioModal] 📦 DETECTANDA PRENDA CON SOLO CANTIDAD');
+        console.log('[cargarPrendaEnFormularioModal] 📦 DETECTADA PRENDA CON UNISEX (GENERICO)');
         
         // LIMPIAR todas las tarjetas de géneros (DAMA, CABALLERO, SOBREMEDIDA)
         const containerGeneros = document.getElementById('tarjetas-generos-container');
@@ -1607,7 +1608,6 @@ function cargarPrendaEnFormularioModal(prendaData) {
             const genericoData = prendaData.generosConTallas.GENERICO;
             if (genericoData && typeof genericoData === 'object') {
                 const tallasArray = genericoData.tallas || [];
-                // Si el primer elemento de tallas tiene cantidad
                 if (tallasArray.length > 0) {
                     cantidadValue = tallasArray[0];
                 }
@@ -1616,37 +1616,27 @@ function cargarPrendaEnFormularioModal(prendaData) {
         }
         
         if (cantidadValue > 0) {
-            // Establecer la cantidad en el input
-            const cantidadInput = document.getElementById('cantidad-solo');
-            if (cantidadInput) {
-                cantidadInput.value = cantidadValue;
-                console.log('[cargarPrendaEnFormularioModal]   Input cantidad-solo establecido a:', cantidadValue);
-            }
-            
             // Guardar en variable global
             window.cantidadSoloSeleccionada = cantidadValue;
-            
-            // Mostrar sección de SOLO CANTIDAD
-            const btnSoloCantidad = document.getElementById('btn-genero-solo-cantidad');
-            const checkSoloCantidad = document.getElementById('check-solo-cantidad');
-            const seccionSoloCantidad = document.getElementById('seccion-solo-cantidad');
-            const tarjetaSoloCantidad = document.getElementById('tarjeta-solo-cantidad');
-            const cantidadDisplay = document.getElementById('cantidad-solo-display');
-            
-            if (btnSoloCantidad) {
-                btnSoloCantidad.style.background = '#0066cc';
-                btnSoloCantidad.style.borderColor = '#0066cc';
-                btnSoloCantidad.style.color = 'white';
-                btnSoloCantidad.setAttribute('data-selected', 'true');
-            }
-            if (checkSoloCantidad) checkSoloCantidad.style.display = 'block';
-            if (seccionSoloCantidad) seccionSoloCantidad.style.display = 'block';
-            if (tarjetaSoloCantidad) {
-                tarjetaSoloCantidad.style.display = 'block';
-                if (cantidadDisplay) cantidadDisplay.textContent = cantidadValue;
+
+            // Crear tarjeta visual de Unisex
+            if (typeof window.crearTarjetaUnisex === 'function') {
+                window.crearTarjetaUnisex(cantidadValue);
+            } else {
+                // Fallback: marcar botón manualmente
+                const btnUnisex = document.getElementById('btn-genero-unisex');
+                const checkUnisex = document.getElementById('check-unisex');
+                
+                if (btnUnisex) {
+                    btnUnisex.style.background = '#f5f3ff';
+                    btnUnisex.style.borderColor = '#7c3aed';
+                    btnUnisex.style.color = '#5b21b6';
+                    btnUnisex.setAttribute('data-selected', 'true');
+                }
+                if (checkUnisex) checkUnisex.style.display = 'block';
             }
             
-            console.log('[cargarPrendaEnFormularioModal]   ✓ Sección SOLO CANTIDAD activada para edición');
+            console.log('[cargarPrendaEnFormularioModal]   ✓ Sección UNISEX activada para edición');
         }
     }
 }

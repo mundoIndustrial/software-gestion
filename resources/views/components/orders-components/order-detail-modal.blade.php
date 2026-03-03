@@ -89,8 +89,8 @@
 
         <div class="separator-line"></div>
 
-        <!-- Línea de ancho y metraje - ENCIMA DE ENCARGADO DE ORDEN -->
-        <div id="order-ancho-metraje" class="order-ancho-metraje">
+        <!-- Línea de ancho y metraje - ESCONDIDA (ahora se muestra en la descripción por color) -->
+        <div id="order-ancho-metraje" class="order-ancho-metraje" style="display: none;">
             <div>
                 <span>Ancho: <span id="ancho-valor" class="ancho-valor">--</span></span>
                 <span>Metraje: <span id="metraje-valor" class="metraje-valor">--</span></span>

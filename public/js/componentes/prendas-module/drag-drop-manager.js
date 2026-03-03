@@ -172,11 +172,119 @@ class DragDropManager {
                 ) ||
                 elementoActivo.contentEditable === 'true'
             );
+
+            // 🔴 FIX: ANTES de permitir pegado normal en campos de texto,
+            // verificar si estamos dentro del wizard de colores y hay una imagen en el clipboard.
+            // En ese caso, redirigir la imagen al dropZone de la fila, no pegarla como texto.
+            const wizardColoresContainer = document.getElementById('lista-colores-checkboxes');
             
-            // Si es un campo de texto, permitir el comportamiento normal del navegador
+            // Verificar por activeElement O por posición del cursor (mouse)
+            let elementoBajoCursorWizard = null;
+            if (this.mousePosition && this.mousePosition.x && this.mousePosition.y) {
+                elementoBajoCursorWizard = document.elementFromPoint(this.mousePosition.x, this.mousePosition.y);
+            }
+            
+            const activoEnWizard = elementoActivo && wizardColoresContainer && (
+                wizardColoresContainer.contains(elementoActivo) ||
+                elementoActivo === wizardColoresContainer
+            );
+            const cursorEnWizard = elementoBajoCursorWizard && wizardColoresContainer && (
+                wizardColoresContainer.contains(elementoBajoCursorWizard) ||
+                elementoBajoCursorWizard === wizardColoresContainer
+            );
+            
+            const dentroDelWizardColores = wizardColoresContainer && 
+                wizardColoresContainer.offsetParent !== null &&
+                (activoEnWizard || cursorEnWizard);
+            
+            // Determinar cuál elemento usar para buscar la fila (preferir activo, luego cursor)
+            const elementoReferencia = activoEnWizard ? elementoActivo : elementoBajoCursorWizard;
+
+            if (dentroDelWizardColores) {
+                UIHelperService.log('DragDropManager', `🎨 Wizard colores detectado - activo: ${activoEnWizard}, cursor: ${cursorEnWizard}`);
+                
+                // Verificar si el clipboard tiene una imagen
+                const clipItems = e.clipboardData?.items;
+                let imagenEnClipboard = false;
+                let archivoImagen = null;
+                if (clipItems) {
+                    for (let i = 0; i < clipItems.length; i++) {
+                        if (clipItems[i].kind === 'file' && clipItems[i].type.startsWith('image/')) {
+                            imagenEnClipboard = true;
+                            archivoImagen = clipItems[i].getAsFile();
+                            break;
+                        }
+                    }
+                }
+
+                if (imagenEnClipboard && archivoImagen) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Encontrar el wrapper más cercano al elemento de referencia
+                    // Subir por la fila (grid row) que contiene tanto el input como el wrapper de imagen
+                    let filaActual = elementoReferencia ? elementoReferencia.closest('[class^="fila-color"]') : null;
+                    if (!filaActual && elementoReferencia && elementoReferencia.parentElement) {
+                        // Fallback: buscar en el contenedor padre del grid row
+                        filaActual = elementoReferencia.closest('[class^="contenedor-colores"]');
+                        if (filaActual) {
+                            // Tomar la última fila dentro del contenedor
+                            const filas = filaActual.querySelectorAll('[class^="fila-color"]');
+                            filaActual = filas.length > 0 ? filas[filas.length - 1] : filaActual;
+                        }
+                    }
+                    
+                    // También intentar buscar si el cursor está directamente sobre un .imagen-tela-wrapper
+                    if (!filaActual && elementoBajoCursorWizard) {
+                        const wrapperDirecto = elementoBajoCursorWizard.closest('.imagen-tela-wrapper');
+                        if (wrapperDirecto) {
+                            filaActual = wrapperDirecto.closest('[class^="fila-color"]');
+                        }
+                    }
+
+                    let targetWrapper = null;
+                    if (filaActual) {
+                        targetWrapper = filaActual.querySelector('.imagen-tela-wrapper');
+                    }
+
+                    // Fallback: usar el primer wrapper sin imagen, o el último
+                    if (!targetWrapper) {
+                        const allWrappers = wizardColoresContainer.querySelectorAll('.imagen-tela-wrapper');
+                        for (const w of allWrappers) {
+                            const preview = w.querySelector('div[style*="display: none"]') || 
+                                           w.querySelector('div:last-child');
+                            // Si el preview está oculto, es un wrapper sin imagen
+                            if (preview && preview.style.display === 'none') {
+                                targetWrapper = w;
+                                break;
+                            }
+                        }
+                        // Si todos tienen imagen, usar el último
+                        if (!targetWrapper && allWrappers.length > 0) {
+                            targetWrapper = allWrappers[allWrappers.length - 1];
+                        }
+                    }
+
+                    if (targetWrapper) {
+                        const fileInput = targetWrapper.querySelector('.imagen-tela-wizard');
+                        if (fileInput) {
+                            const dt = new DataTransfer();
+                            dt.items.add(archivoImagen);
+                            fileInput.files = dt.files;
+                            fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+                            UIHelperService.log('DragDropManager', '🎨 Imagen pegada redirigida a dropZone del wizard colores-por-talla');
+                        }
+                    }
+                    return;
+                }
+                // Si no hay imagen en clipboard, dejar que el texto se pegue normalmente
+                return;
+            }
+
+            // Si es un campo de texto (fuera del wizard colores), permitir el comportamiento normal
             if (esCampoTexto) {
                 UIHelperService.log('DragDropManager', `📝 Campo de texto detectado (${elementoActivo.tagName}${elementoActivo.type ? ':' + elementoActivo.type : ''}), permitiendo pegado normal`);
-                return; // No interceptar, dejar que el navegador maneje el pegado
+                return;
             }
 
             // 🔴 CRÍTICO: Soportar AMBOS modales (creación nueva Y edición) Y EPP

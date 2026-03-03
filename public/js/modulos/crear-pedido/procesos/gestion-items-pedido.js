@@ -663,7 +663,7 @@ class GestionItemsUI {
                 return;
             }
 
-            // Validar que al menos haya seleccionado tallas O "SOLO CANTIDAD"
+            // Validar que al menos haya seleccionado tallas O "UNISEX"
             const tieneTallas = prendaData.cantidad_talla && 
                 Object.values(prendaData.cantidad_talla).some(genero => 
                     Object.keys(genero).length > 0
@@ -674,10 +674,10 @@ class GestionItemsUI {
             console.log('[gestion-items-pedido]  Validación de tallas:');
             console.log('[gestion-items-pedido]   - prendaData.cantidad_talla:', prendaData.cantidad_talla);
             console.log('[gestion-items-pedido]   - tieneTallas:', tieneTallas);
-            console.log('[gestion-items-pedido]   - tieneSoloCantidad:', tieneSoloCantidad);
+            console.log('[gestion-items-pedido]   - tieneSoloCantidad (UNISEX):', tieneSoloCantidad);
 
             if (!tieneTallas && !tieneSoloCantidad) {
-                this.notificationService?.advertencia('Por favor selecciona al menos una talla o utiliza la opción "SOLO CANTIDAD"');
+                this.notificationService?.advertencia('Por favor selecciona al menos una talla o utiliza la opción "UNISEX"');
                 console.log('[gestion-items-pedido]  Validación FALLIDA: No hay tallas ni cantidad');
                 return;
             }

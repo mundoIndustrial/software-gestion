@@ -615,6 +615,24 @@ window.ColoresPorTalla = (function() {
 
         const asignaciones = window.StateManager ? window.StateManager.getAsignaciones() : {};
         const asignacionesArray = Object.entries(asignaciones);
+        
+        // 🔴 FIX: Si ya no hay asignaciones wizard, limpiar telas que fueron agregadas
+        // automáticamente por el wizard (no tienen color/referencia/imágenes propias)
+        if (asignacionesArray.length === 0 && window.telasCreacion && window.telasCreacion.length > 0) {
+            // Filtrar: solo mantener telas que tienen datos propios (color, referencia o imágenes)
+            const telasConDatos = window.telasCreacion.filter(t => {
+                const tieneColor = t.color && t.color.trim() !== '';
+                const tieneRef = t.referencia && t.referencia.trim() !== '';
+                const tieneImgs = t.imagenes && t.imagenes.length > 0;
+                const tieneObs = t.observaciones && t.observaciones.trim() !== '' && t.observaciones.trim() !== '-';
+                return tieneColor || tieneRef || tieneImgs || tieneObs;
+            });
+            if (telasConDatos.length < window.telasCreacion.length) {
+                console.log('[ColoresPorTalla] 🧹 Limpiando', window.telasCreacion.length - telasConDatos.length, 'telas huérfanas del wizard');
+                window.telasCreacion = telasConDatos;
+            }
+        }
+        
         const telasSimples = window.telasCreacion || [];
 
         // Determinar si hay datos para mostrar
@@ -623,6 +641,8 @@ window.ColoresPorTalla = (function() {
         if (!hayDatos) {
             if (seccionResumen) seccionResumen.style.display = 'none';
             if (seccionTallasOriginal) seccionTallasOriginal.style.display = 'block';
+            tablaBody.innerHTML = '';
+            console.log('[ColoresPorTalla] 📭 Sin datos - tabla limpia, sección oculta');
             return;
         }
 
@@ -804,7 +824,33 @@ window.ColoresPorTalla = (function() {
                     const asignaciones = window.StateManager.getAsignaciones();
                     delete asignaciones[clave];
                     window.StateManager.setAsignaciones(asignaciones);
+                    
+                    // 🔴 FIX: Si no quedan más asignaciones, limpiar estado completo
+                    const restantes = Object.keys(asignaciones);
+                    if (restantes.length === 0) {
+                        console.log('[ColoresPorTalla] 🧹 Última asignación eliminada, limpiando estado...');
+                        // Limpiar tallasRelacionales
+                        if (window.tallasRelacionales) {
+                            Object.keys(window.tallasRelacionales).forEach(g => {
+                                window.tallasRelacionales[g] = {};
+                            });
+                        }
+                        // Limpiar tarjetas de género del DOM
+                        const containerTarjetas = document.getElementById('tarjetas-generos-container');
+                        if (containerTarjetas) containerTarjetas.innerHTML = '';
+                        // Desmarcar botones de género
+                        document.querySelectorAll('[id^="btn-genero-"]').forEach(b => {
+                            b.dataset.selected = 'false';
+                            b.style.borderColor = '';
+                            b.style.background = '';
+                        });
+                        document.querySelectorAll('[id^="check-"]').forEach(chk => {
+                            chk.style.display = 'none';
+                        });
+                    }
+                    
                     actualizarTablaResumen();
+                    if (typeof window.actualizarTotalPrendas === 'function') window.actualizarTotalPrendas();
                 }
             });
         });

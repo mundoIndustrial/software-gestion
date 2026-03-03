@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\User;
 use App\Models\Cliente;
 use App\Models\ConsecutivoReciboPedido;
+use App\Models\PedidoAnchoGeneral;
+use App\Models\PedidoMetrajeColor;
 use App\Services\CalculadorDiasService;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -199,11 +201,19 @@ class PedidoProduccion extends Model
     }
 
     /**
-     * Relación: Un pedido tiene un registro de ancho y metraje
+     * Relación: Un pedido tiene muchos registros de ancho general
      */
-    public function anchoMetraje()
+    public function anchoGenerales()
     {
-        return $this->hasOne(PedidoAnchoMetraje::class, 'pedido_produccion_id');
+        return $this->hasMany(PedidoAnchoGeneral::class, 'pedido_produccion_id');
+    }
+
+    /**
+     * Relación: Un pedido tiene muchos registros de metraje por color
+     */
+    public function metrajesPorColor()
+    {
+        return $this->hasMany(PedidoMetrajeColor::class, 'pedido_produccion_id');
     }
 
     /**

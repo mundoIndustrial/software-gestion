@@ -7,6 +7,8 @@ use App\Application\Operario\Services\ObtenerPedidosOperarioService;
 use App\Application\Operario\Services\ObtenerPrendasRecibosService;
 use App\Domain\Operario\Repositories\OperarioRepository;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
+use App\Models\PedidoAnchoGeneral;
+use App\Models\PedidoMetrajeColor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -690,15 +692,31 @@ class OperarioController extends Controller
                 continue;
             }
 
-            $anchoMetrajePrenda = \App\Models\PedidoAnchoMetraje::where('pedido_produccion_id', $pedidoId)
+            $anchoGeneral = PedidoAnchoGeneral::where('pedido_produccion_id', $pedidoId)
                 ->where('prenda_pedido_id', $prendaId)
                 ->first();
 
-            $prenda['ancho_metraje'] = $anchoMetrajePrenda ? [
-                'ancho' => $anchoMetrajePrenda->ancho,
-                'metraje' => $anchoMetrajePrenda->metraje,
-                'prenda_id' => $anchoMetrajePrenda->prenda_pedido_id
-            ] : null;
+            $metrajesPorColor = PedidoMetrajeColor::where('pedido_produccion_id', $pedidoId)
+                ->where('prenda_pedido_id', $prendaId)
+                ->get();
+
+            if ($anchoGeneral || $metrajesPorColor->isNotEmpty()) {
+                $ancho_metraje_data = [
+                    'ancho' => $anchoGeneral ? $anchoGeneral->ancho : null,
+                    'metrajes_por_color' => []
+                ];
+                
+                foreach ($metrajesPorColor as $metraje) {
+                    $ancho_metraje_data['metrajes_por_color'][] = [
+                        'color' => $metraje->color,
+                        'metraje' => $metraje->metraje
+                    ];
+                }
+                
+                $prenda['ancho_metraje'] = $ancho_metraje_data;
+            } else {
+                $prenda['ancho_metraje'] = null;
+            }
 
             $prenda['recibos'] = $this->obtenerConsecutivosPrenda($pedidoId, $prendaId);
         }

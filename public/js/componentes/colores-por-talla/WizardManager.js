@@ -1138,7 +1138,35 @@ window.WizardManager = (function() {
             }
             
             try {
-                contenedor.innerHTML = '';
+                // 🔴 FIX: No borrar todo el contenedor (destruiría los botones Letra/Número).
+                //    Solo borrar/reemplazar el sub-contenedor de tallas.
+                let tallasSubContainer = document.getElementById('wizard-tallas-sub-contenedor');
+                if (tallasSubContainer) {
+                    tallasSubContainer.remove();
+                }
+                
+                tallasSubContainer = document.createElement('div');
+                tallasSubContainer.id = 'wizard-tallas-sub-contenedor';
+                tallasSubContainer.style.marginTop = '1rem';
+                contenedor.appendChild(tallasSubContainer);
+                
+                // Actualizar visualmente los botones de tipo para marcar el activo
+                const tipoBtns = contenedor.querySelectorAll('.wizard-tipo-talla-btn');
+                tipoBtns.forEach(b => {
+                    if (b.textContent.trim() === tipo) {
+                        b.setAttribute('data-selected', 'true');
+                        b.style.background = '#eff6ff';
+                        b.style.borderColor = '#3b82f6';
+                        b.style.color = '#1f2937';
+                        b.style.fontWeight = '600';
+                    } else {
+                        b.removeAttribute('data-selected');
+                        b.style.background = 'white';
+                        b.style.borderColor = '#d1d5db';
+                        b.style.color = '#374151';
+                        b.style.fontWeight = '500';
+                    }
+                });
                 
                 // Obtener las tallas para este tipo
                 const tallas = StateManager.getTallasDisponibles(genero)[tipo] || [];
@@ -1150,7 +1178,7 @@ window.WizardManager = (function() {
                     div.style.padding = '1.5rem';
                     div.style.color = '#9ca3af';
                     div.textContent = 'No hay tallas disponibles para este tipo';
-                    contenedor.appendChild(div);
+                    tallasSubContainer.appendChild(div);
                     return;
                 }
                 
@@ -1168,7 +1196,7 @@ window.WizardManager = (function() {
                 tituloDiv.style.color = '#374151';
                 tituloDiv.style.fontSize = '0.95rem';
                 tituloDiv.innerHTML = `Tipo de talla: <strong>${tipo}</strong> (puedes seleccionar varias)`;
-                contenedor.appendChild(tituloDiv);
+                tallasSubContainer.appendChild(tituloDiv);
                 
                 // Agregar instrucción clara
                 const instruccionDiv = document.createElement('div');
@@ -1180,7 +1208,7 @@ window.WizardManager = (function() {
                 instruccionDiv.style.fontSize = '0.85rem';
                 instruccionDiv.style.color = '#92400e';
                 instruccionDiv.innerHTML = '⚠️ <strong>Selecciona al menos una talla</strong> haciendo click en los botones de abajo';
-                contenedor.appendChild(instruccionDiv);
+                tallasSubContainer.appendChild(instruccionDiv);
                 
                 // Contenedor para los checkboxes - HORIZONTAL
                 const checkboxContainer = document.createElement('div');
@@ -1188,7 +1216,7 @@ window.WizardManager = (function() {
                 checkboxContainer.style.gap = '0.75rem';
                 checkboxContainer.style.flexWrap = 'wrap';
                 checkboxContainer.style.alignItems = 'center';
-                contenedor.appendChild(checkboxContainer);
+                tallasSubContainer.appendChild(checkboxContainer);
                 
                 // Crear checkboxes para cada talla (MÚLTIPLE SELECCIÓN)
                 tallas.forEach(talla => {

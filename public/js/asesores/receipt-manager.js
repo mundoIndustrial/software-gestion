@@ -373,9 +373,11 @@ class ReceiptManager {
         // Establecer el contenido
         document.getElementById('descripcion-text').innerHTML = contenido;
         
-        // Actualizar ancho y metraje específico para esta prenda
-        this.actualizarAnchoMetrajePorPrenda(recibo.prenda);
-
+        // Cargar y agregar metrajes por color a la descripción
+        if (recibo.prenda && recibo.prenda.prenda_pedido_id) {
+            this.agregarMetrajesPorColor(recibo.prenda);
+        }
+        
         // Actualizar estado de botones
         this.actualizarBotones();
     }
@@ -392,33 +394,95 @@ class ReceiptManager {
             ancho_metraje_valor: prenda.ancho_metraje
         });
         
-        // Buscar los elementos existentes en el recibo
-        const anchoSpan = document.getElementById('ancho-valor');
-        const metrajeSpan = document.getElementById('metraje-valor');
-        
-        if (anchoSpan && metrajeSpan) {
-            // Si la prenda tiene datos de ancho/metraje, usarlos
-            if (prenda.ancho_metraje && (prenda.ancho_metraje.ancho || prenda.ancho_metraje.metraje)) {
-                anchoSpan.textContent = prenda.ancho_metraje.ancho + ' m';
-                metrajeSpan.textContent = prenda.ancho_metraje.metraje + ' m';
-                
-                console.log('[ReceiptManager] Ancho/Metraje actualizado para prenda:', {
-                    prenda: prenda.nombre,
-                    ancho: prenda.ancho_metraje.ancho,
-                    metraje: prenda.ancho_metraje.metraje
-                });
-            } else {
-                // Si no hay datos para esta prenda, mostrar guiones
-                anchoSpan.textContent = '--';
-                metrajeSpan.textContent = '--';
-                
-                console.log('[ReceiptManager] Sin datos de ancho/metraje para prenda, mostrando guiones:', {
-                    prenda: prenda.nombre
-                });
-            }
-        } else {
-            console.log('[ReceiptManager] No se encontraron los elementos ancho-valor o metraje-valor en el DOM');
+        // NOTA: La sección de ancho/metraje ahora está escondida
+        // Los metrajes por color se muestran directamente en la descripción de tallas
+        console.log('[ReceiptManager] Datos de ancho/metraje para prenda:', {
+            prenda: prenda.nombre,
+            ancho_metraje: prenda.ancho_metraje
+        });
+    }
+
+    /**
+     * Cargar metrajes por color desde la API y agregarlos a la descripción
+     */
+    agregarMetrajesPorColor(prenda) {
+        // No hacer nada si no tenemos ID de prenda
+        if (!prenda.prenda_pedido_id || !this.datosFactura.numero_pedido) {
+            console.log('[ReceiptManager] Sin ID de prenda o número de pedido, omitiendo carga de metrajes');
+            return;
         }
+
+        const pedido = this.datosFactura.numero_pedido;
+        const prendaId = prenda.prenda_pedido_id;
+
+        // Fetch async para obtener metrajes
+        fetch(`/insumos/materiales/${pedido}/obtener-ancho-metraje-prenda/${prendaId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success || !Array.isArray(data.data) || data.data.length === 0) {
+                    console.log('[ReceiptManager.agregarMetrajesPorColor] Sin datos de metraje');
+                    return;
+                }
+
+                // Agrupar metrajes por color
+                const metrajesPorColor = {};
+                data.data.forEach(item => {
+                    if (item.color) {
+                        metrajesPorColor[item.color] = item.metraje;
+                    }
+                });
+
+                console.log('[ReceiptManager.agregarMetrajesPorColor] Metrajes cargados:', metrajesPorColor);
+
+                // Buscar y reemplazar colores en la descripción
+                const descripcionEl = document.getElementById('descripcion-text');
+                if (!descripcionEl) return;
+
+                let html = descripcionEl.innerHTML;
+
+                // Para cada color, buscar en el HTML y agregar el metraje
+                Object.entries(metrajesPorColor).forEach(([color, metraje]) => {
+                    // Buscar patrón como:
+                    // <strong>VERDE MILITAR:</strong> S-2, M-6, XL-3
+                    // o
+                    // <span style="color: red;"><strong>VERDE MILITAR:</strong> S-2, M-6, XL-3</span>
+                    
+                    if (!metraje) {
+                        console.log(`[ReceiptManager] Color ${color} sin metraje, omitiendo`);
+                        return;
+                    }
+                    
+                    const colorUpperCase = color.toUpperCase();
+                    
+                    // Buscar desde <strong>COLOR:</strong> hasta antes del siguiente <br, </span>, </div>, o fin de línea
+                    // Patrón: <strong>VERDE MILITAR:</strong> .... [tallas] antes de <br o </span>
+                    const regex = new RegExp(
+                        `(<strong>${colorUpperCase}:</strong>\\s*[^<]*?\\d[^<]*)(<br|<\\/span>|<\\/div>|$)`,
+                        'gi'
+                    );
+                    
+                    const reemplazo = (match, contenido, cierre) => {
+                        // Solo agregar metraje si no ya existe
+                        if (!contenido.includes('Metraje:')) {
+                            // Remover el cierre si existe, lo agregaremos después
+                            const contenidoLimpio = contenido.trim();
+                            return `${contenidoLimpio} - Metraje: ${metraje} m${cierre}`;
+                        }
+                        return match;
+                    };
+                    
+                    html = html.replace(regex, reemplazo);
+                    
+                    console.log(`[ReceiptManager] Procesado color ${color} con metraje ${metraje}m`);
+                });
+
+                // Actualizar HTML
+                descripcionEl.innerHTML = html;
+                console.log('[ReceiptManager.agregarMetrajesPorColor] Descripción actualizada');
+            })
+            .catch(error => {
+                console.warn('[ReceiptManager.agregarMetrajesPorColor] Error al cargar metrajes:', error);
+            });
     }
 
     /**

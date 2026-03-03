@@ -4,6 +4,8 @@ namespace App\Application\Services\Recibos;
 
 use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
 use App\Infrastructure\Repositories\AsesoresRepository;
+use App\Models\PedidoAnchoGeneral;
+use App\Models\PedidoMetrajeColor;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -48,17 +50,32 @@ class ObtenerRecibosService
                 $prendaId = $prenda['id'] ?? $prenda['prenda_pedido_id'] ?? null;
                 
                 if ($prendaId) {
-                    // Buscar ancho y metraje para esta prenda específica
-                    $anchoMetraje = \App\Models\PedidoAnchoMetraje::where('pedido_produccion_id', $pedidoId)
+                    // Buscar ancho en tabla pedido_ancho_general
+                    $anchoGeneral = PedidoAnchoGeneral::where('pedido_produccion_id', $pedidoId)
                         ->where('prenda_pedido_id', $prendaId)
                         ->first();
                     
-                    if ($anchoMetraje) {
-                        $prenda['ancho_metraje'] = [
-                            'ancho' => $anchoMetraje->ancho,
-                            'metraje' => $anchoMetraje->metraje,
-                            'prenda_id' => $anchoMetraje->prenda_pedido_id
+                    // Buscar metrajes en tabla pedido_metraje_color
+                    $metrajesPorColor = PedidoMetrajeColor::where('pedido_produccion_id', $pedidoId)
+                        ->where('prenda_pedido_id', $prendaId)
+                        ->get();
+                    
+                    if ($anchoGeneral || $metrajesPorColor->isNotEmpty()) {
+                        $ancho_metraje_data = [
+                            'prenda_id' => $prendaId,
+                            'ancho' => $anchoGeneral ? $anchoGeneral->ancho : null,
+                            'metrajes_por_color' => []
                         ];
+                        
+                        // Agregar metrajes por color si existen
+                        foreach ($metrajesPorColor as $metraje) {
+                            $ancho_metraje_data['metrajes_por_color'][] = [
+                                'color' => $metraje->color,
+                                'metraje' => $metraje->metraje
+                            ];
+                        }
+                        
+                        $prenda['ancho_metraje'] = $ancho_metraje_data;
                     } else {
                         $prenda['ancho_metraje'] = null;
                     }

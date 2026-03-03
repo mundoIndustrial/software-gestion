@@ -503,10 +503,10 @@ window.crearTarjetaGenero = function(genero, tallas) {
     // Normalizar género a mayúsculas para consistencia
     genero = String(genero).toUpperCase();
     
-    // 🔴 NUEVO: Si es "GENERICO" (SOLO CANTIDAD), no crear tarjeta visual
-    // La tarjeta de solo cantidad se muestra en su propio contenedor (tarjeta-solo-cantidad)
+    // 🔴 NUEVO: Si es "GENERICO" (UNISEX), no crear tarjeta visual
+    // La tarjeta de unisex se muestra en su propio contenedor via crearTarjetaUnisex()
     if (genero === 'GENERICO') {
-        console.log('[crearTarjetaGenero]  GENERICO detectado - No creando tarjeta visual (se muestra en tarjeta-solo-cantidad)');
+        console.log('[crearTarjetaGenero]  GENERICO detectado - No creando tarjeta visual (se muestra via crearTarjetaUnisex)');
         return;
     }
     

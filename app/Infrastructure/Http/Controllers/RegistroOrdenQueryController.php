@@ -20,6 +20,8 @@ use App\Services\RegistroOrdenProcessesService;
 use App\Services\RegistroOrdenEnumService;
 use App\Models\Festivo;
 use App\Services\FestivosColombiaService;
+use App\Models\PedidoAnchoGeneral;
+use App\Models\PedidoMetrajeColor;
 use Carbon\Carbon;
 
 /**
@@ -1829,17 +1831,27 @@ class RegistroOrdenQueryController extends Controller
                 }
 
                 // Obtener ancho y metraje para esta prenda específica
-                $anchoMetrajePrenda = \App\Models\PedidoAnchoMetraje::where('pedido_produccion_id', $pedidoModel->id)
+                $anchoGeneral = PedidoAnchoGeneral::where('pedido_produccion_id', $pedidoModel->id)
                     ->where('prenda_pedido_id', $prenda->id)
                     ->first();
                 
+                $metrajesPorColor = PedidoMetrajeColor::where('pedido_produccion_id', $pedidoModel->id)
+                    ->where('prenda_pedido_id', $prenda->id)
+                    ->get();
+                
                 $anchoMetrajeData = null;
-                if ($anchoMetrajePrenda) {
+                if ($anchoGeneral || $metrajesPorColor->isNotEmpty()) {
                     $anchoMetrajeData = [
-                        'ancho' => $anchoMetrajePrenda->ancho,
-                        'metraje' => $anchoMetrajePrenda->metraje,
-                        'prenda_id' => $anchoMetrajePrenda->prenda_pedido_id
+                        'ancho' => $anchoGeneral ? $anchoGeneral->ancho : null,
+                        'metrajes_por_color' => []
                     ];
+                    
+                    foreach ($metrajesPorColor as $metraje) {
+                        $anchoMetrajeData['metrajes_por_color'][] = [
+                            'color' => $metraje->color,
+                            'metraje' => $metraje->metraje
+                        ];
+                    }
                 }
 
                 $prendasConSeguimiento[] = [

@@ -12,6 +12,8 @@ class PedidoAnchoMetraje extends Model
     protected $fillable = [
         'pedido_produccion_id',
         'prenda_pedido_id',
+        'color',
+        'talla',
         'ancho',
         'metraje',
         'creado_por',

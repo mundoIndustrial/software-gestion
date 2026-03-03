@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Http\Controllers\Insumos;
+namespace App\Infrastructure\Insumos;
 
-use App\Http\Controllers\Controller;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Models\ConsecutivoReciboPedido;
@@ -10,14 +9,25 @@ use App\Models\MaterialesOrdenInsumos;
 use App\Models\PedidoAnchoGeneral;
 use App\Models\PedidoMetrajeColor;
 use App\Events\ReciboAprobado;
+use App\Application\Insumos\UseCases\GuardarAnchoMetrajeUseCase;
+use App\Application\Insumos\DTOs\GuardarAnchoMetrajeDTO;
+use App\Domain\Insumos\Services\AplicarFiltrosService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 
-class InsumosController extends Controller
+class InsumosService
 {
+    /**
+     * Constructor con inyección de dependencias
+     */
+    public function __construct(
+        private GuardarAnchoMetrajeUseCase $guardarAnchoMetrajeUseCase,
+        private AplicarFiltrosService $aplicarFiltrosService
+    ) {}
+    
     /**
      * Dashboard del rol insumos
      */
@@ -34,129 +44,6 @@ class InsumosController extends Controller
     }
 
     /**
-     * Obtener valores únicos de una columna para filtros
-     */
-    public function obtenerValoresFiltro($column)
-    {
-        try {
-            $user = Auth::user();
-            $this->verificarRolInsumos($user);
-            
-            // Validar que la columna sea permitida
-            $columnasPermitidas = ['numero_pedido', 'cliente', 'estado', 'area', 'fecha_de_creacion_de_orden'];
-            if (!in_array($column, $columnasPermitidas)) {
-                \Log::warning('Columna no permitida en filtro: ' . $column);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Columna no permitida',
-                    'column' => $column
-                ], 400);
-            }
-            
-            // Obtener valores únicos de la columna especificada
-            // Usar la misma query base que en materiales() - Filtrar por Estados y Áreas permitidas
-            $query = PedidoProduccion::where(function($q) {
-                // Estados permitidos
-                $q->whereIn('estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'Anulada', 'PENDIENTE_INSUMOS']);
-            })->where(function($q) {
-                // Áreas permitidas
-                $q->where('area', 'LIKE', '%Corte%')
-                  ->orWhere('area', 'LIKE', '%Creación%orden%')
-                  ->orWhere('area', 'LIKE', '%Creación de orden%');
-            });
-            
-            // Obtener valores únicos
-            if ($column === 'fecha_de_creacion_de_orden') {
-                // Para fechas, obtener primero y luego formatear
-                $allRecords = $query->get();
-                $totalRegistros = $allRecords->count();
-                
-                \Log::info('📅 FILTRO FECHA - Registros totales encontrados:', [
-                    'total_registros' => $totalRegistros,
-                    'filtros_aplicados' => 'Estado (Pendiente, No iniciado, En Ejecución, Anulada, PENDIENTE_INSUMOS)'
-                ]);
-                
-                $valores = $allRecords
-                    ->pluck($column)
-                    ->map(function($value) {
-                        if ($value) {
-                            // Si es un objeto Carbon, formatear a string
-                            if (is_object($value) && method_exists($value, 'format')) {
-                                return $value->format('d/m/Y');
-                            }
-                            // Si es string, intentar convertir de Y-m-d a d/m/Y
-                            $strValue = trim((string)$value);
-                            try {
-                                // Intentar parsear como fecha Y-m-d
-                                if (preg_match('/^\d{4}-\d{2}-\d{2}/', $strValue)) {
-                                    $fecha = \Carbon\Carbon::createFromFormat('Y-m-d', substr($strValue, 0, 10));
-                                    return $fecha->format('d/m/Y');
-                                }
-                            } catch (\Exception $e) {
-                                // Si falla, retornar como está
-                            }
-                            return $strValue;
-                        }
-                        return null;
-                    })
-                    ->filter(function($value) {
-                        return !empty($value);
-                    })
-                    ->unique()
-                    ->sort()
-                    ->values()
-                    ->toArray();
-                    
-                \Log::info('📅 FILTRO FECHA - Valores únicos obtenidos:', [
-                    'total_valores_unicos' => count($valores),
-                    'primeros_5' => array_slice($valores, 0, 5),
-                    'ultimos_5' => array_slice($valores, -5)
-                ]);
-            } else {
-                // Para otras columnas
-                $valores = $query->distinct()
-                    ->orderBy($column, 'asc')
-                    ->pluck($column)
-                    ->filter(function($value) {
-                        return !empty($value);
-                    })
-                    ->map(function($value) {
-                        // Convertir PENDIENTE_INSUMOS a "Pendiente Insumos" para el filtro de estado
-                        if ($value === 'PENDIENTE_INSUMOS') {
-                            return 'Pendiente Insumos';
-                        }
-                        return $value;
-                    })
-                    ->values()
-                    ->toArray();
-            }
-            
-            \Log::info('Valores de filtro obtenidos:', [
-                'column' => $column,
-                'total' => count($valores),
-                'valores' => array_slice($valores, 0, 5) // Mostrar solo los primeros 5 en logs
-            ]);
-            
-            return response()->json([
-                'success' => true,
-                'column' => $column,
-                'valores' => $valores,
-                'total' => count($valores)
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Error al obtener valores de filtro:', [
-                'column' => $column,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al obtener valores: ' . $e->getMessage(),
-                'column' => $column
-            ], 500);
-        }
-    }
-
     /**
      * Control de materiales - Modificado para mostrar recibos de costura individuales
      */
@@ -172,7 +59,7 @@ class InsumosController extends Controller
         
         $queryStart = microtime(true);
         
-        // Obtener parámetro de búsqueda
+        // Obtener parámetros de búsqueda y filtros
         $search = $request->get('search', '');
         
         // Obtener parámetros de filtro (soportar múltiples filtros)
@@ -193,15 +80,6 @@ class InsumosController extends Controller
         if (!is_array($filterValues)) {
             $filterValues = [$filterValues];
         }
-        
-        \Log::info('📥 PARÁMETROS RECIBIDOS:', [
-            'all_params' => $request->all(),
-            'filterColumns' => $filterColumns,
-            'filterValuesArray' => $filterValuesArray,
-            'filterColumn' => $filterColumn,
-            'filterValues' => $filterValues,
-            'search' => $search
-        ]);
         
         // CAMBIO PRINCIPAL: Obtener recibos de costura en lugar de pedidos
         $baseQuery = DB::table('consecutivos_recibos_pedidos')
@@ -237,68 +115,22 @@ class InsumosController extends Controller
               });
         });
         
-        // Aplicar múltiples filtros (nuevo sistema)
+        // Aplicar filtros usando AplicarFiltrosService (DDD)
         $hasFilters = false;
         if (!empty($filterColumns) && !empty($filterValuesArray)) {
             $hasFilters = true;
-            \Log::info(' Filtros recibidos:', [
+            \Log::info(' Filtros recibidos (via AplicarFiltrosService):', [
                 'filterColumns' => $filterColumns,
                 'filterValuesArray' => $filterValuesArray
             ]);
-            foreach ($filterColumns as $idx => $column) {
-                if (isset($filterValuesArray[$idx])) {
-                    $filterValue = $filterValuesArray[$idx];
-                    \Log::info("📌 Aplicando filtro: {$column} = {$filterValue}");
-                    
-                    // Convertir "Pendiente Insumos" a "PENDIENTE_INSUMOS" para el filtro de estado
-                    if ($column === 'estado' && $filterValue === 'Pendiente Insumos') {
-                        $filterValue = 'PENDIENTE_INSUMOS';
-                    }
-                    
-                    // Mapear columnas para recibos
-                    if ($column === 'numero_pedido') {
-                        $column = 'pedidos_produccion.numero_pedido';
-                    } elseif ($column === 'cliente') {
-                        $column = 'pedidos_produccion.cliente';
-                    } elseif ($column === 'estado') {
-                        $column = 'pedidos_produccion.estado';
-                    } elseif ($column === 'area') {
-                        $column = 'pedidos_produccion.area';
-                    } elseif ($column === 'fecha_de_creacion_de_orden') {
-                        $column = 'pedidos_produccion.fecha_de_creacion_de_orden';
-                    }
-                    
-                    // Para campos de texto, usar LIKE
-                    if (in_array($column, ['pedidos_produccion.numero_pedido', 'pedidos_produccion.cliente'])) {
-                        $baseQuery->where($column, 'LIKE', "%{$filterValue}%");
-                    } elseif ($column === 'pedidos_produccion.fecha_de_creacion_de_orden') {
-                        // Para fechas, convertir de d/m/Y a Y-m-d
-                        try {
-                            $fecha = \Carbon\Carbon::createFromFormat('d/m/Y', $filterValue);
-                            $baseQuery->whereDate($column, $fecha->format('Y-m-d'));
-                        } catch (\Exception $e) {
-                            \Log::warning("Error al convertir fecha: {$filterValue}", ['error' => $e->getMessage()]);
-                        }
-                    } else {
-                        // Para otros campos, usar whereIn
-                        $baseQuery->whereIn($column, [$filterValue]);
-                    }
-                }
-            }
+            $baseQuery = $this->aplicarFiltrosService->aplicar($baseQuery, $filterColumns, $filterValuesArray);
         }
         // Fallback para filtro antiguo (singular)
         elseif (!empty($filterColumn) && !empty($filterValues)) {
             $hasFilters = true;
-            // Convertir "Pendiente Insumos" a "PENDIENTE_INSUMOS" para el filtro de estado
-            if ($filterColumn === 'estado') {
-                $filterValues = array_map(function($value) {
-                    return $value === 'Pendiente Insumos' ? 'PENDIENTE_INSUMOS' : $value;
-                }, $filterValues);
-            }
-            
-            // Mapear columna
-            $mappedColumn = 'pedidos_produccion.' . $filterColumn;
-            $baseQuery->whereIn($mappedColumn, $filterValues);
+            // Convertir formato singular a formato multi para el service
+            $columns = array_fill(0, count($filterValues), $filterColumn);
+            $baseQuery = $this->aplicarFiltrosService->aplicar($baseQuery, $columns, $filterValues);
         }
         
         // Aplicar búsqueda si existe
@@ -1379,8 +1211,7 @@ class InsumosController extends Controller
             }
             
             // ==================== VERIFICAR FLUJO 2: PIEZAS (múltiples telas/colores) ====================
-            $coloresTelas = \App\Models\PrendaPedidoColorTela::with(['color', 'tela'])
-                ->where('prenda_pedido_id', $prendaId)
+            $coloresTelas = \App\Models\PrendaPedidoColorTela::where('prenda_pedido_id', $prendaId)
                 ->get();
             
             if ($coloresTelas->count() > 0) {
@@ -1389,8 +1220,8 @@ class InsumosController extends Controller
                 $telasUnicas = [];
                 
                 foreach ($coloresTelas as $ct) {
-                    $colorNombre = $ct->color_nombre ?? $ct->color?->nombre ?? "Color {$ct->color_id}";
-                    $telaNombre = $ct->tela_nombre ?? $ct->tela?->nombre ?? "Tela {$ct->tela_id}";
+                    $colorNombre = $ct->color_nombre ?? \App\Models\Color::find($ct->color_id)?->nombre ?? "Color {$ct->color_id}";
+                    $telaNombre = $ct->tela_nombre ?? \App\Models\Tela::find($ct->tela_id)?->nombre ?? "Tela {$ct->tela_id}";
                     
                     // Crear clave única para color-tela
                     $clave = "{$colorNombre}-{$telaNombre}";
@@ -1461,14 +1292,6 @@ class InsumosController extends Controller
                 ->where('prenda_pedido_id', $prendaId)
                 ->get();
             
-            // Determinar tipo_modo guardado (prioridad: ancho_general > metraje_color)
-            $tipoModoGuardado = null;
-            if ($anchoGeneral && $anchoGeneral->tipo_modo) {
-                $tipoModoGuardado = $anchoGeneral->tipo_modo;
-            } elseif ($metrajesPorColor->isNotEmpty() && $metrajesPorColor->first()->tipo_modo) {
-                $tipoModoGuardado = $metrajesPorColor->first()->tipo_modo;
-            }
-            
             // Construir respuesta con formato consistente
             $data = [];
             
@@ -1484,9 +1307,7 @@ class InsumosController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => $data,
-                'ancho' => $anchoGeneral ? $anchoGeneral->ancho : null,
-                'metraje' => $anchoGeneral ? $anchoGeneral->metraje : null,
-                'tipo_modo' => $tipoModoGuardado
+                'ancho' => $anchoGeneral ? $anchoGeneral->ancho : null
             ]);
             
         } catch (\Exception $e) {
@@ -1518,92 +1339,17 @@ class InsumosController extends Controller
                 'metraje' => 'nullable|numeric|min:0'
             ]);
             
-            // Buscar el pedido
-            $pedido = PedidoProduccion::find($numeroPedido)
-                ?? PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+            // Crear DTO desde datos validados
+            $dto = GuardarAnchoMetrajeDTO::fromRequest($validated, $numeroPedido, $user->id);
             
-            // VALIDAR: No permitir mezclar tipo_modo diferente al ya guardado
-            $tipoModoNuevo = $validated['tipo_modo'] ?? 'normal';
+            // Ejecutar UseCase
+            $resultado = $this->guardarAnchoMetrajeUseCase->execute($dto);
             
-            $anchoExistente = PedidoAnchoGeneral::where('pedido_produccion_id', $pedido->id)
-                ->where('prenda_pedido_id', $validated['prenda_id'])
-                ->first();
-            
-            $metrajeExistente = PedidoMetrajeColor::where('pedido_produccion_id', $pedido->id)
-                ->where('prenda_pedido_id', $validated['prenda_id'])
-                ->first();
-            
-            $tipoModoExistente = null;
-            if ($anchoExistente && $anchoExistente->tipo_modo) {
-                $tipoModoExistente = $anchoExistente->tipo_modo;
-            } elseif ($metrajeExistente && $metrajeExistente->tipo_modo) {
-                $tipoModoExistente = $metrajeExistente->tipo_modo;
+            if (!$resultado['success']) {
+                return response()->json($resultado, 422);
             }
             
-            if ($tipoModoExistente && $tipoModoNuevo !== $tipoModoExistente) {
-                $nombres = ['normal' => 'Normal', 'color' => 'Por Color', 'pieza' => 'Por Pieza'];
-                return response()->json([
-                    'success' => false,
-                    'message' => "Ya existen datos guardados en modo \"{$nombres[$tipoModoExistente]}\". No se puede guardar en modo \"{$nombres[$tipoModoNuevo]}\".",
-                    'tipo_modo_existente' => $tipoModoExistente
-                ], 409);
-            }
-            
-            // Guardar ancho general (sin color)
-            if (!$validated['color'] && ($validated['ancho'] !== null || $validated['metraje'] !== null)) {
-                $datosAncho = [
-                    'tipo_modo' => $validated['tipo_modo'] ?? 'normal',
-                    'creado_por' => $user->id,
-                    'actualizado_por' => $user->id,
-                ];
-                
-                if ($validated['ancho'] !== null) {
-                    $datosAncho['ancho'] = $validated['ancho'];
-                }
-                if ($validated['metraje'] !== null) {
-                    $datosAncho['metraje'] = $validated['metraje'];
-                }
-                
-                PedidoAnchoGeneral::updateOrCreate(
-                    [
-                        'pedido_produccion_id' => $pedido->id,
-                        'prenda_pedido_id' => $validated['prenda_id'],
-                    ],
-                    $datosAncho
-                );
-                
-                \Log::info("Ancho general guardado para pedido {$numeroPedido}, prenda {$validated['prenda_id']}: ancho={$validated['ancho']}m, metraje={$validated['metraje']}m (tipo_modo: {$validated['tipo_modo']})", [
-                    'usuario_id' => $user->id,
-                    'usuario_nombre' => $user->name
-                ]);
-            }
-            
-            // Guardar metraje por color
-            if ($validated['color'] && $validated['metraje'] !== null) {
-                PedidoMetrajeColor::updateOrCreate(
-                    [
-                        'pedido_produccion_id' => $pedido->id,
-                        'prenda_pedido_id' => $validated['prenda_id'],
-                        'color' => $validated['color'],
-                    ],
-                    [
-                        'metraje' => $validated['metraje'],
-                        'tipo_modo' => $validated['tipo_modo'] ?? 'color',
-                        'creado_por' => $user->id,
-                        'actualizado_por' => $user->id,
-                    ]
-                );
-                
-                \Log::info("Metraje guardado para pedido {$numeroPedido}, prenda {$validated['prenda_id']}, color {$validated['color']}: {$validated['metraje']}m (tipo_modo: {$validated['tipo_modo']})", [
-                    'usuario_id' => $user->id,
-                    'usuario_nombre' => $user->name
-                ]);
-            }
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Ancho y metraje guardados correctamente'
-            ]);
+            return response()->json($resultado);
             
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -1611,7 +1357,9 @@ class InsumosController extends Controller
                 'message' => 'Error de validación: ' . $e->getMessage()
             ], 422);
         } catch (\Exception $e) {
-            \Log::error('Error al guardar ancho y metraje de prenda: ' . $e->getMessage());
+            Log::error('Error al guardar ancho y metraje de prenda: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al guardar ancho y metraje de prenda'

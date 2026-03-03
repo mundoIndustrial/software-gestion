@@ -191,51 +191,20 @@
                                 <span id="check-sobremedida" class="btn-genero-check">✓</span>
                             </button>
                             
-                            <!-- Botón SOLO CANTIDAD -->
-                            <button type="button" id="btn-genero-solo-cantidad" class="btn-genero" data-selected="false" onclick="abrirOpcionalSoloCantidad()">
+                            <!-- Botón UNISEX -->
+                            <button type="button" id="btn-genero-unisex" class="btn-genero" data-selected="false" onclick="abrirModalUnisex()">
                                 <div class="btn-genero-content">
-                                    <span class="material-symbols-rounded">shopping_cart</span>
-                                    <span>SOLO CANTIDAD</span>
+                                    <span class="material-symbols-rounded">wc</span>
+                                    <span>UNISEX</span>
                                 </div>
-                                <span id="check-solo-cantidad" class="btn-genero-check">✓</span>
+                                <span id="check-unisex" class="btn-genero-check">✓</span>
                             </button>
                         </div>
                         
                         <!-- Tarjetas de Géneros Seleccionados -->
                         <div id="tarjetas-generos-container" class="generos-container"></div>
                         
-                        <!-- SECCIÓN SOLO CANTIDAD (Oculta por defecto) -->
-                        <div id="seccion-solo-cantidad" style="display: none; margin-top: 1.5rem; padding: 1rem; background: #f0f7ff; border: 2px solid #0066cc; border-radius: 8px;">
-                            <label class="form-label-primary" style="margin-bottom: 1rem;">
-                                <span class="material-symbols-rounded">shopping_cart</span>CANTIDAD SIN ESPECÍFICAR TALLA *
-                            </label>
-                            <div style="display: flex; align-items: center; gap: 1rem;">
-                                <div style="flex: 1;">
-                                    <label for="cantidad-solo" class="sr-only">Cantidad</label>
-                                    <input type="number" id="cantidad-solo" placeholder="Ingresa la cantidad total..." min="1" class="form-input" style="font-size: 1rem; padding: 0.75rem;">
-                                </div>
-                                <button type="button" id="btn-agregar-solo-cantidad" class="btn btn-primary" style="white-space: nowrap; padding: 0.75rem 1.5rem;" onclick="agregarSoloCantidad()">
-                                    <span class="material-symbols-rounded" style="vertical-align: middle;">add</span>
-                                    Agregar
-                                </button>
-                                <button type="button" id="btn-cancelar-solo-cantidad" class="btn btn-outline-secondary" style="white-space: nowrap; padding: 0.75rem 1.5rem;" onclick="cancelarSoloCantidad()">
-                                    <span class="material-symbols-rounded" style="vertical-align: middle;">close</span>
-                                    Cancelar
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Tarjeta de SOLO CANTIDAD (Si está activada) -->
-                        <div id="tarjeta-solo-cantidad" style="display: none; margin-top: 1rem; padding: 1rem; background: whitesmoke; border: 2px solid #0066cc; border-radius: 8px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <p style="margin: 0; font-weight: 600; color: #0066cc;">CANTIDAD TOTAL: <span id="cantidad-solo-display" style="font-size: 1.2rem;">0</span> unidades</p>
-                                </div>
-                                <button type="button" class="btn btn-sm btn-danger" onclick="eliminarSoloCantidad()" title="Eliminar">
-                                    <span class="material-symbols-rounded">delete</span>
-                                </button>
-                            </div>
-                        </div>
+                        <!-- Tarjeta de UNISEX (Si está activada, se crea dinámicamente en tarjetas-generos-container) -->
                         
                         <!-- Total general -->
                         <div class="total-box">
@@ -510,141 +479,250 @@ if (window.actualizarTablaTelas) {
     };
 }
 
-// ========== FUNCIONES PARA "SOLO CANTIDAD" ==========
+// ========== FUNCIONES PARA "UNISEX" (antes "SOLO CANTIDAD") ==========
 /**
- * Variable global para almacenar la cantidad cuando se selecciona "SOLO CANTIDAD"
+ * Variable global para almacenar la cantidad cuando se selecciona "UNISEX"
  */
 window.cantidadSoloSeleccionada = null;
 
 /**
- * Abre el campo de entrada para ingresar solo cantidad
+ * Abre modal estilo sobremedida para ingresar cantidad UNISEX
  */
-window.abrirOpcionalSoloCantidad = function() {
-    const btnSoloCantidad = document.getElementById('btn-genero-solo-cantidad');
-    const checkSoloCantidad = document.getElementById('check-solo-cantidad');
-    const seccionSoloCantidad = document.getElementById('seccion-solo-cantidad');
-    const tarjetaSoloCantidad = document.getElementById('tarjeta-solo-cantidad');
-    
-    // Verificar si ya está seleccionado
-    const estáSeleccionado = btnSoloCantidad.getAttribute('data-selected') === 'true';
-    
-    if (estáSeleccionado) {
-        // DESELECCIONAR
-        btnSoloCantidad.style.background = 'white';
-        btnSoloCantidad.style.borderColor = '#d1d5db';
-        btnSoloCantidad.style.color = '#374151';
-        btnSoloCantidad.setAttribute('data-selected', 'false');
-        checkSoloCantidad.style.display = 'none';
-        seccionSoloCantidad.style.display = 'none';
-        
-        // Limpiar la tarjeta si existe
-        eliminarSoloCantidad();
-    } else {
-        // SELECCIONAR
-        btnSoloCantidad.style.background = '#e0f2fe';
-        btnSoloCantidad.style.borderColor = '#0369a1';
-        btnSoloCantidad.style.color = '#0369a1';
-        btnSoloCantidad.setAttribute('data-selected', 'true');
-        checkSoloCantidad.style.display = 'inline-block';
-        seccionSoloCantidad.style.display = 'block';
-        
-        // Desseleccionar otros géneros
-        ['dama', 'caballero', 'sobremedida'].forEach(genero => {
-            const btn = document.getElementById(`btn-genero-${genero}`);
-            const check = document.getElementById(`check-${genero}`);
-            if (btn) {
-                btn.style.background = 'white';
-                btn.style.borderColor = '#d1d5db';
-                btn.style.color = '#374151';
-                btn.setAttribute('data-selected', 'false');
-                check.style.display = 'none';
-            }
-        });
-        
-        // Limpiar cualquier tarjeta de género anterior
-        const tarjetasGeneros = document.getElementById('tarjetas-generos-container');
-        if (tarjetasGeneros) {
-            tarjetasGeneros.innerHTML = '';
+window.abrirModalUnisex = function() {
+    const modal = document.createElement('div');
+    modal.id = 'modal-unisex';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1060000;';
+
+    const container = document.createElement('div');
+    container.style.cssText = 'background: white; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); overflow: hidden;';
+
+    // Header
+    const header = document.createElement('div');
+    header.style.cssText = 'background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: white; padding: 1.5rem; display: flex; align-items: center; justify-content: space-between;';
+
+    const headerContent = document.createElement('div');
+    headerContent.style.cssText = 'display: flex; align-items: center; gap: 0.75rem;';
+    headerContent.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.5rem;">wc</span><h2 style="margin: 0; font-size: 1.25rem;">Agregar Unisex</h2>';
+    header.appendChild(headerContent);
+
+    const btnCerrar = document.createElement('button');
+    btnCerrar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.5rem;">close</span>';
+    btnCerrar.style.cssText = 'background: transparent; color: white; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;';
+    btnCerrar.onclick = () => cerrarModalUnisex();
+    header.appendChild(btnCerrar);
+
+    container.appendChild(header);
+
+    // Content
+    const content = document.createElement('div');
+    content.style.cssText = 'padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;';
+
+    // Explicación
+    const explicacion = document.createElement('p');
+    explicacion.style.cssText = 'margin: 0; color: #6b7280; font-size: 0.95rem; line-height: 1.5;';
+    explicacion.textContent = 'La opción Unisex permite agregar una cantidad total sin especificar tallas individuales ni género. Ideal para prendas genéricas o a medida.';
+    content.appendChild(explicacion);
+
+    // Input de Cantidad
+    const cantidadLabel = document.createElement('label');
+    cantidadLabel.style.cssText = 'display: flex; flex-direction: column; gap: 0.5rem; font-weight: 600; color: #1f2937;';
+    cantidadLabel.innerHTML = '<span>Cantidad Total *</span>';
+
+    const cantidadInput = document.createElement('input');
+    cantidadInput.id = 'unisex-cantidad';
+    cantidadInput.type = 'number';
+    cantidadInput.min = '1';
+    cantidadInput.placeholder = 'Ej: 100';
+    cantidadInput.style.cssText = 'padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 6px; font-size: 1rem; font-weight: 600;';
+
+    // Enter para confirmar
+    cantidadInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            confirmarUnisex();
         }
-        
-        // Enfocar en el campo de cantidad
-        setTimeout(() => {
-            document.getElementById('cantidad-solo').focus();
-        }, 100);
-    }
+    });
+
+    cantidadLabel.appendChild(cantidadInput);
+    content.appendChild(cantidadLabel);
+
+    container.appendChild(content);
+
+    // Footer
+    const footer = document.createElement('div');
+    footer.style.cssText = 'display: flex; gap: 1rem; justify-content: flex-end; padding: 1.5rem; border-top: 1px solid #e5e7eb;';
+
+    const btnCancelar = document.createElement('button');
+    btnCancelar.type = 'button';
+    btnCancelar.textContent = 'Cancelar';
+    btnCancelar.style.cssText = 'background: #e5e7eb; color: #1f2937; border: none; border-radius: 6px; padding: 0.75rem 1.5rem; cursor: pointer; font-weight: 500; transition: all 0.2s;';
+    btnCancelar.onmouseover = () => btnCancelar.style.background = '#d1d5db';
+    btnCancelar.onmouseout = () => btnCancelar.style.background = '#e5e7eb';
+    btnCancelar.onclick = () => cerrarModalUnisex();
+    footer.appendChild(btnCancelar);
+
+    const btnConfirmar = document.createElement('button');
+    btnConfirmar.type = 'button';
+    btnConfirmar.textContent = 'Confirmar';
+    btnConfirmar.style.cssText = 'background: #7c3aed; color: white; border: none; border-radius: 6px; padding: 0.75rem 1.5rem; cursor: pointer; font-weight: 500; transition: all 0.2s;';
+    btnConfirmar.onmouseover = () => btnConfirmar.style.background = '#5b21b6';
+    btnConfirmar.onmouseout = () => btnConfirmar.style.background = '#7c3aed';
+    btnConfirmar.onclick = () => confirmarUnisex();
+    footer.appendChild(btnConfirmar);
+
+    container.appendChild(footer);
+    modal.appendChild(container);
+
+    document.body.appendChild(modal);
+
+    // Focus en cantidad
+    setTimeout(() => document.getElementById('unisex-cantidad').focus(), 100);
 };
 
 /**
- * Agrega la cantidad ingresada
+ * Confirmar cantidad Unisex desde el modal
  */
-window.agregarSoloCantidad = function() {
-    const cantidadInput = document.getElementById('cantidad-solo');
-    const cantidad = parseInt(cantidadInput.value, 10);
-    
-    // Validar
-    if (isNaN(cantidad) || cantidad <= 0) {
-        alert('Por favor ingresa una cantidad válida');
-        cantidadInput.focus();
+window.confirmarUnisex = function() {
+    const cantidad = parseInt(document.getElementById('unisex-cantidad').value) || 0;
+
+    if (cantidad <= 0) {
+        alert('La cantidad debe ser mayor a 0');
+        document.getElementById('unisex-cantidad').focus();
         return;
     }
-    
+
     // Guardar en variable global
     window.cantidadSoloSeleccionada = cantidad;
-    
-    // Actualizar display
-    document.getElementById('cantidad-solo-display').textContent = cantidad;
-    
-    // Mostrar tarjeta
-    const tarjeta = document.getElementById('tarjeta-solo-cantidad');
-    tarjeta.style.display = 'block';
-    
-    // Ocultar formulario de entrada
-    document.getElementById('seccion-solo-cantidad').style.display = 'none';
-    
+
+    // Cerrar modal
+    cerrarModalUnisex();
+
+    // Crear tarjeta visual en el contenedor de géneros
+    crearTarjetaUnisex(cantidad);
+
     // Actualizar total
     actualizarTotalPrendas();
-    
-    console.log('[SOLO CANTIDAD] Cantidad agregada:', cantidad);
+
+    console.log('[UNISEX] Cantidad agregada:', cantidad);
 };
 
 /**
- * Cancela la entrada de "SOLO CANTIDAD"
+ * Cerrar modal de unisex
  */
-window.cancelarSoloCantidad = function() {
-    document.getElementById('cantidad-solo').value = '';
-    document.getElementById('seccion-solo-cantidad').style.display = 'none';
-    
-    const btnSoloCantidad = document.getElementById('btn-genero-solo-cantidad');
-    btnSoloCantidad.style.background = 'white';
-    btnSoloCantidad.style.borderColor = '#d1d5db';
-    btnSoloCantidad.style.color = '#374151';
-    btnSoloCantidad.setAttribute('data-selected', 'false');
-    
-    document.getElementById('check-solo-cantidad').style.display = 'none';
+window.cerrarModalUnisex = function() {
+    const modal = document.getElementById('modal-unisex');
+    if (modal) {
+        modal.remove();
+    }
 };
 
 /**
- * Elimina la cantidad seleccionada
+ * Crear tarjeta de unisex en el contenedor de géneros
  */
-window.eliminarSoloCantidad = function() {
+window.crearTarjetaUnisex = function(cantidad) {
+    // Marcar botón
+    const btnUnisex = document.getElementById('btn-genero-unisex');
+    const checkMark = document.getElementById('check-unisex');
+
+    if (btnUnisex) {
+        btnUnisex.dataset.selected = 'true';
+        btnUnisex.style.borderColor = '#7c3aed';
+        btnUnisex.style.background = '#f5f3ff';
+        btnUnisex.style.color = '#5b21b6';
+    }
+
+    if (checkMark) {
+        checkMark.style.display = 'block';
+    }
+
+    // Obtener contenedor
+    const container = document.getElementById('tarjetas-generos-container');
+    if (!container) return;
+
+    // Eliminar tarjeta anterior si existe
+    const tarjetaAnterior = container.querySelector('[data-unisex="true"]');
+    if (tarjetaAnterior) {
+        tarjetaAnterior.remove();
+    }
+
+    // Crear tarjeta compacta
+    const tarjeta = document.createElement('div');
+    tarjeta.dataset.unisex = 'true';
+    tarjeta.style.cssText = 'background: white; border: 2px solid #7c3aed; border-radius: 8px; padding: 1rem; margin-top: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);';
+
+    // Header compacto
+    const headerDiv = document.createElement('div');
+    headerDiv.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; justify-content: space-between;';
+
+    const headerLeft = document.createElement('div');
+    headerLeft.style.cssText = 'display: flex; align-items: center; gap: 0.5rem;';
+    headerLeft.innerHTML = `
+        <span class="material-symbols-rounded" style="font-size: 1.25rem; color: #7c3aed;">wc</span>
+        <div>
+            <h4 style="margin: 0; color: #1f2937; font-size: 0.9rem; font-weight: 600;">UNISEX</h4>
+            <p style="margin: 0; color: #6b7280; font-size: 0.75rem;">Cantidad total: ${cantidad} unidades</p>
+        </div>
+    `;
+    headerDiv.appendChild(headerLeft);
+
+    const btnEliminar = document.createElement('button');
+    btnEliminar.type = 'button';
+    btnEliminar.title = 'Eliminar unisex';
+    btnEliminar.style.cssText = 'background: transparent; border: none; color: #6b7280; cursor: pointer; padding: 0.35rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; border-radius: 4px; font-size: 1rem;';
+    btnEliminar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1rem;">delete</span>';
+    btnEliminar.onmouseover = () => {
+        btnEliminar.style.color = '#ef4444';
+        btnEliminar.style.background = '#fee2e2';
+    };
+    btnEliminar.onmouseout = () => {
+        btnEliminar.style.color = '#6b7280';
+        btnEliminar.style.background = 'transparent';
+    };
+    btnEliminar.onclick = () => {
+        eliminarUnisex();
+    };
+    headerDiv.appendChild(btnEliminar);
+
+    tarjeta.appendChild(headerDiv);
+    container.appendChild(tarjeta);
+};
+
+/**
+ * Elimina la opción unisex
+ */
+window.eliminarUnisex = function() {
     window.cantidadSoloSeleccionada = null;
-    document.getElementById('cantidad-solo').value = '';
-    document.getElementById('tarjeta-solo-cantidad').style.display = 'none';
-    document.getElementById('seccion-solo-cantidad').style.display = 'none';
-    
-    const btnSoloCantidad = document.getElementById('btn-genero-solo-cantidad');
-    btnSoloCantidad.style.background = 'white';
-    btnSoloCantidad.style.borderColor = '#d1d5db';
-    btnSoloCantidad.style.color = '#374151';
-    btnSoloCantidad.setAttribute('data-selected', 'false');
-    
-    document.getElementById('check-solo-cantidad').style.display = 'none';
-    
+
+    // Eliminar tarjeta
+    const container = document.getElementById('tarjetas-generos-container');
+    if (container) {
+        const tarjeta = container.querySelector('[data-unisex="true"]');
+        if (tarjeta) tarjeta.remove();
+    }
+
+    // Resetear botón
+    const btnUnisex = document.getElementById('btn-genero-unisex');
+    const checkUnisex = document.getElementById('check-unisex');
+
+    if (btnUnisex) {
+        btnUnisex.style.background = 'white';
+        btnUnisex.style.borderColor = '#d1d5db';
+        btnUnisex.style.color = '#374151';
+        btnUnisex.setAttribute('data-selected', 'false');
+    }
+    if (checkUnisex) checkUnisex.style.display = 'none';
+
     actualizarTotalPrendas();
 };
 
+// Alias de compatibilidad para funciones antiguas
+window.abrirOpcionalSoloCantidad = window.abrirModalUnisex;
+window.eliminarSoloCantidad = window.eliminarUnisex;
+window.agregarSoloCantidad = window.confirmarUnisex;
+window.cancelarSoloCantidad = window.cerrarModalUnisex;
+
 /**
- * Actualiza el total de prendas (incluyendo la cantidad "SOLO CANTIDAD")
+ * Actualiza el total de prendas (incluyendo la cantidad UNISEX)
  */
 window.actualizarTotalPrendasOriginal = window.actualizarTotalPrendas || function() {};
 
@@ -660,7 +738,7 @@ window.actualizarTotalPrendas = function() {
         });
     }
     
-    // Sumar cantidad "SOLO CANTIDAD"
+    // Sumar cantidad UNISEX
     if (window.cantidadSoloSeleccionada) {
         totalPrendas += window.cantidadSoloSeleccionada;
     }
@@ -1426,11 +1504,51 @@ document.addEventListener('paste', function(event) {
                                         console.warn('[TablaResumen] No se pudo sincronizar eliminación con servidor:', e);
                                     }
                                     
+                                    // 🔴 FIX: Si no quedan más asignaciones, limpiar estado completo
+                                    const asignacionesRestantes = Object.keys(asignaciones);
+                                    if (asignacionesRestantes.length === 0) {
+                                        console.log('[TablaResumen] 🧹 No quedan asignaciones, limpiando estado...');
+                                        
+                                        // Limpiar tallasRelacionales para evitar que crearTarjetaGenero recree tarjetas
+                                        if (window.tallasRelacionales) {
+                                            Object.keys(window.tallasRelacionales).forEach(g => {
+                                                window.tallasRelacionales[g] = {};
+                                            });
+                                        }
+                                        
+                                        // Limpiar telas huérfanas del wizard (sin datos propios)
+                                        if (window.telasCreacion) {
+                                            window.telasCreacion = window.telasCreacion.filter(t => {
+                                                const tieneColor = t.color && t.color.trim() !== '';
+                                                const tieneRef = t.referencia && t.referencia.trim() !== '';
+                                                const tieneImgs = t.imagenes && t.imagenes.length > 0;
+                                                return tieneColor || tieneRef || tieneImgs;
+                                            });
+                                        }
+                                        
+                                        // Limpiar tarjetas de genéro del DOM
+                                        const containerTarjetas = document.getElementById('tarjetas-generos-container');
+                                        if (containerTarjetas) containerTarjetas.innerHTML = '';
+                                        
+                                        // Desmarcar botones de género
+                                        document.querySelectorAll('[id^="btn-genero-"]').forEach(btn => {
+                                            btn.dataset.selected = 'false';
+                                            btn.style.borderColor = '';
+                                            btn.style.background = '';
+                                        });
+                                        document.querySelectorAll('[id^="check-"]').forEach(chk => {
+                                            chk.style.display = 'none';
+                                        });
+                                    }
+                                    
                                     // Actualizar tabla y otras secciones
                                     if (window.ColoresPorTalla && typeof window.ColoresPorTalla.actualizarTablaResumen === 'function') {
                                         window.ColoresPorTalla.actualizarTablaResumen();
                                     }
-                                    if (typeof crearTarjetaGenero === 'function') crearTarjetaGenero();
+                                    // Solo recrear tarjeta si aún quedan asignaciones
+                                    if (asignacionesRestantes.length > 0 && typeof crearTarjetaGenero === 'function') {
+                                        crearTarjetaGenero();
+                                    }
                                     if (typeof actualizarTotalPrendas === 'function') actualizarTotalPrendas();
                                     
                                     console.log('✅ Asignación eliminada');
