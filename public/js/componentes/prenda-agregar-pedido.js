@@ -41,6 +41,40 @@
     }
 
     /**
+     * Inicializar DragDropManager para que funcione arrastrar y Ctrl+V
+     * en el modal de agregar prenda (prenda, telas, procesos).
+     * @private
+     */
+    function _inicializarDragDropEnModal() {
+        try {
+            // Si DragDropManager existe y ya fue inicializado, solo reconfigurar los handlers
+            // (los elementos DOM se recrearon al limpiar el modal)
+            if (window.DragDropManager && window.DragDropManager.inicializado) {
+                console.log('[PrendaAgregarPedido] 🔄 DragDropManager ya inicializado, reconfigurando handlers...');
+                window.DragDropManager.reconfigurarPrendas();
+                window.DragDropManager.reconfigurarTelas();
+                window.DragDropManager.reconfigurarProcesos();
+                return;
+            }
+
+            // Si DragDropManager existe como clase pero no se ha instanciado
+            if (typeof DragDropManager !== 'undefined' && !window.DragDropManager) {
+                window.DragDropManager = new DragDropManager();
+            }
+
+            // Inicializar si existe
+            if (window.DragDropManager && typeof window.DragDropManager.inicializar === 'function') {
+                window.DragDropManager.inicializar();
+                console.log('[PrendaAgregarPedido] ✅ DragDropManager inicializado para modal agregar');
+            } else {
+                console.warn('[PrendaAgregarPedido] ⚠️ DragDropManager no disponible');
+            }
+        } catch (e) {
+            console.error('[PrendaAgregarPedido] Error inicializando DragDropManager:', e);
+        }
+    }
+
+    /**
      * Pedir novedad/justificación antes de guardar
      * @returns {Promise<string|null>} novedad o null si canceló
      * @private
@@ -311,6 +345,9 @@
 
             console.log('[PrendaAgregarPedido] 🆕 Modal abierto en modo AGREGAR para pedido:', pedidoId);
 
+            // Inicializar drag & drop (prenda, telas, procesos) para que funcione arrastrar y Ctrl+V
+            _inicializarDragDropEnModal();
+
         } catch (error) {
             console.error('[PrendaAgregarPedido] Error al abrir modal:', error);
             if (typeof Swal !== 'undefined') {
@@ -392,9 +429,14 @@
 
                 if (!Array.isArray(datos.procesos)) {
                     Object.entries(datos.procesos).forEach(([tipo, d], idx) => {
-                        if (d.imagenes && Array.isArray(d.imagenes)) {
+                        // Los datos reales pueden estar en d.datos (estructura de procesosSeleccionados)
+                        const datosReales = d.datos || d;
+
+                        // Extraer imágenes desde datosReales o d directamente
+                        const imagenesProceso = datosReales.imagenes || d.imagenes || [];
+                        if (Array.isArray(imagenesProceso) && imagenesProceso.length > 0) {
                             filesPorProceso[idx] = [];
-                            d.imagenes.forEach(img => {
+                            imagenesProceso.forEach(img => {
                                 if (img instanceof File) {
                                     filesPorProceso[idx].push(img);
                                 } else if (img?.file instanceof File) {
@@ -403,12 +445,12 @@
                             });
                         }
                         procesosArray.push({
-                            tipo: d.tipo || tipo,
-                            nombre: d.nombre || tipo,
-                            ubicaciones: d.ubicaciones || [],
-                            observaciones: d.observaciones || '',
-                            tallas: d.tallas || {},
-                            estado: d.estado || 'PENDIENTE'
+                            tipo: datosReales.tipo || d.tipo || tipo,
+                            nombre: datosReales.nombre || d.nombre || tipo,
+                            ubicaciones: datosReales.ubicaciones || d.ubicaciones || [],
+                            observaciones: datosReales.observaciones || d.observaciones || '',
+                            tallas: datosReales.tallas || d.tallas || {},
+                            estado: datosReales.estado || d.estado || 'PENDIENTE'
                         });
                     });
 

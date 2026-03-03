@@ -70,7 +70,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
             // Cargar modelo Eloquent completo con relaciones (solo si es necesario)
             $modeloEloquent = \App\Models\PedidoProduccion::with([
                 'prendas' => function($q) use ($esCortador, $usuario) {
-                    $q->withTrashed(); // INCLUIR SOFT-DELETED
+                    // NO incluir prendas eliminadas (SoftDeletes aplica automáticamente)
                     
                     // FILTRO: Si el usuario es CORTADOR, excluir prendas de bodega (de_bodega = TRUE)
                     if ($esCortador) {
@@ -100,8 +100,8 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                               ]);
                           },
                           'procesos' => function($q3) {
-                              $q3->withTrashed() // INCLUIR SOFT-DELETED
-                                 ->with([
+                              // NO incluir procesos eliminados (SoftDeletes aplica automáticamente)
+                              $q3->with([
                                      'tipoProceso',
                                      'tallas',  // NUEVO: Cargar tallas del proceso
                                      'imagenes' => function($q4) {

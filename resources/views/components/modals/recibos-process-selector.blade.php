@@ -478,6 +478,14 @@
             return;
         }
 
+        // Filtrar prendas eliminadas (soft-deleted) por seguridad
+        prendas = prendas.filter(p => !p.deleted_at);
+
+        if (prendas.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #9ca3af; padding: 40px;">No hay prendas activas en este pedido</p>';
+            return;
+        }
+
         let html = '';
 
         prendas.forEach((prenda, prendaIdx) => {

@@ -252,9 +252,19 @@ class PrendaFormCollector {
                 const copia = {};
                 Object.entries(procesos).forEach(([tipoProceso, proceso]) => {
                     if (proceso && typeof proceso === 'object') {
+                        // Deep copy completo de datos (incluye tallas, ubicaciones, observaciones, imagenes)
+                        let datosCopiados = null;
+                        if (proceso.datos && typeof proceso.datos === 'object') {
+                            datosCopiados = {
+                                ...proceso.datos,
+                                ubicaciones: Array.isArray(proceso.datos.ubicaciones) ? [...proceso.datos.ubicaciones] : (proceso.datos.ubicaciones || []),
+                                tallas: proceso.datos.tallas ? JSON.parse(JSON.stringify(proceso.datos.tallas)) : {},
+                                imagenes: Array.isArray(proceso.datos.imagenes) ? [...proceso.datos.imagenes] : [],
+                            };
+                        }
                         copia[tipoProceso] = {
                             tipo: proceso.tipo || tipoProceso,
-                            datos: proceso.datos ? { ...proceso.datos } : null
+                            datos: datosCopiados
                         };
                     }
                 });

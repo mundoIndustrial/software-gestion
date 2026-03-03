@@ -48,6 +48,8 @@ use App\Application\Pedidos\DTOs\RenderItemCardDTO;
 use App\Models\PrendaFotoPedido;
 use App\Models\PrendaFotoTelaPedido;
 use App\Models\PedidosProcesoImagenes;
+use App\Models\ConsecutivoReciboPedido;
+use App\Models\PedidosProcesosPrendaTallaColor;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -714,7 +716,7 @@ class PedidosProduccionController
                 'imagenes' => 'nullable|array',
                 'imagenes.*' => 'nullable|image|max:5120',
                 'imagenes_existentes' => 'nullable|json', // Imágenes existentes de BD a preservar
-                'telas' => 'nullable|array',
+                'telas' => 'nullable|json',
             ]);
 
             // Procesar imágenes de prenda directamente en carpeta final
@@ -824,8 +826,29 @@ class PedidosProduccionController
                 }
             }
 
+            // Procesar imágenes de telas (fotos_tela[0], fotos_tela[1], etc.)
+            $fotosTelaRutas = [];
+            $telaFotoService = new \App\Domain\Pedidos\Services\TelaFotoService();
+            $fotosTelaFiles = $request->file('fotos_tela') ?? [];
+            foreach ($fotosTelaFiles as $indice => $archivo) {
+                if ($archivo && $archivo->isValid()) {
+                    try {
+                        $rutas = $telaFotoService->procesarFoto($archivo, (int)$id, true);
+                        $fotosTelaRutas[$indice] = $rutas;
+                        Log::info('[PedidosProduccionController] Imagen de tela procesada', [
+                            'indice' => $indice,
+                            'ruta_webp' => $rutas['ruta_webp'],
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::warning('[PedidosProduccionController] Error procesando imagen de tela', [
+                            'indice' => $indice, 'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+            }
+
             // Usar Use Case DDD
-            $dto = AgregarPrendaCompletaDTO::fromRequest($id, $validated, $imagenesGuardadas, $imagenesExistentes, $fotosProcesoNuevo);
+            $dto = AgregarPrendaCompletaDTO::fromRequest($id, $validated, $imagenesGuardadas, $imagenesExistentes, $fotosProcesoNuevo, $fotosTelaRutas);
             $prenda = $this->agregarPrendaCompletaUseCase->execute($dto);
 
             Log::info('[PedidosProduccionController] Prenda completa agregada exitosamente', [
@@ -2202,6 +2225,9 @@ class PedidosProduccionController
                 'pedido_id' => $id,
             ]);
 
+            // Usar transacción para garantizar eliminación atómica
+            DB::beginTransaction();
+
             // Construir mensaje de eliminación
             $mensajeEliminacion = "[ELIMINADA PRENDA] {$nombrePrenda} - Motivo: {$motivo}";
 
@@ -2281,6 +2307,16 @@ class PedidosProduccionController
                 ->where('prenda_pedido_id', $prendaId)
                 ->delete();
 
+            // =====================================================
+            // Recopilar IDs de talla_color ANTES de eliminar procesos
+            // (necesarios para limpiar bodega_notas)
+            // =====================================================
+            $tallaColorIds = DB::table('pedidos_procesos_prenda_talla_colores as tc')
+                ->join('pedidos_procesos_prenda_tallas as t', 't.id', '=', 'tc.pedidos_procesos_prenda_talla_id')
+                ->join('pedidos_procesos_prenda_detalles as d', 'd.id', '=', 't.proceso_prenda_detalle_id')
+                ->where('d.prenda_pedido_id', $prendaId)
+                ->pluck('tc.id');
+
             // Eliminar procesos y sus imágenes
             $procesos = \App\Models\PedidosProcesosPrendaDetalle::where('prenda_pedido_id', $prendaId)->get();
             foreach ($procesos as $proceso) {
@@ -2296,9 +2332,11 @@ class PedidosProduccionController
                         $imagen->delete();
                     }
                 }
-                // Eliminar tallas del proceso
+                // Eliminar colores de tallas del proceso
                 if ($proceso->tallas) {
                     foreach ($proceso->tallas as $talla) {
+                        // Eliminar colores asociados a cada talla del proceso
+                        PedidosProcesosPrendaTallaColor::where('pedidos_procesos_prenda_talla_id', $talla->id)->delete();
                         $talla->delete();
                     }
                 }
@@ -2311,6 +2349,47 @@ class PedidosProduccionController
                 'prenda_id' => $prendaId,
             ]);
 
+            // =====================================================
+            // Eliminar consecutivos de recibos asociados a la prenda
+            // =====================================================
+            $consecutivosEliminados = ConsecutivoReciboPedido::where('prenda_id', $prendaId)
+                ->where('pedido_produccion_id', $id)
+                ->delete();
+
+            Log::info('[PedidosProduccionController] Consecutivos de recibos eliminados', [
+                'cantidad' => $consecutivosEliminados,
+                'prenda_id' => $prendaId,
+                'pedido_id' => $id,
+            ]);
+
+            // =====================================================
+            // Eliminar detalles de bodega asociados a la prenda (soft delete)
+            // =====================================================
+            $bodegaDetallesEliminados = DB::table('bodega_detalles_talla')
+                ->where('prenda_id', $prendaId)
+                ->where('pedido_produccion_id', $id)
+                ->whereNull('deleted_at')
+                ->update(['deleted_at' => now()]);
+
+            Log::info('[PedidosProduccionController] Detalles de bodega eliminados', [
+                'cantidad' => $bodegaDetallesEliminados,
+                'prenda_id' => $prendaId,
+                'pedido_id' => $id,
+            ]);
+
+            // =====================================================
+            // Eliminar notas de bodega vinculadas a los talla_color_id
+            // =====================================================
+            if ($tallaColorIds->isNotEmpty()) {
+                $bodegaNotasEliminadas = DB::table('bodega_notas')
+                    ->whereIn('talla_color_id', $tallaColorIds)
+                    ->delete();
+                Log::info('[PedidosProduccionController] Notas de bodega eliminadas', [
+                    'cantidad' => $bodegaNotasEliminadas,
+                    'prenda_id' => $prendaId,
+                ]);
+            }
+
             // Marcar prenda como eliminada (soft delete)
             $prenda->delete();
 
@@ -2319,6 +2398,8 @@ class PedidosProduccionController
                 'nombre' => $nombrePrenda,
                 'pedido_id' => $id,
             ]);
+
+            DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -2330,6 +2411,7 @@ class PedidosProduccionController
             ], 200);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            DB::rollBack();
             Log::warning('[PedidosProduccionController] Prenda o pedido no encontrado', [
                 'pedido_id' => $id,
                 'error' => $e->getMessage(),
@@ -2341,6 +2423,7 @@ class PedidosProduccionController
             ], 404);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
             Log::warning('[PedidosProduccionController] Validación fallida al eliminar prenda', [
                 'errors' => $e->errors(),
             ]);
@@ -2352,6 +2435,7 @@ class PedidosProduccionController
             ], 422);
 
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('[PedidosProduccionController] Error eliminando prenda', [
                 'pedido_id' => $id,
                 'error' => $e->getMessage(),

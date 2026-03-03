@@ -50,6 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // ⚡ TESTING: Deshabilitar CSRF para Postman
         $middleware->validateCsrfTokens(except: [
             'pedidos-produccion/crear-sin-cotizacion',
+            'api/pedidos/*/epp/agregar',
         ]);
         
         // Add security headers middleware globally

@@ -447,13 +447,24 @@ class EppController extends Controller
     public function agregar(int $pedidoId, Request $request): JsonResponse
     {
         try {
+            // Debug: Log all request data before validation
+            \Log::info('[EppController::agregar] Request recibido', [
+                'pedidoId' => $pedidoId,
+                'all_input' => $request->except(['imagenes']),
+                'has_imagenes' => $request->hasFile('imagenes'),
+                'imagenes_count' => $request->hasFile('imagenes') ? count($request->file('imagenes')) : 0,
+                'content_type' => $request->header('Content-Type'),
+                'method' => $request->method(),
+                'all_keys' => array_keys($request->all()),
+            ]);
+
             $validated = $request->validate([
                 'epp_id' => 'required|integer|exists:epps,id',
                 'cantidad' => 'required|integer|min:1',
                 'observaciones' => 'nullable|string|max:1000',
                 'novedad' => 'nullable|string|max:2000',
                 'imagenes' => 'nullable|array|max:5',
-                'imagenes.*' => 'nullable|string',
+                'imagenes.*' => 'nullable|file|image|max:5120',
             ]);
 
             // Procesar imágenes si existen
@@ -539,15 +550,27 @@ class EppController extends Controller
                 'message' => $e->getMessage(),
             ], 400);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::warning('[EppController::agregar] Validación fallida al agregar EPP', [
+                'pedidoId' => $pedidoId,
+                'errors' => $e->errors(),
+                'input' => $request->except(['imagenes']),
+                'has_files' => $request->hasFile('imagenes'),
+                'all_keys' => array_keys($request->all()),
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Datos inválidos',
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
+            \Log::error('[EppController::agregar] Error inesperado al agregar EPP', [
+                'pedidoId' => $pedidoId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Error al agregar EPP',
+                'message' => 'Error al agregar EPP: ' . $e->getMessage(),
             ], 500);
         }
     }

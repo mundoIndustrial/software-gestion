@@ -6,25 +6,22 @@ use App\Application\Pedidos\DTOs\AgregarPrendaCompletaDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Domain\Pedidos\Repositories\PedidoRepository;
 use App\Models\PrendaPedido;
+use App\Models\PrendaPedidoColorTela;
+use App\Models\PrendaPedidoTalla;
+use App\Models\PrendaFotoTelaPedido;
 use App\Models\TipoProceso;
+use App\Models\TipoPrenda;
+use App\Models\TelaPrenda;
+use App\Models\ColorPrenda;
+use App\Models\PedidosProcesosPrendaDetalle;
+use App\Models\PedidosProcesosPrendaTalla;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Use Case para agregar una prenda al pedido con fotos y tallas
  * 
- * REFACTORIZADO: FASE 3 - Validaciones centralizadas
- * 
- * Responsabilidades:
- * - Validar pedido existe  TRAIT
- * - Crear registro en prendas_pedido
- * - Crear fotos de referencia (prenda_fotos_pedido)
- * - Crear tallas y cantidades (prenda_pedido_tallas)
- * 
- * Responsabilidades SEPARADAS en otros Use Cases:
- * - Agregar variantes â†’ AgregarVariantePrendaUseCase
- * - Agregar colores y telas â†’ AgregarColorTelaUseCase
- * - Agregar procesos â†’ AgregarProcesoPrendaUseCase
- * 
- * Antes: 58 lÃ­neas | DespuÃ©s: ~45 lÃ­neas | Reducción: ~22%
+ * Replica EXACTAMENTE la lógica de PedidoWebService::crearItemCompleto()
+ * para que el resultado sea idéntico al crear pedido nuevo.
  */
 final class AgregarPrendaCompletaUseCase
 {
@@ -36,66 +33,162 @@ final class AgregarPrendaCompletaUseCase
 
     public function execute(AgregarPrendaCompletaDTO $dto): PrendaPedido
     {
-        // CENTRALIZADO: Validar pedido existe (trait)
-        $this->validarPedidoExiste($dto->pedidoId, $this->pedidoRepository);
+        return DB::transaction(function () use ($dto) {
+            // CENTRALIZADO: Validar pedido existe (trait)
+            $this->validarPedidoExiste($dto->pedidoId, $this->pedidoRepository);
 
-        // 1. Crear prenda base
-        $prenda = PrendaPedido::create([
-            'pedido_produccion_id' => $dto->pedidoId,
-            'nombre_prenda' => $dto->nombre_prenda,
-            'descripcion' => $dto->descripcion,
-            'de_bodega' => $dto->de_bodega,
-        ]);
+            // 0. Crear o obtener TipoPrenda (igual que PedidoWebService::crearOObtenerTipoPrenda)
+            $this->crearOObtenerTipoPrenda($dto->nombre_prenda);
 
-        // 2. Agregar fotos: nuevas + existentes
-        $fotos = [];
-        
-        // Agregar fotos nuevas
-        if (!empty($dto->imagenes)) {
-            foreach ($dto->imagenes as $orden => $rutaOriginal) {
-                $fotos[$rutaOriginal] = [
-                    'ruta_original' => $rutaOriginal,
-                    'ruta_webp' => $this->generarRutaWebp($rutaOriginal),
-                    'orden' => $orden + 1,
-                ];
+            // 1. Crear prenda base
+            $prenda = PrendaPedido::create([
+                'pedido_produccion_id' => $dto->pedidoId,
+                'nombre_prenda' => $dto->nombre_prenda,
+                'descripcion' => $dto->descripcion,
+                'de_bodega' => $dto->de_bodega,
+            ]);
+
+            // 2. Agregar fotos: nuevas + existentes
+            $fotos = [];
+            
+            if (!empty($dto->imagenes)) {
+                foreach ($dto->imagenes as $orden => $rutaOriginal) {
+                    $fotos[$rutaOriginal] = [
+                        'ruta_original' => $rutaOriginal,
+                        'ruta_webp' => $this->generarRutaWebp($rutaOriginal),
+                        'orden' => $orden + 1,
+                    ];
+                }
             }
-        }
-        
-        // Agregar imágenes existentes que deben preservarse
-        if (!empty($dto->imagenesExistentes)) {
-            foreach ($dto->imagenesExistentes as $imagenExistente) {
-                if (is_array($imagenExistente) && isset($imagenExistente['previewUrl'])) {
-                    $ruta = $imagenExistente['previewUrl'];
-                    if (!isset($fotos[$ruta])) {
-                        $fotos[$ruta] = [
-                            'ruta_original' => $ruta,
-                            'ruta_webp' => $this->generarRutaWebp($ruta),
-                            'orden' => count($fotos) + 1,
-                        ];
+            
+            if (!empty($dto->imagenesExistentes)) {
+                foreach ($dto->imagenesExistentes as $imagenExistente) {
+                    if (is_array($imagenExistente) && isset($imagenExistente['previewUrl'])) {
+                        $ruta = $imagenExistente['previewUrl'];
+                        if (!isset($fotos[$ruta])) {
+                            $fotos[$ruta] = [
+                                'ruta_original' => $ruta,
+                                'ruta_webp' => $this->generarRutaWebp($ruta),
+                                'orden' => count($fotos) + 1,
+                            ];
+                        }
                     }
                 }
             }
-        }
-        
-        // Guardar todas las fotos combinadas
-        if (!empty($fotos)) {
-            foreach ($fotos as $datosFoto) {
-                $prenda->fotos()->create($datosFoto);
-            }
-        }
-
-        // 3. Agregar tallas si existen (cantidad_talla viene como estructura relacional)
-        // Estructura: { "DAMA": {"S": 20, "M": 15}, "CABALLERO": {"20": 10}, ... }
-        if (!empty($dto->cantidad_talla)) {
-            foreach ($dto->cantidad_talla as $genero => $tallasDelGenero) {
-                if (!is_array($tallasDelGenero) || empty($tallasDelGenero)) {
-                    continue;
+            
+            if (!empty($fotos)) {
+                foreach ($fotos as $datosFoto) {
+                    $prenda->fotos()->create($datosFoto);
                 }
-                foreach ($tallasDelGenero as $talla => $cantidad) {
+            }
+
+            // 3. Agregar tallas (IGUAL que PedidoWebService::crearTallasPrenda - con SOBREMEDIDA)
+            if (!empty($dto->cantidad_talla)) {
+                $this->crearTallasPrenda($prenda, $dto->cantidad_talla);
+            }
+
+            // 4. Agregar variantes si existen
+            if (!empty($dto->variantes) && is_array($dto->variantes)) {
+                $variantes = $dto->variantes;
+                $varianteData = [
+                    'tipo_manga_id'        => $variantes['tipo_manga_id'] ?? null,
+                    'tipo_broche_boton_id' => $variantes['tipo_broche_boton_id'] ?? $variantes['tipo_broche_id'] ?? null,
+                    'manga_obs'            => $variantes['obs_manga'] ?? $variantes['manga_obs'] ?? null,
+                    'broche_boton_obs'     => $variantes['obs_broche'] ?? $variantes['broche_boton_obs'] ?? null,
+                    'tiene_bolsillos'      => $variantes['tiene_bolsillos'] ?? false,
+                    'bolsillos_obs'        => $variantes['obs_bolsillos'] ?? $variantes['bolsillos_obs'] ?? null,
+                ];
+
+                $prenda->variantes()->create($varianteData);
+
+                \Log::info('[AgregarPrendaCompletaUseCase] Variante creada', [
+                    'prenda_id' => $prenda->id,
+                    'variante' => $varianteData,
+                ]);
+            }
+
+            // 5. Agregar telas (IGUAL que PedidoWebService::crearTelasDesdeFormulario)
+            if (!empty($dto->telas) && is_array($dto->telas)) {
+                $this->crearTelasDesdeFormulario($prenda, $dto->telas, $dto->fotosTelaRutas ?? []);
+            }
+
+            // 6. Agregar procesos (IGUAL que PedidoWebService::crearProcesosCompletos)
+            if (!empty($dto->procesos) && is_array($dto->procesos)) {
+                $this->crearProcesosCompletos($prenda, $dto->procesos, $dto->fotosProcesoNuevo ?? []);
+            }
+
+            // 7. Guardar novedad
+            $this->guardarNovedad($prenda, $dto);
+
+            return $prenda;
+        });
+    }
+
+    // ============================================================
+    // MÉTODOS PRIVADOS - Replican PedidoWebService exactamente
+    // ============================================================
+
+    /**
+     * Crear o obtener TipoPrenda (replica PedidoWebService::crearOObtenerTipoPrenda)
+     */
+    private function crearOObtenerTipoPrenda(string $nombrePrenda): void
+    {
+        try {
+            $nombreUpper = strtoupper(trim($nombrePrenda));
+            $tipoPrenda = TipoPrenda::whereRaw('UPPER(nombre) = ?', [$nombreUpper])->first();
+
+            if (!$tipoPrenda) {
+                TipoPrenda::create([
+                    'nombre' => $nombreUpper,
+                    'codigo' => strtoupper(substr(preg_replace('/[^a-zA-Z]/', '', $nombrePrenda), 0, 10)),
+                    'descripcion' => 'Prenda creada automáticamente desde pedido',
+                    'activo' => true,
+                    'palabras_clave' => [],
+                ]);
+                \Log::info('[AgregarPrendaCompletaUseCase] TipoPrenda creado', ['nombre' => $nombreUpper]);
+            }
+        } catch (\Exception $e) {
+            \Log::warning('[AgregarPrendaCompletaUseCase] Error creando TipoPrenda', [
+                'error' => $e->getMessage(), 'nombre' => $nombrePrenda
+            ]);
+        }
+    }
+
+    /**
+     * Crear tallas para prenda (replica PedidoWebService::crearTallasPrenda)
+     * Maneja: SOBREMEDIDA {SOBREMEDIDA: {CABALLERO: 100, DAMA: 50}} y normal {DAMA: {S: 10, M: 20}}
+     */
+    private function crearTallasPrenda(PrendaPedido $prenda, array $cantidadTalla): void
+    {
+        foreach ($cantidadTalla as $generoOEspecial => $contenido) {
+            if (!is_array($contenido) || empty($contenido)) {
+                continue;
+            }
+
+            if (strtoupper($generoOEspecial) === 'SOBREMEDIDA') {
+                // SOBREMEDIDA: {CABALLERO: 100, DAMA: 50}
+                foreach ($contenido as $genero => $cantidad) {
+                    if ((int)$cantidad > 0) {
+                        PrendaPedidoTalla::create([
+                            'prenda_pedido_id' => $prenda->id,
+                            'genero' => strtoupper($genero),
+                            'talla' => null,
+                            'cantidad' => (int)$cantidad,
+                            'es_sobremedida' => true,
+                        ]);
+                    }
+                }
+                \Log::info('[AgregarPrendaCompletaUseCase] Sobremedida creada', [
+                    'prenda_id' => $prenda->id, 'generos_sobremedida' => count($contenido),
+                ]);
+            } else {
+                // Normal: {S: 10, M: 20}
+                foreach ($contenido as $talla => $cantidad) {
                     $cantidadInt = (int)($cantidad ?? 0);
                     if ($cantidadInt > 0) {
-                        $prenda->tallas()->create([
-                            'genero' => $genero,
+                        PrendaPedidoTalla::create([
+                            'prenda_pedido_id' => $prenda->id,
+                            'genero' => strtoupper($generoOEspecial),
                             'talla' => (string)$talla,
                             'cantidad' => $cantidadInt,
                         ]);
@@ -104,102 +197,280 @@ final class AgregarPrendaCompletaUseCase
             }
         }
 
-        // 4. Agregar variantes si existen (manga, broche/botón, bolsillos)
-        if (!empty($dto->variantes) && is_array($dto->variantes)) {
-            $variantes = $dto->variantes;
-            $varianteData = [
-                'tipo_manga_id'        => $variantes['tipo_manga_id'] ?? null,
-                'tipo_broche_boton_id' => $variantes['tipo_broche_boton_id'] ?? $variantes['tipo_broche_id'] ?? null,
-                'manga_obs'            => $variantes['obs_manga'] ?? $variantes['manga_obs'] ?? null,
-                'broche_boton_obs'     => $variantes['obs_broche'] ?? $variantes['broche_boton_obs'] ?? null,
-                'tiene_bolsillos'      => $variantes['tiene_bolsillos'] ?? false,
-                'bolsillos_obs'        => $variantes['obs_bolsillos'] ?? $variantes['bolsillos_obs'] ?? null,
-            ];
+        \Log::info('[AgregarPrendaCompletaUseCase] Tallas creadas', [
+            'prenda_id' => $prenda->id, 'cantidad_generos' => count($cantidadTalla),
+        ]);
+    }
 
-            $prenda->variantes()->create($varianteData);
+    /**
+     * Crear telas (replica PedidoWebService::crearTelasDesdeFormulario)
+     * Incluye: resolución IDs por nombre, fallback directo, creación automática de tela
+     */
+    private function crearTelasDesdeFormulario(PrendaPedido $prenda, array $telas, array $fotosTelaRutas = []): void
+    {
+        \Log::info('[AgregarPrendaCompletaUseCase] crearTelasDesdeFormulario INICIADA', [
+            'prenda_id' => $prenda->id, 'telas_count' => count($telas),
+        ]);
 
-            \Log::info('[AgregarPrendaCompletaUseCase] Variante creada', [
-                'prenda_id' => $prenda->id,
-                'variante' => $varianteData,
-            ]);
-        }
+        $telasCreadasCount = 0;
 
-        // 5. Agregar procesos si existen (bordado, estampado, reflectivo, etc.)
-        if (!empty($dto->procesos) && is_array($dto->procesos)) {
-            foreach ($dto->procesos as $procesoIdx => $proceso) {
-                // Resolver tipo_proceso_id: puede venir directo o buscarse por slug/nombre
-                $tipoProceso = $proceso['tipo_proceso_id'] ?? null;
+        foreach ($telas as $telaIdx => $telaData) {
+            // Si IDs ya están presentes y válidos, usar directamente
+            if (isset($telaData['tela_id']) && isset($telaData['color_id']) &&
+                $telaData['tela_id'] > 0 && $telaData['color_id'] > 0) {
 
-                if (!$tipoProceso && isset($proceso['tipo'])) {
-                    $tipoProcesoModel = TipoProceso::where('slug', strtolower($proceso['tipo']))
-                        ->orWhere('nombre', $proceso['tipo'])
-                        ->first();
-                    if ($tipoProcesoModel) {
-                        $tipoProceso = $tipoProcesoModel->id;
-                    } else {
-                        \Log::warning('[AgregarPrendaCompletaUseCase] Tipo de proceso no encontrado', [
-                            'tipo_buscado' => $proceso['tipo'],
-                            'prenda_id' => $prenda->id,
-                        ]);
-                        continue;
-                    }
-                }
-
-                if (!$tipoProceso) continue;
-
-                // Decodificar ubicaciones
-                $ubicaciones = $proceso['ubicaciones'] ?? null;
-                if (is_string($ubicaciones)) {
-                    $ubicaciones = json_decode($ubicaciones, true);
-                }
-
-                $procesoCreado = $prenda->procesos()->create([
-                    'tipo_proceso_id' => $tipoProceso,
-                    'ubicaciones' => !empty($ubicaciones) ? json_encode($ubicaciones) : json_encode([]),
-                    'observaciones' => $proceso['observaciones'] ?? '',
-                    'estado' => $proceso['estado'] ?? 'PENDIENTE',
+                $colorTela = PrendaPedidoColorTela::create([
+                    'prenda_pedido_id' => $prenda->id,
+                    'color_id' => $telaData['color_id'],
+                    'tela_id' => $telaData['tela_id'],
+                    'referencia' => $telaData['referencia'] ?? null,
                 ]);
+                $telasCreadasCount++;
+                $this->guardarFotoTela($colorTela, $telaIdx, $fotosTelaRutas);
 
-                // Crear tallas del proceso si existen
-                if (isset($proceso['tallas']) && is_array($proceso['tallas']) && !empty($proceso['tallas'])) {
-                    foreach ($proceso['tallas'] as $genero => $tallas) {
-                        if (!is_array($tallas)) continue;
-                        foreach ($tallas as $talla => $cantidad) {
-                            if ((int)$cantidad > 0) {
-                                $procesoCreado->tallas()->create([
-                                    'genero' => strtoupper($genero),
-                                    'talla' => strtoupper((string)$talla),
-                                    'cantidad' => (int)$cantidad,
-                                ]);
-                            }
+                \Log::info('[AgregarPrendaCompletaUseCase] Tela creada (directo)', [
+                    'prenda_id' => $prenda->id, 'tela_id' => $telaData['tela_id'], 'color_id' => $telaData['color_id'],
+                ]);
+            } else {
+                // Resolver IDs por nombre usando ColorTelaService + fallback
+                $telaId = null;
+                $colorId = null;
+
+                try {
+                    $telaNombre = $telaData['tela'] ?? $telaData['tela_nombre'] ?? null;
+                    if ($telaNombre) {
+                        $colorTelaService = app(\App\Application\Services\ColorTelaService::class);
+                        $telaId = $colorTelaService->obtenerOCrearTela($telaNombre);
+                    }
+
+                    $colorNombre = $telaData['color'] ?? $telaData['color_nombre'] ?? null;
+                    if ($colorNombre && !empty($colorNombre)) {
+                        $colorTelaService = app(\App\Application\Services\ColorTelaService::class);
+                        $colorId = $colorTelaService->obtenerOCrearColor($colorNombre);
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('[AgregarPrendaCompletaUseCase] ColorTelaService falló, usando fallback', [
+                        'error' => $e->getMessage(),
+                    ]);
+
+                    // FALLBACK: búsqueda directa en BD (igual que PedidoWebService)
+                    try {
+                        $telaNombre = $telaData['tela'] ?? $telaData['tela_nombre'] ?? null;
+                        if ($telaNombre && !$telaId) {
+                            $tela = TelaPrenda::where('nombre', $telaNombre)->first();
+                            if ($tela) $telaId = $tela->id;
                         }
-                    }
-                }
-
-                // Agregar fotos del proceso si existen
-                if (!empty($dto->fotosProcesoNuevo) && isset($dto->fotosProcesoNuevo[$procesoIdx])) {
-                    foreach ($dto->fotosProcesoNuevo[$procesoIdx] as $rutasFoto) {
-                        $procesoCreado->imagenes()->create([
-                            'ruta_original' => $rutasFoto['ruta_original'] ?? null,
-                            'ruta_webp' => $rutasFoto['ruta_webp'] ?? $rutasFoto['ruta_original'] ?? null,
-                            'orden' => 1,
+                        $colorNombre = $telaData['color'] ?? $telaData['color_nombre'] ?? null;
+                        if ($colorNombre && !empty($colorNombre) && !$colorId) {
+                            $color = ColorPrenda::where('nombre', $colorNombre)->first();
+                            if ($color) $colorId = $color->id;
+                        }
+                    } catch (\Exception $fallbackError) {
+                        \Log::error('[AgregarPrendaCompletaUseCase] Error en fallback', [
+                            'error' => $fallbackError->getMessage(),
                         ]);
                     }
                 }
 
-                \Log::info('[AgregarPrendaCompletaUseCase] Proceso creado', [
-                    'prenda_id' => $prenda->id,
-                    'proceso_id' => $procesoCreado->id,
-                    'tipo_proceso_id' => $tipoProceso,
-                    'tipo' => $proceso['tipo'] ?? 'N/A',
-                ]);
+                // Si no hay telaId pero hay nombre, crear la tela (igual que PedidoWebService)
+                $telaNombreGeneral = $telaData['nombre'] ?? $telaData['tela'] ?? $telaData['tela_nombre'] ?? null;
+                if (!$telaId && !empty($telaNombreGeneral)) {
+                    $telaExistente = TelaPrenda::where('nombre', $telaNombreGeneral)->where('activo', true)->first();
+                    if ($telaExistente) {
+                        $telaId = $telaExistente->id;
+                    } else {
+                        $telaPorDefecto = TelaPrenda::create([
+                            'nombre' => $telaNombreGeneral ?: 'Tela Genérica',
+                            'referencia' => 'GEN-' . time(),
+                            'descripcion' => 'Tela creada automáticamente',
+                            'activo' => true,
+                        ]);
+                        $telaId = $telaPorDefecto->id;
+                        \Log::info('[AgregarPrendaCompletaUseCase] Tela nueva creada', [
+                            'tela_nombre' => $telaPorDefecto->nombre, 'tela_id' => $telaId,
+                        ]);
+                    }
+                }
+
+                if ($telaId || $colorId) {
+                    $colorTela = PrendaPedidoColorTela::create([
+                        'prenda_pedido_id' => $prenda->id,
+                        'color_id' => $colorId ?? null,
+                        'tela_id' => $telaId ?? null,
+                        'referencia' => $telaData['referencia'] ?? null,
+                    ]);
+                    $telasCreadasCount++;
+                    $this->guardarFotoTela($colorTela, $telaIdx, $fotosTelaRutas);
+
+                    \Log::info('[AgregarPrendaCompletaUseCase] Tela/Color registrado', [
+                        'prenda_id' => $prenda->id, 'tela_id' => $telaId, 'color_id' => $colorId,
+                    ]);
+                }
             }
         }
 
-        // 6. Guardar novedad en pedidos_produccion.novedades
-        $this->guardarNovedad($prenda, $dto);
+        \Log::info('[AgregarPrendaCompletaUseCase] crearTelasDesdeFormulario TERMINADA', [
+            'prenda_id' => $prenda->id, 'telas_creadas' => $telasCreadasCount,
+        ]);
+    }
 
-        return $prenda;
+    /**
+     * Guardar foto de tela en PrendaFotoTelaPedido
+     */
+    private function guardarFotoTela(PrendaPedidoColorTela $colorTela, int $telaIdx, array $fotosTelaRutas): void
+    {
+        if (!empty($fotosTelaRutas) && isset($fotosTelaRutas[$telaIdx])) {
+            $rutasTela = $fotosTelaRutas[$telaIdx];
+            PrendaFotoTelaPedido::create([
+                'prenda_pedido_colores_telas_id' => $colorTela->id,
+                'ruta_original' => $rutasTela['ruta_original'] ?? null,
+                'ruta_webp' => $rutasTela['ruta_webp'] ?? $rutasTela['ruta_original'] ?? null,
+                'orden' => 1,
+            ]);
+        }
+    }
+
+    /**
+     * Crear procesos completos (replica PedidoWebService::crearProcesosCompletos)
+     * Incluye: deduplicación, datos_adicionales, tallas con SOBREMEDIDA
+     */
+    private function crearProcesosCompletos(PrendaPedido $prenda, array $procesos, array $fotosProcesoNuevo = []): void
+    {
+        \Log::info('[AgregarPrendaCompletaUseCase] crearProcesosCompletos INICIADA', [
+            'prenda_id' => $prenda->id, 'procesos_count' => count($procesos),
+        ]);
+
+        foreach ($procesos as $procesoIdx => $proceso) {
+            if (!is_array($proceso)) continue;
+
+            // Resolver tipo_proceso_id
+            $tipoProcesoId = $proceso['tipo_proceso_id'] ?? null;
+
+            if (!$tipoProcesoId && isset($proceso['tipo'])) {
+                $tipoProcesoModel = TipoProceso::where('slug', strtolower($proceso['tipo']))
+                    ->orWhere('nombre', $proceso['tipo'])
+                    ->first();
+                if ($tipoProcesoModel) {
+                    $tipoProcesoId = $tipoProcesoModel->id;
+                } else {
+                    \Log::warning('[AgregarPrendaCompletaUseCase] Tipo de proceso no encontrado', [
+                        'tipo_buscado' => $proceso['tipo'], 'prenda_id' => $prenda->id,
+                    ]);
+                    continue;
+                }
+            }
+
+            if (!$tipoProcesoId) continue;
+
+            // Deduplicación: eliminar proceso existente del mismo tipo (igual que PedidoWebService)
+            $procesoExistente = PedidosProcesosPrendaDetalle::where('prenda_pedido_id', $prenda->id)
+                ->where('tipo_proceso_id', $tipoProcesoId)
+                ->first();
+            if ($procesoExistente) {
+                $procesoExistente->delete();
+                \Log::warning('[AgregarPrendaCompletaUseCase] Proceso duplicado eliminado', [
+                    'prenda_id' => $prenda->id, 'tipo_proceso_id' => $tipoProcesoId,
+                ]);
+            }
+
+            // Decodificar ubicaciones
+            $ubicaciones = $proceso['ubicaciones'] ?? [];
+            if (is_string($ubicaciones)) {
+                $ubicaciones = json_decode($ubicaciones, true) ?? [];
+            }
+            if (!is_array($ubicaciones)) {
+                $ubicaciones = is_string($ubicaciones) ? [$ubicaciones] : [];
+            }
+
+            $observaciones = $proceso['observaciones'] ?? null;
+            if (is_string($observaciones)) {
+                $observaciones = trim($observaciones);
+                $observaciones = empty($observaciones) ? null : $observaciones;
+            }
+
+            // Crear proceso
+            $procesoCreado = PedidosProcesosPrendaDetalle::create([
+                'prenda_pedido_id' => $prenda->id,
+                'tipo_proceso_id' => $tipoProcesoId,
+                'ubicaciones' => !empty($ubicaciones) ? json_encode($ubicaciones) : json_encode([]),
+                'observaciones' => $observaciones,
+                'datos_adicionales' => json_encode($proceso),
+                'estado' => $proceso['estado'] ?? 'PENDIENTE',
+            ]);
+
+            // Crear tallas del proceso (maneja SOBREMEDIDA)
+            if (isset($proceso['tallas']) && is_array($proceso['tallas']) && !empty($proceso['tallas'])) {
+                $this->crearTallasProceso($procesoCreado, $proceso['tallas']);
+            }
+
+            // Agregar fotos del proceso
+            if (!empty($fotosProcesoNuevo) && isset($fotosProcesoNuevo[$procesoIdx])) {
+                foreach ($fotosProcesoNuevo[$procesoIdx] as $rutasFoto) {
+                    $procesoCreado->imagenes()->create([
+                        'ruta_original' => $rutasFoto['ruta_original'] ?? null,
+                        'ruta_webp' => $rutasFoto['ruta_webp'] ?? $rutasFoto['ruta_original'] ?? null,
+                        'orden' => 1,
+                    ]);
+                }
+            }
+
+            \Log::info('[AgregarPrendaCompletaUseCase] Proceso creado', [
+                'prenda_id' => $prenda->id,
+                'proceso_id' => $procesoCreado->id,
+                'tipo_proceso_id' => $tipoProcesoId,
+                'tipo' => $proceso['tipo'] ?? 'N/A',
+            ]);
+        }
+
+        \Log::info('[AgregarPrendaCompletaUseCase] crearProcesosCompletos TERMINADA', [
+            'prenda_id' => $prenda->id,
+        ]);
+    }
+
+    /**
+     * Crear tallas para proceso (replica PedidoWebService::crearTallasProceso)
+     * Maneja: SOBREMEDIDA, géneros normales con generoMap
+     */
+    private function crearTallasProceso(PedidosProcesosPrendaDetalle $proceso, array $tallas): void
+    {
+        $generoMap = ['dama' => 'DAMA', 'caballero' => 'CABALLERO', 'unisex' => 'UNISEX'];
+
+        foreach ($tallas as $generoBD => $tallasCant) {
+            if (!is_array($tallasCant) || empty($tallasCant)) {
+                continue;
+            }
+
+            if (strtolower($generoBD) === 'sobremedida') {
+                // SOBREMEDIDA: {CABALLERO: 100, DAMA: 50}
+                foreach ($tallasCant as $generoParaSobremedida => $cantidad) {
+                    $cantidad = (int)$cantidad;
+                    if ($cantidad > 0) {
+                        PedidosProcesosPrendaTalla::create([
+                            'proceso_prenda_detalle_id' => $proceso->id,
+                            'genero' => strtoupper($generoParaSobremedida),
+                            'talla' => null,
+                            'cantidad' => $cantidad,
+                            'es_sobremedida' => true,
+                        ]);
+                    }
+                }
+            } else {
+                // Normal: género con tallas
+                $generoEnum = $generoMap[strtolower($generoBD)] ?? strtoupper($generoBD);
+
+                foreach ($tallasCant as $talla => $cantidad) {
+                    $cantidad = (int)$cantidad;
+                    if ($cantidad > 0) {
+                        PedidosProcesosPrendaTalla::create([
+                            'proceso_prenda_detalle_id' => $proceso->id,
+                            'genero' => $generoEnum,
+                            'talla' => (string)$talla,
+                            'cantidad' => $cantidad,
+                        ]);
+                    }
+                }
+            }
+        }
     }
 
     private function generarRutaWebp(string $rutaOriginal): string

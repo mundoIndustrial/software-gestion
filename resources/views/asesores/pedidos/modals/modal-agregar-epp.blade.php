@@ -416,7 +416,7 @@ let eppYaAgregadosEnFormulario = []; // IDs de EPPs ya en el formulario
 function obtenerEPPsYaAgregadosEnFormulario() {
     eppYaAgregadosEnFormulario = [];
     
-    // Buscar la tabla en el formulario de cotizacion/pedido
+    // 1) Buscar la tabla en el formulario de cotizacion/pedido (modo creación)
     const tablaItems = document.getElementById('tabla-items-pedido');
     console.log('[obtenerEPPsYaAgregadosEnFormulario] Buscando tabla:', tablaItems);
     
@@ -436,6 +436,20 @@ function obtenerEPPsYaAgregadosEnFormulario() {
         });
     } else {
         console.warn('[obtenerEPPsYaAgregadosEnFormulario] tabla-items-pedido NO ENCONTRADA');
+    }
+    
+    // 2) MODO EDICIÓN: También incluir EPPs del pedido existente (window.datosEdicionPedido)
+    if (window.__EPP_AGREGAR_PEDIDO_EXISTENTE__ && window.datosEdicionPedido && window.datosEdicionPedido.epps) {
+        const eppsExistentes = window.datosEdicionPedido.epps;
+        console.log('[obtenerEPPsYaAgregadosEnFormulario] MODO EDICIÓN - EPPs existentes en pedido:', eppsExistentes.length);
+        
+        eppsExistentes.forEach(epp => {
+            const eppId = parseInt(epp.epp_id || epp.id);
+            if (eppId && !eppYaAgregadosEnFormulario.includes(eppId)) {
+                eppYaAgregadosEnFormulario.push(eppId);
+                console.log(`[obtenerEPPsYaAgregadosEnFormulario] EPP existente en pedido: ${eppId} (${epp.nombre_completo || epp.nombre || ''})`);
+            }
+        });
     }
     
     console.log('[obtenerEPPsYaAgregadosEnFormulario] EPPs totales encontrados:', eppYaAgregadosEnFormulario);
@@ -2514,33 +2528,57 @@ async function _guardarEPPsViaAPI(pedidoId, novedad = '') {
             }
 
             // Adjuntar imágenes como archivos si existen
+            let imagenesAdjuntas = 0;
             if (epp.imagenes && epp.imagenes.length > 0) {
                 for (let i = 0; i < epp.imagenes.length; i++) {
                     const img = epp.imagenes[i];
                     if (img.file instanceof File) {
                         formData.append(`imagenes[${i}]`, img.file, img.file.name);
+                        imagenesAdjuntas++;
                     } else if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
                         // Intentar obtener el archivo desde el cache global
                         const cachedFile = window._eppFilesCache?.[img.previewUrl];
                         if (cachedFile instanceof File) {
                             formData.append(`imagenes[${i}]`, cachedFile, cachedFile.name);
+                            imagenesAdjuntas++;
+                        } else {
+                            console.warn(`[_guardarEPPsViaAPI] Imagen ${i} no es File válido, omitiendo`);
                         }
+                    } else {
+                        console.warn(`[_guardarEPPsViaAPI] Imagen ${i} tipo no reconocido:`, typeof img.file, img);
                     }
                 }
             }
 
-            console.log(`[_guardarEPPsViaAPI] Enviando EPP "${epp.nombre_completo}" al pedido ${pedidoId}`);
+            // Debug: log de datos que se envían
+            console.log(`[_guardarEPPsViaAPI] Enviando EPP "${epp.nombre_completo}" al pedido ${pedidoId}`, {
+                epp_id: epp.id,
+                cantidad: epp.cantidad || 1,
+                observaciones: epp.observaciones || '',
+                novedad: (novedad && idx === 0) ? novedad : '(no)',
+                imagenes: imagenesAdjuntas,
+                csrfToken: csrfToken ? 'presente' : 'AUSENTE'
+            });
 
             const response = await fetch(`/api/pedidos/${pedidoId}/epp/agregar`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': csrfToken
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
                 },
                 body: formData
             });
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
+                console.error(`[_guardarEPPsViaAPI] Respuesta ${response.status}:`, errorData);
+                // Mostrar campos con error si existen
+                if (errorData.errors) {
+                    const camposError = Object.entries(errorData.errors)
+                        .map(([campo, msgs]) => `${campo}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+                        .join('; ');
+                    throw new Error(`${errorData.message || 'Error'}: ${camposError}`);
+                }
                 throw new Error(errorData.message || `Error HTTP ${response.status}`);
             }
 
@@ -2564,12 +2602,24 @@ async function _guardarEPPsViaAPI(pedidoId, novedad = '') {
     cerrarModalAgregarEPPConfirmado();
 
     if (errores.length > 0) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Guardado parcial',
-            html: `Se guardaron ${exitosos} EPP(s) correctamente.<br>Errores: ${errores.map(e => e.nombre + ': ' + e.error).join('<br>')}`,
-        });
+        // Si hubo errores pero también éxitos parciales, recargar datos
+        if (exitosos > 0) {
+            await _recargarYMostrarEPPs(pedidoId);
+            Swal.fire({
+                icon: 'warning',
+                title: 'Guardado parcial',
+                html: `Se guardaron ${exitosos} EPP(s) correctamente.<br>Errores: ${errores.map(e => e.nombre + ': ' + e.error).join('<br>')}`,
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error al guardar',
+                html: `No se pudieron guardar los EPP(s).<br>Errores: ${errores.map(e => e.nombre + ': ' + e.error).join('<br>')}`,
+            });
+        }
     } else {
+        // Todos exitosos - recargar datos y mostrar la lista actualizada en tiempo real
+        await _recargarYMostrarEPPs(pedidoId);
         Swal.fire({
             icon: 'success',
             title: 'EPP(s) agregado(s)',
@@ -2580,8 +2630,12 @@ async function _guardarEPPsViaAPI(pedidoId, novedad = '') {
             timer: 3000
         });
     }
+}
 
-    // Recargar datos del pedido para reflejar los EPPs agregados
+/**
+ * Recargar datos del pedido y re-abrir la vista de EPPs (actualización en tiempo real)
+ */
+async function _recargarYMostrarEPPs(pedidoId) {
     try {
         if (window.datosEdicionPedido && typeof window.abrirEditarEPP === 'function') {
             // Recargar datos del pedido vía fetch
@@ -2592,14 +2646,16 @@ async function _guardarEPPsViaAPI(pedidoId, novedad = '') {
                 const pedidoData = await pedidoResponse.json();
                 if (pedidoData.epps || pedidoData.epps_transformados) {
                     window.datosEdicionPedido.epps = pedidoData.epps_transformados || pedidoData.epps || [];
+                    console.log('[_recargarYMostrarEPPs] Datos del pedido actualizados con', window.datosEdicionPedido.epps.length, 'EPPs');
                 }
-                console.log('[_guardarEPPsViaAPI] Datos del pedido actualizados');
+            } else {
+                console.warn('[_recargarYMostrarEPPs] Error al recargar pedido:', pedidoResponse.status);
             }
-            // Re-abrir la vista de EPPs del pedido
+            // Re-abrir la vista de EPPs del pedido (actualización en tiempo real)
             abrirEditarEPP();
         }
     } catch (e) {
-        console.warn('[_guardarEPPsViaAPI] No se pudieron recargar los datos del pedido:', e);
+        console.warn('[_recargarYMostrarEPPs] No se pudieron recargar los datos del pedido:', e);
     }
 }
 

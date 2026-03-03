@@ -3,6 +3,7 @@
 namespace App\Domain\Epp\Repositories;
 
 use App\Models\PedidoEpp;
+use App\Models\PedidoEppImagen;
 use Illuminate\Support\Collection;
 
 /**
@@ -50,9 +51,7 @@ class PedidoEppRepository implements PedidoEppRepositoryInterface
         // Procesar imágenes si existen
         if (!empty($imagenes) && is_array($imagenes)) {
             foreach ($imagenes as $index => $imagen) {
-                // Aquí irá la lógica para guardar las imágenes en pedido_epp_imagenes
-                // Por ahora solo guardamos la metadata
-                \DB::table('pedido_epp_imagenes')->updateOrCreate(
+                PedidoEppImagen::updateOrCreate(
                     [
                         'pedido_epp_id' => $pedidoEpp->id,
                         'orden' => $index + 1,

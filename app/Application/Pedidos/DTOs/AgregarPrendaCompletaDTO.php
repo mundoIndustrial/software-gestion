@@ -29,11 +29,12 @@ final class AgregarPrendaCompletaDTO
         public readonly ?array $procesos = null,             // Procesos (bordado, estampado, etc)
         public readonly ?array $variantes = null,            // Variantes (manga, broche, bolsillos)
         public readonly ?array $fotosProcesoNuevo = null,    // Fotos de procesos nuevos [{idx => [{ruta_webp, ruta_original}]}]
+        public readonly ?array $fotosTelaRutas = null,       // Fotos de telas [{idx => {ruta_webp, ruta_original}}]
         public readonly ?string $origen = null,              // Origen de la prenda
         public readonly ?string $novedad = null,              // Novedad/justificación del cambio
     ) {}
 
-    public static function fromRequest(int|string $pedidoId, array $data, ?array $imagenes = null, ?array $imagenesExistentes = null, ?array $fotosProcesoNuevo = null): self
+    public static function fromRequest(int|string $pedidoId, array $data, ?array $imagenes = null, ?array $imagenesExistentes = null, ?array $fotosProcesoNuevo = null, ?array $fotosTelaRutas = null): self
     {
         // Decodificar cantidad_talla si viene como JSON string
         $cantidadTalla = $data['cantidad_talla'] ?? null;
@@ -59,19 +60,34 @@ final class AgregarPrendaCompletaDTO
             $variantes = json_decode($variantes, true);
         }
 
+        // Decodificar telas si viene como JSON string
+        $telas = $data['telas'] ?? null;
+        if (is_string($telas)) {
+            $telas = json_decode($telas, true);
+        }
+
+        // Derivar de_bodega desde 'origen' o campo directo
+        $deBodega = false;
+        if (isset($data['de_bodega'])) {
+            $deBodega = (bool) $data['de_bodega'];
+        } elseif (isset($data['origen'])) {
+            $deBodega = strtolower($data['origen']) === 'bodega';
+        }
+
         return new self(
             pedidoId: $pedidoId,
             nombre_prenda: $data['nombre_prenda'] ?? throw new \InvalidArgumentException('nombre_prenda requerido'),
             descripcion: $data['descripcion'] ?? null,
-            de_bodega: $data['de_bodega'] ?? false,
+            de_bodega: $deBodega,
             imagenes: $imagenes,
             imagenesExistentes: $imagenesExistentes,
             cantidad_talla: $cantidadTalla,
             asignaciones_colores: $asignacionesColores,
-            telas: $data['telas'] ?? null,
+            telas: $telas,
             procesos: $procesos,
             variantes: $variantes,
             fotosProcesoNuevo: $fotosProcesoNuevo,
+            fotosTelaRutas: $fotosTelaRutas,
             origen: $data['origen'] ?? null,
             novedad: $data['novedad'] ?? null,
         );
