@@ -436,37 +436,29 @@
                             @php
                                 $encargadoProceso = '-';
                                 
-                                // Obtener datos de la prenda directamente desde la base de datos
-                                if (isset($recibo['pedido_produccion_id']) && isset($recibo['prenda_id'])) {
+                                if (!empty($recibo['pedido_info']['numero_pedido']) && !empty($recibo['consecutivo_actual'])) {
                                     try {
-                                        // Buscar la prenda con sus procesos usando la relación correcta
-                                        $prendaConProcesos = \App\Models\PrendaPedido::with(['procesosPrenda' => function($query) {
-                                            $query->orderBy('created_at', 'desc');
-                                        }])->find($recibo['prenda_id']);
-                                        
-                                        if ($prendaConProcesos && $prendaConProcesos->procesosPrenda && $prendaConProcesos->procesosPrenda->count() > 0) {
-                                            $procesoMasReciente = $prendaConProcesos->procesosPrenda->first();
-                                            \Log::info('[DEBUG] Proceso más reciente encontrado: ' . json_encode([
-                                                'id' => $procesoMasReciente->id,
-                                                'proceso' => $procesoMasReciente->proceso,
-                                                'encargado' => $procesoMasReciente->encargado,
-                                                'created_at' => $procesoMasReciente->created_at
-                                            ]));
-                                            
-                                            if ($procesoMasReciente && !empty($procesoMasReciente->encargado)) {
-                                                $encargadoProceso = htmlspecialchars($procesoMasReciente->encargado);
-                                                \Log::info('[DEBUG] Encargado encontrado desde BD: ' . $encargadoProceso . ' para prenda ' . $recibo['prenda_id']);
-                                            } else {
-                                                \Log::info('[DEBUG] Proceso más reciente sin encargado');
-                                            }
-                                        } else {
-                                            \Log::info('[DEBUG] Prenda sin procesos - Prenda ID: ' . $recibo['prenda_id']);
+                                        $numeroPedido = (int) $recibo['pedido_info']['numero_pedido'];
+                                        $prendaId = isset($recibo['prenda_id']) ? (int) $recibo['prenda_id'] : null;
+                                        $numeroRecibo = (int) $recibo['consecutivo_actual'];
+
+                                        $procesoMasReciente = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
+                                            ->whereNull('deleted_at')
+                                            ->where(function ($q) use ($prendaId, $numeroRecibo) {
+                                                if (!empty($prendaId)) {
+                                                    $q->where('prenda_pedido_id', $prendaId);
+                                                }
+                                                $q->orWhere('numero_recibo', $numeroRecibo);
+                                            })
+                                            ->orderByDesc('created_at')
+                                            ->first();
+
+                                        if ($procesoMasReciente && !empty($procesoMasReciente->encargado)) {
+                                            $encargadoProceso = htmlspecialchars($procesoMasReciente->encargado);
                                         }
                                     } catch (\Exception $e) {
-                                        \Log::error('[DEBUG] Error obteniendo datos de prenda: ' . $e->getMessage());
+                                        \Log::error('[recibos-costura-table] Error obteniendo encargado por recibo: ' . $e->getMessage());
                                     }
-                                } else {
-                                    \Log::info('[DEBUG] No hay pedido_produccion_id o prenda_id');
                                 }
                             @endphp
                             <span style="font-weight: 600; color: #374151;">{{ $encargadoProceso }}</span>

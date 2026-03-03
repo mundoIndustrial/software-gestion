@@ -146,10 +146,17 @@ abstract class AbstractObtenerUseCase
         $usuario = \Illuminate\Support\Facades\Auth::user();
         $esCortador = $usuario && $usuario->hasRole('cortador');
 
+        $esApiOperario = false;
+        try {
+            $esApiOperario = request()->is('api/operario/*');
+        } catch (\Exception $e) {
+            $esApiOperario = false;
+        }
+
         $queryBuilder = \App\Models\PrendaPedido::where('pedido_produccion_id', $pedidoId);
 
         // FILTRO: Si el usuario es CORTADOR, excluir prendas de bodega (de_bodega = TRUE)
-        if ($esCortador) {
+        if ($esCortador && !$esApiOperario) {
             $queryBuilder->where('de_bodega', false);
             
             \Log::info('[AbstractObtenerUseCase::obtenerPrendas] Filtrando prendas de bodega para CORTADOR', [

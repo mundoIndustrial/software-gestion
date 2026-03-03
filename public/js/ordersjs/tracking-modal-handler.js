@@ -940,7 +940,9 @@ const trackingTableStyles = `
 
     const btnConfirmAddProceso = document.getElementById('btnConfirmAddProceso');
     if (btnConfirmAddProceso) {
-      btnConfirmAddProceso.addEventListener('click', handleAgregarProceso);
+      const nuevoBtnConfirm = btnConfirmAddProceso.cloneNode(true);
+      btnConfirmAddProceso.parentNode.replaceChild(nuevoBtnConfirm, btnConfirmAddProceso);
+      nuevoBtnConfirm.onclick = handleAgregarProceso;
     }
 
     // Cerrar modal al hacer clic en el overlay
@@ -1825,7 +1827,7 @@ const trackingTableStyles = `
           areaActual = prenda.ultimo_proceso_area;
         } else if (prenda.area && String(prenda.area).trim() !== '') {
           areaActual = prenda.area;
-        } else if (window.currentOrderData?.area && String(window.currentOrderData.area).trim() !== '') {
+        } else if (!window.location.pathname.includes('/recibos-costura') && window.currentOrderData?.area && String(window.currentOrderData.area).trim() !== '') {
           areaActual = window.currentOrderData.area;
         }
 
@@ -1879,7 +1881,9 @@ const trackingTableStyles = `
       if (reciboHeaderElement) {
         // Mantener el área en el header (si existe)
         const match = String(numeroRecibo || '');
-        const areaActual = prenda?.ultimo_proceso_area || prenda?.area || window.currentOrderData?.area || '';
+        const areaActual = prenda?.ultimo_proceso_area
+          || prenda?.area
+          || (!window.location.pathname.includes('/recibos-costura') ? (window.currentOrderData?.area || '') : '');
         reciboHeaderElement.textContent = areaActual && String(areaActual).trim() !== ''
           ? `${match} - ${areaActual}`
           : match;
@@ -1991,9 +1995,14 @@ const trackingTableStyles = `
     // Usar la UI original del tracking para mostrar el área actual y encargado si se puede
     // (sin inventar una vista nueva). La edición/creación se hace con el botón "Agregar Área".
     const prenda = window.currentPrendaData || {};
+    const esRecibosCostura = window.location.pathname.includes('/recibos-costura');
+
+    const procesoIdFallback = window.currentConsecutivoCosturaData?.proceso_id || null;
+    const tieneProcesoReal = Boolean(prenda?.ultimo_proceso_id || procesoIdFallback);
+
     const areaActual = prenda?.ultimo_proceso_area
       || (prenda?.area && String(prenda.area).trim() !== '' ? prenda.area : null)
-      || (window.currentOrderData?.area && String(window.currentOrderData.area).trim() !== '' ? window.currentOrderData.area : null)
+      || (!esRecibosCostura && window.currentOrderData?.area && String(window.currentOrderData.area).trim() !== '' ? window.currentOrderData.area : null)
       || null;
 
     // Encargado real solo desde procesos_prenda; fallback a /consecutivo-costura si está disponible
@@ -2002,13 +2011,12 @@ const trackingTableStyles = `
       || null;
 
     // Si hay algo que mostrar, renderizar una tarjeta estándar de área.
-    if (areaActual && typeof createAreaCard === 'function') {
+    if (tieneProcesoReal && areaActual && typeof createAreaCard === 'function') {
       const estadoUltimo = prenda?.ultimo_proceso_estado || 'Pendiente';
       const estaActivo = estadoUltimo !== 'Completado';
 
       const fechaInicioFallback = window.currentConsecutivoCosturaData?.fecha_inicio || null;
       const fechaFinFallback = window.currentConsecutivoCosturaData?.fecha_fin || null;
-      const procesoIdFallback = window.currentConsecutivoCosturaData?.proceso_id || null;
 
       const card = createAreaCard(areaActual, {
         id: prenda?.ultimo_proceso_id || procesoIdFallback,

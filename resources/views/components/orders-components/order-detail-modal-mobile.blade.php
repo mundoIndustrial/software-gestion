@@ -415,8 +415,8 @@ window.llenarReciboCosturaMobile = function(data) {
     const tipoReciboUpper = (tipoReciboDataset || '').toString().trim().toUpperCase();
     const receiptTitleEl = document.getElementById('receipt-title-mobile');
     if (receiptTitleEl) {
-        if (tipoReciboUpper === 'REFLECTIVO') {
-            receiptTitleEl.textContent = 'RECIBO DE REFLECTIVO';
+        if (tipoReciboUpper) {
+            receiptTitleEl.textContent = `RECIBO DE ${tipoReciboUpper}`;
         } else {
             receiptTitleEl.textContent = 'RECIBO DE COSTURA';
         }
@@ -635,10 +635,12 @@ window.llenarReciboCosturaMobile = function(data) {
                 });
             }
             // Opción 2: Usar procesos (fallback)
+            // IMPORTANTE: algunos payloads usan tipo_proceso / nombre_proceso (ej: anexos)
             if (prenda.procesos && Array.isArray(prenda.procesos)) {
                 prenda.procesos.forEach(function(proceso) {
-                    if (proceso.proceso && !todosProcesos.includes(proceso.proceso)) {
-                        todosProcesos.push(proceso.proceso);
+                    const tipoProc = (proceso.proceso || proceso.tipo_proceso || proceso.nombre_proceso || '').toString().trim();
+                    if (tipoProc && !todosProcesos.includes(tipoProc)) {
+                        todosProcesos.push(tipoProc);
                     }
                 });
             }
@@ -680,15 +682,24 @@ window.llenarReciboCosturaMobile = function(data) {
         
         console.log(' [FILTRO PROCESOS] Control Calidad - tieneCostu:', tieneCostu, 'tieneReflectivo:', tieneReflectivo);
     } else if (esVistaOperario) {
-        // Vista operario = solo recibos de COSTURA (igual que /recibos-costura)
-        // Los bodegueros ya tienen su filtro propio en el backend (COSTURA-BODEGA)
+        // Vista operario:
+        // - Por defecto mostrar COSTURA/COSTURA-BODEGA
+        // - PERO si viene tipo_recibo en URL y existe en los procesos disponibles, mostrar ese tipo solicitado
         const tieneCostu = todosProcesos.includes('COSTURA');
         const tieneCosturaBodega = todosProcesos.includes('COSTURA-BODEGA');
+
         procesosFiltrados = [];
         if (tieneCostu) procesosFiltrados.push('COSTURA');
         if (tieneCosturaBodega) procesosFiltrados.push('COSTURA-BODEGA');
-        
-        console.log(' [FILTRO PROCESOS] Vista operario - Solo COSTURA:', tieneCostu, 'COSTURA-BODEGA:', tieneCosturaBodega);
+
+        if (tipoReciboUpper && todosProcesos.includes(tipoReciboUpper)) {
+            procesosFiltrados = [tipoReciboUpper];
+            window.procesoCarouselIndex = 0;
+            window.procesoActualSeleccionado = tipoReciboUpper;
+            console.log(' [FILTRO PROCESOS] Vista operario - mostrando tipo_recibo solicitado:', tipoReciboUpper);
+        } else {
+            console.log(' [FILTRO PROCESOS] Vista operario - por defecto COSTURA:', tieneCostu, 'COSTURA-BODEGA:', tieneCosturaBodega);
+        }
     }
     
     console.log(' [FILTRO PROCESOS] Procesos filtrados FINAL:', procesosFiltrados);
@@ -1267,12 +1278,37 @@ window.llenarReciboCosturaMobile = function(data) {
                 // Agrupado por COLOR: AZUL CELESTE: L-3, M-3, S-3
                 
                 // Tallas a nivel de PRENDA (no de proceso)
-                if (prenda.tallas && typeof prenda.tallas === 'object') {
+                // EXCEPCIÓN: si estamos viendo un ANEXO de COSTURA (es_parcial=true),
+                // se deben mostrar SOLO las tallas del anexo.
+                let tallasFuente = prenda.tallas;
+                try {
+                    if (procesoActualSeleccionado && procesoActualSeleccionado.toUpperCase() === 'COSTURA' && prenda.procesos && Array.isArray(prenda.procesos)) {
+                        const procCosturaAnexo = prenda.procesos.find(p => {
+                            const tipo = (p.proceso || p.tipo_proceso || p.nombre_proceso || '').toString().trim().toUpperCase();
+                            return tipo === 'COSTURA' && !!p.es_parcial;
+                        });
+
+                        if (procCosturaAnexo) {
+                            console.log('📱 [RECIBO MOBILE] COSTURA ANEXO detectado, usando tallas del anexo:', procCosturaAnexo);
+                            if (procCosturaAnexo.talla_colores && Array.isArray(procCosturaAnexo.talla_colores) && procCosturaAnexo.talla_colores.length > 0) {
+                                tallasFuente = transformarTallaColoresAEstructura(procCosturaAnexo.talla_colores);
+                            } else if (procCosturaAnexo.tallas && typeof procCosturaAnexo.tallas === 'object') {
+                                tallasFuente = procCosturaAnexo.tallas;
+                            } else {
+                                tallasFuente = {};
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn('📱 [RECIBO MOBILE] Error detectando costura anexo:', e);
+                }
+
+                if (tallasFuente && typeof tallasFuente === 'object') {
                     const tallasLineas = [];
                     
-                    const generos = Object.keys(prenda.tallas);
+                    const generos = Object.keys(tallasFuente);
                     generos.forEach((genero) => {
-                        const tallasGenero = prenda.tallas[genero] || {};
+                        const tallasGenero = tallasFuente[genero] || {};
                         
                         if (typeof tallasGenero === 'object' && !Array.isArray(tallasGenero)) {
                             // Detectar si hay colores reales (no "SIN COLOR")
@@ -1484,8 +1520,9 @@ window.llenarReciboCosturaMobile = function(data) {
                         if (proceso.talla_colores && Array.isArray(proceso.talla_colores) && proceso.talla_colores.length > 0) {
                             console.log('📱 [OPERARIO] Transformando talla_colores a estructura enriquecida:', proceso.talla_colores);
                             tallasObj = transformarTallaColoresAEstructura(proceso.talla_colores);
-                        } else if (!tallasObj || Object.keys(tallasObj).length === 0) {
-                            // Si no hay tallas en el proceso, usar fallback de la prenda
+                        } else if ((!tallasObj || Object.keys(tallasObj).length === 0) && !proceso.es_parcial) {
+                            // Si no hay tallas en el proceso y NO es anexo, usar fallback de la prenda
+                            // Para anexos solo deben mostrarse tallas del anexo.
                             tallasObj = prenda.tallas;
                         }
                         

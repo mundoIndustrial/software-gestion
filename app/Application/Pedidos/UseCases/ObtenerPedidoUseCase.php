@@ -67,13 +67,27 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
             $usuario = Auth::user();
             $esCortador = $usuario && $usuario->hasRole('cortador');
 
+            $esApiOperario = false;
+            try {
+                $esApiOperario = request()->is('api/operario/*');
+            } catch (\Exception $e) {
+                $esApiOperario = false;
+            }
+
             // Cargar modelo Eloquent completo con relaciones (solo si es necesario)
             $modeloEloquent = \App\Models\PedidoProduccion::with([
                 'prendas' => function($q) use ($esCortador, $usuario) {
                     // NO incluir prendas eliminadas (SoftDeletes aplica automáticamente)
                     
                     // FILTRO: Si el usuario es CORTADOR, excluir prendas de bodega (de_bodega = TRUE)
-                    if ($esCortador) {
+                    $esApiOperarioInner = false;
+                    try {
+                        $esApiOperarioInner = request()->is('api/operario/*');
+                    } catch (\Exception $e) {
+                        $esApiOperarioInner = false;
+                    }
+
+                    if ($esCortador && !$esApiOperarioInner) {
                         $q->where('de_bodega', false);
                         Log::info('[ObtenerPedidoUseCase] Filtrando prendas de bodega para CORTADOR', [
                             'usuario' => $usuario->name,

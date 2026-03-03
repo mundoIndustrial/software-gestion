@@ -708,7 +708,22 @@ class OperarioController extends Controller
             }
 
             $this->enriquecerPrendasConConsecutivos($responseData, $pedidoId);
+            $this->agregarRecibosParcialesAProcesos($responseData, $pedidoId);
             $this->agregarAnchoMetrajeGeneral($responseData, $pedido);
+
+            // Si se solicita un tipo_recibo que NO es COSTURA, la vista debe mostrar tallas del ANEXO
+            // (pedidos_parciales_tallas). Para evitar que el frontend muestre tallas de la prenda por error,
+            // limpiamos las tallas a nivel prenda en esta respuesta.
+            $tipoReciboFiltroUpper = strtoupper((string) request('tipo_recibo', ''));
+            $tiposCostura = ['COSTURA', 'COSTURA-BODEGA', 'REFLECTIVO'];
+            if ($tipoReciboFiltroUpper && !in_array($tipoReciboFiltroUpper, $tiposCostura, true)) {
+                if (isset($responseData['prendas']) && is_array($responseData['prendas'])) {
+                    foreach ($responseData['prendas'] as &$prenda) {
+                        $prenda['tallas'] = [];
+                        $prenda['talla_colores'] = [];
+                    }
+                }
+            }
 
             return response()->json([
                 'success' => true,
@@ -781,6 +796,125 @@ class OperarioController extends Controller
             }
 
             $prenda['recibos'] = $this->obtenerConsecutivosPrenda($pedidoId, $prendaId);
+        }
+    }
+
+    private function agregarRecibosParcialesAProcesos(array &$responseData, int $pedidoId): void
+    {
+        if (!isset($responseData['prendas']) || !is_array($responseData['prendas'])) {
+            return;
+        }
+
+        foreach ($responseData['prendas'] as &$prenda) {
+            $prendaId = $prenda['id'] ?? $prenda['prenda_pedido_id'] ?? null;
+            if (!$prendaId) {
+                continue;
+            }
+
+            try {
+                $recibosParciales = \DB::table('pedidos_parciales')
+                    ->where('pedido_produccion_id', $pedidoId)
+                    ->where('prenda_pedido_id', $prendaId)
+                    ->orderBy('tipo_recibo', 'asc')
+                    ->orderBy('id', 'asc')
+                    ->get();
+
+                if ($recibosParciales->isEmpty()) {
+                    continue;
+                }
+
+                $anexosPorTipo = [];
+                $procesosAdicionales = [];
+
+                foreach ($recibosParciales as $reciboParcial) {
+                    $tipoRecibo = (string) ($reciboParcial->tipo_recibo ?? '');
+                    if ($tipoRecibo === '') {
+                        continue;
+                    }
+
+                    if (!isset($anexosPorTipo[$tipoRecibo])) {
+                        $anexosPorTipo[$tipoRecibo] = 0;
+                    }
+                    $anexosPorTipo[$tipoRecibo]++;
+
+                    $numeroReciboAnexo = $reciboParcial->consecutivo_actual ?? $reciboParcial->numero_recibo ?? null;
+
+                    $tallas = \DB::table('pedidos_parciales_tallas')
+                        ->where('pedido_parcial_id', $reciboParcial->id)
+                        ->get();
+
+                    $tallasList = [];
+                    $tallasTransformadas = [
+                        'dama' => [],
+                        'caballero' => [],
+                        'unisex' => [],
+                    ];
+                    $tallaColores = [];
+
+                    foreach ($tallas as $talla) {
+                        $tallasList[] = [
+                            'talla' => $talla->talla,
+                            'cantidad' => $talla->cantidad,
+                            'genero' => $talla->genero ?? 'General',
+                            'color_nombre' => $talla->color_nombre ?? null,
+                        ];
+
+                        $tallaColores[] = [
+                            'genero' => $talla->genero ?? null,
+                            'talla' => $talla->talla,
+                            'cantidad' => (int) $talla->cantidad,
+                            'color_nombre' => $talla->color_nombre ?? null,
+                        ];
+
+                        $genero = strtolower($talla->genero ?? 'caballero');
+                        if ($genero === 'dama') {
+                            $genero = 'dama';
+                        } elseif ($genero === 'caballero') {
+                            $genero = 'caballero';
+                        } else {
+                            $genero = 'unisex';
+                        }
+
+                        $tallasTransformadas[$genero][$talla->talla] = $talla->cantidad;
+                    }
+
+                    $imagenesPrenda = [];
+                    if (isset($prenda['imagenes']) && is_array($prenda['imagenes'])) {
+                        $imagenesPrenda = $prenda['imagenes'];
+                    }
+
+                    $procesosAdicionales[] = [
+                        'tipo_proceso' => $tipoRecibo,
+                        'nombre_proceso' => $tipoRecibo . ' ANEXO ' . $anexosPorTipo[$tipoRecibo],
+                        'estado' => $reciboParcial->estado ?? 'PENDIENTE',
+                        'numero_recibo' => $numeroReciboAnexo,
+                        'es_parcial' => true,
+                        'numero_anexo' => $anexosPorTipo[$tipoRecibo],
+                        'pedido_parcial_id' => $reciboParcial->id,
+                        // IMPORTANT: Para el frontend del recibo, el campo 'tallas' debe ser OBJETO (no lista)
+                        // para que lo renderice correctamente. En anexos solo deben mostrarse tallas del anexo.
+                        'tallas' => $tallasTransformadas,
+                        'tallas_list' => $tallasList,
+                        'tallas_transformadas' => $tallasTransformadas,
+                        // Soporte para tallas con color (el frontend transforma esto si existe)
+                        'talla_colores' => $tallaColores,
+                        'created_at' => $reciboParcial->created_at,
+                        'imagenes' => $imagenesPrenda,
+                    ];
+                }
+
+                if (!isset($prenda['procesos']) || !is_array($prenda['procesos'])) {
+                    $prenda['procesos'] = [];
+                }
+
+                $prenda['procesos'] = array_merge($prenda['procesos'], $procesosAdicionales);
+            } catch (\Exception $e) {
+                \Log::error('[OperarioController.getPedidoData] Error cargando recibos parciales', [
+                    'pedido_id' => $pedidoId,
+                    'prenda_id' => $prendaId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
     }
 
