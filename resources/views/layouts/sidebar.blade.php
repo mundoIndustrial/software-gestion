@@ -174,6 +174,14 @@
         </a>
       </li>
       <li class="menu-item">
+        <a href="{{ route('gestion-bodega.pendientes-epp-list') }}"
+           class="menu-link {{ request()->routeIs('gestion-bodega.pendientes-epp-list') ? 'active' : '' }}"
+           aria-label="Pendientes EPP">
+          <span class="material-symbols-rounded" aria-hidden="true">pending_actions</span>
+          <span class="menu-label">Pendientes</span>
+        </a>
+      </li>
+      <li class="menu-item">
         <a href="{{ route('despacho.index') }}"
            class="menu-link {{ request()->routeIs('despacho.*') ? 'active' : '' }}"
            aria-label="Despacho">

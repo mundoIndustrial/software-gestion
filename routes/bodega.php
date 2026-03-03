@@ -68,6 +68,14 @@ Route::middleware(['auth', 'role:bodeguero,supervisor_pedidos,supervisor_gerenci
     Route::get('/pendiente-epp', [PedidosController::class, 'pendienteEpp'])
         ->name('pendientes-epp');
 
+    // Lista simplificada de EPP pendientes
+    Route::get('/pendientes-epp-list', [PedidosController::class, 'pendientesEppList'])
+        ->name('pendientes-epp-list');
+
+    // Exportar EPP pendientes a Excel
+    Route::get('/pendientes-epp/exportar', [PedidosController::class, 'exportarPendientesEpp'])
+        ->name('exportar-pendientes-epp');
+
     // Mostrar detalles de pedido específico para Pendiente EPP
     Route::get('/pendiente-epp/{id}', [PedidosController::class, 'showPendienteEpp'])
         ->name('pendiente-epp-show');
@@ -93,6 +101,10 @@ Route::middleware(['auth', 'role:bodeguero,supervisor_pedidos,supervisor_gerenci
 
     Route::post('/pedidos/fecha', [PedidosController::class, 'actualizarFecha'])
         ->name('actualizar-fecha');
+
+    // Actualizar fecha de entrega a despacho
+    Route::post('/bodega-detalles/{id}/fecha-entrega-despacho', [PedidosController::class, 'actualizarFechaEntregaDespacho'])
+        ->name('actualizar-fecha-entrega-despacho');
 
     // API para datos de factura (JSON)
     Route::get('/pedidos/{id}/factura-datos', [PedidosController::class, 'obtenerDatosFacturaJSON'])

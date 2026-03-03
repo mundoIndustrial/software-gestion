@@ -28,6 +28,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Font;
+use PhpOffice\PhpSpreadsheet\Style\PatternFill;
 
 class PedidosController extends Controller
 {
@@ -876,8 +881,148 @@ class PedidosController extends Controller
     }
 
     /**
-     * Marcar pedido como entregado usando CQRS
+     * Mostrar lista simplificada de EPP pendientes para supervisor
+     * Tabla con columnas: fecha, asesor, cliente, cantidad, producto, fecha de entrega a despacho
      */
+    public function pendientesEppList(Request $request)
+    {
+        try {
+            // Obtener EPP pendientes sin agrupar - una fila por cada registro
+            $query = BodegaDetalleTalla::where('bodega_detalles_talla.area', 'EPP')
+                ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
+                ->where('bodega_detalles_talla.pedido_epp_id', '!=', null)
+                ->leftJoin('pedidos_produccion', 'bodega_detalles_talla.numero_pedido', '=', 'pedidos_produccion.numero_pedido')
+                ->select('bodega_detalles_talla.*', 'pedidos_produccion.fecha_de_creacion_de_orden')
+                ->orderBy('bodega_detalles_talla.fecha_entrega', 'asc');
+
+            // Aplicar búsqueda si existe
+            if ($request->filled('search')) {
+                $search = $request->get('search');
+                $query->where(function($q) use ($search) {
+                    $q->where('bodega_detalles_talla.numero_pedido', 'LIKE', "%{$search}%")
+                      ->orWhere('bodega_detalles_talla.empresa', 'LIKE', "%{$search}%")
+                      ->orWhere('bodega_detalles_talla.asesor', 'LIKE', "%{$search}%")
+                      ->orWhere('bodega_detalles_talla.prenda_nombre', 'LIKE', "%{$search}%");
+                });
+            }
+
+            $epp_pendientes = $query->paginate(20);
+
+            \Log::info('Pendientes EPP obtenidos: ' . $epp_pendientes->total());
+
+            return view('bodega.pendientes-epp-list', [
+                'epp_pendientes' => $epp_pendientes,
+                'total' => $epp_pendientes->total(),
+                'search' => $request->query('search', ''),
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error en pendientesEppList: ' . $e->getMessage());
+            return back()->with('error', 'Error al cargar los pendientes de EPP: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Exportar EPP pendientes a Excel
+     */
+    public function exportarPendientesEpp(Request $request)
+    {
+        try {
+            // Obtener datos sin paginar
+            $query = BodegaDetalleTalla::where('bodega_detalles_talla.area', 'EPP')
+                ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
+                ->where('bodega_detalles_talla.pedido_epp_id', '!=', null)
+                ->leftJoin('pedidos_produccion', 'bodega_detalles_talla.numero_pedido', '=', 'pedidos_produccion.numero_pedido')
+                ->select('bodega_detalles_talla.*', 'pedidos_produccion.fecha_de_creacion_de_orden')
+                ->orderBy('bodega_detalles_talla.fecha_entrega', 'asc');
+
+            // Aplicar búsqueda si existe
+            if ($request->filled('search')) {
+                $search = $request->get('search');
+                $query->where(function($q) use ($search) {
+                    $q->where('bodega_detalles_talla.numero_pedido', 'LIKE', "%{$search}%")
+                      ->orWhere('bodega_detalles_talla.empresa', 'LIKE', "%{$search}%")
+                      ->orWhere('bodega_detalles_talla.asesor', 'LIKE', "%{$search}%")
+                      ->orWhere('bodega_detalles_talla.prenda_nombre', 'LIKE', "%{$search}%");
+                });
+            }
+
+            $epp_pendientes = $query->get();
+
+            // Crear nuevo Spreadsheet
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+
+            // Configurar encabezados
+            $headers = ['Fecha Pedido', 'Asesor', 'Cliente', 'Nº Pedido', 'Producto', 'Cantidad', 'Fecha Entrega a Despacho'];
+            
+            // Estilos para encabezados
+            $headerFill = new PatternFill(
+                PatternFill::FILL_SOLID,
+                '1F2937',
+                '1F2937'
+            );
+            $headerFont = new Font(['bold' => true, 'color' => ['rgb' => 'FFFFFF']]);
+
+            // Agregar encabezados
+            foreach ($headers as $col => $header) {
+                $cell = $sheet->getCellByColumnAndRow($col + 1, 1);
+                $cell->setValue($header);
+                $cell->getStyle()->setFont($headerFont);
+                $cell->getStyle()->setFill($headerFill);
+                $cell->getStyle()->setAlignment(new Alignment(Alignment::HORIZONTAL_CENTER, Alignment::VERTICAL_CENTER));
+            }
+
+            // Agregar datos
+            $row = 2;
+            foreach ($epp_pendientes as $item) {
+                $fechaPedido = $item->fecha_de_creacion_de_orden ? \Carbon\Carbon::parse($item->fecha_de_creacion_de_orden)->format('d/m/Y') : '—';
+                $fechaEntrega = $item->fecha_entrega ? \Carbon\Carbon::parse($item->fecha_entrega)->format('d/m/Y') : '—';
+
+                $sheet->setCellValue('A' . $row, $fechaPedido);
+                $sheet->setCellValue('B' . $row, $item->asesor ?? '—');
+                $sheet->setCellValue('C' . $row, $item->empresa ?? '—');
+                $sheet->setCellValue('D' . $row, $item->numero_pedido);
+                $sheet->setCellValue('E' . $row, $item->prenda_nombre ?? '—');
+                $sheet->setCellValue('F' . $row, $item->cantidad ?? 0);
+                $sheet->setCellValue('G' . $row, $fechaEntrega);
+
+                // Alineaciones
+                $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('F' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('G' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+                $row++;
+            }
+
+            // Ajustar ancho de columnas
+            $sheet->getColumnDimension('A')->setWidth(15);
+            $sheet->getColumnDimension('B')->setWidth(15);
+            $sheet->getColumnDimension('C')->setWidth(20);
+            $sheet->getColumnDimension('D')->setWidth(12);
+            $sheet->getColumnDimension('E')->setWidth(30);
+            $sheet->getColumnDimension('F')->setWidth(12);
+            $sheet->getColumnDimension('G')->setWidth(20);
+
+            // Crear writer y descarga
+            $writer = new Xlsx($spreadsheet);
+            $filename = 'Pendientes-EPP-' . date('Y-m-d-H-i-s') . '.xlsx';
+
+            headers_sent() ?: header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            headers_sent() ?: header('Content-Disposition: attachment;filename="' . $filename . '"');
+            headers_sent() ?: header('Cache-Control: max-age=0');
+
+            $writer->save('php://output');
+            exit;
+
+        } catch (\Exception $e) {
+            \Log::error('Error en exportarPendientesEpp: ' . $e->getMessage());
+            return back()->with('error', 'Error al exportar: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Marcar pedido como entregado usando CQRS
     public function entregar(Request $request, $id): JsonResponse
     {
         // Validar que el usuario no sea de solo lectura
@@ -2274,6 +2419,35 @@ class PedidosController extends Controller
                 'items' => [],
                 'estadisticas' => ['total_items' => 0, 'total_epp_pendientes' => 0]
             ];
+        }
+    }
+
+    /**
+     * Actualizar fecha de entrega a despacho
+     */
+    public function actualizarFechaEntregaDespacho(Request $request, $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'fecha_entrega_despacho' => 'required|date_format:Y-m-d',
+        ]);
+
+        try {
+            $bodegaDetalle = BodegaDetalleTalla::findOrFail($id);
+            $bodegaDetalle->update([
+                'fecha_entrega_despacho' => $validated['fecha_entrega_despacho']
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Fecha de entrega a despacho actualizada correctamente',
+                'fecha_entrega_despacho' => $bodegaDetalle->fecha_entrega_despacho?->format('d/m/Y')
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al actualizar fecha de entrega a despacho: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar la fecha'
+            ], 500);
         }
     }
 

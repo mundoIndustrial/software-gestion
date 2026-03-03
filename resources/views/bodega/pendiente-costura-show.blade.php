@@ -309,7 +309,24 @@
                                             @endforeach
                                         @endforeach
                                     @else
-                                        @foreach($grupo as $item)
+                                        @php
+                                            // Para el fallback, extraer género y datos de la primera variante si existen
+                                            $primerItem = $grupo->first();
+                                            $generoFallback = '';
+                                            
+                                            if (is_array($variantes) && !empty($variantes)) {
+                                                foreach ($variantes as $var) {
+                                                    if (!empty($var['genero'])) {
+                                                        $generoVar = strtoupper($var['genero'] ?? '');
+                                                        if ($generoVar !== 'GENERICO') {
+                                                            $generoFallback = $var['genero'];
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        @endphp
+                                        @foreach($grupo as $indexItem => $item)
                                             <tr class="hover:bg-slate-50 transition-colors"
                                                 data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                 data-asesor="{{ $item['asesor'] ?? ($pedido['asesor'] ?? '') }}"
@@ -321,15 +338,66 @@
                                                     style="background-color: rgba(37, 99, 235, 0.05);"
                                                 @endif
                                             >
-                                                <td class="px-4 py-3 text-xs text-black border-r border-slate-300" style="width: 22%;">
+                                                @if($indexItem === 0)
+                                                <td class="px-4 py-3 text-xs text-black border-r border-slate-300" rowspan="{{ count($grupo) }}" style="width: 22%;">
                                                     <div class="font-bold text-black mb-1">
                                                         {{ $nombre }}
                                                         @if(($item['de_bodega'] ?? ($item['descripcion']['de_bodega'] ?? ($item['objetoPrenda']['de_bodega'] ?? false))) )
                                                             <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
                                                         @endif
                                                     </div>
+                                                    @if($tela || ($color && strtolower($color) !== 'sin color'))
+                                                        <div class="text-black text-xs mb-1">
+                                                            @if($tela && $color && strtolower($color) !== 'sin color')
+                                                                Tela: {{ $tela }} - Color: {{ $color }}
+                                                            @elseif($tela)
+                                                                Tela: {{ $tela }}
+                                                            @elseif($color && strtolower($color) !== 'sin color')
+                                                                Color: {{ $color }}
+                                                            @endif
+                                                        </div>
+                                                    @endif
+                                                    @if(count($procesos) > 0)
+                                                        <div class="text-black text-xs mt-2 space-y-0.5">
+                                                            @foreach($procesos as $proceso)
+                                                                <div class="flex items-start gap-1">
+                                                                    <span class="text-blue-600 font-bold">•</span>
+                                                                    <span>
+                                                                        {{ $proceso['tipo_proceso'] ?? 'Proceso' }}
+                                                                        @if(!empty($proceso['ubicaciones']))
+                                                                            @php
+                                                                                $ubicaciones = $proceso['ubicaciones'];
+
+                                                                                if (is_string($ubicaciones) && (strpos($ubicaciones, '[') === 0 || strpos($ubicaciones, '{') === 0)) {
+                                                                                    $ubicacionesDecodificadas = json_decode($ubicaciones, true);
+                                                                                    if (is_array($ubicacionesDecodificadas)) {
+                                                                                        $ubicacionesStr = implode(', ', $ubicacionesDecodificadas);
+                                                                                    } else {
+                                                                                        $ubicacionesStr = $ubicaciones;
+                                                                                    }
+                                                                                } elseif (is_array($ubicaciones)) {
+                                                                                    $ubicacionesStr = implode(', ', $ubicaciones);
+                                                                                } else {
+                                                                                    $ubicacionesStr = $ubicaciones;
+                                                                                }
+                                                                            @endphp
+                                                                            @if(!empty($ubicacionesStr))
+                                                                                ({{ $ubicacionesStr }})
+                                                                            @endif
+                                                                        @endif
+                                                                    </span>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
                                                 </td>
-                                                <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" style="width: 6%;">—</td>
+                                                @endif
+
+                                                @if($indexItem === 0)
+                                                <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" rowspan="{{ count($grupo) }}" style="width: 6%;">
+                                                    {{ $generoFallback ? ucfirst(strtolower($generoFallback)) : '—' }}
+                                                </td>
+                                                @endif
                                                 <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
                                                     {{ $item['talla'] ?? '—' }}
                                                 </td>
