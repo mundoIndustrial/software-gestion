@@ -356,6 +356,8 @@ export class PedidosRecibosModule {
             // === INYECCIÓN DE TALLAS DEL PARCIAL (antes de renderizar) ===
             const recibo = recibos[reciboIndice];
             const tallasFormato = parcialResult.data.tallas_formato;
+            const tallasFormatoColores = parcialResult.data.tallas_formato_colores;
+            const tallasArrayParcial = parcialResult.data.tallas;
 
             console.log('[PedidosRecibosModule.abrirReciboParcial] Inyectando tallas del parcial:', {
                 tallasOriginales: recibo.tallas,
@@ -364,11 +366,17 @@ export class PedidosRecibosModule {
             });
 
             // Sobrescribir tallas del recibo con las del parcial
-            recibo.tallas = tallasFormato;
+            recibo.tallas = (tallasFormatoColores && Object.keys(tallasFormatoColores).length > 0)
+                ? tallasFormatoColores
+                : tallasFormato;
 
-            // Eliminar talla_colores para evitar que el Formatter use colores
-            // (los parciales no tienen asignación de colores por talla)
-            delete recibo.talla_colores;
+            // Si el parcial trae colores por talla, inyectarlos para que Formatters
+            // renderice agrupado por color.
+            if (Array.isArray(tallasArrayParcial) && tallasArrayParcial.length > 0) {
+                recibo.talla_colores = tallasArrayParcial;
+            } else {
+                delete recibo.talla_colores;
+            }
 
             // Marcar como parcial para que el renderer sepa limpiar consecutivo
             recibo._esParcial = true;
@@ -384,9 +392,11 @@ export class PedidosRecibosModule {
             });
 
             // Temporalmente limpiar talla_colores de prendaData para que el renderer
-            // NO re-inyecte colores en el recibo (los parciales usan solo tallas planas)
+            // use los colores del parcial (si existen) y no los de la prenda base.
             const tallaColoresOriginal = prendaData.talla_colores;
-            prendaData.talla_colores = null;
+            if (recibo.talla_colores && Array.isArray(recibo.talla_colores) && recibo.talla_colores.length > 0) {
+                prendaData.talla_colores = recibo.talla_colores;
+            }
 
             // Renderizar con la pipeline normal (tallas ya están inyectadas)
             this._renderizarRecibo(prendaData, reciboIndice, tipoRecibo, datos, recibos);

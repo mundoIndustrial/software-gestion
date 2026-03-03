@@ -42,6 +42,7 @@ class RecibosParcialesController extends Controller
                 'tallas.*.talla' => 'required|string',
                 'tallas.*.cantidad' => 'required|integer|min:1',
                 'tallas.*.genero' => 'nullable|string',
+                'tallas.*.color_nombre' => 'nullable|string|max:100',
                 'notas' => 'nullable|string|max:1000',
             ]);
 
@@ -90,6 +91,7 @@ class RecibosParcialesController extends Controller
                         'talla' => $talla['talla'],
                         'cantidad' => $talla['cantidad'],
                         'genero' => $talla['genero'] ?? null,
+                        'color_nombre' => $talla['color_nombre'] ?? null,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
@@ -97,6 +99,7 @@ class RecibosParcialesController extends Controller
                     Log::info('[RecibosParcialesController@store] Talla parcial creada:', [
                         'talla' => $talla['talla'],
                         'cantidad' => $talla['cantidad'],
+                        'color_nombre' => $talla['color_nombre'] ?? null,
                     ]);
                 }
 
@@ -181,12 +184,19 @@ class RecibosParcialesController extends Controller
             $tallasPorGenero = [];
             // Formato compatible con Formatters._agregarTallasFormato: {CABALLERO: {M: 4, S: 1}}
             $tallasFormato = [];
+            // Formato enriquecido por color: {CABALLERO: {M: [{color,cantidad}]}}
+            $tallasFormatoColores = [
+                'DAMA' => [],
+                'CABALLERO' => [],
+                'UNISEX' => []
+            ];
             foreach ($tallas as $talla) {
                 $genero = $talla->genero ?? 'CABALLERO';
                 if (!isset($tallasPorGenero[$genero])) {
                     $tallasPorGenero[$genero] = [];
                 }
-                $tallasPorGenero[$genero][] = $talla->talla . '-' . $talla->cantidad;
+                $labelColor = isset($talla->color_nombre) && $talla->color_nombre ? (' (' . $talla->color_nombre . ')') : '';
+                $tallasPorGenero[$genero][] = $talla->talla . $labelColor . '-' . $talla->cantidad;
 
                 // Formato para Formatters
                 $generoKey = strtoupper($genero);
@@ -194,6 +204,20 @@ class RecibosParcialesController extends Controller
                     $tallasFormato[$generoKey] = [];
                 }
                 $tallasFormato[$generoKey][$talla->talla] = (int) $talla->cantidad;
+
+                // Formato enriquecido por color
+                $tallaKey = (string) $talla->talla;
+                $colorNombre = isset($talla->color_nombre) && $talla->color_nombre ? (string) $talla->color_nombre : 'SIN COLOR';
+                if (!isset($tallasFormatoColores[$generoKey])) {
+                    $tallasFormatoColores[$generoKey] = [];
+                }
+                if (!isset($tallasFormatoColores[$generoKey][$tallaKey])) {
+                    $tallasFormatoColores[$generoKey][$tallaKey] = [];
+                }
+                $tallasFormatoColores[$generoKey][$tallaKey][] = [
+                    'color' => strtoupper($colorNombre),
+                    'cantidad' => (int) $talla->cantidad
+                ];
             }
 
             // Formato: "CABALLERO: M-1, S-1"
@@ -208,6 +232,7 @@ class RecibosParcialesController extends Controller
                     'parcial' => $parcial,
                     'tallas' => $tallas,
                     'tallas_formato' => $tallasFormato, // {CABALLERO: {M: 4, S: 1}} para Formatters
+                    'tallas_formato_colores' => $tallasFormatoColores, // {CABALLERO: {M: [{color,cantidad}]}}
                     'tallas_descripcion' => $descripcionTallas,
                     'total_tallas' => count($tallas),
                     'total_cantidad' => collect($tallas)->sum('cantidad'),

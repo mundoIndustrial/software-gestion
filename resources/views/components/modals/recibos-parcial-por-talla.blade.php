@@ -125,6 +125,20 @@
         window.modalReciboParcialState.tallas = [];
         window.modalReciboParcialState.tallasCantidad = {};
 
+        // Reset visual para evitar que se arrastre selección/notas de un anexo anterior
+        const notasEl = document.getElementById('parcial-notas');
+        if (notasEl) notasEl.value = '';
+        const tallasListEl = document.getElementById('parcial-tallas-list');
+        if (tallasListEl) tallasListEl.innerHTML = '';
+        const cantidadesListEl = document.getElementById('parcial-cantidades-list');
+        if (cantidadesListEl) cantidadesListEl.innerHTML = '<p style="color: #9ca3af; text-align: center; padding: 12px;">Selecciona tallas para ver cantidades editable</p>';
+        const totalEl = document.getElementById('parcial-total-cantidad');
+        if (totalEl) totalEl.textContent = '0';
+        const errorEl = document.getElementById('parcial-error');
+        if (errorEl) errorEl.style.display = 'none';
+        const errorMsgEl = document.getElementById('parcial-error-message');
+        if (errorMsgEl) errorMsgEl.textContent = '';
+
         const overlay = document.getElementById('modal-recibo-parcial-overlay');
         const modal = document.getElementById('modal-recibo-parcial');
         const loading = document.getElementById('parcial-loading');
@@ -148,11 +162,61 @@
             let tallas = [];
             const tipoProcesoUpper = String(tipoProceso || '').toUpperCase();
             const esCosturaBase = tipoProcesoUpper === 'COSTURA' || tipoProcesoUpper === 'COSTURA-BODEGA';
+
+            // Helper: normaliza estructura relacional de tallas con colores desde la prenda
+            const normalizarTallasConColoresDesdePrenda = (origen) => {
+                if (!origen || typeof origen !== 'object' || Array.isArray(origen)) return [];
+
+                const normalizadas = [];
+                const pushItem = (generoKey, tallaKey, color, cantidad) => {
+                    const tallaStr = String(tallaKey || '').trim();
+                    const generoStr = generoKey ? String(generoKey).toUpperCase() : null;
+                    const colorStr = color !== null && color !== undefined && String(color).trim() !== '' ? String(color).trim() : null;
+                    const qty = parseInt(cantidad) || 0;
+                    if (!tallaStr || qty <= 0) return;
+                    normalizadas.push({ talla: tallaStr, cantidad: qty, genero: generoStr, color: colorStr });
+                };
+
+                const keys = Object.keys(origen);
+                const esPorGenero = keys.some(k => ['dama', 'caballero', 'unisex', 'sobremedida', 'DAMA', 'CABALLERO', 'UNISEX'].includes(String(k)));
+
+                if (esPorGenero) {
+                    keys.forEach(gKey => {
+                        const generoVal = origen[gKey];
+                        if (!generoVal || typeof generoVal !== 'object') return;
+                        Object.entries(generoVal).forEach(([tallaKey, colorList]) => {
+                            if (Array.isArray(colorList)) {
+                                colorList.forEach(item => {
+                                    pushItem(gKey, tallaKey, item?.color ?? null, item?.cantidad ?? item);
+                                });
+                            } else if (colorList && typeof colorList === 'object') {
+                                pushItem(gKey, tallaKey, colorList.color ?? null, colorList.cantidad ?? 0);
+                            } else {
+                                pushItem(gKey, tallaKey, null, colorList);
+                            }
+                        });
+                    });
+                } else {
+                    Object.entries(origen).forEach(([tallaKey, qty]) => pushItem(null, tallaKey, null, qty));
+                }
+
+                return normalizadas;
+            };
+
+            // PRIORIDAD: si la prenda tiene tallas por color, usarlas siempre para anexos
+            // (las tallas del proceso vienen de pedidos_procesos_prenda_tallas y no incluyen color)
+            if (!esCosturaBase && penda.tallas && typeof penda.tallas === 'object' && !Array.isArray(penda.tallas)) {
+                const candidatas = normalizarTallasConColoresDesdePrenda(penda.tallas);
+                const tieneColor = candidatas.some(t => t && t.color);
+                if (candidatas.length > 0 && tieneColor) {
+                    tallas = candidatas;
+                }
+            }
             
             // Buscar el proceso que coincide con tipoProceso
             // Importante: para COSTURA/COSTURA-BODEGA NO usar penda.procesos, porque ahí pueden venir anexos
             // con tallas parciales y eso haría que el modal muestre solo esas tallas.
-            if (!esCosturaBase && penda.procesos && Array.isArray(penda.procesos)) {
+            if (tallas.length === 0 && !esCosturaBase && penda.procesos && Array.isArray(penda.procesos)) {
                 const procesoEncontrado = penda.procesos.find(p => {
                     // Comparar con tipo_proceso (STRING) o tipo_recibo
                     const tipo = String(p.tipo_proceso || p.nombre_proceso || '').toUpperCase();
@@ -185,6 +249,15 @@
             // Si no encontró tallas en procesos, usar las de la prenda como fallback
             if (tallas.length === 0 && penda.tallas && Array.isArray(penda.tallas)) {
                 tallas = penda.tallas;
+            }
+
+            // Caso: tallas relacionales con colores (estructura: {DAMA:{S:[{color,cantidad}]} ...})
+            // Normalizar a lista plana con color.
+            if (tallas.length === 0 && penda.tallas && typeof penda.tallas === 'object' && !Array.isArray(penda.tallas)) {
+                const candidatas = normalizarTallasConColoresDesdePrenda(penda.tallas);
+                if (candidatas.length > 0) {
+                    tallas = candidatas;
+                }
             }
 
             // Caso especial: COSTURA/COSTURA-BODEGA (recibo base) suele traer tallas como objeto
@@ -264,22 +337,44 @@
         const container = document.getElementById('parcial-tallas-list');
         container.innerHTML = '';
 
+        // Agrupar por color para selección (si no hay color, usar 'Sin color')
+        const grupos = {};
+        const ordenColores = [];
         tallas.forEach((talla, idx) => {
-            const tallaId = `parcial-talla-${idx}`;
-            const labelText = talla.talla + (talla.genero ? ` (${talla.genero})` : '') + (talla.cantidad ? ` - Disponible: ${talla.cantidad}` : '');
-            
-            const html = `
-                <label style="display: flex; align-items: center; padding: 12px; background: white; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s; position: relative;">
-                    <input type="checkbox" id="${tallaId}" class="parcial-talla-checkbox" data-talla-index="${idx}" 
-                           style="width: 18px; height: 18px; margin-right: 12px; cursor: pointer;"
-                           onchange="actualizarCantidadTalla(${idx})">
-                    <span style="flex: 1; font-weight: 500; color: #1f2937;">${labelText}</span>
-                    <span style="color: #8b5cf6; font-weight: 600; font-size: 14px;">
-                        ${talla.cantidad || 0}
-                    </span>
-                </label>
+            const colorLabel = (talla && talla.color) ? String(talla.color) : 'Sin color';
+            if (!grupos[colorLabel]) {
+                grupos[colorLabel] = [];
+                ordenColores.push(colorLabel);
+            }
+            grupos[colorLabel].push({ talla, idx });
+        });
+
+        ordenColores.forEach(colorLabel => {
+            container.innerHTML += `
+                <div style="margin-top: 10px; padding: 10px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;">
+                    <div style="font-weight: 700; color: #111827; font-size: 13px; text-transform: uppercase; letter-spacing: 0.02em;">${colorLabel}</div>
+                </div>
             `;
-            container.innerHTML += html;
+
+            (grupos[colorLabel] || []).forEach(({ talla, idx }) => {
+                const tallaId = `parcial-talla-${idx}`;
+                const generoLabel = talla.genero ? ` (${talla.genero})` : '';
+                const disponibleLabel = talla.cantidad ? ` - Disponible: ${talla.cantidad}` : '';
+                const labelText = `${talla.talla}${generoLabel}${disponibleLabel}`;
+
+                const html = `
+                    <label style="display: flex; align-items: center; padding: 12px; background: white; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s; position: relative;">
+                        <input type="checkbox" id="${tallaId}" class="parcial-talla-checkbox" data-talla-index="${idx}" 
+                               style="width: 18px; height: 18px; margin-right: 12px; cursor: pointer;"
+                               onchange="actualizarCantidadTalla(${idx})">
+                        <span style="flex: 1; font-weight: 500; color: #1f2937;">${labelText}</span>
+                        <span style="color: #8b5cf6; font-weight: 600; font-size: 14px;">
+                            ${talla.cantidad || 0}
+                        </span>
+                    </label>
+                `;
+                container.innerHTML += html;
+            });
         });
     }
 
@@ -323,10 +418,12 @@
             const cantidadActual = tallasCantidad[idx];
             const maxCantidad = talla.cantidad || 0;
 
+            const colorLabel = talla.color ? ` - ${talla.color}` : '';
+
             const html = `
                 <div style="display: grid; grid-template-columns: 1fr 120px; gap: 12px; align-items: center;">
                     <label style="font-weight: 500; color: #1f2937; font-size: 13px;">
-                        ${talla.talla} (${talla.genero || 'General'}):
+                        ${talla.talla}${colorLabel} (${talla.genero || 'General'}):
                     </label>
                     <input type="number" 
                            id="parcial-cantidad-${idx}" 
@@ -403,7 +500,8 @@
                 tallasSeleccionadas.push({
                     talla: talla.talla,
                     cantidad: tallasCantidad[idx],
-                    genero: talla.genero
+                    genero: talla.genero,
+                    color_nombre: talla.color || null
                 });
             });
 
@@ -465,6 +563,20 @@
         
         if (overlay) overlay.style.display = 'none';
         if (modal) modal.style.display = 'none';
+
+        // Limpiar DOM (notas/selección) para que no se arrastre al siguiente pedido
+        const notasEl = document.getElementById('parcial-notas');
+        if (notasEl) notasEl.value = '';
+        const tallasListEl = document.getElementById('parcial-tallas-list');
+        if (tallasListEl) tallasListEl.innerHTML = '';
+        const cantidadesListEl = document.getElementById('parcial-cantidades-list');
+        if (cantidadesListEl) cantidadesListEl.innerHTML = '';
+        const totalEl = document.getElementById('parcial-total-cantidad');
+        if (totalEl) totalEl.textContent = '0';
+        const errorEl = document.getElementById('parcial-error');
+        if (errorEl) errorEl.style.display = 'none';
+        const errorMsgEl = document.getElementById('parcial-error-message');
+        if (errorMsgEl) errorMsgEl.textContent = '';
 
         // Limpiar estado
         window.modalReciboParcialState = {

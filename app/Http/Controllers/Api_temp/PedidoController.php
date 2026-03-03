@@ -456,6 +456,58 @@ class PedidoController extends Controller
             if (isset($datos['prendas']) && is_array($datos['prendas'])) {
                 foreach ($datos['prendas'] as &$prenda) {
                     if (isset($prenda['id'])) {
+                        try {
+                            $tallasPorGenero = [
+                                'DAMA' => [],
+                                'CABALLERO' => [],
+                                'UNISEX' => []
+                            ];
+
+                            $tallasColores = \DB::table('prenda_pedido_talla_colores as pptc')
+                                ->join('prenda_pedido_tallas as ppt', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
+                                ->where('ppt.prenda_pedido_id', $prenda['id'])
+                                ->select([
+                                    'ppt.genero',
+                                    'ppt.talla',
+                                    'pptc.color_nombre',
+                                    'pptc.cantidad'
+                                ])
+                                ->get();
+
+                            if ($tallasColores->count() > 0) {
+                                foreach ($tallasColores as $tallaColor) {
+                                    $genero = strtoupper((string)($tallaColor->genero ?? ''));
+                                    if (!in_array($genero, ['DAMA', 'CABALLERO', 'UNISEX'], true)) {
+                                        $genero = 'CABALLERO';
+                                    }
+                                    $talla = (string)($tallaColor->talla ?? '');
+                                    $color = (string)($tallaColor->color_nombre ?? '');
+                                    $cantidad = (int)($tallaColor->cantidad ?? 0);
+
+                                    if ($talla === '' || $cantidad <= 0) {
+                                        continue;
+                                    }
+
+                                    if (!isset($tallasPorGenero[$genero][$talla])) {
+                                        $tallasPorGenero[$genero][$talla] = [];
+                                    }
+
+                                    $tallasPorGenero[$genero][$talla][] = [
+                                        'cantidad' => $cantidad,
+                                        'color' => $color !== '' ? $color : null,
+                                    ];
+                                }
+
+                                $prenda['tallas'] = $tallasPorGenero;
+                            }
+                        } catch (\Exception $e) {
+                            \Log::warning('[PedidoController::show] Error cargando tallas con color para prenda', [
+                                'pedido_id' => $id,
+                                'prenda_id' => $prenda['id'],
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
+
                         $entrega = \App\Models\PrendaEntrega::where('prenda_pedido_id', $prenda['id'])->first();
                         $prenda['entrega'] = $entrega ? [
                             'entregado' => $entrega->entregado,
