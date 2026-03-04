@@ -6,6 +6,7 @@ use App\Application\PedidosLogo\UseCases\GuardarAreaNovedadPedidoLogoUseCase;
 use App\Application\PedidosLogo\UseCases\ListPedidosLogoUseCase;
 use App\Models\Cotizacion;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class VisualizadorLogoController extends Controller
 {
@@ -157,6 +158,50 @@ class VisualizadorLogoController extends Controller
     public function pedidosLogo()
     {
         return view('visualizador-logo.pedidos-logo');
+    }
+
+    public function disenosLogo()
+    {
+        return view('visualizador-logo.disenos-logo');
+    }
+
+    public function disenosLogoData(Request $request)
+    {
+        $perPage = (int) $request->get('per_page', 20);
+        if ($perPage < 1) $perPage = 20;
+        if ($perPage > 100) $perPage = 100;
+
+        $query = DB::table('disenos_logo_pedido as dlp')
+            ->join('pedidos_procesos_prenda_detalles as ppd', 'ppd.id', '=', 'dlp.proceso_prenda_detalle_id')
+            ->join('prendas_pedido as pr', 'pr.id', '=', 'ppd.prenda_pedido_id')
+            ->join('pedidos_produccion as ped', 'ped.id', '=', 'pr.pedido_produccion_id')
+            ->select([
+                'dlp.id',
+                'dlp.url',
+                'dlp.observacio_diseño',
+                'dlp.created_at',
+                'ppd.id as proceso_prenda_detalle_id',
+                'pr.id as prenda_pedido_id',
+                'ped.id as pedido_id',
+                'ped.cliente as cliente',
+            ])
+            ->orderByDesc('dlp.created_at');
+
+        if ($request->filled('search')) {
+            $search = trim((string) $request->get('search'));
+            $query->where(function ($q) use ($search) {
+                $q->where('ped.cliente', 'like', "%{$search}%")
+                  ->orWhere('dlp.observacio_diseño', 'like', "%{$search}%")
+                  ->orWhere('dlp.url', 'like', "%{$search}%");
+            });
+        }
+
+        $items = $query->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'items' => $items,
+        ]);
     }
 
     /**

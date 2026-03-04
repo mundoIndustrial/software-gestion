@@ -51,6 +51,24 @@ export class ReceiptBuilder {
             
             // Obtener procesos para usarlos tanto en el recibo base como en los recibos de proceso
             const procesos = prenda.procesos || [];
+
+            // Extraer imágenes de logo de la prenda (solo procesos de logo)
+            const tiposLogo = new Set(['bordado', 'estampado', 'dtf', 'sublimado']);
+            const procesoEsLogo = (proc) => {
+                const tipoProcesoRaw = String(proc?.tipo_proceso || proc?.nombre_proceso || proc?.nombre || '').toLowerCase();
+                if (tiposLogo.has(tipoProcesoRaw)) return true;
+                // ids: 2 (Bordado), 3 (Estampado), 4 (DTF), 5 (Sublimado)
+                const id = proc?.tipo_proceso_id;
+                return id === 2 || id === 3 || id === 4 || id === 5;
+            };
+
+            const imagenesLogoPrenda = [];
+            procesos.forEach((proc) => {
+                if (!procesoEsLogo(proc)) return;
+                if (proc.imagenes && Array.isArray(proc.imagenes)) {
+                    imagenesLogoPrenda.push(...proc.imagenes);
+                }
+            });
             
             // Preparar imágenes para el recibo base
             let imagenesBase = [];
@@ -64,13 +82,15 @@ export class ReceiptBuilder {
             if (prenda.imagenes_tela && Array.isArray(prenda.imagenes_tela)) {
                 imagenesBase = [...imagenesBase, ...prenda.imagenes_tela];
             }
-            
-            // Agregar imágenes de todos los procesos
-            procesos.forEach((proc) => {
-                if (proc.imagenes && Array.isArray(proc.imagenes)) {
-                    imagenesBase = [...imagenesBase, ...proc.imagenes];
-                }
-            });
+
+            // Agregar imágenes de logo (si existen) - SOLO de esta prenda
+            if (imagenesLogoPrenda.length > 0) {
+                imagenesBase = [...imagenesBase, ...imagenesLogoPrenda];
+            }
+
+            // IMPORTANTE:
+            // El recibo base debe mostrar solo imágenes relacionadas a la prenda del recibo
+            // (prenda + tela). NO debe arrastrar imágenes de otros procesos.
             
             recibos.push({
                 tipo: tipoBase,
@@ -104,7 +124,7 @@ export class ReceiptBuilder {
             }
             
             if (tipoProceso) {
-                // Preparar imágenes para este proceso (prenda + tela + imágenes del proceso)
+                // Preparar imágenes para este proceso (prenda + imágenes del proceso)
                 let imagenesProceso = [];
                 
                 // Agregar imágenes de la prenda
@@ -112,19 +132,25 @@ export class ReceiptBuilder {
                     imagenesProceso = [...imagenesProceso, ...prenda.imagenes];
                 }
                 
-                // Agregar imágenes de tela
-                if (prenda.imagenes_tela && Array.isArray(prenda.imagenes_tela)) {
-                    imagenesProceso = [...imagenesProceso, ...prenda.imagenes_tela];
-                }
-                
                 // Agregar imágenes específicas del proceso
                 if (proc.imagenes && Array.isArray(proc.imagenes)) {
                     imagenesProceso = [...imagenesProceso, ...proc.imagenes];
                 }
+
+                // Deduplicar (mantener orden)
+                const seen = new Set();
+                imagenesProceso = imagenesProceso.filter((img) => {
+                    const key = typeof img === 'string' ? img : (img?.url || img?.ruta_webp || img?.ruta || img?.ruta_original || JSON.stringify(img));
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                });
                 
-                // Asegurarse de que el proceso tenga el array de imágenes completo
-                proc.imagenes = imagenesProceso;
-                recibos.push(proc);
+                // IMPORTANTE: No mutar el objeto `proc` original.
+                // Mutarlo contamina `prenda.procesos` (y por ende la galería estilo insumos),
+                // provocando mezcla de imágenes entre procesos (ej: Reflectivo mostrando Bordado).
+                const procRecibo = { ...proc, imagenes: imagenesProceso };
+                recibos.push(procRecibo);
             }
         });
         

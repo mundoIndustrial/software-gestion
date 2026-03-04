@@ -13,7 +13,7 @@ final class DisenoLogoPedidoRepository implements DisenoLogoPedidoRepositoryInte
         return DisenoLogoPedido::query()
             ->where('proceso_prenda_detalle_id', $procesoPrendaDetalleId)
             ->orderBy('id', 'asc')
-            ->get(['id', 'url']);
+            ->get(['id', 'url', 'observacio_diseño']);
     }
 
     public function contarPorProceso(int $procesoPrendaDetalleId): int
@@ -23,16 +23,18 @@ final class DisenoLogoPedidoRepository implements DisenoLogoPedidoRepositoryInte
             ->count();
     }
 
-    public function crear(int $procesoPrendaDetalleId, string $url): array
+    public function crear(int $procesoPrendaDetalleId, string $url, ?string $observacion = null): array
     {
         $row = DisenoLogoPedido::create([
             'proceso_prenda_detalle_id' => $procesoPrendaDetalleId,
             'url' => $url,
+            'observacio_diseño' => $observacion,
         ]);
 
         return [
             'id' => $row->id,
             'url' => $row->url,
+            'observacio_diseño' => $row->{'observacio_diseño'} ?? null,
         ];
     }
 

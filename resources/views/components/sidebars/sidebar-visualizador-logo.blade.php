@@ -35,9 +35,16 @@
             <ul class="menu-list" role="navigation">
                 <li class="menu-item">
                     <a href="{{ route('visualizador-logo.pedidos-logo') }}"
-                       class="menu-link">
+                       class="menu-link {{ request()->routeIs('visualizador-logo.pedidos-logo') ? 'active' : '' }}">
                         <span class="material-symbols-rounded">edit</span>
                         <span class="menu-label">Pedidos Logo</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{ route('visualizador-logo.disenos-logo') }}"
+                       class="menu-link {{ request()->routeIs('visualizador-logo.disenos-logo') ? 'active' : '' }}">
+                        <span class="material-symbols-rounded">image</span>
+                        <span class="menu-label">Diseños de logo</span>
                     </a>
                 </li>
             </ul>

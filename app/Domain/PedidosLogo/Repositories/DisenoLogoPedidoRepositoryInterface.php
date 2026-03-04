@@ -10,7 +10,7 @@ interface DisenoLogoPedidoRepositoryInterface
 
     public function contarPorProceso(int $procesoPrendaDetalleId): int;
 
-    public function crear(int $procesoPrendaDetalleId, string $url): array;
+    public function crear(int $procesoPrendaDetalleId, string $url, ?string $observacion = null): array;
 
     public function findById(int $id): ?object;
 

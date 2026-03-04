@@ -291,7 +291,7 @@ export class Formatters {
                 // Crear layout en columnas para ubicaciones y observaciones
                 let ubicacionesHTML = '';
                 if (ubicacionesArray && ubicacionesArray.length > 0) {
-                    ubicacionesHTML = '<strong>UBICACIONES:</strong><br>';
+                    ubicacionesHTML = '<span>UBICACIONES:</span><br>';
                     ubicacionesArray.forEach((ubicacion) => {
                         ubicacionesHTML += `• ${String(ubicacion).toUpperCase()}<br>`;
                     });
@@ -504,7 +504,7 @@ export class Formatters {
         
         if (ubicacionesArray && ubicacionesArray.length > 0) {
             lineas.push('');
-            lineas.push('<strong>UBICACIONES:</strong>');
+            lineas.push('<span>UBICACIONES:</span>');
             ubicacionesArray.forEach((ubicacion) => {
                 lineas.push(`• ${String(ubicacion).toUpperCase()}`);
             });

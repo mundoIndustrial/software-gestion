@@ -104,7 +104,10 @@ export class GalleryManager {
             if (!modalWrapper) return false;
 
             const esVistaVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/pedidos-logo');
-            const puedeAdjuntarDisenoLogo = esVistaVisualizadorLogo && window.__isDisenadorLogosRole === true;
+            const puedeAdjuntarDisenoLogo = esVistaVisualizadorLogo && (
+                window.__isDisenadorLogosRole === true ||
+                window.__isVisualizadorCotizacionesLogoRole === true
+            );
             if (puedeAdjuntarDisenoLogo) {
                 GalleryManager._aplicarTamanioGaleria(modalWrapper);
             }
@@ -178,6 +181,8 @@ export class GalleryManager {
                 this._renderizarGaleria(galeria, fotosParaMostrar, puedeAdjuntarDisenoLogo, {
                     pedidoId,
                     procesoPrendaDetalleId,
+                    prendaPedidoId,
+                    prendaData,
                     datosCompletos: state.datosCompletos
                 });
             }
@@ -196,7 +201,10 @@ export class GalleryManager {
         const esVistaVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/pedidos-logo');
         const puedeGestionarDisenoLogo = (typeof puedeAdjuntarDisenoLogo === 'boolean')
             ? puedeAdjuntarDisenoLogo
-            : (esVistaVisualizadorLogo && window.__isDisenadorLogosRole === true);
+            : (esVistaVisualizadorLogo && (
+                window.__isDisenadorLogosRole === true ||
+                window.__isVisualizadorCotizacionesLogoRole === true
+            ));
 
         const puedeVerDisenoLogo = esVistaVisualizadorLogo && (
             window.__isDisenadorLogosRole === true ||
@@ -219,7 +227,7 @@ export class GalleryManager {
         // Intentar renderizar estilo insumos (por prendas categorizadas)
         const datosCompletos = uploadCtx?.datosCompletos;
         if (datosCompletos && datosCompletos.prendas && datosCompletos.prendas.length > 0) {
-            html += this._construirGaleriaEstiloInsumos(datosCompletos);
+            html += this._construirGaleriaEstiloInsumos(datosCompletos, uploadCtx);
         } else if (fotos.length > 0) {
             html += this._construirGridImagenes(fotos);
         } else {
@@ -238,14 +246,11 @@ export class GalleryManager {
                 <div style="margin-top: 18px; padding: 14px; border: 1px solid #e5e7eb; border-radius: 12px; background: #f8fafc;">
                     <div style="font-weight: 800; color: #111827; font-size: 0.9rem; margin-bottom: 10px;">${titulo}</div>
                     ${esSoloLecturaDisenoLogo ? '' : `
-                    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                        <input id="logo-design-upload-input" type="file" accept="image/*" multiple style="flex: 1; min-width: 240px;" />
-                        <div id="logo-design-upload-hint" style="font-size: 0.85rem; color: #475569;">Máximo 3 imágenes</div>
-                    </div>
-                    <div style="margin-top: 10px; display: flex; align-items: center; justify-content: flex-end;">
-                        <button id="logo-design-upload-save" type="button" style="padding: 10px 14px; border-radius: 10px; border: none; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; font-weight: 800; cursor: pointer; box-shadow: 0 2px 8px rgba(14, 165, 233, 0.18);">Guardar cambios</button>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button id="logo-design-open-modal" type="button" style="padding: 10px 14px; border-radius: 10px; border: none; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; font-weight: 900; cursor: pointer; box-shadow: 0 2px 8px rgba(14, 165, 233, 0.18);">Adjuntar diseño</button>
                     </div>
                     `}
+                    <div id="logo-design-upload-observacion-view" style="margin-top: 10px; font-size: 0.85rem; color: #111827; display:none;"></div>
                     <div id="logo-design-upload-error" style="display:none; margin-top: 8px; font-size: 0.85rem; color: #dc2626; font-weight: 700;"></div>
                     <div id="logo-design-upload-preview" style="margin-top: 12px; display: flex; flex-direction: row; gap: 10px; overflow-x: auto; overflow-y: hidden; padding-bottom: 6px; align-items: center;"></div>
                 </div>
@@ -256,10 +261,10 @@ export class GalleryManager {
         galeria.innerHTML = html;
 
         if (puedeVerDisenoLogo) {
-            const input = galeria.querySelector('#logo-design-upload-input');
+            const btnOpenModal = galeria.querySelector('#logo-design-open-modal');
+            const obsView = galeria.querySelector('#logo-design-upload-observacion-view');
             const preview = galeria.querySelector('#logo-design-upload-preview');
             const error = galeria.querySelector('#logo-design-upload-error');
-            const btnSave = galeria.querySelector('#logo-design-upload-save');
             const modoSoloLectura = esSoloLecturaDisenoLogo;
             if (preview && error) {
                 const pedidoId = uploadCtx?.pedidoId;
@@ -325,6 +330,8 @@ export class GalleryManager {
                     const form = new FormData();
                     form.append('pedido_id', String(pedidoId));
                     form.append('proceso_prenda_detalle_id', String(procesoPrendaDetalleId));
+                    const obs = (typeof window.__logoDesignObs === 'string') ? window.__logoDesignObs.trim() : '';
+                    if (obs) form.append('observacio_diseño', obs);
                     files.forEach((f) => form.append('images[]', f));
 
                     const response = await fetch('/visualizador-logo/pedidos-logo/disenos', {
@@ -347,23 +354,14 @@ export class GalleryManager {
                 const syncInputState = () => {
                     const nuevos = Array.isArray(window.__logoDesignFiles) ? window.__logoDesignFiles : [];
                     const guardados = Array.isArray(window.__logoDesignSaved) ? window.__logoDesignSaved : [];
-                    const toDelete = window.__logoDesignToDelete instanceof Set ? window.__logoDesignToDelete : new Set();
 
-                    const guardadosActivos = guardados.filter((it) => !toDelete.has(String(it.id)));
-                    const totalSeleccionado = guardadosActivos.length + nuevos.length;
+                    const totalSeleccionado = guardados.length + nuevos.length;
 
                     const noHaySlots = totalSeleccionado >= 3;
-                    if (input) {
-                        input.disabled = noHaySlots || modoSoloLectura;
-                        input.style.opacity = (noHaySlots || modoSoloLectura) ? '0.6' : '1';
-                        input.style.cursor = (noHaySlots || modoSoloLectura) ? 'not-allowed' : 'pointer';
-                    }
-
-                    if (btnSave) {
-                        const hasChanges = !modoSoloLectura && (nuevos.length > 0 || toDelete.size > 0);
-                        btnSave.disabled = !hasChanges;
-                        btnSave.style.opacity = hasChanges ? '1' : '0.6';
-                        btnSave.style.cursor = hasChanges ? 'pointer' : 'not-allowed';
+                    if (btnOpenModal) {
+                        btnOpenModal.disabled = noHaySlots || modoSoloLectura;
+                        btnOpenModal.style.opacity = (noHaySlots || modoSoloLectura) ? '0.6' : '1';
+                        btnOpenModal.style.cursor = (noHaySlots || modoSoloLectura) ? 'not-allowed' : 'pointer';
                     }
 
                     if (noHaySlots && error.textContent === '') {
@@ -379,9 +377,18 @@ export class GalleryManager {
 
                 const renderPreview = () => {
                     const guardados = Array.isArray(window.__logoDesignSaved) ? window.__logoDesignSaved : [];
-                    const toDelete = window.__logoDesignToDelete instanceof Set ? window.__logoDesignToDelete : new Set();
-                    const selected = Array.isArray(window.__logoDesignFiles) ? window.__logoDesignFiles : [];
                     preview.innerHTML = '';
+
+                    if (obsView) {
+                        const obs = guardados.map((it) => it?.observacio_diseño).find((t) => typeof t === 'string' && t.trim() !== '');
+                        if (typeof obs === 'string' && obs.trim() !== '') {
+                            obsView.innerHTML = `<span style="font-weight: 800;">Observaciones:</span> <span style="font-weight: 400;">${obs.trim()}</span>`;
+                            obsView.style.display = 'block';
+                        } else {
+                            obsView.textContent = '';
+                            obsView.style.display = 'none';
+                        }
+                    }
 
                     const abrirFullscreen = (url) => {
                         const fotosJSON = JSON.stringify([url]);
@@ -396,114 +403,97 @@ export class GalleryManager {
                     };
 
                     // Render: guardados primero
-                    guardados.forEach((item) => {
-                        const itemId = String(item.id);
-                        const marcado = !modoSoloLectura && toDelete.has(itemId);
+                    const list = document.createElement('div');
+                    list.style.cssText = 'display:flex; flex-direction: column; gap: 10px; width: 100%;';
 
-                        const wrap = document.createElement('div');
-                        wrap.style.cssText = 'position: relative; width: 96px; height: 96px; flex: 0 0 auto; border: 2px solid #e5e7eb; border-radius: 10px; overflow: hidden; background: white; display:flex; align-items:center; justify-content:center;';
-                        if (marcado) {
-                            wrap.style.opacity = '0.45';
-                            wrap.style.borderColor = '#dc2626';
-                        }
+                    guardados.forEach((item) => {
+                        const row = document.createElement('div');
+                        row.style.cssText = 'display:flex; align-items:center; gap: 10px; padding: 10px; border: 1px solid #e5e7eb; border-radius: 12px; background: white;';
+
+                        const thumbWrap = document.createElement('div');
+                        thumbWrap.style.cssText = 'width: 72px; height: 72px; border-radius: 10px; overflow:hidden; border: 1px solid #e5e7eb; flex: 0 0 auto; cursor: pointer; background: #f8fafc; display:flex; align-items:center; justify-content:center;';
 
                         const img = document.createElement('img');
                         img.src = item.url;
                         img.alt = `Diseño ${item.id}`;
                         img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display:block;';
-
-                        // Doble click para ver en fullscreen
-                        img.addEventListener('dblclick', (e) => {
+                        img.addEventListener('click', (e) => {
                             e.preventDefault();
                             e.stopPropagation();
                             abrirFullscreen(item.url);
                         });
+                        thumbWrap.appendChild(img);
+
+                        const text = document.createElement('div');
+                        text.style.cssText = 'flex: 1; display:flex; flex-direction: column; gap: 4px; min-width: 0;';
+
+                        const title = document.createElement('div');
+                        title.style.cssText = 'font-weight: 900; color: #111827; font-size: 0.85rem;';
+                        title.textContent = `Diseño #${item.id}`;
+
+                        const obs = document.createElement('div');
+                        obs.style.cssText = 'font-size: 0.82rem; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+                        const obsTxt = (typeof item?.observacio_diseño === 'string' && item.observacio_diseño.trim() !== '')
+                            ? item.observacio_diseño.trim()
+                            : 'Sin observación';
+                        obs.textContent = obsTxt;
+
+                        text.appendChild(title);
+                        text.appendChild(obs);
+
+                        row.appendChild(thumbWrap);
+                        row.appendChild(text);
 
                         if (!modoSoloLectura) {
-                            const btnRemove = document.createElement('button');
-                            btnRemove.type = 'button';
-                            btnRemove.textContent = '×';
-                            btnRemove.title = marcado ? 'Deshacer eliminación' : 'Eliminar';
-                            btnRemove.style.cssText = 'position:absolute; top:6px; right:6px; width:22px; height:22px; border-radius:999px; border:none; background: rgba(220,38,38,0.95); color:white; font-weight:900; line-height:22px; text-align:center; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.25);';
-                            btnRemove.addEventListener('click', (e) => {
+                            const btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.textContent = 'Eliminar';
+                            btn.style.cssText = 'padding: 8px 10px; border-radius: 10px; border: none; background: #dc2626; color: white; font-weight: 900; cursor: pointer; flex: 0 0 auto;';
+                            btn.addEventListener('click', async (e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                const set = window.__logoDesignToDelete instanceof Set ? window.__logoDesignToDelete : new Set();
-                                if (set.has(itemId)) {
-                                    set.delete(itemId);
-                                } else {
-                                    set.add(itemId);
+                                btn.disabled = true;
+                                btn.style.opacity = '0.6';
+                                btn.style.cursor = 'not-allowed';
+                                try {
+                                    await eliminarDiseno(item.id);
+                                    const refreshed = await fetchExistentes();
+                                    window.__logoDesignSaved = refreshed;
+                                    renderPreview();
+                                    syncInputState();
+                                } catch (err) {
+                                    error.textContent = err?.message || 'Error al eliminar diseño.';
+                                    error.style.color = '#dc2626';
+                                    error.style.display = 'block';
+                                    btn.disabled = false;
+                                    btn.style.opacity = '1';
+                                    btn.style.cursor = 'pointer';
                                 }
-                                window.__logoDesignToDelete = set;
-                                renderPreview();
-                                syncInputState();
                             });
-                            wrap.appendChild(btnRemove);
+                            row.appendChild(btn);
                         }
 
-                        wrap.appendChild(img);
-                        preview.appendChild(wrap);
+                        list.appendChild(row);
                     });
 
-                    selected.forEach((file, idx) => {
-                        const url = URL.createObjectURL(file);
-                        const item = document.createElement('div');
-                        item.style.cssText = 'position: relative; width: 96px; height: 96px; flex: 0 0 auto; border: 2px solid #e5e7eb; border-radius: 10px; overflow: hidden; background: white; display:flex; align-items:center; justify-content:center;';
-
-                        const img = document.createElement('img');
-                        img.src = url;
-                        img.alt = file.name;
-                        img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display:block;';
-
-                        // Doble click para ver en fullscreen
-                        img.addEventListener('dblclick', (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            abrirFullscreen(url);
-                        });
-
-                        const btnRemove = document.createElement('button');
-                        btnRemove.type = 'button';
-                        btnRemove.textContent = '×';
-                        btnRemove.style.cssText = 'position:absolute; top:6px; right:6px; width:22px; height:22px; border-radius:999px; border:none; background: rgba(220,38,38,0.95); color:white; font-weight:900; line-height:22px; text-align:center; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.25);';
-                        btnRemove.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            const current = Array.isArray(window.__logoDesignFiles) ? window.__logoDesignFiles : [];
-                            window.__logoDesignFiles = current.filter((_, i) => i !== idx);
-                            renderPreview();
-                            syncInputState();
-                        });
-
-                        item.appendChild(img);
-                        item.appendChild(btnRemove);
-                        preview.appendChild(item);
-                    });
+                    preview.appendChild(list);
                 };
 
-                if (input && !modoSoloLectura) input.addEventListener('change', () => {
-                    const files = Array.from(input.files || []);
-                    error.style.display = 'none';
-                    error.textContent = '';
-
-                    const current = Array.isArray(window.__logoDesignFiles) ? window.__logoDesignFiles : [];
+                const agregarArchivos = (files, currentFiles = []) => {
+                    const list = Array.isArray(files) ? files : [];
+                    const current = Array.isArray(currentFiles) ? currentFiles : [];
                     const guardados = Array.isArray(window.__logoDesignSaved) ? window.__logoDesignSaved : [];
-                    const toDelete = window.__logoDesignToDelete instanceof Set ? window.__logoDesignToDelete : new Set();
-                    const guardadosActivos = guardados.filter((it) => !toDelete.has(String(it.id)));
-                    const remainingSlots = Math.max(0, 3 - (guardadosActivos.length + current.length));
+                    const remainingSlots = Math.max(0, 3 - (guardados.length + current.length));
                     if (remainingSlots === 0) {
-                        syncInputState();
-                        input.value = '';
-                        return;
+                        return current;
                     }
 
-                    const toAdd = files.slice(0, remainingSlots);
-                    if (files.length > remainingSlots) {
+                    const toAdd = list.slice(0, remainingSlots);
+                    if (list.length > remainingSlots) {
                         error.textContent = 'Solo puedes adjuntar máximo 3 imágenes.';
                         error.style.display = 'block';
                     }
 
-                    // Acumular sin duplicados (por fingerprint básico)
                     const fingerprint = (f) => `${f.name}__${f.size}__${f.lastModified}`;
                     const currentMap = new Set(current.map(fingerprint));
                     const merged = [...current];
@@ -515,78 +505,297 @@ export class GalleryManager {
                         }
                     });
 
-                    window.__logoDesignFiles = merged;
-                    renderPreview();
-                    syncInputState();
+                    return merged;
+                };
 
-                    // Permite seleccionar la misma imagen de nuevo (si se eliminó) y dispara change
-                    input.value = '';
-                });
+                const guardarCambios = async (btnGuardar, btnCancelar, inputFile) => {
+                    const current = Array.isArray(window.__logoDesignFiles) ? window.__logoDesignFiles : [];
+                    if (current.length === 0) return;
 
-                if (btnSave && !modoSoloLectura) {
-                    btnSave.addEventListener('click', async () => {
-                        const current = Array.isArray(window.__logoDesignFiles) ? window.__logoDesignFiles : [];
-                        const toDelete = window.__logoDesignToDelete instanceof Set ? window.__logoDesignToDelete : new Set();
-                        if (current.length === 0 && toDelete.size === 0) return;
+                    error.style.display = 'none';
+                    error.textContent = '';
 
-                        error.style.display = 'none';
-                        error.textContent = '';
+                    const prevSaveDisabled = btnGuardar ? btnGuardar.disabled : false;
+                    if (btnGuardar) {
+                        btnGuardar.disabled = true;
+                        btnGuardar.style.opacity = '0.6';
+                        btnGuardar.style.cursor = 'not-allowed';
+                    }
+                    if (btnCancelar) {
+                        btnCancelar.disabled = true;
+                        btnCancelar.style.opacity = '0.6';
+                        btnCancelar.style.cursor = 'not-allowed';
+                    }
+                    if (inputFile) {
+                        inputFile.disabled = true;
+                        inputFile.style.opacity = '0.6';
+                        inputFile.style.cursor = 'not-allowed';
+                    }
 
-                        const prevSaveDisabled = btnSave.disabled;
-                        btnSave.disabled = true;
-                        btnSave.style.opacity = '0.6';
-                        btnSave.style.cursor = 'not-allowed';
-                        input.disabled = true;
-                        input.style.opacity = '0.6';
-                        input.style.cursor = 'not-allowed';
+                    try {
+                        const refreshed = await fetchExistentes();
+                        window.__logoDesignSaved = refreshed;
 
-                        try {
-                            // 1) aplicar eliminaciones
-                            const ids = Array.from(toDelete);
-                            for (const id of ids) {
-                                await eliminarDiseno(id);
-                            }
-
-                            // 2) refrescar guardados (para recalcular slots)
-                            const refreshed = await fetchExistentes();
-                            window.__logoDesignSaved = refreshed;
-                            window.__logoDesignToDelete = new Set();
-
-                            // 3) subir nuevos si existen
-                            const slots = Math.max(0, 3 - refreshed.length);
-                            const filesToUpload = current.slice(0, slots);
-                            if (filesToUpload.length > 0) {
-                                await subirDisenos(filesToUpload);
-                            }
-
-                            // 4) refrescar de nuevo para mostrar lo que quedó guardado
-                            const finalList = await fetchExistentes();
-                            window.__logoDesignSaved = finalList;
-                            window.__logoDesignFiles = [];
-                            window.__logoDesignToDelete = new Set();
-                            renderPreview();
-                            syncInputState();
-                            error.textContent = 'Guardado correctamente.';
-                            error.style.color = '#16a34a';
-                            error.style.display = 'block';
-                            setTimeout(() => {
-                                if (error.textContent === 'Guardado correctamente.') {
-                                    error.textContent = '';
-                                    error.style.display = 'none';
-                                    error.style.color = '#dc2626';
-                                }
-                            }, 1800);
-                        } catch (err) {
-                            error.textContent = err?.message || 'Error al guardar diseños.';
-                            error.style.color = '#dc2626';
-                            error.style.display = 'block';
-                            btnSave.disabled = prevSaveDisabled;
-                            btnSave.style.opacity = prevSaveDisabled ? '0.6' : '1';
-                            btnSave.style.cursor = prevSaveDisabled ? 'not-allowed' : 'pointer';
-                        } finally {
-                            syncInputState();
+                        const slots = Math.max(0, 3 - refreshed.length);
+                        const filesToUpload = current.slice(0, slots);
+                        if (filesToUpload.length > 0) {
+                            await subirDisenos(filesToUpload);
                         }
+
+                        const finalList = await fetchExistentes();
+                        window.__logoDesignSaved = finalList;
+                        window.__logoDesignFiles = [];
+                        renderPreview();
+                        syncInputState();
+                        error.textContent = 'Guardado correctamente.';
+                        error.style.color = '#16a34a';
+                        error.style.display = 'block';
+                        setTimeout(() => {
+                            if (error.textContent === 'Guardado correctamente.') {
+                                error.textContent = '';
+                                error.style.display = 'none';
+                                error.style.color = '#dc2626';
+                            }
+                        }, 1800);
+
+                        const overlay = document.getElementById('logo-design-modal-overlay');
+                        if (overlay) overlay.remove();
+                        window.__logoDesignObs = '';
+                    } catch (err) {
+                        error.textContent = err?.message || 'Error al guardar diseños.';
+                        error.style.color = '#dc2626';
+                        error.style.display = 'block';
+                        if (btnGuardar) {
+                            btnGuardar.disabled = prevSaveDisabled;
+                            btnGuardar.style.opacity = prevSaveDisabled ? '0.6' : '1';
+                            btnGuardar.style.cursor = prevSaveDisabled ? 'not-allowed' : 'pointer';
+                        }
+                        if (btnCancelar) {
+                            btnCancelar.disabled = false;
+                            btnCancelar.style.opacity = '1';
+                            btnCancelar.style.cursor = 'pointer';
+                        }
+                        if (inputFile) {
+                            inputFile.disabled = false;
+                            inputFile.style.opacity = '1';
+                            inputFile.style.cursor = 'pointer';
+                        }
+                    } finally {
+                        syncInputState();
+                    }
+                };
+
+                const abrirModalAdjuntar = () => {
+                    if (modoSoloLectura) return;
+                    const existing = document.getElementById('logo-design-modal-overlay');
+                    if (existing) existing.remove();
+
+                    let modalFiles = [];
+
+                    const overlay = document.createElement('div');
+                    overlay.id = 'logo-design-modal-overlay';
+                    overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999999; display:flex; align-items:center; justify-content:center; padding: 16px;';
+
+                    const modal = document.createElement('div');
+                    modal.style.cssText = 'width: 520px; max-width: 100%; background: white; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); overflow: hidden;';
+
+                    modal.innerHTML = `
+                        <div style="padding: 14px 14px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; font-weight: 900; letter-spacing: 0.5px; display:flex; justify-content: space-between; align-items:center;">
+                            <div>ADJUNTAR DISEÑO</div>
+                            <button id="logo-design-modal-close" type="button" style="border:none; background: rgba(255,255,255,0.18); color:white; font-weight:900; width:34px; height:34px; border-radius: 10px; cursor:pointer;">×</button>
+                        </div>
+                        <div style="padding: 14px; display:flex; flex-direction: column; gap: 10px;">
+                            <div id="logo-design-dropzone" tabindex="0" style="border: 2px dashed #cbd5e1; border-radius: 12px; padding: 14px; background: #f8fafc; outline: none;">
+                                <div style="font-weight: 900; color: #0f172a; margin-bottom: 6px;">Pega (Ctrl+V) o arrastra aquí la imagen</div>
+                                <div style="font-size: 0.85rem; color: #475569;">También puedes seleccionarla desde tu equipo</div>
+                                <div id="logo-design-dropzone-indicator" style="display:none; margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: #dbeafe; color: #1d4ed8; font-weight: 900; text-align: center;">Suelta para adjuntar</div>
+                                <div style="margin-top: 10px; display:flex; gap: 10px; align-items:center; flex-wrap: wrap;">
+                                    <input id="logo-design-modal-file" type="file" accept="image/*" multiple style="flex:1; min-width: 240px;" />
+                                    <div style="font-size: 0.85rem; color: #475569;">Máximo 3 imágenes</div>
+                                </div>
+                            </div>
+                            <div style="display:flex; flex-direction: column; gap: 6px;">
+                                <label for="logo-design-modal-obs" style="font-size: 0.85rem; color: #111827; font-weight: 900;">Observaciones</label>
+                                <textarea id="logo-design-modal-obs" rows="2" maxlength="200" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #e5e7eb; font-size: 0.9rem; resize: vertical; background: white;" placeholder="Escribe una observación (máx 200 caracteres)"></textarea>
+                            </div>
+                            <div style="display:flex; gap: 10px; justify-content: flex-end;">
+                                <button id="logo-design-modal-cancel" type="button" style="padding: 10px 14px; border-radius: 10px; border: 1px solid #e5e7eb; background: #ffffff; color:#111827; font-weight: 900; cursor:pointer;">Cancelar</button>
+                                <button id="logo-design-modal-save" type="button" style="padding: 10px 14px; border-radius: 10px; border: none; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; font-weight: 900; cursor: pointer;">Guardar cambios</button>
+                            </div>
+                        </div>
+                    `;
+
+                    overlay.appendChild(modal);
+                    document.body.appendChild(overlay);
+
+                    const btnClose = overlay.querySelector('#logo-design-modal-close');
+                    const btnCancel = overlay.querySelector('#logo-design-modal-cancel');
+                    const btnSave = overlay.querySelector('#logo-design-modal-save');
+                    const inputFile = overlay.querySelector('#logo-design-modal-file');
+                    const inputObs = overlay.querySelector('#logo-design-modal-obs');
+                    const dropzone = overlay.querySelector('#logo-design-dropzone');
+                    const indicator = overlay.querySelector('#logo-design-dropzone-indicator');
+
+                    const extraerImagenesClipboard = (clipboardEvent) => {
+                        const items = clipboardEvent?.clipboardData?.items;
+                        if (!items) return [];
+                        const pasted = [];
+                        for (const it of items) {
+                            if (it && it.type && it.type.startsWith('image/')) {
+                                const f = it.getAsFile();
+                                if (f) pasted.push(f);
+                            }
+                        }
+                        return pasted;
+                    };
+
+                    const renderModalPreview = () => {
+                        if (!dropzone) return;
+                        const prev = dropzone.querySelector('#logo-design-modal-preview');
+                        if (prev) prev.remove();
+
+                        const wrap = document.createElement('div');
+                        wrap.id = 'logo-design-modal-preview';
+                        wrap.style.cssText = 'margin-top: 10px; display:flex; gap: 10px; overflow-x:auto; padding-bottom: 6px;';
+
+                        modalFiles.forEach((file, idx) => {
+                            const url = URL.createObjectURL(file);
+                            const item = document.createElement('div');
+                            item.style.cssText = 'position: relative; width: 88px; height: 88px; flex: 0 0 auto; border: 2px solid #e5e7eb; border-radius: 10px; overflow: hidden; background: white; display:flex; align-items:center; justify-content:center;';
+
+                            const img = document.createElement('img');
+                            img.src = url;
+                            img.alt = file.name;
+                            img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display:block;';
+                            img.addEventListener('dblclick', (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const fotosJSON = JSON.stringify([url]);
+                                if (typeof window.abrirModalImagenProcesoGrande === 'function') {
+                                    window.abrirModalImagenProcesoGrande(0, fotosJSON);
+                                } else if (typeof GalleryManager.abrirModalImagenProcesoGrande === 'function') {
+                                    GalleryManager.abrirModalImagenProcesoGrande(0, fotosJSON);
+                                }
+                            });
+
+                            const btnRemove = document.createElement('button');
+                            btnRemove.type = 'button';
+                            btnRemove.textContent = '×';
+                            btnRemove.style.cssText = 'position:absolute; top:6px; right:6px; width:22px; height:22px; border-radius:999px; border:none; background: rgba(220,38,38,0.95); color:white; font-weight:900; line-height:22px; text-align:center; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.25);';
+                            btnRemove.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                modalFiles = modalFiles.filter((_, i) => i !== idx);
+                                renderModalPreview();
+                            });
+
+                            item.appendChild(img);
+                            item.appendChild(btnRemove);
+                            wrap.appendChild(item);
+                        });
+
+                        dropzone.appendChild(wrap);
+                    };
+
+                    const cerrar = () => {
+                        const ov = document.getElementById('logo-design-modal-overlay');
+                        if (ov) ov.remove();
+                        window.__logoDesignObs = '';
+
+                        if (window.__logoDesignOnPasteGlobal) {
+                            document.removeEventListener('paste', window.__logoDesignOnPasteGlobal);
+                            window.__logoDesignOnPasteGlobal = null;
+                        }
+                    };
+
+                    if (btnClose) btnClose.addEventListener('click', cerrar);
+                    if (btnCancel) btnCancel.addEventListener('click', cerrar);
+                    overlay.addEventListener('click', (e) => {
+                        if (e.target === overlay) cerrar();
                     });
+
+                    if (inputObs) {
+                        inputObs.value = (typeof window.__logoDesignObs === 'string') ? window.__logoDesignObs : '';
+                        inputObs.addEventListener('input', () => {
+                            window.__logoDesignObs = inputObs.value;
+                        });
+                    }
+
+                    const onFiles = (files) => {
+                        const list = Array.from(files || []).filter((f) => f && f.type && f.type.startsWith('image/'));
+                        if (list.length === 0) return;
+                        const before = Array.isArray(modalFiles) ? modalFiles : [];
+                        modalFiles = agregarArchivos(list, before);
+                        renderModalPreview();
+                    };
+
+                    if (inputFile) {
+                        inputFile.addEventListener('change', () => {
+                            onFiles(inputFile.files);
+                            inputFile.value = '';
+                        });
+                    }
+
+                    if (dropzone) {
+                        if (indicator) indicator.style.display = 'none';
+                        dropzone.addEventListener('dragover', (e) => {
+                            e.preventDefault();
+                            dropzone.style.borderColor = '#2563eb';
+                            dropzone.style.background = '#eff6ff';
+                            if (indicator) indicator.style.display = 'block';
+                        });
+                        dropzone.addEventListener('dragleave', (e) => {
+                            e.preventDefault();
+                            dropzone.style.borderColor = '#cbd5e1';
+                            dropzone.style.background = '#f8fafc';
+                            if (indicator) indicator.style.display = 'none';
+                        });
+                        dropzone.addEventListener('drop', (e) => {
+                            e.preventDefault();
+                            dropzone.style.borderColor = '#cbd5e1';
+                            dropzone.style.background = '#f8fafc';
+                            if (indicator) indicator.style.display = 'none';
+                            onFiles(e.dataTransfer?.files);
+                        });
+                        dropzone.addEventListener('paste', (e) => {
+                            const pasted = extraerImagenesClipboard(e);
+                            if (pasted.length > 0) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const before = Array.isArray(modalFiles) ? modalFiles : [];
+                                modalFiles = agregarArchivos(pasted, before);
+                                renderModalPreview();
+                            }
+                        });
+                        dropzone.focus();
+                    }
+
+                    window.__logoDesignOnPasteGlobal = (e) => {
+                        const ov = document.getElementById('logo-design-modal-overlay');
+                        if (!ov) return;
+                        if (e.defaultPrevented) return;
+                        const pasted = extraerImagenesClipboard(e);
+                        if (pasted.length === 0) return;
+                        e.preventDefault();
+                        const before = Array.isArray(modalFiles) ? modalFiles : [];
+                        modalFiles = agregarArchivos(pasted, before);
+                        renderModalPreview();
+                    };
+                    document.addEventListener('paste', window.__logoDesignOnPasteGlobal);
+
+                    if (btnSave) {
+                        btnSave.addEventListener('click', async () => {
+                            window.__logoDesignObs = (inputObs && typeof inputObs.value === 'string') ? inputObs.value.trim() : '';
+                            window.__logoDesignFiles = Array.isArray(modalFiles) ? modalFiles : [];
+                            await guardarCambios(btnSave, btnCancel, inputFile);
+                        });
+                    }
+
+                    renderModalPreview();
+                };
+
+                if (btnOpenModal && !modoSoloLectura) {
+                    btnOpenModal.addEventListener('click', abrirModalAdjuntar);
                 }
 
                 if (!Array.isArray(window.__logoDesignFiles)) {
@@ -597,6 +806,9 @@ export class GalleryManager {
                 }
                 if (!(window.__logoDesignToDelete instanceof Set)) {
                     window.__logoDesignToDelete = new Set();
+                }
+                if (typeof window.__logoDesignObs !== 'string') {
+                    window.__logoDesignObs = '';
                 }
 
                 // Cargar existentes al abrir la galería
@@ -644,13 +856,46 @@ export class GalleryManager {
     /**
      * Construye galería estilo insumos: categorizada por prenda, telas y procesos
      */
-    static _construirGaleriaEstiloInsumos(datosCompletos) {
+    static _construirGaleriaEstiloInsumos(datosCompletos, uploadCtx = {}) {
         let html = '';
         let tieneImagenes = false;
         GalleryManager._imagenesGaleria = [];
 
-        datosCompletos.prendas.forEach((prenda, prendaIndex) => {
+        const prendaPedidoIdActual = uploadCtx?.prendaPedidoId ?? uploadCtx?.prendaData?.prenda_pedido_id ?? uploadCtx?.prendaData?.id ?? null;
+        let prendas = Array.isArray(datosCompletos.prendas) ? datosCompletos.prendas : [];
+        if (prendaPedidoIdActual) {
+            const filtradas = prendas.filter((p) => String(p?.prenda_pedido_id ?? p?.id ?? '') === String(prendaPedidoIdActual));
+            if (filtradas.length > 0) {
+                prendas = filtradas;
+            }
+        }
+
+        prendas.forEach((prenda, prendaIndex) => {
             const nombrePrenda = prenda.nombre || prenda.nombre_prenda || `Prenda ${prendaIndex + 1}`;
+
+            const normalizarRuta = (img) => {
+                let url = '';
+                if (typeof img === 'string') url = img;
+                else if (img && typeof img === 'object') url = img.url || img.ruta_webp || img.ruta || img.ruta_original || '';
+                if (url && typeof url === 'string' && url.includes('/storage/storage/')) {
+                    url = url.replace('/storage/storage/', '/storage/');
+                }
+                return url;
+            };
+
+            const setImagenesBase = new Set();
+            if (Array.isArray(prenda.imagenes)) {
+                prenda.imagenes.forEach((im) => {
+                    const u = normalizarRuta(im);
+                    if (u) setImagenesBase.add(u);
+                });
+            }
+            if (Array.isArray(prenda.imagenes_tela)) {
+                prenda.imagenes_tela.forEach((im) => {
+                    const u = normalizarRuta(im);
+                    if (u) setImagenesBase.add(u);
+                });
+            }
 
             // Imágenes de la prenda
             if (prenda.imagenes && prenda.imagenes.length > 0) {
@@ -661,7 +906,7 @@ export class GalleryManager {
                         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
                 `;
                 prenda.imagenes.forEach((imagen, index) => {
-                    const rutaImg = imagen.ruta_webp || imagen.ruta_original || '';
+                    const rutaImg = normalizarRuta(imagen);
                     const globalIdx = GalleryManager._imagenesGaleria.length;
                     GalleryManager._imagenesGaleria.push(rutaImg);
                     html += GalleryManager._crearTarjetaImagen(rutaImg, nombrePrenda, `Imagen ${index + 1}`, globalIdx);
@@ -678,7 +923,7 @@ export class GalleryManager {
                         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
                 `;
                 prenda.imagenes_tela.forEach((imagen, index) => {
-                    const rutaImg = imagen.ruta_webp || imagen.ruta_original || '';
+                    const rutaImg = normalizarRuta(imagen);
                     const globalIdx = GalleryManager._imagenesGaleria.length;
                     GalleryManager._imagenesGaleria.push(rutaImg);
                     html += GalleryManager._crearTarjetaImagen(rutaImg, `Tela ${index + 1}`, 'Click para ver grande', globalIdx);
@@ -690,14 +935,28 @@ export class GalleryManager {
             if (prenda.procesos && prenda.procesos.length > 0) {
                 prenda.procesos.forEach(proceso => {
                     if (proceso.imagenes && proceso.imagenes.length > 0) {
+                        const seen = new Set();
+                        const imagenesProceso = proceso.imagenes
+                            .map((im) => normalizarRuta(im))
+                            .filter((u) => {
+                                if (!u) return false;
+                                if (setImagenesBase.has(u)) return false;
+                                if (seen.has(u)) return false;
+                                seen.add(u);
+                                return true;
+                            });
+
+                        if (imagenesProceso.length === 0) {
+                            return;
+                        }
+
                         tieneImagenes = true;
                         html += `
                             <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
                                 <h3 style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 600; color: #1f2937;">${nombrePrenda} - ${proceso.tipo_proceso}</h3>
                                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
                         `;
-                        proceso.imagenes.forEach((imagen, index) => {
-                            const rutaImg = imagen.ruta_webp || imagen.ruta_original || '';
+                        imagenesProceso.forEach((rutaImg, index) => {
                             const globalIdx = GalleryManager._imagenesGaleria.length;
                             GalleryManager._imagenesGaleria.push(rutaImg);
                             html += GalleryManager._crearTarjetaImagen(rutaImg, proceso.tipo_proceso, 'Click para ver grande', globalIdx);

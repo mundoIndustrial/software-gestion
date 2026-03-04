@@ -12,6 +12,7 @@ class DisenoLogoPedido extends Model
     protected $fillable = [
         'proceso_prenda_detalle_id',
         'url',
+        'observacio_diseño',
     ];
 
     public function proceso(): BelongsTo
