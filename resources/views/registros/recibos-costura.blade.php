@@ -1643,11 +1643,190 @@ if (document.readyState === 'loading') {
         cargarConteoRecibosCorte();
         setupCosturaNotifications();
         setInterval(cargarConteoRecibosCorte, 30000);
+        
+        // 🔴 LISTENER EN TIEMPO REAL PARA RECIBOS APROBADOS
+        initializeReciboAprobadoListener();
     });
 } else {
     cargarConteoRecibosCorte();
     setupCosturaNotifications();
     setInterval(cargarConteoRecibosCorte, 30000);
+    
+    // 🔴 LISTENER EN TIEMPO REAL PARA RECIBOS APROBADOS
+    initializeReciboAprobadoListener();
 }
+
+/**
+ * 🔴 LISTENER EN TIEMPO REAL - Escucha cuando se aprueban insumos
+ * Se conecta al evento 'recibo.aprobado' del canal 'recibos-costura'
+ */
+function initializeReciboAprobadoListener() {
+    console.log('🔴 [ReciboAprobado] Inicializando listener en tiempo real...');
+    
+    // Esperar a que Echo esté listo
+    window.waitForEcho(function() {
+        try {
+            console.log('🔴 [ReciboAprobado] Echo está listo, conectando al canal...');
+            
+            // Conectar al canal y escuchar el evento
+            window.EchoInstance.channel('recibos-costura')
+                .listen('recibo.aprobado', function(data) {
+                    console.log('🔴 [ReciboAprobado] ¡Evento recibido en tiempo real!', data);
+                    
+                    // Mostrar notificación visual
+                    showRecibAprobadoNotification(data);
+                    
+                    // Recargar la tabla dinámicamente
+                    recargarTablaRecibosEnTiempoReal(data);
+                    
+                    // Reproducir sonido de notificación (opcional)
+                    playNotificationSound();
+                });
+            
+            console.log('✅ [ReciboAprobado] Listener configurado correctamente');
+            
+        } catch (error) {
+            console.error('❌ [ReciboAprobado] Error al configurar el listener:', error);
+        }
+    });
+}
+
+/**
+ * 🔴 Mostrar notificación visual cuando se aprueba un recibo
+ */
+function showRecibAprobadoNotification(data) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 16px 24px;
+        border-radius: 8px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        z-index: 10000001;
+        font-weight: 600;
+        animation: slideInRight 0.3s ease-out;
+        max-width: 400px;
+        word-wrap: break-word;
+    `;
+    
+    // Crear contenido con datos del recibo
+    const contenido = `
+        <div style="margin-bottom: 8px;">
+            ✅ <strong>Recibo Aprobado</strong>
+        </div>
+        <div style="font-size: 13px; opacity: 0.9;">
+            <div>📋 Recibo #${data.consecutivo}</div>
+            <div>👤 Cliente: ${data.cliente || 'N/A'}</div>
+            <div>📦 Área: ${data.area || 'N/A'}</div>
+        </div>
+    `;
+    
+    notification.innerHTML = contenido;
+    document.body.appendChild(notification);
+    
+    // Agregar animación CSS si no existe
+    if (!document.getElementById('slideInRightStyle')) {
+        const style = document.createElement('style');
+        style.id = 'slideInRightStyle';
+        style.textContent = `
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Eliminar la notificación después de 5 segundos
+    setTimeout(function() {
+        notification.style.animation = 'slideInRight 0.3s ease-out reverse';
+        setTimeout(function() {
+            notification.remove();
+        }, 300);
+    }, 5000);
+}
+
+/**
+ * 🔴 Recargar la tabla dinámicamente cuando se aprueba un recibo
+ */
+function recargarTablaRecibosEnTiempoReal(data) {
+    console.log('🔴 [ReciboAprobado] Recargando tabla en tiempo real...');
+    
+    try {
+        // Hacer solicitud AJAX para obtener los recibos actualizados
+        fetch(window.location.pathname + '?ajax=1', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.recibos && result.recibos.html) {
+                console.log('🔴 [ReciboAprobado] HTML recibido, actualizando tabla...');
+                
+                // Actualizar solo el tbody
+                const tbody = document.getElementById('tablaRecibosBody');
+                if (tbody) {
+                    tbody.innerHTML = result.recibos.html;
+                    console.log('✅ [ReciboAprobado] Tabla actualizada correctamente');
+                    
+                    // Reinicializar event listeners en las nuevas filas
+                    reinitializeTableListeners();
+                }
+            }
+        })
+        .catch(error => {
+            console.error('❌ [ReciboAprobado] Error al recargar tabla:', error);
+            // Como fallback, recargar toda la página después de 3 segundos
+            setTimeout(() => {
+                console.log('🔄 [ReciboAprobado] Recargando página como fallback...');
+                window.location.reload();
+            }, 3000);
+        });
+        
+    } catch (error) {
+        console.error('❌ [ReciboAprobado] Error en recargarTablaRecibosEnTiempoReal:', error);
+    }
+}
+
+/**
+ * 🔴 Reproducir sonido de notificación (opcional)
+ */
+function playNotificationSound() {
+    try {
+        // Crear un sonido simple usando Web Audio API
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        // Sonido positivo (2 beeps)
+        oscillator.frequency.value = 800;
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.1);
+        
+        oscillator.frequency.value = 1000;
+        oscillator.start(audioContext.currentTime + 0.15);
+        oscillator.stop(audioContext.currentTime + 0.25);
+        
+    } catch (error) {
+        console.debug('[ReciboAprobado] No se pudo reproducir sonido (normal en algunos contextos)');
+    }
+}
+
 </script>
 @endpush

@@ -1904,6 +1904,25 @@ class InsumosController extends Controller
                 ];
             });
 
+            // Si es una solicitud AJAX, retornar JSON con HTML de la tabla
+            if ($request->ajax() || $request->wantsJson()) {
+                // Renderizar el HTML del tbody
+                $htmlTbody = view('components.recibos.recibos-costura-table-tbody', [
+                    'recibos' => $recibosConInfo,
+                    'totalCantidadGlobal' => 0
+                ])->render();
+                
+                return response()->json([
+                    'success' => true,
+                    'recibos' => [
+                        'html' => $htmlTbody,
+                        'data' => $recibosConInfo
+                    ],
+                    'total' => $recibosConInfo->count(),
+                    'total_cantidad' => 0
+                ]);
+            }
+
             return view('insumos.materiales.recibos-costura', [
                 'recibos' => $recibosConInfo,
                 'title' => 'Recibos de Costura - Insumos'

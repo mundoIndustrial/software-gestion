@@ -1583,11 +1583,20 @@ class RegistroOrdenController extends Controller
                 return $recibo;
             });
 
-            // Si es una solicitud AJAX, retornar JSON
+            // Si es una solicitud AJAX, retornar JSON con HTML de la tabla
             if ($request->ajax() || $request->wantsJson()) {
+                // Renderizar el HTML del tbody
+                $htmlTbody = view('components.recibos.recibos-costura-table-tbody', [
+                    'recibos' => $recibosConCantidad,
+                    'totalCantidadGlobal' => $totalCantidadGlobal
+                ])->render();
+                
                 return response()->json([
                     'success' => true,
-                    'recibos' => $recibosConCantidad,
+                    'recibos' => [
+                        'html' => $htmlTbody,
+                        'data' => $recibosConCantidad
+                    ],
                     'total' => $recibosConCantidad->count(),
                     'total_cantidad' => $totalCantidadGlobal,
                     'filtros_aplicados' => $filtros
