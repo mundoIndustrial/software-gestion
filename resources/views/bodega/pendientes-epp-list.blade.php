@@ -59,14 +59,13 @@
             <!-- Botón de Exportación -->
             @if($total > 0)
                 <div class="flex gap-3 mb-6">
-                    <a 
-                        href="{{ route('gestion-bodega.exportar-pendientes-epp', request()->query()) }}"
+                    <button 
+                        onclick="copyTableToClipboard(this)"
                         class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors inline-flex items-center gap-2"
-                        download
                     >
-                        <span class="material-symbols-rounded text-sm">download</span>
-                        Exportar a Excel
-                    </a>
+                        <span class="material-symbols-rounded text-sm">content_copy</span>
+                        Copiar a Portapapeles
+                    </button>
                 </div>
             @endif
 
@@ -198,6 +197,112 @@
 </div>
 
 <script>
+// Copiar tabla al portapapeles
+function copyTableToClipboard(button) {
+    const table = document.querySelector('table');
+    if (!table) return;
+
+    let tsvData = '';
+    
+    // Obtener encabezados
+    const headers = [];
+    table.querySelectorAll('thead th').forEach(th => {
+        headers.push(th.textContent.trim());
+    });
+    tsvData += headers.join('\t') + '\n';
+    
+    // Procesar filas y manejar rowspans
+    const rows = table.querySelectorAll('tbody tr');
+    const rowspanValues = {}; // {columnIndex: {value, remainingRows}}
+    
+    rows.forEach((tr, trIndex) => {
+        const cells = [];
+        let cellIndex = 0;
+        
+        // Primero, agregar valores de rowspans activos
+        for (let col = 0; col < headers.length; col++) {
+            if (rowspanValues[col] && rowspanValues[col].remainingRows > 0) {
+                cells[col] = rowspanValues[col].value;
+                rowspanValues[col].remainingRows--;
+            }
+        }
+        
+        // Luego, procesar las celdas reales de esta fila
+        const tds = tr.querySelectorAll('td');
+        let tdIndex = 0;
+        
+        for (let logicalCol = 0; logicalCol < headers.length; logicalCol++) {
+            // Si ya tenemos valor del rowspan, saltar
+            if (cells[logicalCol] !== undefined) {
+                continue;
+            }
+            
+            if (tdIndex < tds.length) {
+                const td = tds[tdIndex];
+                
+                // Obtener el texto limpio
+                let text = '';
+                const inputs = td.querySelectorAll('input');
+                
+                if (inputs.length > 0) {
+                    // Si hay input de fecha, obtener su valor
+                    const input = inputs[0];
+                    if (input.value) {
+                        const dateStr = input.value;
+                        const [year, month, day] = dateStr.split('-');
+                        text = `${day}/${month}/${year}`;
+                    }
+                } else {
+                    // Obtener texto sin elementos interactivos
+                    text = Array.from(td.childNodes)
+                        .filter(node => node.nodeType === Node.TEXT_NODE || (node.nodeType === Node.ELEMENT_NODE && node.tagName !== 'INPUT' && !node.classList.contains('estado-guardado') && !node.classList.contains('text-xs')))
+                        .map(node => node.textContent.trim())
+                        .join(' ')
+                        .trim();
+                }
+                
+                cells[logicalCol] = text;
+                
+                // Verificar si hay rowspan
+                const rowspan = parseInt(td.getAttribute('rowspan') || 1);
+                if (rowspan > 1) {
+                    rowspanValues[logicalCol] = {
+                        value: text,
+                        remainingRows: rowspan - 1
+                    };
+                }
+                
+                tdIndex++;
+            } else {
+                cells[logicalCol] = '';
+            }
+        }
+        
+        // Asegurar que tenemos exactamente el número de columnas de encabezados
+        while (cells.length < headers.length) {
+            cells.push('');
+        }
+        
+        tsvData += cells.slice(0, headers.length).join('\t') + '\n';
+    });
+    
+    // Copiar al portapapeles
+    navigator.clipboard.writeText(tsvData).then(() => {
+        // Mostrar confirmación
+        const originalText = button.innerHTML;
+        button.innerHTML = '<span class="material-symbols-rounded text-sm">check</span> ¡Copiado!';
+        button.classList.add('bg-green-700');
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('bg-green-700');
+        }, 2000);
+    }).catch(err => {
+        console.error('Error al copiar:', err);
+        alert('Error al copiar los datos al portapapeles');
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Manejar cambios en los inputs de fecha
     document.querySelectorAll('.fecha-entrega-despacho').forEach(input => {
