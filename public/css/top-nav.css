@@ -750,3 +750,173 @@
     color: var(--color-hover-primary);
     transform: scale(1.05);
 }
+
+/* ========================================
+   CAMPANA DE NOTIFICACIONES - Recibos de Costura
+   ======================================== */
+
+.costura-bell-btn {
+    position: relative;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    color: #666;
+    margin-right: 12px;
+}
+
+.costura-bell-btn:hover {
+    background-color: rgba(37, 99, 235, 0.1);
+}
+
+.costura-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #dc2626;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+    min-width: 20px;
+}
+
+.costura-badge.show {
+    display: flex;
+}
+
+.costura-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border-radius: 8px;
+    min-width: 320px;
+    max-width: 400px;
+    display: none;
+    flex-direction: column;
+    margin-top: 8px;
+    z-index: 999;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.costura-dropdown.show {
+    display: flex;
+}
+
+.costura-dropdown-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    font-weight: 600;
+    color: #1f2937;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.costura-dropdown-clear {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+    font-size: 12px;
+    text-decoration: underline;
+    padding: 0;
+}
+
+.costura-notif-list {
+    max-height: 400px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.costura-notif-item {
+    padding: 10px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.costura-notif-item:hover {
+    background-color: #f9fafb;
+}
+
+.costura-notif-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.costura-notif-item p {
+    margin: 0;
+    padding: 0;
+}
+
+.costura-notif-number {
+    font-weight: bold;
+    color: #2563eb;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.costura-notif-cliente {
+    font-size: 13px;
+    color: #4b5563;
+    margin-bottom: 2px;
+}
+
+.costura-notif-fecha {
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+.costura-notif-visto-btn {
+    padding: 6px 10px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.costura-notif-visto-btn:hover {
+    background: #2563eb;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+.costura-notif-visto-btn:active {
+    transform: scale(0.98);
+}
+
+.costura-notif-empty {
+    padding: 16px;
+    text-align: center;
+    color: #9ca3af;
+}
+
+.costura-notification-container {
+    position: relative;
+    margin-right: 12px;
+}

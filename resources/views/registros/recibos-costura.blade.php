@@ -1514,5 +1514,140 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// ======= CAMPANA DE NOTIFICACIONES PARA RECIBOS DE COSTURA =======
+console.log('[🔔 CAMPANA COSTURA] Sistema iniciado');
+
+async function cargarConteoRecibosCorte() {
+    try {
+        const response = await fetch('/api/recibos-costura/ejecutando-corte', {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            const total = data.total || 0;
+            const recibos = data.recibos || [];
+            
+            console.log('[🔔 CAMPANA COSTURA] Total:', total);
+            
+            // Actualizar badge
+            const badge = document.getElementById('costuraBadge');
+            if (badge) {
+                badge.textContent = total;
+                if (total > 0) {
+                    badge.classList.add('show');
+                } else {
+                    badge.classList.remove('show');
+                }
+            }
+            
+            // Poblar lista
+            const list = document.getElementById('costuraNotifList');
+            if (list) {
+                if (recibos.length > 0) {
+                    list.innerHTML = '';
+                    recibos.forEach(function(recibo) {
+                        const item = document.createElement('div');
+                        item.className = 'costura-notif-item';
+                        
+                        // Contenido de la notificación
+                        const content = document.createElement('div');
+                        content.className = 'costura-notif-content';
+                        content.innerHTML = 
+                            '<p class="costura-notif-number">Recibo #' + recibo.numero_recibo + '</p>' +
+                            '<p class="costura-notif-cliente">' + recibo.cliente + '</p>' +
+                            '<p class="costura-notif-fecha">' + recibo.fecha + '</p>';
+                        
+                        // Botón visto
+                        const vistaBtn = document.createElement('button');
+                        vistaBtn.className = 'costura-notif-visto-btn';
+                        vistaBtn.textContent = 'Visto';
+                        vistaBtn.dataset.reciboId = recibo.id;
+                        vistaBtn.addEventListener('click', async function(e) {
+                            e.stopPropagation();
+                            await marcarReciboVisto(recibo.id, item);
+                        });
+                        
+                        item.appendChild(content);
+                        item.appendChild(vistaBtn);
+                        list.appendChild(item);
+                    });
+                } else {
+                    list.innerHTML = '<div class="costura-notif-empty">Sin recibos en ejecución</div>';
+                }
+            }
+        }
+    } catch (error) {
+        console.error('[🔔 CAMPANA COSTURA] Error:', error);
+    }
+}
+
+async function marcarReciboVisto(reciboId, itemElement) {
+    try {
+        const response = await fetch('/api/recibos-costura/' + reciboId + '/marcar-visto-corte', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                // Remover la notificación de forma suave
+                itemElement.style.opacity = '0';
+                itemElement.style.transform = 'translateX(10px)';
+                setTimeout(function() {
+                    itemElement.remove();
+                    // Recargar el conteo
+                    cargarConteoRecibosCorte();
+                }, 200);
+                console.log('[✓ VISTO] Recibo marcado:', reciboId);
+            }
+        }
+    } catch (error) {
+        console.error('[✗ ERROR VISTO] No se pudo marcar el recibo:', error);
+    }
+}
+
+function setupCosturaNotifications() {
+    const bellBtn = document.getElementById('costuraBellBtn');
+    const dropdown = document.getElementById('costuraDropdown');
+    const clearBtn = document.getElementById('costuraClearBtn');
+    
+    if (!bellBtn || !dropdown) return;
+    
+    bellBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('show');
+    });
+    
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdown.classList.remove('show');
+        });
+    }
+    
+    document.addEventListener('click', function(e) {
+        if (!bellBtn.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        cargarConteoRecibosCorte();
+        setupCosturaNotifications();
+        setInterval(cargarConteoRecibosCorte, 30000);
+    });
+} else {
+    cargarConteoRecibosCorte();
+    setupCosturaNotifications();
+    setInterval(cargarConteoRecibosCorte, 30000);
+}
 </script>
 @endpush

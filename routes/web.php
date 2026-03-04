@@ -1432,6 +1432,8 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     // Rutas para recibos de costura
     Route::get('/recibos-costura', [RegistroOrdenController::class, 'recibosCostura'])->name('registros.recibos-costura');
     Route::get('/recibos-costura/recibo/{reciboId}', [RegistroOrdenController::class, 'getReciboJson'])->name('registros.recibo-json');
+    Route::get('/api/recibos-costura/ejecutando-corte', [RegistroOrdenController::class, 'contarRecibosEjecutandoCostura'])->name('api.recibos-costura.ejecutando-corte');
+    Route::post('/api/recibos-costura/{id}/marcar-visto-corte', [RegistroOrdenController::class, 'marcarReciboVistoCostura'])->name('api.recibos-costura.marcar-visto-corte');
     
     // Rutas para recibos de reflectivo
     Route::get('/recibos-reflectivo', [RegistroOrdenController::class, 'recibosReflectivo'])->name('registros.recibos-reflectivo');

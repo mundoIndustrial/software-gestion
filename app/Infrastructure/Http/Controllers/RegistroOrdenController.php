@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\DB;
 use App\Services\PrendaCotizacionTemplateService;
 use App\Services\CacheCalculosService;
 use App\Services\FestivosColombiaService;
+use Carbon\Carbon;
 
 class RegistroOrdenController extends Controller
 {
@@ -2240,6 +2241,120 @@ class RegistroOrdenController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'Error al obtener área reciente: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Contar recibos de COSTURA en ejecución (área Corte) para la campana
+     * GET /api/recibos-costura/ejecutando-corte
+     */
+    public function contarRecibosEjecutandoCostura()
+    {
+        try {
+            $userId = auth()->id();
+            
+            // Obtener recibos COSTURA en estado "En Ejecución" con área "Corte"
+            // EXCLUYENDO los que el usuario actual ya marcó como visto
+            $recibos = DB::table('consecutivos_recibos_pedidos')
+                ->where('tipo_recibo', 'COSTURA')
+                ->where('estado', 'En Ejecución')
+                ->where('area', 'Corte')
+                ->where('activo', 1)
+                ->whereNotIn('id', function($query) use ($userId) {
+                    $query->select('consecutivo_recibo_id')
+                        ->from('recibos_usuario_vistos')
+                        ->where('user_id', $userId)
+                        ->where('tipo_recibo', 'COSTURA');
+                })
+                ->select([
+                    'id',
+                    'consecutivo_actual as numero_recibo',
+                    'pedido_produccion_id',
+                    'prenda_id',
+                    'created_at'
+                ])
+                ->get();
+
+            // Enriquecer datos con información del pedido
+            $recibosConInfo = $recibos->map(function ($recibo) {
+                $pedido = PedidoProduccion::find($recibo->pedido_produccion_id);
+                
+                return [
+                    'id' => $recibo->id,
+                    'numero_recibo' => $recibo->numero_recibo,
+                    'cliente' => $pedido ? $pedido->cliente : '-',
+                    'pedido_id' => $pedido ? $pedido->numero_pedido : '-',
+                    'fecha' => Carbon::parse($recibo->created_at)->format('d/m/Y H:i')
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'total' => $recibosConInfo->count(),
+                'recibos' => $recibosConInfo->values()->toArray()
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error en contarRecibosEjecutandoCostura: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al contar recibos de costura',
+                'total' => 0,
+                'recibos' => []
+            ], 500);
+        }
+    }
+
+    /**
+     * Marcar un recibo de COSTURA como visto por el usuario actual
+     * POST /api/recibos-costura/{id}/marcar-visto-corte
+     */
+    public function marcarReciboVistoCostura($reciboId)
+    {
+        try {
+            $userId = auth()->id();
+            
+            // Obtener el recibo
+            $recibo = DB::table('consecutivos_recibos_pedidos')
+                ->where('id', $reciboId)
+                ->where('tipo_recibo', 'COSTURA')
+                ->first();
+            
+            if (!$recibo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recibo no encontrado'
+                ], 404);
+            }
+            
+            // Crear o ignorar si ya existe (gracias a unique constraint)
+            DB::table('recibos_usuario_vistos')->insertOrIgnore([
+                'consecutivo_recibo_id' => $reciboId,
+                'user_id' => $userId,
+                'tipo_recibo' => 'COSTURA',
+                'created_at' => Carbon::now()
+            ]);
+            
+            \Log::info('Recibo de costura marcado como visto', [
+                'recibo_id' => $reciboId,
+                'user_id' => $userId,
+                'numero_recibo' => $recibo->consecutivo_actual
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Recibo marcado como visto',
+                'recibo_id' => $reciboId
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error al marcar recibo como visto: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al marcar el recibo como visto'
             ], 500);
         }
     }

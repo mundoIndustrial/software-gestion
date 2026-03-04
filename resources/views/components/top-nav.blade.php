@@ -46,6 +46,28 @@
     </div>
 
     <div class="nav-right">
+        <!-- Campana de Costura -->
+        @if(request()->is('recibos-costura'))
+        <div class="costura-notification-container">
+            <button id="costuraBellBtn" class="costura-bell-btn" title="Recibos en ejecución - Área Corte" aria-label="Notificaciones de costura">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span id="costuraBadge" class="costura-badge">0</span>
+            </button>
+            <div id="costuraDropdown" class="costura-dropdown">
+                <div class="costura-dropdown-header">
+                    <span>Área Corte - En Ejecución</span>
+                    <button id="costuraClearBtn" class="costura-dropdown-clear">✕</button>
+                </div>
+                <div id="costuraNotifList" class="costura-notif-list">
+                    <div class="costura-notif-empty">Cargando...</div>
+                </div>
+            </div>
+        </div>
+        @endif
+
         @if(Route::currentRouteName() === 'cotizaciones.pendientes' || request()->is('recibos-costura'))
         <button 
             id="btnLimpiarFiltros"
