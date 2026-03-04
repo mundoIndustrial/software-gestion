@@ -598,7 +598,7 @@
                             $descripcionConTallas .= "\n\n=== EPP ===";
                             $eppNumero = 1;
                             foreach ($pedido->epps as $pedidoEpp) {
-                                $eppNombre = $pedidoEpp->epp->nombre ?? 'EPP desconocido';
+                                $eppNombre = $pedidoEpp->epp?->nombre_completo ?? ($pedidoEpp->epp_id ? "EPP #{$pedidoEpp->epp_id}" : 'EPP desconocido');
                                 $eppCantidad = $pedidoEpp->cantidad ?? 1;
                                 $eppObservaciones = $pedidoEpp->observaciones ?? '';
                                 

@@ -125,10 +125,11 @@ class ObtenerPedidoDetalleService
         $epps = [];
         if ($pedido->epps) {
             foreach ($pedido->epps as $pedidoEpp) {
+                $eppNombre = $pedidoEpp->epp?->nombre_completo ?? ($pedidoEpp->epp_id ? "EPP #{$pedidoEpp->epp_id}" : 'EPP Desconocido');
                 $epps[] = [
                     'id' => $pedidoEpp->id,
                     'epp_id' => $pedidoEpp->epp_id,
-                    'nombre' => $pedidoEpp->epp?->nombre ?? 'EPP Desconocido',
+                    'nombre' => $eppNombre,
                     'descripcion' => $pedidoEpp->epp?->descripcion ?? '',
                     'cantidad' => $pedidoEpp->cantidad,
                     'imagenes' => $pedidoEpp->imagenes ?? [],

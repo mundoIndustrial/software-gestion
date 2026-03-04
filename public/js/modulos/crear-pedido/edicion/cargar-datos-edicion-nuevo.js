@@ -416,7 +416,7 @@ function generarTarjetaEpp(epp, index) {
         <div class="epp-header">
             <div class="epp-title-section">
                 <span class="epp-label">EPP ${index + 1}</span>
-                <h5>${epp.nombre || 'EPP Desconocido'}</h5>
+                <h5>${epp.nombre || epp.nombre_completo || (epp.epp_id ? `EPP #${epp.epp_id}` : 'EPP Desconocido')}</h5>
             </div>
             
             <div class="epp-menu-contextual">

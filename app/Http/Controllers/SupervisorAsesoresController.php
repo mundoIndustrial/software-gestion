@@ -244,7 +244,7 @@ class SupervisorAsesoresController extends Controller
         \Log::info('Asesores encontrados: ' . count($asesores));
         
         // Obtener TODOS los pedidos de la tabla sin filtros de asesor
-        $query = PedidoProduccion::with(['asesora', 'prendas.procesos', 'cotizacion']);
+        $query = PedidoProduccion::with(['asesora', 'prendas.procesos', 'cotizacion', 'epps']);
         
         // Búsqueda general (cliente o número de pedido)
         if ($request->has('search') && $request->search) {
