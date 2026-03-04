@@ -453,22 +453,34 @@ function renderizarGaleriaFotos(key) {
 window.guardarProcesoPorTallas = function() {
     if (!procesoPorTallasActual) return;
 
+    console.log('[GUARDAR-POR-TALLAS] Iniciando guardado del proceso:', procesoPorTallasActual);
+    console.log('[GUARDAR-POR-TALLAS] datosPorTallaTemp ANTES de recolectar:', JSON.stringify(datosPorTallaTemp, null, 2));
+
     // Recoger ubicaciones de los textareas
     document.querySelectorAll('.prt-ubicacion-input').forEach(textarea => {
         const key = textarea.dataset.key;
+        const valor = textarea.value;
+        console.log('[GUARDAR-POR-TALLAS] Ubicación textarea:', { key, valor, existe_en_temp: !!datosPorTallaTemp[key] });
         if (datosPorTallaTemp[key]) {
-            datosPorTallaTemp[key].ubicaciones = textarea.value
+            datosPorTallaTemp[key].ubicaciones = valor
                 .split(',')
                 .map(u => u.trim())
                 .filter(u => u.length > 0);
+            console.log('[GUARDAR-POR-TALLAS] ✅ Ubicaciones guardadas para', key, ':', datosPorTallaTemp[key].ubicaciones);
+        } else {
+            console.warn('[GUARDAR-POR-TALLAS] ⚠️ Clave no encontrada en datosPorTallaTemp:', key);
+            console.log('[GUARDAR-POR-TALLAS] Claves disponibles:', Object.keys(datosPorTallaTemp));
         }
     });
 
     // Recoger observaciones de los textareas
     document.querySelectorAll('.prt-observaciones').forEach(textarea => {
         const key = textarea.dataset.key;
+        const valor = textarea.value;
+        console.log('[GUARDAR-POR-TALLAS] Observaciones textarea:', { key, valor: valor.substring(0, 50), existe_en_temp: !!datosPorTallaTemp[key] });
         if (datosPorTallaTemp[key]) {
-            datosPorTallaTemp[key].observaciones = textarea.value;
+            datosPorTallaTemp[key].observaciones = valor;
+            console.log('[GUARDAR-POR-TALLAS] ✅ Observaciones guardadas para', key);
         }
     });
 
@@ -489,6 +501,8 @@ window.guardarProcesoPorTallas = function() {
             datosPorTallaTemp[key].seleccionada = checkbox.checked;
         }
     });
+
+    console.log('[GUARDAR-POR-TALLAS] datosPorTallaTemp DESPUÉS de recolectar:', JSON.stringify(datosPorTallaTemp, null, 2));
 
     // Construir estructura de tallas y datosExtendidos
     const tallas = { dama: {}, caballero: {}, sobremedida: {} };

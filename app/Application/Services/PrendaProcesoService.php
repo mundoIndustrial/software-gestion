@@ -96,6 +96,9 @@ class PrendaProcesoService
                 // Guardar TALLAS en tabla relacional (NUEVO MODELO)
                 if (!empty($proceso['tallas']) && is_array($proceso['tallas'])) {
                     $generoMap = ['dama' => 'DAMA', 'caballero' => 'CABALLERO', 'unisex' => 'UNISEX'];
+                    
+                    // Obtener datosExtendidos si existen (para "por tallas")
+                    $datosExtendidos = $proceso['datosExtendidos'] ?? [];
 
                     foreach ($proceso['tallas'] as $generoBD => $tallasArray) {
                         if (!is_array($tallasArray) || empty($tallasArray)) {
@@ -109,12 +112,18 @@ class PrendaProcesoService
                                 $cantidad = (int)$cantidad;
                                 if ($cantidad > 0) {
                                     $generoEnum = strtoupper($generoParaSobremedida);
+                                    
+                                    // Obtener datos extendidos para sobremedida
+                                    $detallesExtendidos = $datosExtendidos['sobremedida'][$generoParaSobremedida] ?? [];
+                                    
                                     DB::table('pedidos_procesos_prenda_tallas')->insert([
                                         'proceso_prenda_detalle_id' => $procesoDetalleId,
                                         'genero' => $generoEnum,
                                         'talla' => null,
                                         'cantidad' => $cantidad,
                                         'es_sobremedida' => true,
+                                        'ubicaciones' => !empty($detallesExtendidos['ubicaciones']) ? json_encode($detallesExtendidos['ubicaciones']) : null,
+                                        'observaciones' => $detallesExtendidos['observaciones'] ?? null,
                                         'created_at' => now(),
                                         'updated_at' => now(),
                                     ]);
@@ -127,17 +136,42 @@ class PrendaProcesoService
                                 continue;
                             }
 
-                            foreach ($tallasArray as $talla => $cantidad) {
+                            foreach ($tallasArray as $tallaKey => $cantidad) {
                                 $cantidad = (int)$cantidad;
                                 if ($cantidad > 0) {
-                                    DB::table('pedidos_procesos_prenda_tallas')->insert([
+                                    // Separar talla y color si viene como "talla__color"
+                                    $partes = explode('__', (string)$tallaKey);
+                                    $tallaReal = $partes[0];
+                                    $colorNombre = isset($partes[1]) ? $partes[1] : null;
+                                    
+                                    // Obtener datos extendidos para esta talla
+                                    $detallesExtendidos = $datosExtendidos[strtolower($generoBD)][$tallaKey] ?? [];
+                                    
+                                    // Insertar en pedidos_procesos_prenda_tallas
+                                    $tallaProcesoPrendaId = DB::table('pedidos_procesos_prenda_tallas')->insertGetId([
                                         'proceso_prenda_detalle_id' => $procesoDetalleId,
                                         'genero' => $generoEnum,
-                                        'talla' => (string)$talla,
+                                        'talla' => $tallaReal,
                                         'cantidad' => $cantidad,
+                                        'ubicaciones' => !empty($detallesExtendidos['ubicaciones']) ? json_encode($detallesExtendidos['ubicaciones']) : null,
+                                        'observaciones' => $detallesExtendidos['observaciones'] ?? null,
                                         'created_at' => now(),
                                         'updated_at' => now(),
                                     ]);
+                                    
+                                    // Si hay color, insertar en pedidos_procesos_prenda_talla_colores
+                                    if (!empty($colorNombre)) {
+                                        DB::table('pedidos_procesos_prenda_talla_colores')->insert([
+                                            'pedidos_procesos_prenda_talla_id' => $tallaProcesoPrendaId,
+                                            'color_nombre' => $colorNombre,
+                                            'tela_nombre' => null, // Podría venir en datos extendidos si es necesario
+                                            'cantidad' => $cantidad,
+                                            'ubicaciones' => !empty($detallesExtendidos['ubicaciones']) ? json_encode($detallesExtendidos['ubicaciones']) : null,
+                                            'observaciones' => $detallesExtendidos['observaciones'] ?? null,
+                                            'created_at' => now(),
+                                            'updated_at' => now(),
+                                        ]);
+                                    }
                                 }
                             }
                         }

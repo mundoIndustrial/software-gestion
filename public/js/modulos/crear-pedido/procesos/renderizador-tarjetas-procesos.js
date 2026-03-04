@@ -396,7 +396,17 @@ function generarTarjetaProceso(tipo, datos) {
 
             Object.entries(tallasGenero).forEach(([tallaKey, detalle]) => {
                 totalDetalle++;
-                const cantidad = tallasData[tallaKey] || 0;
+                
+                // Buscar la cantidad: intentar primero con tallaKey tal cual, luego con espacios convertidos a guiones bajos
+                let cantidad = tallasData[tallaKey];
+                if (cantidad === undefined) {
+                    // Si no encuentra, intentar con guiones bajos (por si fue guardado de forma diferente)
+                    const tallasDataKeys = Object.keys(tallasData);
+                    const keyAdjustada = tallasDataKeys.find(k => k.replace(/_/g, ' ') === tallaKey.replace(/_/g, ' '));
+                    cantidad = keyAdjustada ? tallasData[keyAdjustada] : 0;
+                }
+                if (cantidad === undefined) cantidad = 0;
+                
                 const tallaDisplay = formatearTallaKey(tallaKey);
 
                 // Ubicaciones - cada línea en su propia fila
