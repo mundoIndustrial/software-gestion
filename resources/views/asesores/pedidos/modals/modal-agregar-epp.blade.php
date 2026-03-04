@@ -995,8 +995,7 @@ function renderizarTablaEPPAgregados() {
                     tabindex="0"
                     ondrop="manejarDropFotosEPP(event, ${epp.id})" 
                     ondragover="manejarDragOverFotosEPP(event)" 
-                    ondragleave="manejarDragLeaveFotosEPP(event)"
-                    onclick="this.focus()">
+                    ondragleave="manejarDragLeaveFotosEPP(event)">
                     ${fotosHtml ? `<div class="flex gap-1 items-center">${fotosHtml}</div>` : '<span class="text-gray-400 text-xs">Arrastra imágenes</span>'}
                 </div>
                 <input type="file" id="inputFotos_${epp.id}" multiple accept="image/*" style="display: none;" onchange="manejarSeleccionFotosEPP(event, ${epp.id})">
@@ -3855,16 +3854,16 @@ document.addEventListener('click', function(e) {
  * Variable global para rastrear cuál zona de fotos está activa (última clickeada)
  */
 window.zonaFotosActivaId = null;
-window.estoyDraggingFiles = false;
+window.dragEnterCounter = 0;
 
 /**
  * Hacer que las zonas de fotos reciban focus al hacer click
  * Esto permite que Ctrl+V detecte correctamente en cuál EPP pegar la imagen
- * También abre el file picker al hacer click (pero no durante drag)
+ * También abre el file picker al hacer click
  */
 document.addEventListener('click', function(e) {
     const fotoZona = e.target.closest('[id^="fotoZona_"]');
-    if (fotoZona && !window.estoyDraggingFiles) {
+    if (fotoZona) {
         // Dar focus a la zona para que Ctrl+V pueda detectarla
         fotoZona.focus();
         // IMPORTANTE: Guardar cuál zona está activa para usar en paste
@@ -3875,7 +3874,7 @@ document.addEventListener('click', function(e) {
         const eppId = fotoZona.id.replace('fotoZona_', '');
         const inputFile = document.getElementById(`inputFotos_${eppId}`);
         
-        // Abrir el file picker si existe el input (solo si no estamos arrastrando)
+        // Abrir el file picker si existe el input
         if (inputFile) {
             console.log('[click] Abriendo file picker para EPP:', eppId);
             inputFile.click();
@@ -3883,19 +3882,25 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Detectar cuando comienza un drag para evitar que click abra el file picker
-document.addEventListener('dragover', function(e) {
-    window.estoyDraggingFiles = true;
+// Mejorado: usar dragenter/dragleave con contador para saber cuándo salimos completamente
+document.addEventListener('dragenter', function(e) {
+    window.dragEnterCounter++;
 });
 
 document.addEventListener('dragleave', function(e) {
-    // Verificar si realmente salimos del área (no solo de un elemento hijo)
-    if (e.target.tagName === 'BODY' || e.clientX === 0 || e.clientY === 0) {
-        window.estoyDraggingFiles = false;
+    window.dragEnterCounter--;
+    if (window.dragEnterCounter === 0) {
+        // Salimos completamente del área drag
+        document.querySelectorAll('[id^="fotoZona_"]').forEach(zona => {
+            zona.classList.remove('bg-blue-100', 'border-blue-400');
+        });
     }
 });
 
 document.addEventListener('drop', function(e) {
-    window.estoyDraggingFiles = false;
+    window.dragEnterCounter = 0;
+    document.querySelectorAll('[id^="fotoZona_"]').forEach(zona => {
+        zona.classList.remove('bg-blue-100', 'border-blue-400');
+    });
 });
 </script>
