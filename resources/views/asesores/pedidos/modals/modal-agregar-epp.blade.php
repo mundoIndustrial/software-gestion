@@ -407,6 +407,7 @@
 // Variables globales
 let productoSeleccionadoEPP = null;
 let eppAgregadosList = []; // Lista de EPP agregados en el modal
+window.eppAgregadosList = eppAgregadosList; // Exponer para DragDropManager
 let eppDisponiblesList = []; // Lista de EPP disponibles para mostrar en tabla
 let eppYaAgregadosEnFormulario = []; // IDs de EPPs ya en el formulario
 
@@ -1381,6 +1382,7 @@ function cerrarModalAgregarEPPConfirmado() {
     console.log('[cerrarModalAgregarEPP] Paste listener removido');
     document.body.style.overflow = 'auto';
     eppAgregadosList = []; // Limpiar lista al cerrar
+    window.eppAgregadosList = eppAgregadosList;
     
     // Limpiar zona de fotos activa
     window.zonaFotosActivaId = null;
@@ -2548,6 +2550,7 @@ async function finalizarAgregarEPP() {
         
         // Limpiar lista de EPPs agregados ya que fueron guardados
         eppAgregadosList = [];
+        window.eppAgregadosList = eppAgregadosList;
         console.log(' [finalizarAgregarEPP] Lista de EPPs agregados limpiada');
         
         // Recalcular totales (eppStore.onChange ya lo hace, esto es para vistas sin store)
@@ -2677,6 +2680,7 @@ async function _guardarEPPsViaAPI(pedidoId, novedad = '') {
     // Limpiar flag y lista
     window.__EPP_AGREGAR_PEDIDO_EXISTENTE__ = null;
     eppAgregadosList = [];
+    window.eppAgregadosList = eppAgregadosList;
 
     // Cerrar modal
     cerrarModalAgregarEPPConfirmado();
@@ -3854,7 +3858,6 @@ document.addEventListener('click', function(e) {
  * Variable global para rastrear cuál zona de fotos está activa (última clickeada)
  */
 window.zonaFotosActivaId = null;
-window.dragEnterCounter = 0;
 
 /**
  * Hacer que las zonas de fotos reciban focus al hacer click
@@ -3863,44 +3866,21 @@ window.dragEnterCounter = 0;
  */
 document.addEventListener('click', function(e) {
     const fotoZona = e.target.closest('[id^="fotoZona_"]');
+    
     if (fotoZona) {
         // Dar focus a la zona para que Ctrl+V pueda detectarla
         fotoZona.focus();
         // IMPORTANTE: Guardar cuál zona está activa para usar en paste
         window.zonaFotosActivaId = fotoZona.id;
-        console.log('[click] Focus en zona de fotos:', fotoZona.id);
+        console.log('[click] Focus en zona de fotos:', window.zonaFotosActivaId);
         
-        // Extraer el EPP ID del id de la zona (fotoZona_849 -> 849)
+        // Abrir file picker
         const eppId = fotoZona.id.replace('fotoZona_', '');
         const inputFile = document.getElementById(`inputFotos_${eppId}`);
-        
-        // Abrir el file picker si existe el input
         if (inputFile) {
             console.log('[click] Abriendo file picker para EPP:', eppId);
             inputFile.click();
         }
     }
-});
-
-// Mejorado: usar dragenter/dragleave con contador para saber cuándo salimos completamente
-document.addEventListener('dragenter', function(e) {
-    window.dragEnterCounter++;
-});
-
-document.addEventListener('dragleave', function(e) {
-    window.dragEnterCounter--;
-    if (window.dragEnterCounter === 0) {
-        // Salimos completamente del área drag
-        document.querySelectorAll('[id^="fotoZona_"]').forEach(zona => {
-            zona.classList.remove('bg-blue-100', 'border-blue-400');
-        });
-    }
-});
-
-document.addEventListener('drop', function(e) {
-    window.dragEnterCounter = 0;
-    document.querySelectorAll('[id^="fotoZona_"]').forEach(zona => {
-        zona.classList.remove('bg-blue-100', 'border-blue-400');
-    });
 });
 </script>

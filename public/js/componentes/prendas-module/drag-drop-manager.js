@@ -482,6 +482,28 @@ class DragDropManager {
                             // Según el tipo de modal, determinar el handler
                             switch (modalSeleccionado.tipo) {
                                 case 'EPP':
+                                    // Verificar si hay una zona de fotos activa en la tabla de EPPs agregados
+                                    if (window.zonaFotosActivaId && window.eppAgregadosList && window.eppAgregadosList.length > 0) {
+                                        const eppIdTabla = parseInt(window.zonaFotosActivaId.replace('fotoZona_', ''));
+                                        const eppEnTabla = window.eppAgregadosList.find(ep => ep.id == eppIdTabla);
+                                        if (eppEnTabla) {
+                                            handlerCorrecto = 'EPP-tabla';
+                                            funcionManejo = (_input) => {
+                                                if (!eppEnTabla.imagenes) eppEnTabla.imagenes = [];
+                                                const blobUrl = URL.createObjectURL(file);
+                                                eppEnTabla.imagenes.push({
+                                                    file: file,
+                                                    previewUrl: blobUrl,
+                                                    nombre: file.name || 'pegado_' + Date.now() + '.png'
+                                                });
+                                                if (typeof window.renderizarTablaEPPAgregados === 'function') {
+                                                    window.renderizarTablaEPPAgregados();
+                                                }
+                                            };
+                                            UIHelperService.log('DragDropManager', `🎯 Usando handler para EPP tabla (zona activa: ${window.zonaFotosActivaId}, eppId: ${eppIdTabla})`);
+                                            break;
+                                        }
+                                    }
                                     handlerCorrecto = 'EPP';
                                     funcionManejo = window.manejarSubidaFotosEPP;
                                     UIHelperService.log('DragDropManager', '🎯 Usando handler para EPP');
@@ -521,6 +543,27 @@ class DragDropManager {
                             // Fallback según el tipo de modal
                             switch (modalSeleccionado.tipo) {
                                 case 'EPP':
+                                    // Fallback: también verificar zona activa de tabla
+                                    if (window.zonaFotosActivaId && window.eppAgregadosList && window.eppAgregadosList.length > 0) {
+                                        const eppIdFb = parseInt(window.zonaFotosActivaId.replace('fotoZona_', ''));
+                                        const eppFb = window.eppAgregadosList.find(ep => ep.id == eppIdFb);
+                                        if (eppFb) {
+                                            handlerCorrecto = 'EPP-tabla (fallback)';
+                                            funcionManejo = (_input) => {
+                                                if (!eppFb.imagenes) eppFb.imagenes = [];
+                                                const blobUrl = URL.createObjectURL(file);
+                                                eppFb.imagenes.push({
+                                                    file: file,
+                                                    previewUrl: blobUrl,
+                                                    nombre: file.name || 'pegado_' + Date.now() + '.png'
+                                                });
+                                                if (typeof window.renderizarTablaEPPAgregados === 'function') {
+                                                    window.renderizarTablaEPPAgregados();
+                                                }
+                                            };
+                                            break;
+                                        }
+                                    }
                                     handlerCorrecto = 'EPP (fallback)';
                                     funcionManejo = window.manejarSubidaFotosEPP;
                                     break;

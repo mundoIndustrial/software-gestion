@@ -1810,7 +1810,7 @@ NIT 1.093.738.433-3</textarea>
                 <div class="relative overflow-hidden rounded-lg border-2 border-gray-200">
                     <img src="${imagen.previewUrl}" alt="Foto EPP" class="w-full h-32 object-cover">
                     <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button type="button" onclick="eliminarFotoEPP('${imagen.id}')" class="bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button type="button" onclick="eliminarFotoEPPCotizacion('${imagen.id}')" class="bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                             <i class="material-symbols-rounded text-sm">delete</i>
                         </button>
                     </div>
@@ -1823,9 +1823,9 @@ NIT 1.093.738.433-3</textarea>
             contenedor.appendChild(fotoElement);
         }
 
-        // Función para eliminar foto
-        window.eliminarFotoEPP = function(fotoId) {
-            console.log(`🗑️ [eliminarFotoEPP] Eliminando foto: ${fotoId}`);
+        // Función para eliminar foto (cotización - diferente de la de la tabla EPP)
+        window.eliminarFotoEPPCotizacion = function(fotoId) {
+            console.log(`🗑️ [eliminarFotoEPPCotizacion] Eliminando foto: ${fotoId}`);
             
             // Eliminar del DOM
             const fotoElement = document.querySelector(`[data-foto-id="${fotoId}"]`);
