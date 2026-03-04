@@ -419,7 +419,9 @@
                         
                         <!-- Fecha de creación -->
                         <td>
-                            @if($recibo['pedido_info'] && isset($recibo['pedido_info']['fecha_creacion_orden']))
+                            @if(!empty($recibo['es_parcial']) && !empty($recibo['created_at']))
+                                <span>{{ \Carbon\Carbon::parse($recibo['created_at'])->format('d/m/Y') }}</span>
+                            @elseif($recibo['pedido_info'] && isset($recibo['pedido_info']['fecha_creacion_orden']))
                                 <span>{{ \Carbon\Carbon::parse($recibo['pedido_info']['fecha_creacion_orden'])->format('d/m/Y') }}</span>
                             @else
                                 <span class="text-muted">-</span>

@@ -1486,6 +1486,26 @@ class RegistroOrdenController extends Controller
                     $parcialId = (int) $matches[1];
                 }
                 $esParcial = $parcialId !== null;
+
+                $createdAt = $recibo->created_at;
+                if ($esParcial) {
+                    try {
+                        $parcial = \DB::table('pedidos_parciales')
+                            ->select('created_at')
+                            ->where('id', $parcialId)
+                            ->whereNull('deleted_at')
+                            ->first();
+                        if ($parcial && !empty($parcial->created_at)) {
+                            $createdAt = $parcial->created_at;
+                        }
+                    } catch (\Exception $e) {
+                        \Log::warning('[recibosCostura] No se pudo obtener created_at de pedidos_parciales', [
+                            'recibo_id' => $recibo->id,
+                            'pedido_parcial_id' => $parcialId,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
                 
                 return [
                     'id' => $recibo->id,
@@ -1496,7 +1516,7 @@ class RegistroOrdenController extends Controller
                     'notas' => $recibo->notas,
                     'estado' => $recibo->estado ?? 'PENDIENTE_INSUMOS',
                     'area' => $recibo->area ?? 'Insumos',
-                    'created_at' => $recibo->created_at,
+                    'created_at' => $createdAt,
                     'updated_at' => $recibo->updated_at,
                     'dias_calculados' => $diasCalculados,
                     'descripcion_detallada' => $descripcionDetallada, // Nuevo campo para filtro

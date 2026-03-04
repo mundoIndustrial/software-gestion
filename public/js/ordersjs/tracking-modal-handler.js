@@ -1750,6 +1750,28 @@ const trackingTableStyles = `
   window.showPrendaTracking = async function(prenda) {
     try {
       console.log('[showPrendaTracking] INICIO - Mostrando seguimiento para prenda:', prenda);
+
+      try {
+        const tieneSeguimiento = prenda && (
+          (prenda.seguimientos_por_area && Object.keys(prenda.seguimientos_por_area).length > 0) ||
+          (prenda.seguimientos && Object.keys(prenda.seguimientos).length > 0) ||
+          (prenda.ultimo_recibo_numero && prenda.ultimo_recibo_numero !== '-')
+        );
+
+        if (!tieneSeguimiento && Array.isArray(window.prendasData) && window.prendasData.length > 0) {
+          const prendaId = prenda?.id || prenda?.prenda_pedido_id;
+          const prendaEnriquecida = window.prendasData.find(p =>
+            String(p?.id) === String(prendaId) || String(p?.prenda_pedido_id) === String(prendaId)
+          );
+
+          if (prendaEnriquecida) {
+            prenda = Object.assign({}, prendaEnriquecida, prenda);
+            console.log('[showPrendaTracking] Usando prenda enriquecida desde prendasData:', prendaEnriquecida);
+          }
+        }
+      } catch (e) {
+        console.warn('[showPrendaTracking] Error hidratando prenda desde prendasData:', e);
+      }
       
       window.currentPrendaData = prenda;
       
@@ -2238,7 +2260,7 @@ const trackingTableStyles = `
   }
   
   // Actualizar el área en la tabla de recibos-costura
-  function actualizarAreaEnTablaRecibos() {
+  async function actualizarAreaEnTablaRecibos() {
     try {
       console.log('[actualizarAreaEnTablaRecibos] Verificando si estamos en recibos-costura');
       
@@ -2247,55 +2269,76 @@ const trackingTableStyles = `
         console.log('[actualizarAreaEnTablaRecibos] No estamos en recibos-costura, omitiendo actualización');
         return;
       }
-      
-      // Obtener el área más reciente del pedido actual
-      if (!window.currentOrderData || !window.currentOrderData.id) {
-        console.warn('[actualizarAreaEnTablaRecibos] No hay currentOrderData disponible');
+
+      const pedidoId = window.currentOrderData?.id || null;
+      const prendaId = window.currentPrendaData?.id || null;
+      const numeroRecibo = window.currentConsecutivoCosturaData?.consecutivo || null;
+
+      if (!pedidoId || !prendaId || !numeroRecibo) {
+        console.warn('[actualizarAreaEnTablaRecibos] Datos insuficientes para refrescar fila', {
+          pedidoId,
+          prendaId,
+          numeroRecibo
+        });
         return;
       }
-      
-      // Llamar a un endpoint para obtener el área más reciente
-      fetch(`/api/pedido/${window.currentOrderData.id}/area-reciente`)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Error al obtener área reciente');
-          }
-          return response.json();
-        })
-        .then(data => {
-          console.log('[actualizarAreaEnTablaRecibos] Área reciente obtenida:', data);
-          
-          if (data.success && data.area) {
-            // Buscar la fila correspondiente en la tabla y actualizar el área
-            const filas = document.querySelectorAll('#tablaRecibosBody tr[data-orden-id]');
-            filas.forEach(fila => {
-              const pedidoId = fila.getAttribute('data-orden-id');
-              // Buscar si esta fila corresponde a nuestro pedido
-              const enlaceSeguimiento = fila.querySelector('a[onclick*="abrirModalSeguimiento"]');
-              if (enlaceSeguimiento) {
-                const onclickAttr = enlaceSeguimiento.getAttribute('onclick');
-                if (onclickAttr && onclickAttr.includes(`abrirModalSeguimiento(${currentOrderData.id})`)) {
-                  // Encontramos la fila correcta, actualizar el área
-                  const areaCell = fila.querySelector('td:nth-child(4) .badge');
-                  if (areaCell) {
-                    console.log('[actualizarAreaEnTablaRecibos] Actualizando área en la tabla:', data.area);
-                    areaCell.textContent = data.area;
-                    
-                    // Actualizar clases según el área
-                    areaCell.className = 'badge bg-secondary'; // Mantener estilo consistente
-                  }
-                }
-              }
-            });
-          }
-        })
-        .catch(error => {
-          console.error('[actualizarAreaEnTablaRecibos] Error:', error);
+
+      const row = findReciboCosturaRow(pedidoId, prendaId, numeroRecibo);
+      if (!row) {
+        console.warn('[actualizarAreaEnTablaRecibos] No se encontró fila a actualizar', {
+          pedidoId,
+          prendaId,
+          numeroRecibo
         });
-        
+        return;
+      }
+
+      const url = `/registros/${pedidoId}/consecutivo-costura?prenda_id=${encodeURIComponent(prendaId)}`;
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        throw new Error(`Error HTTP ${resp.status} al refrescar consecutivo-costura`);
+      }
+      const data = await resp.json();
+      console.log('[actualizarAreaEnTablaRecibos] Respuesta consecutivo-costura:', data);
+
+      if (!data || !data.success) {
+        return;
+      }
+
+      // Área (columna 3)
+      const areaBadge = row.querySelector('td:nth-child(3) .badge');
+      if (areaBadge && data.area) {
+        areaBadge.textContent = data.area;
+      }
+
+      // Encargado orden (última columna)
+      const encargadoSpan = row.querySelector('td:last-child span');
+      if (encargadoSpan) {
+        encargadoSpan.textContent = (data.encargado && String(data.encargado).trim() !== '')
+          ? String(data.encargado).trim()
+          : '-';
+      }
+      
     } catch (error) {
       console.error('[actualizarAreaEnTablaRecibos] Error general:', error);
     }
+  }
+
+  function findReciboCosturaRow(pedidoId, prendaId, numeroRecibo) {
+    const filas = document.querySelectorAll('#tablaRecibosBody tr[data-pedido-id][data-numero-recibo]');
+    for (const fila of filas) {
+      const filaPedidoId = fila.getAttribute('data-pedido-id');
+      const filaNumeroRecibo = fila.getAttribute('data-numero-recibo');
+      if (String(filaPedidoId) !== String(pedidoId) || String(filaNumeroRecibo) !== String(numeroRecibo)) {
+        continue;
+      }
+      const btn = fila.querySelector('.btn-ver-dropdown');
+      const filaPrendaId = btn ? btn.getAttribute('data-prenda-id') : null;
+      if (String(filaPrendaId) === String(prendaId)) {
+        return fila;
+      }
+    }
+    return null;
   }
 
   // Manejar edición de proceso
@@ -2404,6 +2447,9 @@ const trackingTableStyles = `
 
       // Mostrar mensaje de éxito
       showSuccess('Proceso actualizado correctamente');
+
+      // Actualizar la fila en la tabla de recibos-costura si estamos en esa página
+      await actualizarAreaEnTablaRecibos();
 
     } catch (error) {
       console.error('[handleActualizarProceso] Error:', error);
@@ -2748,6 +2794,9 @@ const trackingTableStyles = `
         ? 'Proceso actualizado correctamente' 
         : 'Proceso agregado correctamente';
       showSuccess(mensaje);
+
+      // Actualizar la fila en la tabla de recibos-costura si estamos en esa página
+      await actualizarAreaEnTablaRecibos();
 
     } catch (error) {
       console.error('[handleAgregarProceso] Error:', error);

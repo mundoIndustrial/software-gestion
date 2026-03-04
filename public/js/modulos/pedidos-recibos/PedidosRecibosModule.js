@@ -310,6 +310,12 @@ export class PedidosRecibosModule {
             const parcialData = parcialResult.data?.parcial || parcialResult.data || null;
             const consecutivoAnexo = parcialData?.consecutivo_actual ?? parcialData?.numero_recibo ?? null;
 
+            // Para anexos: la fecha del recibo debe venir de pedidos_parciales.created_at
+            // El renderer usa datosPedido.fecha para pintar los cuadros de fecha.
+            if (parcialData && parcialData.created_at) {
+                datos.fecha = parcialData.created_at;
+            }
+
             this.modalManager.setState({ datosCompletos: datos });
 
             // Validar prendas
