@@ -2,7 +2,7 @@
 
 @section('content')
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/contador/tabla-cotizaciones.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/contador/tabla-index.css') }}?v={{ time() }}">
 @endpush
 
 <!-- Sección de Todas las Cotizaciones -->

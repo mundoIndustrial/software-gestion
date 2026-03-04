@@ -2,7 +2,7 @@
 
 @section('content')
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/contador/tabla-por-revisar.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/contador/tabla-index.css') }}?v={{ time() }}">
 @endpush
 
 <!-- Sección de Cotizaciones a Revisar -->
@@ -19,8 +19,8 @@
                             ['key' => 'tipo', 'label' => 'Tipo', 'flex' => '0 0 120px', 'justify' => 'center'],
                             ['key' => 'fecha', 'label' => 'Fecha', 'flex' => '0 0 180px', 'justify' => 'center'],
                             ['key' => 'cliente', 'label' => 'Cliente', 'flex' => '0 0 200px', 'justify' => 'center'],
-                            ['key' => 'asesora', 'label' => 'Asesora', 'flex' => '0 0 150px', 'justify' => 'center'],
                             ['key' => 'novedades', 'label' => 'Novedades', 'flex' => '0 0 180px', 'justify' => 'center'],
+                            ['key' => 'asesora', 'label' => 'Asesora', 'flex' => '0 0 150px', 'justify' => 'center'],
                         ];
                     @endphp
                     
@@ -145,18 +145,18 @@
                                         <span>{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '-') }}</span>
                                     </div>
                                 </div>
+
+                                <!-- Novedades -->
+                                <div class="table-cell" style="flex: 0 0 180px;">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <span style="font-size: 0.85rem;">{{ $cotizacion->novedades ?? '-' }}</span>
+                                    </div>
+                                </div>
                                 
                                 <!-- Asesora -->
                                 <div class="table-cell" style="flex: 0 0 150px;" data-asesora="{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '') }}">
                                     <div class="cell-content" style="justify-content: center;">
                                         <span>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '-') }}</span>
-                                    </div>
-                                </div>
-                                
-                                <!-- Novedades -->
-                                <div class="table-cell" style="flex: 0 0 180px;">
-                                    <div class="cell-content" style="justify-content: center;">
-                                        <span style="font-size: 0.85rem;">{{ $cotizacion->novedades ?? '-' }}</span>
                                     </div>
                                 </div>
                             </div>
