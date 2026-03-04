@@ -1078,8 +1078,9 @@ document.addEventListener('paste', function(event) {
             const refInput = document.getElementById('simple-referencia-input');
             // const obsInput = document.getElementById('simple-observaciones-input');
 
-            if (telaInput) telaInput.value = (t.tela || '').toUpperCase();
-            if (colorInput) colorInput.value = (t.color || '').toUpperCase();
+            // 🔴 FIX: Buscar 'nombre_tela' primero (desde cotización), luego 'tela' (desde creación nueva)
+            if (telaInput) telaInput.value = (t.nombre_tela || t.tela || '').toUpperCase();
+            if (colorInput) colorInput.value = (t.color || t.color_nombre || '').toUpperCase();
             if (refInput) refInput.value = (t.referencia || '').toUpperCase();
             // if (obsInput) obsInput.value = t.observaciones || '';
 
@@ -1260,8 +1261,11 @@ document.addEventListener('paste', function(event) {
 
         if (isEdit) {
             // --- Modo Edición: actualizar registro existente ---
+            // 🔴 FIX: Guardar en AMBAS propiedades (tela y nombre_tela) para compatibilidad
             window.telasCreacion[editIdx].tela = tela;
+            window.telasCreacion[editIdx].nombre_tela = tela;
             window.telasCreacion[editIdx].color = color;
+            window.telasCreacion[editIdx].color_nombre = color;
             window.telasCreacion[editIdx].referencia = referencia;
             window.telasCreacion[editIdx].observaciones = observaciones;
             window.telasCreacion[editIdx].imagenes = window._imagenTelaSimple ? [window._imagenTelaSimple] : [];
@@ -1270,7 +1274,9 @@ document.addEventListener('paste', function(event) {
             // --- Modo Agregar: crear nuevo registro ---
             const nuevaTela = {
                 tela: tela,
+                nombre_tela: tela,
                 color: color,
+                color_nombre: color,
                 referencia: referencia,
                 observaciones: observaciones,
                 imagenes: window._imagenTelaSimple ? [window._imagenTelaSimple] : [],
@@ -1350,8 +1356,8 @@ document.addEventListener('paste', function(event) {
                         
                         // Obtener tela actual
                         const telaActual = document.querySelector('#tela-seleccionada')?.value ||
+                                         (window.telasCreacion && window.telasCreacion[0]?.nombre_tela) ||
                                          (window.telasCreacion && window.telasCreacion[0]?.tela) ||
-                                         (window.telasCreacion && window.telasCreacion[0]?.nombreTela) ||
                                          '--';
                         
                         // Establecer la tela en StateManager si existe

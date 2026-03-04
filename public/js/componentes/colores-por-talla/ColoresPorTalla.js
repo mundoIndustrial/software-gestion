@@ -664,7 +664,7 @@ window.ColoresPorTalla = (function() {
         const telasEnWizard = new Set();
 
         asignacionesArray.forEach(([clave, asignacion], rowIdx) => {
-            const { genero, talla, tela, colores } = asignacion;
+            const { genero, talla, tela, colores, referencia, imagenes } = asignacion;
             if (tela) telasEnWizard.add(tela.toUpperCase());
             
             if (!colores || !Array.isArray(colores) || colores.length === 0) return;
@@ -682,38 +682,78 @@ window.ColoresPorTalla = (function() {
                 return `<span style="display:inline-block;background:#dbeafe;color:#1e40af;padding:0.15rem 0.5rem;border-radius:12px;font-size:0.73rem;font-weight:500;margin:0.1rem;white-space:nowrap;">${nombre} (${cant})</span>`;
             }).join('');
             
-            // Combinar referencias (únicas, no vacías)
-            const refs = [...new Set(colores.map(c => c.referencia).filter(Boolean))];
-            const refHtml = refs.length > 0 ? refs.join(', ') : '-';
+            // 🔴 FIX: Buscar referencia en colores (para wizard con multi-refs) O en asignación (para cotización simple)
+            const refsDesdoColores = [...new Set(colores.map(c => c.referencia).filter(Boolean))];
+            const refDesdeAsignacion = referencia ? [referencia] : [];
+            const allRefs = [...new Set([...refsDesdoColores, ...refDesdeAsignacion])];
+            const refHtml = allRefs.length > 0 ? allRefs.join(', ') : '-';
             
-            // Combinar imágenes (soporta blob local via _imageStore O ruta del servidor via imagen_ruta)
+            // 🔴 FIX: Buscar imágenes en colores (para wizard) O en asignación (para cotización)
             let imgsHtml = '<span style="color:#9ca3af;font-size:0.75rem;">—</span>';
-            const conImagenBlob = colores.filter(c => c.imagen_id && _getImage(c.imagen_id));
-            const conImagenServidor = colores.filter(c => c.imagen_ruta && !(c.imagen_id && _getImage(c.imagen_id)));
-            if (conImagenBlob.length > 0 || conImagenServidor.length > 0) {
-                let partsHtml = '';
-                // Imágenes locales (blob)
-                partsHtml += conImagenBlob.map(c => {
-                    const imgData = _getImage(c.imagen_id);
-                    if (imgData && imgData.blobUrl) {
-                        return '<img src="' + imgData.blobUrl + '" style="width:28px;height:28px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;margin:1px;" alt="img">';
+            
+            // Primero intentar con imagenes de asignación (cotización simple con múltiples colores)
+            let imagenEncontrada = false;
+            if (imagenes && Array.isArray(imagenes) && imagenes.length > 0) {
+                const imgHTML = imagenes.map(img => {
+                    if (typeof img === 'string') {
+                        // Normalizar URL
+                        let src = img;
+                        if (!src.startsWith('/') && !src.startsWith('http')) {
+                            src = '/storage/' + src;
+                        }
+                        return '<img src="' + src + '" style="width:28px;height:28px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;margin:1px;" alt="img">';
+                    } else if (typeof img === 'object' && img !== null) {
+                        // Objeto con ruta/ruta_webp
+                        const rutaFinal = img.ruta || img.ruta_webp || img.url || img.src;
+                        if (rutaFinal) {
+                            let src = rutaFinal;
+                            if (!src.startsWith('/') && !src.startsWith('http')) {
+                                src = '/storage/' + src;
+                            }
+                            return '<img src="' + src + '" style="width:28px;height:28px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;margin:1px;" alt="img">';
+                        }
                     }
                     return '';
-                }).join('');
-                // Imágenes del servidor (guardadas en storage)
-                partsHtml += conImagenServidor.map(c => {
-                    let src = c.imagen_ruta;
-                    // Normalizar: asegurar que empiece con /storage/ sin duplicar
-                    if (src.startsWith('/storage/')) {
-                        // ya tiene prefijo correcto
-                    } else if (src.startsWith('storage/')) {
-                        src = '/' + src;
-                    } else if (!src.startsWith('/')) {
-                        src = '/storage/' + src;
+                }).filter(Boolean).join('');
+                
+                if (imgHTML) {
+                    imgsHtml = imgHTML;
+                    imagenEncontrada = true;
+                    console.log('[ColoresPorTalla] ✅ Imagen desde asignación:', clave);
+                }
+            }
+            
+            // Si no encontró imagenes en asignación, intentar desde colores (wizard tradicional)
+            if (!imagenEncontrada) {
+                const conImagenBlob = colores.filter(c => c.imagen_id && _getImage(c.imagen_id));
+                const conImagenServidor = colores.filter(c => c.imagen_ruta && !(c.imagen_id && _getImage(c.imagen_id)));
+                if (conImagenBlob.length > 0 || conImagenServidor.length > 0) {
+                    let partsHtml = '';
+                    // Imágenes locales (blob)
+                    partsHtml += conImagenBlob.map(c => {
+                        const imgData = _getImage(c.imagen_id);
+                        if (imgData && imgData.blobUrl) {
+                            return '<img src="' + imgData.blobUrl + '" style="width:28px;height:28px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;margin:1px;" alt="img">';
+                        }
+                        return '';
+                    }).join('');
+                    // Imágenes del servidor (guardadas en storage)
+                    partsHtml += conImagenServidor.map(c => {
+                        let src = c.imagen_ruta;
+                        // Normalizar: asegurar que empiece con /storage/ sin duplicar
+                        if (src.startsWith('/storage/')) {
+                            // ya tiene prefijo correcto
+                        } else if (src.startsWith('storage/')) {
+                            src = '/' + src;
+                        } else if (!src.startsWith('/')) {
+                            src = '/storage/' + src;
+                        }
+                        return '<img src="' + src + '" style="width:28px;height:28px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;margin:1px;" alt="img">';
+                    }).join('');
+                    if (partsHtml) {
+                        imgsHtml = partsHtml;
                     }
-                    return '<img src="' + src + '" style="width:28px;height:28px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;margin:1px;" alt="img">';
-                }).join('');
-                imgsHtml = partsHtml || '<span style="color:#9ca3af;font-size:0.75rem;">—</span>';
+                }
             }
             
             // Combinar observaciones (únicas, no vacías) - COMENTADO
@@ -748,12 +788,13 @@ window.ColoresPorTalla = (function() {
 
         // --- 2) Filas de telas simples (sin wizard) ---
         telasSimples.forEach((t, idx) => {
-            const telaName = (t.tela || '').toUpperCase();
+            // 🔴 FIX: Buscar tanto 'tela' como 'nombre_tela' (compatibilidad cotización + prendas nuevas)
+            const telaName = (t.nombre_tela || t.tela || '').toUpperCase();
             // Saltar si esta tela ya está representada por wizard
             if (telasEnWizard.has(telaName)) return;
 
             const bg = (idx % 2 === 0) ? '#ffffff' : '#f9fafb';
-            const color = t.color || '-';
+            const color = t.color || t.color_nombre || '-';
             const referencia = t.referencia || '-';
             // const observaciones = t.observaciones || '-';
 
@@ -765,6 +806,17 @@ window.ColoresPorTalla = (function() {
                     imgHtml = '<img src="' + URL.createObjectURL(img) + '" style="width:32px;height:32px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;" alt="img">';
                 } else if (typeof img === 'string') {
                     imgHtml = '<img src="' + img + '" style="width:32px;height:32px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;" alt="img">';
+                } else if (typeof img === 'object' && img !== null) {
+                    // 🔴 FIX: Manejar objetos con ruta y ruta_webp (desde backend cotización)
+                    const rutaFinal = img.ruta || img.ruta_webp || img.url || img.src;
+                    if (rutaFinal) {
+                        // Normalizar ruta si es necesaria
+                        let urlFinal = rutaFinal;
+                        if (!urlFinal.startsWith('/') && !urlFinal.startsWith('http')) {
+                            urlFinal = '/storage/' + urlFinal;
+                        }
+                        imgHtml = '<img src="' + urlFinal + '" style="width:32px;height:32px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;" alt="img">';
+                    }
                 }
             }
 
@@ -1012,6 +1064,13 @@ window.ColoresPorTalla = (function() {
                                 <input type="text" id="wz-edit-talla" value="${asig.talla || ''}" class="form-control" style="text-transform:uppercase;font-size:0.9rem;text-align:center;" onkeyup="this.value=this.value.toUpperCase();">
                             </div>
                         </div>
+                        ${asig.referencia ? `
+                        <div style="margin-bottom:0.75rem;">
+                            <label style="font-size:0.75rem;font-weight:600;color:#374151;display:block;margin-bottom:0.3rem;">REFERENCIA COMÚN</label>
+                            <input type="text" id="wz-edit-referencia-comun" value="${asig.referencia || ''}" class="form-control" style="text-transform:uppercase;font-size:0.9rem;background:#f0f9ff;border-color:#0284c7;color:#0c4a6e;font-weight:600;" readonly>
+                            <small style="color:#6b7280;font-size:0.7rem;display:block;margin-top:0.2rem;">Aplicada a todos los colores</small>
+                        </div>
+                        ` : ''}
                         <div style="border-bottom:1px solid #e5e7eb;margin-bottom:0.75rem;padding-bottom:0.5rem;">
                             <span style="font-size:0.8rem;font-weight:600;color:#6b7280;">COLORES (${asig.colores.length})</span>
                         </div>
@@ -1176,6 +1235,11 @@ window.ColoresPorTalla = (function() {
         const nTela = (modal.querySelector('#wz-edit-tela').value || '').trim().toUpperCase();
         const nGenero = modal.querySelector('#wz-edit-genero').value;
         const nTalla = (modal.querySelector('#wz-edit-talla').value || '').trim().toUpperCase();
+        
+        // 🔴 FIX: Leer referencia común (si existe)
+        const refComun = modal.querySelector('#wz-edit-referencia-comun') 
+            ? (modal.querySelector('#wz-edit-referencia-comun').value || '').trim().toUpperCase()
+            : '';
 
         if (!nTela) { modal.querySelector('#wz-edit-tela').style.borderColor = '#ef4444'; return; }
         if (!nTalla) { modal.querySelector('#wz-edit-talla').style.borderColor = '#ef4444'; return; }
@@ -1186,7 +1250,7 @@ window.ColoresPorTalla = (function() {
         cards.forEach((card, idx) => {
             const colorNombre = (card.querySelector('.wz-edit-color').value || '').trim().toUpperCase();
             const cantidad = parseInt(card.querySelector('.wz-edit-cantidad').value) || 0;
-            const referencia = (card.querySelector('.wz-edit-ref').value || '').trim().toUpperCase();
+            const referencia = (card.querySelector('.wz-edit-ref').value || '').trim().toUpperCase() || refComun;  // 🔴 FIX: Usar referencia común
             const observaciones = ''; // (card.querySelector('.wz-edit-obs').value || '').trim();
 
             if (!colorNombre) return; // omitir colores vacíos

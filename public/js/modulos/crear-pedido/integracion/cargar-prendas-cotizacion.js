@@ -76,6 +76,55 @@ class CargadorPrendasCotizacion {
         const procesos = data.procesos || {};
 
         console.log('[CargadorPrendasCotizacion]  Transformando datos para prenda:', prenda.nombre_producto);
+        
+        // 🔴 FIX CRÍTICO: Usar telas_multiples de la prenda original guardada (tienen la referencia)
+        // El backend NO devuelve telas_multiples, pero lo tenemos guardado en el cliente
+        if (window.prendaOriginalDesdeSelector && window.prendaOriginalDesdeSelector.variantes) {
+            console.log('[transformarDatos] ✅ USANDO telas_multiples de prenda original guardada:');
+            
+            const variantesOriginales = window.prendaOriginalDesdeSelector.variantes;
+            let telasMultiplesDelOriginal = [];
+            
+            if (Array.isArray(variantesOriginales)) {
+                // Si es array, buscar telas_multiples en cada variante
+                variantesOriginales.forEach((varOrig, idx) => {
+                    if (varOrig.telas_multiples && Array.isArray(varOrig.telas_multiples)) {
+                        console.log(`[transformarDatos]  [VarianteOriginal ${idx}] Encontradas ${varOrig.telas_multiples.length} telas_multiples`);
+                        telasMultiplesDelOriginal.push(...varOrig.telas_multiples);
+                    }
+                });
+            } else if (variantesOriginales && typeof variantesOriginales === 'object') {
+                // Si es objeto plano, buscar telas_multiples
+                if (variantesOriginales.telas_multiples) {
+                    let telasTemp = variantesOriginales.telas_multiples;
+                    
+                    // Si es string JSON, parsear
+                    if (typeof telasTemp === 'string') {
+                        try {
+                            telasTemp = JSON.parse(telasTemp);
+                            console.log('[transformarDatos]  ✅ telas_multiples parseado desde STRING en prenda original');
+                        } catch(e) {
+                            console.warn('[transformarDatos]  ❌ Error parseando telas_multiples de prenda original');
+                            telasTemp = [];
+                        }
+                    }
+                    
+                    if (Array.isArray(telasTemp) && telasTemp.length > 0) {
+                        console.log('[transformarDatos]  [VarianteOriginal] Encontradas', telasTemp.length, 'telas_multiples');
+                        telasMultiplesDelOriginal = telasTemp;
+                    }
+                }
+            }
+            
+            // Guardar en un lugar accesible para usarlas más adelante
+            if (telasMultiplesDelOriginal.length > 0) {
+                window._telasMultiplesOriginales = telasMultiplesDelOriginal;
+                console.log('[transformarDatos] 💾 Guardadas', telasMultiplesDelOriginal.length, 'telas_multiples originales para enriquecimiento');
+                telasMultiplesDelOriginal.forEach((t, idx) => {
+                    console.log(`  [${idx}] ${t.tela} - ${t.color} -> ref: "${t.referencia}" | imagenes: ${t.imagenes ? JSON.stringify(t.imagenes).substring(0, 100) : 'undefined'}`);
+                });
+            }
+        }
 
         // Preparar estructura de procesos con TODA la información
         const procesosCompletos = {};
@@ -345,6 +394,20 @@ class CargadorPrendasCotizacion {
                             ? String(tela.referencia).trim() 
                             : '';
                         
+                        // 🔴 FIX: Procesar imágenes que pueden venir como string JSON
+                        let imagenesProcesadas = [];
+                        if (tela.imagenes) {
+                            if (typeof tela.imagenes === 'string') {
+                                try {
+                                    imagenesProcesadas = JSON.parse(tela.imagenes) || [];
+                                } catch(e) {
+                                    imagenesProcesadas = [];
+                                }
+                            } else if (Array.isArray(tela.imagenes)) {
+                                imagenesProcesadas = tela.imagenes;
+                            }
+                        }
+                        
                         // Crear objeto de tela con todas las propiedades
                         const telaCompleta = {
                             id: tela.id || null,
@@ -354,7 +417,7 @@ class CargadorPrendasCotizacion {
                             descripcion: tela.descripcion || '',
                             grosor: tela.grosor || '',
                             composicion: tela.composicion || '',
-                            imagenes: Array.isArray(tela.imagenes) ? tela.imagenes : [],
+                            imagenes: imagenesProcesadas,
                             origen: 'variante_directa',
                             variante_index: varianteIndex,
                             tela_index: telaIndex
@@ -389,12 +452,45 @@ class CargadorPrendasCotizacion {
         } else if (prenda.variantes && typeof prenda.variantes === 'object' && !Array.isArray(prenda.variantes)) {
             // Variantes es un objeto plano (ya procesado por el backend) - extraer telas_multiples
             console.log('[transformarDatos]  Variantes es objeto plano, buscando telas_multiples');
+            console.log('[transformarDatos]  🔍 prenda.variantes.telas_multiples tipo:', typeof prenda.variantes.telas_multiples);
+            console.log('[transformarDatos]  🔍 prenda.variantes.telas_multiples contenido:', prenda.variantes.telas_multiples);
+            
             let telasMultiples = prenda.variantes.telas_multiples;
             if (typeof telasMultiples === 'string') {
-                try { telasMultiples = JSON.parse(telasMultiples); } catch(e) { telasMultiples = []; }
+                try { 
+                    telasMultiples = JSON.parse(telasMultiples); 
+                    console.log('[transformarDatos]  ✅ telas_multiples parseado desde STRING');
+                } catch(e) { 
+                    console.warn('[transformarDatos] ❌ Error parseando telas_multiples:', e);
+                    telasMultiples = []; 
+                }
             }
+            
+            console.log('[transformarDatos]  📋 telas_multiples después parse - es array?', Array.isArray(telasMultiples), 'length:', telasMultiples?.length || 0);
+            
             if (Array.isArray(telasMultiples) && telasMultiples.length > 0) {
+                console.log('[transformarDatos]  🧵 Encontradas', telasMultiples.length, 'telas en telas_multiples');
                 telasMultiples.forEach((tela, idx) => {
+                    console.log(`[transformarDatos]  [TelaMultiple ${idx}] Procesando:`, {
+                        tela: tela.tela,
+                        color: tela.color,
+                        referencia: tela.referencia
+                    });
+                    
+                    // 🔴 FIX: Procesar imágenes que pueden venir como string JSON
+                    let imagenesProcesadas = [];
+                    if (tela.imagenes) {
+                        if (typeof tela.imagenes === 'string') {
+                            try {
+                                imagenesProcesadas = JSON.parse(tela.imagenes) || [];
+                            } catch(e) {
+                                imagenesProcesadas = [];
+                            }
+                        } else if (Array.isArray(tela.imagenes)) {
+                            imagenesProcesadas = tela.imagenes;
+                        }
+                    }
+                    
                     telasAgregadasTemp.push({
                         id: tela.id || null,
                         nombre_tela: tela.tela || tela.nombre_tela || '',
@@ -403,13 +499,15 @@ class CargadorPrendasCotizacion {
                         descripcion: tela.descripcion || '',
                         grosor: tela.grosor || '',
                         composicion: tela.composicion || '',
-                        imagenes: Array.isArray(tela.imagenes) ? tela.imagenes : [],
+                        imagenes: imagenesProcesadas,
                         origen: 'variante_objeto_plano',
                         tela_index: idx
                     });
                 });
                 telasDesdeVariantes = telasAgregadasTemp;
-                console.log('[transformarDatos]  Telas desde variantes (objeto plano):', telasDesdeVariantes.length);
+                console.log('[transformarDatos]  ✅ Telas desde variantes (objeto plano):', telasDesdeVariantes.length);
+            } else {
+                console.log('[transformarDatos]  ⚠️ telas_multiples no es array o está vacío');
             }
         } else {
             console.log('[transformarDatos]  La prenda no tiene variantes array');
@@ -428,36 +526,162 @@ class CargadorPrendasCotizacion {
             telasFormato = [...telasDesdeBackend];
             
             // Enriquecer con datos de variantes si es necesario
+            // 🔴 FIX: Usar múltiples estrategias de comparación para enriquecer
             telasDesdeVariantes.forEach(telaVariante => {
-                const existe = telasFormato.some(telaBackend => 
-                    telaBackend.nombre_tela === telaVariante.nombre_tela && 
-                    telaBackend.color === telaVariante.color
-                );
+                console.log('[transformarDatos] 🔍 Buscando coincidencia para variante:', {
+                    nombre: telaVariante.nombre_tela,
+                    color: telaVariante.color,
+                    referencia: telaVariante.referencia
+                });
                 
-                if (!existe) {
-                    telasFormato.push(telaVariante);
-                    console.log('[transformarDatos] ➕ Agregada tela desde variantes:', telaVariante);
-                } else {
-                    // Enriquecer con referencia si no la tiene
-                    const indiceExistente = telasFormato.findIndex(telaBackend => 
-                        telaBackend.nombre_tela === telaVariante.nombre_tela && 
-                        telaBackend.color === telaVariante.color
-                    );
-                    
-                    if (indiceExistente !== -1) {
-                        const telaExistente = telasFormato[indiceExistente];
-                        if ((!telaExistente.referencia || telaExistente.referencia === '') && 
-                            telaVariante.referencia && telaVariante.referencia !== '') {
-                            telasFormato[indiceExistente].referencia = telaVariante.referencia;
-                            telasFormato[indiceExistente].origen = 'backend_enriquecido_variantes';
-                        }
+                // Estrategia 1: Si telaVariante tiene índice, usarlo directamente
+                let indiceExistente = -1;
+                if (telaVariante.indice !== undefined && telaVariante.indice !== null) {
+                    const idx = parseInt(telaVariante.indice);
+                    if (idx >= 0 && idx < telasFormato.length) {
+                        indiceExistente = idx;
+                        console.log('[transformarDatos] ✅ Coincidencia por ÍNDICE:', idx);
                     }
+                }
+                
+                // Estrategia 2: Comparar por nombre_tela + color (normalizado)
+                if (indiceExistente === -1) {
+                    indiceExistente = telasFormato.findIndex(telaBackend => 
+                        telaBackend.nombre_tela === telaVariante.nombre_tela && 
+                        (telaBackend.color || '').toUpperCase() === (telaVariante.color || '').toUpperCase()
+                    );
+                    if (indiceExistente !== -1) {
+                        console.log('[transformarDatos] ✅ Coincidencia por NOMBRE + COLOR:', indiceExistente);
+                    }
+                }
+                
+                // Estrategia 3: Comparar solo por color (más flexible)
+                if (indiceExistente === -1) {
+                    indiceExistente = telasFormato.findIndex(telaBackend => 
+                        (telaBackend.color || '').toUpperCase() === (telaVariante.color || '').toUpperCase()
+                    );
+                    if (indiceExistente !== -1) {
+                        console.log('[transformarDatos] ✅ Coincidencia por COLOR:', indiceExistente);
+                    }
+                }
+                
+                // Si encontramos coincidencia, enriquecer
+                if (indiceExistente !== -1) {
+                    const telaExistente = telasFormato[indiceExistente];
+                    
+                    // Enriquecer con referencia
+                    if ((!telaExistente.referencia || telaExistente.referencia === '') && 
+                        telaVariante.referencia && telaVariante.referencia !== '') {
+                        telasFormato[indiceExistente].referencia = telaVariante.referencia;
+                        telasFormato[indiceExistente].origen = 'backend_enriquecido_variantes';
+                        console.log('[transformarDatos] 🔧 Tela enriquecida con referencia:', telaVariante.referencia);
+                    }
+                    
+                    // Enriquecer con imagenes
+                    if ((!telaExistente.imagenes || telaExistente.imagenes.length === 0) && 
+                        telaVariante.imagenes && telaVariante.imagenes.length > 0) {
+                        telasFormato[indiceExistente].imagenes = telaVariante.imagenes;
+                        console.log('[transformarDatos] 📸 Tela enriquecida con imágenes:', telaVariante.imagenes.length);
+                    }
+                } else {
+                    // No encontró coincidencia, agregar como nueva
+                    telasFormato.push(telaVariante);
+                    console.log('[transformarDatos] ➕ Agregada tela desde variantes (sin coincidencia):', telaVariante);
                 }
             });
         } else if (telasDesdeVariantes && telasDesdeVariantes.length > 0) {
             // Última opción: usar telas desde variantes
             console.log('[transformarDatos]  USANDO TELAS DESDE VARIANTES (fallback):', telasDesdeVariantes.length);
             telasFormato = [...telasDesdeVariantes];
+        }
+        
+        // 🔴 FIX CRÍTICO: Si tenemos telas_multiples originales guardadas, usarlas para enriquecer
+        // Esto asegura que referencias como '43534543' se asignen correctamente
+        if (window._telasMultiplesOriginales && window._telasMultiplesOriginales.length > 0 && telasFormato.length > 0) {
+            console.log('[transformarDatos] 🔧 ENRIQUECIENDO CON telas_multiples ORIGINALES...');
+            
+            window._telasMultiplesOriginales.forEach(telaOriginal => {
+                // Estrategia 1: Buscar por índice directo (más confiable)
+                let indiceEncontrado = -1;
+                
+                if (telaOriginal.indice !== undefined && telaOriginal.indice !== null) {
+                    const idx = parseInt(telaOriginal.indice);
+                    if (idx >= 0 && idx < telasFormato.length) {
+                        indiceEncontrado = idx;
+                        console.log(`[transformarDatos] ✅ Enriquecimiento por ÍNDICE: ${idx}`);
+                    }
+                }
+                
+                // Estrategia 2: Buscar por nombre + color normalizados
+                if (indiceEncontrado === -1 && telaOriginal.tela && telaOriginal.color) {
+                    indiceEncontrado = telasFormato.findIndex(telaBack =>
+                        telaBack.nombre_tela === telaOriginal.tela &&
+                        (telaBack.color || '').toUpperCase() === (telaOriginal.color || '').toUpperCase()
+                    );
+                    if (indiceEncontrado !== -1) {
+                        console.log(`[transformarDatos] ✅ Enriquecimiento por TELA+COLOR: ${indiceEncontrado}`);
+                    }
+                }
+                
+                // Estrategia 3: Buscar solo por color
+                if (indiceEncontrado === -1 && telaOriginal.color) {
+                    indiceEncontrado = telasFormato.findIndex(telaBack =>
+                        (telaBack.color || '').toUpperCase() === (telaOriginal.color || '').toUpperCase()
+                    );
+                    if (indiceEncontrado !== -1) {
+                        console.log(`[transformarDatos] ✅ Enriquecimiento por COLOR: ${indiceEncontrado}`);
+                    }
+                }
+                
+                // Si encontramos coincidencia, enriquecer
+                if (indiceEncontrado !== -1) {
+                    const telaTarget = telasFormato[indiceEncontrado];
+                    
+                    // Enriquecer con referencia
+                    if ((!telaTarget.referencia || telaTarget.referencia === '') && telaOriginal.referencia) {
+                        telaTarget.referencia = telaOriginal.referencia;
+                        console.log(`[transformarDatos] 🔧 REFERENCIA ENRIQUECIDA: "${telaOriginal.referencia}"`);
+                    }
+                    
+                    // Enriquecer con descripción/especificación
+                    if ((!telaTarget.descripcion || telaTarget.descripcion === '') && telaOriginal.descripcion) {
+                        telaTarget.descripcion = telaOriginal.descripcion;
+                        console.log(`[transformarDatos] 📝 DESCRIPCIÓN ENRIQUECIDA: "${telaOriginal.descripcion}"`);
+                    }
+                    
+                    // Enriquecer con imágenes
+                    if ((!telaTarget.imagenes || telaTarget.imagenes.length === 0) && telaOriginal.imagenes) {
+                        let imagenesTemp = telaOriginal.imagenes;
+                        console.log(`[transformarDatos]  📸 Procesando imagenes de tela original:`, {
+                            tipo: typeof imagenesTemp,
+                            esArray: Array.isArray(imagenesTemp),
+                            length: imagenesTemp?.length,
+                            contenido: imagenesTemp
+                        });
+                        
+                        if (typeof imagenesTemp === 'string') {
+                            try {
+                                imagenesTemp = JSON.parse(imagenesTemp);
+                                console.log(`[transformarDatos]  ✅ Imagenes parseadas desde STRING`);
+                            } catch(e) {
+                                console.warn(`[transformarDatos]  ❌ Error parseando imagenes:`, e);
+                                imagenesTemp = [];
+                            }
+                        }
+                        
+                        if (Array.isArray(imagenesTemp) && imagenesTemp.length > 0) {
+                            telaTarget.imagenes = imagenesTemp;
+                            console.log(`[transformarDatos] 📸 IMÁGENES ENRIQUECIDAS: ${imagenesTemp.length} foto(s)`);
+                        } else {
+                            console.warn(`[transformarDatos]  ⚠️ imagenesTemp NO es array o está vacío:`, imagenesTemp);
+                        }
+                    }
+                } else {
+                    console.warn(`[transformarDatos] ⚠️ No se encontró coincidencia para enriquecer: ${telaOriginal.tela} - ${telaOriginal.color}`);
+                }
+            });
+            
+            console.log('[transformarDatos] ✅ ENRIQUECIMIENTO COMPLETADO con telas_multiples originales');
         }
         
         console.log('[transformarDatos]  TELAS FINALES PROCESADAS:', telasFormato);
@@ -500,6 +724,18 @@ class CargadorPrendasCotizacion {
                 ? (telasFormato[0].nombre_tela || telasFormato[0].tela || 'SIN TELA').toUpperCase()
                 : 'SIN TELA';
             
+            // 🔴 FIX: Extraer referencia e imagenes de telasFormato enriquecidas
+            const referenciaDelTela = telasFormato.length > 0 ? (telasFormato[0].referencia || '') : '';
+            const imagenesDelTela = telasFormato.length > 0 ? (telasFormato[0].imagenes || []) : [];
+            
+            console.log('[transformarDatos] 🔧 Enriquecimiento para asignaciones wizard:', {
+                tela: telasFormato[0]?.nombre_tela,
+                referencia: referenciaDelTela,
+                imagenes_count: imagenesDelTela.length,
+                imagenes_tipo: typeof imagenesDelTela,
+                imagenes_contenido: imagenesDelTela
+            });
+            
             tallasConCantidades.forEach(t => {
                 const colorRaw = (t.color || '').trim();
                 if (colorRaw === '') return; // Solo procesar tallas que tienen color asignado
@@ -519,7 +755,9 @@ class CargadorPrendasCotizacion {
                     genero: genero,
                     talla: talla,
                     color: color,
-                    cantidad: cantidad
+                    cantidad: cantidad,
+                    referencia: referenciaDelTela,
+                    imagenes: imagenesDelTela
                 });
                 
                 // Objeto para StateManager (formato wizard)
@@ -530,7 +768,10 @@ class CargadorPrendasCotizacion {
                         tela: telaName,
                         tipo: tipoTalla,
                         talla: talla,
-                        colores: []
+                        colores: [],
+                        // 🔴 FIX: Agregar referencia e imagenes enriquecidas
+                        referencia: referenciaDelTela,
+                        imagenes: imagenesDelTela
                     };
                 }
                 

@@ -501,8 +501,8 @@ class PrendaFormCollector {
                     }).filter(img => img !== null && img !== undefined);
                     
                     return {
-                        tela: tela.tela || '',
-                        color: tela.color || '',
+                        tela: tela.nombre_tela || tela.tela || '',
+                        color: tela.color || tela.color_nombre || '',
                         referencia: tela.referencia || '',
                         observaciones: tela.observaciones || '',
                         tela_id: tela.tela_id || 0,

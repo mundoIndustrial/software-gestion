@@ -131,8 +131,8 @@
                     imagenes: fotosNuevasGestor[index] || prenda.imagenes || [],
                     //  AGREGADO: recolectar telas desde prenda
                     telas: (prenda.telasAgregadas || []).map((tela, telaIdx) => ({
-                        tela: tela.tela || '',
-                        color: tela.color || '',
+                        tela: tela.nombre_tela || tela.tela || '',
+                        color: tela.color || tela.color_nombre || '',
                         referencia: tela.referencia || '',
                         //  Imágenes de tela
                         imagenes: telasNuevasGestor?.[index]?.[telaIdx] || tela.imagenes || []
@@ -194,7 +194,7 @@
                             tela.imagenes = Array.from(inputImagenTela.files);
                         }
                         
-                        if (tela.tela || tela.color || tela.imagenes.length > 0) {
+                        if (tela.tela || tela.nombre_tela || tela.color || tela.imagenes.length > 0) {
                             prenda.telas.push(tela);
                         }
                     });
@@ -293,7 +293,7 @@
                     descripcion: p.descripcion,
                     genero: p.genero,
                     cantidades: p.cantidades,
-                    telas: (p.telas || []).map(t => ({tela: t.tela, color: t.color, referencia: t.referencia}))
+                    telas: (p.telas || []).map(t => ({tela: t.nombre_tela || t.tela, color: t.color, referencia: t.referencia}))
                 })),
                 epps: (datos.epps || []).map(e => ({
                     epp_id: e.epp_id,
