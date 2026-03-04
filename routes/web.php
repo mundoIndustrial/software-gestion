@@ -1647,6 +1647,10 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('auth')
         ->name('aprobador.cotizacion.detail');
 
+    Route::post('/cotizaciones/logo/observacion-prenda', [App\Http\Controllers\LogoObservacionPrendaCotController::class, 'upsert'])
+        ->middleware('auth')
+        ->name('cotizaciones.logo.observacion-prenda.upsert');
+
     // Acceso a costos de cotización desde aprobador de cotizaciones - RUTA ACCESIBLE PARA APROBADOR, CONTADOR Y ADMIN
     Route::get('/contador/cotizacion/{cotizacion}/costos', [App\Http\Controllers\ContadorController::class, 'obtenerCostos'])
         ->name('aprobador.cotizacion.costos');

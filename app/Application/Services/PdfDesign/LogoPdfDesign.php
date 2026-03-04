@@ -267,6 +267,10 @@ CSS;
     {
         try {
             $nombre = htmlspecialchars($prenda->nombre_producto ?? 'Sin nombre');
+            $obsPrenda = '';
+            if (isset($prenda->logo_observacion)) {
+                $obsPrenda = trim((string) $prenda->logo_observacion);
+            }
             
             $logoCot = $this->cotizacion->logoCotizacion;
             if (!$logoCot) {
@@ -358,13 +362,18 @@ CSS;
                 $descripcionHtml .= '<div class="prenda-descripcion" style="margin-top: 8px; padding: 8px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 3px; font-size: 9px; line-height: 1.4;">' . implode(', ', $todasUbicaciones) . '</div>';
             }
 
+            $observacionPrendaHtml = '';
+            if ($obsPrenda !== '') {
+                $observacionPrendaHtml = '<div class="prenda-obs" style="margin-top: 6px; padding: 8px; background: #ffffff; border: 1px solid #e2e8f0; border-left: 3px solid #1e5ba8; border-radius: 3px; font-size: 9px; line-height: 1.4;"><strong style="color:#1e5ba8;">Observación del logo:</strong> ' . htmlspecialchars($obsPrenda) . '</div>';
+            }
+
             // Variaciones - ELIMINADO según solicitud
             $variacionesHtml = ''; // Ya no se muestra tabla de variaciones
 
             // Imágenes
             $imagenesHtml = $this->renderImagenesLogo($prenda, $logoCot);
 
-            return '<div class="prenda-card"><div class="prenda-header"><div class="prenda-nombre">' . $nombre . '</div>' . $telasHtml . $tallasHtml . $descripcionHtml . '</div><div class="prenda-contenido">' . $variacionesHtml . $imagenesHtml . '</div></div>';
+            return '<div class="prenda-card"><div class="prenda-header"><div class="prenda-nombre">' . $nombre . '</div>' . $telasHtml . $tallasHtml . $descripcionHtml . $observacionPrendaHtml . '</div><div class="prenda-contenido">' . $variacionesHtml . $imagenesHtml . '</div></div>';
 
         } catch (\Exception $e) {
             \Log::error('Error en renderPrendaCard', ['error' => $e->getMessage()]);

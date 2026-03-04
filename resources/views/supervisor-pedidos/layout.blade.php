@@ -854,6 +854,36 @@
         }
     </script>
 
+    <div id="cotizacionModal" class="modal fullscreen" style="display: none;">
+        <div class="modal-content" style="background: white;">
+            <div class="modal-header">
+                <img src="{{ asset('images/logo2.png') }}" alt="Logo Mundo Industrial" class="modal-header-logo" width="150" height="60">
+                <div style="display: flex; gap: 3rem; align-items: center; flex: 1; margin-left: 2rem; color: white; font-size: 0.85rem;">
+                    <div>
+                        <p style="margin: 0; opacity: 0.8;">Cotización #</p>
+                        <p id="modalHeaderNumber" style="margin: 0; font-size: 1.1rem; font-weight: 600;">-</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0; opacity: 0.8;">Fecha</p>
+                        <p id="modalHeaderDate" style="margin: 0; font-size: 1.1rem; font-weight: 600;">-</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0; opacity: 0.8;">Cliente</p>
+                        <p id="modalHeaderClient" style="margin: 0; font-size: 1.1rem; font-weight: 600;">-</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0; opacity: 0.8;">Asesora</p>
+                        <p id="modalHeaderAdvisor" style="margin: 0; font-size: 1.1rem; font-weight: 600;">-</p>
+                    </div>
+                </div>
+                <button onclick="closeCotizacionModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0.5rem 1rem; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">✕</button>
+            </div>
+            <div id="modalBody" style="padding: 2rem; overflow-y: auto; background: white;"></div>
+        </div>
+    </div>
+
+    <script src="{{ asset('js/contador/cotizacion.js') }}"></script>
+
 </body>
 </html>
 

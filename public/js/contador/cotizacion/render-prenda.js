@@ -740,6 +740,30 @@
         // - Imágenes del logo (si existen)
         // No mostrar tallas, variantes, reflectivo, telas ni fotos de prenda.
         if (modo === 'logo') {
+            {
+                const canEdit = (typeof window !== 'undefined' && window.location && window.location.pathname)
+                    ? String(window.location.pathname).replace(/\/+$/, '') === '/visualizador-logo/dashboard'
+                    : false;
+                const cotizacionId = payload && payload.cotizacion ? payload.cotizacion.id : '';
+                const obs = (prenda && (prenda.logo_observacion !== undefined && prenda.logo_observacion !== null))
+                    ? String(prenda.logo_observacion)
+                    : '';
+
+                html += `
+                    <div style="margin-top: 0.75rem; padding: 0.75rem; background: white; border: 1px solid #e2e8f0; border-radius: 8px;">
+                        <div style="color: #1e5ba8; font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.35rem;">Observación del logo</div>
+                        <div
+                            class="logo-prenda-obs"
+                            data-cotizacion-id="${cotizacionId}"
+                            data-prenda-cot-id="${prenda.id}"
+                            data-editing="0"
+                            style="min-height: 34px; padding: 0.5rem 0.6rem; border-radius: 6px; border: 1px dashed #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 0.9rem; line-height: 1.35; cursor: ${canEdit ? 'text' : 'default'};"
+                            title="${canEdit ? 'Doble click para editar. Enter para guardar.' : 'Solo lectura'}"
+                        >${obs ? obs.replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''}</div>
+                    </div>
+                `;
+            }
+
             html += renderSoloLogoPorPrenda(payload, prenda);
             html += `</div>`;
             return html;

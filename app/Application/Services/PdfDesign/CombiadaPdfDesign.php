@@ -257,6 +257,14 @@ CSS;
         // Tallas en rojo
         $html .= $this->renderPrendaTallas($prenda);
 
+        $obsPrenda = '';
+        if (isset($prenda->logo_observacion)) {
+            $obsPrenda = trim((string) $prenda->logo_observacion);
+        }
+        if ($obsPrenda !== '') {
+            $html .= '<div class="prenda-obs" style="margin-top: 6px; padding: 8px; background: #ffffff; border: 1px solid #e2e8f0; border-left: 3px solid #1e5ba8; border-radius: 3px; font-size: 9px; line-height: 1.4;"><strong style="color:#1e5ba8;">Observación del logo:</strong> ' . htmlspecialchars($obsPrenda) . '</div>';
+        }
+
         $html .= '</div>';
 
         // Contenido

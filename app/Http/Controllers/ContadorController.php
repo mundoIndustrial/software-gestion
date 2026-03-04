@@ -3,16 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cotizacion;
+use App\Models\LogoObservacionPrendaCot;
+use App\Models\Cliente;
+use App\Models\User;
+use App\Models\TipoCotizacion;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Helpers\DescripcionPrendaHelper;
+use App\Events\CotizacionEstadoCambiado;
+use Illuminate\View\View;
+use Illuminate\Support\Facades\DB;
 use App\Models\PrendaCotizacionFriendly;
 use App\Models\CostoPrenda;
 use App\Services\ImagenCotizacionService;
-use App\Helpers\DescripcionPrendaHelper;
-use App\Events\CotizacionEstadoCambiado;
-use Illuminate\Http\Request;
-use Illuminate\View\View;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
@@ -298,6 +302,14 @@ class ContadorController extends Controller
             \Log::info('getCotizacionDetail - Cotización ID: ' . $id);
             \Log::info('getCotizacionDetail - Prendas encontradas: ' . $cotizacionModelo->prendas->count());
 
+            $logoObsRows = LogoObservacionPrendaCot::query()
+                ->where('cotizacion_id', $cotizacionModelo->id)
+                ->get(['prenda_cot_id', 'observacion']);
+            $logoObservacionesPorPrenda = $logoObsRows
+                ->keyBy('prenda_cot_id')
+                ->map(fn ($row) => $row ? $row->observacion : null)
+                ->toArray();
+
             // Preparar datos de la cotización
             $datos = [
                 'cotizacion' => [
@@ -317,7 +329,8 @@ class ContadorController extends Controller
                     'cliente_direccion' => $cotizacionModelo->cliente_direccion ?? null,
                     'cliente_telefono' => $cotizacionModelo->cliente_telefono ?? null,
                 ],
-                'prendas_cotizaciones' => $cotizacionModelo->prendas->map(function($prenda, $index) {
+                'logo_observaciones_prenda' => $logoObservacionesPorPrenda,
+                'prendas_cotizaciones' => $cotizacionModelo->prendas->map(function($prenda, $index) use ($logoObservacionesPorPrenda) {
                     // Generar descripción formateada usando el método del modelo
                     $descripcionFormateada = $prenda->generarDescripcionDetallada($index + 1);
                     
@@ -326,6 +339,7 @@ class ContadorController extends Controller
                         'nombre_prenda' => $prenda->nombre_producto ?? 'Prenda sin nombre',
                         'cantidad' => $prenda->cantidad ?? 0,
                         'prenda_bodega' => (bool) ($prenda->prenda_bodega ?? false),
+                        'logo_observacion' => $logoObservacionesPorPrenda[$prenda->id] ?? null,
                         'descripcion' => $prenda->descripcion ?? null,
                         'descripcion_formateada' => $descripcionFormateada,
                         'detalles_proceso' => $prenda->descripcion ?? null,

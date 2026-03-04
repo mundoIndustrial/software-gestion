@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Application\Services\PdfDesign\CombiadaPdfDesign;
 use App\Models\Cotizacion;
+use App\Models\LogoObservacionPrendaCot;
 use App\Models\TallasCostosCot;
 use Illuminate\Http\Request;
 
@@ -64,6 +65,16 @@ class PDFCotizacionCombiadaController extends Controller
 
             foreach ($cotizacion->prendas as $prenda) {
                 $prenda->tallas_costos_descripcion = $tallasCostos->get($prenda->id)?->descripcion;
+            }
+
+            $obsRows = LogoObservacionPrendaCot::query()
+                ->where('cotizacion_id', $cotizacion->id)
+                ->get(['prenda_cot_id', 'observacion'])
+                ->keyBy('prenda_cot_id');
+
+            foreach ($cotizacion->prendas as $prenda) {
+                $row = $prenda && isset($prenda->id) ? ($obsRows[$prenda->id] ?? null) : null;
+                $prenda->logo_observacion = $row ? ($row->observacion ?? null) : null;
             }
 
             \Log::info("Cotización encontrada: " . json_encode([

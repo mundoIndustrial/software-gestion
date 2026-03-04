@@ -48,6 +48,180 @@ if (typeof window !== 'undefined') {
     };
 }
 
+if (typeof window !== 'undefined') {
+    window.__logoPrendaObsWired = window.__logoPrendaObsWired || false;
+
+    window.wireLogoPrendaObservaciones = function wireLogoPrendaObservaciones() {
+        if (window.__logoPrendaObsWired) return;
+        window.__logoPrendaObsWired = true;
+
+        const canEditLogoObs = () => {
+            try {
+                const p = (window.location && window.location.pathname) ? String(window.location.pathname) : '';
+                const norm = p.replace(/\/+$/, '');
+                return norm === '/visualizador-logo/dashboard';
+            } catch (_) {
+                return false;
+            }
+        };
+
+        const getCsrf = () => {
+            const meta = document.querySelector('meta[name="csrf-token"]');
+            return meta ? meta.getAttribute('content') : '';
+        };
+
+        const setCaretToEnd = (el) => {
+            try {
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                range.collapse(false);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } catch (_) {
+                // no-op
+            }
+        };
+
+        const normalizeText = (t) => {
+            if (t === null || t === undefined) return '';
+            return String(t).replace(/\r\n/g, '\n').trim();
+        };
+
+        const renderPlaceholderIfEmpty = (el) => {
+            const text = normalizeText(el.textContent);
+            if (text) return;
+            el.textContent = '';
+        };
+
+        const saveObs = async ({ cotizacionId, prendaCotId, observacion }) => {
+            const res = await fetch('/cotizaciones/logo/observacion-prenda', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': getCsrf(),
+                },
+                body: JSON.stringify({
+                    cotizacion_id: cotizacionId,
+                    prenda_cot_id: prendaCotId,
+                    observacion,
+                }),
+            });
+
+            let payload = null;
+            try {
+                payload = await res.json();
+            } catch (_) {
+                // no-op
+            }
+
+            if (!res.ok || !payload || payload.success !== true) {
+                const msg = (payload && (payload.message || payload.error)) ? (payload.message || payload.error) : `Error HTTP ${res.status}`;
+                throw new Error(msg);
+            }
+
+            return payload;
+        };
+
+        document.addEventListener('dblclick', (ev) => {
+            const el = ev.target && ev.target.closest ? ev.target.closest('.logo-prenda-obs') : null;
+            if (!el) return;
+            if (!canEditLogoObs()) return;
+            if (el.dataset.editing === '1') return;
+
+            const current = normalizeText(el.textContent);
+            el.dataset.originalText = current;
+            el.dataset.editing = '1';
+            el.contentEditable = 'true';
+            el.style.borderStyle = 'solid';
+            el.style.background = '#ffffff';
+            el.textContent = current;
+
+            el.focus();
+            setCaretToEnd(el);
+        });
+
+        document.addEventListener('keydown', async (ev) => {
+            const el = ev.target && ev.target.classList && ev.target.classList.contains('logo-prenda-obs')
+                ? ev.target
+                : (ev.target && ev.target.closest ? ev.target.closest('.logo-prenda-obs') : null);
+            if (!el) return;
+            if (!canEditLogoObs()) return;
+            if (el.dataset.editing !== '1') return;
+
+            if (ev.key === 'Escape') {
+                ev.preventDefault();
+                const original = normalizeText(el.dataset.originalText || '');
+                el.contentEditable = 'false';
+                el.dataset.editing = '0';
+                el.style.borderStyle = 'dashed';
+                el.style.background = '#f8fafc';
+                el.textContent = original;
+                renderPlaceholderIfEmpty(el);
+                return;
+            }
+
+            if (ev.key === 'Enter' && !ev.shiftKey) {
+                ev.preventDefault();
+
+                const cotizacionId = parseInt(el.dataset.cotizacionId || '0', 10);
+                const prendaCotId = parseInt(el.dataset.prendaCotId || '0', 10);
+                const text = normalizeText(el.textContent);
+
+                if (!cotizacionId || !prendaCotId) {
+                    el.contentEditable = 'false';
+                    el.dataset.editing = '0';
+                    el.style.borderStyle = 'dashed';
+                    el.style.background = '#f8fafc';
+                    renderPlaceholderIfEmpty(el);
+                    return;
+                }
+
+                el.contentEditable = 'false';
+                el.dataset.editing = '0';
+                el.style.borderStyle = 'dashed';
+                el.style.background = '#f8fafc';
+
+                try {
+                    await saveObs({
+                        cotizacionId,
+                        prendaCotId,
+                        observacion: text,
+                    });
+                    el.textContent = text;
+                    renderPlaceholderIfEmpty(el);
+                } catch (e) {
+                    alert('Error guardando observación: ' + (e && e.message ? e.message : 'Error'));
+                    const original = normalizeText(el.dataset.originalText || '');
+                    el.textContent = original;
+                    renderPlaceholderIfEmpty(el);
+                }
+            }
+        });
+
+        document.addEventListener('blur', (ev) => {
+            const el = ev.target && ev.target.classList && ev.target.classList.contains('logo-prenda-obs') ? ev.target : null;
+            if (!el) return;
+            if (el.dataset.editing !== '1') return;
+
+            const original = normalizeText(el.dataset.originalText || '');
+            el.contentEditable = 'false';
+            el.dataset.editing = '0';
+            el.style.borderStyle = 'dashed';
+            el.style.background = '#f8fafc';
+            el.textContent = original;
+            renderPlaceholderIfEmpty(el);
+        }, true);
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof window.wireLogoPrendaObservaciones === 'function') {
+            window.wireLogoPrendaObservaciones();
+        }
+    });
+}
+
 /**
  * Abre el modal de detalle de cotización
  * @param {number} cotizacionId - ID de la cotización

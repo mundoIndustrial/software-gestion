@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Application\Services\PdfDesign\LogoPdfDesign;
 use App\Models\Cotizacion;
+use App\Models\LogoObservacionPrendaCot;
 use Illuminate\Http\Request;
 
 /**
@@ -51,6 +52,18 @@ class PDFLogoController extends Controller
                     ]);
                 }
             ])->findOrFail($id);
+
+            $obsRows = LogoObservacionPrendaCot::query()
+                ->where('cotizacion_id', $cotizacion->id)
+                ->get(['prenda_cot_id', 'observacion'])
+                ->keyBy('prenda_cot_id');
+
+            if ($cotizacion->relationLoaded('prendas') && $cotizacion->prendas) {
+                foreach ($cotizacion->prendas as $prenda) {
+                    $row = $prenda && isset($prenda->id) ? ($obsRows[$prenda->id] ?? null) : null;
+                    $prenda->logo_observacion = $row ? ($row->observacion ?? null) : null;
+                }
+            }
 
             // Decodificar el campo especificaciones si viene como string con escape
             if ($cotizacion->especificaciones && is_string($cotizacion->especificaciones)) {
