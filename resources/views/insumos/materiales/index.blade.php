@@ -4295,6 +4295,118 @@ function abrirModalSeguimientoDirectoInsumos(pedidoId, prendaIdTarget) {
         window.datosSelectorPrendas = null;
         window.pedidoIdSelector = null;
     }
+
+    /**
+     * REALTIME LISTENERS - Escuchar cambios en tiempo real desde supervisor-pedidos
+     * Cuando se aprueba un pedido en supervisor-pedidos, actualiza la tabla en insumos/materiales
+     */
+    function initializeRealtimeListener() {
+        try {
+            // Usar la instancia de Echo (esperar a que esté lista)
+            window.waitForEcho(() => {
+                const echo = window.EchoInstance;
+                
+                if (!echo) {
+                    console.warn('[Realtime Insumos] Echo no está disponible');
+                    return;
+                }
+
+                console.log('[Realtime Insumos] Inicializando listeners...');
+
+                // Función para refrescar la tabla
+                const refreshMateriales = debounce(() => {
+                    console.log('[Realtime Insumos] Refrescando tabla de materiales...');
+                    // Recargar la página o hacer una llamada AJAX para actualizar
+                    location.reload();
+                }, 2000);
+
+                // ==========================================
+                // CANAL: supervisor-pedidos
+                // ==========================================
+                const channelSupervisor = echo.channel('supervisor-pedidos');
+                
+                channelSupervisor.subscribed(() => {
+                    console.log('[Realtime Insumos] ✅ Suscripción exitosa al canal supervisor-pedidos');
+                });
+                
+                channelSupervisor.error((error) => {
+                    console.error('[Realtime Insumos] ❌ Error en suscripción al canal supervisor-pedidos:', error);
+                });
+                
+                // Escuchar evento 'orden.updated' (el nombre devuelto por broadcastAs())
+                channelSupervisor.listen('.orden.updated', (data) => {
+                    console.log('[Realtime Insumos] 📢 Evento .orden.updated recibido:', data);
+                    if (data.orden && (data.orden.estado === 'PENDIENTE_INSUMOS' || data.orden.area === 'Insumos')) {
+                        console.log('[Realtime Insumos] 🔄 Refrescando porque orden está en Insumos');
+                        refreshMateriales();
+                    }
+                });
+
+                // Alternativa: Escuchar sin el prefijo de punto
+                channelSupervisor.listen('orden.updated', (data) => {
+                    console.log('[Realtime Insumos] 📢 Evento orden.updated (sin punto) recibido:', data);
+                    if (data.orden && (data.orden.estado === 'PENDIENTE_INSUMOS' || data.orden.area === 'Insumos')) {
+                        console.log('[Realtime Insumos] 🔄 Refrescando porque orden está en Insumos');
+                        refreshMateriales();
+                    }
+                });
+                
+                // Por si el evento tiene el nombre de la clase
+                channelSupervisor.listen('OrdenUpdated', (data) => {
+                    console.log('[Realtime Insumos] 📢 Evento OrdenUpdated recibido:', data);
+                    if (data.orden && (data.orden.estado === 'PENDIENTE_INSUMOS' || data.orden.area === 'Insumos')) {
+                        console.log('[Realtime Insumos] 🔄 Refrescando porque orden está en Insumos');
+                        refreshMateriales();
+                    }
+                });
+
+                // ==========================================
+                // CANAL: ordenes
+                // ==========================================
+                const channelOrdenes = echo.channel('ordenes');
+                
+                channelOrdenes.subscribed(() => {
+                    console.log('[Realtime Insumos] ✅ Suscripción exitosa al canal ordenes');
+                });
+                
+                channelOrdenes.error((error) => {
+                    console.error('[Realtime Insumos] ❌ Error en suscripción al canal ordenes:', error);
+                });
+
+                // Múltiples variantes de nombres de eventos
+                ['orden.updated', '.orden.updated', 'OrdenUpdated'].forEach(eventName => {
+                    channelOrdenes.listen(eventName, (data) => {
+                        console.log(`[Realtime Insumos] 📢 Evento '${eventName}' recibido en canal ordenes:`, data);
+                        refreshMateriales();
+                    });
+                });
+
+                console.log('[Realtime Insumos] ✅ Sistema de tiempo real inicializado correctamente');
+            });
+        } catch (error) {
+            console.error('[Realtime Insumos] ❌ Error inicializando listener:', error);
+        }
+    }
+
+    // Función debounce para evitar múltiples refrescos rápidos
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    // Esperar a que el documento esté completamente cargado antes de inicializar
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeRealtimeListener);
+    } else {
+        initializeRealtimeListener();
+    }
 </script>
 @endsection
 

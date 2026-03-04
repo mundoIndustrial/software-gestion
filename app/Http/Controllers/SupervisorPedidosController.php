@@ -503,9 +503,30 @@ class SupervisorPedidosController extends Controller
                 'timestamp' => now()
             ]);
 
-            //  Broadcast evento en tiempo real (temporalmente deshabilitado para diagnóstico)
-            // broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['estado', 'novedades']));
-            \Log::info("Broadcast OMITIDO para pedido {$orden->numero_pedido} - Aprobación (diagnóstico)");
+            // Broadcast evento en tiempo real
+            try {
+                \Log::info('Iniciando broadcast para orden', [
+                    'orden_id' => $orden->id,
+                    'numero_pedido' => $orden->numero_pedido,
+                    'estado' => $orden->estado,
+                ]);
+                
+                $event = new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['estado', 'novedades']);
+                \Log::info('Evento OrdenUpdated creado', [
+                    'evento_clase' => get_class($event),
+                    'evento_broadcastAs' => $event->broadcastAs(),
+                    'evento_canales' => array_map(fn($ch) => $ch->name, $event->broadcastOn()),
+                ]);
+                
+                broadcast($event);
+                
+                \Log::info("✅ Broadcast enviado exitosamente para pedido {$orden->numero_pedido} - Aprobación");
+            } catch (\Exception $e) {
+                \Log::error("❌ Error despachando broadcast: " . $e->getMessage(), [
+                    'orden_id' => $orden->id,
+                    'exception' => (string)$e
+                ]);
+            }
 
             return response()->json([
                 'success' => true,
