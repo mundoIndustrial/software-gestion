@@ -945,8 +945,8 @@ function renderizarTablaEPPAgregados() {
                     ondrop="manejarDropFotosEPP(event, ${epp.id})" 
                     ondragover="manejarDragOverFotosEPP(event)" 
                     ondragleave="manejarDragLeaveFotosEPP(event)"
-                    onclick="document.getElementById('inputFotos_${epp.id}').click()">
-                    ${fotosHtml ? `<div class="flex gap-1 items-center">${fotosHtml}</div>` : '<span class="text-gray-400 text-xs">Arrastra, pega (Ctrl+V) o haz clic</span>'}
+                    onclick="this.focus()">
+                    ${fotosHtml ? `<div class="flex gap-1 items-center">${fotosHtml}</div>` : '<span class="text-gray-400 text-xs">Arrastra imágenes o pega (Ctrl+V)</span>'}
                 </div>
                 <input type="file" id="inputFotos_${epp.id}" multiple accept="image/*" style="display: none;" onchange="manejarSeleccionFotosEPP(event, ${epp.id})">
             </td>
@@ -3732,5 +3732,16 @@ document.addEventListener('click', function(e) {
         cerrarModalAgregarEPP();
     }
 });
-</script>
 
+/**
+ * Hacer que las zonas de fotos reciban focus al hacer click
+ * Esto permite que Ctrl+V detecte correctamente en cuál EPP pegar la imagen
+ */
+document.addEventListener('click', function(e) {
+    const fotoZona = e.target.closest('[id^="fotoZona_"]');
+    if (fotoZona) {
+        // Dar focus a la zona para que Ctrl+V pueda detectarla
+        fotoZona.focus();
+        console.log('[click] Focus en zona de fotos:', fotoZona.id);
+    }
+});

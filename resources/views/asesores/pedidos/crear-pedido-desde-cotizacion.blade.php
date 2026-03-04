@@ -213,6 +213,7 @@
 @include('asesores.pedidos.modals.modal-proceso-generico')
 @include('asesores.pedidos.modals.modal-confirmar-eliminar-imagen-proceso')
 @include('asesores.pedidos.modals.modal-agregar-epp')
+@include('asesores.pedidos.modals.modal-editar-epp')
 
 @push('scripts')
     <!-- 🔧 Logger centralizado (DEBE cargar ANTES de cualquier servicio) -->
