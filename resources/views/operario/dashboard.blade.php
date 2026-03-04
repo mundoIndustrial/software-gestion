@@ -1,13 +1,13 @@
-@extends('operario.layout')
+﻿@extends('operario.layout')
 
-@section('title', 'Mis Órdenes')
+@section('title', 'Mis Ã“rdenes')
 @section('page-title', '')
 
 @php
     // Helper para obtener clase de estado
     function getEstadoClass($estado) {
         $estado = strtolower(trim($estado));
-        if (strpos($estado, 'ejecución') !== false || strpos($estado, 'proceso') !== false) {
+        if (strpos($estado, 'ejecuciÃ³n') !== false || strpos($estado, 'proceso') !== false) {
             return 'en-proceso';
         }
         if (strpos($estado, 'completada') !== false || strpos($estado, 'completado') !== false) {
@@ -26,7 +26,7 @@
             rol: '{{ Auth::user()->roles->first()->name ?? '' }}'
         };
     </script>
-    <!-- Búsqueda -->
+    <!-- BÃºsqueda -->
     <div class="search-section">
         <span class="material-symbols-rounded">search</span>
         <input type="text" id="searchInput" class="search-box" placeholder="Buscar por # Recibo, Prenda o Cliente...">
@@ -101,7 +101,7 @@
                                     : (in_array($areaReciboNormalizada, ['control calidad', 'control de calidad'], true)
                                         ? $reciboCompletadoControlCalidad
                                         : false));
-                            $labelAreaVista = $areaReciboActual ?: '—';
+                            $labelAreaVista = $areaReciboActual ?: 'â€”';
                             $labelEstadoVista = $completadoVistaSegunArea
                                 ? ('COMPLETADO ' . strtoupper($labelAreaVista))
                                 : ('PENDIENTE ' . strtoupper($labelAreaVista));
@@ -138,7 +138,7 @@
                                     <p class="prendas-label">
                                         <strong>{{ $prenda['nombre_prenda'] }}</strong>
                                         @if($prenda['descripcion'])
-                                            — {{ $prenda['descripcion'] }}
+                                            â€” {{ $prenda['descripcion'] }}
                                         @endif
                                     </p>
                                 </div>
@@ -158,7 +158,7 @@
                                             $esTipoReciboCostura = in_array('COSTURA', $tiposUnicos->toArray());
                                         @endphp
 
-                                        {{-- Botón "Pasar a Costura" o "DESHACER COSTURA" solo para recibos tipo COSTURA --}}
+                                        {{-- BotÃ³n "Pasar a Costura" o "DESHACER COSTURA" solo para recibos tipo COSTURA --}}
                                         @if($esTipoReciboCostura)
                                             <button class="btn-pasar-costura {{ $esCosturaProceso ? 'btn-deshacer-costura' : '' }}" 
                                                     id="btn-costura-{{ $prenda['prenda_id'] }}"
@@ -175,7 +175,7 @@
                                             </button>
                                         @endif
 
-                                        {{-- Botón "Pasar a C.C" o "DESHACER" --}}
+                                        {{-- BotÃ³n "Pasar a C.C" o "DESHACER" --}}
                                         <button class="btn-pasar-cc" 
                                                 id="btn-cc-{{ $prenda['prenda_id'] }}"
                                                 data-pedido-id="{{ $prenda['pedido_id'] }}"
@@ -196,19 +196,25 @@
                                         AGREGAR NOVEDAD
                                     </button>
                                     @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura'))
-                                        {{-- Para costura-reflectivo/vista-costura, crear un botón por cada TIPO de recibo (sin duplicados) --}}
+                                        {{-- Para costura-reflectivo/vista-costura, crear un botÃ³n por cada TIPO de recibo (sin duplicados) --}}
                                         @php
                                             $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
                                         @endphp
                                         @foreach($tiposUnicos as $tipoReciboUnico)
-                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $tipoReciboUnico }}')">
+                                            @php
+                                                $reciboTipo = collect($prenda['recibos'] ?? [])->first(function($r) use ($tipoReciboUnico) {
+                                                    return strtoupper((string)($r['tipo_recibo'] ?? '')) === strtoupper((string)$tipoReciboUnico);
+                                                });
+                                                $pedidoParcialId = $reciboTipo['pedido_parcial_id'] ?? null;
+                                            @endphp
+                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $tipoReciboUnico }}', {{ $pedidoParcialId ? (int)$pedidoParcialId : 'null' }})">
                                                 <span class="material-symbols-rounded">receipt</span>
                                                 {{ $tipoReciboUnico }}
                                             </button>
                                         @endforeach
                                     @else
-                                        {{-- Para otros operarios, un solo botón con tipo de recibo --}}
-                                        <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $prenda['recibos'][0]['tipo_recibo'] ?? '' }}')">
+                                        {{-- Para otros operarios, un solo botÃ³n con tipo de recibo --}}
+                                        <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $prenda['recibos'][0]['tipo_recibo'] ?? '' }}', {{ !empty($prenda['recibos'][0]['pedido_parcial_id']) ? (int)$prenda['recibos'][0]['pedido_parcial_id'] : 'null' }})">
                                             <span class="material-symbols-rounded">receipt</span>
                                             VER RECIBOS
                                         </button>
@@ -218,20 +224,20 @@
 
                             <!-- Contenido Derecho -->
                             <div class="orden-right">
-                                {{-- Pie de página con número de pedido --}}
+                                {{-- Pie de pÃ¡gina con nÃºmero de pedido --}}
                                 <div class="orden-pedido-footer">
                                     <small>PEDIDO #{{ $prenda['numero_pedido'] }}</small>
                                 </div>
 
                                 <div class="orden-right-center">
                                     @if(isset($prenda['recibos'][0]['consecutivo_actual']))
-                                        {{-- Mostrar número del recibo --}}
+                                        {{-- Mostrar nÃºmero del recibo --}}
                                         <div class="orden-fecha">
                                             <span class="orden-fecha-label">RECIBO</span>
                                             <span>#{{ $prenda['recibos'][0]['consecutivo_actual'] }}</span>
                                         </div>
                                     @else
-                                        {{-- Para otros roles, mostrar número del pedido --}}
+                                        {{-- Para otros roles, mostrar nÃºmero del pedido --}}
                                         <div class="orden-fecha">
                                             <span class="orden-fecha-label">PEDIDO</span>
                                             <span>#{{ $prenda['numero_pedido'] }}</span>
@@ -239,7 +245,14 @@
                                     @endif
                                     <div class="orden-fecha">
                                         <span class="orden-fecha-label">REGISTRO</span>
-                                        <span>{{ $prenda['fecha_creacion']->format('d/m/Y') }}</span>
+                                        @php
+                                            $esParcial = !empty($prenda['recibos'][0]['es_parcial']);
+                                            $creadoEnRecibo = $prenda['recibos'][0]['creado_en'] ?? null;
+                                            $fechaRegistro = $esParcial && $creadoEnRecibo
+                                                ? \Carbon\Carbon::parse($creadoEnRecibo)
+                                                : ($prenda['fecha_creacion'] ?? null);
+                                        @endphp
+                                        <span>{{ $fechaRegistro ? $fechaRegistro->format('d/m/Y') : '-' }}</span>
                                     </div>
                                     <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $prenda['recibos'][0]['tipo_recibo'] ?? '' }}'); return false;">
                                         <span class="material-symbols-rounded">arrow_forward</span>
@@ -285,7 +298,7 @@
         margin: 0 auto;
     }
 
-    /* Búsqueda */
+    /* BÃºsqueda */
     .search-section {
         position: relative;
         margin-bottom: 1.5rem;
@@ -350,7 +363,7 @@
         pointer-events: auto;
     }
 
-    /* Órdenes Section */
+    /* Ã“rdenes Section */
     .ordenes-section {
         background: white;
     }
@@ -388,7 +401,7 @@
         font-weight: 600;
     }
 
-    /* Órdenes List */
+    /* Ã“rdenes List */
     .ordenes-list {
         display: grid;
         gap: 0.75rem;
@@ -574,7 +587,7 @@
         font-weight: 500;
     }
 
-    /* Botón Reportar Pendiente */
+    /* BotÃ³n Reportar Pendiente */
     .orden-actions {
         padding: 0.75rem 1rem;
         border-top: 1px solid #f0f0f0;
@@ -765,7 +778,7 @@
         transition: all 0.2s ease;
     }
 
-    /* Botón Agregar Novedad */
+    /* BotÃ³n Agregar Novedad */
     .btn-agregar-novedad {
         display: flex;
         align-items: center;
@@ -860,7 +873,7 @@
         border: 1px solid #B39DDB;
     }
 
-    /* Botón Ver Recibos */
+    /* BotÃ³n Ver Recibos */
     .btn-ver-recibos {
         display: flex;
         align-items: center;
@@ -890,7 +903,7 @@
         font-size: 14px;
     }
 
-    /* Botón Pasar a Control Calidad */
+    /* BotÃ³n Pasar a Control Calidad */
     .btn-pasar-cc {
         background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
         border: none;
@@ -919,7 +932,7 @@
         font-size: 14px;
     }
 
-    /* Botón Pasar a Costura */
+    /* BotÃ³n Pasar a Costura */
     .btn-pasar-costura {
         background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
         border: none;
@@ -958,7 +971,7 @@
         box-shadow: 0 4px 8px rgba(255, 152, 0, 0.25);
     }
 
-    /* Animación de cargando para botones deshacer */
+    /* AnimaciÃ³n de cargando para botones deshacer */
     @keyframes spin-loading {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
@@ -1214,7 +1227,7 @@
         if (searchInput) {
             const clearBtn = document.getElementById('clearFilterBtn');
             
-            // Handler para botón de limpiar
+            // Handler para botÃ³n de limpiar
             if (clearBtn) {
                 clearBtn.addEventListener('click', function() {
                     searchInput.value = '';
@@ -1229,13 +1242,13 @@
             searchInput.addEventListener('input', function(e) {
                 const busqueda = e.target.value.toLowerCase().trim();
                 
-                // Mostrar/ocultar botón de limpiar según si hay texto
+                // Mostrar/ocultar botÃ³n de limpiar segÃºn si hay texto
                 if (clearBtn) {
                     clearBtn.style.display = busqueda ? 'flex' : 'none';
                 }
 
                 ordenCards.forEach(card => {
-                    // Extraer número de RECIBO del DOM (desde .orden-right)
+                    // Extraer nÃºmero de RECIBO del DOM (desde .orden-right)
                     const reciboDom = card.querySelector('.orden-right .orden-fecha span:not(.orden-fecha-label)');
                     const numeroRecibo = reciboDom ? reciboDom.textContent.toLowerCase().trim() : '';
                     const cliente = card.dataset.cliente.toLowerCase();
@@ -1244,9 +1257,9 @@
                     const prendaDom = card.querySelector('.orden-prendas .prendas-label strong');
                     const nombrePrenda = prendaDom ? prendaDom.textContent.toLowerCase().trim() : '';
 
-                    console.log('🔍 Filtro:', {busqueda, numeroRecibo, clienteName: cliente, nombrePrenda, coincide: numeroRecibo.includes(busqueda) || cliente.includes(busqueda) || nombrePrenda.includes(busqueda)});
+                    console.log('ðŸ” Filtro:', {busqueda, numeroRecibo, clienteName: cliente, nombrePrenda, coincide: numeroRecibo.includes(busqueda) || cliente.includes(busqueda) || nombrePrenda.includes(busqueda)});
 
-                    // Mostrar si coincide con número de recibo, cliente o prenda
+                    // Mostrar si coincide con nÃºmero de recibo, cliente o prenda
                     if (numeroRecibo.includes(busqueda) || cliente.includes(busqueda) || nombrePrenda.includes(busqueda) || busqueda === '') {
                         card.style.display = '';
                     } else {
@@ -1257,7 +1270,7 @@
         }
     });
 
-    // Función para filtrar prendas por tipo de recibo
+    // FunciÃ³n para filtrar prendas por tipo de recibo
     window.filtrarPrendasPorRecibo = function(filtro) {
         console.log(' [FILTRO] Iniciando filtro:', filtro);
         
@@ -1292,11 +1305,11 @@
                 mostradas++;
             } else {
                 if (tipoRecibo === filtro) {
-                    console.log(`  ✓ Mostrando (coincide con filtro "${filtro}")`);
+                    console.log(`  âœ“ Mostrando (coincide con filtro "${filtro}")`);
                     card.style.display = '';
                     mostradas++;
                 } else {
-                    console.log(`  ✗ Ocultando (tipo="${tipoRecibo}" !== filtro="${filtro}")`);
+                    console.log(`  âœ— Ocultando (tipo="${tipoRecibo}" !== filtro="${filtro}")`);
                     card.style.display = 'none';
                     ocultadas++;
                 }
@@ -1306,10 +1319,10 @@
         console.log(` Filtro completado: ${mostradas} mostradas, ${ocultadas} ocultadas`);
     };
 
-    // Función para abrir detalles de recibos
+    // FunciÃ³n para abrir detalles de recibos
     function abrirDetallesRecibos(numeroPedido, prendaId, nombrePrenda, tipoRecibo) {
         console.log(' [ABRIR DETALLES RECIBOS] ===== INICIANDO =====');
-        console.log(' Parámetros recibidos:', {
+        console.log(' ParÃ¡metros recibidos:', {
             numeroPedido: numeroPedido,
             prendaId: prendaId,
             nombrePrenda: nombrePrenda,
@@ -1319,16 +1332,16 @@
             tipoNombrePrenda: typeof nombrePrenda
         });
         
-        // Validar que tengamos el número de pedido
+        // Validar que tengamos el nÃºmero de pedido
         if (!numeroPedido || numeroPedido === '' || numeroPedido === null || numeroPedido === undefined) {
-            console.error(' ERROR: numeroPedido está vacío o undefined', numeroPedido);
-            alert('Error: No se pudo determinar el número de pedido');
+            console.error(' ERROR: numeroPedido estÃ¡ vacÃ­o o undefined', numeroPedido);
+            alert('Error: No se pudo determinar el nÃºmero de pedido');
             return false;
         }
         
-        // Convertir a string si es número
+        // Convertir a string si es nÃºmero
         const numeroPedidoStr = String(numeroPedido).trim();
-        console.log('📝 numeroPedido normalizado:', numeroPedidoStr);
+        console.log('ðŸ“ numeroPedido normalizado:', numeroPedidoStr);
         
         // Construir la URL con prenda_id y tipo de recibo si se proporcionan
         let url = '/operario/pedido/' + numeroPedidoStr;
@@ -1336,26 +1349,26 @@
         
         if (prendaId) {
             params.append('prenda_id', prendaId);
-            console.log('📝 Prenda ID:', prendaId);
+            console.log('ðŸ“ Prenda ID:', prendaId);
         }
         
         if (tipoRecibo) {
             params.append('tipo_recibo', tipoRecibo);
-            console.log('📝 Tipo de recibo:', tipoRecibo);
+            console.log('ðŸ“ Tipo de recibo:', tipoRecibo);
         }
         
         if (params.toString()) {
             url += '?' + params.toString();
         }
         
-        console.log('🌐 URL a navegar:', url);
+        console.log('ðŸŒ URL a navegar:', url);
         console.log(' Navegando a:', url);
         
         // Navegar
         try {
-            console.log('⏳ Iniciando navegación...');
+            console.log('â³ Iniciando navegaciÃ³n...');
             window.location.href = url;
-            console.log(' Navegación iniciada exitosamente');
+            console.log(' NavegaciÃ³n iniciada exitosamente');
             return false;
         } catch (error) {
             console.error(' Error al navegar:', error);
@@ -1430,7 +1443,7 @@
                 cerrarModalReportar();
                 abrirModalExito('Novedad reportada correctamente', 'El estado ha sido cambiado a Pendiente.');
                 
-                // Recargar después de 2 segundos para que se actualice con los nuevos datos
+                // Recargar despuÃ©s de 2 segundos para que se actualice con los nuevos datos
                 setTimeout(() => {
                     location.reload();
                 }, 2000);
@@ -1455,7 +1468,7 @@
         }
     }
 
-    // Modal de éxito
+    // Modal de Ã©xito
     function abrirModalExito(titulo, mensaje) {
         document.getElementById('exitoTitulo').textContent = titulo;
         document.getElementById('exitoMensaje').textContent = mensaje;
@@ -1468,7 +1481,7 @@
 
     // Cerrar modal exitoal hacer click fuera
 
-    // Función para marcar proceso como completado
+    // FunciÃ³n para marcar proceso como completado
     window.marcarProcesoCompletado = async function(numeroPedido) {
         try {
             const response = await fetch(`/operario/api/completar-proceso/${numeroPedido}`, {
@@ -1482,8 +1495,8 @@
             const data = await response.json();
 
             if (response.ok) {
-                // Mostrar modal de éxito
-                document.getElementById('exitoTitulo').textContent = '¡Proceso Completado!';
+                // Mostrar modal de Ã©xito
+                document.getElementById('exitoTitulo').textContent = 'Â¡Proceso Completado!';
                 document.getElementById('exitoMensaje').textContent = 'El proceso ha sido marcado como completado correctamente.';
                 document.getElementById('modalExito').style.display = 'flex';
             } else {
@@ -1504,9 +1517,9 @@
         const modal = document.getElementById('modalExito');
         modal.style.display = 'none';
         
-        // Recargar la página si fue exitoso (cuando el título es "¡Proceso Completado!")
+        // Recargar la pÃ¡gina si fue exitoso (cuando el tÃ­tulo es "Â¡Proceso Completado!")
         const titulo = document.getElementById('exitoTitulo').textContent;
-        if (titulo === '¡Proceso Completado!') {
+        if (titulo === 'Â¡Proceso Completado!') {
             setTimeout(() => {
                 location.reload();
             }, 500);
@@ -1615,7 +1628,7 @@
         </div>
 
         <div class="modal-body">
-            <p class="modal-description">Describe el problema o novedad. La orden pasará a estado <strong>Pendiente</strong>.</p>
+            <p class="modal-description">Describe el problema o novedad. La orden pasarÃ¡ a estado <strong>Pendiente</strong>.</p>
             
             <div class="modal-info">
                 <p class="info-label">ORDEN:</p>
@@ -1829,7 +1842,7 @@
         box-shadow: 0 2px 6px rgba(239, 83, 80, 0.3);
     }
 
-    /* Modal de Éxito */
+    /* Modal de Ã‰xito */
     .modal-exito {
         max-width: 400px;
     }
@@ -1897,12 +1910,12 @@
     }
 </style>
 
-<!-- Modal Éxito -->
+<!-- Modal Ã‰xito -->
 <div id="modalExito" class="modal-overlay">
     <div class="modal-content modal-exito">
         <div class="modal-header modal-header-exito">
             <span class="material-symbols-rounded modal-icon-exito">check_circle</span>
-            <h2 id="exitoTitulo">¡Éxito!</h2>
+            <h2 id="exitoTitulo">Â¡Ã‰xito!</h2>
         </div>
 
         <div class="modal-body">
@@ -1918,7 +1931,7 @@
 </div>
 
 <script>
-// Función para filtrar pedidos por tipo
+// FunciÃ³n para filtrar pedidos por tipo
 function filtrarPedidos(filtro) {
     const ordenesList = document.getElementById('ordenesList');
     const cards = ordenesList.querySelectorAll('.orden-card-simple');
@@ -1953,7 +1966,7 @@ function filtrarPedidos(filtro) {
     }
 }
 
-// Búsqueda global (mantener funcionando con filtros)
+// BÃºsqueda global (mantener funcionando con filtros)
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
@@ -1961,7 +1974,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const searchTerm = this.value.toLowerCase();
             const clearBtn = document.getElementById('clearFilterBtn');
             
-            // Mostrar/ocultar botón de limpiar
+            // Mostrar/ocultar botÃ³n de limpiar
             if (clearBtn) {
                 clearBtn.style.display = searchTerm ? 'flex' : 'none';
             }
@@ -1971,12 +1984,12 @@ document.addEventListener('DOMContentLoaded', function() {
             let visibles = 0;
 
             cards.forEach(card => {
-                // Si el filtro activo no es 'todos', aplicar también el filtro de tipo
+                // Si el filtro activo no es 'todos', aplicar tambiÃ©n el filtro de tipo
                 const badgeActivo = document.querySelector('.badge-filtro-active');
                 const filtroActivo = badgeActivo ? badgeActivo.dataset.filtro : 'todos';
                 const debeVisiblePorTipo = filtroActivo === 'todos' || card.dataset.tipoRecibo === filtroActivo;
 
-                // Extraer número de RECIBO del DOM (desde .orden-right)
+                // Extraer nÃºmero de RECIBO del DOM (desde .orden-right)
                 const reciboDom = card.querySelector('.orden-right .orden-fecha span:not(.orden-fecha-label)');
                 const numeroRecibo = reciboDom ? reciboDom.textContent.toLowerCase().trim() : '';
                 const cliente = card.dataset.cliente ? card.dataset.cliente.toLowerCase() : '';
@@ -2010,9 +2023,9 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="modal-content" style="max-width: 700px;">
         <div class="modal-header" style="background: #1e293b; border-bottom: 1px solid #e2e8f0;">
             <h2 style="color: white; margin: 0; font-size: 1rem; font-weight: 600;">
-                💬 Novedades - Pedido <span id="prendaNumeroPedidoDisplay">#</span> - Recibo <span id="prendaNumeroReciboDisplay"></span>
+                ðŸ’¬ Novedades - Pedido <span id="prendaNumeroPedidoDisplay">#</span> - Recibo <span id="prendaNumeroReciboDisplay"></span>
             </h2>
-            <button onclick="cerrarModalNovedad()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.5rem; padding: 0; margin: 0;">✕</button>
+            <button onclick="cerrarModalNovedad()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.5rem; padding: 0; margin: 0;">âœ•</button>
         </div>
 
         <div class="modal-body" style="max-height: 600px; overflow-y: auto;">
@@ -2026,12 +2039,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 <textarea 
                     id="novedadDescripcionText" 
                     style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 0.875rem; font-family: 'Poppins', sans-serif; resize: none; focus: outline none;"
-                    placeholder="Escribe tu novedad aquí..." 
+                    placeholder="Escribe tu novedad aquÃ­..." 
                     rows="4"></textarea>
 
                 <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
                     <button type="button" onclick="guardarNovedad()" style="flex: 1; padding: 0.5rem 1rem; background: #22c55e; color: white; border: none; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease;">
-                        ✓ Guardar Novedad
+                        âœ“ Guardar Novedad
                     </button>
                     <button type="button" onclick="cerrarModalNovedad()" style="flex: 1; padding: 0.5rem 1rem; background: #94a3b8; color: white; border: none; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease;">
                         Cancelar
@@ -2047,13 +2060,13 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="modal-content" style="max-width: 600px;">
         <div class="modal-header" style="background: #1e293b; border-bottom: 1px solid #e2e8f0;">
             <h2 style="color: white; margin: 0; font-size: 1rem; font-weight: 600;">
-                ✏️ Editar Novedad
+                âœï¸ Editar Novedad
             </h2>
-            <button onclick="cerrarModalEditarNovedad()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.5rem; padding: 0; margin: 0;">✕</button>
+            <button onclick="cerrarModalEditarNovedad()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.5rem; padding: 0; margin: 0;">âœ•</button>
         </div>
 
         <div class="modal-body" style="padding: 1.5rem;">
-            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">DESCRIPCIÓN</label>
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">DESCRIPCIÃ“N</label>
             <textarea 
                 id="editarNovedadText" 
                 style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 0.875rem; font-family: 'Poppins', sans-serif; resize: none;"
@@ -2063,16 +2076,16 @@ document.addEventListener('DOMContentLoaded', function() {
             <div style="margin-bottom: 1rem; margin-top: 1rem;">
                 <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">TIPO DE NOVEDAD</label>
                 <select id="editarTipoSelect" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-family: 'Poppins', sans-serif; font-size: 0.85rem; color: #333; background: white;">
-                    <option value="observacion">Observación</option>
+                    <option value="observacion">ObservaciÃ³n</option>
                     <option value="problema">Problema</option>
                     <option value="cambio">Cambio</option>
-                    <option value="correccion">Corrección</option>
+                    <option value="correccion">CorrecciÃ³n</option>
                 </select>
             </div>
 
             <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
                 <button type="button" onclick="guardarNovedadEditada()" style="flex: 1; padding: 0.5rem 1rem; background: #22c55e; color: white; border: none; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease;">
-                    ✓ Guardar Cambios
+                    âœ“ Guardar Cambios
                 </button>
                 <button type="button" onclick="cerrarModalEditarNovedad()" style="flex: 1; padding: 0.5rem 1rem; background: #94a3b8; color: white; border: none; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease;">
                     Cancelar
@@ -2214,10 +2227,10 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- Modal de Mensajes -->
 <div id="modalMensaje" class="modal-mensaje-overlay">
     <div class="modal-mensaje-contenido" id="modalMensajeContenido" style="position: relative;">
-        <button onclick="cerrarModalMensaje()" style="position: absolute; top: 0.75rem; right: 0.75rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999; transition: all 0.3s ease;" onmouseover="this.style.color='#333'" onmouseout="this.style.color='#999'">✕</button>
-        <div class="modal-mensaje-icono" id="modalMensajeIcono">✓</div>
-        <div class="modal-mensaje-titulo" id="modalMensajeTitulo">Éxito</div>
-        <div class="modal-mensaje-texto" id="modalMensajeTexto">La operación se realizó correctamente</div>
+        <button onclick="cerrarModalMensaje()" style="position: absolute; top: 0.75rem; right: 0.75rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999; transition: all 0.3s ease;" onmouseover="this.style.color='#333'" onmouseout="this.style.color='#999'">âœ•</button>
+        <div class="modal-mensaje-icono" id="modalMensajeIcono">âœ“</div>
+        <div class="modal-mensaje-titulo" id="modalMensajeTitulo">Ã‰xito</div>
+        <div class="modal-mensaje-texto" id="modalMensajeTexto">La operaciÃ³n se realizÃ³ correctamente</div>
         <button class="modal-mensaje-boton" onclick="cerrarModalMensaje()">Aceptar</button>
     </div>
 </div>
@@ -2230,7 +2243,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Funciones para manejar Modal de Mensajes
-    function mostrarMensaje(titulo, texto, tipo = 'exito', icono = '✓') {
+    function mostrarMensaje(titulo, texto, tipo = 'exito', icono = 'âœ“') {
         const modal = document.getElementById('modalMensaje');
         const contenido = document.getElementById('modalMensajeContenido');
         const iconoEl = document.getElementById('modalMensajeIcono');
@@ -2251,7 +2264,7 @@ document.addEventListener('DOMContentLoaded', function() {
         tituloEl.textContent = titulo;
         textoEl.textContent = texto;
         
-        // Resetear botón a valores por defecto (si existe)
+        // Resetear botÃ³n a valores por defecto (si existe)
         if (boton) {
             boton.textContent = 'Aceptar';
             boton.style.background = '#3F51B5';
@@ -2280,19 +2293,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Función auxiliar para mensaje de éxito
+    // FunciÃ³n auxiliar para mensaje de Ã©xito
     function mostrarExito(titulo, texto = '') {
-        mostrarMensaje(titulo, texto, 'exito', '✓');
+        mostrarMensaje(titulo, texto, 'exito', 'âœ“');
     }
 
-    // Función auxiliar para mensaje de error
+    // FunciÃ³n auxiliar para mensaje de error
     function mostrarError(titulo, texto = '') {
-        mostrarMensaje(titulo, texto, 'error', '✕');
+        mostrarMensaje(titulo, texto, 'error', 'âœ•');
     }
 
-    // Función auxiliar para mensaje de información
+    // FunciÃ³n auxiliar para mensaje de informaciÃ³n
     function mostrarInfo(titulo, texto = '') {
-        mostrarMensaje(titulo, texto, 'info', 'ℹ');
+        mostrarMensaje(titulo, texto, 'info', 'â„¹');
     }
 
     // Cerrar modal de mensajes al hacer click fuera
@@ -2306,9 +2319,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Variables globales para el modal
 
 
-    // Función para abrir modal de agregar novedad
+    // FunciÃ³n para abrir modal de agregar novedad
     function abrirModalNovedad(numeroPedido, prendaId, nombrePrenda, numeroRecibo) {
-        console.log('📝 Abriendo modal novedad', {numeroPedido, prendaId, nombrePrenda, numeroRecibo});
+        console.log('ðŸ“ Abriendo modal novedad', {numeroPedido, prendaId, nombrePrenda, numeroRecibo});
         
         const modal = document.getElementById('modalNovedad');
         if (!modal) {
@@ -2320,7 +2333,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.novedadActual.numeroPedido = numeroPedido;
         window.novedadActual.prendaId = prendaId;
         
-        // Establecer valores con validación
+        // Establecer valores con validaciÃ³n
         const prendaNumeroDisplay = document.getElementById('prendaNumeroPedidoDisplay');
         const reciboNumeroDisplay = document.getElementById('prendaNumeroReciboDisplay');
         const textareaDescripcion = document.getElementById('novedadDescripcionText');
@@ -2336,7 +2349,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function cargarNovedadesDelUsuario(numeroPedido, prendaId) {
-        console.log('📋 Cargando novedades', {numeroPedido, prendaId});
+        console.log('ðŸ“‹ Cargando novedades', {numeroPedido, prendaId});
         
         fetch(`/operario/api/novedades/${numeroPedido}/${prendaId}`, {
             headers: {
@@ -2345,7 +2358,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
-            console.log('✓ Novedades obtenidas:', data);
+            console.log('âœ“ Novedades obtenidas:', data);
             
             if (window.USUARIO_ACTUAL && window.USUARIO_ACTUAL.rol === 'cortador') {
                 data.novedades = data.novedades.filter(n => n.creado_por === window.USUARIO_ACTUAL.id);
@@ -2353,7 +2366,7 @@ document.addEventListener('DOMContentLoaded', function() {
             mostrarNovedades(data.novedades || []);
         })
         .catch(error => {
-            console.error('❌ Error cargando novedades:', error);
+            console.error('âŒ Error cargando novedades:', error);
         });
     }
 
@@ -2442,7 +2455,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const tipoNovedad = 'observacion';
 
         if (!descripcion) {
-            mostrarError('Validación', 'Por favor describe la novedad');
+            mostrarError('ValidaciÃ³n', 'Por favor describe la novedad');
             return;
         }
 
@@ -2468,7 +2481,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Recargar novedades
                 cargarNovedadesDelUsuario(window.novedadActual.numeroPedido, window.novedadActual.prendaId);
-                mostrarExito('Éxito', 'Novedad guardada correctamente');
+                mostrarExito('Ã‰xito', 'Novedad guardada correctamente');
             } else {
                 mostrarError('Error', (data.message || 'No se pudo guardar la novedad'));
             }
@@ -2480,13 +2493,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function editarNovedad(id, texto, tipo) {
-        // Guardar datos de la novedad en edición
+        // Guardar datos de la novedad en ediciÃ³n
         window.novedadEnEdicion = { id, texto, tipo };
         
-        // Mostrar modal de edición
+        // Mostrar modal de ediciÃ³n
         const editModal = document.getElementById('modalEditarNovedad');
         if (!editModal) {
-            mostrarError('Error', 'Modal de edición no encontrado');
+            mostrarError('Error', 'Modal de ediciÃ³n no encontrado');
             return;
         }
         
@@ -2525,11 +2538,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const nuevoTipo = editSelect.value;
         
         if (!nuevoTexto) {
-            mostrarError('Validación', 'Por favor describe la novedad');
+            mostrarError('ValidaciÃ³n', 'Por favor describe la novedad');
             return;
         }
         
-        // Enviar actualización
+        // Enviar actualizaciÃ³n
         fetch(`/operario/api/novedades/${window.novedadEnEdicion.id}`, {
             method: 'PUT',
             headers: {
@@ -2546,7 +2559,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 cerrarModalEditarNovedad();
                 cargarNovedadesDelUsuario(window.novedadActual.numeroPedido, window.novedadActual.prendaId);
-                mostrarExito('Éxito', 'Novedad actualizada correctamente');
+                mostrarExito('Ã‰xito', 'Novedad actualizada correctamente');
             } else {
                 mostrarError('Error', (data.message || 'No se pudo actualizar la novedad'));
             }
@@ -2558,7 +2571,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function eliminarNovedad(id) {
-        // Modal de confirmación
+        // Modal de confirmaciÃ³n
         const modal = document.getElementById('modalMensaje');
         const contenido = document.getElementById('modalMensajeContenido');
         const iconoEl = document.getElementById('modalMensajeIcono');
@@ -2571,7 +2584,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         iconoEl.textContent = '?';
         tituloEl.textContent = 'Confirmar';
-        textoEl.textContent = 'Está seguro de que desea eliminar esta novedad?';
+        textoEl.textContent = 'EstÃ¡ seguro de que desea eliminar esta novedad?';
         
         boton.textContent = 'Eliminar';
         boton.style.background = '#ef4444';
@@ -2598,14 +2611,14 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.success) {
                     cargarNovedadesDelUsuario(window.novedadActual.numeroPedido, window.novedadActual.prendaId);
-                    mostrarExito('Éxito', 'Novedad eliminada correctamente');
+                    mostrarExito('Ã‰xito', 'Novedad eliminada correctamente');
                 } else {
                     mostrarError('Error', 'Error al eliminar la novedad');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                mostrarError('Error', 'Error al procesar la eliminación');
+                mostrarError('Error', 'Error al procesar la eliminaciÃ³n');
             });
         };
         
@@ -2680,7 +2693,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const { pedidoId, prendaId, tipoRecibo, recibo, btnId } = window.costuraPendiente;
 
-        // Deshabilitar botón mientras se procesa
+        // Deshabilitar botÃ³n mientras se procesa
         const btnConfirmar = document.querySelector('.btn-confirmar-costura');
         if (btnConfirmar) {
             btnConfirmar.disabled = true;
@@ -2702,7 +2715,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Actualizar dinámicamente el botón a DESHACER COSTURA
+                // Actualizar dinÃ¡micamente el botÃ³n a DESHACER COSTURA
                 const btn = document.getElementById(btnId);
                 if (btn) {
                     btn.dataset.area = 'Costura';
@@ -2733,8 +2746,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 cerrarModalCostura();
-                mostrarExito('Éxito', 'Recibo enviado a Costura correctamente');
-                console.log('✓ Prenda enviada a Costura. Encargado: ' + encargado);
+                mostrarExito('Ã‰xito', 'Recibo enviado a Costura correctamente');
+                console.log('âœ“ Prenda enviada a Costura. Encargado: ' + encargado);
             } else {
                 mostrarError('Error', data.message || 'Error al pasar a Costura');
             }
@@ -2755,7 +2768,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const btn = document.getElementById(btnId);
         if (!btn || btn.disabled) return;
 
-        // Bloquear botón y mostrar cargando
+        // Bloquear botÃ³n y mostrar cargando
         btn.disabled = true;
         const originalHTML = btn.innerHTML;
         btn.innerHTML = '<span class="material-symbols-rounded spin-icon">sync</span> PROCESANDO...';
@@ -2775,7 +2788,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Actualizar botón a PASAR A COSTURA
+                // Actualizar botÃ³n a PASAR A COSTURA
                 if (btn) {
                     btn.dataset.area = data.data.area_nueva || '';
                     btn.dataset.procesoId = '';
@@ -2789,7 +2802,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const badgeArea = body ? body.querySelector('.orden-top-badges .badge-area') : null;
                         const badgeEstado = body ? body.querySelector('.orden-top-badges .badge-completado-corte') : null;
 
-                        const areaNueva = (data.data.area_nueva || '—').toString().trim().toUpperCase();
+                        const areaNueva = (data.data.area_nueva || 'â€”').toString().trim().toUpperCase();
 
                         if (badgeArea) {
                             badgeArea.textContent = areaNueva;
@@ -2806,8 +2819,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
 
-                mostrarExito('Éxito', 'Proceso de Costura deshecho correctamente');
-                console.log('✓ Costura deshecha. Área restaurada a: ' + (data.data.area_nueva || 'sin área'));
+                mostrarExito('Ã‰xito', 'Proceso de Costura deshecho correctamente');
+                console.log('âœ“ Costura deshecha. Ãrea restaurada a: ' + (data.data.area_nueva || 'sin Ã¡rea'));
             } else {
                 btn.innerHTML = originalHTML;
                 mostrarError('Error', data.message || 'Error al deshacer Costura');
@@ -2837,7 +2850,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // CONTROL CALIDAD - Funciones
     // ==========================================
 
-    // Función dinámica para pasar recibo a Control Calidad o Deshacer
+    // FunciÃ³n dinÃ¡mica para pasar recibo a Control Calidad o Deshacer
     function esAreaControlCalidad(area) {
         const norm = (area || '').toLowerCase().trim().replace(/[-_]/g, ' ').replace(/\s+/g, ' ');
         return norm === 'control calidad' || norm === 'control de calidad';
@@ -2858,7 +2871,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const btnCC = document.getElementById(btnId);
             if (!btnCC || btnCC.disabled) return;
 
-            // Bloquear botón y mostrar cargando
+            // Bloquear botÃ³n y mostrar cargando
             btnCC.disabled = true;
             const originalCCHTML = btnCC.innerHTML;
             btnCC.innerHTML = '<span class="material-symbols-rounded spin-icon">sync</span> PROCESANDO...';
@@ -2878,17 +2891,17 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Actualizar dinámicamente el botón
+                    // Actualizar dinÃ¡micamente el botÃ³n
                     const nuevoArea = data.data.area_nueva;
                     btnCC.dataset.area = nuevoArea;
                     btnCC.dataset.procesoId = '';
                     
                     btnCC.innerHTML = '<span class="material-symbols-rounded">check_circle</span> PASAR A C.C';
                     
-                    console.log('✓ Control Calidad deshecho. Área restaurada a: ' + nuevoArea);
+                    console.log('âœ“ Control Calidad deshecho. Ãrea restaurada a: ' + nuevoArea);
                 } else {
                     btnCC.innerHTML = originalCCHTML;
-                    console.error('❌ Error: ' + data.message);
+                    console.error('âŒ Error: ' + data.message);
                 }
             })
             .catch(error => {
@@ -2916,7 +2929,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Actualizar dinámicamente el botón
+                    // Actualizar dinÃ¡micamente el botÃ³n
                     const procesoId = data.data.proceso_id;
                     const btn = document.getElementById(btnId);
                     btn.dataset.area = 'Control Calidad';
@@ -2926,9 +2939,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     icon.textContent = 'undo';
                     btn.innerHTML = '<span class="material-symbols-rounded">undo</span> DESHACER';
                     
-                    console.log('✓ Prenda enviada a Control Calidad');
+                    console.log('âœ“ Prenda enviada a Control Calidad');
                 } else {
-                    console.error('❌ Error: ' + data.message);
+                    console.error('âŒ Error: ' + data.message);
                 }
             })
             .catch(error => {
@@ -2953,4 +2966,3 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 @endsection
-

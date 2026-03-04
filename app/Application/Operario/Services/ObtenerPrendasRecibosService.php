@@ -307,6 +307,28 @@ class ObtenerPrendasRecibosService
                             ->whereNull('deleted_at')
                             ->latest('created_at')
                             ->first();
+
+                        $parcialId = null;
+                        $notas = isset($recibo->notas) ? (string) $recibo->notas : '';
+                        if ($notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
+                            $parcialId = (int) $matches[1];
+                        }
+                        $esParcial = $parcialId !== null;
+
+                        $creadoEn = $recibo->created_at;
+                        if ($esParcial) {
+                            try {
+                                $parcialCreatedAt = \DB::table('pedidos_parciales')
+                                    ->where('id', $parcialId)
+                                    ->whereNull('deleted_at')
+                                    ->value('created_at');
+                                if (!empty($parcialCreatedAt)) {
+                                    $creadoEn = $parcialCreatedAt;
+                                }
+                            } catch (\Exception $e) {
+                                // Mantener created_at del recibo si falla
+                            }
+                        }
                         
                         return [
                             'id' => $recibo->id,
@@ -314,9 +336,11 @@ class ObtenerPrendasRecibosService
                             'consecutivo_actual' => $recibo->consecutivo_actual,
                             'consecutivo_inicial' => $recibo->consecutivo_inicial,
                             'notas' => $recibo->notas,
-                            'creado_en' => $recibo->created_at,
+                            'creado_en' => $creadoEn,
                             'area' => $recibo->area,
                             'proceso_id' => $procesoCC ? $procesoCC->id : null,
+                            'es_parcial' => $esParcial,
+                            'pedido_parcial_id' => $parcialId,
                         ];
                     })->toArray(),
                     'total_recibos' => $recibosDelTipo->count(),

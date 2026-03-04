@@ -312,9 +312,40 @@ class InsumosController extends Controller
         
         // Obtener todos los recibos con la información del pedido
         $allRecibos = $baseQuery->orderBy('consecutivos_recibos_pedidos.consecutivo_actual', 'desc')->get();
+
+        // Para anexos: resolver created_at real desde pedidos_parciales (parcial_id en notas)
+        $parcialCreatedAtMap = [];
+        try {
+            $parcialIds = $allRecibos
+                ->map(function ($recibo) {
+                    $notas = isset($recibo->notas) ? (string) $recibo->notas : '';
+                    if ($notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
+                        return (int) $matches[1];
+                    }
+                    return null;
+                })
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+
+            if (!empty($parcialIds)) {
+                $parcialCreatedAtMap = DB::table('pedidos_parciales')
+                    ->whereNull('deleted_at')
+                    ->whereIn('id', $parcialIds)
+                    ->pluck('created_at', 'id')
+                    ->map(function ($dt) {
+                        return $dt ? (string) $dt : null;
+                    })
+                    ->toArray();
+            }
+        } catch (\Exception $e) {
+            \Log::warning('INSUMOS: Error obteniendo created_at de pedidos_parciales', ['error' => $e->getMessage()]);
+            $parcialCreatedAtMap = [];
+        }
         
         // Transformar los datos para que sean compatibles con la vista
-        $recibosTransformados = $allRecibos->map(function($recibo) {
+        $recibosTransformados = $allRecibos->map(function($recibo) use ($parcialCreatedAtMap) {
             // Calcular días para este recibo
             $diasCalculados = 0;
             if ($recibo->fecha_de_creacion_de_orden) {
@@ -362,6 +393,12 @@ class InsumosController extends Controller
                 $parcialId = (int) $matches[1];
             }
             $esParcial = $parcialId !== null;
+
+            // Si es anexo, reemplazar fecha inicio por created_at real del anexo
+            $fechaInicioOrden = $recibo->fecha_de_creacion_de_orden;
+            if ($esParcial && $parcialId !== null && isset($parcialCreatedAtMap[$parcialId]) && $parcialCreatedAtMap[$parcialId]) {
+                $fechaInicioOrden = $parcialCreatedAtMap[$parcialId];
+            }
             
             // Crear objeto compatible con la vista
             return (object)[
@@ -372,7 +409,7 @@ class InsumosController extends Controller
                 'estado' => $recibo->recibo_estado ?? $recibo->pedido_estado, // Estado del recibo
                 'area' => $recibo->recibo_area ?? $recibo->pedido_area, // Área del recibo
                 'pedido_estado' => $recibo->pedido_estado, // Estado del pedido (para filtros)
-                'fecha_de_creacion_de_orden' => $recibo->fecha_de_creacion_de_orden,
+                'fecha_de_creacion_de_orden' => $fechaInicioOrden,
                 'dia_de_entrega' => $recibo->dia_de_entrega,
                 'fecha_estimada_de_entrega' => $recibo->fecha_estimada_de_entrega,
                 'dias_calculados' => $diasCalculados,

@@ -1379,13 +1379,53 @@ class RegistroOrdenController extends Controller
                     'prendas.coloresTelas.color', 
                     'prendas.tallas'
                 ])->find($recibo->pedido_produccion_id);
+
+                // Detectar si es anexo (recibo parcial) y resolver created_at real del anexo
+                $parcialId = null;
+                $notas = isset($recibo->notas) ? (string) $recibo->notas : '';
+                if ($notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
+                    $parcialId = (int) $matches[1];
+                }
+                $esParcial = $parcialId !== null;
+
+                $createdAt = $recibo->created_at;
+                if ($esParcial) {
+                    try {
+                        $parcial = \DB::table('pedidos_parciales')
+                            ->select('created_at')
+                            ->where('id', $parcialId)
+                            ->whereNull('deleted_at')
+                            ->first();
+                        if ($parcial && !empty($parcial->created_at)) {
+                            $createdAt = $parcial->created_at;
+                        }
+                    } catch (\Exception $e) {
+                        \Log::warning('[recibosCostura] No se pudo obtener created_at de pedidos_parciales', [
+                            'recibo_id' => $recibo->id,
+                            'pedido_parcial_id' => $parcialId,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
                 
                 // Calcular días para este pedido (desde fecha de creación del pedido hasta hoy)
                 $diasCalculados = 0;
-                if ($pedido && $pedido->fecha_de_creacion_de_orden) {
+                $fechaBaseCalculo = null;
+                if ($esParcial && $createdAt) {
                     try {
-                        // Para recibos, calcular desde fecha_de_creacion_de_orden del pedido hasta hoy
-                        $fechaInicio = $pedido->fecha_de_creacion_de_orden;
+                        $fechaBaseCalculo = \Carbon\Carbon::parse($createdAt);
+                    } catch (\Exception $e) {
+                        $fechaBaseCalculo = null;
+                    }
+                }
+                if (!$fechaBaseCalculo && $pedido && $pedido->fecha_de_creacion_de_orden) {
+                    $fechaBaseCalculo = $pedido->fecha_de_creacion_de_orden;
+                }
+
+                if ($fechaBaseCalculo) {
+                    try {
+                        // Para anexos: calcular desde created_at del anexo. Para recibo base: fecha_de_creacion_de_orden.
+                        $fechaInicio = $fechaBaseCalculo;
                         $fechaFin = \Carbon\Carbon::now();
                         
                         // Obtener festivos
@@ -1419,11 +1459,13 @@ class RegistroOrdenController extends Controller
                         
                         $diasCalculados = max(0, $totalDays);
                         
-                        \Log::info('[recibosCostura] Días calculados para pedido', [
+                        \Log::info('[recibosCostura] Días calculados para recibo', [
                             'recibo_id' => $recibo->id,
                             'pedido_id' => $pedido->id,
                             'numero_pedido' => $pedido->numero_pedido,
-                            'fecha_creacion_pedido' => $pedido->fecha_de_creacion_de_orden->format('Y-m-d H:i:s'),
+                            'es_parcial' => $esParcial,
+                            'pedido_parcial_id' => $parcialId,
+                            'fecha_base_calculo' => $fechaInicio instanceof \Carbon\Carbon ? $fechaInicio->format('Y-m-d H:i:s') : (string) $fechaInicio,
                             'dias_calculados' => $diasCalculados
                         ]);
                         
@@ -1480,33 +1522,6 @@ class RegistroOrdenController extends Controller
                     }
                 }
 
-                $parcialId = null;
-                $notas = isset($recibo->notas) ? (string) $recibo->notas : '';
-                if ($notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
-                    $parcialId = (int) $matches[1];
-                }
-                $esParcial = $parcialId !== null;
-
-                $createdAt = $recibo->created_at;
-                if ($esParcial) {
-                    try {
-                        $parcial = \DB::table('pedidos_parciales')
-                            ->select('created_at')
-                            ->where('id', $parcialId)
-                            ->whereNull('deleted_at')
-                            ->first();
-                        if ($parcial && !empty($parcial->created_at)) {
-                            $createdAt = $parcial->created_at;
-                        }
-                    } catch (\Exception $e) {
-                        \Log::warning('[recibosCostura] No se pudo obtener created_at de pedidos_parciales', [
-                            'recibo_id' => $recibo->id,
-                            'pedido_parcial_id' => $parcialId,
-                            'error' => $e->getMessage(),
-                        ]);
-                    }
-                }
-                
                 return [
                     'id' => $recibo->id,
                     'consecutivo_actual' => $recibo->consecutivo_actual,

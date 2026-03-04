@@ -313,7 +313,14 @@ export class PedidosRecibosModule {
             // Para anexos: la fecha del recibo debe venir de pedidos_parciales.created_at
             // El renderer usa datosPedido.fecha para pintar los cuadros de fecha.
             if (parcialData && parcialData.created_at) {
-                datos.fecha = parcialData.created_at;
+                // Normalizar a solo fecha para evitar desfases por zona horaria (ej: 23:00 -> día siguiente)
+                const createdAtStr = String(parcialData.created_at);
+                // Soportar formatos: "YYYY-MM-DD HH:MM:SS" o ISO "YYYY-MM-DDTHH:MM:SS..."
+                const soloFecha = createdAtStr.includes('T')
+                    ? createdAtStr.split('T')[0]
+                    : createdAtStr.substring(0, 10);
+
+                datos.fecha = soloFecha;
             }
 
             this.modalManager.setState({ datosCompletos: datos });

@@ -1458,9 +1458,63 @@
                 
                 console.log('🔢 [NUMERO RECIBO COSTURA]', numeroReciboCostura, 'tipo:', typeof numeroReciboCostura);
 
+                // Resolver fecha de recibo:
+                // - Si viene pedido_parcial_id (anexo), usar created_at del anexo
+                // - Si NO viene pedido_parcial_id, inferir anexo por (tipoRecibo + es_parcial=true)
+                const pedidoParcialIdParam = urlParams.get('pedido_parcial_id');
+                let fechaRecibo = data.fecha_creacion || new Date().toISOString().split('T')[0];
+                try {
+                    if (data.prendas && Array.isArray(data.prendas) && data.prendas.length > 0) {
+                        const prendaIdInt = prendaIdParam ? parseInt(prendaIdParam, 10) : null;
+                        const prendaTarget = prendaIdInt
+                            ? data.prendas.find(p => String(p.id) === String(prendaIdInt))
+                            : null;
+
+                        const prendaParaBuscar = prendaTarget || data.prendas[0];
+                        const procesos = (prendaParaBuscar && Array.isArray(prendaParaBuscar.procesos))
+                            ? prendaParaBuscar.procesos
+                            : [];
+
+                        const normalizarFecha = (createdAt) => {
+                            const createdAtStr = String(createdAt);
+                            return createdAtStr.includes('T')
+                                ? createdAtStr.split('T')[0]
+                                : createdAtStr.substring(0, 10);
+                        };
+
+                        let procesoParcial = null;
+
+                        if (pedidoParcialIdParam) {
+                            procesoParcial = procesos.find(proc =>
+                                String(proc?.pedido_parcial_id || '') === String(pedidoParcialIdParam)
+                            );
+                        } else {
+                            const tipoUpper = String(tipoRecibo || '').trim().toUpperCase();
+                            if (tipoUpper) {
+                                procesoParcial = procesos
+                                    .filter(proc => {
+                                        const tipoProc = String(proc?.proceso || proc?.tipo_proceso || proc?.nombre_proceso || '').trim().toUpperCase();
+                                        return tipoProc === tipoUpper && !!proc?.es_parcial;
+                                    })
+                                    .sort((a, b) => {
+                                        const fa = a?.created_at ? new Date(a.created_at).getTime() : 0;
+                                        const fb = b?.created_at ? new Date(b.created_at).getTime() : 0;
+                                        return fb - fa;
+                                    })[0] || null;
+                            }
+                        }
+
+                        if (procesoParcial && procesoParcial.created_at) {
+                            fechaRecibo = normalizarFecha(procesoParcial.created_at);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('⚠️ Error resolviendo fecha de anexo:', e);
+                }
+
                 // Construir objeto para llenarReciboCosturaMobile con la misma estructura
                 const pedidoData = {
-                    fecha: data.fecha_creacion || new Date().toISOString().split('T')[0],
+                    fecha: fechaRecibo,
                     asesora: data.asesor || 'N/A',
                     formaPago: data.forma_de_pago || 'N/A',
                     cliente: data.cliente || 'N/A',
