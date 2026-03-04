@@ -75,16 +75,23 @@ class PrendaProcesoService
                     );
                 }
 
+                // Detectar modo de tallas
+                $modoTallas = $proceso['modo_tallas'] ?? 'para_todas';
+                $datosExtendidos = !empty($proceso['datos_extendidos']) ? $proceso['datos_extendidos'] : null;
+                if (is_string($datosExtendidos)) {
+                    $datosExtendidos = json_decode($datosExtendidos, true);
+                }
+
                 // Validar que proceso tenga DATOS
-                // Si ubicaciones y tallas están vacíos → RECHAZAR
+                // Para modo por_tallas, los datos están en datosExtendidos, no en ubicaciones globales
                 $tieneUbicaciones = !empty($proceso['ubicaciones']) && is_array($proceso['ubicaciones']) && count($proceso['ubicaciones']) > 0;
                 $tieneTallas = !empty($proceso['tallas']) && is_array($proceso['tallas']);
+                $tieneDatosExtendidos = !empty($datosExtendidos);
                 
-                if (!$tieneUbicaciones && !$tieneTallas) {
+                if (!$tieneUbicaciones && !$tieneTallas && !$tieneDatosExtendidos) {
                     throw new \DomainException(
                         "Proceso '{$tipoProcesoId}' NO PUEDE ESTAR VACÍO. "
-                        . "Debe tener ubicaciones O tallas. "
-                        . "Recibido: ubicaciones=[], tallas={}. "
+                        . "Debe tener ubicaciones, tallas o datosExtendidos. "
                         . "Abortar guardar proceso vacío para evitar datos inconsistentes."
                     );
                 }
@@ -95,6 +102,7 @@ class PrendaProcesoService
                     'tipo_proceso_id' => $tipoProcesoId,
                     'ubicaciones' => !empty($proceso['ubicaciones']) ? json_encode($proceso['ubicaciones']) : null,
                     'observaciones' => $proceso['observaciones'] ?? null,
+                    'modo_tallas' => $modoTallas,
                     // LEGACY: Mantener campos JSON marcados como deprecated
                     'tallas_dama' => !empty($proceso['tallas']['dama']) ? json_encode($proceso['tallas']['dama']) : null,
                     'tallas_caballero' => !empty($proceso['tallas']['caballero']) ? json_encode($proceso['tallas']['caballero']) : null,
@@ -107,19 +115,27 @@ class PrendaProcesoService
                     'prenda_id' => $prendaId,
                     'proceso_detalle_id' => $procesoDetalleId,
                     'tipo_proceso_id' => $tipoProcesoId,
+                    'modo_tallas' => $modoTallas,
                 ]);
 
                 // Guardar tallas en la tabla relacional
-                $this->guardarTallasProceso($procesoDetalleId, $proceso);
+                $this->guardarTallasProceso($procesoDetalleId, $proceso, $datosExtendidos);
 
-                // Guardar imÃ¡genes del proceso
-                $imagenes = $proceso['imagenes'] ?? [];
-                if (!empty($imagenes)) {
-                    $this->procesoImagenService->guardarImagenesProcesos(
-                        $procesoDetalleId,
-                        $pedidoId,
-                        $imagenes
-                    );
+                // Guardar imágenes del proceso (solo modo para_todas, en por_tallas van por talla)
+                if ($modoTallas !== 'por_tallas') {
+                    $imagenes = $proceso['imagenes'] ?? [];
+                    if (!empty($imagenes)) {
+                        $this->procesoImagenService->guardarImagenesProcesos(
+                            $procesoDetalleId,
+                            $pedidoId,
+                            $imagenes
+                        );
+                    }
+                }
+
+                // Guardar imágenes por talla (modo por_tallas)
+                if ($modoTallas === 'por_tallas' && !empty($proceso['imagenes_por_talla'])) {
+                    $this->guardarImagenesPorTalla($procesoDetalleId, $pedidoId, $proceso['imagenes_por_talla']);
                 }
             } catch (\Exception $e) {
                 Log::error(' [PrendaProcesoService] Error guardando proceso', [
@@ -147,7 +163,7 @@ class PrendaProcesoService
      *   "sobremedida": { "CABALLERO": 100, "DAMA": 50 }
      * }
      */
-    private function guardarTallasProceso(int $procesoDetalleId, array $proceso): void
+    private function guardarTallasProceso(int $procesoDetalleId, array $proceso, ?array $datosExtendidos = null): void
     {
         try {
             $tallas = $proceso['tallas'] ?? [];
@@ -221,6 +237,15 @@ class PrendaProcesoService
                         $cantidad = (int)$cantidad;
                         
                         if ($cantidad > 0) {
+                            // Extraer datos por talla si existen (modo por_tallas)
+                            $tallaExtendida = $datosExtendidos[$generoBD][$talla] ?? null;
+                            $ubicacionesTalla = null;
+                            $observacionesTalla = null;
+                            if ($tallaExtendida) {
+                                $ubicacionesTalla = !empty($tallaExtendida['ubicaciones']) ? json_encode($tallaExtendida['ubicaciones']) : null;
+                                $observacionesTalla = $tallaExtendida['observaciones'] ?? null;
+                            }
+
                             $existe = DB::table('pedidos_procesos_prenda_tallas')
                                 ->where('proceso_prenda_detalle_id', $procesoDetalleId)
                                 ->where('genero', $generoEnum)
@@ -234,6 +259,8 @@ class PrendaProcesoService
                                     ->where('talla', $talla)
                                     ->update([
                                         'cantidad' => $cantidad,
+                                        'ubicaciones' => $ubicacionesTalla,
+                                        'observaciones' => $observacionesTalla,
                                         'updated_at' => now(),
                                     ]);
                             } else {
@@ -242,6 +269,8 @@ class PrendaProcesoService
                                     'genero' => $generoEnum,
                                     'talla' => $talla,
                                     'cantidad' => $cantidad,
+                                    'ubicaciones' => $ubicacionesTalla,
+                                    'observaciones' => $observacionesTalla,
                                     'created_at' => now(),
                                     'updated_at' => now(),
                                 ]);
@@ -260,6 +289,66 @@ class PrendaProcesoService
                 'proceso_detalle_id' => $procesoDetalleId,
                 'error' => $e->getMessage(),
             ]);
+        }
+    }
+
+    /**
+     * Guardar imágenes por talla (modo por_tallas)
+     * 
+     * Estructura de imagenes_por_talla:
+     * Cada key del request es "prendas[X][procesos][tipo][imagenes_por_talla][genero__talla][]"
+     * Llega como: ['dama__S' => [UploadedFile, ...], 'caballero__L' => [UploadedFile, ...]]
+     */
+    private function guardarImagenesPorTalla(int $procesoDetalleId, int $pedidoId, array $imagenesPorTalla): void
+    {
+        $generoMap = ['dama' => 'DAMA', 'caballero' => 'CABALLERO', 'unisex' => 'UNISEX'];
+
+        foreach ($imagenesPorTalla as $tallaKey => $imagenes) {
+            if (empty($imagenes) || !is_array($imagenes)) continue;
+
+            // Parse key: "dama__S" → genero=dama, talla=S
+            $sepIdx = strpos($tallaKey, '__');
+            if ($sepIdx === false) continue;
+
+            $genero = substr($tallaKey, 0, $sepIdx);
+            $talla = substr($tallaKey, $sepIdx + 2);
+            $generoEnum = $generoMap[$genero] ?? null;
+            if (!$generoEnum) continue;
+
+            // Buscar el registro de talla en la BD
+            $tallaRecord = DB::table('pedidos_procesos_prenda_tallas')
+                ->where('proceso_prenda_detalle_id', $procesoDetalleId)
+                ->where('genero', $generoEnum)
+                ->where('talla', $talla)
+                ->first();
+
+            if (!$tallaRecord) {
+                Log::warning('[guardarImagenesPorTalla] Talla no encontrada', [
+                    'proceso_detalle_id' => $procesoDetalleId,
+                    'genero' => $generoEnum,
+                    'talla' => $talla,
+                ]);
+                continue;
+            }
+
+            // Guardar imágenes vinculadas a esta talla usando el servicio existente + talla_id
+            foreach ($imagenes as $index => $imagenData) {
+                try {
+                    $this->procesoImagenService->guardarImagenProceso(
+                        $procesoDetalleId,
+                        $pedidoId,
+                        $imagenData,
+                        $index,
+                        $tallaRecord->id
+                    );
+                } catch (\Exception $e) {
+                    Log::error('[guardarImagenesPorTalla] Error guardando imagen', [
+                        'talla_key' => $tallaKey,
+                        'index' => $index,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
         }
     }
 }

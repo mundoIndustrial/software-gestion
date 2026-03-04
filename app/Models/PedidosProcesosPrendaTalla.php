@@ -23,10 +23,13 @@ class PedidosProcesosPrendaTalla extends Model
         'talla',
         'cantidad',
         'es_sobremedida',
+        'ubicaciones',
+        'observaciones',
     ];
 
     protected $casts = [
         'cantidad' => 'integer',
+        'ubicaciones' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -49,6 +52,14 @@ class PedidosProcesosPrendaTalla extends Model
     public function coloresAsignados(): HasMany
     {
         return $this->hasMany(PedidosProcesosPrendaTallaColor::class, 'pedidos_procesos_prenda_talla_id');
+    }
+
+    /**
+     * Imágenes asociadas a esta talla específica (modo por_tallas)
+     */
+    public function imagenes(): HasMany
+    {
+        return $this->hasMany(PedidosProcessImagenes::class, 'proceso_prenda_talla_id');
     }
 
     // ============================================================

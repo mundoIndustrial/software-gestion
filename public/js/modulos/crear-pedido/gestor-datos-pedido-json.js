@@ -220,23 +220,47 @@ class GestorDatosPedidoJSON {
 
                 Object.entries(prenda.procesos).forEach(([tipoProceso, proceso]) => {
                     if (proceso && proceso.datos) {
-                        formData.append(`prendas[${prendaIdx}][procesos][${tipoProceso}][tipo]`, proceso.datos.tipo || tipoProceso);
-                        formData.append(`prendas[${prendaIdx}][procesos][${tipoProceso}][ubicaciones]`, JSON.stringify(proceso.datos.ubicaciones || []));
-                        formData.append(`prendas[${prendaIdx}][procesos][${tipoProceso}][observaciones]`, proceso.datos.observaciones || '');
-                        formData.append(`prendas[${prendaIdx}][procesos][${tipoProceso}][tallas]`, JSON.stringify(proceso.datos.tallas || {}));
+                        const prefix = `prendas[${prendaIdx}][procesos][${tipoProceso}]`;
+                        const modoTallas = proceso.modoTallas || (proceso.datos.datosExtendidos ? 'por_tallas' : 'para_todas');
+
+                        formData.append(`${prefix}[tipo]`, proceso.datos.tipo || tipoProceso);
+                        formData.append(`${prefix}[ubicaciones]`, JSON.stringify(proceso.datos.ubicaciones || []));
+                        formData.append(`${prefix}[observaciones]`, proceso.datos.observaciones || '');
+                        formData.append(`${prefix}[tallas]`, JSON.stringify(proceso.datos.tallas || {}));
+                        formData.append(`${prefix}[modo_tallas]`, modoTallas);
                         contadores.procesos++;
 
+                        if (modoTallas === 'por_tallas' && proceso.datos.datosExtendidos) {
+                            // Enviar datosExtendidos como JSON (ubicaciones + observaciones por talla)
+                            formData.append(`${prefix}[datos_extendidos]`, JSON.stringify(proceso.datos.datosExtendidos));
 
-
-                        if (proceso.datos.imagenes && proceso.datos.imagenes.length > 0) {
-
-                            proceso.datos.imagenes.forEach((img, imgIdx) => {
-                                if (img instanceof File) {
-                                    formData.append(`prendas[${prendaIdx}][procesos][${tipoProceso}][imagenes][]`, img);
-                                    contadores.archivos++;
-
+                            // Enviar imágenes POR TALLA con key especial
+                            const extendidos = proceso.datos.datosExtendidos;
+                            ['dama', 'caballero', 'unisex'].forEach(genero => {
+                                if (extendidos[genero]) {
+                                    Object.entries(extendidos[genero]).forEach(([talla, datosTalla]) => {
+                                        const tallaKey = `${genero}__${talla}`;
+                                        if (datosTalla.imagenesFiles && datosTalla.imagenesFiles.length > 0) {
+                                            datosTalla.imagenesFiles.forEach(file => {
+                                                if (file instanceof File) {
+                                                    formData.append(`${prefix}[imagenes_por_talla][${tallaKey}][]`, file);
+                                                    contadores.archivos++;
+                                                }
+                                            });
+                                        }
+                                    });
                                 }
                             });
+                        } else {
+                            // Modo para_todas: enviar imágenes al nivel del proceso
+                            if (proceso.datos.imagenes && proceso.datos.imagenes.length > 0) {
+                                proceso.datos.imagenes.forEach((img, imgIdx) => {
+                                    if (img instanceof File) {
+                                        formData.append(`${prefix}[imagenes][]`, img);
+                                        contadores.archivos++;
+                                    }
+                                });
+                            }
                         }
                     }
                 });

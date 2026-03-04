@@ -19,6 +19,7 @@ class PedidosProcessImagenes extends Model
 
     protected $fillable = [
         'proceso_prenda_detalle_id',
+        'proceso_prenda_talla_id',
         'ruta_original',
         'ruta_webp',
         'orden',
@@ -37,6 +38,14 @@ class PedidosProcessImagenes extends Model
     public function proceso(): BelongsTo
     {
         return $this->belongsTo(PedidosProcesosPrendaDetalle::class, 'proceso_prenda_detalle_id');
+    }
+
+    /**
+     * Talla específica a la que pertenece esta imagen (modo por_tallas)
+     */
+    public function talla(): BelongsTo
+    {
+        return $this->belongsTo(PedidosProcesosPrendaTalla::class, 'proceso_prenda_talla_id');
     }
 
     /**

@@ -370,6 +370,119 @@ function generarTarjetaProceso(tipo, datos) {
         });
     }
     
+    // ─── Detectar modo "por_tallas" con datosExtendidos ───
+    const datosExtendidos = datos.datosExtendidos || {};
+    const tieneDetallePorTalla = Object.keys(datosExtendidos).some(genero => 
+        datosExtendidos[genero] && Object.keys(datosExtendidos[genero]).length > 0
+    );
+
+    let contenidoPorTallasHTML = '';
+    if (tieneDetallePorTalla) {
+        const generosConfig = {
+            dama: { titulo: 'DAMA', color: '#ec4899', bg: '#fdf2f8', border: '#fbcfe8', chipBg: '#fce7f3' },
+            caballero: { titulo: 'CABALLERO', color: '#1d4ed8', bg: '#eff6ff', border: '#93c5fd', chipBg: '#dbeafe' },
+            sobremedida: { titulo: 'SOBREMEDIDA', color: '#92400e', bg: '#fffbeb', border: '#fcd34d', chipBg: '#fef3c7' }
+        };
+
+        let tarjetasTallas = '';
+        let totalDetalle = 0;
+
+        ['dama', 'caballero', 'sobremedida'].forEach(genero => {
+            const tallasGenero = datosExtendidos[genero];
+            if (!tallasGenero || Object.keys(tallasGenero).length === 0) return;
+
+            const cfg = generosConfig[genero];
+            const tallasData = datos.tallas?.[genero] || {};
+
+            Object.entries(tallasGenero).forEach(([tallaKey, detalle]) => {
+                totalDetalle++;
+                const cantidad = tallasData[tallaKey] || 0;
+                const tallaDisplay = formatearTallaKey(tallaKey);
+
+                // Ubicaciones - cada línea en su propia fila
+                const ubicsTalla = (detalle.ubicaciones || []).filter(u => u);
+                // Expandir: si una ubicación tiene saltos de línea, separar en líneas individuales
+                const lineasUbic = [];
+                ubicsTalla.forEach(u => {
+                    String(u).split(/\n/).forEach(linea => {
+                        const l = linea.trim();
+                        if (l) lineasUbic.push(l);
+                    });
+                });
+                const ubicsHTML = lineasUbic.length > 0
+                    ? `<div style="display: flex; flex-direction: column; gap: 0.2rem; width: 100%;">${lineasUbic.map(l => `<span style="background: ${cfg.chipBg}; color: ${cfg.color}; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; display: block;">${l}</span>`).join('')}</div>`
+                    : '<span style="color: #9ca3af; font-size: 0.75rem;">Sin ubicaciones</span>';
+
+                // Observaciones
+                const obsTalla = detalle.observaciones || '';
+                const obsHTML = obsTalla
+                    ? `<div style="padding: 0.3rem 0.5rem; background: #fef3c7; border-left: 2px solid #f59e0b; border-radius: 4px; font-size: 0.75rem; color: #78350f;">${obsTalla}</div>`
+                    : '';
+
+                // Imágenes (array de blob URLs o strings)
+                const imgsTalla = (detalle.imagenes || []).filter(src => src);
+                // Compatibilidad con campo antiguo 'imagen' singular
+                if (imgsTalla.length === 0 && detalle.imagen) {
+                    imgsTalla.push(detalle.imagen);
+                }
+                let imgHTML = '';
+                if (imgsTalla.length > 0) {
+                    imgHTML = `<div style="display:flex; flex-wrap:wrap; gap:0.25rem; margin-top:0.2rem;">` +
+                        imgsTalla.map(src => {
+                            let imgSrc = src;
+                            if (src instanceof File) imgSrc = URL.createObjectURL(src);
+                            return `<div style="width:40px;height:40px;border-radius:4px;overflow:hidden;border:1.5px solid ${cfg.border};flex-shrink:0;">
+                                <img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;">
+                            </div>`;
+                        }).join('') + `</div>`;
+                }
+
+                tarjetasTallas += `
+                    <div style="border: 1.5px solid ${cfg.border}; border-radius: 8px; background: ${cfg.bg}; padding: 0.6rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                <span style="font-weight: 800; font-size: 0.85rem; color: ${cfg.color};">${cfg.titulo} - ${tallaDisplay}</span>
+                                <span style="font-size: 0.7rem; background: ${cfg.color}; color: white; padding: 0.1rem 0.4rem; border-radius: 9999px; font-weight: 700;">${cantidad} und</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                            <span style="font-size: 0.7rem; font-weight: 700; color: #374151;">Ubic:</span>
+                            ${ubicsHTML}
+                        </div>
+                        ${obsHTML}
+                        ${imgHTML}
+                    </div>
+                `;
+            });
+        });
+
+        if (totalDetalle > 0) {
+            contenidoPorTallasHTML = `
+                <div>
+                    <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem;">
+                        <span class="material-symbols-rounded" style="font-size: 1rem; color: #6b7280;">view_list</span>
+                        <strong style="font-size: 0.875rem;">DETALLE POR TALLA (${totalDetalle})</strong>
+                        <span style="font-size: 0.65rem; background: #8b5cf6; color: white; padding: 0.1rem 0.4rem; border-radius: 9999px; font-weight: 700;">Por Tallas</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        ${tarjetasTallas}
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    // ─── Contenido normal vs por tallas ───
+    const contenidoHTML = contenidoPorTallasHTML
+        ? contenidoPorTallasHTML
+        : `<div style="margin-bottom: 0.75rem;">
+                <strong style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">UBICACIONES</strong>
+                <div>${ubicacionesHTML}</div>
+            </div>
+            ${tallasHTML}
+            ${observacionesHTML}
+            ${imagenesHTML}`;
+    
     return `
         <div class="tarjeta-proceso" data-tipo="${tipo}" style="
             background: white;
@@ -404,14 +517,7 @@ function generarTarjetaProceso(tipo, datos) {
             
             <!-- Contenido -->
             <div style="color: #374151; font-size: 0.875rem;">
-                <div style="margin-bottom: 0.75rem;">
-                    <strong style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">UBICACIONES</strong>
-                    <div>${ubicacionesHTML}</div>
-                </div>
-                
-                ${tallasHTML}
-                ${observacionesHTML}
-                ${imagenesHTML}
+                ${contenidoHTML}
             </div>
         </div>
     `;
@@ -429,18 +535,17 @@ function generarTarjetaProceso(tipo, datos) {
 window.editarProcesoDesdeModal = function(tipo) {
     console.log('✏️ [EDITAR-PROCESO-MODAL] Iniciando edición de proceso existente:', tipo);
     
-    //  DEBUG CRÍTICO: Verificar dónde estamos
-    const swalPopup = document.querySelector('.swal2-popup');
-    const mainModal = document.querySelector('[data-main-modal="prenda-editor"]');
-    const customModal = document.querySelector('.modal-overlay');
-    console.log(' [EDITAR-PROCESO-MODAL] ESTRUCTURA DEL DOM:');
-    console.log('   - Swal2 popup abierto?:', !!swalPopup);
-    console.log('   - Modal principal [data-main-modal]?:', !!mainModal);
-    console.log('   - Modal custom (.modal-overlay)?:', !!customModal);
-    console.log('   - Body children count:', document.body.children.length);
-
     // Obtener datos del proceso
     const proceso = window.procesosSeleccionados[tipo];
+
+    // Detectar si fue guardado como "Por Tallas" y abrir el modal correcto
+    if (proceso?.datos?.datosExtendidos || proceso?.modoTallas === 'por_tallas') {
+        console.log('✏️ [EDITAR-PROCESO-MODAL] Detectado modo POR TALLAS, abriendo modal por tallas');
+        if (window.abrirModalProcesoPorTallas) {
+            window.abrirModalProcesoPorTallas(tipo);
+        }
+        return;
+    }
     
     console.log(' [EDITAR-PROCESO-MODAL] Datos encontrados:', {
         tipo: tipo,
@@ -666,13 +771,21 @@ window.editarProcesoDesdeModal = function(tipo) {
  */
 window.editarProceso = function(tipo) {
 
+    // Detectar si fue guardado como "Por Tallas" y abrir el modal correcto
+    const proceso = window.procesosSeleccionados?.[tipo];
+    if (proceso?.datos?.datosExtendidos || proceso?.modoTallas === 'por_tallas') {
+        console.log('✏️ [EDITAR-PROCESO] Detectado modo POR TALLAS, abriendo modal por tallas');
+        if (window.abrirModalProcesoPorTallas) {
+            window.abrirModalProcesoPorTallas(tipo);
+        }
+        return;
+    }
     
     // Abrir modal del proceso
     if (window.abrirModalProcesoGenerico) {
         window.abrirModalProcesoGenerico(tipo);
         
         // Cargar datos existentes en el modal
-        const proceso = window.procesosSeleccionados[tipo];
         if (proceso?.datos) {
             cargarDatosProcesoEnModal(tipo, proceso.datos);
         }

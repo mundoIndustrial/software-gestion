@@ -53,8 +53,13 @@ window.manejarCheckboxProceso = function(tipoProceso, estaChecked) {
         // Actualizar resumen visual
         actualizarResumenProcesos();
         
-        // Abrir modal para capturar detalles del proceso
-        window.abrirModalProcesoGenerico(tipoProceso);
+        // Abrir selector de modo (Para Todas / Por Tallas)
+        if (typeof window.abrirSelectorModoProceso === 'function') {
+            window.abrirSelectorModoProceso(tipoProceso);
+        } else {
+            // Fallback: abrir modal genérico directamente
+            window.abrirModalProcesoGenerico(tipoProceso);
+        }
 
     } else {
         // Usuario desmarcó el checkbox

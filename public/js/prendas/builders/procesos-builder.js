@@ -90,6 +90,79 @@ class ProcesosBuilder {
         const datos = proceso.datos || {};
         const icono = this.ICONOS[tipoProceso] || '<i class="fas fa-cog"></i>';
         const nombreProceso = tipoProceso.charAt(0).toUpperCase() + tipoProceso.slice(1);
+        const esPorTallas = !!(datos.datosExtendidos) || proceso.modoTallas === 'por_tallas';
+
+        // ─── Modo POR TALLAS ───
+        if (esPorTallas && datos.datosExtendidos) {
+            let porTallasHTML = '';
+            const generos = { dama: { label: 'DAMA', icon: '<i class="fas fa-female"></i>', color: '#be185d', bg: '#fdf2f8', border: '#fbcfe8' }, caballero: { label: 'CABALLERO', icon: '<i class="fas fa-male"></i>', color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' } };
+
+            Object.entries(generos).forEach(([genero, cfg]) => {
+                const tallasGenero = datos.datosExtendidos[genero];
+                if (!tallasGenero || Object.keys(tallasGenero).length === 0) return;
+
+                Object.entries(tallasGenero).forEach(([tallaKey, datosTalla]) => {
+                    const parts = String(tallaKey).split('__');
+                    const tallaDisplay = parts[0] || tallaKey;
+                    const cantidad = datos.tallas?.[genero]?.[tallaKey] ?? '';
+
+                    let ubicHTML = '';
+                    if (datosTalla.ubicaciones && datosTalla.ubicaciones.length > 0) {
+                        const chips = datosTalla.ubicaciones.map(u => {
+                            const texto = typeof u === 'string' ? u : (u?.ubicacion || '');
+                            return texto ? `<span style="background: ${cfg.bg}; color: ${cfg.color}; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">${texto}</span>` : '';
+                        }).filter(Boolean).join('');
+                        if (chips) ubicHTML = `<div style="margin-top: 0.35rem;"><span style="font-size: 0.75rem; color: #6b7280; font-weight: 600;"><i class="fas fa-map-marker-alt" style="margin-right: 0.25rem;"></i>Ubicaciones:</span><div style="display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.2rem;">${chips}</div></div>`;
+                    }
+
+                    let obsHTML = '';
+                    if (datosTalla.observaciones) {
+                        obsHTML = `<div style="margin-top: 0.35rem; font-size: 0.8rem; color: #374151; background: #f9fafb; padding: 0.35rem 0.5rem; border-radius: 4px; border-left: 2px solid ${cfg.color};"><i class="fas fa-sticky-note" style="margin-right: 0.25rem; color: ${cfg.color};"></i>${datosTalla.observaciones}</div>`;
+                    }
+
+                    let imgHTML = '';
+                    const imgs = datosTalla.imagenes || [];
+                    if (imgs.length > 0) {
+                        const thumbs = imgs.map(img => {
+                            let src = '';
+                            if (typeof img === 'string') src = img;
+                            else if (img instanceof File) src = URL.createObjectURL(img);
+                            else if (img?.url || img?.previewUrl || img?.blobUrl) src = img.url || img.previewUrl || img.blobUrl;
+                            return src ? `<img src="${src}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid ${cfg.border};">` : '';
+                        }).filter(Boolean).join('');
+                        if (thumbs) imgHTML = `<div style="display: flex; gap: 0.3rem; margin-top: 0.35rem;">${thumbs}</div>`;
+                    }
+
+                    porTallasHTML += `
+                        <div style="border: 1px solid ${cfg.border}; border-radius: 8px; padding: 0.6rem; background: ${cfg.bg}; min-width: 180px; flex: 1;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.3rem;">
+                                <div style="display: flex; align-items: center; gap: 0.35rem;">
+                                    <span style="color: ${cfg.color};">${cfg.icon}</span>
+                                    <span style="font-weight: 900; color: #0f172a;">${tallaDisplay}</span>
+                                </div>
+                                ${cantidad ? `<span style="background: ${cfg.color}; color: white; padding: 0.1rem 0.45rem; border-radius: 6px; font-weight: 900; font-size: 0.75rem;">${cantidad}</span>` : ''}
+                            </div>
+                            ${ubicHTML}
+                            ${obsHTML}
+                            ${imgHTML}
+                        </div>
+                    `;
+                });
+            });
+
+            return `
+                <div style="background: white; border: 2px solid #e5e7eb; border-radius: 10px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; padding-bottom: 0.75rem; border-bottom: 2px solid #0ea5e9;">
+                        <span style="font-size: 1.5rem;">${icono}</span>
+                        <h4 style="margin: 0; color: #0369a1; font-size: 1.1rem; font-weight: 700;">${nombreProceso}</h4>
+                        <span style="background: #7c3aed; color: white; padding: 0.15rem 0.5rem; border-radius: 12px; font-size: 0.7rem; font-weight: 700;">Por Tallas</span>
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.6rem;">
+                        ${porTallasHTML}
+                    </div>
+                </div>
+            `;
+        }
 
         const ubicacionesHTML = this._construirUbicaciones(datos);
         const tallasHTML = this._construirTallasDeProcesos(datos);

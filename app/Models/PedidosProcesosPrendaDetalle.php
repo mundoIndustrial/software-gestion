@@ -40,6 +40,7 @@ class PedidosProcesosPrendaDetalle extends Model
         'tipo_proceso_id',
         'ubicaciones',
         'observaciones',
+        'modo_tallas',
         'tallas_dama',
         'tallas_caballero',
         'estado',

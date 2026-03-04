@@ -52,6 +52,8 @@
 <!-- Modal para Agregar/Editar Prendas (necesario para edición desde listado) -->
 @include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
 @include('asesores.pedidos.modals.modal-seleccionar-tallas')
+@include('asesores.pedidos.modals.modal-selector-modo-proceso')
+@include('asesores.pedidos.modals.modal-proceso-por-tallas')
 @include('asesores.pedidos.modals.modal-proceso-generico')
 
 <!-- Modal de Confirmación de Eliminación de Imagen (FUERA del modal-proceso-generico para evitar aria-hidden) -->

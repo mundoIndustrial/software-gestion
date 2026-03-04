@@ -1440,6 +1440,10 @@
 <!-- Modal para Seleccionar Tallas -->
 @include('asesores.pedidos.modals.modal-seleccionar-tallas')
 
+<!-- Modal Selector de Modo de Proceso -->
+@include('asesores.pedidos.modals.modal-selector-modo-proceso')
+@include('asesores.pedidos.modals.modal-proceso-por-tallas')
+
 <!-- Modal para Editar Procesos Genéricos -->
 @include('asesores.pedidos.modals.modal-proceso-generico')
 
@@ -1479,6 +1483,10 @@
     <!-- Manejadores de procesos - Para edición de procesos desde supervisor -->
     <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/selector-modo-proceso.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-por-tallas.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/extension-editor-tallas-multiproducto.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/extension-guardar-datos-tallas-extendida.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/componentes/procesos-imagenes-storage.js') }}"></script>
     <script src="{{ asset('js/componentes/manejo-imagenes-proceso.js') }}"></script>

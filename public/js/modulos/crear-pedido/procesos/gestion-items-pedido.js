@@ -1322,8 +1322,13 @@ window.editarProcesoEdicion = function(tipo) {
         return;
     }
     
-    // Si no existe, intentar abrir el modal genérico
-    if (window.abrirModalProcesoGenerico) {
+    // Si no existe, detectar modo y abrir el modal correcto
+    const procesoData = window.procesosSeleccionados?.[tipo];
+    if (procesoData?.datos?.datosExtendidos || procesoData?.modoTallas === 'por_tallas') {
+        if (window.abrirModalProcesoPorTallas) {
+            window.abrirModalProcesoPorTallas(tipo);
+        }
+    } else if (window.abrirModalProcesoGenerico) {
         window.abrirModalProcesoGenerico(tipo);
         
         // Asegurar nuevamente que el z-index esté alto después de abrir
@@ -1334,9 +1339,8 @@ window.editarProcesoEdicion = function(tipo) {
         }
         
         // Cargar datos en el modal
-        const proceso = window.procesosSeleccionados?.[tipo];
-        if (proceso?.datos) {
-            cargarDatosProcesoEnModalEdicion(tipo, proceso.datos);
+        if (procesoData?.datos) {
+            cargarDatosProcesoEnModalEdicion(tipo, procesoData.datos);
         }
     } else {
 

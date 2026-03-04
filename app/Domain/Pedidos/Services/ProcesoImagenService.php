@@ -149,5 +149,60 @@ class ProcesoImagenService
             }
         }
     }
+
+    /**
+     * Guardar una imagen individual de proceso, opcionalmente vinculada a una talla
+     */
+    public function guardarImagenProceso(int $procesoDetalleId, int $pedidoId, mixed $imagenData, int $index = 0, ?int $tallaId = null): void
+    {
+        $procesoDetalle = DB::table('pedidos_procesos_prenda_detalles')
+            ->where('id', $procesoDetalleId)
+            ->first();
+
+        if (!$procesoDetalle) return;
+
+        $tipoProcesoNombre = DB::table('tipos_procesos')
+            ->where('id', $procesoDetalle->tipo_proceso_id)
+            ->value('slug') ?? 'proceso';
+
+        $archivo = null;
+        $esPrincipal = $index === 0;
+
+        if ($imagenData instanceof UploadedFile) {
+            $archivo = $imagenData;
+        } elseif (is_array($imagenData) && isset($imagenData['archivo']) && $imagenData['archivo'] instanceof UploadedFile) {
+            $archivo = $imagenData['archivo'];
+        } elseif (is_string($imagenData)) {
+            $rutaAbsoluta = !str_starts_with($imagenData, '/') ? '/' . $imagenData : $imagenData;
+            DB::table('pedidos_procesos_imagenes')->insert([
+                'proceso_prenda_detalle_id' => $procesoDetalleId,
+                'proceso_prenda_talla_id' => $tallaId,
+                'ruta_original' => basename($imagenData),
+                'ruta_webp' => $rutaAbsoluta,
+                'orden' => $index,
+                'es_principal' => $esPrincipal ? 1 : 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            return;
+        }
+
+        if ($archivo) {
+            $directorio = storage_path("app/public/pedidos/{$pedidoId}/procesos/{$tipoProcesoNombre}");
+            $resultado = $this->transformador->transformarAWebp($archivo, $directorio, $index, 'proceso');
+            $rutaAbsoluta = '/storage/pedidos/' . $pedidoId . '/procesos/' . $tipoProcesoNombre . '/' . $resultado['nombreArchivo'];
+
+            DB::table('pedidos_procesos_imagenes')->insert([
+                'proceso_prenda_detalle_id' => $procesoDetalleId,
+                'proceso_prenda_talla_id' => $tallaId,
+                'ruta_original' => $archivo->getClientOriginalName(),
+                'ruta_webp' => $rutaAbsoluta,
+                'orden' => $index,
+                'es_principal' => $esPrincipal ? 1 : 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+    }
 }
 
