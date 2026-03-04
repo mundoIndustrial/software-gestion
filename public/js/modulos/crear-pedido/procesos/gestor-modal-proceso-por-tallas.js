@@ -93,6 +93,8 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
             const key = `dama__${tallaKey}`;
             const existente = datosExistentes?.dama?.[tallaKey];
             datosPorTallaTemp[key] = {
+                seleccionada: true,
+                cantidadSeleccionada: existente?.cantidadSeleccionada || cantidad,
                 ubicaciones: existente?.ubicaciones ? [...existente.ubicaciones] : [],
                 observaciones: existente?.observaciones || '',
                 imagenes: existente?.imagenes ? [...existente.imagenes] : (existente?.imagen ? [existente.imagen] : []),
@@ -111,6 +113,8 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
             const key = `caballero__${tallaKey}`;
             const existente = datosExistentes?.caballero?.[tallaKey];
             datosPorTallaTemp[key] = {
+                seleccionada: true,
+                cantidadSeleccionada: existente?.cantidadSeleccionada || cantidad,
                 ubicaciones: existente?.ubicaciones ? [...existente.ubicaciones] : [],
                 observaciones: existente?.observaciones || '',
                 imagenes: existente?.imagenes ? [...existente.imagenes] : (existente?.imagen ? [existente.imagen] : []),
@@ -143,20 +147,43 @@ function crearTarjetaTalla(genero, tallaKey, cantidad, datos) {
     const accentColor = esRosa ? '#ec4899' : '#1d4ed8';
     const dashedColor = esRosa ? '#f9a8d4' : '#93c5fd';
     const safeKey = `${genero}__${tallaKey}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const checkboxId = `checkbox-${safeKey}`;
+    const inputCantidadId = `cantidad-${safeKey}`;
 
     const card = document.createElement('div');
-    card.style.cssText = `border: 2px solid ${borderColor}; border-radius: 12px; background: ${bgColor}; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;`;
+    card.style.cssText = `border: 2px solid ${borderColor}; border-radius: 12px; background: ${bgColor}; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; transition: opacity 0.2s, background-color 0.2s;`;
+    card.id = `tarjeta-${safeKey}`;
 
-    // ─── Header ───
+    // ─── Header con Checkbox ───
     const header = document.createElement('div');
-    header.style.cssText = 'display: flex; justify-content: space-between; align-items: center;';
-    header.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
+    header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;';
+    
+    const checkboxDiv = document.createElement('div');
+    checkboxDiv.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; flex: 1;';
+    checkboxDiv.innerHTML = `
+        <input type="checkbox" id="${checkboxId}" checked style="width: 18px; height: 18px; cursor: pointer;">
+        <label for="${checkboxId}" style="cursor: pointer; display: flex; align-items: center; gap: 0.5rem; flex: 1;">
             <span style="font-weight: 900; font-size: 1.1rem; color: ${accentColor};">${etiqueta}</span>
-            <span style="font-size: 0.75rem; background: ${accentColor}; color: white; padding: 0.15rem 0.5rem; border-radius: 9999px; font-weight: 700;">${cantidad} und</span>
-        </div>
+        </label>
     `;
+    header.appendChild(checkboxDiv);
+
+    // ─── Cantidad editable ───
+    const cantidadDiv = document.createElement('div');
+    cantidadDiv.style.cssText = 'display: flex; align-items: center; gap: 0.3rem;';
+    cantidadDiv.innerHTML = `
+        <input type="number" id="${inputCantidadId}" min="0" value="${datos.cantidadSeleccionada || cantidad}" 
+            style="width: 50px; padding: 0.3rem 0.5rem; border: 1px solid ${accentColor}; border-radius: 4px; text-align: center; font-size: 0.85rem; font-weight: 700;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: #6b7280;">und</span>
+    `;
+    header.appendChild(cantidadDiv);
+
     card.appendChild(header);
+
+    // Crear contenedor para el resto del contenido (se ocultará si se deselecciona)
+    const contenidoDiv = document.createElement('div');
+    contenidoDiv.id = `contenido-${safeKey}`;
+    contenidoDiv.style.cssText = 'display: flex; flex-direction: column; gap: 0.75rem; transition: opacity 0.2s;';
 
     // ─── Ubicación ───
     const ubicDiv = document.createElement('div');
@@ -169,7 +196,7 @@ function crearTarjetaTalla(genero, tallaKey, cantidad, datos) {
             style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.85rem; min-height: 55px; resize: vertical; box-sizing: border-box;"
         >${(datos.ubicaciones || []).join(', ')}</textarea>
     `;
-    card.appendChild(ubicDiv);
+    contenidoDiv.appendChild(ubicDiv);
 
     // ─── Observaciones ───
     const obsDiv = document.createElement('div');
@@ -182,7 +209,7 @@ function crearTarjetaTalla(genero, tallaKey, cantidad, datos) {
             style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.85rem; min-height: 55px; resize: vertical;"
         >${datos.observaciones}</textarea>
     `;
-    card.appendChild(obsDiv);
+    contenidoDiv.appendChild(obsDiv);
 
     // ─── Fotos (múltiples) ───
     const fotoDiv = document.createElement('div');
@@ -215,10 +242,33 @@ function crearTarjetaTalla(genero, tallaKey, cantidad, datos) {
         </div>
         <input type="file" id="${inputFileId}" accept="image/*" multiple style="display:none;" onchange="cargarFotosPorTalla('${safeKey}', this)">
     `;
-    card.appendChild(fotoDiv);
+    contenidoDiv.appendChild(fotoDiv);
 
-    // ─── Configurar Drag & Drop + Paste en la galería ───
+    card.appendChild(contenidoDiv);
+
+    // ─── Event Listeners para Checkbox y Cantidad ───
     setTimeout(() => {
+        const checkbox = document.getElementById(checkboxId);
+        const inputCantidad = document.getElementById(inputCantidadId);
+
+        if (checkbox) {
+            checkbox.addEventListener('change', () => {
+                datosPorTallaTemp[safeKey].seleccionada = checkbox.checked;
+                // Cambiar opacidad del contenido
+                contenidoDiv.style.opacity = checkbox.checked ? '1' : '0.5';
+                contenidoDiv.style.pointerEvents = checkbox.checked ? 'auto' : 'none';
+            });
+        }
+
+        if (inputCantidad) {
+            inputCantidad.addEventListener('change', () => {
+                const nuevaCantidad = Math.max(0, parseInt(inputCantidad.value) || cantidad);
+                datosPorTallaTemp[safeKey].cantidadSeleccionada = nuevaCantidad;
+                inputCantidad.value = nuevaCantidad;
+            });
+        }
+
+        // Configurar Drag & Drop + Paste en la galería
         const galeria = document.getElementById(galeriaId);
         if (galeria) configurarDragDropPasteTalla(galeria, safeKey);
     }, 0);
@@ -422,6 +472,24 @@ window.guardarProcesoPorTallas = function() {
         }
     });
 
+    // Recoger cantidades de los inputs
+    document.querySelectorAll('[id^="cantidad-"]').forEach(input => {
+        const id = input.id.replace('cantidad-', '');
+        const key = id;
+        if (datosPorTallaTemp[key]) {
+            datosPorTallaTemp[key].cantidadSeleccionada = Math.max(0, parseInt(input.value) || 0);
+        }
+    });
+
+    // Recoger estado de checkboxes
+    document.querySelectorAll('[id^="checkbox-"]').forEach(checkbox => {
+        const id = checkbox.id.replace('checkbox-', '');
+        const key = id;
+        if (datosPorTallaTemp[key]) {
+            datosPorTallaTemp[key].seleccionada = checkbox.checked;
+        }
+    });
+
     // Construir estructura de tallas y datosExtendidos
     const tallas = { dama: {}, caballero: {}, sobremedida: {} };
     const datosExtendidos = { dama: {}, caballero: {}, sobremedida: {} };
@@ -432,17 +500,19 @@ window.guardarProcesoPorTallas = function() {
         : { dama: {}, caballero: {}, sobremedida: null };
 
     Object.entries(datosPorTallaTemp).forEach(([key, datos]) => {
+        // Solo guardar si está seleccionada
+        if (!datos.seleccionada) return;
+
         // key = "dama__M" o "caballero__L"
         const sepIdx = key.indexOf('__');
         const genero = key.substring(0, sepIdx);
         const tallaKey = key.substring(sepIdx + 2);
 
-        // Copiar cantidad de la prenda
-        if (tallasPrenda[genero] && tallasPrenda[genero][tallaKey] !== undefined) {
-            tallas[genero][tallaKey] = tallasPrenda[genero][tallaKey];
-        }
+        // Usar la cantidad seleccionada (editada) en lugar de la cantidad original
+        tallas[genero][tallaKey] = datos.cantidadSeleccionada;
 
         datosExtendidos[genero][tallaKey] = {
+            cantidadSeleccionada: datos.cantidadSeleccionada,
             ubicaciones: datos.ubicaciones || [],
             observaciones: datos.observaciones || '',
             imagenes: datos.imagenes || [],
