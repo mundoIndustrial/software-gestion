@@ -77,6 +77,21 @@ class OrdenUpdated implements ShouldBroadcastNow
             $ordenData['pedido'] = $ordenData['numero_pedido'];
         }
 
+        // Agregar información del cliente si está disponible
+        if ($this->orden instanceof \Illuminate\Database\Eloquent\Model && $this->orden->cliente) {
+            $ordenData['cliente_nombre'] = $this->orden->cliente->nombre ?? $this->orden->cliente->razon_social ?? 'Sin cliente';
+        } elseif (isset($ordenData['cliente_id'])) {
+            // Si no está cargada, intentar obtenerla
+            try {
+                $cliente = \App\Models\Cliente::find($ordenData['cliente_id']);
+                if ($cliente) {
+                    $ordenData['cliente_nombre'] = $cliente->nombre ?? $cliente->razon_social ?? 'Sin cliente';
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Error obteniendo cliente en OrdenUpdated: ' . $e->getMessage());
+            }
+        }
+
         return [
             'orden' => $ordenData,
             'action' => $this->action,

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\User;
 
 class ConsecutivoReciboPedido extends Model
 {
@@ -48,5 +49,13 @@ class ConsecutivoReciboPedido extends Model
     public function prenda(): BelongsTo
     {
         return $this->belongsTo(PrendaPedido::class, 'prenda_id');
+    }
+
+    /**
+     * Relación: Usuarios que marcaron este recibo como visto
+     */
+    public function vistoPor()
+    {
+        return $this->belongsToMany(User::class, 'recibos_vistos_insumos', 'consecutivo_recibo_id', 'user_id');
     }
 }

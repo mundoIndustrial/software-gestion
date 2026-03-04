@@ -2254,6 +2254,8 @@ Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.
     Route::get('/materiales/{numeroPedido}/obtener-recibo-prenda/{prendaId}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerReciboPrenda'])->name('materiales.obtener-recibo-prenda');
     Route::get('/api/materiales/{pedido}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerMateriales'])->name('api.materiales');
     Route::get('/api/filtros/{column}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerValoresFiltro'])->name('api.filtros');
+    Route::get('/api/contar-costura-pendiente', [\App\Http\Controllers\Insumos\InsumosController::class, 'contarCosturaPendiente'])->name('api.contar.costura.pendiente');
+    Route::post('/api/recibo/{id}/marcar-visto', [\App\Http\Controllers\Insumos\InsumosController::class, 'marcarReciboVisto'])->name('api.recibo.marcar-visto');
     Route::post('/materiales/{numeroPedido}/cambiar-estado', [\App\Http\Controllers\Insumos\InsumosController::class, 'cambiarEstado'])->name('materiales.cambiar-estado');
     Route::post('/materiales/recibo/{reciboId}/cambiar-estado', [\App\Http\Controllers\Insumos\InsumosController::class, 'cambiarEstadoRecibo'])->name('materiales.recibo.cambiar-estado');
     Route::post('/materiales/{materialId}/toggle-marcado', [\App\Http\Controllers\Insumos\MaterialesController::class, 'toggleMarcado'])->name('materiales.toggle-marcado');

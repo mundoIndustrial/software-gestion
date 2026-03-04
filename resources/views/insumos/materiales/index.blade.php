@@ -405,13 +405,39 @@
     {{-- Header Principal Blanco --}}
     <div style="background: white; border-bottom: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05); width: 100%; margin: 0; box-sizing: border-box;">
         <div style="padding: 1rem 0; width: 100%;">
-            {{-- Título y Descripción --}}
-            <div style="margin-bottom: 1rem; padding: 0 0.5rem;">
-                <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                    <span class="material-symbols-rounded text-4xl text-blue-600">inventory_2</span>
-                    Control de Insumos del Pedido
-                </h1>
-                <p class="text-gray-600 text-sm mt-2">Gestiona y controla los insumos de tus pedidos en tiempo real</p>
+            {{-- Título, Descripción y Campana --}}
+            <div style="margin-bottom: 1rem; padding: 0 0.5rem; display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="flex: 1;">
+                    <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                        <span class="material-symbols-rounded text-4xl text-blue-600">inventory_2</span>
+                        Control de Insumos del Pedido
+                    </h1>
+                    <p class="text-gray-600 text-sm mt-2">Gestiona y controla los insumos de tus pedidos en tiempo real</p>
+                </div>
+                {{-- Campana de Notificaciones INSUMOS (IDs únicos para evitar colisión con notifications-realtime.js global) --}}
+                <div style="position: relative;">
+                    <button id="insumosBellBtn" class="relative p-3 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Notificaciones de nuevos recibos">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                        </svg>
+                        <span id="insumosBadge" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1 -translate-y-1 bg-red-600 rounded-full" style="display: none; min-width: 20px;">0</span>
+                    </button>
+
+                    {{-- Dropdown de Notificaciones --}}
+                    <div id="insumosDropdown" class="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50" style="display: none; max-height: 500px; overflow-y: auto;">
+                        <div class="p-4 border-b border-gray-200 bg-grad gradient-to-r from-blue-50 to-blue-100">
+                            <div class="flex justify-between items-center">
+                                <h3 class="font-bold text-gray-900">Nuevos Recibos Aprobados</h3>
+                                <button id="insumosClearBtn" class="text-sm text-gray-600 hover:text-gray-900 font-medium">Limpiar Todo</button>
+                            </div>
+                        </div>
+                        <div id="insumosNotifList" class="divide-y divide-gray-200">
+                            <div class="p-4 text-center text-gray-500">
+                                <p>Sin notificaciones</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {{-- Buscador Mejorado --}}
@@ -4302,16 +4328,73 @@ function abrirModalSeguimientoDirectoInsumos(pedidoId, prendaIdTarget) {
      */
     function initializeRealtimeListener() {
         try {
-            // Usar la instancia de Echo (esperar a que esté lista)
             window.waitForEcho(() => {
                 const echo = window.EchoInstance;
                 
                 if (!echo) {
-                    console.warn('[Realtime Insumos] Echo no está disponible');
+                    console.warn('[Realtime Insumos] Echo no disponible');
                     return;
                 }
 
                 console.log('[Realtime Insumos] Inicializando listeners...');
+
+                // Almacenar notificaciones
+                window.notificacionesInsumos = window.notificacionesInsumos || [];
+
+                // Función para agregar notificación a la campana
+                const addNotification = (orden) => {
+                    console.log('[🔔 Campana] Nuevo recibo aprobado:', orden.numero_pedido || orden.pedido);
+                    const notificacion = {
+                        id: Math.random().toString(36).substr(2, 9),
+                        pedido_numero: orden.numero_pedido || orden.pedido,
+                        cliente: orden.cliente_nombre || 'Sin cliente',
+                        timestamp: new Date().toLocaleTimeString(),
+                        orden_id: orden.id
+                    };
+
+                    window.notificacionesInsumos.push(notificacion);
+
+                    // Incrementar badge
+                    const badge = document.getElementById('insumosBadge');
+                    if (badge) {
+                        const current = parseInt(badge.textContent || '0') + 1;
+                        badge.textContent = current;
+                        badge.style.display = 'inline-flex';
+                    }
+
+                    // Agregar a la lista visual
+                    const notificationsList = document.getElementById('insumosNotifList');
+                    if (notificationsList) {
+                        // Limpiar placeholder si existe
+                        if (notificationsList.children.length === 1 && 
+                            (notificationsList.children[0].textContent.includes('Sin notificaciones') || 
+                             notificationsList.children[0].textContent.includes('Sin recibos'))) {
+                            notificationsList.innerHTML = '';
+                        }
+
+                        const notifEl = document.createElement('div');
+                        notifEl.className = 'p-4 hover:bg-gray-50 transition cursor-pointer border-b border-gray-100';
+                        notifEl.innerHTML = `
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <p class="font-bold text-blue-600">Recibo #${notificacion.pedido_numero}</p>
+                                    <p class="text-sm text-gray-600">${notificacion.cliente}</p>
+                                    <p class="text-xs text-gray-400 mt-1">${notificacion.timestamp}</p>
+                                </div>
+                                <button class="text-blue-600 hover:text-blue-800 font-medium text-sm px-3 py-1 rounded hover:bg-blue-50" onclick="verReciboDesdeCampana(${notificacion.orden_id})">
+                                    Ver
+                                </button>
+                            </div>
+                        `;
+                        notificationsList.insertBefore(notifEl, notificationsList.firstChild);
+                    }
+
+                    // Reproducir sonido de notificación
+                    playNotificationSound();
+
+                    // Toast visual
+                    showNotificationToast(notificacion);
+                };
 
                 // Función para refrescar la tabla
                 const refreshMateriales = debounce(() => {
@@ -4336,17 +4419,22 @@ function abrirModalSeguimientoDirectoInsumos(pedidoId, prendaIdTarget) {
                 // Escuchar evento 'orden.updated' (el nombre devuelto por broadcastAs())
                 channelSupervisor.listen('.orden.updated', (data) => {
                     console.log('[Realtime Insumos] 📢 Evento .orden.updated recibido:', data);
-                    if (data.orden && (data.orden.estado === 'PENDIENTE_INSUMOS' || data.orden.area === 'Insumos')) {
-                        console.log('[Realtime Insumos] 🔄 Refrescando porque orden está en Insumos');
+                    // SOLO mostrar notificación si el estado es PENDIENTE_INSUMOS (es decir, fue aprobado en supervisor)
+                    if (data.orden && data.orden.estado === 'PENDIENTE_INSUMOS') {
+                        console.log('[Realtime Insumos] ✅ Recibo aprobado a PENDIENTE_INSUMOS, mostrando notificación');
+                        addNotification(data.orden);
                         refreshMateriales();
+                    } else {
+                        console.log('[Realtime Insumos] ⏭ Recibo actualizado pero NO está en PENDIENTE_INSUMOS, estado:', data.orden?.estado);
                     }
                 });
 
                 // Alternativa: Escuchar sin el prefijo de punto
                 channelSupervisor.listen('orden.updated', (data) => {
                     console.log('[Realtime Insumos] 📢 Evento orden.updated (sin punto) recibido:', data);
-                    if (data.orden && (data.orden.estado === 'PENDIENTE_INSUMOS' || data.orden.area === 'Insumos')) {
-                        console.log('[Realtime Insumos] 🔄 Refrescando porque orden está en Insumos');
+                    if (data.orden && data.orden.estado === 'PENDIENTE_INSUMOS') {
+                        console.log('[Realtime Insumos] ✅ Recibo aprobado a PENDIENTE_INSUMOS, mostrando notificación');
+                        addNotification(data.orden);
                         refreshMateriales();
                     }
                 });
@@ -4354,8 +4442,9 @@ function abrirModalSeguimientoDirectoInsumos(pedidoId, prendaIdTarget) {
                 // Por si el evento tiene el nombre de la clase
                 channelSupervisor.listen('OrdenUpdated', (data) => {
                     console.log('[Realtime Insumos] 📢 Evento OrdenUpdated recibido:', data);
-                    if (data.orden && (data.orden.estado === 'PENDIENTE_INSUMOS' || data.orden.area === 'Insumos')) {
-                        console.log('[Realtime Insumos] 🔄 Refrescando porque orden está en Insumos');
+                    if (data.orden && data.orden.estado === 'PENDIENTE_INSUMOS') {
+                        console.log('[Realtime Insumos] ✅ Recibo aprobado a PENDIENTE_INSUMOS, mostrando notificación');
+                        addNotification(data.orden);
                         refreshMateriales();
                     }
                 });
@@ -4377,6 +4466,10 @@ function abrirModalSeguimientoDirectoInsumos(pedidoId, prendaIdTarget) {
                 ['orden.updated', '.orden.updated', 'OrdenUpdated'].forEach(eventName => {
                     channelOrdenes.listen(eventName, (data) => {
                         console.log(`[Realtime Insumos] 📢 Evento '${eventName}' recibido en canal ordenes:`, data);
+                        // SOLO notificar si el estado es PENDIENTE_INSUMOS
+                        if (data.orden && data.orden.estado === 'PENDIENTE_INSUMOS') {
+                            addNotification(data.orden);
+                        }
                         refreshMateriales();
                     });
                 });
@@ -4387,6 +4480,117 @@ function abrirModalSeguimientoDirectoInsumos(pedidoId, prendaIdTarget) {
             console.error('[Realtime Insumos] ❌ Error inicializando listener:', error);
         }
     }
+
+    /**
+     * Setup de controles de la campana de notificaciones
+     */
+    function setupNotificationBellControls() {
+        const bellBtn = document.getElementById('insumosBellBtn');
+        const dropdown = document.getElementById('insumosDropdown');
+        const clearBtn = document.getElementById('insumosClearBtn');
+
+        // Abrir/cerrar dropdown
+        if (bellBtn) {
+            bellBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (dropdown) {
+                    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+                }
+            });
+        }
+
+        // Limpiar todas las notificaciones
+        if (clearBtn) {
+            clearBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.notificacionesInsumos = [];
+                const badge = document.getElementById('insumosBadge');
+                if (badge) {
+                    badge.textContent = '0';
+                    badge.style.display = 'none';
+                }
+                const notificationsList = document.getElementById('insumosNotifList');
+                if (notificationsList) {
+                    notificationsList.innerHTML = '<div class="p-4 text-center text-gray-500"><p>Sin notificaciones</p></div>';
+                }
+            });
+        }
+
+        // Cerrar dropdown cuando se hace click fuera
+        document.addEventListener('click', (e) => {
+            if (dropdown && bellBtn && !dropdown.contains(e.target) && !bellBtn.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+    }
+
+    /**
+     * Reproduce un sonido de notificación
+     */
+    function playNotificationSound() {
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        } catch (e) {
+            console.log('[Notificación] No se pudo reproducir sonido:', e.message);
+        }
+    }
+
+    /**
+     * Muestra un toast visual cuando llega una notificación
+     */
+    function showNotificationToast(notificacion) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-lg z-50 flex items-center gap-3 animate-pulse';
+        toast.style.animation = 'slideInUp 0.5s ease-out';
+        toast.innerHTML = `
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div>
+                <p class="font-bold">Nuevo Recibo Aprobado</p>
+                <p class="text-sm">Número: #${notificacion.pedido_numero} - ${notificacion.cliente}</p>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'slideOutDown 0.5s ease-out';
+            setTimeout(() => toast.remove(), 500);
+        }, 5000);
+    }
+
+    /**
+     * Ve un recibo desde la notificación de campana
+     */
+    window.verReciboDesdeCampana = function(ordenId) {
+        console.log('[Notificación] Visualizando recibo:', ordenId);
+        // Buscar la fila en la tabla y hacer scroll hacia ella
+        const row = document.querySelector(`tr[data-pedido-produccion-id="${ordenId}"]`);
+        if (row) {
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            row.style.backgroundColor = '#fef3c7';
+            setTimeout(() => {
+                row.style.backgroundColor = '';
+            }, 2000);
+        }
+        // Cerrar dropdown
+        const dropdown = document.getElementById('insumosDropdown');
+        if (dropdown) dropdown.style.display = 'none';
+    };
 
     // Función debounce para evitar múltiples refrescos rápidos
     function debounce(func, wait) {
@@ -4401,12 +4605,214 @@ function abrirModalSeguimientoDirectoInsumos(pedidoId, prendaIdTarget) {
         };
     }
 
+    console.log('[🔔 CAMPANA INSUMOS] Sistema iniciado');
+    
+    // ======= MARCAR RECIBO COMO VISTO =======
+    async function marcarReciboVisto(reciboId, itemElement) {
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]');
+            const response = await fetch('/insumos/api/recibo/' + reciboId + '/marcar-visto', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken ? csrfToken.content : ''
+                }
+            });
+
+            if (response.ok) {
+                console.log('[🔔 CAMPANA INSUMOS] Recibo', reciboId, 'marcado como visto');
+
+                // Animar y remover el item
+                itemElement.style.transition = 'all 0.3s ease';
+                itemElement.style.opacity = '0';
+                itemElement.style.maxHeight = '0';
+                itemElement.style.overflow = 'hidden';
+                itemElement.style.padding = '0';
+                itemElement.style.margin = '0';
+
+                setTimeout(function() {
+                    itemElement.remove();
+
+                    // Decrementar badge
+                    const badge = document.getElementById('insumosBadge');
+                    if (badge) {
+                        let count = parseInt(badge.textContent) || 0;
+                        count = Math.max(0, count - 1);
+                        badge.textContent = count;
+                        badge.style.display = count > 0 ? 'inline-flex' : 'none';
+                    }
+
+                    // Si no quedan items, mostrar mensaje vacío
+                    const list = document.getElementById('insumosNotifList');
+                    if (list && list.querySelectorAll('[data-recibo-id]').length === 0) {
+                        list.innerHTML = '<div class="p-4 text-center text-gray-500"><p>Sin recibos pendientes</p></div>';
+                    }
+                }, 300);
+            } else {
+                console.error('[🔔 CAMPANA INSUMOS] Error marcando visto:', response.status);
+                alert('Error al marcar como visto');
+            }
+        } catch (error) {
+            console.error('[🔔 CAMPANA INSUMOS] Error en marcarReciboVisto:', error);
+            alert('Error al marcar como visto');
+        }
+    }
+
+    // ======= CARGAR CONTEO Y LISTA INICIAL DESDE API =======
+    async function cargarConteoInicial() {
+        try {
+            const response = await fetch('/insumos/api/contar-costura-pendiente', {
+                method: 'GET',
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                const total = data.total || 0;
+                const recibos = data.recibos || [];
+                
+                console.log('[🔔 CAMPANA INSUMOS] Total:', total, '| Recibos cargados:', recibos.length);
+                
+                // Actualizar badge
+                const badge = document.getElementById('insumosBadge');
+                if (badge) {
+                    badge.textContent = total;
+                    badge.style.display = total > 0 ? 'inline-flex' : 'none';
+                }
+                
+                // Poblar lista del dropdown
+                const list = document.getElementById('insumosNotifList');
+                if (list && recibos.length > 0) {
+                    list.innerHTML = '';
+                    recibos.forEach(function(recibo) {
+                        const item = document.createElement('div');
+                        item.className = 'p-3 hover:bg-gray-50 transition border-b border-gray-100';
+                        item.setAttribute('data-recibo-id', recibo.id);
+                        item.innerHTML = 
+                            '<div class="flex justify-between items-center">' +
+                                '<div class="flex-1 cursor-pointer" data-action="ver">' +
+                                    '<p class="font-bold text-blue-600">Recibo #' + recibo.numero_recibo + '</p>' +
+                                    '<p class="text-sm text-gray-600">' + recibo.cliente + '</p>' +
+                                    '<p class="text-xs text-gray-400 mt-1">' + recibo.fecha + '</p>' +
+                                '</div>' +
+                                '<button class="btn-marcar-visto ml-2 p-1.5 rounded-full hover:bg-green-100 transition" data-id="' + recibo.id + '" title="Marcar como visto">' +
+                                    '<svg class="w-5 h-5 text-gray-400 hover:text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+                                        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>' +
+                                    '</svg>' +
+                                '</button>' +
+                            '</div>';
+                        
+                        // Click en datos -> ver recibo
+                        item.querySelector('[data-action="ver"]').addEventListener('click', function() {
+                            if (typeof verReciboDesdeCampana === 'function') {
+                                verReciboDesdeCampana(recibo.pedido_id);
+                            }
+                        });
+                        
+                        // Click en check -> marcar como visto
+                        item.querySelector('.btn-marcar-visto').addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            marcarReciboVisto(recibo.id, item);
+                        });
+                        
+                        list.appendChild(item);
+                    });
+                    
+                    // Si hay más recibos que los que mostramos
+                    if (total > recibos.length) {
+                        const moreItem = document.createElement('div');
+                        moreItem.className = 'p-3 text-center text-gray-500 text-sm';
+                        moreItem.textContent = '... y ' + (total - recibos.length) + ' recibo(s) más';
+                        list.appendChild(moreItem);
+                    }
+                } else if (list && recibos.length === 0) {
+                    list.innerHTML = '<div class="p-4 text-center text-gray-500"><p>Sin recibos pendientes</p></div>';
+                }
+            } else {
+                console.error('[🔔 CAMPANA INSUMOS] Error HTTP:', response.status);
+            }
+        } catch (error) {
+            console.error('[🔔 CAMPANA INSUMOS] Error cargando datos:', error);
+        }
+    }
+
     // Esperar a que el documento esté completamente cargado antes de inicializar
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeRealtimeListener);
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarConteoInicial();
+            initializeRealtimeListener();
+            setupNotificationBellControls();
+        });
     } else {
+        cargarConteoInicial();
         initializeRealtimeListener();
+        setupNotificationBellControls();
     }
+
+    /**
+     * CSS para animaciones de notificación
+     */
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideOutDown {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(100px);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        #insumosBellBtn {
+            position: relative;
+            transition: all 0.2s ease-in-out;
+        }
+
+        #insumosBellBtn:hover {
+            background-color: #dbeafe;
+        }
+
+        #insumosDropdown {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .notification-item {
+            border-left: 4px solid #2563eb;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .notification-item:hover {
+            background-color: #f3f4f6;
+        }
+    `;
+    document.head.appendChild(style);
 </script>
 @endsection
 

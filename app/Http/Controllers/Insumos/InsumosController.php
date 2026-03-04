@@ -1942,4 +1942,99 @@ class InsumosController extends Controller
             return 'Error';
         }
     }
+
+    /**
+     * Contar y listar recibos COSTURA en estado PENDIENTE_INSUMOS (no vistos por el usuario actual)
+     * Endpoint: GET /insumos/api/contar-costura-pendiente
+     */
+    public function contarCosturaPendiente()
+    {
+        try {
+            $user = Auth::user();
+            $this->verificarRolInsumos($user);
+
+            // IDs de recibos ya vistos por este usuario
+            $vistosIds = \App\Models\ReciboVistoInsumo::where('user_id', $user->id)
+                ->pluck('consecutivo_recibo_id')
+                ->toArray();
+
+            // Recibos COSTURA PENDIENTE_INSUMOS que este usuario NO ha marcado como vistos
+            $query = ConsecutivoReciboPedido::where('tipo_recibo', 'COSTURA')
+                ->where('estado', 'PENDIENTE_INSUMOS')
+                ->whereNotIn('id', $vistosIds);
+
+            $total = $query->count();
+
+            $recibos = $query->with(['pedido:id,numero_pedido,cliente'])
+                ->orderBy('created_at', 'desc')
+                ->limit(50)
+                ->get(['id', 'pedido_produccion_id', 'tipo_recibo', 'estado', 'consecutivo_actual', 'created_at']);
+
+            $lista = $recibos->map(function ($recibo) {
+                return [
+                    'id' => $recibo->id,
+                    'numero_recibo' => $recibo->consecutivo_actual,
+                    'cliente' => $recibo->pedido->cliente ?? 'Sin cliente',
+                    'pedido_id' => $recibo->pedido_produccion_id,
+                    'fecha' => $recibo->created_at ? $recibo->created_at->format('d/m/Y H:i') : '',
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'total' => $total,
+                'recibos' => $lista,
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al contar recibos COSTURA pendiente:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener contador',
+                'total' => 0,
+                'recibos' => []
+            ], 500);
+        }
+    }
+
+    /**
+     * Marcar un recibo como visto por el usuario actual
+     * Endpoint: POST /insumos/api/recibo/{id}/marcar-visto
+     */
+    public function marcarReciboVisto($id)
+    {
+        try {
+            $user = Auth::user();
+            $this->verificarRolInsumos($user);
+
+            // Verificar que el recibo existe
+            $recibo = ConsecutivoReciboPedido::findOrFail($id);
+
+            // Insertar o ignorar si ya existe (unique constraint)
+            \App\Models\ReciboVistoInsumo::firstOrCreate([
+                'consecutivo_recibo_id' => $recibo->id,
+                'user_id' => $user->id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Recibo marcado como visto',
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al marcar recibo como visto:', [
+                'error' => $e->getMessage(),
+                'recibo_id' => $id,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al marcar como visto',
+            ], 500);
+        }
+    }
 }

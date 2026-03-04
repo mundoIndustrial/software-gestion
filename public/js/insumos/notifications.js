@@ -1,11 +1,20 @@
 // ========================================
-// NOTIFICATIONS SYSTEM
+// NOTIFICATIONS SYSTEM - INSUMOS
 // ========================================
-let lastMarkAllReadTime = 0; // Timestamp de última vez que se marcaron todas como leídas
+// Este sistema está personalizado para mostrar SOLO recibos COSTURA en PENDIENTE_INSUMOS
+
+let lastMarkAllReadTime = 0;
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Sistema de notificaciones deshabilitado para rol Insumos
-
+    console.log('[Notificaciones INSUMOS] Sistema inicializado');
+    
+    // Verificar si estamos en la página de materiales
+    if (window.location.pathname.includes('/insumos/materiales')) {
+        console.log('[Notificaciones INSUMOS] Página de materiales detectada - sistema deshabilitado (usando campana específica)');
+        return;
+    }
+    
+    // En otras páginas de insumos, el sistema está deshabilitado
 });
 
 function updateNotificationBadge(count) {
@@ -17,8 +26,8 @@ function updateNotificationBadge(count) {
 }
 
 function renderNotifications(data) {
-    const notificationList = document.getElementById('notificationList');
-    if (!notificationList) return;
+    // Deshabilitado para insumos
+}
     
     // Limpiar lista
     notificationList.innerHTML = '';

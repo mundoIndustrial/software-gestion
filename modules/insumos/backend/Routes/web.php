@@ -33,6 +33,9 @@ Route::middleware(['auth', 'insumos-access'])
         Route::get('/api/materiales/{numeroPedido}', [InsumosController::class, 'obtenerMateriales'])
             ->name('api.materiales');
 
+        Route::get('/api/contar-costura-pendiente', [InsumosController::class, 'contarCosturaPendiente'])
+            ->name('api.contar.costura.pendiente');
+
         Route::get('/api/filtros/{column}', [InsumosController::class, 'obtenerValoresFiltro'])
             ->name('api.filtros');
 
