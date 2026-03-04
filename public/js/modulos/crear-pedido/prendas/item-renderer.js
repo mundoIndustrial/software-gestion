@@ -236,7 +236,7 @@ class ItemRenderer {
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 0.5rem;">
                     ${imagenes.map(img => `
                         <div style="position: relative; border-radius: 4px; overflow: hidden; background: #f3f4f6; border: 1px solid #e5e7eb; aspect-ratio: 1;">
-                            <img src="${img.preview || img.url || ''}" alt="Imagen EPP" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                            <img src="${img.previewUrl || img.preview || img.url || img.ruta_web || ''}" alt="Imagen EPP" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                         </div>
                     `).join('')}
                 </div>

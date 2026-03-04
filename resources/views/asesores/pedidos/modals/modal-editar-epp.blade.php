@@ -272,6 +272,58 @@ function abrirModalEditarEPP(eppData) {
     // Mostrar modal
     document.getElementById('modalEditarEPP').classList.remove('hidden');
     
+    // Agregar listener de paste para la zona de fotos de este modal
+    const fotoZona = document.getElementById('modalEditarEPPFotoZona');
+    if (fotoZona && !window.__pasteListenerEditarEPP__) {
+        // Dar focus a la zona para que pueda recibir eventos
+        fotoZona.setAttribute('tabindex', '0');
+        
+        // Crear listener único para este modal
+        window.__pasteListenerEditarEPP__ = function(e) {
+            const modal = document.getElementById('modalEditarEPP');
+            if (!modal || modal.classList.contains('hidden')) return;
+            
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            
+            let pegadasOk = 0;
+            for (let item of items) {
+                if (item.type.startsWith('image/')) {
+                    const file = item.getAsFile();
+                    if (!file) continue;
+                    
+                    const previewUrl = URL.createObjectURL(file);
+                    
+                    const imagen = {
+                        id: Date.now() + '_paste_' + Math.random().toString(36).substr(2, 5),
+                        file: file,
+                        previewUrl: previewUrl,
+                        nombre: file.name || 'pegado_' + Date.now() + '.png',
+                        extension: (file.name || '').split('.').pop().toLowerCase() || 'png',
+                        tamaño: file.size,
+                        pedido_epp_id: null,
+                        ruta_original: null,
+                        ruta_webp: null,
+                        principal: 0,
+                        orden: 0
+                    };
+                    
+                    if (!fotosEnEdicionIndividual) fotosEnEdicionIndividual = [];
+                    fotosEnEdicionIndividual.push(imagen);
+                    pegadasOk++;
+                }
+            }
+            
+            if (pegadasOk > 0) {
+                console.log('[paste] ✅ Imágenes pegadas en modal editar EPP:', pegadasOk);
+                mostrarFotosEnModalEditar();
+            }
+        };
+        
+        document.addEventListener('paste', window.__pasteListenerEditarEPP__);
+        console.log('[abrirModalEditarEPP] Paste listener agregado para modal de edición');
+    }
+    
     console.log('[abrirModalEditarEPP] Modal abierto, EPP en edición:', eppEnEdicionIndividual, 'Índice:', indiceEPPEnEdicion, 'Tarjeta ID:', tarjetaEppIdEnEdicion);
 }
 
@@ -416,6 +468,13 @@ function cerrarModalEditarEPP() {
     fotosEnEdicionIndividual = [];
     indiceEPPEnEdicion = -1;
     tarjetaEppIdEnEdicion = null;
+    
+    // Remover listener de paste del modal de edición
+    if (window.__pasteListenerEditarEPP__) {
+        document.removeEventListener('paste', window.__pasteListenerEditarEPP__);
+        window.__pasteListenerEditarEPP__ = null;
+        console.log('[cerrarModalEditarEPP] Paste listener removido');
+    }
 }
 
 /**
@@ -589,33 +648,6 @@ function eliminarFotoEnModalEditar(index) {
     
     console.log('[eliminarFotoEnModalEditar] Foto eliminada, total restantes:', fotosEnEdicionIndividual.length);
 }
-
-/**
- * Soporte para Ctrl+V en el modal
- */
-document.addEventListener('paste', function(e) {
-    const modal = document.getElementById('modalEditarEPP');
-    if (!modal || modal.classList.contains('hidden')) return;
-    
-    const items = e.clipboardData.items;
-    if (!items) return;
-    
-    console.log('[paste] Imagen pegada en modal editar EPP');
-    
-    for (let item of items) {
-        if (item.type.startsWith('image/')) {
-            const file = item.getAsFile();
-            const blobUrl = URL.createObjectURL(file);
-            fotosEnEdicionIndividual.push({
-                file: file,
-                previewUrl: blobUrl,
-                nombre: file.name
-            });
-        }
-    }
-    
-    mostrarFotosEnModalEditar();
-});
 
 /**
  * Cerrar dropdown al hacer click fuera

@@ -694,7 +694,38 @@ document.addEventListener('paste', function(e) {
     const items = e.clipboardData.items;
     if (!items) return;
     
-    // ========== MODO EDICIÓN: pegar en contenedorFotosEPP ==========
+    // ========== PRIORIDAD 1: Si clickeó una zona de fotos en la tabla, usar esa ==========
+    if (window.zonaFotosActivaId && eppAgregadosList.length > 0) {
+        const eppId = parseInt(window.zonaFotosActivaId.replace('fotoZona_', ''));
+        console.log('[paste] TABLA PRIORITARIA - Zona activa:', window.zonaFotosActivaId, '-> eppId:', eppId);
+        
+        const epp = eppAgregadosList.find(e => e.id == eppId);
+        if (epp) {
+            if (!epp.imagenes) epp.imagenes = [];
+            
+            let pegadasOk = 0;
+            for (let item of items) {
+                if (item.type.startsWith('image/')) {
+                    const file = item.getAsFile();
+                    const blobUrl = URL.createObjectURL(file);
+                    epp.imagenes.push({
+                        file: file,
+                        previewUrl: blobUrl,
+                        nombre: file.name
+                    });
+                    pegadasOk++;
+                }
+            }
+            
+            if (pegadasOk > 0) {
+                renderizarTablaEPPAgregados();
+                console.log('[paste] ✅ Imágenes pegadas en tabla PRIORITARIO - EPP:', eppId, '- Total:', pegadasOk);
+                return; // Se procesó en tabla, no continuar
+            }
+        }
+    }
+    
+    // ========== PRIORIDAD 2: pegar en contenedorFotosEPP (formulario de creación) ==========
     const seccionFotos = document.getElementById('seccionFotosEPP');
     if (seccionFotos && seccionFotos.style.display !== 'none') {
         let tieneImagen = false;
@@ -748,38 +779,55 @@ document.addEventListener('paste', function(e) {
         }
     }
     
-    // ========== MODO TABLA: pegar en eppAgregadosList ==========
+    // ========== PRIORIDAD 3: MODO TABLA - pegar en eppAgregadosList ==========
     if (eppAgregadosList.length === 0) return;
     
-    // Detectar cuál zona de fotos tiene foco
+    // PRIMERA OPCIÓN: Usar la zona de fotos que fue clickeada (más confiable)
     let eppId = null;
-    const focusedElement = document.activeElement;
     
-    if (focusedElement && focusedElement.id && focusedElement.id.startsWith('fotoZona_')) {
-        // Si el elemento enfocado es una zona de fotos, extraer el EPP ID
-        eppId = parseInt(focusedElement.id.replace('fotoZona_', ''));
-    } else {
-        // Si no hay zona enfocada, buscar en el elemento más cercano con clase fotoZona
-        let parent = focusedElement;
-        while (parent && !parent.id?.startsWith('fotoZona_')) {
-            parent = parent.parentElement;
-        }
-        if (parent && parent.id?.startsWith('fotoZona_')) {
-            eppId = parseInt(parent.id.replace('fotoZona_', ''));
+    if (window.zonaFotosActivaId) {
+        // Extraer el ID del EPP desde la zona activa
+        eppId = parseInt(window.zonaFotosActivaId.replace('fotoZona_', ''));
+        console.log('[paste] Usando zona de fotos activa:', window.zonaFotosActivaId, '-> eppId:', eppId);
+    }
+    
+    // SEGUNDA OPCIÓN: Detectar cuál zona de fotos tiene foco actualmente
+    if (!eppId) {
+        const focusedElement = document.activeElement;
+        
+        if (focusedElement && focusedElement.id && focusedElement.id.startsWith('fotoZona_')) {
+            // Si el elemento enfocado es una zona de fotos, extraer el EPP ID
+            eppId = parseInt(focusedElement.id.replace('fotoZona_', ''));
+            console.log('[paste] Zona de fotos tiene focus:', focusedElement.id);
+        } else {
+            // Si no hay zona enfocada, buscar en el elemento más cercano con clase fotoZona
+            let parent = focusedElement;
+            while (parent && !parent.id?.startsWith('fotoZona_')) {
+                parent = parent.parentElement;
+            }
+            if (parent && parent.id?.startsWith('fotoZona_')) {
+                eppId = parseInt(parent.id.replace('fotoZona_', ''));
+                console.log('[paste] Zona de fotos detectada como padre:', parent.id);
+            }
         }
     }
     
-    // Si no logramos detectar, usar el último EPP
+    // TERCERA OPCIÓN: Si no logramos detectar, usar el último EPP
     if (!eppId) {
         eppId = eppAgregadosList[eppAgregadosList.length - 1].id;
+        console.log('[paste] Ninguna zona detectada, usando último EPP:', eppId);
     }
     
     // Obtener el EPP con el ID detectado
     const epp = eppAgregadosList.find(e => e.id == eppId);
-    if (!epp) return;
+    if (!epp) {
+        console.warn('[paste] EPP no encontrado con ID:', eppId);
+        return;
+    }
     
     if (!epp.imagenes) epp.imagenes = [];
     
+    let pegadasOk = 0;
     for (let item of items) {
         if (item.type.startsWith('image/')) {
             const file = item.getAsFile();
@@ -790,11 +838,14 @@ document.addEventListener('paste', function(e) {
                 previewUrl: blobUrl,
                 nombre: file.name
             });
-            renderizarTablaEPPAgregados();
+            pegadasOk++;
         }
     }
     
-    console.log('[paste] Imágenes pegadas en EPP:', eppId);
+    if (pegadasOk > 0) {
+        renderizarTablaEPPAgregados();
+        console.log('[paste] ✅ Imágenes pegadas en EPP:', eppId, '- Total:', pegadasOk);
+    }
 });
 
 /**
@@ -946,7 +997,7 @@ function renderizarTablaEPPAgregados() {
                     ondragover="manejarDragOverFotosEPP(event)" 
                     ondragleave="manejarDragLeaveFotosEPP(event)"
                     onclick="this.focus()">
-                    ${fotosHtml ? `<div class="flex gap-1 items-center">${fotosHtml}</div>` : '<span class="text-gray-400 text-xs">Arrastra imágenes o pega (Ctrl+V)</span>'}
+                    ${fotosHtml ? `<div class="flex gap-1 items-center">${fotosHtml}</div>` : '<span class="text-gray-400 text-xs">Arrastra imágenes</span>'}
                 </div>
                 <input type="file" id="inputFotos_${epp.id}" multiple accept="image/*" style="display: none;" onchange="manejarSeleccionFotosEPP(event, ${epp.id})">
             </td>
@@ -1164,15 +1215,21 @@ function abrirModalAgregarEPP() {
     const eppEnFormulario = obtenerEPPsYaAgregadosEnFormulario();
     console.log('[abrirModalAgregarEPP] Variable global actualizada:', eppYaAgregadosEnFormulario);
     
-    // Limpiar estado previo COMPLETAMENTE (sin conexión a EPPs anteriores)
-    eppAgregadosList = [];
-    eppDisponiblesList = []; // Vaciar lista de disponibles
-    document.getElementById('inputBuscadorEPPTabla').value = '';
-    document.getElementById('contadorEPP').textContent = '0';
-    document.getElementById('listaEPPAgregados').style.display = 'none';
-    document.getElementById('btnFinalizarAgregarEPP').disabled = true;
+    // IMPORTANTE: Solo limpiar si la lista está vacía (primera vez)
+    // Si ya hay EPPs en la lista (regresos al modal), preservarlos
+    if (eppAgregadosList.length === 0) {
+        console.log('[abrirModalAgregarEPP] PRIMERA VEZ - limpiando estado previo');
+        eppDisponiblesList = []; // Vaciar lista de disponibles solo si es la primera vez
+        document.getElementById('inputBuscadorEPPTabla').value = '';
+    } else {
+        console.log('[abrirModalAgregarEPP] REGRESO AL MODAL - preservando', eppAgregadosList.length, 'EPPs agregados');
+    }
     
-    // Limpiar dropdown - no cargar EPPs disponibles
+    document.getElementById('contadorEPP').textContent = eppAgregadosList.length;
+    document.getElementById('listaEPPAgregados').style.display = eppAgregadosList.length > 0 ? 'block' : 'none';
+    document.getElementById('btnFinalizarAgregarEPP').disabled = eppAgregadosList.length === 0;
+    
+    // Limpiar dropdown - no cargar EPPs disponibles inicialmente
     const opcionesContainer = document.getElementById('opcionesDropdownEPP');
     if (opcionesContainer) {
         opcionesContainer.innerHTML = '';
@@ -1190,7 +1247,27 @@ function abrirModalAgregarEPP() {
         mensajeSinResultados.classList.remove('hidden');
     }
     
-    console.log('[abrirModalAgregarEPP] Modal abierto VACÍO - usuario debe buscar EPPs');
+    // Re-renderizar tabla si hay EPPs
+    if (eppAgregadosList.length > 0) {
+        renderizarTablaEPPAgregados();
+        console.log('[abrirModalAgregarEPP] Tabla Re-renderizada con', eppAgregadosList.length, 'EPPs');
+    }
+    
+    // IMPORTANTÍSIMO: Ocultar sección de edición para evitar que Ctrl+V vaya allá
+    const seccionFotos = document.getElementById('seccionFotosEPP');
+    if (seccionFotos) {
+        seccionFotos.style.display = 'none';
+        console.log('[abrirModalAgregarEPP] Sección de edición ocultada');
+    }
+    
+    // Limpiar zona de fotos activa desde cierre anterior
+    window.zonaFotosActivaId = null;
+    
+    // ===== REGISTRAR LISTENER DE PASTE PARA CTRL+V =====
+    document.addEventListener('paste', window.handlePasteEPP);
+    console.log('[abrirModalAgregarEPP] Paste listener registrado para Ctrl+V');
+    
+    console.log('[abrirModalAgregarEPP] Modal abierto - EPPs agregados:', eppAgregadosList.length);
     console.log('[abrirModalAgregarEPP] EPPs a EXCLUIR:', eppYaAgregadosEnFormulario);
 }
 
@@ -1305,6 +1382,10 @@ function cerrarModalAgregarEPPConfirmado() {
     console.log('[cerrarModalAgregarEPP] Paste listener removido');
     document.body.style.overflow = 'auto';
     eppAgregadosList = []; // Limpiar lista al cerrar
+    
+    // Limpiar zona de fotos activa
+    window.zonaFotosActivaId = null;
+    console.log('[cerrarModalAgregarEPP] Zona de fotos activa reseteada');
 
     // Limpiar flag de agregar EPP a pedido existente
     window.__EPP_AGREGAR_PEDIDO_EXISTENTE__ = null;
@@ -3655,9 +3736,13 @@ function handlePastePrenda(event) {
     }
 }
 
-// ========== MANEJADOR DE CTRL+V PARA EPP ==========
+// ========== MANEJADOR DE CTRL+V MEJORADO PARA EPP ==========
 function handlePasteEPP(event) {
     console.log('[handlePasteEPP] Paste detectado');
+    
+    // Prevenir que otros handlers lo procesen
+    event.preventDefault();
+    event.stopPropagation();
     
     if (!event.clipboardData || !event.clipboardData.items) {
         console.warn('[handlePasteEPP] No hay datos en el clipboard');
@@ -3675,19 +3760,52 @@ function handlePasteEPP(event) {
     }
     
     if (archivos.length > 0) {
-        event.preventDefault();
-        event.stopPropagation();
+        console.log('[handlePasteEPP] Archivos encontrados:', archivos.length);
+        console.log('[handlePasteEPP] window.zonaFotosActivaId:', window.zonaFotosActivaId);
         
-        // Crear un pseudo-evento con los archivos
-        const input = document.getElementById('inputFotosEPP');
-        const dataTransfer = new DataTransfer();
+        // Determinar si estamos en la tabla de EPPs agregados o en sección de edición
+        if (window.zonaFotosActivaId && window.zonaFotosActivaId.startsWith('fotoZona_')) {
+            // Estamos en la tabla - usar manejarSeleccionFotosEPP
+            const eppId = window.zonaFotosActivaId.replace('fotoZona_', '');
+            const input = document.getElementById(`inputFotos_${eppId}`);
+            
+            console.log('[handlePasteEPP] Pegando en tabla para EPP:', eppId);
+            console.log('[handlePasteEPP] Input encontrado:', !!input);
+            
+            if (input) {
+                const dataTransfer = new DataTransfer();
+                archivos.forEach(archivo => {
+                    dataTransfer.items.add(archivo);
+                });
+                input.files = dataTransfer.files;
+                
+                console.log('[handlePasteEPP] Archivos asignados al input:', input.files.length);
+                console.log('[handlePasteEPP] Llamando a manejarSeleccionFotosEPP');
+                
+                // Llamar directamente con el objeto evento correcto
+                manejarSeleccionFotosEPP({target: input, preventDefault: () => {}, stopPropagation: () => {}}, eppId);
+            }
+        } else {
+            // Estamos en modo edición - usar el input de edición
+            const inputEdicion = document.getElementById('inputFotosEPP');
+            
+            console.log('[handlePasteEPP] Pegando en sección de edición');
+            console.log('[handlePasteEPP] Input edición encontrado:', !!inputEdicion);
+            
+            if (inputEdicion) {
+                const dataTransfer = new DataTransfer();
+                archivos.forEach(archivo => {
+                    dataTransfer.items.add(archivo);
+                });
+                inputEdicion.files = dataTransfer.files;
+                
+                console.log('[handlePasteEPP] Archivos asignados al input edición:', inputEdicion.files.length);
+                console.log('[handlePasteEPP] Llamando a manejarSubidaFotosEPP');
+                
+                manejarSubidaFotosEPP(inputEdicion);
+            }
+        }
         
-        archivos.forEach(archivo => {
-            dataTransfer.items.add(archivo);
-        });
-        
-        input.files = dataTransfer.files;
-        manejarSubidaFotosEPP(input);
         console.log('[handlePasteEPP] Archivos pegados procesados:', archivos.length);
     }
 }
@@ -3734,14 +3852,50 @@ document.addEventListener('click', function(e) {
 });
 
 /**
+ * Variable global para rastrear cuál zona de fotos está activa (última clickeada)
+ */
+window.zonaFotosActivaId = null;
+window.estoyDraggingFiles = false;
+
+/**
  * Hacer que las zonas de fotos reciban focus al hacer click
  * Esto permite que Ctrl+V detecte correctamente en cuál EPP pegar la imagen
+ * También abre el file picker al hacer click (pero no durante drag)
  */
 document.addEventListener('click', function(e) {
     const fotoZona = e.target.closest('[id^="fotoZona_"]');
-    if (fotoZona) {
+    if (fotoZona && !window.estoyDraggingFiles) {
         // Dar focus a la zona para que Ctrl+V pueda detectarla
         fotoZona.focus();
+        // IMPORTANTE: Guardar cuál zona está activa para usar en paste
+        window.zonaFotosActivaId = fotoZona.id;
         console.log('[click] Focus en zona de fotos:', fotoZona.id);
+        
+        // Extraer el EPP ID del id de la zona (fotoZona_849 -> 849)
+        const eppId = fotoZona.id.replace('fotoZona_', '');
+        const inputFile = document.getElementById(`inputFotos_${eppId}`);
+        
+        // Abrir el file picker si existe el input (solo si no estamos arrastrando)
+        if (inputFile) {
+            console.log('[click] Abriendo file picker para EPP:', eppId);
+            inputFile.click();
+        }
     }
 });
+
+// Detectar cuando comienza un drag para evitar que click abra el file picker
+document.addEventListener('dragover', function(e) {
+    window.estoyDraggingFiles = true;
+});
+
+document.addEventListener('dragleave', function(e) {
+    // Verificar si realmente salimos del área (no solo de un elemento hijo)
+    if (e.target.tagName === 'BODY' || e.clientX === 0 || e.clientY === 0) {
+        window.estoyDraggingFiles = false;
+    }
+});
+
+document.addEventListener('drop', function(e) {
+    window.estoyDraggingFiles = false;
+});
+</script>
