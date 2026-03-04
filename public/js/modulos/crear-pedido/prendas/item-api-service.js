@@ -236,37 +236,65 @@ class ItemAPIService {
                     });
                     
                     // Reemplazar imagenes de procesos
-                    Object.entries(prendaExtraida.procesos).forEach(([procesoKey, procesosEnriquecidos]) => {
-                        if (prenda.procesos && prenda.procesos[procesoKey] && Array.isArray(procesosEnriquecidos)) {
+                    Object.entries(prendaExtraida.procesos).forEach(([procesoKey, procesoExtraido]) => {
+                        if (prenda.procesos && prenda.procesos[procesoKey]) {
                             console.debug(`[crearPedido] INYECTANDO procesos[${procesoKey}]:`, {
-                                procesosEnriquecidos_length: procesosEnriquecidos.length,
-                                procesos_exists: !!prenda.procesos[procesoKey],
-                                proceso_estructura: prenda.procesos[procesoKey]
+                                procesoExtraido_keys: Object.keys(procesoExtraido),
+                                prenda_proceso_keys: Object.keys(prenda.procesos[procesoKey])
                             });
-                            procesosEnriquecidos.forEach((imgEnriquecida, imgIdx) => {
-                                // Intentar inyectar en datos.imagenes PRIMERO (estructura más común)
-                                if (prenda.procesos[procesoKey].datos?.imagenes && Array.isArray(prenda.procesos[procesoKey].datos.imagenes)) {
-                                    if (prenda.procesos[procesoKey].datos.imagenes[imgIdx]) {
-                                        prenda.procesos[procesoKey].datos.imagenes[imgIdx] = {
-                                            file: imgEnriquecida.file,
-                                            formdata_key: imgEnriquecida.formdata_key,
-                                            uid: imgEnriquecida.uid
-                                        };
-                                        console.debug(`[crearPedido] Inyectado en datos.imagenes[${imgIdx}]`);
+                            
+                            // CASO 1: Procesar imagenes (modo para_todas)
+                            if (procesoExtraido.imagenes && Array.isArray(procesoExtraido.imagenes)) {
+                                procesoExtraido.imagenes.forEach((imgEnriquecida, imgIdx) => {
+                                    // Intentar inyectar en datos.imagenes PRIMERO
+                                    if (prenda.procesos[procesoKey].datos?.imagenes && Array.isArray(prenda.procesos[procesoKey].datos.imagenes)) {
+                                        if (prenda.procesos[procesoKey].datos.imagenes[imgIdx]) {
+                                            prenda.procesos[procesoKey].datos.imagenes[imgIdx] = {
+                                                file: imgEnriquecida.file,
+                                                formdata_key: imgEnriquecida.formdata_key,
+                                                uid: imgEnriquecida.uid
+                                            };
+                                            console.debug(`[crearPedido] Inyectado en datos.imagenes[${imgIdx}]`);
+                                        }
                                     }
-                                }
-                                // Fallback: intentar en imagenes directo
-                                else if (prenda.procesos[procesoKey].imagenes && Array.isArray(prenda.procesos[procesoKey].imagenes)) {
-                                    if (prenda.procesos[procesoKey].imagenes[imgIdx]) {
-                                        prenda.procesos[procesoKey].imagenes[imgIdx] = {
-                                            file: imgEnriquecida.file,
-                                            formdata_key: imgEnriquecida.formdata_key,
-                                            uid: imgEnriquecida.uid
-                                        };
-                                        console.debug(`[crearPedido] Inyectado en imagenes[${imgIdx}]`);
+                                    // Fallback: intentar en imagenes directo
+                                    else if (prenda.procesos[procesoKey].imagenes && Array.isArray(prenda.procesos[procesoKey].imagenes)) {
+                                        if (prenda.procesos[procesoKey].imagenes[imgIdx]) {
+                                            prenda.procesos[procesoKey].imagenes[imgIdx] = {
+                                                file: imgEnriquecida.file,
+                                                formdata_key: imgEnriquecida.formdata_key,
+                                                uid: imgEnriquecida.uid
+                                            };
+                                            console.debug(`[crearPedido] Inyectado en imagenes[${imgIdx}]`);
+                                        }
                                     }
-                                }
-                            });
+                                });
+                            }
+                            
+                            // CASO 2: Procesar imagenes_por_talla (modo por_tallas)
+                            if (procesoExtraido.imagenes_por_talla && typeof procesoExtraido.imagenes_por_talla === 'object') {
+                                Object.entries(procesoExtraido.imagenes_por_talla).forEach(([tallaKey, imagesArray]) => {
+                                    if (Array.isArray(imagesArray)) {
+                                        imagesArray.forEach((imgEnriquecida, imgIdx) => {
+                                            // Inyectar en datos.datosExtendidos
+                                            if (prenda.procesos[procesoKey].datos?.datosExtendidos) {
+                                                // Encontrar género y talla en datosExtendidos
+                                                const [genero, talla] = tallaKey.split('__');
+                                                if (genero && talla && prenda.procesos[procesoKey].datos.datosExtendidos[genero]?.[talla]?.imagenesFiles) {
+                                                    if (prenda.procesos[procesoKey].datos.datosExtendidos[genero][talla].imagenesFiles[imgIdx]) {
+                                                        prenda.procesos[procesoKey].datos.datosExtendidos[genero][talla].imagenesFiles[imgIdx] = {
+                                                            file: imgEnriquecida.file,
+                                                            formdata_key: imgEnriquecida.formdata_key,
+                                                            uid: imgEnriquecida.uid
+                                                        };
+                                                        console.debug(`[crearPedido] Inyectado en datosExtendidos[${tallaKey}][${imgIdx}]`);
+                                                    }
+                                                }
+                                            }
+                                        });
+                                    }
+                                });
+                            }
                         }
                     });
                 }
@@ -811,8 +839,12 @@ class ItemAPIService {
                 // ==========================================
                 if (item.procesos && typeof item.procesos === 'object' && !Array.isArray(item.procesos)) {
                     Object.entries(item.procesos).forEach(([procesoKey, proceso]) => {
-                        prendaData.procesos[procesoKey] = [];
-
+                        // Inicializar como objeto, no array
+                        prendaData.procesos[procesoKey] = {
+                            imagenes: [],
+                            imagenes_por_talla: {}
+                        };
+                        
                         if (!proceso || typeof proceso !== 'object') {
                             return;
                         }
@@ -827,7 +859,7 @@ class ItemAPIService {
                         imagenes.forEach((img, imgIdx) => {
                             if (img instanceof File) {
                                 const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][imagenes][${imgIdx}]`;
-                                prendaData.procesos[procesoKey].push({
+                                prendaData.procesos[procesoKey].imagenes.push({
                                     file: img,
                                     formdata_key: formdataKey,
                                     uid: img.uid || null  // ← AGREGADO: Capturar UID de la imagen del proceso si existe
@@ -839,7 +871,7 @@ class ItemAPIService {
                                 const fileOriginal = this.fileRegistry.get(img.file.uid);
                                 console.log(`[extraerFiles]  Recuperando File de proceso desde registry para uid:`, img.file.uid);
                                 const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][imagenes][${imgIdx}]`;
-                                prendaData.procesos[procesoKey].push({
+                                prendaData.procesos[procesoKey].imagenes.push({
                                     file: fileOriginal,
                                     formdata_key: formdataKey,
                                     uid: img.uid || null
@@ -849,13 +881,48 @@ class ItemAPIService {
                             } else if (img && (typeof img === 'string' || (typeof img === 'object' && (img.ruta || img.url)))) {
                                 //  CRÍTICO: Convertir URLs de cotización a File objects
                                 const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][imagenes][${imgIdx}]`;
-                                const promise = this.convertirImagenDeCotizacionAFile(img, formdataKey, prendaData.procesos[procesoKey], estructura.archivosMap, item.uid);
+                                const promise = this.convertirImagenDeCotizacionAFile(img, formdataKey, prendaData.procesos[procesoKey].imagenes, estructura.archivosMap, item.uid);
                                 
                                 if (promise) {
                                     conversionPromises.push(promise);
                                 }
                             }
                         });
+                        
+                        // NUEVO: Procesar imágenes por talla desde datosExtendidos
+                        if (proceso.datos && proceso.datos.datosExtendidos && typeof proceso.datos.datosExtendidos === 'object') {
+                            const datosExtendidos = proceso.datos.datosExtendidos;
+                            
+                            // Iterar sobre géneros
+                            Object.entries(datosExtendidos).forEach(([genero, tallasDatos]) => {
+                                if (!tallasDatos || typeof tallasDatos !== 'object') return;
+                                
+                                // Iterar sobre tallas
+                                Object.entries(tallasDatos).forEach(([talla, tallaData]) => {
+                                    if (!tallaData || !Array.isArray(tallaData.imagenesFiles)) return;
+                                    
+                                    const tallaKey = `${genero}__${talla}`;
+                                    if (!prendaData.procesos[procesoKey].imagenes_por_talla[tallaKey]) {
+                                        prendaData.procesos[procesoKey].imagenes_por_talla[tallaKey] = [];
+                                    }
+                                    
+                                    // Procesar Files de esta talla
+                                    tallaData.imagenesFiles.forEach((imgFile, imgIdx) => {
+                                        if (imgFile instanceof File) {
+                                            const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][imagenes_por_talla][${tallaKey}][${imgIdx}]`;
+                                            prendaData.procesos[procesoKey].imagenes_por_talla[tallaKey].push({
+                                                file: imgFile,
+                                                formdata_key: formdataKey,
+                                                uid: imgFile.uid || null
+                                            });
+                                            estructura.archivosMap[formdataKey] = imgFile;
+                                            
+                                            console.debug(`[extraerFiles] Prenda[${prendaIdx}].procesos[${procesoKey}].imagenes_por_talla[${tallaKey}][${imgIdx}] = ${imgFile.name} (key: ${formdataKey})`);
+                                        }
+                                    });
+                                });
+                            });
+                        }
                     });
                 }
 

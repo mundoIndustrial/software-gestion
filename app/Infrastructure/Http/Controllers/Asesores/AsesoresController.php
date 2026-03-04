@@ -1046,6 +1046,27 @@ class AsesoresController extends Controller
             
             \Log::info(' [CONTROLLER-FACTURA] Datos de factura obtenidos exitosamente');
             
+            // LOG: Verificar modo_tallas en procesos
+            if (!empty($datos['prendas'])) {
+                foreach ($datos['prendas'] as $idx => $prenda) {
+                    if (!empty($prenda['procesos'])) {
+                        foreach ($prenda['procesos'] as $pidx => $proc) {
+                            \Log::info('[CONTROLLER-FACTURA-MODO-TALLAS] Verificación de proceso', [
+                                'prenda_idx' => $idx,
+                                'prenda_nombre' => $prenda['nombre'] ?? 'N/A',
+                                'proceso_idx' => $pidx,
+                                'proceso_tipo' => $proc['tipo'] ?? 'N/A',
+                                'tiene_modo_tallas' => isset($proc['modo_tallas']),
+                                'modo_tallas_valor' => $proc['modo_tallas'] ?? 'NULL',
+                                'tiene_tallas_detalles' => isset($proc['tallas_detalles']),
+                                'tallas_detalles_keys' => isset($proc['tallas_detalles']) ? array_keys($proc['tallas_detalles']) : 'N/A',
+                                'tallas_detalles_count' => isset($proc['tallas_detalles']) ? count(array_filter($proc['tallas_detalles'])) : 0,
+                            ]);
+                        }
+                    }
+                }
+            }
+            
             //  LOG CRÍTICO: Verificar que las imágenes tienen IDs
             if (!empty($datos['prendas'])) {
                 $primeraPrend = $datos['prendas'][0];

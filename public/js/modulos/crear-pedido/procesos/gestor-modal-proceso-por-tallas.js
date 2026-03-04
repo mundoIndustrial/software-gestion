@@ -470,7 +470,8 @@ window.guardarProcesoPorTallas = function() {
         tallas: tallas,
         imagenes: [],
         imagenesEliminadas: [],
-        datosExtendidos: datosExtendidos
+        datosExtendidos: datosExtendidos,
+        modoTallas: 'por_tallas'  // NUEVO: Incluir modo_tallas dentro de datos también
     };
 
     console.log('[por-tallas] Proceso guardado:', procesoPorTallasActual, window.procesosSeleccionados[procesoPorTallasActual]);

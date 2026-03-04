@@ -495,7 +495,10 @@ class PedidoPrendaService
             if (isset($proceso['datos']) && is_array($proceso['datos'])) {
                 $procesosNormalizados[] = array_merge(
                     ['tipo' => $proceso['tipo'] ?? $key],
-                    $proceso['datos']
+                    $proceso['datos'],
+                    // ⚡ NUEVO: Preservar modo_tallas si está fuera de datos
+                    isset($proceso['modoTallas']) ? ['modoTallas' => $proceso['modoTallas']] : [],
+                    isset($proceso['modo_tallas']) ? ['modo_tallas' => $proceso['modo_tallas']] : []
                 );
             } else {
                 // Ya está en el formato correcto

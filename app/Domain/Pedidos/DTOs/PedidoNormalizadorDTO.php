@@ -173,13 +173,35 @@ class PedidoNormalizadorDTO
     private static function normalizarProcesos(array $procesos): array
     {
         return array_map(function ($proceso) {
+            $modoTallas = $proceso['modoTallas'] ?? $proceso['modo_tallas'] ?? 'para_todas';
+            $datosExtendidos = $proceso['datosExtendidos'] ?? $proceso['datos_extendidos'] ?? null;
+            
+            // NUEVO: Construir imagenes_por_talla desde datosExtendidos
+            $imagenesPorTalla = [];
+            if ($modoTallas === 'por_tallas' && $datosExtendidos && is_array($datosExtendidos)) {
+                foreach ($datosExtendidos as $genero => $tallasDatos) {
+                    if (!is_array($tallasDatos)) continue;
+                    foreach ($tallasDatos as $talla => $tallaData) {
+                        if (!is_array($tallaData)) continue;
+                        
+                        $tallaKey = "{$genero}__{$talla}";
+                        if (!empty($tallaData['imagenesFiles']) && is_array($tallaData['imagenesFiles'])) {
+                            $imagenesPorTalla[$tallaKey] = $tallaData['imagenesFiles'];
+                        }
+                    }
+                }
+            }
+            
             return [
                 'uid' => $proceso['uid'] ?? null,
                 'nombre' => strtolower(trim($proceso['nombre'] ?? '')),
                 'ubicaciones' => self::normalizarUbicaciones($proceso['ubicaciones'] ?? []),
                 'observaciones' => trim($proceso['observaciones'] ?? ''),
                 'tallas' => $proceso['tallas'] ?? [],
-                'imagenes' => self::normalizarImagenes($proceso['imagenes'] ?? [])
+                'imagenes' => self::normalizarImagenes($proceso['imagenes'] ?? []),
+                'modo_tallas' => $modoTallas,
+                'imagenes_por_talla' => $imagenesPorTalla,  // NUEVO: Estructura para modo por_tallas
+                'datos_extendidos' => $datosExtendidos  // Preservar datos por talla (ubicaciones, obs, imagenes por talla)
             ];
         }, $procesos);
     }

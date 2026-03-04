@@ -801,6 +801,7 @@ class PedidoWebService
             'prenda_id' => $prenda->id,
             'procesos_count' => count($procesos),
             'procesos_keys' => array_keys($procesos),
+            'procesos_raw' => json_encode($procesos, JSON_PRETTY_PRINT),  // ← DEBUG: Ver estructura exacta
         ]);
 
         foreach ($procesos as $tipoProceso => $procesoData) {
@@ -865,6 +866,20 @@ class PedidoWebService
                 $datosProceso['uid'] = $procesoUID;
             }
 
+            // ⚡ NUEVO: Extraer modo_tallas y datos_extendidos
+            $modoTallas = $datosProceso['modo_tallas'] ?? $procesoData['modo_tallas'] ?? 'para_todas';
+            $datosExtendidos = $datosProceso['datos_extendidos'] ?? $procesoData['datos_extendidos'] ?? null;
+            if (is_string($datosExtendidos)) {
+                $datosExtendidos = json_decode($datosExtendidos, true);
+            }
+
+            \Log::info('[PedidoWebService]  EXTRACCIÓN DE MODO_TALLAS', [
+                'tipo_proceso' => $tipoProceso,
+                'modo_tallas_extraido' => $modoTallas,
+                'datos_extendidos_presente' => !empty($datosExtendidos) ? 'SÍ' : 'NO',
+                'datos_extendidos_keys' => !empty($datosExtendidos) ? array_keys($datosExtendidos) : [],
+            ]);
+
             Log::debug('[PedidoWebService] Creando proceso', [
                 'tipo' => $tipoProceso,
                 'uid' => $procesoUID,
@@ -872,6 +887,7 @@ class PedidoWebService
                 'uid_en_datosProceso_antes' => isset($datosProceso['uid']),
                 'ubicaciones_raw' => $ubicaciones,
                 'observaciones_raw' => $observaciones,
+                'modo_tallas' => $modoTallas,
                 'tallas_count' => isset($datosProceso['tallas']) ? count($datosProceso['tallas']) : 0,
                 'imagenes_count' => isset($datosProceso['imagenes']) ? count($datosProceso['imagenes']) : 0,
             ]);
@@ -896,7 +912,7 @@ class PedidoWebService
                 'tipo_proceso_id' => $tipoProcesoId,
                 'ubicaciones' => !empty($ubicaciones) ? json_encode($ubicaciones) : json_encode([]),
                 'observaciones' => $observaciones,
-                'datos_adicionales' => json_encode($datosProceso),
+                'modo_tallas' => $modoTallas,  // ⚡ Guardar modo_tallas
                 'estado' => 'PENDIENTE',
             ]);
 
@@ -917,11 +933,55 @@ class PedidoWebService
                 'uid' => $procesoUID,
                 'ubicaciones_guardadas' => $procesoPrenda->ubicaciones,
                 'observaciones_guardadas' => $procesoPrenda->observaciones,
+                'modo_tallas_guardado' => $modoTallas,
             ]);
 
-            // Crear tallas del proceso
-            if (isset($datosProceso['tallas']) && is_array($datosProceso['tallas'])) {
-                \Log::info('[PedidoWebService]  Llamando crearTallasProceso', [
+            // ⚡ NUEVO: Manejar tallas según modo
+            if ($modoTallas === 'por_tallas' && !empty($datosExtendidos)) {
+                // MODO POR_TALLAS: Guardar ubicaciones/observaciones por talla desde datosExtendidos
+                \Log::info('[PedidoWebService]  MODO POR_TALLAS: Guardando ubicaciones/observaciones por talla', [
+                    'proceso_id' => $procesoPrenda->id,
+                    'datos_extendidos_keys' => array_keys($datosExtendidos),
+                ]);
+
+                foreach ($datosExtendidos as $genero => $tallasDatos) {
+                    if (!is_array($tallasDatos)) continue;
+                    
+                    foreach ($tallasDatos as $talla => $tallaData) {
+                        if (!is_array($tallaData)) continue;
+                        
+                        $cantidad = $datosProceso['tallas'][$genero][$talla] ?? 0;
+                        $ubicacionesTalla = !empty($tallaData['ubicaciones']) ? json_encode($tallaData['ubicaciones']) : null;
+                        $observacionesTalla = $tallaData['observaciones'] ?? null;
+                        
+                        // Crear/actualizar en pedidos_procesos_prenda_tallas usando updateOrInsert
+                        DB::table('pedidos_procesos_prenda_tallas')->updateOrInsert(
+                            [
+                                'proceso_prenda_detalle_id' => $procesoPrenda->id,
+                                'genero' => strtoupper($genero),
+                                'talla' => $talla,
+                            ],
+                            [
+                                'cantidad' => (int)$cantidad,
+                                'ubicaciones' => $ubicacionesTalla,
+                                'observaciones' => $observacionesTalla,
+                                'updated_at' => now(),
+                            ]
+                        );
+                        
+                        \Log::debug('[PedidoWebService] Talla guardada en modo por_tallas', [
+                            'proceso_id' => $procesoPrenda->id,
+                            'genero' => strtoupper($genero),
+                            'talla' => $talla,
+                            'cantidad' => (int)$cantidad,
+                            'ubicaciones' => $ubicacionesTalla,
+                            'observaciones' => $observacionesTalla,
+                        ]);
+                    }
+                }
+            } elseif (isset($datosProceso['tallas']) && is_array($datosProceso['tallas'])) {
+                // MODO PARA_TODAS: Usar lógica existente
+                \Log::info('[PedidoWebService]  MODO PARA_TODAS: Llamando crearTallasProceso', [
                     'proceso_id' => $procesoPrenda->id,
                     'tallas_estructura' => array_keys($datosProceso['tallas']),
                     'flujo' => $flujo,
@@ -929,6 +989,8 @@ class PedidoWebService
                 $this->crearTallasProceso($procesoPrenda, $datosProceso['tallas'], $asignacionesColores, $flujo);
             } else {
                 \Log::warning('[PedidoWebService]  NO HAY TALLAS para proceso ' . $tipoProceso, [
+                    'modo_tallas' => $modoTallas,
+                    'tiene_datos_extendidos' => !empty($datosExtendidos) ? 'SÍ' : 'NO',
                     'tiene_tallas_key' => isset($datosProceso['tallas']) ? 'SÍ' : 'NO',
                     'es_array' => is_array($datosProceso['tallas'] ?? null) ? 'SÍ' : 'NO',
                 ]);

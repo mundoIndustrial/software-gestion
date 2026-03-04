@@ -143,7 +143,9 @@
                 ubicaciones: ubicaciones,
                 observaciones: observaciones,
                 tallas: normalizarTallas(datosReales.tallas || datoProceso.tallas || {}),
-                imagenes: normalizarImagenes(datoProceso.imagenes || datosReales.imagenes || [])
+                imagenes: normalizarImagenes(datoProceso.imagenes || datosReales.imagenes || []),
+                modo_tallas: datosReales.modoTallas || datosReales.modo_tallas || datoProceso.modoTallas || datoProceso.modo_tallas || 'para_todas',  // ← NUEVO: Normalizar a snake_case para backend
+                datos_extendidos: datosReales.datosExtendidos || datosReales.datos_extendidos || null  // ← PRESERVAR datos por talla (normalizando key también)
             };
             
             // ⚡ OPTIMIZADO: Removido console.log masivo - impacta 30-50ms
@@ -253,18 +255,51 @@
                     
                     // IMÁGENES DE PROCESOS
                     if (prenda.procesos && typeof prenda.procesos === 'object') {
-                        Object.entries(prenda.procesos).forEach(function([procesoKey, procesoImgs]) {
-                            if (Array.isArray(procesoImgs)) {
-                                procesoImgs.forEach(function(imgObj, imgIdx) {
+                        Object.entries(prenda.procesos).forEach(function([procesoKey, procesoData]) {
+                            // Detectar estructura: array (legacy) o objeto con imagenes/imagenes_por_talla
+                            if (Array.isArray(procesoData)) {
+                                // CASO 1: Array directo de imágenes (legacy)
+                                procesoData.forEach(function(imgObj, imgIdx) {
                                     const file = imgObj.file || imgObj;
                                     const formdataKey = imgObj.formdata_key || ('prendas[' + prendaIdx + '][procesos][' + procesoKey + '][imagenes][' + imgIdx + ']');
                                     
                                     if (file instanceof File) {
                                         formData.append(formdataKey, file);
                                         archivosAgregados++;
-                                        // ⚡ OPTIMIZADO: Removido archivosDebug
                                     }
                                 });
+                            } else if (procesoData && typeof procesoData === 'object') {
+                                // CASO 2: Objeto con propiedades imagenes e imagenes_por_talla
+                                
+                                // Procesar imagenes array (modo para_todas)
+                                if (Array.isArray(procesoData.imagenes)) {
+                                    procesoData.imagenes.forEach(function(imgObj, imgIdx) {
+                                        const file = imgObj.file || imgObj;
+                                        const formdataKey = imgObj.formdata_key || ('prendas[' + prendaIdx + '][procesos][' + procesoKey + '][imagenes][' + imgIdx + ']');
+                                        
+                                        if (file instanceof File) {
+                                            formData.append(formdataKey, file);
+                                            archivosAgregados++;
+                                        }
+                                    });
+                                }
+                                
+                                // Procesar imagenes_por_talla (modo por_tallas)
+                                if (procesoData.imagenes_por_talla && typeof procesoData.imagenes_por_talla === 'object') {
+                                    Object.entries(procesoData.imagenes_por_talla).forEach(function([tallaKey, imagesArray]) {
+                                        if (Array.isArray(imagesArray)) {
+                                            imagesArray.forEach(function(imgObj, imgIdx) {
+                                                const file = imgObj.file || imgObj;
+                                                const formdataKey = imgObj.formdata_key || ('prendas[' + prendaIdx + '][procesos][' + procesoKey + '][imagenes_por_talla][' + tallaKey + '][' + imgIdx + ']');
+                                                
+                                                if (file instanceof File) {
+                                                    formData.append(formdataKey, file);
+                                                    archivosAgregados++;
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
                             }
                         });
                     }

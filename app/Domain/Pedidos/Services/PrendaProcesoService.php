@@ -103,9 +103,8 @@ class PrendaProcesoService
                     'ubicaciones' => !empty($proceso['ubicaciones']) ? json_encode($proceso['ubicaciones']) : null,
                     'observaciones' => $proceso['observaciones'] ?? null,
                     'modo_tallas' => $modoTallas,
-                    // LEGACY: Mantener campos JSON marcados como deprecated
-                    'tallas_dama' => !empty($proceso['tallas']['dama']) ? json_encode($proceso['tallas']['dama']) : null,
-                    'tallas_caballero' => !empty($proceso['tallas']['caballero']) ? json_encode($proceso['tallas']['caballero']) : null,
+                    // ⚡ ELIMINADO: No guardar tallas_dama, tallas_caballero, datos_adicionales
+                    // Los datos por talla van en pedidos_procesos_prenda_tallas
                     'estado' => 'PENDIENTE',
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -167,6 +166,14 @@ class PrendaProcesoService
     {
         try {
             $tallas = $proceso['tallas'] ?? [];
+            
+            // DIAGNÓSTICO: Log de entrada
+            Log::debug(' [guardarTallasProceso] INICIADA', [
+                'proceso_detalle_id' => $procesoDetalleId,
+                'tallas_count' => count($tallas),
+                'datosExtendidos_exists' => $datosExtendidos !== null,
+                'datosExtendidos_keys' => $datosExtendidos ? array_keys($datosExtendidos) : [],
+            ]);
             
             if (empty($tallas)) {
                 Log::debug(' [guardarTallasProceso] Sin tallas para guardar', [
@@ -244,6 +251,14 @@ class PrendaProcesoService
                             if ($tallaExtendida) {
                                 $ubicacionesTalla = !empty($tallaExtendida['ubicaciones']) ? json_encode($tallaExtendida['ubicaciones']) : null;
                                 $observacionesTalla = $tallaExtendida['observaciones'] ?? null;
+                                
+                                Log::debug(' [guardarTallasProceso] Extrayendo datos por talla', [
+                                    'genero' => $generoBD,
+                                    'talla' => $talla,
+                                    'ubicaciones_raw' => $tallaExtendida['ubicaciones'] ?? [],
+                                    'ubicaciones_json' => $ubicacionesTalla,
+                                    'observaciones' => $observacionesTalla,
+                                ]);
                             }
 
                             $existe = DB::table('pedidos_procesos_prenda_tallas')
@@ -273,6 +288,15 @@ class PrendaProcesoService
                                     'observaciones' => $observacionesTalla,
                                     'created_at' => now(),
                                     'updated_at' => now(),
+                                ]);
+                                
+                                Log::debug(' [guardarTallasProceso] Talla insertada', [
+                                    'proceso_detalle_id' => $procesoDetalleId,
+                                    'genero' => $generoEnum,
+                                    'talla' => $talla,
+                                    'cantidad' => $cantidad,
+                                    'ubicaciones_guardada' => $ubicacionesTalla,
+                                    'observaciones_guardada' => $observacionesTalla,
                                 ]);
                             }
                         }

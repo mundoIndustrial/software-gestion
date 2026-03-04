@@ -566,6 +566,15 @@ class FacturaPedidoService
         // Obtener nombre del tipo de proceso
         $nombreProceso = $proc->tipoProceso->nombre ?? 'Proceso';
         
+        // NUEVO: Obtener modo_tallas
+        $modoTallas = $proc->modo_tallas ?? 'para_todas';
+        
+        // NUEVO: Obtener detalles por talla si es modo por_tallas
+        $tallesDetalles = [];
+        if ($modoTallas === 'por_tallas') {
+            $tallesDetalles = $this->obtenerTallesDetallesProceso($proc);
+        }
+        
         return [
             'id' => $proc->id,
             'nombre' => $nombreProceso,
@@ -576,6 +585,8 @@ class FacturaPedidoService
             'observaciones' => $proc->observaciones ?? '',
             'ubicaciones' => $ubicaciones,
             'imagenes' => $imagenesProceso,
+            'modo_tallas' => $modoTallas,  // NUEVO
+            'tallas_detalles' => $tallesDetalles,  // NUEVO
         ];
     }
 
@@ -847,5 +858,60 @@ class FacturaPedidoService
         
         // Si no comienza ni con /storage/ ni con storage/, agregar /storage/ al inicio
         return '/storage/' . ltrim($ruta, '/');
+    }
+
+    /**
+     * NUEVO: Obtener detalles de tallas (ubicaciones, observaciones) para un proceso
+     * Retorna estructura: { dama: { S: { ubicaciones: [...], observaciones: '...' } } }
+     */
+    private function obtenerTallesDetallesProceso($proceso): array
+    {
+        $tallesDetalles = [
+            'dama' => [],
+            'caballero' => [],
+            'unisex' => [],
+            'sobremedida' => []
+        ];
+        
+        try {
+            // Consultar ubicaciones y observaciones por talla
+            $registrosTallas = \DB::table('pedidos_procesos_prenda_tallas')
+                ->where('proceso_prenda_detalle_id', $proceso->id)
+                ->get(['genero', 'talla', 'ubicaciones', 'observaciones']);
+            
+            if ($registrosTallas && $registrosTallas->count() > 0) {
+                foreach ($registrosTallas as $registro) {
+                    // Normalizar genero a minúsculas
+                    $genero = strtolower($registro->genero ?? 'dama');
+                    $talla = $registro->talla ?? 'S';
+                    
+                    // Parsear ubicaciones si es JSON
+                    $ubicaciones = [];
+                    if ($registro->ubicaciones) {
+                        if (is_array($registro->ubicaciones)) {
+                            $ubicaciones = $registro->ubicaciones;
+                        } else if (is_string($registro->ubicaciones)) {
+                            $ubicaciones = json_decode($registro->ubicaciones, true) ?? [];
+                        }
+                    }
+                    
+                    // Asignar a la estructura por genero/talla
+                    $tallesDetalles[$genero][$talla] = [
+                        'ubicaciones' => $ubicaciones,
+                        'observaciones' => $registro->observaciones ?? ''
+                    ];
+                }
+                
+                return $tallesDetalles;
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('[FACTURA] Error obteniendo detalles de tallas', [
+                'proceso_id' => $proceso->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+        
+        return $tallesDetalles;
     }
 }

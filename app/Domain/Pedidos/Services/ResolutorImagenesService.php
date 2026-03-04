@@ -140,11 +140,8 @@ class ResolutorImagenesService
                         continue;
                     }
 
-                    // IMÁGENES DE PROCESOS - Solo procesar si hay imágenes
+                    // IMÁGENES DE PROCESOS - Modo para_todas
                     if (!empty($proceso['imagenes'])) {
-                        // IMPORTANTE: No usar nombre del proceso como subcarpeta
-                        // Usar solo 'procesos' para evitar rutas duplicadas
-                        // El mapeo se hace por UID, no por nombre
                         $this->procesarImagenesDeGrupo(
                             $request,
                             $todosLosArchivos,
@@ -156,6 +153,25 @@ class ResolutorImagenesService
                             $mapeoUidARuta,
                             $registrarUID
                         );
+                    }
+                    
+                    // NUEVO: IMÁGENES POR TALLA - Modo por_tallas
+                    if (!empty($proceso['imagenes_por_talla']) && is_array($proceso['imagenes_por_talla'])) {
+                        foreach ($proceso['imagenes_por_talla'] as $tallaKey => $imagenesDetalles) {
+                            if (!empty($imagenesDetalles) && is_array($imagenesDetalles)) {
+                                $this->procesarImagenesDeGrupo(
+                                    $request,
+                                    $todosLosArchivos,
+                                    $pedidoId,
+                                    "prendas.{$prendaIdx}.procesos.{$procesoIdx}.imagenes_por_talla.{$tallaKey}",
+                                    'procesos',
+                                    $imagenesDetalles,
+                                    $procesoUID,
+                                    $mapeoUidARuta,
+                                    $registrarUID
+                                );
+                            }
+                        }
                     }
                 }
             }
@@ -322,7 +338,17 @@ class ResolutorImagenesService
             
             // Imágenes de procesos
             foreach ($prenda['procesos'] ?? [] as $proceso) {
+                // Imágenes modo para_todas
                 $total += count($proceso['imagenes'] ?? []);
+                
+                // NUEVO: Imágenes por talla (modo por_tallas)
+                if (!empty($proceso['imagenes_por_talla']) && is_array($proceso['imagenes_por_talla'])) {
+                    foreach ($proceso['imagenes_por_talla'] as $tallaKey => $imagenesDetalles) {
+                        if (is_array($imagenesDetalles)) {
+                            $total += count($imagenesDetalles);
+                        }
+                    }
+                }
             }
         }
         

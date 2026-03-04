@@ -395,6 +395,25 @@ class ReciboPedidoService
             // Obtener nombre del tipo de proceso
             $nombreProceso = $proc->tipoProceso->nombre ?? 'Proceso';
             
+            // NUEVO: Obtener modo_tallas
+            $modoTallas = $proc->modo_tallas ?? 'para_todas';
+            
+            // NUEVO: Obtener detalles por talla si es modo por_tallas
+            $tallesDetalles = [];
+            if ($modoTallas === 'por_tallas') {
+                $tallesDetalles = $this->obtenerTallesDetallesProceso($proc);
+                \Log::info('[RECIBO-SERVICE] Modo por_tallas detectado', [
+                    'procesoId' => $proc->id,
+                    'modo' => $modoTallas,
+                    'tallesDetalles' => $tallesDetalles
+                ]);
+            } else {
+                \Log::info('[RECIBO-SERVICE] Modo global detectado', [
+                    'procesoId' => $proc->id,
+                    'modo' => $modoTallas
+                ]);
+            }
+            
             $procesos[] = [
                 'id' => $proc->id,
                 'nombre' => $nombreProceso,
@@ -406,6 +425,8 @@ class ReciboPedidoService
                 'ubicaciones' => $ubicaciones,
                 'imagenes' => $imagenesProceso,
                 'estado' => $proc->estado ?? 'Pendiente',
+                'modo_tallas' => $modoTallas,  // NUEVO: Marcar modo
+                'tallas_detalles' => $tallesDetalles,  // NUEVO: Datos por talla
             ];
         }
         
@@ -698,4 +719,70 @@ class ReciboPedidoService
         
         return $tallas;
     }
+
+    /**
+     * Obtener detalles de tallas (ubicaciones y observaciones) para un proceso
+     * Retorna estructura anidada: {genero: {talla: {ubicaciones: [...], observaciones: '...'}}}
+     */
+    private function obtenerTallesDetallesProceso($proceso): array
+    {
+        $tallesDetalles = [
+            'dama' => [],
+            'caballero' => [],
+            'unisex' => [],
+            'sobremedida' => []
+        ];
+        
+        try {
+            // Consultar ubicaciones y observaciones por talla
+            $registrosTallas = \DB::table('pedidos_procesos_prenda_tallas')
+                ->where('proceso_prenda_detalle_id', $proceso->id)
+                ->get(['genero', 'talla', 'ubicaciones', 'observaciones']);
+            
+            if ($registrosTallas && $registrosTallas->count() > 0) {
+                foreach ($registrosTallas as $registro) {
+                    // Normalizar genero a minúsculas
+                    $genero = strtolower($registro->genero ?? 'dama');
+                    $talla = $registro->talla ?? 'S';
+                    
+                    // Parsear ubicaciones si es JSON
+                    $ubicaciones = [];
+                    if ($registro->ubicaciones) {
+                        if (is_array($registro->ubicaciones)) {
+                            $ubicaciones = $registro->ubicaciones;
+                        } else if (is_string($registro->ubicaciones)) {
+                            $ubicaciones = json_decode($registro->ubicaciones, true) ?? [];
+                        }
+                    }
+                    
+                    // Asignar a la estructura por genero/talla
+                    $tallesDetalles[$genero][$talla] = [
+                        'ubicaciones' => $ubicaciones,
+                        'observaciones' => $registro->observaciones ?? ''
+                    ];
+                }
+                
+                \Log::info('[RECIBO-SERVICE] Detalles de tallas obtenidos', [
+                    'procesoId' => $proceso->id,
+                    'tallesDetalles' => $tallesDetalles
+                ]);
+                
+                return $tallesDetalles;
+            }
+            
+            \Log::info('[RECIBO-SERVICE] No se encontraron detalles de tallas', [
+                'procesoId' => $proceso->id,
+                'tallesDetalles' => $tallesDetalles
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('[RECIBO-SERVICE] Error obteniendo detalles de tallas', [
+                'procesoId' => $proceso->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+        
+        return $tallesDetalles;
+    }
 }
+

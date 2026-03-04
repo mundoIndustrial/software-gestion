@@ -633,6 +633,25 @@ class InvoiceRenderer {
                         </table>
                     ` : ''}
                     
+                    ${proc.modo_tallas === 'por_tallas' && proc.tallas_detalles && Object.keys(proc.tallas_detalles).length > 0 ? `
+                        <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #eee; font-weight: 600; color: #2c3e50; margin-bottom: 4px;">Detalles por Talla:</div>
+                        <div style="margin-left: 8px;">
+                            ${Object.entries(proc.tallas_detalles).map(([genero, tallas]) => {
+                                if (!tallas || typeof tallas !== 'object') return '';
+                                return Object.entries(tallas).map(([talla, datos]) => `
+                                    <div style="margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #f0f0f0; font-size: 10px;">
+                                        <div style="font-weight: 700; color: #1f2937; margin-bottom: 2px; display: flex; align-items: center; gap: 4px;">
+                                            <span class="material-symbols-rounded" style="font-size: 16px; font-weight: 500;">straighten</span>
+                                            ${genero.toUpperCase()} - ${talla}
+                                        </div>
+                                        ${datos.ubicaciones ? `<div style="color: #666; margin: 1px 0; display: flex; align-items: center; gap: 4px;"><span class="material-symbols-rounded" style="font-size: 14px;">location_on</span> <strong>Ubicación:</strong> ${Array.isArray(datos.ubicaciones) ? datos.ubicaciones.join(', ') : (typeof datos.ubicaciones === 'string' ? JSON.parse(datos.ubicaciones).join(', ') : datos.ubicaciones)}</div>` : ''}
+                                        ${datos.observaciones ? `<div style="color: #666; margin: 1px 0; display: flex; align-items: center; gap: 4px;"><span class="material-symbols-rounded" style="font-size: 14px;">notes</span> <strong>Nota:</strong> ${datos.observaciones}</div>` : ''}
+                                    </div>
+                                `).join('');
+                            }).join('')}
+                        </div>
+                    ` : ''}
+                    
                     ${proc.imagenes && proc.imagenes.length > 0 ? `
                         <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #eee; display: flex; gap: 4px; position: relative;">
                             <div style="position: relative; cursor: pointer;" onclick="window._abrirGaleriaImagenes(${JSON.stringify(proc.imagenes).replace(/"/g, '&quot;')}, 'Imágenes de ${proc.tipo || 'Proceso'}')">
