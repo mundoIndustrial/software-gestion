@@ -417,7 +417,13 @@ class PedidoController extends Controller
                                     ->where('proceso_prenda_detalle_id', $proceso['id'])
                                     ->get();
                                 
-                                // Transformar a formato por género
+                                \Log::info('[PedidoController-PROCESOS-TALLAS] Tallas obtenidas', [
+                                    'proceso_id' => $proceso['id'],
+                                    'tallas_count' => $tallas->count(),
+                                    'tallas' => $tallas->toArray()
+                                ]);
+                                
+                                // Transformar a formato por género CON COLORES
                                 $talasTransformadas = [
                                     'dama' => [],
                                     'caballero' => [],
@@ -430,11 +436,43 @@ class PedidoController extends Controller
                                     else if ($genero === 'caballero') $genero = 'caballero';
                                     else $genero = 'unisex';
                                     
-                                    $talasTransformadas[$genero][$talla->talla] = $talla->cantidad;
+                                    // Obtener colores para esta talla
+                                    $colores = \DB::table('pedidos_procesos_prenda_talla_colores')
+                                        ->where('pedidos_procesos_prenda_talla_id', $talla->id)
+                                        ->get();
+                                    
+                                    \Log::info('[PedidoController-TALLAS-COLORES] DEBUG', [
+                                        'pedido_id' => $id,
+                                        'proceso_id' => $proceso['id'],
+                                        'talla_id' => $talla->id,
+                                        'talla_valor' => $talla->talla,
+                                        'genero' => $genero,
+                                        'cantidad_talla' => $talla->cantidad,
+                                        'colores_encontrados' => $colores->count(),
+                                        'colores_data' => $colores->map(function($c) { return ['color' => $c->color_nombre, 'cant' => $c->cantidad]; })->toArray()
+                                    ]);
+                                    
+                                    if ($colores->count() > 0) {
+                                        // Si hay colores, usar estructura con colores
+                                        $talasTransformadas[$genero][$talla->talla] = $colores->map(function($color) {
+                                            return [
+                                                'color' => $color->color_nombre,
+                                                'cantidad' => $color->cantidad
+                                            ];
+                                        })->toArray();
+                                    } else {
+                                        // Sin colores, usar cantidad simple
+                                        $talasTransformadas[$genero][$talla->talla] = $talla->cantidad;
+                                    }
                                 }
                                 
-                                // Agregar al proceso
-                                $proceso['tallas_transformadas'] = $talasTransformadas;
+                                \Log::info('[PedidoController-PROCESOS-FINAL] Transformadas', [
+                                    'proceso_id' => $proceso['id'],
+                                    'tallas_transformadas' => $talasTransformadas
+                                ]);
+                                
+                                // Agregar al proceso con nombre 'tallas' para que el renderer lo encuentre
+                                $proceso['tallas'] = $talasTransformadas;
                             }
                         }
                         unset($proceso);
@@ -1729,4 +1767,78 @@ class PedidoController extends Controller
     {
         return $this->cancelar($id);
     }
+
+    /**
+     * GET /pedidos-public/{pedidoId}/ancho-metraje-prenda/{prendaId}
+     * 
+     * Obtiene ancho y metraje de una prenda específica (endpoint público)
+     * Utilizado en supervisor-pedidos para mostrar ancho/metraje en recibos
+     */
+    public function obtenerAnchoMetrajePrendaPublico($pedidoId, $prendaId)
+    {
+        try {
+            // Obtener el pedido
+            $pedido = \App\Models\PedidoProduccion::find($pedidoId);
+            if (!$pedido) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pedido no encontrado'
+                ], 404);
+            }
+
+            // Obtener ancho general
+            $anchoGeneral = \App\Models\PedidoAnchoGeneral::where('pedido_produccion_id', $pedidoId)
+                ->where('prenda_pedido_id', $prendaId)
+                ->first();
+
+            // Obtener metrajes por color
+            $metrajesPorColor = \App\Models\PedidoMetrajeColor::where('pedido_produccion_id', $pedidoId)
+                ->where('prenda_pedido_id', $prendaId)
+                ->get();
+
+            // Determinar modo según los datos disponibles
+            $tipoModo = null;
+            if ($anchoGeneral && $metrajesPorColor->isEmpty()) {
+                $tipoModo = 'normal';
+            } elseif (!$anchoGeneral && !$metrajesPorColor->isEmpty()) {
+                $tipoModo = 'color';
+            } elseif ($anchoGeneral && !$metrajesPorColor->isEmpty()) {
+                $tipoModo = 'pieza';
+            }
+
+            // Construir respuesta
+            $response = [
+                'success' => true,
+                'ancho' => $anchoGeneral ? $anchoGeneral->ancho : null,
+                'metraje' => $anchoGeneral ? $anchoGeneral->metraje : null,
+                'tipo_modo' => $tipoModo,
+                'data' => []
+            ];
+
+            // Agregar metrajes por color si existen
+            if ($metrajesPorColor->isNotEmpty()) {
+                $response['data'] = $metrajesPorColor->map(function ($item) {
+                    return [
+                        'color' => $item->color,
+                        'metraje' => $item->metraje
+                    ];
+                })->toArray();
+            }
+
+            return response()->json($response);
+
+        } catch (\Exception $e) {
+            \Log::error('Error en obtenerAnchoMetrajePrendaPublico:', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener ancho y metraje'
+            ], 500);
+        }
+    }
 }
+

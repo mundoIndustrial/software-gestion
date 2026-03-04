@@ -334,13 +334,13 @@
         </div>
         
         <div style="margin-bottom: 1.5rem;">
-            <label for="cantidadEPP" style="display: block; color: #374151; font-weight: 600; margin-bottom: 0.5rem;">Cantidad:</label>
-            <input type="number" id="cantidadEPP" min="1" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem;">
+            <label for="cantidadEPPEdicion" style="display: block; color: #374151; font-weight: 600; margin-bottom: 0.5rem;">Cantidad:</label>
+            <input type="number" id="cantidadEPPEdicion" min="1" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem;">
         </div>
         
         <div style="margin-bottom: 1.5rem;">
-            <label for="observacionesEPP" style="display: block; color: #374151; font-weight: 600; margin-bottom: 0.5rem;">Observaciones:</label>
-            <textarea id="observacionesEPP" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; min-height: 100px; resize: vertical;"></textarea>
+            <label for="observacionesEPPEdicion" style="display: block; color: #374151; font-weight: 600; margin-bottom: 0.5rem;">Observaciones:</label>
+            <textarea id="observacionesEPPEdicion" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; min-height: 100px; resize: vertical;"></textarea>
         </div>
         
         <div style="display: flex; gap: 1rem; justify-content: flex-end;">
@@ -414,8 +414,8 @@
         // Llenar los campos
         document.getElementById('modalEppNombre').value = eppData.nombre_completo || eppData.nombre || '';
         document.getElementById('buscadorEppEdicion').value = '';
-        document.getElementById('cantidadEPP').value = eppData.cantidad || 1;
-        document.getElementById('observacionesEPP').value = eppData.observaciones || '';
+        document.getElementById('cantidadEPPEdicion').value = eppData.cantidad || 1;
+        document.getElementById('observacionesEPPEdicion').value = eppData.observaciones || '';
         document.getElementById('resultadosBuscadorEppEdicion').style.display = 'none';
         
         // Guardar datos en variable global
@@ -535,8 +535,8 @@
             return;
         }
         
-        const cantidad = parseInt(document.getElementById('cantidadEPP').value);
-        const observaciones = document.getElementById('observacionesEPP').value;
+        const cantidad = parseInt(document.getElementById('cantidadEPPEdicion').value);
+        const observaciones = document.getElementById('observacionesEPPEdicion').value;
         const eppId = eppData.epp_id;
         
         if (cantidad < 1) {
@@ -589,6 +589,23 @@
                 customClass: { container: 'swal-toast-container' }
             });
             return;
+        }
+        
+        // Obtener el botón y desactivarlo
+        const botonGuardar = document.querySelector('#modal-novedad-epp button[onclick="confirmarNovedad()"]');
+        const botonCancelar = document.querySelector('#modal-novedad-epp button[onclick="cerrarModalNovedad()"]');
+        const textoOriginal = botonGuardar?.textContent || 'Guardar Novedad y Aplicar Cambios';
+        
+        if (botonGuardar) {
+            botonGuardar.disabled = true;
+            botonGuardar.style.opacity = '0.6';
+            botonGuardar.style.cursor = 'not-allowed';
+            botonGuardar.textContent = '⏳ Guardando...';
+        }
+        
+        if (botonCancelar) {
+            botonCancelar.disabled = true;
+            botonCancelar.style.opacity = '0.6';
         }
         
         const cambios = window.cambiosEppPendientes;
@@ -765,6 +782,23 @@
             
         } catch (error) {
             console.error(' Error guardando cambios:', error);
+            
+            // Restaurar el botón en caso de error
+            const botonGuardar = document.querySelector('#modal-novedad-epp button[onclick="confirmarNovedad()"]');
+            const botonCancelar = document.querySelector('#modal-novedad-epp button[onclick="cerrarModalNovedad()"]');
+            
+            if (botonGuardar) {
+                botonGuardar.disabled = false;
+                botonGuardar.style.opacity = '1';
+                botonGuardar.style.cursor = 'pointer';
+                botonGuardar.textContent = textoOriginal;
+            }
+            
+            if (botonCancelar) {
+                botonCancelar.disabled = false;
+                botonCancelar.style.opacity = '1';
+            }
+            
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -981,8 +1015,8 @@
         // Llenar los campos
         document.getElementById('modalEppNombre').value = eppData.nombre_completo || eppData.nombre || '';
         document.getElementById('buscadorEppEdicion').value = '';
-        document.getElementById('cantidadEPP').value = eppData.cantidad || 1;
-        document.getElementById('observacionesEPP').value = eppData.observaciones || '';
+        document.getElementById('cantidadEPPEdicion').value = eppData.cantidad || 1;
+        document.getElementById('observacionesEPPEdicion').value = eppData.observaciones || '';
         document.getElementById('resultadosBuscadorEppEdicion').style.display = 'none';
         
         // Guardar datos en variable global
@@ -1022,8 +1056,8 @@
             return;
         }
         
-        const cantidad = parseInt(document.getElementById('cantidadEPP').value);
-        const observaciones = document.getElementById('observacionesEPP').value;
+        const cantidad = parseInt(document.getElementById('cantidadEPPEdicion').value);
+        const observaciones = document.getElementById('observacionesEPPEdicion').value;
         const eppId = eppData.epp_id;
         
         if (cantidad < 1) {

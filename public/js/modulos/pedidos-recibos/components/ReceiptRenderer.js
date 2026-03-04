@@ -352,12 +352,34 @@ export class ReceiptRenderer {
         }
 
         // Fetch async para obtener metrajes
-        fetch(`/insumos/materiales/${pedidoId}/obtener-ancho-metraje-prenda/${prendaData.prenda_pedido_id}`)
+        // Intentar primero endpoint público, si falla intentar ruta de insumos
+        const publicEndpoint = `/pedidos-public/${pedidoId}/ancho-metraje-prenda/${prendaData.prenda_pedido_id}`;
+        const insumosEndpoint = `/insumos/materiales/${pedidoId}/obtener-ancho-metraje-prenda/${prendaData.prenda_pedido_id}`;
+        
+        fetch(publicEndpoint)
             .then(response => {
-                console.log('[ReceiptRenderer._cargarYAgregarMetrajesPorColor] Response status:', response.status);
-                return response.json();
+                console.log('[ReceiptRenderer._cargarYAgregarMetrajesPorColor] Response status (public):', response.status);
+                if (!response.ok && response.status === 404) {
+                    // Si no existe endpoint público, intentar insumos
+                    return fetch(insumosEndpoint).then(r => {
+                        console.log('[ReceiptRenderer._cargarYAgregarMetrajesPorColor] Intentando endpoint de insumos');
+                        return r;
+                    });
+                }
+                return response;
+            })
+            .then(response => response.json())
+            .catch(error => {
+                console.error('[ReceiptRenderer._cargarYAgregarMetrajesPorColor] Error fetching:', error);
+                return null;
             })
             .then(data => {
+                // Si data es null (error), retornar
+                if (!data) {
+                    console.log('[ReceiptRenderer._cargarYAgregarMetrajesPorColor] Sin datos respuesta');
+                    return;
+                }
+
                 console.log('[ReceiptRenderer._cargarYAgregarMetrajesPorColor] Response recibido:', {
                     success: data.success,
                     tipo_modo: data.tipo_modo,

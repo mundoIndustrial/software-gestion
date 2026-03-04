@@ -1327,6 +1327,12 @@ Route::middleware('auth')->group(function () {
         ->where('id', '[0-9]+')
         ->name('pedidos.public.recibos-datos');
     
+    // Ruta pública para obtener ancho y metraje de una prenda (acceso público)
+    Route::get('/pedidos-public/{pedidoId}/ancho-metraje-prenda/{prendaId}', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerAnchoMetrajePrendaPublico'])
+        ->where('pedidoId', '[0-9]+')
+        ->where('prendaId', '[0-9]+')
+        ->name('pedidos.public.ancho-metraje-prenda');
+    
     // ========================================
     // RUTA PARA REFRESCAR TOKEN CSRF (Prevenir error 419)
     // ========================================

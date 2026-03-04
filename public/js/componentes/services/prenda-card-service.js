@@ -565,9 +565,11 @@ window.PrendaCardService = {
                 const ref = t.referencia || t.ref || '';
                 const telaFoto = window.ImageConverterService ? window.ImageConverterService.obtenerImagenTela(t) : null;
 
+                const obs = t.observaciones || '';
                 let detalles = '';
                 if (col && col !== 'N/A' && col !== '') detalles += `<span style="color: #64748b;">Color: <b>${col}</b></span>`;
                 if (ref && ref !== 'N/A' && ref !== '') detalles += `${detalles ? ' · ' : ''}<span style="color: #64748b;">Ref: <b>${ref}</b></span>`;
+                if (obs) detalles += `${detalles ? ' · ' : ''}<span style="color: #64748b;">Obs: <b>${obs}</b></span>`;
 
                 return `
                     <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.85rem; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px;">
@@ -960,6 +962,7 @@ window.PrendaCardService = {
             const nombreTela = telaItem.tela || telaItem.nombre_tela || 'N/A';
             const color = telaItem.color || 'N/A';
             const referencia = telaItem.referencia || telaItem.ref || 'N/A';
+            const observaciones = telaItem.observaciones || '';
             
             // Usar servicio centralizado para obtener imagen de tela
             const telaFoto = window.ImageConverterService ? 

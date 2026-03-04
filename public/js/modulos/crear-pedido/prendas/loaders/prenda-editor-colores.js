@@ -22,9 +22,25 @@ class PrendaEditorColores {
         
         // Necesitamos asignacionesColoresPorTalla para renderizar agrupado
         if (!prenda.asignacionesColoresPorTalla || Object.keys(prenda.asignacionesColoresPorTalla).length === 0) {
-            console.log(' [Colores] Sin asignaciones para cargar');
-            this._ocultarSeccion();
-            this._mostrarTarjetasTallas();
+            console.log(' [Colores] Sin asignaciones wizard para cargar');
+            
+            // 🔴 FIX: Aún sin asignaciones wizard, puede haber telas simples en
+            // window.telasCreacion (cargadas por PrendaEditorTelas). Delegar a
+            // actualizarTablaResumen() que maneja AMBOS tipos de datos y gestiona
+            // la visibilidad de seccion-resumen-asignaciones correctamente.
+            if (window.telasCreacion && window.telasCreacion.length > 0) {
+                if (window.ColoresPorTalla && typeof window.ColoresPorTalla.actualizarTablaResumen === 'function') {
+                    window.ColoresPorTalla.actualizarTablaResumen();
+                    console.log('[Carga]  Tabla actualizada con telas simples via actualizarTablaResumen()');
+                } else {
+                    console.warn('[Carga]  ColoresPorTalla no disponible para renderizar telas simples');
+                    this._ocultarSeccion();
+                    this._mostrarTarjetasTallas();
+                }
+            } else {
+                this._ocultarSeccion();
+                this._mostrarTarjetasTallas();
+            }
             return;
         }
         

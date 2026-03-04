@@ -1080,7 +1080,7 @@ class PedidoWebService
                             'proceso_prenda_detalle_id' => $proceso->id,
                             'genero' => $generoEnum,
                             'talla' => $tallaReal,
-                            'cantidad' => null, // cantidad se desglosa en colores
+                            'cantidad' => $data['totalCantidad'], // guardar cantidad total aunque sea desglosada en colores
                         ]);
 
                         foreach ($data['colores'] as $colorItem) {
@@ -1138,8 +1138,9 @@ class PedidoWebService
                                 }
                             }
                             
-                            // En flujo wizard con asignación: cantidad = null
-                            $cantidadGuardar = ($esWizard && $claveEncontrada) ? null : $cantidad;
+                            // Siempre guardar cantidad para cálculos,
+                            // aunque el detalle de colores esté en coloresAsignados
+                            $cantidadGuardar = $cantidad;
                             
                             $tallaProceso = PedidosProcesosPrendaTalla::create([
                                 'proceso_prenda_detalle_id' => $proceso->id,

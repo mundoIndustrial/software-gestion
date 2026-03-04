@@ -131,7 +131,6 @@
                                         <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: white;">COLOR</th>
                                         <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: white;">REFERENCIA</th>
                                         <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: white;">IMAGEN</th>
-                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: white;">OBSERVACIONES</th>
                                         <th data-col="wizard-only" style="padding: 0.75rem; text-align: left; font-weight: 600; color: white;">GÉNERO</th>
                                         <th data-col="wizard-only" style="padding: 0.75rem; text-align: left; font-weight: 600; color: white;">TALLA</th>
                                         <th data-col="wizard-only" style="padding: 0.75rem; text-align: center; font-weight: 600; width: 80px; color: white;">CANT.</th>
@@ -901,10 +900,10 @@ document.addEventListener('paste', function(event) {
                     </div>
                 </div>
                 <!-- Observaciones -->
-                <div style="margin-bottom: 0.25rem;">
+                <!-- <div style="margin-bottom: 0.25rem;">
                     <label style="font-size: 0.75rem; font-weight: 600; color: #374151; display: block; margin-bottom: 0.3rem;">OBSERVACIONES</label>
                     <textarea id="simple-observaciones-input" placeholder="Observaciones adicionales..." class="form-control" rows="2" style="font-size: 0.9rem; resize: vertical;"></textarea>
-                </div>
+                </div> -->
             </div>
             <!-- Footer -->
             <div style="padding: 0.75rem 1.25rem; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 0.5rem;">
@@ -1034,6 +1033,7 @@ document.addEventListener('paste', function(event) {
      * Abre el modal simple de agregar/editar tela
      * @param {number|undefined} editIdx - Si se pasa, entra en modo edición con ese índice
      */
+    window.abrirModalTelaSimple = abrirModalTelaSimple;
     function abrirModalTelaSimple(editIdx) {
         const $modal = jQuery('#modal-agregar-tela-simple');
         if (!$modal.length) { alert('Modal no encontrado'); return; }
@@ -1056,7 +1056,7 @@ document.addEventListener('paste', function(event) {
         }
 
         // Limpiar campos
-        ['simple-tela-input','simple-color-input','simple-referencia-input','simple-observaciones-input'].forEach(id => {
+        ['simple-tela-input','simple-color-input','simple-referencia-input'].forEach(id => {
             const el = document.getElementById(id); if (el) el.value = '';
         });
         const imgInput = document.getElementById('simple-tela-img-input');
@@ -1076,12 +1076,12 @@ document.addEventListener('paste', function(event) {
             const telaInput = document.getElementById('simple-tela-input');
             const colorInput = document.getElementById('simple-color-input');
             const refInput = document.getElementById('simple-referencia-input');
-            const obsInput = document.getElementById('simple-observaciones-input');
+            // const obsInput = document.getElementById('simple-observaciones-input');
 
             if (telaInput) telaInput.value = (t.tela || '').toUpperCase();
             if (colorInput) colorInput.value = (t.color || '').toUpperCase();
             if (refInput) refInput.value = (t.referencia || '').toUpperCase();
-            if (obsInput) obsInput.value = t.observaciones || '';
+            // if (obsInput) obsInput.value = t.observaciones || '';
 
             // Pre-cargar imagen existente
             if (t.imagenes && t.imagenes.length > 0) {
@@ -1225,12 +1225,12 @@ document.addEventListener('paste', function(event) {
         const telaInput = document.getElementById('simple-tela-input');
         const colorInput = document.getElementById('simple-color-input');
         const refInput = document.getElementById('simple-referencia-input');
-        const obsInput = document.getElementById('simple-observaciones-input');
+        // const obsInput = document.getElementById('simple-observaciones-input');
 
         const tela = (telaInput?.value || '').trim().toUpperCase();
         const color = (colorInput?.value || '').trim().toUpperCase();
         const referencia = (refInput?.value || '').trim().toUpperCase();
-        const observaciones = (obsInput?.value || '').trim();
+        const observaciones = ''; // (obsInput?.value || '').trim();
 
         if (!tela) {
             telaInput.style.borderColor = '#ef4444';

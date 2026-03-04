@@ -65,6 +65,7 @@ class FacturaPedidoService
             'prendas.procesos.tipoProceso',
             'prendas.procesos.imagenes',
             'prendas.procesos.tallas',
+            'prendas.procesos.tallas.coloresAsignados',
             'epps.imagenes',
         ])->find($pedidoId);
     }
@@ -580,6 +581,9 @@ class FacturaPedidoService
 
     /**
      * Construir tallas de un proceso
+     * Soporta dos formatos:
+     * 1. Tallas simples: { dama: { L: 10, XL: 12 } }
+     * 2. Con colores desglosados: { dama: { L: [{ color: 'AZUL', tela: 'BORNEO', cantidad: 10 }] } }
      */
     private function construirTallasProceso($proc): array
     {
@@ -592,12 +596,33 @@ class FacturaPedidoService
         
         if ($proc->tallas && $proc->tallas->count() > 0) {
             foreach ($proc->tallas as $tallaProceso) {
+                // Verificar si hay colores desglosados
+                $colores = $tallaProceso->coloresAsignados && $tallaProceso->coloresAsignados->count() > 0
+                    ? $tallaProceso->coloresAsignados->toArray()
+                    : null;
+                
                 if ($tallaProceso->es_sobremedida) {
                     $genero = strtoupper($tallaProceso->genero ?? 'DAMA');
                     $procTallas['sobremedida'][$genero] = (int)$tallaProceso->cantidad;
                 } else {
                     $genero = strtolower($tallaProceso->genero ?? 'dama');
-                    $procTallas[$genero][$tallaProceso->talla] = (int)$tallaProceso->cantidad;
+                    $nomTalla = $tallaProceso->talla;
+                    
+                    // Si hay colores, guardar como array; si no, solo cantidad
+                    if ($colores) {
+                        // Formatear colores para el frontend
+                        // El frontend espera { color, cantidad } en el array
+                        $procTallas[$genero][$nomTalla] = array_map(function ($color) {
+                            return [
+                                'color' => $color['color_nombre'] ?? 'Sin color',
+                                'tela' => $color['tela_nombre'] ?? 'Sin tela',
+                                'cantidad' => (int)$color['cantidad'],
+                            ];
+                        }, $colores);
+                    } else {
+                        // Fallback: solo cantidad si no hay colores
+                        $procTallas[$genero][$nomTalla] = (int)$tallaProceso->cantidad;
+                    }
                 }
             }
         }

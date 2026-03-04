@@ -379,6 +379,7 @@ class PrendaDataTransformer {
                 tela: tela.tela ? tela.tela.nombre : '',
                 color: tela.color ? tela.color.nombre : '',
                 referencia: tela.referencia || '',
+                observaciones: tela.observaciones || '',
                 fotos: tela.fotos || []
             }));
             

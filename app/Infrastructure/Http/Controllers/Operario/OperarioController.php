@@ -780,6 +780,7 @@ class OperarioController extends Controller
             if ($anchoGeneral || $metrajesPorColor->isNotEmpty()) {
                 $ancho_metraje_data = [
                     'ancho' => $anchoGeneral ? $anchoGeneral->ancho : null,
+                    'metraje' => $anchoGeneral ? $anchoGeneral->metraje : null,
                     'metrajes_por_color' => []
                 ];
                 

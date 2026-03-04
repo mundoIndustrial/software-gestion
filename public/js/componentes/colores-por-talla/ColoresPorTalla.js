@@ -436,7 +436,7 @@ window.ColoresPorTalla = (function() {
             const cantidadInput = document.querySelectorAll('.cantidad-input-wizard');
             const referenciaInput = document.querySelectorAll('.referencia-input-wizard');
             const imagenInput = document.querySelectorAll('.imagen-tela-wizard');
-            const observacionesInput = document.querySelectorAll('.observaciones-input-wizard');
+            // const observacionesInput = document.querySelectorAll('.observaciones-input-wizard');
             
             // Agrupar colores por talla (con objeto {nombre, cantidad, referencia, imagen, observaciones})
             coloresInput.forEach((inputColor, i) => {
@@ -444,7 +444,7 @@ window.ColoresPorTalla = (function() {
                 const cantidad = cantidadInput[i] ? parseInt(cantidadInput[i].value) || 0 : 0;
                 const color = inputColor.value.trim().toUpperCase();
                 const referencia = referenciaInput[i] ? referenciaInput[i].value.trim().toUpperCase() : '';
-                const observaciones = observacionesInput[i] ? observacionesInput[i].value.trim() : '';
+                const observaciones = ''; // observacionesInput[i] ? observacionesInput[i].value.trim() : '';
                 const imagenFile = imagenInput[i] ? imagenInput[i].files[0] : null;
                 
                 // Solo procesar si hay color y cantidad > 0, y si la talla está en nuestra lista
@@ -653,7 +653,7 @@ window.ColoresPorTalla = (function() {
         }
         if (msgVacio) msgVacio.style.display = 'none';
 
-        // Construir filas: TELA | COLOR | REFERENCIA | IMAGEN | OBS | GÉNERO | TALLA | CANTIDAD | ACCIÓN
+        // Construir filas: TELA | COLOR | REFERENCIA | IMAGEN | GÉNERO | TALLA | CANTIDAD | ACCIÓN
         let html = '';
         let totalAsignaciones = 0;
         const cellStyle = 'padding: 0.75rem; color: #374151;';
@@ -716,9 +716,9 @@ window.ColoresPorTalla = (function() {
                 imgsHtml = partsHtml || '<span style="color:#9ca3af;font-size:0.75rem;">—</span>';
             }
             
-            // Combinar observaciones (únicas, no vacías)
-            const obs = [...new Set(colores.map(c => c.observaciones).filter(Boolean))];
-            const obsText = obs.length > 0 ? obs.join(' | ') : '-';
+            // Combinar observaciones (únicas, no vacías) - COMENTADO
+            // const obs = [...new Set(colores.map(c => c.observaciones).filter(Boolean))];
+            // const obsText = obs.length > 0 ? obs.join(' | ') : '-';
             
             html += `
                 <tr style="background: ${bg}; border-bottom: 1px solid #e5e7eb;" data-clave="${clave}" data-tipo="wizard">
@@ -726,7 +726,6 @@ window.ColoresPorTalla = (function() {
                     <td style="${cellStyle}" data-field="color"><div style="display:flex;flex-wrap:wrap;gap:0.15rem;">${coloresChipsHtml}</div></td>
                     <td style="${cellStyle} font-size:0.8rem;" data-field="referencia">${refHtml}</td>
                     <td style="${cellStyle}" data-field="imagen"><div style="display:flex;flex-wrap:wrap;gap:2px;">${imgsHtml}</div></td>
-                    <td style="${cellStyle} font-size:0.8rem; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" data-field="observaciones" title="${obsText}">${obsText}</td>
                     <td style="${cellStyle}" data-field="genero">${genero ? genero.toUpperCase() : '--'}</td>
                     <td style="${cellStyle} font-weight: 500;" data-field="talla">${talla || '--'}</td>
                     <td style="${cellStyle} text-align: center; font-weight: 600;" data-field="cantidad">${totalCant}</td>
@@ -756,7 +755,7 @@ window.ColoresPorTalla = (function() {
             const bg = (idx % 2 === 0) ? '#ffffff' : '#f9fafb';
             const color = t.color || '-';
             const referencia = t.referencia || '-';
-            const observaciones = t.observaciones || '-';
+            // const observaciones = t.observaciones || '-';
 
             // Imagen thumbnail
             let imgHtml = '<span style="color:#9ca3af;font-size:0.75rem;">—</span>';
@@ -780,8 +779,7 @@ window.ColoresPorTalla = (function() {
                     <td style="${cellStyle} font-weight: 500;" data-field="tela">${telaName || '--'}</td>
                     <td style="${cellStyle}" data-field="color">${color}</td>
                     <td style="${cellStyle}" data-field="referencia">${referencia}</td>
-                    <td style="${cellStyle}" data-field="imagen">${imgHtml}</td>
-                    <td style="${cellStyle} font-size:0.8rem; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" data-field="observaciones" title="${observaciones}">${observaciones}</td>${wizardCols}
+                    <td style="${cellStyle}" data-field="imagen">${imgHtml}</td>${wizardCols}
                     <td style="padding: 0.75rem; text-align: center;">
                         <div style="display: flex; gap: 0.25rem; justify-content: center;">
                             <button type="button" class="btn-editar-tela-simple" data-tela-idx="${idx}"
@@ -890,7 +888,9 @@ window.ColoresPorTalla = (function() {
      * Activar edición de una tela simple: abre el modal precargado
      */
     function _activarEdicionTelaSimple(fila, idx) {
-        if (typeof abrirModalTelaSimple === 'function') {
+        if (typeof window.abrirModalTelaSimple === 'function') {
+            window.abrirModalTelaSimple(idx);
+        } else if (typeof abrirModalTelaSimple === 'function') {
             abrirModalTelaSimple(idx);
         } else {
             console.error('[ColoresPorTalla] abrirModalTelaSimple no disponible');
@@ -957,10 +957,12 @@ window.ColoresPorTalla = (function() {
                         <label style="font-size:0.7rem;font-weight:600;color:#374151;display:block;margin-bottom:0.2rem;">REFERENCIA</label>
                         <input type="text" class="wz-edit-ref form-control" value="${referencia}" style="text-transform:uppercase;font-size:0.85rem;" onkeyup="this.value=this.value.toUpperCase()">
                     </div>
+                    <!-- OBSERVACIONES COMENTADO
                     <div>
                         <label style="font-size:0.7rem;font-weight:600;color:#374151;display:block;margin-bottom:0.2rem;">OBSERVACIONES</label>
                         <input type="text" class="wz-edit-obs form-control" value="${observaciones}" style="font-size:0.85rem;">
                     </div>
+                    -->
                 </div>
                 <div>
                     <label style="font-size:0.7rem;font-weight:600;color:#374151;display:block;margin-bottom:0.2rem;">IMAGEN</label>
@@ -1185,13 +1187,13 @@ window.ColoresPorTalla = (function() {
             const colorNombre = (card.querySelector('.wz-edit-color').value || '').trim().toUpperCase();
             const cantidad = parseInt(card.querySelector('.wz-edit-cantidad').value) || 0;
             const referencia = (card.querySelector('.wz-edit-ref').value || '').trim().toUpperCase();
-            const observaciones = (card.querySelector('.wz-edit-obs').value || '').trim();
+            const observaciones = ''; // (card.querySelector('.wz-edit-obs').value || '').trim();
 
             if (!colorNombre) return; // omitir colores vacíos
 
             const colorData = { nombre: colorNombre, cantidad: cantidad };
             if (referencia) colorData.referencia = referencia;
-            if (observaciones) colorData.observaciones = observaciones;
+            // if (observaciones) colorData.observaciones = observaciones;
             if (window._wizardEditImagenes && window._wizardEditImagenes[idx]) {
                 const imgId = window._wizardEditImagenes[idx];
                 const imgData = _getImage(imgId);

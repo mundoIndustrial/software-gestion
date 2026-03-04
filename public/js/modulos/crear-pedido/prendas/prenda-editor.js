@@ -193,6 +193,15 @@ class PrendaEditor {
 
         console.log(' [🔄 Carga] Datos cargados en formulario');
         
+        // 🔴 CRÍTICO: Actualizar tabla de resumen DESPUÉS de cargar telas y colores
+        // Esto garantiza que la tabla se muestre aunque sea solo con telas simples
+        if (window.ColoresPorTalla && typeof window.ColoresPorTalla.actualizarTablaResumen === 'function') {
+            setTimeout(() => {
+                window.ColoresPorTalla.actualizarTablaResumen();
+                console.log('[prenda-editor] 🎯 actualizarTablaResumen() ejecutado post-carga');
+            }, 50);
+        }
+        
         // 🔴 NUEVO: Cargar sección UNISEX (antes SOLO CANTIDAD) si existe DIRECTAMENTE aquí
         const tieneGenerico = prenda.generosConTallas && 
                              Object.keys(prenda.generosConTallas).some(g => g.toUpperCase() === 'GENERICO');

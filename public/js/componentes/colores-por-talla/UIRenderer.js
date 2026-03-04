@@ -72,7 +72,7 @@ window.UIRenderer = (function() {
             const headerRow = document.createElement('div');
             Object.assign(headerRow.style, {
                 display: 'grid',
-                gridTemplateColumns: '1fr 120px 80px 140px 1fr 36px',
+                gridTemplateColumns: '1fr 120px 80px 140px 36px',
                 gap: '0.5rem',
                 padding: '0.5rem 0.75rem',
                 background: '#f9fafb',
@@ -88,7 +88,6 @@ window.UIRenderer = (function() {
                 <span>Referencia</span>
                 <span style="text-align:center">Cant.</span>
                 <span>Imagen</span>
-                <span>Observaciones</span>
                 <span></span>
             `;
             seccion.appendChild(headerRow);
@@ -165,7 +164,7 @@ window.UIRenderer = (function() {
             fila.className = `fila-color-${tallaIdx}-${colorIdx}`;
             Object.assign(fila.style, {
                 display: 'grid',
-                gridTemplateColumns: '1fr 120px 80px 140px 1fr 36px',
+                gridTemplateColumns: '1fr 120px 80px 140px 36px',
                 gap: '0.5rem',
                 alignItems: 'center',
                 padding: '0.5rem 0.75rem',
@@ -193,11 +192,7 @@ window.UIRenderer = (function() {
             const imgWrapper = this.crearBotonImagenTela();
             fila.appendChild(imgWrapper);
             
-            // 5. Input de observaciones (inline)
-            const inputObs = this.crearInputObservaciones();
-            fila.appendChild(inputObs);
-            
-            // 6. Botón eliminar
+            // 5. Botón eliminar
             const btnEliminar = this.crearBotonEliminarFila(fila);
             fila.appendChild(btnEliminar);
             
@@ -513,25 +508,25 @@ window.UIRenderer = (function() {
         },
 
         /**
-         * Crear input de observaciones (compacto, una línea)
+         * Crear input de observaciones (compacto, una línea) - COMENTADO
          */
-        crearInputObservaciones() {
-            const inputObs = document.createElement('input');
-            inputObs.type = 'text';
-            inputObs.className = 'observaciones-input-wizard';
-            inputObs.placeholder = 'Notas...';
-            Object.assign(inputObs.style, {
-                padding: '0.4rem 0.5rem',
-                border: '1px solid #d1d5db',
-                borderRadius: '4px',
-                fontSize: '0.8rem',
-                background: 'white',
-                width: '100%',
-                boxSizing: 'border-box'
-            });
-            
-            return inputObs;
-        },
+        // crearInputObservaciones() {
+        //     const inputObs = document.createElement('input');
+        //     inputObs.type = 'text';
+        //     inputObs.className = 'observaciones-input-wizard';
+        //     inputObs.placeholder = 'Notas...';
+        //     Object.assign(inputObs.style, {
+        //         padding: '0.4rem 0.5rem',
+        //         border: '1px solid #d1d5db',
+        //         borderRadius: '4px',
+        //         fontSize: '0.8rem',
+        //         background: 'white',
+        //         width: '100%',
+        //         boxSizing: 'border-box'
+        //     });
+        //     
+        //     return inputObs;
+        // }
 
         /**
          * Crear botón eliminar fila
