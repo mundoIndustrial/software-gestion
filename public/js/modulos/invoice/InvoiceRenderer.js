@@ -633,7 +633,7 @@ class InvoiceRenderer {
                         </table>
                     ` : ''}
                     
-                    ${proc.modo_tallas === 'por_tallas' && proc.tallas_detalles && Object.keys(proc.tallas_detalles).length > 0 ? `
+                    ${(proc.modo_tallas === 'general' || proc.modo_tallas === 'especifico') && proc.tallas_detalles && Object.keys(proc.tallas_detalles).length > 0 ? `
                         <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #eee; font-weight: 600; color: #2c3e50; margin-bottom: 4px;">Detalles por Talla:</div>
                         <div style="margin-left: 8px;">
                             ${Object.entries(proc.tallas_detalles).map(([genero, tallas]) => {

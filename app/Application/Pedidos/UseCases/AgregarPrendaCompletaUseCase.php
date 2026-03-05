@@ -398,6 +398,7 @@ final class AgregarPrendaCompletaUseCase
                 'observaciones' => $observaciones,
                 'datos_adicionales' => json_encode($proceso),
                 'estado' => $proceso['estado'] ?? 'PENDIENTE',
+                'modo_tallas' => $proceso['modoTallas'] ?? 'generico',
             ]);
 
             // Crear tallas del proceso (maneja SOBREMEDIDA)

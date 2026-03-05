@@ -1088,6 +1088,57 @@ class PedidosProduccionController
                 }
             }
 
+            // 🔴 NUEVO: Procesar imágenes de procesos POR TALLA (vienen como fotosProcesoTallasNuevo_{procesoIdx}_{genero}_{talla}[])
+            // Formato: fotosProcesoTallasNuevo_0_dama_M[], fotosProcesoTallasNuevo_1_caballero_L[], etc.
+            $fotosProcesoTallasNuevo = [];
+            
+            foreach ($request->allFiles() as $key => $files) {
+                if (strpos($key, 'fotosProcesoTallasNuevo_') === 0) {
+                    // Extraer params: fotosProcesoTallasNuevo_{procesoIdx}_{genero}_{talla}
+                    preg_match('/fotosProcesoTallasNuevo_(\d+)_(.+)_(.+)/', $key, $matches);
+                    if (!isset($matches[1]) || !isset($matches[2]) || !isset($matches[3])) continue;
+                    
+                    $procesoIdx = (int)$matches[1];
+                    $genero = strtolower($matches[2]);
+                    $talla = $matches[3];
+                    $keyTalla = "{$procesoIdx}_{$genero}_{$talla}";
+                    
+                    // Soportar tanto un solo archivo como array de archivos
+                    $archivos = is_array($files) ? $files : [$files];
+                    
+                    if (!isset($fotosProcesoTallasNuevo[$keyTalla])) {
+                        $fotosProcesoTallasNuevo[$keyTalla] = [];
+                    }
+                    
+                    foreach ($archivos as $archivo) {
+                        if ($archivo && $archivo->isValid()) {
+                            try {
+                                $rutas = $procesoFotoService->procesarFoto($archivo, (int)$id);
+                                $fotosProcesoTallasNuevo[$keyTalla][] = [
+                                    'ruta_original' => $rutas['ruta_original'] ?? null,
+                                    'ruta_webp' => $rutas['ruta_webp'] ?? null,
+                                    'proceso_idx' => $procesoIdx,
+                                    'genero' => $genero,
+                                    'talla' => $talla,
+                                ];
+                                Log::info('[PedidosProduccionController] Imagen de proceso por talla procesada', [
+                                    'key' => $key,
+                                    'keyTalla' => $keyTalla,
+                                    'archivo' => $archivo->getClientOriginalName(),
+                                    'ruta_webp' => $rutas['ruta_webp'] ?? 'N/A'
+                                ]);
+                            } catch (\Exception $e) {
+                                Log::warning('[PedidosProduccionController] Error procesando imagen de proceso por talla', [
+                                    'key' => $key,
+                                    'keyTalla' => $keyTalla,
+                                    'error' => $e->getMessage()
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
+
             // Procesar imágenes existentes que deben preservarse
             $imagenesExistentes = [];
             if ($request->input('imagenes_existentes')) {
@@ -1321,7 +1372,7 @@ class PedidosProduccionController
             }
             
             // IMPORTANTE: Usar $validated['prenda_id'], NO $id (que es pedido_id)
-            $dto = ActualizarPrendaCompletaDTO::fromRequest($validated['prenda_id'], $validated, $imagenesGuardadas, $imagenesExistentes, $fotosTelasProcesadas, $fotosProcesoNuevo, $fotosColorProcesadas);
+            $dto = ActualizarPrendaCompletaDTO::fromRequest($validated['prenda_id'], $validated, $imagenesGuardadas, $imagenesExistentes, $fotosTelasProcesadas, $fotosProcesoNuevo, $fotosColorProcesadas, $fotosProcesoTallasNuevo);
             $prenda = $this->actualizarPrendaCompletaUseCase->ejecutar($dto);
 
             Log::info('[PedidosProduccionController] Prenda completa actualizada exitosamente', [

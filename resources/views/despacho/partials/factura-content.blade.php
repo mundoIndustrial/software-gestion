@@ -102,7 +102,7 @@
                                     <div style="font-weight: 600; color: #374151; margin-bottom: 4px; font-size: 11px;">{{ $proceso['tipo_proceso'] ?? 'N/A' }}</div>
                                     
                                     {{-- MODO POR_TALLAS: Mostrar información por cada talla --}}
-                                    @if(isset($proceso['modo_tallas']) && $proceso['modo_tallas'] === 'por_tallas' && isset($proceso['tallas_detalles']))
+                                    @if(isset($proceso['modo_tallas']) && ($proceso['modo_tallas'] === 'general' || $proceso['modo_tallas'] === 'especifico') && isset($proceso['tallas_detalles']))
                                         @foreach($proceso['tallas_detalles'] as $genero => $tallasDatos)
                                             @if(is_array($tallasDatos))
                                                 <div style="margin-left: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">

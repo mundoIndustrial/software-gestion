@@ -2,10 +2,9 @@
  * gestor-modal-proceso-por-tallas.js
  * 
  * Modal dedicado para configurar un proceso "Por Tallas".
- * Cada talla de la prenda muestra sus propios campos de:
- * - Ubicación (con lista)
- * - Observaciones (textarea)
- * - Foto (una por talla)
+ * Permite dos modos:
+ * - GENERAL: Ubicación compartida + Observaciones por talla + Imágenes compartidas
+ * - ESPECÍFICO: Ubicación, Observaciones e Imágenes por talla
  * 
  * Se guarda en procesosSeleccionados con la misma estructura que el modal genérico
  * pero adicionando datosExtendidos por talla.
@@ -19,6 +18,12 @@ let datosPorTallaTemp = {};
 
 // Talla activa para paste (Ctrl+V) — se actualiza al hacer click o hover en una tarjeta
 let tallaActivaParaPaste = null;
+
+// ─── Variables para modo de configuración ───
+let modoModalPorTallasActual = 'general'; // 'general' o 'especifico'
+let fotosGeneralesTemp = []; // Almacena URLs de fotos compartidas
+let fotosGeneralesFilesTemp = []; // Almacena archivos de fotos compartidas
+let ubicacionGeneralTemp = ''; // Almacena ubicación compartida
 
 const iconosPorTallas = {
     reflectivo: 'light_mode',
@@ -71,6 +76,161 @@ const nombresPorTallas = {
 };
 
 /**
+ * Cambiar el modo de configuración del modal (General ↔ Específico)
+ */
+window.cambiarModoModalPorTallas = function(nuevoModo) {
+    if (nuevoModo === modoModalPorTallasActual) return;
+
+    modoModalPorTallasActual = nuevoModo;
+    const btnGeneral = document.getElementById('btn-modo-general');
+    const btnEspecifico = document.getElementById('btn-modo-especifico');
+    const containerGeneral = document.getElementById('modo-general-container');
+    const containerEspecifico = document.getElementById('modo-especifico-container');
+
+    // Actualizar estilos de botones
+    if (btnGeneral && btnEspecifico) {
+        if (nuevoModo === 'general') {
+            btnGeneral.style.cssText = 'padding: 0.4rem 1rem; border: 2px solid #333; border-radius: 6px; background: white; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #333;';
+            btnEspecifico.style.cssText = 'padding: 0.4rem 1rem; border: 1px solid #ddd; border-radius: 6px; background: #f9f9f9; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #999;';
+        } else {
+            btnGeneral.style.cssText = 'padding: 0.4rem 1rem; border: 1px solid #ddd; border-radius: 6px; background: #f9f9f9; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #999;';
+            btnEspecifico.style.cssText = 'padding: 0.4rem 1rem; border: 2px solid #333; border-radius: 6px; background: white; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #333;';
+        }
+    }
+
+    // Mostrar/ocultar contenedores
+    if (containerGeneral && containerEspecifico) {
+        if (nuevoModo === 'general') {
+            containerGeneral.style.display = 'block';
+            containerEspecifico.style.display = 'none';
+        } else {
+            containerGeneral.style.display = 'none';
+            containerEspecifico.style.display = 'block';
+        }
+    }
+
+    console.log('[por-tallas] Cambiado a modo:', nuevoModo);
+};
+
+/**
+ * Cargar fotos generales (compartidas para todas las tallas)
+ */
+window.cargarFotosGenerales = function(inputElement) {
+    const files = Array.from(inputElement.files || []);
+    if (files.length > 0) {
+        agregarImagenesGenerales(files);
+    }
+    inputElement.value = '';
+};
+
+/**
+ * Agrega imágenes a fotos generales
+ */
+function agregarImagenesGenerales(files) {
+    const validos = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (validos.length === 0) return;
+
+    validos.forEach(file => {
+        const blobUrl = URL.createObjectURL(file);
+        fotosGeneralesTemp.push(blobUrl);
+        fotosGeneralesFilesTemp.push(file);
+    });
+    renderizarGaleriaFotosGenerales();
+}
+
+/**
+ * Re-renderiza la galería de fotos generales
+ */
+function renderizarGaleriaFotosGenerales() {
+    const galeria = document.getElementById('prt-galeria-general');
+    if (!galeria) return;
+
+    const thumbs = (fotosGeneralesTemp || []).map((src, idx) => `
+        <div style="position:relative; width:70px; height:70px; border-radius:6px; overflow:hidden; border:1px solid #ddd; flex-shrink:0;">
+            <img src="${src}" style="width:100%;height:100%;object-fit:cover;">
+            <button type="button" onclick="eliminarFotoGeneral(${idx})"
+                style="position:absolute;top:2px;right:2px;background:rgba(220,38,38,0.85);color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;">&times;</button>
+        </div>
+    `).join('');
+
+    galeria.innerHTML = `
+        ${thumbs}
+        <div onclick="document.getElementById('prt-foto-input-general').click()"
+            style="width: 70px; height: 70px; border: 2px dashed #ccc; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: white; flex-shrink: 0;">
+            <div style="text-align:center;">
+                <span class="material-symbols-rounded" style="font-size:1.3rem;color:#999;">add_photo_alternate</span>
+                <div style="font-size:0.6rem;color:#999;">Agregar</div>
+            </div>
+        </div>
+    `;
+
+    // Reconfigurar drag & drop después de redibujar
+    configurarDragDropPasteGeneral();
+}
+
+/**
+ * Crear tarjeta simplificada para modo general (solo observaciones)
+ */
+function crearTarjetaTallaGeneral(genero, tallaKey, cantidad, datos) {
+    const parts = String(tallaKey).split('__');
+    const tallaDisplay = parts[0] || tallaKey;
+    const colorDisplay = parts[1] || null;
+    const etiqueta = colorDisplay ? `${tallaDisplay} - ${colorDisplay}` : tallaDisplay;
+    
+    const actualKey = `${genero}__${tallaKey}`;
+    const safeKey = actualKey.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const checkboxId = `checkbox-mg-${safeKey}`;
+    const inputCantidadId = `cantidad-mg-${safeKey}`;
+
+    const card = document.createElement('div');
+    card.style.cssText = `border: 1px solid #ddd; border-radius: 8px; background: #fafafa; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; transition: opacity 0.2s, background-color 0.2s;`;
+
+    // Header con Checkbox
+    const header = document.createElement('div');
+    header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;';
+    
+    const checkboxDiv = document.createElement('div');
+    checkboxDiv.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; flex: 1;';
+    checkboxDiv.innerHTML = `
+        <input type="checkbox" id="${checkboxId}" checked style="width: 18px; height: 18px; cursor: pointer;">
+        <label for="${checkboxId}" style="cursor: pointer; display: flex; align-items: center; gap: 0.5rem; flex: 1;">
+            <span style="font-weight: 600; font-size: 1rem; color: #333;">${etiqueta}</span>
+        </label>
+    `;
+    header.appendChild(checkboxDiv);
+
+    // Cantidad editable
+    const cantidadDiv = document.createElement('div');
+    cantidadDiv.style.cssText = 'display: flex; align-items: center; gap: 0.3rem;';
+    cantidadDiv.innerHTML = `
+        <input type="number" id="${inputCantidadId}" min="0" value="${datos.cantidadSeleccionada || cantidad}" 
+            style="width: 50px; padding: 0.3rem 0.5rem; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 0.85rem; font-weight: 600;">
+        <span style="font-size: 0.8rem; font-weight: 600; color: #666;">und</span>
+    `;
+    header.appendChild(cantidadDiv);
+    card.appendChild(header);
+
+    // Contenido: Solo Observaciones
+    const contenidoDiv = document.createElement('div');
+    contenidoDiv.style.cssText = 'display: flex; flex-direction: column; gap: 0.75rem;';
+    
+    const obsDiv = document.createElement('div');
+    obsDiv.style.cssText = 'display: flex; flex-direction: column; gap: 0.35rem;';
+    obsDiv.innerHTML = `
+        <label style="font-size: 0.8rem; font-weight: 600; color: #555; display: flex; align-items: center; gap: 0.35rem;">
+            <span class="material-symbols-rounded" style="font-size: 1rem;">description</span>Observaciones
+        </label>
+        <textarea class="prt-observaciones-general" data-key="${actualKey}" placeholder="Instrucciones especiales para esta talla..."
+            style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85rem; min-height: 55px; resize: vertical; box-sizing: border-box;"
+        >${datos.observaciones || ''}</textarea>
+    `;
+    contenidoDiv.appendChild(obsDiv);
+    card.appendChild(contenidoDiv);
+
+    return card;
+};
+
+/**
  * Abre el modal de proceso por tallas
  */
 window.abrirModalProcesoPorTallas = function(tipoProceso) {
@@ -106,6 +266,22 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
     // Limpiar contenedores
     if (contDama) contDama.innerHTML = '';
     if (contCab) contCab.innerHTML = '';
+    
+    // Limpiar contenedores del modo general
+    const contDamaGeneral = document.getElementById('tallas-dama-modo-general');
+    const secDamaGeneral = document.getElementById('seccion-dama-modo-general');
+    const contCabGeneral = document.getElementById('tallas-caballero-modo-general');
+    const secCabGeneral = document.getElementById('seccion-caballero-modo-general');
+    
+    if (contDamaGeneral) contDamaGeneral.innerHTML = '';
+    if (contCabGeneral) contCabGeneral.innerHTML = '';
+    
+    // Limpiar galería de fotos generales
+    const galeriaGeneral = document.getElementById('prt-galeria-general');
+    if (galeriaGeneral) galeriaGeneral.innerHTML = '';
+    
+    // Marcar como no configurado para reconfigurar
+    if (galeriaGeneral) galeriaGeneral._dragDropConfigured = false;
 
     if (tallasDama.length === 0 && tallasCaballero.length === 0) {
         if (secDama) secDama.style.display = 'none';
@@ -129,6 +305,20 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
         estructuraDatos: datosExistentes ? Object.keys(datosExistentes) : 'VACIO'
     });
 
+    // ─── Recuperar datos generales si existen ───
+    const datosGenerales = window.procesosSeleccionados?.[tipoProceso]?.datos;
+    if (datosGenerales?.ubicacionGeneral) {
+        ubicacionGeneralTemp = datosGenerales.ubicacionGeneral;
+        const inputUbicacion = document.getElementById('ubicacion-general-input');
+        if (inputUbicacion) inputUbicacion.value = ubicacionGeneralTemp;
+    }
+    if (datosGenerales?.fotosGenerales && Array.isArray(datosGenerales.fotosGenerales)) {
+        fotosGeneralesTemp = [...datosGenerales.fotosGenerales];
+    }
+    
+    // Redibujar galería de fotos generales (con o sin fotos existentes)
+    renderizarGaleriaFotosGenerales();
+
     // Renderizar DAMA
     if (tallasDama.length > 0 && contDama) {
         secDama.style.display = 'block';
@@ -145,8 +335,21 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
             };
             contDama.appendChild(crearTarjetaTalla('dama', tallaKey, cantidad, datosPorTallaTemp[key]));
         });
+        
+        // También renderizar para modo general
+        if (contDamaGeneral && secDamaGeneral) {
+            secDamaGeneral.style.display = 'block';
+            tallasDama.forEach(([tallaKey, cantidad]) => {
+                const key = `dama__${tallaKey}`;
+                const datosCard = datosPorTallaTemp[key] || { cantidadSeleccionada: cantidad, observaciones: '' };
+                contDamaGeneral.appendChild(crearTarjetaTallaGeneral('dama', tallaKey, cantidad, datosCard));
+            });
+        }
     } else {
         if (secDama) secDama.style.display = 'none';
+        if (document.getElementById('seccion-dama-modo-general')) {
+            document.getElementById('seccion-dama-modo-general').style.display = 'none';
+        }
     }
 
     // Renderizar CABALLERO
@@ -165,8 +368,21 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
             };
             contCab.appendChild(crearTarjetaTalla('caballero', tallaKey, cantidad, datosPorTallaTemp[key]));
         });
+        
+        // También renderizar para modo general
+        if (contCabGeneral && secCabGeneral) {
+            secCabGeneral.style.display = 'block';
+            tallasCaballero.forEach(([tallaKey, cantidad]) => {
+                const key = `caballero__${tallaKey}`;
+                const datosCard = datosPorTallaTemp[key] || { cantidadSeleccionada: cantidad, observaciones: '' };
+                contCabGeneral.appendChild(crearTarjetaTallaGeneral('caballero', tallaKey, cantidad, datosCard));
+            });
+        }
     } else {
         if (secCab) secCab.style.display = 'none';
+        if (document.getElementById('seccion-caballero-modo-general')) {
+            document.getElementById('seccion-caballero-modo-general').style.display = 'none';
+        }
     }
 
     modal.style.display = 'flex';
@@ -418,6 +634,19 @@ function handlePasteGlobalPorTallas(e) {
     e.preventDefault();
     e.stopPropagation();
 
+    // ─── Manejo para FOTOS GENERALES ───
+    if (tallaActivaParaPaste === 'GENERAL') {
+        agregarImagenesGenerales(files);
+        const galeria = document.getElementById('prt-galeria-general');
+        if (galeria) {
+            galeria.style.outline = '2px solid #22c55e';
+            galeria.style.outlineOffset = '2px';
+            setTimeout(() => { galeria.style.outline = ''; galeria.style.outlineOffset = ''; }, 600);
+        }
+        return;
+    }
+
+    // ─── Manejo para FOTOS POR TALLA (específico) ───
     // Determinar a qué talla agregar
     let targetKey = tallaActivaParaPaste;
 
@@ -510,54 +739,81 @@ function renderizarGaleriaFotos(key) {
 window.guardarProcesoPorTallas = function() {
     if (!procesoPorTallasActual) return;
 
-    console.log('[GUARDAR-POR-TALLAS] Iniciando guardado del proceso:', procesoPorTallasActual);
-    console.log('[GUARDAR-POR-TALLAS] datosPorTallaTemp ANTES de recolectar:', JSON.stringify(datosPorTallaTemp, null, 2));
+    console.log('[GUARDAR-POR-TALLAS] Iniciando guardado del proceso:', procesoPorTallasActual, 'Modo:', modoModalPorTallasActual);
 
-    // Recoger ubicaciones de los textareas
-    document.querySelectorAll('.prt-ubicacion-input').forEach(textarea => {
-        const key = textarea.dataset.key;
-        const valor = textarea.value;
-        console.log('[GUARDAR-POR-TALLAS] Ubicación textarea:', { key, valor, existe_en_temp: !!datosPorTallaTemp[key] });
-        if (datosPorTallaTemp[key]) {
-            datosPorTallaTemp[key].ubicaciones = valor
-                .split(',')
-                .map(u => u.trim())
-                .filter(u => u.length > 0);
-            console.log('[GUARDAR-POR-TALLAS] ✅ Ubicaciones guardadas para', key, ':', datosPorTallaTemp[key].ubicaciones);
-        } else {
-            console.warn('[GUARDAR-POR-TALLAS] ⚠️ Clave no encontrada en datosPorTallaTemp:', key);
-            console.log('[GUARDAR-POR-TALLAS] Claves disponibles:', Object.keys(datosPorTallaTemp));
-        }
-    });
+    // ─── RECOGER DATOS SEGÚN EL MODO ACTUAL ───
+    if (modoModalPorTallasActual === 'general') {
+        // Modo general: ubicación general + observaciones por talla + fotos generales
+        ubicacionGeneralTemp = document.getElementById('ubicacion-general-input')?.value || '';
+        
+        // Recoger observaciones generales
+        document.querySelectorAll('.prt-observaciones-general').forEach(textarea => {
+            const key = textarea.dataset.key;
+            const valor = textarea.value;
+            if (datosPorTallaTemp[key]) {
+                datosPorTallaTemp[key].observaciones = valor;
+            }
+        });
 
-    // Recoger observaciones de los textareas
-    document.querySelectorAll('.prt-observaciones').forEach(textarea => {
-        const key = textarea.dataset.key;
-        const valor = textarea.value;
-        console.log('[GUARDAR-POR-TALLAS] Observaciones textarea:', { key, valor: valor.substring(0, 50), existe_en_temp: !!datosPorTallaTemp[key] });
-        if (datosPorTallaTemp[key]) {
-            datosPorTallaTemp[key].observaciones = valor;
-            console.log('[GUARDAR-POR-TALLAS] ✅ Observaciones guardadas para', key);
-        }
-    });
+        // Recoger cantidades generales
+        document.querySelectorAll('[id^="cantidad-mg-"]').forEach(input => {
+            const id = input.id.replace('cantidad-mg-', '');
+            // Necesitamos encontrar la clave real desde el IDs
+            const tallaKey = Object.keys(datosPorTallaTemp).find(k => 
+                k.replace(/[^a-zA-Z0-9_-]/g, '_') === id
+            );
+            if (tallaKey && datosPorTallaTemp[tallaKey]) {
+                datosPorTallaTemp[tallaKey].cantidadSeleccionada = Math.max(0, parseInt(input.value) || 0);
+            }
+        });
 
-    // Recoger cantidades de los inputs
-    document.querySelectorAll('[id^="cantidad-"]').forEach(input => {
-        const id = input.id.replace('cantidad-', '');
-        const key = id;
-        if (datosPorTallaTemp[key]) {
-            datosPorTallaTemp[key].cantidadSeleccionada = Math.max(0, parseInt(input.value) || 0);
-        }
-    });
+        // Recoger checkboxes generales
+        document.querySelectorAll('[id^="checkbox-mg-"]').forEach(checkbox => {
+            const id = checkbox.id.replace('checkbox-mg-', '');
+            const tallaKey = Object.keys(datosPorTallaTemp).find(k => 
+                k.replace(/[^a-zA-Z0-9_-]/g, '_') === id
+            );
+            if (tallaKey && datosPorTallaTemp[tallaKey]) {
+                datosPorTallaTemp[tallaKey].seleccionada = checkbox.checked;
+            }
+        });
+    } else {
+        // Modo específico: recoger todo (ubicación, observaciones e imágenes por talla)
+        document.querySelectorAll('.prt-ubicacion-input').forEach(textarea => {
+            const key = textarea.dataset.key;
+            const valor = textarea.value;
+            if (datosPorTallaTemp[key]) {
+                datosPorTallaTemp[key].ubicaciones = valor
+                    .split(',')
+                    .map(u => u.trim())
+                    .filter(u => u.length > 0);
+            }
+        });
 
-    // Recoger estado de checkboxes
-    document.querySelectorAll('[id^="checkbox-"]').forEach(checkbox => {
-        const id = checkbox.id.replace('checkbox-', '');
-        const key = id;
-        if (datosPorTallaTemp[key]) {
-            datosPorTallaTemp[key].seleccionada = checkbox.checked;
-        }
-    });
+        document.querySelectorAll('.prt-observaciones').forEach(textarea => {
+            const key = textarea.dataset.key;
+            const valor = textarea.value;
+            if (datosPorTallaTemp[key]) {
+                datosPorTallaTemp[key].observaciones = valor;
+            }
+        });
+
+        document.querySelectorAll('[id^="cantidad-"]:not([id^="cantidad-mg-"])').forEach(input => {
+            const id = input.id.replace('cantidad-', '');
+            const key = id;
+            if (datosPorTallaTemp[key]) {
+                datosPorTallaTemp[key].cantidadSeleccionada = Math.max(0, parseInt(input.value) || 0);
+            }
+        });
+
+        document.querySelectorAll('[id^="checkbox-"]:not([id^="checkbox-mg-"])').forEach(checkbox => {
+            const id = checkbox.id.replace('checkbox-', '');
+            const key = id;
+            if (datosPorTallaTemp[key]) {
+                datosPorTallaTemp[key].seleccionada = checkbox.checked;
+            }
+        });
+    }
 
     console.log('[GUARDAR-POR-TALLAS] datosPorTallaTemp DESPUÉS de recolectar:', JSON.stringify(datosPorTallaTemp, null, 2));
 
@@ -587,16 +843,15 @@ window.guardarProcesoPorTallas = function() {
             ubicaciones: datos.ubicaciones,
             observaciones: datos.observaciones,
             imagenesCount: datos.imagenes?.length,
-            imagenesFilesCount: datos.imagenesFiles?.length,
-            imagenesFilesTypes: datos.imagenesFiles?.map((f, i) => `${i}: ${f instanceof File ? 'File' : typeof f}`)
+            imagenesFilesCount: datos.imagenesFiles?.length
         });
 
         datosExtendidos[genero][tallaKey] = {
             cantidadSeleccionada: datos.cantidadSeleccionada,
-            ubicaciones: datos.ubicaciones || [],
+            ubicaciones: modoModalPorTallasActual === 'general' ? [] : (datos.ubicaciones || []),
             observaciones: datos.observaciones || '',
-            imagenes: datos.imagenes || [],
-            imagenesFiles: datos.imagenesFiles || []
+            imagenes: modoModalPorTallasActual === 'general' ? [] : (datos.imagenes || []),
+            imagenesFiles: modoModalPorTallasActual === 'general' ? [] : (datos.imagenesFiles || [])
         };
     });
 
@@ -615,17 +870,19 @@ window.guardarProcesoPorTallas = function() {
     window.procesosSeleccionados[procesoPorTallasActual].modoTallas = 'por_tallas';
     window.procesosSeleccionados[procesoPorTallasActual].datos = {
         tipo: procesoPorTallasActual,
-        ubicaciones: [],
+        ubicaciones: modoModalPorTallasActual === 'general' ? [ubicacionGeneralTemp] : [],
         observaciones: '',
         tallas: tallas,
-        imagenes: [],
+        imagenes: fotosGeneralesTemp,
         imagenesEliminadas: [],
         datosExtendidos: datosExtendidos,
-        modoTallas: 'por_tallas',  // NUEVO: Incluir modo_tallas dentro de datos también
-        imagenes_por_talla: construirImagenesPorTalla(datosExtendidos)  // NUEVO: Estructura para servicio de API
+        modoTallas: modoModalPorTallasActual,  // Guardar el modo: 'general' o 'especifico'
+        ubicacionGeneral: modoModalPorTallasActual === 'general' ? ubicacionGeneralTemp : '',
+        fotosGenerales: modoModalPorTallasActual === 'general' ? fotosGeneralesTemp : [],
+        imagenes_por_talla: construirImagenesPorTalla(datosExtendidos)
     };
 
-    console.log('[por-tallas] Proceso guardado:', procesoPorTallasActual, window.procesosSeleccionados[procesoPorTallasActual]);
+    console.log('[por-tallas] Proceso guardado:', procesoPorTallasActual, 'Modo:', modoModalPorTallasActual, window.procesosSeleccionados[procesoPorTallasActual]);
 
     // Guardar en procesosGuardados si existe
     if (window.procesosGuardados) {
@@ -650,6 +907,9 @@ window.guardarProcesoPorTallas = function() {
     tallaActivaParaPaste = null;
     procesoPorTallasActual = null;
     datosPorTallaTemp = {};
+    fotosGeneralesTemp = [];
+    fotosGeneralesFilesTemp = [];
+    ubicacionGeneralTemp = '';
 };
 
 /**
@@ -681,4 +941,68 @@ window.cerrarModalProcesoPorTallas = function() {
 
     procesoPorTallasActual = null;
     datosPorTallaTemp = {};
+    modoModalPorTallasActual = 'general';  // Resetear a modo general para próxima vez
+    fotosGeneralesTemp = [];
+    fotosGeneralesFilesTemp = [];
+    ubicacionGeneralTemp = '';
+};
+
+/**
+ * Elimina una foto general (compartida)
+ */
+window.eliminarFotoGeneral = function(index) {
+    if (index >= 0 && index < fotosGeneralesTemp.length) {
+        // Revocar URL del blob para liberar memoria
+        URL.revokeObjectURL(fotosGeneralesTemp[index]);
+        fotosGeneralesTemp.splice(index, 1);
+        fotosGeneralesFilesTemp.splice(index, 1);
+        renderizarGaleriaFotosGenerales();
+    }
+};
+
+/**
+ * Configura drag & drop y paste para fotos generales (compartidas)
+ */
+function configurarDragDropPasteGeneral() {
+    const galeria = document.getElementById('prt-galeria-general');
+    if (!galeria || galeria._dragDropConfigured) return;
+
+    // ─── Drag Over ───
+    galeria.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        galeria.style.outline = '2px dashed #333';
+        galeria.style.outlineOffset = '2px';
+        galeria.style.background = '#f0f0f0';
+    });
+
+    // ─── Drag Leave ───
+    galeria.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        galeria.style.outline = '';
+        galeria.style.outlineOffset = '';
+        galeria.style.background = '';
+    });
+
+    // ─── Drop ───
+    galeria.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        galeria.style.outline = '';
+        galeria.style.outlineOffset = '';
+        galeria.style.background = '';
+
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            agregarImagenesGenerales(e.dataTransfer.files);
+        }
+    });
+
+    // ─── Mouse Enter: Marcar para paste ───
+    galeria.addEventListener('mouseenter', () => {
+        tallaActivaParaPaste = 'GENERAL';
+    });
+
+    // Marcar como configurado para evitar listeners duplicados
+    galeria._dragDropConfigured = true;
 };

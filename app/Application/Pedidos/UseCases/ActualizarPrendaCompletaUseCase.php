@@ -1137,6 +1137,8 @@ final class ActualizarPrendaCompletaUseCase
                         'ubicaciones' => !empty($ubicaciones) ? json_encode($ubicaciones) : $procesoExistente->ubicaciones,
                         'observaciones' => $proceso['observaciones'] ?? $procesoExistente->observaciones,
                         'estado' => $proceso['estado'] ?? $procesoExistente->estado,
+                        'modo_tallas' => $proceso['modoTallas'] ?? $procesoExistente->modo_tallas,
+                        'datos_adicionales' => json_encode($proceso),
                     ]);
 
                     //  ACTUALIZAR TALLAS del proceso si se proporcionan
@@ -1188,6 +1190,9 @@ final class ActualizarPrendaCompletaUseCase
                             'proceso_id' => $procesoId,
                             'tallas_nuevas' => $proceso['tallas']
                         ]);
+
+                        // 🔴 NUEVO: Procesar imágenes que corresponden a estas tallas
+                        $this->procesarImagenesTallasProcesoExistente($procesoExistente, $procesoIdx, $dto);
                     }
 
                     // 🔴 NUEVO: Sincronizar imágenes del proceso existente
@@ -1249,6 +1254,8 @@ final class ActualizarPrendaCompletaUseCase
                             'ubicaciones' => !empty($ubicaciones) ? json_encode($ubicaciones) : $procesoExistente->ubicaciones,
                             'observaciones' => $proceso['observaciones'] ?? $procesoExistente->observaciones,
                             'estado' => $proceso['estado'] ?? $procesoExistente->estado,
+                            'modo_tallas' => $proceso['modoTallas'] ?? $procesoExistente->modo_tallas,
+                            'datos_adicionales' => json_encode($proceso),
                         ]);
                         
                         // Agregar imágenes del proceso si existen (es actualización, no creación)
@@ -1294,6 +1301,9 @@ final class ActualizarPrendaCompletaUseCase
                                 }
                             }
                         }
+                        
+                        // 🔴 NUEVO: Procesar imágenes que corresponden a estas tallas
+                        $this->procesarImagenesTallasProcesoExistente($procesoExistente, $procesoIdx, $dto);
                         
                         continue;
                     }
@@ -1352,6 +1362,9 @@ final class ActualizarPrendaCompletaUseCase
                         'proceso_id' => $procesoCreado->id,
                         'tallas' => $proceso['tallas']
                     ]);
+
+                    // 🔴 NUEVO: Procesar imágenes que corresponden a estas tallas
+                    $this->procesarImagenesTallasProcesoExistente($procesoCreado, $procesoIdx, $dto);
                 }
 
                 // Agregar imágenes del proceso si existen
@@ -1513,6 +1526,63 @@ final class ActualizarPrendaCompletaUseCase
                     'orden' => $idx + 1,
                     'es_principal' => $idx === 0 ? 1 : 0,
                 ]);
+            }
+        }
+    }
+
+    /**
+     * 🔴 NUEVO: Procesar imágenes de tallas específicas de un proceso
+     * Busca en fotosProcesoTallasNuevo y crea registros en pedidos_procesos_imagenes
+     */
+    private function procesarImagenesTallasProcesoExistente(
+        PedidosProcesosPrendaDetalle $proceso,
+        int $procesoIdx,
+        ActualizarPrendaCompletaDTO $dto
+    ): void {
+        if (empty($dto->fotosProcesoTallasNuevo)) {
+            \Log::info('[ActualizarPrendaCompletaUseCase] Sin imágenes por talla para procesar', [
+                'proceso_id' => $proceso->id,
+                'procesoIdx' => $procesoIdx
+            ]);
+            return;
+        }
+
+        // Iterar sobre las tallas del proceso que acabamos de actualizar
+        $tallas = $proceso->tallas()->get();
+        
+        foreach ($tallas as $talla) {
+            // Construir la key para buscar en fotosProcesoTallasNuevo
+            $keyTalla = "{$procesoIdx}_" . strtolower($talla->genero) . "_{$talla->talla}";
+            
+            // Buscar si hay imágenes para esta talla
+            if (isset($dto->fotosProcesoTallasNuevo[$keyTalla]) && !empty($dto->fotosProcesoTallasNuevo[$keyTalla])) {
+                $imagenesParaTalla = $dto->fotosProcesoTallasNuevo[$keyTalla];
+                $orden = 1;
+                
+                foreach ($imagenesParaTalla as $foto) {
+                    if (isset($foto['ruta_webp']) || isset($foto['ruta_original'])) {
+                        // Crear registro en pedidos_procesos_imagenes vinculado a esta talla específica
+                        \DB::table('pedidos_procesos_imagenes')->insert([
+                            'proceso_prenda_talla_id' => $talla->id,
+                            'ruta_original' => $foto['ruta_original'] ?? $foto['ruta_webp'],
+                            'ruta_webp' => $foto['ruta_webp'] ?? $foto['ruta_original'],
+                            'orden' => $orden,
+                            'es_principal' => $orden === 1 ? 1 : 0,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                        
+                        \Log::info('[ActualizarPrendaCompletaUseCase] Imagen de talla agregada', [
+                            'proceso_id' => $proceso->id,
+                            'talla_id' => $talla->id,
+                            'genero_talla' => "{$talla->genero}_{$talla->talla}",
+                            'keyTalla' => $keyTalla,
+                            'ruta_webp' => $foto['ruta_webp'] ?? 'N/A'
+                        ]);
+                        
+                        $orden++;
+                    }
+                }
             }
         }
     }

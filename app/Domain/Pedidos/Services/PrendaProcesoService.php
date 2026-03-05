@@ -76,7 +76,7 @@ class PrendaProcesoService
                 }
 
                 // Detectar modo de tallas
-                $modoTallas = $proceso['modo_tallas'] ?? 'para_todas';
+                $modoTallas = $processo['modo_tallas'] ?? 'generico';
                 $datosExtendidos = !empty($proceso['datos_extendidos']) ? $proceso['datos_extendidos'] : null;
                 if (is_string($datosExtendidos)) {
                     $datosExtendidos = json_decode($datosExtendidos, true);

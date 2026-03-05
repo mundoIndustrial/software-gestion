@@ -382,7 +382,7 @@ function generarTarjetaProceso(tipo, datos) {
     let contenidoPorTallasHTML = '';
     if (tieneDetallePorTalla) {
         const generosConfig = {
-            dama: { titulo: 'DAMA', color: '#ec4899', bg: '#fdf2f8', border: '#fbcfe8', chipBg: '#fce7f3' },
+            dama: { titulo: 'DAMA', color: '#6b7280', bg: '#f3f4f6', border: '#d1d5db', chipBg: '#e5e7eb' },
             caballero: { titulo: 'CABALLERO', color: '#1d4ed8', bg: '#eff6ff', border: '#93c5fd', chipBg: '#dbeafe' },
             sobremedida: { titulo: 'SOBREMEDIDA', color: '#92400e', bg: '#fffbeb', border: '#fcd34d', chipBg: '#fef3c7' }
         };
@@ -466,10 +466,12 @@ function generarTarjetaProceso(tipo, datos) {
                                 <span style="font-size: 0.7rem; background: ${cfg.color}; color: white; padding: 0.1rem 0.4rem; border-radius: 9999px; font-weight: 700;">${cantidad} und</span>
                             </div>
                         </div>
+                        ${datos.modoTallas === 'general' ? '' : `
                         <div style="display: flex; flex-direction: column; gap: 0.2rem;">
                             <span style="font-size: 0.7rem; font-weight: 700; color: #374151;">Ubic:</span>
                             ${ubicsHTML}
                         </div>
+                        `}
                         ${obsHTML}
                         ${imgHTML}
                     </div>
@@ -494,8 +496,51 @@ function generarTarjetaProceso(tipo, datos) {
     }
 
     // ─── Contenido normal vs por tallas ───
+    let ubicacionGeneralHTML = '';
+    let fotosGeneralesHTML = '';
+    
+    // Renderizar ubicación general si está en modo "general"
+    if (datos.modoTallas === 'general' && datos.ubicacionGeneral) {
+        ubicacionGeneralHTML = `
+            <div style="background: #f3f4f6; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; border: 1px solid #d1d5db;">
+                <strong style="font-size: 0.8rem; color: #333; display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem;">
+                    <span class="material-symbols-rounded" style="font-size: 1rem;">location_on</span>UBICACIÓN GENERAL
+                </strong>
+                <span style="color: #6b7280; font-size: 0.8rem; line-height: 1.4;">${datos.ubicacionGeneral}</span>
+            </div>
+        `;
+    }
+    
+    // Renderizar fotos generales si está en modo "general"
+    if (datos.modoTallas === 'general' && datos.fotosGenerales && datos.fotosGenerales.length > 0) {
+        const fotosHTML = datos.fotosGenerales.map((src, idx) => {
+            let imgSrc = src;
+            if (src instanceof File) {
+                imgSrc = URL.createObjectURL(src);
+            } else if (typeof src === 'object' && src !== null) {
+                imgSrc = src.ruta_webp || src.url || src.ruta_original || src.ruta || src.previewUrl || src.src || String(src);
+            } else if (typeof src === 'string') {
+                imgSrc = src.startsWith('blob:') ? src : agregarStorage(src);
+            }
+            return `<div style="width:50px;height:50px;border-radius:4px;overflow:hidden;border:1px solid #d1d5db;flex-shrink:0;">
+                <img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;">
+            </div>`;
+        }).join('');
+        
+        fotosGeneralesHTML = `
+            <div style="margin-bottom: 0.75rem;">
+                <strong style="font-size: 0.8rem; color: #333; display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem;">
+                    <span class="material-symbols-rounded" style="font-size: 1rem;">photo_camera</span>FOTOS GENERALES (${datos.fotosGenerales.length})
+                </strong>
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                    ${fotosHTML}
+                </div>
+            </div>
+        `;
+    }
+
     const contenidoHTML = contenidoPorTallasHTML
-        ? contenidoPorTallasHTML
+        ? `${ubicacionGeneralHTML}${fotosGeneralesHTML}${contenidoPorTallasHTML}`
         : `<div style="margin-bottom: 0.75rem;">
                 <strong style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">UBICACIONES</strong>
                 <div>${ubicacionesHTML}</div>

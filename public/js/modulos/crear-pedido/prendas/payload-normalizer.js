@@ -144,7 +144,7 @@
                 observaciones: observaciones,
                 tallas: normalizarTallas(datosReales.tallas || datoProceso.tallas || {}),
                 imagenes: normalizarImagenes(datoProceso.imagenes || datosReales.imagenes || []),
-                modo_tallas: datosReales.modoTallas || datosReales.modo_tallas || datoProceso.modoTallas || datoProceso.modo_tallas || 'para_todas',  // ← NUEVO: Normalizar a snake_case para backend
+                modo_tallas: datosReales.modoTallas || datosReales.modo_tallas || datoProceso.modoTallas || datoProceso.modo_tallas || 'generico',  // ← NUEVO: Normalizar a snake_case para backend
                 datos_extendidos: datosReales.datosExtendidos || datosReales.datos_extendidos || null  // ← PRESERVAR datos por talla (normalizando key también)
             };
             

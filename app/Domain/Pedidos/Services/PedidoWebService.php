@@ -867,7 +867,7 @@ class PedidoWebService
             }
 
             // ⚡ NUEVO: Extraer modo_tallas y datos_extendidos
-            $modoTallas = $datosProceso['modo_tallas'] ?? $procesoData['modo_tallas'] ?? 'para_todas';
+            $modoTallas = $datosProceso['modo_tallas'] ?? $procesoData['modo_tallas'] ?? 'generico';
             $datosExtendidos = $datosProceso['datos_extendidos'] ?? $procesoData['datos_extendidos'] ?? null;
             if (is_string($datosExtendidos)) {
                 $datosExtendidos = json_decode($datosExtendidos, true);
@@ -1045,7 +1045,9 @@ class PedidoWebService
                     'tallas_estructura' => array_keys($datosProceso['tallas']),
                     'flujo' => $flujo,
                 ]);
-                $this->crearTallasProceso($procesoPrenda, $datosProceso['tallas'], $asignacionesColores, $flujo);
+                // Pasar datosExtendidos para guardar observaciones y ubicaciones por talla
+                $datosExtendidos = $datosProceso['datos_extendidos'] ?? $datosProceso['datosExtendidos'] ?? [];
+                $this->crearTallasProceso($procesoPrenda, $datosProceso['tallas'], $asignacionesColores, $flujo, $datosExtendidos);
             } else {
                 \Log::warning('[PedidoWebService]  NO HAY TALLAS para proceso ' . $tipoProceso, [
                     'modo_tallas' => $modoTallas,
@@ -1093,13 +1095,14 @@ class PedidoWebService
      *   "sobremedida": { "CABALLERO": 100, "DAMA": 50 }
      * }
      */
-    private function crearTallasProceso(PedidosProcesosPrendaDetalle $proceso, array $tallas, array $asignacionesColores = [], string $flujo = 'simple'): void
+    private function crearTallasProceso(PedidosProcesosPrendaDetalle $proceso, array $tallas, array $asignacionesColores = [], string $flujo = 'simple', array $datosExtendidos = []): void
     {
         \Log::info('[PedidoWebService]  crearTallasProceso INICIADA', [
             'proceso_id' => $proceso->id,
             'tallas_estructura' => json_encode($tallas),
             'flujo' => $flujo,
             'asignaciones_count' => count($asignacionesColores),
+            'datos_extendidos_count' => count($datosExtendidos),
         ]);
 
         $tallasCreadas = 0;
@@ -1259,6 +1262,18 @@ class PedidoWebService
                                 }
                             }
                             
+                            // Extraer observaciones y ubicaciones del datosExtendidos
+                            $observacionesTalla = null;
+                            $ubicacionesTalla = null;
+                            if (!empty($datosExtendidos)) {
+                                $generoKey = strtolower(trim($generoBD));
+                                if (isset($datosExtendidos[$generoKey][$talla])) {
+                                    $datosTalla = $datosExtendidos[$generoKey][$talla];
+                                    $observacionesTalla = $datosTalla['observaciones'] ?? null;
+                                    $ubicacionesTalla = $datosTalla['ubicaciones'] ?? null;
+                                }
+                            }
+                            
                             // Siempre guardar cantidad para cálculos,
                             // aunque el detalle de colores esté en coloresAsignados
                             $cantidadGuardar = $cantidad;
@@ -1268,6 +1283,8 @@ class PedidoWebService
                                 'genero' => $generoEnum,
                                 'talla' => $talla,
                                 'cantidad' => $cantidadGuardar,
+                                'observaciones' => $observacionesTalla,
+                                'ubicaciones' => !empty($ubicacionesTalla) ? json_encode($ubicacionesTalla) : null,
                             ]);
                             
                             // Crear colores asignados si hay asignación wizard

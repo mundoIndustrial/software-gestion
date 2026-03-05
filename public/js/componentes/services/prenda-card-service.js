@@ -733,6 +733,46 @@ window.PrendaCardService = {
                 let porTallasHTML = '';
                 const generos = { dama: { label: 'DAMA', icon: '<i class="fas fa-female"></i>', color: '#be185d', bg: '#fdf2f8', border: '#fbcfe8' }, caballero: { label: 'CABALLERO', icon: '<i class="fas fa-male"></i>', color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' } };
 
+                // Detectar modo general
+                const esGeneral = datos.modoTallas === 'general';
+                let ubicacionGeneralHTML = '';
+                let fotosGeneralesHTML = '';
+
+                // Si es general, renderizar ubicación general y fotos generales al inicio
+                if (esGeneral) {
+                    if (datos.ubicacionGeneral) {
+                        ubicacionGeneralHTML = `
+                            <div style="background: #f3f4f6; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; border: 1px solid #d1d5db;">
+                                <strong style="font-size: 0.8rem; color: #333; display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem;">
+                                    <i class="fas fa-map-marker-alt"></i>UBICACIÓN GENERAL
+                                </strong>
+                                <span style="color: #6b7280; font-size: 0.8rem;">${datos.ubicacionGeneral}</span>
+                            </div>
+                        `;
+                    }
+
+                    if (datos.fotosGenerales && datos.fotosGenerales.length > 0) {
+                        const fotosThumb = datos.fotosGenerales.map((src, idx) => {
+                            let imgSrc = src;
+                            if (typeof src === 'string') {
+                                imgSrc = src.startsWith('blob:') ? src : src;
+                            }
+                            return `<img src="${imgSrc}" style="width: 45px; height: 45px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db;">`;
+                        }).join('');
+                        
+                        fotosGeneralesHTML = `
+                            <div style="margin-bottom: 0.75rem;">
+                                <strong style="font-size: 0.8rem; color: #333; display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem;">
+                                    <i class="fas fa-images"></i>FOTOS GENERALES (${datos.fotosGenerales.length})
+                                </strong>
+                                <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+                                    ${fotosThumb}
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+
                 Object.entries(generos).forEach(([genero, cfg]) => {
                     const tallasGenero = datos.datosExtendidos[genero];
                     if (!tallasGenero || Object.keys(tallasGenero).length === 0) return;
@@ -742,9 +782,9 @@ window.PrendaCardService = {
                         const tallaDisplay = parts[0] || tallaKey;
                         const cantidad = datos.tallas?.[genero]?.[tallaKey] ?? '';
 
-                        // Ubicaciones
+                        // Ubicaciones - NO mostrar si es modo general
                         let ubicHTML = '';
-                        if (datosTalla.ubicaciones && datosTalla.ubicaciones.length > 0) {
+                        if (!esGeneral && datosTalla.ubicaciones && datosTalla.ubicaciones.length > 0) {
                             const chips = datosTalla.ubicaciones.map(u => {
                                 const texto = typeof u === 'string' ? u : (u?.ubicacion || '');
                                 return texto ? `<span style="background: ${cfg.bg}; color: ${cfg.color}; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; display: inline-block;">${texto}</span>` : '';
@@ -760,19 +800,21 @@ window.PrendaCardService = {
                             obsHTML = `<div style="margin-top: 0.35rem; font-size: 0.8rem; color: #374151; background: #f9fafb; padding: 0.35rem 0.5rem; border-radius: 4px; border-left: 2px solid ${cfg.color};"><i class="fas fa-sticky-note" style="margin-right: 0.25rem; color: ${cfg.color};"></i>${datosTalla.observaciones}</div>`;
                         }
 
-                        // Imágenes
+                        // Imágenes - NO mostrar si es modo general
                         let imgHTML = '';
-                        const imgs = datosTalla.imagenes || [];
-                        if (imgs.length > 0) {
-                            const thumbs = imgs.map(img => {
-                                let src = '';
-                                if (typeof img === 'string') src = img;
-                                else if (img instanceof File) src = URL.createObjectURL(img);
-                                else if (img?.url || img?.previewUrl || img?.blobUrl) src = img.url || img.previewUrl || img.blobUrl;
-                                return src ? `<img src="${src}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid ${cfg.border};">` : '';
-                            }).filter(Boolean).join('');
-                            if (thumbs) {
-                                imgHTML = `<div style="display: flex; gap: 0.3rem; margin-top: 0.35rem;">${thumbs}</div>`;
+                        if (!esGeneral) {
+                            const imgs = datosTalla.imagenes || [];
+                            if (imgs.length > 0) {
+                                const thumbs = imgs.map(img => {
+                                    let src = '';
+                                    if (typeof img === 'string') src = img;
+                                    else if (img instanceof File) src = URL.createObjectURL(img);
+                                    else if (img?.url || img?.previewUrl || img?.blobUrl) src = img.url || img.previewUrl || img.blobUrl;
+                                    return src ? `<img src="${src}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid ${cfg.border};">` : '';
+                                }).filter(Boolean).join('');
+                                if (thumbs) {
+                                    imgHTML = `<div style="display: flex; gap: 0.3rem; margin-top: 0.35rem;">${thumbs}</div>`;
+                                }
                             }
                         }
 
@@ -800,6 +842,8 @@ window.PrendaCardService = {
                             <h4 style="margin: 0; color: #0369a1; font-size: 1.1rem; font-weight: 700;">${nombreProceso}</h4>
                             <span style="background: #7c3aed; color: white; padding: 0.15rem 0.5rem; border-radius: 12px; font-size: 0.7rem; font-weight: 700;">Por Tallas</span>
                         </div>
+                        ${ubicacionGeneralHTML}
+                        ${fotosGeneralesHTML}
                         <div style="display: flex; flex-wrap: wrap; gap: 0.6rem;">
                             ${porTallasHTML}
                         </div>

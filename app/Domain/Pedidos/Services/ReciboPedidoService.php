@@ -396,19 +396,19 @@ class ReciboPedidoService
             $nombreProceso = $proc->tipoProceso->nombre ?? 'Proceso';
             
             // NUEVO: Obtener modo_tallas
-            $modoTallas = $proc->modo_tallas ?? 'para_todas';
+            $modoTallas = $proc->modo_tallas ?? 'generico';
             
-            // NUEVO: Obtener detalles por talla si es modo por_tallas
+            // NUEVO: Obtener detalles por talla si es modo general o especifico
             $tallesDetalles = [];
-            if ($modoTallas === 'por_tallas') {
+            if (in_array($modoTallas, ['general', 'especifico'])) {
                 $tallesDetalles = $this->obtenerTallesDetallesProceso($proc);
-                \Log::info('[RECIBO-SERVICE] Modo por_tallas detectado', [
+                \Log::info('[RECIBO-SERVICE] Modo con detalles por talla detectado', [
                     'procesoId' => $proc->id,
                     'modo' => $modoTallas,
                     'tallesDetalles' => $tallesDetalles
                 ]);
             } else {
-                \Log::info('[RECIBO-SERVICE] Modo global detectado', [
+                \Log::info('[RECIBO-SERVICE] Modo generico (sin detalles por talla)', [
                     'procesoId' => $proc->id,
                     'modo' => $modoTallas
                 ]);
