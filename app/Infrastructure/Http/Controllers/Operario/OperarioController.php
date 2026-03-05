@@ -1059,7 +1059,9 @@ class OperarioController extends Controller
         try {
             $usuario = Auth::user();
 
-            $areaOperario = $usuario->hasRole('cortador') ? 'Corte' : ($usuario->hasRole('costurero') ? 'Costura' : null);
+            $esCortador = $usuario->hasRole('cortador');
+            $esCosturero = $usuario->hasRole('costurero');
+            $areaOperario = $esCortador ? 'Corte' : ($esCosturero ? 'Costura' : null);
             if (!$areaOperario) {
                 return response()->json([
                     'success' => false,
@@ -1084,6 +1086,47 @@ class OperarioController extends Controller
                     'success' => false,
                     'message' => 'Este recibo no está en tu área actual'
                 ], 403);
+            }
+
+            if ($esCortador) {
+                DB::transaction(function () use ($recibo) {
+                    $recibo->area = 'Costura';
+                    $recibo->save();
+
+                    if (!empty($recibo->prenda_id)) {
+                        $prenda = \App\Models\PrendaPedido::where('id', $recibo->prenda_id)
+                            ->with(['pedidoProduccion'])
+                            ->first();
+
+                        $numeroPedido = $prenda && $prenda->pedidoProduccion
+                            ? (int) $prenda->pedidoProduccion->numero_pedido
+                            : null;
+
+                        if (!empty($numeroPedido)) {
+                            $procesoCostura = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
+                                ->where('prenda_pedido_id', $recibo->prenda_id)
+                                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                                ->whereNull('deleted_at')
+                                ->first();
+
+                            if (!$procesoCostura) {
+                                $procesoCostura = \App\Models\ProcesoPrenda::create([
+                                    'numero_pedido' => $numeroPedido,
+                                    'prenda_pedido_id' => $recibo->prenda_id,
+                                    'numero_recibo' => $recibo->consecutivo_actual,
+                                    'proceso' => 'Costura',
+                                    'fecha_inicio' => now(),
+                                    'encargado' => null,
+                                    'estado_proceso' => 'Pendiente',
+                                    'codigo_referencia' => 'COS-' . ($recibo->consecutivo_actual ?? 0) . '-' . date('YmdHis'),
+                                ]);
+                            } else {
+                                $procesoCostura->encargado = null;
+                                $procesoCostura->save();
+                            }
+                        }
+                    }
+                });
             }
 
             DB::table('prenda_recibo_completado')->updateOrInsert(
@@ -1117,12 +1160,41 @@ class OperarioController extends Controller
         try {
             $usuario = Auth::user();
 
-            $areaOperario = $usuario->hasRole('cortador') ? 'Corte' : ($usuario->hasRole('costurero') ? 'Costura' : null);
+            $esCortador = $usuario->hasRole('cortador');
+            $esCosturero = $usuario->hasRole('costurero');
+            $areaOperario = $esCortador ? 'Corte' : ($esCosturero ? 'Costura' : null);
             if (!$areaOperario) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Rol no autorizado'
                 ], 403);
+            }
+
+            if ($esCortador) {
+                $recibo = \App\Models\ConsecutivoReciboPedido::where('id', $idRecibo)
+                    ->where('activo', 1)
+                    ->first();
+
+                if ($recibo) {
+                    $areaRecibo = strtolower(trim((string) ($recibo->area ?? '')));
+                    if ($areaRecibo === 'costura') {
+                        $sinEncargadoCostura = true;
+                        if (!empty($recibo->prenda_id)) {
+                            $procesoCostura = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
+                                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                                ->whereNull('deleted_at')
+                                ->first();
+                            if ($procesoCostura && !empty($procesoCostura->encargado)) {
+                                $sinEncargadoCostura = false;
+                            }
+                        }
+
+                        if ($sinEncargadoCostura) {
+                            $recibo->area = 'Corte';
+                            $recibo->save();
+                        }
+                    }
+                }
             }
 
             DB::table('prenda_recibo_completado')

@@ -45,11 +45,32 @@ class ObtenerPrendasRecibosService
             ->with(['prenda', 'prenda.pedidoProduccion', 'prenda.procesosPrenda', 'prenda.tallas', 'pedido', 'pedido.prendas', 'pedido.prendas.tallas']);
         
         // Para cortadores: excluir PENDIENTE_INSUMOS (misma lógica que /recibos-costura)
+        // y permitir ver recibos en Costura solo si aún NO hay encargado en proceso Costura
         if ($tipoOperario === 'cortador') {
             $query->where('estado', '!=', 'PENDIENTE_INSUMOS');
         }
         
         $recibos = $query->orderBy('created_at', 'desc')->get();
+
+        if ($tipoOperario === 'cortador') {
+            $recibos = $recibos->filter(function ($recibo) {
+                $area = strtolower(trim((string) ($recibo->area ?? '')));
+                if ($area !== 'costura') {
+                    return true;
+                }
+
+                if (empty($recibo->prenda_id)) {
+                    return false;
+                }
+
+                $procesoCostura = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
+                    ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                    ->whereNull('deleted_at')
+                    ->first();
+
+                return !$procesoCostura || empty($procesoCostura->encargado);
+            })->values();
+        }
 
         // Para costura-reflectivo y vista-costura: AGREGAR REFLECTIVO aprobados SIN validar encargado
         if ($tipoOperario === 'costura-reflectivo' || $tipoOperario === 'vista-costura') {
