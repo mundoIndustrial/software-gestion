@@ -610,7 +610,7 @@ class InvoiceRenderer {
                 <div style="background: #f9f9f9; padding: 6px; margin: 4px 0; border-left: 3px solid #9ca3af; border-radius: 2px; font-size: 11px; text-align: left;">
                     <div style="font-weight: 700; color: #3b82f6; margin-bottom: 4px; text-transform: uppercase; text-align: left;">Proceso: ${proc.tipo || proc.nombre || `(ID: ${proc.tipo_proceso_id})`}</div>
                     
-                    ${(proc.ubicaciones?.length > 0 || proc.observaciones || proc.tallas) ? `
+                    ${(proc.ubicaciones?.length > 0 || proc.observaciones || (proc.tallas && !(proc.modo_tallas === 'general' || proc.modo_tallas === 'especifico'))) ? `
                         <table style="width: 100%; font-size: 11px; margin-bottom: 4px; border-collapse: collapse;">
                             ${proc.ubicaciones && proc.ubicaciones.length > 0 ? `
                                 <tr style="border-bottom: 1px solid #eee;">
@@ -624,7 +624,7 @@ class InvoiceRenderer {
                                     <td style="padding: 2px 0; font-size: 11px; vertical-align: top; text-align: left;">${proc.observaciones}</td>
                                 </tr>
                             ` : ''}
-                            ${proc.tallas && typeof proc.tallas === 'object' && Object.keys(proc.tallas).length > 0 ? `
+                            ${proc.tallas && typeof proc.tallas === 'object' && Object.keys(proc.tallas).length > 0 && !(proc.modo_tallas === 'general' || proc.modo_tallas === 'especifico') ? `
                                 <tr>
                                     <td style="padding: 2px 2px 2px 0; font-weight: 600; color: #6b7280; width: 18%; vertical-align: top; text-align: left;">Tallas:</td>
                                     <td style="padding: 2px 0; font-size: 11px; vertical-align: top; text-align: left;">${this.renderizarTallasProceso(proc.tallas)}</td>
@@ -633,42 +633,108 @@ class InvoiceRenderer {
                         </table>
                     ` : ''}
                     
-                    ${(proc.modo_tallas === 'general' || proc.modo_tallas === 'especifico') && proc.tallas_detalles && Object.keys(proc.tallas_detalles).length > 0 ? `
+                    ${((proc.modo_tallas === 'general' || proc.modo_tallas === 'especifico') && proc.tallas_detalles && Object.keys(proc.tallas_detalles).length > 0) || (proc.modo_tallas === 'general' && proc.tallas) ? `
                         <div style="margin-top: 3px; padding-top: 3px; border-top: 1px solid #eee; font-weight: 600; color: #374151; font-size: 10px; margin-bottom: 2px;">Detalles por Talla:</div>
                         <table style="width: 100%; font-size: 9px; border-collapse: collapse; margin-bottom: 2px;">
                             <thead>
                                 <tr style="background: #f3f4f6; border-bottom: 1px solid #d1d5db;">
-                                    <th style="padding: 2px 4px; text-align: left; font-weight: 600; color: #374151; width: ${proc.modo_tallas === 'especifico' ? '20%' : '50%'};">Talla</th>
-                                    ${proc.modo_tallas === 'especifico' ? `<th style="padding: 2px 4px; text-align: left; font-weight: 600; color: #374151; width: 30%;">Ubicación</th>` : ''}
-                                    <th style="padding: 2px 4px; text-align: left; font-weight: 600; color: #374151; width: ${proc.modo_tallas === 'especifico' ? '50%' : '50%'};">Observaciones</th>
+                                    <th style="padding: 2px 4px; text-align: left; font-weight: 600; color: #374151; width: 15%;">Talla</th>
+                                    <th style="padding: 2px 4px; text-align: center; font-weight: 600; color: #374151; width: 10%;">Cantidad</th>
+                                    <th style="padding: 2px 4px; text-align: left; font-weight: 600; color: #374151; width: ${proc.modo_tallas === 'especifico' ? '20%' : '30%'};">Color</th>
+                                    ${proc.modo_tallas === 'especifico' ? `<th style="padding: 2px 4px; text-align: left; font-weight: 600; color: #374151; width: 20%;">Ubicación</th>` : ''}
+                                    <th style="padding: 2px 4px; text-align: left; font-weight: 600; color: #374151; width: ${proc.modo_tallas === 'especifico' ? '35%' : '45%'};">Observaciones</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${Object.entries(proc.tallas_detalles).map(([genero, tallas]) => {
-                                    if (!tallas || typeof tallas !== 'object') return '';
-                                    return Object.entries(tallas).map(([talla, datos]) => `
-                                        <tr style="border-bottom: 1px solid #f0f0f0;">
-                                            <td style="padding: 2px 4px; color: #1f2937; font-weight: 600;">${genero.toUpperCase()} ${talla}</td>
-                                            ${proc.modo_tallas === 'especifico' ? `<td style="padding: 2px 4px; color: #666;">${datos.ubicaciones && (Array.isArray(datos.ubicaciones) ? datos.ubicaciones.join(', ') : (typeof datos.ubicaciones === 'string' ? JSON.parse(datos.ubicaciones).join(', ') : datos.ubicaciones)) || '—'}</td>` : ''}
-                                            <td style="padding: 2px 4px; color: #666;">${datos.observaciones || '—'}</td>
-                                        </tr>
-                                    `).join('');
-                                }).join('')}
+                                ${(() => {
+                                    // Usar tallas_detalles si están disponibles (modo específico o general con datos en BD)
+                                    if (proc.tallas_detalles && Object.keys(proc.tallas_detalles).length > 0) {
+                                        return Object.entries(proc.tallas_detalles).map(([genero, tallas]) => {
+                                            if (!tallas || typeof tallas !== 'object') return '';
+                                            return Object.entries(tallas).map(([talla, datos]) => {
+                                                // Parsear talla en caso de que venga con color: L__AZUL OSCURO
+                                                let tallaReal = talla;
+                                                let colorNombre = datos.color || '';
+                                                
+                                                if (talla.includes('__')) {
+                                                    const partes = talla.split('__');
+                                                    tallaReal = partes[0];
+                                                    colorNombre = colorNombre || partes[1] || '';
+                                                }
+                                                
+                                                const cantidad = datos.cantidad || 0;
+                                                
+                                                return `
+                                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                                    <td style="padding: 2px 4px; color: #1f2937; font-weight: 600;">${genero.toUpperCase()} ${tallaReal}</td>
+                                                    <td style="padding: 2px 4px; color: #1f2937; font-weight: 600; text-align: center;">${cantidad}</td>
+                                                    <td style="padding: 2px 4px; color: #666;">${colorNombre || '—'}</td>
+                                                    ${proc.modo_tallas === 'especifico' ? `<td style="padding: 2px 4px; color: #666;">${datos.ubicaciones && (Array.isArray(datos.ubicaciones) ? datos.ubicaciones.join(', ') : (typeof datos.ubicaciones === 'string' ? JSON.parse(datos.ubicaciones).join(', ') : datos.ubicaciones)) || '—'}</td>` : ''}
+                                                    <td style="padding: 2px 4px; color: #666;">${datos.observaciones || '—'}</td>
+                                                </tr>
+                                            `;
+                                            }).join('');
+                                        }).join('');
+                                    }
+                                    
+                                    // En modo general, si no hay tallas_detalles, usar proc.tallas directamente
+                                    if (proc.modo_tallas === 'general' && proc.tallas) {
+                                        return Object.entries(proc.tallas).map(([genero, tallasData]) => {
+                                            if (genero.toUpperCase() === 'GENERICO' || !tallasData) return '';
+                                            return Object.entries(tallasData).map(([tallaKey, datos]) => {
+                                                let tallaReal = tallaKey;
+                                                let colorNombre = '';
+                                                let cantidad = 0;
+                                                
+                                                // Si es un array entonces tiene colores desglosados
+                                                if (Array.isArray(datos) && datos.length > 0) {
+                                                    return datos.map((item, idx) => {
+                                                        return `
+                                                        <tr style="border-bottom: 1px solid #f0f0f0;">
+                                                            <td style="padding: 2px 4px; color: #1f2937; font-weight: 600;">${genero.toUpperCase()} ${tallaKey}</td>
+                                                            <td style="padding: 2px 4px; color: #1f2937; font-weight: 600; text-align: center;">${item.cantidad || 0}</td>
+                                                            <td style="padding: 2px 4px; color: #666;">${item.color || '—'}</td>
+                                                            ${proc.modo_tallas === 'especifico' ? `<td style="padding: 2px 4px; color: #666;">—</td>` : ''}
+                                                            <td style="padding: 2px 4px; color: #666;">—</td>
+                                                        </tr>
+                                                    `;
+                                                    }).join('');
+                                                } else if (tallaKey.includes('__')) {
+                                                    // Parsear TALLA__COLOR
+                                                    const partes = tallaKey.split('__');
+                                                    tallaReal = partes[0];
+                                                    colorNombre = partes[1] || '';
+                                                    cantidad = datos || 0;
+                                                    
+                                                    return `
+                                                    <tr style="border-bottom: 1px solid #f0f0f0;">
+                                                        <td style="padding: 2px 4px; color: #1f2937; font-weight: 600;">${genero.toUpperCase()} ${tallaReal}</td>
+                                                        <td style="padding: 2px 4px; color: #1f2937; font-weight: 600; text-align: center;">${cantidad}</td>
+                                                        <td style="padding: 2px 4px; color: #666;">${colorNombre || '—'}</td>
+                                                        ${proc.modo_tallas === 'especifico' ? `<td style="padding: 2px 4px; color: #666;">—</td>` : ''}
+                                                        <td style="padding: 2px 4px; color: #666;">—</td>
+                                                    </tr>
+                                                `;
+                                                } else {
+                                                    // Talla simple sin color
+                                                    return `
+                                                    <tr style="border-bottom: 1px solid #f0f0f0;">
+                                                        <td style="padding: 2px 4px; color: #1f2937; font-weight: 600;">${genero.toUpperCase()} ${tallaKey}</td>
+                                                        <td style="padding: 2px 4px; color: #1f2937; font-weight: 600; text-align: center;">${datos || 0}</td>
+                                                        <td style="padding: 2px 4px; color: #666;">—</td>
+                                                        ${proc.modo_tallas === 'especifico' ? `<td style="padding: 2px 4px; color: #666;">—</td>` : ''}
+                                                        <td style="padding: 2px 4px; color: #666;">—</td>
+                                                    </tr>
+                                                `;
+                                                }
+                                            }).join('');
+                                        }).join('');
+                                    }
+                                    
+                                    return '';
+                                })()}
                             </tbody>
                         </table>
-                        ${(() => {
-                            let todasImagenes = [];
-                            Object.entries(proc.tallas_detalles).forEach(([genero, tallas]) => {
-                                if (tallas && typeof tallas === 'object') {
-                                    Object.entries(tallas).forEach(([talla, datos]) => {
-                                        if (datos.imagenes && Array.isArray(datos.imagenes)) {
-                                            todasImagenes = [...new Set([...todasImagenes, ...datos.imagenes])];
-                                        }
-                                    });
-                                }
-                            });
-                            return todasImagenes.length > 0 ? `<div style="display: flex; gap: 3px; flex-wrap: wrap;">${todasImagenes.map(img => `<img src="${window._extraerURLImagen ? window._extraerURLImagen(img) : img}" style="width: 40px; height: 40px; border-radius: 2px; border: 1px solid #ddd; object-fit: cover;">`).join('')}</div>` : '';
-                        })()}
                     ` : ''}
                     
                     ${proc.imagenes && proc.imagenes.length > 0 ? `

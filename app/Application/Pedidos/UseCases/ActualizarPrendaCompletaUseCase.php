@@ -1316,7 +1316,7 @@ final class ActualizarPrendaCompletaUseCase
 
                 $procesoCreado = $prenda->procesos()->create([
                     'tipo_proceso_id' => $tipoProceso,
-                    'ubicaciones' => !empty($ubicaciones) ? json_encode($ubicaciones) : null,
+                    'ubicaciones' => !empty($ubicaciones) ? json_encode($ubicaciones) : json_encode([]),
                     'observaciones' => $proceso['observaciones'] ?? null,
                     'estado' => $proceso['estado'] ?? 'PENDIENTE',
                 ]);

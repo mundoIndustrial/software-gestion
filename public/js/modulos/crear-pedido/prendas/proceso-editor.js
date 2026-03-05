@@ -24,7 +24,8 @@ class ProcesosEditor {
             ubicaciones: null,      // Array reemplazado (no merge)
             imagenes: null,         // Array reemplazado (no merge)
             observaciones: null,    // String
-            tallas: null           // Object
+            tallas: null,           // Object
+            modo_tallas: null       // String: 'general', 'especifico', 'por_tallas'
         };
         
         // Flag para saber si hay cambios pendientes
@@ -167,6 +168,26 @@ class ProcesosEditor {
     }
 
     /**
+     * Registrar cambio de modo de tallas
+     * @param {string} nuevoModo - 'general', 'especifico', 'por_tallas'
+     */
+    registrarCambioModoTallas(nuevoModo) {
+        if (!this.procesoEnEdicion) {
+            console.warn(' [PROCESO-EDITOR] No hay proceso en edición');
+            return;
+        }
+
+        console.log(' [PROCESO-EDITOR] Registrando cambio de modo_tallas:', {
+            anterior: this.cambios.modo_tallas || this.procesoOriginal.modo_tallas,
+            nueva: nuevoModo
+        });
+
+        this.cambios.modo_tallas = nuevoModo;
+        this.hayChangiosPendientes = true;
+        this.procesoEnEdicion.datos.modo_tallas = nuevoModo;
+    }
+
+    /**
      * Obtener el proceso en edición
      */
     obtenerProcesoenEdicion() {
@@ -198,6 +219,11 @@ class ProcesosEditor {
         // Si hay cambio en tallas
         if (this.cambios.tallas !== null) {
             cambiosFinales.tallas = this.cambios.tallas;
+        }
+
+        // Si hay cambio en modo_tallas
+        if (this.cambios.modo_tallas !== null) {
+            cambiosFinales.modo_tallas = this.cambios.modo_tallas;
         }
 
         console.log('📤 [PROCESO-EDITOR] Cambios a enviar:', {
@@ -366,7 +392,8 @@ class ProcesosEditor {
             ubicaciones: null,
             imagenes: null,
             observaciones: null,
-            tallas: null
+            tallas: null,
+            modo_tallas: null
         };
     }
 
@@ -397,6 +424,10 @@ class ProcesosEditor {
 
         if (this.cambios.tallas !== null) {
             cambios.push('Tallas actualizadas');
+        }
+
+        if (this.cambios.modo_tallas !== null) {
+            cambios.push(`Modo de tallas cambiado a: ${this.cambios.modo_tallas}`);
         }
 
         return cambios.length > 0 ? cambios : ['Sin cambios detectados'];

@@ -81,22 +81,31 @@ const nombresPorTallas = {
  * Cambiar el modo de configuración del modal (General ↔ Específico)
  */
 window.cambiarModoModalPorTallas = function(nuevoModo) {
+    const btnGeneral = document.getElementById('btn-modo-general');
+    const btnEspecifico = document.getElementById('btn-modo-especifico');
+    
     if (nuevoModo === modoModalPorTallasActual) return;
 
     modoModalPorTallasActual = nuevoModo;
-    const btnGeneral = document.getElementById('btn-modo-general');
-    const btnEspecifico = document.getElementById('btn-modo-especifico');
     const containerGeneral = document.getElementById('modo-general-container');
     const containerEspecifico = document.getElementById('modo-especifico-container');
 
-    // Actualizar estilos de botones
+    // Actualizar estilos de botones - Ambos siempre habilitados
     if (btnGeneral && btnEspecifico) {
         if (nuevoModo === 'general') {
-            btnGeneral.style.cssText = 'padding: 0.4rem 1rem; border: 2px solid #333; border-radius: 6px; background: white; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #333;';
-            btnEspecifico.style.cssText = 'padding: 0.4rem 1rem; border: 1px solid #ddd; border-radius: 6px; background: #f9f9f9; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #999;';
+            // Modo GENERAL activo
+            btnGeneral.style.cssText = 'padding: 0.4rem 1rem; border: 2px solid #333; border-radius: 6px; background: white; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #333; opacity: 1;';
+            btnGeneral.disabled = false;
+            
+            btnEspecifico.style.cssText = 'padding: 0.4rem 1rem; border: 1px solid #ddd; border-radius: 6px; background: #f9f9f9; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #999; opacity: 0.6;';
+            btnEspecifico.disabled = false;
         } else {
-            btnGeneral.style.cssText = 'padding: 0.4rem 1rem; border: 1px solid #ddd; border-radius: 6px; background: #f9f9f9; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #999;';
-            btnEspecifico.style.cssText = 'padding: 0.4rem 1rem; border: 2px solid #333; border-radius: 6px; background: white; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #333;';
+            // Modo ESPECÍFICO activo
+            btnGeneral.style.cssText = 'padding: 0.4rem 1rem; border: 1px solid #ddd; border-radius: 6px; background: #f9f9f9; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #999; opacity: 0.6;';
+            btnGeneral.disabled = false;
+            
+            btnEspecifico.style.cssText = 'padding: 0.4rem 1rem; border: 2px solid #333; border-radius: 6px; background: white; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #333; opacity: 1;';
+            btnEspecifico.disabled = false;
         }
     }
 
@@ -109,6 +118,12 @@ window.cambiarModoModalPorTallas = function(nuevoModo) {
             containerGeneral.style.display = 'none';
             containerEspecifico.style.display = 'block';
         }
+    }
+
+    // ⚡ Registrar cambio de modo en el editor de procesos
+    if (window.procesosEditor && procesoPorTallasActual) {
+        window.procesosEditor.registrarCambioModoTallas(nuevoModo);
+        console.log('[por-tallas] 📊 Cambio de modo registrado en editor:', nuevoModo);
     }
 
     console.log('[por-tallas] Cambiado a modo:', nuevoModo);
@@ -314,7 +329,9 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
         datosCompletos: window.procesosSeleccionados?.[tipoProceso]?.datos,
         datosExistentes,
         tieneDatatos: !!datosExistentes,
-        estructuraDatos: datosExistentes ? Object.keys(datosExistentes) : 'VACIO'
+        estructuraDatos: datosExistentes ? Object.keys(datosExistentes) : 'VACIO',
+        modo_tallas_directo: window.procesosSeleccionados?.[tipoProceso]?.datos?.modo_tallas,
+        todosLosCampos: window.procesosSeleccionados?.[tipoProceso]?.datos ? Object.keys(window.procesosSeleccionados?.[tipoProceso]?.datos).slice(0, 20) : 'SIN DATOS'
     });
 
     // ─── Recuperar datos generales si existen ───
@@ -425,6 +442,34 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
         if (document.getElementById('seccion-caballero-modo-general')) {
             document.getElementById('seccion-caballero-modo-general').style.display = 'none';
         }
+    }
+
+    // ─── Restaurar modo actual (general o especifico) ───
+    const modoGuardado = datosGenerales?.modo_tallas || 'general';
+    
+    console.log('[por-tallas] 📊 Modo guardado detectado:', {
+        tipoProceso: tipoProceso,
+        modo: modoGuardado,
+        datosGenerales_modo: datosGenerales?.modo_tallas,
+        datosGenerales_tipo: datosGenerales?.tipo,
+        datosGenerales_id: datosGenerales?.id,
+        datosGenerales_exists: !!datosGenerales,
+        procesosSeleccionados_keys: Object.keys(window.procesosSeleccionados || {}),
+        datosGenerales_allKeys: datosGenerales ? Object.keys(datosGenerales).slice(0, 10) : 'N/A'
+    });
+    
+    // 🔴 CRÍTICO: Si modo_tallas no se encontró en datos, intentar desde la relación tipoProceso
+    let modoFinal = modoGuardado;
+    if (!datosGenerales?.modo_tallas && datosGenerales?.tipoProceso?.modo_tallas) {
+        modoFinal = datosGenerales.tipoProceso.modo_tallas;
+        console.warn('[por-tallas] ⚠️ modo_tallas rescatado de tipoProceso.modo_tallas:', modoFinal);
+    }
+    
+    // Cambiar al modo correcto (activa los botones correspondientes)
+    if (modoFinal === 'especifico') {
+        cambiarModoModalPorTallas('especifico');
+    } else {
+        cambiarModoModalPorTallas('general');
     }
 
     modal.style.display = 'flex';
@@ -914,7 +959,9 @@ window.guardarProcesoPorTallas = function() {
         };
     }
 
-    window.procesosSeleccionados[procesoPorTallasActual].modoTallas = 'por_tallas';
+    // ⚡ CRÍTICO: Guardar modoTallas en AMBOS niveles (raíz y datos) con el valor CORRECTO
+    // Esto asegura que se copie correctamente sin importar dónde lo busque el código
+    window.procesosSeleccionados[procesoPorTallasActual].modoTallas = modoModalPorTallasActual;  // 'general' o 'especifico'
     window.procesosSeleccionados[procesoPorTallasActual].datos = {
         tipo: procesoPorTallasActual,
         ubicaciones: modoModalPorTallasActual === 'general' ? [ubicacionGeneralTemp] : [],

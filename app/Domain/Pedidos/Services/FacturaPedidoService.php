@@ -877,7 +877,7 @@ class FacturaPedidoService
             // Obtener tallas del proceso
             $registrosTallas = \DB::table('pedidos_procesos_prenda_tallas')
                 ->where('proceso_prenda_detalle_id', $proceso->id)
-                ->get(['id', 'genero', 'talla', 'ubicaciones', 'observaciones']);
+                ->get(['id', 'genero', 'talla', 'cantidad', 'ubicaciones', 'observaciones']);
             
             if ($registrosTallas && $registrosTallas->count() > 0) {
                 foreach ($registrosTallas as $tallaProceso) {
@@ -941,11 +941,12 @@ class FacturaPedidoService
                         }
                     } else {
                         // Si no hay colores, usar ubicaciones de la talla directamente
+                        // Obtener cantidad de la tabla pedidos_procesos_prenda_tallas
                         $tallesDetalles[$genero][$talla] = [
                             'ubicaciones' => $ubicaciones,
                             'observaciones' => $tallaProceso->observaciones ?? '',
                             'imagenes' => $imagenesTalla,
-                            'cantidad' => 0
+                            'cantidad' => (int)$tallaProceso->cantidad  // ← USAR LA CANTIDAD DE LA TABLA
                         ];
                     }
                 }

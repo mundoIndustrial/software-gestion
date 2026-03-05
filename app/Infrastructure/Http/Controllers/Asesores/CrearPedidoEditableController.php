@@ -823,12 +823,13 @@ class CrearPedidoEditableController extends Controller
                         // Aceptar tanto datosExtendidos (camelCase) como datos_extendidos (snake_case del normalizer)
                         $datosExtendidos = $proceso['datosExtendidos'] ?? $proceso['datos_extendidos'] ?? null;
                         
-                        // Solo procesar si es modo por_tallas y hay datos extendidos
-                        if ($modeTallas === 'por_tallas' && !empty($datosExtendidos)) {
-                            Log::info('[PASO-7C] Procesando proceso por_tallas', [
+                        // Procesar imágenes por talla si es modo por_tallas O modo especifico (ambos usan datosExtendidos)
+                        if (($modeTallas === 'por_tallas' || $modeTallas === 'especifico') && !empty($datosExtendidos)) {
+                            Log::info('[PASO-7C] Procesando proceso con datosExtendidos', [
                                 'prenda_idx' => $prendaIdx,
                                 'proceso_key' => $procesoKey,
                                 'proceso_numerico' => $procesoNumerico,
+                                'modo_tallas' => $modeTallas,
                                 'datos_extendidos_keys' => array_keys($datosExtendidos),
                             ]);
                             $imagenesPorTallaGuardadas += $this->procesarImagenesPorTalla(

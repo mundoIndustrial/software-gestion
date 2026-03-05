@@ -284,7 +284,7 @@ class PrendaFormCollector {
                         copia[tipoProceso] = {
                             tipo: proceso.tipo || tipoProceso,
                             datos: datosCopiados,
-                            modoTallas: proceso.modoTallas
+                            modoTallas: datosCopiados?.modoTallas || proceso.modoTallas || 'generico'
                         };
                     }
                 });

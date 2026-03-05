@@ -153,6 +153,7 @@ class ProcesosController extends Controller
                 'ubicaciones' => 'nullable|array|min:1',
                 'ubicaciones.*' => 'string|min:1|max:100',
                 'observaciones' => 'nullable|string|max:1000',
+                'modo_tallas' => 'nullable|string|in:general,especifico,por_tallas,generico',
                 'tallas' => 'nullable|json', // Estructura relacional: {DAMA: {S: 10}, CABALLERO: {32: 5}}
                 'datos_adicionales' => 'nullable|array',
             ]);
@@ -163,6 +164,9 @@ class ProcesosController extends Controller
             }
             if (isset($validated['observaciones'])) {
                 $proceso->setObservaciones($validated['observaciones']);
+            }
+            if (isset($validated['modo_tallas'])) {
+                $proceso->modo_tallas = $validated['modo_tallas'];
             }
             if (isset($validated['tallas'])) {
                 $proceso->setTallasRelacional(json_decode($validated['tallas'], true));

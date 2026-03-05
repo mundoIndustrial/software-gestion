@@ -1058,8 +1058,10 @@ class PedidoWebService
             }
 
             // Crear imágenes del proceso usando ProcesoImagenService
+            // Las imágenes por talla-color ya se guardan en el Controller (crearPedidoEditableController)
+            // mediante procesarImagenesPorTalla(), así que aquí solo manejamos imágenes generales
             if (isset($datosProceso['imagenes']) && is_array($datosProceso['imagenes']) && !empty($datosProceso['imagenes'])) {
-                \Log::info('[PedidoWebService] Guardando imágenes del proceso', [
+                \Log::info('[PedidoWebService] Guardando imágenes generales del proceso', [
                     'proceso_id' => $procesoPrenda->id,
                     'cantidad_imagenes' => count($datosProceso['imagenes']),
                 ]);
@@ -1208,10 +1210,33 @@ class PedidoWebService
                         ]);
 
                         foreach ($data['colores'] as $colorItem) {
-                            $tallaProceso->coloresAsignados()->create([
+                            // Extraer observaciones y ubicaciones desde datosExtendidos
+                            $claveDataExtendidos = "{$tallaReal}__{$colorItem['nombre']}";
+                            $observacionesColor = null;
+                            $ubicacionesColor = null;
+                            
+                            if (!empty($datosExtendidos)) {
+                                $generoKey = strtolower(trim($generoBD));
+                                if (isset($datosExtendidos[$generoKey][$claveDataExtendidos])) {
+                                    $datosColor = $datosExtendidos[$generoKey][$claveDataExtendidos];
+                                    $observacionesColor = $datosColor['observaciones'] ?? null;
+                                    $ubicacionesColor = $datosColor['ubicaciones'] ?? null;
+                                }
+                            }
+                            
+                            $colorCreado = $tallaProceso->coloresAsignados()->create([
                                 'color_nombre' => $colorItem['nombre'],
                                 'tela_nombre' => $telaGuardar,
                                 'cantidad' => (int)$colorItem['cantidad'],
+                                'observaciones' => $observacionesColor,
+                                'ubicaciones' => !empty($ubicacionesColor) ? json_encode($ubicacionesColor) : null,
+                            ]);
+                            
+                            \Log::debug('[PedidoWebService] Color con observaciones guardado', [
+                                'color_id' => $colorCreado->id ?? 'sin_id',
+                                'color_nombre' => $colorItem['nombre'],
+                                'observaciones' => $observacionesColor,
+                                'ubicaciones' => $ubicacionesColor,
                             ]);
                         }
 
@@ -1298,10 +1323,33 @@ class PedidoWebService
                                         $colorCantidad = $colorItem['cantidad'] ?? 1;
                                         
                                         if ($colorNombre) {
-                                            $tallaProceso->coloresAsignados()->create([
+                                            // Intentar obtener observaciones y ubicaciones específicas del color
+                                            $claveColorDataExtendidos = "{$talla}__{$colorNombre}";
+                                            $observacionesColor = null;
+                                            $ubicacionesColor = null;
+                                            
+                                            if (!empty($datosExtendidos)) {
+                                                $generoKey = strtolower(trim($generoBD));
+                                                if (isset($datosExtendidos[$generoKey][$claveColorDataExtendidos])) {
+                                                    $datosColor = $datosExtendidos[$generoKey][$claveColorDataExtendidos];
+                                                    $observacionesColor = $datosColor['observaciones'] ?? null;
+                                                    $ubicacionesColor = $datosColor['ubicaciones'] ?? null;
+                                                }
+                                            }
+                                            
+                                            $colorCreado = $tallaProceso->coloresAsignados()->create([
                                                 'color_nombre' => $colorNombre,
                                                 'tela_nombre' => $telaGuardar,
                                                 'cantidad' => (int)$colorCantidad,
+                                                'observaciones' => $observacionesColor,
+                                                'ubicaciones' => !empty($ubicacionesColor) ? json_encode($ubicacionesColor) : null,
+                                            ]);
+                                            
+                                            \Log::debug('[PedidoWebService] Color con observaciones guardado (flujo normal)', [
+                                                'color_id' => $colorCreado->id ?? 'sin_id',
+                                                'color_nombre' => $colorNombre,
+                                                'observaciones' => $observacionesColor,
+                                                'ubicaciones' => $ubicacionesColor,
                                             ]);
                                         }
                                     }

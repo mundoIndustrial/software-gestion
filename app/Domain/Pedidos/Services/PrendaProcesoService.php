@@ -100,7 +100,7 @@ class PrendaProcesoService
                 $procesoDetalleId = DB::table('pedidos_procesos_prenda_detalles')->insertGetId([
                     'prenda_pedido_id' => $prendaId,
                     'tipo_proceso_id' => $tipoProcesoId,
-                    'ubicaciones' => !empty($proceso['ubicaciones']) ? json_encode($proceso['ubicaciones']) : null,
+                    'ubicaciones' => !empty($proceso['ubicaciones']) ? json_encode($proceso['ubicaciones']) : json_encode([]),
                     'observaciones' => $proceso['observaciones'] ?? null,
                     'modo_tallas' => $modoTallas,
                     // ⚡ ELIMINADO: No guardar tallas_dama, tallas_caballero, datos_adicionales

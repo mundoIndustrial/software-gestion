@@ -78,7 +78,7 @@ class PrendaProcesoService
                 $procesoDetalleId = DB::table('pedidos_procesos_prenda_detalles')->insertGetId([
                     'prenda_pedido_id' => $prendaId,
                     'tipo_proceso_id' => $tipoProcesoId,
-                    'ubicaciones' => !empty($proceso['ubicaciones']) ? $this->normalizarUbicaciones($proceso['ubicaciones']) : null,
+                    'ubicaciones' => !empty($proceso['ubicaciones']) ? $this->normalizarUbicaciones($proceso['ubicaciones']) : json_encode([]),
                     'observaciones' => $proceso['observaciones'] ?? null,
                     'tallas_dama' => null,  // LEGACY - usar tabla relacional
                     'tallas_caballero' => null,  // LEGACY - usar tabla relacional

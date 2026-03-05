@@ -934,6 +934,7 @@ class ObtenerPedidoDetalleService
             'tipo' => $proceso->tipoProceso?->nombre ?? 'Tipo desconocido',
             'ubicaciones' => $proceso->ubicaciones ? (is_array($proceso->ubicaciones) ? $proceso->ubicaciones : (json_decode($proceso->ubicaciones, true) ?? [$proceso->ubicaciones])) : [],
             'observaciones' => $proceso->observaciones ?? '',
+            'modo_tallas' => $proceso->modo_tallas ?? 'general',
             'tallas' => $tallas,
             'datosExtendidos' => $datosExtendidos,
             'imagenes' => $proceso->imagenes->map(function($img) {

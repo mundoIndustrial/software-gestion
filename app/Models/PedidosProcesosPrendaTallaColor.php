@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $color_nombre
  * @property string $tela_nombre
  * @property int $cantidad
+ * @property string|null $observaciones Observaciones específicas para este color-talla
+ * @property array|null $ubicaciones Ubicaciones en formato JSON para este color-talla
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
  */
@@ -28,6 +30,8 @@ class PedidosProcesosPrendaTallaColor extends Model
         'color_nombre',
         'tela_nombre',
         'cantidad',
+        'observaciones',
+        'ubicaciones',
     ];
 
     protected $casts = [

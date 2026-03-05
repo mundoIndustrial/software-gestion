@@ -40,7 +40,12 @@ class PrendaEditorProcesos {
             if (Array.isArray(prenda.procesos)) {
                 // Si es array, convertir a objeto con keys
                 prenda.procesos.forEach((proceso, idx) => {
-                    const tipoOriginal = proceso.tipo || proceso.nombre || `proceso_${idx}`;
+                    // 🔴 CRÍTICO: Extraer nombre del tipo de proceso - puede venir en diferentes formatos
+                    let tipoOriginal = proceso.tipo 
+                        || proceso.nombre 
+                        || (proceso.tipoProceso && proceso.tipoProceso.nombre)  // ← Nombre desde relación anidada (servidor)
+                        || `proceso_${idx}`;
+                    
                     // 🔴 Normalizar a lowercase para que matchee iconos/nombres del renderizador
                     const tipo = tipoOriginal.toLowerCase().trim();
                     
@@ -72,6 +77,16 @@ class PrendaEditorProcesos {
                         tipo: tipo,
                         datos: datosNormalizados
                     };
+                    
+                    // 🔴 CRÍTICO: Verificar que modo_tallas existe y se propagó correctamente
+                    console.log(`[PROCESOS-LOADER] 🎯 Proceso "${tipo}" cargado:`, {
+                        tipo: tipo,
+                        procesoId: datosNormalizados.id,
+                        modo_tallas_desde_servidor: datosNormalizados.modo_tallas,
+                        modo_tallas_en_window: window.procesosSeleccionados[tipo].datos.modo_tallas,
+                        tipoProcesoNested: datosNormalizados.tipoProceso?.nombre,
+                        datosKeys: Object.keys(datosNormalizados).slice(0, 15)  // Primeros 15 campos
+                    });
                     
                     // DEBUG: Registrar datosExtendidos si existen
                     if (datosNormalizados.datosExtendidos) {
