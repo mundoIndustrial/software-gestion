@@ -27,6 +27,25 @@ let fotosGeneralesTemp = []; // NUEVAS fotos agregadas por el usuario
 let fotosGeneralesFilesTemp = []; // Archivos de fotos nuevas compartidas
 let ubicacionGeneralTemp = ''; // Almacena ubicación compartida
 
+// ─── Variables para manejo de listener de paste ───
+// El listener se registra en el modal, no en document (mejor práctica)
+let modalPasteListenerRegistrado = false;
+
+// ─── Flag para evitar procesar múltiples pastes simultáneos ───
+let procesandoPasteEvent = false;
+
+// ─── Listener global de PASTE en document (capture phase) ───
+window.pasteListenerPorTallas = function(e) {
+    const modal = document.getElementById('modal-proceso-por-tallas');
+    if (!modal || modal.style.display === 'none') return;
+    
+    console.log('[pasteListenerPorTallas] 📋 PASTE detectado en document');
+    handlePasteGlobalPorTallas(e);
+};
+
+// Registrar listener globalmente en capture phase (máxima prioridad)
+document.addEventListener('paste', window.pasteListenerPorTallas, true);
+
 const iconosPorTallas = {
     reflectivo: 'light_mode',
     bordado: 'auto_awesome',
@@ -76,6 +95,24 @@ const nombresPorTallas = {
     dtf: 'DTF',
     sublimado: 'Sublimado'
 };
+
+/**
+ * Registra el listener de paste EN EL MODAL (mejor práctica que listener global)
+ * Se ejecuta solo una vez al abrir el modal
+ */
+function registrarListenerPasteEnModal() {
+    // El listener ya está registrado globalmente en document (capture phase)
+    // No necesitamos hacer nada aquí
+    console.log('[PASTE-LISTENER] ✅ Listener global ya activo en document');
+}
+
+/**
+ * Desregistra el listener de paste del modal al cerrarlo
+ */
+function desregistrarListenerPasteDelModal() {
+    // El listener global permanece activo pero no procesará nada si el modal está oculto
+    console.log('[PASTE-LISTENER] Modal cerrado, listener global permanece en standby');
+}
 
 /**
  * Cambiar el modo de configuración del modal (General ↔ Específico)
@@ -147,11 +184,41 @@ function agregarImagenesGenerales(files) {
     const validos = Array.from(files).filter(f => f.type.startsWith('image/'));
     if (validos.length === 0) return;
 
-    validos.forEach(file => {
+    console.log('[agregarImagenesGenerales] 📸 Intentando agregar', validos.length, 'imágenes');
+    
+    // Procesar cada archivo y calcular su hash para detectar duplicados
+    validos.forEach((file, idx) => {
+        console.log('[agregarImagenesGenerales]   Archivo', idx, ':', file.name, file.size, 'bytes');
+        
+        // Crear una clave única para el archivo basada en nombre + tamaño + tipo
+        // (no es un hash criptográfico real, pero funciona para detectar duplicados)
+        const fileKey = `${file.name}_${file.size}_${file.type}`;
+        
+        // Verificar si ya existe una imagen con la misma clave en fotosGeneralesTemp
+        const yaExiste = window._fotosGeneralesKeys && window._fotosGeneralesKeys.has(fileKey);
+        
+        if (yaExiste) {
+            console.warn('[agregarImagenesGenerales] ⚠️ DUPLICADO DETECTADO:', fileKey, '- Ignorando');
+            return; // Skip this file
+        }
+        
+        // Inicializar el Set si no existe
+        if (!window._fotosGeneralesKeys) {
+            window._fotosGeneralesKeys = new Set();
+        }
+        
+        // Marcar como procesado
+        window._fotosGeneralesKeys.add(fileKey);
+        
+        // Agregar a los arrays
         const blobUrl = URL.createObjectURL(file);
         fotosGeneralesTemp.push(blobUrl);
         fotosGeneralesFilesTemp.push(file);
+        
+        console.log('[agregarImagenesGenerales] ✅ Imagen agregada:', fileKey);
     });
+    
+    console.log('[agregarImagenesGenerales] 🎉 Total en fotosGeneralesTemp después:', fotosGeneralesTemp.length);
     renderizarGaleriaFotosGenerales();
 }
 
@@ -190,6 +257,10 @@ function renderizarGaleriaFotosGenerales() {
             </div>
         </div>
     `;
+
+    // Resetear flag de configuración después de redibujar para que se reconfiguren los listeners
+    // (aunque innerHTML remueve los listeners, necesitamos limpiar el flag también)
+    galeria._dragDropConfigured = false;
 
     // Reconfigurar drag & drop después de redibujar
     configurarDragDropPasteGeneral();
@@ -358,6 +429,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
     fotosGeneralesExistentes = [];
     fotosGeneralesTemp = [];
     fotosGeneralesFilesTemp = [];
+    window._fotosGeneralesKeys = new Set(); // Resetear Set de claves para detectar duplicados
     
     if (datosGenerales?.fotosGenerales && Array.isArray(datosGenerales.fotosGenerales)) {
         fotosGeneralesExistentes = [...datosGenerales.fotosGenerales];
@@ -473,10 +545,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
     }
 
     modal.style.display = 'flex';
-    
-    // Activar listener global de paste (Ctrl+V) en capture phase
-    // para interceptar ANTES de que contenteditable lo capture
-    document.addEventListener('paste', handlePasteGlobalPorTallas, true);
+    console.log('[abrirModalProcesoPorTallas] ✅ Modal abierto, listener global de paste activo');
 };
 
 /**
@@ -653,24 +722,29 @@ function agregarImagenesATalla(key, files) {
  * Configura drag & drop y tracking de talla activa para paste
  */
 function configurarDragDropPasteTalla(galeria, key) {
+    // Si ya está configurado, evitar agregar listeners duplicados
+    if (galeria._dragDropPastaTallaConfigured) return;
+
     // ── Drag & Drop ──
-    galeria.addEventListener('dragover', (e) => {
+    const manejadorDragOver = (e) => {
         e.preventDefault();
         e.stopPropagation();
         galeria.style.outline = '2px dashed #3b82f6';
         galeria.style.outlineOffset = '2px';
         galeria.style.background = '#eff6ff';
-    });
+    };
+    galeria.addEventListener('dragover', manejadorDragOver);
 
-    galeria.addEventListener('dragleave', (e) => {
+    const manejadorDragLeave = (e) => {
         e.preventDefault();
         e.stopPropagation();
         galeria.style.outline = '';
         galeria.style.outlineOffset = '';
         galeria.style.background = '';
-    });
+    };
+    galeria.addEventListener('dragleave', manejadorDragLeave);
 
-    galeria.addEventListener('drop', (e) => {
+    const manejadorDrop = (e) => {
         e.preventDefault();
         e.stopPropagation();
         galeria.style.outline = '';
@@ -680,7 +754,8 @@ function configurarDragDropPasteTalla(galeria, key) {
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
             agregarImagenesATalla(key, e.dataTransfer.files);
         }
-    });
+    };
+    galeria.addEventListener('drop', manejadorDrop);
 
     // ── Marcar talla activa al interactuar (click o mouseenter) ──
     const card = galeria.closest('div[style*="border-radius: 12px"]');
@@ -692,22 +767,35 @@ function configurarDragDropPasteTalla(galeria, key) {
         card.addEventListener('click', marcarActiva);
         card.addEventListener('mouseenter', marcarActiva);
     }
+
+    // Marcar como configurado
+    galeria._dragDropPastaTallaConfigured = true;
 }
 
 /**
  * Handler global de paste (Ctrl+V) — activo mientras el modal por tallas esté abierto
  */
 function handlePasteGlobalPorTallas(e) {
-    // Solo procesar si el modal está visible
+    console.log('[handlePasteGlobalPorTallas] 📋 PASTE event processing');
+
     const modal = document.getElementById('modal-proceso-por-tallas');
-    if (!modal || modal.style.display === 'none') return;
+    if (!modal || modal.style.display === 'none') {
+        console.log('[handlePasteGlobalPorTallas] ❌ Modal no visible, ignorando paste');
+        return;
+    }
 
     // Ignorar si el focus está en un input/textarea (el usuario está escribiendo)
     const tag = document.activeElement?.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') {
+        console.log('[handlePasteGlobalPorTallas] ⚠️ Focus en', tag, '- ignorando paste');
+        return;
+    }
 
     const items = e.clipboardData?.items;
-    if (!items) return;
+    if (!items) {
+        console.log('[handlePasteGlobalPorTallas] ❌ No clipboard items');
+        return;
+    }
     
     const files = [];
     for (let i = 0; i < items.length; i++) {
@@ -716,43 +804,49 @@ function handlePasteGlobalPorTallas(e) {
             if (file) files.push(file);
         }
     }
+    
+    console.log('[handlePasteGlobalPorTallas] 📸 Archivos detectados:', files.length);
     if (files.length === 0) return;
 
     e.preventDefault();
     e.stopPropagation();
 
-    // ─── Manejo para FOTOS GENERALES ───
-    if (tallaActivaParaPaste === 'GENERAL') {
-        agregarImagenesGenerales(files);
-        const galeria = document.getElementById('prt-galeria-general');
-        if (galeria) {
-            galeria.style.outline = '2px solid #22c55e';
-            galeria.style.outlineOffset = '2px';
-            setTimeout(() => { galeria.style.outline = ''; galeria.style.outlineOffset = ''; }, 600);
+    try {
+        // ─── Manejo para FOTOS GENERALES ───
+        if (tallaActivaParaPaste === 'GENERAL') {
+            console.log('[handlePasteGlobalPorTallas] 🖼️ Agregando a GENERAL');
+            agregarImagenesGenerales(files);
+            const galeria = document.getElementById('prt-galeria-general');
+            if (galeria) {
+                galeria.style.outline = '2px solid #22c55e';
+                galeria.style.outlineOffset = '2px';
+                setTimeout(() => { galeria.style.outline = ''; galeria.style.outlineOffset = ''; }, 600);
+            }
+            return;
         }
-        return;
-    }
 
-    // ─── Manejo para FOTOS POR TALLA (específico) ───
-    // Determinar a qué talla agregar
-    let targetKey = tallaActivaParaPaste;
+        // ─── Manejo para FOTOS POR TALLA (específico) ───
+        let targetKey = tallaActivaParaPaste;
 
-    // Si no hay talla activa, usar la primera disponible
-    if (!targetKey || !datosPorTallaTemp[targetKey]) {
-        const keys = Object.keys(datosPorTallaTemp);
-        if (keys.length > 0) targetKey = keys[0];
-    }
-
-    if (targetKey && datosPorTallaTemp[targetKey]) {
-        agregarImagenesATalla(targetKey, files);
-        // Flash visual en la galería destino
-        const safeKey = convertirAKeySegura(targetKey);
-        const gal = document.getElementById(`prt-galeria-${safeKey}`);
-        if (gal) {
-            gal.style.outline = '2px solid #22c55e';
-            gal.style.outlineOffset = '2px';
-            setTimeout(() => { gal.style.outline = ''; gal.style.outlineOffset = ''; }, 600);
+        // Si no hay talla activa, usar la primera disponible
+        if (!targetKey || !datosPorTallaTemp[targetKey]) {
+            const keys = Object.keys(datosPorTallaTemp);
+            if (keys.length > 0) targetKey = keys[0];
         }
+
+        if (targetKey && datosPorTallaTemp[targetKey]) {
+            console.log('[handlePasteGlobalPorTallas] 🖼️ Agregando a talla:', targetKey);
+            agregarImagenesATalla(targetKey, files);
+            const safeKey = convertirAKeySegura(targetKey);
+            const gal = document.getElementById(`prt-galeria-${safeKey}`);
+            if (gal) {
+                gal.style.outline = '2px solid #22c55e';
+                gal.style.outlineOffset = '2px';
+                setTimeout(() => { gal.style.outline = ''; gal.style.outlineOffset = ''; }, 600);
+            }
+        }
+    } catch (error) {
+        console.error('[handlePasteGlobalPorTallas] ❌ Error:', error);
     }
 }
 
@@ -823,6 +917,12 @@ function renderizarGaleriaFotos(key) {
             </div>
         </div>
     `;
+
+    // Resetear flag de configuración para que se reconfiguren los listeners
+    galeria._dragDropPastaTallaConfigured = false;
+
+    // Reconfigurar drag & drop después de redibujar
+    configurarDragDropPasteTalla(galeria, key);
 }
 
 /**
@@ -1007,7 +1107,9 @@ window.guardarProcesoPorTallas = function() {
     const modal = document.getElementById('modal-proceso-por-tallas');
     if (modal) modal.style.display = 'none';
 
-    document.removeEventListener('paste', handlePasteGlobalPorTallas, true);
+    // Desregistrar el listener del modal
+    desregistrarListenerPasteDelModal();
+    procesandoPasteEvent = false; // Resetear flag de protección
     tallaActivaParaPaste = null;
     procesoPorTallasActual = null;
     datosPorTallaTemp = {};
@@ -1024,7 +1126,9 @@ window.cerrarModalProcesoPorTallas = function() {
     const modal = document.getElementById('modal-proceso-por-tallas');
     if (modal) modal.style.display = 'none';
 
-    document.removeEventListener('paste', handlePasteGlobalPorTallas, true);
+    // Desregistrar el listener del modal
+    desregistrarListenerPasteDelModal();
+    procesandoPasteEvent = false; // Resetear flag de protección
     tallaActivaParaPaste = null;
 
     // Desmarcar checkbox si no tiene datos guardados
@@ -1112,28 +1216,33 @@ window.eliminarFotoGeneral = function(index, esExistente) {
  */
 function configurarDragDropPasteGeneral() {
     const galeria = document.getElementById('prt-galeria-general');
-    if (!galeria || galeria._dragDropConfigured) return;
+    if (!galeria) return;
+
+    // Si ya está completamente configurado, NO hacer nada para evitar listeners duplicados
+    if (galeria._dragDropConfigured) return;
 
     // ─── Drag Over ───
-    galeria.addEventListener('dragover', (e) => {
+    const manejadorDragOver = (e) => {
         e.preventDefault();
         e.stopPropagation();
         galeria.style.outline = '2px dashed #333';
         galeria.style.outlineOffset = '2px';
         galeria.style.background = '#f0f0f0';
-    });
+    };
+    galeria.addEventListener('dragover', manejadorDragOver);
 
     // ─── Drag Leave ───
-    galeria.addEventListener('dragleave', (e) => {
+    const manejadorDragLeave = (e) => {
         e.preventDefault();
         e.stopPropagation();
         galeria.style.outline = '';
         galeria.style.outlineOffset = '';
         galeria.style.background = '';
-    });
+    };
+    galeria.addEventListener('dragleave', manejadorDragLeave);
 
     // ─── Drop ───
-    galeria.addEventListener('drop', (e) => {
+    const manejadorDrop = (e) => {
         e.preventDefault();
         e.stopPropagation();
         galeria.style.outline = '';
@@ -1143,12 +1252,20 @@ function configurarDragDropPasteGeneral() {
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
             agregarImagenesGenerales(e.dataTransfer.files);
         }
-    });
+    };
+    galeria.addEventListener('drop', manejadorDrop);
 
     // ─── Mouse Enter: Marcar para paste ───
-    galeria.addEventListener('mouseenter', () => {
+    const manejadorMouseEnter = () => {
         tallaActivaParaPaste = 'GENERAL';
-    });
+    };
+    galeria.addEventListener('mouseenter', manejadorMouseEnter);
+
+    // Guardar referencias para poder remover después si es necesario
+    galeria._manejadorDragOver = manejadorDragOver;
+    galeria._manejadorDragLeave = manejadorDragLeave;
+    galeria._manejadorDrop = manejadorDrop;
+    galeria._manejadorMouseEnter = manejadorMouseEnter;
 
     // Marcar como configurado para evitar listeners duplicados
     galeria._dragDropConfigured = true;
