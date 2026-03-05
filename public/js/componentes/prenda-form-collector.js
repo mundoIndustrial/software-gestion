@@ -252,7 +252,7 @@ class PrendaFormCollector {
                 const copia = {};
                 Object.entries(procesos).forEach(([tipoProceso, proceso]) => {
                     if (proceso && typeof proceso === 'object') {
-                        // Deep copy completo de datos (incluye tallas, ubicaciones, observaciones, imagenes)
+                        // Deep copy completo de datos (incluye tallas, ubicaciones, observaciones, imagenes, datosExtendidos)
                         let datosCopiados = null;
                         if (proceso.datos && typeof proceso.datos === 'object') {
                             datosCopiados = {
@@ -260,11 +260,31 @@ class PrendaFormCollector {
                                 ubicaciones: Array.isArray(proceso.datos.ubicaciones) ? [...proceso.datos.ubicaciones] : (proceso.datos.ubicaciones || []),
                                 tallas: proceso.datos.tallas ? JSON.parse(JSON.stringify(proceso.datos.tallas)) : {},
                                 imagenes: Array.isArray(proceso.datos.imagenes) ? [...proceso.datos.imagenes] : [],
+                                // 🔴 CRÍTICO: Preservar datosExtendidos con imagenesFiles (File objects)
+                                datosExtendidos: proceso.datos.datosExtendidos ? JSON.parse(JSON.stringify(proceso.datos.datosExtendidos)) : {}
                             };
+                            
+                            // 🔴 Restaurar imagenesFiles arrays que se pierden en JSON.stringify
+                            // JSON.stringify pierde referencias a File objects, pero imagenesFiles debería estar
+                            // Copiar arrays de Files directamente (NO mediante JSON)
+                            if (proceso.datos.datosExtendidos && typeof proceso.datos.datosExtendidos === 'object') {
+                                Object.entries(proceso.datos.datosExtendidos).forEach(([genero, tallasDatos]) => {
+                                    if (tallasDatos && typeof tallasDatos === 'object') {
+                                        Object.entries(tallasDatos).forEach(([talla, tallaData]) => {
+                                            if (tallaData && Array.isArray(tallaData.imagenesFiles)) {
+                                                // Copiar array de Files directamente (no pueden serializarse vía JSON)
+                                                datosCopiados.datosExtendidos[genero][talla].imagenesFiles = [...tallaData.imagenesFiles];
+                                                console.log(`[copiarProcesos] ✅ imagenesFiles preservados para ${genero}__${talla}:`, tallaData.imagenesFiles.length, 'files');
+                                            }
+                                        });
+                                    }
+                                });
+                            }
                         }
                         copia[tipoProceso] = {
                             tipo: proceso.tipo || tipoProceso,
-                            datos: datosCopiados
+                            datos: datosCopiados,
+                            modoTallas: proceso.modoTallas
                         };
                     }
                 });

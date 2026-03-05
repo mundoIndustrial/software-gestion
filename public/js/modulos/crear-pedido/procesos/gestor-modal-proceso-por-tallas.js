@@ -28,6 +28,40 @@ const iconosPorTallas = {
     sublimado: 'palette'
 };
 
+/**
+ * Construye la estructura imagenes_por_talla a partir de datosExtendidos
+ * Transforma: datosExtendidos[genero][tallaKey] → imagenes_por_talla[genero__tallaKey]
+ */
+function construirImagenesPorTalla(datosExtendidos) {
+    const imagenesPorTalla = {};
+    
+    Object.entries(datosExtendidos).forEach(([genero, tallasDatos]) => {
+        if (!tallasDatos || typeof tallasDatos !== 'object') return;
+        
+        Object.entries(tallasDatos).forEach(([tallaKey, tallaData]) => {
+            if (!tallaData || !tallaData.imagenes) return;
+            
+            // Clave combinada: "genero__tallaKey"
+            const claveCombinada = `${genero}__${tallaKey}`;
+            
+            // Solo incluir si hay imágenes
+            if (tallaData.imagenes && tallaData.imagenes.length > 0) {
+                imagenesPorTalla[claveCombinada] = tallaData.imagenes;
+            }
+        });
+    });
+    
+    return imagenesPorTalla;
+}
+
+/**
+ * Convierte una clave actual (con espacios) a una clave segura (solo alfanuméricos e guiones bajos/guiones)
+ * Usado para generar IDs válidos en HTML a partir de claves de datos
+ */
+function convertirAKeySegura(actualKey) {
+    return actualKey.replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
 const nombresPorTallas = {
     reflectivo: 'Reflectivo',
     bordado: 'Bordado',
@@ -146,7 +180,9 @@ function crearTarjetaTalla(genero, tallaKey, cantidad, datos) {
     const bgColor = esRosa ? '#fdf2f8' : '#eff6ff';
     const accentColor = esRosa ? '#ec4899' : '#1d4ed8';
     const dashedColor = esRosa ? '#f9a8d4' : '#93c5fd';
-    const safeKey = `${genero}__${tallaKey}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+    // IMPORTANTE: Usar actualKey (con espacios) para data-key, y safeKey (con underscores) solo para IDs HTML
+    const actualKey = `${genero}__${tallaKey}`;
+    const safeKey = actualKey.replace(/[^a-zA-Z0-9_-]/g, '_');
     const checkboxId = `checkbox-${safeKey}`;
     const inputCantidadId = `cantidad-${safeKey}`;
 
@@ -192,7 +228,7 @@ function crearTarjetaTalla(genero, tallaKey, cantidad, datos) {
         <label style="font-size: 0.8rem; font-weight: 700; color: #374151; display: flex; align-items: center; gap: 0.35rem;">
             <span class="material-symbols-rounded" style="font-size: 1rem;">location_on</span>Ubicación(es)
         </label>
-        <textarea class="prt-ubicacion-input" data-key="${safeKey}" placeholder="Ej: Frente, Espalda..."
+        <textarea class="prt-ubicacion-input" data-key="${actualKey}" placeholder="Ej: Frente, Espalda..."
             style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.85rem; min-height: 55px; resize: vertical; box-sizing: border-box;"
         >${(datos.ubicaciones || []).join(', ')}</textarea>
     `;
@@ -205,7 +241,7 @@ function crearTarjetaTalla(genero, tallaKey, cantidad, datos) {
         <label style="font-size: 0.8rem; font-weight: 700; color: #374151; display: flex; align-items: center; gap: 0.35rem;">
             <span class="material-symbols-rounded" style="font-size: 1rem;">description</span>Observaciones
         </label>
-        <textarea class="prt-observaciones" data-key="${safeKey}" placeholder="Instrucciones especiales para esta talla..."
+        <textarea class="prt-observaciones" data-key="${actualKey}" placeholder="Instrucciones especiales para esta talla..."
             style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.85rem; min-height: 55px; resize: vertical;"
         >${datos.observaciones}</textarea>
     `;
@@ -221,7 +257,7 @@ function crearTarjetaTalla(genero, tallaKey, cantidad, datos) {
     const thumbsExistentes = (datos.imagenes || []).map((src, idx) => `
         <div style="position:relative; width:70px; height:70px; border-radius:6px; overflow:hidden; border:2px solid ${borderColor}; flex-shrink:0;">
             <img src="${src}" style="width:100%;height:100%;object-fit:cover;">
-            <button type="button" onclick="eliminarFotoPorTalla('${safeKey}', ${idx})"
+            <button type="button" onclick="eliminarFotoPorTalla('${actualKey}', ${idx})"
                 style="position:absolute;top:2px;right:2px;background:rgba(220,38,38,0.85);color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;">&times;</button>
         </div>
     `).join('');
@@ -240,7 +276,7 @@ function crearTarjetaTalla(genero, tallaKey, cantidad, datos) {
                 </div>
             </div>
         </div>
-        <input type="file" id="${inputFileId}" accept="image/*" multiple style="display:none;" onchange="cargarFotosPorTalla('${safeKey}', this)">
+        <input type="file" id="${inputFileId}" accept="image/*" multiple style="display:none;" onchange="cargarFotosPorTalla('${actualKey}', this)">
     `;
     contenidoDiv.appendChild(fotoDiv);
 
@@ -253,7 +289,7 @@ function crearTarjetaTalla(genero, tallaKey, cantidad, datos) {
 
         if (checkbox) {
             checkbox.addEventListener('change', () => {
-                datosPorTallaTemp[safeKey].seleccionada = checkbox.checked;
+                datosPorTallaTemp[actualKey].seleccionada = checkbox.checked;
                 // Cambiar opacidad del contenido
                 contenidoDiv.style.opacity = checkbox.checked ? '1' : '0.5';
                 contenidoDiv.style.pointerEvents = checkbox.checked ? 'auto' : 'none';
@@ -263,14 +299,14 @@ function crearTarjetaTalla(genero, tallaKey, cantidad, datos) {
         if (inputCantidad) {
             inputCantidad.addEventListener('change', () => {
                 const nuevaCantidad = Math.max(0, parseInt(inputCantidad.value) || cantidad);
-                datosPorTallaTemp[safeKey].cantidadSeleccionada = nuevaCantidad;
+                datosPorTallaTemp[actualKey].cantidadSeleccionada = nuevaCantidad;
                 inputCantidad.value = nuevaCantidad;
             });
         }
 
         // Configurar Drag & Drop + Paste en la galería
         const galeria = document.getElementById(galeriaId);
-        if (galeria) configurarDragDropPasteTalla(galeria, safeKey);
+        if (galeria) configurarDragDropPasteTalla(galeria, actualKey);
     }, 0);
 
     return card;
@@ -376,7 +412,8 @@ function handlePasteGlobalPorTallas(e) {
     if (targetKey && datosPorTallaTemp[targetKey]) {
         agregarImagenesATalla(targetKey, files);
         // Flash visual en la galería destino
-        const gal = document.getElementById(`prt-galeria-${targetKey}`);
+        const safeKey = convertirAKeySegura(targetKey);
+        const gal = document.getElementById(`prt-galeria-${safeKey}`);
         if (gal) {
             gal.style.outline = '2px solid #22c55e';
             gal.style.outlineOffset = '2px';
@@ -417,7 +454,9 @@ window.eliminarFotoPorTalla = function(key, index) {
  * Re-renderiza la galería de fotos para una talla
  */
 function renderizarGaleriaFotos(key) {
-    const galeria = document.getElementById(`prt-galeria-${key}`);
+    // key es la actualKey con espacios, convertir a safeKey para buscar elementos DOM
+    const safeKey = convertirAKeySegura(key);
+    const galeria = document.getElementById(`prt-galeria-${safeKey}`);
     if (!galeria || !datosPorTallaTemp[key]) return;
 
     const datos = datosPorTallaTemp[key];
@@ -425,7 +464,7 @@ function renderizarGaleriaFotos(key) {
     const esRosa = keyParts[0] === 'dama';
     const borderColor = esRosa ? '#fbcfe8' : '#93c5fd';
     const dashedColor = esRosa ? '#f9a8d4' : '#93c5fd';
-    const inputFileId = `prt-foto-input-${key}`;
+    const inputFileId = `prt-foto-input-${safeKey}`;
 
     const thumbs = (datos.imagenes || []).map((src, idx) => `
         <div style="position:relative; width:70px; height:70px; border-radius:6px; overflow:hidden; border:2px solid ${borderColor}; flex-shrink:0;">
@@ -525,6 +564,15 @@ window.guardarProcesoPorTallas = function() {
         // Usar la cantidad seleccionada (editada) en lugar de la cantidad original
         tallas[genero][tallaKey] = datos.cantidadSeleccionada;
 
+        console.log('[GUARDAR-POR-TALLAS] Guardando datosExtendidos para:', key, {
+            cantidadSeleccionada: datos.cantidadSeleccionada,
+            ubicaciones: datos.ubicaciones,
+            observaciones: datos.observaciones,
+            imagenesCount: datos.imagenes?.length,
+            imagenesFilesCount: datos.imagenesFiles?.length,
+            imagenesFilesTypes: datos.imagenesFiles?.map((f, i) => `${i}: ${f instanceof File ? 'File' : typeof f}`)
+        });
+
         datosExtendidos[genero][tallaKey] = {
             cantidadSeleccionada: datos.cantidadSeleccionada,
             ubicaciones: datos.ubicaciones || [],
@@ -555,7 +603,8 @@ window.guardarProcesoPorTallas = function() {
         imagenes: [],
         imagenesEliminadas: [],
         datosExtendidos: datosExtendidos,
-        modoTallas: 'por_tallas'  // NUEVO: Incluir modo_tallas dentro de datos también
+        modoTallas: 'por_tallas',  // NUEVO: Incluir modo_tallas dentro de datos también
+        imagenes_por_talla: construirImagenesPorTalla(datosExtendidos)  // NUEVO: Estructura para servicio de API
     };
 
     console.log('[por-tallas] Proceso guardado:', procesoPorTallasActual, window.procesosSeleccionados[procesoPorTallasActual]);

@@ -23,6 +23,7 @@ use App\Application\Services\ColorTelaService;
 use App\Domain\Pedidos\DTOs\PedidoNormalizadorDTO;
 use App\Domain\Pedidos\Services\ResolutorImagenesService;
 use App\Domain\Pedidos\Services\MapeoImagenesService;
+use App\Domain\Pedidos\Services\ProcesoImagenService;
 
 /**
  * CrearPedidoEditableController
@@ -47,7 +48,8 @@ class CrearPedidoEditableController extends Controller
         private ImageUploadService $imageUploadService,
         private ColorTelaService $colorTelaService,
         private ResolutorImagenesService $resolutorImagenes,
-        private MapeoImagenesService $mapeoImagenes
+        private MapeoImagenesService $mapeoImagenes,
+        private ProcesoImagenService $procesoImagenService
     ) {}
 
     /**
@@ -803,6 +805,54 @@ class CrearPedidoEditableController extends Controller
                     'epps_count' => count($eppsCrudos),
                     'tiempo_ms' => $tiempoPaso7B,
                 ]);
+            }
+
+            // ====== PASO 7C: Procesar imágenes por talla (modo por_tallas) ======
+            $tiempoPaso7C = 0;
+            $prendas = $datosFrontend['prendas'] ?? [];
+            if (!empty($prendas)) {
+                $inicioPaso7C = microtime(true);
+                $imagenesPorTallaGuardadas = 0;
+                
+                foreach ($prendas as $prendaIdx => $prenda) {
+                    $procesos = $prenda['procesos'] ?? [];
+                    $procesoNumerico = 0; // Contador numérico para offset en BD
+                    foreach ($procesos as $procesoKey => $proceso) {
+                        $modeTallas = $proceso['modo_tallas'] ?? 'para_todas';
+                        
+                        // Aceptar tanto datosExtendidos (camelCase) como datos_extendidos (snake_case del normalizer)
+                        $datosExtendidos = $proceso['datosExtendidos'] ?? $proceso['datos_extendidos'] ?? null;
+                        
+                        // Solo procesar si es modo por_tallas y hay datos extendidos
+                        if ($modeTallas === 'por_tallas' && !empty($datosExtendidos)) {
+                            Log::info('[PASO-7C] Procesando proceso por_tallas', [
+                                'prenda_idx' => $prendaIdx,
+                                'proceso_key' => $procesoKey,
+                                'proceso_numerico' => $procesoNumerico,
+                                'datos_extendidos_keys' => array_keys($datosExtendidos),
+                            ]);
+                            $imagenesPorTallaGuardadas += $this->procesarImagenesPorTalla(
+                                $request,
+                                $pedidoId,
+                                $prendaIdx,
+                                $procesoNumerico, // Usar índice numérico, no el key string
+                                $procesoKey,       // Pasar el key del proceso (ej: "bordado")
+                                $datosExtendidos
+                            );
+                        }
+                        $procesoNumerico++;
+                    }
+                }
+                
+                $tiempoPaso7C = round((microtime(true) - $inicioPaso7C) * 1000, 2);
+                
+                if ($imagenesPorTallaGuardadas > 0) {
+                    Log::info('[CREAR-PEDIDO]  PASO 7C: Imágenes por talla procesadas', [
+                        'pedido_id' => $pedidoId,
+                        'imagenes_guardadas' => $imagenesPorTallaGuardadas,
+                        'tiempo_ms' => $tiempoPaso7C,
+                    ]);
+                }
             }
 
             // ====== PASO 8: Calcular cantidades y commit ======
@@ -2195,6 +2245,151 @@ class CrearPedidoEditableController extends Controller
                 $this->buscarArchivosAnidados($valor, $nuevaPrefijo, $archivos);
             }
         }
+    }
+
+    /**
+     * Procesa las imágenes cargadas para "modo por_tallas"
+     * Busca archivos en FormData que correspondan a cada talla y los guarda en pedidos_procesos_imagenes
+     * 
+     * @param Request $request
+     * @param int $pedidoId
+     * @param int $prendaIdx
+     * @param int $procesoIdx
+     * @param array $datosExtendidos (genero => [tallaKey => {...}])
+     * @return int Cantidad de imágenes guardadas
+     */
+    private function procesarImagenesPorTalla(
+        Request $request,
+        int $pedidoId,
+        int $prendaIdx,
+        int $procesoNumerico,
+        string $procesoKey,
+        array $datosExtendidos
+    ): int {
+        $contadorGuardadas = 0;
+        
+        try {
+            // Buscar la prenda asociada al pedido (en orden de creación con índice $prendaIdx)
+            $prenda = \DB::table('prendas_pedido')
+                ->where('pedido_produccion_id', $pedidoId)
+                ->orderBy('id')
+                ->offset($prendaIdx)
+                ->limit(1)
+                ->first();
+            
+            if (!$prenda) {
+                Log::warning('[procesarImagenesPorTalla] Prenda no encontrada', [
+                    'pedido_id' => $pedidoId,
+                    'prenda_idx' => $prendaIdx,
+                ]);
+                return 0;
+            }
+            
+            // Obtener el proceso_prenda_detalle en el orden esperado (índice numérico)
+            $procesosDetalles = \DB::table('pedidos_procesos_prenda_detalles')
+                ->where('prenda_pedido_id', $prenda->id)
+                ->orderBy('id')
+                ->get();
+            
+            if ($procesoNumerico >= $procesosDetalles->count()) {
+                Log::warning('[procesarImagenesPorTalla] Proceso no encontrado en índice', [
+                    'prenda_id' => $prenda->id,
+                    'proceso_numerico' => $procesoNumerico,
+                    'proceso_key' => $procesoKey,
+                    'procesos_disponibles' => $procesosDetalles->count(),
+                ]);
+                return 0;
+            }
+            
+            $procesoDetalleId = $procesosDetalles[$procesoNumerico]->id;
+            
+            Log::info('[procesarImagenesPorTalla] Procesando', [
+                'proceso_detalle_id' => $procesoDetalleId,
+                'prenda_idx' => $prendaIdx,
+                'proceso_key' => $procesoKey,
+                'generos' => array_keys($datosExtendidos),
+            ]);
+            
+            // Recorrer generos
+            foreach ($datosExtendidos as $genero => $tallasDatos) {
+                if (!is_array($tallasDatos)) continue;
+                
+                // Recorrer tallas
+                foreach ($tallasDatos as $tallaKey => $tallaData) {
+                    if (!is_array($tallaData)) continue;
+                    
+                    // Parsear tallaKey en "tallaReal" y "colorNombre"
+                    $partes = explode('__', (string)$tallaKey, 2);
+                    $tallaReal = trim($partes[0]);
+                    $colorNombre = isset($partes[1]) ? trim($partes[1]) : null;
+                    
+                    // Buscar el registro de talla en la BD
+                    $tallaRecord = \DB::table('pedidos_procesos_prenda_tallas')
+                        ->where('proceso_prenda_detalle_id', $procesoDetalleId)
+                        ->where('genero', strtoupper($genero))
+                        ->where('talla', $tallaReal)
+                        ->first();
+                    
+                    if (!$tallaRecord) {
+                        Log::warning('[procesarImagenesPorTalla] Registro de talla no encontrado', [
+                            'proceso_prenda_detalle_id' => $procesoDetalleId,
+                            'genero' => $genero,
+                            'talla' => $tallaReal,
+                        ]);
+                        continue;
+                    }
+                    
+                    // Buscar archivos en FormData usando $request->file() con convenio bracket→dot
+                    // Frontend envía: prendas[0][procesos][bordado][datosExtendidos][dama][M][imagenes][0]
+                    // Laravel accede: prendas.0.procesos.bordado.datosExtendidos.dama.M.imagenes.0
+                    $imgIdx = 0;
+                    while (true) {
+                        $formKey = "prendas.{$prendaIdx}.procesos.{$procesoKey}.datosExtendidos.{$genero}.{$tallaKey}.imagenes.{$imgIdx}";
+                        
+                        if (!$request->hasFile($formKey)) {
+                            break;
+                        }
+                        
+                        $archivo = $request->file($formKey);
+                        
+                        try {
+                            $this->procesoImagenService->guardarImagenProceso(
+                                $procesoDetalleId,
+                                $pedidoId,
+                                $archivo,
+                                $imgIdx,
+                                $tallaRecord->id
+                            );
+                            $contadorGuardadas++;
+                            
+                            Log::info('[PASO-7C] Imagen guardada para talla', [
+                                'talla' => "{$tallaReal}" . ($colorNombre ? "_{$colorNombre}" : ''),
+                                'proceso_prenda_talla_id' => $tallaRecord->id,
+                                'archivo' => $archivo->getClientOriginalName(),
+                                'form_key' => $formKey,
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::error('[PASO-7C] Error guardando imagen para talla', [
+                                'talla' => "{$tallaReal}" . ($colorNombre ? "_{$colorNombre}" : ''),
+                                'archivo' => $archivo->getClientOriginalName(),
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
+                        
+                        $imgIdx++;
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('[procesarImagenesPorTalla] Error general', [
+                'pedido_id' => $pedidoId,
+                'prenda_idx' => $prendaIdx,
+                'proceso_key' => $procesoKey,
+                'error' => $e->getMessage(),
+            ]);
+        }
+        
+        return $contadorGuardadas;
     }
 
     /**

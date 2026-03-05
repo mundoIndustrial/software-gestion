@@ -947,36 +947,95 @@ class PedidoWebService
                 foreach ($datosExtendidos as $genero => $tallasDatos) {
                     if (!is_array($tallasDatos)) continue;
                     
-                    foreach ($tallasDatos as $talla => $tallaData) {
+                    // Agrupar tallas por talla real (sin color) para crearlas una sola vez
+                    $tallasAgrupadas = [];
+                    
+                    foreach ($tallasDatos as $tallaKey => $tallaData) {
                         if (!is_array($tallaData)) continue;
                         
-                        $cantidad = $datosProceso['tallas'][$genero][$talla] ?? 0;
-                        $ubicacionesTalla = !empty($tallaData['ubicaciones']) ? json_encode($tallaData['ubicaciones']) : null;
-                        $observacionesTalla = $tallaData['observaciones'] ?? null;
+                        // Separar TALLA__COLOR si está en ese formato (ej: L__AZUL CIELO)
+                        $partes = explode('__', (string)$tallaKey, 2);
+                        $tallaReal = trim($partes[0]);
+                        $colorNombre = isset($partes[1]) ? trim($partes[1]) : null;
                         
-                        // Crear/actualizar en pedidos_procesos_prenda_tallas usando updateOrInsert
-                        DB::table('pedidos_procesos_prenda_tallas')->updateOrInsert(
+                        $cantidad = $datosProceso['tallas'][$genero][$tallaKey] ?? 0;
+                        
+                        // Agrupar datos por talla real
+                        if (!isset($tallasAgrupadas[$tallaReal])) {
+                            $tallasAgrupadas[$tallaReal] = [
+                                'totalCantidad' => 0,
+                                'colores' => [],
+                            ];
+                        }
+                        $tallasAgrupadas[$tallaReal]['totalCantidad'] += (int)$cantidad;
+                        
+                        // Registrar color con sus datos específicos
+                        $tallasAgrupadas[$tallaReal]['colores'][] = [
+                            'nombre' => $colorNombre,
+                            'cantidad' => (int)$cantidad,
+                            'ubicaciones' => $tallaData['ubicaciones'] ?? [],
+                            'observaciones' => $tallaData['observaciones'] ?? '',
+                            'imagenes_talla' => [],  // Las imágenes se manejan aparte
+                        ];
+                    }
+                    
+                    // Crear tallas y luego los colores en tabla relacional
+                    foreach ($tallasAgrupadas as $tallaReal => $tallaAgrupadaData) {
+                        // Crear/actualizar entrada en pedidos_procesos_prenda_tallas
+                        $tallaProceso = DB::table('pedidos_procesos_prenda_tallas')->updateOrInsert(
                             [
                                 'proceso_prenda_detalle_id' => $procesoPrenda->id,
                                 'genero' => strtoupper($genero),
-                                'talla' => $talla,
+                                'talla' => $tallaReal,
                             ],
                             [
-                                'cantidad' => (int)$cantidad,
-                                'ubicaciones' => $ubicacionesTalla,
-                                'observaciones' => $observacionesTalla,
+                                'cantidad' => (int)$tallaAgrupadaData['totalCantidad'],
                                 'updated_at' => now(),
                             ]
                         );
                         
+                        // Obtener el ID de la talla que acabamos de crear/actualizar
+                        $tallaProcesoId = DB::table('pedidos_procesos_prenda_tallas')
+                            ->where('proceso_prenda_detalle_id', $procesoPrenda->id)
+                            ->where('genero', strtoupper($genero))
+                            ->where('talla', $tallaReal)
+                            ->value('id');
+                        
                         \Log::debug('[PedidoWebService] Talla guardada en modo por_tallas', [
                             'proceso_id' => $procesoPrenda->id,
+                            'talla_proceso_id' => $tallaProcesoId,
                             'genero' => strtoupper($genero),
-                            'talla' => $talla,
-                            'cantidad' => (int)$cantidad,
-                            'ubicaciones' => $ubicacionesTalla,
-                            'observaciones' => $observacionesTalla,
+                            'talla_real' => $tallaReal,
+                            'cantidad_total' => (int)$tallaAgrupadaData['totalCantidad'],
+                            'colores_count' => count($tallaAgrupadaData['colores']),
                         ]);
+                        
+                        // Crear colores en pedidos_procesos_prenda_talla_colores
+                        foreach ($tallaAgrupadaData['colores'] as $colorData) {
+                            if (!empty($colorData['nombre'])) {  // Solo si hay color
+                                DB::table('pedidos_procesos_prenda_talla_colores')->updateOrInsert(
+                                    [
+                                        'pedidos_procesos_prenda_talla_id' => $tallaProcesoId,
+                                        'color_nombre' => $colorData['nombre'],
+                                    ],
+                                    [
+                                        'tela_nombre' => null,  // Se puede llenar si está disponible
+                                        'ubicaciones' => !empty($colorData['ubicaciones']) ? json_encode($colorData['ubicaciones']) : null,
+                                        'observaciones' => $colorData['observaciones'] ?? null,
+                                        'cantidad' => (int)$colorData['cantidad'],
+                                        'updated_at' => now(),
+                                    ]
+                                );
+                                
+                                \Log::debug('[PedidoWebService] Color guardado en talla por_tallas', [
+                                    'talla_proceso_id' => $tallaProcesoId,
+                                    'color' => $colorData['nombre'],
+                                    'cantidad' => (int)$colorData['cantidad'],
+                                    'ubicaciones' => $colorData['ubicaciones'],
+                                    'observaciones' => $colorData['observaciones'],
+                                ]);
+                            }
+                        }
                     }
                 }
             } elseif (isset($datosProceso['tallas']) && is_array($datosProceso['tallas'])) {

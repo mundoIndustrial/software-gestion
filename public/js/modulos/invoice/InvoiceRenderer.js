@@ -646,6 +646,7 @@ class InvoiceRenderer {
                                         </div>
                                         ${datos.ubicaciones ? `<div style="color: #666; margin: 1px 0; display: flex; align-items: center; gap: 4px;"><span class="material-symbols-rounded" style="font-size: 14px;">location_on</span> <strong>Ubicación:</strong> ${Array.isArray(datos.ubicaciones) ? datos.ubicaciones.join(', ') : (typeof datos.ubicaciones === 'string' ? JSON.parse(datos.ubicaciones).join(', ') : datos.ubicaciones)}</div>` : ''}
                                         ${datos.observaciones ? `<div style="color: #666; margin: 1px 0; display: flex; align-items: center; gap: 4px;"><span class="material-symbols-rounded" style="font-size: 14px;">notes</span> <strong>Nota:</strong> ${datos.observaciones}</div>` : ''}
+                                        ${datos.imagenes && datos.imagenes.length > 0 ? `<div style="margin-top: 4px; color: #666;"><div style="font-size: 9px; font-weight: 600; color: #6b7280; margin-bottom: 2px;">Imágenes:</div><div style="display: flex; gap: 4px; flex-wrap: wrap;">${datos.imagenes.map(img => `<img src="${window._extraerURLImagen ? window._extraerURLImagen(img) : img}" style="width: 50px; height: 50px; border-radius: 3px; border: 1px solid #ddd; object-fit: cover;">`).join('')}</div></div>` : ''}
                                     </div>
                                 `).join('');
                             }).join('')}

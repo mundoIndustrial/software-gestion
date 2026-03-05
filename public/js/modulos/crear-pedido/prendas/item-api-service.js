@@ -892,6 +892,7 @@ class ItemAPIService {
                         // NUEVO: Procesar imágenes por talla desde datosExtendidos
                         if (proceso.datos && proceso.datos.datosExtendidos && typeof proceso.datos.datosExtendidos === 'object') {
                             const datosExtendidos = proceso.datos.datosExtendidos;
+                            console.debug('[extraerFiles] Procesando datosExtendidos para proceso:', procesoKey, datosExtendidos);
                             
                             // Iterar sobre géneros
                             Object.entries(datosExtendidos).forEach(([genero, tallasDatos]) => {
@@ -899,7 +900,16 @@ class ItemAPIService {
                                 
                                 // Iterar sobre tallas
                                 Object.entries(tallasDatos).forEach(([talla, tallaData]) => {
-                                    if (!tallaData || !Array.isArray(tallaData.imagenesFiles)) return;
+                                    if (!tallaData || !Array.isArray(tallaData.imagenesFiles)) {
+                                        console.debug(`[extraerFiles] Talla ${genero}__${talla}: No tiene imagenesFiles o no es array`, {
+                                            tieneImagenesFiles: !!tallaData?.imagenesFiles,
+                                            esArray: Array.isArray(tallaData?.imagenesFiles),
+                                            tallaDataKeys: tallaData ? Object.keys(tallaData) : 'null'
+                                        });
+                                        return;
+                                    }
+                                    
+                                    console.debug(`[extraerFiles] Talla ${genero}__${talla}: Encontrados ${tallaData.imagenesFiles.length} archivos`);
                                     
                                     const tallaKey = `${genero}__${talla}`;
                                     if (!prendaData.procesos[procesoKey].imagenes_por_talla[tallaKey]) {
@@ -909,7 +919,9 @@ class ItemAPIService {
                                     // Procesar Files de esta talla
                                     tallaData.imagenesFiles.forEach((imgFile, imgIdx) => {
                                         if (imgFile instanceof File) {
-                                            const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][imagenes_por_talla][${tallaKey}][${imgIdx}]`;
+                                            // Usar formato bracket para que PHP parsee correctamente en $_FILES
+                                            // Backend accede con dot notation: prendas.0.procesos.bordado.datosExtendidos.dama.M.imagenes.0
+                                            const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][datosExtendidos][${genero}][${talla}][imagenes][${imgIdx}]`;
                                             prendaData.procesos[procesoKey].imagenes_por_talla[tallaKey].push({
                                                 file: imgFile,
                                                 formdata_key: formdataKey,
@@ -917,10 +929,18 @@ class ItemAPIService {
                                             });
                                             estructura.archivosMap[formdataKey] = imgFile;
                                             
-                                            console.debug(`[extraerFiles] Prenda[${prendaIdx}].procesos[${procesoKey}].imagenes_por_talla[${tallaKey}][${imgIdx}] = ${imgFile.name} (key: ${formdataKey})`);
+                                            console.debug(`[extraerFiles] ✅ Prenda[${prendaIdx}].procesos[${procesoKey}].imagenes_por_talla[${tallaKey}][${imgIdx}] = ${imgFile.name}`);
+                                        } else {
+                                            console.debug(`[extraerFiles] ⚠️ imgFile NO es File, es:`, typeof imgFile, imgFile);
                                         }
                                     });
                                 });
+                            });
+                        } else {
+                            console.debug('[extraerFiles] Proceso SIN datosExtendidos o no es objeto', {
+                                tieneDatos: !!proceso.datos,
+                                tieneDatosExtendidos: !!proceso.datos?.datosExtendidos,
+                                tipoDatosExtendidos: typeof proceso.datos?.datosExtendidos
                             });
                         }
                     });

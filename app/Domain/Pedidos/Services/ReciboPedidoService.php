@@ -734,32 +734,72 @@ class ReciboPedidoService
         ];
         
         try {
-            // Consultar ubicaciones y observaciones por talla
+            // Obtener tallas del proceso
             $registrosTallas = \DB::table('pedidos_procesos_prenda_tallas')
                 ->where('proceso_prenda_detalle_id', $proceso->id)
-                ->get(['genero', 'talla', 'ubicaciones', 'observaciones']);
+                ->get(['id', 'genero', 'talla', 'ubicaciones', 'observaciones']);
             
             if ($registrosTallas && $registrosTallas->count() > 0) {
-                foreach ($registrosTallas as $registro) {
-                    // Normalizar genero a minúsculas
-                    $genero = strtolower($registro->genero ?? 'dama');
-                    $talla = $registro->talla ?? 'S';
+                foreach ($registrosTallas as $tallaProceso) {
+                    $genero = strtolower($tallaProceso->genero ?? 'dama');
+                    $talla = $tallaProceso->talla ?? 'S';
                     
-                    // Parsear ubicaciones si es JSON
+                    // Parsear ubicaciones de la talla si existen (para modo para_todas)
                     $ubicaciones = [];
-                    if ($registro->ubicaciones) {
-                        if (is_array($registro->ubicaciones)) {
-                            $ubicaciones = $registro->ubicaciones;
-                        } else if (is_string($registro->ubicaciones)) {
-                            $ubicaciones = json_decode($registro->ubicaciones, true) ?? [];
+                    if ($tallaProceso->ubicaciones) {
+                        if (is_array($tallaProceso->ubicaciones)) {
+                            $ubicaciones = $tallaProceso->ubicaciones;
+                        } else if (is_string($tallaProceso->ubicaciones)) {
+                            $ubicaciones = json_decode($tallaProceso->ubicaciones, true) ?? [];
                         }
                     }
                     
-                    // Asignar a la estructura por genero/talla
-                    $tallesDetalles[$genero][$talla] = [
-                        'ubicaciones' => $ubicaciones,
-                        'observaciones' => $registro->observaciones ?? ''
-                    ];
+                    // Obtener colores para esta talla (si existen)
+                    $coloresConDetalles = \DB::table('pedidos_procesos_prenda_talla_colores')
+                        ->where('pedidos_procesos_prenda_talla_id', $tallaProceso->id)
+                        ->get(['id', 'color_nombre', 'ubicaciones', 'observaciones', 'cantidad']);
+                    
+                    // Obtener imágenes para esta talla
+                    $imagenesTalla = \DB::table('pedidos_procesos_imagenes')
+                        ->where('proceso_prenda_talla_id', $tallaProceso->id)
+                        ->get(['ruta_webp', 'orden'])
+                        ->pluck('ruta_webp')
+                        ->toArray();
+                    
+                    // Si hay colores, crear entrada por cada color
+                    if ($coloresConDetalles && $coloresConDetalles->count() > 0) {
+                        foreach ($coloresConDetalles as $color) {
+                            $colorNombre = $color->color_nombre ?? 'Sin color';
+                            $claveTalla = "{$talla}__" . $colorNombre; // Ej: L__AZUL CIELO
+                            
+                            // Parsear ubicaciones del color
+                            $ubicacionesColor = [];
+                            if ($color->ubicaciones) {
+                                if (is_array($color->ubicaciones)) {
+                                    $ubicacionesColor = $color->ubicaciones;
+                                } else if (is_string($color->ubicaciones)) {
+                                    $ubicacionesColor = json_decode($color->ubicaciones, true) ?? [];
+                                }
+                            }
+                            
+                            // Asignar con clave que incluye color
+                            $tallesDetalles[$genero][$claveTalla] = [
+                                'ubicaciones' => $ubicacionesColor,
+                                'observaciones' => $color->observaciones ?? '',
+                                'imagenes' => $imagenesTalla,
+                                'cantidad' => (int)$color->cantidad,
+                                'color' => $colorNombre
+                            ];
+                        }
+                    } else {
+                        // Si no hay colores, usar ubicaciones de la talla directamente
+                        $tallesDetalles[$genero][$talla] = [
+                            'ubicaciones' => $ubicaciones,
+                            'observaciones' => $tallaProceso->observaciones ?? '',
+                            'imagenes' => $imagenesTalla,
+                            'cantidad' => 0
+                        ];
+                    }
                 }
                 
                 \Log::info('[RECIBO-SERVICE] Detalles de tallas obtenidos', [

@@ -1041,8 +1041,23 @@ class GestionItemsUI {
                 prendas_total: pedidoData.prendas?.length || 0,
                 epps_total: pedidoData.epps?.length || 0,
                 primer_prenda_telas: pedidoData.prendas?.[0]?.telas?.length || 0,
+                primer_prenda_procesos: pedidoData.prendas?.[0]?.procesos ? Object.keys(pedidoData.prendas[0].procesos) : [],
                 primer_prenda_contenido: pedidoData.prendas?.[0]
             });
+            
+            // DEBUG: Verificar si datosExtendidos está presente en procesos
+            if (pedidoData.prendas?.[0]?.procesos) {
+                Object.entries(pedidoData.prendas[0].procesos).forEach(([procesoKey, proceso]) => {
+                    if (proceso.datos?.datosExtendidos) {
+                        console.log(`[gestion-items-pedido] 📊 Proceso "${procesoKey}" TIENE datosExtendidos:`, {
+                            generos: Object.keys(proceso.datos.datosExtendidos),
+                            datosExtendidos: proceso.datos.datosExtendidos
+                        });
+                    } else {
+                        console.log(`[gestion-items-pedido] ⚠️ Proceso "${procesoKey}" NO tiene datosExtendidos`);
+                    }
+                });
+            }
 
             // Permitir prendas O epps (al menos uno debe tener items)
             const tienePrendas = pedidoData.prendas && pedidoData.prendas.length > 0;
