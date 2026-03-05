@@ -572,6 +572,67 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
     return window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, tipoRecibo, prendaIndex);
 };
 
+if (typeof window.printReceiptModal !== 'function') {
+    window.printReceiptModal = function() {
+        const wrapper = document.getElementById('order-detail-modal-wrapper');
+        if (!wrapper) {
+            window.print();
+            return;
+        }
+
+        const shouldSyncPrintHeightFromView = () => {
+            const descripcion = wrapper.querySelector('.order-descripcion');
+            if (!descripcion) return false;
+            return !(descripcion.scrollHeight > (descripcion.clientHeight + 1));
+        };
+
+        const existing = document.getElementById('print-receipt-root');
+        if (existing) existing.remove();
+
+        const clone = wrapper.cloneNode(true);
+        clone.id = 'print-receipt-root';
+        clone.style.display = 'block';
+
+        document.body.appendChild(clone);
+        document.body.classList.add('printing-receipt-active');
+
+        const trySyncPrintHeightFromClone = () => {
+            if (!shouldSyncPrintHeightFromView()) {
+                document.documentElement.style.removeProperty('--receipt-print-height');
+                return;
+            }
+
+            const card = clone.querySelector('.order-detail-card');
+            if (!card) return;
+
+            const computed = window.getComputedStyle(card);
+            const cssHeight = parseFloat(computed.height);
+            if (!cssHeight || cssHeight <= 0) return;
+
+            const rect = card.getBoundingClientRect();
+            const pxHeight = rect.height;
+            if (!pxHeight || pxHeight <= 0) return;
+
+            const baseMm = 287;
+            const mmHeight = (pxHeight / cssHeight) * baseMm;
+            document.documentElement.style.setProperty('--receipt-print-height', `${mmHeight}mm`);
+        };
+
+        const cleanup = () => {
+            document.body.classList.remove('printing-receipt-active');
+            const el = document.getElementById('print-receipt-root');
+            if (el) el.remove();
+            document.documentElement.style.removeProperty('--receipt-print-height');
+            window.removeEventListener('afterprint', cleanup);
+        };
+
+        window.addEventListener('afterprint', cleanup);
+
+        trySyncPrintHeightFromClone();
+        window.print();
+    };
+}
+
 /**
  * FUNCIÓN GLOBAL para abrir recibo parcial (anexo)
  * Usa la pipeline de renderizado completa, inyectando tallas del parcial

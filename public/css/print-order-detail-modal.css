@@ -1,0 +1,109 @@
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 0.4cm;
+    }
+
+    html,
+    body {
+        background: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    body.printing-receipt-active > *:not(#print-receipt-root) {
+        display: none !important;
+    }
+
+    body.printing-receipt-active #print-receipt-root {
+        display: block !important;
+    }
+
+    #modal-overlay,
+    #floating-buttons-container,
+    #floating-buttons-container-logo {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    /* Reset de layout del wrapper para impresión */
+    #print-receipt-root {
+        position: static !important;
+        top: auto !important;
+        left: auto !important;
+        transform: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+        page-break-before: avoid !important;
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
+        break-before: avoid-page !important;
+        break-after: avoid-page !important;
+        break-inside: avoid !important;
+    }
+
+    .order-detail-modal-container {
+        transform: none !important;
+        transform-origin: top center !important;
+        min-height: auto !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        align-items: flex-start !important;
+        justify-content: center !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    /* Mantener el diseño original, pero ajustado a una hoja */
+    .order-detail-card {
+        box-shadow: none !important;
+        /* Margen para que el borde redondeado no se recorte */
+        margin: 4mm auto 0 auto !important;
+
+        /* Forzar 1 sola página: tamaño fijo dentro de A4 (considerando márgenes) */
+        width: 180mm !important;
+        max-width: 180mm !important;
+        height: var(--receipt-print-height, 287mm) !important;
+        min-height: var(--receipt-print-height, 287mm) !important;
+        box-sizing: border-box !important;
+
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+
+        /* Importante para que el border-radius se vea correcto */
+        overflow: hidden !important;
+    }
+
+    body.printing-receipt-active .order-detail-card {
+        width: 180mm !important;
+        max-width: 180mm !important;
+        box-sizing: border-box !important;
+    }
+
+    /* En impresión, no queremos scroll dentro del contenido */
+    .order-descripcion {
+        overflow: visible !important;
+        bottom: auto !important;
+    }
+
+    /* Evitar que el navegador agregue páginas por alturas mínimas del CSS base */
+    .order-detail-modal-container {
+        overflow: hidden !important;
+    }
+
+    .order-detail-modal-container,
+    .order-detail-card {
+        page-break-after: avoid !important;
+        page-break-before: avoid !important;
+    }
+}

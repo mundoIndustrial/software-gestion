@@ -531,6 +531,102 @@ export class Formatters {
             lineas.push('');
             lineas.push('<strong>TALLAS</strong>');
             this._agregarTallasFormato(lineas, tallasAMostrar, prenda.genero, prenda);
+
+            // NUEVO: Ubicaciones por talla (solo para procesos que manejan ubicaciones por talla)
+            // Se apoya en `proceso.tallas_detalle` del backend: [{genero,talla,cantidad,ubicaciones,...}, ...]
+            const tallasDetalle = proceso.tallas_detalle;
+            if (Array.isArray(tallasDetalle) && tallasDetalle.length > 0) {
+                const normalizarUbicaciones = (raw) => {
+                    if (!raw) return [];
+                    if (Array.isArray(raw)) return raw;
+                    if (typeof raw === 'string') {
+                        const s = raw.trim();
+                        if (!s) return [];
+                        // Caso común: viene como string JSON: "[\"UBI 1\", \"UBI 2\"]"
+                        if ((s.startsWith('[') && s.endsWith(']')) || (s.startsWith('{') && s.endsWith('}'))) {
+                            try {
+                                const parsed = JSON.parse(s);
+                                if (Array.isArray(parsed)) return parsed;
+                            } catch (e) {
+                                // ignore
+                            }
+                        }
+                        // Fallback: string simple
+                        return [s];
+                    }
+                    return [];
+                };
+
+                const conUbicaciones = tallasDetalle
+                    .map(t => ({
+                        ...t,
+                        _ubicaciones_normalizadas: normalizarUbicaciones(t?.ubicaciones)
+                    }))
+                    .filter(t => Array.isArray(t?._ubicaciones_normalizadas) && t._ubicaciones_normalizadas.length > 0)
+                    .filter(t => (parseInt(t?.cantidad, 10) || 0) > 0);
+
+                if (conUbicaciones.length > 0) {
+                    lineas.push('');
+                    lineas.push('<strong>UBICACIONES POR TALLA</strong>');
+
+                    const compararTallas = (tallaA, tallaB) => {
+                        const a = String(tallaA).toUpperCase().trim();
+                        const b = String(tallaB).toUpperCase().trim();
+                        const numA = parseFloat(a);
+                        const numB = parseFloat(b);
+                        if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+                        return a.localeCompare(b, 'es');
+                    };
+
+                    const construirBloqueGenero = (generoBuscado) => {
+                        const items = conUbicaciones
+                            .filter(t => String(t.genero || '').toUpperCase() === generoBuscado)
+                            .slice()
+                            .sort((a, b) => compararTallas(a.talla || '', b.talla || ''));
+
+                        if (items.length === 0) return '';
+
+                        const partes = [];
+                        partes.push(`<div style="font-weight: 800; margin-bottom: 6px;">${generoBuscado}</div>`);
+
+                        items.forEach((t) => {
+                            const tallaLabel = (t.es_sobremedida ? 'SOBREMEDIDA' : (t.talla ?? '')).toString().toUpperCase();
+                            partes.push(`<div style="margin-bottom: 8px;">`);
+                            partes.push(`<div style="font-weight: 700;">${tallaLabel}</div>`);
+
+                            const ubicacionesFlat = [];
+                            (t._ubicaciones_normalizadas || []).forEach((u) => {
+                                const str = String(u ?? '').trim();
+                                if (!str) return;
+                                str.split(/\r?\n/).forEach((linea) => {
+                                    const l = String(linea ?? '').trim();
+                                    if (l) ubicacionesFlat.push(l);
+                                });
+                            });
+
+                            ubicacionesFlat.forEach((u) => {
+                                partes.push(`<div>• ${String(u).toUpperCase()}</div>`);
+                            });
+
+                            partes.push(`</div>`);
+                        });
+
+                        return partes.join('');
+                    };
+
+                    const colCaballero = construirBloqueGenero('CABALLERO') || construirBloqueGenero('UNISEX');
+                    const colDama = construirBloqueGenero('DAMA');
+
+                    const columnasHtml = `
+                        <div style="display: flex; gap: 14px; align-items: flex-start;">
+                            <div style="width: 50%;">${colCaballero || '<div style="font-weight: 700;">CABALLERO</div><div>-</div>'}</div>
+                            <div style="width: 50%;">${colDama || '<div style="font-weight: 700;">DAMA</div><div>-</div>'}</div>
+                        </div>
+                    `;
+
+                    lineas.push(columnasHtml);
+                }
+            }
         } else if (prenda.tallas && Object.keys(prenda.tallas).length > 0) {
             // Fallback: usar tallas de la prenda si el proceso no tiene
             lineas.push('');

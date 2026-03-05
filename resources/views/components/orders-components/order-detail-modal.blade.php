@@ -1,4 +1,5 @@
 <link rel="stylesheet" href="{{ asset('css/order-detail-modal.css') }}">
+<link rel="stylesheet" href="{{ asset('css/print-order-detail-modal.css') }}" media="print">
 <style>
 /* Estilos específicos para ancho y metraje */
 .order-ancho-metraje {
@@ -142,6 +143,9 @@
     </button>
     <button id="btn-galeria" type="button" title="Ver galería" onclick="toggleFactura()" style="width: 56px; height: 56px; border-radius: 50%; background: white; border: 2px solid #ddd; color: #333; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); pointer-events: auto;">
         <i class="fas fa-images"></i>
+    </button>
+    <button id="btn-print-receipt" type="button" title="Imprimir" onclick="window.printReceiptModal && window.printReceiptModal()" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #27ae60, #229954); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); pointer-events: auto;">
+        <i class="fas fa-print"></i>
     </button>
 </div>
 

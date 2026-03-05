@@ -812,6 +812,8 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                         'CABALLERO' => [],
                         'UNISEX' => []
                     ];
+
+                    $tallasDetalle = [];
                     
                     if ($proceso->tallas && $proceso->tallas->count() > 0) {
                         foreach ($proceso->tallas as $tallaProceso) {
@@ -820,6 +822,16 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                                 $tallasTransformadas[$genero] = [];
                             }
                             $tallasTransformadas[$genero][$tallaProceso->talla] = (int)$tallaProceso->cantidad;
+
+                            $tallasDetalle[] = [
+                                'id' => $tallaProceso->id,
+                                'genero' => $tallaProceso->genero,
+                                'talla' => $tallaProceso->talla,
+                                'cantidad' => (int) ($tallaProceso->cantidad ?? 0),
+                                'es_sobremedida' => (bool) ($tallaProceso->es_sobremedida ?? false),
+                                'ubicaciones' => $tallaProceso->ubicaciones ?? [],
+                                'observaciones' => $tallaProceso->observaciones ?? null,
+                            ];
                         }
                     }
 
@@ -831,6 +843,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                         'ubicaciones' => $proceso->ubicaciones ?? [],
                         'observaciones' => $proceso->observaciones ?? '',
                         'tallas' => $tallasTransformadas,  // Tallas desde pedidos_procesos_prenda_tallas
+                        'tallas_detalle' => $tallasDetalle,
                         'imagenes' => $imagenes, // Array ordenado con estructura completa
                         'estado' => $proceso->estado ?? 'PENDIENTE',
                         'numero_recibo' => $proceso->numero_recibo,
