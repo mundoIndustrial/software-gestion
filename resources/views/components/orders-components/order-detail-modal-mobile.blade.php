@@ -1342,7 +1342,15 @@ window.llenarReciboCosturaMobile = function(data) {
 
             // 3. Manga
             if (prenda.manga) {
-                html += `<strong>MANGA:</strong> ${(prenda.manga || '').toUpperCase()}<br>`;
+                let mangaTexto = (prenda.manga || '').toUpperCase();
+                // Incluir observación de manga si existe y tiene contenido
+                if (prenda.obs_manga) {
+                    const obsMangaTrimmed = (prenda.obs_manga || '').toString().trim();
+                    if (obsMangaTrimmed && obsMangaTrimmed !== '' && obsMangaTrimmed !== 'undefined') {
+                        mangaTexto += ` (${obsMangaTrimmed.toUpperCase()})`;
+                    }
+                }
+                html += `<strong>MANGA:</strong> ${mangaTexto}<br>`;
             } else if (prenda.tipo_manga) {
                 let mangaTexto = prenda.tipo_manga.toUpperCase();
                 if (prenda.descripcion_variaciones) {
