@@ -594,7 +594,9 @@ export class Formatters {
                         partes.push(`<div style="font-weight: 800; margin-bottom: 6px;">${generoBuscado}</div>`);
 
                         items.forEach((t) => {
-                            const tallaLabel = (t.es_sobremedida ? 'SOBREMEDIDA' : (t.talla ?? '')).toString().toUpperCase();
+                            const tallaBaseLabel = (t.es_sobremedida ? 'SOBREMEDIDA' : (t.talla ?? '')).toString().toUpperCase();
+                            const colorLabel = (t?.color_nombre ?? '').toString().trim().toUpperCase();
+                            const tallaLabel = colorLabel ? `${tallaBaseLabel} - ${colorLabel}` : tallaBaseLabel;
                             partes.push(`<div style="margin-bottom: 8px;">`);
                             partes.push(`<div style="font-weight: 700;">${tallaLabel}</div>`);
 

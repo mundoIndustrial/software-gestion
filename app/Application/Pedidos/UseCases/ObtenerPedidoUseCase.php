@@ -823,17 +823,46 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                             }
                             $tallasTransformadas[$genero][$tallaProceso->talla] = (int)$tallaProceso->cantidad;
 
-                            $tallasDetalle[] = [
-                                'id' => $tallaProceso->id,
-                                'genero' => $tallaProceso->genero,
-                                'talla' => $tallaProceso->talla,
-                                'cantidad' => (int) ($tallaProceso->cantidad ?? 0),
-                                'es_sobremedida' => (bool) ($tallaProceso->es_sobremedida ?? false),
-                                'ubicaciones' => ($proceso->modo_tallas ?? null) === 'general'
-                                    ? (($tallaProceso->observaciones ?? null) ?: null)
-                                    : ($tallaProceso->ubicaciones ?? []),
-                                'observaciones' => $tallaProceso->observaciones ?? null,
-                            ];
+                            // Si hay colores asignados para esta talla, construir el detalle por color
+                            // (para que el frontend pueda mostrar "TALLA - COLOR").
+                            // En modo_tallas = general, la "ubicación" viene desde observaciones.
+                            $modoTallas = strtolower((string)($proceso->modo_tallas ?? ''));
+                            $coloresAsignados = null;
+                            try {
+                                $coloresAsignados = $tallaProceso->coloresAsignados ?? null;
+                            } catch (\Exception $e) {
+                                $coloresAsignados = null;
+                            }
+
+                            if ($coloresAsignados && $coloresAsignados->count() > 0) {
+                                foreach ($coloresAsignados as $tallaColor) {
+                                    $tallasDetalle[] = [
+                                        'id' => $tallaProceso->id,
+                                        'genero' => $tallaProceso->genero,
+                                        'talla' => $tallaProceso->talla,
+                                        'color_nombre' => $tallaColor->color_nombre ?? null,
+                                        'tela_nombre' => $tallaColor->tela_nombre ?? null,
+                                        'cantidad' => (int) ($tallaColor->cantidad ?? 0),
+                                        'es_sobremedida' => (bool) ($tallaProceso->es_sobremedida ?? false),
+                                        'ubicaciones' => $modoTallas === 'general'
+                                            ? (($tallaColor->observaciones ?? null) ?: null)
+                                            : ($tallaColor->ubicaciones ?? []),
+                                        'observaciones' => $tallaColor->observaciones ?? null,
+                                    ];
+                                }
+                            } else {
+                                $tallasDetalle[] = [
+                                    'id' => $tallaProceso->id,
+                                    'genero' => $tallaProceso->genero,
+                                    'talla' => $tallaProceso->talla,
+                                    'cantidad' => (int) ($tallaProceso->cantidad ?? 0),
+                                    'es_sobremedida' => (bool) ($tallaProceso->es_sobremedida ?? false),
+                                    'ubicaciones' => $modoTallas === 'general'
+                                        ? (($tallaProceso->observaciones ?? null) ?: null)
+                                        : ($tallaProceso->ubicaciones ?? []),
+                                    'observaciones' => $tallaProceso->observaciones ?? null,
+                                ];
+                            }
                         }
                     }
 
