@@ -567,11 +567,10 @@ export class Formatters {
 
                 if (conUbicaciones.length > 0) {
                     lineas.push('');
-                    const modoTallas = String(proceso?.modo_tallas ?? '').trim().toLowerCase();
-                    console.log('[Formatters.construirDescripcionProceso] modo_tallas para título ubicaciones:', modoTallas, proceso?.modo_tallas);
-                    lineas.push(modoTallas === 'general'
-                        ? '<strong>PERSONALIZACIÓN POR TALLA</strong>'
-                        : '<strong>UBICACIONES POR TALLA</strong>'
+                    lineas.push(
+                        String(proceso?.modo_tallas || '').toLowerCase() === 'general'
+                            ? '<strong>ESPECIFICACIÓN POR TALLA</strong>'
+                            : '<strong>UBICACIONES POR TALLA</strong>'
                     );
 
                     const compararTallas = (tallaA, tallaB) => {
@@ -622,24 +621,29 @@ export class Formatters {
                     const colCaballero = construirBloqueGenero('CABALLERO') || construirBloqueGenero('UNISEX');
                     const colDama = construirBloqueGenero('DAMA');
 
-                    const columnas = [];
-                    if (colCaballero) {
-                        columnas.push(`<div style="flex: 1;">${colCaballero}</div>`);
-                    }
-                    if (colDama) {
-                        columnas.push(`<div style="flex: 1;">${colDama}</div>`);
+                    let columnasHtml = '';
+                    if (colCaballero && colDama) {
+                        columnasHtml = `
+                            <div style="display: flex; gap: 14px; align-items: flex-start;">
+                                <div style="width: 50%;">${colCaballero}</div>
+                                <div style="width: 50%;">${colDama}</div>
+                            </div>
+                        `;
+                    } else if (colCaballero) {
+                        columnasHtml = `
+                            <div style="display: flex; gap: 14px; align-items: flex-start;">
+                                <div style="width: 100%;">${colCaballero}</div>
+                            </div>
+                        `;
+                    } else if (colDama) {
+                        columnasHtml = `
+                            <div style="display: flex; gap: 14px; align-items: flex-start;">
+                                <div style="width: 100%;">${colDama}</div>
+                            </div>
+                        `;
                     }
 
-                    if (columnas.length === 1) {
-                        lineas.push(`<div>${columnas[0]}</div>`);
-                    } else if (columnas.length === 2) {
-                        lineas.push(`
-                            <div style="display: flex; gap: 14px; align-items: flex-start;">
-                                ${columnas[0]}
-                                ${columnas[1]}
-                            </div>
-                        `);
-                    }
+                    lineas.push(columnasHtml);
                 }
             }
         } else if (prenda.tallas && Object.keys(prenda.tallas).length > 0) {

@@ -351,6 +351,10 @@
         pedidoId: null,
         prendas: [],
         isOpen: false,
+        uiState: {
+            scrollTop: 0,
+            expandedAccordions: []
+        },
         // Información del usuario actual
         usuarioRoles: {!! json_encode(auth()->user()?->roles->pluck('name')->toArray() ?? []) !!},
         esSupervisorPedidos: {{ auth()->user()?->hasRole('supervisor_pedidos') ? 'true' : 'false' }},
@@ -502,6 +506,15 @@
             // Renderizar prendas
             console.log('[abrirSelectorRecibos] Renderizando prendas, cantidad:', (datos.prendas || []).length);
             renderizarPrendasEnSelector(datos.prendas);
+
+            // Restaurar scroll del modal después de renderizar
+            try {
+                const modalEl = document.getElementById('recibos-process-selector-modal');
+                const savedScroll = window.selectorRecibosState?.uiState?.scrollTop;
+                if (modalEl && typeof savedScroll === 'number' && savedScroll > 0) {
+                    modalEl.scrollTop = savedScroll;
+                }
+            } catch (e) {}
 
             loading.style.display = 'none';
 
@@ -811,6 +824,24 @@
         });
 
         container.innerHTML = html;
+
+        // Restaurar estado UI (acordeones abiertos) si existe
+        try {
+            const expanded = window.selectorRecibosState?.uiState?.expandedAccordions;
+            if (Array.isArray(expanded) && expanded.length > 0) {
+                expanded.forEach((id) => {
+                    const processes = document.getElementById(id);
+                    if (!processes) return;
+                    processes.style.display = 'block';
+                    const header = processes.previousElementSibling;
+                    if (header && header.classList) {
+                        header.classList.add('expanded');
+                        const chevron = header.querySelector('.prenda-chevron');
+                        if (chevron && chevron.classList) chevron.classList.add('expanded');
+                    }
+                });
+            }
+        } catch (e) {}
     }
 
     /**
@@ -948,6 +979,19 @@
         const pedidoId = window.selectorRecibosState.pedidoId;
         
         console.log(`[PRENDA-DEBUG] Proceso Click #${procesoClickCount} - Datos válidos - PedidoID: ${pedidoId}, TipoString: ${tipoString}`);
+
+        // Guardar estado UI antes de cerrar selector (scroll + acordeones abiertos)
+        try {
+            const modal = document.getElementById('recibos-process-selector-modal');
+            const expandedAccordions = Array.from(document.querySelectorAll('#selector-prendas-list .prenda-processes'))
+                .filter((el) => el && el.style && el.style.display === 'block')
+                .map((el) => el.id)
+                .filter(Boolean);
+            window.selectorRecibosState.uiState = {
+                scrollTop: modal ? (modal.scrollTop || 0) : 0,
+                expandedAccordions
+            };
+        } catch (e) {}
 
         // Cerrar selector
         cerrarSelectorRecibos();

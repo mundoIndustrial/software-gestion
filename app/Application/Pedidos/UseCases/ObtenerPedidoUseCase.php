@@ -844,6 +844,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                         'descripcion' => $proceso->descripcion,
                         'ubicaciones' => $proceso->ubicaciones ?? [],
                         'observaciones' => $proceso->observaciones ?? '',
+                        'modo_tallas' => $proceso->modo_tallas ?? 'generico',
                         'tallas' => $tallasTransformadas,  // Tallas desde pedidos_procesos_prenda_tallas
                         'tallas_detalle' => $tallasDetalle,
                         'imagenes' => $imagenes, // Array ordenado con estructura completa

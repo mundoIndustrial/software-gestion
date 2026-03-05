@@ -86,6 +86,18 @@ export class CloseButtonManager {
     static cerrarModal(modalManager) {
         this.removerBoton();
         modalManager.cerrarModal();
+
+        try {
+            const selectorWasOpen = !!window.selectorRecibosState?.isOpen;
+            const pedidoId = window.selectorRecibosState?.pedidoId;
+            if ((selectorWasOpen || pedidoId) && typeof window.abrirSelectorRecibos === 'function') {
+                setTimeout(() => {
+                    try {
+                        window.abrirSelectorRecibos(pedidoId);
+                    } catch (e) {}
+                }, 0);
+            }
+        } catch (e) {}
     }
 
     /**
