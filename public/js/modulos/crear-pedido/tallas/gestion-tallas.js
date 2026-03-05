@@ -689,7 +689,7 @@ window.crearTarjetaGenero = function(genero, tallas) {
 };
 
 /**
- * Actualizar total de prendas (incluyendo sobremedida)
+ * Actualizar total de prendas (incluyendo sobremedida y UNISEX)
  */
 window.actualizarTotalPrendas = function() {
     let total = 0;
@@ -699,11 +699,23 @@ window.actualizarTotalPrendas = function() {
         total += parseInt(input.value) || 0;
     });
     
+    // Sumar UNISEX desde la estructura relacional
+    if (window.tallasRelacionales && window.tallasRelacionales.UNISEX) {
+        Object.values(window.tallasRelacionales.UNISEX).forEach(cantidad => {
+            total += parseInt(cantidad) || 0;
+        });
+    }
+    
     // Sumar sobremedida
-    if (window.tallasRelacionales.SOBREMEDIDA) {
+    if (window.tallasRelacionales && window.tallasRelacionales.SOBREMEDIDA) {
         Object.values(window.tallasRelacionales.SOBREMEDIDA).forEach(cantidad => {
             total += parseInt(cantidad) || 0;
         });
+    }
+    
+    // Fallback: Sumar desde cantidadSoloSeleccionada si existe y no está en tallasRelacionales.UNISEX
+    if (window.cantidadSoloSeleccionada && (!window.tallasRelacionales || !window.tallasRelacionales.UNISEX || Object.keys(window.tallasRelacionales.UNISEX).length === 0)) {
+        total += parseInt(window.cantidadSoloSeleccionada) || 0;
     }
     
     const totalElement = document.getElementById('total-prendas');
@@ -742,10 +754,12 @@ window.obtenerTallasYCantidades = function() {
 window.validarTallasSeleccionadas = function() {
     const dama = Object.keys(window.tallasRelacionales.DAMA || {}).length > 0;
     const caballero = Object.keys(window.tallasRelacionales.CABALLERO || {}).length > 0;
+    const unisex = Object.keys(window.tallasRelacionales.UNISEX || {}).length > 0;
+    const sobremedida = Object.keys(window.tallasRelacionales.SOBREMEDIDA || {}).length > 0;
     
-    if (!dama && !caballero) {
+    if (!dama && !caballero && !unisex && !sobremedida) {
 
-        alert(' Debe seleccionar al menos tallas de un género (DAMA o CABALLERO)');
+        alert(' Debe seleccionar al menos tallas de un género (DAMA, CABALLERO o UNISEX)');
         return false;
     }
     

@@ -99,7 +99,7 @@ window.seleccionarModoProcesoTodas = function() {
     
     // Guardar el modo seleccionado en el proceso
     if (window.procesosSeleccionados[tipoProceso]) {
-        window.procesosSeleccionados[tipoProceso].modoTallas = 'todas';
+        window.procesosSeleccionados[tipoProceso].modoTallas = 'para_todas';
     }
     
     // Abrir modal genérico (que tiene ubicaciones, observaciones y fotos)

@@ -72,6 +72,15 @@ class PrendaEditorProcesos {
                         tipo: tipo,
                         datos: datosNormalizados
                     };
+                    
+                    // DEBUG: Registrar datosExtendidos si existen
+                    if (datosNormalizados.datosExtendidos) {
+                        console.log(`[PROCESOS-LOADER] 📊 datosExtendidos para ${tipo}:`, {
+                            tiene: true,
+                            estructura: Object.keys(datosNormalizados.datosExtendidos),
+                            contenido: datosNormalizados.datosExtendidos
+                        });
+                    }
                 });
             } else {
                 // Si ya es objeto, procesarlo

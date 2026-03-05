@@ -78,7 +78,10 @@ window.renderizarTarjetasProcesos = function() {
             ubicaciones: datosProcess.ubicaciones?.length || 0,
             tallas: Object.keys(datosProcess.tallas?.dama || {}).length + Object.keys(datosProcess.tallas?.caballero || {}).length,
             observaciones: datosProcess.observaciones ? 'sí' : 'no',
-            imagenes: datosProcess.imagenes?.length || 0
+            imagenes: datosProcess.imagenes?.length || 0,
+            tieneDatosExtendidos: !!datosProcess.datosExtendidos,
+            datosExtendidosClaves: datosProcess.datosExtendidos ? Object.keys(datosProcess.datosExtendidos) : 'N/A',
+            datosCompletos: datosProcess
         });
         html += generarTarjetaProceso(tipo, datosProcess);
     });
@@ -440,7 +443,15 @@ function generarTarjetaProceso(tipo, datos) {
                     imgHTML = `<div style="display:flex; flex-wrap:wrap; gap:0.25rem; margin-top:0.2rem;">` +
                         imgsTalla.map(src => {
                             let imgSrc = src;
-                            if (src instanceof File) imgSrc = URL.createObjectURL(src);
+                            if (src instanceof File) {
+                                imgSrc = URL.createObjectURL(src);
+                            } else if (typeof src === 'object' && src !== null) {
+                                // Extraer URL del objeto imagen
+                                imgSrc = src.ruta_webp || src.url || src.ruta_original || src.ruta || src.previewUrl || src.src || String(src);
+                            } else if (typeof src === 'string') {
+                                // Si es una blob URL, usarla directamente; si no, agregar /storage/
+                                imgSrc = src.startsWith('blob:') ? src : agregarStorage(src);
+                            }
                             return `<div style="width:40px;height:40px;border-radius:4px;overflow:hidden;border:1.5px solid ${cfg.border};flex-shrink:0;">
                                 <img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;">
                             </div>`;

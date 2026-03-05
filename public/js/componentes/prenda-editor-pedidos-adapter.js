@@ -417,16 +417,41 @@
                 if (!Array.isArray(procesosRaw) && typeof procesosRaw === 'object') {
                     // 🔴 PASO 1: Extraer File images ANTES de transformar (se pierden en JSON.stringify)
                     const filesPorProceso = {};
+                    const filesPorTalla = {}; // NUEVO: Para imágenes de tallas en datosExtendidos
+                    
                     Object.entries(procesosRaw).forEach(([tipo, proc], idx) => {
                         const d = proc?.datos || proc || {};
                         const imagenes = d.imagenes || [];
                         filesPorProceso[idx] = [];
+                        
+                        // Extraer File objects de imagenes del proceso
                         if (Array.isArray(imagenes)) {
                             imagenes.forEach(img => {
                                 if (img instanceof File) {
                                     filesPorProceso[idx].push(img);
                                 } else if (img?.file instanceof File) {
                                     filesPorProceso[idx].push(img.file);
+                                }
+                            });
+                        }
+                        
+                        // NUEVO: Extraer File objects de imagenesFiles en datosExtendidos por talla
+                        if (d.datosExtendidos && typeof d.datosExtendidos === 'object') {
+                            Object.entries(d.datosExtendidos).forEach(([genero, tallasDatos]) => {
+                                if (tallasDatos && typeof tallasDatos === 'object') {
+                                    Object.entries(tallasDatos).forEach(([talla, tallaData]) => {
+                                        if (tallaData?.imagenesFiles && Array.isArray(tallaData.imagenesFiles)) {
+                                            const keyTalla = `${idx}_${genero}_${talla}`;
+                                            filesPorTalla[keyTalla] = filesPorTalla[keyTalla] || [];
+                                            
+                                            tallaData.imagenesFiles.forEach(img => {
+                                                if (img instanceof File) {
+                                                    filesPorTalla[keyTalla].push(img);
+                                                    console.log(`[PedidosAdapter] 📸 Imagen File encontrada para talla ${genero}/${talla}`);
+                                                }
+                                            });
+                                        }
+                                    });
                                 }
                             });
                         }
@@ -499,6 +524,7 @@
                             ubicaciones: d.ubicaciones || [],
                             observaciones: d.observaciones || '',
                             tallas: d.tallas || {},
+                            datosExtendidos: d.datosExtendidos || {},
                             estado: d.estado || 'PENDIENTE',
                             imagenes_existentes: imagenesExistentes
                         };
@@ -518,6 +544,14 @@
                         files.forEach((file, fileIdx) => {
                             formData.append(`fotosProcesoNuevo_${idx}[]`, file);
                             console.log(`[PedidosAdapter] 📸 Foto proceso[${idx}][${fileIdx}]: ${file.name}`);
+                        });
+                    });
+                    
+                    // NUEVO: Agregar File images de tallas al FormData
+                    Object.entries(filesPorTalla).forEach(([keyTalla, files]) => {
+                        files.forEach((file, fileIdx) => {
+                            formData.append(`fotosProcesoTallasNuevo_${keyTalla}[]`, file);
+                            console.log(`[PedidosAdapter] 📸 Foto talla[${keyTalla}][${fileIdx}]: ${file.name}`);
                         });
                     });
                 } else if (Array.isArray(procesosRaw)) {

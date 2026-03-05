@@ -1144,6 +1144,9 @@ final class ActualizarPrendaCompletaUseCase
                         // Eliminar tallas existentes del proceso
                         $procesoExistente->tallas()->delete();
 
+                        // Obtener datosExtendidos si existe (para ubicaciones y observaciones por talla)
+                        $datosExtendidos = $proceso['datosExtendidos'] ?? [];
+
                         // Crear nuevas tallas desde el payload
                         foreach ($proceso['tallas'] as $genero => $tallas) {
                             if (!is_array($tallas)) {
@@ -1152,10 +1155,30 @@ final class ActualizarPrendaCompletaUseCase
 
                             foreach ($tallas as $talla => $cantidad) {
                                 if ($cantidad > 0) {
+                                    // Extraer ubicaciones y observaciones del datosExtendidos si existe
+                                    $ubicacionesTalla = null;
+                                    $observacionesTalla = null;
+                                    
+                                    if (!empty($datosExtendidos)) {
+                                        $generoLower = strtolower($genero);
+                                        $tallaDatos = $datosExtendidos[$generoLower][$talla] ?? null;
+                                        
+                                        if ($tallaDatos) {
+                                            if (isset($tallaDatos['ubicaciones']) && !empty($tallaDatos['ubicaciones'])) {
+                                                $ubicacionesTalla = json_encode($tallaDatos['ubicaciones']);
+                                            }
+                                            if (isset($tallaDatos['observaciones'])) {
+                                                $observacionesTalla = $tallaDatos['observaciones'];
+                                            }
+                                        }
+                                    }
+
                                     $procesoExistente->tallas()->create([
                                         'genero' => strtoupper($genero),
                                         'talla' => strtoupper($talla),
                                         'cantidad' => (int)$cantidad,
+                                        'ubicaciones' => $ubicacionesTalla,
+                                        'observaciones' => $observacionesTalla,
                                     ]);
                                 }
                             }
@@ -1234,14 +1257,38 @@ final class ActualizarPrendaCompletaUseCase
                         // Actualizar tallas del proceso si se proporcionan
                         if (isset($proceso['tallas']) && is_array($proceso['tallas']) && !empty($proceso['tallas'])) {
                             $procesoExistente->tallas()->delete();
+                            
+                            // Obtener datosExtendidos si existe (para ubicaciones y observaciones por talla)
+                            $datosExtendidos = $proceso['datosExtendidos'] ?? [];
+                            
                             foreach ($proceso['tallas'] as $genero => $tallas) {
                                 if (!is_array($tallas)) continue;
                                 foreach ($tallas as $talla => $cantidad) {
                                     if ($cantidad > 0) {
+                                        // Extraer ubicaciones y observaciones del datosExtendidos si existe
+                                        $ubicacionesTalla = null;
+                                        $observacionesTalla = null;
+                                        
+                                        if (!empty($datosExtendidos)) {
+                                            $generoLower = strtolower($genero);
+                                            $tallaDatos = $datosExtendidos[$generoLower][$talla] ?? null;
+                                            
+                                            if ($tallaDatos) {
+                                                if (isset($tallaDatos['ubicaciones']) && !empty($tallaDatos['ubicaciones'])) {
+                                                    $ubicacionesTalla = json_encode($tallaDatos['ubicaciones']);
+                                                }
+                                                if (isset($tallaDatos['observaciones'])) {
+                                                    $observacionesTalla = $tallaDatos['observaciones'];
+                                                }
+                                            }
+                                        }
+
                                         $procesoExistente->tallas()->create([
                                             'genero' => strtoupper($genero),
                                             'talla' => strtoupper($talla),
                                             'cantidad' => (int)$cantidad,
+                                            'ubicaciones' => $ubicacionesTalla,
+                                            'observaciones' => $observacionesTalla,
                                         ]);
                                     }
                                 }
@@ -1266,14 +1313,37 @@ final class ActualizarPrendaCompletaUseCase
 
                 // Crear tallas del proceso nuevo si se proporcionan
                 if (isset($proceso['tallas']) && is_array($proceso['tallas']) && !empty($proceso['tallas'])) {
+                    // Obtener datosExtendidos si existe (para ubicaciones y observaciones por talla)
+                    $datosExtendidos = $proceso['datosExtendidos'] ?? [];
+                    
                     foreach ($proceso['tallas'] as $genero => $tallas) {
                         if (!is_array($tallas)) continue;
                         foreach ($tallas as $talla => $cantidad) {
                             if ($cantidad > 0) {
+                                // Extraer ubicaciones y observaciones del datosExtendidos si existe
+                                $ubicacionesTalla = null;
+                                $observacionesTalla = null;
+                                
+                                if (!empty($datosExtendidos)) {
+                                    $generoLower = strtolower($genero);
+                                    $tallaDatos = $datosExtendidos[$generoLower][$talla] ?? null;
+                                    
+                                    if ($tallaDatos) {
+                                        if (isset($tallaDatos['ubicaciones']) && !empty($tallaDatos['ubicaciones'])) {
+                                            $ubicacionesTalla = json_encode($tallaDatos['ubicaciones']);
+                                        }
+                                        if (isset($tallaDatos['observaciones'])) {
+                                            $observacionesTalla = $tallaDatos['observaciones'];
+                                        }
+                                    }
+                                }
+
                                 $procesoCreado->tallas()->create([
                                     'genero' => strtoupper($genero),
                                     'talla' => strtoupper($talla),
                                     'cantidad' => (int)$cantidad,
+                                    'ubicaciones' => $ubicacionesTalla,
+                                    'observaciones' => $observacionesTalla,
                                 ]);
                             }
                         }

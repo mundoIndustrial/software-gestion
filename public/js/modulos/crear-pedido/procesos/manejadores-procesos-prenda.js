@@ -43,6 +43,7 @@ window.manejarCheckboxProceso = function(tipoProceso, estaChecked) {
         if (!procesosSeleccionados[tipoProceso]) {
             procesosSeleccionados[tipoProceso] = {
                 tipo: tipoProceso,
+                modoTallas: 'para_todas',  // ← Valor por defecto
                 datos: null
             };
             //  CRÍTICO: Sincronizar con window inmediatamente

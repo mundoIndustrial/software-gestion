@@ -593,6 +593,12 @@ window.confirmarUnisex = function() {
     // Guardar en variable global
     window.cantidadSoloSeleccionada = cantidad;
 
+    // IMPORTANTE: Guardar también en la estructura relacional para que otros módulos (procesos) lo encuentren
+    if (!window.tallasRelacionales) {
+        window.tallasRelacionales = { DAMA: {}, CABALLERO: {}, UNISEX: {}, SOBREMEDIDA: {} };
+    }
+    window.tallasRelacionales.UNISEX = { 'UNISEX': cantidad };
+
     // Cerrar modal
     cerrarModalUnisex();
 
@@ -602,7 +608,7 @@ window.confirmarUnisex = function() {
     // Actualizar total
     actualizarTotalPrendas();
 
-    console.log('[UNISEX] Cantidad agregada:', cantidad);
+    console.log('[UNISEX] Cantidad agregada:', cantidad, '| Guardado en tallasRelacionales:', window.tallasRelacionales.UNISEX);
 };
 
 /**
@@ -692,6 +698,11 @@ window.crearTarjetaUnisex = function(cantidad) {
 window.eliminarUnisex = function() {
     window.cantidadSoloSeleccionada = null;
 
+    // IMPORTANTE: Limpiar también de la estructura relacional
+    if (window.tallasRelacionales && window.tallasRelacionales.UNISEX) {
+        window.tallasRelacionales.UNISEX = {};
+    }
+
     // Eliminar tarjeta
     const container = document.getElementById('tarjetas-generos-container');
     if (container) {
@@ -712,6 +723,8 @@ window.eliminarUnisex = function() {
     if (checkUnisex) checkUnisex.style.display = 'none';
 
     actualizarTotalPrendas();
+
+    console.log('[UNISEX] Eliminado de cantidadSoloSeleccionada y tallasRelacionales');
 };
 
 // Alias de compatibilidad para funciones antiguas

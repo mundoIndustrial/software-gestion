@@ -835,6 +835,8 @@ function obtenerTallasDeLaPrenda() {
         if (!g) return null;
         if (g === 'dama' || g.startsWith('dam')) return 'dama';
         if (g === 'caballero' || g.startsWith('cab')) return 'caballero';
+        // NUEVO: Mapear 'unisex' a 'sobremedida' para mantener consistencia
+        if (g === 'unisex' || g.startsWith('uni')) return 'sobremedida';
         return null;
     };
 
@@ -897,6 +899,21 @@ function obtenerTallasDeLaPrenda() {
         console.log('[obtenerTallasDeLaPrenda] Sobremedida encontrada:', tallas.sobremedida);
     } else {
         console.log('[obtenerTallasDeLaPrenda] No hay sobremedida');
+    }
+
+    // Obtener UNISEX si existe (es una categoría especial de sobremedida)
+    if (tallasRelacionales.UNISEX && Object.keys(tallasRelacionales.UNISEX).length > 0) {
+        // Combinar UNISEX con sobremedida si existe, o asignar directamente
+        tallas.sobremedida = { ...(tallas.sobremedida || {}), ...tallasRelacionales.UNISEX };
+        console.log('[obtenerTallasDeLaPrenda] UNISEX encontrado:', tallasRelacionales.UNISEX);
+    } else {
+        console.log('[obtenerTallasDeLaPrenda] No hay UNISEX');
+    }
+
+    // Fallback: Si hay cantidadSoloSeleccionada pero no está en tallasRelacionales.UNISEX, usarlo como sobremedida
+    if (window.cantidadSoloSeleccionada && (!tallasRelacionales.UNISEX || Object.keys(tallasRelacionales.UNISEX).length === 0)) {
+        tallas.sobremedida = { ...(tallas.sobremedida || {}), 'UNISEX': window.cantidadSoloSeleccionada };
+        console.log('[obtenerTallasDeLaPrenda] Fallback: UNISEX desde cantidadSoloSeleccionada:', window.cantidadSoloSeleccionada);
     }
 
     console.log('[obtenerTallasDeLaPrenda] Resultado final:', tallas);

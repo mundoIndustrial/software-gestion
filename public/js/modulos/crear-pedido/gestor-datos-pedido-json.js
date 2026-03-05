@@ -221,7 +221,11 @@ class GestorDatosPedidoJSON {
                 Object.entries(prenda.procesos).forEach(([tipoProceso, proceso]) => {
                     if (proceso && proceso.datos) {
                         const prefix = `prendas[${prendaIdx}][procesos][${tipoProceso}]`;
-                        const modoTallas = proceso.modoTallas || (proceso.datos.datosExtendidos ? 'por_tallas' : 'para_todas');
+                        // Normalizar modoTallas: "todas" → "para_todas"
+                        let modoTallas = proceso.modoTallas || (proceso.datos.datosExtendidos ? 'por_tallas' : 'para_todas');
+                        if (modoTallas === 'todas') {
+                            modoTallas = 'para_todas';  // ← Conversión de seguridad
+                        }
 
                         formData.append(`${prefix}[tipo]`, proceso.datos.tipo || tipoProceso);
                         formData.append(`${prefix}[ubicaciones]`, JSON.stringify(proceso.datos.ubicaciones || []));

@@ -119,6 +119,15 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
 
     // Restaurar datos si el proceso ya tiene datos guardados
     const datosExistentes = window.procesosSeleccionados?.[tipoProceso]?.datos?.datosExtendidos;
+    
+    console.log('[por-tallas] 🔍 DEBUGGING abrirModalProcesoPorTallas', {
+        tipoProceso,
+        procesoCompleto: window.procesosSeleccionados?.[tipoProceso],
+        datosCompletos: window.procesosSeleccionados?.[tipoProceso]?.datos,
+        datosExistentes,
+        tieneDatatos: !!datosExistentes,
+        estructuraDatos: datosExistentes ? Object.keys(datosExistentes) : 'VACIO'
+    });
 
     // Renderizar DAMA
     if (tallasDama.length > 0 && contDama) {
@@ -185,6 +194,15 @@ function crearTarjetaTalla(genero, tallaKey, cantidad, datos) {
     const safeKey = actualKey.replace(/[^a-zA-Z0-9_-]/g, '_');
     const checkboxId = `checkbox-${safeKey}`;
     const inputCantidadId = `cantidad-${safeKey}`;
+    
+    // DEBUG
+    console.log(`[crearTarjetaTalla] Creando tarjeta para ${actualKey}:`, {
+        ubicaciones: datos.ubicaciones,
+        observaciones: datos.observaciones,
+        imagenes: datos.imagenes,
+        tieneUbicaciones: !!(datos.ubicaciones && datos.ubicaciones.length > 0),
+        tieneObservaciones: !!datos.observaciones
+    });
 
     const card = document.createElement('div');
     card.style.cssText = `border: 2px solid ${borderColor}; border-radius: 12px; background: ${bgColor}; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; transition: opacity 0.2s, background-color 0.2s;`;

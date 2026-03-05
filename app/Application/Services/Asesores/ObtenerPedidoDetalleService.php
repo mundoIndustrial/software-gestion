@@ -448,6 +448,7 @@ class ObtenerPedidoDetalleService
     private function construirTallasProcesoRelacional($procesoPrendaDetalleId)
     {
         $tallas = [];
+        $datosExtendidos = [];
         
         $tallasRelacionales = \App\Models\PedidosProcesosPrendaTalla::where(
             'proceso_prenda_detalle_id', 
@@ -455,22 +456,85 @@ class ObtenerPedidoDetalleService
         )->get();
         
         if ($tallasRelacionales->count() > 0) {
-            // Agrupar por gÃ©nero
+            // Agrupar por género
             foreach ($tallasRelacionales as $tallaRecord) {
                 $genero = strtolower($tallaRecord->genero); // 'dama', 'caballero', 'unisex'
                 
                 if (!isset($tallas[$genero])) {
                     $tallas[$genero] = [];
                 }
+                if (!isset($datosExtendidos[$genero])) {
+                    $datosExtendidos[$genero] = [];
+                }
                 
                 // Agregar talla con su cantidad
                 if ($tallaRecord->cantidad > 0) {
                     $tallas[$genero][$tallaRecord->talla] = $tallaRecord->cantidad;
                 }
+                
+                // NUEVO: Agregar datos extendidos para renderización con ubicaciones/observaciones
+                $tallaKey = $tallaRecord->talla;
+                
+                // Procesar ubicaciones - si es JSON, decodificar a array; si es string, convertir a array
+                $ubicacionesProcesadas = [];
+                if ($tallaRecord->ubicaciones) {
+                    if (is_array($tallaRecord->ubicaciones)) {
+                        $ubicacionesProcesadas = $tallaRecord->ubicaciones;
+                    } else {
+                        // Intentar decodificar como JSON
+                        $decoded = json_decode($tallaRecord->ubicaciones, true);
+                        if (is_array($decoded)) {
+                            $ubicacionesProcesadas = $decoded;
+                        } else {
+                            // Si no es JSON válido, es un string simple
+                            $ubicacionesProcesadas = [$tallaRecord->ubicaciones];
+                        }
+                    }
+                }
+                
+                // NUEVO: Cargar imágenes específicas para esta talla desde pedidos_procesos_imagenes
+                $imagenesPorTalla = DB::table('pedidos_procesos_imagenes')
+                    ->where('proceso_prenda_talla_id', $tallaRecord->id)
+                    ->whereNull('deleted_at')
+                    ->orderBy('orden', 'asc')
+                    ->get()
+                    ->map(function($img) {
+                        $ruta_webp = $img->ruta_webp ?? '';
+                        $ruta_original = $img->ruta_original ?? '';
+                        
+                        // Normalizar rutas
+                        if ($ruta_webp && !str_starts_with($ruta_webp, '/storage/')) {
+                            $ruta_webp = '/storage/' . ltrim($ruta_webp, '/');
+                        }
+                        if ($ruta_original && !str_starts_with($ruta_original, '/storage/')) {
+                            $ruta_original = '/storage/' . ltrim($ruta_original, '/');
+                        }
+                        
+                        return [
+                            'id' => $img->id,
+                            'ruta_webp' => $ruta_webp,
+                            'ruta_original' => $ruta_original,
+                            'url' => $ruta_webp ?: $ruta_original,
+                            'es_principal' => $img->es_principal ?? false
+                        ];
+                    })
+                    ->filter(fn($img) => $img['ruta_webp'] || $img['ruta_original'])
+                    ->values()
+                    ->toArray();
+                
+                $datosExtendidos[$genero][$tallaKey] = [
+                    'cantidadSeleccionada' => $tallaRecord->cantidad,
+                    'ubicaciones' => $ubicacionesProcesadas,
+                    'observaciones' => $tallaRecord->observaciones ?? '',
+                    'imagenes' => $imagenesPorTalla
+                ];
             }
         }
         
-        return $tallas;
+        return [
+            'tallas' => $tallas,
+            'datosExtendidos' => $datosExtendidos
+        ];
     }
 
     /**
@@ -844,28 +908,36 @@ class ObtenerPedidoDetalleService
      */
     private function construirProcesoParaEdicion($proceso, $prendaId): array
     {
-        Log::info(' [PROCESO-DETALLE] Construyendo proceso para edición', [
+        Log::info('🔴 [PROCESO-DETALLE] Construyendo proceso para edición', [
             'proceso_id' => $proceso->id,
             'tipo_proceso' => $proceso->tipoProceso?->nombre ?? 'Desconocido',
             'imagenes_count' => $proceso->imagenes->count() ?? 0
         ]);
 
         $tallasProceso = $this->construirTallasProcesoRelacional($proceso->id);
+        
+        // Desempaquetar respuesta que ahora es array con 'tallas' y 'datosExtendidos'
+        $tallas = $tallasProceso['tallas'] ?? [];
+        $datosExtendidos = $tallasProceso['datosExtendidos'] ?? [];
 
-        Log::info(' [PROCESO-CONSTRUIDO] Proceso construido', [
+        Log::info('🔴 [PROCESO-CONSTRUIDO] Proceso construido', [
             'proceso_id' => $proceso->id,
-            'tallas_count' => count($tallasProceso),
-            'imagenes_count' => $proceso->imagenes->count() ?? 0
+            'tallas_count' => count($tallas),
+            'tieneDetallePorTalla' => count(array_filter($datosExtendidos, fn($g) => count($g) > 0)) > 0,
+            'datosExtendidos_estructura' => array_map(fn($g) => count($g), $datosExtendidos),
+            'datosExtendidos_muestra' => array_slice($datosExtendidos, 0, 1),
+            'imagenes_proceso_count' => $proceso->imagenes->count() ?? 0
         ]);
 
-        return [
+        $procesoArray = [
             'id' => $proceso->id,
             'tipo' => $proceso->tipoProceso?->nombre ?? 'Tipo desconocido',
             'ubicaciones' => $proceso->ubicaciones ? (is_array($proceso->ubicaciones) ? $proceso->ubicaciones : (json_decode($proceso->ubicaciones, true) ?? [$proceso->ubicaciones])) : [],
             'observaciones' => $proceso->observaciones ?? '',
-            'tallas' => $tallasProceso,
+            'tallas' => $tallas,
+            'datosExtendidos' => $datosExtendidos,
             'imagenes' => $proceso->imagenes->map(function($img) {
-                // 🔴 CRÍTICO: Devolver objeto completo con TODOS los campos, no solo URL
+                // CRITICO: Devolver objeto completo con TODOS los campos, no solo URL
                 $ruta_webp = str_replace('\\', '/', $img->ruta_webp ?? '');
                 $ruta_original = str_replace('\\', '/', $img->ruta_original ?? '');
                 
@@ -904,6 +976,8 @@ class ObtenerPedidoDetalleService
                 return $img['ruta_webp'] || $img['ruta_original'];
             })->toArray() ?? [],
         ];
+
+        return $procesoArray;
     }
 }
 
