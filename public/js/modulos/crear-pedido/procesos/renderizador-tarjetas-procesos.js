@@ -73,15 +73,24 @@ window.renderizarTarjetasProcesos = function() {
     //  OPTIMIZACIÓN: Construir TODO el HTML en memoria ANTES de tocar el DOM
     let html = '';
     procesosConDatos.forEach(tipo => {
-        const datosProcess = procesos[tipo].datos;
+        const procesoCompleto = procesos[tipo];
+        const datosProcess = procesoCompleto.datos;
+        
+        // Asegurar que modoTallas esté en datos (puede venir como modoTallas o modo_tallas)
+        if (!datosProcess.modoTallas) {
+            datosProcess.modoTallas = procesoCompleto.modoTallas || datosProcess.modo_tallas || 'generico';
+        }
+        
         console.log(`🎨 [RENDER-PROCESOS] Generando tarjeta para: ${tipo}`, {
-            ubicaciones: datosProcess.ubicaciones?.length || 0,
+            modoTallas: datosProcess.modoTallas,
+            ubicacionesCount: Array.isArray(datosProcess.ubicaciones) ? datosProcess.ubicaciones.length : 0,
+            ubicacionesValue: datosProcess.ubicaciones,
+            imagenesCount: Array.isArray(datosProcess.imagenes) ? datosProcess.imagenes.length : 0,
+            imagenesPreview: datosProcess.imagenes ? datosProcess.imagenes.slice(0, 1) : [],
             tallas: Object.keys(datosProcess.tallas?.dama || {}).length + Object.keys(datosProcess.tallas?.caballero || {}).length,
             observaciones: datosProcess.observaciones ? 'sí' : 'no',
-            imagenes: datosProcess.imagenes?.length || 0,
             tieneDatosExtendidos: !!datosProcess.datosExtendidos,
-            datosExtendidosClaves: datosProcess.datosExtendidos ? Object.keys(datosProcess.datosExtendidos) : 'N/A',
-            datosCompletos: datosProcess
+            datosExtendidosClaves: datosProcess.datosExtendidos ? Object.keys(datosProcess.datosExtendidos) : 'N/A'
         });
         html += generarTarjetaProceso(tipo, datosProcess);
     });
@@ -466,7 +475,7 @@ function generarTarjetaProceso(tipo, datos) {
                                 <span style="font-size: 0.7rem; background: ${cfg.color}; color: white; padding: 0.1rem 0.4rem; border-radius: 9999px; font-weight: 700;">${cantidad} und</span>
                             </div>
                         </div>
-                        ${datos.modoTallas === 'general' ? '' : `
+                        ${(datos.modoTallas === 'general' || datos.modoTallas === 'generico') ? '' : `
                         <div style="display: flex; flex-direction: column; gap: 0.2rem;">
                             <span style="font-size: 0.7rem; font-weight: 700; color: #374151;">Ubic:</span>
                             ${ubicsHTML}
@@ -499,25 +508,48 @@ function generarTarjetaProceso(tipo, datos) {
     let ubicacionGeneralHTML = '';
     let fotosGeneralesHTML = '';
     
+    // Mapear ubicaciones y fotos desde la BD cuando viene de un proceso existente
+    const ubicacionesDisplay = datos.ubicacionGeneral || (datos.ubicaciones && (
+        Array.isArray(datos.ubicaciones) 
+            ? datos.ubicaciones.filter(u => u && typeof u === 'string').join(', ')
+            : String(datos.ubicaciones)
+    )) || '';
+    
+    const fotosDisplay = datos.fotosGenerales || datos.imagenes || [];
+    
+    console.log(`🎨 [GENERAR-TARJETA-${tipo.toUpperCase()}] Mapeo de ubicaciones y fotos:`, {
+        tipo: tipo,
+        modoTallas: datos.modoTallas,
+        datosUbicacionGeneral: datos.ubicacionGeneral,
+        datosUbicaciones: datos.ubicaciones,
+        ubicacionesDisplay: ubicacionesDisplay,
+        datosImagenes: Array.isArray(datos.imagenes) ? `Array[${datos.imagenes.length}]` : typeof datos.imagenes,
+        fotosGenerales: Array.isArray(datos.fotosGenerales) ? `Array[${datos.fotosGenerales.length}]` : typeof datos.fotosGenerales,
+        fotosDisplay: Array.isArray(fotosDisplay) ? `Array[${fotosDisplay.length}]` : fotosDisplay,
+        debeRenderizarUbicacionGeneral: (datos.modoTallas === 'general' || datos.modoTallas === 'generico') && !!ubicacionesDisplay,
+        debeRenderizarFotosGenerales: (datos.modoTallas === 'general' || datos.modoTallas === 'generico') && fotosDisplay && fotosDisplay.length > 0
+    });
+    
     // Renderizar ubicación general si está en modo "general"
-    if (datos.modoTallas === 'general' && datos.ubicacionGeneral) {
+    if ((datos.modoTallas === 'general' || datos.modoTallas === 'generico') && ubicacionesDisplay) {
         ubicacionGeneralHTML = `
             <div style="background: #f3f4f6; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; border: 1px solid #d1d5db;">
                 <strong style="font-size: 0.8rem; color: #333; display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem;">
                     <span class="material-symbols-rounded" style="font-size: 1rem;">location_on</span>UBICACIÓN GENERAL
                 </strong>
-                <span style="color: #6b7280; font-size: 0.8rem; line-height: 1.4;">${datos.ubicacionGeneral}</span>
+                <span style="color: #6b7280; font-size: 0.8rem; line-height: 1.4;">${ubicacionesDisplay}</span>
             </div>
         `;
     }
     
     // Renderizar fotos generales si está en modo "general"
-    if (datos.modoTallas === 'general' && datos.fotosGenerales && datos.fotosGenerales.length > 0) {
-        const fotosHTML = datos.fotosGenerales.map((src, idx) => {
+    if ((datos.modoTallas === 'general' || datos.modoTallas === 'generico') && fotosDisplay && fotosDisplay.length > 0) {
+        const fotosHTML = fotosDisplay.map((src, idx) => {
             let imgSrc = src;
             if (src instanceof File) {
                 imgSrc = URL.createObjectURL(src);
             } else if (typeof src === 'object' && src !== null) {
+                // Desde BD: ruta_webp, ruta_original, url, ruta
                 imgSrc = src.ruta_webp || src.url || src.ruta_original || src.ruta || src.previewUrl || src.src || String(src);
             } else if (typeof src === 'string') {
                 imgSrc = src.startsWith('blob:') ? src : agregarStorage(src);
@@ -530,7 +562,7 @@ function generarTarjetaProceso(tipo, datos) {
         fotosGeneralesHTML = `
             <div style="margin-bottom: 0.75rem;">
                 <strong style="font-size: 0.8rem; color: #333; display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem;">
-                    <span class="material-symbols-rounded" style="font-size: 1rem;">photo_camera</span>FOTOS GENERALES (${datos.fotosGenerales.length})
+                    <span class="material-symbols-rounded" style="font-size: 1rem;">photo_camera</span>FOTOS GENERALES (${fotosDisplay.length})
                 </strong>
                 <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
                     ${fotosHTML}

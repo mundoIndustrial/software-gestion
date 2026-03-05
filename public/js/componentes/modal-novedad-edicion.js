@@ -217,10 +217,19 @@ class ModalNovedadEdicion {
                     }
                     
                     if (proc && tipoSlug) {
+                        // Mapear tallas_detalles a datosExtendidos si existen
+                        let datosExtendidos = {};
+                        if (proc.tallas_detalles && typeof proc.tallas_detalles === 'object') {
+                            Object.entries(proc.tallas_detalles).forEach(([genero, tallas]) => {
+                                datosExtendidos[genero.toLowerCase()] = tallas || {};
+                            });
+                        }
+                        
                         window.procesosSeleccionados[tipoSlug] = {
                             id: proc.id,
                             tipo: tipoSlug,
                             tipo_proceso_id: proc.tipo_proceso_id,
+                            modoTallas: proc.modo_tallas || 'generico',
                             datos: {
                                 id: proc.id,
                                 tipo_proceso_id: proc.tipo_proceso_id,
@@ -232,6 +241,10 @@ class ModalNovedadEdicion {
                                 tipo_proceso: proc.tipo_proceso,
                                 tallas: proc.tallas || {},
                                 imagenes: proc.imagenes || [],
+                                datosExtendidos: datosExtendidos,
+                                tallas_detalles: proc.tallas_detalles || {},
+                                modoTallas: proc.modo_tallas || 'generico',
+                                modo_tallas: proc.modo_tallas || 'generico',
                                 created_at: proc.created_at
                             }
                         };
@@ -239,7 +252,14 @@ class ModalNovedadEdicion {
                             tipoSlug: tipoSlug,
                             id: proc.id,
                             tipo_proceso_id: proc.tipo_proceso_id,
-                            tipo_proceso: proc.tipo_proceso
+                            tipo_proceso: proc.tipo_proceso,
+                            modo_tallas: proc.modo_tallas,
+                            tieneTallasDetalles: !!proc.tallas_detalles,
+                            tallesDetallesKeys: proc.tallas_detalles ? Object.keys(proc.tallas_detalles) : [],
+                            ubicacionesCount: Array.isArray(proc.ubicaciones) ? proc.ubicaciones.length : (proc.ubicaciones ? 1 : 0),
+                            ubicacionesValue: proc.ubicaciones,
+                            imagenesCount: Array.isArray(proc.imagenes) ? proc.imagenes.length : (proc.imagenes ? 1 : 0),
+                            imagenesValue: proc.imagenes
                         });
                     }
                 });
@@ -259,17 +279,29 @@ class ModalNovedadEdicion {
                         const procId = datosProc.id;
                         const procTipoProceso = datosProc.tipo_proceso_id;
                         
+                        // Mapear tallas_detalles a datosExtendidos si existen
+                        let datosExtendidos = {};
+                        if (datosProc.tallas_detalles && typeof datosProc.tallas_detalles === 'object') {
+                            Object.entries(datosProc.tallas_detalles).forEach(([genero, tallas]) => {
+                                datosExtendidos[genero.toLowerCase()] = tallas || {};
+                            });
+                        }
+                        
                         // Asegurar que id y tipo_proceso_id están en datos
                         const datosNormalizados = {
                             ...datosProc,
                             id: procId,
-                            tipo_proceso_id: procTipoProceso
+                            tipo_proceso_id: procTipoProceso,
+                            datosExtendidos: datosExtendidos,
+                            modoTallas: datosProc.modo_tallas || datosProc.modoTallas || 'generico',
+                            modo_tallas: datosProc.modo_tallas || datosProc.modoTallas || 'generico'
                         };
                         
                         window.procesosSeleccionados[tipo] = {
                             id: procId,
                             tipo: tipo,
                             tipo_proceso_id: procTipoProceso,
+                            modoTallas: datosProc.modo_tallas || 'generico',
                             datos: datosNormalizados
                         };
                         
@@ -278,6 +310,8 @@ class ModalNovedadEdicion {
                             id: procId,
                             tipo_proceso_id: procTipoProceso,
                             tieneUbicaciones: !!datosNormalizados.ubicaciones,
+                            modo_tallas: datosNormalizados.modo_tallas,
+                            tieneTallasDetalles: !!datosNormalizados.tallas_detalles,
                             datosKeys: Object.keys(datosNormalizados)
                         });
                     }

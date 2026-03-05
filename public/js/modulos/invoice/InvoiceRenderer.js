@@ -634,23 +634,41 @@ class InvoiceRenderer {
                     ` : ''}
                     
                     ${(proc.modo_tallas === 'general' || proc.modo_tallas === 'especifico') && proc.tallas_detalles && Object.keys(proc.tallas_detalles).length > 0 ? `
-                        <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #eee; font-weight: 600; color: #2c3e50; margin-bottom: 4px;">Detalles por Talla:</div>
-                        <div style="margin-left: 8px;">
-                            ${Object.entries(proc.tallas_detalles).map(([genero, tallas]) => {
-                                if (!tallas || typeof tallas !== 'object') return '';
-                                return Object.entries(tallas).map(([talla, datos]) => `
-                                    <div style="margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #f0f0f0; font-size: 10px;">
-                                        <div style="font-weight: 700; color: #1f2937; margin-bottom: 2px; display: flex; align-items: center; gap: 4px;">
-                                            <span class="material-symbols-rounded" style="font-size: 16px; font-weight: 500;">straighten</span>
-                                            ${genero.toUpperCase()} - ${talla}
-                                        </div>
-                                        ${datos.ubicaciones ? `<div style="color: #666; margin: 1px 0; display: flex; align-items: center; gap: 4px;"><span class="material-symbols-rounded" style="font-size: 14px;">location_on</span> <strong>Ubicación:</strong> ${Array.isArray(datos.ubicaciones) ? datos.ubicaciones.join(', ') : (typeof datos.ubicaciones === 'string' ? JSON.parse(datos.ubicaciones).join(', ') : datos.ubicaciones)}</div>` : ''}
-                                        ${datos.observaciones ? `<div style="color: #666; margin: 1px 0; display: flex; align-items: center; gap: 4px;"><span class="material-symbols-rounded" style="font-size: 14px;">notes</span> <strong>Nota:</strong> ${datos.observaciones}</div>` : ''}
-                                        ${datos.imagenes && datos.imagenes.length > 0 ? `<div style="margin-top: 4px; color: #666;"><div style="font-size: 9px; font-weight: 600; color: #6b7280; margin-bottom: 2px;">Imágenes:</div><div style="display: flex; gap: 4px; flex-wrap: wrap;">${datos.imagenes.map(img => `<img src="${window._extraerURLImagen ? window._extraerURLImagen(img) : img}" style="width: 50px; height: 50px; border-radius: 3px; border: 1px solid #ddd; object-fit: cover;">`).join('')}</div></div>` : ''}
-                                    </div>
-                                `).join('');
-                            }).join('')}
-                        </div>
+                        <div style="margin-top: 3px; padding-top: 3px; border-top: 1px solid #eee; font-weight: 600; color: #374151; font-size: 10px; margin-bottom: 2px;">Detalles por Talla:</div>
+                        <table style="width: 100%; font-size: 9px; border-collapse: collapse; margin-bottom: 2px;">
+                            <thead>
+                                <tr style="background: #f3f4f6; border-bottom: 1px solid #d1d5db;">
+                                    <th style="padding: 2px 4px; text-align: left; font-weight: 600; color: #374151; width: ${proc.modo_tallas === 'especifico' ? '20%' : '50%'};">Talla</th>
+                                    ${proc.modo_tallas === 'especifico' ? `<th style="padding: 2px 4px; text-align: left; font-weight: 600; color: #374151; width: 30%;">Ubicación</th>` : ''}
+                                    <th style="padding: 2px 4px; text-align: left; font-weight: 600; color: #374151; width: ${proc.modo_tallas === 'especifico' ? '50%' : '50%'};">Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${Object.entries(proc.tallas_detalles).map(([genero, tallas]) => {
+                                    if (!tallas || typeof tallas !== 'object') return '';
+                                    return Object.entries(tallas).map(([talla, datos]) => `
+                                        <tr style="border-bottom: 1px solid #f0f0f0;">
+                                            <td style="padding: 2px 4px; color: #1f2937; font-weight: 600;">${genero.toUpperCase()} ${talla}</td>
+                                            ${proc.modo_tallas === 'especifico' ? `<td style="padding: 2px 4px; color: #666;">${datos.ubicaciones && (Array.isArray(datos.ubicaciones) ? datos.ubicaciones.join(', ') : (typeof datos.ubicaciones === 'string' ? JSON.parse(datos.ubicaciones).join(', ') : datos.ubicaciones)) || '—'}</td>` : ''}
+                                            <td style="padding: 2px 4px; color: #666;">${datos.observaciones || '—'}</td>
+                                        </tr>
+                                    `).join('');
+                                }).join('')}
+                            </tbody>
+                        </table>
+                        ${(() => {
+                            let todasImagenes = [];
+                            Object.entries(proc.tallas_detalles).forEach(([genero, tallas]) => {
+                                if (tallas && typeof tallas === 'object') {
+                                    Object.entries(tallas).forEach(([talla, datos]) => {
+                                        if (datos.imagenes && Array.isArray(datos.imagenes)) {
+                                            todasImagenes = [...new Set([...todasImagenes, ...datos.imagenes])];
+                                        }
+                                    });
+                                }
+                            });
+                            return todasImagenes.length > 0 ? `<div style="display: flex; gap: 3px; flex-wrap: wrap;">${todasImagenes.map(img => `<img src="${window._extraerURLImagen ? window._extraerURLImagen(img) : img}" style="width: 40px; height: 40px; border-radius: 2px; border: 1px solid #ddd; object-fit: cover;">`).join('')}</div>` : '';
+                        })()}
                     ` : ''}
                     
                     ${proc.imagenes && proc.imagenes.length > 0 ? `

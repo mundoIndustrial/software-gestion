@@ -500,7 +500,7 @@
     </div>
 
     <!-- Sección Módulos -->
-    @if(auth()->user()->role && auth()->user()->role->name === 'admin')
+    @if(auth()->user()->role && in_array(auth()->user()->role->name, ['admin', 'lider_produccion']))
     <div class="menu-section">
       <span class="menu-section-title">Módulos</span>
       <ul class="menu-list" role="navigation">
@@ -543,6 +543,7 @@
     </div>
 
     <!-- Sección Administración -->
+    @if(auth()->user()->role && in_array(auth()->user()->role->name, ['admin', 'lider_produccion']))
     <div class="menu-section">
       <span class="menu-section-title">Administración</span>
       <ul class="menu-list" role="navigation">
@@ -601,6 +602,7 @@
       </li>
       </ul>
     </div>
+    @endif
     @endif
     @endif
   </div>

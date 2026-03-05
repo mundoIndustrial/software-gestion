@@ -424,7 +424,17 @@
                         const imagenes = d.imagenes || [];
                         filesPorProceso[idx] = [];
                         
-                        // Extraer File objects de imagenes del proceso
+                        // 🔴 PASO 1a: Usar imagenesFiles directamente si está disponible (desde modal por tallas)
+                        if (d.imagenesFiles && Array.isArray(d.imagenesFiles)) {
+                            d.imagenesFiles.forEach(file => {
+                                if (file instanceof File) {
+                                    filesPorProceso[idx].push(file);
+                                    console.log(`[PedidosAdapter] 📸 File encontrado en imagenesFiles para ${tipo}`);
+                                }
+                            });
+                        }
+                        
+                        // 🔴 PASO 1b: Extraer File objects de imagenes del proceso (fallback para compatibilidad)
                         if (Array.isArray(imagenes)) {
                             imagenes.forEach(img => {
                                 if (img instanceof File) {
@@ -472,15 +482,51 @@
                         const imagenesExistentes = [];
                         const imagenesAEliminar = [];
                         
-                        // Procesar imágenes: separar existentes de eliminadas
-                        if (d.imagenes && Array.isArray(d.imagenes)) {
-                            d.imagenes.forEach(img => {
-                                if (img && !(img instanceof File) && !(img?.file instanceof File)) {
-                                    const url = img.url || img.ruta_original || img.ruta_webp || img.ruta || img.previewUrl || '';
-                                    const id = img.id || null;
-                                    if (url || id) {
-                                        imagenesExistentes.push({ id: id, url: url, ruta_original: img.ruta_original || url, ruta_webp: img.ruta_webp || '' });
+                        // 🔴 PASO 1: Usar imagenes_existentes explícitamente si está disponible (desde modal por tallas/general)
+                        if (d.imagenes_existentes && Array.isArray(d.imagenes_existentes)) {
+                            console.log(`[PedidosAdapter] ✅ Usando imagenes_existentes explícitas para ${tipo}:`, d.imagenes_existentes.length, 'imágenes');
+                            d.imagenes_existentes.forEach(img => {
+                                const url = img.url || img.ruta_original || img.ruta_webp || img.ruta || img.previewUrl || '';
+                                const id = img.id || null;
+                                if (url || id) {
+                                    imagenesExistentes.push({ id: id, url: url, ruta_original: img.ruta_original || url, ruta_webp: img.ruta_webp || '' });
+                                }
+                            });
+                        } else {
+                            // 🔴 PASO 2 (fallback): Procesar imágenes del array imagenes: separar existentes de eliminadas
+                            if (d.imagenes && Array.isArray(d.imagenes)) {
+                                d.imagenes.forEach(img => {
+                                    if (img && !(img instanceof File) && !(img?.file instanceof File)) {
+                                        const url = img.url || img.ruta_original || img.ruta_webp || img.ruta || img.previewUrl || '';
+                                        const id = img.id || null;
+                                        if (url || id) {
+                                            imagenesExistentes.push({ id: id, url: url, ruta_original: img.ruta_original || url, ruta_webp: img.ruta_webp || '' });
+                                        }
                                     }
+                                });
+                            }
+                        }
+                        
+                        // 🟢 NUEVO: Registrar imágenes ELIMINADAS de la BD (NUEVO NOMBRE: imagenes_a_eliminar)
+                        if (d.imagenes_a_eliminar && Array.isArray(d.imagenes_a_eliminar)) {
+                            console.log(`[PedidosAdapter] 🗑️ Imágenes a eliminar para ${tipo}:`, d.imagenes_a_eliminar.length);
+                            d.imagenes_a_eliminar.forEach(img => {
+                                // El nuevo formato envía objetos completos {id, url, ruta_original, ruta_webp}
+                                if (img) {
+                                    imagenesAEliminar.push(img);
+                                }
+                            });
+                        }
+                        
+                        // FALLBACK: Registrar imágenes ELIMINADAS de la BD (nombre antiguo)
+                        if (d.imagenes_eliminadas && Array.isArray(d.imagenes_eliminadas)) {
+                            console.log(`[PedidosAdapter] 🗑️ Imágenes a eliminar para ${tipo}:`, d.imagenes_eliminadas.length);
+                            d.imagenes_eliminadas.forEach(imgUrl => {
+                                if (imgUrl && typeof imgUrl === 'string') {
+                                    imagenesAEliminar.push({
+                                        url: imgUrl,
+                                        ruta_original: imgUrl
+                                    });
                                 }
                             });
                         }
@@ -556,6 +602,24 @@
                     });
                 } else if (Array.isArray(procesosRaw)) {
                     procesosArray = procesosRaw;
+                }
+                
+                // 🟢 CRÍTICO: Extraer imágenes a eliminar de TODOS los procesos y agregarlas al FormData
+                const todasLasImagenesAEliminar = [];
+                procesosArray.forEach((proceso, idx) => {
+                    if (proceso.imagenes_a_eliminar && Array.isArray(proceso.imagenes_a_eliminar)) {
+                        proceso.imagenes_a_eliminar.forEach(img => {
+                            todasLasImagenesAEliminar.push(img);
+                            console.log(`[PedidosAdapter] 🗑️ Imagen a eliminar de proceso ${idx}:`, img);
+                        });
+                        // NO ELIMINAR del JSON, mantenerlo para registro
+                    }
+                });
+                
+                // Agregar imágenes a eliminar al FormData (nivel superior)
+                if (todasLasImagenesAEliminar.length > 0) {
+                    formData.append('imagenes_a_eliminar', JSON.stringify(todasLasImagenesAEliminar));
+                    console.log('[PedidosAdapter] 📤 Total imágenes a eliminar:', todasLasImagenesAEliminar.length);
                 }
                 
                 formData.append('procesos', JSON.stringify(procesosArray));

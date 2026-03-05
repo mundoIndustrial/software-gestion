@@ -101,52 +101,69 @@
                                 <div style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
                                     <div style="font-weight: 600; color: #374151; margin-bottom: 4px; font-size: 11px;">{{ $proceso['tipo_proceso'] ?? 'N/A' }}</div>
                                     
-                                    {{-- MODO POR_TALLAS: Mostrar información por cada talla --}}
+                                    {{-- MODO GENERAL/ESPECIFICO: Mostrar información en tabla compacta --}}
                                     @if(isset($proceso['modo_tallas']) && ($proceso['modo_tallas'] === 'general' || $proceso['modo_tallas'] === 'especifico') && isset($proceso['tallas_detalles']))
-                                        @foreach($proceso['tallas_detalles'] as $genero => $tallasDatos)
-                                            @if(is_array($tallasDatos))
-                                                <div style="margin-left: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
-                                                    <div style="font-weight: 600; color: #6b7280; font-size: 10px; margin-bottom: 4px;">{{ strtoupper($genero) }}</div>
-                                                    @foreach($tallasDatos as $talla => $tallaDatos)
-                                                        @if(is_array($tallaDatos))
-                                                            <div style="margin-left: 8px; padding: 4px; background: #fafafa; border-radius: 2px; margin-bottom: 4px; font-size: 10px;">
-                                                                <div style="font-weight: 600; color: #374151; margin-bottom: 2px;">Talla {{ $talla }}</div>
-                                                                
-                                                                {{-- Ubicaciones por talla --}}
-                                                                @if(!empty($tallaDatos['ubicaciones']))
-                                                                    <div style="font-size: 10px; color: #374151; margin-bottom: 2px;">
-                                                                        <strong>📍 Ubicaciones:</strong> 
-                                                                        @if(is_array($tallaDatos['ubicaciones']))
-                                                                            {{ implode(', ', $tallaDatos['ubicaciones']) }}
-                                                                        @else
-                                                                            {{ $tallaDatos['ubicaciones'] }}
+                                        <div style="margin-top: 3px; margin-bottom: 2px;">
+                                            <div style="font-weight: 600; color: #374151; font-size: 10px; margin-bottom: 2px;">Detalles por Talla:</div>
+                                            <table style="width: 100%; font-size: 9px; border-collapse: collapse; margin-bottom: 2px;">
+                                                <thead>
+                                                    <tr style="background: #f3f4f6; border-bottom: 1px solid #d1d5db;">
+                                                        <th style="padding: 2px 4px; text-align: left; font-weight: 600; color: #374151; width: {{ $proceso['modo_tallas'] === 'especifico' ? '20%' : '50%' }};">Talla</th>
+                                                        @if($proceso['modo_tallas'] === 'especifico')
+                                                            <th style="padding: 2px 4px; text-align: left; font-weight: 600; color: #374151; width: 30%;">Ubicación</th>
+                                                        @endif
+                                                        <th style="padding: 2px 4px; text-align: left; font-weight: 600; color: #374151; width: {{ $proceso['modo_tallas'] === 'especifico' ? '50%' : '50%' }};">Observaciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($proceso['tallas_detalles'] as $genero => $tallasDatos)
+                                                        @if(is_array($tallasDatos))
+                                                            @foreach($tallasDatos as $talla => $tallaDatos)
+                                                                @if(is_array($tallaDatos))
+                                                                    <tr style="border-bottom: 1px solid #f0f0f0;">
+                                                                        <td style="padding: 2px 4px; color: #1f2937; font-weight: 600;">{{ strtoupper($genero) }} {{ $talla }}</td>
+                                                                        @if($proceso['modo_tallas'] === 'especifico')
+                                                                            <td style="padding: 2px 4px; color: #666;">
+                                                                                @if(!empty($tallaDatos['ubicaciones']))
+                                                                                    @if(is_array($tallaDatos['ubicaciones']))
+                                                                                        {{ implode(', ', $tallaDatos['ubicaciones']) }}
+                                                                                    @else
+                                                                                        {{ $tallaDatos['ubicaciones'] }}
+                                                                                    @endif
+                                                                                @else
+                                                                                    —
+                                                                                @endif
+                                                                            </td>
                                                                         @endif
-                                                                    </div>
+                                                                        <td style="padding: 2px 4px; color: #666;">{{ $tallaDatos['observaciones'] ?? '—' }}</td>
+                                                                    </tr>
                                                                 @endif
-                                                                
-                                                                {{-- Observaciones por talla --}}
-                                                                @if(!empty($tallaDatos['observaciones']))
-                                                                    <div style="font-size: 10px; color: #374151; margin-bottom: 2px;">
-                                                                        <strong>📝 Notas:</strong> {{ $tallaDatos['observaciones'] }}
-                                                                    </div>
-                                                                @endif
-                                                                
-                                                                {{-- Imágenes por talla --}}
-                                                                @if(!empty($tallaDatos['imagenes']))
-                                                                    <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px;">
-                                                                        @foreach($tallaDatos['imagenes'] as $imagen)
-                                                                            @if(isset($imagen['ruta_webp']))
-                                                                                <img src="{{ $imagen['ruta_webp'] }}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd;">
-                                                                            @endif
-                                                                        @endforeach
-                                                                    </div>
-                                                                @endif
-                                                            </div>
+                                                            @endforeach
                                                         @endif
                                                     @endforeach
-                                                </div>
-                                            @endif
-                                        @endforeach
+                                                </tbody>
+                                            </table>
+                                            {{-- Imágenes integradas --}}
+                                            <div style="display: flex; gap: 3px; flex-wrap: wrap;">
+                                                @php
+                                                    $todasImagenes = [];
+                                                    foreach($proceso['tallas_detalles'] as $genero => $tallasDatos) {
+                                                        if(is_array($tallasDatos)) {
+                                                            foreach($tallasDatos as $talla => $tallaDatos) {
+                                                                if(is_array($tallaDatos) && !empty($tallaDatos['imagenes'])) {
+                                                                    $todasImagenes = array_unique(array_merge($todasImagenes, (array)$tallaDatos['imagenes']), SORT_REGULAR);
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                @endphp
+                                                @foreach($todasImagenes as $imagen)
+                                                    @if(isset($imagen['ruta_webp']))
+                                                        <img src="{{ $imagen['ruta_webp'] }}" style="width: 40px; height: 40px; border-radius: 2px; border: 1px solid #ddd; object-fit: cover;">
+                                                    @endif
+                                                @endforeach
+                                            </div>
+                                        </div>
                                     {{-- MODO PARA_TODAS: Mostrar información general --}}
                                     @else
                                         @if(!empty($proceso['observaciones']))

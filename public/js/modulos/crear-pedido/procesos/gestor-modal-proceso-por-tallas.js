@@ -21,8 +21,10 @@ let tallaActivaParaPaste = null;
 
 // ─── Variables para modo de configuración ───
 let modoModalPorTallasActual = 'general'; // 'general' o 'especifico'
-let fotosGeneralesTemp = []; // Almacena URLs de fotos compartidas
-let fotosGeneralesFilesTemp = []; // Almacena archivos de fotos compartidas
+let fotosGeneralesExistentes = []; // URLs de BD que ya existen (no modificar)
+let fotosGeneralesEliminadas = []; // URLs de BD que fueron ELIMINADAS por el usuario
+let fotosGeneralesTemp = []; // NUEVAS fotos agregadas por el usuario
+let fotosGeneralesFilesTemp = []; // Archivos de fotos nuevas compartidas
 let ubicacionGeneralTemp = ''; // Almacena ubicación compartida
 
 const iconosPorTallas = {
@@ -145,13 +147,23 @@ function renderizarGaleriaFotosGenerales() {
     const galeria = document.getElementById('prt-galeria-general');
     if (!galeria) return;
 
-    const thumbs = (fotosGeneralesTemp || []).map((src, idx) => `
+    // Combinar existentes y nuevas para mostrar en la galería
+    const todasLasFotos = [...fotosGeneralesExistentes, ...fotosGeneralesTemp];
+    
+    const thumbs = todasLasFotos.map((item, idx) => {
+        // Manejar tanto strings como objetos
+        const src = typeof item === 'string' ? item : (item?.url || item);
+        const esExistente = idx < fotosGeneralesExistentes.length;
+        const indiceReal = idx;
+        
+        return `
         <div style="position:relative; width:70px; height:70px; border-radius:6px; overflow:hidden; border:1px solid #ddd; flex-shrink:0;">
             <img src="${src}" style="width:100%;height:100%;object-fit:cover;">
-            <button type="button" onclick="eliminarFotoGeneral(${idx})"
+            <button type="button" onclick="eliminarFotoGeneral(${indiceReal}, ${esExistente})"
                 style="position:absolute;top:2px;right:2px;background:rgba(220,38,38,0.85);color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;">&times;</button>
         </div>
-    `).join('');
+    `;
+    }).join('');
 
     galeria.innerHTML = `
         ${thumbs}
@@ -307,14 +319,44 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
 
     // ─── Recuperar datos generales si existen ───
     const datosGenerales = window.procesosSeleccionados?.[tipoProceso]?.datos;
+    
+    // Mapear ubicación general (puede venir como ubicacionGeneral o ubicaciones array)
+    let ubicacionDisplay = '';
     if (datosGenerales?.ubicacionGeneral) {
-        ubicacionGeneralTemp = datosGenerales.ubicacionGeneral;
+        ubicacionDisplay = datosGenerales.ubicacionGeneral;
+    } else if (datosGenerales?.ubicaciones && Array.isArray(datosGenerales.ubicaciones)) {
+        ubicacionDisplay = datosGenerales.ubicaciones.filter(u => u && typeof u === 'string').join(', ');
+    } else if (datosGenerales?.ubicaciones && typeof datosGenerales.ubicaciones === 'string') {
+        ubicacionDisplay = datosGenerales.ubicaciones;
+    }
+    
+    if (ubicacionDisplay) {
+        ubicacionGeneralTemp = ubicacionDisplay;
         const inputUbicacion = document.getElementById('ubicacion-general-input');
         if (inputUbicacion) inputUbicacion.value = ubicacionGeneralTemp;
     }
+    
+    // Mapear fotos generales (puede venir como fotosGenerales o imagenes array)
+    // IMPORTANTE: Cargar en fotosGeneralesExistentes (no modificar) e inicializar fotosGeneralesTemp vacío
+    fotosGeneralesExistentes = [];
+    fotosGeneralesTemp = [];
+    fotosGeneralesFilesTemp = [];
+    
     if (datosGenerales?.fotosGenerales && Array.isArray(datosGenerales.fotosGenerales)) {
-        fotosGeneralesTemp = [...datosGenerales.fotosGenerales];
+        fotosGeneralesExistentes = [...datosGenerales.fotosGenerales];
+    } else if (datosGenerales?.imagenes && Array.isArray(datosGenerales.imagenes)) {
+        fotosGeneralesExistentes = [...datosGenerales.imagenes];
     }
+    
+    console.log('[por-tallas] 🔄 Datos generales cargados:', {
+        ubicacionDisplay: ubicacionDisplay,
+        fotosExistentes: fotosGeneralesExistentes.length,
+        fotosNuevas: fotosGeneralesTemp.length,
+        datosGenerales_ubicacionGeneral: datosGenerales?.ubicacionGeneral,
+        datosGenerales_ubicaciones: datosGenerales?.ubicaciones,
+        datosGenerales_fotosGenerales: datosGenerales?.fotosGenerales,
+        datosGenerales_imagenes: datosGenerales?.imagenes
+    });
     
     // Redibujar galería de fotos generales (con o sin fotos existentes)
     renderizarGaleriaFotosGenerales();
@@ -713,13 +755,18 @@ function renderizarGaleriaFotos(key) {
     const dashedColor = esRosa ? '#f9a8d4' : '#93c5fd';
     const inputFileId = `prt-foto-input-${safeKey}`;
 
-    const thumbs = (datos.imagenes || []).map((src, idx) => `
+    const thumbs = (datos.imagenes || []).map((item, idx) => {
+        // Manejar tanto strings como objetos
+        const src = typeof item === 'string' ? item : (item?.url || item);
+        
+        return `
         <div style="position:relative; width:70px; height:70px; border-radius:6px; overflow:hidden; border:2px solid ${borderColor}; flex-shrink:0;">
             <img src="${src}" style="width:100%;height:100%;object-fit:cover;">
             <button type="button" onclick="eliminarFotoPorTalla('${key}', ${idx})"
                 style="position:absolute;top:2px;right:2px;background:rgba(220,38,38,0.85);color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;">&times;</button>
         </div>
-    `).join('');
+    `;
+    }).join('');
 
     galeria.innerHTML = `
         ${thumbs}
@@ -873,16 +920,26 @@ window.guardarProcesoPorTallas = function() {
         ubicaciones: modoModalPorTallasActual === 'general' ? [ubicacionGeneralTemp] : [],
         observaciones: '',
         tallas: tallas,
-        imagenes: fotosGeneralesTemp,
+        imagenes: fotosGeneralesTemp, // Solo nuevas imágenes (File objects directos o blob URLs)
+        imagenesFiles: fotosGeneralesFilesTemp, // File objects para las nuevas imágenes
+        imagenes_existentes: fotosGeneralesExistentes, // URLs de BD que se van a mantener
+        imagenes_a_eliminar: fotosGeneralesEliminadas, // URLs de BD que fueron eliminadas - NOMBRE CORRECTO para que adapter lo encuentre
         imagenesEliminadas: [],
         datosExtendidos: datosExtendidos,
         modoTallas: modoModalPorTallasActual,  // Guardar el modo: 'general' o 'especifico'
         ubicacionGeneral: modoModalPorTallasActual === 'general' ? ubicacionGeneralTemp : '',
-        fotosGenerales: modoModalPorTallasActual === 'general' ? fotosGeneralesTemp : [],
+        fotosGenerales: modoModalPorTallasActual === 'general' ? [...fotosGeneralesExistentes, ...fotosGeneralesTemp] : [],
         imagenes_por_talla: construirImagenesPorTalla(datosExtendidos)
     };
 
-    console.log('[por-tallas] Proceso guardado:', procesoPorTallasActual, 'Modo:', modoModalPorTallasActual, window.procesosSeleccionados[procesoPorTallasActual]);
+    console.log('[por-tallas] Proceso guardado:', procesoPorTallasActual, 'Modo:', modoModalPorTallasActual, {
+        tipo: procesoPorTallasActual,
+        fotosExistentes: fotosGeneralesExistentes.length,
+        fotosNuevas: fotosGeneralesTemp.length,
+        fotosEliminadas: fotosGeneralesEliminadas.length,
+        archivosNuevos: fotosGeneralesFilesTemp.length,
+        proceso: window.procesosSeleccionados[procesoPorTallasActual]
+    });
 
     // Guardar en procesosGuardados si existe
     if (window.procesosGuardados) {
@@ -907,6 +964,7 @@ window.guardarProcesoPorTallas = function() {
     tallaActivaParaPaste = null;
     procesoPorTallasActual = null;
     datosPorTallaTemp = {};
+    fotosGeneralesExistentes = [];
     fotosGeneralesTemp = [];
     fotosGeneralesFilesTemp = [];
     ubicacionGeneralTemp = '';
@@ -942,6 +1000,8 @@ window.cerrarModalProcesoPorTallas = function() {
     procesoPorTallasActual = null;
     datosPorTallaTemp = {};
     modoModalPorTallasActual = 'general';  // Resetear a modo general para próxima vez
+    fotosGeneralesExistentes = [];
+    fotosGeneralesEliminadas = [];
     fotosGeneralesTemp = [];
     fotosGeneralesFilesTemp = [];
     ubicacionGeneralTemp = '';
@@ -950,14 +1010,54 @@ window.cerrarModalProcesoPorTallas = function() {
 /**
  * Elimina una foto general (compartida)
  */
-window.eliminarFotoGeneral = function(index) {
-    if (index >= 0 && index < fotosGeneralesTemp.length) {
-        // Revocar URL del blob para liberar memoria
-        URL.revokeObjectURL(fotosGeneralesTemp[index]);
-        fotosGeneralesTemp.splice(index, 1);
-        fotosGeneralesFilesTemp.splice(index, 1);
-        renderizarGaleriaFotosGenerales();
+window.eliminarFotoGeneral = function(index, esExistente) {
+    if (esExistente) {
+        // Eliminar foto existente de BD - REGISTRARLA PARA ELIMINACIÓN
+        if (index < fotosGeneralesExistentes.length) {
+            const fotoEliminada = fotosGeneralesExistentes[index];
+            console.log('[eliminarFotoGeneral] Eliminando foto existente de BD:', index, fotoEliminada);
+            
+            // Registrar en array de eliminadas con TODOS los datos para que el backend la identifique
+            let imagenAEliminar = {};
+            
+            if (typeof fotoEliminada === 'string') {
+                // Si es solo URL
+                imagenAEliminar = {
+                    url: fotoEliminada,
+                    ruta_original: fotoEliminada
+                };
+            } else if (typeof fotoEliminada === 'object') {
+                // Si es un objeto con id, ruta_original, etc.
+                imagenAEliminar = {
+                    id: fotoEliminada.id || undefined,
+                    url: fotoEliminada.url || fotoEliminada.ruta_original || fotoEliminada.ruta_webp || '',
+                    ruta_original: fotoEliminada.ruta_original || fotoEliminada.url || fotoEliminada.ruta_webp || '',
+                    ruta_webp: fotoEliminada.ruta_webp || ''
+                };
+            }
+            
+            if (imagenAEliminar.url || imagenAEliminar.id) {
+                fotosGeneralesEliminadas.push(imagenAEliminar);
+                console.log('[eliminarFotoGeneral] Foto eliminada registrada:', imagenAEliminar);
+            }
+            
+            fotosGeneralesExistentes.splice(index, 1);
+            console.log('[eliminarFotoGeneral] Fotos eliminadas registradas (total):', fotosGeneralesEliminadas.length);
+        }
+    } else {
+        // Eliminar foto nueva agregada
+        const indiceNueva = index - fotosGeneralesExistentes.length;
+        if (indiceNueva >= 0 && indiceNueva < fotosGeneralesTemp.length) {
+            console.log('[eliminarFotoGeneral] Eliminando foto nueva:', indiceNueva);
+            // Revocar URL del blob para liberar memoria
+            if (typeof fotosGeneralesTemp[indiceNueva] === 'string' && fotosGeneralesTemp[indiceNueva].startsWith('blob:')) {
+                URL.revokeObjectURL(fotosGeneralesTemp[indiceNueva]);
+            }
+            fotosGeneralesTemp.splice(indiceNueva, 1);
+            fotosGeneralesFilesTemp.splice(indiceNueva, 1);
+        }
     }
+    renderizarGaleriaFotosGenerales();
 };
 
 /**

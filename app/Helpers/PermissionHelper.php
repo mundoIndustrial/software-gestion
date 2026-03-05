@@ -13,7 +13,7 @@ class PermissionHelper
     {
         return Auth::check() && 
                Auth::user()->role && 
-               Auth::user()->role->name === 'admin';
+               in_array(Auth::user()->role->name, ['admin', 'lider_produccion']);
     }
 
     /**
@@ -37,7 +37,7 @@ class PermissionHelper
         }
 
         $role = Auth::user()->role->name;
-        return in_array($role, ['admin', 'supervisor-admin', 'insumos']);
+        return in_array($role, ['admin', 'lider_produccion', 'supervisor-admin', 'insumos']);
     }
 
     /**
@@ -51,7 +51,7 @@ class PermissionHelper
         }
 
         $role = Auth::user()->role->name;
-        return in_array($role, ['admin', 'supervisor-admin', 'supervisor']);
+        return in_array($role, ['admin', 'lider_produccion', 'supervisor-admin', 'supervisor']);
     }
 
     /**
@@ -65,7 +65,7 @@ class PermissionHelper
         }
 
         $role = Auth::user()->role->name;
-        return in_array($role, ['admin', 'supervisor-admin', 'asesor']);
+        return in_array($role, ['admin', 'lider_produccion', 'supervisor-admin', 'asesor']);
     }
 
     /**
@@ -79,7 +79,7 @@ class PermissionHelper
         }
 
         $role = Auth::user()->role->name;
-        return in_array($role, ['admin', 'supervisor-admin', 'contador']);
+        return in_array($role, ['admin', 'lider_produccion', 'supervisor-admin', 'contador']);
     }
 
     /**
@@ -111,6 +111,6 @@ class PermissionHelper
         }
 
         $role = Auth::user()->role->name;
-        return in_array($role, ['admin', 'supervisor-admin']);
+        return in_array($role, ['admin', 'lider_produccion', 'supervisor-admin']);
     }
 }
