@@ -567,7 +567,12 @@ export class Formatters {
 
                 if (conUbicaciones.length > 0) {
                     lineas.push('');
-                    lineas.push('<strong>UBICACIONES POR TALLA</strong>');
+                    const modoTallas = String(proceso?.modo_tallas ?? '').trim().toLowerCase();
+                    console.log('[Formatters.construirDescripcionProceso] modo_tallas para título ubicaciones:', modoTallas, proceso?.modo_tallas);
+                    lineas.push(modoTallas === 'general'
+                        ? '<strong>PERSONALIZACIÓN POR TALLA</strong>'
+                        : '<strong>UBICACIONES POR TALLA</strong>'
+                    );
 
                     const compararTallas = (tallaA, tallaB) => {
                         const a = String(tallaA).toUpperCase().trim();
@@ -617,14 +622,24 @@ export class Formatters {
                     const colCaballero = construirBloqueGenero('CABALLERO') || construirBloqueGenero('UNISEX');
                     const colDama = construirBloqueGenero('DAMA');
 
-                    const columnasHtml = `
-                        <div style="display: flex; gap: 14px; align-items: flex-start;">
-                            <div style="width: 50%;">${colCaballero || '<div style="font-weight: 700;">CABALLERO</div><div>-</div>'}</div>
-                            <div style="width: 50%;">${colDama || '<div style="font-weight: 700;">DAMA</div><div>-</div>'}</div>
-                        </div>
-                    `;
+                    const columnas = [];
+                    if (colCaballero) {
+                        columnas.push(`<div style="flex: 1;">${colCaballero}</div>`);
+                    }
+                    if (colDama) {
+                        columnas.push(`<div style="flex: 1;">${colDama}</div>`);
+                    }
 
-                    lineas.push(columnasHtml);
+                    if (columnas.length === 1) {
+                        lineas.push(`<div>${columnas[0]}</div>`);
+                    } else if (columnas.length === 2) {
+                        lineas.push(`
+                            <div style="display: flex; gap: 14px; align-items: flex-start;">
+                                ${columnas[0]}
+                                ${columnas[1]}
+                            </div>
+                        `);
+                    }
                 }
             }
         } else if (prenda.tallas && Object.keys(prenda.tallas).length > 0) {

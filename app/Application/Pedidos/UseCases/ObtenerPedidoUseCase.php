@@ -829,7 +829,9 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                                 'talla' => $tallaProceso->talla,
                                 'cantidad' => (int) ($tallaProceso->cantidad ?? 0),
                                 'es_sobremedida' => (bool) ($tallaProceso->es_sobremedida ?? false),
-                                'ubicaciones' => $tallaProceso->ubicaciones ?? [],
+                                'ubicaciones' => ($proceso->modo_tallas ?? null) === 'general'
+                                    ? (($tallaProceso->observaciones ?? null) ?: null)
+                                    : ($tallaProceso->ubicaciones ?? []),
                                 'observaciones' => $tallaProceso->observaciones ?? null,
                             ];
                         }
