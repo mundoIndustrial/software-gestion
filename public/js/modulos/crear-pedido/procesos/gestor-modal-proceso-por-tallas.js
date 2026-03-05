@@ -334,6 +334,11 @@ function crearTarjetaTallaGeneral(genero, tallaKey, cantidad, datos) {
 window.abrirModalProcesoPorTallas = function(tipoProceso) {
     procesoPorTallasActual = tipoProceso;
     datosPorTallaTemp = {};
+    
+    // Limpiar ubicación general y campo input
+    ubicacionGeneralTemp = '';
+    const inputUbicacionGeneral = document.getElementById('ubicacion-general-input');
+    if (inputUbicacionGeneral) inputUbicacionGeneral.value = '';
 
     const modal = document.getElementById('modal-proceso-por-tallas');
     if (!modal) {
