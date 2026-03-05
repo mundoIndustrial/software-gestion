@@ -1556,7 +1556,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
 // ========================================
 // RUTAS PARA COTIZACIONES - PRENDA (DDD REFACTORIZADO)
 // ========================================
-Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_pedidos'])->group(function () {
+Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_produccion,supervisor_pedidos'])->group(function () {
     // Cotizaciones tipo PRENDA
     Route::get('/cotizaciones-prenda/crear', [CotizacionPrendaController::class, 'create'])->name('cotizaciones-prenda.create');
     Route::post('/cotizaciones-prenda', [CotizacionPrendaController::class, 'store'])->name('cotizaciones-prenda.store');
@@ -1574,7 +1574,7 @@ Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_pedido
 // ========================================
 // RUTAS PARA COTIZACIONES - BORDADO (DDD REFACTORIZADO)
 // ========================================
-Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_pedidos'])->group(function () {
+Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_produccion,supervisor_pedidos'])->group(function () {
     // Cotizaciones tipo BORDADO/LOGO
     Route::get('/cotizaciones-bordado/crear', [CotizacionBordadoController::class, 'create'])->name('cotizaciones-bordado.create');
     Route::post('/cotizaciones-bordado', [CotizacionBordadoController::class, 'store'])->name('cotizaciones-bordado.store');
@@ -1669,7 +1669,7 @@ Route::middleware(['auth'])->group(function () {
 // RUTAS PARA CONTADOR (MÓDULO INDEPENDIENTE)
 // ========================================
 // Admin puede acceder a contador además del rol contador
-Route::middleware(['auth', 'role:contador,admin,lider_produccion'])->prefix('contador')->name('contador.')->group(function () {
+Route::middleware(['auth', 'role:contador,admin,lider_produccion,supervisor_produccion'])->prefix('contador')->name('contador.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\ContadorController::class, 'index'])->name('index');
     Route::get('/todas', [App\Http\Controllers\ContadorController::class, 'todas'])->name('todas');
     Route::get('/por-revisar', [App\Http\Controllers\ContadorController::class, 'porRevisar'])->name('por-revisar');
@@ -1809,7 +1809,7 @@ Route::middleware(['auth'])->prefix('asesores')->group(function () {
 // ========================================
 // Estas rutas NO deben vivir bajo el prefijo /asesores porque el usuario del visualizador
 // no necesariamente tiene rol asesor y se bloquea con 403.
-Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,lider_produccion,contador,aprobador_cotizaciones,asesor'])->group(function () {
+Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,lider_produccion,supervisor_produccion,contador,aprobador_cotizaciones,asesor'])->group(function () {
     Route::get('/cotizacion/{id}/pdf/logo', [PDFLogoController::class, 'generate'])->name('visualizador.cotizacion.pdf.logo');
 });
 
@@ -1817,7 +1817,7 @@ Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,lider_prod
 // PDF - RUTAS GLOBALES (FUERA DE /asesores)
 // ========================================
 // Necesarias para que módulos como Contador puedan descargar PDFs sin depender de /asesores.
-Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_pedidos,despacho,contador,aprobador_cotizaciones'])->group(function () {
+Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_produccion,supervisor_pedidos,despacho,contador,aprobador_cotizaciones'])->group(function () {
     Route::get('/cotizacion/{id}/pdf/prenda', [PDFPrendaController::class, 'generate']);
     Route::get('/cotizacion/{id}/pdf/combinada', [PDFCotizacionCombiadaController::class, 'generate']);
     Route::get('/cotizacion/{id}/pdf/epp', [PDFEppController::class, 'generate']);
@@ -1827,7 +1827,7 @@ Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_pedido
 // RUTAS PARA ASESORES (MÓDULO INDEPENDIENTE)
 // ========================================
 // Admin y supervisor_pedidos pueden acceder a asesores además del rol asesor
-Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_pedidos,despacho'])->prefix('asesores')->name('asesores.')->group(function () {
+Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_produccion,supervisor_pedidos,despacho'])->prefix('asesores')->name('asesores.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'dashboard'])->name('dashboard');
     Route::get('/dashboard-data', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'getDashboardData'])->name('dashboard-data');
@@ -1933,19 +1933,19 @@ Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_pedido
     // ========================================
     Route::get('/cotizacion/{id}/pdf/prenda', [PDFPrendaController::class, 'generate'])
         ->withoutMiddleware('role')
-        ->middleware('role:asesor,admin,lider_produccion,supervisor_pedidos,despacho,contador,aprobador_cotizaciones')
+        ->middleware('role:asesor,admin,lider_produccion,supervisor_produccion,supervisor_pedidos,despacho,contador,aprobador_cotizaciones')
         ->name('cotizacion.pdf.prenda');
     Route::get('/cotizacion/{id}/pdf/combinada', [PDFCotizacionCombiadaController::class, 'generate'])
         ->withoutMiddleware('role')
-        ->middleware('role:asesor,admin,lider_produccion,supervisor_pedidos,despacho,contador,aprobador_cotizaciones')
+        ->middleware('role:asesor,admin,lider_produccion,supervisor_produccion,supervisor_pedidos,despacho,contador,aprobador_cotizaciones')
         ->name('cotizacion.pdf.combinada');
     Route::get('/cotizacion/{id}/pdf/logo', [PDFLogoController::class, 'generate'])
         ->withoutMiddleware('role')
-        ->middleware('role:asesor,admin,lider_produccion,supervisor_pedidos,despacho,contador,aprobador_cotizaciones,visualizador_cotizaciones_logo')
+        ->middleware('role:asesor,admin,lider_produccion,supervisor_produccion,supervisor_pedidos,despacho,contador,aprobador_cotizaciones,visualizador_cotizaciones_logo')
         ->name('cotizacion.pdf.logo');
     Route::get('/cotizacion/{id}/pdf/epp', [PDFEppController::class, 'generate'])
         ->withoutMiddleware('role')
-        ->middleware('role:asesor,admin,lider_produccion,supervisor_pedidos,despacho,contador,aprobador_cotizaciones')
+        ->middleware('role:asesor,admin,lider_produccion,supervisor_produccion,supervisor_pedidos,despacho,contador,aprobador_cotizaciones')
         ->name('cotizacion.pdf.epp');
     
     // RUTA GENÉRICA - Debe ser ÚLTIMA para no shadowers las rutas específicas
@@ -2139,7 +2139,7 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('api
 // ========================================
 // RUTAS PARA SUPERVISOR DE ASESORES
 // ========================================
-Route::middleware(['auth', 'role:supervisor_asesores,supervisor_gerencia,admin,lider_produccion'])->prefix('supervisor-asesores')->name('supervisor-asesores.')->group(function () {
+Route::middleware(['auth', 'role:supervisor_asesores,supervisor_gerencia,admin,lider_produccion,supervisor_produccion'])->prefix('supervisor-asesores')->name('supervisor-asesores.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [App\Http\Controllers\SupervisorAsesoresController::class, 'dashboard'])->name('dashboard');
     Route::get('/dashboard-stats', [App\Http\Controllers\SupervisorAsesoresController::class, 'dashboardStats'])->name('dashboard-stats');
@@ -2172,7 +2172,7 @@ Route::middleware(['auth', 'role:supervisor_asesores,supervisor_gerencia,admin,l
 // ========================================
 // RUTAS PARA VISUALIZADOR DE COTIZACIONES LOGO
 // ========================================
-Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,lider_produccion,diseñador-logos,bordador'])->prefix('visualizador-logo')->name('visualizador-logo.')->group(function () {
+Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,lider_produccion,supervisor_produccion,diseñador-logos,bordador'])->prefix('visualizador-logo')->name('visualizador-logo.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [App\Http\Controllers\VisualizadorLogoController::class, 'dashboard'])->name('dashboard');
     

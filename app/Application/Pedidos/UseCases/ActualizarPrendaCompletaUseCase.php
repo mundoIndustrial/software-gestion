@@ -1786,11 +1786,18 @@ final class ActualizarPrendaCompletaUseCase
                 }
 
                 // 1. Eliminar registro de BD (soft delete si está configurado)
-                // IMPORTANTE: validar que la imagen pertenece a ESTA prenda para evitar cruces
-                // (bug reportado: eliminar foto de prenda borraba foto de tela)
-                $fotoPedido = \App\Models\PrendaFotoPedido::where('id', $imagenId)
-                    ->where('prenda_pedido_id', $prenda->id)
-                    ->first();
+                // Buscar en ambas tablas posibles: PrendaFotoPedido (prendas) y ProcesoPrendaImagen (procesos)
+                
+                // Primero intentar en tabla de procesos
+                $fotoPedido = \App\Models\ProcesoPrendaImagen::where('id', $imagenId)->first();
+                
+                // Si no está en procesos, buscar en tabla de prendas
+                if (!$fotoPedido) {
+                    $fotoPedido = \App\Models\PrendaFotoPedido::where('id', $imagenId)
+                        ->where('prenda_pedido_id', $prenda->id)
+                        ->first();
+                }
+                
                 if ($fotoPedido) {
                     $fotoPedido->delete(); // Usa SoftDelete automáticamente
                     $imagenesProcesadas++;
