@@ -1143,30 +1143,43 @@ final class ActualizarPrendaCompletaUseCase
 
                     //  ACTUALIZAR TALLAS del proceso si se proporcionan
                     if (isset($proceso['tallas']) && is_array($proceso['tallas']) && !empty($proceso['tallas'])) {
-                        // Mapear tallas viejas (por genero+talla+color) → old_talla_id para migrar imágenes
-                        $mapaTallasViejas = [];
+                        // Mapear tallas viejas: mapKey → [image_ids] para preservar imágenes por talla
+                        $mapaImagenesPorKey = [];
                         $tallasViejas = $procesoExistente->tallas()->get();
                         foreach ($tallasViejas as $tv) {
                             $coloresViejos = \DB::table('pedidos_procesos_prenda_talla_colores')
                                 ->where('pedidos_procesos_prenda_talla_id', $tv->id)
                                 ->get();
+                            
+                            // Obtener IDs de imágenes vinculadas a esta talla
+                            $imageIds = \DB::table('pedidos_procesos_imagenes')
+                                ->where('proceso_prenda_talla_id', $tv->id)
+                                ->whereNull('deleted_at')
+                                ->pluck('id')
+                                ->toArray();
+                            
                             if ($coloresViejos->count() > 0) {
                                 foreach ($coloresViejos as $cv) {
                                     $mapKey = strtoupper($tv->genero) . '_' . strtoupper($tv->talla) . '__' . $cv->color_nombre;
-                                    $mapaTallasViejas[$mapKey] = $tv->id;
+                                    $mapaImagenesPorKey[$mapKey] = $imageIds;
                                 }
                             } else {
                                 $mapKey = strtoupper($tv->genero) . '_' . strtoupper($tv->talla);
-                                $mapaTallasViejas[$mapKey] = $tv->id;
+                                $mapaImagenesPorKey[$mapKey] = $imageIds;
                             }
                         }
 
-                        // Eliminar tallas existentes y colores asociados
-                        foreach ($tallasViejas as $tv) {
-                            \DB::table('pedidos_procesos_prenda_talla_colores')
-                                ->where('pedidos_procesos_prenda_talla_id', $tv->id)
-                                ->delete();
+                        // CRÍTICO: Desvincular imágenes ANTES de eliminar tallas
+                        // La FK tiene ON DELETE CASCADE — sin esto, las imágenes se destruyen
+                        $tallasViejasIds = $tallasViejas->pluck('id')->toArray();
+                        if (!empty($tallasViejasIds)) {
+                            \DB::table('pedidos_procesos_imagenes')
+                                ->whereIn('proceso_prenda_talla_id', $tallasViejasIds)
+                                ->whereNull('deleted_at')
+                                ->update(['proceso_prenda_talla_id' => null]);
                         }
+
+                        // Ahora sí eliminar tallas (CASCADE ya no borra imágenes porque fueron desvinculadas)
                         $procesoExistente->tallas()->delete();
 
                         // Obtener datosExtendidos si existe (para ubicaciones y observaciones por talla)
@@ -1225,25 +1238,22 @@ final class ActualizarPrendaCompletaUseCase
                                         ]);
                                     }
 
-                                    // Migrar imágenes por talla existentes al nuevo ID de talla
+                                    // Re-vincular imágenes que pertenecían a esta talla (por mapKey exacto)
                                     $mapKeyNueva = strtoupper($genero) . '_' . strtoupper($tallaReal);
                                     if (!empty($colorNombre)) {
                                         $mapKeyNueva .= '__' . $colorNombre;
                                     }
-                                    if (isset($mapaTallasViejas[$mapKeyNueva])) {
-                                        $oldTallaId = $mapaTallasViejas[$mapKeyNueva];
-                                        $migradas = \DB::table('pedidos_procesos_imagenes')
-                                            ->where('proceso_prenda_talla_id', $oldTallaId)
-                                            ->whereNull('deleted_at')
+                                    if (!empty($mapaImagenesPorKey[$mapKeyNueva])) {
+                                        $imageIdsParaRevincular = $mapaImagenesPorKey[$mapKeyNueva];
+                                        \DB::table('pedidos_procesos_imagenes')
+                                            ->whereIn('id', $imageIdsParaRevincular)
                                             ->update(['proceso_prenda_talla_id' => $tallaCreada->id]);
-                                        if ($migradas > 0) {
-                                            \Log::info('[ActualizarPrendaCompletaUseCase] Imágenes por talla migradas', [
-                                                'proceso_id' => $procesoExistente->id,
-                                                'old_talla_id' => $oldTallaId,
-                                                'new_talla_id' => $tallaCreada->id,
-                                                'migradas' => $migradas,
-                                            ]);
-                                        }
+                                        \Log::info('[ActualizarPrendaCompletaUseCase] Imágenes por talla re-vinculadas', [
+                                            'proceso_id' => $procesoExistente->id,
+                                            'mapKey' => $mapKeyNueva,
+                                            'new_talla_id' => $tallaCreada->id,
+                                            'image_ids' => $imageIdsParaRevincular,
+                                        ]);
                                     }
                                 }
                             }
@@ -1326,6 +1336,38 @@ final class ActualizarPrendaCompletaUseCase
                         
                         // Actualizar tallas del proceso si se proporcionan
                         if (isset($proceso['tallas']) && is_array($proceso['tallas']) && !empty($proceso['tallas'])) {
+                            // Mapear tallas viejas: mapKey → [image_ids] para preservar imágenes
+                            $mapaImagenesPorKeyYaExiste = [];
+                            $tallasViejasYE = $procesoExistente->tallas()->get();
+                            foreach ($tallasViejasYE as $tv) {
+                                $coloresViejos = \DB::table('pedidos_procesos_prenda_talla_colores')
+                                    ->where('pedidos_procesos_prenda_talla_id', $tv->id)
+                                    ->get();
+                                $imageIds = \DB::table('pedidos_procesos_imagenes')
+                                    ->where('proceso_prenda_talla_id', $tv->id)
+                                    ->whereNull('deleted_at')
+                                    ->pluck('id')
+                                    ->toArray();
+                                if ($coloresViejos->count() > 0) {
+                                    foreach ($coloresViejos as $cv) {
+                                        $mapKey = strtoupper($tv->genero) . '_' . strtoupper($tv->talla) . '__' . $cv->color_nombre;
+                                        $mapaImagenesPorKeyYaExiste[$mapKey] = $imageIds;
+                                    }
+                                } else {
+                                    $mapKey = strtoupper($tv->genero) . '_' . strtoupper($tv->talla);
+                                    $mapaImagenesPorKeyYaExiste[$mapKey] = $imageIds;
+                                }
+                            }
+
+                            // CRÍTICO: Desvincular imágenes ANTES de eliminar tallas (ON DELETE CASCADE)
+                            $tallasViejasIdsYE = $tallasViejasYE->pluck('id')->toArray();
+                            if (!empty($tallasViejasIdsYE)) {
+                                \DB::table('pedidos_procesos_imagenes')
+                                    ->whereIn('proceso_prenda_talla_id', $tallasViejasIdsYE)
+                                    ->whereNull('deleted_at')
+                                    ->update(['proceso_prenda_talla_id' => null]);
+                            }
+
                             $procesoExistente->tallas()->delete();
                             
                             // Obtener datosExtendidos si existe (para ubicaciones y observaciones por talla)
@@ -1379,12 +1421,23 @@ final class ActualizarPrendaCompletaUseCase
                                                 'updated_at' => now(),
                                             ]);
                                         }
+
+                                        // Re-vincular imágenes que pertenecían a esta talla
+                                        $mapKeyNueva = strtoupper($genero) . '_' . strtoupper($tallaReal);
+                                        if (!empty($colorNombre)) {
+                                            $mapKeyNueva .= '__' . $colorNombre;
+                                        }
+                                        if (!empty($mapaImagenesPorKeyYaExiste[$mapKeyNueva])) {
+                                            \DB::table('pedidos_procesos_imagenes')
+                                                ->whereIn('id', $mapaImagenesPorKeyYaExiste[$mapKeyNueva])
+                                                ->update(['proceso_prenda_talla_id' => $tallaCreada->id]);
+                                        }
                                     }
                                 }
                             }
                         }
                         
-                        // 🔴 NUEVO: Procesar imágenes que corresponden a estas tallas
+                        // Procesar imágenes NUEVAS que corresponden a estas tallas
                         $this->procesarImagenesTallasProcesoExistente($procesoExistente, $procesoIdx, $dto);
                         
                         continue;

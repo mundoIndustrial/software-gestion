@@ -1246,6 +1246,21 @@ function cerrarModalPrendaNueva() {
         }
         console.log('✓ PASO 5 completado');
         
+        // PASO 5.6: Limpiar imágenes de prenda del storage
+        console.log('→ PASO 5.6: Limpiando imagenesPrendaStorage...');
+        if (window.imagenesPrendaStorage) {
+            window.imagenesPrendaStorage.limpiar?.() || window.imagenesPrendaStorage.establecerImagenes([]);
+        }
+        const previewFoto = document.getElementById('nueva-prenda-foto-preview');
+        if (previewFoto) {
+            previewFoto.innerHTML = '';
+            previewFoto.dataset.imagenes = '[]';
+            previewFoto.dataset.indiceActual = '0';
+        }
+        const contadorFoto = document.getElementById('nueva-prenda-foto-contador');
+        if (contadorFoto) contadorFoto.textContent = '';
+        console.log('✓ PASO 5.6 completado');
+
         // PASO 5.5: Limpiar "UNISEX" (antes "SOLO CANTIDAD")
         console.log('→ PASO 5.5: Limpiando opción "UNISEX"...');
         window.cantidadSoloSeleccionada = null;
