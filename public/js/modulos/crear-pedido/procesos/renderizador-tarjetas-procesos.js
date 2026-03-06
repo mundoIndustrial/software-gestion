@@ -383,8 +383,9 @@ function generarTarjetaProceso(tipo, datos) {
     }
     
     // ─── Detectar modo "por_tallas" con datosExtendidos ───
+    const esGeneralMode = datos.modoTallas === 'general' || datos.modoTallas === 'generico';
     const datosExtendidos = datos.datosExtendidos || {};
-    const tieneDetallePorTalla = Object.keys(datosExtendidos).some(genero => 
+    const tieneDetallePorTalla = !esGeneralMode && Object.keys(datosExtendidos).some(genero => 
         datosExtendidos[genero] && Object.keys(datosExtendidos[genero]).length > 0
     );
 
@@ -637,7 +638,10 @@ window.editarProcesoDesdeModal = function(tipo) {
     const proceso = window.procesosSeleccionados[tipo];
 
     // Detectar si fue guardado como "Por Tallas" y abrir el modal correcto
-    if (proceso?.datos?.datosExtendidos || proceso?.modoTallas === 'por_tallas') {
+    const modoTallas = proceso?.datos?.modo_tallas || proceso?.datos?.modoTallas || proceso?.modoTallas || 'generico';
+    console.log('✏️ [EDITAR-PROCESO-MODAL] Modo de tallas detectado:', modoTallas);
+    
+    if (modoTallas === 'general' || modoTallas === 'especifico' || modoTallas === 'por_tallas') {
         console.log('✏️ [EDITAR-PROCESO-MODAL] Detectado modo POR TALLAS, abriendo modal por tallas');
         if (window.abrirModalProcesoPorTallas) {
             window.abrirModalProcesoPorTallas(tipo);
@@ -645,14 +649,21 @@ window.editarProcesoDesdeModal = function(tipo) {
         return;
     }
     
-    console.log(' [EDITAR-PROCESO-MODAL] Datos encontrados:', {
-        tipo: tipo,
-        procesoExiste: !!proceso,
-        tieneDatos: !!proceso?.datos,
-        procesoId: proceso?.datos?.id,
-        tieneUbicaciones: !!proceso?.datos?.ubicaciones,
-        countUbicaciones: Array.isArray(proceso?.datos?.ubicaciones) ? proceso.datos.ubicaciones.length : 0,
-        countImagenes: (proceso?.datos?.imagenes?.length || 0)
+    console.log('✏️ [EDITAR-PROCESO-MODAL] ESTRUCTURA COMPLETA del proceso:', {
+        procesoCompleto: proceso,
+        datos: proceso?.datos,
+        todasLasKeys: proceso?.datos ? Object.keys(proceso.datos) : [],
+        valoresEspecificos: {
+            modo_tallas: proceso?.datos?.modo_tallas,
+            modoTallas: proceso?.datos?.modoTallas,
+            modo_tallas_tipo: typeof proceso?.datos?.modo_tallas,
+            modoTallas_tipo: typeof proceso?.datos?.modoTallas,
+            datosExtendidos: proceso?.datos?.datosExtendidos,
+            tieneDatosExtendidos: !!proceso?.datos?.datosExtendidos,
+            tipoProceso: proceso?.datos?.tipoProceso,
+            ubicaciones: proceso?.datos?.ubicaciones,
+            tallas: proceso?.datos?.tallas
+        }
     });
 
     if (!proceso?.datos) {

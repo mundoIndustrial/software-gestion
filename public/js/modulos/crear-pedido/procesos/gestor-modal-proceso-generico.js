@@ -1864,6 +1864,7 @@ window.agregarProcesoAlPedido = function() {
 
         const datos = {
             tipo: procesoActual,
+            modoTallas: window.procesosSeleccionados?.[procesoActual]?.modoTallas || 'generico',
             ubicaciones: ubicacionesClonadas,
             observaciones: document.getElementById('proceso-observaciones')?.value || '',
             tallas: {

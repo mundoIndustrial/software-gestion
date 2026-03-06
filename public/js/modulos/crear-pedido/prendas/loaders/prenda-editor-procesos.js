@@ -84,8 +84,14 @@ class PrendaEditorProcesos {
                         procesoId: datosNormalizados.id,
                         modo_tallas_desde_servidor: datosNormalizados.modo_tallas,
                         modo_tallas_en_window: window.procesosSeleccionados[tipo].datos.modo_tallas,
+                        modoTallas_desde_servidor: datosNormalizados.modoTallas,
+                        modoTallas_en_window: window.procesosSeleccionados[tipo].datos.modoTallas,
                         tipoProcesoNested: datosNormalizados.tipoProceso?.nombre,
-                        datosKeys: Object.keys(datosNormalizados).slice(0, 15)  // Primeros 15 campos
+                        datosKeys: Object.keys(datosNormalizados).slice(0, 15),  // Primeros 15 campos
+                        estructuraCompleta: {
+                            datosNormalizados: datosNormalizados,
+                            windowDatos: window.procesosSeleccionados[tipo]?.datos
+                        }
                     });
                     
                     // DEBUG: Registrar datosExtendidos si existen

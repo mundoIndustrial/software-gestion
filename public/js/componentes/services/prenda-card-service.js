@@ -726,7 +726,9 @@ window.PrendaCardService = {
             const datos = proceso.datos || {};
             const icono = iconosProcesos[tipoProceso] || '<i class="fas fa-cog"></i>';
             const nombreProceso = tipoProceso.charAt(0).toUpperCase() + tipoProceso.slice(1);
-            const esPorTallas = !!(datos.datosExtendidos) || proceso.modoTallas === 'por_tallas';
+            const modoTallasResuelto = datos.modoTallas || proceso.modoTallas || 'generico';
+            const esGeneralMode = modoTallasResuelto === 'general' || modoTallasResuelto === 'generico';
+            const esPorTallas = !esGeneralMode && (!!(datos.datosExtendidos) || proceso.modoTallas === 'por_tallas');
 
             // ─── Modo POR TALLAS: renderizar sub-tarjetas por talla ───
             if (esPorTallas && datos.datosExtendidos) {
@@ -734,7 +736,7 @@ window.PrendaCardService = {
                 const generos = { dama: { label: 'DAMA', icon: '<i class="fas fa-female"></i>', color: '#be185d', bg: '#fdf2f8', border: '#fbcfe8' }, caballero: { label: 'CABALLERO', icon: '<i class="fas fa-male"></i>', color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' } };
 
                 // Detectar modo general
-                const esGeneral = datos.modoTallas === 'general';
+                const esGeneral = modoTallasResuelto === 'general' || modoTallasResuelto === 'generico';
                 let ubicacionGeneralHTML = '';
                 let fotosGeneralesHTML = '';
 
