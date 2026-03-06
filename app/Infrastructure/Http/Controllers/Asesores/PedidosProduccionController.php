@@ -1095,7 +1095,9 @@ class PedidosProduccionController
             foreach ($request->allFiles() as $key => $files) {
                 if (strpos($key, 'fotosProcesoTallasNuevo_') === 0) {
                     // Extraer params: fotosProcesoTallasNuevo_{procesoIdx}_{genero}_{talla}
-                    preg_match('/fotosProcesoTallasNuevo_(\d+)_(.+)_(.+)/', $key, $matches);
+                    // Usar [a-zA-Z]+ para genero (dama/caballero/sobremedida/unisex) para evitar match greedy
+                    // cuando el nombre del color contiene guiones bajos (ej: AZUL_OSCURO)
+                    preg_match('/fotosProcesoTallasNuevo_(\d+)_([a-zA-Z]+)_(.+)/', $key, $matches);
                     if (!isset($matches[1]) || !isset($matches[2]) || !isset($matches[3])) continue;
                     
                     $procesoIdx = (int)$matches[1];

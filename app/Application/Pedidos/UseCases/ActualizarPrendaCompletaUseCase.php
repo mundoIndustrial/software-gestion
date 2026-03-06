@@ -1143,7 +1143,30 @@ final class ActualizarPrendaCompletaUseCase
 
                     //  ACTUALIZAR TALLAS del proceso si se proporcionan
                     if (isset($proceso['tallas']) && is_array($proceso['tallas']) && !empty($proceso['tallas'])) {
-                        // Eliminar tallas existentes del proceso (cascade elimina colores también)
+                        // Mapear tallas viejas (por genero+talla+color) → old_talla_id para migrar imágenes
+                        $mapaTallasViejas = [];
+                        $tallasViejas = $procesoExistente->tallas()->get();
+                        foreach ($tallasViejas as $tv) {
+                            $coloresViejos = \DB::table('pedidos_procesos_prenda_talla_colores')
+                                ->where('pedidos_procesos_prenda_talla_id', $tv->id)
+                                ->get();
+                            if ($coloresViejos->count() > 0) {
+                                foreach ($coloresViejos as $cv) {
+                                    $mapKey = strtoupper($tv->genero) . '_' . strtoupper($tv->talla) . '__' . $cv->color_nombre;
+                                    $mapaTallasViejas[$mapKey] = $tv->id;
+                                }
+                            } else {
+                                $mapKey = strtoupper($tv->genero) . '_' . strtoupper($tv->talla);
+                                $mapaTallasViejas[$mapKey] = $tv->id;
+                            }
+                        }
+
+                        // Eliminar tallas existentes y colores asociados
+                        foreach ($tallasViejas as $tv) {
+                            \DB::table('pedidos_procesos_prenda_talla_colores')
+                                ->where('pedidos_procesos_prenda_talla_id', $tv->id)
+                                ->delete();
+                        }
                         $procesoExistente->tallas()->delete();
 
                         // Obtener datosExtendidos si existe (para ubicaciones y observaciones por talla)
@@ -1201,6 +1224,27 @@ final class ActualizarPrendaCompletaUseCase
                                             'updated_at' => now(),
                                         ]);
                                     }
+
+                                    // Migrar imágenes por talla existentes al nuevo ID de talla
+                                    $mapKeyNueva = strtoupper($genero) . '_' . strtoupper($tallaReal);
+                                    if (!empty($colorNombre)) {
+                                        $mapKeyNueva .= '__' . $colorNombre;
+                                    }
+                                    if (isset($mapaTallasViejas[$mapKeyNueva])) {
+                                        $oldTallaId = $mapaTallasViejas[$mapKeyNueva];
+                                        $migradas = \DB::table('pedidos_procesos_imagenes')
+                                            ->where('proceso_prenda_talla_id', $oldTallaId)
+                                            ->whereNull('deleted_at')
+                                            ->update(['proceso_prenda_talla_id' => $tallaCreada->id]);
+                                        if ($migradas > 0) {
+                                            \Log::info('[ActualizarPrendaCompletaUseCase] Imágenes por talla migradas', [
+                                                'proceso_id' => $procesoExistente->id,
+                                                'old_talla_id' => $oldTallaId,
+                                                'new_talla_id' => $tallaCreada->id,
+                                                'migradas' => $migradas,
+                                            ]);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1210,7 +1254,7 @@ final class ActualizarPrendaCompletaUseCase
                             'tallas_nuevas' => $proceso['tallas']
                         ]);
 
-                        // 🔴 NUEVO: Procesar imágenes que corresponden a estas tallas
+                        // Procesar imágenes NUEVAS que corresponden a estas tallas
                         $this->procesarImagenesTallasProcesoExistente($procesoExistente, $procesoIdx, $dto);
                     }
 
@@ -1609,37 +1653,65 @@ final class ActualizarPrendaCompletaUseCase
         $tallas = $proceso->tallas()->get();
         
         foreach ($tallas as $talla) {
-            // Construir la key para buscar en fotosProcesoTallasNuevo
-            $keyTalla = "{$procesoIdx}_" . strtolower($talla->genero) . "_{$talla->talla}";
-            
-            // Buscar si hay imágenes para esta talla
-            if (isset($dto->fotosProcesoTallasNuevo[$keyTalla]) && !empty($dto->fotosProcesoTallasNuevo[$keyTalla])) {
-                $imagenesParaTalla = $dto->fotosProcesoTallasNuevo[$keyTalla];
-                $orden = 1;
-                
-                foreach ($imagenesParaTalla as $foto) {
-                    if (isset($foto['ruta_webp']) || isset($foto['ruta_original'])) {
-                        // Crear registro en pedidos_procesos_imagenes vinculado a esta talla específica
-                        \DB::table('pedidos_procesos_imagenes')->insert([
-                            'proceso_prenda_detalle_id' => $proceso->id,
-                            'proceso_prenda_talla_id' => $talla->id,
-                            'ruta_original' => $foto['ruta_original'] ?? $foto['ruta_webp'],
-                            'ruta_webp' => $foto['ruta_webp'] ?? $foto['ruta_original'],
-                            'orden' => $orden,
-                            'es_principal' => $orden === 1 ? 1 : 0,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                        
-                        \Log::info('[ActualizarPrendaCompletaUseCase] Imagen de talla agregada', [
-                            'proceso_id' => $proceso->id,
-                            'talla_id' => $talla->id,
-                            'genero_talla' => "{$talla->genero}_{$talla->talla}",
-                            'keyTalla' => $keyTalla,
-                            'ruta_webp' => $foto['ruta_webp'] ?? 'N/A'
-                        ]);
-                        
-                        $orden++;
+            // Verificar si la talla tiene colores asociados para construir la key correctamente
+            $coloresAsociados = \DB::table('pedidos_procesos_prenda_talla_colores')
+                ->where('pedidos_procesos_prenda_talla_id', $talla->id)
+                ->get();
+
+            $keysABuscar = [];
+
+            if ($coloresAsociados->count() > 0) {
+                // Con colores: key = {idx}_{genero}_{TALLA}__{COLOR} (espacios → guiones bajos para coincidir con PHP form keys)
+                foreach ($coloresAsociados as $color) {
+                    $colorNormalizado = str_replace(' ', '_', $color->color_nombre);
+                    $keysABuscar[] = "{$procesoIdx}_" . strtolower($talla->genero) . "_{$talla->talla}__{$colorNormalizado}";
+                }
+            } else {
+                // Sin colores: key = {idx}_{genero}_{TALLA}
+                $keysABuscar[] = "{$procesoIdx}_" . strtolower($talla->genero) . "_{$talla->talla}";
+            }
+
+            foreach ($keysABuscar as $keyTalla) {
+                // Buscar si hay imágenes para esta talla (buscar con y sin case-insensitive)
+                $imagenesParaTalla = $dto->fotosProcesoTallasNuevo[$keyTalla] ?? null;
+
+                // Fallback: buscar con clave todo en minúsculas
+                if (empty($imagenesParaTalla)) {
+                    $keyLower = strtolower($keyTalla);
+                    foreach ($dto->fotosProcesoTallasNuevo as $dtoKey => $dtoVal) {
+                        if (strtolower($dtoKey) === $keyLower) {
+                            $imagenesParaTalla = $dtoVal;
+                            $keyTalla = $dtoKey;
+                            break;
+                        }
+                    }
+                }
+
+                if (!empty($imagenesParaTalla)) {
+                    $orden = 1;
+                    foreach ($imagenesParaTalla as $foto) {
+                        if (isset($foto['ruta_webp']) || isset($foto['ruta_original'])) {
+                            \DB::table('pedidos_procesos_imagenes')->insert([
+                                'proceso_prenda_detalle_id' => $proceso->id,
+                                'proceso_prenda_talla_id' => $talla->id,
+                                'ruta_original' => $foto['ruta_original'] ?? $foto['ruta_webp'],
+                                'ruta_webp' => $foto['ruta_webp'] ?? $foto['ruta_original'],
+                                'orden' => $orden,
+                                'es_principal' => $orden === 1 ? 1 : 0,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                            
+                            \Log::info('[ActualizarPrendaCompletaUseCase] Imagen de talla agregada', [
+                                'proceso_id' => $proceso->id,
+                                'talla_id' => $talla->id,
+                                'genero_talla' => "{$talla->genero}_{$talla->talla}",
+                                'keyTalla' => $keyTalla,
+                                'ruta_webp' => $foto['ruta_webp'] ?? 'N/A'
+                            ]);
+                            
+                            $orden++;
+                        }
                     }
                 }
             }
