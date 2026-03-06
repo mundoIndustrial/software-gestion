@@ -2401,11 +2401,21 @@ const trackingTableStyles = `
   // Manejar actualización de proceso
   window.handleActualizarProceso = async function(procesoId) {
     try {
-      const area = document.getElementById('procesoArea').value;
-      const estado = document.getElementById('procesoEstado').value;
-      const fechaInicio = document.getElementById('procesoFechaInicio').value;
-      const encargado = document.getElementById('procesoEncargado').value;
-      const observaciones = document.getElementById('procesoObservaciones').value;
+      const procesoAreaEl = document.getElementById('procesoArea');
+      const procesoEstadoEl = document.getElementById('procesoEstado');
+      const procesoFechaInicioEl = document.getElementById('procesoFechaInicio');
+      const procesoEncargadoEl = document.getElementById('procesoEncargado');
+      const procesoObservacionesEl = document.getElementById('procesoObservaciones');
+
+      if (!procesoAreaEl || !procesoEncargadoEl) {
+        throw new Error('No se encontraron los campos del formulario para actualizar el proceso. Por favor recarga la página.');
+      }
+
+      const area = procesoAreaEl.value;
+      const estado = procesoEstadoEl ? procesoEstadoEl.value : 'Pendiente';
+      const fechaInicio = procesoFechaInicioEl ? procesoFechaInicioEl.value : '';
+      const encargado = procesoEncargadoEl.value;
+      const observaciones = procesoObservacionesEl ? procesoObservacionesEl.value : '';
 
       console.log('[handleActualizarProceso] Actualizando proceso:', {
         procesoId, area, estado, fechaInicio, encargado, observaciones
@@ -2437,12 +2447,31 @@ const trackingTableStyles = `
       limpiarFormularioProceso();
       resetFormButton();
 
+      // Cerrar modal de agregar/editar proceso
+      try {
+        closeAddProcesoModal();
+      } catch (e) {
+        console.warn('[handleActualizarProceso] No se pudo cerrar addProcesoModal:', e);
+      }
+
       // Recargar seguimientos de la prenda
-      await loadPrendasWithTracking(currentOrderData.id);
+      const orderId = window.currentOrderData?.id;
+      if (orderId) {
+        await loadPrendasWithTracking(orderId);
+      } else {
+        console.warn('[handleActualizarProceso] currentOrderData.id no disponible, no se recargan prendas');
+      }
       
       // Actualizar vista actual
-      if (currentPrendaData) {
-        renderPrendaTrackingTimeline(currentPrendaData);
+      if (window.currentPrendaData && window.currentPrendaData.id && Array.isArray(window.prendasData)) {
+        const prendaActualizada = window.prendasData.find(p => String(p.id) === String(window.currentPrendaData.id));
+        if (prendaActualizada) {
+          window.currentPrendaData = prendaActualizada;
+        }
+      }
+
+      if (window.currentPrendaData) {
+        renderPrendaTrackingTimeline(window.currentPrendaData);
       }
 
       // Mostrar mensaje de éxito
@@ -2459,8 +2488,20 @@ const trackingTableStyles = `
 
   // Limpiar formulario de proceso
   function limpiarFormularioProceso() {
-    document.getElementById('procesoArea').value = '';
-    document.getElementById('procesoEncargado').value = '';
+    const procesoArea = document.getElementById('procesoArea');
+    if (procesoArea) procesoArea.value = '';
+
+    const procesoEncargado = document.getElementById('procesoEncargado');
+    if (procesoEncargado) procesoEncargado.value = '';
+
+    const procesoEstado = document.getElementById('procesoEstado');
+    if (procesoEstado) procesoEstado.value = 'Pendiente';
+
+    const procesoFechaInicio = document.getElementById('procesoFechaInicio');
+    if (procesoFechaInicio) procesoFechaInicio.value = '';
+
+    const procesoObservaciones = document.getElementById('procesoObservaciones');
+    if (procesoObservaciones) procesoObservaciones.value = '';
   }
 
   // Resetear botón del formulario a su estado original

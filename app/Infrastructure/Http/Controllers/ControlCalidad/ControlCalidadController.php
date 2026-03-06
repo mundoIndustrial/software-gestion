@@ -36,10 +36,8 @@ class ControlCalidadController extends Controller
         $recibosQuery = ConsecutivoReciboPedido::where('activo', 1)
             ->whereIn('tipo_recibo', ['COSTURA', 'REFLECTIVO']);
 
-        // Si NO es líder, filtrar solo por área de Control Calidad
-        if (!$esLiderControlCalidad) {
-            $recibosQuery->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad']);
-        }
+        // Siempre listar únicamente recibos cuyo área actual sea Control de Calidad
+        $recibosQuery->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad']);
 
         $recibos = $recibosQuery
             ->with(['pedido', 'prenda', 'pedido.prendas'])

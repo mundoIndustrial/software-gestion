@@ -323,6 +323,31 @@ class ProcesoSeguimientoController extends Controller
 
             $proceso->save();
 
+            // Sincronizar el area en consecutivos_recibos_pedidos para esta prenda
+            try {
+                $prenda = PrendaPedido::find($proceso->prenda_pedido_id);
+
+                if ($prenda && $prenda->pedido_produccion_id) {
+                    $consecutivo = ConsecutivoReciboPedido::where('pedido_produccion_id', $prenda->pedido_produccion_id)
+                        ->where('prenda_id', $proceso->prenda_pedido_id)
+                        ->first();
+
+                    if ($consecutivo) {
+                        $datosActualizar = [
+                            'area' => $request->area,
+                        ];
+
+                        if ($request->area === 'Insumos') {
+                            $datosActualizar['estado'] = 'Pendiente_Insumos';
+                        }
+
+                        $consecutivo->update($datosActualizar);
+                    }
+                }
+            } catch (\Exception $consecutivoError) {
+                \Log::warning('[ProcesoSeguimientoController] Error actualizando consecutivo en actualizar(): ' . $consecutivoError->getMessage());
+            }
+
             \Log::info('[ProcesoSeguimientoController] Proceso actualizado', [
                 'proceso_id' => $id,
                 'area' => $request->area,
@@ -454,11 +479,12 @@ class ProcesoSeguimientoController extends Controller
                             'proceso_id' => $procesoMasReciente->id
                         ]);
                     } else {
-                        // Si no hay más procesos, dejar el area vacío
+                        // Si no hay más procesos, volver a Insumos
                         $consecutivo->update([
-                            'area' => null
+                            'area' => 'Insumos',
+                            'estado' => 'Pendiente_Insumos',
                         ]);
-                        \Log::info('[ProcesoSeguimientoController] Consecutivo actualizado a null (sin procesos restantes):', [
+                        \Log::info('[ProcesoSeguimientoController] Consecutivo actualizado a Insumos (sin procesos restantes):', [
                             'consecutivo_id' => $consecutivo->id
                         ]);
                     }

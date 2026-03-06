@@ -81,33 +81,33 @@
                 <div class="user-dropdown">
                     <button class="user-btn" id="userBtn" aria-label="Menú de usuario" aria-expanded="false" aria-controls="userMenu">
                         <div class="user-avatar">
-                            @if(Auth::user()->avatar)
+                            @if(Auth::check() && Auth::user()->avatar)
                                 <img src="{{ route('storage.serve', ['path' => 'avatars/' . Auth::user()->avatar]) }}" alt="Avatar de {{ Auth::user()->name }}">
                             @else
                                 <div class="avatar-placeholder" aria-label="Avatar">
-                                    {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                                    {{ strtoupper(substr(Auth::check() ? Auth::user()->name : 'U', 0, 1)) }}
                                 </div>
                             @endif
                         </div>
                         <div class="user-info">
-                            <span class="user-name">{{ Auth::user()->name }}</span>
-                            <span class="user-role">{{ Auth::user()->role->name ?? 'Usuario' }}</span>
+                            <span class="user-name">{{ Auth::check() ? Auth::user()->name : 'Invitado' }}</span>
+                            <span class="user-role">{{ Auth::check() ? (Auth::user()->role->name ?? 'Usuario') : 'Invitado' }}</span>
                         </div>
                     </button>
                     <div class="user-menu" id="userMenu" role="region" aria-label="Menú de usuario">
                         <div class="user-menu-header">
                             <div class="user-avatar-large">
-                                @if(Auth::user()->avatar)
+                                @if(Auth::check() && Auth::user()->avatar)
                                     <img src="{{ route('storage.serve', ['path' => 'avatars/' . Auth::user()->avatar]) }}" alt="{{ Auth::user()->name }}">
                                 @else
                                     <div class="avatar-placeholder">
-                                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                                        {{ strtoupper(substr(Auth::check() ? Auth::user()->name : 'U', 0, 1)) }}
                                     </div>
                                 @endif
                             </div>
                             <div>
-                                <p class="user-menu-name">{{ Auth::user()->name }}</p>
-                                <p class="user-menu-email">{{ Auth::user()->email }}</p>
+                                <p class="user-menu-name">{{ Auth::check() ? Auth::user()->name : 'Invitado' }}</p>
+                                <p class="user-menu-email">{{ Auth::check() ? Auth::user()->email : 'invitado@ejemplo.com' }}</p>
                             </div>
                         </div>
                         <div class="menu-divider"></div>

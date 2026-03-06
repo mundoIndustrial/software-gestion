@@ -42,6 +42,15 @@ class ObtenerPrendasRecibosService
         if ($tipoOperario === 'cortador') {
             $query->where('estado', '!=', 'PENDIENTE_INSUMOS');
         }
+
+        // Restricciones por rol sobre áreas visibles
+        if ($tipoOperario === 'cortador') {
+            $query->whereIn('area', ['Corte', 'Costura']);
+        }
+
+        if ($tipoOperario === 'costurero') {
+            $query->whereIn('area', ['Costura']);
+        }
         
         $recibos = $query->orderBy('created_at', 'desc')->get();
 
@@ -130,6 +139,16 @@ class ObtenerPrendasRecibosService
         $recibos = $recibos->unique(function ($recibo) {
             return ($recibo->prenda_id ?: ('pedido_' . $recibo->pedido_produccion_id)) . '_' . $recibo->tipo_recibo;
         })->values();
+
+        // vista-costura: solo debe ver recibos que estén actualmente en el área Costura
+        if ($tipoOperario === 'vista-costura') {
+            $recibos = $recibos
+                ->filter(function ($recibo) {
+                    $area = strtolower(trim((string) ($recibo->area ?? '')));
+                    return $area === 'costura';
+                })
+                ->values();
+        }
 
         \Log::info(' [ObtenerPrendasRecibosService] Recibos encontrados', [
             'total_recibos' => $recibos->count(),
@@ -322,6 +341,12 @@ class ObtenerPrendasRecibosService
                             ->latest('created_at')
                             ->first();
 
+                        $procesoCostura = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
+                            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                            ->whereNull('deleted_at')
+                            ->latest('created_at')
+                            ->first();
+
                         $parcialId = null;
                         $notas = isset($recibo->notas) ? (string) $recibo->notas : '';
                         if ($notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
@@ -353,6 +378,8 @@ class ObtenerPrendasRecibosService
                             'creado_en' => $creadoEn,
                             'area' => $recibo->area,
                             'proceso_id' => $procesoCC ? $procesoCC->id : null,
+                            'proceso_id_costura' => $procesoCostura ? $procesoCostura->id : null,
+                            'encargado_costura' => $procesoCostura ? $procesoCostura->encargado : null,
                             'es_parcial' => $esParcial,
                             'pedido_parcial_id' => $parcialId,
                         ];

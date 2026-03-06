@@ -70,6 +70,10 @@ class DashboardController extends Controller
                 return redirect()->route('registros.recibos-costura');
             }
 
+            if ($roleName === 'administrador-costura') {
+                return redirect()->route('tableros-ordenes.index');
+            }
+
             if ($roleName === 'cartera') {
                 return redirect()->route('cartera.pedidos');
             }

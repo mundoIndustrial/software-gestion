@@ -17,6 +17,82 @@ class ReciboCosturaController extends Controller
         $this->middleware('auth');
     }
 
+    public function limpiarEncargadoCostura(Request $request, $pedidoId, $prendaId)
+    {
+        try {
+            if (!auth()->user()->hasRole('vista-costura')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permisos para realizar esta acción'
+                ], 403);
+            }
+
+            $request->validate([
+                'tipo_recibo' => 'required|string'
+            ]);
+
+            $pedido = PedidoProduccion::findOrFail($pedidoId);
+
+            $recibo = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedido->id)
+                ->where('prenda_id', $prendaId)
+                ->whereRaw('UPPER(tipo_recibo) = ?', [strtoupper($request->tipo_recibo)])
+                ->whereRaw('LOWER(TRIM(area)) = ?', ['costura'])
+                ->where('activo', 1)
+                ->first();
+
+            if (!$recibo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recibo no encontrado o no está en Costura'
+                ], 404);
+            }
+
+            DB::beginTransaction();
+
+            $procesoCostura = ProcesoPrenda::where('prenda_pedido_id', $prendaId)
+                ->where('numero_pedido', $pedido->numero_pedido)
+                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                ->whereNull('deleted_at')
+                ->latest('fecha_inicio')
+                ->first();
+
+            if (!$procesoCostura) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró proceso de Costura'
+                ], 404);
+            }
+
+            $procesoCostura->update([
+                'encargado' => null,
+                'estado_proceso' => 'Pendiente',
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Encargado de Costura eliminado correctamente',
+                'data' => [
+                    'proceso_id' => $procesoCostura->id,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error limpiando encargado de Costura', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar encargado: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     /**
      * Cambiar área de recibo a Control Calidad
      */
@@ -312,22 +388,39 @@ class ReciboCosturaController extends Controller
 
             $areaAnterior = $recibo->area;
 
-            // Crear proceso de Costura en procesos_prenda
-            $nuevoProceso = ProcesoPrenda::create([
-                'numero_pedido'     => $pedido->numero_pedido,
-                'prenda_pedido_id'  => $request->prenda_id,
-                'numero_recibo'     => $recibo->consecutivo_actual,
-                'proceso'           => 'Costura',
-                'fecha_inicio'      => now(),
-                'encargado'         => $request->encargado,
-                'estado_proceso'    => 'En Progreso',
-                'codigo_referencia' => 'COS-' . $recibo->consecutivo_actual . '-' . date('YmdHis')
-            ]);
+            // Si ya existe proceso de Costura (ej. creado por cortador al completar),
+            // NO crear uno nuevo ni actualizar área; solo asignar encargado.
+            $procesoExistente = ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                ->where('prenda_pedido_id', $request->prenda_id)
+                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                ->whereNull('deleted_at')
+                ->latest('fecha_inicio')
+                ->first();
 
-            // Actualizar área del recibo a Costura
-            $recibo->update([
-                'area' => 'Costura'
-            ]);
+            if ($procesoExistente) {
+                $procesoExistente->update([
+                    'encargado' => $request->encargado,
+                    'estado_proceso' => $procesoExistente->estado_proceso === 'Pendiente' ? 'En Progreso' : $procesoExistente->estado_proceso,
+                ]);
+                $nuevoProceso = $procesoExistente;
+            } else {
+                // Crear proceso de Costura en procesos_prenda
+                $nuevoProceso = ProcesoPrenda::create([
+                    'numero_pedido'     => $pedido->numero_pedido,
+                    'prenda_pedido_id'  => $request->prenda_id,
+                    'numero_recibo'     => $recibo->consecutivo_actual,
+                    'proceso'           => 'Costura',
+                    'fecha_inicio'      => now(),
+                    'encargado'         => $request->encargado,
+                    'estado_proceso'    => 'En Progreso',
+                    'codigo_referencia' => 'COS-' . $recibo->consecutivo_actual . '-' . date('YmdHis')
+                ]);
+
+                // Actualizar área del recibo a Costura
+                $recibo->update([
+                    'area' => 'Costura'
+                ]);
+            }
 
             DB::commit();
 

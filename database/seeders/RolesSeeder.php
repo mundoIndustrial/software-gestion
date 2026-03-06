@@ -76,6 +76,11 @@ class RolesSeeder extends Seeder
                 'description' => 'Líder de Control de Calidad - ve recibos de costura/reflectivo sin restricción por área',
                 'requires_credentials' => true,
             ],
+            [
+                'name' => 'administrador-costura',
+                'description' => 'Administrador Costura - Acceso a tableros de órdenes (costura)',
+                'requires_credentials' => true,
+            ],
         ];
 
         foreach ($roles as $role) {

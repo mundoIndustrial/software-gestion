@@ -11,6 +11,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EntregaController;
 use App\Http\Controllers\EntregasCompletasController;
 use App\Http\Controllers\TablerosController;
+use App\Http\Controllers\TablerosOrdenesController;
 use App\Http\Controllers\VistasController;
 use App\Http\Controllers\BalanceoController;
 use App\Infrastructure\Http\Controllers\Asesores\CotizacionesViewController;
@@ -524,7 +525,7 @@ Route::middleware(['web', 'auth'])->group(function () {
                     'error' => 'Error al cargar sugerencias: ' . $e->getMessage()
                 ], 500);
             }
-        })->name('cartera.rechazados.clientes.sugerencias');
+        })->name('cartera.rechazados.clientes.sugerencias2');
         
         Route::post('/numeros/sugerencias', function (\Illuminate\Http\Request $request) {
             try {
@@ -1386,6 +1387,19 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/public/colores', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerColores'])->name('api.public.colores');
     Route::post('/api/public/colores', [App\Http\Controllers\Api_temp\PedidoController::class, 'crearObtenerColor'])->name('api.public.colores.create');
 });
+
+// Rutas para tableros_ordenes
+Route::get('/tableros_ordenes', function () {
+    return view('tableros_ordenes.index');
+})->name('tableros-ordenes.index');
+
+Route::get('/tableros_ordenes/api/costureros', [TablerosOrdenesController::class, 'costureros'])->name('tableros-ordenes.api.costureros');
+Route::get('/tableros_ordenes/api/recibos/buscar', [TablerosOrdenesController::class, 'buscarRecibos'])->name('tableros-ordenes.api.recibos.buscar');
+
+Route::get('/tableros_ordenes/api/recibos/fijado', [TablerosOrdenesController::class, 'obtenerReciboFijado'])->name('tableros-ordenes.api.recibos.fijado.obtener');
+Route::post('/tableros_ordenes/api/recibos/fijar', [TablerosOrdenesController::class, 'fijarRecibo'])->name('tableros-ordenes.api.recibos.fijar');
+Route::delete('/tableros_ordenes/api/recibos/fijado', [TablerosOrdenesController::class, 'limpiarReciboFijado'])->name('tableros-ordenes.api.recibos.fijado.limpiar');
+Route::get('/tableros_ordenes/api/recibos/por-id', [TablerosOrdenesController::class, 'obtenerReciboPorId'])->name('tableros-ordenes.api.recibos.por-id');
 
 Route::middleware(['auth', 'supervisor-access'])->group(function () {
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
@@ -2906,6 +2920,10 @@ Route::middleware(['auth'])->prefix('recibos-novedades')->name('recibos-novedade
     Route::post('{pedidoId}/{numeroRecibo}/pasar-a-costura', [App\Infrastructure\Http\Controllers\ReciboCosturaController::class, 'pasarACostura'])
         ->name('pasar-a-costura');
     
+    // Limpiar encargado de Costura (sin cambiar área ni eliminar proceso)
+    Route::delete('{pedidoId}/{prendaId}/limpiar-encargado-costura', [App\Infrastructure\Http\Controllers\ReciboCosturaController::class, 'limpiarEncargadoCostura'])
+        ->name('limpiar-encargado-costura');
+
     // Deshacer Costura
     Route::delete('{pedidoId}/{prendaId}/deshacer-costura', [App\Infrastructure\Http\Controllers\ReciboCosturaController::class, 'deshacerCostura'])
         ->name('deshacer-costura');

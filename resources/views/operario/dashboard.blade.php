@@ -113,6 +113,14 @@
                                     <span class="badge-completado-corte {{ $completadoVistaSegunArea ? 'is-on' : '' }}">
                                         {{ $labelEstadoVista }}
                                     </span>
+                                    @php
+                                        $encargadoCosturaBadge = $reciboPrincipal['encargado_costura'] ?? null;
+                                        $encargadoCosturaBadge = is_string($encargadoCosturaBadge) ? trim($encargadoCosturaBadge) : $encargadoCosturaBadge;
+                                    @endphp
+                                    <strong class="label-encargado">Encargado:</strong>
+                                    <span class="badge-encargado">
+                                        {{ $encargadoCosturaBadge ? strtoupper($encargadoCosturaBadge) : 'SIN ENCARGADO' }}
+                                    </span>
                                 </div>
                             @endif
                             <div class="orden-left">
@@ -151,16 +159,20 @@
                                         @php
                                             $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
                                             $areaActual = $prenda['recibos'][0]['area'] ?? null;
-                                            $procesoId = $prenda['recibos'][0]['proceso_id'] ?? null;
+                                            $procesoId = $prenda['recibos'][0]['proceso_id_costura'] ?? null;
+                                            $encargadoCostura = $prenda['recibos'][0]['encargado_costura'] ?? null;
                                             $tipoRecibo = strtoupper($tiposUnicos->first() ?? 'COSTURA');
                                             $esCC = in_array(strtolower(trim($areaActual ?? '')), ['control calidad', 'control de calidad']);
                                             $esCosturaProceso = strtolower(trim($areaActual ?? '')) === 'costura';
                                             $esTipoReciboCostura = in_array('COSTURA', $tiposUnicos->toArray());
+                                            $encargadoCostura = is_string($encargadoCostura) ? trim($encargadoCostura) : $encargadoCostura;
+                                            $tieneEncargadoCostura = !empty($encargadoCostura);
+                                            $mostrarComoDeshacerCostura = $esCosturaProceso && $tieneEncargadoCostura;
                                         @endphp
 
                                         {{-- Botón "Pasar a Costura" o "DESHACER COSTURA" solo para recibos tipo COSTURA --}}
                                         @if($esTipoReciboCostura)
-                                            <button class="btn-pasar-costura {{ $esCosturaProceso ? 'btn-deshacer-costura' : '' }}" 
+                                            <button class="btn-pasar-costura {{ $mostrarComoDeshacerCostura ? 'btn-deshacer-costura' : '' }}" 
                                                     id="btn-costura-{{ $prenda['prenda_id'] }}"
                                                     data-pedido-id="{{ $prenda['pedido_id'] }}"
                                                     data-prenda-id="{{ $prenda['prenda_id'] }}"
@@ -169,9 +181,10 @@
                                                     data-recibo="{{ isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'] }}"
                                                     data-area="{{ $areaActual ?? '' }}"
                                                     data-proceso-id="{{ $procesoId }}"
+                                                    data-encargado-costura="{{ is_string($encargadoCostura ?? null) ? trim($encargadoCostura) : ($encargadoCostura ?? '') }}"
                                                     onclick="manejarPasarACostura(this)">
-                                                <span class="material-symbols-rounded">{{ $esCosturaProceso ? 'undo' : 'checkroom' }}</span>
-                                                {{ $esCosturaProceso ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
+                                                <span class="material-symbols-rounded">{{ $mostrarComoDeshacerCostura ? 'undo' : 'checkroom' }}</span>
+                                                {{ $mostrarComoDeshacerCostura ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
                                             </button>
                                         @endif
 
@@ -195,6 +208,35 @@
                                         <span class="material-symbols-rounded">comment</span>
                                         AGREGAR NOVEDAD
                                     </button>
+                                    @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura'))
+                                        @php
+                                            $reciboReflectivo = collect($prenda['recibos'] ?? [])->first(function($r) {
+                                                return strtoupper((string)($r['tipo_recibo'] ?? '')) === 'REFLECTIVO';
+                                            });
+                                            $tieneReciboReflectivo = !empty($reciboReflectivo);
+                                            $encargadoCosturaRef = $reciboReflectivo['encargado_costura'] ?? null;
+                                            $encargadoCosturaRef = is_string($encargadoCosturaRef) ? trim($encargadoCosturaRef) : $encargadoCosturaRef;
+                                            $tieneEncargadoCosturaRef = !empty($encargadoCosturaRef);
+                                            $areaReciboRef = $reciboReflectivo['area'] ?? '';
+                                            $esCosturaAreaRef = strtolower(trim((string)$areaReciboRef)) === 'costura';
+                                        @endphp
+                                        @if($tieneReciboReflectivo && $esCosturaAreaRef)
+                                            <button class="btn-pasar-costura {{ $tieneEncargadoCosturaRef ? 'btn-deshacer-costura' : '' }}" 
+                                                    id="btn-costura-reflectivo-{{ $prenda['prenda_id'] }}"
+                                                    data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                    data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                    data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                    data-tipo-recibo="REFLECTIVO"
+                                                    data-recibo="{{ $reciboReflectivo['consecutivo_actual'] ?? $prenda['numero_pedido'] }}"
+                                                    data-area="{{ $areaReciboRef }}"
+                                                    data-proceso-id="{{ $reciboReflectivo['proceso_id_costura'] ?? '' }}"
+                                                    data-encargado-costura="{{ $encargadoCosturaRef ?? '' }}"
+                                                    onclick="manejarPasarACostura(this)">
+                                                <span class="material-symbols-rounded">{{ $tieneEncargadoCosturaRef ? 'undo' : 'checkroom' }}</span>
+                                                {{ $tieneEncargadoCosturaRef ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
+                                            </button>
+                                        @endif
+                                    @endif
                                     @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura'))
                                         {{-- Para costura-reflectivo/vista-costura, crear un botón por cada TIPO de recibo (sin duplicados) --}}
                                         @php
@@ -690,6 +732,15 @@
         background: rgba(255, 255, 255, 0.65);
         color: #0F172A;
         backdrop-filter: blur(2px);
+    }
+
+    .label-encargado {
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 0.3px;
+        color: #0F172A;
+        display: inline-flex;
+        align-items: center;
     }
 
     .badge-completado-corte.is-on {
@@ -2645,15 +2696,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const recibo = btn.dataset.recibo;
         const area = btn.dataset.area;
         const procesoId = btn.dataset.procesoId;
+        const encargadoCostura = (btn.dataset.encargadoCostura || '').trim();
         const btnId = btn.id;
 
-        if (esAreaCostura(area)) {
+        if (esAreaCostura(area) && encargadoCostura) {
             // DESHACER COSTURA
             deshacerCostura(pedidoId, prendaId, tipoRecibo, btnId);
-        } else {
-            // Abrir modal para pedir encargado
-            abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, btnId);
+            return;
         }
+
+        // Abrir modal para pedir encargado
+        abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, btnId);
     }
 
     function abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, btnId) {
@@ -2718,7 +2771,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Actualizar dinámicamente el botón a DESHACER COSTURA
                 const btn = document.getElementById(btnId);
                 if (btn) {
-                    btn.dataset.area = 'Costura';
+                    btn.dataset.area = btn.dataset.area || 'Costura';
                     btn.dataset.procesoId = data.data.proceso_id;
                     btn.classList.add('btn-deshacer-costura');
                     btn.innerHTML = '<span class="material-symbols-rounded">undo</span> DESHACER COSTURA';
@@ -2775,7 +2828,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.style.opacity = '0.6';
         btn.style.pointerEvents = 'none';
 
-        fetch('/recibos-novedades/' + pedidoId + '/' + prendaId + '/deshacer-costura', {
+        fetch('/recibos-novedades/' + pedidoId + '/' + prendaId + '/limpiar-encargado-costura', {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -2788,10 +2841,9 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Actualizar botón a PASAR A COSTURA
+                // Actualizar botón a PASAR A COSTURA (solo se limpió encargado)
                 if (btn) {
-                    btn.dataset.area = data.data.area_nueva || '';
-                    btn.dataset.procesoId = '';
+                    btn.dataset.encargadoCostura = '';
                     btn.classList.remove('btn-deshacer-costura');
                     btn.innerHTML = '<span class="material-symbols-rounded">checkroom</span> PASAR A COSTURA';
 
@@ -2801,15 +2853,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         const body = card ? card.querySelector('.orden-body') : null;
                         const badgeArea = body ? body.querySelector('.orden-top-badges .badge-area') : null;
                         const badgeEstado = body ? body.querySelector('.orden-top-badges .badge-completado-corte') : null;
+                        const badgeEncargado = body ? body.querySelector('.orden-top-badges .badge-encargado') : null;
 
-                        const areaNueva = (data.data.area_nueva || 'â€”').toString().trim().toUpperCase();
-
-                        if (badgeArea) {
-                            badgeArea.textContent = areaNueva;
+                        if (badgeEncargado) {
+                            badgeEncargado.textContent = 'SIN ENCARGADO';
                         }
 
                         if (badgeEstado) {
-                            badgeEstado.textContent = 'PENDIENTE ' + areaNueva;
+                            badgeEstado.textContent = 'PENDIENTE COSTURA';
                             badgeEstado.classList.remove('is-on');
                         }
 
@@ -2819,8 +2870,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
 
-                mostrarExito('Éxito', 'Proceso de Costura deshecho correctamente');
-                console.log('âœ“ Costura deshecha. Ãrea restaurada a: ' + (data.data.area_nueva || 'sin Ã¡rea'));
+                mostrarExito('Éxito', 'Encargado de Costura eliminado correctamente');
+                console.log('âœ“ Encargado de Costura eliminado');
             } else {
                 btn.innerHTML = originalHTML;
                 mostrarError('Error', data.message || 'Error al deshacer Costura');
@@ -2929,15 +2980,27 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Actualizar dinámicamente el botón
-                    const procesoId = data.data.proceso_id;
-                    const btn = document.getElementById(btnId);
-                    btn.dataset.area = 'Control Calidad';
-                    btn.dataset.procesoId = procesoId;
+                    const dashboard = document.querySelector('.operario-dashboard');
+                    if (dashboard && dashboard.classList.contains('is-vista-costura')) {
+                        const card = btn.closest('.orden-card-simple');
+                        if (card) {
+                            card.remove();
+                        }
+                        mostrarExito('Éxito', 'Recibo enviado a Control de Calidad');
+                        return;
+                    }
+
+                    const btnEl = document.getElementById(btnId);
+                    if (!btnEl) {
+                        mostrarExito('Éxito', 'Recibo enviado a Control de Calidad');
+                        return;
+                    }
+                    btnEl.dataset.area = 'Control Calidad';
+                    btnEl.dataset.procesoId = data.data.proceso_id;
                     
-                    const icon = btn.querySelector('.material-symbols-rounded');
+                    const icon = btnEl.querySelector('.material-symbols-rounded');
                     icon.textContent = 'undo';
-                    btn.innerHTML = '<span class="material-symbols-rounded">undo</span> DESHACER';
+                    btnEl.innerHTML = '<span class="material-symbols-rounded">undo</span> DESHACER';
                     
                     console.log('âœ“ Prenda enviada a Control Calidad');
                 } else {
