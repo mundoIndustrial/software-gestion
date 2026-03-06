@@ -404,21 +404,25 @@ Route::middleware('api')->post('epp/imagenes/upload', [\App\Infrastructure\Http\
 Route::middleware('api')->delete('epp/imagenes/{imagenId}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'eliminarImagen'])
     ->name('epp.imagenes.eliminar');
 
-// Búsqueda y listado de EPP
+// ========== GESTIÓN DE EPP - Solo accesible para gestor_epp y admin ==========
+// NOTA: Usamos middleware 'web' porque estas rutas son llamadas desde el navegador con sesión
+Route::middleware(['web', 'auth', 'role:gestor_epp,admin'])->group(function () {
+    // Endpoint simplificado para gestión (con relación de categoría)
+    Route::get('epp/gestion', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'indexSimple'])
+        ->name('epp.gestion-api');
+
+    // Crear nuevo EPP (solo nombre_completo)
+    Route::post('epp', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'crearEppSimple'])
+        ->name('epp.store');
+});
+
+// Búsqueda y listado de EPP (usado por asesores)
 Route::middleware('api')->get('epp', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'index'])
     ->name('epp.index');
 
-// Endpoint simplificado para gestión (con relación de categoría)
-Route::middleware('api')->get('epp/gestion', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'indexSimple'])
-    ->name('epp.gestion-api');
-
-// Buscar EPP por término
+// Buscar EPP por término (usado por asesores)
 Route::middleware('api')->get('epps/buscar', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'buscar'])
     ->name('epp.buscar');
-
-// Crear nuevo EPP (solo nombre_completo)
-Route::middleware('api')->post('epp', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'crearEppSimple'])
-    ->name('epp.store');
 
 
 // Debug: Prueba simple de EPP
@@ -485,22 +489,25 @@ Route::middleware('api')->get('epp/categorias/simple', [\App\Infrastructure\Http
 
 // Ruta para crear EPP movida arriba (POST epp ahora usa crearEppSimple)
 
-Route::middleware('api')->get('epp/{id}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'show'])
-    ->name('epp.show');
+// ========== CRUD DE EPP - Solo accesible para gestor_epp y admin ==========
+// NOTA: Usamos middleware 'web' porque estas rutas son llamadas desde el navegador con sesión
+Route::middleware(['web', 'auth', 'role:gestor_epp,admin'])->group(function () {
+    Route::get('epp/{id}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'show'])
+        ->name('epp.show');
 
-// CRUD completo para EPPs
-Route::middleware('api')->put('epp/{id}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'update'])
-    ->name('epp.update');
+    Route::put('epp/{id}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'update'])
+        ->name('epp.update');
 
-Route::middleware('api')->delete('epp/{id}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'destroy'])
-    ->name('epp.destroy');
+    Route::delete('epp/{id}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'destroy'])
+        ->name('epp.destroy');
 
-// Endpoints alternativos para compatibilidad con frontend
-Route::middleware('api')->post('epp/{id}/actualizar', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'actualizarDirecto'])
-    ->name('epp.actualizar-directo');
+    // Endpoints alternativos para compatibilidad con frontend
+    Route::post('epp/{id}/actualizar', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'actualizarDirecto'])
+        ->name('epp.actualizar-directo');
 
-Route::middleware('api')->post('epp/{id}/eliminar', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'eliminarDirecto'])
-    ->name('epp.eliminar-directo');
+    Route::post('epp/{id}/eliminar', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'eliminarDirecto'])
+        ->name('epp.eliminar-directo');
+});
 
 // Gestión de EPP en pedidos - Rutas RESTful
 Route::middleware('api')->prefix('pedidos/{pedido}/epps')->name('pedidos.epps.')->group(function () {

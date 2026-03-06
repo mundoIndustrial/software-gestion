@@ -242,11 +242,22 @@
 
             let html = '';
             
+            // Botón ir al inicio (<<)
+            html += `
+                <button ${this.paginaActual === 1 ? 'disabled' : ''} 
+                    onclick="gestorEpps.cambiarPagina(1)" 
+                    class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium ${this.paginaActual === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'} transition"
+                    title="Primera página">
+                    <span class="material-symbols-rounded text-base">keyboard_double_arrow_left</span>
+                </button>
+            `;
+            
             // Botón anterior
             html += `
                 <button ${this.paginaActual === 1 ? 'disabled' : ''} 
                     onclick="gestorEpps.cambiarPagina(${this.paginaActual - 1})" 
-                    class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium ${this.paginaActual === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'} transition">
+                    class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium ${this.paginaActual === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'} transition"
+                    title="Página anterior">
                     <span class="material-symbols-rounded text-base">chevron_left</span>
                 </button>
             `;
@@ -273,8 +284,19 @@
             html += `
                 <button ${this.paginaActual === totalPages ? 'disabled' : ''} 
                     onclick="gestorEpps.cambiarPagina(${this.paginaActual + 1})" 
-                    class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium ${this.paginaActual === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'} transition">
+                    class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium ${this.paginaActual === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'} transition"
+                    title="Página siguiente">
                     <span class="material-symbols-rounded text-base">chevron_right</span>
+                </button>
+            `;
+            
+            // Botón ir al final (>>)
+            html += `
+                <button ${this.paginaActual === totalPages ? 'disabled' : ''} 
+                    onclick="gestorEpps.cambiarPagina(${totalPages})" 
+                    class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium ${this.paginaActual === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'} transition"
+                    title="Última página">
+                    <span class="material-symbols-rounded text-base">keyboard_double_arrow_right</span>
                 </button>
             `;
 

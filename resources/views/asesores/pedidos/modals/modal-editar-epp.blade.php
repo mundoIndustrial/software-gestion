@@ -341,7 +341,7 @@ async function filtrarEPPsEnEdicion(valor) {
     
     try {
         // Usar el mismo endpoint que modal-agregar-epp
-        const response = await fetch(`/api/epp/gestion?q=${encodeURIComponent(busqueda)}&per_page=100`);
+        const response = await fetch(`/api/epp?q=${encodeURIComponent(busqueda)}&per_page=100`);
         const result = await response.json();
         const epps = (result.success && result.data) ? result.data : [];
         

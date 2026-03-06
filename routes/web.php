@@ -2669,7 +2669,7 @@ require __DIR__.'/bodega.php';
 // ========================================
 // RUTAS DE EPP (GESTIÓN COMPLETA)
 // ========================================
-Route::prefix('epp')->name('epp.')->group(function () {
+Route::middleware(['auth', 'role:gestor_epp,admin'])->prefix('epp')->name('epp.')->group(function () {
     Route::get('/', [App\Infrastructure\Http\Controllers\Epp\EppController::class, 'vistaGestion'])
         ->name('gestion');
     

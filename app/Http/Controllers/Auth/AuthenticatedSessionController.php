@@ -41,6 +41,11 @@ class AuthenticatedSessionController extends Controller
         if ($user && $user->hasRole('lider-control-calidad')) {
             return redirect(route('control-calidad.dashboard', absolute: false));
         }
+
+        // Gestor EPP - Solo acceso a gestión de EPPs
+        if ($user && $user->hasRole('gestor_epp')) {
+            return redirect(route('epp.gestion', absolute: false));
+        }
         
         \Log::info('Login usuario', [
             'user_id' => $user->id,

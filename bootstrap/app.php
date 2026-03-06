@@ -45,6 +45,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'control-calidad-access' => \App\Http\Middleware\ControlCalidadAccess::class,
             'check.despacho.role' => \App\Http\Middleware\CheckDespachoRole::class,
             'restrict-bodega-roles' => \App\Http\Middleware\RestrictBodegaRoles::class,
+            'restrict-gestor-epp' => \App\Http\Middleware\RestrictGestorEpp::class,
         ]);
         
         // ⚡ TESTING: Deshabilitar CSRF para Postman
@@ -58,6 +59,9 @@ return Application::configure(basePath: dirname(__DIR__))
         
         // Restrict bodega roles to bodega routes only
         $middleware->append(\App\Http\Middleware\RestrictBodegaRoles::class);
+        
+        // Restrict gestor_epp role to /epp routes only
+        $middleware->append(\App\Http\Middleware\RestrictGestorEpp::class);
         
         //  Add memory cleanup middleware to prevent memory exhaustion
         $middleware->append(\App\Http\Middleware\CleanupMemoryAfterRequest::class);

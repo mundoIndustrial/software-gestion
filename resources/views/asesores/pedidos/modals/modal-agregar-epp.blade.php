@@ -416,7 +416,7 @@ async function cargarEPPDisponibles() {
         console.log('[cargarEPPDisponibles] Iniciando carga de EPP...');
         
         // Llamar al endpoint API para obtener los primeros EPPs CON paginación
-        const response = await fetch('/api/epp/gestion');
+        const response = await fetch('/api/epp');
         const result = await response.json();
         
         if (result.success && result.data) {
@@ -528,7 +528,7 @@ async function filtrarDropdownEPP(valor) {
         console.log('[filtrarDropdownEPP] Buscando:', busqueda, 'con EPPs en formulario:', eppYaAgregadosEnFormulario);
         
         // Buscar en el servidor SIN límite de paginación
-        const response = await fetch(`/api/epp/gestion?q=${encodeURIComponent(busqueda)}&per_page=10000`);
+        const response = await fetch(`/api/epp?q=${encodeURIComponent(busqueda)}&per_page=10000`);
         const result = await response.json();
         
         let filtrados = [];
