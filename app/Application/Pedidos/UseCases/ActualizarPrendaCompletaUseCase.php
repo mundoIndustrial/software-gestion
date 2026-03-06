@@ -1143,7 +1143,7 @@ final class ActualizarPrendaCompletaUseCase
 
                     //  ACTUALIZAR TALLAS del proceso si se proporcionan
                     if (isset($proceso['tallas']) && is_array($proceso['tallas']) && !empty($proceso['tallas'])) {
-                        // Eliminar tallas existentes del proceso
+                        // Eliminar tallas existentes del proceso (cascade elimina colores también)
                         $procesoExistente->tallas()->delete();
 
                         // Obtener datosExtendidos si existe (para ubicaciones y observaciones por talla)
@@ -1155,15 +1155,20 @@ final class ActualizarPrendaCompletaUseCase
                                 continue;
                             }
 
-                            foreach ($tallas as $talla => $cantidad) {
+                            foreach ($tallas as $tallaKey => $cantidad) {
                                 if ($cantidad > 0) {
+                                    // Separar talla y color si viene como "talla__color"
+                                    $partes = explode('__', (string)$tallaKey);
+                                    $tallaReal = $partes[0];
+                                    $colorNombre = isset($partes[1]) ? $partes[1] : null;
+
                                     // Extraer ubicaciones y observaciones del datosExtendidos si existe
                                     $ubicacionesTalla = null;
                                     $observacionesTalla = null;
                                     
                                     if (!empty($datosExtendidos)) {
                                         $generoLower = strtolower($genero);
-                                        $tallaDatos = $datosExtendidos[$generoLower][$talla] ?? null;
+                                        $tallaDatos = $datosExtendidos[$generoLower][$tallaKey] ?? null;
                                         
                                         if ($tallaDatos) {
                                             if (isset($tallaDatos['ubicaciones']) && !empty($tallaDatos['ubicaciones'])) {
@@ -1175,13 +1180,27 @@ final class ActualizarPrendaCompletaUseCase
                                         }
                                     }
 
-                                    $procesoExistente->tallas()->create([
+                                    $tallaCreada = $procesoExistente->tallas()->create([
                                         'genero' => strtoupper($genero),
-                                        'talla' => strtoupper($talla),
+                                        'talla' => strtoupper($tallaReal),
                                         'cantidad' => (int)$cantidad,
                                         'ubicaciones' => $ubicacionesTalla,
                                         'observaciones' => $observacionesTalla,
                                     ]);
+
+                                    // Si hay color, recrear registro en pedidos_procesos_prenda_talla_colores
+                                    if (!empty($colorNombre)) {
+                                        \DB::table('pedidos_procesos_prenda_talla_colores')->insert([
+                                            'pedidos_procesos_prenda_talla_id' => $tallaCreada->id,
+                                            'color_nombre' => $colorNombre,
+                                            'tela_nombre' => null,
+                                            'cantidad' => (int)$cantidad,
+                                            'ubicaciones' => $ubicacionesTalla,
+                                            'observaciones' => $observacionesTalla,
+                                            'created_at' => now(),
+                                            'updated_at' => now(),
+                                        ]);
+                                    }
                                 }
                             }
                         }
@@ -1270,15 +1289,20 @@ final class ActualizarPrendaCompletaUseCase
                             
                             foreach ($proceso['tallas'] as $genero => $tallas) {
                                 if (!is_array($tallas)) continue;
-                                foreach ($tallas as $talla => $cantidad) {
+                                foreach ($tallas as $tallaKey => $cantidad) {
                                     if ($cantidad > 0) {
+                                        // Separar talla y color si viene como "talla__color"
+                                        $partes = explode('__', (string)$tallaKey);
+                                        $tallaReal = $partes[0];
+                                        $colorNombre = isset($partes[1]) ? $partes[1] : null;
+
                                         // Extraer ubicaciones y observaciones del datosExtendidos si existe
                                         $ubicacionesTalla = null;
                                         $observacionesTalla = null;
                                         
                                         if (!empty($datosExtendidos)) {
                                             $generoLower = strtolower($genero);
-                                            $tallaDatos = $datosExtendidos[$generoLower][$talla] ?? null;
+                                            $tallaDatos = $datosExtendidos[$generoLower][$tallaKey] ?? null;
                                             
                                             if ($tallaDatos) {
                                                 if (isset($tallaDatos['ubicaciones']) && !empty($tallaDatos['ubicaciones'])) {
@@ -1290,13 +1314,27 @@ final class ActualizarPrendaCompletaUseCase
                                             }
                                         }
 
-                                        $procesoExistente->tallas()->create([
+                                        $tallaCreada = $procesoExistente->tallas()->create([
                                             'genero' => strtoupper($genero),
-                                            'talla' => strtoupper($talla),
+                                            'talla' => strtoupper($tallaReal),
                                             'cantidad' => (int)$cantidad,
                                             'ubicaciones' => $ubicacionesTalla,
                                             'observaciones' => $observacionesTalla,
                                         ]);
+
+                                        // Si hay color, recrear registro en pedidos_procesos_prenda_talla_colores
+                                        if (!empty($colorNombre)) {
+                                            \DB::table('pedidos_procesos_prenda_talla_colores')->insert([
+                                                'pedidos_procesos_prenda_talla_id' => $tallaCreada->id,
+                                                'color_nombre' => $colorNombre,
+                                                'tela_nombre' => null,
+                                                'cantidad' => (int)$cantidad,
+                                                'ubicaciones' => $ubicacionesTalla,
+                                                'observaciones' => $observacionesTalla,
+                                                'created_at' => now(),
+                                                'updated_at' => now(),
+                                            ]);
+                                        }
                                     }
                                 }
                             }
@@ -1319,6 +1357,7 @@ final class ActualizarPrendaCompletaUseCase
                     'ubicaciones' => !empty($ubicaciones) ? json_encode($ubicaciones) : json_encode([]),
                     'observaciones' => $proceso['observaciones'] ?? null,
                     'estado' => $proceso['estado'] ?? 'PENDIENTE',
+                    'modo_tallas' => $proceso['modoTallas'] ?? 'generico',
                 ]);
 
                 // Crear tallas del proceso nuevo si se proporcionan
@@ -1328,15 +1367,20 @@ final class ActualizarPrendaCompletaUseCase
                     
                     foreach ($proceso['tallas'] as $genero => $tallas) {
                         if (!is_array($tallas)) continue;
-                        foreach ($tallas as $talla => $cantidad) {
+                        foreach ($tallas as $tallaKey => $cantidad) {
                             if ($cantidad > 0) {
+                                // Separar talla y color si viene como "talla__color"
+                                $partes = explode('__', (string)$tallaKey);
+                                $tallaReal = $partes[0];
+                                $colorNombre = isset($partes[1]) ? $partes[1] : null;
+
                                 // Extraer ubicaciones y observaciones del datosExtendidos si existe
                                 $ubicacionesTalla = null;
                                 $observacionesTalla = null;
                                 
                                 if (!empty($datosExtendidos)) {
                                     $generoLower = strtolower($genero);
-                                    $tallaDatos = $datosExtendidos[$generoLower][$talla] ?? null;
+                                    $tallaDatos = $datosExtendidos[$generoLower][$tallaKey] ?? null;
                                     
                                     if ($tallaDatos) {
                                         if (isset($tallaDatos['ubicaciones']) && !empty($tallaDatos['ubicaciones'])) {
@@ -1348,13 +1392,27 @@ final class ActualizarPrendaCompletaUseCase
                                     }
                                 }
 
-                                $procesoCreado->tallas()->create([
+                                $tallaCreada = $procesoCreado->tallas()->create([
                                     'genero' => strtoupper($genero),
-                                    'talla' => strtoupper($talla),
+                                    'talla' => strtoupper($tallaReal),
                                     'cantidad' => (int)$cantidad,
                                     'ubicaciones' => $ubicacionesTalla,
                                     'observaciones' => $observacionesTalla,
                                 ]);
+
+                                // Si hay color, crear registro en pedidos_procesos_prenda_talla_colores
+                                if (!empty($colorNombre)) {
+                                    \DB::table('pedidos_procesos_prenda_talla_colores')->insert([
+                                        'pedidos_procesos_prenda_talla_id' => $tallaCreada->id,
+                                        'color_nombre' => $colorNombre,
+                                        'tela_nombre' => null,
+                                        'cantidad' => (int)$cantidad,
+                                        'ubicaciones' => $ubicacionesTalla,
+                                        'observaciones' => $observacionesTalla,
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ]);
+                                }
                             }
                         }
                     }
@@ -1680,11 +1738,12 @@ final class ActualizarPrendaCompletaUseCase
             $rolAsesor = 'Sistema';
         }
         
-        // Formatear la novedad: Rol-Nombre-Fecha Hora:Min AM/PM - Novedad
+        // Formatear la novedad: Rol-Nombre-Fecha Hora:Min AM/PM - Modificó la prenda "X" - Novedad
         $nuevaNovedad = trim($dto->novedad);
         $fechaHora = now()->format('d/m/Y h:i A'); // 16/02/2026 12:01 AM
         $rolLabel = ucfirst(str_replace('_', ' ', $rolAsesor)); // supervisor_pedidos → Supervisor pedidos
-        $novedadConInfo = "{$rolLabel}-{$nombreAsesor}-{$fechaHora} - {$nuevaNovedad}";
+        $nombrePrenda = $prenda->nombre_prenda ?? 'Sin nombre';
+        $novedadConInfo = "{$rolLabel}-{$nombreAsesor}-{$fechaHora} - Modificó la prenda \"{$nombrePrenda}\" - {$nuevaNovedad}";
         
         $novedadesActualizadas = $novedadesActuales . ($novedadesActuales ? "\n\n" : "") . $novedadConInfo;
 
@@ -1700,6 +1759,27 @@ final class ActualizarPrendaCompletaUseCase
             'nombre_asesor' => $nombreAsesor,
             'rol_asesor' => $rolAsesor,
         ]);
+
+        // Crear notificación para supervisores
+        try {
+            \App\Models\News::create([
+                'event_type' => 'prenda_modificada',
+                'table_name' => 'prendas_pedido',
+                'record_id' => $prenda->id,
+                'description' => "{$rolLabel} {$nombreAsesor} modificó la prenda \"{$nombrePrenda}\" en Pedido #{$pedido->numero_pedido}",
+                'user_id' => $usuarioAutenticado?->id,
+                'pedido' => $pedido->numero_pedido,
+                'metadata' => [
+                    'tipo' => 'prenda_modificada',
+                    'prenda_id' => $prenda->id,
+                    'prenda_nombre' => $nombrePrenda,
+                    'pedido_id' => $pedido->id,
+                    'novedad' => $nuevaNovedad,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Log::warning('[ActualizarPrendaCompletaUseCase] Error creando News', ['error' => $e->getMessage()]);
+        }
     }
 
     /**
@@ -1714,10 +1794,10 @@ final class ActualizarPrendaCompletaUseCase
      * @param $procesoExistente Proceso a actualizar
      * @param array $tallasNuevas Tallas nuevas por género
      */
-    private function actualizarTallasDelProceso($procesoExistente, array $tallasNuevas): void
+    private function actualizarTallasDelProceso($procesoExistente, array $tallasNuevas, array $datosExtendidos = []): void
     {
         try {
-            // 1. ELIMINAR todas las tallas existentes del proceso
+            // 1. ELIMINAR todas las tallas existentes del proceso (cascade elimina colores)
             $procesoExistente->tallas()->delete();
 
             // 2. CREAR nuevas tallas desde el payload
@@ -1726,13 +1806,52 @@ final class ActualizarPrendaCompletaUseCase
                     continue;
                 }
 
-                foreach ($tallas as $talla => $cantidad) {
+                foreach ($tallas as $tallaKey => $cantidad) {
                     if ($cantidad > 0) {
-                        $procesoExistente->tallas()->create([
+                        // Separar talla y color si viene como "talla__color"
+                        $partes = explode('__', (string)$tallaKey);
+                        $tallaReal = $partes[0];
+                        $colorNombre = isset($partes[1]) ? $partes[1] : null;
+
+                        // Extraer ubicaciones y observaciones del datosExtendidos
+                        $ubicacionesTalla = null;
+                        $observacionesTalla = null;
+
+                        if (!empty($datosExtendidos)) {
+                            $generoLower = strtolower($genero);
+                            $tallaDatos = $datosExtendidos[$generoLower][$tallaKey] ?? null;
+
+                            if ($tallaDatos) {
+                                if (isset($tallaDatos['ubicaciones']) && !empty($tallaDatos['ubicaciones'])) {
+                                    $ubicacionesTalla = json_encode($tallaDatos['ubicaciones']);
+                                }
+                                if (isset($tallaDatos['observaciones'])) {
+                                    $observacionesTalla = $tallaDatos['observaciones'];
+                                }
+                            }
+                        }
+
+                        $tallaCreada = $procesoExistente->tallas()->create([
                             'genero' => strtoupper($genero),
-                            'talla' => strtoupper($talla),
+                            'talla' => strtoupper($tallaReal),
                             'cantidad' => (int)$cantidad,
+                            'ubicaciones' => $ubicacionesTalla,
+                            'observaciones' => $observacionesTalla,
                         ]);
+
+                        // Si hay color, recrear registro en pedidos_procesos_prenda_talla_colores
+                        if (!empty($colorNombre)) {
+                            \DB::table('pedidos_procesos_prenda_talla_colores')->insert([
+                                'pedidos_procesos_prenda_talla_id' => $tallaCreada->id,
+                                'color_nombre' => $colorNombre,
+                                'tela_nombre' => null,
+                                'cantidad' => (int)$cantidad,
+                                'ubicaciones' => $ubicacionesTalla,
+                                'observaciones' => $observacionesTalla,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
                     }
                 }
             }

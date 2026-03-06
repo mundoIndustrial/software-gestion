@@ -353,9 +353,22 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
     if (tituloEl) tituloEl.textContent = `${nombresPorTallas[tipoProceso] || tipoProceso} — Por Tallas`;
 
     // Obtener tallas de la prenda
-    const tallasPrenda = (typeof obtenerTallasDeLaPrenda === 'function')
+    let tallasPrenda = (typeof obtenerTallasDeLaPrenda === 'function')
         ? obtenerTallasDeLaPrenda()
         : { dama: {}, caballero: {}, sobremedida: null };
+
+    // Si el proceso ya tiene tallas propias guardadas, preferir esas para que los keys
+    // coincidan con datosExtendidos (ej: L__SDFDF vs L__AZUL MARINO del prenda)
+    const procesoTallasGuardadas = window.procesosSeleccionados?.[tipoProceso]?.datos?.tallas;
+    if (procesoTallasGuardadas && typeof procesoTallasGuardadas === 'object') {
+        const damaObj = (procesoTallasGuardadas.dama && !Array.isArray(procesoTallasGuardadas.dama)) ? procesoTallasGuardadas.dama : {};
+        const cabObj = (procesoTallasGuardadas.caballero && !Array.isArray(procesoTallasGuardadas.caballero)) ? procesoTallasGuardadas.caballero : {};
+        const sobreObj = (procesoTallasGuardadas.sobremedida && !Array.isArray(procesoTallasGuardadas.sobremedida)) ? procesoTallasGuardadas.sobremedida : null;
+        if (Object.keys(damaObj).length > 0 || Object.keys(cabObj).length > 0) {
+            console.log('[por-tallas] Usando tallas PROPIAS del proceso (no de la prenda):', procesoTallasGuardadas);
+            tallasPrenda = { dama: damaObj, caballero: cabObj, sobremedida: sobreObj };
+        }
+    }
 
     const tallasDama = Object.entries(tallasPrenda.dama || {});
     const tallasCaballero = Object.entries(tallasPrenda.caballero || {});

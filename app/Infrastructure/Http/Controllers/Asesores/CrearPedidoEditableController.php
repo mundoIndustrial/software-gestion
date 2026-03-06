@@ -888,6 +888,28 @@ class CrearPedidoEditableController extends Controller
                 'resumen' => "JSON: {$tiempoPaso1}ms | Cliente: {$tiempoPaso2}ms | DTO: {$tiempoPaso3}ms | PedidoBase: {$tiempoPaso5}ms | Carpetas: {$tiempoPaso6}ms | Imágenes: {$tiempoPaso7}ms | EPPs: {$tiempoPaso7B}ms | Cálculo: {$tiempoPaso8}ms | TOTAL: {$tiempoTotal}ms"
             ]);
 
+            // Crear notificación para supervisores
+            try {
+                $nombreAsesor = Auth::user()->name ?? 'Sistema';
+                \App\Models\News::create([
+                    'event_type' => 'pedido_creado',
+                    'table_name' => 'pedidos_produccion',
+                    'record_id' => $pedidoId,
+                    'description' => "Asesor {$nombreAsesor} creó el Pedido #{$pedido->numero_pedido} - Cliente: {$clienteNombre}",
+                    'user_id' => Auth::id(),
+                    'pedido' => $pedido->numero_pedido,
+                    'metadata' => [
+                        'tipo' => 'pedido_creado',
+                        'pedido_id' => $pedidoId,
+                        'cliente' => $clienteNombre,
+                        'prendas' => $cantidadTotalPrendas,
+                        'epps' => $cantidadTotalEpps,
+                    ],
+                ]);
+            } catch (\Exception $e) {
+                Log::warning('[CrearPedidoEditableController] Error creando News', ['error' => $e->getMessage()]);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Pedido creado exitosamente',

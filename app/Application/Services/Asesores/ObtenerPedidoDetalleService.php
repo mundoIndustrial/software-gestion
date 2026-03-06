@@ -468,66 +468,126 @@ class ObtenerPedidoDetalleService
                 }
                 
                 // Agregar talla con su cantidad
-                if ($tallaRecord->cantidad > 0) {
-                    $tallas[$genero][$tallaRecord->talla] = $tallaRecord->cantidad;
-                }
+                // VERIFICAR si tiene colores asociados en pedidos_procesos_prenda_talla_colores
+                $coloresAsociados = DB::table('pedidos_procesos_prenda_talla_colores')
+                    ->where('pedidos_procesos_prenda_talla_id', $tallaRecord->id)
+                    ->get();
+
+                if ($coloresAsociados->count() > 0) {
+                    // Tiene colores: crear una entrada por cada color con key TALLA__COLOR
+                    foreach ($coloresAsociados as $colorRecord) {
+                        $tallaColorKey = $tallaRecord->talla . '__' . $colorRecord->color_nombre;
+                        $cantidadColor = $colorRecord->cantidad ?? $tallaRecord->cantidad;
+                        
+                        if ($cantidadColor > 0) {
+                            $tallas[$genero][$tallaColorKey] = $cantidadColor;
+                        }
+                        
+                        // Procesar ubicaciones del color
+                        $ubicacionesColor = [];
+                        if ($colorRecord->ubicaciones) {
+                            $decoded = json_decode($colorRecord->ubicaciones, true);
+                            if (is_array($decoded)) {
+                                $ubicacionesColor = $decoded;
+                            } else {
+                                $ubicacionesColor = [$colorRecord->ubicaciones];
+                            }
+                        }
+                        
+                        // Cargar imágenes específicas para esta talla
+                        $imagenesPorTalla = DB::table('pedidos_procesos_imagenes')
+                            ->where('proceso_prenda_talla_id', $tallaRecord->id)
+                            ->whereNull('deleted_at')
+                            ->orderBy('orden', 'asc')
+                            ->get()
+                            ->map(function($img) {
+                                $ruta_webp = $img->ruta_webp ?? '';
+                                $ruta_original = $img->ruta_original ?? '';
+                                if ($ruta_webp && !str_starts_with($ruta_webp, '/storage/')) {
+                                    $ruta_webp = '/storage/' . ltrim($ruta_webp, '/');
+                                }
+                                if ($ruta_original && !str_starts_with($ruta_original, '/storage/')) {
+                                    $ruta_original = '/storage/' . ltrim($ruta_original, '/');
+                                }
+                                return [
+                                    'id' => $img->id,
+                                    'ruta_webp' => $ruta_webp,
+                                    'ruta_original' => $ruta_original,
+                                    'url' => $ruta_webp ?: $ruta_original,
+                                    'es_principal' => $img->es_principal ?? false
+                                ];
+                            })
+                            ->filter(fn($img) => $img['ruta_webp'] || $img['ruta_original'])
+                            ->values()
+                            ->toArray();
+                        
+                        $datosExtendidos[$genero][$tallaColorKey] = [
+                            'cantidadSeleccionada' => $cantidadColor,
+                            'ubicaciones' => $ubicacionesColor,
+                            'observaciones' => $colorRecord->observaciones ?? '',
+                            'imagenes' => $imagenesPorTalla
+                        ];
+                    }
+                } else {
+                    // Sin colores: usar talla simple
+                    if ($tallaRecord->cantidad > 0) {
+                        $tallas[$genero][$tallaRecord->talla] = $tallaRecord->cantidad;
+                    }
                 
-                // NUEVO: Agregar datos extendidos para renderización con ubicaciones/observaciones
-                $tallaKey = $tallaRecord->talla;
-                
-                // Procesar ubicaciones - si es JSON, decodificar a array; si es string, convertir a array
-                $ubicacionesProcesadas = [];
-                if ($tallaRecord->ubicaciones) {
-                    if (is_array($tallaRecord->ubicaciones)) {
-                        $ubicacionesProcesadas = $tallaRecord->ubicaciones;
-                    } else {
-                        // Intentar decodificar como JSON
-                        $decoded = json_decode($tallaRecord->ubicaciones, true);
-                        if (is_array($decoded)) {
-                            $ubicacionesProcesadas = $decoded;
+                    // Agregar datos extendidos para renderización con ubicaciones/observaciones
+                    $tallaKey = $tallaRecord->talla;
+                    
+                    // Procesar ubicaciones - si es JSON, decodificar a array; si es string, convertir a array
+                    $ubicacionesProcesadas = [];
+                    if ($tallaRecord->ubicaciones) {
+                        if (is_array($tallaRecord->ubicaciones)) {
+                            $ubicacionesProcesadas = $tallaRecord->ubicaciones;
                         } else {
-                            // Si no es JSON válido, es un string simple
-                            $ubicacionesProcesadas = [$tallaRecord->ubicaciones];
+                            $decoded = json_decode($tallaRecord->ubicaciones, true);
+                            if (is_array($decoded)) {
+                                $ubicacionesProcesadas = $decoded;
+                            } else {
+                                $ubicacionesProcesadas = [$tallaRecord->ubicaciones];
+                            }
                         }
                     }
+                    
+                    // Cargar imágenes específicas para esta talla desde pedidos_procesos_imagenes
+                    $imagenesPorTalla = DB::table('pedidos_procesos_imagenes')
+                        ->where('proceso_prenda_talla_id', $tallaRecord->id)
+                        ->whereNull('deleted_at')
+                        ->orderBy('orden', 'asc')
+                        ->get()
+                        ->map(function($img) {
+                            $ruta_webp = $img->ruta_webp ?? '';
+                            $ruta_original = $img->ruta_original ?? '';
+                            
+                            if ($ruta_webp && !str_starts_with($ruta_webp, '/storage/')) {
+                                $ruta_webp = '/storage/' . ltrim($ruta_webp, '/');
+                            }
+                            if ($ruta_original && !str_starts_with($ruta_original, '/storage/')) {
+                                $ruta_original = '/storage/' . ltrim($ruta_original, '/');
+                            }
+                            
+                            return [
+                                'id' => $img->id,
+                                'ruta_webp' => $ruta_webp,
+                                'ruta_original' => $ruta_original,
+                                'url' => $ruta_webp ?: $ruta_original,
+                                'es_principal' => $img->es_principal ?? false
+                            ];
+                        })
+                        ->filter(fn($img) => $img['ruta_webp'] || $img['ruta_original'])
+                        ->values()
+                        ->toArray();
+                    
+                    $datosExtendidos[$genero][$tallaKey] = [
+                        'cantidadSeleccionada' => $tallaRecord->cantidad,
+                        'ubicaciones' => $ubicacionesProcesadas,
+                        'observaciones' => $tallaRecord->observaciones ?? '',
+                        'imagenes' => $imagenesPorTalla
+                    ];
                 }
-                
-                // NUEVO: Cargar imágenes específicas para esta talla desde pedidos_procesos_imagenes
-                $imagenesPorTalla = DB::table('pedidos_procesos_imagenes')
-                    ->where('proceso_prenda_talla_id', $tallaRecord->id)
-                    ->whereNull('deleted_at')
-                    ->orderBy('orden', 'asc')
-                    ->get()
-                    ->map(function($img) {
-                        $ruta_webp = $img->ruta_webp ?? '';
-                        $ruta_original = $img->ruta_original ?? '';
-                        
-                        // Normalizar rutas
-                        if ($ruta_webp && !str_starts_with($ruta_webp, '/storage/')) {
-                            $ruta_webp = '/storage/' . ltrim($ruta_webp, '/');
-                        }
-                        if ($ruta_original && !str_starts_with($ruta_original, '/storage/')) {
-                            $ruta_original = '/storage/' . ltrim($ruta_original, '/');
-                        }
-                        
-                        return [
-                            'id' => $img->id,
-                            'ruta_webp' => $ruta_webp,
-                            'ruta_original' => $ruta_original,
-                            'url' => $ruta_webp ?: $ruta_original,
-                            'es_principal' => $img->es_principal ?? false
-                        ];
-                    })
-                    ->filter(fn($img) => $img['ruta_webp'] || $img['ruta_original'])
-                    ->values()
-                    ->toArray();
-                
-                $datosExtendidos[$genero][$tallaKey] = [
-                    'cantidadSeleccionada' => $tallaRecord->cantidad,
-                    'ubicaciones' => $ubicacionesProcesadas,
-                    'observaciones' => $tallaRecord->observaciones ?? '',
-                    'imagenes' => $imagenesPorTalla
-                ];
             }
         }
         

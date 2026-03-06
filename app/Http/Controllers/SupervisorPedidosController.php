@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\TipoCotizacion;
+use App\Models\NewsVisto;
+use App\Models\PedidoVistoSupervisor;
 use Illuminate\Http\JsonResponse;
 
 class SupervisorPedidosController extends Controller
@@ -1176,15 +1178,15 @@ class SupervisorPedidosController extends Controller
                 ], 401);
             }
 
-            // Obtener IDs de órdenes ya vistas por el usuario
-            $viewedOrdenIds = session('viewed_ordenes_' . $user->id, []);
+            // IDs de pedidos ya vistos por este usuario (tabla persistente)
+            $pedidosVistosIds = PedidoVistoSupervisor::where('user_id', $user->id)->pluck('pedido_id')->toArray();
 
             // Obtener todas las órdenes PENDIENTES DE APROBACIÓN
-            // (sin aprobado_por_supervisor_en) QUE TENGAN COTIZACIÓN ASOCIADA Y NO ANULADAS
             $ordenesPendientes = PedidoProduccion::whereNull('aprobado_por_supervisor_en')
-                ->whereNotNull('cotizacion_id')
                 ->where('estado', '!=', 'Anulada')
-                ->whereNotIn('id', $viewedOrdenIds)
+                ->where('estado', '!=', 'pendiente_cartera')
+                ->whereNotNull('numero_pedido')
+                ->where('numero_pedido', '>', 0)
                 ->with(['asesora:id,name'])
                 ->select([
                     'id', 'numero_pedido', 'cliente', 'asesor_id', 
@@ -1193,8 +1195,8 @@ class SupervisorPedidosController extends Controller
                 ->orderBy('fecha_de_creacion_de_orden', 'desc')
                 ->get();
 
-            // Convertir a formato de notificación
-            $notificaciones = $ordenesPendientes->map(function($orden) {
+            // Convertir a formato de notificación con visto por usuario
+            $notificaciones = $ordenesPendientes->map(function($orden) use ($pedidosVistosIds) {
                 return [
                     'id' => $orden->id,
                     'numero_pedido' => $orden->numero_pedido,
@@ -1205,18 +1207,102 @@ class SupervisorPedidosController extends Controller
                     'titulo' => "Orden #" . $orden->numero_pedido . " - " . $orden->cliente,
                     'mensaje' => "Cliente: {$orden->cliente} | Asesor: " . (($orden->asesora?->name) ?? 'N/A'),
                     'tipo' => 'orden_pendiente_aprobacion',
-                    'timestamp' => ($orden->fecha_de_creacion_de_orden?->toIso8601String()) ?? null
+                    'timestamp' => ($orden->fecha_de_creacion_de_orden?->toIso8601String()) ?? null,
+                    'visto' => in_array($orden->id, $pedidosVistosIds),
                 ];
             });
 
-            // Obtener notificaciones NO LEÍDAS del usuario
-            $unreadCount = $user->unreadNotifications()->count();
+            $totalOrdenesNoVistas = $notificaciones->where('visto', false)->count();
+
+            // IDs de news ya vistos por este usuario
+            $newsVistosIds = NewsVisto::where('user_id', $user->id)->pluck('news_id')->toArray();
+
+            // Obtener novedades recientes (News) de los últimos 7 días
+            $novedadesTipos = ['pedido_creado', 'order_created', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado', 'order_status_changed'];
+            $novedadesQuery = \App\Models\News::whereIn('event_type', $novedadesTipos)
+                ->where('created_at', '>=', now()->subDays(7))
+                ->orderBy('created_at', 'desc')
+                ->limit(50)
+                ->get();
+
+            // También agregar órdenes anuladas como novedades
+            $ordenesAnuladas = PedidoProduccion::where('estado', 'Anulada')
+                ->whereNotNull('numero_pedido')
+                ->where('numero_pedido', '>', 0)
+                ->where('updated_at', '>=', now()->subDays(7))
+                ->with(['asesora:id,name'])
+                ->select(['id', 'numero_pedido', 'cliente', 'asesor_id', 'updated_at'])
+                ->orderBy('updated_at', 'desc')
+                ->limit(20)
+                ->get();
+
+            $novedades = $novedadesQuery->map(function($news) use ($newsVistosIds) {
+                    $icono = match($news->event_type) {
+                        'pedido_creado', 'order_created' => 'add_shopping_cart',
+                        'prenda_agregada' => 'checkroom',
+                        'prenda_modificada' => 'edit',
+                        'epp_agregado' => 'health_and_safety',
+                        'epp_modificado' => 'edit',
+                        'order_status_changed' => 'sync_alt',
+                        default => 'notifications',
+                    };
+                    $color = match($news->event_type) {
+                        'pedido_creado', 'order_created' => '#10b981',
+                        'prenda_agregada' => '#3b82f6',
+                        'prenda_modificada' => '#f59e0b',
+                        'epp_agregado' => '#8b5cf6',
+                        'epp_modificado' => '#f59e0b',
+                        'order_status_changed' => '#6366f1',
+                        default => '#6b7280',
+                    };
+                    return [
+                        'id' => $news->id,
+                        'tipo' => $news->event_type,
+                        'descripcion' => $news->description,
+                        'pedido' => $news->pedido,
+                        'fecha' => $news->created_at->format('d/m/Y h:i A'),
+                        'icono' => $icono,
+                        'color' => $color,
+                        'timestamp' => $news->created_at->toIso8601String(),
+                        'metadata' => $news->metadata,
+                        'visto' => in_array($news->id, $newsVistosIds),
+                        'source' => 'news',
+                    ];
+                });
+
+            // Agregar anuladas como novedades con prefijo especial
+            $novedadesAnuladas = $ordenesAnuladas->map(function($orden) use ($pedidosVistosIds) {
+                return [
+                    'id' => 'anulada_' . $orden->id,
+                    'tipo' => 'pedido_anulado',
+                    'descripcion' => "Orden #{$orden->numero_pedido} - {$orden->cliente} fue ANULADA",
+                    'pedido' => $orden->numero_pedido,
+                    'fecha' => $orden->updated_at->format('d/m/Y h:i A'),
+                    'icono' => 'cancel',
+                    'color' => '#ef4444',
+                    'timestamp' => $orden->updated_at->toIso8601String(),
+                    'metadata' => null,
+                    'visto' => in_array($orden->id, $pedidosVistosIds),
+                    'source' => 'anulada',
+                ];
+            });
+
+            // Combinar y ordenar por timestamp
+            $todasNovedades = $novedades->concat($novedadesAnuladas)
+                ->sortByDesc('timestamp')
+                ->values();
+
+            $totalNovedadesNoVistas = $todasNovedades->where('visto', false)->count();
 
             return response()->json([
                 'success' => true,
-                'notificaciones' => $notificaciones,
-                'totalPendientes' => $ordenesPendientes->count(),
-                'sin_leer' => $unreadCount  // Cambiar a contar notificaciones no leídas del usuario
+                'notificaciones' => $notificaciones->values(),
+                'novedades' => $todasNovedades,
+                'totalPendientes' => $notificaciones->count(),
+                'totalOrdenesNoVistas' => $totalOrdenesNoVistas,
+                'totalNovedades' => $todasNovedades->count(),
+                'totalNovedadesNoVistas' => $totalNovedadesNoVistas,
+                'totalGeneral' => $totalOrdenesNoVistas + $totalNovedadesNoVistas,
             ]);
         } catch (\Exception $e) {
             \Log::error('Error al obtener notificaciones: ' . $e->getMessage());
@@ -1245,14 +1331,46 @@ class SupervisorPedidosController extends Controller
             // Marcar notificaciones del modelo de Laravel como leídas
             $user->unreadNotifications()->update(['read_at' => now()]);
 
-            // También guardar en sesión los IDs de órdenes pendientes
-            $viewedOrdenIds = PedidoProduccion::whereNull('aprobado_por_supervisor_en')
-                ->whereNotNull('cotizacion_id')
-                ->where('estado', '!=', 'Anulada')
-                ->pluck('id')
-                ->toArray();
-            
-            session(['viewed_ordenes_' . $user->id => $viewedOrdenIds]);
+            // Marcar todas las novedades como vistas por este usuario
+            $novedadesTipos = ['pedido_creado', 'order_created', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado', 'order_status_changed'];
+            $newsIds = \App\Models\News::whereIn('event_type', $novedadesTipos)
+                ->where('created_at', '>=', now()->subDays(7))
+                ->pluck('id');
+
+            foreach ($newsIds as $newsId) {
+                NewsVisto::firstOrCreate([
+                    'news_id' => $newsId,
+                    'user_id' => $user->id,
+                ]);
+            }
+
+            // Marcar todas las órdenes pendientes como vistas
+            $pedidoIds = PedidoProduccion::whereNull('aprobado_por_supervisor_en')
+                ->where('estado', '!=', 'pendiente_cartera')
+                ->whereNotNull('numero_pedido')
+                ->where('numero_pedido', '>', 0)
+                ->pluck('id');
+
+            foreach ($pedidoIds as $pedidoId) {
+                PedidoVistoSupervisor::firstOrCreate([
+                    'pedido_id' => $pedidoId,
+                    'user_id' => $user->id,
+                ]);
+            }
+
+            // También marcar anuladas como vistas
+            $anuladasIds = PedidoProduccion::where('estado', 'Anulada')
+                ->whereNotNull('numero_pedido')
+                ->where('numero_pedido', '>', 0)
+                ->where('updated_at', '>=', now()->subDays(7))
+                ->pluck('id');
+
+            foreach ($anuladasIds as $anuladaId) {
+                PedidoVistoSupervisor::firstOrCreate([
+                    'pedido_id' => $anuladaId,
+                    'user_id' => $user->id,
+                ]);
+            }
 
             return response()->json([
                 'success' => true,
@@ -1301,6 +1419,60 @@ class SupervisorPedidosController extends Controller
                 'success' => false,
                 'message' => 'Error al marcar notificación: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Toggle visto de una novedad (News) para el usuario actual
+     */
+    public function toggleNewsVisto(Request $request, $newsId)
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
+            }
+
+            $existing = NewsVisto::where('news_id', $newsId)->where('user_id', $user->id)->first();
+
+            if ($existing) {
+                $existing->delete();
+                $visto = false;
+            } else {
+                NewsVisto::create(['news_id' => $newsId, 'user_id' => $user->id]);
+                $visto = true;
+            }
+
+            return response()->json(['success' => true, 'visto' => $visto]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Toggle visto de un pedido para el usuario actual
+     */
+    public function togglePedidoVisto(Request $request, $pedidoId)
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
+            }
+
+            $existing = PedidoVistoSupervisor::where('pedido_id', $pedidoId)->where('user_id', $user->id)->first();
+
+            if ($existing) {
+                $existing->delete();
+                $visto = false;
+            } else {
+                PedidoVistoSupervisor::create(['pedido_id' => $pedidoId, 'user_id' => $user->id]);
+                $visto = true;
+            }
+
+            return response()->json(['success' => true, 'visto' => $visto]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 

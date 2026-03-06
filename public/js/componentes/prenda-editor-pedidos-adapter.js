@@ -569,6 +569,7 @@
                             nombre: d.nombre || tipo,
                             ubicaciones: d.ubicaciones || [],
                             observaciones: d.observaciones || '',
+                            modoTallas: d.modoTallas || d.modo_tallas || proc?.modoTallas || 'generico',
                             tallas: d.tallas || {},
                             datosExtendidos: d.datosExtendidos || {},
                             estado: d.estado || 'PENDIENTE',

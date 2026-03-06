@@ -2413,7 +2413,10 @@ async function finalizarAgregarEPP() {
             return;
         }
 
-        const novedad = novedadResult.value.trim();
+        const motivoUsuario = novedadResult.value.trim();
+        // Construir novedad con nombres de todos los EPPs agregados
+        const nombresEpp = eppAgregadosList.map(e => `"${e.nombre_completo || 'Sin nombre'}"`).join(', ');
+        const novedad = `Agregó EPP: ${nombresEpp} - ${motivoUsuario}`;
         console.log('[finalizarAgregarEPP] MODO EDICIÓN - Guardando vía API para pedido:', pedidoIdExistente, 'novedad:', novedad);
         await _guardarEPPsViaAPI(pedidoIdExistente, novedad);
         return;

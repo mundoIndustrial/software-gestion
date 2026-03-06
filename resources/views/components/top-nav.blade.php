@@ -95,6 +95,236 @@
         </button>
         @endif
 
+        {{-- Campana de notificaciones para Bodega y Despacho --}}
+        @if(request()->is('gestion-bodega/*') || request()->is('despacho') || request()->is('despacho/*'))
+        <div class="bodega-notification-container" style="position:relative; margin-right:12px;">
+            <button id="bodegaBellBtn" class="bodega-bell-btn" title="Notificaciones" aria-label="Notificaciones de bodega" style="
+                background:none; border:none; cursor:pointer; position:relative; padding:8px;
+                color:#475569; transition:color 0.2s;">
+                <span class="material-symbols-rounded" style="font-size:24px;">notifications</span>
+                <span id="bodegaBellBadge" style="
+                    display:none; position:absolute; top:2px; right:2px;
+                    background:#ef4444; color:#fff; font-size:0.65rem; font-weight:700;
+                    min-width:18px; height:18px; border-radius:9px; 
+                    display:flex; align-items:center; justify-content:center;
+                    padding:0 4px; line-height:1;">0</span>
+            </button>
+            <div id="bodegaBellDropdown" style="
+                display:none; position:absolute; top:calc(100% + 8px); right:0;
+                width:400px; max-height:500px; background:#fff;
+                border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,0.15);
+                z-index:9999; overflow:hidden; border:1px solid #e2e8f0;">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:0.8rem 1rem; border-bottom:1px solid #e2e8f0; background:#f8fafc;">
+                    <h3 style="margin:0; font-size:0.95rem; font-weight:600; color:#1e293b;">Notificaciones</h3>
+                    <button id="bodegaMarkAllBtn" style="background:none; border:none; cursor:pointer; font-size:0.8rem; color:#2563eb; font-weight:500;">Marcar todas</button>
+                </div>
+                <div id="bodegaBellList" style="overflow-y:auto; max-height:420px;">
+                    <div style="padding:2rem; text-align:center; color:#94a3b8;">
+                        <span class="material-symbols-rounded" style="font-size:2rem; display:block; margin-bottom:0.5rem;">notifications_off</span>
+                        <p style="margin:0;">Sin notificaciones</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+        (function() {
+            let bodegaTabActiva = 'ordenes';
+            const rutaBase = window.location.pathname.startsWith('/despacho') ? '/despacho' : '/gestion-bodega';
+
+            const bellBtn = document.getElementById('bodegaBellBtn');
+            const dropdown = document.getElementById('bodegaBellDropdown');
+            const markAllBtn = document.getElementById('bodegaMarkAllBtn');
+
+            if (!bellBtn) return;
+
+            bellBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isOpen = dropdown.style.display === 'block';
+                dropdown.style.display = isOpen ? 'none' : 'block';
+                if (!isOpen) cargarNotificacionesBodega();
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.bodega-notification-container')) {
+                    dropdown.style.display = 'none';
+                }
+            });
+
+            markAllBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                fetch(rutaBase + '/notificaciones/marcar-todas-leidas', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(r => r.json())
+                .then(data => { if (data.success) cargarNotificacionesBodega(); })
+                .catch(err => console.error('Error marcar todas:', err));
+            });
+
+            function cargarNotificacionesBodega() {
+                fetch(rutaBase + '/notificaciones')
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.success) return;
+
+                        const badge = document.getElementById('bodegaBellBadge');
+                        const list = document.getElementById('bodegaBellList');
+
+                        badge.textContent = data.totalGeneral;
+                        badge.style.display = data.totalGeneral > 0 ? 'flex' : 'none';
+
+                        let html = `
+                            <div style="display:flex; border-bottom:2px solid #e0e6ed;">
+                                <button class="bodega-notif-tab" data-tab="ordenes"
+                                    style="flex:1; padding:0.6rem; border:none; background:${bodegaTabActiva === 'ordenes' ? '#f0f7ff' : '#fff'}; cursor:pointer; font-weight:600; font-size:0.82rem; color:${bodegaTabActiva === 'ordenes' ? '#2563eb' : '#7f8c8d'}; border-bottom:${bodegaTabActiva === 'ordenes' ? '2px solid #2563eb' : 'none'}; margin-bottom:-2px;">
+                                    Órdenes (${data.totalPendientes})
+                                </button>
+                                <button class="bodega-notif-tab" data-tab="novedades"
+                                    style="flex:1; padding:0.6rem; border:none; background:${bodegaTabActiva === 'novedades' ? '#f0f7ff' : '#fff'}; cursor:pointer; font-weight:600; font-size:0.82rem; color:${bodegaTabActiva === 'novedades' ? '#2563eb' : '#7f8c8d'}; border-bottom:${bodegaTabActiva === 'novedades' ? '2px solid #2563eb' : 'none'}; margin-bottom:-2px;">
+                                    Novedades (${data.totalNovedades})
+                                </button>
+                            </div>`;
+
+                        // Tab Órdenes
+                        html += `<div class="bodega-tab-content" data-content="ordenes" style="display:${bodegaTabActiva === 'ordenes' ? 'block' : 'none'}; max-height:350px; overflow-y:auto;">`;
+                        if (data.notificaciones && data.notificaciones.length > 0) {
+                            html += data.notificaciones.map(notif => `
+                                <div style="padding:0.7rem 1rem; border-bottom:1px solid #e0e6ed; ${notif.visto ? 'opacity:0.55;' : ''}">
+                                    <div style="display:flex; gap:0.6rem; align-items:start;">
+                                        <label style="display:flex; align-items:center; cursor:pointer; margin-top:2px; flex-shrink:0;" onclick="event.stopPropagation()">
+                                            <input type="checkbox" class="bodega-pedido-check" data-pedido-id="${notif.id}" ${notif.visto ? 'checked' : ''}
+                                                style="width:16px; height:16px; accent-color:#10b981; cursor:pointer;">
+                                        </label>
+                                        <div style="flex:1; min-width:0;">
+                                            <h4 style="margin:0 0 0.3rem 0; font-size:0.9rem; color:#2c3e50;">
+                                                <strong>Orden #${notif.numero_pedido}</strong>
+                                            </h4>
+                                            <p style="margin:0.15rem 0; font-size:0.82rem; color:#7f8c8d;">
+                                                Cliente: <strong>${notif.cliente}</strong>
+                                            </p>
+                                            <p style="margin:0.15rem 0; font-size:0.82rem; color:#7f8c8d;">
+                                                Asesor: ${notif.asesor}
+                                            </p>
+                                            <small style="color:#999;">${notif.fecha}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('');
+                        } else {
+                            html += `<div style="padding:2rem; text-align:center; color:#7f8c8d;">
+                                <span class="material-symbols-rounded" style="font-size:2rem; display:block; margin-bottom:0.5rem;">verified</span>
+                                <p>¡Sin órdenes pendientes!</p>
+                            </div>`;
+                        }
+                        html += `</div>`;
+
+                        // Tab Novedades
+                        html += `<div class="bodega-tab-content" data-content="novedades" style="display:${bodegaTabActiva === 'novedades' ? 'block' : 'none'}; max-height:350px; overflow-y:auto;">`;
+                        if (data.novedades && data.novedades.length > 0) {
+                            html += data.novedades.map(nov => `
+                                <div style="padding:0.7rem 1rem; border-bottom:1px solid #f0f0f0; ${nov.visto ? 'opacity:0.55;' : ''}">
+                                    <div style="display:flex; gap:0.6rem; align-items:start;">
+                                        <label style="display:flex; align-items:center; cursor:pointer; margin-top:2px; flex-shrink:0;" onclick="event.stopPropagation()">
+                                            <input type="checkbox" class="bodega-news-check" data-news-id="${nov.id}" data-source="${nov.source || 'news'}" ${nov.visto ? 'checked' : ''}
+                                                style="width:16px; height:16px; accent-color:#10b981; cursor:pointer;">
+                                        </label>
+                                        <span class="material-symbols-rounded" style="color:${nov.color}; font-size:1.3rem; margin-top:2px; flex-shrink:0;">${nov.icono}</span>
+                                        <div style="flex:1; min-width:0;">
+                                            <p style="margin:0 0 0.2rem 0; font-size:0.83rem; color:#2c3e50; line-height:1.3; word-break:break-word;">${nov.descripcion}</p>
+                                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                                ${nov.pedido ? `<small style="color:#2563eb; font-weight:600;">Orden #${nov.pedido}</small>` : ''}
+                                                <small style="color:#999;">${nov.fecha}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('');
+                        } else {
+                            html += `<div style="padding:2rem; text-align:center; color:#7f8c8d;">
+                                <span class="material-symbols-rounded" style="font-size:2rem; display:block; margin-bottom:0.5rem;">notifications_off</span>
+                                <p>Sin novedades recientes</p>
+                            </div>`;
+                        }
+                        html += `</div>`;
+
+                        list.innerHTML = html;
+
+                        // Tab listeners
+                        list.querySelectorAll('.bodega-notif-tab').forEach(tab => {
+                            tab.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                bodegaTabActiva = this.dataset.tab;
+                                cargarNotificacionesBodega();
+                            });
+                        });
+
+                        function toggleVistoBodega(checkbox, url) {
+                            const item = checkbox.closest('div[style*="border-bottom"]');
+                            const checked = checkbox.checked;
+                            if (item) item.style.opacity = checked ? '0.55' : '1';
+                            fetch(url, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                                    'Accept': 'application/json'
+                                }
+                            })
+                            .then(r => r.json())
+                            .then(resp => {
+                                if (resp.success) {
+                                    let count = parseInt(badge.textContent) || 0;
+                                    count = resp.visto ? Math.max(0, count - 1) : count + 1;
+                                    badge.textContent = count;
+                                    badge.style.display = count > 0 ? 'flex' : 'none';
+                                }
+                            })
+                            .catch(err => console.error('Error toggle visto:', err));
+                        }
+
+                        // Checkbox pedidos
+                        list.querySelectorAll('.bodega-pedido-check').forEach(chk => {
+                            chk.addEventListener('change', function(e) {
+                                e.stopPropagation();
+                                toggleVistoBodega(this, `${rutaBase}/notificaciones/pedido/${this.dataset.pedidoId}/toggle-visto`);
+                            });
+                        });
+
+                        // Checkbox novedades
+                        list.querySelectorAll('.bodega-news-check').forEach(chk => {
+                            chk.addEventListener('change', function(e) {
+                                e.stopPropagation();
+                                const source = this.dataset.source;
+                                let url;
+                                if (source === 'anulada') {
+                                    const pedidoId = String(this.dataset.newsId).replace('anulada_', '');
+                                    url = `${rutaBase}/notificaciones/pedido/${pedidoId}/toggle-visto`;
+                                } else {
+                                    url = `${rutaBase}/notificaciones/news/${this.dataset.newsId}/toggle-visto`;
+                                }
+                                toggleVistoBodega(this, url);
+                            });
+                        });
+                    })
+                    .catch(err => {
+                        document.getElementById('bodegaBellList').innerHTML = `
+                            <div style="padding:1rem; text-align:center; color:#e74c3c;">
+                                <p>Error al cargar notificaciones</p>
+                            </div>`;
+                    });
+            }
+
+            // Auto-load on page and refresh every 30s
+            document.addEventListener('DOMContentLoaded', function() {
+                cargarNotificacionesBodega();
+                setInterval(cargarNotificacionesBodega, 30000);
+            });
+        })();
+        </script>
+        @endif
+
         <div class="user-dropdown">
             <button class="user-btn" id="userBtn" aria-label="Menú de usuario" aria-expanded="false" aria-controls="userMenu">
                 <div class="user-avatar">

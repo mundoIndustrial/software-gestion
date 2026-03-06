@@ -142,6 +142,16 @@ Route::middleware(['auth', 'role:bodeguero,supervisor_pedidos,supervisor_gerenci
     // API para filtros dinámicos
     Route::get('/filtro-datos/{tipo}', [PedidosController::class, 'obtenerDatosFiltro'])
         ->name('obtener-datos-filtro');
+
+    // Notificaciones (campana)
+    Route::get('/notificaciones', [PedidosController::class, 'getNotifications'])
+        ->name('notificaciones');
+    Route::post('/notificaciones/marcar-todas-leidas', [PedidosController::class, 'markAllNotificationsAsRead'])
+        ->name('notificaciones.marcar-todas');
+    Route::post('/notificaciones/news/{newsId}/toggle-visto', [PedidosController::class, 'toggleNewsVisto'])
+        ->name('notificaciones.toggle-news');
+    Route::post('/notificaciones/pedido/{pedidoId}/toggle-visto', [PedidosController::class, 'togglePedidoVisto'])
+        ->name('notificaciones.toggle-pedido');
 });
 
 // Ruta alternativa si prefieres acceso público (para testing)

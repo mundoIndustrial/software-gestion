@@ -154,4 +154,14 @@ Route::prefix('despacho')
         Route::get('/pendientes/{id}', [DespachoController::class, 'showPendienteUnificado'])
             ->name('despacho.pendientes-show')
             ->where('id', '[0-9]+');
+
+        // Notificaciones (campana)
+        Route::get('/notificaciones', [DespachoController::class, 'getNotifications'])
+            ->name('despacho.notificaciones');
+        Route::post('/notificaciones/marcar-todas-leidas', [DespachoController::class, 'markAllNotificationsAsRead'])
+            ->name('despacho.notificaciones.marcar-todas');
+        Route::post('/notificaciones/news/{newsId}/toggle-visto', [DespachoController::class, 'toggleNewsVisto'])
+            ->name('despacho.notificaciones.toggle-news');
+        Route::post('/notificaciones/pedido/{pedidoId}/toggle-visto', [DespachoController::class, 'togglePedidoVisto'])
+            ->name('despacho.notificaciones.toggle-pedido');
     });

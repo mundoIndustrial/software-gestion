@@ -523,7 +523,7 @@ class EppController extends Controller
                     }
 
                     $fechaFormato = now()->format('d/m/Y h:i A');
-                    $linea_novedad = "{$rol}-{$nombreUsuario}-{$fechaFormato} - AGREGAR EPP: {$validated['novedad']}";
+                    $linea_novedad = "{$rol}-{$nombreUsuario}-{$fechaFormato} - {$validated['novedad']}";
 
                     $pedido = \App\Models\PedidoProduccion::find($pedidoId);
                     if ($pedido) {
@@ -535,6 +535,25 @@ class EppController extends Controller
                             'pedidoId' => $pedidoId,
                             'novedad' => $linea_novedad,
                         ]);
+
+                        // Crear notificación para supervisores
+                        try {
+                            \App\Models\News::create([
+                                'event_type' => 'epp_agregado',
+                                'table_name' => 'pedido_epp',
+                                'record_id' => $resultado['pedido_epp_id'] ?? 0,
+                                'description' => "{$rol} {$nombreUsuario} agregó EPP al Pedido #{$pedido->numero_pedido}: {$validated['novedad']}",
+                                'user_id' => $usuario?->id,
+                                'pedido' => $pedido->numero_pedido,
+                                'metadata' => [
+                                    'tipo' => 'epp_agregado',
+                                    'pedido_id' => $pedidoId,
+                                    'novedad' => $validated['novedad'],
+                                ],
+                            ]);
+                        } catch (\Exception $newsEx) {
+                            \Log::warning('[EppController] Error creando News', ['error' => $newsEx->getMessage()]);
+                        }
                     }
                 } catch (\Exception $e) {
                     \Log::warning('[EppController] Error guardando novedad al agregar EPP', [
@@ -751,8 +770,9 @@ class EppController extends Controller
                     // Formato: NOMBRE-ROL-dd/mm/yyyy-h:mmAM/PM
                     //         CAMBIO EPP: DESCRIPCIÓN
                     $fechaActual = now();
-                    $fechaFormato = $fechaActual->format('d/m/Y') . '-' . $fechaActual->format('g:iA');
-                    $linea_novedad = "{$nombreUsuario}-{$rol}-{$fechaFormato}\nCAMBIO EPP: {$validated['novedad']}";
+                    $fechaFormato = $fechaActual->format('d/m/Y h:i A');
+                    $nombreEpp = \App\Models\Epp::find($pedidoEpp->epp_id)?->nombre_completo ?? 'Sin nombre';
+                    $linea_novedad = "{$rol}-{$nombreUsuario}-{$fechaFormato} - Modificó EPP \"{$nombreEpp}\" - {$validated['novedad']}";
                     
                     \Log::info('[EppController] Datos de usuario para novedad:', [
                         'nombreUsuario' => $nombreUsuario,
@@ -779,6 +799,26 @@ class EppController extends Controller
                             'pedidoId' => $pedidoId,
                             'novedad' => $linea_novedad,
                         ]);
+
+                        // Crear notificación para supervisores
+                        try {
+                            \App\Models\News::create([
+                                'event_type' => 'epp_modificado',
+                                'table_name' => 'pedido_epp',
+                                'record_id' => $pedidoEppId,
+                                'description' => "{$rol} {$nombreUsuario} modificó EPP \"{$nombreEpp}\" en Pedido #{$pedido->numero_pedido}",
+                                'user_id' => $usuario?->id,
+                                'pedido' => $pedido->numero_pedido,
+                                'metadata' => [
+                                    'tipo' => 'epp_modificado',
+                                    'pedido_id' => $pedidoId,
+                                    'epp_nombre' => $nombreEpp,
+                                    'novedad' => $validated['novedad'],
+                                ],
+                            ]);
+                        } catch (\Exception $newsEx) {
+                            \Log::warning('[EppController] Error creando News', ['error' => $newsEx->getMessage()]);
+                        }
                     } else {
                         \Log::warning('[EppController] Pedido no encontrado para guardar novedad:', [
                             'pedidoId' => $pedidoId,

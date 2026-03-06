@@ -491,7 +491,10 @@
             }
         });
 
-        // Función para cargar notificaciones (órdenes pendientes de aprobación)
+        // Tab activa para notificaciones
+        let notifTabActiva = 'ordenes';
+
+        // Función para cargar notificaciones (órdenes pendientes + novedades)
         function cargarNotificacionesPendientes() {
             fetch('/supervisor-pedidos/notificaciones')
                 .then(response => response.json())
@@ -499,67 +502,189 @@
                     if (data.success) {
                         const badge = document.getElementById('notificationBadge');
                         const list = document.getElementById('notificationList');
-                        
-                        // Actualizar badge con órdenes pendientes totales
-                        // (mostrar todas las pendientes, no solo las no leídas)
-                        badge.textContent = data.totalPendientes;
-                        badge.style.display = data.totalPendientes > 0 ? 'block' : 'none';
-                        
-                        // Llenar lista de notificaciones
+
+                        badge.textContent = data.totalGeneral;
+                        badge.style.display = data.totalGeneral > 0 ? 'block' : 'none';
+
+                        // Tabs
+                        let html = `
+                            <div style="display:flex; border-bottom:2px solid #e0e6ed;">
+                                <button class="notif-tab ${notifTabActiva === 'ordenes' ? 'active' : ''}" data-tab="ordenes"
+                                    style="flex:1; padding:0.6rem; border:none; background:${notifTabActiva === 'ordenes' ? '#f0f7ff' : '#fff'}; cursor:pointer; font-weight:600; font-size:0.82rem; color:${notifTabActiva === 'ordenes' ? '#2563eb' : '#7f8c8d'}; border-bottom:${notifTabActiva === 'ordenes' ? '2px solid #2563eb' : 'none'}; margin-bottom:-2px;">
+                                    Órdenes (${data.totalPendientes})
+                                </button>
+                                <button class="notif-tab ${notifTabActiva === 'novedades' ? 'active' : ''}" data-tab="novedades"
+                                    style="flex:1; padding:0.6rem; border:none; background:${notifTabActiva === 'novedades' ? '#f0f7ff' : '#fff'}; cursor:pointer; font-weight:600; font-size:0.82rem; color:${notifTabActiva === 'novedades' ? '#2563eb' : '#7f8c8d'}; border-bottom:${notifTabActiva === 'novedades' ? '2px solid #2563eb' : 'none'}; margin-bottom:-2px;">
+                                    Novedades (${data.totalNovedades})
+                                </button>
+                            </div>
+                        `;
+
+                        // Contenido tab Órdenes
+                        html += `<div class="notif-tab-content" data-content="ordenes" style="display:${notifTabActiva === 'ordenes' ? 'block' : 'none'}; max-height:350px; overflow-y:auto;">`;
                         if (data.notificaciones && data.notificaciones.length > 0) {
-                            list.innerHTML = data.notificaciones.map(notif => `
-                                <div class="notification-item" style="padding: 1rem; border-bottom: 1px solid #e0e6ed; cursor: pointer;" onclick="irAOrden(${notif.numero_pedido})">
-                                    <div style="display: flex; justify-content: space-between; align-items: start;">
-                                        <div style="flex: 1;">
-                                            <h4 style="margin: 0 0 0.5rem 0; font-size: 0.95rem; color: #2c3e50;">
+                            html += data.notificaciones.map(notif => `
+                                <div class="notification-item" style="padding:0.7rem 1rem; border-bottom:1px solid #e0e6ed; ${notif.visto ? 'opacity:0.55;' : ''}">
+                                    <div style="display:flex; gap:0.6rem; align-items:start;">
+                                        <label style="display:flex; align-items:center; cursor:pointer; margin-top:2px; flex-shrink:0;" onclick="event.stopPropagation()">
+                                            <input type="checkbox" class="pedido-visto-check" data-pedido-id="${notif.id}" ${notif.visto ? 'checked' : ''}
+                                                style="width:16px; height:16px; accent-color:#10b981; cursor:pointer;">
+                                        </label>
+                                        <div style="flex:1; min-width:0;">
+                                            <h4 style="margin:0 0 0.3rem 0; font-size:0.9rem; color:#2c3e50;">
                                                 <strong>Orden #${notif.numero_pedido}</strong>
                                             </h4>
-                                            <p style="margin: 0.25rem 0; font-size: 0.85rem; color: #7f8c8d;">
+                                            <p style="margin:0.15rem 0; font-size:0.82rem; color:#7f8c8d;">
                                                 Cliente: <strong>${notif.cliente}</strong>
                                             </p>
-                                            <p style="margin: 0.25rem 0; font-size: 0.85rem; color: #7f8c8d;">
+                                            <p style="margin:0.15rem 0; font-size:0.82rem; color:#7f8c8d;">
                                                 Asesor: ${notif.asesor}
                                             </p>
-                                            <small style="color: #999;">${notif.fecha}</small>
+                                            <small style="color:#999;">${notif.fecha}</small>
                                         </div>
-                                        <span style="background: #fff3cd; color: #f39c12; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; margin-left: 0.5rem;">
-                                            PENDIENTE
-                                        </span>
                                     </div>
                                 </div>
                             `).join('');
                         } else {
-                            list.innerHTML = `
-                                <div class="notification-empty" style="padding: 2rem; text-align: center; color: #7f8c8d;">
-                                    <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;">verified</span>
+                            html += `
+                                <div style="padding:2rem; text-align:center; color:#7f8c8d;">
+                                    <span class="material-symbols-rounded" style="font-size:2rem; display:block; margin-bottom:0.5rem;">verified</span>
                                     <p>¡Sin órdenes pendientes!</p>
-                                    <small>Todas las órdenes han sido aprobadas o anuladas.</small>
-                                </div>
-                            `;
+                                </div>`;
                         }
+                        html += `</div>`;
+
+                        // Contenido tab Novedades
+                        html += `<div class="notif-tab-content" data-content="novedades" style="display:${notifTabActiva === 'novedades' ? 'block' : 'none'}; max-height:350px; overflow-y:auto;">`;
+                        if (data.novedades && data.novedades.length > 0) {
+                            html += data.novedades.map(nov => `
+                                <div class="notification-item" style="padding:0.7rem 1rem; border-bottom:1px solid #f0f0f0; ${nov.visto ? 'opacity:0.55;' : ''}">
+                                    <div style="display:flex; gap:0.6rem; align-items:start;">
+                                        <label style="display:flex; align-items:center; cursor:pointer; margin-top:2px; flex-shrink:0;" onclick="event.stopPropagation()">
+                                            <input type="checkbox" class="news-visto-check" data-news-id="${nov.id}" data-source="${nov.source || 'news'}" ${nov.visto ? 'checked' : ''}
+                                                style="width:16px; height:16px; accent-color:#10b981; cursor:pointer;">
+                                        </label>
+                                        <span class="material-symbols-rounded" style="color:${nov.color}; font-size:1.3rem; margin-top:2px; flex-shrink:0;">${nov.icono}</span>
+                                        <div style="flex:1; min-width:0; cursor:pointer;" onclick="irAOrden(${nov.pedido || 0})">
+                                            <p style="margin:0 0 0.2rem 0; font-size:0.83rem; color:#2c3e50; line-height:1.3; word-break:break-word;">${nov.descripcion}</p>
+                                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                                ${nov.pedido ? `<small style="color:#2563eb; font-weight:600;">Orden #${nov.pedido}</small>` : ''}
+                                                <small style="color:#999;">${nov.fecha}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('');
+                        } else {
+                            html += `
+                                <div style="padding:2rem; text-align:center; color:#7f8c8d;">
+                                    <span class="material-symbols-rounded" style="font-size:2rem; display:block; margin-bottom:0.5rem;">notifications_off</span>
+                                    <p>Sin novedades recientes</p>
+                                </div>`;
+                        }
+                        html += `</div>`;
+
+                        list.innerHTML = html;
+
+                        // Listeners para tabs
+                        list.querySelectorAll('.notif-tab').forEach(tab => {
+                            tab.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                notifTabActiva = this.dataset.tab;
+                                cargarNotificacionesPendientes();
+                            });
+                        });
+
+                        // Función genérica para toggle visto
+                        function toggleVisto(checkbox, url) {
+                            const item = checkbox.closest('.notification-item');
+                            const checked = checkbox.checked;
+                            item.style.opacity = checked ? '0.55' : '1';
+                            fetch(url, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                                    'Accept': 'application/json'
+                                }
+                            })
+                            .then(r => r.json())
+                            .then(resp => {
+                                if (resp.success) {
+                                    const badge = document.getElementById('notificationBadge');
+                                    let count = parseInt(badge.textContent) || 0;
+                                    count = resp.visto ? Math.max(0, count - 1) : count + 1;
+                                    badge.textContent = count;
+                                    badge.style.display = count > 0 ? 'block' : 'none';
+                                }
+                            })
+                            .catch(err => console.error('Error toggle visto:', err));
+                        }
+
+                        // Listeners checkboxes órdenes
+                        list.querySelectorAll('.pedido-visto-check').forEach(chk => {
+                            chk.addEventListener('change', function(e) {
+                                e.stopPropagation();
+                                toggleVisto(this, `/supervisor-pedidos/notificaciones/pedido/${this.dataset.pedidoId}/toggle-visto`);
+                            });
+                        });
+
+                        // Listeners checkboxes novedades
+                        list.querySelectorAll('.news-visto-check').forEach(chk => {
+                            chk.addEventListener('change', function(e) {
+                                e.stopPropagation();
+                                const source = this.dataset.source;
+                                let url;
+                                if (source === 'anulada') {
+                                    // Anuladas usan la tabla pedidos_vistos_supervisor
+                                    const pedidoId = String(this.dataset.newsId).replace('anulada_', '');
+                                    url = `/supervisor-pedidos/notificaciones/pedido/${pedidoId}/toggle-visto`;
+                                } else {
+                                    url = `/supervisor-pedidos/notificaciones/news/${this.dataset.newsId}/toggle-visto`;
+                                }
+                                toggleVisto(this, url);
+                            });
+                        });
                     }
                 })
                 .catch(error => {
                     document.getElementById('notificationList').innerHTML = `
-                        <div class="notification-empty" style="padding: 1rem; text-align: center; color: #e74c3c;">
+                        <div style="padding:1rem; text-align:center; color:#e74c3c;">
                             <p>Error al cargar notificaciones</p>
                         </div>
                     `;
                 });
         }
 
+        // Marcar todas como leídas
+        document.querySelector('.mark-all-read')?.addEventListener('click', function(e) {
+            e.stopPropagation();
+            fetch('/supervisor-pedidos/notificaciones/marcar-todas-leidas', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    cargarNotificacionesPendientes();
+                }
+            })
+            .catch(err => console.error('Error al marcar notificaciones:', err));
+        });
+
         // Función para ir a la orden
         function irAOrden(numeroPedido) {
-            // Ir a la sección de órdenes pendientes
+            if (!numeroPedido) return;
             window.location.href = '/supervisor-pedidos?aprobacion=pendiente';
         }
 
-        // Cargar notificaciones al iniciar página
+        // Cargar notificaciones al iniciar página y auto-refresh cada 30s
         document.addEventListener('DOMContentLoaded', function() {
-            // No ejecutar en cartera (será sobrescrito)
             if (typeof isCartera === 'undefined' || !isCartera) {
                 cargarNotificacionesPendientes();
-                // cargarContadorOrdenesPendientes();
+                setInterval(cargarNotificacionesPendientes, 30000);
             }
         });
 

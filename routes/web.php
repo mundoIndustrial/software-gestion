@@ -2323,6 +2323,8 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
     Route::get('/notificaciones', [App\Http\Controllers\SupervisorPedidosController::class, 'getNotifications'])->name('notifications');
     Route::post('/notificaciones/marcar-todas-leidas', [App\Http\Controllers\SupervisorPedidosController::class, 'markAllNotificationsAsRead'])->name('mark-all-read');
     Route::post('/notificaciones/{notificationId}/marcar-leida', [App\Http\Controllers\SupervisorPedidosController::class, 'markNotificationAsRead'])->name('mark-read');
+    Route::post('/notificaciones/news/{newsId}/toggle-visto', [App\Http\Controllers\SupervisorPedidosController::class, 'toggleNewsVisto'])->name('news.toggle-visto');
+    Route::post('/notificaciones/pedido/{pedidoId}/toggle-visto', [App\Http\Controllers\SupervisorPedidosController::class, 'togglePedidoVisto'])->name('pedido.toggle-visto');
     
     // Obtener opciones de filtro (debe ir antes de /{id})
     Route::get('/filtro-opciones/{campo}', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerOpcionesFiltro'])->name('filtro-opciones');

@@ -401,9 +401,10 @@ final class AgregarPrendaCompletaUseCase
                 'modo_tallas' => $proceso['modoTallas'] ?? 'generico',
             ]);
 
-            // Crear tallas del proceso (maneja SOBREMEDIDA)
+            // Crear tallas del proceso (maneja SOBREMEDIDA, datosExtendidos con ubicaciones/observaciones por talla)
             if (isset($proceso['tallas']) && is_array($proceso['tallas']) && !empty($proceso['tallas'])) {
-                $this->crearTallasProceso($procesoCreado, $proceso['tallas']);
+                $datosExtendidos = $proceso['datosExtendidos'] ?? [];
+                $this->crearTallasProceso($procesoCreado, $proceso['tallas'], $datosExtendidos);
             }
 
             // Agregar fotos del proceso
@@ -432,9 +433,10 @@ final class AgregarPrendaCompletaUseCase
 
     /**
      * Crear tallas para proceso (replica PedidoWebService::crearTallasProceso)
-     * Maneja: SOBREMEDIDA, géneros normales con generoMap
+     * Maneja: SOBREMEDIDA, géneros normales con generoMap, datosExtendidos (ubicaciones/observaciones por talla),
+     * y formato TALLA__COLOR para crear registros en pedidos_procesos_prenda_talla_colores
      */
-    private function crearTallasProceso(PedidosProcesosPrendaDetalle $proceso, array $tallas): void
+    private function crearTallasProceso(PedidosProcesosPrendaDetalle $proceso, array $tallas, array $datosExtendidos = []): void
     {
         $generoMap = ['dama' => 'DAMA', 'caballero' => 'CABALLERO', 'unisex' => 'UNISEX'];
 
@@ -461,14 +463,53 @@ final class AgregarPrendaCompletaUseCase
                 // Normal: género con tallas
                 $generoEnum = $generoMap[strtolower($generoBD)] ?? strtoupper($generoBD);
 
-                foreach ($tallasCant as $talla => $cantidad) {
+                foreach ($tallasCant as $tallaKey => $cantidad) {
                     $cantidad = (int)$cantidad;
-                    if ($cantidad > 0) {
-                        PedidosProcesosPrendaTalla::create([
-                            'proceso_prenda_detalle_id' => $proceso->id,
-                            'genero' => $generoEnum,
-                            'talla' => (string)$talla,
+                    if ($cantidad <= 0) continue;
+
+                    // Separar talla y color si viene como "talla__color"
+                    $partes = explode('__', (string)$tallaKey);
+                    $tallaReal = $partes[0];
+                    $colorNombre = isset($partes[1]) ? $partes[1] : null;
+
+                    // Extraer ubicaciones y observaciones del datosExtendidos si existe
+                    $ubicacionesTalla = null;
+                    $observacionesTalla = null;
+
+                    if (!empty($datosExtendidos)) {
+                        $generoLower = strtolower($generoBD);
+                        $tallaDatos = $datosExtendidos[$generoLower][$tallaKey] ?? null;
+
+                        if ($tallaDatos) {
+                            if (isset($tallaDatos['ubicaciones']) && !empty($tallaDatos['ubicaciones'])) {
+                                $ubicacionesTalla = json_encode($tallaDatos['ubicaciones']);
+                            }
+                            if (isset($tallaDatos['observaciones'])) {
+                                $observacionesTalla = $tallaDatos['observaciones'];
+                            }
+                        }
+                    }
+
+                    $tallaCreada = PedidosProcesosPrendaTalla::create([
+                        'proceso_prenda_detalle_id' => $proceso->id,
+                        'genero' => $generoEnum,
+                        'talla' => (string)$tallaReal,
+                        'cantidad' => $cantidad,
+                        'ubicaciones' => $ubicacionesTalla,
+                        'observaciones' => $observacionesTalla,
+                    ]);
+
+                    // Si hay color, insertar en pedidos_procesos_prenda_talla_colores
+                    if (!empty($colorNombre)) {
+                        DB::table('pedidos_procesos_prenda_talla_colores')->insert([
+                            'pedidos_procesos_prenda_talla_id' => $tallaCreada->id,
+                            'color_nombre' => $colorNombre,
+                            'tela_nombre' => null,
                             'cantidad' => $cantidad,
+                            'ubicaciones' => $ubicacionesTalla,
+                            'observaciones' => $observacionesTalla,
+                            'created_at' => now(),
+                            'updated_at' => now(),
                         ]);
                     }
                 }
@@ -510,7 +551,8 @@ final class AgregarPrendaCompletaUseCase
         $nuevaNovedad = trim($dto->novedad);
         $fechaHora = now()->format('d/m/Y h:i A');
         $rolLabel = ucfirst(str_replace('_', ' ', $rolAsesor));
-        $novedadConInfo = "{$rolLabel}-{$nombreAsesor}-{$fechaHora} - {$nuevaNovedad}";
+        $nombrePrenda = $prenda->nombre_prenda ?? 'Sin nombre';
+        $novedadConInfo = "{$rolLabel}-{$nombreAsesor}-{$fechaHora} - Agregó la prenda \"{$nombrePrenda}\" - {$nuevaNovedad}";
 
         $novedadesActualizadas = $novedadesActuales . ($novedadesActuales ? "\n\n" : "") . $novedadConInfo;
 
@@ -524,6 +566,27 @@ final class AgregarPrendaCompletaUseCase
             'novedad' => $dto->novedad,
             'nombre_asesor' => $nombreAsesor,
         ]);
+
+        // Crear notificación para supervisores
+        try {
+            \App\Models\News::create([
+                'event_type' => 'prenda_agregada',
+                'table_name' => 'prendas_pedido',
+                'record_id' => $prenda->id,
+                'description' => "{$rolLabel} {$nombreAsesor} agregó la prenda \"{$nombrePrenda}\" al Pedido #{$pedido->numero_pedido}",
+                'user_id' => $usuarioAutenticado?->id,
+                'pedido' => $pedido->numero_pedido,
+                'metadata' => [
+                    'tipo' => 'prenda_agregada',
+                    'prenda_id' => $prenda->id,
+                    'prenda_nombre' => $nombrePrenda,
+                    'pedido_id' => $pedido->id,
+                    'novedad' => $nuevaNovedad,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Log::warning('[AgregarPrendaCompletaUseCase] Error creando News', ['error' => $e->getMessage()]);
+        }
     }
 }
 

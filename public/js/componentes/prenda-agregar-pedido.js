@@ -431,11 +431,21 @@
                     Object.entries(datos.procesos).forEach(([tipo, d], idx) => {
                         // Los datos reales pueden estar en d.datos (estructura de procesosSeleccionados)
                         const datosReales = d.datos || d;
+                        filesPorProceso[idx] = [];
 
-                        // Extraer imágenes desde datosReales o d directamente
+                        // 1) imagenesFiles directamente (File objects desde modal por tallas modo general)
+                        const imagenesFiles = datosReales.imagenesFiles || d.imagenesFiles || [];
+                        if (Array.isArray(imagenesFiles)) {
+                            imagenesFiles.forEach(file => {
+                                if (file instanceof File) {
+                                    filesPorProceso[idx].push(file);
+                                }
+                            });
+                        }
+
+                        // 2) Fallback: extraer File objects de imagenes del proceso
                         const imagenesProceso = datosReales.imagenes || d.imagenes || [];
-                        if (Array.isArray(imagenesProceso) && imagenesProceso.length > 0) {
-                            filesPorProceso[idx] = [];
+                        if (Array.isArray(imagenesProceso)) {
                             imagenesProceso.forEach(img => {
                                 if (img instanceof File) {
                                     filesPorProceso[idx].push(img);
@@ -444,12 +454,33 @@
                                 }
                             });
                         }
+
+                        // 3) Extraer File objects de datosExtendidos por talla
+                        const datosExt = datosReales.datosExtendidos || d.datosExtendidos;
+                        if (datosExt && typeof datosExt === 'object') {
+                            Object.entries(datosExt).forEach(([genero, tallasDatos]) => {
+                                if (tallasDatos && typeof tallasDatos === 'object') {
+                                    Object.entries(tallasDatos).forEach(([talla, tallaData]) => {
+                                        if (tallaData?.imagenesFiles && Array.isArray(tallaData.imagenesFiles)) {
+                                            tallaData.imagenesFiles.forEach(img => {
+                                                if (img instanceof File) {
+                                                    filesPorProceso[idx].push(img);
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        }
+
                         procesosArray.push({
                             tipo: datosReales.tipo || d.tipo || tipo,
                             nombre: datosReales.nombre || d.nombre || tipo,
                             ubicaciones: datosReales.ubicaciones || d.ubicaciones || [],
                             observaciones: datosReales.observaciones || d.observaciones || '',
                             tallas: datosReales.tallas || d.tallas || {},
+                            modoTallas: datosReales.modoTallas || datosReales.modo_tallas || d.modoTallas || 'generico',
+                            datosExtendidos: datosExt || {},
                             estado: datosReales.estado || d.estado || 'PENDIENTE'
                         });
                     });
