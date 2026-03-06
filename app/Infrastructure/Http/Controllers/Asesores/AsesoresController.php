@@ -872,10 +872,8 @@ class AsesoresController extends Controller
         ]);
 
         try {
-            // Buscar el pedido
-            $pedido = PedidoProduccion::where('id', (int)$id)
-                ->orWhere('numero_pedido', (int)$id)
-                ->first();
+            // Buscar el pedido por ID primario
+            $pedido = PedidoProduccion::find((int)$id);
             
             if (!$pedido) {
                 \Log::warning('[confirmarCorreccion] Pedido no encontrado', [
