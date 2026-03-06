@@ -8,19 +8,12 @@ use App\Models\ConsecutivoReciboPedido;
 use App\Models\PedidosProcesosPrendaDetalle;
 use Illuminate\Support\Collection;
 
-/**
- * Service: ObtenerPrendasRecibosService
- * 
- * Obtiene las prendas con sus recibos de costura para un operario
- */
 class ObtenerPrendasRecibosService
 {
-    /**
-     * Obtener prendas con recibos de costura del operario
-     */
+   
     public function obtenerPrendasConRecibos(User $usuario): Collection
     {
-        // Obtener tipo de operario
+        
         $tipoOperario = $this->obtenerTipoOperario($usuario);
 
         \Log::info('🔍 [obtenerPrendasConRecibos] TIPO OPERARIO DETECTADO', [

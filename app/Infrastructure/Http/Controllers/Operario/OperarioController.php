@@ -1180,18 +1180,63 @@ class OperarioController extends Controller
                     if ($areaRecibo === 'costura') {
                         $sinEncargadoCostura = true;
                         if (!empty($recibo->prenda_id)) {
-                            $procesoCostura = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
+                            $numeroPedido = null;
+                            $prenda = \App\Models\PrendaPedido::where('id', $recibo->prenda_id)
+                                ->with(['pedidoProduccion'])
+                                ->first();
+                            if ($prenda && $prenda->pedidoProduccion) {
+                                $numeroPedido = (int) $prenda->pedidoProduccion->numero_pedido;
+                            }
+
+                            $queryProcesoCostura = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
                                 ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                                ->whereNull('deleted_at')
+                                ->where('numero_recibo', $recibo->consecutivo_actual)
+                                ->whereNull('deleted_at');
+
+                            if (!empty($numeroPedido)) {
+                                $queryProcesoCostura->where('numero_pedido', $numeroPedido);
+                            }
+
+                            $procesoCostura = $queryProcesoCostura
+                                ->latest('fecha_inicio')
                                 ->first();
                             if ($procesoCostura && !empty($procesoCostura->encargado)) {
                                 $sinEncargadoCostura = false;
+                            }
+
+                            // Fallback: si no se encontró proceso por numero_recibo,
+                            // buscar proceso de Costura por prenda (+ numero_pedido) sin exigir numero_recibo.
+                            // Esto cubre registros antiguos o creados sin numero_recibo.
+                            if ($sinEncargadoCostura && empty($procesoCostura)) {
+                                $queryProcesoCosturaFallback = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
+                                    ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                                    ->whereNull('deleted_at');
+
+                                if (!empty($numeroPedido)) {
+                                    $queryProcesoCosturaFallback->where('numero_pedido', $numeroPedido);
+                                }
+
+                                $procesoCosturaFallback = $queryProcesoCosturaFallback
+                                    ->latest('fecha_inicio')
+                                    ->first();
+
+                                if ($procesoCosturaFallback && !empty($procesoCosturaFallback->encargado)) {
+                                    $sinEncargadoCostura = false;
+                                }
+
+                                if (empty($procesoCostura) && !empty($procesoCosturaFallback)) {
+                                    $procesoCostura = $procesoCosturaFallback;
+                                }
                             }
                         }
 
                         if ($sinEncargadoCostura) {
                             $recibo->area = 'Corte';
                             $recibo->save();
+
+                            if (!empty($procesoCostura)) {
+                                $procesoCostura->forceDelete();
+                            }
                         }
                     }
                 }
