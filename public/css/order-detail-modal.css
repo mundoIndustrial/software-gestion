@@ -164,7 +164,7 @@
     top: 240px;
     left: 20px;
     right: 20px;
-    bottom: 70px;
+    bottom: 200px;
     text-align: left;
     font-size: 13.4px;
     color: #000;
@@ -231,6 +231,30 @@
     text-align: left;
 }
 
+.order-descripcion {
+    scrollbar-width: thin;
+    scrollbar-color: #9ca3af transparent;
+}
+
+.order-descripcion::-webkit-scrollbar {
+    width: 8px;
+}
+
+.order-descripcion::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.order-descripcion::-webkit-scrollbar-thumb {
+    background-color: #9ca3af;
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+.order-descripcion::-webkit-scrollbar-thumb:hover {
+    background-color: #6b7280;
+}
+
 .arrow-container {
     position: absolute;
     top: 85px;
@@ -259,6 +283,33 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
+}
+
+#metrajes-por-color-container {
+    max-height: 60px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #9ca3af transparent;
+}
+
+#metrajes-por-color-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+#metrajes-por-color-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#metrajes-por-color-container::-webkit-scrollbar-thumb {
+    background-color: #9ca3af;
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+#metrajes-por-color-container::-webkit-scrollbar-thumb:hover {
+    background-color: #6b7280;
 }
 
 .vertical-separator {
