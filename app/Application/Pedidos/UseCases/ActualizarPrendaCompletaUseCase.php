@@ -1563,6 +1563,7 @@ final class ActualizarPrendaCompletaUseCase
                     if (isset($foto['ruta_webp']) || isset($foto['ruta_original'])) {
                         // Crear registro en pedidos_procesos_imagenes vinculado a esta talla específica
                         \DB::table('pedidos_procesos_imagenes')->insert([
+                            'proceso_prenda_detalle_id' => $proceso->id,
                             'proceso_prenda_talla_id' => $talla->id,
                             'ruta_original' => $foto['ruta_original'] ?? $foto['ruta_webp'],
                             'ruta_webp' => $foto['ruta_webp'] ?? $foto['ruta_original'],
