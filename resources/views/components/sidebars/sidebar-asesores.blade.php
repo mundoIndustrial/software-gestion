@@ -139,6 +139,16 @@
                         </li>
                     </ul>
                 </li>
+                <li class="menu-item">
+                    <a href="{{ route('asesores.pendientes') }}"
+                       class="menu-link {{ request()->routeIs('asesores.pendientes') ? 'active' : '' }}"
+                       style="display:flex;align-items:center;gap:0.5rem;"
+                       aria-label="Ver pedidos pendientes">
+                        <span class="material-symbols-rounded">pending_actions</span>
+                        <span class="menu-label">Pendientes</span>
+                        <span class="badge-alert" id="pendientesAsesorCount" style="display: none; background: #dc2626; color: white; border-radius: 50%; width: 22px; height: 22px; align-items: center; justify-content: center; font-weight: 700; font-size: 0.7rem; min-width: 22px; flex-shrink: 0;">0</span>
+                    </a>
+                </li>
             </ul>
         </div>
 
@@ -210,4 +220,27 @@
     <div class="sidebar-footer">
     </div>
 </aside>
+
+<script>
+    // Cargar conteo de pendientes del asesor
+    function cargarConteoPendientes() {
+        fetch('/asesores/api/conteo-pendientes-asesor')
+            .then(response => response.json())
+            .then(data => {
+                const badge = document.getElementById('pendientesAsesorCount');
+                if (badge && data.success && data.conteo > 0) {
+                    badge.textContent = data.conteo;
+                    badge.style.display = 'flex';
+                } else if (badge) {
+                    badge.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar conteo de pendientes:', error);
+            });
+    }
+
+    // Cargar conteo solo al cargar la página
+    document.addEventListener('DOMContentLoaded', cargarConteoPendientes);
+</script>
 

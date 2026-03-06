@@ -46,6 +46,7 @@ use App\Application\Pedidos\DTOs\ObtenerNotificacionesDTO;
 use App\Application\Pedidos\DTOs\MarcarNotificacionLeidaDTO;
 use App\Application\Pedidos\DTOs\ObtenerPerfilAsesorDTO;
 use App\Application\Pedidos\DTOs\ActualizarPerfilAsesorDTO;
+use App\Application\Bodega\Services\BodegaPedidoService;
 use Illuminate\Routing\Controller;
 
 class AsesoresController extends Controller
@@ -71,6 +72,7 @@ class AsesoresController extends Controller
     protected MarcarNotificacionLeidaUseCase $marcarNotificacionLeidaUseCase;
     protected ObtenerPerfilAsesorUseCase $obtenerPerfilAsesorUseCase;
     protected ActualizarPerfilAsesorUseCase $actualizarPerfilAsesorUseCase;
+    protected BodegaPedidoService $bodegaPedidoService;
 
     public function __construct(
         PedidoProduccionRepository $pedidoProduccionRepository,
@@ -93,7 +95,8 @@ class AsesoresController extends Controller
         ObtenerNotificacionesUseCase $obtenerNotificacionesUseCase,
         MarcarNotificacionLeidaUseCase $marcarNotificacionLeidaUseCase,
         ObtenerPerfilAsesorUseCase $obtenerPerfilAsesorUseCase,
-        ActualizarPerfilAsesorUseCase $actualizarPerfilAsesorUseCase
+        ActualizarPerfilAsesorUseCase $actualizarPerfilAsesorUseCase,
+        BodegaPedidoService $bodegaPedidoService
     ) {
         $this->pedidoProduccionRepository = $pedidoProduccionRepository;
         $this->dashboardService = $dashboardService;
@@ -116,6 +119,7 @@ class AsesoresController extends Controller
         $this->marcarNotificacionLeidaUseCase = $marcarNotificacionLeidaUseCase;
         $this->obtenerPerfilAsesorUseCase = $obtenerPerfilAsesorUseCase;
         $this->actualizarPerfilAsesorUseCase = $actualizarPerfilAsesorUseCase;
+        $this->bodegaPedidoService = $bodegaPedidoService;
     }
 
     /**
@@ -189,6 +193,236 @@ class AsesoresController extends Controller
         } catch (\Exception $e) {
             \Log::error('Error al listar pedidos: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error al listar pedidos');
+        }
+    }
+
+    /**
+     * Mostrar vista de pedidos pendientes del asesor logueado
+     */
+    public function pendientes(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            $search = $request->query('search', '');
+            $tipo = $request->query('tipo', 'todos'); // 'costura', 'epp', 'todos'
+            
+            return view('asesores.pedidos.pendientes', [
+                'search' => $search,
+                'tipo' => $tipo,
+                'userName' => $user->name ?? 'Usuario'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al mostrar pendientes: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al cargar pedidos pendientes');
+        }
+    }
+
+    /**
+     * Mostrar detalle de pendientes de un pedido específico
+     */
+    public function pendientesDetalle($id)
+    {
+        try {
+            $user = Auth::user();
+            $asesorNombre = $user->name ?? '';
+            
+            // Obtener el pedido
+            $pedido = PedidoProduccion::findOrFail($id);
+            
+            // Obtener detalles completos usando el servicio de bodega
+            $datosCompletos = $this->bodegaPedidoService->obtenerDetallePedido($id);
+            
+            // Filtrar solo los ítems con estado Pendiente
+            $itemsPendientes = collect($datosCompletos['items'])->filter(function($item) {
+                return ($item['estado_bodega'] ?? '') === 'Pendiente';
+            })->values()->all();
+            
+            return view('asesores.pedidos.pendientes-detalle', [
+                'pedido' => $pedido,
+                'detalles' => $itemsPendientes
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al mostrar detalle de pendientes: ' . $e->getMessage());
+            return redirect()->route('asesores.pendientes')->with('error', 'Error al cargar el detalle');
+        }
+    }
+
+    /**
+     * Obtener todas las notas de un pedido
+     */
+    public function obtenerNotasPedido($id)
+    {
+        try {
+            $pedido = PedidoProduccion::findOrFail($id);
+            
+            $notas = DB::table('bodega_notas')
+                ->where('numero_pedido', $pedido->numero_pedido)
+                ->orderBy('created_at', 'desc')
+                ->get();
+            
+            return response()->json([
+                'success' => true,
+                'data' => $notas
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener notas del pedido: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cargar las notas'
+            ], 500);
+        }
+    }
+
+    /**
+     * Contar pedidos pendientes del asesor
+     */
+    public function contarPendientesAsesor()
+    {
+        try {
+            $user = Auth::user();
+            $asesorNombre = $user->name ?? '';
+            
+            // Contar pedidos únicos pendientes del asesor
+            $conteo = DB::table('bodega_detalles_talla')
+                ->select('numero_pedido')
+                ->whereNotNull('numero_pedido')
+                ->where('numero_pedido', '!=', '')
+                ->where('estado_bodega', 'Pendiente')
+                ->where('asesor', 'like', "%{$asesorNombre}%")
+                ->whereNull('deleted_at')
+                ->distinct()
+                ->count('numero_pedido');
+            
+            return response()->json([
+                'success' => true,
+                'conteo' => $conteo
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al contar pendientes del asesor: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'conteo' => 0
+            ], 500);
+        }
+    }
+
+    /**
+     * API para obtener pendientes del asesor logueado
+     */
+    public function obtenerPendientesAsesor(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            $asesorNombre = $user->name ?? '';
+            
+            $search = $request->query('search', '');
+            $tipo = $request->query('tipo', 'todos');
+            $page = $request->query('page', 1);
+            $perPage = $request->query('per_page', 20);
+            
+            \Log::info('[ASESOR] Obteniendo pendientes para asesor: ' . $asesorNombre, [
+                'search' => $search,
+                'tipo' => $tipo
+            ]);
+            
+            // Consultar bodega_detalles_talla filtrado por asesor y estado Pendiente
+            $query = DB::table('bodega_detalles_talla as bdt')
+                ->leftJoin('pedidos_produccion as pp', 'bdt.pedido_produccion_id', '=', 'pp.id')
+                ->select('bdt.*', 'pp.created_at as pedido_fecha_creacion')
+                ->whereNotNull('bdt.numero_pedido')
+                ->where('bdt.numero_pedido', '!=', '')
+                ->where('bdt.estado_bodega', 'Pendiente')
+                ->whereNull('bdt.deleted_at');
+            
+            // Filtrar por asesor
+            if ($asesorNombre) {
+                $query->where('bdt.asesor', 'like', "%{$asesorNombre}%");
+            }
+            
+            // Filtrar por tipo de área
+            if ($tipo === 'costura') {
+                $query->where('bdt.area', 'Costura');
+            } elseif ($tipo === 'epp') {
+                $query->where('bdt.area', 'EPP');
+            }
+            
+            // Búsqueda
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('bdt.numero_pedido', 'like', "%{$search}%")
+                      ->orWhere('bdt.empresa', 'like', "%{$search}%")
+                      ->orWhere('bdt.prenda_nombre', 'like', "%{$search}%");
+                });
+            }
+            
+            // Obtener datos agrupados por pedido
+            $detalles = $query->orderBy('pp.created_at', 'desc')->get();
+            
+            // Agrupar por número de pedido
+            $pedidosAgrupados = $detalles->groupBy('numero_pedido')->map(function ($items, $numeroPedido) {
+                $primerItem = $items->first();
+                $totalItems = $items->count();
+                $totalCantidad = $items->sum(function($item) {
+                    return is_numeric($item->cantidad) ? (int)$item->cantidad : 0;
+                });
+                
+                $areas = $items->pluck('area')->unique()->filter()->values()->toArray();
+                $tipoDisplay = implode(' + ', $areas);
+                
+                return [
+                    'id' => $primerItem->pedido_produccion_id ?? 0,
+                    'numero_pedido' => $numeroPedido,
+                    'cliente' => $primerItem->empresa ?? 'Sin Empresa',
+                    'asesor' => $primerItem->asesor ?? '',
+                    'estado' => $primerItem->estado_bodega ?? 'Pendiente',
+                    'fecha_creacion' => $primerItem->pedido_fecha_creacion ? \Carbon\Carbon::parse($primerItem->pedido_fecha_creacion)->format('d/m/Y') : '-',
+                    'fecha_entrega' => $primerItem->fecha_entrega ? \Carbon\Carbon::parse($primerItem->fecha_entrega)->format('d/m/Y') : '',
+                    'tipo' => $tipoDisplay,
+                    'total_items' => $totalItems,
+                    'total_pendientes' => $totalItems,
+                    'total_cantidad' => $totalCantidad,
+                    'areas' => $areas,
+                    'detalles' => $items->map(function($item) {
+                        return [
+                            'prenda' => $item->prenda_nombre,
+                            'talla' => $item->talla,
+                            'cantidad' => $item->cantidad,
+                            'pendientes' => $item->pendientes,
+                            'area' => $item->area,
+                            'estado_costura' => $item->costura_estado,
+                            'estado_epp' => $item->epp_estado,
+                            'observaciones' => $item->observaciones_bodega
+                        ];
+                    })->toArray()
+                ];
+            })->values();
+            
+            // Paginación manual
+            $total = $pedidosAgrupados->count();
+            $pedidosPaginados = $pedidosAgrupados->forPage($page, $perPage);
+            
+            return response()->json([
+                'success' => true,
+                'data' => $pedidosPaginados->values(),
+                'meta' => [
+                    'current_page' => (int)$page,
+                    'per_page' => (int)$perPage,
+                    'total' => $total,
+                    'last_page' => ceil($total / $perPage)
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('[ASESOR] Error al obtener pendientes: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener pendientes: ' . $e->getMessage()
+            ], 500);
         }
     }
 

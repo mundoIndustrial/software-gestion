@@ -49,6 +49,11 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     // PEDIDOS - VISTAS Y CRUD
     // ========================================
     Route::get('/pedidos', [AsesoresController::class, 'index'])->name('pedidos.index');
+    Route::get('/pendientes', [AsesoresController::class, 'pendientes'])->name('pendientes');
+    Route::get('/pendientes/{id}', [AsesoresController::class, 'pendientesDetalle'])->name('pendientes.detalle');
+    Route::get('/api/pendientes-asesor', [AsesoresController::class, 'obtenerPendientesAsesor'])->name('api.pendientes-asesor');
+    Route::get('/api/conteo-pendientes-asesor', [AsesoresController::class, 'contarPendientesAsesor'])->name('api.conteo-pendientes-asesor');
+    Route::get('/pendientes/{id}/notas', [AsesoresController::class, 'obtenerNotasPedido'])->name('pendientes.notas');
     Route::get('/cotizaciones/create', [AsesoresController::class, 'create'])->name('pedidos.create');
     Route::get('/pedidos/next-pedido', [AsesoresController::class, 'getNextPedido'])->name('next-pedido');
     Route::get('/pedidos/{id}', [AsesoresController::class, 'show'])->where('id', '[0-9]+')->name('pedidos.show');
