@@ -26,7 +26,7 @@
                                 <label for="nueva-prenda-nombre" class="form-label-primary">
                                     <span class="material-symbols-rounded">checkroom</span>NOMBRE DE LA PRENDA *
                                 </label>
-                                <input type="text" id="nueva-prenda-nombre" required placeholder="Ej: CAMISA DRILL, POLO, PANTALÓN..." class="form-input" onkeyup="this.value = this.value.toUpperCase(); if(typeof cargarPrendasDatalist==='function') cargarPrendasDatalist();" style="text-transform: uppercase;" list="lista-prendas-autocomplete">
+                                <input type="text" id="nueva-prenda-nombre" required placeholder="Ej: CAMISA DRILL, POLO, PANTALÓN..." class="form-input" onkeyup="convertirAMayusculasConCursor(this); if(typeof cargarPrendasDatalist==='function') cargarPrendasDatalist();" style="text-transform: uppercase;" list="lista-prendas-autocomplete">
                                 <datalist id="lista-prendas-autocomplete">
                                     <!-- Las opciones se cargarán dinámicamente desde el JavaScript -->
                                 </datalist>
@@ -49,7 +49,7 @@
                             <label for="nueva-prenda-descripcion" class="form-label-primary">
                                 <span class="material-symbols-rounded">description</span>DESCRIPCIÓN
                             </label>
-                            <textarea id="nueva-prenda-descripcion" placeholder="Descripción de la prenda, detalles especiales..." class="form-textarea" onkeyup="this.value = this.value.toUpperCase();" style="text-transform: uppercase;"></textarea>
+                            <textarea id="nueva-prenda-descripcion" placeholder="Descripción de la prenda, detalles especiales..." class="form-textarea" onkeyup="convertirAMayusculasConCursor(this);" style="text-transform: uppercase;"></textarea>
                         </div>
                     </div>
 
@@ -317,7 +317,7 @@
                                             </div>
                                             <div>
                                                 <label for="manga-obs" class="sr-only">Observaciones de Manga</label>
-                                                <input type="text" id="manga-obs" placeholder="Observaciones..." disabled style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; opacity: 0.5; font-size: 0.875rem; width: 100%; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
+                                                <input type="text" id="manga-obs" placeholder="Observaciones..." disabled style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; opacity: 0.5; font-size: 0.875rem; width: 100%; text-transform: uppercase;" onkeyup="convertirAMayusculasConCursor(this);">
                                             </div>
                                         </div>
                                     </td>
@@ -334,7 +334,7 @@
                                     </td>
                                     <td style="padding: 0.75rem;">
                                         <label for="bolsillos-obs" class="sr-only">Observaciones de Bolsillos</label>
-                                        <input type="text" id="bolsillos-obs" placeholder="Observaciones (Ej: 4 bolsillos con cierre, ocultos, etc...)" disabled style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; opacity: 0.5; font-size: 0.875rem; width: 100%; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
+                                        <input type="text" id="bolsillos-obs" placeholder="Observaciones (Ej: 4 bolsillos con cierre, ocultos, etc...)" disabled style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; opacity: 0.5; font-size: 0.875rem; width: 100%; text-transform: uppercase;" onkeyup="convertirAMayusculasConCursor(this);">
                                     </td>
                                 </tr>
                                 
@@ -359,7 +359,7 @@
                                             </div>
                                             <div>
                                                 <label for="broche-obs" class="sr-only">Observaciones de Broche/Botón</label>
-                                                <input type="text" id="broche-obs" placeholder="Observaciones..." disabled style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; opacity: 0.5; font-size: 0.875rem; width: 100%; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
+                                                <input type="text" id="broche-obs" placeholder="Observaciones..." disabled style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; opacity: 0.5; font-size: 0.875rem; width: 100%; text-transform: uppercase;" onkeyup="convertirAMayusculasConCursor(this);">
                                             </div>
                                         </div>
                                     </td>
@@ -431,6 +431,18 @@
 
 <!-- SCRIPT: Asegurar que la fila de inputs de telas siempre esté disponible en edición -->
 <script>
+/**
+ * Convierte el valor de un input a mayúsculas preservando la posición del cursor
+ * Soluciona el problema de que el cursor salte al final al escribir
+ * @param {HTMLInputElement|HTMLTextAreaElement} element - El elemento input o textarea
+ */
+window.convertirAMayusculasConCursor = function(element) {
+    const start = element.selectionStart;
+    const end = element.selectionEnd;
+    element.value = element.value.toUpperCase();
+    element.setSelectionRange(start, end);
+};
+
 /**
  * Asegurar que la fila de inputs de telas sea siempre visible y funcional
  * Ejecutar después de que se renderice el modal en modo edición
@@ -883,17 +895,17 @@ document.addEventListener('paste', function(event) {
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
                     <div>
                         <label style="font-size: 0.75rem; font-weight: 600; color: #374151; display: block; margin-bottom: 0.3rem;">TELA *</label>
-                        <input type="text" id="simple-tela-input" placeholder="Ej: DRILL, OXFORD..." list="opciones-telas" class="form-control" style="text-transform: uppercase; font-size: 0.9rem;" onkeyup="this.value = this.value.toUpperCase();">
+                        <input type="text" id="simple-tela-input" placeholder="Ej: DRILL, OXFORD..." list="opciones-telas" class="form-control" style="text-transform: uppercase; font-size: 0.9rem;" onkeyup="convertirAMayusculasConCursor(this);">
                     </div>
                     <div>
                         <label style="font-size: 0.75rem; font-weight: 600; color: #374151; display: block; margin-bottom: 0.3rem;">COLOR</label>
-                        <input type="text" id="simple-color-input" placeholder="Ej: AZUL, ROJO..." list="opciones-colores" class="form-control" style="text-transform: uppercase; font-size: 0.9rem;" onkeyup="this.value = this.value.toUpperCase();">
+                        <input type="text" id="simple-color-input" placeholder="Ej: AZUL, ROJO..." list="opciones-colores" class="form-control" style="text-transform: uppercase; font-size: 0.9rem;" onkeyup="convertirAMayusculasConCursor(this);">
                     </div>
                 </div>
                 <!-- Referencia -->
                 <div style="margin-bottom: 0.75rem;">
                     <label style="font-size: 0.75rem; font-weight: 600; color: #374151; display: block; margin-bottom: 0.3rem;">REFERENCIA</label>
-                    <input type="text" id="simple-referencia-input" placeholder="Ref..." class="form-control" style="text-transform: uppercase; font-size: 0.9rem;" onkeyup="this.value = this.value.toUpperCase();">
+                    <input type="text" id="simple-referencia-input" placeholder="Ref..." class="form-control" style="text-transform: uppercase; font-size: 0.9rem;" onkeyup="convertirAMayusculasConCursor(this);">
                 </div>
                 <!-- Imagen - Drop Zone -->
                 <div style="margin-bottom: 0.75rem;">

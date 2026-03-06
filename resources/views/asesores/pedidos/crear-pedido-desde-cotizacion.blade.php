@@ -440,12 +440,21 @@
             if (input) {
                 console.log('🔤 Configurando input para mayúsculas:', inputId);
                 
-                // Función para convertir a mayúsculas
+                // Función para convertir a mayúsculas preservando posición del cursor
                 function forceUpperCase() {
                     const currentValue = input.value;
                     const upperValue = currentValue.toUpperCase();
                     if (currentValue !== upperValue) {
+                        // Guardar posición del cursor
+                        const start = input.selectionStart;
+                        const end = input.selectionEnd;
+                        
+                        // Actualizar valor
                         input.value = upperValue;
+                        
+                        // Restaurar posición del cursor
+                        input.setSelectionRange(start, end);
+                        
                         console.log('🔤 Convertido a mayúsculas:', currentValue, '→', upperValue);
                     }
                 }

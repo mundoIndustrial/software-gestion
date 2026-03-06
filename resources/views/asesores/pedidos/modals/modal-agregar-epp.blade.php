@@ -152,75 +152,26 @@
             
             <!-- Buscador con Dropdown Multi-Select -->
             <div id="buscadorEPPSection" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div class="flex gap-3 items-end">
-                    <div class="flex-1 relative">
-                        <label for="inputBuscadorEPPTabla" class="text-sm font-medium text-gray-700 block mb-2">
-                            <i class="material-symbols-rounded inline text-base mr-1">search</i>
-                            Selecciona EPP (búsqueda y multi-select)
-                        </label>
-                        <input 
-                            type="text" 
-                            id="inputBuscadorEPPTabla"
-                            onkeyup="filtrarDropdownEPP(this.value)"
-                            placeholder="Escribe para buscar y selecciona..." 
-                            class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 text-sm"
-                        >
-                        <!-- Dropdown de opciones -->
-                        <div id="dropdownEPP" class="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg hidden z-50" style="max-height: 400px; overflow-y: auto;">
-                            <div class="p-2 space-y-1" id="opcionesDropdownEPP">
-                                <!-- Se llena dinámicamente -->
-                            </div>
-                            <div id="mensajeSinResultados" class="p-4 text-center text-gray-500 hidden">
-                                <p>Sin resultados</p>
-                            </div>
-                        </div>
-                    </div>
-                    <button 
-                        type="button"
-                        onclick="abrirFormularioCrearEPP()"
-                        class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium flex items-center gap-2 hover:bg-green-700 transition text-sm"
+                <div class="relative">
+                    <label for="inputBuscadorEPPTabla" class="text-sm font-medium text-gray-700 block mb-2">
+                        <i class="material-symbols-rounded inline text-base mr-1">search</i>
+                        Selecciona EPP (búsqueda y multi-select)
+                    </label>
+                    <input 
+                        type="text" 
+                        id="inputBuscadorEPPTabla"
+                        onkeyup="filtrarDropdownEPP(this.value)"
+                        placeholder="Escribe para buscar y selecciona..." 
+                        class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 text-sm"
                     >
-                        <i class="material-symbols-rounded">add_circle</i>
-                        Nuevo EPP
-                    </button>
-                </div>
-            </div>
-
-            <!-- Formulario para Crear Nuevo EPP (inicialmente oculto) -->
-            <div id="formularioCrearEPP" class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4" style="display: none;">
-                <h3 class="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <i class="material-symbols-rounded">add</i>
-                    Crear Nuevo EPP
-                </h3>
-                
-                <div class="space-y-3">
-                    <div>
-                        <label for="nombreCompletNuevoEPP" class="text-sm font-medium text-gray-700 block mb-1">Nombre Completo</label>
-                        <input 
-                            type="text"
-                            id="nombreCompletNuevoEPP"
-                            placeholder="Ej. CASCO DE SEGURIDAD ROJO"
-                            class="w-full px-3 py-2 border-2 border-blue-300 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 text-sm"
-                        >
-                    </div>
-                    
-                    <div class="flex gap-2">
-                        <button 
-                            type="button"
-                            onclick="guardarNuevoEPP()"
-                            class="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-green-700 transition text-sm"
-                        >
-                            <i class="material-symbols-rounded" style="font-size: 18px;">check_circle</i>
-                            Guardar
-                        </button>
-                        <button 
-                            type="button"
-                            onclick="cerrarFormularioCrearEPP()"
-                            class="flex-1 px-3 py-2 bg-gray-400 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-gray-500 transition text-sm"
-                        >
-                            <i class="material-symbols-rounded" style="font-size: 18px;">close</i>
-                            Cancelar
-                        </button>
+                    <!-- Dropdown de opciones -->
+                    <div id="dropdownEPP" class="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg hidden z-50" style="max-height: 400px; overflow-y: auto;">
+                        <div class="p-2 space-y-1" id="opcionesDropdownEPP">
+                            <!-- Se llena dinámicamente -->
+                        </div>
+                        <div id="mensajeSinResultados" class="p-4 text-center text-gray-500 hidden">
+                            <p>Sin resultados</p>
+                        </div>
                     </div>
                 </div>
             </div>

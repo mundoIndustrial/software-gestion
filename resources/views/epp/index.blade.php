@@ -4,248 +4,185 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de EPPs</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Material Icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
+        .material-symbols-rounded {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
         body {
-            background-color: #f8f9fa;
-        }
-        .container-fluid {
-            max-width: 1400px;
-        }
-        .card {
-            border: none;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        }
-        .table th {
-            border-top: none;
-        }
-        .btn-group .btn {
-            border-radius: 0.375rem;
-        }
-        .pagination .page-link {
-            border-radius: 0.375rem;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
     </style>
 </head>
-<body>
-    <div class="container-fluid mt-4">
+<body class="bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h1 class="h3 mb-0">Gestión de EPPs</h1>
-                <p class="text-muted mb-0">Administrar todos los Equipos de Protección Personal</p>
-            </div>
-            <div>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#crearEppModal">
-                    <i class="fas fa-plus me-2"></i>Nuevo EPP
+        <div class="mb-8">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                        <span class="material-symbols-rounded text-blue-600" style="font-size: 36px;">engineering</span>
+                        Gestión de EPPs
+                    </h1>
+                    <p class="text-gray-600 mt-1">Administrar Equipos de Protección Personal</p>
+                </div>
+                <button type="button" onclick="gestorEpps.abrirModalCrear()" class="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium flex items-center gap-2 hover:bg-blue-700 transition shadow-md hover:shadow-lg">
+                    <span class="material-symbols-rounded">add_circle</span>
+                    Nuevo EPP
                 </button>
             </div>
         </div>
 
         <!-- Filtros -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label for="buscar" class="form-label">Buscar</label>
-                        <input type="text" class="form-control" id="buscar" placeholder="Buscar por nombre, marca...">
-                    </div>
-                    <div class="col-md-3">
-                        <label for="filtroCategoria" class="form-label">Categoría</label>
-                        <select class="form-select" id="filtroCategoria">
-                            <option value="">Todas las categorías</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label for="filtroTipo" class="form-label">Tipo</label>
-                        <select class="form-select" id="filtroTipo">
-                            <option value="">Todos los tipos</option>
-                            <option value="PRODUCTO">Producto</option>
-                            <option value="SERVICIO">Servicio</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="filtroActivo" class="form-label">Estado</label>
-                        <select class="form-select" id="filtroActivo">
-                            <option value="">Todos</option>
-                            <option value="1">Activos</option>
-                            <option value="0">Inactivos</option>
-                        </select>
-                    </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="buscar" class="block text-sm font-medium text-gray-700 mb-2">
+                        <span class="material-symbols-rounded inline text-base align-middle mr-1">search</span>
+                        Buscar
+                    </label>
+                    <input type="text" id="buscar" placeholder="Buscar por nombre..." class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                </div>
+                <div class="flex items-end">
+                    <button type="button" onclick="gestorEpps.limpiarFiltros()" class="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition flex items-center justify-center gap-2">
+                        <span class="material-symbols-rounded">filter_alt_off</span>
+                        Limpiar Filtros
+                    </button>
                 </div>
             </div>
         </div>
 
         <!-- Tabla de EPPs -->
-        <div class="card">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover" id="tablaEpps">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>ID</th>
-                                <th>Nombre Completo</th>
-                                <th>Marca</th>
-                                <th>Categoría</th>
-                                <th>Tipo</th>
-                                <th>Talla</th>
-                                <th>Color</th>
-                                <th>Estado</th>
-                                <th>Descripción</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaEppsBody">
-                            <!-- Los datos se cargarán dinámicamente -->
-                        </tbody>
-                    </table>
-                </div>
-                
-                <!-- Paginación -->
-                <nav aria-label="Paginación de EPPs">
-                    <ul class="pagination justify-content-center" id="paginacionEpps">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <!-- Header de la tabla -->
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <h2 class="text-lg font-semibold text-gray-900">
+                    Lista de EPPs 
+                    <span class="text-sm font-normal text-gray-500 ml-2">(<span id="totalRegistros">0</span> registros)</span>
+                </h2>
+            </div>
+
+            <!-- Tabla -->
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nombre Completo</th>
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-32">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaEppsBody" class="divide-y divide-gray-200">
+                        <!-- Los datos se cargarán dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginación -->
+            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                <div class="flex items-center justify-between">
+                    <div class="text-sm text-gray-600">
+                        Mostrando <span id="registrosDesde">0</span> a <span id="registrosHasta">0</span> de <span id="registrosTotales">0</span> registros
+                    </div>
+                    <div class="flex gap-2" id="paginacionEpps">
                         <!-- Se generará dinámicamente -->
-                    </ul>
-                </nav>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Script de EPPs -->
+    <!-- Modal Crear EPP -->
+    <div id="modalCrearEPP" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
+            <div class="bg-blue-600 px-6 py-4 rounded-t-xl flex justify-between items-center">
+                <h3 id="tituloModal" class="text-xl font-bold text-white">Crear Nuevo EPP</h3>
+                <button onclick="gestorEpps.cerrarModal()" class="text-white hover:bg-blue-700 p-1 rounded transition">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="formCrearEPP" onsubmit="gestorEpps.guardarEPP(event)">
+                    <input type="hidden" id="epp_id" value="">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="nombre_completo" class="block text-sm font-medium text-gray-700 mb-2">
+                                Nombre Completo <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="nombre_completo" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                    </div>
+                    <div class="mt-6 flex gap-3">
+                        <button type="button" onclick="gestorEpps.cerrarModal()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition">
+                            Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
     class GestorEpps {
         constructor() {
             this.epps = [];
-            this.categorias = [];
             this.paginaActual = 1;
             this.totalPorPagina = 20;
             this.totalRegistros = 0;
             this.filtros = {
-                buscar: '',
-                categoria_id: '',
-                tipo: '',
-                activo: ''
+                buscar: ''
             };
             
             this.init();
         }
 
         async init() {
-            await this.cargarCategorias();
             await this.cargarEpps();
             this.configurarEventListeners();
-            this.cargarCategoriasEnSelects();
         }
 
         configurarEventListeners() {
             // Búsqueda en tiempo real
-            document.getElementById('buscar').addEventListener('input', (e) => {
-                this.filtros.buscar = e.target.value;
-                this.paginaActual = 1;
-                this.cargarEpps();
-            });
-
-            // Filtros
-            document.getElementById('filtroCategoria').addEventListener('change', (e) => {
-                this.filtros.categoria_id = e.target.value;
-                this.paginaActual = 1;
-                this.cargarEpps();
-            });
-
-            document.getElementById('filtroTipo').addEventListener('change', (e) => {
-                this.filtros.tipo = e.target.value;
-                this.paginaActual = 1;
-                this.cargarEpps();
-            });
-
-            document.getElementById('filtroActivo').addEventListener('change', (e) => {
-                this.filtros.activo = e.target.value;
-                this.paginaActual = 1;
-                this.cargarEpps();
-            });
-        }
-
-        async cargarCategorias() {
-            try {
-                const response = await fetch('/api/epp/categorias/simple');
-                const result = await response.json();
-                
-                if (result.success) {
-                    this.categorias = result.data;
-                }
-            } catch (error) {
-                console.error('Error cargando categorías:', error);
+            const buscarInput = document.getElementById('buscar');
+            if (buscarInput) {
+                buscarInput.addEventListener('input', (e) => {
+                    this.filtros.buscar = e.target.value;
+                    this.paginaActual = 1;
+                    this.cargarEpps();
+                });
             }
-        }
-
-        cargarCategoriasEnSelects() {
-            const selects = [
-                document.getElementById('categoria_id'),
-                document.getElementById('editar_categoria_id'),
-                document.getElementById('filtroCategoria')
-            ];
-
-            selects.forEach(select => {
-                if (select) {
-                    select.innerHTML = '<option value="">Seleccione una categoría</option>';
-                    this.categorias.forEach(cat => {
-                        const option = document.createElement('option');
-                        option.value = cat.id;
-                        option.textContent = cat.nombre || cat.codigo || cat.descripcion || `Categoría ${cat.id}`;
-                        select.appendChild(option);
-                    });
-                }
-            });
         }
 
         async cargarEpps() {
             try {
-                console.log('[GestorEpps] Iniciando carga de EPPs');
+                console.log('[GestorEpps] Cargando EPPs...');
                 
                 const params = new URLSearchParams();
                 
                 if (this.filtros.buscar) {
                     params.append('q', this.filtros.buscar);
                 }
-                
-                if (this.filtros.categoria_id) {
-                    params.append('categoria', this.filtros.categoria_id);
-                }
 
                 params.append('page', this.paginaActual);
                 params.append('per_page', this.totalPorPagina);
 
                 const url = `/api/epp/gestion?${params}`;
-                console.log('[GestorEpps] URL de consulta:', url);
-
                 const response = await fetch(url);
                 const result = await response.json();
-                console.log('[GestorEpps] Response data:', result);
                 
                 if (result.success) {
                     this.epps = result.data;
                     this.totalRegistros = result.total || this.epps.length;
                     
-                    let eppsFiltrados = this.epps;
-                    
-                    if (this.filtros.tipo) {
-                        eppsFiltrados = eppsFiltrados.filter(epp => epp.tipo === this.filtros.tipo);
-                    }
-                    
-                    if (this.filtros.activo !== '') {
-                        const activoBool = this.filtros.activo === '1';
-                        eppsFiltrados = eppsFiltrados.filter(epp => epp.activo === activoBool);
-                    }
-                    
-                    console.log('[GestorEpps] EPPs filtrados:', eppsFiltrados.length);
-                    this.renderizarTabla(eppsFiltrados);
-                    this.renderizarPaginacion(eppsFiltrados.length);
+                    console.log('[GestorEpps] EPPs cargados:', this.epps.length);
+                    this.renderizarTabla(this.epps);
+                    this.renderizarPaginacion();
+                    this.actualizarContadores();
                 } else {
                     console.error('[GestorEpps] Error en respuesta:', result);
                     this.renderizarTablaVacia('Error al cargar datos');
@@ -253,7 +190,6 @@
             } catch (error) {
                 console.error('[GestorEpps] Error en carga:', error);
                 this.renderizarTablaVacia('Error de conexión');
-                this.mostrarDatosPrueba();
             }
         }
 
@@ -263,10 +199,11 @@
             if (epps.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="10" class="text-center py-4">
-                            <div class="text-muted">
-                                <i class="fas fa-search fa-2x mb-2"></i>
-                                <p>No se encontraron EPPs con los filtros actuales</p>
+                        <td colspan="2" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center justify-center text-gray-400">
+                                <span class="material-symbols-rounded text-5xl mb-3">search_off</span>
+                                <p class="text-lg font-medium">No se encontraron EPPs</p>
+                                <p class="text-sm">Intenta con otros filtros de búsqueda</p>
                             </div>
                         </td>
                     </tr>
@@ -275,41 +212,18 @@
             }
 
             tbody.innerHTML = epps.map(epp => `
-                <tr>
-                    <td>${epp.id}</td>
-                    <td>
-                        <strong>${epp.nombre_completo || ''}</strong>
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-semibold text-gray-900">${epp.nombre_completo || '-'}</div>
+                        ${epp.marca ? `<div class="text-xs text-gray-500 mt-1">${epp.marca}</div>` : ''}
                     </td>
-                    <td>${epp.marca || '-'}</td>
-                    <td>
-                        <span class="badge bg-secondary">
-                            ${this.getNombreCategoria(epp)}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="badge bg-${epp.tipo === 'PRODUCTO' ? 'primary' : 'info'}">
-                            ${epp.tipo || '-'}
-                        </span>
-                    </td>
-                    <td>${epp.talla || '-'}</td>
-                    <td>${epp.color || '-'}</td>
-                    <td>
-                        <span class="badge bg-${epp.activo ? 'success' : 'danger'}">
-                            ${epp.activo ? 'Activo' : 'Inactivo'}
-                        </span>
-                    </td>
-                    <td>
-                        <small class="text-muted">
-                            ${epp.descripcion ? (epp.descripcion.length > 50 ? epp.descripcion.substring(0, 50) + '...' : epp.descripcion) : '-'}
-                        </small>
-                    </td>
-                    <td>
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="window.gestorEpps.editarEpp(${epp.id})" title="Editar">
-                                <i class="fas fa-edit"></i>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex items-center justify-center gap-2">
+                            <button onclick="gestorEpps.editarEpp(${epp.id})" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Editar">
+                                <span class="material-symbols-rounded text-base">edit</span>
                             </button>
-                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="window.gestorEpps.confirmarEliminar(${epp.id}, '${epp.nombre_completo || ''}')" title="Eliminar">
-                                <i class="fas fa-trash"></i>
+                            <button onclick="gestorEpps.eliminarEpp(${epp.id})" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Eliminar">
+                                <span class="material-symbols-rounded text-base">delete</span>
                             </button>
                         </div>
                     </td>
@@ -317,8 +231,8 @@
             `).join('');
         }
 
-        renderizarPaginacion(totalItems) {
-            const totalPages = Math.ceil(totalItems / this.totalPorPagina);
+        renderizarPaginacion() {
+            const totalPages = Math.ceil(this.totalRegistros / this.totalPorPagina);
             const pagination = document.getElementById('paginacionEpps');
             
             if (totalPages <= 1) {
@@ -330,145 +244,200 @@
             
             // Botón anterior
             html += `
-                <li class="page-item ${this.paginaActual === 1 ? 'disabled' : ''}">
-                    <a class="page-link" href="#" onclick="window.gestorEpps.cambiarPagina(${this.paginaActual - 1})">
-                        <i class="fas fa-chevron-left"></i>
-                    </a>
-                </li>
+                <button ${this.paginaActual === 1 ? 'disabled' : ''} 
+                    onclick="gestorEpps.cambiarPagina(${this.paginaActual - 1})" 
+                    class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium ${this.paginaActual === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'} transition">
+                    <span class="material-symbols-rounded text-base">chevron_left</span>
+                </button>
             `;
 
             // Páginas
-            for (let i = 1; i <= totalPages; i++) {
-                if (i === 1 || i === totalPages || (i >= this.paginaActual - 2 && i <= this.paginaActual + 2)) {
-                    html += `
-                        <li class="page-item ${i === this.paginaActual ? 'active' : ''}">
-                            <a class="page-link" href="#" onclick="window.gestorEpps.cambiarPagina(${i})">${i}</a>
-                        </li>
-                    `;
-                } else if (i === this.paginaActual - 3 || i === this.paginaActual + 3) {
-                    html += `
-                        <li class="page-item disabled">
-                            <span class="page-link">...</span>
-                        </li>
-                    `;
-                }
+            const maxPagesToShow = 5;
+            let startPage = Math.max(1, this.paginaActual - Math.floor(maxPagesToShow / 2));
+            let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+            if (endPage - startPage < maxPagesToShow - 1) {
+                startPage = Math.max(1, endPage - maxPagesToShow + 1);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `
+                    <button onclick="gestorEpps.cambiarPagina(${i})" 
+                        class="px-4 py-2 border ${i === this.paginaActual ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-300 text-gray-700 hover:bg-gray-50'} rounded-lg text-sm font-medium transition">
+                        ${i}
+                    </button>
+                `;
             }
 
             // Botón siguiente
             html += `
-                <li class="page-item ${this.paginaActual === totalPages ? 'disabled' : ''}">
-                    <a class="page-link" href="#" onclick="window.gestorEpps.cambiarPagina(${this.paginaActual + 1})">
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-                </li>
+                <button ${this.paginaActual === totalPages ? 'disabled' : ''} 
+                    onclick="gestorEpps.cambiarPagina(${this.paginaActual + 1})" 
+                    class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium ${this.paginaActual === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'} transition">
+                    <span class="material-symbols-rounded text-base">chevron_right</span>
+                </button>
             `;
 
             pagination.innerHTML = html;
         }
 
         cambiarPagina(pagina) {
+            if (pagina < 1 || pagina > Math.ceil(this.totalRegistros / this.totalPorPagina)) {
+                return;
+            }
             this.paginaActual = pagina;
             this.cargarEpps();
-            return false;
         }
 
-        getNombreCategoria(epp) {
-            if (!epp.categoria_id) {
-                return 'Sin categoría';
-            }
+        actualizarContadores() {
+            const inicio = (this.paginaActual - 1) * this.totalPorPagina + 1;
+            const fin = Math.min(this.paginaActual * this.totalPorPagina, this.totalRegistros);
             
-            if (epp.categoria && epp.categoria.nombre) {
-                return epp.categoria.nombre;
-            }
-            
-            const categoria = this.categorias.find(cat => cat.id == epp.categoria_id);
-            if (categoria) {
-                return categoria.nombre || categoria.codigo || `Cat ${categoria.id}`;
-            }
-            
-            return `Categoría ${epp.categoria_id}`;
-        }
-
-        mostrarDatosPrueba() {
-            const datosPrueba = [
-                {
-                    id: 1,
-                    nombre_completo: 'ALCOHOL 1000ML',
-                    marca: 'Marca Test',
-                    categoria_id: 1,
-                    tipo: 'PRODUCTO',
-                    talla: 'Única',
-                    color: 'Transparente',
-                    activo: true,
-                    descripcion: 'Alcohol desinfectante de 1000ml'
-                },
-                {
-                    id: 2,
-                    nombre_completo: 'CASQUETE PORTAVISOR AMARILLO',
-                    marca: 'SteelPro',
-                    categoria_id: 2,
-                    tipo: 'PRODUCTO',
-                    talla: 'Única',
-                    color: 'Amarillo',
-                    activo: true,
-                    descripcion: 'Casco de seguridad con portavisor amarillo'
-                },
-                {
-                    id: 3,
-                    nombre_completo: 'BOTAS DE SEGURIDAD',
-                    marca: 'SafetyBoot',
-                    categoria_id: 1,
-                    tipo: 'PRODUCTO',
-                    talla: '42',
-                    color: 'Negro',
-                    activo: true,
-                    descripcion: 'Botas antideslizantes con puntera de acero'
-                }
-            ];
-            
-            this.epps = datosPrueba;
-            this.totalRegistros = datosPrueba.length;
-            this.renderizarTabla(datosPrueba);
-            this.renderizarPaginacion(datosPrueba.length);
-            
-            console.log('[GestorEpps] Datos de prueba cargados:', datosPrueba.length);
+            document.getElementById('totalRegistros').textContent = this.totalRegistros;
+            document.getElementById('registrosDesde').textContent = inicio;
+            document.getElementById('registrosHasta').textContent = fin;
+            document.getElementById('registrosTotales').textContent = this.totalRegistros;
         }
 
         renderizarTablaVacia(mensaje = 'No se encontraron EPPs') {
             const tbody = document.getElementById('tablaEppsBody');
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="10" class="text-center py-4">
-                        <div class="text-muted">
-                            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                            <p>${mensaje}</p>
-                            <small>Revisa la consola para más detalles</small>
+                    <td colspan="2" class="px-6 py-12 text-center">
+                        <div class="flex flex-col items-center justify-center text-gray-400">
+                            <span class="material-symbols-rounded text-5xl mb-3">info</span>
+                            <p class="text-lg font-medium">${mensaje}</p>
                         </div>
                     </td>
                 </tr>
             `;
         }
 
-        // Métodos CRUD (placeholder)
-        editarEpp(id) {
-            console.log('Editar EPP:', id);
-            // Implementar lógica de edición
+        limpiarFiltros() {
+            document.getElementById('buscar').value = '';
+            this.filtros = {
+                buscar: ''
+            };
+            this.paginaActual = 1;
+            this.cargarEpps();
         }
 
-        confirmarEliminar(id, nombre) {
-            console.log('Eliminar EPP:', id, nombre);
-            // Implementar lógica de eliminación
+        abrirModalCrear() {
+            document.getElementById('tituloModal').textContent = 'Crear Nuevo EPP';
+            document.getElementById('epp_id').value = '';
+            document.getElementById('nombre_completo').value = '';
+            document.getElementById('modalCrearEPP').style.display = 'flex';
+        }
+
+        cerrarModal() {
+            document.getElementById('modalCrearEPP').style.display = 'none';
+        }
+
+        async guardarEPP(event) {
+            event.preventDefault();
+            
+            const eppId = document.getElementById('epp_id').value;
+            const nombreCompleto = document.getElementById('nombre_completo').value;
+
+            if (!nombreCompleto.trim()) {
+                alert('Por favor, ingresa el nombre completo del EPP');
+                return;
+            }
+
+            try {
+                const isEditing = eppId !== '';
+                const url = isEditing ? `/api/epp/${eppId}` : '/api/epp';
+                const method = isEditing ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    },
+                    body: JSON.stringify({
+                        nombre_completo: nombreCompleto,
+                        categoria_id: 1110,
+                        activo: true,
+                        tipo: 'PRODUCTO'
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success || response.ok) {
+                    alert(isEditing ? 'EPP actualizado exitosamente' : 'EPP creado exitosamente');
+                    this.cerrarModal();
+                    this.cargarEpps();
+                } else {
+                    alert('Error al guardar el EPP: ' + (result.message || 'Error desconocido'));
+                }
+            } catch (error) {
+                console.error('Error guardando EPP:', error);
+                alert('Error de conexión al guardar el EPP');
+            }
+        }
+
+        async editarEpp(id) {
+            try {
+                // Cargar datos del EPP
+                const response = await fetch(`/api/epp/${id}`);
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    const epp = result.data;
+                    
+                    // Cambiar título del modal
+                    document.getElementById('tituloModal').textContent = 'Editar EPP';
+                    
+                    // Cargar datos en el formulario
+                    document.getElementById('epp_id').value = epp.id;
+                    document.getElementById('nombre_completo').value = epp.nombre_completo || '';
+                    
+                    // Mostrar modal
+                    document.getElementById('modalCrearEPP').style.display = 'flex';
+                } else {
+                    alert('Error al cargar los datos del EPP');
+                }
+            } catch (error) {
+                console.error('Error cargando EPP:', error);
+                alert('Error de conexión al cargar el EPP');
+            }
+        }
+
+        async eliminarEpp(id) {
+            if (!confirm('¿Estás seguro de que deseas eliminar este EPP?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/epp/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success || response.ok) {
+                    alert('EPP eliminado exitosamente');
+                    this.cargarEpps();
+                } else {
+                    alert('Error al eliminar el EPP: ' + (result.message || 'Error desconocido'));
+                }
+            } catch (error) {
+                console.error('Error eliminando EPP:', error);
+                alert('Error de conexión al eliminar el EPP');
+            }
         }
     }
 
-    // Inicialización directa
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('[EPP] DOM cargado, iniciando...');
-        
-        setTimeout(function() {
-            window.gestorEpps = new GestorEpps();
-            console.log('[EPP] GestorEpps inicializado');
-        }, 500);
+    // Iniciar gestor cuando el DOM esté listo
+    let gestorEpps;
+    document.addEventListener('DOMContentLoaded', () => {
+        gestorEpps = new GestorEpps();
+        window.gestorEpps = gestorEpps;
     });
     </script>
 </body>
