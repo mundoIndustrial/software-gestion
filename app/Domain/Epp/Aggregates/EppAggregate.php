@@ -79,7 +79,7 @@ class EppAggregate
         ?string $color,
         ?string $descripcion,
         bool $activo,
-        \DateTime $creadoEn,
+        ?\DateTime $creadoEn,
         ?\DateTime $actualizadoEn
     ): self {
         $agregado = new self(
@@ -93,7 +93,8 @@ class EppAggregate
             $activo
         );
 
-        $agregado->creadoEn = $creadoEn;
+        // Si created_at es NULL en BD, usar fecha actual
+        $agregado->creadoEn = $creadoEn ?? new \DateTime();
         $agregado->actualizadoEn = $actualizadoEn;
 
         return $agregado;
