@@ -95,8 +95,14 @@ class OperarioController extends Controller
     {
         $usuario = Auth::user();
 
-        // Obtener prendas con recibos de costura
+        $verTodas = $request->boolean('todas');
+
+        // Obtener prendas con recibos del operario
         $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibos($usuario);
+
+        if ($verTodas || $usuario->hasRole('vista-costura') || $usuario->hasRole('administrador-costura')) {
+            $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibosTodosCostura();
+        }
 
         $areaOperario = $usuario->hasRole('cortador') ? 'Corte' : ($usuario->hasRole('costurero') ? 'Costura' : null);
         if ($areaOperario) {
@@ -1061,7 +1067,8 @@ class OperarioController extends Controller
 
             $esCortador = $usuario->hasRole('cortador');
             $esCosturero = $usuario->hasRole('costurero');
-            $areaOperario = $esCortador ? 'Corte' : ($esCosturero ? 'Costura' : null);
+            $esAdminCostura = $usuario->hasRole('administrador-costura');
+            $areaOperario = $esCortador ? 'Corte' : (($esCosturero || $esAdminCostura) ? 'Costura' : null);
             if (!$areaOperario) {
                 return response()->json([
                     'success' => false,
@@ -1086,6 +1093,27 @@ class OperarioController extends Controller
                     'success' => false,
                     'message' => 'Este recibo no está en tu área actual'
                 ], 403);
+            }
+
+            $nombreOperario = (string) $usuario->name;
+            if ($esAdminCostura) {
+                $encargadoActual = null;
+                if (!empty($recibo->prenda_id)) {
+                    $encargadoActual = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
+                        ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                        ->whereNull('deleted_at')
+                        ->latest('created_at')
+                        ->value('encargado');
+                }
+
+                $encargadoActual = is_string($encargadoActual) ? trim($encargadoActual) : $encargadoActual;
+                if (empty($encargadoActual)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El recibo no tiene encargado de Costura asignado'
+                    ], 422);
+                }
+                $nombreOperario = (string) $encargadoActual;
             }
 
             if ($esCortador) {
@@ -1133,7 +1161,7 @@ class OperarioController extends Controller
                 ['id_recibo' => (int) $recibo->id, 'area' => $areaOperario],
                 [
                     'numero_recibo' => (int) ($recibo->consecutivo_actual ?? 0),
-                    'nombre_operario' => (string) $usuario->name,
+                    'nombre_operario' => $nombreOperario,
                     'fecha_completado' => now(),
                 ]
             );
@@ -1162,7 +1190,8 @@ class OperarioController extends Controller
 
             $esCortador = $usuario->hasRole('cortador');
             $esCosturero = $usuario->hasRole('costurero');
-            $areaOperario = $esCortador ? 'Corte' : ($esCosturero ? 'Costura' : null);
+            $esAdminCostura = $usuario->hasRole('administrador-costura');
+            $areaOperario = $esCortador ? 'Corte' : (($esCosturero || $esAdminCostura) ? 'Costura' : null);
             if (!$areaOperario) {
                 return response()->json([
                     'success' => false,

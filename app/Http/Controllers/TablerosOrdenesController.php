@@ -11,6 +11,7 @@ use App\Models\ConsecutivoReciboPedido;
 use App\Models\PedidoProduccion;
 use App\Models\ReciboFijado;
 use App\Events\ReciboFijadoActualizado;
+use Illuminate\Support\Facades\DB;
 
 class TablerosOrdenesController extends Controller
 {
@@ -52,17 +53,20 @@ class TablerosOrdenesController extends Controller
         }
 
         $encargado = strtolower(trim((string) $encargadoNombre));
+        $encargado = preg_replace('/\s+/', ' ', $encargado);
 
         $query = ConsecutivoReciboPedido::query()
-            ->where('tipo_recibo', 'COSTURA')
-            ->where('activo', 1)
-            ->whereIn('area', ['Corte', 'Costura', 'Control de Calidad', 'Control Calidad'])
-            ->whereHas('prenda', function ($prendaQ) use ($encargado) {
-                $prendaQ->whereHas('procesosPrenda', function ($procQ) use ($encargado) {
-                    $procQ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                        ->whereRaw('LOWER(TRIM(encargado)) = ?', [$encargado]);
-                });
-            });
+            ->select('consecutivos_recibos_pedidos.*')
+            ->join('procesos_prenda as pp', function ($join) {
+                $join->on('pp.prenda_pedido_id', '=', 'consecutivos_recibos_pedidos.prenda_id')
+                    ->whereNull('pp.deleted_at');
+            })
+            ->where('consecutivos_recibos_pedidos.tipo_recibo', 'COSTURA')
+            ->where('consecutivos_recibos_pedidos.activo', 1)
+            ->whereIn('consecutivos_recibos_pedidos.area', ['Corte', 'Costura', 'Control de Calidad', 'Control Calidad'])
+            ->whereRaw('LOWER(TRIM(pp.proceso)) = ?', ['costura'])
+            ->whereRaw("REGEXP_REPLACE(LOWER(TRIM(pp.encargado)), '\\s+', ' ') = ?", [$encargado])
+            ->distinct();
 
         if ($q !== '') {
             $query->where(function ($w) use ($q) {

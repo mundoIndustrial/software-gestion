@@ -107,6 +107,14 @@
                                 : ('PENDIENTE ' . strtoupper($labelAreaVista));
                         @endphp
                         <div class="orden-body {{ ($reciboCompletadoArea || (auth()->user()->hasRole('vista-costura') && $completadoVistaSegunArea)) ? 'recibo-completado-area' : '' }}">
+                            @php
+                                $encargadoCosturaCorner = $reciboPrincipal['encargado_costura'] ?? null;
+                                $encargadoCosturaCorner = is_string($encargadoCosturaCorner) ? trim($encargadoCosturaCorner) : $encargadoCosturaCorner;
+                            @endphp
+                            <div class="orden-encargado-corner" onclick="event.stopPropagation();">
+                                <strong>Encargado:</strong>
+                                <span>{{ $encargadoCosturaCorner ? strtoupper($encargadoCosturaCorner) : 'SIN ENCARGADO' }}</span>
+                            </div>
                             @if(auth()->user()->hasRole('vista-costura'))
                                 <div class="orden-top-badges" onclick="event.stopPropagation();">
                                     <span class="badge-area">{{ strtoupper($labelAreaVista) }}</span>
@@ -301,7 +309,14 @@
                                     </a>
                                 </div>
 
-                                @if(auth()->user()->hasRole('cortador') || auth()->user()->hasRole('costurero'))
+                                @php
+                                    $encargadoCosturaAcciones = $reciboPrincipal['encargado_costura'] ?? null;
+                                    $encargadoCosturaAcciones = is_string($encargadoCosturaAcciones) ? trim($encargadoCosturaAcciones) : $encargadoCosturaAcciones;
+                                    $tieneEncargadoCosturaAcciones = !empty($encargadoCosturaAcciones);
+                                    $puedeMarcarRecibo = auth()->user()->hasAnyRole(['cortador', 'costurero', 'administrador-costura']);
+                                @endphp
+
+                                @if($puedeMarcarRecibo && (auth()->user()->hasRole('administrador-costura') ? $tieneEncargadoCosturaAcciones : true))
                                     <div class="orden-right-actions">
                                         <button class="btn-completar-recibo" 
                                                 data-recibo-id="{{ $reciboPrincipal['id'] ?? '' }}"
@@ -708,6 +723,25 @@
 
     .orden-body {
         position: relative;
+    }
+
+    .orden-encargado-corner {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #111827;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 4px 8px;
+        z-index: 2;
+        user-select: none;
+        max-width: 55%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .orden-top-badges {

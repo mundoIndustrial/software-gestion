@@ -111,6 +111,14 @@
                             </div>
                         </div>
                         <div class="menu-divider"></div>
+                        <a href="{{ route('operario.dashboard', ['todas' => 1]) }}"
+                           class="menu-item {{ Route::currentRouteName() === 'tableros-ordenes.index' ? 'active' : '' }}"
+                           role="button"
+                           data-no-intercept="1"
+                           onclick="event.preventDefault(); event.stopPropagation(); window.location.href=this.href;">
+                            <span class="material-symbols-rounded">list</span>
+                            <span>Ver todas las ordenes</span>
+                        </a>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit" class="menu-item logout">

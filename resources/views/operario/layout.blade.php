@@ -148,15 +148,13 @@
                             </div>
                         </div>
                         <div class="menu-divider"></div>
-                        <a href="{{ route('operario.dashboard') }}" class="menu-item">
-                            <span class="material-symbols-rounded">home</span>
-                            <span>Mi Dashboard</span>
-                        </a>
-                        <a href="{{ route('operario.mis-pedidos') }}" class="menu-item">
-                            <span class="material-symbols-rounded">assignment</span>
-                            <span>Mis Pedidos</span>
-                        </a>
-                        <div class="menu-divider"></div>
+                        @if(Auth::user()->hasRole('administrador-costura'))
+                            <a href="{{ url('/tableros_ordenes') }}" class="menu-item">
+                                <span class="material-symbols-rounded">arrow_back</span>
+                                <span>Volver a tableros</span>
+                            </a>
+                            <div class="menu-divider"></div>
+                        @endif
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit" class="menu-item logout">

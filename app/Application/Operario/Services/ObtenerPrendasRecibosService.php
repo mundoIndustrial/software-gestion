@@ -11,6 +11,111 @@ use Illuminate\Support\Collection;
 class ObtenerPrendasRecibosService
 {
    
+    public function obtenerPrendasConRecibosTodosCostura(): Collection
+    {
+        // Vista global: listar todos los recibos COSTURA activos (incluye módulos 1/2/3)
+        // Sin filtrar por encargado/usuario. Se mantiene la lógica de armado de estructura.
+        $usuarioFake = new User();
+        $usuarioFake->name = 'VISTA GLOBAL';
+
+        // Reutilizar la lógica marcando el rol como vista-costura a nivel de tipos.
+        // Aquí no usamos hasRole; simplemente construimos el query base para COSTURA.
+        $tiposRecibo = ['COSTURA', 'COSTURA-BODEGA'];
+
+        $recibos = ConsecutivoReciboPedido::where('activo', 1)
+            ->whereIn('tipo_recibo', $tiposRecibo)
+            ->whereIn('area', ['Corte', 'Costura', 'Control de Calidad', 'Control Calidad'])
+            ->with(['prenda', 'prenda.pedidoProduccion', 'prenda.procesosPrenda', 'prenda.tallas', 'pedido', 'pedido.prendas', 'pedido.prendas.tallas'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Deduplicar: Si hay múltiples recibos con misma prenda_id + tipo_recibo, quedar con el más reciente
+        $recibos = $recibos->unique(function ($recibo) {
+            return ($recibo->prenda_id ?: ('pedido_' . $recibo->pedido_produccion_id)) . '_' . $recibo->tipo_recibo;
+        })->values();
+
+        // Agrupar por prenda (o por pedido si es sin prenda_id)
+        $prendasAgrupadas = $recibos->groupBy(function ($recibo) {
+            if ($recibo->prenda_id) {
+                return 'prenda_' . $recibo->prenda_id;
+            }
+            return 'pedido_' . $recibo->pedido_produccion_id;
+        })->flatMap(function ($recibosDelaPrenda) {
+            $primeRecibo = $recibosDelaPrenda->first();
+
+            if ($primeRecibo->prenda_id && $primeRecibo->prenda) {
+                $prenda = $primeRecibo->prenda;
+                $pedido = $prenda->pedidoProduccion;
+            } else if ($primeRecibo->pedido_produccion_id && $primeRecibo->pedido) {
+                $pedido = $primeRecibo->pedido;
+                $prenda = $pedido->prendas->first();
+            } else {
+                return [];
+            }
+
+            if (!$prenda || !$pedido) {
+                return [];
+            }
+
+            $recibosPorTipo = $recibosDelaPrenda->groupBy('tipo_recibo');
+            $resultados = [];
+
+            foreach ($recibosPorTipo as $tipoRecibo => $recibosDelTipo) {
+                // Solo COSTURA/COSTURA-BODEGA aquí
+                if (!in_array(strtoupper((string) $tipoRecibo), ['COSTURA', 'COSTURA-BODEGA'], true)) {
+                    continue;
+                }
+
+                $resultados[] = [
+                    'prenda_id' => $prenda->id,
+                    'pedido_id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'cliente' => $pedido->cliente,
+                    'nombre_prenda' => $prenda->nombre_prenda,
+                    'descripcion' => $prenda->descripcion,
+                    'de_bodega' => $prenda->de_bodega,
+                    'tallas' => $prenda->tallas ? $prenda->tallas->map(function ($talla) {
+                        return [
+                            'id' => $talla->id,
+                            'genero' => $talla->genero,
+                            'talla' => $talla->talla,
+                            'cantidad' => $talla->cantidad,
+                            'tipo_talla' => $talla->tipo_talla,
+                            'es_sobremedida' => $talla->es_sobremedida,
+                            'tela' => $talla->tela,
+                            'colores' => $talla->colores,
+                        ];
+                    })->toArray() : [],
+                    'recibos' => $recibosDelTipo->map(function ($recibo) {
+                        $procesoCostura = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
+                            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                            ->whereNull('deleted_at')
+                            ->latest('created_at')
+                            ->first();
+
+                        return [
+                            'id' => $recibo->id,
+                            'tipo_recibo' => $recibo->tipo_recibo,
+                            'consecutivo_actual' => $recibo->consecutivo_actual,
+                            'consecutivo_inicial' => $recibo->consecutivo_inicial,
+                            'notas' => $recibo->notas,
+                            'creado_en' => $recibo->created_at,
+                            'area' => $recibo->area,
+                            'proceso_id_costura' => $procesoCostura ? $procesoCostura->id : null,
+                            'encargado_costura' => $procesoCostura ? $procesoCostura->encargado : null,
+                        ];
+                    })->toArray(),
+                    'total_recibos' => $recibosDelTipo->count(),
+                    'fecha_creacion' => $prenda->created_at,
+                ];
+            }
+
+            return $resultados;
+        })->values();
+
+        return $prendasAgrupadas;
+    }
+
     public function obtenerPrendasConRecibos(User $usuario): Collection
     {
         
