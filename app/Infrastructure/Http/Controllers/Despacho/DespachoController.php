@@ -245,14 +245,21 @@ class DespachoController extends Controller
                 ->where('pedidos_produccion.estado', '!=', 'Entregado')
                 ->where('prendas_pedido.de_bodega', 1)
                 ->whereNull('prendas_pedido.deleted_at')
-                ->whereNull('pedidos_procesos_prenda_detalles.id')
-                // Solo listar si existe al menos una talla marcada como Pendiente en bodega_detalles_talla.
-                // Evita casos donde se cumple "de_bodega sin procesos" pero ya no hay pendientes.
+                ->whereNull('pedidos_procesos_prenda_detalles.id') // NO debe tener procesos
+                // Solo listar si existe al menos una talla marcada como Pendiente en bodega_detalles_talla
+                // Y que esté vinculada a una prenda con de_bodega = 1 SIN procesos
                 ->whereExists(function ($q) {
                     $q->select(DB::raw(1))
-                        ->from('bodega_detalles_talla')
-                        ->whereColumn('bodega_detalles_talla.pedido_produccion_id', 'pedidos_produccion.id')
-                        ->where('bodega_detalles_talla.estado_bodega', 'Pendiente');
+                        ->from('bodega_detalles_talla as bdt')
+                        ->join('prendas_pedido as pp', function($join) {
+                            $join->on('pp.id', '=', 'bdt.prenda_id')
+                                 ->where('pp.de_bodega', '=', 1)
+                                 ->whereNull('pp.deleted_at');
+                        })
+                        ->leftJoin('pedidos_procesos_prenda_detalles as pppd', 'pppd.prenda_pedido_id', '=', 'pp.id')
+                        ->whereColumn('bdt.pedido_produccion_id', 'pedidos_produccion.id')
+                        ->where('bdt.estado_bodega', 'Pendiente')
+                        ->whereNull('pppd.id'); // La prenda NO debe tener procesos
                 })
                 ->select('pedidos_produccion.*')
                 ->distinct();
@@ -622,6 +629,135 @@ class DespachoController extends Controller
         }
     }
 
+    /**
+     * Marcar todos los ítems de un pedido como entregados
+     */
+    public function entregarTodo(Request $request, PedidoProduccion $pedido): JsonResponse
+    {
+        \Log::info('[DespachoController] entregarTodo llamado', [
+            'pedido_id' => $pedido->id,
+            'numero_pedido' => $pedido->numero_pedido,
+        ]);
+        
+        try {
+            DB::beginTransaction();
+            
+            // Obtener todas las filas de despacho para este pedido
+            $filas = $this->obtenerFilas->obtenerTodas($pedido->id);
+            
+            $itemsProcesados = 0;
+            $itemsCreados = 0;
+            
+            // Procesar cada ítem (prendas y EPP)
+            foreach ($filas as $fila) {
+                $tipoItem = $fila->tipo; // 'prenda' o 'epp'
+                $itemId = $fila->id;
+                $tallaId = $fila->tallaId; // Usar tallaId del DTO
+                $tallaColorId = $fila->talla_color_id ?? null;
+                $genero = $fila->genero ?? null;
+                
+                // Para prendas, el item_id debe ser el ID de la prenda, pero talla_id es el ID de la talla
+                if ($tipoItem === 'prenda' && $tallaId) {
+                    // Buscar registro específico de esta talla
+                    $despacho = DesparChoParcialesModel::where('pedido_id', $pedido->id)
+                        ->where('tipo_item', $tipoItem)
+                        ->where('item_id', $itemId)
+                        ->where('talla_id', $tallaId)
+                        ->first();
+                } else {
+                    // Para EPP o prendas sin talla específica
+                    $despacho = DesparChoParcialesModel::where('pedido_id', $pedido->id)
+                        ->where('tipo_item', $tipoItem)
+                        ->where('item_id', $itemId)
+                        ->when($tallaId, function ($q) use ($tallaId) {
+                            $q->where('talla_id', $tallaId);
+                        })
+                        ->when($tallaColorId, function ($q) use ($tallaColorId) {
+                            $q->where('talla_color_id', $tallaColorId);
+                        })
+                        ->first();
+                }
+                
+                if (!$despacho) {
+                    // Crear nuevo registro de despacho
+                    $despacho = DesparChoParcialesModel::create([
+                        'pedido_id' => $pedido->id,
+                        'tipo_item' => $tipoItem,
+                        'item_id' => $itemId,
+                        'talla_id' => $tallaId,
+                        'talla_color_id' => $tallaColorId,
+                        'genero' => $genero,
+                        'entregado' => false,
+                        'fecha_despacho' => now(),
+                        'usuario_id' => auth()->id(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    $itemsCreados++;
+                }
+                
+                // Marcar como entregado
+                $despacho->update([
+                    'entregado' => true,
+                    'fecha_entrega' => now(),
+                    'updated_at' => now(),
+                ]);
+                $itemsProcesados++;
+            }
+            
+            // Cambiar el estado del pedido a "Entregado"
+            $estadoAnterior = $pedido->estado;
+            $pedido->update([
+                'estado' => 'Entregado',
+                'updated_at' => now(),
+            ]);
+            
+            DB::commit();
+            
+            \Log::info('[DespachoController] Pedido marcado como entregado completamente', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'estado_anterior' => $estadoAnterior,
+                'items_procesados' => $itemsProcesados,
+                'items_creados' => $itemsCreados,
+            ]);
+            
+            // Emitir evento para WebSocket
+            event(new DespachoPedidoActualizado($pedido, [
+                'action' => 'pedido_entregado_completo',
+                'numero_pedido' => $pedido->numero_pedido,
+                'nuevo_estado' => 'Entregado',
+                'anterior_estado' => $estadoAnterior,
+                'items_procesados' => $itemsProcesados,
+                'usuario' => auth()->user()->name,
+                'timestamp' => now()->toIso8601String(),
+            ]));
+            
+            return response()->json([
+                'success' => true,
+                'message' => "Pedido #{$pedido->numero_pedido} marcado como entregado completamente ({$itemsProcesados} ítems procesados)",
+                'items_procesados' => $itemsProcesados,
+                'items_creados' => $itemsCreados,
+                'estado_anterior' => $estadoAnterior,
+                'nuevo_estado' => 'Entregado',
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('Error al marcar pedido como entregado completamente', [
+                'pedido_id' => $pedido->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     // ===== MÉTODOS UNIFICADOS PARA PENDIENTES (COSTURA + EPP) =====
 
     /**
@@ -659,13 +795,23 @@ class DespachoController extends Controller
             $search = $request->query('search', '');
             
             // Pedidos pendientes de costura (solo los que tienen registros en bodega_detalles_talla)
+            // IMPORTANTE: Solo incluir si los registros pendientes están vinculados a prendas con de_bodega = true
+            // Y que esas prendas NO tengan procesos en pedidos_procesos_prenda_detalles
+            // Si los registros pendientes son de prendas con de_bodega = false, no debe aparecer (son solo producción)
             $query = PedidoProduccion::query()
                 ->join('bodega_detalles_talla', 'bodega_detalles_talla.pedido_produccion_id', '=', 'pedidos_produccion.id')
+                ->join('prendas_pedido', function($join) {
+                    $join->on('prendas_pedido.id', '=', 'bodega_detalles_talla.prenda_id')
+                         ->where('prendas_pedido.de_bodega', '=', 1)
+                         ->whereNull('prendas_pedido.deleted_at');
+                })
+                ->leftJoin('pedidos_procesos_prenda_detalles', 'pedidos_procesos_prenda_detalles.prenda_pedido_id', '=', 'prendas_pedido.id')
                 ->whereNotNull('pedidos_produccion.numero_pedido')
                 ->where('pedidos_produccion.numero_pedido', '!=', '')
                 ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'Entregado', 'Anulada', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
                 ->where('bodega_detalles_talla.area', 'Costura')
                 ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
+                ->whereNull('pedidos_procesos_prenda_detalles.id') // NO debe tener procesos
                 ->select('pedidos_produccion.*') // Evitar columnas duplicadas
                 ->distinct(); // Evitar duplicados por múltiples registros en bodega_detalles_talla
             
@@ -1200,8 +1346,8 @@ class DespachoController extends Controller
                 ]);
             }
             
-            // Ordenar por fecha de creación
-            $pendientes = $pendientes->sortByDesc('fecha_creacion')->values();
+            // Ordenar por número de pedido descendente
+            $pendientes = $pendientes->sortByDesc('numero_pedido')->values();
             
             // Aplicar paginación
             $total = $pendientes->count();

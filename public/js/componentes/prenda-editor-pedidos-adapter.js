@@ -382,32 +382,32 @@
             }
 
             // Telas (JSON) - usar telasAgregadas o telas
+            // 🔴 CRÍTICO: Enviar SIEMPRE (incluso vacío) para que el backend sepa si eliminar telas
             const telas = datos.telasAgregadas || datos.colores_telas || datos.telas || [];
-            if (telas.length > 0) {
-                // Separar File objects de datos JSON
-                const telasJSON = telas.map((t, idx) => {
-                    const telaData = {
-                        tela: t.tela || t.nombre_tela || '',
-                        color: t.color || t.color_nombre || '',
-                        referencia: t.referencia || '',
-                        tela_id: t.tela_id || 0,
-                        color_id: t.color_id || 0,
-                        id: t.id || t._original_id || undefined
-                    };
-                    // Agregar File objects de imágenes de tela al FormData
-                    if (t.imagenes && Array.isArray(t.imagenes)) {
-                        t.imagenes.forEach((img, imgIdx) => {
-                            if (img instanceof File) {
-                                formData.append(`fotos_tela[${idx}]`, img);
-                            } else if (img?.file instanceof File) {
-                                formData.append(`fotos_tela[${idx}]`, img.file);
-                            }
-                        });
-                    }
-                    return telaData;
-                });
-                formData.append('colores_telas', JSON.stringify(telasJSON));
-            }
+            const telasJSON = telas.map((t, idx) => {
+                const telaData = {
+                    tela: t.tela || t.nombre_tela || '',
+                    color: t.color || t.color_nombre || '',
+                    referencia: t.referencia || '',
+                    tela_id: t.tela_id || 0,
+                    color_id: t.color_id || 0,
+                    id: t.id || t._original_id || undefined
+                };
+                // Agregar File objects de imágenes de tela al FormData
+                if (t.imagenes && Array.isArray(t.imagenes)) {
+                    t.imagenes.forEach((img, imgIdx) => {
+                        if (img instanceof File) {
+                            formData.append(`fotos_tela[${idx}]`, img);
+                        } else if (img?.file instanceof File) {
+                            formData.append(`fotos_tela[${idx}]`, img.file);
+                        }
+                    });
+                }
+                return telaData;
+            });
+            // Siempre enviar, incluso si está vacío (para eliminar telas en BD)
+            formData.append('colores_telas', JSON.stringify(telasJSON));
+            console.log('[PedidosAdapter] 🧵 Telas enviadas:', telasJSON.length, 'telas');
 
             // Procesos (JSON) - transformar de objeto a array si es necesario
             if (datos.procesos) {

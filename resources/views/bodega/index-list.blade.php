@@ -158,7 +158,7 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-center text-black">
-                                        {{ \Carbon\Carbon::parse($pedidoData['fecha_pedido'])->format('d/m/Y') }}
+                                        {{ \Carbon\Carbon::parse($pedidoData['fecha_pedido'])->format('d/m/Y h:i:s A') }}
                                     </td>
                                 </tr>
                             @endforeach

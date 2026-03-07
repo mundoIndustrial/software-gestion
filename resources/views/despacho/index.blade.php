@@ -94,11 +94,17 @@
                                     @elseif($pedido->estado_entrega === 'parcial') bg-yellow-100
                                     @endif" 
                                     data-pedido-id="{{ $pedido->id }}">
-                                    <td class="px-6 py-4 text-center">
+                                    <td class="px-6 py-4 text-center whitespace-nowrap">
                                         <a href="{{ route('despacho.show', $pedido->id) }}"
                                            class="inline-block px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition-colors">
                                             Ver
                                         </a>
+                                        <button type="button"
+                                                onclick="entregarTodo({{ $pedido->id }}, '{{ addslashes($pedido->numero_pedido) }}')"
+                                                class="inline-block ml-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-colors"
+                                                title="Marcar todos los ítems como entregados">
+                                            Entregar
+                                        </button>
                                     </td>
                                     <td class="px-6 py-4 font-medium text-slate-900">
                                         {{ $pedido->numero_pedido }}
@@ -260,6 +266,95 @@ function abrirModalNovedadesDespachoIndex(pedidoId, numeroPedido) {
         observer.observe(container, { childList: true, subtree: true });
     });
 })();
+
+function entregarTodo(pedidoId, numeroPedido) {
+    if (!confirm(`¿Estás seguro de marcar TODOS los ítems del pedido #${numeroPedido} como entregados? Esta acción marcará el pedido como completado.`)) {
+        return;
+    }
+    
+    // Mostrar indicador de carga
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ Procesando...';
+    btn.disabled = true;
+    
+    fetch(`/despacho/${pedidoId}/entregar-todo`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mostrar notificación de éxito
+            mostrarNotificacionExito(numeroPedido);
+            
+            // Eliminar la fila de la tabla con animación
+            const row = document.querySelector(`tr[data-pedido-id="${pedidoId}"]`);
+            if (row) {
+                row.style.transition = 'all 0.3s ease';
+                row.style.opacity = '0';
+                row.style.transform = 'translateX(-20px)';
+                
+                row.addEventListener('transitionend', function() {
+                    row.remove();
+                    
+                    // Verificar si no quedan pedidos
+                    const tbody = document.querySelector('tbody');
+                    if (tbody && tbody.children.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="8" class="text-center py-8 text-slate-500">
+                                    No hay pedidos pendientes
+                                </td>
+                            </tr>
+                        `;
+                    }
+                }, { once: true });
+            }
+        } else {
+            // Restaurar botón y mostrar error
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            alert('Error: ' + (data.message || 'No se pudo procesar la solicitud'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        alert('Error de conexión. Por favor intenta nuevamente.');
+    });
+}
+
+function mostrarNotificacionExito(numeroPedido) {
+    // Crear notificación flotante
+    const notificacion = document.createElement('div');
+    notificacion.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
+    notificacion.innerHTML = `
+        <div class="flex items-center gap-2">
+            <span>✅</span>
+            <span>Pedido #${numeroPedido} marcado como entregado completamente</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notificacion);
+    
+    // Mostrar notificación
+    setTimeout(() => {
+        notificacion.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Ocultar después de 3 segundos
+    setTimeout(() => {
+        notificacion.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            document.body.removeChild(notificacion);
+        }, 300);
+    }, 3000);
+}
 
 console.log('🔍 Variables globales configuradas:');
 console.log('  - Usuario ID:', window.__despachoObsUsuarioActualId);

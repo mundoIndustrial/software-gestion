@@ -510,7 +510,8 @@ class PedidosController extends Controller
                 DB::raw('SUM(pendientes) as pendientes_total'),
                 DB::raw('MIN(talla) as talla_ejemplo')
             ])
-            ->groupBy('numero_pedido');
+            ->groupBy('numero_pedido')
+            ->orderBy('numero_pedido', 'desc'); // Ordenar por número de pedido descendente
             // orderBy temporalmente eliminado para evitar conflicto con count()
 
             \Log::info('Query con groupBy simplificado construida');
@@ -606,8 +607,7 @@ class PedidosController extends Controller
                                         ->take($porPagina)
                                         ->get();
 
-            // Ordenar por fecha_entrega después de obtener los resultados
-            $pedidosPorPagina = $pedidosPorPagina->sortBy('fecha_entrega');
+            // Los resultados ya vienen ordenados por número de pedido descendente desde la query
 
             // Obtener estadísticas
             $estadisticas = BodegaDetalleTalla::obtenerEstadisticasCostura();
@@ -711,7 +711,8 @@ class PedidosController extends Controller
                 DB::raw('SUM(pendientes) as pendientes_total'),
                 DB::raw('MIN(talla) as talla_ejemplo')
             ])
-            ->groupBy('numero_pedido');
+            ->groupBy('numero_pedido')
+            ->orderBy('numero_pedido', 'desc'); // Ordenar por número de pedido descendente
             // orderBy temporalmente eliminado para evitar conflicto con count()
 
             \Log::info('Query con groupBy simplificado construida');
@@ -807,8 +808,7 @@ class PedidosController extends Controller
                                         ->take($porPagina)
                                         ->get();
 
-            // Ordenar por fecha_entrega después de obtener los resultados
-            $pedidosPorPagina = $pedidosPorPagina->sortBy('fecha_entrega');
+            // Los resultados ya vienen ordenados por número de pedido descendente desde la query
 
             // Obtener estadísticas
             $estadisticas = [

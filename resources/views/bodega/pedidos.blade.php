@@ -122,7 +122,7 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-center text-black">
-                                {{ $pedido->created_at->format('d/m/Y') }}
+                                {{ $pedido->created_at->format('d/m/Y h:i A') }}
                             </td>
                         </tr>
                         @endforeach

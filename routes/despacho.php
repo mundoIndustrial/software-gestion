@@ -59,6 +59,11 @@ Route::prefix('despacho')
             ->name('despacho.estado-entregas')
             ->where('pedido', '[0-9]+');
 
+        // Marcar todos los ítems de un pedido como entregados
+        Route::post('/{pedido}/entregar-todo', [DespachoController::class, 'entregarTodo'])
+            ->name('despacho.entregar-todo')
+            ->where('pedido', '[0-9]+');
+
         // Deshacer marcado como entregado
         Route::post('/{pedido}/deshacer-entregado', [DespachoController::class, 'deshacerEntregado'])
             ->name('despacho.deshacer-entregado')

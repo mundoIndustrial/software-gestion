@@ -13,10 +13,35 @@ class PrendaEditorTelas {
             telas: prenda.telasAgregadas?.map(t => t.nombre_tela || t.tela_nombre || t.tela || t.nombre || 'Sin nombre')
         });
         
-        // Buscar tabla
+        // 🔥 Replicar a global para que sea editable (ANTES de verificar DOM)
+        // 🔴 NO usar JSON.parse/stringify - destruye File objects y blob URLs
+        if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas)) {
+            window.telasCreacion = prenda.telasAgregadas.map(tela => ({
+                ...tela,
+                imagenes: tela.imagenes ? [...tela.imagenes] : []
+            }));
+            console.log('[Carga] 🧵 Telas replicadas en window.telasCreacion (preservando File objects):', window.telasCreacion.length);
+        }
+        
+        // Cargar datalist de telas y colores
+        if (typeof cargarDatalistTelasColores === 'function') {
+            setTimeout(() => { cargarDatalistTelasColores(); }, 100);
+        }
+        
+        // Configurar drag & drop para telas
+        if (typeof configurarDragDropTela === 'function') {
+            configurarDragDropTela();
+        }
+        
+        // Buscar tabla legacy (#tbody-telas)
         const tablaTelas = document.querySelector('#tbody-telas');
         if (!tablaTelas) {
-            console.warn('❌ [Telas] No encontrado #tbody-telas');
+            // Tabla legacy no existe, usar tabla unificada de resumen
+            console.log('[Telas] #tbody-telas no encontrado, usando tabla unificada de resumen');
+            if (window.ColoresPorTalla && typeof window.ColoresPorTalla.actualizarTablaResumen === 'function') {
+                window.ColoresPorTalla.actualizarTablaResumen();
+            }
+            console.log('✅ [Telas] Completado (vía tabla unificada)');
             return;
         }
         
@@ -33,23 +58,6 @@ class PrendaEditorTelas {
         
         console.log('[Telas] Filas viejas eliminadas');
         
-        // 🔴 NUEVO: Cargar datalist de telas y colores
-        console.log('[Telas] 🔄 Verificando si cargarDatalistTelasColores existe:', typeof cargarDatalistTelasColores);
-        if (typeof cargarDatalistTelasColores === 'function') {
-            console.log('[Telas] ✅ Llamando a cargarDatalistTelasColores con pequeño retraso...');
-            // Pequeño retraso para asegurar que el DOM del modal esté listo
-            setTimeout(() => {
-                cargarDatalistTelasColores();
-            }, 100);
-        } else {
-            console.warn('[Telas] ⚠️ cargarDatalistTelasColores no existe');
-        }
-        
-        // 🔴 NUEVO: Configurar drag & drop para telas
-        if (typeof configurarDragDropTela === 'function') {
-            configurarDragDropTela();
-        }
-        
         // Cargar telas nuevas
         if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas) && prenda.telasAgregadas.length > 0) {
             prenda.telasAgregadas.forEach((tela, idx) => {
@@ -64,16 +72,6 @@ class PrendaEditorTelas {
                 
                 console.log(`✅ [Telas] ${idx + 1}: ${tela.nombre_tela || tela.tela_nombre || tela.tela || tela.nombre || 'Sin nombre'}`);
             });
-        }
-        
-        // 🔥 Replicar a global para que sea editable
-        // 🔴 NO usar JSON.parse/stringify - destruye File objects y blob URLs
-        if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas)) {
-            window.telasCreacion = prenda.telasAgregadas.map(tela => ({
-                ...tela,
-                imagenes: tela.imagenes ? [...tela.imagenes] : []
-            }));
-            console.log('[Carga] 🧵 Telas replicadas en window.telasCreacion (preservando File objects):', window.telasCreacion.length);
         }
         
         console.log('✅ [Telas] Completado');
