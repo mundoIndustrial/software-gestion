@@ -1605,9 +1605,8 @@ class DespachoController extends Controller
                 }
             }
             
-            // Agrupar items por prenda
+            // NO agrupar - crear un item por cada talla (como bodega)
             $items = [];
-            $prendasAgrupadas = [];
             
             foreach ($itemsPendientes as $item) {
                 $prendaNombre = $item['descripcion']['nombre_prenda'] ?? $item['prenda_nombre'] ?? '';
@@ -1634,27 +1633,19 @@ class DespachoController extends Controller
                 if (!empty($colorKey) && (!isset($item['descripcion']['color']) || empty($item['descripcion']['color']))) {
                     $item['descripcion']['color'] = $colorKey;
                 }
-                $prendaKey = trim($prendaNombre . '|' . $colorKey);
-                if (!isset($prendasAgrupadas[$prendaKey])) {
-                    $prendasAgrupadas[$prendaKey] = [];
-                }
-                $prendasAgrupadas[$prendaKey][] = $item;
-            }
-            
-            // Convertir agrupado a items con estructura esperada
-            foreach ($prendasAgrupadas as $prendaKey => $tallasDeProenda) {
-                $primerItem = $tallasDeProenda[0];
-                $prendaNombre = $primerItem['descripcion']['nombre_prenda'] ?? $primerItem['prenda_nombre'] ?? '';
-                $es_epp = strpos(strtoupper($prendaNombre), 'EPP') !== false;
-                $primerItem = $tallasDeProenda[0];
                 
-                $item = [
+                $es_epp = strpos(strtoupper($prendaNombre), 'EPP') !== false;
+                
+                // Crear un item individual por cada talla/item
+                $itemNormalizado = [
                     'numero_pedido' => $numeroPedido,
-                    'asesor' => $primerItem['asesor'] ?? $pedidoData['asesor'],
-                    'empresa' => $primerItem['empresa'] ?? $pedidoData['cliente'],
+                    'asesor' => $item['asesor'] ?? $pedidoData['asesor'],
+                    'empresa' => $item['empresa'] ?? $pedidoData['cliente'],
                     'prenda_nombre' => $prendaNombre,
                     'es_epp' => $es_epp,
-                    'descripcion' => $primerItem['descripcion'] ?? [
+                    'tipo' => $item['tipo'] ?? 'prenda',
+                    'area' => $item['area'] ?? '',
+                    'descripcion' => $item['descripcion'] ?? [
                         'nombre_prenda' => $prendaNombre,
                         'nombre' => $prendaNombre,
                         'tela' => null,
@@ -1662,24 +1653,21 @@ class DespachoController extends Controller
                         'procesos' => [],
                         'variantes' => [],
                     ],
-                    'genero' => $primerItem['genero'] ?? null,
-                    'cantidad' => collect($tallasDeProenda)->sum('cantidad') ?? 0,
-                    'observaciones' => $primerItem['observaciones'] ?? '',
-                    'tallas' => array_map(function($taItem) {
-                        return [
-                            'talla' => $taItem['talla'] ?? '',
-                            'talla_color_id' => $taItem['talla_color_id'] ?? null,
-                            'cantidad' => $taItem['cantidad'] ?? 0,
-                            'pendientes' => $taItem['pendientes'] ?? '',
-                            'estado_bodega' => $taItem['estado_bodega'] ?? 'Pendiente',
-                            'fecha_entrega' => $taItem['fecha_entrega'] ?? '',
-                            'observaciones_bodega' => $taItem['observaciones_bodega'] ?? '',
-                        ];
-                    }, $tallasDeProenda),
-                    'descripcion_rowspan' => count($tallasDeProenda),
+                    'genero' => $item['genero'] ?? null,
+                    'talla' => $item['talla'] ?? '',
+                    'talla_color_id' => $item['talla_color_id'] ?? null,
+                    'cantidad' => $item['cantidad'] ?? 0,
+                    'cantidad_total' => $item['cantidad'] ?? 0,
+                    'pendientes' => $item['pendientes'] ?? '',
+                    'estado_bodega' => $item['estado_bodega'] ?? 'Pendiente',
+                    'fecha_entrega' => $item['fecha_entrega'] ?? '',
+                    'observaciones' => $item['observaciones'] ?? '',
+                    'observaciones_bodega' => $item['observaciones_bodega'] ?? '',
+                    'pedido_produccion_id' => $item['pedido_produccion_id'] ?? $pedidoProduccion->id,
+                    'recibo_prenda_id' => $item['recibo_prenda_id'] ?? $reciboPrenda->id,
                 ];
                 
-                $items[] = $item;
+                $items[] = $itemNormalizado;
             }
             
             // Verificar que sea un pedido con estado permitido
