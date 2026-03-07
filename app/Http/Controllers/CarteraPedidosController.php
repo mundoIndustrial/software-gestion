@@ -59,6 +59,10 @@ class CarteraPedidosController extends Controller
             $query = PedidoProduccion::whereIn('estado', $estadosPendientes)
                                    ->whereNotIn('estado', $estadosExcluidos);
             
+            // Excluir pedidos que solo tienen EPP (sin prendas)
+            // Un pedido debe tener al menos una prenda para aparecer en cartera
+            $query->whereHas('prendas');
+            
             // Aplicar búsqueda general
             if (!empty($search)) {
                 $search = '%' . $search . '%';
@@ -381,6 +385,9 @@ class CarteraPedidosController extends Controller
             $query = PedidoProduccion::whereNotNull('aprobado_por_cartera_en')
                                    ->whereIn('estado', $estadosPermitidos);
             
+            // Excluir pedidos que solo tienen EPP (sin prendas)
+            $query->whereHas('prendas');
+            
             // Aplicar búsqueda general
             if (!empty($search)) {
                 $search = '%' . $search . '%';
@@ -480,6 +487,9 @@ class CarteraPedidosController extends Controller
             
             // Construir query
             $query = PedidoProduccion::whereIn('estado', $estadosRechazados);
+            
+            // Excluir pedidos que solo tienen EPP (sin prendas)
+            $query->whereHas('prendas');
             
             // Aplicar búsqueda general
             if (!empty($search)) {
@@ -581,6 +591,9 @@ class CarteraPedidosController extends Controller
             
             // Construir query
             $query = PedidoProduccion::whereIn('estado', $estadosAnulados);
+            
+            // Excluir pedidos que solo tienen EPP (sin prendas)
+            $query->whereHas('prendas');
             
             // Aplicar búsqueda general
             if (!empty($search)) {
