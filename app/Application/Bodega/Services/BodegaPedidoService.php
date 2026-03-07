@@ -1051,6 +1051,62 @@ class BodegaPedidoService
             }
         }
         
+        // Agrupar por artículo + género para calcular rowspan de género
+        $porArticuloGenero = [];
+        foreach ($items as $index => $item) {
+            // Obtener género del item
+            $genero = '';
+            if (isset($item['descripcion']['variantes']) && is_array($item['descripcion']['variantes']) && count($item['descripcion']['variantes']) > 0) {
+                // Buscar el género de la variante que corresponde a la talla del item
+                foreach ($item['descripcion']['variantes'] as $variante) {
+                    if (($variante['talla'] ?? '') === ($item['talla'] ?? '')) {
+                        $genero = $variante['genero'] ?? '';
+                        break;
+                    }
+                }
+                // Si no encontró por talla, usar el de la primera variante
+                if (empty($genero)) {
+                    $genero = $item['descripcion']['variantes'][0]['genero'] ?? '';
+                }
+            } elseif (isset($item['genero'])) {
+                $genero = $item['genero'];
+            }
+            
+            // Normalizar género
+            $genero = strtoupper(trim($genero));
+            if (empty($genero) || $genero === 'GENERICO') {
+                $genero = 'GENERICO';
+            }
+            
+            // Determinar ID del artículo (mismo que antes)
+            $idArticulo = null;
+            if (isset($item['prenda_id']) && !empty($item['prenda_id'])) {
+                $idArticulo = 'prenda_' . $item['prenda_id'];
+            } elseif (isset($item['pedido_epp_id']) && !empty($item['pedido_epp_id'])) {
+                $idArticulo = 'epp_' . $item['pedido_epp_id'];
+            } else {
+                $nombreArticulo = $item['descripcion']['nombre_prenda'] ?? $item['descripcion']['nombre'] ?? 'Sin nombre';
+                $idArticulo = 'nombre_' . md5(strtolower(trim($nombreArticulo)));
+            }
+            
+            $asesor = $item['asesor'];
+            // Crear clave por artículo + género
+            $claveArticuloGenero = $asesor . '|' . $idArticulo . '|' . $genero;
+            
+            if (!isset($porArticuloGenero[$claveArticuloGenero])) {
+                $porArticuloGenero[$claveArticuloGenero] = [];
+            }
+            $porArticuloGenero[$claveArticuloGenero][] = $index;
+        }
+        
+        // Asignar rowspans para género
+        foreach ($porArticuloGenero as $claveArticuloGenero => $indices) {
+            $rowspan = count($indices);
+            foreach ($indices as $itemIndex) {
+                $items[$itemIndex]['genero_rowspan'] = $itemIndex === $indices[0] ? $rowspan : 0;
+            }
+        }
+        
         return $items;
     }
 

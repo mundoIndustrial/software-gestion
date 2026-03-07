@@ -98,7 +98,8 @@
                                         $procesos = $desc['procesos'] ?? [];
                                         $primeraVariante = count($variantes) > 0 ? $variantes[0] : null;
 
-                                        $gruposPorColor = [];
+                                        // Group by color and then by gender
+                                        $gruposPorColorGenero = [];
                                         if (($primeraItem['tipo'] ?? null) === 'prenda' && is_array($variantes)) {
                                             foreach ($variantes as $variante) {
                                                 $generoVar = strtoupper($variante['genero'] ?? '');
@@ -117,13 +118,18 @@
                                                         $tallaColorId = $colorDetalle['talla_color_id'] ?? ($colorDetalle['tallaColorId'] ?? null);
 
                                                         if (!empty($tallaVar) && $cantidadColor > 0) {
-                                                            if (!isset($gruposPorColor[$colorKey])) {
-                                                                $gruposPorColor[$colorKey] = [
+                                                            // Group by color first, then by gender
+                                                            if (!isset($gruposPorColorGenero[$colorKey])) {
+                                                                $gruposPorColorGenero[$colorKey] = [];
+                                                            }
+                                                            if (!isset($gruposPorColorGenero[$colorKey][$generoVar])) {
+                                                                $gruposPorColorGenero[$colorKey][$generoVar] = [
                                                                     'color' => $colorKey,
+                                                                    'genero' => $generoVar,
                                                                     'tallas' => [],
                                                                 ];
                                                             }
-                                                            $gruposPorColor[$colorKey]['tallas'][] = [
+                                                            $gruposPorColorGenero[$colorKey][$generoVar]['tallas'][] = [
                                                                 'talla' => $tallaVar,
                                                                 'genero' => $variante['genero'] ?? null,
                                                                 'cantidad' => $cantidadColor,
@@ -135,144 +141,157 @@
                                             }
                                         }
 
-                                        foreach ($gruposPorColor as &$grupoColor) {
-                                            usort($grupoColor['tallas'], function ($a, $b) {
-                                                $nA = is_numeric($a['talla']) ? (int)$a['talla'] : null;
-                                                $nB = is_numeric($b['talla']) ? (int)$b['talla'] : null;
-                                                if ($nA !== null && $nB !== null) return $nA - $nB;
-                                                return strcmp($a['talla'], $b['talla']);
-                                            });
+                                        // Sort sizes within each color-gender group
+                                        foreach ($gruposPorColorGenero as &$gruposPorGenero) {
+                                            foreach ($gruposPorGenero as &$grupoGenero) {
+                                                usort($grupoGenero['tallas'], function ($a, $b) {
+                                                    $nA = is_numeric($a['talla']) ? (int)$a['talla'] : null;
+                                                    $nB = is_numeric($b['talla']) ? (int)$b['talla'] : null;
+                                                    if ($nA !== null && $nB !== null) return $nA - $nB;
+                                                    return strcmp($a['talla'], $b['talla']);
+                                                });
+                                            }
                                         }
-                                        unset($grupoColor);
+                                        unset($gruposPorGenero, $grupoGenero);
 
-                                        $tieneColoresPorTalla = !empty($gruposPorColor);
+                                        $tieneColoresPorTalla = !empty($gruposPorColorGenero);
                                     @endphp
 
                                     @if($tieneColoresPorTalla)
-                                        @foreach($gruposPorColor as $indexColor => $grupoColor)
+                                        @foreach($gruposPorColorGenero as $colorKey => $gruposPorGenero)
                                             @php
-                                                $rowSpanColor = count($grupoColor['tallas']);
-                                                $colorLabel = $grupoColor['color'] === '__SIN_COLOR__' ? null : $grupoColor['color'];
+                                                $colorLabel = $colorKey === '__SIN_COLOR__' ? null : $colorKey;
+                                                // Count total rows for this color (for description rowspan)
+                                                $totalRowsColor = 0;
+                                                foreach ($gruposPorGenero as $grupoGenero) {
+                                                    $totalRowsColor += count($grupoGenero['tallas']);
+                                                }
+                                                $isFirstRowOfColor = true;
                                             @endphp
-                                            @foreach($grupoColor['tallas'] as $indexTalla => $t)
+                                            @foreach($gruposPorGenero as $generoKey => $grupoGenero)
                                                 @php
-                                                    $tKey = ($t['talla'] ?? '') . '|' . (($t['tallaColorId'] ?? null) ?? '');
-                                                    $baseItem = $itemsPorTallaColor[$tKey] ?? ($itemsPorTalla[$t['talla']] ?? $primeraItem);
+                                                    $rowSpanGenero = count($grupoGenero['tallas']);
                                                 @endphp
-                                                <tr class="hover:bg-slate-50 transition-colors"
-                                                    data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
-                                                    data-asesor="{{ is_string($baseItem['asesor'] ?? null) && !empty($baseItem['asesor']) ? $baseItem['asesor'] : 'N/A' }}"
-                                                    data-empresa="{{ is_string($baseItem['empresa'] ?? null) && !empty($baseItem['empresa']) ? $baseItem['empresa'] : 'N/A' }}"
-                                                    data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
-                                                    @if(($baseItem['estado_bodega'] ?? '') === 'Homologar')
-                                                        style="background-color: rgba(147, 51, 234, 0.08);"
-                                                    @elseif(($baseItem['estado_bodega'] ?? '') === 'Entregado')
-                                                        style="background-color: rgba(37, 99, 235, 0.05);"
-                                                    @endif
-                                                >
-                                                    <!-- DESCRIPCIÓN (PRENDA) - por grupo de color -->
-                                                    @if($indexTalla === 0)
-                                                    <td class="px-4 py-3 text-xs text-black border-r border-slate-300" rowspan="{{ $rowSpanColor }}" style="width: 22%;">
-                                                        <div class="font-bold text-black mb-1">
-                                                            {{ $nombre }}
-                                                            @if($colorLabel)
-                                                                <span class="text-black"> - <strong>{{ $colorLabel }}</strong></span>
-                                                            @endif
-                                                            @if(($baseItem['de_bodega'] ?? ($baseItem['descripcion']['de_bodega'] ?? ($baseItem['objetoPrenda']['de_bodega'] ?? false))) )
-                                                                <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
-                                                            @endif
-                                                        </div>
-                                                        @if(isset($desc['descripcion']) && !empty($desc['descripcion']))
-                                                            <div class="text-slate-600 text-xs mb-2 italic">
-                                                                {{ $desc['descripcion'] }}
-                                                            </div>
+                                                @foreach($grupoGenero['tallas'] as $indexTalla => $t)
+                                                    @php
+                                                        $tKey = ($t['talla'] ?? '') . '|' . (($t['tallaColorId'] ?? null) ?? '');
+                                                        $baseItem = $itemsPorTallaColor[$tKey] ?? ($itemsPorTalla[$t['talla']] ?? $primeraItem);
+                                                    @endphp
+                                                    <tr class="hover:bg-slate-50 transition-colors"
+                                                        data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
+                                                        data-asesor="{{ is_string($baseItem['asesor'] ?? null) && !empty($baseItem['asesor']) ? $baseItem['asesor'] : 'N/A' }}"
+                                                        data-empresa="{{ is_string($baseItem['empresa'] ?? null) && !empty($baseItem['empresa']) ? $baseItem['empresa'] : 'N/A' }}"
+                                                        data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
+                                                        @if(($baseItem['estado_bodega'] ?? '') === 'Homologar')
+                                                            style="background-color: rgba(147, 51, 234, 0.08);"
+                                                        @elseif(($baseItem['estado_bodega'] ?? '') === 'Entregado')
+                                                            style="background-color: rgba(37, 99, 235, 0.05);"
                                                         @endif
-                                                        @if($tela || ($color && strtolower($color) !== 'sin color'))
-                                                            <div class="text-black text-xs mb-1">
-                                                                @if($tela && $color && strtolower($color) !== 'sin color')
-                                                                    Tela: {{ $tela }} - Color: {{ $color }}
-                                                                @elseif($tela)
-                                                                    Tela: {{ $tela }}
-                                                                @elseif($color && strtolower($color) !== 'sin color')
-                                                                    Color: {{ $color }}
+                                                    >
+                                                        <!-- DESCRIPCIÓN (PRENDA) - once per color group -->
+                                                        @if($isFirstRowOfColor)
+                                                        <td class="px-4 py-3 text-xs text-black border-r border-slate-300" rowspan="{{ $totalRowsColor }}" style="width: 22%;">
+                                                            <div class="font-bold text-black mb-1">
+                                                                {{ $nombre }}
+                                                                @if($colorLabel)
+                                                                    <span class="text-black"> - <strong>{{ $colorLabel }}</strong></span>
+                                                                @endif
+                                                                @if(($baseItem['de_bodega'] ?? ($baseItem['descripcion']['de_bodega'] ?? ($baseItem['objetoPrenda']['de_bodega'] ?? false))) )
+                                                                    <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
                                                                 @endif
                                                             </div>
-                                                        @endif
-
-                                                        @if(isset($primeraVariante) && $primeraVariante)
-                                                            @php
-                                                                $variantesInfo = [];
-
-                                                                if(!empty($primeraVariante['manga'])) {
-                                                                    $mangaObs = !empty($primeraVariante['manga_obs']) ? $primeraVariante['manga_obs'] : '';
-                                                                    $variantesInfo[] = 'Manga:' . $primeraVariante['manga'] . ' (' . $mangaObs . ')';
-                                                                }
-
-                                                                if(!empty($primeraVariante['broche'])) {
-                                                                    $brocheObs = !empty($primeraVariante['broche_obs']) ? $primeraVariante['broche_obs'] : '';
-                                                                    $variantesInfo[] = $primeraVariante['broche'] . ' (' . $brocheObs . ')';
-                                                                }
-
-                                                                if(!empty($primeraVariante['bolsillos'])) {
-                                                                    $bolsillosObs = !empty($primeraVariante['bolsillos_obs']) ? $primeraVariante['bolsillos_obs'] : '';
-                                                                    $variantesInfo[] = 'Bolsillos (' . $bolsillosObs . ')';
-                                                                }
-                                                            @endphp
-                                                            @if(!empty($variantesInfo))
-                                                                <div class="text-slate-900 mb-1 text-xs space-y-0.5">
-                                                                    @foreach($variantesInfo as $variante)
-                                                                        <div>• {{ $variante }}</div>
-                                                                    @endforeach
+                                                            @if(isset($desc['descripcion']) && !empty($desc['descripcion']))
+                                                                <div class="text-slate-600 text-xs mb-2 italic">
+                                                                    {{ $desc['descripcion'] }}
                                                                 </div>
                                                             @endif
-                                                        @endif
+                                                            @if($tela || ($color && strtolower($color) !== 'sin color'))
+                                                                <div class="text-black text-xs mb-1">
+                                                                    @if($tela && $color && strtolower($color) !== 'sin color')
+                                                                        Tela: {{ $tela }} - Color: {{ $color }}
+                                                                    @elseif($tela)
+                                                                        Tela: {{ $tela }}
+                                                                    @elseif($color && strtolower($color) !== 'sin color')
+                                                                        Color: {{ $color }}
+                                                                    @endif
+                                                                </div>
+                                                            @endif
 
-                                                        @if(count($procesos) > 0)
-                                                            <div class="text-black text-xs mt-2 space-y-0.5">
-                                                                @foreach($procesos as $proceso)
-                                                                    <div class="flex items-start gap-1">
-                                                                        <span class="text-blue-600 font-bold">•</span>
-                                                                        <span>
-                                                                            {{ $proceso['tipo_proceso'] ?? 'Proceso' }}
-                                                                            @if(!empty($proceso['ubicaciones']))
-                                                                                @php
-                                                                                    $ubicaciones = $proceso['ubicaciones'];
+                                                            @if(isset($primeraVariante) && $primeraVariante)
+                                                                @php
+                                                                    $variantesInfo = [];
 
-                                                                                    if (is_string($ubicaciones) && (strpos($ubicaciones, '[') === 0 || strpos($ubicaciones, '{') === 0)) {
-                                                                                        $ubicacionesDecodificadas = json_decode($ubicaciones, true);
-                                                                                        if (is_array($ubicacionesDecodificadas)) {
-                                                                                            $ubicacionesStr = implode(', ', $ubicacionesDecodificadas);
+                                                                    if(!empty($primeraVariante['manga'])) {
+                                                                        $mangaObs = !empty($primeraVariante['manga_obs']) ? $primeraVariante['manga_obs'] : '';
+                                                                        $variantesInfo[] = 'Manga:' . $primeraVariante['manga'] . ' (' . $mangaObs . ')';
+                                                                    }
+
+                                                                    if(!empty($primeraVariante['broche'])) {
+                                                                        $brocheObs = !empty($primeraVariante['broche_obs']) ? $primeraVariante['broche_obs'] : '';
+                                                                        $variantesInfo[] = $primeraVariante['broche'] . ' (' . $brocheObs . ')';
+                                                                    }
+
+                                                                    if(!empty($primeraVariante['bolsillos'])) {
+                                                                        $bolsillosObs = !empty($primeraVariante['bolsillos_obs']) ? $primeraVariante['bolsillos_obs'] : '';
+                                                                        $variantesInfo[] = 'Bolsillos (' . $bolsillosObs . ')';
+                                                                    }
+                                                                @endphp
+                                                                @if(!empty($variantesInfo))
+                                                                    <div class="text-slate-900 mb-1 text-xs space-y-0.5">
+                                                                        @foreach($variantesInfo as $variante)
+                                                                            <div>• {{ $variante }}</div>
+                                                                        @endforeach
+                                                                    </div>
+                                                                @endif
+                                                            @endif
+
+                                                            @if(count($procesos) > 0)
+                                                                <div class="text-black text-xs mt-2 space-y-0.5">
+                                                                    @foreach($procesos as $proceso)
+                                                                        <div class="flex items-start gap-1">
+                                                                            <span class="text-blue-600 font-bold">•</span>
+                                                                            <span>
+                                                                                {{ $proceso['tipo_proceso'] ?? 'Proceso' }}
+                                                                                @if(!empty($proceso['ubicaciones']))
+                                                                                    @php
+                                                                                        $ubicaciones = $proceso['ubicaciones'];
+
+                                                                                        if (is_string($ubicaciones) && (strpos($ubicaciones, '[') === 0 || strpos($ubicaciones, '{') === 0)) {
+                                                                                            $ubicacionesDecodificadas = json_decode($ubicaciones, true);
+                                                                                            if (is_array($ubicacionesDecodificadas)) {
+                                                                                                $ubicacionesStr = implode(', ', $ubicacionesDecodificadas);
+                                                                                            } else {
+                                                                                                $ubicacionesStr = $ubicaciones;
+                                                                                            }
+                                                                                        } elseif (is_array($ubicaciones)) {
+                                                                                            $ubicacionesStr = implode(', ', $ubicaciones);
                                                                                         } else {
                                                                                             $ubicacionesStr = $ubicaciones;
                                                                                         }
-                                                                                    } elseif (is_array($ubicaciones)) {
-                                                                                        $ubicacionesStr = implode(', ', $ubicaciones);
-                                                                                    } else {
-                                                                                        $ubicacionesStr = $ubicaciones;
-                                                                                    }
-                                                                                @endphp
-                                                                                @if(!empty($ubicacionesStr))
-                                                                                    ({{ $ubicacionesStr }})
+                                                                                    @endphp
+                                                                                    @if(!empty($ubicacionesStr))
+                                                                                        ({{ $ubicacionesStr }})
+                                                                                    @endif
                                                                                 @endif
-                                                                            @endif
-                                                                        </span>
-                                                                    </div>
-                                                                @endforeach
-                                                            </div>
+                                                                            </span>
+                                                                        </div>
+                                                                    @endforeach
+                                                                </div>
+                                                            @endif
+                                                        </td>
+                                                        @php $isFirstRowOfColor = false; @endphp
                                                         @endif
-                                                    </td>
-                                                    @endif
 
-                                                    <!-- GÉNERO (por grupo de color) -->
-                                                    @if($indexTalla === 0)
-                                                    <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" rowspan="{{ $rowSpanColor }}" style="width: 6%;">
-                                                        @php
-                                                            $gen = $t['genero'] ?? '';
-                                                            $gen = (is_string($gen) && strtoupper(trim($gen)) === 'GENERICO') ? '' : $gen;
-                                                        @endphp
-                                                        {{ $gen ? ucfirst(strtolower($gen)) : '—' }}
-                                                    </td>
-                                                    @endif
+                                                        <!-- GÉNERO (once per gender within color group) -->
+                                                        @if($indexTalla === 0)
+                                                        <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" rowspan="{{ $rowSpanGenero }}" style="width: 6%;">
+                                                            @php
+                                                                $gen = $generoKey;
+                                                                $gen = (is_string($gen) && strtoupper(trim($gen)) === 'GENERICO') ? '' : $gen;
+                                                            @endphp
+                                                            {{ $gen ? ucfirst(strtolower($gen)) : '—' }}
+                                                        </td>
+                                                        @endif
 
                                                     <!-- TALLA -->
                                                     <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
@@ -446,6 +465,7 @@
                                                     </td>
                                                 </tr>
                                             @endforeach
+                                            @endforeach
                                         @endforeach
                                     @else
                                         @foreach($grupo as $item)
@@ -576,16 +596,25 @@
                                                 @endif
                                                 
                                                 <!-- GÉNERO -->
-                                                @if(($item['descripcion_rowspan'] ?? 0) > 0)
-                                                <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" rowspan="{{ $item['descripcion_rowspan'] }}" style="width: 6%;">
+                                                @if(($item['genero_rowspan'] ?? 0) > 0)
+                                                <td class="px-2 py-3 text-center text-[13px] text-black border-r border-slate-300" rowspan="{{ $item['genero_rowspan'] }}" style="width: 6%;">
                                                     @if(($item['tipo'] ?? null) === 'epp' || ($item['area'] ?? null) === 'EPP')
                                                         —
                                                     @else
                                                         @php
                                                             $genero = '';
                                                             if(isset($item['descripcion']['variantes']) && is_array($item['descripcion']['variantes']) && count($item['descripcion']['variantes']) > 0) {
-                                                                $primeraVariante = $item['descripcion']['variantes'][0];
-                                                                $genero = $primeraVariante['genero'] ?? '';
+                                                                // Buscar género por la talla del item
+                                                                foreach ($item['descripcion']['variantes'] as $variante) {
+                                                                    if (($variante['talla'] ?? '') === ($item['talla'] ?? '')) {
+                                                                        $genero = $variante['genero'] ?? '';
+                                                                        break;
+                                                                    }
+                                                                }
+                                                                // Si no encontró, usar el primero
+                                                                if (empty($genero)) {
+                                                                    $genero = $item['descripcion']['variantes'][0]['genero'] ?? '';
+                                                                }
                                                             }
                                                             elseif(isset($item['genero'])) {
                                                                 $genero = $item['genero'];
