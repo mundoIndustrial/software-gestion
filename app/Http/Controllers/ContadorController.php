@@ -413,6 +413,8 @@ class ContadorController extends Controller
                                 'tipo_broche_id' => $variante->tipo_broche_id ?? null,
                                 'tipo_broche_nombre' => $nombreTipoBroche,
                                 'obs_broche' => $variante->obs_broche ?? null,
+                                'tiene_reflectivo' => $variante->tiene_reflectivo ?? null,
+                                'obs_reflectivo' => $variante->obs_reflectivo ?? null,
                                 'descripcion_adicional' => $variante->descripcion_adicional ?? null,
                             ];
                         })->toArray() : [],
