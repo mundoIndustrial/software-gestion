@@ -14,8 +14,13 @@ class BodegaDetalleTalla extends Model
     protected $fillable = [
         'pedido_produccion_id',
         'recibo_prenda_id',
+        'prenda_id',
+        'pedido_epp_id',
         'numero_pedido',
+        'row_hash',
         'talla',
+        'talla_color_id',
+        'genero',
         'prenda_nombre',
         'asesor',
         'empresa',

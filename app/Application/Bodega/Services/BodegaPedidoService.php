@@ -714,9 +714,11 @@ class BodegaPedidoService
         foreach ($variantes as $variante) {
             $talla = $variante['talla'] ?? '';
             $cantidad = $variante['cantidad'] ?? 0;
+            $prendaId = $prendaEnriquecida['id'] ?? null;
+            $genero = $variante['genero'] ?? null;
             
-            // Obtener datos de bodega para esta talla específica
-            $bodegaData = $this->obtenerDatosBodega($recibo->numero_pedido, $talla, $prendaEnriquecida['nombre'] ?? null, $cantidad, $rolesDelUsuario);
+            // Obtener datos de bodega para esta talla específica con prenda_id y genero
+            $bodegaData = $this->obtenerDatosBodega($recibo->numero_pedido, $talla, $prendaEnriquecida['nombre'] ?? null, $cantidad, $rolesDelUsuario, null, $prendaId, $genero);
             
             $tallas[] = [
                 'talla' => $talla,
@@ -761,9 +763,11 @@ class BodegaPedidoService
         $talla = $variante['talla'] ?? '';
         $prendaNombre = $prendaEnriquecida['nombre'] ?? null;
         $cantidad = $cantidadOverride !== null ? (int)$cantidadOverride : ($variante['cantidad'] ?? 0);
+        $prendaId = $prendaEnriquecida['id'] ?? null;
+        $genero = $variante['genero'] ?? null;
         
-        // Obtener datos de bodega
-        $bodegaData = $this->obtenerDatosBodega($recibo->numero_pedido, $talla, $prendaNombre, $cantidad, $rolesDelUsuario, $tallaColorId);
+        // Obtener datos de bodega con prenda_id y genero para identificación única
+        $bodegaData = $this->obtenerDatosBodega($recibo->numero_pedido, $talla, $prendaNombre, $cantidad, $rolesDelUsuario, $tallaColorId, $prendaId, $genero);
         
         // Obtener asesor de forma segura
         $asesor = 'N/A';
@@ -790,6 +794,7 @@ class BodegaPedidoService
             'recibo_prenda_id' => $recibo->id,
             'prenda_id' => $prendaEnriquecida['id'] ?? null,
             'talla_color_id' => $tallaColorId,
+            'genero' => $genero,
             'asesor' => $asesor,
             'empresa' => $empresa,
             'descripcion' => $prendaEnriquecida,
@@ -915,7 +920,7 @@ class BodegaPedidoService
         ];
     }
 
-    private function obtenerDatosBodega(string $numeroPedido, string $talla, ?string $prendaNombre, int $cantidad, array $rolesDelUsuario, $tallaColorId = null): array
+    private function obtenerDatosBodega(string $numeroPedido, string $talla, ?string $prendaNombre, int $cantidad, array $rolesDelUsuario, $tallaColorId = null, $prendaId = null, $genero = null): array
     {
         // Para EPPs, el talla es un identificador único MD5, buscarlo directamente
         $bodegaDataBase = null;
@@ -928,16 +933,55 @@ class BodegaPedidoService
                 ->when($prendaNombre, fn($q) => $q->where('prenda_nombre', $prendaNombre))
                 ->first();
         } else {
-            // Para prendas, buscar por talla tradicional
-            $bodegaDataBase = BodegaDetallesTalla::where('numero_pedido', $numeroPedido)
-                ->where('talla', $talla)
-                ->when($tallaColorId !== null, function ($q) use ($tallaColorId) {
-                    return $q->where('talla_color_id', $tallaColorId);
-                }, function ($q) {
-                    return $q->whereNull('talla_color_id');
-                })
-                ->when($prendaNombre, fn($q) => $q->where('prenda_nombre', $prendaNombre))
-                ->first();
+            // Para prendas, normalizar género a mayúsculas y calcular row_hash
+            $generoNormalizado = $genero ? strtoupper($genero) : null;
+            
+            if ($prendaId && $talla && $generoNormalizado) {
+                $rowHash = md5($numeroPedido . '_' . $prendaId . '_' . $talla . '_' . ($tallaColorId ?? '') . '_' . $generoNormalizado);
+                
+                \Log::debug('[obtenerDatosBodega] Calculando row_hash', [
+                    'numero_pedido' => $numeroPedido,
+                    'prenda_id' => $prendaId,
+                    'talla' => $talla,
+                    'talla_color_id' => $tallaColorId ?? 'null',
+                    'genero_original' => $genero,
+                    'genero_normalizado' => $generoNormalizado,
+                    'componentes' => $numeroPedido . '_' . $prendaId . '_' . $talla . '_' . ($tallaColorId ?? '') . '_' . $generoNormalizado,
+                    'row_hash_calculado' => $rowHash
+                ]);
+                
+                $bodegaDataBase = BodegaDetallesTalla::where('row_hash', $rowHash)->first();
+                
+                \Log::debug('[obtenerDatosBodega] Resultado búsqueda por row_hash', [
+                    'row_hash' => $rowHash,
+                    'encontrado' => $bodegaDataBase ? 'SI' : 'NO',
+                    'registro_id' => $bodegaDataBase?->id ?? 'null',
+                    'pendientes_valor' => $bodegaDataBase?->pendientes ?? 'null',
+                    'estado_bodega' => $bodegaDataBase?->estado_bodega ?? 'null',
+                    'area' => $bodegaDataBase?->area ?? 'null',
+                    'cantidad' => $bodegaDataBase?->cantidad ?? 'null'
+                ]);
+            }
+            
+            // Si no se encontró por row_hash, buscar por los criterios tradicionales (registros antiguos sin row_hash)
+            if (!$bodegaDataBase) {
+                $bodegaDataBase = BodegaDetallesTalla::where('numero_pedido', $numeroPedido)
+                    ->where('talla', $talla)
+                    ->when($tallaColorId !== null, function ($q) use ($tallaColorId) {
+                        return $q->where('talla_color_id', $tallaColorId);
+                    }, function ($q) {
+                        return $q->whereNull('talla_color_id');
+                    })
+                    ->when($prendaNombre, fn($q) => $q->where('prenda_nombre', $prendaNombre))
+                    ->when($prendaId !== null, fn($q) => $q->where('prenda_id', $prendaId))
+                    ->when($generoNormalizado !== null, fn($q) => $q->where('genero', $generoNormalizado))
+                    ->first();
+                    
+                \Log::debug('[obtenerDatosBodega] Resultado búsqueda tradicional', [
+                    'encontrado' => $bodegaDataBase ? 'SI' : 'NO',
+                    'registro_id' => $bodegaDataBase?->id ?? 'null'
+                ]);
+            }
         }
         
         // Obtener estado específico del rol
@@ -971,7 +1015,7 @@ class BodegaPedidoService
             $estadoEspecifico = $datosFinales?->epp_estado ?? $bodegaDataBase?->epp_estado ?? $estado;
         }
         
-        return [
+        $resultado = [
             'id' => $datosFinales?->id,
             'estado' => $estadoEspecifico,
             'estado_bodega' => $estado,
@@ -985,6 +1029,15 @@ class BodegaPedidoService
             'fecha_pedido' => $bodegaDataBase?->fecha_pedido ? Carbon::parse($bodegaDataBase->fecha_pedido)->format('Y-m-d') : null,
             'usuario_nombre' => $datosFinales?->usuario_bodega_nombre ?? $bodegaDataBase?->usuario_bodega_nombre,
         ];
+        
+        \Log::debug('[obtenerDatosBodega] Retornando datos', [
+            'pendientes' => $resultado['pendientes'],
+            'estado_bodega' => $resultado['estado_bodega'],
+            'area' => $resultado['area'],
+            'cantidad' => $resultado['cantidad']
+        ]);
+        
+        return $resultado;
     }
 
     private function calcularRowspans(array $items): array

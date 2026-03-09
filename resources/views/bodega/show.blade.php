@@ -82,11 +82,23 @@
                                         $itemsPorTallaColor = [];
                                         foreach ($grupo as $it) {
                                             if (isset($it['talla'])) {
-                                                $itemsPorTalla[$it['talla']] = $it;
-
-                                                $itTallaColorId = $it['talla_color_id'] ?? ($it['tallaColorId'] ?? null);
-                                                $itKey = $it['talla'] . '|' . ($itTallaColorId ?? '');
+                                                // Normalizar género a mayúsculas
+                                                $generoItem = isset($it['genero']) ? strtoupper($it['genero']) : '';
+                                                $itTallaColorId = $it['talla_color_id'] ?? ($it['tallaColorId'] ?? '');
+                                                
+                                                // Usar row_hash como clave única (incluye: numero_pedido, prenda_id, talla, talla_color_id, genero)
+                                                $itKey = md5(
+                                                    ($it['numero_pedido'] ?? '') . '_' .
+                                                    ($it['prenda_id'] ?? '') . '_' .
+                                                    ($it['talla'] ?? '') . '_' .
+                                                    $itTallaColorId . '_' .
+                                                    $generoItem
+                                                );
+                                                
                                                 $itemsPorTallaColor[$itKey] = $it;
+                                                
+                                                // Mantener $itemsPorTalla solo como fallback
+                                                $itemsPorTalla[$it['talla']] = $it;
                                             }
                                         }
 
@@ -197,14 +209,27 @@
                                                 @endphp
                                                 @foreach($grupoGenero['tallas'] as $indexTalla => $t)
                                                     @php
-                                                        $tKey = ($t['talla'] ?? '') . '|' . (($t['tallaColorId'] ?? null) ?? '');
+                                                        // Normalizar talla_color_id a string vacío si es null
+                                                        $tallaColorIdNormalizado = $t['tallaColorId'] ?? '';
+                                                        
+                                                        // Calcular la clave única usando el mismo formato que en el array
+                                                        $tKey = md5(
+                                                            ($primeraItem['numero_pedido'] ?? '') . '_' .
+                                                            ($primeraItem['prenda_id'] ?? '') . '_' .
+                                                            ($t['talla'] ?? '') . '_' .
+                                                            $tallaColorIdNormalizado . '_' .
+                                                            $generoKey
+                                                        );
+                                                        
                                                         $baseItem = $itemsPorTallaColor[$tKey] ?? ($itemsPorTalla[$t['talla']] ?? $primeraItem);
-                                                        // Crear identificador único para cada fila
+                                                        
+                                                        // Crear identificador único para cada fila incluyendo género
                                                         $rowHash = md5(
                                                             ($baseItem['numero_pedido'] ?? '') . '_' . 
                                                             ($baseItem['prenda_id'] ?? '') . '_' . 
                                                             ($baseItem['talla'] ?? '') . '_' . 
-                                                            ($t['tallaColorId'] ?? '')
+                                                            $tallaColorIdNormalizado . '_' .
+                                                            ($generoKey ?? '')
                                                         );
                                                     @endphp
                                                     <tr class="hover:bg-slate-50 transition-colors"
@@ -212,6 +237,7 @@
                                                         data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
                                                         data-prenda-id="{{ $baseItem['prenda_id'] ?? '' }}"
                                                         data-talla="{{ $baseItem['talla'] ?? '' }}"
+                                                        data-genero="{{ $generoKey ?? '' }}"
                                                         data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
                                                         data-asesor="{{ is_string($baseItem['asesor'] ?? null) && !empty($baseItem['asesor']) ? $baseItem['asesor'] : 'N/A' }}"
                                                         data-empresa="{{ is_string($baseItem['empresa'] ?? null) && !empty($baseItem['empresa']) ? $baseItem['empresa'] : 'N/A' }}"

@@ -1775,13 +1775,43 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
         return;
     }
 
-    // Obtener prenda_id y talla_color_id desde el <tr> (más confiable que los parámetros onclick)
-    const prendaIdFinal = prendaId || (fila ? fila.getAttribute('data-prenda-id') : null) || pendientesInput.getAttribute('data-prenda-id') || null;
-    const tallaColorIdFinal = (fila ? fila.getAttribute('data-talla-color-id') : null) || tallaColorId || pendientesInput.getAttribute('data-talla-color-id') || null;
+    // Buscar el select.estado-select que contiene los data-* principales
+    const estadoSelect = fila ? fila.querySelector('.estado-select') : null;
+    
+    // Obtener prenda_id y talla_color_id desde varios lugares (prioridad: estadoSelect > fila > parámetros)
+    const prendaIdFinal = (estadoSelect ? estadoSelect.getAttribute('data-prenda-id') : null) 
+        || prendaId 
+        || (fila ? fila.getAttribute('data-prenda-id') : null) 
+        || pendientesInput.getAttribute('data-prenda-id') 
+        || null;
+        
+    const tallaColorIdFinal = (estadoSelect ? estadoSelect.getAttribute('data-talla-color-id') : null)
+        || (fila ? fila.getAttribute('data-talla-color-id') : null) 
+        || tallaColorId 
+        || pendientesInput.getAttribute('data-talla-color-id') 
+        || null;
+    
+    // Obtener datos adicionales desde la fila TR
+    const asesor = fila ? fila.getAttribute('data-asesor') : null;
+    const empresa = fila ? fila.getAttribute('data-empresa') : null;
+    const genero = fila ? fila.getAttribute('data-genero') : null;
+    
+    // Obtener datos desde el select.estado-select
+    const cantidad = estadoSelect ? estadoSelect.getAttribute('data-cantidad') : null;
+    const reciboId = estadoSelect ? estadoSelect.getAttribute('data-recibo-prenda-id') : null;
+    const pedidoEppId = estadoSelect ? estadoSelect.getAttribute('data-pedido-epp-id') : null;
+    const pedidoProduccionId = estadoSelect ? estadoSelect.getAttribute('data-pedido-produccion-id') : null;
+    const prendaNombre = estadoSelect ? estadoSelect.getAttribute('data-prenda-nombre') : null;
     
     console.log('🔑 [GUARDAR-FILA] IDs obtenidos:', { 
+        rowHash,
         prendaIdFinal, 
         tallaColorIdFinal,
+        asesor,
+        empresa,
+        genero,
+        cantidad,
+        prendaNombre,
         desdeFila: fila ? 'Sí' : 'No'
     });
     
@@ -1794,10 +1824,19 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
 
     // Preparar datos para enviar
     const datos = {
+        row_hash: rowHash,
         numero_pedido: numeroPedido,
         talla: talla,
+        genero: genero || null,
         talla_color_id: tallaColorIdFinal ? Number(tallaColorIdFinal) : null,
         prenda_id: prendaIdFinal ? Number(prendaIdFinal) : null,
+        pedido_epp_id: pedidoEppId ? Number(pedidoEppId) : null,
+        recibo_prenda_id: reciboId ? Number(reciboId) : null,
+        pedido_produccion_id: pedidoProduccionId ? Number(pedidoProduccionId) : null,
+        asesor: asesor || null,
+        empresa: empresa || null,
+        cantidad: cantidad ? Number(cantidad) : null,
+        prenda_nombre: prendaNombre || null,
         pendientes: pendientes || null,
         fecha_pedido: fechaPedido || null,
         fecha_entrega: fechaEntrega || null,
