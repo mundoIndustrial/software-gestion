@@ -110,6 +110,7 @@
                                                 }
 
                                                 if (isset($variante['colores_detalle']) && is_array($variante['colores_detalle']) && !empty($variante['colores_detalle'])) {
+                                                    // Tiene colores detallados
                                                     foreach ($variante['colores_detalle'] as $colorDetalle) {
                                                         $rawColor = $colorDetalle['color'] ?? '';
                                                         $esColorValido = !empty($rawColor) && strtolower(trim($rawColor)) !== 'sin color';
@@ -136,6 +137,28 @@
                                                                 'tallaColorId' => $tallaColorId,
                                                             ];
                                                         }
+                                                    }
+                                                } else {
+                                                    // No tiene colores detallados, agregar directamente con cantidad de la variante
+                                                    $cantidadVar = (int)($variante['cantidad'] ?? 0);
+                                                    if (!empty($tallaVar) && !empty($generoVar) && $cantidadVar > 0) {
+                                                        $colorKey = '__SIN_COLOR__';
+                                                        if (!isset($gruposPorColorGenero[$colorKey])) {
+                                                            $gruposPorColorGenero[$colorKey] = [];
+                                                        }
+                                                        if (!isset($gruposPorColorGenero[$colorKey][$generoVar])) {
+                                                            $gruposPorColorGenero[$colorKey][$generoVar] = [
+                                                                'color' => $colorKey,
+                                                                'genero' => $generoVar,
+                                                                'tallas' => [],
+                                                            ];
+                                                        }
+                                                        $gruposPorColorGenero[$colorKey][$generoVar]['tallas'][] = [
+                                                            'talla' => $tallaVar,
+                                                            'genero' => $variante['genero'] ?? null,
+                                                            'cantidad' => $cantidadVar,
+                                                            'tallaColorId' => null,
+                                                        ];
                                                     }
                                                 }
                                             }
@@ -176,12 +199,22 @@
                                                     @php
                                                         $tKey = ($t['talla'] ?? '') . '|' . (($t['tallaColorId'] ?? null) ?? '');
                                                         $baseItem = $itemsPorTallaColor[$tKey] ?? ($itemsPorTalla[$t['talla']] ?? $primeraItem);
+                                                        // Crear identificador único para cada fila
+                                                        $rowHash = md5(
+                                                            ($baseItem['numero_pedido'] ?? '') . '_' . 
+                                                            ($baseItem['prenda_id'] ?? '') . '_' . 
+                                                            ($baseItem['talla'] ?? '') . '_' . 
+                                                            ($t['tallaColorId'] ?? '')
+                                                        );
                                                     @endphp
                                                     <tr class="hover:bg-slate-50 transition-colors"
+                                                        data-row-hash="{{ $rowHash }}"
                                                         data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
+                                                        data-prenda-id="{{ $baseItem['prenda_id'] ?? '' }}"
+                                                        data-talla="{{ $baseItem['talla'] ?? '' }}"
+                                                        data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
                                                         data-asesor="{{ is_string($baseItem['asesor'] ?? null) && !empty($baseItem['asesor']) ? $baseItem['asesor'] : 'N/A' }}"
                                                         data-empresa="{{ is_string($baseItem['empresa'] ?? null) && !empty($baseItem['empresa']) ? $baseItem['empresa'] : 'N/A' }}"
-                                                        data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
                                                         @if(($baseItem['estado_bodega'] ?? '') === 'Homologar')
                                                             style="background-color: rgba(147, 51, 234, 0.08);"
                                                         @elseif(($baseItem['estado_bodega'] ?? '') === 'Entregado')
@@ -317,9 +350,11 @@
                                                                     bg-slate-50
                                                                 @endif"
                                                             style="font-family: 'Poppins', sans-serif;"
+                                                            data-row-hash="{{ $rowHash }}"
                                                             data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
                                                             data-talla="{{ $baseItem['talla'] }}"
                                                             data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
+                                                            data-prenda-id="{{ $baseItem['prenda_id'] ?? '' }}"
                                                             data-pedido-produccion-id="{{ $baseItem['pedido_produccion_id'] }}"
                                                             data-recibo-prenda-id="{{ $baseItem['recibo_prenda_id'] }}"
                                                             placeholder="Pendientes..."
@@ -338,9 +373,11 @@
                                                                     @else
                                                                         bg-slate-50
                                                                     @endif"
+                                                                data-row-hash="{{ $rowHash }}"
                                                                 data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
                                                                 data-talla="{{ $baseItem['talla'] }}"
                                                                 data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
+                                                                data-prenda-id="{{ $baseItem['prenda_id'] ?? '' }}"
                                                                 placeholder="Notas..."
                                                                 rows="1"
                                                                 readonly
@@ -367,9 +404,11 @@
                                                                     bg-slate-50
                                                                 @endif"
                                                             value="{{ $baseItem['fecha_pedido'] ? $baseItem['fecha_pedido'] : '' }}"
+                                                            data-row-hash="{{ $rowHash }}"
                                                             data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
                                                             data-talla="{{ $baseItem['talla'] }}"
                                                             data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
+                                                            data-prenda-id="{{ $baseItem['prenda_id'] ?? '' }}"
                                                             data-pedido-produccion-id="{{ $baseItem['pedido_produccion_id'] ?? '' }}"
                                                             data-recibo-prenda-id="{{ $baseItem['recibo_prenda_id'] ?? '' }}"
                                                             @if($esReadOnly ?? false) disabled @endif
@@ -387,9 +426,11 @@
                                                                     bg-slate-50
                                                                 @endif"
                                                             value="{{ $baseItem['fecha_entrega'] ? $baseItem['fecha_entrega'] : '' }}"
+                                                            data-row-hash="{{ $rowHash }}"
                                                             data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
                                                             data-talla="{{ $baseItem['talla'] }}"
                                                             data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
+                                                            data-prenda-id="{{ $baseItem['prenda_id'] ?? '' }}"
                                                             data-pedido-produccion-id="{{ $baseItem['pedido_produccion_id'] }}"
                                                             data-recibo-prenda-id="{{ $baseItem['recibo_prenda_id'] }}"
                                                             @if(($baseItem['estado_bodega'] ?? '') === 'Entregado' || ($esReadOnly ?? false))
@@ -403,9 +444,11 @@
                                                         <div class="space-y-2">
                                                             <select
                                                                 class="area-select w-full px-2 py-1 border border-slate-300 bg-white text-black text-xs font-semibold uppercase rounded"
+                                                                data-row-hash="{{ $rowHash }}"
                                                                 data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
                                                                 data-talla="{{ $baseItem['talla'] }}"
                                                                 data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
+                                                                data-prenda-id="{{ $baseItem['prenda_id'] ?? '' }}"
                                                                 data-pedido-produccion-id="{{ $baseItem['pedido_produccion_id'] ?? '' }}"
                                                                 data-recibo-prenda-id="{{ $baseItem['recibo_prenda_id'] ?? '' }}"
                                                                 data-original-area="{{ $baseItem['area'] ?? '' }}"
@@ -418,6 +461,7 @@
 
                                                             <select
                                                                 class="estado-select w-full px-2 py-1 border border-slate-300 bg-white text-black text-xs font-semibold uppercase rounded"
+                                                                data-row-hash="{{ $rowHash }}"
                                                                 data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
                                                                 data-talla="{{ $baseItem['talla'] }}"
                                                                 data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
@@ -442,7 +486,7 @@
                                                             @if(!($esReadOnly ?? false) && !auth()->user()->hasRole('supervisor_gerencia'))
                                                             <button
                                                                 type="button"
-                                                                onclick="guardarFilaCompleta(this, '{{ $baseItem['numero_pedido'] }}', '{{ $baseItem['talla'] }}', '{{ $t['tallaColorId'] ?? '' }}')"
+                                                                onclick="guardarFilaCompleta(this, '{{ $baseItem['numero_pedido'] }}', '{{ $baseItem['talla'] }}', '{{ $t['tallaColorId'] ?? '' }}', '{{ $baseItem['prenda_id'] ?? '' }}')"
                                                                 class="w-full px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase rounded transition"
                                                             >
                                                                 💾 Guardar
@@ -469,7 +513,16 @@
                                         @endforeach
                                     @else
                                         @foreach($grupo as $item)
+                                            @php
+                                                // Crear identificador único para cada fila (prendas sin tallas múltiples)
+                                                $rowHashSimple = md5(
+                                                    ($item['numero_pedido'] ?? '') . '_' . 
+                                                    ($item['prenda_id'] ?? '') . '_' . 
+                                                    ($item['talla'] ?? '')
+                                                );
+                                            @endphp
                                             <tr class="hover:bg-slate-50 transition-colors"
+                                                data-row-hash="{{ $rowHashSimple }}"
                                                 data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                 data-asesor="{{ is_string($item['asesor'] ?? null) && !empty($item['asesor']) ? $item['asesor'] : 'N/A' }}"
                                                 data-empresa="{{ is_string($item['empresa'] ?? null) && !empty($item['empresa']) ? $item['empresa'] : 'N/A' }}"
@@ -655,8 +708,10 @@
                                                                 bg-slate-50
                                                             @endif"
                                                         style="font-family: 'Poppins', sans-serif;"
+                                                        data-row-hash="{{ $rowHashSimple }}"
                                                         data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                         data-talla="{{ $item['talla'] }}"
+                                                        data-prenda-id="{{ $item['prenda_id'] ?? '' }}"
                                                         data-pedido-produccion-id="{{ $item['pedido_produccion_id'] }}"
                                                         data-recibo-prenda-id="{{ $item['recibo_prenda_id'] }}"
                                                         placeholder="Pendientes..."
@@ -675,8 +730,10 @@
                                                                 @else
                                                                     bg-slate-50
                                                                 @endif"
+                                                            data-row-hash="{{ $rowHashSimple }}"
                                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                             data-talla="{{ $item['talla'] }}"
+                                                            data-prenda-id="{{ $item['prenda_id'] ?? '' }}"
                                                             placeholder="Notas..."
                                                             rows="1"
                                                             readonly
@@ -703,8 +760,10 @@
                                                                 bg-slate-50
                                                             @endif"
                                                         value="{{ $item['fecha_pedido'] ? $item['fecha_pedido'] : '' }}"
+                                                        data-row-hash="{{ $rowHashSimple }}"
                                                         data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                         data-talla="{{ $item['talla'] }}"
+                                                        data-prenda-id="{{ $item['prenda_id'] ?? '' }}"
                                                         data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
                                                         data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}"
                                                         @if($esReadOnly ?? false) disabled @endif
@@ -722,8 +781,10 @@
                                                                 bg-slate-50
                                                             @endif"
                                                         value="{{ $item['fecha_entrega'] ? $item['fecha_entrega'] : '' }}"
+                                                        data-row-hash="{{ $rowHashSimple }}"
                                                         data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                         data-talla="{{ $item['talla'] }}"
+                                                        data-prenda-id="{{ $item['prenda_id'] ?? '' }}"
                                                         data-pedido-produccion-id="{{ $item['pedido_produccion_id'] }}"
                                                         data-recibo-prenda-id="{{ $item['recibo_prenda_id'] }}"
                                                         @if($item['estado_bodega'] === 'Entregado' || ($esReadOnly ?? false))
@@ -737,8 +798,10 @@
                                                     <div class="space-y-2">
                                                         <select
                                                             class="area-select w-full px-2 py-1 border border-slate-300 bg-white text-black text-xs font-semibold uppercase rounded"
+                                                            data-row-hash="{{ $rowHashSimple }}"
                                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                             data-talla="{{ $item['talla'] }}"
+                                                            data-prenda-id="{{ $item['prenda_id'] ?? '' }}"
                                                             data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
                                                             data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}"
                                                             data-original-area="{{ $item['area'] ?? '' }}"
@@ -751,6 +814,7 @@
 
                                                         <select
                                                             class="estado-select w-full px-2 py-1 border border-slate-300 bg-white text-black text-xs font-semibold uppercase rounded"
+                                                            data-row-hash="{{ $rowHashSimple }}"
                                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                             data-talla="{{ $item['talla'] }}"
                                                             data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
@@ -774,7 +838,7 @@
                                                         @if(!($esReadOnly ?? false) && !auth()->user()->hasRole('supervisor_gerencia'))
                                                         <button
                                                             type="button"
-                                                            onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}')"
+                                                            onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}', '', '{{ $item['prenda_id'] ?? '' }}')"
                                                             class="w-full px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase rounded transition"
                                                         >
                                                             💾 Guardar

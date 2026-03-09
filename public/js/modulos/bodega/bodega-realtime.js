@@ -123,36 +123,98 @@ class BodegaRealtimeRefresh {
     handleDetalleUpdate(event, numeroPedido, talla) {
         if (!event.detalles) return;
 
-        // Actualizar los campos del formulario
-        const fecha = document.querySelector(`.fecha-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`);
-        const fechaPedido = document.querySelector(`.fecha-pedido-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`);
-        const pendientes = document.querySelector(`.pendientes-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`);
-        const observaciones = document.querySelector(`.observaciones-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`);
-        const estadoSelect = document.querySelector(`.estado-select[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`);
+        // Obtener prenda_id del evento si existe
+        const prendaId = event.detalles.prenda_id || event.prenda_id || null;
+        
+        if (this.debug) {
+            console.log(`📡 [BodegaRealtime] Actualizando detalle ${numeroPedido}-${talla}${prendaId ? ` (prenda_id: ${prendaId})` : ''}`);
+        }
 
-        // Evitar actualizar si el campo está siendo editado
-        if (event.detalles.fecha_entrega && fecha && document.activeElement !== fecha) {
-            fecha.value = event.detalles.fecha_entrega;
-        }
-        if (event.detalles.fecha_pedido && fechaPedido && document.activeElement !== fechaPedido) {
-            fechaPedido.value = event.detalles.fecha_pedido;
-        }
-        if (event.detalles.pendientes !== undefined && pendientes && document.activeElement !== pendientes) {
-            pendientes.value = event.detalles.pendientes || '';
-        }
-        if (event.detalles.observaciones_bodega !== undefined && observaciones && document.activeElement !== observaciones) {
-            observaciones.value = event.detalles.observaciones_bodega || '';
-        }
-        if (event.detalles.estado_bodega && estadoSelect && document.activeElement !== estadoSelect) {
-            estadoSelect.value = event.detalles.estado_bodega;
-            estadoSelect.setAttribute('data-original-estado', event.detalles.estado_bodega);
-            
-            // Disparar evento change para actualizar colores
-            estadoSelect.dispatchEvent(new Event('change'));
+        // Construir selector base
+        const baseSelector = `[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`;
+        const prendaSelector = prendaId ? `[data-prenda-id="${prendaId}"]` : '';
+        
+        // Si hay prenda_id, usar selector específico; sino usar querySelectorAll para actualizar todos
+        if (prendaId) {
+            // CASO 1: Actualizar solo el registro específico con prenda_id
+            const fecha = document.querySelector(`.fecha-input${baseSelector}${prendaSelector}`);
+            const fechaPedido = document.querySelector(`.fecha-pedido-input${baseSelector}${prendaSelector}`);
+            const pendientes = document.querySelector(`.pendientes-input${baseSelector}${prendaSelector}`);
+            const observaciones = document.querySelector(`.observaciones-input${baseSelector}${prendaSelector}`);
+            const estadoSelect = document.querySelector(`.estado-select${baseSelector}${prendaSelector}`);
+
+            // Actualizar elementos encontrados
+            if (event.detalles.fecha_entrega && fecha && document.activeElement !== fecha) {
+                fecha.value = event.detalles.fecha_entrega;
+            }
+            if (event.detalles.fecha_pedido && fechaPedido && document.activeElement !== fechaPedido) {
+                fechaPedido.value = event.detalles.fecha_pedido;
+            }
+            if (event.detalles.pendientes !== undefined && pendientes && document.activeElement !== pendientes) {
+                pendientes.value = event.detalles.pendientes || '';
+            }
+            if (event.detalles.observaciones_bodega !== undefined && observaciones && document.activeElement !== observaciones) {
+                observaciones.value = event.detalles.observaciones_bodega || '';
+            }
+            if (event.detalles.estado_bodega && estadoSelect && document.activeElement !== estadoSelect) {
+                estadoSelect.value = event.detalles.estado_bodega;
+                estadoSelect.setAttribute('data-original-estado', event.detalles.estado_bodega);
+                
+                // Disparar evento change para actualizar colores
+                estadoSelect.dispatchEvent(new Event('change'));
+            }
+        } else {
+            // CASO 2: Sin prenda_id, actualizar todos los registros con esa talla (comportamiento legacy)
+            const fechas = document.querySelectorAll(`.fecha-input${baseSelector}`);
+            const fechasPedido = document.querySelectorAll(`.fecha-pedido-input${baseSelector}`);
+            const pendientesAll = document.querySelectorAll(`.pendientes-input${baseSelector}`);
+            const observacionesAll = document.querySelectorAll(`.observaciones-input${baseSelector}`);
+            const estadosSelect = document.querySelectorAll(`.estado-select${baseSelector}`);
+
+            // Actualizar todos los elementos encontrados
+            if (event.detalles.fecha_entrega) {
+                fechas.forEach(fecha => {
+                    if (document.activeElement !== fecha) {
+                        fecha.value = event.detalles.fecha_entrega;
+                    }
+                });
+            }
+            if (event.detalles.fecha_pedido) {
+                fechasPedido.forEach(fechaPedido => {
+                    if (document.activeElement !== fechaPedido) {
+                        fechaPedido.value = event.detalles.fecha_pedido;
+                    }
+                });
+            }
+            if (event.detalles.pendientes !== undefined) {
+                pendientesAll.forEach(pendientes => {
+                    if (document.activeElement !== pendientes) {
+                        pendientes.value = event.detalles.pendientes || '';
+                    }
+                });
+            }
+            if (event.detalles.observaciones_bodega !== undefined) {
+                observacionesAll.forEach(observaciones => {
+                    if (document.activeElement !== observaciones) {
+                        observaciones.value = event.detalles.observaciones_bodega || '';
+                    }
+                });
+            }
+            if (event.detalles.estado_bodega) {
+                estadosSelect.forEach(estadoSelect => {
+                    if (document.activeElement !== estadoSelect) {
+                        estadoSelect.value = event.detalles.estado_bodega;
+                        estadoSelect.setAttribute('data-original-estado', event.detalles.estado_bodega);
+                        
+                        // Disparar evento change para actualizar colores
+                        estadoSelect.dispatchEvent(new Event('change'));
+                    }
+                });
+            }
         }
 
         if (this.debug) {
-            console.log(` [BodegaRealtime] Actualizado detalle ${numeroPedido}-${talla}`);
+            console.log(` [BodegaRealtime] Actualizado detalle ${numeroPedido}-${talla}${prendaId ? ` (prenda_id: ${prendaId})` : ''}`);
         }
     }
 

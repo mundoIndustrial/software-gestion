@@ -1593,6 +1593,163 @@ class PedidosController extends Controller
     }
 
     /**
+     * Guardar una fila individual de bodega_detalles_talla
+     */
+    public function guardarFilaCompleta(Request $request, string $numeroPedido): JsonResponse
+    {
+        \Log::info('[GUARDAR FILA] Método llamado', [
+            'numero_pedido' => $numeroPedido,
+            'datos' => $request->all()
+        ]);
+        
+        // Validar que el usuario no sea de solo lectura
+        $rolesDelUsuario = auth()->user()->getRoleNames()->toArray();
+        if ($this->roleService->esReadOnly($rolesDelUsuario)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permisos para realizar esta acción. Tu rol es de solo lectura.'
+            ], 403);
+        }
+
+        try {
+            $validated = $request->validate([
+                'numero_pedido' => 'required|string',
+                'talla' => 'required|string',
+                'talla_color_id' => 'nullable|integer',
+                'prenda_id' => 'nullable|integer',
+                'pendientes' => 'nullable|string',
+                'fecha_pedido' => 'nullable|date',
+                'fecha_entrega' => 'nullable|date',
+                'area' => 'nullable|string|in:Costura,EPP,Otro',
+                'observaciones' => 'nullable|string',
+            ]);
+            
+            $usuario = auth()->user();
+            $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+            
+            if (!$pedido) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pedido no encontrado'
+                ], 404);
+            }
+
+            $talla = $validated['talla'];
+            $tallaColorId = $validated['talla_color_id'] ?? null;
+            $prendaId = $validated['prenda_id'] ?? null;
+            
+            // Buscar el registro existente con los identificadores únicos
+            $builder = BodegaDetalleTalla::where('pedido_produccion_id', $pedido->id)
+                ->where('numero_pedido', $numeroPedido)
+                ->where('talla', $talla);
+            
+            // Si talla_color_id es NULL, buscar registros donde también sea NULL
+            // Si tiene valor, buscar por ese valor específico
+            if ($tallaColorId) {
+                $builder->where('talla_color_id', $tallaColorId);
+            } else {
+                $builder->whereNull('talla_color_id');
+            }
+            
+            if ($prendaId) {
+                $builder->where('prenda_id', $prendaId);
+            }
+            
+            $detalleAnterior = $builder->first();
+            
+            if (!$detalleAnterior) {
+                \Log::error('[GUARDAR FILA] Registro NO encontrado', [
+                    'numero_pedido' => $numeroPedido,
+                    'talla' => $talla,
+                    'talla_color_id' => $tallaColorId,
+                    'prenda_id' => $prendaId,
+                    'pedido_produccion_id' => $pedido->id
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró el registro a actualizar. Por favor, recarga la página.'
+                ], 404);
+            }
+
+            \Log::info('[GUARDAR FILA] Registro encontrado', [
+                'detalle_id' => $detalleAnterior->id,
+                'prenda_id' => $detalleAnterior->prenda_id,
+                'talla_color_id' => $detalleAnterior->talla_color_id
+            ]);
+            
+            // Guardar valores anteriores para auditoría
+            $valoresAnteriores = [
+                'pendientes' => $detalleAnterior->pendientes,
+                'fecha_pedido' => $detalleAnterior->fecha_pedido,
+                'fecha_entrega' => $detalleAnterior->fecha_entrega,
+                'area' => $detalleAnterior->area,
+                'observaciones_bodega' => $detalleAnterior->observaciones_bodega,
+            ];
+            
+            // Actualizar el registro
+            $detalleAnterior->update([
+                'pendientes' => $validated['pendientes'] ?? null,
+                'fecha_pedido' => $validated['fecha_pedido'] ?? null,
+                'fecha_entrega' => $validated['fecha_entrega'] ?? null,
+                'area' => $validated['area'] ?? null,
+                'observaciones_bodega' => $validated['observaciones'] ?? null,
+                'usuario_bodega_id' => $usuario->id,
+                'usuario_bodega_nombre' => $usuario->name,
+            ]);
+            
+            // Registrar cambios en auditoría
+            $camposAuditar = [
+                'pendientes' => 'pendientes',
+                'fecha_pedido' => 'fecha_pedido',
+                'fecha_entrega' => 'fecha_entrega',
+                'area' => 'area',
+                'observaciones' => 'observaciones_bodega',
+            ];
+            
+            foreach ($camposAuditar as $campoRequest => $campoBD) {
+                $valorAnterior = $valoresAnteriores[$campoBD];
+                $valorNuevo = $validated[$campoRequest] ?? null;
+                
+                // Convertir null y strings vacíos a representación consistente
+                $valorAnteriorDisplay = ($valorAnterior === null || $valorAnterior === '') ? '' : $valorAnterior;
+                $valorNuevoDisplay = ($valorNuevo === null || $valorNuevo === '') ? '' : $valorNuevo;
+                
+                // Solo registrar si realmente cambió
+                if ($valorAnteriorDisplay !== $valorNuevoDisplay) {
+                    \App\Models\BodegaAuditoria::create([
+                        'bodega_detalles_talla_id' => $detalleAnterior->id,
+                        'numero_pedido' => $numeroPedido,
+                        'talla' => $talla,
+                        'campo_modificado' => $campoBD,
+                        'valor_anterior' => $valorAnteriorDisplay,
+                        'valor_nuevo' => $valorNuevoDisplay,
+                        'usuario_id' => $usuario->id,
+                        'usuario_nombre' => $usuario->name,
+                        'ip_address' => $request->ip(),
+                        'accion' => 'update',
+                        'descripcion' => ucfirst($campoBD) . ' cambió de "' . ($valorAnteriorDisplay ?: 'vacío') . '" a "' . ($valorNuevoDisplay ?: 'vacío') . '"',
+                    ]);
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Fila guardada correctamente'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[GUARDAR FILA] Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Guardar una nota de bodega
      */
     public function guardarNota(Request $request): JsonResponse

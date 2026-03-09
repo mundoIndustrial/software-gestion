@@ -134,6 +134,10 @@ Route::middleware(['auth', 'role:bodeguero,supervisor_pedidos,supervisor_gerenci
     // Guardar pedido completo
     Route::post('/pedidos/{numero_pedido}/guardar-completo', [PedidosController::class, 'guardarPedidoCompleto'])
         ->name('guardar-pedido-completo');
+    
+    // Guardar una fila individual
+    Route::post('/pedidos/{numeroPedido}/guardar-fila', [PedidosController::class, 'guardarFilaCompleta'])
+        ->name('guardar-fila');
 
     // Exportar (opcional)
     Route::get('/pedidos/export', [PedidosController::class, 'export'])

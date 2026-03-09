@@ -1682,183 +1682,167 @@ function mostrarModalExito(mensaje) {
 /**
  * Guardar fila completa de bodega_detalles_talla
  */
-function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId) {
-    // Obtener todos los valores de la fila
-    const tallaColorIdNorm = (tallaColorId !== undefined && tallaColorId !== null && String(tallaColorId).trim() !== '')
-        ? String(tallaColorId).trim()
-        : null;
+function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, prendaId) {
+    // Obtener todos los valores de la fila usando row-hash
+    // Primero intentar obtener el row-hash desde el botón o su fila padre
+    const fila = btnGuardar.closest('tr');
+    const rowHash = fila ? fila.getAttribute('data-row-hash') : null;
+    
+    console.log('🔍 [GUARDAR-FILA] Buscando elementos:', { 
+        rowHash, 
+        numeroPedido, 
+        talla, 
+        tallaColorId, 
+        prendaId 
+    });
+    
+    let pendientesInput, fechaPedidoInput, fechaEntregaInput, areaSelect, observacionesInput;
+    
+    // Si tenemos row-hash, usarlo como selector primario (más confiable)
+    if (rowHash) {
+        pendientesInput = document.querySelector(`.pendientes-input[data-row-hash="${rowHash}"]`);
+        fechaPedidoInput = document.querySelector(`.fecha-pedido-input[data-row-hash="${rowHash}"]`);
+        fechaEntregaInput = document.querySelector(`.fecha-input[data-row-hash="${rowHash}"]`);
+        areaSelect = document.querySelector(`.area-select[data-row-hash="${rowHash}"]`);
+        observacionesInput = document.querySelector(`.observaciones-input[data-row-hash="${rowHash}"]`);
+    }
+    
+    // Fallback: Si no hay row-hash o no se encontraron elementos, usar método antiguo
+    if (!pendientesInput || !fechaPedidoInput || !fechaEntregaInput || !areaSelect) {
+        console.warn('⚠️ [GUARDAR-FILA] Row-hash no funcionó, usando fallback');
+        
+        const tallaColorIdNorm = (tallaColorId !== undefined && tallaColorId !== null && String(tallaColorId).trim() !== '')
+            ? String(tallaColorId).trim()
+            : null;
+        
+        const prendaIdNorm = (prendaId !== undefined && prendaId !== null && String(prendaId).trim() !== '')
+            ? String(prendaId).trim()
+            : null;
 
-    const selectorSuffix = tallaColorIdNorm
-        ? `[data-talla-color-id="${CSS.escape(tallaColorIdNorm)}"]`
-        : '';
+        // Construir selector con talla_color_id y prenda_id
+        let selectorSuffix = '';
+        if (tallaColorIdNorm) {
+            selectorSuffix += `[data-talla-color-id="${CSS.escape(tallaColorIdNorm)}"]`;
+        }
+        if (prendaIdNorm) {
+            selectorSuffix += `[data-prenda-id="${CSS.escape(prendaIdNorm)}"]`;
+        }
 
-    const pendientesInput = document.querySelector(
-        `.pendientes-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]${selectorSuffix}`
-    ) || document.querySelector(
-        `.pendientes-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
-    );
+        pendientesInput = document.querySelector(
+            `.pendientes-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]${selectorSuffix}`
+        ) || document.querySelector(
+            `.pendientes-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+        );
 
-    const fechaPedidoInput = document.querySelector(
-        `.fecha-pedido-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]${selectorSuffix}`
-    ) || document.querySelector(
-        `.fecha-pedido-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
-    );
+        fechaPedidoInput = document.querySelector(
+            `.fecha-pedido-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]${selectorSuffix}`
+        ) || document.querySelector(
+            `.fecha-pedido-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+        );
 
-    const fechaEntregaInput = document.querySelector(
-        `.fecha-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]${selectorSuffix}`
-    ) || document.querySelector(
-        `.fecha-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
-    );
+        fechaEntregaInput = document.querySelector(
+            `.fecha-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]${selectorSuffix}`
+        ) || document.querySelector(
+            `.fecha-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+        );
 
-    const areaSelect = document.querySelector(
-        `.area-select[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]${selectorSuffix}`
-    ) || document.querySelector(
-        `.area-select[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
-    );
+        areaSelect = document.querySelector(
+            `.area-select[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]${selectorSuffix}`
+        ) || document.querySelector(
+            `.area-select[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+        );
 
-    const estadoSelect = document.querySelector(
-        `.estado-select[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]${selectorSuffix}`
-    ) || document.querySelector(
-        `.estado-select[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
-    );
+        observacionesInput = document.querySelector(
+            `.observaciones-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]${selectorSuffix}`
+        ) || document.querySelector(
+            `.observaciones-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+        );
+    }
 
-    // Validar que existan los elementos
-    if (!pendientesInput || !estadoSelect) {
-        alert('Error: No se encontraron los campos de la fila');
+    // Validar que se encontraron los elementos necesarios
+    if (!pendientesInput || !fechaPedidoInput || !fechaEntregaInput || !areaSelect) {
+        console.error('❌ [GUARDAR-FILA] No se encontraron todos los elementos necesarios:', {
+            pendientes: !!pendientesInput,
+            fechaPedido: !!fechaPedidoInput,
+            fechaEntrega: !!fechaEntregaInput,
+            area: !!areaSelect,
+            rowHash: rowHash,
+            talla: talla,
+            tallaColorId: tallaColorId,
+            prendaId: prendaId
+        });
+        alert('Error: No se encontraron todos los campos de la fila');
         return;
     }
 
-    // Obtener la fila para extraer otros campos
-    const fila = pendientesInput.closest('tr');
-    const asesor = (fila.getAttribute('data-asesor') || '').trim();
-    const empresa = (fila.getAttribute('data-empresa') || '').trim();
+    // Obtener prenda_id y talla_color_id desde el <tr> (más confiable que los parámetros onclick)
+    const prendaIdFinal = prendaId || (fila ? fila.getAttribute('data-prenda-id') : null) || pendientesInput.getAttribute('data-prenda-id') || null;
+    const tallaColorIdFinal = (fila ? fila.getAttribute('data-talla-color-id') : null) || tallaColorId || pendientesInput.getAttribute('data-talla-color-id') || null;
     
-    // Obtener CANTIDAD desde el atributo data-cantidad del estado-select
-    const cantidad = parseInt(estadoSelect.getAttribute('data-cantidad') || '0');
-
-    // Obtener los datos de los IDs
-    const pedidoProduccionId = pendientesInput.getAttribute('data-pedido-produccion-id');
-    const reciboPrendaId = pendientesInput.getAttribute('data-recibo-prenda-id');
+    console.log('🔑 [GUARDAR-FILA] IDs obtenidos:', { 
+        prendaIdFinal, 
+        tallaColorIdFinal,
+        desdeFila: fila ? 'Sí' : 'No'
+    });
     
-    // Obtener PRENDA_NOMBRE desde el select
-    const prendaNombre = estadoSelect.getAttribute('data-prenda-nombre') || '';
-    const prendaId = estadoSelect.getAttribute('data-prenda-id') || null;
-    const pedidoEppId = estadoSelect.getAttribute('data-pedido-epp-id') || null;
-    
-    const lastUpdatedAt = new Date().toISOString();
+    // Obtener valores
+    const pendientes = pendientesInput.value || '';
+    const fechaPedido = fechaPedidoInput.value || '';
+    const fechaEntrega = fechaEntregaInput.value || '';
+    const area = areaSelect.value || '';
+    const observaciones = observacionesInput ? observacionesInput.value : '';
 
-    console.log(`[GUARDAR] numeroPedido=${numeroPedido}, talla=${talla}`);
-    console.log(`[GUARDAR] asesor='${asesor}' (largo: ${asesor.length})`);
-    console.log(`[GUARDAR] empresa='${empresa}' (largo: ${empresa.length})`);
-    console.log(`[GUARDAR] data-asesor=${fila.getAttribute('data-asesor')}`);
-    console.log(`[GUARDAR] data-empresa=${fila.getAttribute('data-empresa')}`);
-    console.log(`[GUARDAR] cantidad final: ${cantidad}`);
-
-    const path = String(window.location?.pathname || '');
-    const areaInferida = path.includes('/gestion-bodega/pendiente-costura') ? 'Costura'
-        : (path.includes('/gestion-bodega/pendiente-epp') ? 'EPP' : null);
-    const areaFinal = (areaSelect?.value || '').trim() || areaInferida;
-
-    const datosAGuardar = {
+    // Preparar datos para enviar
+    const datos = {
         numero_pedido: numeroPedido,
         talla: talla,
-        talla_color_id: tallaColorIdNorm ? Number(tallaColorIdNorm) : null,
-        prenda_nombre: prendaNombre || null,
-        prenda_id: prendaId,
-        pedido_epp_id: pedidoEppId,
-        asesor: asesor || null,
-        empresa: empresa || null,
-        cantidad: cantidad || null,
-        pendientes: pendientesInput?.value || null,
-        observaciones_bodega: null, // ya no se guarda aquí
-        fecha_pedido: fechaPedidoInput?.value || null,
-        fecha_entrega: fechaEntregaInput?.value || null,
-        area: areaFinal || null,
-        // Por defecto se mantiene como estado general,
-        // pero en las vistas de pendientes (costura/epp) NO se debe modificar.
-        estado_bodega: estadoSelect?.value || null,
-        pedido_produccion_id: pedidoProduccionId,
-        recibo_prenda_id: reciboPrendaId,
-        last_updated_at: lastUpdatedAt,
+        talla_color_id: tallaColorIdFinal ? Number(tallaColorIdFinal) : null,
+        prenda_id: prendaIdFinal ? Number(prendaIdFinal) : null,
+        pendientes: pendientes || null,
+        fecha_pedido: fechaPedido || null,
+        fecha_entrega: fechaEntrega || null,
+        area: area || null,
+        observaciones: observaciones || null
     };
 
-    // Guardar estado específico por área en vistas de pendientes
-    // (pendiente-costura => costura_estado, pendiente-epp => epp_estado)
-    try {
-        const path = (window.location && window.location.pathname) ? window.location.pathname : '';
-        const estadoSeleccionado = estadoSelect?.value || null;
+    console.log('📤 Guardando fila:', datos);
 
-        if (path.includes('/gestion-bodega/pendiente-costura/')) {
-            datosAGuardar.costura_estado = estadoSeleccionado;
-            delete datosAGuardar.estado_bodega;
-        }
-        if (path.includes('/gestion-bodega/pendiente-epp/')) {
-            datosAGuardar.epp_estado = estadoSeleccionado;
-            delete datosAGuardar.estado_bodega;
-        }
-    } catch (e) {
-        // no-op
-    }
-
-    // Mostrar spinner de carga
-    const textoOriginal = btnGuardar.textContent;
-    btnGuardar.textContent = '⏳ Guardando...';
+    // Deshabilitar botón mientras se guarda
     btnGuardar.disabled = true;
+    btnGuardar.textContent = 'Guardando...';
 
-    fetch('/gestion-bodega/detalles-talla/guardar', {
+    // Enviar al servidor
+    fetch(`/gestion-bodega/pedidos/${numeroPedido}/guardar-fila`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            'X-CSRF-TOKEN': getCsrfToken(),
         },
-        body: JSON.stringify(datosAGuardar)
+        body: JSON.stringify(datos),
     })
     .then(response => response.json())
     .then(data => {
-        btnGuardar.textContent = textoOriginal;
+        console.log('✅ Respuesta:', data);
+        
+        // Habilitar botón
         btnGuardar.disabled = false;
-
+        btnGuardar.textContent = 'Guardar';
+        
         if (data.success) {
-            btnGuardar.textContent = ' Guardado';
+            mostrarModalExito(data.message || 'Fila guardada correctamente');
+            
+            // Recargar después de un momento
             setTimeout(() => {
-                btnGuardar.textContent = textoOriginal;
-            }, 2000);
-            
-            if (window.mostrarModalExito) {
-                mostrarModalExito('✓ Cambios guardados exitosamente');
-            }
-            
-            if (data.data?.updated_at) {
-                if (fechaPedidoInput) fechaPedidoInput.dataset.updatedAt = data.data.updated_at;
-                if (fechaEntregaInput) fechaEntregaInput.dataset.updatedAt = data.data.updated_at;
-            }
-
-            if (data.data && data.data.estado_bodega && estadoSelect) {
-                estadoSelect.value = data.data.estado_bodega;
-                estadoSelect.setAttribute('data-original-estado', data.data.estado_bodega);
-            }
-        } else if (data.conflict) {
-            alert('Conflicto de edición: Otro usuario modificó este registro.\n\nPor favor, recarga la página para los cambios más recientes.');
-            location.reload();
+                location.reload();
+            }, 800);
         } else {
-            btnGuardar.textContent = ' Error';
-            setTimeout(() => {
-                btnGuardar.textContent = textoOriginal;
-            }, 2000);
-            alert('Error: ' + (data.message || 'No se pudieron guardar los cambios'));
+            alert('Error: ' + (data.message || 'No se pudo guardar la fila'));
         }
     })
     .catch(error => {
-        btnGuardar.textContent = textoOriginal;
+        console.error('❌ Error:', error);
         btnGuardar.disabled = false;
-        console.error('Error:', error);
-        alert('Error al guardar: ' + error.message);
+        btnGuardar.textContent = 'Guardar';
+        alert('Error: ' + error.message);
     });
 }
-
-
-
-
-
-
-

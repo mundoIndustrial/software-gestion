@@ -535,12 +535,16 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
     }
 
     // ─── Restaurar modo actual (general o especifico) ───
-    const modoGuardado = datosGenerales?.modo_tallas || 'general';
+    // CRÍTICO: Buscar en múltiples ubicaciones por compatibilidad
+    const modoGuardado = datosGenerales?.modoTallas || datosGenerales?.modo_tallas || 
+                         window.procesosSeleccionados?.[tipoProceso]?.modoTallas || 'general';
     
     console.log('[por-tallas] 📊 Modo guardado detectado:', {
         tipoProceso: tipoProceso,
         modo: modoGuardado,
-        datosGenerales_modo: datosGenerales?.modo_tallas,
+        datosGenerales_modoTallas: datosGenerales?.modoTallas,
+        datosGenerales_modo_tallas: datosGenerales?.modo_tallas,
+        proceso_modoTallas: window.procesosSeleccionados?.[tipoProceso]?.modoTallas,
         datosGenerales_tipo: datosGenerales?.tipo,
         datosGenerales_id: datosGenerales?.id,
         datosGenerales_exists: !!datosGenerales,
@@ -550,7 +554,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
     
     // 🔴 CRÍTICO: Si modo_tallas no se encontró en datos, intentar desde la relación tipoProceso
     let modoFinal = modoGuardado;
-    if (!datosGenerales?.modo_tallas && datosGenerales?.tipoProceso?.modo_tallas) {
+    if (!datosGenerales?.modoTallas && !datosGenerales?.modo_tallas && datosGenerales?.tipoProceso?.modo_tallas) {
         modoFinal = datosGenerales.tipoProceso.modo_tallas;
         console.warn('[por-tallas] ⚠️ modo_tallas rescatado de tipoProceso.modo_tallas:', modoFinal);
     }

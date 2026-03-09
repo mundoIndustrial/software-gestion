@@ -389,6 +389,58 @@ function generarTarjetaProceso(tipo, datos) {
         datosExtendidos[genero] && Object.keys(datosExtendidos[genero]).length > 0
     );
 
+    // ─── HTML de tallas con observaciones para modo GENERAL ───
+    let tallasConObservacionesHTML = '';
+    if (esGeneralMode && totalTallas > 0) {
+        const tieneObservacionesPorTalla = Object.keys(datosExtendidos).some(genero => 
+            datosExtendidos[genero] && Object.values(datosExtendidos[genero]).some(d => d.observaciones)
+        );
+        
+        if (tieneObservacionesPorTalla) {
+            const generosConfig = {
+                dama: { titulo: 'DAMA', color: '#be185d', bg: '#fce7f3' },
+                caballero: { titulo: 'CABALLERO', color: '#1d4ed8', bg: '#dbeafe' },
+                sobremedida: { titulo: 'SOBREMEDIDA', color: '#92400e', bg: '#fef3c7' }
+            };
+            
+            let tarjetasTallasGeneral = '';
+            ['dama', 'caballero', 'sobremedida'].forEach(genero => {
+                const tallasGenero = datos.tallas?.[genero] || {};
+                const extendidosGenero = datosExtendidos[genero] || {};
+                const entries = Object.entries(tallasGenero);
+                if (entries.length === 0) return;
+                
+                const cfg = generosConfig[genero];
+                entries.forEach(([tallaKey, cantidad]) => {
+                    const detalle = extendidosGenero[tallaKey];
+                    const observacion = detalle?.observaciones || '';
+                    if (!observacion) return; // Solo mostrar si tiene observaciones
+                    
+                    tarjetasTallasGeneral += `
+                        <div style="border: 1px solid ${cfg.bg}; border-radius: 6px; background: white; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.3rem;">
+                            <div style="display: flex; align-items: center; gap: 0.3rem;">
+                                <span style="font-weight: 700; font-size: 0.8rem; color: ${cfg.color};">${cfg.titulo} - ${formatearTallaKey(tallaKey)}</span>
+                                <span style="font-size: 0.65rem; background: ${cfg.color}; color: white; padding: 0.1rem 0.3rem; border-radius: 9999px; font-weight: 700;">${cantidad}</span>
+                            </div>
+                            <div style="padding: 0.3rem 0.5rem; background: #fef3c7; border-left: 2px solid #f59e0b; border-radius: 4px; font-size: 0.7rem; color: #78350f;">${observacion}</div>
+                        </div>
+                    `;
+                });
+            });
+            
+            if (tarjetasTallasGeneral) {
+                tallasConObservacionesHTML = `
+                    <div style="margin-top: 0.75rem;">
+                        <strong style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">OBSERVACIONES POR TALLA</strong>
+                        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                            ${tarjetasTallasGeneral}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    }
+
     let contenidoPorTallasHTML = '';
     if (tieneDetallePorTalla) {
         const generosConfig = {
@@ -572,15 +624,24 @@ function generarTarjetaProceso(tipo, datos) {
         `;
     }
 
-    const contenidoHTML = contenidoPorTallasHTML
-        ? `${ubicacionGeneralHTML}${fotosGeneralesHTML}${contenidoPorTallasHTML}`
-        : `<div style="margin-bottom: 0.75rem;">
+    // ─── Construir contenido según el modo ───
+    let contenidoHTML;
+    if (esGeneralMode) {
+        // Modo GENERAL: ubicación general + fotos generales + tallas + observaciones por talla
+        contenidoHTML = `${ubicacionGeneralHTML}${fotosGeneralesHTML}${tallasHTML}${tallasConObservacionesHTML}`;
+    } else if (contenidoPorTallasHTML) {
+        // Modo ESPECÍFICO: ubicación general (si existe) + fotos generales (si existen) + detalles por talla
+        contenidoHTML = `${ubicacionGeneralHTML}${fotosGeneralesHTML}${contenidoPorTallasHTML}`;
+    } else {
+        // Modo GENÉRICO (sin tallas o formato antiguo)
+        contenidoHTML = `<div style="margin-bottom: 0.75rem;">
                 <strong style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">UBICACIONES</strong>
                 <div>${ubicacionesHTML}</div>
             </div>
             ${tallasHTML}
             ${observacionesHTML}
             ${imagenesHTML}`;
+    }
     
     return `
         <div class="tarjeta-proceso" data-tipo="${tipo}" style="
@@ -638,8 +699,14 @@ window.editarProcesoDesdeModal = function(tipo) {
     const proceso = window.procesosSeleccionados[tipo];
 
     // Detectar si fue guardado como "Por Tallas" y abrir el modal correcto
-    const modoTallas = proceso?.datos?.modo_tallas || proceso?.datos?.modoTallas || proceso?.modoTallas || 'generico';
-    console.log('✏️ [EDITAR-PROCESO-MODAL] Modo de tallas detectado:', modoTallas);
+    // CRÍTICO: Buscar en orden de prioridad correcto
+    const modoTallas = proceso?.modoTallas || proceso?.datos?.modoTallas || proceso?.datos?.modo_tallas || 'generico';
+    console.log('✏️ [EDITAR-PROCESO-MODAL] Modo de tallas detectado:', modoTallas, {
+        proceso_modoTallas: proceso?.modoTallas,
+        datos_modoTallas: proceso?.datos?.modoTallas,
+        datos_modo_tallas: proceso?.datos?.modo_tallas,
+        procesoCompleto: proceso
+    });
     
     if (modoTallas === 'general' || modoTallas === 'especifico' || modoTallas === 'por_tallas') {
         console.log('✏️ [EDITAR-PROCESO-MODAL] Detectado modo POR TALLAS, abriendo modal por tallas');
