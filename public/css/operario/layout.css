@@ -29,6 +29,12 @@ body {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
+.top-nav-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
 .nav-left {
     flex: 1;
     display: flex;

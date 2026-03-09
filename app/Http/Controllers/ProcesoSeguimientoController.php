@@ -6,6 +6,9 @@ use App\Models\ProcesoPrenda;
 use App\Models\PrendaPedido;
 use App\Models\PedidoProduccion;
 use App\Models\ConsecutivoReciboPedido;
+use App\Events\OperarioRecibosActualizados;
+use App\Events\CorteAsignadoOperario;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
@@ -142,6 +145,63 @@ class ProcesoSeguimientoController extends Controller
                 $accion = 'creado';
                 
                 \Log::info('[ProcesoSeguimientoController] Proceso creado:', ['proceso_id' => $proceso->id, 'area' => $request->area]);
+            }
+
+            // Broadcast: cuando se asigna/actualiza CORTE a un encargado, notificar al operario en tiempo real
+            try {
+                $areaNormalizada = strtolower(trim((string) $request->area));
+                if ($areaNormalizada === 'corte') {
+                    $encargadoNormalizado = strtolower(trim((string) $request->encargado));
+
+                    \Log::info('[ProcesoSeguimientoController] Broadcast CORTE - inicio', [
+                        'broadcasting_default' => config('broadcasting.default'),
+                        'area' => (string) $request->area,
+                        'encargado' => (string) $request->encargado,
+                        'pedido_produccion_id' => (int) $request->pedido_produccion_id,
+                        'prenda_id' => (int) $request->prenda_id,
+                        'proceso_id' => (int) $proceso->id,
+                    ]);
+
+                    // Canal público (fallback): permite que el dashboard del cortador reaccione comparando por nombre
+                    broadcast(new CorteAsignadoOperario([
+                        'area' => $request->area,
+                        'accion' => $accion,
+                        'numero_pedido' => (int) $request->pedido_produccion_id,
+                        'prenda_id' => (int) $request->prenda_id,
+                        'proceso_id' => (int) $proceso->id,
+                        'encargado' => (string) $request->encargado,
+                    ]));
+
+                    \Log::info('[ProcesoSeguimientoController] Broadcast CORTE - emitido a canal publico operarios.corte');
+
+                    if ($encargadoNormalizado !== '') {
+                        $operario = User::query()
+                            ->whereRaw('LOWER(TRIM(name)) = ?', [$encargadoNormalizado])
+                            ->first();
+
+                        if ($operario && $operario->hasRole('cortador')) {
+                            broadcast(new OperarioRecibosActualizados(
+                                userId: (int) $operario->id,
+                                payload: [
+                                    'area' => $request->area,
+                                    'accion' => $accion,
+                                    'numero_pedido' => (int) $request->pedido_produccion_id,
+                                    'prenda_id' => (int) $request->prenda_id,
+                                    'proceso_id' => (int) $proceso->id,
+                                ]
+                            ));
+
+                            \Log::info('[ProcesoSeguimientoController] Broadcast CORTE - emitido a canal privado App.Models.User', [
+                                'user_id' => (int) $operario->id,
+                            ]);
+                        }
+                    }
+                }
+            } catch (\Exception $broadcastError) {
+                \Log::warning('[ProcesoSeguimientoController] Error broadcasting a operario: ' . $broadcastError->getMessage(), [
+                    'file' => $broadcastError->getFile(),
+                    'line' => $broadcastError->getLine(),
+                ]);
             }
 
             // Actualizar el area en consecutivos_recibos_pedidos
@@ -322,6 +382,62 @@ class ProcesoSeguimientoController extends Controller
             }
 
             $proceso->save();
+
+            // Broadcast en actualización: si se asigna/actualiza CORTE, notificar al operario en tiempo real
+            try {
+                $areaNormalizada = strtolower(trim((string) $request->area));
+                if ($areaNormalizada === 'corte') {
+                    $encargadoNormalizado = strtolower(trim((string) ($request->encargado ?? '')));
+
+                    \Log::info('[ProcesoSeguimientoController] Broadcast CORTE (actualizar) - inicio', [
+                        'broadcasting_default' => config('broadcasting.default'),
+                        'area' => (string) $request->area,
+                        'encargado' => (string) ($request->encargado ?? ''),
+                        'pedido_produccion_id' => (int) ($proceso->numero_pedido ?? 0),
+                        'prenda_id' => (int) ($proceso->prenda_pedido_id ?? 0),
+                        'proceso_id' => (int) $proceso->id,
+                    ]);
+
+                    broadcast(new CorteAsignadoOperario([
+                        'area' => (string) $request->area,
+                        'accion' => 'actualizado',
+                        'numero_pedido' => (int) ($proceso->numero_pedido ?? 0),
+                        'prenda_id' => (int) ($proceso->prenda_pedido_id ?? 0),
+                        'proceso_id' => (int) $proceso->id,
+                        'encargado' => (string) ($request->encargado ?? ''),
+                    ]));
+
+                    \Log::info('[ProcesoSeguimientoController] Broadcast CORTE (actualizar) - emitido a canal publico operarios.corte');
+
+                    if ($encargadoNormalizado !== '') {
+                        $operario = User::query()
+                            ->whereRaw('LOWER(TRIM(name)) = ?', [$encargadoNormalizado])
+                            ->first();
+
+                        if ($operario && $operario->hasRole('cortador')) {
+                            broadcast(new OperarioRecibosActualizados(
+                                userId: (int) $operario->id,
+                                payload: [
+                                    'area' => (string) $request->area,
+                                    'accion' => 'actualizado',
+                                    'numero_pedido' => (int) ($proceso->numero_pedido ?? 0),
+                                    'prenda_id' => (int) ($proceso->prenda_pedido_id ?? 0),
+                                    'proceso_id' => (int) $proceso->id,
+                                ]
+                            ));
+
+                            \Log::info('[ProcesoSeguimientoController] Broadcast CORTE (actualizar) - emitido a canal privado App.Models.User', [
+                                'user_id' => (int) $operario->id,
+                            ]);
+                        }
+                    }
+                }
+            } catch (\Exception $broadcastError) {
+                \Log::warning('[ProcesoSeguimientoController] Error broadcasting a operario en actualizar(): ' . $broadcastError->getMessage(), [
+                    'file' => $broadcastError->getFile(),
+                    'line' => $broadcastError->getLine(),
+                ]);
+            }
 
             // Sincronizar el area en consecutivos_recibos_pedidos para esta prenda
             try {

@@ -23,8 +23,136 @@
     <script>
         window.USUARIO_ACTUAL = {
             id: {{ Auth::id() }},
-            rol: '{{ Auth::user()->roles->first()->name ?? '' }}'
+            rol: '{{ Auth::user()->roles->first()->name ?? '' }}',
+            nombre: '{{ Auth::user()->name ?? '' }}'
         };
+
+        // Tiempo real: escuchar cuando se asignen recibos/procesos al operario
+        (function () {
+            let intentos = 0;
+            const maxIntentos = 100;
+
+            async function actualizarListaSinRecargar() {
+                try {
+                    const url = window.location.href;
+                    const resp = await fetch(url, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        credentials: 'same-origin',
+                    });
+
+                    if (!resp.ok) {
+                        throw new Error('HTTP ' + resp.status);
+                    }
+
+                    const html = await resp.text();
+                    const doc = new DOMParser().parseFromString(html, 'text/html');
+
+                    const nuevoOrdenesList = doc.getElementById('ordenesList');
+                    const actualOrdenesList = document.getElementById('ordenesList');
+                    if (!nuevoOrdenesList || !actualOrdenesList) {
+                        throw new Error('No se encontró #ordenesList en HTML');
+                    }
+
+                    actualOrdenesList.innerHTML = nuevoOrdenesList.innerHTML;
+
+                    const nuevoCount = doc.querySelector('.ordenes-count');
+                    const actualCount = document.querySelector('.ordenes-count');
+                    if (nuevoCount && actualCount) {
+                        actualCount.textContent = nuevoCount.textContent;
+                    }
+
+                    if (typeof window.__initDashboardSearch === 'function') {
+                        window.__initDashboardSearch();
+                    }
+
+                    if (typeof window.filtrarPrendasPorRecibo === 'function') {
+                        const badgeActivo = document.querySelector('.badge-filtro-active');
+                        const filtroActivo = badgeActivo ? badgeActivo.dataset.filtro : null;
+                        if (filtroActivo) {
+                            window.filtrarPrendasPorRecibo(filtroActivo);
+                        }
+                    }
+
+                    console.log('[Operario Dashboard] Lista actualizada sin recargar');
+                } catch (e) {
+                    console.warn('[Operario Dashboard] Falló actualizar lista sin recargar, recargando página', e);
+                    window.location.reload();
+                }
+            }
+
+            function initRealtimeListeners() {
+                try {
+                    intentos += 1;
+
+                    if (!window.USUARIO_ACTUAL?.id) {
+                        if (intentos < maxIntentos) {
+                            return setTimeout(initRealtimeListeners, 200);
+                        }
+                        console.warn('[Operario Dashboard] No se pudo iniciar realtime: USUARIO_ACTUAL no disponible');
+                        return;
+                    }
+
+                    if (!window.EchoInstance) {
+                        if (intentos < maxIntentos) {
+                            return setTimeout(initRealtimeListeners, 200);
+                        }
+                        console.warn('[Operario Dashboard] No se pudo iniciar realtime: EchoInstance no disponible');
+                        return;
+                    }
+
+                    console.log('[Operario Dashboard] Inicializando listeners Echo', {
+                        usuario: window.USUARIO_ACTUAL,
+                        privateChannel: `private-App.Models.User.${window.USUARIO_ACTUAL.id}`,
+                        publicChannel: 'operarios.corte',
+                    });
+
+                    window.EchoInstance.private(`App.Models.User.${window.USUARIO_ACTUAL.id}`)
+                        .subscribed(() => {
+                            console.log('[Operario Dashboard] Suscrito OK a canal privado', `App.Models.User.${window.USUARIO_ACTUAL.id}`);
+                        })
+                        .error((err) => {
+                            console.error('[Operario Dashboard] Error suscribiendo canal privado', err);
+                        })
+                        .listen('.operario.recibos.actualizados', (e) => {
+                            console.log('[Operario Dashboard] Evento operario.recibos.actualizados recibido (privado):', e);
+                            actualizarListaSinRecargar();
+                        });
+
+                    // Fallback público: evento de asignación de corte (compara por nombre)
+                    window.EchoInstance.channel('operarios.corte')
+                        .subscribed(() => {
+                            console.log('[Operario Dashboard] Suscrito OK a canal público', 'operarios.corte');
+                        })
+                        .error((err) => {
+                            console.error('[Operario Dashboard] Error suscribiendo canal público operarios.corte', err);
+                        })
+                        .listen('.corte.asignado', (e) => {
+                            const encargadoEvento = String(e?.encargado || '').trim().toLowerCase();
+                            const nombreActual = String(window.USUARIO_ACTUAL?.nombre || '').trim().toLowerCase();
+
+                            console.log('[Operario Dashboard] Evento corte.asignado recibido:', e);
+                            console.log('[Operario Dashboard] Comparando encargado vs usuario:', {
+                                encargadoEvento,
+                                nombreActual,
+                            });
+
+                            if (encargadoEvento && nombreActual && encargadoEvento === nombreActual) {
+                                console.log('[Operario Dashboard] Match encargado. Recargando...');
+                                actualizarListaSinRecargar();
+                            }
+                        });
+                } catch (e) {
+                    console.warn('[Operario Dashboard] Error inicializando Echo en dashboard', e);
+                    if (intentos < maxIntentos) {
+                        return setTimeout(initRealtimeListeners, 200);
+                    }
+                }
+            }
+
+            initRealtimeListeners();
+        })();
     </script>
     <!-- Búsqueda -->
     <div class="search-section">
@@ -1292,66 +1420,81 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('searchInput');
-        const ordenesList = document.getElementById('ordenesList');
-        const ordenCards = ordenesList ? ordenesList.querySelectorAll('.orden-card-simple') : [];
-
-        // LOG: Mostrar todas las tarjetas y sus atributos
-        console.log('=== TARJETAS CARGADAS EN DASHBOARD ===');
-        console.log('Total de tarjetas:', ordenCards.length);
-        ordenCards.forEach((card, index) => {
-            console.log(`Tarjeta ${index + 1}:`, {
-                numero: card.dataset.numero,
-                prenda: card.dataset.prenda,
-                cliente: card.dataset.cliente,
-                'data-tipo-recibo': card.dataset.tipoRecibo
-            });
-        });
-        console.log('=====================================\n');
-
-        if (searchInput) {
+        window.__initDashboardSearch = function() {
+            const searchInput = document.getElementById('searchInput');
             const clearBtn = document.getElementById('clearFilterBtn');
-            
-            // Handler para botón de limpiar
-            if (clearBtn) {
-                clearBtn.addEventListener('click', function() {
-                    searchInput.value = '';
-                    clearBtn.style.display = 'none';
-                    
-                    // Trigger input event para actualizar filtro
-                    const event = new Event('input', { bubbles: true });
-                    searchInput.dispatchEvent(event);
+
+            const ordenesList = document.getElementById('ordenesList');
+            const ordenCards = ordenesList ? ordenesList.querySelectorAll('.orden-card-simple') : [];
+
+            console.log('=== TARJETAS CARGADAS EN DASHBOARD ===');
+            console.log('Total de tarjetas:', ordenCards.length);
+            ordenCards.forEach((card, index) => {
+                console.log(`Tarjeta ${index + 1}:`, {
+                    numero: card.dataset.numero,
+                    prenda: card.dataset.prenda,
+                    cliente: card.dataset.cliente,
+                    'data-tipo-recibo': card.dataset.tipoRecibo
                 });
+            });
+            console.log('=====================================\n');
+
+            if (!searchInput) {
+                return;
             }
-            
-            searchInput.addEventListener('input', function(e) {
+
+            if (window.__dashboardClearHandler && clearBtn) {
+                clearBtn.removeEventListener('click', window.__dashboardClearHandler);
+            }
+            if (window.__dashboardSearchHandler) {
+                searchInput.removeEventListener('input', window.__dashboardSearchHandler);
+            }
+
+            window.__dashboardClearHandler = function() {
+                searchInput.value = '';
+                if (clearBtn) {
+                    clearBtn.style.display = 'none';
+                }
+
+                const event = new Event('input', { bubbles: true });
+                searchInput.dispatchEvent(event);
+            };
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', window.__dashboardClearHandler);
+            }
+
+            window.__dashboardSearchHandler = function(e) {
                 const busqueda = e.target.value.toLowerCase().trim();
-                
-                // Mostrar/ocultar botón de limpiar según si hay texto
+
                 if (clearBtn) {
                     clearBtn.style.display = busqueda ? 'flex' : 'none';
                 }
 
-                ordenCards.forEach(card => {
-                    // Extraer número de RECIBO del DOM (desde .orden-right)
+                const ordenesListActual = document.getElementById('ordenesList');
+                const cardsActuales = ordenesListActual ? ordenesListActual.querySelectorAll('.orden-card-simple') : [];
+
+                cardsActuales.forEach(card => {
                     const reciboDom = card.querySelector('.orden-right .orden-fecha span:not(.orden-fecha-label)');
                     const numeroRecibo = reciboDom ? reciboDom.textContent.toLowerCase().trim() : '';
-                    const cliente = card.dataset.cliente.toLowerCase();
-                    
-                    // Extraer nombre de PRENDA del DOM (desde .prendas-label strong)
+                    const cliente = String(card.dataset.cliente || '').toLowerCase();
+
                     const prendaDom = card.querySelector('.orden-prendas .prendas-label strong');
                     const nombrePrenda = prendaDom ? prendaDom.textContent.toLowerCase().trim() : '';
 
-                    console.log('ðŸ” Filtro:', {busqueda, numeroRecibo, clienteName: cliente, nombrePrenda, coincide: numeroRecibo.includes(busqueda) || cliente.includes(busqueda) || nombrePrenda.includes(busqueda)});
-
-                    // Mostrar si coincide con número de recibo, cliente o prenda
                     if (numeroRecibo.includes(busqueda) || cliente.includes(busqueda) || nombrePrenda.includes(busqueda) || busqueda === '') {
                         card.style.display = '';
                     } else {
                         card.style.display = 'none';
                     }
                 });
-            });
+            };
+
+            searchInput.addEventListener('input', window.__dashboardSearchHandler);
+        };
+
+        if (typeof window.__initDashboardSearch === 'function') {
+            window.__initDashboardSearch();
         }
     });
 

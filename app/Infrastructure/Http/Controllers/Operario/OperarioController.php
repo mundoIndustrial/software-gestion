@@ -9,9 +9,11 @@ use App\Domain\Operario\Repositories\OperarioRepository;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Models\PedidoAnchoGeneral;
 use App\Models\PedidoMetrajeColor;
+use App\Models\ConsecutivoReciboPedido;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\JsonResponse;
 
 /**
  * Controller: OperarioController
@@ -374,6 +376,231 @@ class OperarioController extends Controller
         $datosOperario = $this->obtenerPedidosService->obtenerPedidosDelOperario($usuario);
 
         return response()->json($datosOperario->toArray());
+    }
+
+    public function listarNotificacionesRecibos(Request $request): JsonResponse
+    {
+        try {
+            $usuario = Auth::user();
+
+            $tipoRecibo = strtoupper(trim((string) $request->query('tipo_recibo', 'COSTURA')));
+            $limit = (int) $request->query('limit', 50);
+            if ($limit <= 0) {
+                $limit = 50;
+            }
+            $limit = min($limit, 200);
+
+            $query = ConsecutivoReciboPedido::query()
+                ->where('activo', 1)
+                ->where('tipo_recibo', $tipoRecibo)
+                ->whereNotIn('id', function ($sub) use ($usuario, $tipoRecibo) {
+                    $sub->select('consecutivo_recibo_id')
+                        ->from('recibos_usuario_vistos')
+                        ->where('user_id', (int) $usuario->id)
+                        ->where('tipo_recibo', $tipoRecibo);
+                })
+                ->orderByDesc('updated_at')
+                ->limit($limit)
+                ->with(['pedido:id,numero_pedido,cliente']);
+
+            // Notificaciones SOLO cuando el recibo esté ASIGNADO al usuario (encargado) en el proceso correspondiente
+            $encargadoNormalizado = strtolower(trim((string) ($usuario->name ?? '')));
+            if ($usuario->hasRole('cortador')) {
+                $query->where('area', 'Corte');
+
+                if ($encargadoNormalizado !== '') {
+                    $query->whereExists(function ($sub) use ($encargadoNormalizado) {
+                        $sub->select(DB::raw(1))
+                            ->from('procesos_prenda as pp')
+                            ->join('pedidos_produccion as ped', 'ped.numero_pedido', '=', 'pp.numero_pedido')
+                            ->whereRaw("LOWER(TRIM(pp.proceso)) = 'corte'")
+                            ->whereRaw('LOWER(TRIM(pp.encargado)) = ?', [$encargadoNormalizado])
+                            ->whereColumn('ped.id', 'consecutivos_recibos_pedidos.pedido_produccion_id')
+                            ->whereColumn('pp.prenda_pedido_id', 'consecutivos_recibos_pedidos.prenda_id')
+                            ->whereNull('pp.deleted_at');
+                    });
+                } else {
+                    // Si el usuario no tiene nombre, no se puede asignar por encargado
+                    $query->whereRaw('1 = 0');
+                }
+            } elseif ($usuario->hasRole('costurero')) {
+                $query->where('area', 'Costura');
+
+                if ($encargadoNormalizado !== '') {
+                    $query->whereExists(function ($sub) use ($encargadoNormalizado) {
+                        $sub->select(DB::raw(1))
+                            ->from('procesos_prenda as pp')
+                            ->join('pedidos_produccion as ped', 'ped.numero_pedido', '=', 'pp.numero_pedido')
+                            ->whereRaw("LOWER(TRIM(pp.proceso)) = 'costura'")
+                            ->whereRaw('LOWER(TRIM(pp.encargado)) = ?', [$encargadoNormalizado])
+                            ->whereColumn('ped.id', 'consecutivos_recibos_pedidos.pedido_produccion_id')
+                            ->whereColumn('pp.prenda_pedido_id', 'consecutivos_recibos_pedidos.prenda_id')
+                            ->whereNull('pp.deleted_at');
+                    });
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+            }
+
+            $recibos = $query->get(['id', 'pedido_produccion_id', 'tipo_recibo', 'consecutivo_actual', 'created_at', 'updated_at']);
+
+            $items = $recibos->map(function (ConsecutivoReciboPedido $recibo) {
+                return [
+                    'id' => (int) $recibo->id,
+                    'numero_recibo' => (int) ($recibo->consecutivo_actual ?? 0),
+                    'cliente' => (string) ($recibo->pedido->cliente ?? '-'),
+                    'fecha' => $recibo->updated_at ? $recibo->updated_at->format('d/m/Y H:i') : ($recibo->created_at ? $recibo->created_at->format('d/m/Y H:i') : ''),
+                    'tipo_recibo' => (string) ($recibo->tipo_recibo ?? ''),
+                ];
+            })->values();
+
+            return response()->json([
+                'success' => true,
+                'total' => $items->count(),
+                'notificaciones' => $items,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[OperarioController] Error listarNotificacionesRecibos', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al listar notificaciones',
+                'total' => 0,
+                'notificaciones' => [],
+            ], 500);
+        }
+    }
+
+    public function marcarNotificacionReciboLeida(Request $request, $id): JsonResponse
+    {
+        try {
+            $usuario = Auth::user();
+
+            $tipoRecibo = strtoupper(trim((string) $request->input('tipo_recibo', 'COSTURA')));
+            $reciboId = (int) $id;
+
+            $recibo = ConsecutivoReciboPedido::query()
+                ->where('id', $reciboId)
+                ->where('tipo_recibo', $tipoRecibo)
+                ->first();
+
+            if (!$recibo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recibo no encontrado',
+                ], 404);
+            }
+
+            DB::table('recibos_usuario_vistos')->insertOrIgnore([
+                'consecutivo_recibo_id' => $reciboId,
+                'user_id' => (int) $usuario->id,
+                'tipo_recibo' => $tipoRecibo,
+                'created_at' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Notificación marcada como leída',
+                'recibo_id' => $reciboId,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[OperarioController] Error marcarNotificacionReciboLeida', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al marcar como leída',
+            ], 500);
+        }
+    }
+
+    public function marcarTodasNotificacionesRecibosLeidas(Request $request): JsonResponse
+    {
+        try {
+            $usuario = Auth::user();
+            $tipoRecibo = strtoupper(trim((string) $request->input('tipo_recibo', 'COSTURA')));
+
+            $query = ConsecutivoReciboPedido::query()
+                ->where('activo', 1)
+                ->where('tipo_recibo', $tipoRecibo)
+                ->whereNotIn('id', function ($sub) use ($usuario, $tipoRecibo) {
+                    $sub->select('consecutivo_recibo_id')
+                        ->from('recibos_usuario_vistos')
+                        ->where('user_id', (int) $usuario->id)
+                        ->where('tipo_recibo', $tipoRecibo);
+                });
+
+            $encargadoNormalizado = strtolower(trim((string) ($usuario->name ?? '')));
+            if ($usuario->hasRole('cortador')) {
+                $query->where('area', 'Corte');
+
+                if ($encargadoNormalizado !== '') {
+                    $query->whereExists(function ($sub) use ($encargadoNormalizado) {
+                        $sub->select(DB::raw(1))
+                            ->from('procesos_prenda as pp')
+                            ->join('pedidos_produccion as ped', 'ped.numero_pedido', '=', 'pp.numero_pedido')
+                            ->whereRaw("LOWER(TRIM(pp.proceso)) = 'corte'")
+                            ->whereRaw('LOWER(TRIM(pp.encargado)) = ?', [$encargadoNormalizado])
+                            ->whereColumn('ped.id', 'consecutivos_recibos_pedidos.pedido_produccion_id')
+                            ->whereColumn('pp.prenda_pedido_id', 'consecutivos_recibos_pedidos.prenda_id')
+                            ->whereNull('pp.deleted_at');
+                    });
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+            } elseif ($usuario->hasRole('costurero')) {
+                $query->where('area', 'Costura');
+
+                if ($encargadoNormalizado !== '') {
+                    $query->whereExists(function ($sub) use ($encargadoNormalizado) {
+                        $sub->select(DB::raw(1))
+                            ->from('procesos_prenda as pp')
+                            ->join('pedidos_produccion as ped', 'ped.numero_pedido', '=', 'pp.numero_pedido')
+                            ->whereRaw("LOWER(TRIM(pp.proceso)) = 'costura'")
+                            ->whereRaw('LOWER(TRIM(pp.encargado)) = ?', [$encargadoNormalizado])
+                            ->whereColumn('ped.id', 'consecutivos_recibos_pedidos.pedido_produccion_id')
+                            ->whereColumn('pp.prenda_pedido_id', 'consecutivos_recibos_pedidos.prenda_id')
+                            ->whereNull('pp.deleted_at');
+                    });
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+            }
+
+            $ids = $query->pluck('id')->map(fn($v) => (int) $v)->all();
+
+            if (!empty($ids)) {
+                $now = now();
+                $rows = array_map(function ($reciboId) use ($usuario, $tipoRecibo, $now) {
+                    return [
+                        'consecutivo_recibo_id' => (int) $reciboId,
+                        'user_id' => (int) $usuario->id,
+                        'tipo_recibo' => $tipoRecibo,
+                        'created_at' => $now,
+                    ];
+                }, $ids);
+
+                DB::table('recibos_usuario_vistos')->insertOrIgnore($rows);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Notificaciones marcadas como leídas',
+                'total' => count($ids),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[OperarioController] Error marcarTodasNotificacionesRecibosLeidas', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al marcar todas como leídas',
+            ], 500);
+        }
     }
 
     /**

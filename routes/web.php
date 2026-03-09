@@ -1730,6 +1730,9 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
     Route::get('/mis-pedidos', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'misPedidos'])->name('mis-pedidos');
     Route::get('/pedido/{numeroPedido}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'verPedido'])->name('ver-pedido');
     Route::get('/api/pedidos', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'obtenerPedidosJson'])->name('api.pedidos');
+    Route::get('/api/notificaciones/recibos', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'listarNotificacionesRecibos'])->name('api.notificaciones.recibos');
+    Route::post('/api/notificaciones/recibos/{id}/leer', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'marcarNotificacionReciboLeida'])->name('api.notificaciones.recibos.leer');
+    Route::post('/api/notificaciones/recibos/leer-todas', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'marcarTodasNotificacionesRecibosLeidas'])->name('api.notificaciones.recibos.leer-todas');
     Route::get('/api/pedido/{numeroPedido}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'obtenerDatosRecibosOperario'])->name('api.pedido');
     Route::post('/api/novedades/crear', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'crearNovedad'])->name('api.novedades.crear');
     Route::delete('/api/novedades/{id}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'eliminarNovedad'])->name('api.novedades.eliminar');

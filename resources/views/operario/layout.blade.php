@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @auth
+    <meta name="user-id" content="{{ auth()->id() }}">
+    <meta name="reverb-key" content="{{ config('broadcasting.connections.reverb.key') }}">
+    <meta name="reverb-app-id" content="{{ config('broadcasting.connections.reverb.app_id') }}">
+    <meta name="reverb-host" content="{{ config('broadcasting.connections.reverb.options.host') }}">
+    <meta name="reverb-port" content="{{ config('broadcasting.connections.reverb.options.port') }}">
+    <meta name="reverb-scheme" content="{{ config('broadcasting.connections.reverb.options.scheme') }}">
+    @endauth
     <title>@yield('title', 'Panel de Operario') - MundoIndustrial</title>
 
     <!-- CSS -->
@@ -114,8 +122,31 @@
             </div>
 
             <div class="top-nav-content">
-                <!-- Perfil de Usuario -->
-                <div class="user-dropdown">
+                <script>
+                    window.OPERARIO_USUARIO = {
+                        id: {{ Auth::id() }},
+                        nombre: '{{ Auth::user()->name ?? '' }}'
+                    };
+                </script>
+
+                <div class="top-nav-actions">
+                    <div class="notificaciones-dropdown">
+                        <button class="notificaciones-btn" id="notificacionesBtn" type="button">
+                            <span class="material-symbols-rounded">notifications</span>
+                            <span class="notificaciones-badge" id="notificacionesBadge" style="display: none;">0</span>
+                        </button>
+                        <div class="notificaciones-menu" id="notificacionesMenu">
+                            <div class="notificaciones-header">
+                                <span class="notificaciones-title">Notificaciones</span>
+                                <button class="notificaciones-markall" id="notificacionesMarkAll" type="button">Marcar todas</button>
+                            </div>
+                            <div class="notificaciones-list" id="notificacionesList"></div>
+                            <div class="notificaciones-empty" id="notificacionesEmpty" style="display: none;">No tienes notificaciones</div>
+                        </div>
+                    </div>
+
+                    <!-- Perfil de Usuario -->
+                    <div class="user-dropdown">
                     <button class="user-btn" id="userBtn">
                         <div class="user-avatar">
                             @if(Auth::user()->avatar)
@@ -164,6 +195,7 @@
                         </form>
                     </div>
                 </div>
+                </div>
             </div>
         </header>
 
@@ -174,6 +206,7 @@
     </div>
 
     <!-- Scripts -->
+    @vite(['resources/js/app.js'])
     <script>
         // Configuración de rutas para JavaScript
         window.APP_ROUTES = {
