@@ -505,8 +505,8 @@
       <span class="menu-section-title">Módulos</span>
       <ul class="menu-list" role="navigation">
       <li class="menu-item">
-        <a href="{{ route('supervisor-asesores.dashboard') }}"
-           class="menu-link {{ request()->routeIs('supervisor-asesores.*') ? 'active' : '' }}"
+        <a href="/supervisor-asesores/pedidos"
+           class="menu-link {{ request()->is('supervisor-asesores/pedidos') ? 'active' : '' }}"
            aria-label="Ver módulo de asesores">
           <span class="material-symbols-rounded" aria-hidden="true">people</span>
           <span class="menu-label">Asesores</span>
@@ -562,6 +562,23 @@
            aria-label="Configuración del sistema">
           <span class="material-symbols-rounded" aria-hidden="true">settings</span>
           <span class="menu-label">Configuración</span>
+        </a>
+      </li>
+      </ul>
+    </div>
+    @endif
+
+    <!-- Sección Cartera -->
+    @if(auth()->user()->role && auth()->user()->role->name === 'admin')
+    <div class="menu-section">
+      <span class="menu-section-title">Cartera</span>
+      <ul class="menu-list" role="navigation">
+      <li class="menu-item">
+        <a href="{{ route('cartera.pedidos') }}"
+           class="menu-link {{ request()->routeIs('cartera.pedidos') ? 'active' : '' }}"
+           aria-label="Pedidos Pendientes Cartera">
+          <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
+          <span class="menu-label">Pedidos Pendientes</span>
         </a>
       </li>
       </ul>
