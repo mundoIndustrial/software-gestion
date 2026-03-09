@@ -23,7 +23,7 @@ Route::get('/pedidos-test', function() {
 // Ruta temporal para acceso sin restricciones (solo para diagnóstico)
 Route::get('/pedidos-temp', [PedidosController::class, 'index']);
 
-Route::middleware(['auth', 'role:bodeguero,supervisor_pedidos,supervisor_gerencia,admin,despacho'])->prefix('gestion-bodega')->name('gestion-bodega.')->group(function () {
+Route::middleware(['auth', 'role:bodeguero,EPP-Bodega,supervisor_pedidos,supervisor_gerencia,admin,despacho'])->prefix('gestion-bodega')->name('gestion-bodega.')->group(function () {
     
     // Ruta de diagnóstico
     Route::get('/diagnostico', function() {
@@ -87,6 +87,10 @@ Route::middleware(['auth', 'role:bodeguero,supervisor_pedidos,supervisor_gerenci
     // Desmarcar pedido como no visto
     Route::post('/pedidos/{id}/desmarcar', [PedidosController::class, 'desmarcar'])
         ->name('desmarcar-pedido');
+    
+    // Marcar pedido como visto (solo para rol EPP-Bodega)
+    Route::post('/pedidos/{id}/marcar-visto', [PedidosController::class, 'marcarVisto'])
+        ->name('marcar-visto');
 
     // Dashboard
     Route::get('/dashboard', [PedidosController::class, 'dashboard'])

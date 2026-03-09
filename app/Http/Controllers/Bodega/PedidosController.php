@@ -477,6 +477,69 @@ class PedidosController extends Controller
     }
 
     /**
+     * Marcar pedido como visto (solo para rol EPP-Bodega)
+     */
+    public function marcarVisto(Request $request, $pedidoId): JsonResponse
+    {
+        try {
+            // Validar que el usuario tenga el rol EPP-Bodega
+            if (!auth()->user()->hasRole('EPP-Bodega')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permisos para realizar esta acción.'
+                ], 403);
+            }
+
+            $visto = $request->input('visto', false);
+            $userId = auth()->id();
+            
+            // Obtener el pedido principal
+            $pedido = PedidoProduccion::findOrFail($pedidoId);
+            
+            if ($visto) {
+                // Marcar como visto - crear registro en pedidos_vistos_supervisor
+                // Usar firstOrCreate para evitar duplicados
+                $registroVisto = \App\Models\PedidoVistoSupervisor::firstOrCreate([
+                    'pedido_id' => $pedidoId,
+                    'user_id' => $userId,
+                ], [
+                    'created_at' => now(),
+                ]);
+                
+                $actualizado = $registroVisto->wasRecentlyCreated || $registroVisto->exists;
+            } else {
+                // Desmarcar como visto - eliminar registro
+                $eliminados = \App\Models\PedidoVistoSupervisor::where('pedido_id', $pedidoId)
+                    ->where('user_id', $userId)
+                    ->delete();
+                    
+                $actualizado = $eliminados > 0;
+            }
+            
+            if ($actualizado) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $visto ? 'Pedido marcado como visto.' : 'Pedido desmarcado como visto.',
+                    'viewed_at' => $visto ? now()->toDateTimeString() : null
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pudo actualizar el estado del pedido.'
+                ], 400);
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Error en PedidosController@marcarVisto: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el pedido: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Mostrar pedidos pendientes de Costura
      */
     public function pendienteCostura(Request $request)

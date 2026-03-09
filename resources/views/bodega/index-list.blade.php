@@ -41,6 +41,9 @@
                     <table class="w-full text-sm">
                         <thead class="bg-slate-50 border-b border-slate-200">
                             <tr>
+                                <th class="px-6 py-3 text-center font-medium text-slate-700 w-24">
+                                    Visto
+                                </th>
                                 <th class="px-6 py-3 text-center font-medium text-slate-700 w-32">
                                     Acción
                                 </th>
@@ -113,7 +116,17 @@
                         </thead>
                         <tbody class="divide-y divide-slate-200">
                             @foreach($pedidosPorPagina as $pedidoData)
-                                <tr class="hover:opacity-75 transition-opacity @if($pedidoData['tiene_pendientes'] ?? false) bg-yellow-100 @elseif($pedidoData['todos_entregados'] ?? false) bg-blue-100 @elseif(!empty($pedidoData['viewed_at'])) bg-gray-200 @else bg-white @endif">
+                                <tr class="hover:opacity-75 transition-opacity @if(auth()->user()->hasRole('EPP-Bodega') && !empty($pedidoData['viewed_at'])) bg-green-100 @elseif($pedidoData['tiene_pendientes'] ?? false) bg-yellow-100 @elseif($pedidoData['todos_entregados'] ?? false) bg-blue-100 @else bg-white @endif" data-pedido-id="{{ $pedidoData['id'] }}">
+                                    <td class="px-6 py-4 text-center">
+                                        @if(auth()->user()->hasRole('EPP-Bodega'))
+                                            <input type="checkbox" 
+                                                   class="w-6 h-6 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 cursor-pointer transform hover:scale-110 transition-all duration-200" 
+                                                   @if(!empty($pedidoData['viewed_at'])) checked @endif
+                                                   onchange="marcarComoVisto({{ $pedidoData['id'] }}, this.checked)">
+                                        @else
+                                            <!-- Para otros roles, no mostrar nada -->
+                                        @endif
+                                    </td>
                                     <td class="px-6 py-4 text-center">
                                         <div class="flex gap-1 justify-center">
                                             <a href="{{ route('gestion-bodega.pedidos-show', $pedidoData['id']) }}"
@@ -737,6 +750,69 @@ async function desmarcarPedido(pedidoId, button) {
         button.disabled = false;
         button.innerHTML = originalContent;
     }
+}
+
+// Función para marcar pedido como visto (solo para rol EPP-Bodega)
+function marcarComoVisto(pedidoId, visto) {
+    // Solo ejecutar si el usuario tiene rol EPP-Bodega
+    if (!{{ auth()->user()->hasRole('EPP-Bodega') ? 'true' : 'false' }}) {
+        console.log('Usuario no tiene rol EPP-Bodega, función ignorada');
+        return;
+    }
+    
+    const tr = document.querySelector(`tr[data-pedido-id="${pedidoId}"]`);
+    
+    fetch(`/gestion-bodega/pedidos/${pedidoId}/marcar-visto`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+        },
+        body: JSON.stringify({ visto: visto })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Cambiar color de la fila
+            if (visto) {
+                // Marcar como visto - verde tiene máxima prioridad
+                tr.className = tr.className.replace(/bg-\w+-100/g, '');
+                tr.classList.add('bg-green-100');
+            } else {
+                // Desmarcar como visto - restaurar color original según estado
+                tr.classList.remove('bg-green-100');
+                
+                // Para restaurar el color correcto, necesitamos verificar los datos actuales
+                // Por ahora, aplicamos lógica simple basada en clases existentes
+                if (!tr.classList.contains('bg-yellow-100') && !tr.classList.contains('bg-blue-100')) {
+                    // Si no tiene otros colores especiales, mantener alternado
+                    const index = Array.from(tr.parentNode.children).indexOf(tr);
+                    if (index % 2 === 0) {
+                        tr.classList.add('bg-white');
+                    } else {
+                        tr.classList.add('bg-slate-50');
+                    }
+                }
+            }
+            
+            console.log(`Pedido ${pedidoId} marcado como ${visto ? 'visto' : 'no visto'}`);
+        } else {
+            // Si hay error, revertir el checkbox
+            const checkbox = tr.querySelector('input[type="checkbox"]');
+            if (checkbox) {
+                checkbox.checked = !visto;
+            }
+            console.error('Error al marcar como visto:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error en la petición:', error);
+        // Revertir el checkbox si hay error
+        const checkbox = tr.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+            checkbox.checked = !visto;
+        }
+    });
 }
 
 // Sistema de tiempo real para actualizaciones de pedidos

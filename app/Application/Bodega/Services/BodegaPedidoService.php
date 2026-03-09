@@ -167,6 +167,12 @@ class BodegaPedidoService
             
             $todosEntregados = $totalItems > 0 && $totalItems === $itemsEntregados;
             
+            // Verificar si el pedido ha sido marcado como visto por el usuario actual
+            $userId = auth()->id();
+            $vistoPorUsuario = \App\Models\PedidoVistoSupervisor::where('pedido_id', $primerPedido->id)
+                ->where('user_id', $userId)
+                ->first();
+
             $pedidosPorPagina[] = [
                 'id' => $primerPedido->id,
                 'numero_pedido' => $numeroPedido,
@@ -175,7 +181,7 @@ class BodegaPedidoService
                 'estado' => $pedidoProduccion?->estado ?? $primerPedido->estado,
                 'fecha_pedido' => $primerPedido->created_at ?? $primerPedido->fecha_pedido,
                 'cantidad_items' => $pedidosDelNumero->count(),
-                'viewed_at' => $pedidoProduccion?->viewed_at,
+                'viewed_at' => $vistoPorUsuario?->created_at, // Usar la fecha de la tabla pedidos_vistos_supervisor
                 'tiene_pendientes' => $tieneItemsPendientes,
                 'todos_entregados' => $todosEntregados,
             ];
@@ -532,6 +538,12 @@ class BodegaPedidoService
                 
                 $todosEntregados = $totalItems > 0 && $totalItems === $itemsEntregados;
                 
+                // Verificar si el pedido ha sido marcado como visto por el usuario actual
+                $userId = auth()->id();
+                $vistoPorUsuario = \App\Models\PedidoVistoSupervisor::where('pedido_id', $primerPedido->id)
+                    ->where('user_id', $userId)
+                    ->first();
+                
                 $pedidosPorPagina[] = [
                     'id' => $primerPedido->id,
                     'numero_pedido' => $numeroPedido,
@@ -540,7 +552,7 @@ class BodegaPedidoService
                     'estado' => $pedidoProduccion?->estado ?? $primerPedido->estado,
                     'fecha_pedido' => $primerPedido->created_at ?? $primerPedido->fecha_pedido,
                     'cantidad_items' => $pedidosDelNumero->count(),
-                    'viewed_at' => $pedidoProduccion?->viewed_at,
+                    'viewed_at' => $vistoPorUsuario?->created_at, // Usar la fecha de la tabla pedidos_vistos_supervisor
                     'tiene_pendientes' => $tieneItemsPendientes,
                     'todos_entregados' => $todosEntregados,
                 ];
