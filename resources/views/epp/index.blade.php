@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Gestión de EPPs</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -123,6 +124,26 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Éxito -->
+    <div id="modalExito" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full mx-4 text-center">
+            <div class="bg-green-600 px-6 py-6 rounded-t-xl">
+                <div class="flex justify-center mb-4">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                        <span class="material-symbols-rounded text-4xl text-green-600">check_circle</span>
+                    </div>
+                </div>
+                <h3 class="text-xl font-bold text-white">¡Éxito!</h3>
+            </div>
+            <div class="p-6">
+                <p id="mensajeExito" class="text-gray-700 text-lg mb-6">La operación se completó correctamente</p>
+                <button onclick="gestorEpps.cerrarModalExito()" class="w-full px-4 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition">
+                    Aceptar
+                </button>
             </div>
         </div>
     </div>
@@ -355,6 +376,15 @@
             document.getElementById('modalCrearEPP').style.display = 'none';
         }
 
+        mostrarModalExito(mensaje = 'La operación se completó correctamente') {
+            document.getElementById('mensajeExito').textContent = mensaje;
+            document.getElementById('modalExito').classList.remove('hidden');
+        }
+
+        cerrarModalExito() {
+            document.getElementById('modalExito').classList.add('hidden');
+        }
+
         async guardarEPP(event) {
             event.preventDefault();
             
@@ -388,9 +418,10 @@
                 const result = await response.json();
 
                 if (result.success || response.ok) {
-                    alert(isEditing ? 'EPP actualizado exitosamente' : 'EPP creado exitosamente');
+                    const mensaje = isEditing ? 'EPP actualizado exitosamente' : 'EPP creado exitosamente';
+                    this.mostrarModalExito(mensaje);
                     this.cerrarModal();
-                    this.cargarEpps();
+                    setTimeout(() => this.cargarEpps(), 1500);
                 } else {
                     alert('Error al guardar el EPP: ' + (result.message || 'Error desconocido'));
                 }
@@ -443,8 +474,8 @@
                 const result = await response.json();
 
                 if (result.success || response.ok) {
-                    alert('EPP eliminado exitosamente');
-                    this.cargarEpps();
+                    this.mostrarModalExito('EPP eliminado exitosamente');
+                    setTimeout(() => this.cargarEpps(), 1500);
                 } else {
                     alert('Error al eliminar el EPP: ' + (result.message || 'Error desconocido'));
                 }
