@@ -1349,18 +1349,25 @@ class DespachoController extends Controller
             // Ordenar por número de pedido descendente
             $pendientes = $pendientes->sortByDesc('numero_pedido')->values();
             
+            \Log::info('[DEBUG] Pendientes antes de paginación - Números de pedido:', [
+                'total_pendientes' => $pendientes->count(),
+                'numeros_pedido' => $pendientes->pluck('numero_pedido')->toArray()
+            ]);
+            
             // Aplicar paginación
             $total = $pendientes->count();
             $offset = ($page - 1) * $perPage;
-            $paginated = $pendientes->slice($offset, $perPage);
+            $paginated = $pendientes->slice($offset, $perPage)->values(); // ← AGREGADO .values()
             
             \Log::info('[DEBUG] Pendientes finales:', [
                 'total' => $total,
                 'page' => $page,
                 'per_page' => $perPage,
+                'offset' => $offset,
                 'paginated_count' => $paginated->count(),
                 'costura_count' => $paginated->where('tipo', 'costura')->count(),
-                'epp_count' => $paginated->where('tipo', 'epp')->count()
+                'epp_count' => $paginated->where('tipo', 'epp')->count(),
+                'paginated_numeros' => $paginated->pluck('numero_pedido')->toArray()
             ]);
             
             return response()->json([
