@@ -307,6 +307,66 @@
             }
             
             // ==========================================
+            // PROCESAR IMÁGENES DE ASIGNACIONES DE COLORES (WIZARD)
+            // ==========================================
+            console.log('[PayloadNormalizer] 🔍 Verificando asignaciones de colores...');
+            
+            if (pedidoNormalizado && Array.isArray(pedidoNormalizado.prendas)) {
+                pedidoNormalizado.prendas.forEach(function(prenda, prendaIdx) {
+                    if (prenda.asignacionesColoresPorTalla && typeof prenda.asignacionesColoresPorTalla === 'object') {
+                        console.log('[PayloadNormalizer] 📸 Encontradas asignaciones de colores para prenda ' + prendaIdx, {
+                            asignaciones_count: Object.keys(prenda.asignacionesColoresPorTalla).length,
+                            coloresPorTallaExists: !!window.ColoresPorTalla,
+                            hasGetImage: window.ColoresPorTalla && typeof window.ColoresPorTalla.getImage === 'function'
+                        });
+                        
+                        // Si ColoresPorTalla está disponible, extraer imágenes
+                        if (window.ColoresPorTalla && typeof window.ColoresPorTalla.getImage === 'function') {
+                            let colorImgIdx = 0;
+                            Object.entries(prenda.asignacionesColoresPorTalla).forEach(function([clave, asignacion]) {
+                                if (asignacion.colores && Array.isArray(asignacion.colores)) {
+                                    asignacion.colores.forEach(function(colorItem) {
+                                        if (colorItem.imagen_id) {
+                                            const imgData = window.ColoresPorTalla.getImage(colorItem.imagen_id);
+                                            
+                                            if (imgData && (imgData.file || imgData)) {
+                                                const file = imgData.file || imgData;
+                                                if (file instanceof File) {
+                                                    formData.append('fotos_color[' + colorImgIdx + ']', file);
+                                                    formData.append('fotos_color_meta[' + colorImgIdx + ']', JSON.stringify({
+                                                        clave: clave,
+                                                        color_nombre: colorItem.nombre,
+                                                        imagen_id: colorItem.imagen_id,
+                                                        imagen_nombre: imgData.nombre || file.name,
+                                                        cantidad: colorItem.cantidad
+                                                    }));
+                                                    archivosAgregados++;
+                                                    colorImgIdx++;
+                                                    console.log('[PayloadNormalizer] ✅ Imagen de color agregada: ' + colorItem.nombre + ' (' + file.name + ')');
+                                                } else {
+                                                    console.warn('[PayloadNormalizer] ⚠️ imgData no es File:', {
+                                                        imagen_id: colorItem.imagen_id,
+                                                        color: colorItem.nombre,
+                                                        tipo: typeof imgData,
+                                                        hasFile: !!imgData.file
+                                                    });
+                                                }
+                                            } else {
+                                                console.warn('[PayloadNormalizer] ⚠️ getImage() retornó null para: ' + colorItem.imagen_id);
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                            console.log('[PayloadNormalizer] 📊 Total imágenes de colores agregadas: ' + colorImgIdx);
+                        } else {
+                            console.warn('[PayloadNormalizer] ⚠️ ColoresPorTalla no disponible o sin método getImage');
+                        }
+                    }
+                });
+            }
+            
+            // ==========================================
             // PROCESAR EPPs
             // ==========================================
             if (Array.isArray(filesExtraidos.epps)) {

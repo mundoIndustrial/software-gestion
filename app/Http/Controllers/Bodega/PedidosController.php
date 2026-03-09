@@ -1693,6 +1693,7 @@ class PedidosController extends Controller
                 'fecha_pedido' => 'nullable|date',
                 'fecha_entrega' => 'nullable|date',
                 'area' => 'nullable|string|in:Costura,EPP,Otro',
+                'estado_bodega' => 'nullable|string|in:Pendiente,Entregado,Anulado,Homologar',
                 'observaciones' => 'nullable|string',
             ]);
             
@@ -1740,6 +1741,7 @@ class PedidosController extends Controller
                 'fecha_pedido' => $validated['fecha_pedido'] ?? null,
                 'fecha_entrega' => $validated['fecha_entrega'] ?? null,
                 'area' => $validated['area'] ?? null,
+                'estado_bodega' => $validated['estado_bodega'] ?? null,
                 'observaciones_bodega' => $validated['observaciones'] ?? null,
                 'usuario_bodega_id' => $usuario->id,
                 'usuario_bodega_nombre' => $usuario->name,
@@ -1778,6 +1780,7 @@ class PedidosController extends Controller
                     'fecha_pedido',
                     'fecha_entrega',
                     'area',
+                    'estado_bodega',
                     'observaciones_bodega',
                 ];
                 

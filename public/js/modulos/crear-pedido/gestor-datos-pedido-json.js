@@ -43,7 +43,8 @@ class GestorDatosPedidoJSON {
             telas: prendaData.telas || [],
             procesos: prendaData.procesos || {},
             variaciones: prendaData.variaciones || {},
-            cantidades: prendaData.cantidades || {}
+            cantidades: prendaData.cantidades || {},
+            asignacionesColoresPorTalla: prendaData.asignacionesColoresPorTalla || {}  // NUEVO: Capturar asignaciones de colores
         };
 
         this.datosCompletos.prendas.push(prenda);
@@ -286,10 +287,59 @@ class GestorDatosPedidoJSON {
                     contadores.cantidades++;
                 });
             }
+
+            // Asignaciones de colores por talla - NUEVO: Procesar imágenes de colores
+            if (prenda.asignacionesColoresPorTalla && Object.keys(prenda.asignacionesColoresPorTalla).length > 0) {
+                // Enviar asignaciones como JSON
+                formData.append(`prendas[${prendaIdx}][asignaciones_colores]`, JSON.stringify(prenda.asignacionesColoresPorTalla));
+                
+                console.log('[GestorDatosPedidoJSON] 🔍 Buscando ColoresPorTalla para procesar imágenes:', {
+                    coloresPorTallaExists: !!window.ColoresPorTalla,
+                    hasGetImage: window.ColoresPorTalla && typeof window.ColoresPorTalla.getImage === 'function',
+                    prendaIdx: prendaIdx,
+                    asignacionesCount: Object.keys(prenda.asignacionesColoresPorTalla).length
+                });
+                
+                // Extraer imágenes de colores desde _imageStore del wizard
+                if (window.ColoresPorTalla && typeof window.ColoresPorTalla.getImage === 'function') {
+                    let colorImgIdx = 0;
+                    Object.entries(prenda.asignacionesColoresPorTalla).forEach(([clave, asignacion]) => {
+                        if (asignacion.colores && Array.isArray(asignacion.colores)) {
+                            asignacion.colores.forEach((colorItem) => {
+                                if (colorItem.imagen_id) {
+                                    const imgData = window.ColoresPorTalla.getImage(colorItem.imagen_id);
+                                    console.log('[GestorDatosPedidoJSON] 📸 Intentando obtener imagen:', {
+                                        imagen_id: colorItem.imagen_id,
+                                        color: colorItem.nombre,
+                                        imgDataExists: !!imgData,
+                                        hasFile: imgData && !!imgData.file
+                                    });
+                                    
+                                    if (imgData && imgData.file) {
+                                        formData.append(`fotos_color[${colorImgIdx}]`, imgData.file);
+                                        formData.append(`fotos_color_meta[${colorImgIdx}]`, JSON.stringify({
+                                            clave: clave,
+                                            color_nombre: colorItem.nombre,
+                                            imagen_id: colorItem.imagen_id,
+                                            imagen_nombre: imgData.nombre || imgData.file.name
+                                        }));
+                                        contadores.archivos++;
+                                        colorImgIdx++;
+                                        console.log('[GestorDatosPedidoJSON] ✅ Imagen agregada:', {
+                                            imagen_id: colorItem.imagen_id,
+                                            color: colorItem.nombre,
+                                            colorImgIdx: colorImgIdx - 1
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    console.warn('[GestorDatosPedidoJSON] ⚠️ ColoresPorTalla no disponible o sin método getImage');
+                }
+            }
         });
-
-
-
 
 
 

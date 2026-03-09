@@ -1821,6 +1821,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
     const fechaEntrega = fechaEntregaInput.value || '';
     const area = areaSelect.value || '';
     const observaciones = observacionesInput ? observacionesInput.value : '';
+    const estado = estadoSelect ? (estadoSelect.value || '') : '';
 
     // Preparar datos para enviar
     const datos = {
@@ -1841,6 +1842,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
         fecha_pedido: fechaPedido || null,
         fecha_entrega: fechaEntrega || null,
         area: area || null,
+        estado_bodega: estado || null,
         observaciones: observaciones || null
     };
 
@@ -1865,15 +1867,22 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
         
         // Habilitar botón
         btnGuardar.disabled = false;
-        btnGuardar.textContent = 'Guardar';
+        btnGuardar.textContent = '💾 Guardar';
         
         if (data.success) {
             mostrarModalExito(data.message || 'Fila guardada correctamente');
             
-            // Recargar después de un momento
+            // Actualizar visualmente sin recargar
+            // Cambiar el color del botón a verde por un momento
+            btnGuardar.style.backgroundColor = '#10b981';
             setTimeout(() => {
-                location.reload();
-            }, 800);
+                btnGuardar.style.backgroundColor = '';
+            }, 1500);
+            
+            // Actualizar el estado original en el select para evitar duplicar cambios
+            if (estadoSelect) {
+                estadoSelect.setAttribute('data-original-estado', estado);
+            }
         } else {
             alert('Error: ' + (data.message || 'No se pudo guardar la fila'));
         }

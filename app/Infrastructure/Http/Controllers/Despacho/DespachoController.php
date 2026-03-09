@@ -284,7 +284,7 @@ class DespachoController extends Controller
                         'fecha_creacion' => $pedido->created_at->format('d/m/Y'),
                         'tipo' => 'costura'
                     ];
-                })
+                })->toArray()
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -1220,7 +1220,7 @@ class DespachoController extends Controller
                         'fecha_creacion' => $pedido->created_at->format('d/m/Y'),
                         'tipo' => 'epp'
                     ];
-                })
+                })->toArray()
             ]);
         } catch (\Exception $e) {
             return response()->json([

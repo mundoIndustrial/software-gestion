@@ -856,6 +856,97 @@ class CrearPedidoEditableController extends Controller
                 }
             }
 
+            // ====== PASO 7D: Procesar imágenes de colores (NUEVO) ======
+            $tiempoPaso7D = 0;
+            $inicioPaso7D = microtime(true);
+            $fotosColorFiles = $request->file('fotos_color') ?? [];
+            $fotosColorMetaAll = $request->input('fotos_color_meta') ?? [];
+            
+            if (!empty($fotosColorFiles)) {
+                $colorFotoServiceCrear = new \App\Domain\Pedidos\Services\TelaFotoService();
+                $fotosColorMeta = [];
+                $imagenesProcesadas = 0;
+
+                foreach ($fotosColorFiles as $indice => $archivo) {
+                    if ($archivo && $archivo->isValid()) {
+                        try {
+                            $rutas = $colorFotoServiceCrear->procesarFoto($archivo, (int)$pedidoId, true);
+                            $metaRaw = $fotosColorMetaAll[$indice] ?? null;
+                            $meta = is_string($metaRaw) ? json_decode($metaRaw, true) : $metaRaw;
+
+                            $fotosColorMeta[] = [
+                                'ruta_webp' => $rutas['ruta_webp'] ?? $rutas['ruta_original'],
+                                'clave' => $meta['clave'] ?? '',
+                                'color_nombre' => $meta['color_nombre'] ?? '',
+                            ];
+
+                            Log::info('[CREAR-PEDIDO] Imagen de color procesada (WebP)', [
+                                'pedido_id' => $pedidoId,
+                                'indice' => $indice,
+                                'archivo' => $archivo->getClientOriginalName(),
+                                'ruta_webp' => $fotosColorMeta[count($fotosColorMeta)-1]['ruta_webp'],
+                                'clave' => $fotosColorMeta[count($fotosColorMeta)-1]['clave'],
+                                'color' => $fotosColorMeta[count($fotosColorMeta)-1]['color_nombre'],
+                            ]);
+                            
+                            $imagenesProcesadas++;
+                        } catch (\Exception $e) {
+                            Log::warning('[CREAR-PEDIDO] Error procesando imagen de color', [
+                                'pedido_id' => $pedidoId,
+                                'indice' => $indice,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
+                }
+
+                // Inyectar rutas de imagen en asignaciones_colores de cada prenda
+                if (!empty($fotosColorMeta)) {
+                    foreach ($prendas as $prendaIdx => $prenda) {
+                        $asignacionesColores = $prenda['asignacionesColoresPorTalla'] ?? [];
+                        
+                        foreach ($fotosColorMeta as $fotoMeta) {
+                            $clave = $fotoMeta['clave'];
+                            $colorNombre = strtoupper($fotoMeta['color_nombre']);
+                            
+                            if (isset($asignacionesColores[$clave]) && !empty($asignacionesColores[$clave]['colores'])) {
+                                foreach ($asignacionesColores[$clave]['colores'] as &$colorItem) {
+                                    if (strtoupper($colorItem['nombre'] ?? '') === $colorNombre) {
+                                        // Actualizar la ruta en la BD directamente
+                                        \App\Models\PrendaPedidoTallaColor::where('color_nombre', $colorNombre)
+                                            ->whereHas('prendaPedidoTalla', function ($q) use ($pedidoId, $prendaIdx) {
+                                                $q->whereHas('prendaPedido', function ($q2) use ($pedidoId) {
+                                                    $q2->where('pedido_produccion_id', $pedidoId);
+                                                });
+                                            })
+                                            ->update(['imagen_ruta' => $fotoMeta['ruta_webp']]);
+                                        
+                                        Log::info('[CREAR-PEDIDO] PrendaPedidoTallaColor actualizado con imagen', [
+                                            'pedido_id' => $pedidoId,
+                                            'color_nombre' => $colorNombre,
+                                            'imagen_ruta' => $fotoMeta['ruta_webp'],
+                                        ]);
+                                        
+                                        break;
+                                    }
+                                }
+                                unset($colorItem);
+                            }
+                        }
+                    }
+                }
+                
+                $tiempoPaso7D = round((microtime(true) - $inicioPaso7D) * 1000, 2);
+                
+                if ($imagenesProcesadas > 0) {
+                    Log::info('[CREAR-PEDIDO] PASO 7D: Imágenes de colores procesadas', [
+                        'pedido_id' => $pedidoId,
+                        'imagenes_procesadas' => $imagenesProcesadas,
+                        'tiempo_ms' => $tiempoPaso7D,
+                    ]);
+                }
+            }
+
             // ====== PASO 8: Calcular cantidades y commit ======
             $inicioPaso8 = microtime(true);
             $cantidadTotalPrendas = $this->calcularCantidadTotalPrendas($pedidoId);
@@ -883,9 +974,11 @@ class CrearPedidoEditableController extends Controller
                     'paso_6_carpetas_ms' => $tiempoPaso6,
                     'paso_7_imagenes_ms' => $tiempoPaso7,
                     'paso_7b_epps_ms' => $tiempoPaso7B,
+                    'paso_7c_imagenes_por_talla_ms' => $tiempoPaso7C,
+                    'paso_7d_imagenes_colores_ms' => $tiempoPaso7D,
                     'paso_8_calculo_ms' => $tiempoPaso8,
                 ],
-                'resumen' => "JSON: {$tiempoPaso1}ms | Cliente: {$tiempoPaso2}ms | DTO: {$tiempoPaso3}ms | PedidoBase: {$tiempoPaso5}ms | Carpetas: {$tiempoPaso6}ms | Imágenes: {$tiempoPaso7}ms | EPPs: {$tiempoPaso7B}ms | Cálculo: {$tiempoPaso8}ms | TOTAL: {$tiempoTotal}ms"
+                'resumen' => "JSON: {$tiempoPaso1}ms | Cliente: {$tiempoPaso2}ms | DTO: {$tiempoPaso3}ms | PedidoBase: {$tiempoPaso5}ms | Carpetas: {$tiempoPaso6}ms | Imágenes: {$tiempoPaso7}ms | EPPs: {$tiempoPaso7B}ms | ImgPorTalla: {$tiempoPaso7C}ms | ImgColores: {$tiempoPaso7D}ms | Cálculo: {$tiempoPaso8}ms | TOTAL: {$tiempoTotal}ms"
             ]);
 
             // Crear notificación para supervisores

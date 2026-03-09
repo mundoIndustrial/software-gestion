@@ -595,10 +595,6 @@
             </div>
         </div>
     </div>
-    <!-- Botón flotante para limpiar filtros -->
-    <button onclick="limpiarTodosLosFiltros()" class="floating-btn clear-filters-btn" title="Limpiar todos los filtros">
-        <span class="material-symbols-rounded">filter_alt_off</span>
-    </button>
 </div>
 
 <!-- Modal de Filtros -->
@@ -633,9 +629,6 @@ let paginationData = null;
 document.addEventListener('DOMContentLoaded', function() {
     cargarPedidos();
     
-    // Inicializar estado del botón flotante
-    actualizarBotonFlotante();
-    
     // Configurar búsqueda en tiempo real
     const searchInput = document.getElementById('searchInput');
     let timeout;
@@ -645,7 +638,6 @@ document.addEventListener('DOMContentLoaded', function() {
             searchActual = this.value;
             currentPage = 1; // Resetear a primera página al buscar
             cargarPedidos();
-            actualizarBotonFlotante();
         }, 500);
     });
 });
@@ -675,7 +667,9 @@ async function cargarPedidos() {
         const data = await response.json();
         
         if (data.success) {
-            renderizarPedidos(data.data);
+            // Convertir a array para asegurar que funcione con .map()
+            const pedidosArray = Array.isArray(data.data) ? data.data : [];
+            renderizarPedidos(pedidosArray);
             actualizarPaginacion(data.pagination);
         } else {
             mostrarError(data.message);
@@ -689,7 +683,10 @@ async function cargarPedidos() {
 function renderizarPedidos(pedidos) {
     const container = document.getElementById('pedidosContainer');
     
-    if (pedidos.length === 0) {
+    // Asegurar que pedidos sea un array
+    const pedidosArray = Array.isArray(pedidos) ? pedidos : [];
+    
+    if (pedidosArray.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <span class="material-symbols-rounded">inbox</span>
@@ -703,7 +700,7 @@ function renderizarPedidos(pedidos) {
             paginationContainer.style.display = 'none';
         }
     } else {
-        container.innerHTML = pedidos.map(pedido => `
+        container.innerHTML = pedidosArray.map(pedido => `
             <div class="table-row">
                 <div>
                     <a href="/despacho/pendientes/${pedido.id}" class="btn-action btn-primary">
@@ -757,45 +754,7 @@ function formatEstado(estado) {
     return estados[estado] || estado;
 }
 
-// Función para limpiar todos los filtros
-function limpiarTodosLosFiltros() {
-    // Limpiar variables de filtro
-    currentFilterType = '';
-    currentFilterValue = '';
-    searchActual = '';
-    
-    // Limpiar input de búsqueda principal
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.value = '';
-    }
-    
-    // Actualizar estado del botón flotante
-    actualizarBotonFlotante();
-    
-    // Recargar pedidos sin filtros
-    cargarPedidos();
-}
 
-// Función para actualizar el estado del botón flotante
-function actualizarBotonFlotante() {
-    const botonFlotante = document.querySelector('.clear-filters-btn');
-    if (!botonFlotante) return;
-    
-    // Verificar si hay filtros activos
-    const tieneFiltros = currentFilterValue || searchActual;
-    
-    if (tieneFiltros) {
-        botonFlotante.classList.add('has-filters');
-        botonFlotante.title = 'Limpiar todos los filtros (' + 
-            (currentFilterValue ? 'Filtros activos' : '') + 
-            (currentFilterValue && searchActual ? ' y ' : '') + 
-            (searchActual ? 'Búsqueda activa' : '') + ')';
-    } else {
-        botonFlotante.classList.remove('has-filters');
-        botonFlotante.title = 'Limpiar todos los filtros';
-    }
-}
 
 function mostrarLoading() {
     const container = document.getElementById('pedidosContainer');
@@ -1054,62 +1013,6 @@ function formatEstado(estado) {
         'PENDIENTE_SUPERVISOR': 'Pendiente Supervisor',
         'DEVUELTO_A_ASESORA': 'Devuelto a Asesora'
     };
-    return estados[estado] || estado;
-}
-
-// Función para limpiar todos los filtros
-function limpiarTodosLosFiltros() {
-    // Limpiar variables de filtro
-    currentFilterType = '';
-    currentFilterValue = '';
-    searchActual = '';
-    
-    // Limpiar input de búsqueda principal
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.value = '';
-    }
-    
-    // Actualizar estado del botón flotante
-    actualizarBotonFlotante();
-    
-    // Recargar pedidos sin filtros
-    cargarPedidos();
-}
-
-// Función para actualizar el estado del botón flotante
-function actualizarBotonFlotante() {
-    const botonFlotante = document.querySelector('.clear-filters-btn');
-    if (!botonFlotante) return;
-    
-    // Verificar si hay filtros activos
-    const tieneFiltros = currentFilterValue || searchActual;
-    
-    if (tieneFiltros) {
-        botonFlotante.classList.add('has-filters');
-        botonFlotante.title = 'Limpiar todos los filtros (' + 
-            (currentFilterValue ? 'Filtros activos' : '') + 
-            (currentFilterValue && searchActual ? ' y ' : '') + 
-            (searchActual ? 'Búsqueda activa' : '') + ')';
-    } else {
-        botonFlotante.classList.remove('has-filters');
-        botonFlotante.title = 'Limpiar todos los filtros';
-    }
-}
-
-function mostrarLoading() {
-    const container = document.getElementById('pedidosContainer');
-    container.innerHTML = `
-        <div class="loading-state">
-            <div class="loading-spinner"></div>
-            <p>Cargando pendientes...</p>
-        </div>
-    `;
-}
-
-function closeFilterModal() {
-    const modal = document.getElementById('filterModal');
-    modal.style.display = 'none';
 }
 
 function clearFilter() {
@@ -1130,9 +1033,6 @@ function clearFilter() {
     if (fechaHasta) fechaHasta.value = '';
     
     applyFilter();
-    
-    // Actualizar estado del botón flotante
-    actualizarBotonFlotante();
 }
 
 function applyFilter() {
@@ -1182,24 +1082,6 @@ function applyFilter() {
     currentFilterValue = filterValue;
     closeFilterModal();
     cargarPedidos();
-    
-    // Actualizar estado del botón flotante
-    actualizarBotonFlotante();
-}
-
-function getEstadoClass(estado) {
-    const clases = {
-        'Pendiente': 'estado-pendiente',
-        'PENDIENTE_INSUMOS': 'estado-pendiente-insumos',
-        'No iniciado': 'estado-no-iniciado',
-        'En Ejecución': 'estado-en-ejecucion',
-        'Anulada': 'estado-anulado',
-        'PENDIENTE_SUPERVISOR': 'estado-pendiente-supervisor',
-        'DEVUELTO_A_ASESORA': 'estado-devuelto-asesora',
-        'pendiente_cartera': 'estado-pendiente-cartera',
-        'RECHAZADO_CARTERA': 'estado-rechazado-cartera'
-    };
-    return clases[estado] || '';
 }
 
 function formatEstado(estado) {
@@ -1217,45 +1099,7 @@ function formatEstado(estado) {
     return estados[estado] || estado;
 }
 
-// Función para limpiar todos los filtros
-function limpiarTodosLosFiltros() {
-    // Limpiar variables de filtro
-    currentFilterType = '';
-    currentFilterValue = '';
-    searchActual = '';
-    
-    // Limpiar input de búsqueda principal
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.value = '';
-    }
-    
-    // Actualizar estado del botón flotante
-    actualizarBotonFlotante();
-    
-    // Recargar pedidos sin filtros
-    cargarPedidos();
-}
 
-// Función para actualizar el estado del botón flotante
-function actualizarBotonFlotante() {
-    const botonFlotante = document.querySelector('.clear-filters-btn');
-    if (!botonFlotante) return;
-    
-    // Verificar si hay filtros activos
-    const tieneFiltros = currentFilterValue || searchActual;
-    
-    if (tieneFiltros) {
-        botonFlotante.classList.add('has-filters');
-        botonFlotante.title = 'Limpiar todos los filtros (' + 
-            (currentFilterValue ? 'Filtros activos' : '') + 
-            (currentFilterValue && searchActual ? ' y ' : '') + 
-            (searchActual ? 'Búsqueda activa' : '') + ')';
-    } else {
-        botonFlotante.classList.remove('has-filters');
-        botonFlotante.title = 'Limpiar todos los filtros';
-    }
-}
 </script>
 
 <script>
@@ -1306,59 +1150,6 @@ function actualizarPaginacion(pagination) {
 </script>
 
 <style>
-.floating-btn {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    transition: all 0.3s ease;
-    z-index: 1000;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.clear-filters-btn {
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    color: white;
-}
-
-.clear-filters-btn:hover {
-    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
-}
-
-.clear-filters-btn:active {
-    transform: scale(0.95);
-}
-
-.clear-filters-btn .material-symbols-rounded {
-    font-size: 24px;
-}
-
-@keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-    }
-    70% {
-        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-    }
-}
-
-.clear-filters-btn.has-filters {
-    animation: pulse 2s infinite;
-}
-
 .pagination-container {
     display: flex;
     justify-content: space-between;
