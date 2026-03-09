@@ -341,13 +341,6 @@ class AsesoresController extends Controller
                 $query->where('bdt.asesor', 'like', "%{$asesorNombre}%");
             }
             
-            // Filtrar por tipo de área
-            if ($tipo === 'costura') {
-                $query->where('bdt.area', 'Costura');
-            } elseif ($tipo === 'epp') {
-                $query->where('bdt.area', 'EPP');
-            }
-            
             // Búsqueda
             if ($search) {
                 $query->where(function ($q) use ($search) {
@@ -357,7 +350,7 @@ class AsesoresController extends Controller
                 });
             }
             
-            // Obtener datos agrupados por pedido
+            // Obtener todos los datos
             $detalles = $query->orderBy('pp.created_at', 'desc')->get();
             
             // Agrupar por número de pedido
@@ -398,6 +391,23 @@ class AsesoresController extends Controller
                     })->toArray()
                 ];
             })->values();
+            
+            // Filtrar por tipo de área después de agrupar
+            if ($tipo === 'costura') {
+                $pedidosAgrupados = $pedidosAgrupados->filter(function($pedido) {
+                    // Solo mostrar si tiene al menos un item con area='Costura' Y costura_estado='Pendiente'
+                    return collect($pedido['detalles'])->some(function($detalle) {
+                        return $detalle['area'] === 'Costura' && $detalle['estado_costura'] === 'Pendiente';
+                    });
+                })->values();
+            } elseif ($tipo === 'epp') {
+                $pedidosAgrupados = $pedidosAgrupados->filter(function($pedido) {
+                    // Solo mostrar si tiene al menos un item con area='EPP' Y epp_estado='Pendiente'
+                    return collect($pedido['detalles'])->some(function($detalle) {
+                        return $detalle['area'] === 'EPP' && $detalle['estado_epp'] === 'Pendiente';
+                    });
+                })->values();
+            }
             
             // Paginación manual
             $total = $pedidosAgrupados->count();
