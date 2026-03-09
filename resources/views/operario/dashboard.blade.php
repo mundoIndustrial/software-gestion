@@ -220,14 +220,21 @@
         <!-- Filtros por tipo de recibo para costura-reflectivo y vista-costura -->
         @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura'))
         <div class="filtros-badges">
-            <button class="badge-filtro badge-filtro-active" data-filtro="costura" onclick="filtrarPrendasPorRecibo('costura')">
-                <span class="material-symbols-rounded">checkroom</span>
-                Costura
-            </button>
-            <button class="badge-filtro" data-filtro="reflectivo" onclick="filtrarPrendasPorRecibo('reflectivo')">
-                <span class="material-symbols-rounded">auto_awesome</span>
-                Reflectivo
-            </button>
+            @if(auth()->user()->hasRole('vista-costura'))
+                <button class="badge-filtro badge-filtro-active" data-filtro="costura" onclick="filtrarPrendasPorRecibo('costura')">
+                    <span class="material-symbols-rounded">checkroom</span>
+                    Costura
+                </button>
+                <button class="badge-filtro" data-filtro="reflectivo" onclick="filtrarPrendasPorRecibo('reflectivo')">
+                    <span class="material-symbols-rounded">auto_awesome</span>
+                    Reflectivo
+                </button>
+            @else
+                <button class="badge-filtro badge-filtro-active" data-filtro="reflectivo" onclick="filtrarPrendasPorRecibo('reflectivo')">
+                    <span class="material-symbols-rounded">auto_awesome</span>
+                    Reflectivo
+                </button>
+            @endif
         </div>
         @endif
 
@@ -246,8 +253,15 @@
                         $tieneReflectivo = in_array('REFLECTIVO', $tiposRecibos);
                         $esReflectivo = $tieneReflectivo ? 'reflectivo' : 'costura';
                         
-                        // Por defecto, ocultar tarjetas REFLECTIVO
-                        $displayInicial = $esReflectivo === 'reflectivo' ? 'none' : '';
+                        // Por defecto:
+                        // - costura-reflectivo: mostrar solo tarjetas REFLECTIVO
+                        // - vista-costura: mantener comportamiento actual (mostrar COSTURA por defecto)
+                        $displayInicial = '';
+                        if (auth()->user()->hasRole('costura-reflectivo')) {
+                            $displayInicial = $esReflectivo === 'reflectivo' ? '' : 'none';
+                        } else {
+                            $displayInicial = $esReflectivo === 'reflectivo' ? 'none' : '';
+                        }
 
                         $reciboPrincipalFiltro = $prenda['recibos'][0] ?? null;
                         $areaReciboFiltro = strtolower(trim((string) ($reciboPrincipalFiltro['area'] ?? '')));
@@ -300,7 +314,7 @@
                                 }
                                 $encargadoVista = is_string($encargadoVista) ? trim($encargadoVista) : $encargadoVista;
                             @endphp
-                            @if(!auth()->user()->hasRole('vista-costura') && !auth()->user()->hasRole('cortador'))
+                            @if(!auth()->user()->hasRole('vista-costura') && !auth()->user()->hasRole('cortador') && !auth()->user()->hasRole('costura-reflectivo'))
                                 <div class="orden-encargado-corner" onclick="event.stopPropagation();">
                                     <strong>Encargado:</strong>
                                     <span>{{ $encargadoVista ? strtoupper($encargadoVista) : 'SIN ENCARGADO' }}</span>
@@ -415,7 +429,7 @@
                                             $areaReciboRef = $reciboReflectivo['area'] ?? '';
                                             $esCosturaAreaRef = strtolower(trim((string)$areaReciboRef)) === 'costura';
                                         @endphp
-                                        @if($tieneReciboReflectivo && $esCosturaAreaRef)
+                                        @if($tieneReciboReflectivo && $esCosturaAreaRef && auth()->user()->hasRole('vista-costura'))
                                             <button class="btn-pasar-costura {{ $tieneEncargadoCosturaRef ? 'btn-deshacer-costura' : '' }}" 
                                                     id="btn-costura-reflectivo-{{ $prenda['prenda_id'] }}"
                                                     data-pedido-id="{{ $prenda['pedido_id'] }}"
@@ -500,10 +514,12 @@
                                     $encargadoCosturaAcciones = $reciboPrincipal['encargado_costura'] ?? null;
                                     $encargadoCosturaAcciones = is_string($encargadoCosturaAcciones) ? trim($encargadoCosturaAcciones) : $encargadoCosturaAcciones;
                                     $tieneEncargadoCosturaAcciones = !empty($encargadoCosturaAcciones);
-                                    $puedeMarcarRecibo = auth()->user()->hasAnyRole(['cortador', 'costurero', 'administrador-costura']);
+                                    $puedeMarcarRecibo = auth()->user()->hasAnyRole(['cortador', 'costurero', 'administrador-costura', 'costura-reflectivo']);
+                                    $tipoReciboAcciones = strtoupper((string) ($reciboPrincipal['tipo_recibo'] ?? ''));
+                                    $permitirMarcarSegunTipo = !auth()->user()->hasRole('costura-reflectivo') || $tipoReciboAcciones === 'REFLECTIVO';
                                 @endphp
 
-                                @if($puedeMarcarRecibo && (auth()->user()->hasRole('administrador-costura') ? $tieneEncargadoCosturaAcciones : true))
+                                @if($puedeMarcarRecibo && $permitirMarcarSegunTipo && (auth()->user()->hasRole('administrador-costura') ? $tieneEncargadoCosturaAcciones : true))
                                     <div class="orden-right-actions">
                                         <button class="btn-completar-recibo" 
                                                 data-recibo-id="{{ $reciboPrincipal['id'] ?? '' }}"
@@ -1565,7 +1581,10 @@
         document.querySelectorAll('.badge-filtro').forEach(btn => {
             btn.classList.remove('badge-filtro-active');
         });
-        document.querySelector(`[data-filtro="${filtro}"]`).classList.add('badge-filtro-active');
+        const btnFiltro = document.querySelector(`[data-filtro="${filtro}"]`);
+        if (btnFiltro) {
+            btnFiltro.classList.add('badge-filtro-active');
+        }
 
         // Filtrar tarjetas
         const ordenesList = document.getElementById('ordenesList');

@@ -2811,6 +2811,34 @@ Route::middleware(['auth'])->post('procesos/{procesoId}/activar-recibo', functio
                     }
                 }
             }
+
+            // Broadcast: si se activó un recibo REFLECTIVO, notificar a costura-reflectivo
+            if ($nombreTipo === 'REFLECTIVO') {
+                try {
+                    $operarios = \App\Models\User::query()
+                        ->whereHas('roles', function ($q) {
+                            $q->where('name', 'costura-reflectivo');
+                        })
+                        ->get(['id']);
+
+                    foreach ($operarios as $operario) {
+                        broadcast(new \App\Events\OperarioRecibosActualizados(
+                            userId: (int) $operario->id,
+                            payload: [
+                                'evento' => 'recibo_activado',
+                                'tipo_recibo' => 'REFLECTIVO',
+                                'proceso_id' => (int) $procesoId,
+                                'prenda_id' => (int) ($proceso->prenda_pedido_id ?? 0),
+                            ]
+                        ));
+                    }
+                } catch (\Throwable $e) {
+                    \Log::warning('[Activar] Broadcast REFLECTIVO falló', [
+                        'proceso_id' => (int) $procesoId,
+                        'message' => $e->getMessage(),
+                    ]);
+                }
+            }
         } else {
             \DB::table('pedidos_procesos_prenda_detalles')
                 ->where('id', $procesoId)

@@ -935,6 +935,82 @@ class SupervisorPedidosController extends Controller
                     'tipo_broche' => $tipoBrocheNombre,
                     'tiene_bolsillos' => $prenda->tiene_bolsillos ?? 0,
                     'tiene_reflectivo' => $prenda->tiene_reflectivo ?? 0,
+                    'id' => $prenda->id,
+                    'prenda_pedido_id' => $prenda->id,
+                    'fotos' => ($prenda->fotos && $prenda->fotos->count() > 0)
+                        ? $prenda->fotos->map(function ($foto) {
+                            $ruta = $foto->ruta_webp ?? $foto->ruta_original;
+                            if (!$ruta) return null;
+                            $ruta = str_replace('\\', '/', $ruta);
+                            if (str_starts_with($ruta, 'http')) return $ruta;
+                            if (str_starts_with($ruta, '/storage/')) return $ruta;
+                            if (str_starts_with($ruta, 'storage/')) return '/' . $ruta;
+                            return '/storage/' . ltrim($ruta, '/');
+                        })->filter()->values()->toArray()
+                        : [],
+                    'tela_fotos' => (function () use ($prenda) {
+                        $imagenes = [];
+
+                        // 1) Si hay imágenes guardadas en prenda_pedido_talla_colores (modo talla-color)
+                        try {
+                            $tallaColorImgs = \DB::table('prenda_pedido_talla_colores as ptc')
+                                ->join('prenda_pedido_tallas as pt', 'ptc.prenda_pedido_talla_id', '=', 'pt.id')
+                                ->where('pt.prenda_pedido_id', $prenda->id)
+                                ->whereNotNull('ptc.imagen_ruta')
+                                ->pluck('ptc.imagen_ruta')
+                                ->toArray();
+
+                            foreach ($tallaColorImgs as $ruta) {
+                                if (!$ruta) continue;
+                                $ruta = str_replace('\\', '/', $ruta);
+                                if (!str_starts_with($ruta, '/storage/')) {
+                                    if (str_starts_with($ruta, 'storage/')) {
+                                        $ruta = '/' . $ruta;
+                                    } elseif (!str_starts_with($ruta, '/')) {
+                                        $ruta = '/storage/' . $ruta;
+                                    }
+                                }
+                                $imagenes[] = $ruta;
+                            }
+                        } catch (\Exception $e) {
+                            // silencioso
+                        }
+
+                        // 2) Fallback: si no hay en talla-color, usar fotos de tela por relación (flujo normal/piezas)
+                        if (count($imagenes) === 0) {
+                            try {
+                                $fotosTelaDB = \DB::table('prenda_fotos_tela_pedido')
+                                    ->join('prenda_pedido_colores_telas', 'prenda_fotos_tela_pedido.prenda_pedido_colores_telas_id', '=', 'prenda_pedido_colores_telas.id')
+                                    ->where('prenda_pedido_colores_telas.prenda_pedido_id', $prenda->id)
+                                    ->orderBy('prenda_fotos_tela_pedido.orden', 'asc')
+                                    ->get(['prenda_fotos_tela_pedido.ruta_webp', 'prenda_fotos_tela_pedido.ruta_original']);
+
+                                foreach ($fotosTelaDB as $fotoTela) {
+                                    $ruta = $fotoTela->ruta_webp ?? $fotoTela->ruta_original;
+                                    if (!$ruta) continue;
+                                    $ruta = str_replace('\\', '/', $ruta);
+                                    if (str_starts_with($ruta, 'http')) {
+                                        $imagenes[] = $ruta;
+                                        continue;
+                                    }
+                                    if (!str_starts_with($ruta, '/storage/')) {
+                                        if (str_starts_with($ruta, 'storage/')) {
+                                            $ruta = '/' . $ruta;
+                                        } elseif (!str_starts_with($ruta, '/')) {
+                                            $ruta = '/storage/' . $ruta;
+                                        }
+                                    }
+                                    $imagenes[] = $ruta;
+                                }
+                            } catch (\Exception $e) {
+                                // silencioso
+                            }
+                        }
+
+                        // unique + reset indices
+                        $imagenes = array_values(array_filter(array_unique($imagenes)));
+                        return $imagenes;
+                    })(),
                 ];
             }
             

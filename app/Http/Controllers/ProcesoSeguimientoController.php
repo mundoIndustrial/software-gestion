@@ -197,6 +197,35 @@ class ProcesoSeguimientoController extends Controller
                         }
                     }
                 }
+
+                // Broadcast: cuando se asigna/actualiza COSTURA a un encargado, notificar al operario (costura-reflectivo)
+                // Esto permite que el dashboard de costura-reflectivo se refresque en tiempo real al asignar el encargado.
+                if ($areaNormalizada === 'costura') {
+                    $encargadoNormalizado = strtolower(trim((string) $request->encargado));
+
+                    if ($encargadoNormalizado !== '') {
+                        $operario = User::query()
+                            ->whereRaw('LOWER(TRIM(name)) = ?', [$encargadoNormalizado])
+                            ->first();
+
+                        if ($operario && $operario->hasRole('costura-reflectivo')) {
+                            broadcast(new OperarioRecibosActualizados(
+                                userId: (int) $operario->id,
+                                payload: [
+                                    'area' => $request->area,
+                                    'accion' => $accion,
+                                    'numero_pedido' => (int) $request->pedido_produccion_id,
+                                    'prenda_id' => (int) $request->prenda_id,
+                                    'proceso_id' => (int) $proceso->id,
+                                ]
+                            ));
+
+                            \Log::info('[ProcesoSeguimientoController] Broadcast COSTURA - emitido a canal privado App.Models.User', [
+                                'user_id' => (int) $operario->id,
+                            ]);
+                        }
+                    }
+                }
             } catch (\Exception $broadcastError) {
                 \Log::warning('[ProcesoSeguimientoController] Error broadcasting a operario: ' . $broadcastError->getMessage(), [
                     'file' => $broadcastError->getFile(),
@@ -427,6 +456,34 @@ class ProcesoSeguimientoController extends Controller
                             ));
 
                             \Log::info('[ProcesoSeguimientoController] Broadcast CORTE (actualizar) - emitido a canal privado App.Models.User', [
+                                'user_id' => (int) $operario->id,
+                            ]);
+                        }
+                    }
+                }
+
+                // Broadcast en actualización: si se asigna/actualiza COSTURA, notificar al operario costura-reflectivo
+                if ($areaNormalizada === 'costura') {
+                    $encargadoNormalizado = strtolower(trim((string) ($request->encargado ?? '')));
+	
+                    if ($encargadoNormalizado !== '') {
+                        $operario = User::query()
+                            ->whereRaw('LOWER(TRIM(name)) = ?', [$encargadoNormalizado])
+                            ->first();
+	
+                        if ($operario && $operario->hasRole('costura-reflectivo')) {
+                            broadcast(new OperarioRecibosActualizados(
+                                userId: (int) $operario->id,
+                                payload: [
+                                    'area' => (string) $request->area,
+                                    'accion' => 'actualizado',
+                                    'numero_pedido' => (int) ($proceso->numero_pedido ?? 0),
+                                    'prenda_id' => (int) ($proceso->prenda_pedido_id ?? 0),
+                                    'proceso_id' => (int) $proceso->id,
+                                ]
+                            ));
+
+                            \Log::info('[ProcesoSeguimientoController] Broadcast COSTURA (actualizar) - emitido a canal privado App.Models.User', [
                                 'user_id' => (int) $operario->id,
                             ]);
                         }

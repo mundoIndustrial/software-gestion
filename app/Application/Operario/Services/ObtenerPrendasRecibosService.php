@@ -149,9 +149,13 @@ class ObtenerPrendasRecibosService
 
         // Determinar tipos de recibo según el rol
         $tiposRecibo = ['COSTURA', 'COSTURA-BODEGA'];
-        if ($tipoOperario === 'costura-reflectivo' || $tipoOperario === 'vista-costura') {
-            // Para costura-reflectivo y vista-costura: mostrar COSTURA y REFLECTIVO (sin COSTURA-BODEGA)
+        if ($tipoOperario === 'vista-costura') {
+            // Para vista-costura: mostrar COSTURA y REFLECTIVO (sin COSTURA-BODEGA)
             $tiposRecibo = ['COSTURA', 'REFLECTIVO'];
+        }
+        if ($tipoOperario === 'costura-reflectivo') {
+            // Para costura-reflectivo: por defecto solo REFLECTIVO
+            $tiposRecibo = ['REFLECTIVO'];
         }
 
         // Obtener todos los recibos de costura activos con relaciones (incluyendo procesos)
@@ -271,6 +275,20 @@ class ObtenerPrendasRecibosService
                 ->filter(function ($recibo) {
                     $area = strtolower(trim((string) ($recibo->area ?? '')));
                     return $area === 'costura';
+                })
+                ->values();
+        }
+
+        // costura-reflectivo: ver REFLECTIVO sin filtrar por área
+        if ($tipoOperario === 'costura-reflectivo') {
+            $recibos = $recibos
+                ->filter(function ($recibo) {
+                    if (strtoupper(trim((string) ($recibo->tipo_recibo ?? ''))) !== 'REFLECTIVO') {
+                        return false;
+                    }
+
+                    // Ya NO se filtra por área ni se requiere encargado: el recibo aparece cuando el supervisor lo activa
+                    return true;
                 })
                 ->values();
         }

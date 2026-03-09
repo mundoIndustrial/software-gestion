@@ -43,6 +43,32 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     private bool $filtrarProcesosPendientes = false;
 
     /**
+     * Normalizar ruta de imagen para asegurar que comience con /storage/
+     */
+    private function normalizarRutaImagen(?string $ruta): ?string
+    {
+        if (!$ruta) {
+            return null;
+        }
+
+        $ruta = str_replace('\\', '/', $ruta);
+
+        if (str_starts_with($ruta, 'http')) {
+            return $ruta;
+        }
+
+        if (str_starts_with($ruta, '/storage/')) {
+            return $ruta;
+        }
+
+        if (str_starts_with($ruta, 'storage/')) {
+            return '/' . $ruta;
+        }
+
+        return '/storage/' . ltrim($ruta, '/');
+    }
+
+    /**
      * Personalización: Obtener todas las opciones de enriquecimiento
      */
     protected function obtenerOpciones(): array
@@ -541,6 +567,223 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
+     * Obtener imágenes de telas con estructura completa (ruta_webp + ruta_original + url + orden).
+     *
+     * FUENTES:
+     * - Flujo normal/piezas: prenda->coloresTelas->fotos
+     * - Flujo talla-color: prenda_pedido_talla_colores.imagen_ruta
+     */
+    private function obtenerImagenesTela($prenda): array
+    {
+        $imagenes = [];
+
+        try {
+            // 1) Flujo normal/piezas: fotos asociadas a colores-telas
+            if ($prenda->coloresTelas && $prenda->coloresTelas->count() > 0) {
+                foreach ($prenda->coloresTelas as $ct) {
+                    if (!$ct) continue;
+                    if (!isset($ct->fotos) || !$ct->fotos) {
+                        try {
+                            $ct->load('fotos');
+                        } catch (\Exception $e) {
+                            // silencioso
+                        }
+                    }
+
+                    if ($ct->fotos && $ct->fotos->count() > 0) {
+                        foreach ($ct->fotos as $foto) {
+                            $rutaWebp = $foto->ruta_webp ?? $foto->url ?? null;
+                            $rutaOriginal = $foto->ruta_original ?? $rutaWebp ?? null;
+                            $url = $this->normalizarRutaImagen($rutaWebp ?: $rutaOriginal);
+                            if (!$url) continue;
+
+                            $imagenes[] = [
+                                'id' => $foto->id ?? null,
+                                'ruta_webp' => $this->normalizarRutaImagen($rutaWebp),
+                                'ruta_original' => $this->normalizarRutaImagen($rutaOriginal),
+                                'url' => $url,
+                                'orden' => (int)($foto->orden ?? 0),
+                                'es_principal' => (bool)($foto->es_principal ?? false),
+                            ];
+                        }
+                    }
+                }
+            }
+
+            // 2) Flujo talla-color: imágenes guardadas por talla/color
+            try {
+                $raw = \DB::table('prenda_pedido_talla_colores as ptc')
+                    ->join('prenda_pedido_tallas as pt', 'ptc.prenda_pedido_talla_id', '=', 'pt.id')
+                    ->where('pt.prenda_pedido_id', $prenda->id)
+                    ->whereNotNull('ptc.imagen_ruta')
+                    ->pluck('ptc.imagen_ruta')
+                    ->toArray();
+
+                foreach ($raw as $item) {
+                    if (!$item) continue;
+
+                    // Puede venir como JSON array en string
+                    if (is_string($item)) {
+                        $trim = trim($item);
+                        if ($trim !== '' && ($trim[0] === '[' || $trim[0] === '{')) {
+                            $decoded = json_decode($trim, true);
+                            if (is_array($decoded)) {
+                                foreach ($decoded as $v) {
+                                    if (!is_string($v)) continue;
+                                    $u = $this->normalizarRutaImagen($v);
+                                    if ($u) {
+                                        $imagenes[] = [
+                                            'id' => null,
+                                            'ruta_webp' => $u,
+                                            'ruta_original' => $u,
+                                            'url' => $u,
+                                            'orden' => 0,
+                                            'es_principal' => false,
+                                        ];
+                                    }
+                                }
+                                continue;
+                            }
+                        }
+
+                        $u = $this->normalizarRutaImagen($trim);
+                        if ($u) {
+                            $imagenes[] = [
+                                'id' => null,
+                                'ruta_webp' => $u,
+                                'ruta_original' => $u,
+                                'url' => $u,
+                                'orden' => 0,
+                                'es_principal' => false,
+                            ];
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                // silencioso
+            }
+
+            // Deduplicar por URL (mantener primer match)
+            $seen = [];
+            $dedup = [];
+            foreach ($imagenes as $img) {
+                $key = $img['url'] ?? null;
+                if (!$key) continue;
+                if (isset($seen[$key])) continue;
+                $seen[$key] = true;
+                $dedup[] = $img;
+            }
+            $imagenes = $dedup;
+
+            // Ordenar por orden
+            usort($imagenes, function($a, $b) {
+                return ($a['orden'] ?? 0) <=> ($b['orden'] ?? 0);
+            });
+        } catch (\Exception $e) {
+            return [];
+        }
+
+        return $imagenes;
+    }
+
+    /**
+     * Obtener procesos de la prenda con imágenes normalizadas.
+     *
+     * Reglas:
+     * - Si $this->filtrarProcesosPendientes = true, ocultar procesos "pendiente" (para /registros)
+     * - Si el pedido está en estado PENDIENTE, retornar []
+     */
+    private function obtenerProcesosDelaPrenda($prenda, ?string $estadoPedido = null): array
+    {
+        try {
+            $estadoPedidoNorm = strtolower(trim((string)($estadoPedido ?? '')));
+            if ($estadoPedidoNorm === 'pendiente') {
+                return [];
+            }
+
+            if (!isset($prenda->procesos) || !$prenda->procesos) {
+                return [];
+            }
+
+            $procesosOut = [];
+
+            foreach ($prenda->procesos as $proceso) {
+                if (!$proceso) continue;
+
+                $estadoProc = strtolower(trim((string)($proceso->estado ?? $proceso['estado'] ?? '')));
+                if ($this->filtrarProcesosPendientes && $estadoProc === 'pendiente') {
+                    continue;
+                }
+
+                $tipo = null;
+                if (isset($proceso->tipoProceso) && $proceso->tipoProceso) {
+                    $tipo = $proceso->tipoProceso->nombre ?? null;
+                }
+                if (!$tipo) {
+                    $tipo = $proceso->tipo_proceso ?? $proceso->nombre_proceso ?? $proceso->nombre ?? null;
+                }
+
+                // Imágenes del proceso
+                $imagenes = [];
+                try {
+                    if (isset($proceso->imagenes) && $proceso->imagenes) {
+                        foreach ($proceso->imagenes as $img) {
+                            $rutaWebp = $img->ruta_webp ?? $img->ruta_web ?? $img->url ?? null;
+                            $rutaOriginal = $img->ruta_original ?? $rutaWebp ?? null;
+                            $url = $this->normalizarRutaImagen($rutaWebp ?: $rutaOriginal);
+                            if (!$url) continue;
+
+                            $imagenes[] = [
+                                'id' => $img->id ?? null,
+                                'ruta_webp' => $this->normalizarRutaImagen($rutaWebp),
+                                'ruta_original' => $this->normalizarRutaImagen($rutaOriginal),
+                                'url' => $url,
+                                'orden' => (int)($img->orden ?? 0),
+                                'es_principal' => (bool)($img->es_principal ?? false),
+                            ];
+                        }
+                    }
+
+                    usort($imagenes, function($a, $b) {
+                        return ($a['orden'] ?? 0) <=> ($b['orden'] ?? 0);
+                    });
+                } catch (\Exception $e) {
+                    $imagenes = [];
+                }
+
+                // Tallas del proceso (si vienen cargadas)
+                $tallas = [];
+                if (isset($proceso->tallas) && $proceso->tallas) {
+                    try {
+                        $tallas = is_array($proceso->tallas)
+                            ? $proceso->tallas
+                            : $proceso->tallas->toArray();
+                    } catch (\Exception $e) {
+                        $tallas = [];
+                    }
+                }
+
+                $procesosOut[] = [
+                    'id' => $proceso->id ?? null,
+                    'tipo_proceso_id' => $proceso->tipo_proceso_id ?? ($proceso->tipoProceso->id ?? null),
+                    'tipo_proceso' => $tipo,
+                    'nombre_proceso' => $tipo,
+                    'estado' => $proceso->estado ?? null,
+                    'observaciones' => $proceso->observaciones ?? '',
+                    'ubicaciones' => $proceso->ubicaciones ?? [],
+                    'modo_tallas' => $proceso->modo_tallas ?? 'general',
+                    'tallas' => $tallas,
+                    'imagenes' => $imagenes,
+                ];
+            }
+
+            return $procesosOut;
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    /**
      * MEJORADO: Obtener imágenes de prenda con AMBAS rutas (ruta_webp y ruta_original)
      * 
      * Retorna array de objetos con estructura completa para el frontend
@@ -563,26 +806,19 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                         'id' => $foto->id ?? null,
                         'ruta_webp' => $this->normalizarRutaImagen($rutaWebp),
                         'ruta_original' => $this->normalizarRutaImagen($rutaOriginal),
+                        'url' => $this->normalizarRutaImagen($rutaWebp ?: $rutaOriginal),
                         'orden' => (int)($foto->orden ?? 0),
+                        'es_principal' => (bool)($foto->es_principal ?? false),
                     ];
                 }
-                
-                // Ordenar por orden
-                usort($imagenes, function($a, $b) {
-                    return $a['orden'] <=> $b['orden'];
-                });
             }
 
-            Log::debug('[ObtenerPedidoUseCase] Imágenes de prenda obtenidas', [
-                'prenda_id' => $prenda->id,
-                'total_imagenes' => count($imagenes),
-            ]);
-
+            // Ordenar por orden
+            usort($imagenes, function($a, $b) {
+                return ($a['orden'] ?? 0) <=> ($b['orden'] ?? 0);
+            });
         } catch (\Exception $e) {
-            Log::warning('Error obteniendo imágenes de prenda', [
-                'prenda_id' => $prenda->id ?? null,
-                'error' => $e->getMessage(),
-            ]);
+            return [];
         }
 
         return $imagenes; // Retorna [] si hay error, nunca null
@@ -620,70 +856,44 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                     if (!isset($ct->fotos) || !$ct->fotos) {
                         $ct->load('fotos');
                     }
-                    
-                    Log::debug("[obtenerColoresTelasCompletos] Procesando colorTela $idx", [
-                        'ct_id' => $ct->id,
-                        'color_id' => $ct->color_id,
-                        'tela_id' => $ct->tela_id,
-                        'color_nombre' => $ct->color?->nombre,
-                        'tela_nombre' => $ct->tela?->nombre,
-                        'fotos_count' => $ct->fotos ? $ct->fotos->count() : 0,
-                    ]);
-                    
                     $fotos = [];
-                    
-                    // Obtener fotos de este color-tela
                     if ($ct->fotos && $ct->fotos->count() > 0) {
                         foreach ($ct->fotos as $foto) {
                             $rutaWebp = $foto->ruta_webp ?? $foto->url ?? null;
                             $rutaOriginal = $foto->ruta_original ?? $rutaWebp ?? null;
-                            
                             $fotos[] = [
                                 'id' => $foto->id ?? null,
                                 'ruta_webp' => $this->normalizarRutaImagen($rutaWebp),
                                 'ruta_original' => $this->normalizarRutaImagen($rutaOriginal),
-                                'url' => $this->normalizarRutaImagen($rutaWebp ?? $rutaOriginal),
+                                'url' => $this->normalizarRutaImagen($rutaWebp ?: $rutaOriginal),
                                 'orden' => (int)($foto->orden ?? 0),
+                                'es_principal' => (bool)($foto->es_principal ?? false),
                             ];
                         }
-                        
-                        // Ordenar por orden
+
                         usort($fotos, function($a, $b) {
-                            return $a['orden'] <=> $b['orden'];
+                            return ($a['orden'] ?? 0) <=> ($b['orden'] ?? 0);
                         });
-                        
-                        Log::debug("[obtenerColoresTelasCompletos] Fotos procesadas para CT $idx", [
-                            'fotos_count' => count($fotos),
-                            'fotos' => $fotos,
-                        ]);
                     }
-                    
+
                     $coloresTelas[] = [
                         'id' => $ct->id,
+                        'prenda_pedido_id' => $ct->prenda_pedido_id ?? ($prenda->id ?? null),
                         'color_id' => $ct->color_id,
-                        'tela_id' => $ct->tela_id,
-                        'referencia' => $ct->referencia,
                         'color_nombre' => $ct->color?->nombre ?? null,
                         'color_codigo' => $ct->color?->codigo ?? null,
+                        'tela_id' => $ct->tela_id,
                         'tela_nombre' => $ct->tela?->nombre ?? null,
-                        'tela_referencia' => $ct->tela?->referencia ?? null,
+                        'tela_referencia' => $ct->tela?->referencia ?? ($ct->referencia ?? null),
+                        'referencia' => $ct->referencia ?? null,
                         'fotos' => $fotos,
-                        'fotos_tela' => $fotos, // Alias para compatibilidad
                     ];
                 }
             }
-
-            Log::info('[obtenerColoresTelasCompletos] Colores y telas completos obtenidos', [
-                'prenda_id' => $prenda->id,
-                'total_colores_telas' => count($coloresTelas),
-                'estructura' => $coloresTelas,
-            ]);
-
         } catch (\Exception $e) {
-            Log::warning('Error obteniendo colores y telas completos', [
+            Log::warning('[obtenerColoresTelasCompletos] Error', [
                 'prenda_id' => $prenda->id ?? null,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'error' => $e->getMessage()
             ]);
         }
 
@@ -691,245 +901,6 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
-     * MEJORADO: Obtener imágenes de telas (color-tela)
-     * 
-     * Retorna array estructurado de imágenes por color-tela
-     * Cada imagen incluye ruta_webp, ruta_original, orden
-     * Ordenadas por campo "orden"
-     * Retorna array vacío si no hay fotos (no null)
-     */
-    private function obtenerImagenesTela($prenda): array
-    {
-        $imagenes = [];
-
-        try {
-            if ($prenda->coloresTelas) {
-                foreach ($prenda->coloresTelas as $ct) {
-                    if ($ct->fotos && $ct->fotos->count() > 0) {
-                        foreach ($ct->fotos as $foto) {
-                            $rutaWebp = $foto->ruta_webp ?? $foto->url ?? null;
-                            $rutaOriginal = $foto->ruta_original ?? $rutaWebp ?? null;
-                            
-                            $imagenes[] = [
-                                'id' => $foto->id ?? null,
-                                'color_tela_id' => $ct->id ?? null,
-                                'color' => $ct->color?->nombre ?? null,
-                                'tela' => $ct->tela?->nombre ?? null,
-                                'ruta_webp' => $this->normalizarRutaImagen($rutaWebp),
-                                'ruta_original' => $this->normalizarRutaImagen($rutaOriginal),
-                                'orden' => (int)($foto->orden ?? 0),
-                            ];
-                        }
-                    }
-                }
-                
-                // Ordenar por orden
-                usort($imagenes, function($a, $b) {
-                    return $a['orden'] <=> $b['orden'];
-                });
-            }
-
-            Log::debug('[ObtenerPedidoUseCase] Imágenes de tela obtenidas', [
-                'prenda_id' => $prenda->id,
-                'total_imagenes' => count($imagenes),
-            ]);
-
-        } catch (\Exception $e) {
-            Log::warning('Error obteniendo imágenes de tela', [
-                'prenda_id' => $prenda->id ?? null,
-                'error' => $e->getMessage()
-            ]);
-        }
-
-        return $imagenes; // Retorna [] si hay error, nunca null
-    }
-
-    /**
-     * MEJORADO: Obtener procesos con imágenes
-     * 
-     * Incluye imágenes de cada proceso ordenadas por "orden"
-     * Cada imagen tiene ruta_webp, ruta_original, orden, es_principal
-     * Retorna array vacío si no hay procesos (no null)
-     */
-    private function obtenerProcesosDelaPrenda($prenda, ?string $estadoPedido = null): array
-    {
-        $procesos = [];
-
-        try {
-            if ($prenda->procesos && $prenda->procesos->count() > 0) {
-                foreach ($prenda->procesos as $proceso) {
-                    $nombreProceso = strtolower($proceso->tipoProceso?->nombre ?? '');
-                    
-                    //  CRÍTICO: Filtrado específico por tipo de proceso
-                    // Procesos que REQUIEREN aprobación para mostrarse: bordado, estampado, dtf, sublimado
-                    $procesosQueRequierenAprobacion = ['bordado', 'estampado', 'dtf', 'sublimado'];
-                    $requiereAprobacion = in_array($nombreProceso, $procesosQueRequierenAprobacion);
-                    
-                    // Si el proceso requiere aprobación y está configurado para filtrar
-                    if ($requiereAprobacion && $this->filtrarProcesosPendientes) {
-                        // Solo mostrar procesos con estado APROBADO
-                        if ($proceso->estado !== 'APROBADO') {
-                            Log::info('[PROCESOS-FILTRADO] Proceso NO aprobado - Omitiendo (requiere aprobación)', [
-                                'proceso_id' => $proceso->id,
-                                'prenda_id' => $prenda->id,
-                                'tipo_proceso' => $proceso->tipoProceso?->nombre ?? 'N/A',
-                                'estado' => $proceso->estado,
-                                'requiere_aprobacion' => $requiereAprobacion,
-                                'filtrar_pendientes' => $this->filtrarProcesosPendientes
-                            ]);
-                            continue; // Saltar este proceso
-                        }
-                    }
-                    
-                    // Los procesos que no requieren aprobación (reflectivo, costura, etc.)
-                    // se muestran siempre sin importar el estado
-                    $imagenes = [];
-                    
-                    // Obtener imágenes del proceso ordenadas
-                    if ($proceso->imagenes && $proceso->imagenes->count() > 0) {
-                        foreach ($proceso->imagenes as $imagen) {
-                            $rutaWebp = $imagen->ruta_webp ?? $imagen->url ?? null;
-                            $rutaOriginal = $imagen->ruta_original ?? $rutaWebp ?? null;
-                            
-                            $imagenes[] = [
-                                'id' => $imagen->id ?? null,
-                                'ruta_webp' => $this->normalizarRutaImagen($rutaWebp),
-                                'ruta_original' => $this->normalizarRutaImagen($rutaOriginal),
-                                'orden' => (int)($imagen->orden ?? 0),
-                                'es_principal' => (bool)($imagen->es_principal ?? false),
-                            ];
-                        }
-                        
-                        // Ordenar por orden
-                        usort($imagenes, function($a, $b) {
-                            return $a['orden'] <=> $b['orden'];
-                        });
-                    }
-                    
-                    // Transformar tallas del proceso desde pedidos_procesos_prenda_tallas
-                    $tallasTransformadas = [
-                        'DAMA' => [],
-                        'CABALLERO' => [],
-                        'UNISEX' => []
-                    ];
-
-                    $tallasDetalle = [];
-                    
-                    if ($proceso->tallas && $proceso->tallas->count() > 0) {
-                        foreach ($proceso->tallas as $tallaProceso) {
-                            $genero = strtoupper($tallaProceso->genero ?? 'DAMA');
-                            if (!isset($tallasTransformadas[$genero])) {
-                                $tallasTransformadas[$genero] = [];
-                            }
-                            $tallasTransformadas[$genero][$tallaProceso->talla] = (int)$tallaProceso->cantidad;
-
-                            // Si hay colores asignados para esta talla, construir el detalle por color
-                            // (para que el frontend pueda mostrar "TALLA - COLOR").
-                            // En modo_tallas = general, la "ubicación" viene desde observaciones.
-                            $modoTallas = strtolower((string)($proceso->modo_tallas ?? ''));
-                            $coloresAsignados = null;
-                            try {
-                                $coloresAsignados = $tallaProceso->coloresAsignados ?? null;
-                            } catch (\Exception $e) {
-                                $coloresAsignados = null;
-                            }
-
-                            if ($coloresAsignados && $coloresAsignados->count() > 0) {
-                                foreach ($coloresAsignados as $tallaColor) {
-                                    $tallasDetalle[] = [
-                                        'id' => $tallaProceso->id,
-                                        'genero' => $tallaProceso->genero,
-                                        'talla' => $tallaProceso->talla,
-                                        'color_nombre' => $tallaColor->color_nombre ?? null,
-                                        'tela_nombre' => $tallaColor->tela_nombre ?? null,
-                                        'cantidad' => (int) ($tallaColor->cantidad ?? 0),
-                                        'es_sobremedida' => (bool) ($tallaProceso->es_sobremedida ?? false),
-                                        'ubicaciones' => $modoTallas === 'general'
-                                            ? (($tallaColor->observaciones ?? null) ?: null)
-                                            : ($tallaColor->ubicaciones ?? []),
-                                        'observaciones' => $tallaColor->observaciones ?? null,
-                                    ];
-                                }
-                            } else {
-                                $tallasDetalle[] = [
-                                    'id' => $tallaProceso->id,
-                                    'genero' => $tallaProceso->genero,
-                                    'talla' => $tallaProceso->talla,
-                                    'cantidad' => (int) ($tallaProceso->cantidad ?? 0),
-                                    'es_sobremedida' => (bool) ($tallaProceso->es_sobremedida ?? false),
-                                    'ubicaciones' => $modoTallas === 'general'
-                                        ? (($tallaProceso->observaciones ?? null) ?: null)
-                                        : ($tallaProceso->ubicaciones ?? []),
-                                    'observaciones' => $tallaProceso->observaciones ?? null,
-                                ];
-                            }
-                        }
-                    }
-
-                    $procesos[] = [
-                        'id' => $proceso->id,
-                        'tipo_proceso' => $proceso->tipoProceso?->nombre ?? null,
-                        'tipo_proceso_id' => $proceso->tipo_proceso_id ?? null,
-                        'descripcion' => $proceso->descripcion,
-                        'ubicaciones' => $proceso->ubicaciones ?? [],
-                        'observaciones' => $proceso->observaciones ?? '',
-                        'modo_tallas' => $proceso->modo_tallas ?? 'generico',
-                        'tallas' => $tallasTransformadas,  // Tallas desde pedidos_procesos_prenda_tallas
-                        'tallas_detalle' => $tallasDetalle,
-                        'imagenes' => $imagenes, // Array ordenado con estructura completa
-                        'estado' => $proceso->estado ?? 'PENDIENTE',
-                        'numero_recibo' => $proceso->numero_recibo,
-                        'tipo_recibo' => $proceso->tipo_recibo,
-                        'etiqueta_proceso' => $proceso->etiqueta_proceso ?? null,
-                        'notas_rechazo' => $proceso->notas_rechazo ?? null,
-                    ];
-                }
-            }
-
-            Log::info('Procesos obtenidos', [
-                'prenda_id' => $prenda->id,
-                'cantidad' => count($procesos),
-                'estado_pedido' => $estadoPedido
-            ]);
-
-        } catch (\Exception $e) {
-            Log::warning('Error obteniendo procesos', [
-                'prenda_id' => $prenda->id ?? null,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-        }
-
-        return $procesos; // Retorna [] si hay error, nunca null
-    }
-
-    /**
-     * Normalizar ruta de imagen para asegurar que siempre comience con /storage/
-     */
-    private function normalizarRutaImagen(?string $ruta): ?string
-    {
-        if (!$ruta) {
-            return null;
-        }
-
-        // Si ya comienza con /storage/, retornar tal cual
-        if (str_starts_with($ruta, '/storage/')) {
-            return $ruta;
-        }
-        // Si comienza con storage/ (sin /), agregar / al inicio
-        else if (str_starts_with($ruta, 'storage/')) {
-            return '/' . $ruta;
-        }
-        // Si no comienza con ninguno, agregar /storage/
-        else {
-            return '/storage/' . $ruta;
-        }
-    }
-
-    /**
-     * Obtener EPPs del pedido enriquecidos
-     * 
-     * Incluye imágenes de EPP ordenadas por "orden"
      * Retorna array vacío si no hay EPPs (no null)
      */
     private function obtenerEppsCompletos($modeloEloquent): array

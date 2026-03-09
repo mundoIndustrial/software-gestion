@@ -43,7 +43,10 @@ function setupNotificaciones() {
     const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     const rolActual = String(window.USUARIO_ACTUAL?.rol || '').toLowerCase();
     const isVistaCostura = rolActual === 'vista-costura';
+    const isCosturaReflectivo = rolActual === 'costura-reflectivo';
     const storageKey = 'vista_costura_push_notificaciones';
+
+    const tipoReciboNotificaciones = isCosturaReflectivo ? 'REFLECTIVO' : 'COSTURA';
 
     function loadPushItems() {
         if (!isVistaCostura) return [];
@@ -132,7 +135,7 @@ function setupNotificaciones() {
 
     async function fetchNotificaciones() {
         try {
-            const resp = await fetch('/operario/api/notificaciones/recibos?tipo_recibo=COSTURA&limit=50', {
+            const resp = await fetch(`/operario/api/notificaciones/recibos?tipo_recibo=${encodeURIComponent(tipoReciboNotificaciones)}&limit=50`, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 },
@@ -159,7 +162,7 @@ function setupNotificaciones() {
                 ...(csrf ? { 'X-CSRF-TOKEN': csrf } : {})
             },
             credentials: 'same-origin',
-            body: JSON.stringify({ tipo_recibo: 'COSTURA' })
+            body: JSON.stringify({ tipo_recibo: tipoReciboNotificaciones })
         });
 
         const data = await resp.json().catch(() => null);
@@ -177,7 +180,7 @@ function setupNotificaciones() {
                 ...(csrf ? { 'X-CSRF-TOKEN': csrf } : {})
             },
             credentials: 'same-origin',
-            body: JSON.stringify({ tipo_recibo: 'COSTURA' })
+            body: JSON.stringify({ tipo_recibo: tipoReciboNotificaciones })
         });
 
         const data = await resp.json().catch(() => null);
