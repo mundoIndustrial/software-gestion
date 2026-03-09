@@ -1989,6 +1989,152 @@
             tableContainer.scrollLeft = tableContainer.scrollWidth;
         }
 
+        function supervisorPedidosMostrarNotificacionNuevoPedido(orden) {
+            try {
+                const numero = orden?.numero_pedido || orden?.numero || '';
+                const cliente = orden?.cliente ? ` - ${orden.cliente}` : '';
+                const mensaje = `Nuevo pedido${numero ? ' #' + numero : ''}${cliente}`;
+
+                if (window.PedidosRealtimeRefresh && window.PedidosRealtimeRefresh.instance && typeof window.PedidosRealtimeRefresh.instance.showRealtimeToast === 'function') {
+                    window.PedidosRealtimeRefresh.instance.showRealtimeToast(mensaje, 'success');
+                    return;
+                }
+
+                const bg = '#16a34a';
+                const container = document.getElementById('toastContainer') || (() => {
+                    let div = document.getElementById('toastContainer');
+                    if (div) return div;
+                    div = document.createElement('div');
+                    div.id = 'toastContainer';
+                    div.className = 'toast-container';
+                    div.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px;';
+                    document.body.appendChild(div);
+                    return div;
+                })();
+
+                const toast = document.createElement('div');
+                toast.style.cssText = `
+                    background: ${bg};
+                    color: white;
+                    padding: 12px 14px;
+                    border-radius: 10px;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+                    font-size: 13px;
+                    font-weight: 600;
+                    max-width: 360px;
+                    transform: translateX(120%);
+                    transition: transform 0.25s ease;
+                `;
+                toast.textContent = mensaje;
+                container.appendChild(toast);
+
+                requestAnimationFrame(() => {
+                    toast.style.transform = 'translateX(0)';
+                });
+
+                setTimeout(() => {
+                    toast.style.transform = 'translateX(120%)';
+                    setTimeout(() => toast.remove(), 250);
+                }, 3500);
+            } catch (e) {
+                // silencioso
+            }
+        }
+
+        function supervisorPedidosInsertarFilaNuevaAlInicio(orden) {
+            const tableContainer = document.querySelector('.table-scroll-container');
+            if (!tableContainer) return;
+
+            const header = tableContainer.querySelector('[style*="grid-template-columns: 200px 140px 200px 150px 140px 150px 150px"]');
+            const numeroPedido = orden?.numero_pedido || orden?.numero || 'N/A';
+            const estado = orden?.estado || 'PENDIENTE_SUPERVISOR';
+
+            const estadoColors = {
+                'PENDIENTE_SUPERVISOR': { bg: '#fff3cd', text: '#856404', label: 'Pendiente Supervisor' },
+                'PENDIENTE_INSUMOS': { bg: '#d1ecf1', text: '#0c5460', label: 'Pendiente Insumos' },
+                'En Ejecución': { bg: '#d4edda', text: '#155724', label: 'En Ejecución' },
+                'No iniciado': { bg: '#e2e3e5', text: '#383d41', label: 'No Iniciado' },
+                'Entregado': { bg: '#d4edda', text: '#155724', label: 'Entregado' },
+                'Finalizada': { bg: '#d4edda', text: '#155724', label: 'Finalizada' },
+                'Anulada': { bg: '#f8d7da', text: '#721c24', label: 'Anulada' },
+                'DEVUELTO_A_ASESORA': { bg: '#f8d7da', text: '#721c24', label: 'Devuelto' },
+            };
+            const estadoInfo = estadoColors[estado] || { bg: '#e2e3e5', text: '#383d41', label: estado };
+
+            const fila = document.createElement('div');
+            fila.setAttribute('data-pedido-id', String(orden?.id || ''));
+            fila.style.cssText = `
+                display: grid;
+                grid-template-columns: 200px 140px 200px 150px 140px 150px 150px;
+                gap: 1.2rem;
+                padding: 1rem;
+                border-bottom: 1px solid #e5e7eb;
+                align-items: center;
+                min-width: min-content;
+                background: #f0f9ff;
+                animation: slideInDown 0.5s ease;
+                transition: background 0.2s ease;
+            `;
+            fila.onmouseover = function() { this.style.background = '#f9fafb'; };
+            fila.onmouseout = function() { this.style.background = 'white'; };
+
+            const safeNumero = String(numeroPedido).replace('#', '');
+            fila.innerHTML = `
+                <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
+                    <button class="btn-ver-dropdown" data-menu-id="menu-ver-${safeNumero}" data-pedido="${safeNumero}" data-pedido-id="${orden?.id || ''}" title="Ver Opciones" style="
+                        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+                        color: white;
+                        border: none;
+                        padding: 0.5rem;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-size: 1rem;
+                        transition: all 0.3s ease;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 36px;
+                        height: 36px;
+                        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+                    ">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div>
+                    <span style="font-weight: 600; color: #1e5ba8;">#${numeroPedido}</span>
+                </div>
+                <div>
+                    <span>${orden?.cliente || ''}</span>
+                </div>
+                <div>
+                    <span style="background: ${estadoInfo.bg}; color: ${estadoInfo.text}; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block;">
+                        ${estadoInfo.label}
+                    </span>
+                </div>
+                <div>
+                    <span style="background: #f3f4f6; color: #9ca3af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap;">
+                        Sin novedades
+                    </span>
+                </div>
+                <div>
+                    <span>${orden?.asesora || orden?.asesor || 'N/A'}</span>
+                </div>
+                <div>
+                    <span>${orden?.forma_pago || orden?.forma_de_pago || 'N/A'}</span>
+                </div>
+            `;
+
+            if (header && header.parentNode === tableContainer) {
+                header.insertAdjacentElement('afterend', fila);
+            } else {
+                tableContainer.prepend(fila);
+            }
+
+            setTimeout(() => {
+                fila.style.backgroundColor = 'white';
+            }, 2000);
+        }
+
         /*
         // Función desactivada - ya no se muestran notificaciones flotantes
         function mostrarNotificacionEnTiempoReal(orden, action) {
@@ -2093,6 +2239,13 @@
                     const refreshTabla = async (payload, eventName) => {
                         console.log(`[Realtime Supervisor] 🔄 Refresh solicitado por ${eventName}:`, payload);
 
+                        if (eventName && String(eventName).includes('pedidos.creados:.pedido.creado')) {
+                            const pedido = payload?.pedido || payload?.orden || payload || {};
+                            supervisorPedidosInsertarFilaNuevaAlInicio(pedido);
+                            supervisorPedidosMostrarNotificacionNuevoPedido(pedido);
+                            return;
+                        }
+
                         if (window.__realtimeSupervisorRefreshTimeout) {
                             clearTimeout(window.__realtimeSupervisorRefreshTimeout);
                         }
@@ -2142,6 +2295,23 @@
                         }, 450);
                     };
 
+                    // Listeners de eventos custom (emitidos por public/js/modulos/asesores/pedidos-realtime.js)
+                    // para evitar recargar toda la página.
+                    if (!window.__supervisorPedidosRealtimeCustomBound) {
+                        window.__supervisorPedidosRealtimeCustomBound = true;
+
+                        window.addEventListener('supervisorPedidos:realtimePedidoCreado', (e) => {
+                            const pedido = e?.detail?.pedido || e?.detail?.raw?.pedido || {};
+                            supervisorPedidosInsertarFilaNuevaAlInicio(pedido);
+                            supervisorPedidosMostrarNotificacionNuevoPedido(pedido);
+                        });
+
+                        window.addEventListener('supervisorPedidos:realtimePedidoActualizado', (e) => {
+                            // Para cambios de recibos/estado/etc: refrescar el contenedor sin recargar navegador
+                            refreshTabla(e?.detail?.raw || e?.detail?.pedido || {}, e?.detail?.source || 'custom:.pedido.actualizado');
+                        });
+                    }
+
                     // Canal principal (cuando el pedido cambia de estado desde despacho/cartera)
                     echo.channel('despacho.pedidos')
                         .listen('.pedido.actualizado', (data) => refreshTabla(data, 'despacho.pedidos:.pedido.actualizado'))
@@ -2161,6 +2331,9 @@
                         console.error('[Realtime Supervisor] ❌ Error en suscripción al canal supervisor-pedidos:', error);
                     });
                     channelSupervisor.listen('OrdenUpdated', (data) => refreshTabla(data, 'supervisor-pedidos:OrdenUpdated'));
+
+                    echo.channel('pedidos.creados')
+                        .listen('.pedido.creado', (data) => refreshTabla(data, 'pedidos.creados:.pedido.creado'));
                     
                     console.log('[Realtime Supervisor] ✅ Sistema de tiempo real inicializado correctamente');
                 } catch (error) {

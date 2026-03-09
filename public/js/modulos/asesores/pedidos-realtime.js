@@ -125,11 +125,18 @@ class PedidosRealtimeRefresh {
                     .listen('.pedido.actualizado', (event) => {
                         if (this.debug) console.log('🔄 [PedidosRealtime] Pedido actualizado recibido (supervisor):', event?.pedido?.id);
 
-                        // Vista con paginación renderizada en servidor: reload con debounce
-                        if (this.reloadTimeout) clearTimeout(this.reloadTimeout);
-                        this.reloadTimeout = setTimeout(() => {
-                            window.location.reload();
-                        }, 600);
+                        // En supervisor-pedidos NO recargar el navegador.
+                        // Delegar a la vista para actualizar DOM / refrescar tabla sin reload.
+                        try {
+                            const detail = {
+                                pedido: event?.pedido || null,
+                                raw: event,
+                                source: 'despacho.pedidos:.pedido.actualizado'
+                            };
+                            window.dispatchEvent(new CustomEvent('supervisorPedidos:realtimePedidoActualizado', { detail }));
+                        } catch (e) {
+                            // noop
+                        }
                     })
                     .error((error) => {
                         console.error(' [PedidosRealtime] Error en canal despacho.pedidos (supervisor):', error);
@@ -137,6 +144,29 @@ class PedidosRealtimeRefresh {
                         this.showConnectionIndicator('Echo Error', 'error');
                         this.startPollingFallback();
                     });
+
+                // También escuchar pedidos nuevos (para que la vista los inserte sin reload)
+                try {
+                    window.EchoInstance.channel('pedidos.creados')
+                        .listen('.pedido.creado', (event) => {
+                            if (this.debug) console.log('➕ [PedidosRealtime] Pedido creado recibido (supervisor):', event?.pedido?.id);
+                            try {
+                                const detail = {
+                                    pedido: event?.pedido || null,
+                                    raw: event,
+                                    source: 'pedidos.creados:.pedido.creado'
+                                };
+                                window.dispatchEvent(new CustomEvent('supervisorPedidos:realtimePedidoCreado', { detail }));
+                            } catch (e) {
+                                // noop
+                            }
+                        })
+                        .error(() => {
+                            // noop
+                        });
+                } catch (e) {
+                    // noop
+                }
 
                 this.usingWebSockets = true;
                 if (this.debug) console.log(' [PedidosRealtime] WebSockets activo para supervisor-pedidos - SIN POLLING');
