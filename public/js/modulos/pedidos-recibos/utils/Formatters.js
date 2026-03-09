@@ -557,19 +557,66 @@ export class Formatters {
                     return [];
                 };
 
+                const normalizarObservaciones = (raw) => {
+                    if (!raw) return [];
+                    if (Array.isArray(raw)) {
+                        return raw
+                            .map(v => String(v ?? '').trim())
+                            .filter(v => v);
+                    }
+                    if (typeof raw === 'string') {
+                        const s = raw.trim();
+                        if (!s) return [];
+                        // Permitir string JSON (array de strings)
+                        if ((s.startsWith('[') && s.endsWith(']')) || (s.startsWith('{') && s.endsWith('}'))) {
+                            try {
+                                const parsed = JSON.parse(s);
+                                if (Array.isArray(parsed)) {
+                                    return parsed
+                                        .map(v => String(v ?? '').trim())
+                                        .filter(v => v);
+                                }
+                            } catch (e) {
+                                // ignore
+                            }
+                        }
+                        // Permitir multi-línea
+                        return s
+                            .split(/\r?\n/)
+                            .map(v => String(v ?? '').trim())
+                            .filter(v => v);
+                    }
+                    return [];
+                };
+
                 const conUbicaciones = tallasDetalle
                     .map(t => ({
                         ...t,
                         _ubicaciones_normalizadas: normalizarUbicaciones(t?.ubicaciones)
                     }))
-                    .filter(t => Array.isArray(t?._ubicaciones_normalizadas) && t._ubicaciones_normalizadas.length > 0)
+                    .map(t => ({
+                        ...t,
+                        _observaciones_normalizadas: normalizarObservaciones(t?.observaciones)
+                    }))
                     .filter(t => (parseInt(t?.cantidad, 10) || 0) > 0);
 
-                if (conUbicaciones.length > 0) {
+                const modo = String(proceso?.modo_tallas || '').toLowerCase();
+                const esGeneral = modo === 'general';
+                const esEspecifico = modo === 'especifico';
+
+                const itemsAMostrar = conUbicaciones.filter((t) => {
+                    if (esGeneral) {
+                        return Array.isArray(t?._observaciones_normalizadas) && t._observaciones_normalizadas.length > 0;
+                    }
+                    // especifico (o cualquier otro modo) prioriza ubicaciones
+                    return Array.isArray(t?._ubicaciones_normalizadas) && t._ubicaciones_normalizadas.length > 0;
+                });
+
+                if (itemsAMostrar.length > 0) {
                     lineas.push('');
                     lineas.push(
-                        String(proceso?.modo_tallas || '').toLowerCase() === 'general'
-                            ? '<strong>ESPECIFICACIÓN POR TALLA</strong>'
+                        esGeneral
+                            ? '<strong>OBSERVACIONES POR TALLA</strong>'
                             : '<strong>UBICACIONES POR TALLA</strong>'
                     );
 
@@ -583,7 +630,7 @@ export class Formatters {
                     };
 
                     const construirBloqueGenero = (generoBuscado) => {
-                        const items = conUbicaciones
+                        const items = itemsAMostrar
                             .filter(t => String(t.genero || '').toUpperCase() === generoBuscado)
                             .slice()
                             .sort((a, b) => compararTallas(a.talla || '', b.talla || ''));
@@ -600,19 +647,25 @@ export class Formatters {
                             partes.push(`<div style="margin-bottom: 8px;">`);
                             partes.push(`<div style="font-weight: 700;">${tallaLabel}</div>`);
 
-                            const ubicacionesFlat = [];
-                            (t._ubicaciones_normalizadas || []).forEach((u) => {
-                                const str = String(u ?? '').trim();
-                                if (!str) return;
-                                str.split(/\r?\n/).forEach((linea) => {
-                                    const l = String(linea ?? '').trim();
-                                    if (l) ubicacionesFlat.push(l);
+                            if (esGeneral) {
+                                (t._observaciones_normalizadas || []).forEach((o) => {
+                                    partes.push(`<div>• ${String(o).toUpperCase()}</div>`);
                                 });
-                            });
+                            } else {
+                                const ubicacionesFlat = [];
+                                (t._ubicaciones_normalizadas || []).forEach((u) => {
+                                    const str = String(u ?? '').trim();
+                                    if (!str) return;
+                                    str.split(/\r?\n/).forEach((linea) => {
+                                        const l = String(linea ?? '').trim();
+                                        if (l) ubicacionesFlat.push(l);
+                                    });
+                                });
 
-                            ubicacionesFlat.forEach((u) => {
-                                partes.push(`<div>• ${String(u).toUpperCase()}</div>`);
-                            });
+                                ubicacionesFlat.forEach((u) => {
+                                    partes.push(`<div>• ${String(u).toUpperCase()}</div>`);
+                                });
+                            }
 
                             partes.push(`</div>`);
                         });

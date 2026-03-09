@@ -124,6 +124,26 @@ export class PedidosRecibosModule {
             if (datos.data && typeof datos.data === 'object') {
                 datos = datos.data;
             }
+
+            // Normalización: el backend puede enviar `proceso.tallas` como ARRAY de detalles
+            // (con ubicaciones/observaciones por talla). El renderer/Formatters espera
+            // `proceso.tallas_detalle` para pintar "UBICACIONES POR TALLA".
+            if (datos && Array.isArray(datos.prendas)) {
+                datos.prendas.forEach((prenda) => {
+                    if (!prenda || !Array.isArray(prenda.procesos)) return;
+                    prenda.procesos.forEach((proceso) => {
+                        if (!proceso) return;
+
+                        // Caso: `tallas` viene como array -> es el detalle por talla
+                        if (Array.isArray(proceso.tallas)) {
+                            // Alias para que Formatters lo tome
+                            if (!Array.isArray(proceso.tallas_detalle) || proceso.tallas_detalle.length === 0) {
+                                proceso.tallas_detalle = proceso.tallas;
+                            }
+                        }
+                    });
+                });
+            }
             
             console.group('[PedidosRecibosModule.abrirRecibo] 📥 DATOS RECIBIDOS DEL ENDPOINT');
             console.log('Endpoint:', endpoint);
@@ -580,56 +600,286 @@ if (typeof window.printReceiptModal !== 'function') {
             return;
         }
 
-        const shouldSyncPrintHeightFromView = () => {
-            const descripcion = wrapper.querySelector('.order-descripcion');
-            if (!descripcion) return false;
-            return !(descripcion.scrollHeight > (descripcion.clientHeight + 1));
-        };
-
-        const existing = document.getElementById('print-receipt-root');
-        if (existing) existing.remove();
-
-        const clone = wrapper.cloneNode(true);
-        clone.id = 'print-receipt-root';
-        clone.style.display = 'block';
-
-        document.body.appendChild(clone);
-        document.body.classList.add('printing-receipt-active');
-
-        const trySyncPrintHeightFromClone = () => {
-            if (!shouldSyncPrintHeightFromView()) {
-                document.documentElement.style.removeProperty('--receipt-print-height');
+        // Nuevo flujo: abrir ventana con diseño 4-por-hoja y disparar impresión desde ahí.
+        // Segmentación: dividir el contenido del recibo en múltiples tarjetas para que nada
+        // se salga del área visible.
+        try {
+            const card = wrapper.querySelector('.order-detail-card');
+            if (!card) {
+                window.print();
                 return;
             }
 
-            const card = clone.querySelector('.order-detail-card');
-            if (!card) return;
+            const getFirst = (sel) => card.querySelector(sel);
+            const cloneAsString = (el) => (el ? el.outerHTML : '');
 
-            const computed = window.getComputedStyle(card);
-            const cssHeight = parseFloat(computed.height);
-            if (!cssHeight || cssHeight <= 0) return;
+            const logoHtml = cloneAsString(getFirst('.order-logo'));
+            const orderDateHtml = cloneAsString(getFirst('.order-date'));
+            const asesorHtml = cloneAsString(getFirst('#order-asesora'));
+            const formaPagoHtml = cloneAsString(getFirst('#order-forma-pago'));
+            const clienteHtml = cloneAsString(getFirst('#order-cliente'));
+            const receiptTitleHtml = cloneAsString(getFirst('#receipt-title'));
+            const pedidoNumberHtml = cloneAsString(getFirst('#order-pedido'));
+            const separatorLineHtml = cloneAsString(getFirst('.separator-line'));
+            const signatureHtml = cloneAsString(getFirst('.signature-section'));
 
-            const rect = card.getBoundingClientRect();
-            const pxHeight = rect.height;
-            if (!pxHeight || pxHeight <= 0) return;
+            const descripcionContainer = getFirst('.order-descripcion');
+            const descripcionText = getFirst('#descripcion-text');
+            const descripcionHtml = descripcionText ? descripcionText.innerHTML : '';
 
-            const baseMm = 287;
-            const mmHeight = (pxHeight / cssHeight) * baseMm;
-            document.documentElement.style.setProperty('--receipt-print-height', `${mmHeight}mm`);
-        };
+            // Medir altura disponible para el contenido en el diseño de impresión (apilado vertical)
+            // Usamos un elemento oculto para calcular en px.
+            const measureRootId = '__print_measure_root__';
+            let measureRoot = document.getElementById(measureRootId);
+            if (!measureRoot) {
+                measureRoot = document.createElement('div');
+                measureRoot.id = measureRootId;
+                measureRoot.style.cssText = 'position:fixed; left:-99999px; top:-99999px; width:0; height:0; overflow:hidden;';
+                document.body.appendChild(measureRoot);
+            }
 
-        const cleanup = () => {
-            document.body.classList.remove('printing-receipt-active');
-            const el = document.getElementById('print-receipt-root');
-            if (el) el.remove();
-            document.documentElement.style.removeProperty('--receipt-print-height');
-            window.removeEventListener('afterprint', cleanup);
-        };
+            // Crear un “recibo” de medición con el mismo scale que la impresión (0.95)
+            const measureWrapper = document.createElement('div');
+            measureWrapper.style.cssText = 'width: 210mm; padding: 4mm;';
+            measureWrapper.innerHTML = `
+                <div style="width: 100%; display:flex; justify-content:center; align-items:flex-start;">
+                    <div class="order-detail-modal-container" style="transform: scale(0.95); transform-origin: top center; margin:0; padding:0;">
+                        <div class="order-detail-card" style="margin:0;">
+                            ${logoHtml}
+                            ${orderDateHtml}
+                            ${asesorHtml}
+                            ${formaPagoHtml}
+                            ${clienteHtml}
+                            <div class="order-descripcion" style="font-size: 14px; line-height: 1.35;"><div id="__measure_desc__"></div></div>
+                            ${receiptTitleHtml}
+                            ${pedidoNumberHtml}
+                            ${separatorLineHtml}
+                            ${signatureHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+            measureRoot.innerHTML = '';
+            measureRoot.appendChild(measureWrapper);
 
-        window.addEventListener('afterprint', cleanup);
+            const measureDesc = measureRoot.querySelector('#__measure_desc__');
+            if (!measureDesc) {
+                window.print();
+                return;
+            }
 
-        trySyncPrintHeightFromClone();
-        window.print();
+            // Determinar alto máximo del contenedor de descripción en el recibo medido
+            const measureDescripcion = measureRoot.querySelector('.order-detail-card .order-descripcion');
+            const maxDescHeightPx = measureDescripcion ? Math.max(0, measureDescripcion.getBoundingClientRect().height) : 0;
+            const effectiveMaxDescHeightPx = maxDescHeightPx > 0 ? maxDescHeightPx : 260; // fallback
+
+            // Particionar por “nodos” para evitar cortar en medio de tags.
+            const temp = document.createElement('div');
+            temp.innerHTML = descripcionHtml;
+            const nodes = Array.from(temp.childNodes).filter(n => {
+                // ignorar nodos vacíos
+                if (n.nodeType === Node.TEXT_NODE) return String(n.textContent || '').trim() !== '';
+                return true;
+            });
+
+            const segments = [];
+            let currentFragment = document.createElement('div');
+
+            const flushSegment = () => {
+                const htmlSeg = currentFragment.innerHTML;
+                if (htmlSeg && htmlSeg.trim() !== '') {
+                    segments.push(htmlSeg);
+                }
+                currentFragment = document.createElement('div');
+            };
+
+            const fits = (candidateHtml) => {
+                measureDesc.innerHTML = candidateHtml;
+                // Permitir un pequeño margen
+                return measureDesc.getBoundingClientRect().height <= (effectiveMaxDescHeightPx + 1);
+            };
+
+            const splitNodeIntoLineParts = (node) => {
+                // Estrategia: convertir el nodo a HTML, reemplazar <br> por \n y partir por líneas.
+                // Cada línea se re-empaqueta como <div>LINEA</div> para poder medir.
+                // Si no hay <br> ni texto multilínea, devuelve null.
+                const container = document.createElement('div');
+                container.appendChild(node.cloneNode(true));
+                const rawHtml = container.innerHTML;
+                const htmlWithNewLines = rawHtml
+                    .replace(/<br\s*\/?>/gi, '\n')
+                    .replace(/<\/div>\s*<div/gi, '\n<div')
+                    .replace(/<\/p>\s*<p/gi, '\n<p');
+
+                if (!htmlWithNewLines.includes('\n')) {
+                    return null;
+                }
+
+                const lines = htmlWithNewLines
+                    .split('\n')
+                    .map(l => l.trim())
+                    .filter(l => l !== '');
+
+                if (lines.length <= 1) return null;
+
+                return lines.map((lineHtml) => {
+                    // Si ya es un bloque HTML, lo respetamos; si es texto plano, lo ponemos tal cual.
+                    const startsWithTag = /^</.test(lineHtml);
+                    return startsWithTag ? `<div>${lineHtml}</div>` : `<div>${lineHtml}</div>`;
+                });
+            };
+
+            const pushHtmlWithPagination = (htmlPiece) => {
+                const candidate = currentFragment.innerHTML + htmlPiece;
+                if (currentFragment.innerHTML.trim() === '') {
+                    if (fits(htmlPiece)) {
+                        currentFragment.innerHTML = htmlPiece;
+                        return;
+                    }
+                    // No cabe ni al inicio: forzar y flush
+                    currentFragment.innerHTML = htmlPiece;
+                    flushSegment();
+                    return;
+                }
+
+                if (fits(candidate)) {
+                    currentFragment.innerHTML = candidate;
+                    return;
+                }
+
+                // No cabe: cerrar segmento y reintentar en el siguiente
+                flushSegment();
+                if (fits(htmlPiece)) {
+                    currentFragment.innerHTML = htmlPiece;
+                } else {
+                    currentFragment.innerHTML = htmlPiece;
+                    flushSegment();
+                }
+            };
+
+            // Inicializar con vacío
+            measureDesc.innerHTML = '';
+
+            for (const node of nodes) {
+                const wrap = document.createElement('div');
+                wrap.appendChild(node.cloneNode(true));
+                const candidate = currentFragment.innerHTML + wrap.innerHTML;
+
+                if (currentFragment.innerHTML.trim() === '') {
+                    // Primer nodo en el segmento
+                    if (fits(wrap.innerHTML)) {
+                        currentFragment.innerHTML = wrap.innerHTML;
+                        continue;
+                    }
+                    // Si ni siquiera cabe un nodo, lo forzamos (para no loop infinito)
+                    currentFragment.innerHTML = wrap.innerHTML;
+                    flushSegment();
+                    continue;
+                }
+
+                if (fits(candidate)) {
+                    currentFragment.innerHTML = candidate;
+                } else {
+                    // Intentar segmentar internamente el nodo por líneas
+                    const parts = splitNodeIntoLineParts(node);
+                    if (Array.isArray(parts) && parts.length > 0) {
+                        // Primero cerrar el segmento actual para aprovechar altura completa
+                        flushSegment();
+                        parts.forEach((p) => pushHtmlWithPagination(p));
+                    } else {
+                        flushSegment();
+                        // arrancar segmento nuevo con este nodo
+                        if (fits(wrap.innerHTML)) {
+                            currentFragment.innerHTML = wrap.innerHTML;
+                        } else {
+                            currentFragment.innerHTML = wrap.innerHTML;
+                            flushSegment();
+                        }
+                    }
+                }
+            }
+            flushSegment();
+
+            // Garantía: si no se generó nada pero sí había HTML, crear un segmento único
+            if (segments.length === 0 && descripcionHtml && descripcionHtml.trim() !== '') {
+                segments.push(descripcionHtml);
+            }
+
+            // Debug liviano (en consola) para verificar segmentación
+            console.log('[printReceiptModal] Segmentos generados:', segments.length);
+
+            // Construir slots en páginas: 4 por hoja
+            const buildReceiptHtml = (segmentHtml) => {
+                // Clonar el layout original, pero reemplazar el contenido del #descripcion-text
+                return `
+                  <div class="order-detail-modal-container" style="transform: scale(0.95); transform-origin: top center; margin:0 !important; padding:0 !important;">
+                    <div class="order-detail-card" style="margin:0 !important;">
+                      ${logoHtml}
+                      ${orderDateHtml}
+                      ${asesorHtml}
+                      ${formaPagoHtml}
+                      ${clienteHtml}
+                      <div class="order-descripcion" style="font-size: 14px; line-height: 1.35;"><div id="descripcion-text">${segmentHtml}</div></div>
+                      ${receiptTitleHtml}
+                      ${pedidoNumberHtml}
+                      ${separatorLineHtml}
+                      ${signatureHtml}
+                    </div>
+                  </div>
+                `;
+            };
+
+            const receiptsHtml = segments
+                .filter(seg => seg && String(seg).trim() !== '')
+                .map(seg => `<div class="receipt-item">${buildReceiptHtml(seg)}</div>`)
+                .join('');
+
+            const html = `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Impresión - 4 recibos por hoja</title>
+  <link rel="stylesheet" href="/css/order-detail-modal.css" />
+  <style>
+    :root { --page-width: 210mm; --page-height: 297mm; --page-padding: 4mm; --grid-gap: 4mm; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .paper { width: var(--page-width); padding: var(--page-padding); }
+    .receipt-item { display: flex; justify-content: center; align-items: flex-start; margin: 0 0 6mm 0; page-break-inside: avoid; break-inside: avoid; }
+    /* Importante: el contenedor visible NO debe scrollear */
+    .receipt-item .order-descripcion { overflow: hidden !important; }
+    .receipt-item .order-descripcion * { overflow: hidden !important; }
+    /* Evitar que el card se desborde fuera del recibo */
+    .receipt-item .order-detail-card { overflow: hidden !important; }
+    @media print { @page { size: A4 portrait; margin: 0; } }
+  </style>
+</head>
+<body>
+  <div class="paper">${receiptsHtml}</div>
+  <script>
+    window.addEventListener('load', () => {
+      setTimeout(() => window.print(), 50);
+    });
+  </script>
+</body>
+</html>`;
+
+            const w = window.open('', '_blank');
+            if (!w) {
+                // Si el navegador bloquea popups, fallback
+                window.print();
+                return;
+            }
+
+            w.document.open();
+            w.document.write(html);
+            w.document.close();
+            return;
+        } catch (e) {
+            console.warn('[printReceiptModal] Fallback impresión antigua por error:', e);
+            window.print();
+        }
     };
 }
 
