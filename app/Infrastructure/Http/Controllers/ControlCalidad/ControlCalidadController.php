@@ -164,6 +164,23 @@ class ControlCalidadController extends Controller
                 ]
             );
 
+            try {
+                event(new \App\Events\ReciboCompletado([
+                    'recibo_id' => (int) $recibo->id,
+                    'consecutivo' => (int) ($recibo->consecutivo_actual ?? 0),
+                    'pedido_produccion_id' => (int) ($recibo->pedido_produccion_id ?? 0),
+                    'prenda_id' => $recibo->prenda_id ? (int) $recibo->prenda_id : null,
+                    'tipo_recibo' => (string) ($recibo->tipo_recibo ?? ''),
+                    'area' => 'Control de Calidad',
+                    'nombre_operario' => (string) ($usuario->name ?? ''),
+                ]));
+            } catch (\Exception $e) {
+                \Log::warning('[ControlCalidadController] Error al broadcast ReciboCompletado', [
+                    'recibo_id' => (int) $idRecibo,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Recibo marcado como completado'

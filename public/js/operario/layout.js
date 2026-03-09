@@ -41,6 +41,59 @@ function setupNotificaciones() {
     if (!btn || !menu || !badge || !list || !empty || !markAllBtn) return;
 
     const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const rolActual = String(window.USUARIO_ACTUAL?.rol || '').toLowerCase();
+    const isVistaCostura = rolActual === 'vista-costura';
+    const storageKey = 'vista_costura_push_notificaciones';
+
+    function loadPushItems() {
+        if (!isVistaCostura) return [];
+        try {
+            const raw = localStorage.getItem(storageKey);
+            const data = raw ? JSON.parse(raw) : [];
+            return Array.isArray(data) ? data : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function savePushItems(items) {
+        if (!isVistaCostura) return;
+        try {
+            localStorage.setItem(storageKey, JSON.stringify(items));
+        } catch {
+            // ignore
+        }
+    }
+
+    function renderPushItems(items) {
+        list.innerHTML = '';
+
+        if (!items || items.length === 0) {
+            empty.style.display = 'block';
+            setBadgeCount(0);
+            return;
+        }
+
+        empty.style.display = 'none';
+        setBadgeCount(items.length);
+
+        items.forEach((n) => {
+            const row = document.createElement('div');
+            row.className = 'notificacion-item';
+            row.dataset.id = n.id;
+            row.dataset.source = 'push';
+
+            row.innerHTML = `
+                <div class="notificacion-main">
+                    <div class="notificacion-title">${n.titulo || 'Notificación'}</div>
+                    <div class="notificacion-meta">${n.detalle || ''}${n.fecha ? ' · ' + n.fecha : ''}</div>
+                </div>
+                <button class="notificacion-read" type="button" data-action="leer">Descartar</button>
+            `;
+
+            list.appendChild(row);
+        });
+    }
 
     function setBadgeCount(count) {
         const c = Number(count) || 0;
@@ -137,7 +190,11 @@ function setupNotificaciones() {
         e.stopPropagation();
         const isOpen = menu.classList.toggle('active');
         if (isOpen) {
-            await fetchNotificaciones();
+            if (isVistaCostura) {
+                renderPushItems(loadPushItems());
+            } else {
+                await fetchNotificaciones();
+            }
         }
     });
 
@@ -157,8 +214,15 @@ function setupNotificaciones() {
 
         try {
             actionBtn.disabled = true;
-            await marcarLeida(id);
-            item.remove();
+            if (isVistaCostura || item?.dataset?.source === 'push') {
+                const current = loadPushItems();
+                const next = current.filter((n) => String(n.id) !== String(id));
+                savePushItems(next);
+                item.remove();
+            } else {
+                await marcarLeida(id);
+                item.remove();
+            }
 
             const remaining = list.querySelectorAll('.notificacion-item').length;
             setBadgeCount(remaining);
@@ -173,8 +237,13 @@ function setupNotificaciones() {
         e.stopPropagation();
         try {
             markAllBtn.disabled = true;
-            await marcarTodas();
-            renderItems([]);
+            if (isVistaCostura) {
+                savePushItems([]);
+                renderPushItems([]);
+            } else {
+                await marcarTodas();
+                renderItems([]);
+            }
         } catch (err) {
             console.warn('[Notificaciones] Error marcar todas', err);
         } finally {
@@ -183,7 +252,36 @@ function setupNotificaciones() {
     });
 
     // Carga inicial del badge (sin abrir)
-    fetchNotificaciones();
+    if (isVistaCostura) {
+        const items = loadPushItems();
+        setBadgeCount(items.length);
+    } else {
+        fetchNotificaciones();
+    }
+
+    if (isVistaCostura) {
+        window.NotificacionesPush = {
+            add: function(payload) {
+                const current = loadPushItems();
+                const id = payload?.id || (Date.now() + '-' + Math.random().toString(16).slice(2));
+                const next = [
+                    {
+                        id,
+                        titulo: payload?.titulo || 'Notificación',
+                        detalle: payload?.detalle || '',
+                        fecha: payload?.fecha || '',
+                    },
+                    ...current,
+                ].slice(0, 50);
+
+                savePushItems(next);
+                setBadgeCount(next.length);
+                if (menu.classList.contains('active')) {
+                    renderPushItems(next);
+                }
+            },
+        };
+    }
 
     // Realtime: refrescar notificaciones cuando llegue un evento de asignación
     // Se engancha a los mismos eventos ya usados en el dashboard.

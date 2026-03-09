@@ -87,10 +87,26 @@ class ObtenerPrendasRecibosService
                         ];
                     })->toArray() : [],
                     'recibos' => $recibosDelTipo->map(function ($recibo) {
-                        $procesoCostura = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
-                            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                            ->whereNull('deleted_at')
-                            ->latest('created_at')
+                        $procesos = $recibo->prenda && $recibo->prenda->relationLoaded('procesosPrenda')
+                            ? $recibo->prenda->procesosPrenda
+                            : collect();
+
+                        $procesoCostura = $procesos
+                            ->filter(fn($p) => is_string($p->proceso ?? null) && strtolower(trim((string) $p->proceso)) === 'costura')
+                            ->sortByDesc(fn($p) => $p->created_at)
+                            ->first();
+
+                        $procesoCorte = $procesos
+                            ->filter(fn($p) => is_string($p->proceso ?? null) && strtolower(trim((string) $p->proceso)) === 'corte')
+                            ->sortByDesc(fn($p) => $p->created_at)
+                            ->first();
+
+                        $procesoControlCalidad = $procesos
+                            ->filter(function ($p) {
+                                $proc = strtolower(trim((string) ($p->proceso ?? '')));
+                                return in_array($proc, ['control de calidad', 'control calidad'], true);
+                            })
+                            ->sortByDesc(fn($p) => $p->created_at)
                             ->first();
 
                         return [
@@ -103,6 +119,8 @@ class ObtenerPrendasRecibosService
                             'area' => $recibo->area,
                             'proceso_id_costura' => $procesoCostura ? $procesoCostura->id : null,
                             'encargado_costura' => $procesoCostura ? $procesoCostura->encargado : null,
+                            'encargado_corte' => $procesoCorte ? $procesoCorte->encargado : null,
+                            'encargado_control_calidad' => $procesoControlCalidad ? $procesoControlCalidad->encargado : null,
                         ];
                     })->toArray(),
                     'total_recibos' => $recibosDelTipo->count(),
@@ -139,7 +157,9 @@ class ObtenerPrendasRecibosService
         // Obtener todos los recibos de costura activos con relaciones (incluyendo procesos)
         $query = ConsecutivoReciboPedido::where('activo', 1)
             ->whereIn('tipo_recibo', $tiposRecibo)
-            ->whereIn('area', ['Corte', 'Costura', 'Control de Calidad', 'Control Calidad'])
+            ->whereIn('area', $tipoOperario === 'vista-costura'
+                ? ['Costura', 'Control de Calidad', 'Control Calidad']
+                : ['Corte', 'Costura', 'Control de Calidad', 'Control Calidad'])
             ->with(['prenda', 'prenda.pedidoProduccion', 'prenda.procesosPrenda', 'prenda.tallas', 'pedido', 'pedido.prendas', 'pedido.prendas.tallas']);
         
         // Para cortadores: excluir PENDIENTE_INSUMOS (misma lógica que /recibos-costura)

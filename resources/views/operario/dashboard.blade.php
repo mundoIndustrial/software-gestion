@@ -139,15 +139,61 @@
                             });
 
                             if (encargadoEvento && nombreActual && encargadoEvento === nombreActual) {
-                                console.log('[Operario Dashboard] Match encargado. Recargando...');
+                                console.log('[Operario Dashboard] Coincide encargado con usuario, actualizando lista sin recargar');
                                 actualizarListaSinRecargar();
                             }
                         });
-                } catch (e) {
-                    console.warn('[Operario Dashboard] Error inicializando Echo en dashboard', e);
-                    if (intentos < maxIntentos) {
-                        return setTimeout(initRealtimeListeners, 200);
+
+                    // Vista-costura: escuchar cuando insumos aprueba/envía el recibo a producción (área Corte)
+                    // Evento broadcast: App\Events\ReciboAprobado -> channel('recibos-costura') -> 'recibo.aprobado'
+                    if (String(window.USUARIO_ACTUAL?.rol || '').toLowerCase() === 'vista-costura') {
+                        window.EchoInstance.channel('recibos-costura')
+                            .subscribed(() => {
+                                console.log('[Operario Dashboard] Suscrito OK a canal público', 'recibos-costura');
+                            })
+                            .error((err) => {
+                                console.error('[Operario Dashboard] Error suscribiendo canal público recibos-costura', err);
+                            })
+                            .listen('.recibo.aprobado', (e) => {
+                                console.log('[Operario Dashboard] Evento recibo.aprobado recibido:', e);
+                                // Vista-costura ya no muestra recibos en área Corte; no refrescar aquí.
+                            })
+                            .listen('.recibo.completado', (e) => {
+                                console.log('[Operario Dashboard] Evento recibo.completado recibido:', e);
+                                try {
+                                    if (window.NotificacionesPush && typeof window.NotificacionesPush.add === 'function') {
+                                        const area = String(e?.area || '').trim();
+                                        const consecutivo = e?.consecutivo ? `#${e.consecutivo}` : '';
+                                        const operario = String(e?.nombre_operario || '').trim();
+                                        let titulo = 'Recibo completado';
+                                        let detalle = `Recibo ${consecutivo}`.trim();
+
+                                        if (area.toLowerCase() === 'corte') {
+                                            titulo = 'Recibo enviado a Costura';
+                                            detalle = `Recibo ${consecutivo} completado en CORTE${operario ? ' por ' + operario : ''}`.trim();
+                                        } else if (area.toLowerCase() === 'costura') {
+                                            titulo = 'Recibo completado en Costura';
+                                            detalle = `Recibo ${consecutivo} completado en COSTURA${operario ? ' por ' + operario : ''}`.trim();
+                                        } else if (area.toLowerCase() === 'control de calidad' || area.toLowerCase() === 'control calidad') {
+                                            titulo = 'Recibo completado en Control de Calidad';
+                                            detalle = `Recibo ${consecutivo} completado en CONTROL DE CALIDAD${operario ? ' por ' + operario : ''}`.trim();
+                                        }
+
+                                        window.NotificacionesPush.add({
+                                            id: `recibo-completado-${String(e?.recibo_id || '')}-${String(e?.area || '')}-${String(e?.timestamp || '')}`,
+                                            titulo,
+                                            detalle,
+                                            fecha: '',
+                                        });
+                                    }
+                                } catch (err) {
+                                    console.warn('[Operario Dashboard] Error creando notificación push', err);
+                                }
+                                actualizarListaSinRecargar();
+                            });
                     }
+                } catch (e) {
+                    console.error('[Operario Dashboard] Error initRealtimeListeners', e);
                 }
             }
 
@@ -202,7 +248,15 @@
                         
                         // Por defecto, ocultar tarjetas REFLECTIVO
                         $displayInicial = $esReflectivo === 'reflectivo' ? 'none' : '';
+
+                        $reciboPrincipalFiltro = $prenda['recibos'][0] ?? null;
+                        $areaReciboFiltro = strtolower(trim((string) ($reciboPrincipalFiltro['area'] ?? '')));
                     @endphp
+
+                    @if(auth()->user()->hasRole('vista-costura') && $areaReciboFiltro === 'corte')
+                        @continue
+                    @endif
+
                     <div class="orden-card-simple" 
                          data-numero="{{ $prenda['numero_pedido'] }}" 
                          data-prenda="{{ strtolower($prenda['nombre_prenda']) }}"
@@ -236,26 +290,31 @@
                         @endphp
                         <div class="orden-body {{ ($reciboCompletadoArea || (auth()->user()->hasRole('vista-costura') && $completadoVistaSegunArea)) ? 'recibo-completado-area' : '' }}">
                             @php
-                                $encargadoCosturaCorner = $reciboPrincipal['encargado_costura'] ?? null;
-                                $encargadoCosturaCorner = is_string($encargadoCosturaCorner) ? trim($encargadoCosturaCorner) : $encargadoCosturaCorner;
+                                $encargadoVista = null;
+                                if ($areaReciboNormalizada === 'corte') {
+                                    $encargadoVista = $reciboPrincipal['encargado_corte'] ?? null;
+                                } elseif ($areaReciboNormalizada === 'costura') {
+                                    $encargadoVista = $reciboPrincipal['encargado_costura'] ?? null;
+                                } elseif (in_array($areaReciboNormalizada, ['control calidad', 'control de calidad'], true)) {
+                                    $encargadoVista = $reciboPrincipal['encargado_control_calidad'] ?? null;
+                                }
+                                $encargadoVista = is_string($encargadoVista) ? trim($encargadoVista) : $encargadoVista;
                             @endphp
-                            <div class="orden-encargado-corner" onclick="event.stopPropagation();">
-                                <strong>Encargado:</strong>
-                                <span>{{ $encargadoCosturaCorner ? strtoupper($encargadoCosturaCorner) : 'SIN ENCARGADO' }}</span>
-                            </div>
+                            @if(!auth()->user()->hasRole('vista-costura') && !auth()->user()->hasRole('cortador'))
+                                <div class="orden-encargado-corner" onclick="event.stopPropagation();">
+                                    <strong>Encargado:</strong>
+                                    <span>{{ $encargadoVista ? strtoupper($encargadoVista) : 'SIN ENCARGADO' }}</span>
+                                </div>
+                            @endif
                             @if(auth()->user()->hasRole('vista-costura'))
                                 <div class="orden-top-badges" onclick="event.stopPropagation();">
                                     <span class="badge-area">{{ strtoupper($labelAreaVista) }}</span>
                                     <span class="badge-completado-corte {{ $completadoVistaSegunArea ? 'is-on' : '' }}">
                                         {{ $labelEstadoVista }}
                                     </span>
-                                    @php
-                                        $encargadoCosturaBadge = $reciboPrincipal['encargado_costura'] ?? null;
-                                        $encargadoCosturaBadge = is_string($encargadoCosturaBadge) ? trim($encargadoCosturaBadge) : $encargadoCosturaBadge;
-                                    @endphp
                                     <strong class="label-encargado">Encargado:</strong>
                                     <span class="badge-encargado">
-                                        {{ $encargadoCosturaBadge ? strtoupper($encargadoCosturaBadge) : 'SIN ENCARGADO' }}
+                                        {{ $encargadoVista ? strtoupper($encargadoVista) : 'SIN ENCARGADO' }}
                                     </span>
                                 </div>
                             @endif
