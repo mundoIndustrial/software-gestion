@@ -1995,6 +1995,34 @@
                 const cliente = orden?.cliente ? ` - ${orden.cliente}` : '';
                 const mensaje = `Nuevo pedido${numero ? ' #' + numero : ''}${cliente}`;
 
+                // Actualizar badge/lista de notificaciones en tiempo real (sin recargar)
+                try {
+                    const badge = document.getElementById('notificationBadge');
+                    if (badge) {
+                        const count = (parseInt(badge.textContent) || 0) + 1;
+                        badge.textContent = String(count);
+                        badge.style.display = count > 0 ? 'block' : 'none';
+                    }
+
+                    // Sincronización (opcional) con backend SIN bloquear la notificación inmediata.
+                    if (window.__supervisorPedidosNotifSyncT) clearTimeout(window.__supervisorPedidosNotifSyncT);
+                    window.__supervisorPedidosNotifSyncT = setTimeout(() => {
+                        try {
+                            if (typeof window.supervisorPedidosRefreshNotificaciones === 'function') {
+                                window.supervisorPedidosRefreshNotificaciones();
+                            } else if (typeof cargarNotificacionesPendientes === 'function') {
+                                cargarNotificacionesPendientes();
+                            } else {
+                                window.dispatchEvent(new CustomEvent('supervisorPedidos:notificacionesRefresh'));
+                            }
+                        } catch (e) {
+                            // noop
+                        }
+                    }, 1200);
+                } catch (e) {
+                    // noop
+                }
+
                 if (window.PedidosRealtimeRefresh && window.PedidosRealtimeRefresh.instance && typeof window.PedidosRealtimeRefresh.instance.showRealtimeToast === 'function') {
                     window.PedidosRealtimeRefresh.instance.showRealtimeToast(mensaje, 'success');
                     return;
@@ -2038,6 +2066,30 @@
                 }, 3500);
             } catch (e) {
                 // silencioso
+            }
+        }
+
+        function supervisorPedidosMaybeNotifyFromActualizado(payload) {
+            try {
+                const pedido = payload?.pedido || payload?.orden || payload || {};
+                const nuevo = payload?.nuevo_estado?.new || payload?.nuevo_estado || pedido?.estado || '';
+                const anterior = payload?.anterior_estado || payload?.nuevo_estado?.old || '';
+
+                if (String(nuevo).toUpperCase() !== 'PENDIENTE_SUPERVISOR') return;
+                if (String(anterior).toUpperCase() === 'PENDIENTE_SUPERVISOR') return;
+
+                if (!window.__supervisorPedidosNotifiedIds) {
+                    window.__supervisorPedidosNotifiedIds = new Set();
+                }
+
+                const key = String(pedido?.id || payload?.pedido_id || payload?.id || '');
+                if (!key) return;
+                if (window.__supervisorPedidosNotifiedIds.has(key)) return;
+                window.__supervisorPedidosNotifiedIds.add(key);
+
+                supervisorPedidosMostrarNotificacionNuevoPedido(pedido);
+            } catch (e) {
+                // noop
             }
         }
 
@@ -2244,6 +2296,12 @@
                             supervisorPedidosInsertarFilaNuevaAlInicio(pedido);
                             supervisorPedidosMostrarNotificacionNuevoPedido(pedido);
                             return;
+                        }
+
+                        // Si el backend no emite "pedido.creado" para supervisor, pero sí "pedido.actualizado"
+                        // cuando pasa a PENDIENTE_SUPERVISOR, notificar de inmediato.
+                        if (eventName && String(eventName).includes('despacho.pedidos:.pedido.actualizado')) {
+                            supervisorPedidosMaybeNotifyFromActualizado(payload);
                         }
 
                         if (window.__realtimeSupervisorRefreshTimeout) {

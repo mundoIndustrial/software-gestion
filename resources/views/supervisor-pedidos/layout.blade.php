@@ -31,8 +31,8 @@
     <!-- Material Symbols para iconos -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
 
-    <!-- Font Awesome para iconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Font Awesome para iconos (restaurado con CDN alterno para evitar bloqueos CORS) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <!-- SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
@@ -45,9 +45,53 @@
 
     <!-- jQuery -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script>
+        // Fallback: si CDN falla, intenta cargar jQuery desde un CDN alterno.
+        // Nota: esto debe ejecutarse ANTES de cargar Bootstrap JS.
+        (function() {
+            function ensureJquery(callback) {
+                if (typeof window.jQuery !== 'undefined') {
+                    callback();
+                    return;
+                }
+
+                console.warn('[Supervisor-Pedidos] jQuery no cargó desde CDN principal, intentando fallback...');
+                var s = document.createElement('script');
+                s.src = 'https://code.jquery.com/jquery-3.7.1.min.js';
+                s.onload = function() {
+                    callback();
+                };
+                s.onerror = function() {
+                    console.error('[Supervisor-Pedidos] No se pudo cargar jQuery desde fallback.');
+                    callback();
+                };
+                document.head.appendChild(s);
+            }
+
+            // Exponer helper por si algún módulo quiere esperar a jQuery
+            window.waitForJquery = function(cb) {
+                ensureJquery(function() {
+                    try { cb && cb(); } catch (e) { /* noop */ }
+                });
+            };
+        })();
+    </script>
     
     <!-- Bootstrap 4 JS (igual que asesores) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Cargar Bootstrap sólo cuando jQuery esté disponible (Bootstrap 4 depende de jQuery)
+        window.waitForJquery(function() {
+            try {
+                if (document.querySelector('script[data-bootstrap-bundle]')) return;
+                var bs = document.createElement('script');
+                bs.src = 'https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js';
+                bs.setAttribute('data-bootstrap-bundle', 'true');
+                document.head.appendChild(bs);
+            } catch (e) {
+                // noop
+            }
+        });
+    </script>
 
     <!-- GLOBAL: Usuario autenticado disponible desde el inicio -->
     <script>
@@ -653,6 +697,28 @@
                         </div>
                     `;
                 });
+        }
+
+        // Exponer refresh global para que otras vistas (ej. supervisor-pedidos/index) puedan forzar
+        // actualización de badge/lista en tiempo real.
+        try {
+            window.supervisorPedidosRefreshNotificaciones = function() {
+                try {
+                    cargarNotificacionesPendientes();
+                } catch (e) {
+                    // noop
+                }
+            };
+
+            window.addEventListener('supervisorPedidos:notificacionesRefresh', function() {
+                try {
+                    cargarNotificacionesPendientes();
+                } catch (e) {
+                    // noop
+                }
+            });
+        } catch (e) {
+            // noop
         }
 
         // Marcar todas como leídas
