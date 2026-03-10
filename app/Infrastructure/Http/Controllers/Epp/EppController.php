@@ -1135,6 +1135,22 @@ class EppController extends Controller
         try {
             $epp = Epp::findOrFail($id);
             
+            // Verificar si el EPP está asociado a pedidos
+            $asociacionesPedidos = \App\Models\PedidoEpp::where('epp_id', $id)->count();
+            
+            if ($asociacionesPedidos > 0) {
+                $mensaje = "No se puede eliminar el EPP porque está asociado a {$asociacionesPedidos} pedido(s).";
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => $mensaje,
+                    'tiene_asociaciones' => true,
+                    'asociaciones' => [
+                        'pedidos' => $asociacionesPedidos
+                    ]
+                ], 400);
+            }
+            
             // Soft delete
             $epp->delete();
 

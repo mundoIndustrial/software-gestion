@@ -44,6 +44,10 @@ class PDFCotizacionHelper
             $config = array_merge($defaultConfig, $config);
             
             \Log::info("Creando instancia mPDF con configuración...");
+
+            // Aumentar límite de PCRE para HTML grandes (mPDF los necesita)
+            ini_set('pcre.backtrack_limit', '50000000');
+            ini_set('pcre.recursion_limit', '50000000');
             
             // Crear PDF
             $mpdf = new Mpdf($config);

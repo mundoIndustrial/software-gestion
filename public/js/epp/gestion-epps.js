@@ -558,9 +558,22 @@ class GestorEpps {
             });
 
             const result = await response.json();
-            return result.success;
+            
+            if (result.success) {
+                return true;
+            } else {
+                // Mostrar error específico si tiene asociaciones
+                if (result.tiene_asociaciones) {
+                    // Mostrar modal con información detallada
+                    this.mostrarErrorDetallado('EPP con Asociaciones Activas', result.message);
+                } else {
+                    this.mostrarError(result.message);
+                }
+                return false;
+            }
         } catch (error) {
             console.error('Error en eliminación directa:', error);
+            this.mostrarError('Error de conexión al eliminar EPP');
             return false;
         }
     }
@@ -598,6 +611,56 @@ class GestorEpps {
 
     mostrarError(mensaje) {
         this.mostrarNotificacion(mensaje, 'danger');
+    }
+
+    mostrarErrorDetallado(titulo, mensaje) {
+        // Crear modal de error detallado
+        const modalHtml = `
+            <div class="modal fade" id="errorDetalladoModal" tabindex="-1" aria-labelledby="errorDetalladoModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title" id="errorDetalladoModalLabel">
+                                <i class="fas fa-exclamation-triangle me-2"></i>${titulo}
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-warning d-flex align-items-center" role="alert">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <div>
+                                    <strong>No se puede eliminar este EPP</strong>
+                                </div>
+                            </div>
+                            <p class="mb-3">${mensaje}</p>
+                            <div class="d-flex justify-content-end">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="fas fa-times me-2"></i>Cerrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Eliminar modal existente si hay uno
+        const modalExistente = document.getElementById('errorDetalladoModal');
+        if (modalExistente) {
+            modalExistente.remove();
+        }
+
+        // Agregar modal al DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('errorDetalladoModal'));
+        modal.show();
+
+        // Eliminar modal del DOM después de ocultarlo
+        document.getElementById('errorDetalladoModal').addEventListener('hidden.bs.modal', () => {
+            document.getElementById('errorDetalladoModal').remove();
+        });
     }
 
     mostrarNotificacion(mensaje, tipo) {
