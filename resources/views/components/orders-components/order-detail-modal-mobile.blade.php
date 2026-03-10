@@ -1203,14 +1203,25 @@ window.llenarReciboCosturaMobile = function(data) {
             descSinTallas = descripcionFormateada.replace(tallasMatch[0], '').trim();
         }
 
-        // Fallback: si no hay bloque de TALLAS en la descripción, construirlo desde prenda.tallas
+        // Fallback: si no hay bloque de TALLAS en la descripción, construirlo desde prenda.tallas o prenda.talla_colores
         if (!tallasExtraidas && todasLasPrendas && Array.isArray(todasLasPrendas) && todasLasPrendas.length > 0) {
             const prendaRef = todasLasPrendas[0];
-            if (prendaRef && prendaRef.tallas && typeof prendaRef.tallas === 'object') {
+            
+            // 🎨 PRIORIZAR talla_colores si está disponible
+            let tallasParaUsar = null;
+            if (prendaRef.talla_colores && Array.isArray(prendaRef.talla_colores) && prendaRef.talla_colores.length > 0) {
+                console.log('📱 [FALLBACK] Usando talla_colores de la prenda:', prendaRef.talla_colores);
+                tallasParaUsar = transformarTallaColoresAEstructura(prendaRef.talla_colores);
+            } else if (prendaRef && prendaRef.tallas && typeof prendaRef.tallas === 'object') {
+                console.log('📱 [FALLBACK] Usando tallas de la prenda (fallback):', prendaRef.tallas);
+                tallasParaUsar = prendaRef.tallas;
+            }
+            
+            if (tallasParaUsar) {
                 const lineas = [];
-                const generos = Object.keys(prendaRef.tallas);
+                const generos = Object.keys(tallasParaUsar);
                 generos.forEach((genero) => {
-                    const tallasGenero = prendaRef.tallas[genero] || {};
+                    const tallasGenero = tallasParaUsar[genero] || {};
                     const tallas = [];
                     Object.keys(tallasGenero).forEach((talla) => {
                         let val = tallasGenero[talla];
@@ -1441,6 +1452,12 @@ window.llenarReciboCosturaMobile = function(data) {
                 // EXCEPCIÓN: si estamos viendo un ANEXO de COSTURA (es_parcial=true),
                 // se deben mostrar SOLO las tallas del anexo.
                 let tallasFuente = prenda.tallas;
+                
+                // 🎨 PRIORIZAR talla_colores si está disponible (como en recibos de costura)
+                if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
+                    console.log('📱 [RECIBO MOBILE] Usando talla_colores de la prenda:', prenda.talla_colores);
+                    tallasFuente = transformarTallaColoresAEstructura(prenda.talla_colores);
+                }
                 try {
                     if (procesoActualSeleccionado && procesoActualSeleccionado.toUpperCase() === 'COSTURA' && prenda.procesos && Array.isArray(prenda.procesos)) {
                         const procCosturaAnexo = prenda.procesos.find(p => {
@@ -1683,7 +1700,13 @@ window.llenarReciboCosturaMobile = function(data) {
                         } else if ((!tallasObj || Object.keys(tallasObj).length === 0) && !proceso.es_parcial) {
                             // Si no hay tallas en el proceso y NO es anexo, usar fallback de la prenda
                             // Para anexos solo deben mostrarse tallas del anexo.
-                            tallasObj = prenda.tallas;
+                            // 🎨 PRIORIZAR talla_colores de la prenda si está disponible
+                            if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
+                                console.log('📱 [OPERARIO] Usando talla_colores de la prenda como fallback:', prenda.talla_colores);
+                                tallasObj = transformarTallaColoresAEstructura(prenda.talla_colores);
+                            } else {
+                                tallasObj = prenda.tallas;
+                            }
                         }
                         
                         if (tallasObj && typeof tallasObj === 'object') {
