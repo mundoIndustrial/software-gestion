@@ -297,7 +297,7 @@
                                     : (in_array($areaReciboNormalizada, ['control calidad', 'control de calidad'], true)
                                         ? $reciboCompletadoControlCalidad
                                         : false));
-                            $labelAreaVista = $areaReciboActual ?: 'â€”';
+                            $labelAreaVista = $areaReciboActual ?: '-';
                             $labelEstadoVista = $completadoVistaSegunArea
                                 ? ('COMPLETADO ' . strtoupper($labelAreaVista))
                                 : ('PENDIENTE ' . strtoupper($labelAreaVista));
@@ -355,9 +355,9 @@
                                     <p class="prendas-label">
                                         <strong>{{ $prenda['nombre_prenda'] }}</strong>
                                         @if($prenda['descripcion'])
-                                            â€” {{ $prenda['descripcion'] }}
+                                            {{ $prenda['descripcion'] }}
                                         @endif
-                                    </p>
+                                    </p>        
                                 </div>
 
 
