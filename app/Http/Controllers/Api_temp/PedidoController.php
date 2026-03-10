@@ -1291,7 +1291,7 @@ class PedidoController extends Controller
                 return null;
             }
 
-            // Estructurar los consecutivos por tipo
+            // Estructurar los consecutivos por tipo con datos completos
             $recibos = [
                 'COSTURA' => null,
                 'ESTAMPADO' => null,
@@ -1326,8 +1326,15 @@ class PedidoController extends Controller
 					return stripos($notas, 'parcial_id:') === false;
 				});
 
-				if ($base && !empty($base->consecutivo_actual)) {
-					$recibos[$tipo] = $base->consecutivo_actual;
+				if ($base) {
+					// Devolver datos completos del recibo, no solo el consecutivo
+					$recibos[$tipo] = [
+						'consecutivo_actual' => $base->consecutivo_actual,
+						'activo' => $base->activo,
+						'created_at' => $base->created_at,
+						'tipo_recibo' => $base->tipo_recibo,
+						'notas' => $base->notas
+					];
 					continue;
 				}
 
@@ -1335,7 +1342,17 @@ class PedidoController extends Controller
 					->filter(fn ($item) => !empty($item->consecutivo_actual))
 					->sortBy(fn ($item) => (int) $item->consecutivo_actual)
 					->first();
-				$recibos[$tipo] = $menor ? $menor->consecutivo_actual : null;
+					
+				if ($menor) {
+					// Devolver datos completos del recibo
+					$recibos[$tipo] = [
+						'consecutivo_actual' => $menor->consecutivo_actual,
+						'activo' => $menor->activo,
+						'created_at' => $menor->created_at,
+						'tipo_recibo' => $menor->tipo_recibo,
+						'notas' => $menor->notas
+					];
+				}
 			}
 
             \Log::info('[PedidoController] Consecutivos estructurados para prenda', [

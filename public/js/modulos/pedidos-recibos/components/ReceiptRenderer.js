@@ -20,7 +20,7 @@ export class ReceiptRenderer {
         this._actualizarTitulo(tipoProceso, recibo, prendaData);
 
         // Llenar información básica
-        this._llenarInformacionBasica(datosPedido);
+        this._llenarInformacionBasica(datosPedido, recibo);
 
         // Llenar descripción de la prenda
         this._llenarDescripcion(prendaData, recibo, tipoProceso, datosPedido);
@@ -109,12 +109,21 @@ export class ReceiptRenderer {
             
             if (!consecutivo && prendaData && prendaData.recibos && Object.keys(prendaData.recibos).length > 0) {
                 tipoReciboKey = tipoReciboMap[tipoProceso.toLowerCase()] || tipoProceso.toUpperCase();
-                consecutivo = prendaData.recibos[tipoReciboKey];
+                
+                // Nuevo formato: los recibos ahora son objetos con datos completos
+                const datosRecibo = prendaData.recibos[tipoReciboKey];
+                if (datosRecibo && typeof datosRecibo === 'object') {
+                    consecutivo = datosRecibo.consecutivo_actual;
+                } else {
+                    // Formato antiguo (fallback por si acaso)
+                    consecutivo = datosRecibo;
+                }
                 
                 console.log(' [ReceiptRenderer] Buscando consecutivo:', {
                     tipoProceso,
                     tipoReciboKey,
                     consecutivo,
+                    datosRecibo,
                     recibos: prendaData.recibos
                 });
             } else if (!consecutivo) {
@@ -189,19 +198,50 @@ export class ReceiptRenderer {
     /**
      * Llena la información básica del pedido
      */
-    static _llenarInformacionBasica(datosPedido) {
-        // Fecha
+    static _llenarInformacionBasica(datosPedido, recibo = null) {
+        // Fecha - Lógica para recibos de procesos
         const dayBox = document.querySelector('.day-box');
         const monthBox = document.querySelector('.month-box');
         const yearBox = document.querySelector('.year-box');
 
         if (dayBox && monthBox && yearBox) {
-            const fecha = Formatters.parsearFecha(datosPedido.fecha);
-            const { day, month, year } = Formatters.formatearFecha(fecha);
-            
-            dayBox.textContent = day;
-            monthBox.textContent = month;
-            yearBox.textContent = year;
+            // Para recibos de procesos (no costura), verificar si está activo
+            if (recibo && recibo.tipo_recibo && recibo.tipo_recibo !== 'COSTURA') {
+                console.log('[ReceiptRenderer] Verificando estado de recibo de proceso:', {
+                    tipo_recibo: recibo.tipo_recibo,
+                    activo: recibo.activo,
+                    created_at: recibo.created_at
+                });
+
+                if (recibo.activo === 1 && recibo.created_at) {
+                    // Recibo activo: usar fecha de creación del recibo
+                    const fecha = Formatters.parsearFecha(recibo.created_at);
+                    const { day, month, year } = Formatters.formatearFecha(fecha);
+                    
+                    dayBox.textContent = day;
+                    monthBox.textContent = month;
+                    yearBox.textContent = year;
+                    
+                    console.log('[ReceiptRenderer] Fecha de recibo activo establecida:', { day, month, year });
+                } else {
+                    // Recibo no activo: mostrar fecha vacía
+                    dayBox.textContent = '--';
+                    monthBox.textContent = '--';
+                    yearBox.textContent = '----';
+                    
+                    console.log('[ReceiptRenderer] Recibo no activo - Fecha vacía');
+                }
+            } else {
+                // Para costura o si no hay recibo: usar fecha del pedido (comportamiento original)
+                const fecha = Formatters.parsearFecha(datosPedido.fecha);
+                const { day, month, year } = Formatters.formatearFecha(fecha);
+                
+                dayBox.textContent = day;
+                monthBox.textContent = month;
+                yearBox.textContent = year;
+                
+                console.log('[ReceiptRenderer] Fecha de pedido (costura o default) establecida:', { day, month, year });
+            }
         }
 
         // Cliente

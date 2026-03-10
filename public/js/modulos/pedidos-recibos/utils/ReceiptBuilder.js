@@ -92,7 +92,7 @@ export class ReceiptBuilder {
             // El recibo base debe mostrar solo imágenes relacionadas a la prenda del recibo
             // (prenda + tela). NO debe arrastrar imágenes de otros procesos.
             
-            recibos.push({
+            const reciboBase = {
                 tipo: tipoBase,
                 tipo_proceso: nombreBase,
                 nombre_proceso: nombreBase,
@@ -102,7 +102,25 @@ export class ReceiptBuilder {
                 observaciones: '',
                 imagenes: imagenesBase,
                 tallas: tallasObj
-            });
+            };
+            
+            // Agregar datos del recibo de costura si existen
+            if (prenda.recibos && prenda.recibos[tipoBase.toUpperCase()]) {
+                const datosRecibo = prenda.recibos[tipoBase.toUpperCase()];
+                reciboBase.activo = datosRecibo.activo;
+                reciboBase.created_at = datosRecibo.created_at;
+                reciboBase.tipo_recibo = datosRecibo.tipo_recibo;
+                reciboBase.consecutivo_actual = datosRecibo.consecutivo_actual;
+                
+                console.log('[ReceiptBuilder] Datos de recibo agregados al recibo base:', {
+                    tipoBase,
+                    activo: datosRecibo.activo,
+                    created_at: datosRecibo.created_at,
+                    consecutivo_actual: datosRecibo.consecutivo_actual
+                });
+            }
+            
+            recibos.push(reciboBase);
         }
         // PASO 2: AGREGAR PROCESOS ADICIONALES
         const procesos = prenda.procesos || [];
@@ -150,6 +168,23 @@ export class ReceiptBuilder {
                 // Mutarlo contamina `prenda.procesos` (y por ende la galería estilo insumos),
                 // provocando mezcla de imágenes entre procesos (ej: Reflectivo mostrando Bordado).
                 const procRecibo = { ...proc, imagenes: imagenesProceso };
+                
+                // Agregar datos del recibo (activo y created_at) si existen
+                if (prenda.recibos && prenda.recibos[tipoProceso.toUpperCase()]) {
+                    const datosRecibo = prenda.recibos[tipoProceso.toUpperCase()];
+                    procRecibo.activo = datosRecibo.activo;
+                    procRecibo.created_at = datosRecibo.created_at;
+                    procRecibo.tipo_recibo = datosRecibo.tipo_recibo;
+                    procRecibo.consecutivo_actual = datosRecibo.consecutivo_actual;
+                    
+                    console.log('[ReceiptBuilder] Datos de recibo agregados al proceso:', {
+                        tipoProceso,
+                        activo: datosRecibo.activo,
+                        created_at: datosRecibo.created_at,
+                        consecutivo_actual: datosRecibo.consecutivo_actual
+                    });
+                }
+                
                 recibos.push(procRecibo);
             }
         });
