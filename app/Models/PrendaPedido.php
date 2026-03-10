@@ -213,6 +213,16 @@ class PrendaPedido extends Model
     }
 
     /**
+     * Relación: Una prenda tiene un registro de ancho y metraje
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function anchoMetraje()
+    {
+        return $this->hasOne(PedidoAnchoGeneral::class, 'prenda_pedido_id');
+    }
+
+    /**
      * Relación: Una prenda tiene muchas novedades de recibo
      * 
      * @return \Illuminate\Database\Eloquent\Relations\HasMany

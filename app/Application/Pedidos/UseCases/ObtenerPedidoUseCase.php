@@ -125,6 +125,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                           'tallas',
                           'variantes.tipoManga',      // CARGAR TIPO MANGA
                           'variantes.tipoBroche',      // CARGAR TIPO BROCHE
+                          'anchoMetraje',              // CARGAR ANCHO Y METRAJE
                           'fotos' => function($q2) {
                               // FOTOS DE PRENDA - ORDENADAS POR ORDEN
                               $q2->orderBy('orden', 'asc');
@@ -263,6 +264,28 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 // OBTENER PROCESOS CON IMÁGENES ORDENADAS
                 // Si el pedido está en estado PENDIENTE, NO mostrar procesos
                 $procesos = $this->obtenerProcesosDelaPrenda($prenda, $estadoPedido);
+                
+                // OBTENER ANCHO Y METRAJE
+                $anchoMetraje = [];
+                if ($prenda->anchoMetraje) {
+                    $anchoMetraje = [
+                        'ancho' => $prenda->anchoMetraje->ancho,
+                        'metraje' => $prenda->anchoMetraje->metraje,
+                        'metrajes_por_color' => [], // TODO: Cargar desde tabla si existe
+                        'tipo_modo' => $prenda->anchoMetraje->tipo_modo,
+                        'contenido_mano' => $prenda->anchoMetraje->contenido_mano,
+                        'observaciones' => $prenda->anchoMetraje->observaciones ?? null,
+                    ];
+                } else {
+                    $anchoMetraje = [
+                        'ancho' => null,
+                        'metraje' => null,
+                        'metrajes_por_color' => [],
+                        'tipo_modo' => null,
+                        'contenido_mano' => null,
+                        'observaciones' => null,
+                    ];
+                }
 
                 $prendasArray[] = [
                     'id' => $prenda->id,
@@ -291,6 +314,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                     'tiene_bolsillos' => isset($variantes[0]) ? (bool)$variantes[0]['bolsillos'] : false,
                     'obs_bolsillos' => $variantes[0]['bolsillos_obs'] ?? null,
                     'tiene_reflectivo' => false,
+                    'ancho_metraje' => $anchoMetraje,
                 ];
             }
 

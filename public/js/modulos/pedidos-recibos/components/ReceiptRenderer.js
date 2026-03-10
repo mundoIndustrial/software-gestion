@@ -396,7 +396,8 @@ export class ReceiptRenderer {
                 const contenedor = document.getElementById('order-ancho-metraje');
                 
                 // Si no hay tipo_modo ni datos, ocultar contenedor
-                if (!data.tipo_modo || (Array.isArray(data.data) && data.data.length === 0 && !data.ancho && !data.metraje)) {
+                // Considerar: data.data (array metrajes), ancho, metraje, y contenido_mano
+                if (!data.tipo_modo || (Array.isArray(data.data) && data.data.length === 0 && !data.ancho && !data.metraje && !data.contenido_mano)) {
                     if (contenedor) {
                         contenedor.style.display = 'none';
                     }
@@ -416,13 +417,24 @@ export class ReceiptRenderer {
                 if (tipoModo === 'normal') {
                     // MODO NORMAL: Ancho + Metraje general en barra inferior
                     // Metraje viene directo de pedido_ancho_general (top-level en response)
-                    if (contenedor) contenedor.style.display = '';
+                    if (contenedor) {
+                        contenedor.style.display = 'block';
+                        
+                        // Asegurar que solo la vista normal está visible
+                        const vistaNormal = document.getElementById('ancho-metraje-normal');
+                        const vistaMano = document.getElementById('ancho-metraje-mano');
+                        if (vistaNormal) {
+                            vistaNormal.classList.remove('hidden-view');
+                            vistaNormal.style.display = 'block';
+                        }
+                        if (vistaMano) vistaMano.style.display = 'none';
+                    }
                     
                     if (metrajeSpan) {
                         const metrajeGeneral = data.metraje || null;
                         metrajeSpan.textContent = metrajeGeneral ? metrajeGeneral + ' m' : '--';
                         // Mostrar metraje en modo normal
-                        metrajeSpan.closest('span').style.display = '';
+                        metrajeSpan.closest('span').style.display = 'block';
                     }
                     
                     console.log('[ReceiptRenderer] Modo NORMAL: Ancho + Metraje en barra inferior');
@@ -430,7 +442,17 @@ export class ReceiptRenderer {
                 } else if (tipoModo === 'color') {
                     // MODO POR COLOR: Solo Ancho en barra inferior, metraje en descripción por color
                     if (contenedor) {
-                        contenedor.style.display = '';
+                        contenedor.style.display = 'block';
+                        
+                        // Asegurar que solo la vista normal está visible
+                        const vistaNormal = document.getElementById('ancho-metraje-normal');
+                        const vistaMano = document.getElementById('ancho-metraje-mano');
+                        if (vistaNormal) {
+                            vistaNormal.classList.remove('hidden-view');
+                            vistaNormal.style.display = 'block';
+                        }
+                        if (vistaMano) vistaMano.style.display = 'none';
+                        
                         // Ocultar metraje de la barra inferior
                         if (metrajeSpan) {
                             metrajeSpan.closest('span').style.display = 'none';
@@ -445,7 +467,17 @@ export class ReceiptRenderer {
                 } else if (tipoModo === 'pieza') {
                     // MODO POR PIEZA: Ancho en columna izquierda + metrajes por color en columna derecha
                     if (contenedor) {
-                        contenedor.style.display = '';
+                        contenedor.style.display = 'block';
+                        
+                        // Asegurar que solo la vista normal está visible
+                        const vistaNormal = document.getElementById('ancho-metraje-normal');
+                        const vistaMano = document.getElementById('ancho-metraje-mano');
+                        if (vistaNormal) {
+                            vistaNormal.classList.remove('hidden-view');
+                            vistaNormal.style.display = 'block';
+                        }
+                        if (vistaMano) vistaMano.style.display = 'none';
+                        
                         // Ocultar metraje general (está escondido en el HTML)
                         if (metrajeSpan) {
                             metrajeSpan.closest('span').style.display = 'none';
@@ -470,6 +502,39 @@ export class ReceiptRenderer {
                     
                     // NO inyectar metrajes en la descripción para modo pieza
                     console.log('[ReceiptRenderer] Modo PIEZA: Metrajes en columna derecha');
+                    
+                } else if (tipoModo === 'mano') {
+                    // MODO A MANO: Mostrar contenido de texto libre
+                    if (contenedor) {
+                        contenedor.style.display = 'block';
+                        
+                        // Ocultar la vista normal agregando la clase hidden-view
+                        const vistaNormal = document.getElementById('ancho-metraje-normal');
+                        if (vistaNormal) {
+                            vistaNormal.classList.add('hidden-view');
+                            vistaNormal.style.display = 'none';
+                        }
+                        
+                        // Mostrar la vista a mano
+                        const vistaMano = document.getElementById('ancho-metraje-mano');
+                        if (vistaMano) {
+                            vistaMano.style.display = 'block';
+                            
+                            // Llenar el contenido
+                            const contenidoMano = document.getElementById('contenido-mano');
+                            if (contenidoMano) {
+                                contenidoMano.textContent = data.contenido_mano || '';
+                            }
+                            
+                            // Ocultar observaciones (no se usa)
+                            const observacionesContainer = document.getElementById('observaciones-mano');
+                            if (observacionesContainer) {
+                                observacionesContainer.style.display = 'none';
+                            }
+                        }
+                    }
+                    
+                    console.log('[ReceiptRenderer] Modo A MANO: Contenido de texto libre');
                 }
             })
             .catch(error => {

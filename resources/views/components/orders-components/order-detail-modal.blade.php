@@ -4,13 +4,13 @@
 /* Estilos específicos para ancho y metraje */
 .order-ancho-metraje {
     position: absolute !important;
-    top: 500px !important;
+    top: 460px !important;
     left: 30px !important;
     right: 30px !important;
     padding: 8px !important;
     font-family: 'Courier New', monospace !important;
     font-weight: bold !important;
-    font-size: 0.9rem !important;
+    font-size: 0.75rem !important;
     letter-spacing: 2px !important;
     color: #333 !important;
     background: transparent !important;
@@ -21,16 +21,24 @@
 }
 
 .ancho-metraje-container {
-    display: flex !important;
+    display: flex;
     justify-content: space-between !important;
+    align-items: flex-end !important;
     gap: 60px !important;
     width: 100% !important;
+}
+
+.ancho-metraje-container.hidden-view {
+    display: none !important;
 }
 
 .ancho-column {
     flex: 0 0 auto !important;
     text-align: left !important;
     white-space: nowrap !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    height: 100% !important;
 }
 
 .metraje-column {
@@ -64,6 +72,16 @@
 .order-ancho-metraje .metraje-valor {
     margin-left: 5px !important;
     font-weight: bold !important;
+}
+
+#ancho-valor {
+    color: red !important;
+}
+
+#ancho-metraje-mano,
+#ancho-metraje-mano #contenido-mano,
+#ancho-metraje-mano #observaciones-mano {
+    color: red !important;
 }
 </style>
 
@@ -110,13 +128,23 @@
 
         <!-- Línea de ancho y metraje con dos columnas separadas -->
         <div id="order-ancho-metraje" class="order-ancho-metraje" style="display: none;">
-            <div class="ancho-metraje-container">
+            <!-- VISTA NORMAL: Dos columnas -->
+            <div id="ancho-metraje-normal" class="ancho-metraje-container">
                 <div class="ancho-column">
                     <span>Ancho: <span id="ancho-valor" class="ancho-valor">--</span></span>
                 </div>
                 <div class="metraje-column">
                     <span class="metraje-label">Metraje: <span id="metraje-valor" class="metraje-valor">--</span></span>
                     <div id="metrajes-por-color-container"></div>
+                </div>
+            </div>
+            
+            <!-- VISTA A MANO: Texto libre -->
+            <div id="ancho-metraje-mano" class="ancho-metraje-mano" style="display: none; padding: 12px; background: #f3f4f6; border-radius: 6px; border-left: 4px solid #d1d5db;">
+                <div id="contenido-mano" class="text-sm whitespace-pre-wrap text-gray-800"></div>
+                <div id="observaciones-mano" class="text-xs text-gray-600 mt-2 border-t border-gray-300 pt-2" style="display: none;">
+                    <strong>Observaciones:</strong>
+                    <div id="contenido-observaciones" class="whitespace-pre-wrap mt-1"></div>
                 </div>
             </div>
         </div>

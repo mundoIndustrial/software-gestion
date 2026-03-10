@@ -1014,6 +1014,9 @@ class PedidoController extends Controller
                             $ancho_metraje_data = [
                                 'prenda_id' => $prendaId,
                                 'ancho' => $anchoGeneral ? $anchoGeneral->ancho : null,
+                                'metraje' => $anchoGeneral ? $anchoGeneral->metraje : null,
+                                'tipo_modo' => $anchoGeneral ? $anchoGeneral->tipo_modo : null,
+                                'contenido_mano' => $anchoGeneral ? $anchoGeneral->contenido_mano : null,
                                 'metrajes_por_color' => []
                             ];
                             
@@ -1786,24 +1789,24 @@ class PedidoController extends Controller
                 ], 404);
             }
 
-            // Obtener ancho general
+            // Obtener ancho general (el más reciente)
             $anchoGeneral = \App\Models\PedidoAnchoGeneral::where('pedido_produccion_id', $pedidoId)
                 ->where('prenda_pedido_id', $prendaId)
+                ->latest('created_at')
                 ->first();
 
-            // Obtener metrajes por color
+            // Obtener metrajes por color (los más recientes)
             $metrajesPorColor = \App\Models\PedidoMetrajeColor::where('pedido_produccion_id', $pedidoId)
                 ->where('prenda_pedido_id', $prendaId)
+                ->latest('created_at')
                 ->get();
 
-            // Determinar modo según los datos disponibles
+            // Determinar tipo_modo (usar el guardado, no inferir)
             $tipoModo = null;
-            if ($anchoGeneral && $metrajesPorColor->isEmpty()) {
-                $tipoModo = 'normal';
-            } elseif (!$anchoGeneral && !$metrajesPorColor->isEmpty()) {
-                $tipoModo = 'color';
-            } elseif ($anchoGeneral && !$metrajesPorColor->isEmpty()) {
-                $tipoModo = 'pieza';
+            if ($anchoGeneral && $anchoGeneral->tipo_modo) {
+                $tipoModo = $anchoGeneral->tipo_modo;
+            } elseif ($metrajesPorColor->isNotEmpty() && $metrajesPorColor->first()->tipo_modo) {
+                $tipoModo = $metrajesPorColor->first()->tipo_modo;
             }
 
             // Construir respuesta
@@ -1811,6 +1814,7 @@ class PedidoController extends Controller
                 'success' => true,
                 'ancho' => $anchoGeneral ? $anchoGeneral->ancho : null,
                 'metraje' => $anchoGeneral ? $anchoGeneral->metraje : null,
+                'contenido_mano' => $anchoGeneral ? $anchoGeneral->contenido_mano : null,
                 'tipo_modo' => $tipoModo,
                 'data' => []
             ];

@@ -1424,7 +1424,7 @@
                 <p class="text-sm text-gray-500 mt-2">Cargando datos...</p>
             </div>
 
-            <!-- SELECTOR DE MODO: Normal, Por Color o Por Pieza -->
+            <!-- SELECTOR DE MODO: Normal, Por Color, Por Pieza o A Mano -->
             <div id="modoSelector" class="bg-gray-100 p-4 rounded-lg border border-gray-300 hidden">
                 <p class="text-sm font-semibold text-gray-700 mb-3">¿Cómo deseas ingresar el ancho y metraje?</p>
                 <div class="flex gap-4 flex-wrap">
@@ -1455,6 +1455,15 @@
                             class="modoRadio"
                         >
                         <span class="text-gray-800 font-medium">Por Pieza</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input 
+                            type="radio" 
+                            name="modoAnchoMetraje" 
+                            value="mano" 
+                            class="modoRadio"
+                        >
+                        <span class="text-gray-800 font-medium">A Mano</span>
                     </label>
                 </div>
             </div>
@@ -1514,6 +1523,25 @@
                 </div>
                 <div id="piezaInputsContainer" class="space-y-4">
                     <!-- Los inputs por pieza/talla-color se generarán dinámicamente aquí -->
+                </div>
+            </div>
+
+            <!-- VISTA A MANO: Ingresar texto libre para ancho y metraje -->
+            <div id="manoView" class="space-y-4 hidden">
+                <div class="bg-purple-50 border-l-4 border-purple-600 p-3 mb-4">
+                    <p class="text-sm text-purple-900">
+                        <i class="fas fa-edit mr-2"></i>
+                        Ingresa el ancho y metraje en formato libre. El texto se mostrará directamente en el recibo.
+                    </p>
+                </div>
+                <div>
+                    <label class="block text-base font-bold text-gray-800 mb-2">Ancho y Metraje:</label>
+                    <textarea 
+                        id="manoAnchoMetrajeTextarea" 
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                        placeholder="Ej: Ancho: 2.10 m, Metraje: 1.50 m"
+                        rows="4"
+                    ></textarea>
                 </div>
             </div>
 
@@ -2090,7 +2118,7 @@
         const tieneDatosGuardados = modal.tieneDatosGuardados;
         
         if (e && e.target && tipoModoGuardado && tieneDatosGuardados && modo !== tipoModoGuardado) {
-            const nombresMode = { 'normal': 'Normal', 'color': 'Por Color', 'pieza': 'Por Pieza' };
+            const nombresMode = { 'normal': 'Normal', 'color': 'Por Color', 'pieza': 'Por Pieza', 'mano': 'A Mano' };
             const modoGuardadoNombre = nombresMode[tipoModoGuardado] || tipoModoGuardado;
             const modoNuevoNombre = nombresMode[modo] || modo;
             
@@ -2105,11 +2133,13 @@
         const normalView = document.getElementById('normalView');
         const colorView = document.getElementById('colorView');
         const piezaView = document.getElementById('piezaView');
+        const manoView = document.getElementById('manoView');
         
         // Ocultar todas las vistas
         normalView.classList.add('hidden');
         colorView.classList.add('hidden');
         piezaView.classList.add('hidden');
+        manoView.classList.add('hidden');
         
         // Ocultar todos los mensajes de "no hay datos"
         document.getElementById('normalDataWarning')?.classList.add('hidden');
@@ -2121,15 +2151,18 @@
             normalView.classList.remove('hidden');
             
             // Cargar datos si están disponibles en el modal
-            if (modal.datosData && modal.datosData.success && modal.datosData.data) {
-                const datos = Array.isArray(modal.datosData.data) ? modal.datosData.data[0] : modal.datosData.data;
-                if (datos) {
-                    if (datos.ancho) {
-                        document.getElementById('anchoInput').value = datos.ancho;
-                    }
-                    if (datos.metraje) {
-                        document.getElementById('metrajeInput').value = datos.metraje;
-                    }
+            // ancho y metraje están en el nivel superior de datosData, no dentro de data[]
+            if (modal.datosData && modal.datosData.success) {
+                if (modal.datosData.ancho !== null && modal.datosData.ancho !== undefined) {
+                    document.getElementById('anchoInput').value = modal.datosData.ancho;
+                } else {
+                    document.getElementById('anchoInput').value = '';
+                }
+                
+                if (modal.datosData.metraje !== null && modal.datosData.metraje !== undefined) {
+                    document.getElementById('metrajeInput').value = modal.datosData.metraje;
+                } else {
+                    document.getElementById('metrajeInput').value = '';
                 }
             } else {
                 // Mostrar aviso si no hay datos
@@ -2173,6 +2206,18 @@
                 document.getElementById('piezaDataWarning')?.classList.remove('hidden');
                 document.getElementById('piezaInputsContainer').innerHTML = '';
             }
+        } else if (modo === 'mano') {
+            // MODO A MANO - Texto libre
+            manoView.classList.remove('hidden');
+            
+            // Cargar datos si están disponibles
+            // contenido_mano está en el nivel superior de datosData, no dentro de data[]
+            if (modal.datosData && modal.datosData.success) {
+                const contenidoMano = modal.datosData.contenido_mano || '';
+                document.getElementById('manoAnchoMetrajeTextarea').value = contenidoMano;
+            } else {
+                document.getElementById('manoAnchoMetrajeTextarea').value = '';
+            }
         }
     }
 
@@ -2188,6 +2233,7 @@
         document.getElementById('metrajeInput').value = '';
         document.getElementById('colorInputsContainer').innerHTML = '';
         document.getElementById('piezaInputsContainer').innerHTML = '';
+        document.getElementById('manoAnchoMetrajeTextarea').value = '';
     }
 
     /**
@@ -2581,6 +2627,49 @@
                     console.error('Error al guardar datos de pieza:', error);
                     showToast('Error al guardar los datos', 'error');
                 });
+        } else if (modoSeleccionado === 'mano') {
+            // GUARDAR MODO A MANO
+            const contenidoMano = document.getElementById('manoAnchoMetrajeTextarea').value.trim();
+            
+            if (!contenidoMano) {
+                showToast('Por favor, ingresa el contenido de ancho y metraje', 'warning');
+                return;
+            }
+            
+            // Enviar al servidor
+            fetch(`/insumos/materiales/${pedido}/guardar-ancho-metraje-prenda`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                },
+                body: JSON.stringify({
+                    prenda_id: prendaId,
+                    tipo_modo: 'mano',
+                    contenido_mano: contenidoMano
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Ancho y metraje guardados correctamente', 'success');
+                    
+                    if (window.receiptManager && window.receiptManager.datosFactura) {
+                        console.log('[guardarAnchoMetraje] Actualizando recibo abierto...');
+                        actualizarReciboConAnchoMetraje();
+                    }
+                    
+                    setTimeout(() => {
+                        cerrarModalAnchoMetraje();
+                    }, 1000);
+                } else {
+                    showToast('Error al guardar los datos', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error al guardar ancho y metraje a mano:', error);
+                showToast('Error al guardar los datos', 'error');
+            });
         }
     }
     

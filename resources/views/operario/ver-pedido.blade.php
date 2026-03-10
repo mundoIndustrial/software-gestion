@@ -1413,6 +1413,18 @@
         console.log('🌐 URL API (nuevo endpoint operario):', apiUrl);
         
         console.log(' Iniciando fetch a:', apiUrl);
+        
+        // Declarar variable fuera del fetch para acceso en .then() y .catch()
+        let loadingOverlay = document.getElementById('loading-overlay');
+        
+        // Mostrar loading overlay
+        if (loadingOverlay) {
+            loadingOverlay.classList.remove('hidden');
+            loadingOverlay.style.opacity = '1';
+            loadingOverlay.style.pointerEvents = 'auto';
+            console.log('✅ Loading overlay mostrado');
+        }
+        
         fetch(apiUrl)
             .then(function(response) {
                 console.log('📨 Respuesta del servidor:', {
@@ -1621,6 +1633,14 @@
                 
                 // Mostrar fotos iniciales de la primer prenda
                 actualizarFotosPrenda();
+                
+                // Ocultar loading overlay
+                if (loadingOverlay) {
+                    loadingOverlay.classList.add('hidden');
+                    loadingOverlay.style.opacity = '0';
+                    loadingOverlay.style.pointerEvents = 'none';
+                    console.log('✅ Loading overlay ocultado (success)');
+                }
 
             })
             .catch(function(error) {
@@ -1629,6 +1649,14 @@
                     stack: error.stack,
                     error: error
                 });
+                
+                // Ocultar loading overlay en caso de error
+                if (loadingOverlay) {
+                    loadingOverlay.classList.add('hidden');
+                    loadingOverlay.style.opacity = '0';
+                    loadingOverlay.style.pointerEvents = 'none';
+                    console.log('✅ Loading overlay ocultado (error)');
+                }
             });
     }, 500);
 

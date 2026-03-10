@@ -64,6 +64,9 @@ class ObtenerRecibosService
                         $ancho_metraje_data = [
                             'prenda_id' => $prendaId,
                             'ancho' => $anchoGeneral ? $anchoGeneral->ancho : null,
+                            'metraje' => $anchoGeneral ? $anchoGeneral->metraje : null,
+                            'tipo_modo' => $anchoGeneral ? $anchoGeneral->tipo_modo : null,
+                            'contenido_mano' => $anchoGeneral ? $anchoGeneral->contenido_mano : null,
                             'metrajes_por_color' => []
                         ];
                         

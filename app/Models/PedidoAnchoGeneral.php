@@ -14,6 +14,8 @@ class PedidoAnchoGeneral extends Model
         'ancho',
         'metraje',
         'tipo_modo',
+        'contenido_mano',
+        'observaciones',
         'creado_por',
         'actualizado_por'
     ];

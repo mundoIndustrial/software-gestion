@@ -1497,14 +1497,16 @@ class InsumosController extends Controller
             $pedido = PedidoProduccion::find($numeroPedido)
                 ?? PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
             
-            // Obtener ancho general
+            // Obtener ancho general (el más reciente)
             $anchoGeneral = PedidoAnchoGeneral::where('pedido_produccion_id', $pedido->id)
                 ->where('prenda_pedido_id', $prendaId)
+                ->latest('created_at')
                 ->first();
             
-            // Obtener metrajes por color
+            // Obtener metrajes por color (los más recientes)
             $metrajesPorColor = PedidoMetrajeColor::where('pedido_produccion_id', $pedido->id)
                 ->where('prenda_pedido_id', $prendaId)
+                ->latest('created_at')
                 ->get();
             
             // Determinar tipo_modo guardado (prioridad: ancho_general > metraje_color)
@@ -1532,6 +1534,7 @@ class InsumosController extends Controller
                 'data' => $data,
                 'ancho' => $anchoGeneral ? $anchoGeneral->ancho : null,
                 'metraje' => $anchoGeneral ? $anchoGeneral->metraje : null,
+                'contenido_mano' => $anchoGeneral ? $anchoGeneral->contenido_mano : null,
                 'tipo_modo' => $tipoModoGuardado
             ]);
             
@@ -1559,9 +1562,10 @@ class InsumosController extends Controller
                 'color' => 'nullable|string|max:100',
                 'tela' => 'nullable|string|max:100',
                 'talla' => 'nullable|string|max:50',
-                'tipo_modo' => 'nullable|in:normal,color,pieza',
+                'tipo_modo' => 'nullable|in:normal,color,pieza,mano',
                 'ancho' => 'nullable|numeric|min:0',
-                'metraje' => 'nullable|numeric|min:0'
+                'metraje' => 'nullable|numeric|min:0',
+                'contenido_mano' => 'nullable|string|max:5000'
             ]);
             
             // Buscar el pedido
@@ -1588,7 +1592,7 @@ class InsumosController extends Controller
             
             if ($tipoModoExistente && $tipoModoNuevo !== $tipoModoExistente) {
                 // Auto-limpiar datos del modo anterior cuando el usuario cambia de modo
-                $nombres = ['normal' => 'Normal', 'color' => 'Por Color', 'pieza' => 'Por Pieza'];
+                $nombres = ['normal' => 'Normal', 'color' => 'Por Color', 'pieza' => 'Por Pieza', 'mano' => 'A Mano'];
                 
                 PedidoAnchoGeneral::where('pedido_produccion_id', $pedido->id)
                     ->where('prenda_pedido_id', $validated['prenda_id'])
@@ -1598,25 +1602,31 @@ class InsumosController extends Controller
                     ->where('prenda_pedido_id', $validated['prenda_id'])
                     ->delete();
                 
-                \Log::info("Modo cambiado de '{$tipoModoExistente}' ({$nombres[$tipoModoExistente]}) a '{$tipoModoNuevo}' ({$nombres[$tipoModoNuevo]}) para pedido {$numeroPedido}, prenda {$validated['prenda_id']}. Datos anteriores eliminados automáticamente.", [
+                $nombreModoExistente = $nombres[$tipoModoExistente] ?? $tipoModoExistente;
+                $nombreModoNuevo = $nombres[$tipoModoNuevo] ?? $tipoModoNuevo;
+                
+                \Log::info("Modo cambiado de '{$tipoModoExistente}' ({$nombreModoExistente}) a '{$tipoModoNuevo}' ({$nombreModoNuevo}) para pedido {$numeroPedido}, prenda {$validated['prenda_id']}. Datos anteriores eliminados automáticamente.", [
                     'usuario_id' => $user->id,
                     'usuario_nombre' => $user->name
                 ]);
             }
             
             // Guardar ancho general (sin color)
-            if (!$validated['color'] && ($validated['ancho'] !== null || $validated['metraje'] !== null)) {
+            if (empty($validated['color']) && (($validated['ancho'] ?? null) !== null || ($validated['metraje'] ?? null) !== null || ($validated['contenido_mano'] ?? null) !== null)) {
                 $datosAncho = [
                     'tipo_modo' => $validated['tipo_modo'] ?? 'normal',
                     'creado_por' => $user->id,
                     'actualizado_por' => $user->id,
                 ];
                 
-                if ($validated['ancho'] !== null) {
+                if (($validated['ancho'] ?? null) !== null) {
                     $datosAncho['ancho'] = $validated['ancho'];
                 }
-                if ($validated['metraje'] !== null) {
+                if (($validated['metraje'] ?? null) !== null) {
                     $datosAncho['metraje'] = $validated['metraje'];
+                }
+                if (($validated['contenido_mano'] ?? null) !== null) {
+                    $datosAncho['contenido_mano'] = $validated['contenido_mano'];
                 }
                 
                 PedidoAnchoGeneral::updateOrCreate(
@@ -1627,14 +1637,24 @@ class InsumosController extends Controller
                     $datosAncho
                 );
                 
-                \Log::info("Ancho general guardado para pedido {$numeroPedido}, prenda {$validated['prenda_id']}: ancho={$validated['ancho']}m, metraje={$validated['metraje']}m (tipo_modo: {$validated['tipo_modo']})", [
-                    'usuario_id' => $user->id,
-                    'usuario_nombre' => $user->name
-                ]);
+                if ($tipoModoNuevo === 'mano') {
+                    \Log::info("Ancho/Metraje guardado en modo A MANO para pedido {$numeroPedido}, prenda {$validated['prenda_id']}", [
+                        'usuario_id' => $user->id,
+                        'usuario_nombre' => $user->name
+                    ]);
+                } else {
+                    $anchoLog = ($validated['ancho'] ?? null) !== null ? $validated['ancho'] . 'm' : 'no especificado';
+                    $metajeLog = ($validated['metraje'] ?? null) !== null ? $validated['metraje'] . 'm' : 'no especificado';
+                    $tipoModoLog = $validated['tipo_modo'] ?? 'normal';
+                    \Log::info("Ancho general guardado para pedido {$numeroPedido}, prenda {$validated['prenda_id']}: ancho={$anchoLog}, metraje={$metajeLog} (tipo_modo: {$tipoModoLog})", [
+                        'usuario_id' => $user->id,
+                        'usuario_nombre' => $user->name
+                    ]);
+                }
             }
             
             // Guardar metraje por color
-            if ($validated['color'] && $validated['metraje'] !== null) {
+            if (!empty($validated['color']) && ($validated['metraje'] ?? null) !== null) {
                 PedidoMetrajeColor::updateOrCreate(
                     [
                         'pedido_produccion_id' => $pedido->id,
@@ -1649,7 +1669,9 @@ class InsumosController extends Controller
                     ]
                 );
                 
-                \Log::info("Metraje guardado para pedido {$numeroPedido}, prenda {$validated['prenda_id']}, color {$validated['color']}: {$validated['metraje']}m (tipo_modo: {$validated['tipo_modo']})", [
+                $metajeLog = $validated['metraje'];
+                $tipoModoLog = $validated['tipo_modo'] ?? 'color';
+                \Log::info("Metraje guardado para pedido {$numeroPedido}, prenda {$validated['prenda_id']}, color {$validated['color']}: {$metajeLog}m (tipo_modo: {$tipoModoLog})", [
                     'usuario_id' => $user->id,
                     'usuario_nombre' => $user->name
                 ]);
