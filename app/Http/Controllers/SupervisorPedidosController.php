@@ -329,6 +329,27 @@ class SupervisorPedidosController extends Controller
         $query->whereNotNull('numero_pedido')
               ->where('numero_pedido', '!=', '');
 
+        // FILTRO PARA EXCLUIR PEDIDOS QUE SOLO TIENEN EPP (sin prendas)
+        // Mostrar solo pedidos que:
+        // 1. Tienen prendas (con o sin EPP)
+        // 2. No tienen prendas ni EPP (pedidos vacíos)
+        // EXCLUYENDO: pedidos que solo tienen EPP (sin prendas)
+        $query->where(function($q) {
+            $q->whereHas('prendas')  // Tiene prendas (puede tener EPP también)
+              ->orWhere(function($subQuery) {
+                  // No tiene prendas NI EPP (pedidos completamente vacíos)
+                  $subQuery->whereDoesntHave('prendas')
+                           ->whereDoesntHave('epps');
+              });
+        });
+
+        // Log para depuración del filtro EPP
+        \Log::info('[SupervisorPedidos] Aplicando filtro para excluir pedidos con solo EPP', [
+            'request_params' => $request->all(),
+            'sql_before' => $query->toSql(),
+            'bindings' => $query->getBindings()
+        ]);
+
         // FILTRO DE APROBACIÓN: Mostrar solo órdenes según su estado de aprobación
         // Si no hay parámetro aprobacion, mostrar todos los pedidos
         if ($request->filled('aprobacion')) {
