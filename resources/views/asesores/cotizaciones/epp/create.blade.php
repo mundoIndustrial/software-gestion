@@ -416,7 +416,7 @@ NIT 1.093.738.433-3</textarea>
                     </button>
                     @endif
                     <button id="btnEnviarCotizacionEpp" type="button" class="btn btn-primary" style="padding: 0.5rem 1.2rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); border: 2px solid #003d7a; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; font-size: 0.85rem; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='linear-gradient(135deg, #0052a3 0%, #003d7a 100%)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 12px rgba(0, 102, 204, 0.3)';" onmouseout="this.style.background='linear-gradient(135deg, #0066cc 0%, #0052a3 100%)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-                        <i class="fas fa-paper-plane" style="font-size: 0.9rem;"></i> Crear
+                        <i class="fas fa-paper-plane" style="font-size: 0.9rem;"></i> {{ (isset($cotizacion) && $cotizacion) ? 'Guardar cambios' : 'Crear' }}
                     </button>
                 </div>
             </div>

@@ -230,6 +230,8 @@ class CotizacionEppController extends Controller
                     $items = [];
                 }
 
+                $isSyncCompleta = $cotizacionIdEdicion && $request->boolean('sync_items', true);
+
                 // Separar items por tipo
                 $epps = array_filter($items, function($item) {
                     $tipo = strtolower($item['tipo'] ?? 'epp');
@@ -496,17 +498,55 @@ class CotizacionEppController extends Controller
                 }
                 // ==================== FIN PRENDAS ====================
 
-                // En edición: SOLO eliminar items si viene un payload completo (detectar por items total)
-                // Si solo vienen algunos items en edición (ej: un solo EPP a editar), NO eliminar los que falten
-                // Solo eliminar cuando vindividualmente se reciba un comando de borrado explícito
-                if ($cotizacionIdEdicion && count($items) > 0) {
-                    // Solo eliminar si el usuario envió EXPRESAMENTE la lista (con clear_imagenes o payload completo)
-                    // Por ahora: NO eliminar items en modo edición a menos que sea una sincronización completa
-                    // Esto evita perder prendas cuando se edita solo un EPP
-                    
-                    // Se podría mejorar con un flag del cliente que indique "sincronización completa" vs "edición parcial"
-                    // Por ahora, mantener todos los items existentes
-                    Log::info('[CotizacionEppController] Modo edición: preservando items existentes que no vienen en payload');
+                if ($isSyncCompleta) {
+                    $keptItemIds = array_values(array_unique(array_map('intval', $keptItemIds)));
+                    $keptPrendaIds = array_values(array_unique(array_map('intval', $keptPrendaIds)));
+
+                    $eppIdsAEliminar = DB::table('epp_items_cot')
+                        ->where('cotizacion_id', $cotizacion->id)
+                        ->when(count($keptItemIds) > 0, function ($q) use ($keptItemIds) {
+                            return $q->whereNotIn('id', $keptItemIds);
+                        })
+                        ->pluck('id')
+                        ->all();
+
+                    foreach ($eppIdsAEliminar as $id) {
+                        $imgs = DB::table('epp_img_cot')->where('epp_item_id', $id)->get(['id', 'ruta']);
+                        foreach ($imgs as $row) {
+                            if ($row?->ruta) {
+                                Storage::disk('public')->delete($row->ruta);
+                            }
+                        }
+                        DB::table('epp_img_cot')->where('epp_item_id', $id)->delete();
+                        DB::table('epp_valor_unitario')->where('epp_item_id', $id)->delete();
+                        DB::table('epp_items_cot')->where('id', $id)->delete();
+                    }
+
+                    $prendaIdsAEliminar = DB::table('prenda_items_cot')
+                        ->where('cotizacion_id', $cotizacion->id)
+                        ->when(count($keptPrendaIds) > 0, function ($q) use ($keptPrendaIds) {
+                            return $q->whereNotIn('id', $keptPrendaIds);
+                        })
+                        ->pluck('id')
+                        ->all();
+
+                    foreach ($prendaIdsAEliminar as $id) {
+                        $imgs = DB::table('prenda_img_cot')->where('prenda_item_id', $id)->get(['id', 'ruta']);
+                        foreach ($imgs as $row) {
+                            if ($row?->ruta) {
+                                Storage::disk('public')->delete($row->ruta);
+                            }
+                        }
+                        DB::table('prenda_img_cot')->where('prenda_item_id', $id)->delete();
+                        DB::table('prenda_valor_unitario')->where('prenda_item_id', $id)->delete();
+                        DB::table('prenda_items_cot')->where('id', $id)->delete();
+                    }
+
+                    Log::info('[CotizacionEppController] Sincronización completa: items eliminados', [
+                        'cotizacion_id' => $cotizacion->id,
+                        'epp_eliminados' => count($eppIdsAEliminar),
+                        'prenda_eliminadas' => count($prendaIdsAEliminar),
+                    ]);
                 }
 
                 if (!$esBorrador) {
