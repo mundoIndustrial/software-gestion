@@ -2290,7 +2290,93 @@ class SupervisorPedidosController extends Controller
         // Esto incluye automáticamente: Color, Tela, Manga, Reflectivo, Bolsillos, Broche y Tallas
         $totalPrendas = $order->prendas->count();
         $descripciones = $order->prendas->map(function($prenda, $index) use ($totalPrendas) {
-            return $prenda->generarDescripcionDetallada($index + 1, $totalPrendas);
+            $base = $prenda->generarDescripcionDetallada($index + 1, $totalPrendas);
+
+            // Adjuntar observaciones por tallas de PROCESOS cuando aplique
+            // Reglas:
+            // - modo_tallas = general    => traer observaciones desde pedidos_procesos_prenda_tallas.observaciones
+            // - modo_tallas = especifico => usar la columna ubicaciones en pedidos_procesos_prenda_detalles
+            try {
+                $procesos = \DB::table('pedidos_procesos_prenda_detalles as ppd')
+                    ->join('tipos_procesos as tp', 'ppd.tipo_proceso_id', '=', 'tp.id')
+                    ->whereNull('ppd.deleted_at')
+                    ->where('ppd.prenda_pedido_id', $prenda->id)
+                    ->orderBy('ppd.id', 'asc')
+                    ->get([
+                        'ppd.id',
+                        'ppd.modo_tallas',
+                        'ppd.ubicaciones',
+                        'ppd.observaciones as observaciones_generales',
+                        'tp.nombre as tipo_proceso_nombre',
+                    ]);
+
+                $lineasProc = [];
+                foreach ($procesos as $proc) {
+                    $modo = $proc->modo_tallas ?? 'generico';
+                    $tipoProcesoNombre = $proc->tipo_proceso_nombre ?? 'PROCESO';
+
+                    if ($modo === 'general') {
+                        $tallasObs = \DB::table('pedidos_procesos_prenda_tallas')
+                            ->where('proceso_prenda_detalle_id', $proc->id)
+                            ->whereNotNull('observaciones')
+                            ->where('observaciones', '!=', '')
+                            ->orderBy('genero', 'asc')
+                            ->orderBy('talla', 'asc')
+                            ->get(['genero', 'talla', 'observaciones']);
+
+                        if ($tallasObs->count() > 0) {
+                            $lineasProc[] = "\nOBSERVACIONES POR TALLA - " . strtoupper($tipoProcesoNombre) . ":";
+                            foreach ($tallasObs as $row) {
+                                $genero = strtoupper((string) $row->genero);
+                                $talla = $row->talla !== null ? (string) $row->talla : 'SOBREMEDIDA';
+                                $obs = trim((string) $row->observaciones);
+                                if ($obs === '') {
+                                    continue;
+                                }
+                                $lineasProc[] = "- {$genero} {$talla}: {$obs}";
+                            }
+                        }
+                    } elseif ($modo === 'especifico') {
+                        $ubicaciones = [];
+                        if (!empty($proc->ubicaciones)) {
+                            $decoded = json_decode($proc->ubicaciones, true);
+                            if (is_array($decoded)) {
+                                $ubicaciones = $decoded;
+                            }
+                        }
+
+                        if (!empty($ubicaciones)) {
+                            $lineasProc[] = "\nUBICACIONES - " . strtoupper($tipoProcesoNombre) . ":";
+                            foreach ($ubicaciones as $u) {
+                                if (is_string($u)) {
+                                    $nombre = trim($u);
+                                    if ($nombre !== '') {
+                                        $lineasProc[] = "- {$nombre}";
+                                    }
+                                    continue;
+                                }
+
+                                if (is_array($u)) {
+                                    $nombre = trim((string)($u['nombre'] ?? $u['ubicacion'] ?? ''));
+                                    $obs = trim((string)($u['observaciones'] ?? $u['obs'] ?? ''));
+                                    if ($nombre === '' && $obs === '') {
+                                        continue;
+                                    }
+                                    $lineasProc[] = $obs !== '' ? "- {$nombre}: {$obs}" : "- {$nombre}";
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (!empty($lineasProc)) {
+                    $base .= "\n" . implode("\n", $lineasProc);
+                }
+            } catch (\Exception $e) {
+                // silencioso
+            }
+
+            return $base;
         })->toArray();
 
         return implode("\n\n", $descripciones);

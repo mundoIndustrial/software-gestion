@@ -134,11 +134,53 @@ export class PedidosRecibosModule {
                     prenda.procesos.forEach((proceso) => {
                         if (!proceso) return;
 
+                        // Preferir ubicaciones_array (si ya viene decodificado del backend)
+                        if (!proceso.ubicaciones && Array.isArray(proceso.ubicaciones_array)) {
+                            proceso.ubicaciones = proceso.ubicaciones_array;
+                        }
+
                         // Caso: `tallas` viene como array -> es el detalle por talla
                         if (Array.isArray(proceso.tallas)) {
                             // Alias para que Formatters lo tome
                             if (!Array.isArray(proceso.tallas_detalle) || proceso.tallas_detalle.length === 0) {
                                 proceso.tallas_detalle = proceso.tallas;
+                            }
+                        }
+
+                        // Caso: modo_tallas=general y viene observaciones_por_talla como objeto
+                        // -> convertir a tallas_detalle para que Formatters pinte "OBSERVACIONES POR TALLA"
+                        const modo = String(proceso.modo_tallas || '').toLowerCase();
+                        if (modo === 'general' && proceso.observaciones_por_talla && typeof proceso.observaciones_por_talla === 'object') {
+                            const normalizarObs = (raw) => {
+                                const s = String(raw ?? '').trim();
+                                if (!s) return '';
+                                return s;
+                            };
+
+                            const out = [];
+                            const mapGenero = {
+                                dama: 'DAMA',
+                                caballero: 'CABALLERO',
+                                unisex: 'UNISEX'
+                            };
+
+                            Object.keys(mapGenero).forEach((k) => {
+                                const grupo = proceso.observaciones_por_talla[k];
+                                if (!grupo || typeof grupo !== 'object') return;
+                                Object.keys(grupo).forEach((tallaKey) => {
+                                    const obs = normalizarObs(grupo[tallaKey]);
+                                    if (!obs) return;
+                                    out.push({
+                                        genero: mapGenero[k],
+                                        talla: tallaKey,
+                                        cantidad: 1,
+                                        observaciones: obs
+                                    });
+                                });
+                            });
+
+                            if (out.length > 0) {
+                                proceso.tallas_detalle = out;
                             }
                         }
                     });
@@ -592,296 +634,552 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
     return window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, tipoRecibo, prendaIndex);
 };
 
-if (typeof window.printReceiptModal !== 'function') {
-    window.printReceiptModal = function() {
-        const wrapper = document.getElementById('order-detail-modal-wrapper');
-        if (!wrapper) {
-            window.print();
-            return;
-        }
+ if (typeof window.printReceiptModal !== 'function') {
+     window.printReceiptModal = function() {
+         const wrapper = document.getElementById('order-detail-modal-wrapper');
+         if (!wrapper) {
+             window.print();
+             return;
+         }
 
-        // Nuevo flujo: abrir ventana con diseño 4-por-hoja y disparar impresión desde ahí.
-        // Segmentación: dividir el contenido del recibo en múltiples tarjetas para que nada
-        // se salga del área visible.
+        // Nuevo flujo: imprimir usando el diseño/paginación del ejemplo "sistema-de-recibos-mundo-industrial".
+        // Se genera un HTML limpio para impresión (A4), sin depender del layout actual del modal.
         try {
-            const card = wrapper.querySelector('.order-detail-card');
-            if (!card) {
-                window.print();
-                return;
-            }
+            const estado = window.pedidosRecibosModule && typeof window.pedidosRecibosModule.getEstado === 'function'
+                ? window.pedidosRecibosModule.getEstado()
+                : null;
 
-            const getFirst = (sel) => card.querySelector(sel);
-            const cloneAsString = (el) => (el ? el.outerHTML : '');
+            const datosPedido = estado && estado.datosCompletos ? estado.datosCompletos : {};
+            const prendaData = estado && estado.prendaData ? estado.prendaData : null;
+            const recibos = estado && Array.isArray(estado.procesosActuales) ? estado.procesosActuales : [];
+            const reciboActual = (recibos && typeof estado?.procesoActualIndice === 'number') ? recibos[estado.procesoActualIndice] : null;
+            const tipoProceso = estado && estado.tipoProceso ? estado.tipoProceso : (reciboActual?.tipo || reciboActual?.tipo_proceso || '');
 
-            const logoHtml = cloneAsString(getFirst('.order-logo'));
-            const orderDateHtml = cloneAsString(getFirst('.order-date'));
-            const asesorHtml = cloneAsString(getFirst('#order-asesora'));
-            const formaPagoHtml = cloneAsString(getFirst('#order-forma-pago'));
-            const clienteHtml = cloneAsString(getFirst('#order-cliente'));
-            const receiptTitleHtml = cloneAsString(getFirst('#receipt-title'));
-            const pedidoNumberHtml = cloneAsString(getFirst('#order-pedido'));
-            const separatorLineHtml = cloneAsString(getFirst('.separator-line'));
-            const signatureHtml = cloneAsString(getFirst('.signature-section'));
-
-            const descripcionContainer = getFirst('.order-descripcion');
-            const descripcionText = getFirst('#descripcion-text');
-            const descripcionHtml = descripcionText ? descripcionText.innerHTML : '';
-
-            // Medir altura disponible para el contenido en el diseño de impresión (apilado vertical)
-            // Usamos un elemento oculto para calcular en px.
-            const measureRootId = '__print_measure_root__';
-            let measureRoot = document.getElementById(measureRootId);
-            if (!measureRoot) {
-                measureRoot = document.createElement('div');
-                measureRoot.id = measureRootId;
-                measureRoot.style.cssText = 'position:fixed; left:-99999px; top:-99999px; width:0; height:0; overflow:hidden;';
-                document.body.appendChild(measureRoot);
-            }
-
-            // Crear un “recibo” de medición con el mismo scale que la impresión (0.95)
-            const measureWrapper = document.createElement('div');
-            measureWrapper.style.cssText = 'width: 210mm; padding: 4mm;';
-            measureWrapper.innerHTML = `
-                <div style="width: 100%; display:flex; justify-content:center; align-items:flex-start;">
-                    <div class="order-detail-modal-container" style="transform: scale(0.95); transform-origin: top center; margin:0; padding:0;">
-                        <div class="order-detail-card" style="margin:0;">
-                            ${logoHtml}
-                            ${orderDateHtml}
-                            ${asesorHtml}
-                            ${formaPagoHtml}
-                            ${clienteHtml}
-                            <div class="order-descripcion" style="font-size: 14px; line-height: 1.35;"><div id="__measure_desc__"></div></div>
-                            ${receiptTitleHtml}
-                            ${pedidoNumberHtml}
-                            ${separatorLineHtml}
-                            ${signatureHtml}
-                        </div>
-                    </div>
-                </div>
-            `;
-            measureRoot.innerHTML = '';
-            measureRoot.appendChild(measureWrapper);
-
-            const measureDesc = measureRoot.querySelector('#__measure_desc__');
-            if (!measureDesc) {
-                window.print();
-                return;
-            }
-
-            // Determinar alto máximo del contenedor de descripción en el recibo medido
-            const measureDescripcion = measureRoot.querySelector('.order-detail-card .order-descripcion');
-            const maxDescHeightPx = measureDescripcion ? Math.max(0, measureDescripcion.getBoundingClientRect().height) : 0;
-            const effectiveMaxDescHeightPx = maxDescHeightPx > 0 ? maxDescHeightPx : 260; // fallback
-
-            // Particionar por “nodos” para evitar cortar en medio de tags.
-            const temp = document.createElement('div');
-            temp.innerHTML = descripcionHtml;
-            const nodes = Array.from(temp.childNodes).filter(n => {
-                // ignorar nodos vacíos
-                if (n.nodeType === Node.TEXT_NODE) return String(n.textContent || '').trim() !== '';
-                return true;
-            });
-
-            const segments = [];
-            let currentFragment = document.createElement('div');
-
-            const flushSegment = () => {
-                const htmlSeg = currentFragment.innerHTML;
-                if (htmlSeg && htmlSeg.trim() !== '') {
-                    segments.push(htmlSeg);
-                }
-                currentFragment = document.createElement('div');
+            const esc = (v) => {
+                const s = String(v ?? '');
+                return s
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
             };
 
-            const fits = (candidateHtml) => {
-                measureDesc.innerHTML = candidateHtml;
-                // Permitir un pequeño margen
-                return measureDesc.getBoundingClientRect().height <= (effectiveMaxDescHeightPx + 1);
-            };
-
-            const splitNodeIntoLineParts = (node) => {
-                // Estrategia: convertir el nodo a HTML, reemplazar <br> por \n y partir por líneas.
-                // Cada línea se re-empaqueta como <div>LINEA</div> para poder medir.
-                // Si no hay <br> ni texto multilínea, devuelve null.
-                const container = document.createElement('div');
-                container.appendChild(node.cloneNode(true));
-                const rawHtml = container.innerHTML;
-                const htmlWithNewLines = rawHtml
-                    .replace(/<br\s*\/?>/gi, '\n')
-                    .replace(/<\/div>\s*<div/gi, '\n<div')
-                    .replace(/<\/p>\s*<p/gi, '\n<p');
-
-                if (!htmlWithNewLines.includes('\n')) {
-                    return null;
-                }
-
-                const lines = htmlWithNewLines
-                    .split('\n')
-                    .map(l => l.trim())
-                    .filter(l => l !== '');
-
-                if (lines.length <= 1) return null;
-
-                return lines.map((lineHtml) => {
-                    // Si ya es un bloque HTML, lo respetamos; si es texto plano, lo ponemos tal cual.
-                    const startsWithTag = /^</.test(lineHtml);
-                    return startsWithTag ? `<div>${lineHtml}</div>` : `<div>${lineHtml}</div>`;
-                });
-            };
-
-            const pushHtmlWithPagination = (htmlPiece) => {
-                const candidate = currentFragment.innerHTML + htmlPiece;
-                if (currentFragment.innerHTML.trim() === '') {
-                    if (fits(htmlPiece)) {
-                        currentFragment.innerHTML = htmlPiece;
-                        return;
+            const normalizarLista = (raw) => {
+                if (!raw) return [];
+                if (Array.isArray(raw)) return raw.map(x => String(x)).filter(Boolean);
+                if (typeof raw === 'string') {
+                    // intentar JSON primero
+                    const s = raw.trim();
+                    if ((s.startsWith('[') && s.endsWith(']')) || (s.startsWith('{') && s.endsWith('}'))) {
+                        try {
+                            const parsed = JSON.parse(s);
+                            if (Array.isArray(parsed)) return parsed.map(x => String(x)).filter(Boolean);
+                        } catch (_) {}
                     }
-                    // No cabe ni al inicio: forzar y flush
-                    currentFragment.innerHTML = htmlPiece;
-                    flushSegment();
-                    return;
+                    return s.split(/\r?\n|\s*\|\s*|\s*,\s*/g).map(x => x.trim()).filter(Boolean);
                 }
-
-                if (fits(candidate)) {
-                    currentFragment.innerHTML = candidate;
-                    return;
-                }
-
-                // No cabe: cerrar segmento y reintentar en el siguiente
-                flushSegment();
-                if (fits(htmlPiece)) {
-                    currentFragment.innerHTML = htmlPiece;
-                } else {
-                    currentFragment.innerHTML = htmlPiece;
-                    flushSegment();
-                }
+                return [];
             };
 
-            // Inicializar con vacío
-            measureDesc.innerHTML = '';
+            const buildTallasResumen = (tallas, tallaColores = null) => {
+                const normalizarGenero = (g) => String(g || '').trim().toUpperCase();
+                const normalizarTalla = (t) => String(t || '').trim().toUpperCase();
+                const normalizarColor = (c) => {
+                    const s = String(c || '').trim().toUpperCase();
+                    return s || 'SIN COLOR';
+                };
 
-            for (const node of nodes) {
-                const wrap = document.createElement('div');
-                wrap.appendChild(node.cloneNode(true));
-                const candidate = currentFragment.innerHTML + wrap.innerHTML;
+                const formatGeneroGroup = (mapGeneroATallas) => {
+                    // mapGeneroATallas: { CABALLERO: Map(talla->cantidad), DAMA: ... }
+                    const partes = [];
+                    Object.keys(mapGeneroATallas).forEach((gen) => {
+                        const m = mapGeneroATallas[gen];
+                        if (!m) return;
+                        const items = [];
+                        for (const [tallaKey, cant] of m.entries()) {
+                            const n = Number(cant || 0);
+                            if (!tallaKey || !n) continue;
+                            items.push(`${tallaKey}: ${n}`);
+                        }
+                        if (items.length > 0) {
+                            partes.push(`${gen}: ${items.join(', ')}`);
+                        }
+                    });
+                    return partes.join(' | ');
+                };
 
-                if (currentFragment.innerHTML.trim() === '') {
-                    // Primer nodo en el segmento
-                    if (fits(wrap.innerHTML)) {
-                        currentFragment.innerHTML = wrap.innerHTML;
-                        continue;
-                    }
-                    // Si ni siquiera cabe un nodo, lo forzamos (para no loop infinito)
-                    currentFragment.innerHTML = wrap.innerHTML;
-                    flushSegment();
-                    continue;
-                }
+                // === 1) Prioridad: tallas por color (array estilo backend: [{genero,talla,color_nombre,cantidad}, ...]) ===
+                const coloresArr = Array.isArray(tallaColores) ? tallaColores : null;
+                if (coloresArr && coloresArr.length > 0) {
+                    // Agrupar por color -> género -> talla
+                    const byColor = new Map();
+                    coloresArr.forEach((row) => {
+                        const genero = normalizarGenero(row?.genero);
+                        const talla = normalizarTalla(row?.talla);
+                        const color = normalizarColor(row?.color_nombre || row?.color);
+                        const cantidad = Number(row?.cantidad || 0);
+                        if (!genero || !talla || !cantidad) return;
 
-                if (fits(candidate)) {
-                    currentFragment.innerHTML = candidate;
-                } else {
-                    // Intentar segmentar internamente el nodo por líneas
-                    const parts = splitNodeIntoLineParts(node);
-                    if (Array.isArray(parts) && parts.length > 0) {
-                        // Primero cerrar el segmento actual para aprovechar altura completa
-                        flushSegment();
-                        parts.forEach((p) => pushHtmlWithPagination(p));
-                    } else {
-                        flushSegment();
-                        // arrancar segmento nuevo con este nodo
-                        if (fits(wrap.innerHTML)) {
-                            currentFragment.innerHTML = wrap.innerHTML;
-                        } else {
-                            currentFragment.innerHTML = wrap.innerHTML;
-                            flushSegment();
+                        if (!byColor.has(color)) byColor.set(color, new Map());
+                        const byGenero = byColor.get(color);
+                        if (!byGenero.has(genero)) byGenero.set(genero, new Map());
+                        const byTalla = byGenero.get(genero);
+                        byTalla.set(talla, (Number(byTalla.get(talla) || 0) + cantidad));
+                    });
+
+                    const partesColor = [];
+                    for (const [color, byGenero] of byColor.entries()) {
+                        const mapGeneroATallas = {};
+                        for (const [gen, byTalla] of byGenero.entries()) {
+                            mapGeneroATallas[gen] = byTalla;
+                        }
+                        const strGenero = formatGeneroGroup(mapGeneroATallas);
+                        if (strGenero) {
+                            partesColor.push(`${color}: ${strGenero}`);
                         }
                     }
+                    return partesColor.join(' | ');
                 }
+
+                // === 2) Array simple: [{genero,talla,cantidad}] (agrupar por género sin repetir) ===
+                if (Array.isArray(tallas)) {
+                    const mapGeneroATallas = {};
+                    tallas.forEach((t) => {
+                        const genero = normalizarGenero(t?.genero);
+                        const talla = normalizarTalla(t?.talla);
+                        const cantidad = Number(t?.cantidad || 0);
+                        if (!genero || !talla || !cantidad) return;
+                        if (!mapGeneroATallas[genero]) mapGeneroATallas[genero] = new Map();
+                        const m = mapGeneroATallas[genero];
+                        m.set(talla, (Number(m.get(talla) || 0) + cantidad));
+                    });
+                    return formatGeneroGroup(mapGeneroATallas);
+                }
+
+                // === 3) Objeto: {GENERO: {talla: cantidad}} o {GENERO: {talla: [{color,cantidad}]}} ===
+                if (tallas && typeof tallas === 'object') {
+                    // Si detectamos arrays con colores, agrupar por color igual
+                    let tieneColores = false;
+                    for (const genKey of Object.keys(tallas)) {
+                        const v = tallas[genKey];
+                        if (!v || typeof v !== 'object') continue;
+                        for (const tallaKey of Object.keys(v)) {
+                            const cell = v[tallaKey];
+                            if (Array.isArray(cell) && cell.length > 0 && cell[0] && (cell[0].color || cell[0].color_nombre)) {
+                                tieneColores = true;
+                                break;
+                            }
+                        }
+                        if (tieneColores) break;
+                    }
+
+                    if (tieneColores) {
+                        const byColor = new Map();
+                        Object.keys(tallas).forEach((genKey) => {
+                            const genero = normalizarGenero(genKey);
+                            const v = tallas[genKey];
+                            if (!v || typeof v !== 'object') return;
+                            Object.keys(v).forEach((tallaKey) => {
+                                const talla = normalizarTalla(tallaKey);
+                                const cell = v[tallaKey];
+                                if (!Array.isArray(cell)) return;
+                                cell.forEach((item) => {
+                                    const color = normalizarColor(item?.color || item?.color_nombre);
+                                    const cantidad = Number(item?.cantidad || 0);
+                                    if (!cantidad) return;
+                                    if (!byColor.has(color)) byColor.set(color, new Map());
+                                    const byGenero = byColor.get(color);
+                                    if (!byGenero.has(genero)) byGenero.set(genero, new Map());
+                                    const byTalla = byGenero.get(genero);
+                                    byTalla.set(talla, (Number(byTalla.get(talla) || 0) + cantidad));
+                                });
+                            });
+                        });
+
+                        const partesColor = [];
+                        for (const [color, byGenero] of byColor.entries()) {
+                            const mapGeneroATallas = {};
+                            for (const [gen, byTalla] of byGenero.entries()) {
+                                mapGeneroATallas[gen] = byTalla;
+                            }
+                            const strGenero = formatGeneroGroup(mapGeneroATallas);
+                            if (strGenero) {
+                                partesColor.push(`${color}: ${strGenero}`);
+                            }
+                        }
+                        return partesColor.join(' | ');
+                    }
+
+                    const mapGeneroATallas = {};
+                    Object.keys(tallas).forEach((generoKey) => {
+                        const genero = normalizarGenero(generoKey);
+                        const tallasGenero = tallas[generoKey];
+                        if (!tallasGenero || typeof tallasGenero !== 'object') return;
+                        if (!mapGeneroATallas[genero]) mapGeneroATallas[genero] = new Map();
+                        const m = mapGeneroATallas[genero];
+                        Object.keys(tallasGenero).forEach((tallaKey) => {
+                            const cant = Number(tallasGenero[tallaKey] || 0);
+                            if (!cant) return;
+                            const talla = normalizarTalla(tallaKey);
+                            m.set(talla, (Number(m.get(talla) || 0) + cant));
+                        });
+                    });
+                    return formatGeneroGroup(mapGeneroATallas);
+                }
+
+                return '';
+            };
+
+            const buildObservacionesPorTalla = () => {
+                // Preferir `tallas_detalle` si existe en el recibo/proceso.
+                const detalle = reciboActual?.tallas_detalle || reciboActual?.tallasDetalle || null;
+                if (!Array.isArray(detalle) || detalle.length === 0) return [];
+
+                return detalle.map((d) => {
+                    const talla = String(d?.talla || d?.nombre_talla || '').trim();
+                    const genero = String(d?.genero || '').trim();
+
+                    // Observaciones/ubicaciones: soportar múltiples formatos
+                    let obs = [];
+                    if (Array.isArray(d?.observaciones)) obs = d.observaciones;
+                    else if (typeof d?.observaciones === 'string') obs = normalizarLista(d.observaciones);
+                    else if (Array.isArray(d?.ubicaciones)) obs = d.ubicaciones;
+                    else if (typeof d?.ubicaciones === 'string') obs = normalizarLista(d.ubicaciones);
+
+                    obs = obs.map(x => String(x).trim()).filter(Boolean);
+                    return {
+                        genero: genero ? genero.toUpperCase() : '',
+                        talla: talla ? talla.toUpperCase() : '-',
+                        observaciones: obs
+                    };
+                }).filter(x => x.observaciones && x.observaciones.length > 0);
+            };
+
+            const fecha = String(datosPedido.fecha || '').trim();
+            const asesor = String(datosPedido.asesor || datosPedido.asesora || '').trim();
+            const formaPago = String(datosPedido.forma_de_pago || '').trim();
+            const cliente = String(datosPedido.cliente || '').trim();
+
+            const prendaNombre = String(prendaData?.nombre || prendaData?.nombre_prenda || '').trim();
+            const prendaColor = String(prendaData?.color || '').trim();
+
+            const ubicaciones = normalizarLista(reciboActual?.ubicaciones);
+
+            const tallasResumen = buildTallasResumen(
+                reciboActual?.tallas || prendaData?.tallas || null,
+                reciboActual?.talla_colores || prendaData?.talla_colores || null
+            );
+            const observacionesPorTalla = buildObservacionesPorTalla();
+
+            const receiptTitleEl = wrapper.querySelector('#receipt-title');
+            const receiptTitle = receiptTitleEl ? receiptTitleEl.textContent.trim() : '';
+            const titulo = receiptTitle || ('RECIBO DE ' + String(tipoProceso || '').toUpperCase());
+
+            // Paginación (misma lógica del ejemplo): estimación por altura total de 4 columnas.
+            // Ajuste: agrupar por género sin repetirlo en cada talla.
+            const pages = [];
+            let currentBlocks = []; // [{type:'genero', genero} | {type:'talla', genero, talla, observaciones}]
+            let currentHeightMm = 0;
+
+            const AVAILABLE_HEIGHT_MM = 150;
+            const GEN_HEADER_HEIGHT_MM = 4;
+            const TALLA_TITLE_HEIGHT_MM = 6;
+            const LINE_HEIGHT_MM = 3.2;
+            const TOTAL_COLUMN_CAPACITY_MM = AVAILABLE_HEIGHT_MM * 4;
+
+            const pushPage = () => {
+                if (!currentBlocks.length) return;
+                pages.push({ blocks: currentBlocks, num: pages.length + 1 });
+                currentBlocks = [];
+                currentHeightMm = 0;
+            };
+
+            const addGeneroHeaderIfNeeded = (genero) => {
+                if (!genero) return;
+                const last = currentBlocks.length ? currentBlocks[currentBlocks.length - 1] : null;
+                const yaEsta = last && last.type === 'genero' && last.genero === genero;
+                if (yaEsta) return;
+
+                // Si no cabe el header, cortar página.
+                if (currentHeightMm + GEN_HEADER_HEIGHT_MM > TOTAL_COLUMN_CAPACITY_MM && currentBlocks.length > 0) {
+                    pushPage();
+                }
+
+                currentBlocks.push({ type: 'genero', genero });
+                currentHeightMm += GEN_HEADER_HEIGHT_MM;
+            };
+
+            // Agrupar por género manteniendo orden
+            const grupos = new Map();
+            observacionesPorTalla.forEach((t) => {
+                const key = t.genero || '';
+                if (!grupos.has(key)) grupos.set(key, []);
+                grupos.get(key).push(t);
+            });
+
+            for (const [generoKey, tallasGrupo] of grupos.entries()) {
+                const generoUpper = generoKey ? String(generoKey).toUpperCase() : '';
+
+                // Encabezado de género (una vez por grupo, y se repetirá solo si hay salto de página)
+                addGeneroHeaderIfNeeded(generoUpper);
+
+                tallasGrupo.forEach((tallaItem) => {
+                    let remainingObs = Array.isArray(tallaItem.observaciones) ? [...tallaItem.observaciones] : [];
+                    let isFirstPart = true;
+
+                    while (remainingObs.length > 0) {
+                        // Si estamos iniciando un nuevo “bloque” en una página vacía o recién se cortó,
+                        // y el grupo tiene género, repetir el header para contexto.
+                        if (currentBlocks.length === 0) {
+                            addGeneroHeaderIfNeeded(generoUpper);
+                        } else {
+                            // Si el último block es de otra cosa y el género se perdió por page-break,
+                            // lo reinsertamos cuando corresponde.
+                            const last = currentBlocks[currentBlocks.length - 1];
+                            const generoPresente = last && ((last.type === 'genero' && last.genero === generoUpper) || (last.type === 'talla' && last.genero === generoUpper));
+                            if (!generoPresente) {
+                                addGeneroHeaderIfNeeded(generoUpper);
+                            }
+                        }
+
+                        const titleH = isFirstPart ? TALLA_TITLE_HEIGHT_MM : 0;
+                        const availableSpace = TOTAL_COLUMN_CAPACITY_MM - currentHeightMm - titleH;
+                        const maxObsThatFit = Math.floor(availableSpace / LINE_HEIGHT_MM);
+
+                        if (maxObsThatFit <= 0 && currentBlocks.length > 0) {
+                            pushPage();
+                            continue;
+                        }
+
+                        const take = remainingObs.splice(0, Math.max(0, maxObsThatFit));
+                        if (take.length > 0) {
+                            currentBlocks.push({
+                                type: 'talla',
+                                genero: generoUpper,
+                                talla: isFirstPart ? tallaItem.talla : (tallaItem.talla + ' (cont.)'),
+                                observaciones: take
+                            });
+                            currentHeightMm += titleH + (take.length * LINE_HEIGHT_MM);
+                        }
+
+                        isFirstPart = false;
+
+                        if (remainingObs.length > 0) {
+                            pushPage();
+                        }
+                    }
+                });
             }
-            flushSegment();
 
-            // Garantía: si no se generó nada pero sí había HTML, crear un segmento único
-            if (segments.length === 0 && descripcionHtml && descripcionHtml.trim() !== '') {
-                segments.push(descripcionHtml);
-            }
+            pushPage();
 
-            // Debug liviano (en consola) para verificar segmentación
-            console.log('[printReceiptModal] Segmentos generados:', segments.length);
+            const totalPages = (pages && Array.isArray(pages) && pages.length > 0) ? pages.length : 1;
 
-            // Construir slots en páginas: 4 por hoja
-            const buildReceiptHtml = (segmentHtml) => {
-                // Clonar el layout original, pero reemplazar el contenido del #descripcion-text
+            const renderHeader = (pageNum) => {
+                const ubicHtml = (ubicaciones && ubicaciones.length > 0)
+                    ? ubicaciones.map(u => `<div>${esc(u).toUpperCase()}</div>`).join('')
+                    : '<div>-</div>';
+
+                const pageLabel = totalPages > 1 ? (`PÁGINA ${pageNum}`) : '';
+
                 return `
-                  <div class="order-detail-modal-container" style="transform: scale(0.95); transform-origin: top center; margin:0 !important; padding:0 !important;">
-                    <div class="order-detail-card" style="margin:0 !important;">
-                      ${logoHtml}
-                      ${orderDateHtml}
-                      ${asesorHtml}
-                      ${formaPagoHtml}
-                      ${clienteHtml}
-                      <div class="order-descripcion" style="font-size: 14px; line-height: 1.35;"><div id="descripcion-text">${segmentHtml}</div></div>
-                      ${receiptTitleHtml}
-                      ${pedidoNumberHtml}
-                      ${separatorLineHtml}
-                      ${signatureHtml}
+                    <div class="brand">
+                      <div class="logo">MUNDO<br>INDUSTRIAL</div>
+                      <div class="title">
+                        ${pageLabel ? `<div class="page-label">${esc(pageLabel)}</div>` : ''}
+                        <div class="receipt-title-print">${esc(titulo).toUpperCase()}</div>
+                      </div>
                     </div>
-                  </div>
+                    <div class="page-indicator">#${pageNum}</div>
+                    <div class="meta">
+                      <div><span class="label">FECHA:</span> <span class="value">${esc(fecha || '-')}</span></div>
+                      <div style="text-align:right"><span class="label">ASESOR:</span> <span class="value">${esc(asesor || '-')}</span></div>
+                      <div><span class="label">FORMA DE PAGO:</span> <span class="value">${esc(formaPago || '-')}</span></div>
+                      <div style="text-align:right"><span class="label">CLIENTE:</span> <span class="value">${esc(cliente || '-')}</span></div>
+                    </div>
+                    <div class="prenda-info">
+                      <div class="prenda-name">${esc(prendaNombre || '-').toUpperCase()}</div>
+                      <div class="prenda-color">${esc(prendaColor || '-').toUpperCase()}</div>
+                    </div>
+                    <div class="section">
+                      <h4>UBICACIONES:</h4>
+                      <div class="ubicaciones-list">${ubicHtml}</div>
+                    </div>
+                    <div class="section">
+                      <h4>TALLAS:</h4>
+                      <div class="tallas-resumen">${esc(tallasResumen || '-')}</div>
+                    </div>
                 `;
             };
 
-            const receiptsHtml = segments
-                .filter(seg => seg && String(seg).trim() !== '')
-                .map(seg => `<div class="receipt-item">${buildReceiptHtml(seg)}</div>`)
-                .join('');
+            const renderTallaItem = (t) => {
+                const lis = (t.observaciones || []).map(obs => `<li>${esc(obs).toUpperCase()}</li>`).join('');
+                return `
+                    <div class="talla-item">
+                      <div class="talla-title">${esc(t.talla).toUpperCase()}</div>
+                      <ul class="observaciones-list">${lis}</ul>
+                    </div>
+                `;
+            };
+
+            const renderGeneroHeader = (genero) => {
+                if (!genero) return '';
+                return `
+                    <div class="genero-header">${esc(genero).toUpperCase()}</div>
+                `;
+            };
+
+            const renderTallasSection = (blocks) => {
+                const itemsHtml = (Array.isArray(blocks) ? blocks : []).map((b) => {
+                    if (b && b.type === 'genero') return renderGeneroHeader(b.genero);
+                    if (b && b.type === 'talla') return renderTallaItem(b);
+                    return '';
+                }).join('');
+
+                return `
+                    <div class="section observations-section" style="margin-top: 2px;">
+                      <h4 style="margin-bottom: 2px; font-size: 11px;">OBSERVACIONES POR TALLA</h4>
+                      <div class="tallas-columns">${itemsHtml}</div>
+                    </div>
+                `;
+            };
+
+            const renderFooter = () => {
+                return `
+                    <div class="separator-line"></div>
+                    <div class="footer">
+                      <div>ENCARGADO DE ORDEN:<br><span style="font-weight:700">-</span></div>
+                      <div>PRENDAS ENTREGADAS:<br><span style="font-weight:700">0/0</span></div>
+                    </div>
+                `;
+            };
+
+            const pagesHtml = (pages.length > 0 ? pages : [{ blocks: [], num: 1 }]).map((p) => {
+                return `
+                    <div class="page">
+                      <div class="receipt-card">
+                        ${renderHeader(p.num)}
+                        ${renderTallasSection(p.blocks)}
+                        ${renderFooter()}
+                      </div>
+                    </div>
+                `;
+            }).join('');
+
+            const css = `
+                :root { --page-width: 210mm; --page-height: 297mm; --page-padding: 5mm; --brand-font: Inter, ui-sans-serif, system-ui, sans-serif; }
+                * { box-sizing: border-box; }
+                html, body { margin: 0; padding: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                body { font-family: var(--brand-font); color: #111; }
+                @media print {
+                  @page { size: A4 portrait; margin: 0; }
+                  body { background: #fff; margin: 0; padding: 0; }
+                  .no-print { display: none !important; }
+                  .page { width: var(--page-width); height: var(--page-height); padding: var(--page-padding); page-break-after: always; position: relative; overflow: hidden; }
+                  .receipt-card { height: 100%; border-width: 1.2mm; border-radius: 6mm; padding: 6mm 6mm 60px 6mm; box-shadow: none; }
+                  /* Altura fija para que el contenido no sobrepase el separator/footer y fluya por columnas */
+                  .tallas-columns {
+                    height: 150mm;
+                    overflow: hidden;
+                    column-count: 4;
+                    -webkit-column-count: 4;
+                    -moz-column-count: 4;
+                    column-fill: auto;
+                    column-gap: 3px;
+                    -webkit-column-gap: 3px;
+                    -moz-column-gap: 3px;
+                  }
+                }
+                .page { width: var(--page-width); min-height: var(--page-height); padding: var(--page-padding); box-sizing: border-box; position: relative; overflow: hidden; }
+                .receipt-card { width: 100%; border: 2px solid #111; border-radius: 12px; padding: 20px 20px 70px 20px; position: relative; }
+                .brand { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 15px; }
+                .brand .logo { font-weight: 900; font-size: 24px; line-height: 1; }
+                .brand .title { font-weight: 900; text-align: right; text-transform: uppercase; display:flex; flex-direction: column; align-items:flex-end; }
+                .page-label { font-weight: 900; font-size: 11px; opacity: 0.85; line-height: 1; margin-bottom: 2px; }
+                .receipt-title-print { font-weight: 900; font-size: 16px; line-height: 1.1; }
+                .page-indicator { position:absolute; top: 40px; right: 30px; color:#d32f2f; font-weight: 900; font-size: 24px; }
+                .meta { display:grid; grid-template-columns: 1fr 1fr; gap: 5px 20px; font-size: 12px; font-weight: 700; margin-bottom: 15px; }
+                .meta .label { opacity: 0.7; }
+                .prenda-info { margin-bottom: 15px; }
+                .prenda-name { font-weight: 900; font-size: 16px; text-transform: uppercase; }
+                .prenda-color { font-weight: 700; font-size: 14px; text-transform: uppercase; }
+                .section { margin-bottom: 15px; font-size: 12px; }
+                .section h4 { margin: 0 0 5px 0; font-weight: 900; text-transform: uppercase; font-size: 12px; }
+                .tallas-resumen { color:#d32f2f; font-weight: 900; }
+                /* Vista previa en popup: mantener el mismo flujo por columnas que en impresión */
+                .tallas-columns {
+                  height: 150mm;
+                  overflow: hidden;
+                  column-count: 4;
+                  -webkit-column-count: 4;
+                  -moz-column-count: 4;
+                  column-fill: auto;
+                  column-gap: 4px;
+                  -webkit-column-gap: 4px;
+                  -moz-column-gap: 4px;
+                }
+                .genero-header { break-inside: avoid; page-break-inside: avoid; margin: 0 0 4px 0; font-size: 11px; font-weight: 900; text-transform: uppercase; }
+                /* Permitir cortes dentro de una talla para que las columnas queden llenas (sin huecos) */
+                .talla-item { break-inside: auto; page-break-inside: auto; margin-bottom: 5px; font-size: 10px; padding-right: 1px; }
+                .talla-title { font-weight: 900; text-decoration: underline; margin-bottom: 1px; font-size: 10.5px; }
+                .observaciones-list { list-style:none; padding: 0; margin: 0; break-inside: auto; page-break-inside: auto; }
+                .observaciones-list li { margin-bottom: 1px; line-height: 1.1; break-inside: auto; page-break-inside: auto; }
+                .observaciones-list li::before { content: "• "; margin-right: 1px; }
+                .separator-line { position: absolute; bottom: 60px; left: 0; right: 0; height: 1mm; background: #111; }
+                .footer { position:absolute; bottom: 0; left:0; right:0; display:grid; grid-template-columns: 1fr 1fr; font-size: 11px; font-weight: 800; border-top: 1mm solid #111; }
+                .footer > div { padding: 10px 15px; border-right: 1mm solid #111; min-height: 50px; }
+                .footer > div:last-child { border-right: none; }
+
+                body.singlepage .page {
+                  min-height: auto !important;
+                  height: auto !important;
+                  overflow: visible !important;
+                }
+                body.singlepage .receipt-card {
+                  height: auto !important;
+                  min-height: 0 !important;
+                  padding: 20px;
+                  display: inline-block;
+                }
+                body.singlepage .tallas-columns { height: auto !important; overflow: visible !important; }
+                body.singlepage .separator-line { position: static !important; margin-top: 12px; }
+                body.singlepage .footer { position: static !important; }
+            `;
+
+            const bodyClass = totalPages > 1 ? 'multipage' : 'singlepage';
 
             const html = `<!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Impresión - 4 recibos por hoja</title>
-  <link rel="stylesheet" href="/css/order-detail-modal.css" />
-  <style>
-    :root { --page-width: 210mm; --page-height: 297mm; --page-padding: 4mm; --grid-gap: 4mm; }
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .paper { width: var(--page-width); padding: var(--page-padding); }
-    .receipt-item { display: flex; justify-content: center; align-items: flex-start; margin: 0 0 6mm 0; page-break-inside: avoid; break-inside: avoid; }
-    /* Importante: el contenedor visible NO debe scrollear */
-    .receipt-item .order-descripcion { overflow: hidden !important; }
-    .receipt-item .order-descripcion * { overflow: hidden !important; }
-    /* Evitar que el card se desborde fuera del recibo */
-    .receipt-item .order-detail-card { overflow: hidden !important; }
-    @media print { @page { size: A4 portrait; margin: 0; } }
-  </style>
+  <title>Impresión Recibo</title>
+  <style>${css}</style>
 </head>
-<body>
-  <div class="paper">${receiptsHtml}</div>
+<body class="${bodyClass}">
+  ${pagesHtml}
   <script>
-    window.addEventListener('load', () => {
-      setTimeout(() => window.print(), 50);
-    });
+    window.addEventListener('load', () => { setTimeout(() => window.print(), 50); });
   </script>
 </body>
 </html>`;
 
             const w = window.open('', '_blank');
             if (!w) {
-                // Si el navegador bloquea popups, fallback
                 window.print();
                 return;
             }
-
             w.document.open();
             w.document.write(html);
             w.document.close();
             return;
         } catch (e) {
-            console.warn('[printReceiptModal] Fallback impresión antigua por error:', e);
+            console.warn('[printReceiptModal] Error en impresión nueva, usando fallback window.print():', e);
             window.print();
         }
-    };
-}
+     };
+ }
 
 /**
  * FUNCIÓN GLOBAL para abrir recibo parcial (anexo)

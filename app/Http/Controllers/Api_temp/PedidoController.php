@@ -412,6 +412,15 @@ class PedidoController extends Controller
                     if (isset($prenda['procesos']) && is_array($prenda['procesos'])) {
                         foreach ($prenda['procesos'] as &$proceso) {
                             if (isset($proceso['id'])) {
+                                // Normalizar ubicaciones a array cuando venga como string JSON
+                                // (compatibilidad: algunos renders esperan array, otros string)
+                                if (isset($proceso['ubicaciones']) && is_string($proceso['ubicaciones'])) {
+                                    $decodedUb = json_decode($proceso['ubicaciones'], true);
+                                    if (is_array($decodedUb)) {
+                                        $proceso['ubicaciones_array'] = $decodedUb;
+                                    }
+                                }
+
                                 // Obtener tallas del proceso
                                 $tallas = \DB::table('pedidos_procesos_prenda_tallas')
                                     ->where('proceso_prenda_detalle_id', $proceso['id'])
@@ -473,6 +482,34 @@ class PedidoController extends Controller
                                 
                                 // Agregar al proceso con nombre 'tallas' para que el renderer lo encuentre
                                 $proceso['tallas'] = $talasTransformadas;
+
+                                // NUEVO: observaciones por talla para modo_tallas = general
+                                // Fuente canónica: pedidos_procesos_prenda_tallas.observaciones
+                                $modoTallas = $proceso['modo_tallas'] ?? null;
+                                if ($modoTallas === 'general') {
+                                    $obsPorTalla = [
+                                        'dama' => [],
+                                        'caballero' => [],
+                                        'unisex' => [],
+                                    ];
+
+                                    foreach ($tallas as $talla) {
+                                        $obs = trim((string)($talla->observaciones ?? ''));
+                                        if ($obs === '') {
+                                            continue;
+                                        }
+
+                                        $genero = strtolower((string)($talla->genero ?? ''));
+                                        if ($genero !== 'dama' && $genero !== 'caballero' && $genero !== 'unisex') {
+                                            $genero = 'caballero';
+                                        }
+
+                                        $tallaKey = $talla->talla !== null ? (string)$talla->talla : 'SOBREMEDIDA';
+                                        $obsPorTalla[$genero][$tallaKey] = $obs;
+                                    }
+
+                                    $proceso['observaciones_por_talla'] = $obsPorTalla;
+                                }
                             }
                         }
                         unset($proceso);
@@ -850,6 +887,65 @@ class PedidoController extends Controller
             
             // Convertir a array para modificar
             $responseData = $response->toArray();
+
+            // Enriquecer procesos (recibos-datos) con observaciones por talla cuando modo_tallas=general
+            // y normalizar ubicaciones a array
+            if (isset($responseData['prendas']) && is_array($responseData['prendas'])) {
+                foreach ($responseData['prendas'] as &$prendaProc) {
+                    if (!isset($prendaProc['procesos']) || !is_array($prendaProc['procesos'])) {
+                        continue;
+                    }
+
+                    foreach ($prendaProc['procesos'] as &$procesoProc) {
+                        if (!isset($procesoProc['id'])) {
+                            continue;
+                        }
+
+                        // ubicaciones_array
+                        if (isset($procesoProc['ubicaciones']) && is_string($procesoProc['ubicaciones'])) {
+                            $decodedUb = json_decode($procesoProc['ubicaciones'], true);
+                            if (is_array($decodedUb)) {
+                                $procesoProc['ubicaciones_array'] = $decodedUb;
+                            }
+                        }
+
+                        // observaciones_por_talla (solo modo general)
+                        $modoTallas = $procesoProc['modo_tallas'] ?? null;
+                        if ($modoTallas === 'general') {
+                            $tallasObs = \DB::table('pedidos_procesos_prenda_tallas')
+                                ->where('proceso_prenda_detalle_id', $procesoProc['id'])
+                                ->whereNotNull('observaciones')
+                                ->where('observaciones', '!=', '')
+                                ->get(['genero', 'talla', 'observaciones']);
+
+                            $obsPorTalla = [
+                                'dama' => [],
+                                'caballero' => [],
+                                'unisex' => [],
+                            ];
+
+                            foreach ($tallasObs as $row) {
+                                $obs = trim((string)($row->observaciones ?? ''));
+                                if ($obs === '') {
+                                    continue;
+                                }
+
+                                $genero = strtolower((string)($row->genero ?? ''));
+                                if ($genero !== 'dama' && $genero !== 'caballero' && $genero !== 'unisex') {
+                                    $genero = 'caballero';
+                                }
+
+                                $tallaKey = $row->talla !== null ? (string)$row->talla : 'SOBREMEDIDA';
+                                $obsPorTalla[$genero][$tallaKey] = $obs;
+                            }
+
+                            $procesoProc['observaciones_por_talla'] = $obsPorTalla;
+                        }
+                    }
+                    unset($procesoProc);
+                }
+                unset($prendaProc);
+            }
             
             // FILTRO BODEGUERO: Si es bodeguero, filtrar procesos para mostrar SOLO 'costura-bodega'
             if ($esBodyguero && isset($responseData['prendas']) && is_array($responseData['prendas'])) {
