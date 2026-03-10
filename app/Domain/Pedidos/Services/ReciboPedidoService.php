@@ -401,7 +401,7 @@ class ReciboPedidoService
             // NUEVO: Obtener detalles por talla si es modo general o especifico
             $tallesDetalles = [];
             if (in_array($modoTallas, ['general', 'especifico'])) {
-                $tallesDetalles = $this->obtenerTallesDetallesProceso($proc);
+                $tallesDetalles = $this->obtenerTallesDetallesProceso($proc, $modoTallas);
                 \Log::info('[RECIBO-SERVICE] Modo con detalles por talla detectado', [
                     'procesoId' => $proc->id,
                     'modo' => $modoTallas,
@@ -724,7 +724,7 @@ class ReciboPedidoService
      * Obtener detalles de tallas (ubicaciones y observaciones) para un proceso
      * Retorna estructura anidada: {genero: {talla: {ubicaciones: [...], observaciones: '...'}}}
      */
-    private function obtenerTallesDetallesProceso($proceso): array
+    private function obtenerTallesDetallesProceso($proceso, string $modoTallas = 'generico'): array
     {
         $tallesDetalles = [
             'dama' => [],
@@ -766,30 +766,42 @@ class ReciboPedidoService
                         ->pluck('ruta_webp')
                         ->toArray();
                     
-                    // Si hay colores, crear entrada por cada color
+                    // Si hay colores, crear entrada por cada color (pero usar observaciones según modo)
                     if ($coloresConDetalles && $coloresConDetalles->count() > 0) {
                         foreach ($coloresConDetalles as $color) {
                             $colorNombre = $color->color_nombre ?? 'Sin color';
-                            $claveTalla = "{$talla}__" . $colorNombre; // Ej: L__AZUL CIELO
                             
-                            // Parsear ubicaciones del color
-                            $ubicacionesColor = [];
-                            if ($color->ubicaciones) {
-                                if (is_array($color->ubicaciones)) {
-                                    $ubicacionesColor = $color->ubicaciones;
-                                } else if (is_string($color->ubicaciones)) {
-                                    $ubicacionesColor = json_decode($color->ubicaciones, true) ?? [];
+                            // EN MODO GENERAL: Usar observaciones de la talla, no del color
+                            // EN MODO ESPECIFICO: Usar observaciones específicas del color
+                            if ($modoTallas === 'general') {
+                                $observacionesActuales = $tallaProceso->observaciones ?? '';
+                                $ubicacionesActuales = $ubicaciones;
+                                $claveTalla = $talla; // Clave solo con la talla
+                            } else {
+                                $claveTalla = "{$talla}__" . $colorNombre; // Ej: L__AZUL CIELO
+                                
+                                // Parsear ubicaciones del color
+                                $ubicacionesActuales = [];
+                                if ($color->ubicaciones) {
+                                    if (is_array($color->ubicaciones)) {
+                                        $ubicacionesActuales = $color->ubicaciones;
+                                    } else if (is_string($color->ubicaciones)) {
+                                        $ubicacionesActuales = json_decode($color->ubicaciones, true) ?? [];
+                                    }
                                 }
+                                $observacionesActuales = $color->observaciones ?? '';
                             }
                             
-                            // Asignar con clave que incluye color
-                            $tallesDetalles[$genero][$claveTalla] = [
-                                'ubicaciones' => $ubicacionesColor,
-                                'observaciones' => $color->observaciones ?? '',
-                                'imagenes' => $imagenesTalla,
-                                'cantidad' => (int)$color->cantidad,
-                                'color' => $colorNombre
-                            ];
+                            // Asignar datos (evitar duplicados en modo general agrupando por talla)
+                            if (!isset($tallesDetalles[$genero][$claveTalla])) {
+                                $tallesDetalles[$genero][$claveTalla] = [
+                                    'ubicaciones' => $ubicacionesActuales,
+                                    'observaciones' => $observacionesActuales,
+                                    'imagenes' => $imagenesTalla,
+                                    'cantidad' => (int)$color->cantidad,
+                                    'color' => $colorNombre
+                                ];
+                            }
                         }
                     } else {
                         // Si no hay colores, usar ubicaciones de la talla directamente

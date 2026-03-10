@@ -240,9 +240,7 @@ class DespachoController extends Controller
                 ->leftJoin('pedidos_procesos_prenda_detalles', 'pedidos_procesos_prenda_detalles.prenda_pedido_id', '=', 'prendas_pedido.id')
                 ->whereNotNull('pedidos_produccion.numero_pedido')
                 ->where('pedidos_produccion.numero_pedido', '!=', '')
-                ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'Entregado', 'Anulada', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
-                ->where('pedidos_produccion.estado', '!=', 'Anulada')
-                ->where('pedidos_produccion.estado', '!=', 'Entregado')
+                ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
                 ->where('prendas_pedido.de_bodega', 1)
                 ->whereNull('prendas_pedido.deleted_at')
                 ->whereNull('pedidos_procesos_prenda_detalles.id') // NO debe tener procesos
@@ -1157,9 +1155,7 @@ class DespachoController extends Controller
                 ->join('bodega_detalles_talla', 'bodega_detalles_talla.pedido_produccion_id', '=', 'pedidos_produccion.id')
                 ->whereNotNull('pedidos_produccion.numero_pedido')
                 ->where('pedidos_produccion.numero_pedido', '!=', '')
-                ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'Entregado', 'Anulada', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
-                ->where('pedidos_produccion.estado', '!=', 'Anulada')
-                ->where('pedidos_produccion.estado', '!=', 'Entregado')
+                ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
                 ->where('bodega_detalles_talla.area', 'EPP')
                 ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
                 ->select('pedidos_produccion.*') // Evitar columnas duplicadas

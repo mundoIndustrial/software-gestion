@@ -352,21 +352,190 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
     if (iconEl) iconEl.textContent = iconosPorTallas[tipoProceso] || 'edit_note';
     if (tituloEl) tituloEl.textContent = `${nombresPorTallas[tipoProceso] || tipoProceso} — Por Tallas`;
 
-    // Obtener tallas de la prenda
-    let tallasPrenda = (typeof obtenerTallasDeLaPrenda === 'function')
-        ? obtenerTallasDeLaPrenda()
-        : { dama: {}, caballero: {}, sobremedida: null };
+    // 🔥 FIX: Obtener tallas desde MÚLTIPLES FUENTES en orden de prioridad
+    // 1. PRIMERO: Desde tabla de resumen visible (CONTIENE ESTADO ACTUAL: nuevas + guardadas)
+    // 2. SEGUNDO: Desde window.tallasRelacionales (tallas MANUALMENTE ingresadas en tarjetas)
+    // 3. TERCERO: Desde StateManager (tallas del WIZARD con colores)
+    // 4. CUARTO: Desde obtenerTallasDeLaPrenda (fallback para datos guardados en BD)
+    
+    let tallasPrenda = { dama: {}, caballero: {}, sobremedida: null };
+    let leyóDesdeTabla = false;
+    
+    // ═ FUENTE 1: Tabla de resumen visible (PRIORITARIA - estado actual completo) ═
+    // En modo EDICIÓN, la tabla de resumen SIEMPRE es la más confiable porque muestra
+    // TODAS las tallas del pedido (tanto las de DB como las nuevas agregadas)
+    const tablaResumenBody = document.getElementById('tabla-resumen-asignaciones-cuerpo');
+    
+    if (tablaResumenBody && tablaResumenBody.querySelectorAll('tr').length > 0) {
+        console.log('[por-tallas] 📋 FUENTE 1 - Leyendo desde tabla de resumen (PRIORITARIO)');
+        console.log('[por-tallas] Filas encontradas en tabla:', tablaResumenBody.querySelectorAll('tr').length);
+        
+        const filasDebug = [];
+        tablaResumenBody.querySelectorAll('tr').forEach((fila, idx) => {
+            const dataGenero = fila.querySelector('[data-field="genero"]')?.textContent?.trim().toLowerCase();
+            const dataTalla = fila.querySelector('[data-field="talla"]')?.textContent?.trim().toUpperCase();
+            const dataCantidad = parseInt(fila.querySelector('[data-field="cantidad"]')?.textContent?.trim() || '1');
+            
+            filasDebug.push({
+                idx,
+                genero: dataGenero,
+                talla: dataTalla,
+                cantidad: dataCantidad,
+                valido: dataTalla && dataCantidad > 0
+            });
+            
+            if (dataTalla && dataCantidad > 0) {
+                const tallasKey = dataGenero === 'caballero' ? 'caballero' : (dataGenero === 'sobremedida' || dataGenero === 'unisex' ? 'sobremedida' : 'dama');
+                
+                if (tallasKey === 'sobremedida') {
+                    if (!tallasPrenda.sobremedida) tallasPrenda.sobremedida = {};
+                    tallasPrenda.sobremedida[dataTalla] = (tallasPrenda.sobremedida[dataTalla] || 0) + dataCantidad;
+                } else {
+                    tallasPrenda[tallasKey][dataTalla] = (tallasPrenda[tallasKey][dataTalla] || 0) + dataCantidad;
+                }
+                console.log(`[por-tallas] ✅ Fila ${idx}: ${tallasKey.toUpperCase()} - ${dataTalla} - ${dataCantidad} unidades`);
+            }
+        });
+        
+        console.log('[por-tallas] 📊 Resumen de filas leídas:', filasDebug);
+        
+        // Si encontró tallas en la tabla, marcar como exitoso
+        if (Object.keys(tallasPrenda.dama).length > 0 || Object.keys(tallasPrenda.caballero).length > 0 || tallasPrenda.sobremedida) {
+            leyóDesdeTabla = true;
+            console.log('[por-tallas] ✅ FUENTE 1 exitosa - Tallas desde tabla de resumen:', tallasPrenda);
+        }
+    }
 
-    // Si el proceso ya tiene tallas propias guardadas, preferir esas para que los keys
-    // coincidan con datosExtendidos (ej: L__SDFDF vs L__AZUL MARINO del prenda)
+    // ═ FUENTE 2: window.tallasRelacionales (si tabla no tuvo datos) ═
+    if (!leyóDesdeTabla) {
+        const tallasRelacionales = window.tallasRelacionales || { DAMA: {}, CABALLERO: {}, UNISEX: {}, SOBREMEDIDA: {} };
+        const hayTallasRelacionales = Object.values(tallasRelacionales).some(generoTallas => 
+            generoTallas && typeof generoTallas === 'object' && Object.keys(generoTallas).length > 0
+        );
+        
+        if (hayTallasRelacionales) {
+            console.log('[por-tallas] 📊 FUENTE 2 - Leyendo desde window.tallasRelacionales:', tallasRelacionales);
+            
+            // Copiar DAMA
+            if (tallasRelacionales.DAMA && Object.keys(tallasRelacionales.DAMA).length > 0) {
+                tallasPrenda.dama = { ...tallasRelacionales.DAMA };
+            }
+            // Copiar CABALLERO
+            if (tallasRelacionales.CABALLERO && Object.keys(tallasRelacionales.CABALLERO).length > 0) {
+                tallasPrenda.caballero = { ...tallasRelacionales.CABALLERO };
+            }
+            // Copiar SOBREMEDIDA y UNISEX
+            if (tallasRelacionales.SOBREMEDIDA && Object.keys(tallasRelacionales.SOBREMEDIDA).length > 0) {
+                tallasPrenda.sobremedida = { ...tallasRelacionales.SOBREMEDIDA };
+            }
+            if (tallasRelacionales.UNISEX && Object.keys(tallasRelacionales.UNISEX).length > 0) {
+                tallasPrenda.sobremedida = { ...(tallasPrenda.sobremedida || {}), ...tallasRelacionales.UNISEX };
+            }
+            
+            console.log('[por-tallas] ✅ Tallas desde tallasRelacionales:', tallasPrenda);
+        }
+    }
+    
+    // ═ FUENTE 3: StateManager (si aún no hay datos) ═
+    if (!leyóDesdeTabla && (Object.keys(tallasPrenda.dama).length === 0 && Object.keys(tallasPrenda.caballero).length === 0) && !tallasPrenda.sobremedida) {
+        if (window.StateManager && typeof window.StateManager.getAsignaciones === 'function') {
+            const asignaciones = window.StateManager.getAsignaciones();
+            if (asignaciones && typeof asignaciones === 'object' && Object.keys(asignaciones).length > 0) {
+                console.log('[por-tallas] 📊 FUENTE 3 - Leyendo tallas desde StateManager (asignaciones wizard):', asignaciones);
+                
+                Object.entries(asignaciones).forEach(([clave, asignacion]) => {
+                    const genero = asignacion.genero ? asignacion.genero.toLowerCase() : 'dama';
+                    const tallasKey = genero === 'caballero' ? 'caballero' : (genero === 'sobremedida' || genero === 'unisex' ? 'sobremedida' : 'dama');
+                    
+                    if (asignacion.talla) {
+                        const talla = asignacion.talla;
+                        const colores = asignacion.colores || [];
+                        const totalCant = colores.reduce((sum, c) => sum + (c.cantidad || 1), 0);
+                        if (totalCant > 0) {
+                            if (tallasKey === 'sobremedida') {
+                                if (!tallasPrenda.sobremedida) tallasPrenda.sobremedida = {};
+                                tallasPrenda.sobremedida[talla] = (tallasPrenda.sobremedida[talla] || 0) + totalCant;
+                            } else {
+                                tallasPrenda[tallasKey][talla] = (tallasPrenda[tallasKey][talla] || 0) + totalCant;
+                            }
+                        }
+                    }
+                });
+                
+                console.log('[por-tallas] ✅ Tallas desde StateManager:', tallasPrenda);
+            }
+        }
+    }
+
+    // ═ FUENTE 4: Fallback a obtenerTallasDeLaPrenda (datos guardados en BD) ═
+    if (!leyóDesdeTabla && (Object.keys(tallasPrenda.dama).length === 0 && Object.keys(tallasPrenda.caballero).length === 0) && !tallasPrenda.sobremedida) {
+        const tallasFallback = (typeof obtenerTallasDeLaPrenda === 'function')
+            ? obtenerTallasDeLaPrenda()
+            : { dama: {}, caballero: {}, sobremedida: null };
+        
+        if (Object.keys(tallasFallback.dama).length > 0 || Object.keys(tallasFallback.caballero).length > 0 || tallasFallback.sobremedida) {
+            tallasPrenda.dama = { ...tallasFallback.dama };
+            tallasPrenda.caballero = { ...tallasFallback.caballero };
+            tallasPrenda.sobremedida = tallasFallback.sobremedida;
+            console.log('[por-tallas] ✅ Tallas desde obtenerTallasDeLaPrenda (fallback):', tallasPrenda);
+        }
+    }
+
+    // Si el proceso ya tiene tallas propias guardadas, COMBINARLAS con las nuevas tallas agregadas
+    // PERO evitando duplicados: si una talla ya existe con cualquier nombre (ej: M__AZUL_ACERO vs M),
+    // no se agrega duplicada
     const procesoTallasGuardadas = window.procesosSeleccionados?.[tipoProceso]?.datos?.tallas;
     if (procesoTallasGuardadas && typeof procesoTallasGuardadas === 'object') {
         const damaObj = (procesoTallasGuardadas.dama && !Array.isArray(procesoTallasGuardadas.dama)) ? procesoTallasGuardadas.dama : {};
         const cabObj = (procesoTallasGuardadas.caballero && !Array.isArray(procesoTallasGuardadas.caballero)) ? procesoTallasGuardadas.caballero : {};
         const sobreObj = (procesoTallasGuardadas.sobremedida && !Array.isArray(procesoTallasGuardadas.sobremedida)) ? procesoTallasGuardadas.sobremedida : null;
         if (Object.keys(damaObj).length > 0 || Object.keys(cabObj).length > 0) {
-            console.log('[por-tallas] Usando tallas PROPIAS del proceso (no de la prenda):', procesoTallasGuardadas);
-            tallasPrenda = { dama: damaObj, caballero: cabObj, sobremedida: sobreObj };
+            console.log('[por-tallas] 🔄 Combinando tallas guardadas en BD + nuevas tallas agregadas después (evitando duplicados)');
+            
+            // Extraer TALLAS BASE de las guardadas (primera parte antes de __)
+            // Ej: M__AZUL_ACERO -> M, XXXXL__AZUL_CELESTE -> XXXXL, M -> M
+            const extraerTallaBase = (clave) => {
+                const partes = clave.split('__');
+                return partes[0].toUpperCase(); // PRIMERA parte es la talla
+            };
+            
+            const tallasBaseGuardadas = {
+                dama: new Set(Object.keys(damaObj).map(extraerTallaBase)),
+                caballero: new Set(Object.keys(cabObj).map(extraerTallaBase))
+            };
+            
+            console.log('[por-tallas] 📝 Tallas base guardadas (DAMA):', Array.from(tallasBaseGuardadas.dama));
+            console.log('[por-tallas] 📝 Tallas base guardadas (CABALLERO):', Array.from(tallasBaseGuardadas.caballero));
+            
+            // Agregar tallas nuevas SOLO si su nombre base no existe en guardadas
+            Object.entries(tallasPrenda.dama || {}).forEach(([key, val]) => {
+                const tallaBase = key.toUpperCase();
+                if (!tallasBaseGuardadas.dama.has(tallaBase)) {
+                    console.log(`[por-tallas] ✅ Agregando talla DAMA nueva: ${key}`);
+                    damaObj[key] = val;
+                } else {
+                    console.log(`[por-tallas] ⊘ Talla DAMA duplicada ignorada: ${key}`);
+                }
+            });
+            
+            Object.entries(tallasPrenda.caballero || {}).forEach(([key, val]) => {
+                const tallaBase = key.toUpperCase();
+                if (!tallasBaseGuardadas.caballero.has(tallaBase)) {
+                    console.log(`[por-tallas] ✅ Agregando talla CABALLERO nueva: ${key}`);
+                    cabObj[key] = val;
+                } else {
+                    console.log(`[por-tallas] ⊘ Talla CABALLERO duplicada ignorada: ${key}`);
+                }
+            });
+            
+            // Mantener sobremedida
+            if (sobreObj && Object.keys(sobreObj).length > 0) {
+                tallasPrenda.sobremedida = sobreObj;
+            }
+            
+            tallasPrenda.dama = damaObj;
+            tallasPrenda.caballero = cabObj;
+            console.log('[por-tallas] ✅ Tallas combinadas sin duplicados:', tallasPrenda);
         }
     }
 
@@ -468,12 +637,35 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
     // Redibujar galería de fotos generales (con o sin fotos existentes)
     renderizarGaleriaFotosGenerales();
 
+    // ─── FUNCTION HELPER: Buscar datos existentes de forma inteligente ───
+    // Si tallaKey es "M" pero en BD está como "M__AZUL_ACERO", encontrar esa clave
+    const buscarDatosExistentesPorTalla = (genero, tallaKey) => {
+        if (!datosExistentes || !datosExistentes[genero]) return null;
+        
+        // Primero intentar búsqueda exacta
+        if (datosExistentes[genero][tallaKey]) {
+            return datosExistentes[genero][tallaKey];
+        }
+        
+        // Si no encuentra exacta, buscar cualquier clave que comience con tallaKey__
+        // Ej: si busco "M", encontrar "M__AZUL_ACERO"
+        const claveConColor = Object.keys(datosExistentes[genero]).find(clave => 
+            clave.startsWith(tallaKey + '__')
+        );
+        
+        if (claveConColor) {
+            return datosExistentes[genero][claveConColor];
+        }
+        
+        return null;
+    };
+
     // Renderizar DAMA
     if (tallasDama.length > 0 && contDama) {
         secDama.style.display = 'block';
         tallasDama.forEach(([tallaKey, cantidad]) => {
             const key = `dama__${tallaKey}`;
-            const existente = datosExistentes?.dama?.[tallaKey];
+            const existente = buscarDatosExistentesPorTalla('dama', tallaKey);
             datosPorTallaTemp[key] = {
                 seleccionada: true,
                 cantidadSeleccionada: existente?.cantidadSeleccionada || cantidad,
@@ -506,7 +698,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
         secCab.style.display = 'block';
         tallasCaballero.forEach(([tallaKey, cantidad]) => {
             const key = `caballero__${tallaKey}`;
-            const existente = datosExistentes?.caballero?.[tallaKey];
+            const existente = buscarDatosExistentesPorTalla('caballero', tallaKey);
             datosPorTallaTemp[key] = {
                 seleccionada: true,
                 cantidadSeleccionada: existente?.cantidadSeleccionada || cantidad,
@@ -954,6 +1146,7 @@ window.guardarProcesoPorTallas = function() {
     if (!procesoPorTallasActual) return;
 
     console.log('[GUARDAR-POR-TALLAS] Iniciando guardado del proceso:', procesoPorTallasActual, 'Modo:', modoModalPorTallasActual);
+    console.log('[GUARDAR-POR-TALLAS] datosPorTallaTemp ANTES de recolectar:', JSON.stringify(datosPorTallaTemp, null, 2));
 
     // ─── RECOGER DATOS SEGÚN EL MODO ACTUAL ───
     if (modoModalPorTallasActual === 'general') {
@@ -961,11 +1154,17 @@ window.guardarProcesoPorTallas = function() {
         ubicacionGeneralTemp = document.getElementById('ubicacion-general-input')?.value || '';
         
         // Recoger observaciones generales
-        document.querySelectorAll('.prt-observaciones-general').forEach(textarea => {
+        const textareasGenerales = document.querySelectorAll('.prt-observaciones-general');
+        console.log('[GUARDAR-POR-TALLAS] Encontrados textareas de observaciones generales:', textareasGenerales.length);
+        
+        textareasGenerales.forEach(textarea => {
             const key = textarea.dataset.key;
             const valor = textarea.value;
+            console.log('[GUARDAR-POR-TALLAS] Recolectando observación:', { key, valor, existeEnTemp: !!datosPorTallaTemp[key] });
             if (datosPorTallaTemp[key]) {
                 datosPorTallaTemp[key].observaciones = valor;
+            } else {
+                console.warn('[GUARDAR-POR-TALLAS] ⚠️ Clave no encontrada en datosPorTallaTemp:', key, 'Claves disponibles:', Object.keys(datosPorTallaTemp));
             }
         });
 
@@ -993,9 +1192,13 @@ window.guardarProcesoPorTallas = function() {
         });
     } else {
         // Modo específico: recoger todo (ubicación, observaciones e imágenes por talla)
-        document.querySelectorAll('.prt-ubicacion-input').forEach(textarea => {
+        const textareasUbicacion = document.querySelectorAll('.prt-ubicacion-input');
+        console.log('[GUARDAR-POR-TALLAS] Modo ESPECÍFICO - Encontrados textareas de ubicación:', textareasUbicacion.length);
+        
+        textareasUbicacion.forEach(textarea => {
             const key = textarea.dataset.key;
             const valor = textarea.value;
+            console.log('[GUARDAR-POR-TALLAS] Recolectando ubicación:', { key, valor, existeEnTemp: !!datosPorTallaTemp[key] });
             if (datosPorTallaTemp[key]) {
                 datosPorTallaTemp[key].ubicaciones = valor
                     .split(',')
@@ -1004,11 +1207,17 @@ window.guardarProcesoPorTallas = function() {
             }
         });
 
-        document.querySelectorAll('.prt-observaciones').forEach(textarea => {
+        const textareasObs = document.querySelectorAll('.prt-observaciones');
+        console.log('[GUARDAR-POR-TALLAS] Encontrados textareas de observaciones específicas:', textareasObs.length);
+        
+        textareasObs.forEach(textarea => {
             const key = textarea.dataset.key;
             const valor = textarea.value;
+            console.log('[GUARDAR-POR-TALLAS] Recolectando observación específica:', { key, valor, existeEnTemp: !!datosPorTallaTemp[key] });
             if (datosPorTallaTemp[key]) {
                 datosPorTallaTemp[key].observaciones = valor;
+            } else {
+                console.warn('[GUARDAR-POR-TALLAS] ⚠️ Clave no encontrada en datosPorTallaTemp:', key, 'Claves disponibles:', Object.keys(datosPorTallaTemp));
             }
         });
 
@@ -1123,6 +1332,52 @@ window.guardarProcesoPorTallas = function() {
     // Renderizar tarjeta del proceso si existe la función
     if (typeof window.renderizarTarjetasProcesos === 'function') {
         window.renderizarTarjetasProcesos();
+    }
+
+    // 🔥 FIX: Sincronizar nuevas tallas con window.telasCreacion para que se muestren en la tabla
+    // Las nuevas tallas que se agregaron en el modal deben estar disponibles en telasCreacion
+    // para que actualizarTablaResumen() las pueda mostrar
+    if (!window.telasCreacion) {
+        window.telasCreacion = [];
+    }
+
+    let tallasSincronizadas = false;
+    Object.entries(tallas).forEach(([genero, tallaDict]) => {
+        Object.entries(tallaDict).forEach(([tallaKey, cantidad]) => {
+            if (cantidad > 0) {
+                // Buscar si esta talla ya existe en telasCreacion
+                const yaExiste = window.telasCreacion.some(t => 
+                    (t.genero === genero || t.genero === genero.toUpperCase()) &&
+                    (t.talla === tallaKey || t.talla === tallaKey.toUpperCase())
+                );
+                
+                if (!yaExiste) {
+                    // Agregar nueva talla a telasCreacion
+                    const telaDelProceso = procesoPorTallasActual || 'bordado';
+                    window.telasCreacion.push({
+                        tela: telaDelProceso.toUpperCase(),
+                        genero: genero.toUpperCase(),
+                        talla: tallaKey.toUpperCase(),
+                        color: '',
+                        referencia: '',
+                        imagenes: [],
+                        observaciones: datosExtendidos[genero]?.[tallaKey]?.observaciones || '',
+                        cantidad: cantidad,
+                        fechaCreacion: new Date().toISOString()
+                    });
+                    tallasSincronizadas = true;
+                    console.log(`[por-tallas] ✅ Sincronizado ${genero.toUpperCase()} - ${tallaKey.toUpperCase()} a telasCreacion`);
+                }
+            }
+        });
+    });
+
+    // Actualizar la tabla de resumen si se sincronizaron nuevas tallas
+    if (tallasSincronizadas) {
+        console.log('[por-tallas] 📊 Actualizando tabla de resumen tras sincronizar nuevas tallas');
+        if (window.ColoresPorTalla && typeof window.ColoresPorTalla.actualizarTablaResumen === 'function') {
+            window.ColoresPorTalla.actualizarTablaResumen();
+        }
     }
 
     // Cerrar modal

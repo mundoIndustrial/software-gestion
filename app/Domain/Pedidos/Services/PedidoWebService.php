@@ -1211,14 +1211,23 @@ class PedidoWebService
 
                         foreach ($data['colores'] as $colorItem) {
                             // Extraer observaciones y ubicaciones desde datosExtendidos
+                            // Intentar dos formatos: TALLA__COLOR (específico) o solo TALLA (general)
                             $claveDataExtendidos = "{$tallaReal}__{$colorItem['nombre']}";
                             $observacionesColor = null;
                             $ubicacionesColor = null;
                             
                             if (!empty($datosExtendidos)) {
                                 $generoKey = strtolower(trim($generoBD));
+                                
+                                // INTENTO 1: Buscar con formato TALLA__COLOR (específico por color)
                                 if (isset($datosExtendidos[$generoKey][$claveDataExtendidos])) {
                                     $datosColor = $datosExtendidos[$generoKey][$claveDataExtendidos];
+                                    $observacionesColor = $datosColor['observaciones'] ?? null;
+                                    $ubicacionesColor = $datosColor['ubicaciones'] ?? null;
+                                }
+                                // INTENTO 2: Fallback a solo TALLA (modo general)
+                                elseif (isset($datosExtendidos[$generoKey][$tallaReal])) {
+                                    $datosColor = $datosExtendidos[$generoKey][$tallaReal];
                                     $observacionesColor = $datosColor['observaciones'] ?? null;
                                     $ubicacionesColor = $datosColor['ubicaciones'] ?? null;
                                 }
@@ -1330,10 +1339,18 @@ class PedidoWebService
                                             
                                             if (!empty($datosExtendidos)) {
                                                 $generoKey = strtolower(trim($generoBD));
+                                                
+                                                // INTENTO 1: Buscar con formato TALLA__COLOR
                                                 if (isset($datosExtendidos[$generoKey][$claveColorDataExtendidos])) {
                                                     $datosColor = $datosExtendidos[$generoKey][$claveColorDataExtendidos];
                                                     $observacionesColor = $datosColor['observaciones'] ?? null;
                                                     $ubicacionesColor = $datosColor['ubicaciones'] ?? null;
+                                                }
+                                                // INTENTO 2: Fallback a solo TALLA (si viene agrupado por talla)
+                                                elseif (isset($datosExtendidos[$generoKey][$talla])) {
+                                                    $datosTalla = $datosExtendidos[$generoKey][$talla];
+                                                    $observacionesColor = $datosTalla['observaciones'] ?? null;
+                                                    $ubicacionesColor = $datosTalla['ubicaciones'] ?? null;
                                                 }
                                             }
                                             

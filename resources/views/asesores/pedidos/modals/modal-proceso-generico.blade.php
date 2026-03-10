@@ -52,11 +52,12 @@
                             Aplicar para todas (de la prenda)
                         </button>
                         
-                        <!-- Botón: Editar tallas específicas -->
+                        <!-- COMENTADO: Botón: Editar tallas específicas
                         <button type="button" id="btn-editar-tallas-especificas" class="btn btn-outline-secondary" onclick="abrirEditorTallasEspecificas()" style="flex: 1; min-width: 200px; padding: 0.75rem;">
                             <span class="material-symbols-rounded" style="font-size: 1.2rem;">edit</span>
                             Editar tallas específicas
                         </button>
+                        -->
                     </div>
                     
                     <!-- Resumen de tallas seleccionadas -->
