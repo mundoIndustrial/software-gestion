@@ -371,29 +371,70 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
         console.log('[por-tallas] Filas encontradas en tabla:', tablaResumenBody.querySelectorAll('tr').length);
         
         const filasDebug = [];
-        tablaResumenBody.querySelectorAll('tr').forEach((fila, idx) => {
+        tablaResumenBody.querySelectorAll('tr[data-tipo="wizard"]').forEach((fila, idx) => {
             const dataGenero = fila.querySelector('[data-field="genero"]')?.textContent?.trim().toLowerCase();
             const dataTalla = fila.querySelector('[data-field="talla"]')?.textContent?.trim().toUpperCase();
-            const dataCantidad = parseInt(fila.querySelector('[data-field="cantidad"]')?.textContent?.trim() || '1');
+            const dataCantidadTotal = parseInt(fila.querySelector('[data-field="cantidad"]')?.textContent?.trim() || '1');
+            
+            // 🎨 EXTRAER COLORES Y CANTIDADES de la celda [data-field="color"]
+            // Estructura: <span>AQUA (1)</span><span>AMATISTA (1)</span> etc.
+            const colorCell = fila.querySelector('[data-field="color"]');
+            const coloresConCantidad = []; // Array de {color: 'AQUA', cantidad: 1}
+            if (colorCell) {
+                const badgesColores = colorCell.querySelectorAll('span');
+                badgesColores.forEach(badge => {
+                    const colorText = badge.textContent?.trim();
+                    if (colorText && colorText !== 'Sin color') {
+                        // Extraer color y cantidad: "AQUA (1)" → color: "AQUA", cantidad: 1
+                        const match = colorText.match(/^(.+?)\s*\(\s*(\d+)\s*\)$/);
+                        if (match) {
+                            const colorLimpio = match[1].trim();
+                            const cantidadColor = parseInt(match[2]) || 1;
+                            coloresConCantidad.push({ color: colorLimpio, cantidad: cantidadColor });
+                        } else {
+                            // Si no tiene formato (X), asumir cantidad 1
+                            coloresConCantidad.push({ color: colorText, cantidad: 1 });
+                        }
+                    }
+                });
+            }
             
             filasDebug.push({
                 idx,
                 genero: dataGenero,
                 talla: dataTalla,
-                cantidad: dataCantidad,
-                valido: dataTalla && dataCantidad > 0
+                cantidad: dataCantidadTotal,
+                colores: coloresConCantidad.map(c => c.color),
+                valido: dataTalla && dataCantidadTotal > 0
             });
             
-            if (dataTalla && dataCantidad > 0) {
+            if (dataTalla && dataCantidadTotal > 0) {
                 const tallasKey = dataGenero === 'caballero' ? 'caballero' : (dataGenero === 'sobremedida' || dataGenero === 'unisex' ? 'sobremedida' : 'dama');
                 
-                if (tallasKey === 'sobremedida') {
-                    if (!tallasPrenda.sobremedida) tallasPrenda.sobremedida = {};
-                    tallasPrenda.sobremedida[dataTalla] = (tallasPrenda.sobremedida[dataTalla] || 0) + dataCantidad;
+                // 🔑 CREAR TARJETA PARA CADA COLOR (si hay) O UNA SOLA TARJETA (si no hay)
+                if (coloresConCantidad.length > 0) {
+                    // Para cada color, crear una clave TALLA__COLOR con su cantidad específica
+                    coloresConCantidad.forEach(({color, cantidad}) => {
+                        const claveParaAgregar = `${dataTalla}__${color}`;
+                        
+                        if (tallasKey === 'sobremedida') {
+                            if (!tallasPrenda.sobremedida) tallasPrenda.sobremedida = {};
+                            tallasPrenda.sobremedida[claveParaAgregar] = (tallasPrenda.sobremedida[claveParaAgregar] || 0) + cantidad;
+                        } else {
+                            tallasPrenda[tallasKey][claveParaAgregar] = (tallasPrenda[tallasKey][claveParaAgregar] || 0) + cantidad;
+                        }
+                        console.log(`[por-tallas] ✅ Fila ${idx}: ${tallasKey.toUpperCase()} - ${claveParaAgregar} - ${cantidad} unidades`);
+                    });
                 } else {
-                    tallasPrenda[tallasKey][dataTalla] = (tallasPrenda[tallasKey][dataTalla] || 0) + dataCantidad;
+                    // Sin colores: crear una sola tarjeta con solo TALLA
+                    if (tallasKey === 'sobremedida') {
+                        if (!tallasPrenda.sobremedida) tallasPrenda.sobremedida = {};
+                        tallasPrenda.sobremedida[dataTalla] = (tallasPrenda.sobremedida[dataTalla] || 0) + dataCantidadTotal;
+                    } else {
+                        tallasPrenda[tallasKey][dataTalla] = (tallasPrenda[tallasKey][dataTalla] || 0) + dataCantidadTotal;
+                    }
+                    console.log(`[por-tallas] ✅ Fila ${idx}: ${tallasKey.toUpperCase()} - ${dataTalla} - ${dataCantidadTotal} unidades (sin color)`);
                 }
-                console.log(`[por-tallas] ✅ Fila ${idx}: ${tallasKey.toUpperCase()} - ${dataTalla} - ${dataCantidad} unidades`);
             }
         });
         
