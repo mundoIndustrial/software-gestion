@@ -173,6 +173,15 @@ class EppController extends Controller
                           ->orderBy('nombre_completo')
                           ->get();
 
+            // Agregar información de asociaciones
+            $eppsConAsociaciones = $epps->map(function ($epp) {
+                $pedidosAsociados = \App\Models\PedidoEpp::where('epp_id', $epp->id)->count();
+                return array_merge($epp->toArray(), [
+                    'tiene_asociaciones' => $pedidosAsociados > 0,
+                    'pedidos_asociados' => $pedidosAsociados,
+                ]);
+            });
+
             \Log::info('[EppController] indexSimple - Resultados', [
                 'total' => $total,
                 'epps_count' => $epps->count(),
@@ -185,7 +194,7 @@ class EppController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $epps,
+                'data' => $eppsConAsociaciones,
                 'total' => $total,
                 'page' => $page,
                 'per_page' => $perPage,
@@ -223,23 +232,42 @@ class EppController extends Controller
             \Log::info('[EppController] Request data:', $request->all());
             
             $validated = $request->validate([
-                'nombre' => 'required|string|max:255',
-                'categoria' => 'nullable|string|max:255',
+                'nombre_completo' => 'required|string|max:500',
+                'marca' => 'nullable|string|max:100',
+                'tipo' => 'required|in:PRODUCTO,SERVICIO',
+                'talla' => 'nullable|string|max:100',
+                'color' => 'nullable|string|max:100',
+                'categoria_id' => 'nullable|integer|exists:epp_categorias,id',
+                'descripcion' => 'nullable|string',
+                'activo' => 'required|boolean',
             ]);
 
             \Log::info('[EppController] Validación exitosa:', $validated);
 
+            // Verificar si el EPP ya existe (case-insensitive)
+            $eppExistente = Epp::whereRaw('LOWER(nombre_completo) = ?', [strtolower($validated['nombre_completo'])])
+                ->first();
+
+            if ($eppExistente) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Este EPP ya existe en el sistema',
+                    'epp_existente' => true,
+                    'epp_id' => $eppExistente->id,
+                    'epp_nombre' => $eppExistente->nombre_completo,
+                ], 400);
+            }
+
             $command = new CrearEppCommand(
-                nombre: $validated['nombre'],
-                categoria: $validated['categoria'] ?? 'General',
+                nombre: $validated['nombre_completo'],
+                categoria: 'General',
                 codigo: null,
-                descripcion: null
+                descripcion: $validated['descripcion'] ?? null
             );
 
             \Log::info('[EppController] Comando creado:', [
                 'command' => class_basename($command),
-                'nombre' => $validated['nombre'],
-                'categoria' => $validated['categoria'] ?? 'General',
+                'nombre' => $validated['nombre_completo'],
             ]);
 
             $epp = $this->commandBus->execute($command);
@@ -301,20 +329,21 @@ class EppController extends Controller
                 'activo' => $activo
             ]);
 
-            // Buscar si ya existe un EPP con el mismo nombre
-            $eppExistente = \App\Models\Epp::where('nombre_completo', $validated['nombre_completo'])
+            // Buscar si ya existe un EPP con el mismo nombre (case-insensitive)
+            $eppExistente = \App\Models\Epp::whereRaw('LOWER(nombre_completo) = ?', [strtolower($validated['nombre_completo'])])
                 ->first();
 
             if ($eppExistente) {
                 \Log::info('[EppController::crearEppSimple] EPP ya existe:', $eppExistente->toArray());
                 
                 return response()->json([
-                    'success' => true,
-                    'message' => 'EPP ya existe',
+                    'success' => false,
+                    'message' => 'Este EPP ya existe en el sistema',
+                    'epp_existente' => true,
+                    'epp_id' => $eppExistente->id,
+                    'epp_nombre' => $eppExistente->nombre_completo,
                     'data' => $eppExistente,
-                    'epp' => $eppExistente,
-                    'existia' => true,
-                ], 200);
+                ], 400);
             }
 
             // Crear EPP directamente en la base de datos
@@ -336,7 +365,6 @@ class EppController extends Controller
                 'message' => 'EPP creado exitosamente',
                 'data' => $epp,
                 'epp' => $epp, // Ambas formas para compatibilidad
-                'existia' => false,
             ], 201);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -1080,6 +1108,22 @@ class EppController extends Controller
     {
         try {
             $epp = Epp::findOrFail($id);
+
+            // Verificar si el EPP está asociado a pedidos
+            $asociacionesPedidos = \App\Models\PedidoEpp::where('epp_id', $id)->count();
+            
+            if ($asociacionesPedidos > 0) {
+                $mensaje = "No se puede editar el EPP porque está asociado a {$asociacionesPedidos} pedido(s).";
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => $mensaje,
+                    'tiene_asociaciones' => true,
+                    'asociaciones' => [
+                        'pedidos' => $asociacionesPedidos
+                    ]
+                ], 400);
+            }
 
             $validated = $request->validate([
                 'nombre_completo' => 'required|string|max:500',

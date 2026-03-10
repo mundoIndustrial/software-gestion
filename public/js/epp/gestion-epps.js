@@ -519,26 +519,21 @@ class GestorEpps {
         try {
             const id = document.getElementById('eliminar_epp_id').value;
             
+            console.log('[GestorEpps] eliminarEpp() llamado con ID:', id);
             this.mostrarLoading(true);
 
-            const response = await fetch(`/api/epp/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json',
-                }
-            });
-
-            // Como no hay endpoint DELETE, usamos uno personalizado
+            // Usamos el método directo que ya maneja los errores y modales
+            console.log('[GestorEpps] Llamando a eliminarEppDirecto()');
             const result = await this.eliminarEppDirecto(id);
+            console.log('[GestorEpps] Resultado de eliminarEppDirecto():', result);
 
             if (result) {
                 this.mostrarExito('EPP eliminado exitosamente');
                 bootstrap.Modal.getInstance(document.getElementById('eliminarEppModal')).hide();
                 this.cargarEpps();
-            } else {
-                this.mostrarError('Error al eliminar EPP');
             }
+            // Si result es false, el error ya fue manejado en eliminarEppDirecto() con el modal
+            // No hacemos nada más aquí para evitar mostrar alerta adicional
         } catch (error) {
             console.error('Error eliminando EPP:', error);
             this.mostrarError('Error de conexión al eliminar EPP');
@@ -549,7 +544,11 @@ class GestorEpps {
 
     async eliminarEppDirecto(id) {
         try {
-            const response = await fetch(`/api/epp/${id}/eliminar`, {
+            console.log('[GestorEpps] eliminarEppDirecto() llamado con ID:', id);
+            const url = `/api/epp/${id}/eliminar`;
+            console.log('[GestorEpps] URL a llamar:', url);
+            
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -557,16 +556,20 @@ class GestorEpps {
                 }
             });
 
+            console.log('[GestorEpps] Response status:', response.status);
             const result = await response.json();
+            console.log('[GestorEpps] Response data:', result);
             
             if (result.success) {
                 return true;
             } else {
                 // Mostrar error específico si tiene asociaciones
                 if (result.tiene_asociaciones) {
+                    console.log('[GestorEpps] Mostrando modal de asociaciones');
                     // Mostrar modal con información detallada
                     this.mostrarErrorDetallado('EPP con Asociaciones Activas', result.message);
                 } else {
+                    console.log('[GestorEpps] Mostrando error genérico:', result.message);
                     this.mostrarError(result.message);
                 }
                 return false;

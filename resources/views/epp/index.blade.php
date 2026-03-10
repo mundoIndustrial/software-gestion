@@ -132,6 +132,59 @@
         </div>
     </div>
 
+    <!-- Modal de Confirmación de Eliminación -->
+    <div id="modalConfirmacionEliminar" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full mx-4">
+            <div class="bg-red-600 px-6 py-6 rounded-t-xl">
+                <div class="flex justify-center mb-4">
+                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                        <span class="material-symbols-rounded text-4xl text-red-600">delete_outline</span>
+                    </div>
+                </div>
+                <h3 class="text-xl font-bold text-white text-center">¿Eliminar EPP?</h3>
+            </div>
+            <div class="p-6">
+                <p class="text-gray-700 mb-6 text-center">¿Estás seguro de que deseas eliminar este EPP? Esta acción no se puede deshacer.</p>
+                <div class="flex gap-3">
+                    <button onclick="gestorEpps.cerrarConfirmacionEliminar()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition">
+                        Cancelar
+                    </button>
+                    <button onclick="gestorEpps.confirmarEliminar()" class="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition">
+                        Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de EPP Duplicado -->
+    <div id="modalEppDuplicado" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full mx-4">
+            <div class="bg-purple-600 px-6 py-6 rounded-t-xl">
+                <div class="flex justify-center mb-4">
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
+                        <span class="material-symbols-rounded text-4xl text-purple-600">info</span>
+                    </div>
+                </div>
+                <h3 class="text-xl font-bold text-white text-center">EPP Ya Existe</h3>
+            </div>
+            <div class="p-6">
+                <p class="text-gray-700 mb-4"><strong id="eppDuplicadoNombre"></strong> ya existe en el sistema.</p>
+                <div class="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg mb-6">
+                    <strong>¿Qué hacer?</strong> Puedes usar este EPP existente en tus pedidos o crear uno con un nombre diferente.
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="gestorEpps.cerrarModalEppDuplicado()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition">
+                        Crear Otro
+                    </button>
+                    <button onclick="gestorEpps.cerrarModalEppDuplicado(); gestorEpps.cerrarModal();" class="flex-1 px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition">
+                        Entendido
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal de Éxito -->
     <div id="modalExito" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
         <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full mx-4 text-center">
@@ -152,6 +205,26 @@
         </div>
     </div>
 
+    <!-- Modal de Error -->
+    <div id="modalError" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full mx-4 text-center">
+            <div class="bg-red-600 px-6 py-6 rounded-t-xl">
+                <div class="flex justify-center mb-4">
+                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                        <span class="material-symbols-rounded text-4xl text-red-600">error</span>
+                    </div>
+                </div>
+                <h3 class="text-xl font-bold text-white">Error</h3>
+            </div>
+            <div class="p-6">
+                <p id="mensajeError" class="text-gray-700 text-lg mb-6">Ocurrió un error al procesar la operación</p>
+                <button onclick="gestorEpps.cerrarModalError()" class="w-full px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
     class GestorEpps {
         constructor() {
@@ -162,6 +235,7 @@
             this.filtros = {
                 buscar: ''
             };
+            this.eppAEliminar = null; // Para almacenar el ID del EPP a eliminar
             
             this.init();
         }
@@ -236,24 +310,36 @@
                 return;
             }
 
-            tbody.innerHTML = epps.map(epp => `
+            tbody.innerHTML = epps.map(epp => {
+                const tieneAsociaciones = epp.tiene_asociaciones || false;
+                const pedidosAsociados = epp.pedidos_asociados || 0;
+                return `
                 <tr class="hover:bg-gray-50 transition">
                     <td class="px-6 py-4">
                         <div class="text-sm font-semibold text-gray-900">${epp.nombre_completo || '-'}</div>
                         ${epp.marca ? `<div class="text-xs text-gray-500 mt-1">${epp.marca}</div>` : ''}
+                        ${tieneAsociaciones ? `<div class="text-xs text-red-600 mt-2 flex items-center gap-1"><span class="material-symbols-rounded text-base">lock</span> ${pedidosAsociados} pedido(s) asociado(s)</div>` : ''}
                     </td>
                     <td class="px-6 py-4 text-center">
                         <div class="flex items-center justify-center gap-2">
-                            <button onclick="gestorEpps.editarEpp(${epp.id})" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Editar">
+                            <button 
+                                onclick="gestorEpps.editarEpp(${epp.id})" 
+                                class="p-2 ${tieneAsociaciones ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'} rounded-lg transition" 
+                                title="${tieneAsociaciones ? 'No se puede editar: EPP con pedidos asociados' : 'Editar'}"
+                                ${tieneAsociaciones ? 'disabled' : ''}>
                                 <span class="material-symbols-rounded text-base">edit</span>
                             </button>
-                            <button onclick="gestorEpps.eliminarEpp(${epp.id})" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Eliminar">
+                            <button 
+                                onclick="gestorEpps.eliminarEpp(${epp.id})" 
+                                class="p-2 ${tieneAsociaciones ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:bg-red-50'} rounded-lg transition" 
+                                title="${tieneAsociaciones ? 'No se puede eliminar: EPP con pedidos asociados' : 'Eliminar'}"
+                                ${tieneAsociaciones ? 'disabled' : ''}>
                                 <span class="material-symbols-rounded text-base">delete</span>
                             </button>
                         </div>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         renderizarPaginacion() {
@@ -389,6 +475,15 @@
             document.getElementById('modalExito').classList.add('hidden');
         }
 
+        mostrarModalError(mensaje = 'Ocurrió un error al procesar la operación') {
+            document.getElementById('mensajeError').textContent = mensaje;
+            document.getElementById('modalError').classList.remove('hidden');
+        }
+
+        cerrarModalError() {
+            document.getElementById('modalError').classList.add('hidden');
+        }
+
         async guardarEPP(event) {
             event.preventDefault();
             
@@ -396,7 +491,7 @@
             const nombreCompleto = document.getElementById('nombre_completo').value;
 
             if (!nombreCompleto.trim()) {
-                alert('Por favor, ingresa el nombre completo del EPP');
+                this.mostrarModalError('Por favor, ingresa el nombre completo del EPP');
                 return;
             }
 
@@ -426,13 +521,21 @@
                     this.mostrarModalExito(mensaje);
                     this.cerrarModal();
                     setTimeout(() => this.cargarEpps(), 1500);
+                } else if (result.epp_existente) {
+                    // Mostrar modal para EPP duplicado
+                    document.getElementById('eppDuplicadoNombre').textContent = result.epp_nombre;
+                    document.getElementById('modalEppDuplicado').classList.remove('hidden');
                 } else {
-                    alert('Error al guardar el EPP: ' + (result.message || 'Error desconocido'));
+                    this.mostrarModalError('Error al guardar el EPP: ' + (result.message || 'Error desconocido'));
                 }
             } catch (error) {
                 console.error('Error guardando EPP:', error);
-                alert('Error de conexión al guardar el EPP');
+                this.mostrarModalError('Error de conexión al guardar el EPP');
             }
+        }
+
+        cerrarModalEppDuplicado() {
+            document.getElementById('modalEppDuplicado').classList.add('hidden');
         }
 
         async editarEpp(id) {
@@ -444,6 +547,37 @@
                 if (result.success && result.data) {
                     const epp = result.data;
                     
+                    // Verificar si tiene asociaciones
+                    if (epp.tiene_asociaciones) {
+                        const pedidosAsociados = epp.pedidos_asociados || 0;
+                        const modeloAsociaciones = document.createElement('div');
+                        modeloAsociaciones.id = 'modalAsociacionesEdicion';
+                        modeloAsociaciones.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                        modeloAsociaciones.innerHTML = `
+                            <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full mx-4">
+                                <div class="bg-orange-600 px-6 py-6 rounded-t-xl">
+                                    <div class="flex justify-center mb-4">
+                                        <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
+                                            <span class="material-symbols-rounded text-4xl text-orange-600">lock</span>
+                                        </div>
+                                    </div>
+                                    <h3 class="text-xl font-bold text-white text-center">No se puede editar</h3>
+                                </div>
+                                <div class="p-6">
+                                    <p class="text-gray-700 mb-4"><strong>${epp.nombre_completo}</strong> no puede ser editado porque está vinculado a ${pedidosAsociados} pedido(s).</p>
+                                    <div class="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg mb-6">
+                                        <strong>Razón:</strong> Este EPP forma parte de órdenes activas en el sistema. Para mantener la integridad de los datos, no se permite su modificación.
+                                    </div>
+                                    <button onclick="this.closest('#modalAsociacionesEdicion').remove()" class="w-full px-4 py-2.5 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition">
+                                        Entendido
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        document.body.appendChild(modeloAsociaciones);
+                        return;
+                    }
+                    
                     // Cambiar título del modal
                     document.getElementById('tituloModal').textContent = 'Editar EPP';
                     
@@ -454,16 +588,30 @@
                     // Mostrar modal
                     document.getElementById('modalCrearEPP').style.display = 'flex';
                 } else {
-                    alert('Error al cargar los datos del EPP');
+                    this.mostrarModalError('Error al cargar los datos del EPP');
                 }
             } catch (error) {
                 console.error('Error cargando EPP:', error);
-                alert('Error de conexión al cargar el EPP');
+                this.mostrarModalError('Error de conexión al cargar el EPP');
             }
         }
 
         async eliminarEpp(id) {
-            if (!confirm('¿Estás seguro de que deseas eliminar este EPP?')) {
+            // Mostrar modal de confirmación en lugar de confirm()
+            this.eppAEliminar = id;
+            document.getElementById('modalConfirmacionEliminar').classList.remove('hidden');
+        }
+
+        cerrarConfirmacionEliminar() {
+            document.getElementById('modalConfirmacionEliminar').classList.add('hidden');
+            this.eppAEliminar = null;
+        }
+
+        async confirmarEliminar() {
+            const id = this.eppAEliminar;
+            
+            if (!id) {
+                this.mostrarModalError('Error: No se pudo identificar el EPP a eliminar');
                 return;
             }
 
@@ -477,15 +625,46 @@
 
                 const result = await response.json();
 
+                // Cerrar modal de confirmación
+                this.cerrarConfirmacionEliminar();
+
                 if (result.success || response.ok) {
                     this.mostrarModalExito('EPP eliminado exitosamente');
                     setTimeout(() => this.cargarEpps(), 1500);
+                } else if (result.tiene_asociaciones) {
+                    // Mostrar modal específico para asociaciones
+                    const modeloAsociaciones = document.createElement('div');
+                    modeloAsociaciones.id = 'modalAsociaciones';
+                    modeloAsociaciones.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                    modeloAsociaciones.innerHTML = `
+                        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full mx-4">
+                            <div class="bg-yellow-600 px-6 py-6 rounded-t-xl">
+                                <div class="flex justify-center mb-4">
+                                    <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center">
+                                        <span class="material-symbols-rounded text-4xl text-yellow-600">warning</span>
+                                    </div>
+                                </div>
+                                <h3 class="text-xl font-bold text-white text-center">No se puede eliminar</h3>
+                            </div>
+                            <div class="p-6">
+                                <p class="text-gray-700 mb-4">${result.message}</p>
+                                <div class="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg mb-6">
+                                    <strong>Razón:</strong> Este EPP está vinculado a ${result.asociaciones?.pedidos || 'uno o más'} pedido(s) en el sistema.
+                                </div>
+                                <button onclick="this.closest('#modalAsociaciones').remove()" class="w-full px-4 py-2.5 bg-yellow-600 text-white rounded-lg font-medium hover:bg-yellow-700 transition">
+                                    Entendido
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modeloAsociaciones);
                 } else {
-                    alert('Error al eliminar el EPP: ' + (result.message || 'Error desconocido'));
+                    this.mostrarModalError(result.message || 'Error desconocido al eliminar el EPP');
                 }
             } catch (error) {
                 console.error('Error eliminando EPP:', error);
-                alert('Error de conexión al eliminar el EPP');
+                this.cerrarConfirmacionEliminar();
+                this.mostrarModalError('Error de conexión al eliminar el EPP');
             }
         }
     }

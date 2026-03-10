@@ -89,7 +89,16 @@ class EppDomainService
             return null;
         }
 
-        return $this->formatearEppParaApi($epp);
+        // Contar pedidos asociados
+        $pedidosAsociados = \App\Models\PedidoEpp::where('epp_id', $id)->count();
+
+        return array_merge(
+            $this->formatearEppParaApi($epp),
+            [
+                'tiene_asociaciones' => $pedidosAsociados > 0,
+                'pedidos_asociados' => $pedidosAsociados,
+            ]
+        );
     }
 
     /**
