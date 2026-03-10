@@ -1229,6 +1229,15 @@ class SupervisorPedidosController extends Controller
                     ->values()
                     ->toArray();
                 break;
+            case 'area':
+                $opciones = (clone $base)
+                    ->distinct()
+                    ->pluck('p.area')
+                    ->filter()
+                    ->sort()
+                    ->values()
+                    ->toArray();
+                break;
             case 'asesor':
                 $opciones = (clone $base)
                     ->distinct()
@@ -1992,11 +2001,30 @@ class SupervisorPedidosController extends Controller
             $procesosConCantidad = $procesosPendientes->map(function($proceso) {
                 $cantidadTotal = 0;
                 
-                if ($proceso->prenda_id) {
-                    // Obtener tallas desde prenda_pedido_tallas
-                    $cantidadTotal = \DB::table('prenda_pedido_tallas')
-                        ->where('prenda_pedido_id', $proceso->prenda_id)
-                        ->sum('cantidad');
+                // Obtener el registro completo del recibo para verificar si es anexo
+                $reciboCompleto = \DB::table('consecutivos_recibos_pedidos')
+                    ->where('id', $proceso->recibo_id)
+                    ->first();
+                
+                if ($reciboCompleto) {
+                    // Detectar si es anexo (recibo parcial)
+                    $parcialId = null;
+                    $notas = isset($reciboCompleto->notas) ? (string) $reciboCompleto->notas : '';
+                    if ($notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
+                        $parcialId = (int) $matches[1];
+                    }
+                    
+                    if ($parcialId !== null) {
+                        // Es un anexo - obtener tallas desde pedidos_parciales_tallas
+                        $cantidadTotal = \DB::table('pedidos_parciales_tallas')
+                            ->where('pedido_parcial_id', $parcialId)
+                            ->sum('cantidad');
+                    } elseif ($proceso->prenda_id) {
+                        // Es un recibo normal - obtener tallas desde prenda_pedido_tallas
+                        $cantidadTotal = \DB::table('prenda_pedido_tallas')
+                            ->where('prenda_pedido_id', $proceso->prenda_id)
+                            ->sum('cantidad');
+                    }
                 }
                 
                 $proceso->cantidad_total_prendas = $cantidadTotal;
@@ -2029,6 +2057,7 @@ class SupervisorPedidosController extends Controller
                     'p.id as pedido_id',
                     'u.name as asesor',
                     'crp.color_costura',
+                    'p.area',
                 ])
                 ->where('crp.tipo_recibo', 'COSTURA')
                 ->where('crp.activo', 1)
@@ -2084,6 +2113,7 @@ class SupervisorPedidosController extends Controller
                     'fecha_creacion' => $recibo->fecha_creacion,
                     'numero_recibo' => $recibo->numero_recibo,
                     'cliente' => $recibo->cliente,
+                    'area' => $recibo->area,
                     'pedido_id' => $recibo->pedido_id,
                     'asesor' => $recibo->asesor,
                     'color_costura' => $recibo->color_costura,

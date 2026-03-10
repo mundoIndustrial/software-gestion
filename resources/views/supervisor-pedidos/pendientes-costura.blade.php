@@ -151,7 +151,7 @@
                             color: white;
                             padding: 0.75rem 1rem;
                             display: grid;
-                            grid-template-columns: 170px 110px 200px 200px 160px 130px 100px;
+                            grid-template-columns: 170px 110px 200px 120px 200px 160px 130px 100px;
                             gap: 0.15rem;
                             font-weight: 600;
                             font-size: 0.8rem;
@@ -175,6 +175,12 @@
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Cliente</span>
                                 <button type="button" class="btn-filter-column" data-col="cliente" title="Filtrar Cliente" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                                    <i class="fas fa-filter" style="font-size: 1rem;"></i>
+                                </button>
+                            </div>
+                            <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span>Área</span>
+                                <button type="button" class="btn-filter-column" data-col="area" title="Filtrar Área" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                                     <i class="fas fa-filter" style="font-size: 1rem;"></i>
                                 </button>
                             </div>
@@ -209,7 +215,7 @@
                                 @foreach($procesosConCantidad as $proceso)
                                     <div data-row="processo" data-color-stored="{{ $proceso['color_costura'] ?? '' }}" style="
                                         display: grid;
-                                        grid-template-columns: 170px 110px 200px 200px 160px 130px 100px;
+                                        grid-template-columns: 170px 110px 200px 120px 200px 160px 130px 100px;
                                         gap: 0.15rem;
                                         padding: 1rem;
                                         border-bottom: 1px solid #e5e7eb;
@@ -232,6 +238,19 @@
                                         <!-- Cliente -->
                                         <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">
                                             {{ $proceso['cliente'] }}
+                                        </div>
+
+                                        <!-- Área -->
+                                        <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">
+                                            @if($proceso['area'])
+                                                <span style="background: #e8f3ff; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; border: 1px solid #bfdbfe; display: inline-block;">
+                                                    {{ $proceso['area'] }}
+                                                </span>
+                                            @else
+                                                <span style="background: #f3f4f6; color: #6b7280; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block;">
+                                                    Sin área
+                                                </span>
+                                            @endif
                                         </div>
 
                                         <!-- Prendas -->
@@ -429,6 +448,10 @@ function getValoresFiltroDesdeURL(columna) {
         const raw = url.searchParams.get('cliente') || '';
         return raw.split(',').map(v => v.trim()).filter(Boolean);
     }
+    if (columna === 'area') {
+        const raw = url.searchParams.get('area') || '';
+        return raw.split(',').map(v => v.trim()).filter(Boolean);
+    }
     if (columna === 'prendas') {
         const raw = url.searchParams.get('prendas') || '';
         return raw.split(',').map(v => v.trim()).filter(Boolean);
@@ -481,6 +504,7 @@ function abrirModalFiltro(columna) {
         fecha_creacion: 'Filtrar Fecha de Creación',
         numero_recibo: 'Filtrar N° Recibo',
         cliente: 'Filtrar Cliente',
+        area: 'Filtrar Área',
         prendas: 'Filtrar Prendas',
         asesor: 'Filtrar Asesora'
     };
