@@ -210,6 +210,13 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
         modal.removeAttribute('aria-hidden');
         console.log(' [MODAL-PROCESO] aria-hidden removido para accesibilidad');
 
+        // 🎯 NUEVO: Aplicar automáticamente todas las tallas cuando se crea un proceso nuevo
+        // En CREACIÓN (no edición): después de mostrar el modal, aplicar tallas automáticamente
+        if (!esEdicion) {
+            window.aplicarProcesoParaTodasTallas();
+            console.log('[abrirModalProcesoGenerico] ✅ Tallas aplicadas automáticamente al abrir modal');
+        }
+
     } catch (error) {
 
     }
@@ -812,81 +819,52 @@ window.aplicarProcesoParaTodasTallas = function() {
 // Obtener tallas registradas en la prenda del modal
 function obtenerTallasDeLaPrenda() {
     // 🔥 ORDEN DE PRIORIDAD de fuentes:
-    // 1. PRIMERO: Tabla del DOM (tabla-resumen-asignaciones-cuerpo) - FUENTE DIRECTA, ACTUALIZA EN TIEMPO REAL
-    // 2. SEGUNDO: StateManager/ColoresPorTalla (tallas del WIZARD con colores) - INCLUYE COLORES
-    // 3. TERCERO: window.tallasRelacionales (tallas ingresadas MANUALMENTE en tarjetas de géneros)
-    // 4. CUARTO: cantidadSoloSeleccionada (fallback para UNISEX)
+    // 1. PRIMERO: window.tallasRelacionales (tallas ingresadas MANUALMENTE en tarjetas de géneros)
+    // 2. SEGUNDO: StateManager/ColoresPorTalla (tallas del WIZARD con colores)
+    // 3. TERCERO: cantidadSoloSeleccionada (fallback para UNISEX)
     
     console.log('[obtenerTallasDeLaPrenda] 🎯 INICIANDO - función de obtención de tallas');
     
-    // ═══ FUENTE 0: Tabla del DOM (tabla-resumen-asignaciones-cuerpo) - FUENTE DIRECTA ═══
-    const obtenerTallasDelDOM = () => {
-        const tablaBody = document.getElementById('tabla-resumen-asignaciones-cuerpo');
-        if (!tablaBody || tablaBody.querySelectorAll('tr').length === 0) {
-            return { encontrado: false, tallas: null };
+    // ═══ FUENTE 1: tallasRelacionales (PRIORIDAD MÁXIMA) ═══
+    // Contiene tallas ingresadas manualmente en las tarjetas de géneros (M, L, XXL, etc.)
+    const tallasRelacionales = window.tallasRelacionales || { DAMA: {}, CABALLERO: {}, UNISEX: {}, SOBREMEDIDA: {} };
+    
+    // Detectar si hay datos en tallasRelacionales
+    const hayTallasRelacionales = Object.values(tallasRelacionales).some(generoTallas => 
+        generoTallas && typeof generoTallas === 'object' && Object.keys(generoTallas).length > 0
+    );
+    
+    if (hayTallasRelacionales) {
+        const tallas = { dama: {}, caballero: {}, sobremedida: null };
+        
+        console.log('[obtenerTallasDeLaPrenda] ✅ FUENTE 1 DETECTADA: tallasRelacionales', tallasRelacionales);
+        
+        // Copiar DAMA
+        if (tallasRelacionales.DAMA && Object.keys(tallasRelacionales.DAMA).length > 0) {
+            tallas.dama = { ...tallasRelacionales.DAMA };
+            console.log('[obtenerTallasDeLaPrenda] → DAMA:', tallas.dama);
         }
-
-        const tallasDelDOM = { dama: {}, caballero: {}, sobremedida: null };
-        console.log('[obtenerTallasDeLaPrenda] 📋 LEYENDO desde tabla-resumen-asignaciones-cuerpo...');
-
-        tablaBody.querySelectorAll('tr').forEach(fila => {
-            try {
-                // Obtener genero y talla de los data-* campos
-                const generoCell = fila.querySelector('[data-field="genero"]');
-                const tallaCell = fila.querySelector('[data-field="talla"]');
-                const colorCell = fila.querySelector('[data-field="color"]');
-                const cantidadCell = fila.querySelector('[data-field="cantidad"]');
-
-                if (!generoCell || !tallaCell || !colorCell || !cantidadCell) return;
-
-                const genero = String(generoCell.textContent || '').trim().toUpperCase();
-                const talla = String(tallaCell.textContent || '').trim().toUpperCase();
-                const cantidad = parseInt(cantidadCell.textContent || 0, 10) || 0;
-
-                // Extraer color desde el span dentro de [data-field="color"]
-                const colorSpan = colorCell.querySelector('span[style*="background"]');
-                let color = '';
-                if (colorSpan) {
-                    const textoColor = colorSpan.textContent || '';
-                    // Formato: "AZUL OSCURO (1)" → extraer "AZUL OSCURO"
-                    color = textoColor.replace(/\s*\(\d+\)\s*$/, '').trim().toUpperCase();
-                } else {
-                    const textoColor = colorCell.textContent || '';
-                    color = textoColor.replace(/\s*\(\d+\)\s*$/, '').trim().toUpperCase();
-                }
-
-                if (!color || cantidad <= 0) return;
-
-                // Normalizar género a minúsculas
-                let generoNorm = 'dama';
-                if (genero.includes('CABALLERO') || genero.includes('HOMBRE')) generoNorm = 'caballero';
-                else if (genero.includes('UNISEX') || genero.includes('SOBREMEDIDA')) generoNorm = 'sobremedida';
-
-                const key = `${talla}__${color}`;
-                tallasDelDOM[generoNorm][key] = (tallasDelDOM[generoNorm][key] || 0) + cantidad;
-
-                console.log(`[obtenerTallasDeLaPrenda] 📋 Fila detectada: ${generoNorm} - ${talla} - ${color} = ${cantidad}`);
-            } catch (e) {
-                console.warn('[obtenerTallasDeLaPrenda] ⚠️ Error al procesar fila:', e);
-            }
-        });
-
-        const totalTallasDOM = Object.keys(tallasDelDOM.dama).length + Object.keys(tallasDelDOM.caballero).length + (tallasDelDOM.sobremedida ? Object.keys(tallasDelDOM.sobremedida).length : 0);
-        if (totalTallasDOM > 0) {
-            console.log('[obtenerTallasDeLaPrenda] ✅ Tallas obtenidas desde DOM:', tallasDelDOM);
-            return { encontrado: true, tallas: tallasDelDOM };
+        
+        // Copiar CABALLERO
+        if (tallasRelacionales.CABALLERO && Object.keys(tallasRelacionales.CABALLERO).length > 0) {
+            tallas.caballero = { ...tallasRelacionales.CABALLERO };
+            console.log('[obtenerTallasDeLaPrenda] → CABALLERO:', tallas.caballero);
         }
-
-        return { encontrado: false, tallas: null };
-    };
-
-    const { encontrado: tallasDOMEncontradas, tallas: tallasDOMData } = obtenerTallasDelDOM();
-    if (tallasDOMEncontradas) {
-        console.log('[obtenerTallasDeLaPrenda] ✅ RETORNANDO tallas desde tabla del DOM (PRIORIDAD MÁXIMA)');
-        return tallasDOMData;
+        
+        // Copiar SOBREMEDIDA y UNISEX
+        if (tallasRelacionales.SOBREMEDIDA && Object.keys(tallasRelacionales.SOBREMEDIDA).length > 0) {
+            tallas.sobremedida = { ...tallasRelacionales.SOBREMEDIDA };
+        }
+        if (tallasRelacionales.UNISEX && Object.keys(tallasRelacionales.UNISEX).length > 0) {
+            tallas.sobremedida = { ...(tallas.sobremedida || {}), ...tallasRelacionales.UNISEX };
+            console.log('[obtenerTallasDeLaPrenda] → UNISEX/SOBREMEDIDA:', tallas.sobremedida);
+        }
+        
+        console.log('[obtenerTallasDeLaPrenda] ✅ Resultado final desde tallasRelacionales:', tallas);
+        return tallas;
     }
     
-    // ═══ FUENTE 1: StateManager / ColoresPorTalla (SEGUNDA PRIORIDAD) - INCLUYE COLORES ═══
+    // ═══ FUENTE 2: StateManager / ColoresPorTalla (Wizard con colores) ═══
     const obtenerAsignacionesColores = () => {
         const datosColores = window.ColoresPorTalla?.datos;
         if (datosColores && typeof datosColores === 'object' && Object.keys(datosColores).length > 0) {
@@ -917,7 +895,7 @@ function obtenerTallasDeLaPrenda() {
 
     if (tieneColores) {
         const tallasConColor = { dama: {}, caballero: {}, sobremedida: null };
-        console.log(`[obtenerTallasDeLaPrenda] ✅ FUENTE PRIORIZADA: Asignaciones de colores desde ${fuente}:`, asignaciones);
+        console.log(`[obtenerTallasDeLaPrenda] ✅ FUENTE 2 DETECTADA: Asignaciones de colores desde ${fuente}:`, asignaciones);
 
         Object.values(asignaciones).forEach(asignacion => {
             const genero = normalizarGenero(asignacion?.genero);
@@ -937,49 +915,10 @@ function obtenerTallasDeLaPrenda() {
             });
         });
 
-        console.log('[obtenerTallasDeLaPrenda] ✅ Resultado final desde asignaciones con COLORES:', tallasConColor);
+        console.log('[obtenerTallasDeLaPrenda] ✅ Resultado final desde asignaciones:', tallasConColor);
         return tallasConColor;
     }
-    
-    // ═══ FUENTE 2: tallasRelacionales (TERCERA PRIORIDAD) ═══
-    // Contiene tallas ingresadas manualmente en las tarjetas de géneros (M, L, XXL, etc.)
-    const tallasRelacionales = window.tallasRelacionales || { DAMA: {}, CABALLERO: {}, UNISEX: {}, SOBREMEDIDA: {} };
-    
-    // Detectar si hay datos en tallasRelacionales
-    const hayTallasRelacionales = Object.values(tallasRelacionales).some(generoTallas => 
-        generoTallas && typeof generoTallas === 'object' && Object.keys(generoTallas).length > 0
-    );
-    
-    if (hayTallasRelacionales) {
-        const tallas = { dama: {}, caballero: {}, sobremedida: null };
-        
-        console.log('[obtenerTallasDeLaPrenda] ✅ FUENTE 2 DETECTADA: tallasRelacionales', tallasRelacionales);
-        
-        // Copiar DAMA
-        if (tallasRelacionales.DAMA && Object.keys(tallasRelacionales.DAMA).length > 0) {
-            tallas.dama = { ...tallasRelacionales.DAMA };
-            console.log('[obtenerTallasDeLaPrenda] → DAMA:', tallas.dama);
-        }
-        
-        // Copiar CABALLERO
-        if (tallasRelacionales.CABALLERO && Object.keys(tallasRelacionales.CABALLERO).length > 0) {
-            tallas.caballero = { ...tallasRelacionales.CABALLERO };
-            console.log('[obtenerTallasDeLaPrenda] → CABALLERO:', tallas.caballero);
-        }
-        
-        // Copiar SOBREMEDIDA y UNISEX
-        if (tallasRelacionales.SOBREMEDIDA && Object.keys(tallasRelacionales.SOBREMEDIDA).length > 0) {
-            tallas.sobremedida = { ...tallasRelacionales.SOBREMEDIDA };
-        }
-        if (tallasRelacionales.UNISEX && Object.keys(tallasRelacionales.UNISEX).length > 0) {
-            tallas.sobremedida = { ...(tallas.sobremedida || {}), ...tallasRelacionales.UNISEX };
-            console.log('[obtenerTallasDeLaPrenda] → UNISEX/SOBREMEDIDA:', tallas.sobremedida);
-        }
-        
-        console.log('[obtenerTallasDeLaPrenda] ✅ Resultado final desde tallasRelacionales:', tallas);
-        return tallas;
-    }
-    
+
     // ═══ FUENTE 3: cantidadSoloSeleccionada (Fallback para UNISEX) ═══
     if (window.cantidadSoloSeleccionada) {
         console.log('[obtenerTallasDeLaPrenda] ✅ FUENTE 3 DETECTADA: cantidadSoloSeleccionada');

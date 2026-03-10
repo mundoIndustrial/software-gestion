@@ -82,7 +82,7 @@
                 color: white;
                 padding: 0.75rem 1rem;
                 display: grid;
-                grid-template-columns: 200px 140px 200px 150px 140px 150px 150px;
+                grid-template-columns: 60px 220px 120px 200px 150px 140px 150px 150px 150px;
                 gap: 1.2rem;
                 font-weight: 600;
                 font-size: 0.8rem;
@@ -92,7 +92,16 @@
                 border-radius: 6px;
             ">
                 <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span>Listo</span>
+                </div>
+                <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                     <span>Acciones</span>
+                </div>
+                <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span>Fecha</span>
+                    <button type="button" class="btn-filter-column" title="Filtrar Fecha" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                        <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
+                    </button>
                 </div>
                 <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                     <span>Número</span>
@@ -139,7 +148,7 @@
                 @foreach($ordenes as $orden)
                     <div style="
                         display: grid;
-                        grid-template-columns: 200px 140px 200px 150px 140px 150px 150px;
+                        grid-template-columns: 60px 220px 120px 200px 150px 140px 150px 150px 150px;
                         gap: 1.2rem;
                         padding: 1rem;
                         border-bottom: 1px solid #e5e7eb;
@@ -147,7 +156,16 @@
                         min-width: min-content;
                         background: white;
                         transition: background 0.2s ease;
-                    " onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+                    " 
+                    onmouseover="if (!this.dataset.seleccionado || this.dataset.seleccionado === 'false') this.style.background='#f9fafb'"
+                    onmouseout="this.style.background = (this.dataset.seleccionado === 'true') ? '#f3f4f6' : 'white'"
+                    data-seleccionado="false"
+                    >
+                        
+                        <!-- Checkbox de selección -->
+                        <div style="display: flex; align-items: center; justify-content: center;">
+                            <input type="checkbox" class="pedido-checkbox" data-pedido-id="{{ $orden->id }}" title="Seleccionar pedido" style="width: 18px; height: 18px; cursor: pointer;">
+                        </div>
                         
                         <!-- Acciones -->
                         <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
@@ -268,6 +286,10 @@
                             " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(139, 92, 246, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(139, 92, 246, 0.3)'">
                                 <i class="fas fa-eye-slash"></i>
                             </button>
+                        </div>
+                        <!-- Fecha -->
+                        <div>
+                            <span style="font-size: 0.85rem; color: #6b7280;">{{ \Carbon\Carbon::parse($orden->created_at)->format('d/m/Y H:i') }}</span>
                         </div>
                         <!-- Número -->
                         <div>
@@ -2117,7 +2139,7 @@
             fila.setAttribute('data-pedido-id', String(orden?.id || ''));
             fila.style.cssText = `
                 display: grid;
-                grid-template-columns: 200px 140px 200px 150px 140px 150px 150px;
+                grid-template-columns: 60px 220px 120px 200px 150px 140px 150px 150px 150px;
                 gap: 1.2rem;
                 padding: 1rem;
                 border-bottom: 1px solid #e5e7eb;
@@ -2575,6 +2597,204 @@
             // Si ya está cargada, ejecutar después de un pequeño delay
             setTimeout(ordenarTablaAscendente, 500);
         }
+    </script>
+
+    <!-- Script para manejo de checkboxes de selección de pedidos -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cargar selecciones guardadas al iniciar
+            setTimeout(() => {
+                cargarSeleccionesGuardadas();
+            }, 500); // Esperar 500ms para que los checkboxes estén disponibles
+
+            // Checkbox "Seleccionar todos"
+            const selectAllCheckbox = document.getElementById('selectAll');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function(e) {
+                    const checkboxes = document.querySelectorAll('.pedido-checkbox');
+                    checkboxes.forEach(checkbox => {
+                        checkbox.checked = e.target.checked;
+                        const pedidoId = checkbox.getAttribute('data-pedido-id');
+                        const fila = checkbox.closest('div[style*="grid-template-columns"]');
+                        
+                        if (e.target.checked) {
+                            seleccionarPedido(pedidoId);
+                            if (fila) {
+                                fila.style.background = '#f3f4f6'; // Gris claro
+                                fila.style.transition = 'background 0.2s';
+                                fila.dataset.seleccionado = 'true';
+                            }
+                        } else {
+                            deseleccionarPedido(pedidoId);
+                            if (fila) {
+                                fila.style.background = 'white';
+                                fila.style.transition = 'background 0.2s';
+                                fila.dataset.seleccionado = 'false';
+                            }
+                        }
+                    });
+                });
+            }
+
+            // Agregar event listeners a todos los checkboxes
+            document.addEventListener('change', function(e) {
+                if (e.target && e.target.classList.contains('pedido-checkbox')) {
+                    const pedidoId = e.target.getAttribute('data-pedido-id');
+                    // Buscar la fila padre (el div que contiene el grid)
+                    const fila = e.target.closest('div[style*="grid-template-columns"]');
+                    
+                    if (e.target.checked) {
+                        seleccionarPedido(pedidoId);
+                        // Marcar la fila como seleccionada
+                        if (fila) {
+                            fila.style.background = '#f3f4f6'; // Gris claro
+                            fila.style.transition = 'background 0.2s';
+                            fila.dataset.seleccionado = 'true'; // Marcar como seleccionado
+                            console.log(`✅ Fila marcada como seleccionada para pedido ${pedidoId}`);
+                        } else {
+                            console.log(`⚠️ No se encontró la fila para pedido ${pedidoId}`);
+                        }
+                    } else {
+                        deseleccionarPedido(pedidoId);
+                        // Restaurar color original de la fila
+                        if (fila) {
+                            fila.style.background = 'white';
+                            fila.style.transition = 'background 0.2s';
+                            fila.dataset.seleccionado = 'false'; // Marcar como no seleccionado
+                            console.log(`✅ Fila restaurada a color normal para pedido ${pedidoId}`);
+                        } else {
+                            console.log(`⚠️ No se encontró la fila para pedido ${pedidoId}`);
+                        }
+                    }
+                }
+            });
+
+            // Función para seleccionar un pedido
+            function seleccionarPedido(pedidoId) {
+                // Usar URL relativa (funciona en desarrollo y producción)
+                fetch(`/supervisor-pedidos/seleccionar/${pedidoId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(`✅ Respuesta del servidor para pedido ${pedidoId}:`, data);
+                    if (data.success) {
+                        console.log(`✅ Pedido ${pedidoId} seleccionado correctamente`);
+                        // El checkbox ya está marcado por el evento change, no necesitamos hacer nada más
+                    } else {
+                        console.error(`❌ Error al seleccionar pedido ${pedidoId}:`, data.message);
+                        // Revertir checkbox si hubo error
+                        const checkbox = document.querySelector(`.pedido-checkbox[data-pedido-id="${pedidoId}"]`);
+                        if (checkbox) checkbox.checked = false;
+                    }
+                })
+                .catch(error => {
+                    console.error(`❌ Error de red al seleccionar pedido ${pedidoId}:`, error);
+                    // Revertir checkbox si hubo error
+                    const checkbox = document.querySelector(`.pedido-checkbox[data-pedido-id="${pedidoId}"]`);
+                    if (checkbox) checkbox.checked = false;
+                });
+            }
+
+            // Función para deseleccionar un pedido
+            function deseleccionarPedido(pedidoId) {
+                // Usar URL relativa (funciona en desarrollo y producción)
+                fetch(`/supervisor-pedidos/seleccionar/${pedidoId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log(`✅ Pedido ${pedidoId} deseleccionado correctamente`);
+                    } else {
+                        console.error(`❌ Error al deseleccionar pedido ${pedidoId}:`, data.message);
+                        // Revertir checkbox si hubo error
+                        const checkbox = document.querySelector(`.pedido-checkbox[data-pedido-id="${pedidoId}"]`);
+                        if (checkbox) checkbox.checked = true;
+                    }
+                })
+                .catch(error => {
+                    console.error(`❌ Error de red al deseleccionar pedido ${pedidoId}:`, error);
+                    // Revertir checkbox si hubo error
+                    const checkbox = document.querySelector(`.pedido-checkbox[data-pedido-id="${pedidoId}"]`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+
+            // Función para cargar las selecciones guardadas del usuario
+            function cargarSeleccionesGuardadas() {
+                console.log('🔄 Cargando selecciones guardadas...');
+                console.log('🌐 URL actual:', window.location.href);
+                console.log('🌐 Origin:', window.location.origin);
+                console.log('🌐 Hostname:', window.location.hostname);
+                console.log('🌐 Port:', window.location.port);
+                
+                // Usar URL relativa (funciona en desarrollo y producción)
+                fetch('/supervisor-pedidos/selecciones', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                    }
+                })
+                .then(response => {
+                    // Si es 404, salir silenciosamente (ruta no existe)
+                    if (response.status === 404) {
+                        return null;
+                    }
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (!data) return; // Si fue 404, data es null
+                    console.log('📥 Respuesta de selecciones:', data);
+                    if (data.success && data.selecciones) {
+                        console.log(`📋 Se encontraron ${data.selecciones.length} selecciones guardadas:`, data.selecciones);
+                        // Marcar los checkboxes correspondientes
+                        data.selecciones.forEach(pedidoId => {
+                            const checkbox = document.querySelector(`.pedido-checkbox[data-pedido-id="${pedidoId}"]`);
+                            if (checkbox) {
+                                checkbox.checked = true;
+                                // Marcar la fila como seleccionada
+                                const fila = checkbox.closest('div[style*="grid-template-columns"]');
+                                if (fila) {
+                                    fila.style.background = '#f3f4f6'; // Gris claro
+                                    fila.style.transition = 'background 0.2s';
+                                    fila.dataset.seleccionado = 'true'; // Marcar como seleccionado
+                                    console.log(`✅ Fila señalada en gris para pedido ${pedidoId}`);
+                                } else {
+                                    console.log(`⚠️ No se encontró la fila para pedido ${pedidoId}`);
+                                    console.log(`🔍 Debugeo - checkbox data-pedido-id: ${pedidoId}`, checkbox);
+                                }
+                            } else {
+                                console.log(`⚠️ No se encontró checkbox para pedido ${pedidoId}`);
+                            }
+                        });
+                        console.log(`📋 Se cargaron ${data.selecciones.length} selecciones guardadas`);
+                    } else {
+                        console.log('📭 No hay selecciones guardadas o error en respuesta');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error al cargar selecciones guardadas:', error);
+                });
+            }
+
+            // Hacer las funciones disponibles globalmente para uso externo
+            window.seleccionarPedido = seleccionarPedido;
+            window.deseleccionarPedido = deseleccionarPedido;
+            window.cargarSeleccionesGuardadas = cargarSeleccionesGuardadas;
+        });
     </script>
 @endpush
 

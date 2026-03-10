@@ -2378,4 +2378,105 @@ class SupervisorPedidosController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Seleccionar un pedido
+     */
+    public function seleccionarPedido($pedidoId)
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Usuario no autenticado'], 401);
+            }
+
+            $pedido = PedidoProduccion::findOrFail($pedidoId);
+            
+            // Usar firstOrCreate para evitar duplicados
+            $seleccion = \App\Models\SeleccionPedido::firstOrCreate([
+                'pedido_id' => $pedidoId,
+                'user_id' => $user->id,
+            ], [
+                'seleccionado' => true,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido seleccionado correctamente',
+                'seleccion' => $seleccion
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al seleccionar pedido: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al seleccionar el pedido'
+            ], 500);
+        }
+    }
+
+    /**
+     * Deseleccionar un pedido
+     */
+    public function deseleccionarPedido($pedidoId)
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Usuario no autenticado'], 401);
+            }
+
+            $seleccion = \App\Models\SeleccionPedido::where('pedido_id', $pedidoId)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if ($seleccion) {
+                $seleccion->delete();
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido deseleccionado correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al deseleccionar pedido: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al deseleccionar el pedido'
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener selecciones del usuario actual
+     */
+    public function obtenerSelecciones()
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Usuario no autenticado'], 401);
+            }
+
+            $selecciones = \App\Models\SeleccionPedido::paraUsuario($user->id)
+                ->seleccionadas()
+                ->with('pedido:id,numero_pedido,cliente,estado')
+                ->get()
+                ->pluck('pedido_id')
+                ->toArray();
+
+            return response()->json([
+                'success' => true,
+                'selecciones' => $selecciones
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener selecciones: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener las selecciones'
+            ], 500);
+        }
+    }
 }

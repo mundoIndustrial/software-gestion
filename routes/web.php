@@ -2349,6 +2349,11 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
     // Ruta para obtener contador de órdenes pendientes de aprobación (DEBE IR ANTES DE /{id})
     Route::get('/ordenes-pendientes-count', [App\Http\Controllers\SupervisorPedidosController::class, 'ordenesPendientesCount'])->name('ordenes-pendientes-count');
     
+    // Gestión de selecciones de pedidos (DEBE IR ANTES DE /{id})
+    Route::post('/seleccionar/{pedidoId}', [App\Http\Controllers\SupervisorPedidosController::class, 'seleccionarPedido'])->name('seleccionar');
+    Route::delete('/seleccionar/{pedidoId}', [App\Http\Controllers\SupervisorPedidosController::class, 'deseleccionarPedido'])->name('deseleccionar');
+    Route::get('/selecciones', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerSelecciones'])->name('selecciones');
+    
     // Ver detalle de orden
     Route::get('/{id}', [App\Http\Controllers\SupervisorPedidosController::class, 'show'])->name('show');
     
