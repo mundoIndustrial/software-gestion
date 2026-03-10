@@ -482,8 +482,8 @@ class PedidosController extends Controller
     public function marcarVisto(Request $request, $pedidoId): JsonResponse
     {
         try {
-            // Validar que el usuario tenga el rol EPP-Bodega
-            if (!auth()->user()->hasRole('EPP-Bodega')) {
+            // Validar que el usuario tenga el rol EPP-Bodega o bodeguero
+            if (!auth()->user()->hasAnyRole(['EPP-Bodega', 'bodeguero'])) {
                 return response()->json([
                     'success' => false,
                     'message' => 'No tienes permisos para realizar esta acción.'

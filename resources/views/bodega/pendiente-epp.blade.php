@@ -43,12 +43,20 @@
         <div class="bg-white rounded-lg shadow-sm border border-slate-200">
             @if(count($pedidosPorPagina) > 0)
                 <div class="overflow-x-auto">
+                    @php
+                        $puedeMarcarVisto = auth()->check() && auth()->user()->hasRole('bodeguero');
+                    @endphp
                     <table class="w-full">
                         <thead class="bg-slate-50 border-b border-slate-200">
                             <tr>
                                 <th class="px-6 py-3 text-center font-medium text-slate-700 w-32">
                                     Acción
                                 </th>
+                                @if($puedeMarcarVisto)
+                                    <th class="px-6 py-3 text-center font-medium text-slate-700 w-24">
+                                        Visto
+                                    </th>
+                                @endif
                                 <th class="px-6 py-3 text-left font-medium text-slate-700">
                                     <div class="flex items-center gap-2">
                                         Nº Pedido
@@ -90,12 +98,12 @@
                                 </th>
                                 <th class="px-6 py-3 text-left font-medium text-slate-700">
                                     <div class="flex items-center gap-2">
-                                        Fecha Entrega
+                                        Fecha Creación
                                         <button 
                                             type="button"
-                                            onclick="abrirModalFiltros('fecha_entrega')"
+                                            onclick="abrirModalFiltros('fecha_creacion')"
                                             class="p-1 hover:bg-slate-200 rounded transition-colors"
-                                            title="Filtrar por fecha de entrega"
+                                            title="Filtrar por fecha de creación"
                                         >
                                             <span class="material-symbols-rounded text-slate-600 text-sm">filter_alt</span>
                                         </button>
@@ -139,14 +147,25 @@
                                     <td class="px-6 py-4 text-center">
                                         <a href="{{ route('gestion-bodega.pendiente-epp-show', $pedido['id']) }}" class="inline-block px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition-colors">Ver</a>
                                     </td>
+                                    @if($puedeMarcarVisto)
+                                        <td class="px-6 py-4 text-center">
+                                            @if(!empty($pedido['pedido_produccion_id']))
+                                                <input
+                                                    type="checkbox"
+                                                    class="pedido-visto-toggle"
+                                                    data-pedido-id="{{ $pedido['pedido_produccion_id'] }}"
+                                                >
+                                            @else
+                                                <span class="text-slate-300">—</span>
+                                            @endif
+                                        </td>
+                                    @endif
                                     <td class="px-6 py-4 font-medium text-black">{{ $pedido['numero_pedido'] }}</td>
                                     <td class="px-6 py-4 text-black">{{ $pedido['cliente'] ?? '—' }}</td>
                                     <td class="px-6 py-4 text-black">{{ $pedido['asesor'] ?? '—' }}</td>
                                     <td class="px-6 py-4 text-black">
-                                        @if($pedido['fecha_entrega'])
-                                            <span class="{{ $pedido['esta_retrasado'] ? 'text-red-600 font-medium' : '' }}">
-                                                {{ \Carbon\Carbon::parse($pedido['fecha_entrega'])->format('d/m/Y') }}
-                                            </span>
+                                        @if($pedido['created_at'])
+                                            {{ \Carbon\Carbon::parse($pedido['created_at'])->format('d/m/Y') }}
                                         @else
                                             <span class="text-slate-400">—</span>
                                         @endif
@@ -293,6 +312,38 @@
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.pedido-visto-toggle').forEach(checkbox => {
+        checkbox.addEventListener('change', async function() {
+            const pedidoId = this.dataset.pedidoId;
+            const visto = this.checked;
+
+            try {
+                const response = await fetch(`/gestion-bodega/pedidos/${pedidoId}/marcar-visto`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ visto })
+                });
+
+                const data = await response.json().catch(() => null);
+
+                if (!response.ok || !data?.success) {
+                    this.checked = !visto;
+                    alert(data?.message || 'No se pudo actualizar el estado de visto.');
+                    return;
+                }
+            } catch (e) {
+                this.checked = !visto;
+                alert('Error de red al actualizar el estado de visto.');
+            }
+        });
+    });
+});
+
 let tipoFiltroActual = '';
 let paginaActual = 1;
 let terminoBusqueda = '';
@@ -323,6 +374,9 @@ function abrirModalFiltros(tipoFiltro) {
             break;
         case 'estado':
             titulo.textContent = 'Filtros por Estado';
+            break;
+        case 'fecha_creacion':
+            titulo.textContent = 'Filtrar por Fecha de Creación';
             break;
         case 'fecha':
         case 'fecha_entrega':
