@@ -1679,11 +1679,11 @@ class PedidosProduccionController
 
             // CATÁLOGO GENERAL: Constantes de tallas por género
             $tallasPorGenero = [
-                'DAMA' => ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
-                'CABALLERO' => ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
+                'DAMA' => ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'],
+                'CABALLERO' => ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'],
                 'NUMEROS_DAMA' => ['6', '8', '10', '12', '14', '16', '18', '28', '30', '32', '34', '36', '38', '40', '42', '44', '46', '48', '50'],
                 'NUMEROS_CABALLERO' => ['6', '8', '10', '12', '14', '16', '18', '20', '22', '24', '26', '28', '30', '32', '34', '36', '38', '40', '42', '44', '46', '48', '50'],
-                'UNISEX' => ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+                'UNISEX' => ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL']
             ];
 
             // Si pide género específico, retornar solo ese

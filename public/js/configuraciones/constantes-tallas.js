@@ -3,8 +3,8 @@
  * Archivo centralizado con todas las definiciones de tallas por género y tipo
  */
 
-// Tallas de letra: XS hasta XXXL
-const TALLAS_LETRAS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+// Tallas de letra: XS hasta XXXXL
+const TALLAS_LETRAS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'];
 
 // Tallas numéricas para DAMA
 const TALLAS_NUMEROS_DAMA = [

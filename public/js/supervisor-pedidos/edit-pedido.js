@@ -162,7 +162,7 @@ function crearPrendaHTML(prenda, index) {
         ? prenda.tallas
             .filter(tallaRecord => tallaRecord.cantidad > 0)
             .sort((a, b) => {
-                const orden = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+                const orden = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'];
                 const indexA = orden.indexOf(a.talla);
                 const indexB = orden.indexOf(b.talla);
                 if (indexA !== -1 && indexB !== -1) return indexA - indexB;

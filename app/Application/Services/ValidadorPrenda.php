@@ -34,7 +34,7 @@ class ValidadorPrenda
     const TALLAS_NUMERICAS = [24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50];
     
     // Tallas letra válidas
-    const TALLAS_LETRA = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+    const TALLAS_LETRA = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'];
     
     /**
      * Validación exhaustiva de una prenda nueva

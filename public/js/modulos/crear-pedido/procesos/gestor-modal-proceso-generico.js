@@ -48,8 +48,8 @@ const procesosConfig = {
 
 // Tallas estándar por género
 const tallasEstandar = {
-    dama: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-    caballero: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+    dama: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'],
+    caballero: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL']
 };
 
 // Abrir modal para un tipo específico de proceso
