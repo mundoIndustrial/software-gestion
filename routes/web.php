@@ -1311,7 +1311,7 @@ Route::get('/storage/pedidos/{path}', function ($path) {
     abort(404, 'Imagen no encontrada');
 })->where('path', '.*')->name('storage.pedidos');
 
-Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified', 'supervisor-access'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified', 'supervisor-access', 'block-costura-reflectivo-dashboard'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

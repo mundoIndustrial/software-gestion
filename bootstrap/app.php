@@ -46,6 +46,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'check.despacho.role' => \App\Http\Middleware\CheckDespachoRole::class,
             'restrict-bodega-roles' => \App\Http\Middleware\RestrictBodegaRoles::class,
             'restrict-gestor-epp' => \App\Http\Middleware\RestrictGestorEpp::class,
+            'block-costura-reflectivo-dashboard' => \App\Http\Middleware\BlockCosturaReflectivoDashboard::class,
         ]);
         
         // ⚡ TESTING: Deshabilitar CSRF para Postman

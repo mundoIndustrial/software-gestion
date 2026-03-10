@@ -779,10 +779,13 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 $tallas = [];
                 if (isset($proceso->tallas) && $proceso->tallas) {
                     try {
-                        $tallas = is_array($proceso->tallas)
-                            ? $proceso->tallas
-                            : $proceso->tallas->toArray();
+                        // Transformar colección de tallas a estructura procesada
+                        $tallas = $this->construirEstructuraTallasDelProceso($proceso->tallas);
                     } catch (\Exception $e) {
+                        Log::warning('Error construyendo tallas del proceso', [
+                            'proceso_id' => $proceso->id ?? null,
+                            'error' => $e->getMessage()
+                        ]);
                         $tallas = [];
                     }
                 }
@@ -1027,5 +1030,58 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
             ]);
             return [];
         }
+    }
+
+    /**
+     * Transformar colección de tallas del proceso a estructura { GENERO: { TALLA: cantidad } }
+     * Input: Colección de PedidosProcesosPrendaTalla (id, proceso_prenda_detalle_id, genero, talla, cantidad, ...)
+     * Output: { DAMA: {L: 3, M: 5}, CABALLERO: {XL: 2}, UNISEX: {} }
+     */
+    private function construirEstructuraTallasDelProceso($tallasColeccion): array
+    {
+        $tallasPorGenero = [
+            'DAMA' => [],
+            'CABALLERO' => [],
+            'UNISEX' => []
+        ];
+        
+        if (!$tallasColeccion) {
+            return $tallasPorGenero;
+        }
+
+        try {
+            $tallasArray = $tallasColeccion instanceof \Illuminate\Support\Collection
+                ? $tallasColeccion->toArray()
+                : (is_array($tallasColeccion) ? $tallasColeccion : []);
+
+            foreach ($tallasArray as $talla) {
+                // Normalizar datos
+                if (is_array($talla)) {
+                    $genero = strtoupper($talla['genero'] ?? '');
+                    $tallaNombre = $talla['talla'] ?? '';
+                    $cantidad = (int)($talla['cantidad'] ?? 0);
+                } else {
+                    $genero = strtoupper($talla->genero ?? '');
+                    $tallaNombre = $talla->talla ?? '';
+                    $cantidad = (int)($talla->cantidad ?? 0);
+                }
+
+                // Validar género
+                if (!in_array($genero, ['DAMA', 'CABALLERO', 'UNISEX'])) {
+                    continue;
+                }
+
+                // Agregar a estructura
+                if ($cantidad > 0) {
+                    $tallasPorGenero[$genero][$tallaNombre] = $cantidad;
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning('Error transformando tallas del proceso', [
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        return $tallasPorGenero;
     }
 }

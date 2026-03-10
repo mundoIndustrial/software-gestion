@@ -6,7 +6,16 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class SupervisorAccessControl
+/**
+ * Middleware: BlockCosturaReflectivoDashboard
+ * 
+ * Bloquea el acceso del rol "costura-reflectivo" a /dashboard
+ * Redirige automaticamente a /operario/dashboard
+ * 
+ * Uso en routes:
+ * Route::middleware('block-costura-reflectivo-dashboard')->get('/dashboard', ...)
+ */
+class BlockCosturaReflectivoDashboard
 {
     /**
      * Handle an incoming request.
@@ -23,21 +32,12 @@ class SupervisorAccessControl
         $user = auth()->user();
 
         // Bloquear costura-reflectivo del acceso a /dashboard
+        // Redirigir a /operario/dashboard
         if ($user && $user->hasRole('costura-reflectivo')) {
             return redirect('/operario/dashboard');
         }
 
-        // Redirigir gestor de EPP a su vista exclusiva
-        if ($user && $user->hasRole('gestor_epp')) {
-            return redirect()->route('epp.gestion');
-        }
-
-        // Bloquear acceso a despacho en rutas de supervisor/dashboard
-        if ($user && ($user->hasRole('Despacho') || $user->hasRole('despacho'))) {
-            return redirect()->route('despacho.index');
-        }
-
-        // Permitir acceso a todos los usuarios autenticados
+        // Permitir acceso a otros usuarios
         return $next($request);
     }
 }
