@@ -1,5 +1,1086 @@
 /* ========================================
-   DASHBOARD OPERARIO - ESTILOS
+   DASHBOARD OPERARIO - NUEVO DISEÑO PROFESIONAL
+   Basado en el diseño de referencia React
    ======================================== */
 
-/* Estilos específicos del dashboard se cargan inline en la vista */
+/* Variables de color */
+:root {
+    --primary-color: #2563eb;
+    --primary-hover: #1d4ed8;
+    --secondary-color: #64748b;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --amber-color: #f59e0b;
+    --emerald-color: #059669;
+    --rose-color: #e11d48;
+    --slate-50: #f8fafc;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+    --slate-300: #cbd5e1;
+    --slate-400: #94a3b8;
+    --slate-500: #64748b;
+    --slate-600: #475569;
+    --slate-700: #334155;
+    --slate-800: #1e293b;
+    --slate-900: #0f172a;
+    --border-radius-sm: 0.5rem;
+    --border-radius-md: 0.75rem;
+    --border-radius-lg: 1rem;
+    --border-radius-xl: 1.5rem;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* Reset y estilos base */
+.operario-dashboard {
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, var(--slate-50) 0%, #f1f5f9 100%);
+    min-height: 100vh;
+    padding: 1rem;
+}
+
+/* Header mejorado */
+.operario-dashboard .search-section {
+    position: relative;
+    margin-bottom: 2rem;
+    max-width: 56rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.operario-dashboard .search-box {
+    width: 100%;
+    background: white;
+    border: none;
+    border-radius: var(--border-radius-xl);
+    padding: 1rem 1rem 1rem 3rem;
+    font-size: 0.875rem;
+    color: var(--slate-700);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+}
+
+.operario-dashboard .search-box::placeholder {
+    color: var(--slate-400);
+}
+
+.operario-dashboard .search-box:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1), var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.operario-dashboard .search-section .material-symbols-rounded {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--slate-400);
+    font-size: 1.125rem;
+    pointer-events: none;
+}
+
+.operario-dashboard .clear-filter-btn {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--slate-400);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: var(--border-radius-sm);
+    transition: all 0.2s ease;
+}
+
+.operario-dashboard .clear-filter-btn:hover {
+    background: var(--slate-100);
+    color: var(--slate-600);
+}
+
+/* Sección de órdenes */
+.operario-dashboard .ordenes-section {
+    max-width: 56rem;
+    margin: 0 auto;
+}
+
+/* Título de sección */
+.operario-dashboard .section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--slate-200);
+}
+
+.operario-dashboard .section-title h3 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--slate-800);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+    flex: 1;
+}
+
+.operario-dashboard .section-title .material-symbols-rounded {
+    color: var(--slate-600);
+    font-size: 1.25rem;
+}
+
+.operario-dashboard .ordenes-count {
+    background: var(--slate-200);
+    color: var(--slate-600);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    min-width: 1.5rem;
+    text-align: center;
+}
+
+/* Filtros badges */
+.operario-dashboard .filtros-badges {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding: 0.25rem;
+    background: rgba(241, 245, 249, 0.5);
+    border-radius: var(--border-radius-xl);
+    width: fit-content;
+}
+
+.operario-dashboard .badge-filtro {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: var(--border-radius-lg);
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: transparent;
+    color: var(--slate-500);
+}
+
+.operario-dashboard .badge-filtro:hover {
+    color: var(--slate-700);
+}
+
+.operario-dashboard .badge-filtro.badge-filtro-active {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.operario-dashboard .badge-filtro .material-symbols-rounded {
+    font-size: 1rem;
+}
+
+/* Lista de órdenes */
+.operario-dashboard .ordenes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Tarjeta de orden - Nuevo diseño */
+.operario-dashboard .orden-card-simple {
+    background: white;
+    border-radius: var(--border-radius-xl);
+    border-left: 4px solid var(--primary-color);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+.operario-dashboard .orden-card-simple:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+/* Borde de estado */
+.operario-dashboard .orden-border {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+}
+
+.operario-dashboard .orden-border.pendiente {
+    background: var(--warning-color);
+}
+
+.operario-dashboard .orden-border.en-proceso {
+    background: var(--primary-color);
+}
+
+.operario-dashboard .orden-border.completada {
+    background: var(--success-color);
+}
+
+/* Contenido de la tarjeta */
+.operario-dashboard .orden-body {
+    padding: 1.25rem;
+}
+
+.operario-dashboard .orden-body.recibo-completado-area {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.02) 100%);
+}
+
+/* Esquina de encargado */
+.operario-dashboard .orden-encargado-corner {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: var(--slate-600);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 10;
+}
+
+/* Badges superiores */
+.operario-dashboard .orden-top-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.operario-dashboard .badge-area {
+    font-size: 0.625rem;
+    font-weight: 700;
+    background: var(--slate-100);
+    color: var(--slate-600);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.operario-dashboard .badge-completado-corte {
+    font-size: 0.625rem;
+    font-weight: 700;
+    background: var(--slate-100);
+    color: var(--slate-600);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.operario-dashboard .badge-completado-corte.is-on {
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary-color);
+}
+
+.operario-dashboard .label-encargado {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: var(--slate-400);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.operario-dashboard .badge-encargado {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: var(--slate-700);
+}
+
+/* Contenido principal */
+.operario-dashboard .orden-left {
+    margin-bottom: 1.5rem;
+}
+
+/* Número y estado */
+.operario-dashboard .orden-top {
+    margin-bottom: 1rem;
+}
+
+.operario-dashboard .orden-numero-section {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.operario-dashboard .orden-numero {
+    font-size: 1.125rem;
+    font-weight: 900;
+    color: var(--slate-800);
+    margin: 0;
+}
+
+.operario-dashboard .estado-badge {
+    font-size: 0.625rem;
+    font-weight: 700;
+    background: var(--slate-100);
+    color: var(--slate-600);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.operario-dashboard .estado-badge.en-proceso {
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary-color);
+}
+
+.operario-dashboard .estado-badge.completada {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+}
+
+/* Cliente */
+.operario-dashboard .orden-cliente {
+    margin-bottom: 0.75rem;
+}
+
+.operario-dashboard .cliente-label {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 0 0 0.25rem 0;
+}
+
+.operario-dashboard .cliente-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--slate-800);
+    margin: 0;
+    line-height: 1.2;
+}
+
+/* Prendas */
+.operario-dashboard .orden-prendas {
+    margin-bottom: 1rem;
+}
+
+.operario-dashboard .prendas-label {
+    font-size: 0.875rem;
+    color: var(--slate-500);
+    font-weight: 500;
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Botones de acción */
+.operario-dashboard .orden-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Estilos base para botones */
+.operario-dashboard .orden-buttons button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    border: none;
+    border-radius: var(--border-radius-xl);
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    box-shadow: var(--shadow-sm);
+}
+
+.operario-dashboard .orden-buttons button:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.operario-dashboard .orden-buttons button:active {
+    transform: scale(0.95);
+}
+
+.operario-dashboard .orden-buttons button .material-symbols-rounded {
+    font-size: 1rem;
+}
+
+/* Botón DESHACER COSTURA */
+.operario-dashboard .btn-deshacer-costura {
+    background: var(--amber-color);
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.2), 0 2px 4px -2px rgba(245, 158, 11, 0.1);
+}
+
+.operario-dashboard .btn-deshacer-costura:hover {
+    background: #d97706;
+}
+
+/* Botón PASAR A C.C */
+.operario-dashboard .btn-pasar-cc {
+    background: var(--emerald-color);
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.2), 0 2px 4px -2px rgba(5, 150, 105, 0.1);
+}
+
+.operario-dashboard .btn-pasar-cc:hover {
+    background: #047857;
+}
+
+/* Botón AGREGAR NOVEDAD */
+.operario-dashboard .btn-agregar-novedad {
+    background: var(--rose-color);
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(225, 29, 72, 0.2), 0 2px 4px -2px rgba(225, 29, 72, 0.1);
+}
+
+.operario-dashboard .btn-agregar-novedad:hover {
+    background: #be123c;
+}
+
+/* Botón PASAR A COSTURA */
+.operario-dashboard .btn-pasar-costura {
+    background: white;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+}
+
+.operario-dashboard .btn-pasar-costura:hover {
+    background: rgba(37, 99, 235, 0.05);
+}
+
+/* Botón VER RECIBOS */
+.operario-dashboard .btn-ver-recibos {
+    background: white;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+}
+
+.operario-dashboard .btn-ver-recibos:hover {
+    background: rgba(37, 99, 235, 0.05);
+}
+
+/* Contenido derecho */
+.operario-dashboard .orden-right {
+    border-top: 1px solid var(--slate-100);
+    padding-top: 1rem;
+}
+
+.operario-dashboard .orden-pedido-footer {
+    margin-bottom: 1rem;
+}
+
+.operario-dashboard .orden-pedido-footer small {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: var(--slate-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: var(--slate-100);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+}
+
+/* Info central */
+.operario-dashboard .orden-right-center {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.operario-dashboard .orden-fecha {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.operario-dashboard .orden-fecha-label {
+    font-size: 0.5625rem;
+    font-weight: 700;
+    color: var(--slate-400);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.operario-dashboard .orden-fecha span:last-child {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--slate-700);
+}
+
+/* Flecha de acción */
+.operario-dashboard .action-arrow {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    background: var(--slate-100);
+    color: var(--slate-400);
+    border-radius: var(--border-radius-xl);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.operario-dashboard .action-arrow:hover {
+    background: var(--slate-200);
+    color: var(--slate-600);
+    transform: translateX(2px);
+}
+
+.operario-dashboard .action-arrow .material-symbols-rounded {
+    font-size: 1.25rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .operario-dashboard {
+        padding: 0.75rem;
+    }
+    
+    .operario-dashboard .search-section,
+    .operario-dashboard .ordenes-section {
+        max-width: 100%;
+    }
+    
+    .operario-dashboard .orden-body {
+        padding: 1rem;
+    }
+    
+    .operario-dashboard .orden-numero-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .operario-dashboard .orden-buttons {
+        gap: 0.5rem;
+    }
+    
+    .operario-dashboard .orden-buttons button {
+        padding: 0.75rem;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+        min-height: 3rem;
+    }
+    
+    .operario-dashboard .orden-right-center {
+        gap: 1rem;
+    }
+    
+    .operario-dashboard .orden-encargado-corner {
+        display: none;
+    }
+    
+    .operario-dashboard .orden-top-badges {
+        gap: 0.25rem;
+    }
+    
+    .operario-dashboard .badge-area,
+    .operario-dashboard .badge-completado-corte {
+        font-size: 0.5625rem;
+        padding: 0.125rem 0.375rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .operario-dashboard {
+        padding: 0.5rem;
+    }
+    
+    .operario-dashboard .section-title h3 {
+        font-size: 1rem;
+    }
+    
+    .operario-dashboard .orden-numero {
+        font-size: 1rem;
+    }
+    
+    .operario-dashboard .cliente-name {
+        font-size: 0.875rem;
+    }
+    
+    .operario-dashboard .prendas-label {
+        font-size: 0.75rem;
+    }
+    
+    .operario-dashboard .orden-buttons button {
+        font-size: 0.75rem;
+        padding: 0.625rem;
+        min-height: 2.75rem;
+    }
+    
+    .operario-dashboard .orden-buttons button .material-symbols-rounded {
+        font-size: 0.875rem;
+    }
+}
+
+/* Animaciones */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.operario-dashboard .orden-card-simple {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Botones para cortadores */
+.btn-completar-corte {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: var(--success-color);
+    color: white;
+    padding: 0.625rem 1rem;
+    border-radius: var(--border-radius-lg);
+    font-size: 0.75rem;
+    font-weight: 700;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-completar-corte:hover {
+    background: #16a34a;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-completar-corte:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-deshacer-corte {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: var(--warning-color);
+    color: white;
+    padding: 0.625rem 1rem;
+    border-radius: var(--border-radius-lg);
+    font-size: 0.75rem;
+    font-weight: 700;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-deshacer-corte:hover {
+    background: #d97706;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-deshacer-corte:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Estados para los botones de cortadores */
+.btn-completar-corte:disabled,
+.btn-deshacer-corte:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-completar-corte:disabled:hover,
+.btn-deshacer-corte:disabled:hover {
+    transform: none;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Animación spin para loading */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.material-symbols-rounded.spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Focus accesible */
+.operario-dashboard .orden-buttons button:focus,
+.operario-dashboard .badge-filtro:focus,
+.operario-dashboard .search-box:focus,
+.operario-dashboard .action-arrow:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Estados especiales para vista-costura */
+.operario-dashboard.is-vista-costura .orden-card-simple {
+    border-left-color: var(--primary-color);
+}
+
+.operario-dashboard.is-vista-costura .orden-border.en-proceso {
+    background: var(--primary-color);
+}
+
+/* Loading states */
+.operario-dashboard .orden-buttons button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.operario-dashboard .orden-buttons button:disabled:hover {
+    transform: none;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Mobile Actions Menu */
+.mobile-actions-toggle {
+    display: none;
+    background: var(--slate-100);
+    border: none;
+    color: var(--slate-400);
+    border-radius: var(--border-radius-lg);
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+}
+
+.mobile-actions-toggle:hover {
+    background: var(--slate-200);
+    color: var(--slate-600);
+}
+
+.mobile-actions-toggle.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+.mobile-actions-drawer {
+    display: none;
+    overflow: hidden;
+    border-top: 1px solid var(--slate-100);
+    margin-top: 1rem;
+    padding-top: 1rem;
+}
+
+.mobile-actions-drawer.active {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    animation: slideDown 0.3s ease-out;
+}
+
+.mobile-primary-action {
+    display: none;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 500px;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 1;
+        max-height: 500px;
+    }
+    to {
+        opacity: 0;
+        max-height: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .mobile-actions-toggle {
+        display: flex;
+    }
+
+    .mobile-actions-drawer {
+        display: none;
+    }
+
+    .mobile-actions-drawer.active {
+        display: grid;
+    }
+
+    .mobile-primary-action {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    /* Ocultar COMPLETAMENTE todos los botones desktop en mobile */
+    .orden-buttons {
+        display: none !important;
+    }
+
+    /* Ajustar layout de la tarjeta para mobile */
+    .orden-card-simple {
+        padding: 1.25rem;
+    }
+
+    .orden-body {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .orden-left {
+        flex: 1;
+        width: 100%;
+    }
+
+    .orden-right {
+        margin-left: 0;
+        margin-top: 0;
+        padding-top: 1rem;
+        border-top: 1px solid var(--slate-100);
+        width: 100%;
+    }
+
+    /* Mostrar botones en el drawer mobile */
+    .mobile-actions-drawer .btn-pasar-costura,
+    .mobile-actions-drawer .btn-pasar-cc,
+    .mobile-actions-drawer .btn-agregar-novedad,
+    .mobile-actions-drawer .btn-ver-recibos,
+    .mobile-actions-drawer .btn-completar-corte,
+    .mobile-actions-drawer .btn-deshacer-corte {
+        display: flex !important;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        border-radius: var(--border-radius-lg);
+        font-size: 0.875rem;
+        font-weight: 700;
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .mobile-actions-drawer .btn-pasar-costura {
+        background: var(--warning-color);
+        color: white;
+    }
+
+    .mobile-actions-drawer .btn-pasar-cc {
+        background: var(--success-color);
+        color: white;
+    }
+
+    .mobile-actions-drawer .btn-agregar-novedad {
+        background: var(--rose-color);
+        color: white;
+    }
+
+    .mobile-actions-drawer .btn-ver-recibos {
+        background: white;
+        color: var(--primary-color);
+        border: 2px solid var(--primary-color);
+    }
+
+    .mobile-actions-drawer .btn-completar-corte {
+        background: var(--success-color);
+        color: white;
+    }
+
+    .mobile-actions-drawer .btn-deshacer-corte {
+        background: var(--warning-color);
+        color: white;
+    }
+
+    /* Botón primario mobile (siempre visible cuando drawer está cerrado) */
+    .mobile-primary-action .btn-pasar-cc {
+        flex: 1;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background: var(--success-color);
+        color: white;
+        padding: 0.75rem;
+        border-radius: var(--border-radius-lg);
+        font-size: 0.875rem;
+        font-weight: 700;
+    }
+
+    .mobile-primary-action .btn-agregar-novedad {
+        flex: 1;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background: var(--rose-color);
+        color: white;
+        padding: 0.75rem;
+        border-radius: var(--border-radius-lg);
+        font-size: 0.875rem;
+        font-weight: 700;
+    }
+
+    .mobile-primary-action .btn-completar-corte {
+        flex: 1;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background: var(--success-color);
+        color: white;
+        padding: 0.75rem;
+        border-radius: var(--border-radius-lg);
+        font-size: 0.875rem;
+        font-weight: 700;
+    }
+
+    .mobile-primary-action .btn-deshacer-corte {
+        flex: 1;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background: var(--warning-color);
+        color: white;
+        padding: 0.75rem;
+        border-radius: var(--border-radius-lg);
+        font-size: 0.875rem;
+        font-weight: 700;
+    }
+
+    .mobile-primary-action .mobile-actions-toggle {
+        flex-shrink: 0;
+        display: flex !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .operario-dashboard {
+        padding: 0.75rem;
+    }
+
+    .orden-card-simple {
+        flex-direction: column;
+        padding: 1rem;
+    }
+
+    .orden-body {
+        padding: 0;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .orden-left {
+        flex: 1;
+        width: 100%;
+    }
+
+    .orden-right {
+        margin-left: 0;
+        margin-top: 0;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--slate-100);
+        width: 100%;
+    }
+
+    .orden-pedido-footer {
+        position: static;
+        margin-bottom: 0.5rem;
+    }
+
+    .orden-right-center {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+
+    .orden-fecha {
+        flex: 1;
+    }
+
+    .action-arrow {
+        flex-shrink: 0;
+        align-self: center;
+    }
+
+    /* Ajustar espaciado en mobile para layout más compacto */
+    .orden-top {
+        margin-bottom: 0.75rem;
+    }
+
+    .orden-cliente {
+        margin-bottom: 0.5rem;
+    }
+
+    .orden-prendas {
+        margin-bottom: 0.75rem;
+    }
+
+    /* Botones mobile con espaciado reducido */
+    .mobile-primary-action {
+        margin-top: 0.75rem;
+    }
+
+    .mobile-actions-drawer {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+    }
+
+    /* Reducir tamaño de texto en mobile */
+    .orden-numero {
+        font-size: 1.25rem;
+    }
+
+    .cliente-name {
+        font-size: 0.875rem;
+    }
+
+    .prendas-label {
+        font-size: 0.875rem;
+    }
+
+    .orden-fecha-label {
+        font-size: 0.625rem;
+    }
+
+    .orden-fecha span:not(.orden-fecha-label) {
+        font-size: 0.75rem;
+    }
+}

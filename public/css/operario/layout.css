@@ -277,25 +277,108 @@ body {
 
 @media (max-width: 768px) {
     .top-nav {
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         gap: 1rem;
-        padding: 1rem;
+        padding: 0.75rem 1rem;
+        justify-content: space-between;
+        align-items: center;
     }
 
     .nav-left {
-        width: 100%;
+        flex: 1;
         order: 1;
+        width: auto;
     }
 
-    .nav-right {
-        width: 100%;
+    .top-nav-content {
         order: 2;
-        justify-content: space-between;
+        flex-shrink: 0;
     }
 
-    .search-container {
-        flex: 0 1 100%;
-        order: 3;
+    .top-nav-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Ocultar info del usuario en mobile, mostrar solo avatar */
+    .user-info {
+        display: none;
+    }
+
+    .user-btn {
+        padding: 0.5rem;
+        min-width: auto;
+        background: transparent;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .user-btn:hover {
+        background: rgba(0,0,0,0.05);
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        overflow: hidden;
+    }
+
+    .user-avatar img,
+    .avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+        color: white;
+        background: #64748b;
+    }
+
+    /* Botón de notificaciones mobile */
+    .notificaciones-btn {
+        padding: 0.5rem;
+        min-width: auto;
+        background: transparent;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+        position: relative;
+    }
+
+    .notificaciones-btn:hover {
+        background: rgba(0,0,0,0.05);
+    }
+
+    .notificaciones-badge {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        min-width: 8px;
+        height: 8px;
+        padding: 0;
+        background: #ef4444;
+        color: white;
+        border-radius: 50%;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid white;
     }
 
     .page-title {
@@ -320,8 +403,29 @@ body {
         font-size: 1rem;
     }
 
+    /* Mantener el user-info oculto en mobile pequeño */
     .user-info {
         display: none;
+    }
+
+    /* Ajustar tamaño de botones en pantallas muy pequeñas */
+    .user-btn,
+    .notificaciones-btn {
+        width: 36px;
+        height: 36px;
+        padding: 0.4rem;
+    }
+
+    .user-avatar {
+        width: 28px;
+        height: 28px;
+    }
+
+    .notificaciones-badge {
+        top: 4px;
+        right: 4px;
+        width: 6px;
+        height: 6px;
     }
 
     .user-menu {
