@@ -2503,6 +2503,159 @@ class PedidosProduccionController
     }
 
     /**
+     * Homologar EPP: Marcar como eliminado y crear uno nuevo con los datos editados
+     * POST /asesores/pedidos/{id}/homologar-epp
+     */
+    public function homologarEpp(Request $request, int|string $id): JsonResponse
+    {
+        try {
+            Log::info('[PedidosProduccionController] POST /asesores/pedidos/{id}/homologar-epp', [
+                'pedido_id' => $id,
+            ]);
+
+            // Validar datos
+            $validated = $request->validate([
+                'pedido_epp_id' => 'required|numeric|min:1',
+                'motivo' => 'required|string|min:5|max:1000',
+                'cantidad' => 'required|numeric|min:1',
+                'observaciones' => 'nullable|string',
+                'epp_id' => 'nullable|numeric',
+            ]);
+
+            $pedidoEppIdAnterior = (int)$validated['pedido_epp_id'];
+            $motivo = $validated['motivo'];
+            $cantidadNueva = (int)$validated['cantidad'];
+            $observacionesNuevas = $validated['observaciones'] ?? '';
+            $eppIdNuevo = isset($validated['epp_id']) ? (int)$validated['epp_id'] : null;
+
+            // Obtener el EPP actual del pedido
+            $pedidoEppAnterior = \App\Models\PedidoEpp::findOrFail($pedidoEppIdAnterior);
+            
+            // Obtener datos del EPP anterior
+            $epp = $pedidoEppAnterior->epp;
+            $nombreEpp = $epp->nombre_completo ?? $epp->nombre ?? 'EPP Sin nombre';
+
+            // Obtener el pedido
+            $pedido = PedidoProduccion::findOrFail($id);
+
+            Log::info('[PedidosProduccionController] EPP encontrado para homologar', [
+                'epp_id_anterior' => $pedidoEppIdAnterior,
+                'nombre' => $nombreEpp,
+                'pedido_id' => $id,
+                'datos_nuevos' => [
+                    'cantidad' => $cantidadNueva,
+                    'observaciones' => $observacionesNuevas,
+                    'epp_id_nuevo' => $eppIdNuevo
+                ]
+            ]);
+
+            // Construir mensaje de homologación
+            $mensajeHomologacion = "[HOMOLOGADO EPP] {$nombreEpp} (Cantidad anterior: {$pedidoEppAnterior->cantidad} → Nueva: {$cantidadNueva}) - Motivo: {$motivo}";
+
+            // Actualizar novedades del pedido
+            if ($pedido->novedades) {
+                $pedido->novedades .= "\n\n" . $mensajeHomologacion;
+            } else {
+                $pedido->novedades = $mensajeHomologacion;
+            }
+            $pedido->save();
+
+            Log::info('[PedidosProduccionController] Novedades actualizadas', [
+                'pedido_id' => $id,
+            ]);
+
+            // Marcar el EPP anterior como eliminado (soft delete)
+            $pedidoEppAnterior->delete();
+
+            Log::info('[PedidosProduccionController] EPP anterior marcado como eliminado', [
+                'epp_id' => $pedidoEppIdAnterior,
+            ]);
+
+            // Crear el nuevo EPP con los datos editados
+            $eppNuevo = new \App\Models\PedidoEpp();
+            $eppNuevo->pedido_produccion_id = $pedidoEppAnterior->pedido_produccion_id;
+            $eppNuevo->epp_id = $eppIdNuevo ?? $pedidoEppAnterior->epp_id;
+            $eppNuevo->cantidad = $cantidadNueva;
+            $eppNuevo->observaciones = $observacionesNuevas;
+            $eppNuevo->homologado_de = $pedidoEppIdAnterior; // Guardar referencia al EPP anterior
+            $eppNuevo->save();
+
+            Log::info('[PedidosProduccionController] EPP duplicado con nuevos datos', [
+                'epp_id_nuevo' => $eppNuevo->id,
+                'epp_id_anterior' => $pedidoEppIdAnterior,
+                'cantidad_nueva' => $cantidadNueva,
+            ]);
+
+            // Duplicar imágenes del EPP anterior (si existen)
+            $imagenesAntiguas = \App\Models\PedidoEppImagen::where('pedido_epp_id', $pedidoEppIdAnterior)->get();
+            foreach ($imagenesAntiguas as $imagenAntigua) {
+                // Crear nueva imagen con los mismos datos
+                $imagenNueva = new \App\Models\PedidoEppImagen();
+                $imagenNueva->pedido_epp_id = $eppNuevo->id;
+                $imagenNueva->ruta_original = $imagenAntigua->ruta_original;
+                $imagenNueva->ruta_web = $imagenAntigua->ruta_web;
+                $imagenNueva->principal = $imagenAntigua->principal;
+                $imagenNueva->orden = $imagenAntigua->orden;
+                $imagenNueva->save();
+            }
+
+            Log::info('[PedidosProduccionController] Imágenes duplicadas', [
+                'cantidad' => $imagenesAntiguas->count(),
+                'epp_id_nuevo' => $eppNuevo->id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'EPP homologado correctamente',
+                'epp_id_anterior' => $pedidoEppIdAnterior,
+                'epp_id_nuevo' => $eppNuevo->id,
+                'epp_nombre' => $nombreEpp,
+                'motivo_registrado' => $motivo,
+                'pedido_id' => $id,
+                'cambios' => [
+                    'cantidad_anterior' => $pedidoEppAnterior->cantidad,
+                    'cantidad_nueva' => $cantidadNueva,
+                    'epp_id_nuevo' => $eppIdNuevo,
+                ]
+            ], 200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::warning('[PedidosProduccionController] EPP o pedido no encontrado', [
+                'pedido_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'EPP o pedido no encontrado',
+            ], 404);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('[PedidosProduccionController] Validación fallida al homologar EPP', [
+                'errors' => $e->errors(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validación fallida',
+                'errors' => $e->errors(),
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error homologando EPP', [
+                'pedido_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al homologar EPP: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Eliminar EPP de un pedido
      * POST /asesores/pedidos/{id}/eliminar-epp
      */

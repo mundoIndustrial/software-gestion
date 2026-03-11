@@ -165,17 +165,11 @@
                             <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.85rem;">Cantidad: <strong>${item.cantidad || 0}</strong></p>
                         </div>
                         <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
-                            <button onclick="abrirEditarEPPEspecifico(${idx})" 
-                                style="background: #1e40af; color: white; padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"
-                                onmouseover="this.style.background='#1e3a8a'; this.style.transform='scale(1.05)';"
-                                onmouseout="this.style.background='#1e40af'; this.style.transform='scale(1)';">
-                                ✏️ Editar
-                            </button>
-                            <button onclick="abrirModalEliminarEpp(${JSON.stringify(item).replace(/"/g, '&quot;')}, ${idx}, window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido)" 
-                                style="background: #ef4444; color: white; padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"
-                                onmouseover="this.style.background='#dc2626'; this.style.transform='scale(1.05)';"
-                                onmouseout="this.style.background='#ef4444'; this.style.transform='scale(1)';">
-                                🗑️ Eliminar
+                            <button onclick="abrirModalHomologarEpp(${JSON.stringify(item).replace(/"/g, '&quot;')}, ${idx}, window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido)" 
+                                style="background: #8b5cf6; color: white; padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"
+                                onmouseover="this.style.background='#7c3aed'; this.style.transform='scale(1.05)';"
+                                onmouseout="this.style.background='#8b5cf6'; this.style.transform='scale(1)';">
+                                🔄 Homologar
                             </button>
                         </div>
                     </div>
@@ -437,6 +431,7 @@
             modal.style.display = 'none';
         }
         window.eppEnEdicionActual = null;
+        window.eppEnHomologacion = null; // Limpiar flag de homologación
         document.getElementById('buscadorEppEdicion').value = '';
     }
     
@@ -721,22 +716,45 @@
                 eppId: cambios.eppId,
                 novedad,
                 imagenesEliminadas: cambios.imagenesAEliminar?.length || 0,
-                imagenesAgregadas: cambios.imagenesAAgregar?.length || 0
+                imagenesAgregadas: cambios.imagenesAAgregar?.length || 0,
+                esHomologacion: !!window.eppEnHomologacion
             });
             
-            const response = await fetch(`/api/pedidos/${pedidoId}/epp/${pedidoEppId}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({
-                    cantidad: cambios.cantidad,
-                    observaciones: cambios.observaciones,
-                    epp_id: cambios.eppId,
-                    novedad: novedad
-                })
-            });
+            // Detectar si es una homologación
+            let response;
+            if (window.eppEnHomologacion) {
+                console.log('🔄 [Modal Novedad] Modo HOMOLOGACIÓN detectado');
+                
+                response = await fetch(`/asesores/pedidos/${pedidoId}/homologar-epp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        pedido_epp_id: window.eppEnHomologacion.id,
+                        cantidad: cambios.cantidad,
+                        observaciones: cambios.observaciones,
+                        epp_id: cambios.eppId,
+                        motivo: novedad
+                    })
+                });
+            } else {
+                // Modo edición normal
+                response = await fetch(`/api/pedidos/${pedidoId}/epp/${pedidoEppId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        cantidad: cambios.cantidad,
+                        observaciones: cambios.observaciones,
+                        epp_id: cambios.eppId,
+                        novedad: novedad
+                    })
+                });
+            }
             
             if (!response.ok) {
                 const error = await response.json();
@@ -1219,6 +1237,38 @@
         }
     }
 
+    /**
+     * Homologar EPP: Abrir modal de edición para poder editarlo
+     */
+    window.abrirModalHomologarEpp = function(epp, eppIndex, pedidoId) {
+        const eppId = epp.id || epp.pedido_epp_id;
+        const nombreEpp = epp.nombre || epp.epp?.nombre || epp.nombre_completo || epp.epp_nombre || 'EPP Sin nombre';
+        
+        console.log('[EPP] 🔄 Homologando EPP:', nombreEpp, 'id:', eppId, 'pedidoId:', pedidoId);
+
+        if (!pedidoId || !eppId) {
+            console.error('[EPP] Faltan pedidoId o eppId para homologar');
+            Swal.fire('Error', 'No se pudo identificar el pedido o el EPP para homologar', 'error');
+            return;
+        }
+
+        // Marcar que estamos en modo homologación
+        window.eppEnHomologacion = {
+            id: eppId,
+            original: JSON.parse(JSON.stringify(epp))
+        };
+
+        // Abrir el modal de edición normal
+        try {
+            Swal.close();
+            abrirModalEditarEppForm(epp);
+            console.log('[EPP] 🔄 Modal abierto en modo homologación');
+        } catch (error) {
+            console.error('[EPP] Error abriendo modal:', error);
+            Swal.fire('Error', 'No se pudo abrir el modal de edición', 'error');
+        }
+    };
+
     // Exponer funciones globalmente
     window.abrirModalEditarEppForm = abrirModalEditarEppFormConImagenes;
     window.cerrarModalEditarEppForm = cerrarModalEditarEppForm;
@@ -1228,5 +1278,6 @@
     window.confirmarSeleccionImagenes = confirmarSeleccionImagenes;
     window.eliminarImagenEPP = eliminarImagenEPP;
     window.eliminarImagenNuevaEPP = eliminarImagenNuevaEPP;
+    window.abrirModalHomologarEpp = abrirModalHomologarEpp;
 </script>
 

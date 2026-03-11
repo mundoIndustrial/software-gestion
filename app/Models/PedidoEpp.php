@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Modelo Eloquent: PedidoEpp
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class PedidoEpp extends Model
 {
+    use SoftDeletes;
     protected $table = 'pedido_epp';
 
     protected $fillable = [
@@ -21,11 +23,13 @@ class PedidoEpp extends Model
         'cantidad',
         'tallas_medidas',
         'observaciones',
+        'homologado_de',
     ];
 
     protected $casts = [
         'tallas_medidas' => 'array',
         'cantidad' => 'integer',
+        'homologado_de' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -44,6 +48,22 @@ class PedidoEpp extends Model
     public function epp(): BelongsTo
     {
         return $this->belongsTo(Epp::class, 'epp_id');
+    }
+
+    /**
+     * Relación: El EPP anterior que fue homologado
+     */
+    public function homologadoDe(): BelongsTo
+    {
+        return $this->belongsTo(PedidoEpp::class, 'homologado_de');
+    }
+
+    /**
+     * Relación: Los EPP que fueron homologados desde este
+     */
+    public function homologaciones()
+    {
+        return $this->hasMany(PedidoEpp::class, 'homologado_de');
     }
 
     /**

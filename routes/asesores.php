@@ -101,6 +101,9 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     // Eliminar EPP de un pedido y registrar motivo en novedades
     Route::post('/pedidos/{id}/eliminar-epp', [\App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'eliminarEpp'])->where('id', '[0-9]+')->name('pedidos.eliminar-epp');
 
+    // Homologar EPP: marcar como eliminado y duplicar
+    Route::post('/pedidos/{id}/homologar-epp', [\App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'homologarEpp'])->where('id', '[0-9]+')->name('pedidos.homologar-epp');
+
     // Actualizar SOLO la variante de prenda (manga, broche, bolsillos) - CON MERGE
     Route::put('/pedidos/{pedidoId}/prendas/{prendaId}/variante', [\App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'actualizarVariantePrend'])->where('pedidoId', '[0-9]+')->where('prendaId', '[0-9]+')->name('pedidos.actualizar-variante-prenda');
 
