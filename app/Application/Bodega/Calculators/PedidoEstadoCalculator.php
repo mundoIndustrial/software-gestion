@@ -21,114 +21,18 @@ class PedidoEstadoCalculator
      */
     public function calcular(string $numeroPedido): array
     {
-        $totalItemsReales = $this->obtenerTotalItemsReales($numeroPedido);
+        $totalItems = $this->obtenerTotalItems($numeroPedido);
         $itemsPendientes = $this->obtenerItemsPendientes($numeroPedido);
         $itemsEntregados = $this->obtenerItemsEntregados($numeroPedido);
         
         return [
-            'total_items' => $totalItemsReales,
+            'total_items' => $totalItems,
             'items_pendientes' => $itemsPendientes,
             'items_entregados' => $itemsEntregados,
             'tiene_pendientes' => $itemsPendientes > 0,
-            'todos_pendientes' => $this->todosPendientes($totalItemsReales, $itemsPendientes),
-            'todos_entregados' => $this->todosEntregados($totalItemsReales, $itemsEntregados),
+            'todos_pendientes' => $this->todosPendientes($totalItems, $itemsPendientes),
+            'todos_entregados' => $this->todosEntregados($totalItems, $itemsEntregados),
         ];
-    }
-
-    /**
-     * Obtener total de items REALES del pedido original
-     * Cuenta todos los items que deberían existir según el pedido original
-     */
-    private function obtenerTotalItemsReales(string $numeroPedido): int
-    {
-        try {
-            // Método 1: Intentar obtener desde recibos usando el use case
-            try {
-                $recibos = \App\Models\ReciboPrenda::where('numero_pedido', $numeroPedido)->get();
-                $totalItems = 0;
-                
-                foreach ($recibos as $recibo) {
-                    try {
-                        $obtenerPedidoUseCase = app(\App\Application\Bodega\UseCases\ObtenerPedidoUseCase::class);
-                        $datosCompletos = $obtenerPedidoUseCase->ejecutar($recibo->id);
-                        
-                        // Contar prendas
-                        if (isset($datosCompletos->prendas) && is_array($datosCompletos->prendas)) {
-                            foreach ($datosCompletos->prendas as $prenda) {
-                                $variantes = $prenda['variantes'] ?? [];
-                                foreach ($variantes as $variante) {
-                                    $coloresDetalle = $variante['colores_detalle'] ?? [];
-                                    foreach ($coloresDetalle as $color) {
-                                        $cantidad = (int)($color['cantidad'] ?? 0);
-                                        if ($cantidad > 0) {
-                                            $totalItems += $cantidad;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // Contar EPPs
-                        if (isset($datosCompletos->epps) && is_array($datosCompletos->epps)) {
-                            foreach ($datosCompletos->epps as $epp) {
-                                $cantidad = (int)($epp['cantidad'] ?? 0);
-                                if ($cantidad > 0) {
-                                    $totalItems += $cantidad;
-                                }
-                            }
-                        }
-                        
-                    } catch (\Exception $e) {
-                        continue;
-                    }
-                }
-                
-                if ($totalItems > 0) {
-                    return $totalItems;
-                }
-            } catch (\Exception $e) {
-                // Continuar con método 2
-            }
-            
-            // Método 2: Contar desde variantes de prendas (más directo)
-            try {
-                $pedido = \App\Models\PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
-                if ($pedido) {
-                    $variantes = \App\Models\PrendaVariantePed::where('pedido_produccion_id', $pedido->id)->get();
-                    $totalItems = 0;
-                    
-                    foreach ($variantes as $variante) {
-                        // Obtener tallas desde la relación
-                        $tallas = \App\Models\TallaPrendaCot::where('prenda_pedido_id', $variante->prenda_pedido_id)->get();
-                        foreach ($tallas as $talla) {
-                            $cantidades = json_decode($talla->cantidad, true);
-                            if (is_array($cantidades)) {
-                                foreach ($cantidades as $cantidad) {
-                                    if ($cantidad > 0) {
-                                        $totalItems += $cantidad;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    
-                    if ($totalItems > 0) {
-                        return $totalItems;
-                    }
-                }
-            } catch (\Exception $e) {
-                // Continuar con fallback
-            }
-            
-        } catch (\Exception $e) {
-            \Log::error('[PedidoEstadoCalculator] Error al obtener total de items reales', [
-                'numero_pedido' => $numeroPedido,
-                'error' => $e->getMessage()
-            ]);
-        }
-        
-        // Fallback: usar el método original (solo items existentes en bodega_detalles_talla)
-        return $this->obtenerTotalItems($numeroPedido);
     }
 
     /**
@@ -166,9 +70,9 @@ class PedidoEstadoCalculator
      * Verificar si TODOS los items están pendientes
      * 
      * Retorna true SOLO si:
-     * - Hay al menos 1 item real del pedido (total > 0)
-     * - TODOS los items reales están en estado "Pendiente" en bodega_detalles_talla
-     * - No hay items en otros estados (Entregado, En Progreso, etc.)
+     * - Hay al menos 1 item (total > 0)
+     * - TODOS los items no-anulados están en estado "Pendiente"
+     * - No hay items en otros estados (En Progreso, etc.)
      */
     private function todosPendientes(int $totalItems, int $itemsPendientes): bool
     {
@@ -177,11 +81,6 @@ class PedidoEstadoCalculator
 
     /**
      * Verificar si TODOS los items están entregados
-     * 
-     * Retorna true SOLO si:
-     * - Hay al menos 1 item real del pedido (total > 0)
-     * - TODOS los items reales están en estado "Entregado" en bodega_detalles_talla
-     * - No hay items en otros estados (Pendiente, En Progreso, etc.)
      */
     private function todosEntregados(int $totalItems, int $itemsEntregados): bool
     {

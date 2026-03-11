@@ -87,7 +87,6 @@ class PedidosController extends Controller
                 'paginaActual' => $datos['pagina_actual'] ?? 1,
                 'porPagina' => $datos['por_pagina'] ?? 20,
                 'search' => $request->query('search', ''),
-                'routeName' => 'gestion-bodega.pedidos',
             ]);
             
         } catch (\Exception $e) {
@@ -127,7 +126,6 @@ class PedidosController extends Controller
                 'paginaActual' => $datos['pagina_actual'] ?? 1,
                 'porPagina' => $datos['por_pagina'] ?? 20,
                 'search' => $request->query('search', ''),
-                'routeName' => 'gestion-bodega.pedidos-anulados',
             ]);
         } catch (\Exception $e) {
             \Log::error('Error en PedidosController@anulados: ' . $e->getMessage());
@@ -166,7 +164,6 @@ class PedidosController extends Controller
                 'paginaActual' => $datos['pagina_actual'] ?? 1,
                 'porPagina' => $datos['por_pagina'] ?? 20,
                 'search' => $request->query('search', ''),
-                'routeName' => 'gestion-bodega.pedidos-entregados',
             ]);
         } catch (\Exception $e) {
             \Log::error('Error en PedidosController@entregados: ' . $e->getMessage());
@@ -238,103 +235,6 @@ class PedidosController extends Controller
                             ?? null;
                     }
 
-                    // Si es un EPP, obtener el historial de homologaciones
-                    if (($item['area'] ?? '') === 'EPP' && !empty($item['pedido_epp_id'] ?? null)) {
-                        $pedidoEppId = $item['pedido_epp_id'];
-                        
-                        // PASO 1: Obtener el EPP actual
-                        $eppActual = DB::table('pedido_epp')
-                            ->select(['id', 'homologado_de'])
-                            ->where('id', $pedidoEppId)
-                            ->first();
-                        
-                        // PASO 2: Encontrar el EPP original en la cadena recursivamente
-                        $eppIdOriginal = $pedidoEppId;
-                        $intentos = 0;
-                        $maxIntentos = 10;
-                        
-                        while ($intentos < $maxIntentos) {
-                            $intentos++;
-                            $eppPadre = DB::table('pedido_epp')
-                                ->select(['id', 'homologado_de'])
-                                ->where('id', $eppIdOriginal)
-                                ->first();
-                            
-                            if (!$eppPadre || !$eppPadre->homologado_de) {
-                                break; // Encontramos el original
-                            }
-                            
-                            $eppIdOriginal = $eppPadre->homologado_de;
-                        }
-                        
-                        // PASO 3: Obtener toda la cadena desde el original (recursivamente)
-                        $historial = [];
-                        $eppActualId = $eppIdOriginal;
-                        $intentos = 0;
-                        
-                        while ($intentos < $maxIntentos) {
-                            $intentos++;
-                            
-                            $epp = DB::table('pedido_epp')
-                                ->leftJoin('epps', 'pedido_epp.epp_id', '=', 'epps.id')
-                                ->where('pedido_epp.id', $eppActualId)
-                                ->select([
-                                    'pedido_epp.id as pedido_epp_id',
-                                    'pedido_epp.epp_id',
-                                    'epps.nombre_completo as epp_nombre',
-                                    'pedido_epp.cantidad',
-                                    DB::raw("DATE_FORMAT(pedido_epp.created_at, '%Y-%m-%d %H:%i') as fecha_creacion"),
-                                    'pedido_epp.deleted_at',
-                                    'pedido_epp.observaciones',
-                                    'pedido_epp.homologado_de'
-                                ])
-                                ->first();
-                            
-                            if (!$epp) {
-                                break;
-                            }
-                            
-                            $historial[] = (array) $epp;
-                            
-                            // Buscar el siguiente en la cadena
-                            $siguiente = DB::table('pedido_epp')
-                                ->select(['id'])
-                                ->where('homologado_de', $epp->pedido_epp_id)
-                                ->first();
-                            
-                            if (!$siguiente) {
-                                break;
-                            }
-                            
-                            $eppActualId = $siguiente->id;
-                        }
-                        
-                        // Procesar historial para que sea compatible con el JS
-                        if (!empty($historial)) {
-                            $historialeFormatted = array_map(function($h) {
-                                return [
-                                    'pedido_epp_id' => $h['pedido_epp_id'],
-                                    'epp_id' => $h['epp_id'],
-                                    'epp_nombre' => $h['epp_nombre'],
-                                    'cantidad' => $h['cantidad'],
-                                    'fecha_creacion' => $h['fecha_creacion'],
-                                    'deleted_at' => $h['deleted_at'],
-                                    'observaciones' => $h['observaciones'] ?? '-',
-                                    'es_original' => $h['homologado_de'] === null,
-                                ];
-                            }, $historial);
-                            
-                            $item['tiene_historial'] = count($historialeFormatted) > 1;
-                            $item['historial_homologaciones'] = $historialeFormatted;
-                        } else {
-                            $item['tiene_historial'] = false;
-                            $item['historial_homologaciones'] = [];
-                        }
-                    } else {
-                        $item['tiene_historial'] = false;
-                        $item['historial_homologaciones'] = [];
-                    }
-
                     return $item;
                 }, $datos['items']);
                 
@@ -391,48 +291,18 @@ class PedidosController extends Controller
     public function show(Request $request, $pedidoId)
     {
         try {
-            // Obtener el ReciboPrenda buscando por numero_pedido (parámetro es numero_pedido, no id)
-            $reciboPrenda = ReciboPrenda::where('numero_pedido', $pedidoId)
-                ->orWhere('id', $pedidoId) // Fallback para compatibilidad con id directo
-                ->first();
+            // Obtener el ReciboPrenda para conseguir el numero_pedido
+            $reciboPrenda = ReciboPrenda::findOrFail($pedidoId);
             
-            // Si no encuentra ReciboPrenda, buscar en PedidoProduccion directamente
-            if (!$reciboPrenda) {
-                $pedidoProduccion = PedidoProduccion::where('numero_pedido', $pedidoId)
-                    ->orWhere('id', $pedidoId)
-                    ->firstOrFail();
-                $numeroPedidoFinal = $pedidoProduccion->numero_pedido;
-            } else {
-                $numeroPedidoFinal = $reciboPrenda->numero_pedido;
-            }
-            
-            // Marcar pedido como visto usando el numero_pedido (en ambos casos)
-            PedidoProduccion::where('numero_pedido', $numeroPedidoFinal)
+            // Marcar pedido como visto usando el numero_pedido
+            PedidoProduccion::where('numero_pedido', $reciboPrenda->numero_pedido)
                 ->update(['viewed_at' => Carbon::now()]);
             
             $datos = $this->bodegaPedidoService->obtenerDetallePedido($pedidoId);
             
-            \Log::debug('[PedidosController@show] Datos obtenidos del servicio', [
-                'items_count' => count($datos['items'] ?? []),
-                'items_tipos' => array_unique(array_map(fn($item) => $item['tipo'] ?? 'unknown', $datos['items'] ?? [])),
-                'items_areas' => array_unique(array_map(fn($item) => $item['area'] ?? 'null', $datos['items'] ?? [])),
-                'rolesDelUsuario' => $this->getUserRoles(),
-            ]);
-            
             // Verificar si el usuario es de solo lectura
             $rolesDelUsuario = $this->getUserRoles();
             $esReadOnly = $this->isReadOnly();
-            
-            // Log antes de filtrar
-            $itemsAntesDeFiltro = $datos['items'] ?? [];
-            \Log::debug('[PedidosController@show] Items ANTES de filtro', [
-                'count' => count($itemsAntesDeFiltro),
-                'items' => array_map(fn($item) => [
-                    'tipo' => $item['tipo'] ?? 'unknown',
-                    'area' => $item['area'] ?? 'null',
-                    'estado_bodega' => $item['estado_bodega'] ?? 'null'
-                ], $itemsAntesDeFiltro)
-            ]);
             
             // Filtrar items según el rol del usuario
             if (in_array('EPP-Bodega', $rolesDelUsuario)) {
@@ -452,12 +322,6 @@ class PedidosController extends Controller
                     $datos['items'] = array_values($datos['items']);
                 }
             }
-            
-            // Log después de filtrar
-            \Log::debug('[PedidosController@show] Items DESPUÉS de filtro', [
-                'count' => count($datos['items'] ?? []),
-                'filtro_aplicado' => in_array('EPP-Bodega', $rolesDelUsuario) ? 'EPP-Bodega' : (in_array('Costura-Bodega', $rolesDelUsuario) ? 'Costura-Bodega' : 'ninguno')
-            ]);
             
             // Agregar la variable esReadOnly a los datos
             $datos['esReadOnly'] = $esReadOnly;
@@ -552,22 +416,14 @@ class PedidosController extends Controller
             $query = BodegaDetalleTalla::porArea($area)
                 ->porEstado('Pendiente');
 
-            // Excluir pedidos anulados para ambas áreas
-            // IMPORTANTE: excluir values NULL de la subquery para evitar problema de NOT IN (NULL, ...)
-            $query->whereNotIn('numero_pedido', function($subquery) {
-                $subquery->select('numero_pedido')
-                    ->from('pedidos_produccion')
-                    ->where('estado', 'Anulada')
-                    ->whereNotNull('numero_pedido');  // <-- Excluir NULL de la subquery
-            });
-
-            // Excluir pedidos entregados del principal para ambas áreas (Costura y EPP)
-            $query->whereNotIn('numero_pedido', function($subquery) {
-                $subquery->select('numero_pedido')
-                    ->from('pedidos_produccion')
-                    ->where('estado', 'Entregado')
-                    ->whereNotNull('numero_pedido');  // <-- Excluir NULL de la subquery
-            });
+            // Para EPP, excluir pedidos entregados del principal
+            if ($area === 'EPP') {
+                $query->whereNotIn('numero_pedido', function($subquery) {
+                    $subquery->select('numero_pedido')
+                        ->from('pedidos_produccion')
+                        ->where('estado', 'Entregado');
+                });
+            }
 
             \Log::info('Query construida, total registros: ' . $query->count());
 
@@ -695,18 +551,12 @@ class PedidosController extends Controller
                         ->where('estado', 'Entregado');
                 };
                 
-                $anuladosSubquery = function($subquery) {
-                    $subquery->select('numero_pedido')
-                        ->from('pedidos_produccion')
-                        ->where('estado', 'Anulada');
-                };
-                
                 $estadisticas = [
-                    'total' => BodegaDetalleTalla::porArea('EPP')->whereNotIn('numero_pedido', $entregedosSubquery)->whereNotIn('numero_pedido', $anuladosSubquery)->count(),
-                    'pendientes' => BodegaDetalleTalla::porArea('EPP')->porEstado('Pendiente')->whereNotIn('numero_pedido', $entregedosSubquery)->whereNotIn('numero_pedido', $anuladosSubquery)->count(),
-                    'entregados' => BodegaDetalleTalla::porArea('EPP')->porEstado('Entregado')->whereNotIn('numero_pedido', $entregedosSubquery)->whereNotIn('numero_pedido', $anuladosSubquery)->count(),
-                    'anulados' => BodegaDetalleTalla::porArea('EPP')->porEstado('Anulado')->whereNotIn('numero_pedido', $entregedosSubquery)->whereNotIn('numero_pedido', $anuladosSubquery)->count(),
-                    'retrasados' => BodegaDetalleTalla::porArea('EPP')->retrasados()->whereNotIn('numero_pedido', $entregedosSubquery)->whereNotIn('numero_pedido', $anuladosSubquery)->count(),
+                    'total' => BodegaDetalleTalla::porArea('EPP')->whereNotIn('numero_pedido', $entregedosSubquery)->count(),
+                    'pendientes' => BodegaDetalleTalla::porArea('EPP')->porEstado('Pendiente')->whereNotIn('numero_pedido', $entregedosSubquery)->count(),
+                    'entregados' => BodegaDetalleTalla::porArea('EPP')->porEstado('Entregado')->whereNotIn('numero_pedido', $entregedosSubquery)->count(),
+                    'anulados' => BodegaDetalleTalla::porArea('EPP')->porEstado('Anulado')->whereNotIn('numero_pedido', $entregedosSubquery)->count(),
+                    'retrasados' => BodegaDetalleTalla::porArea('EPP')->retrasados()->whereNotIn('numero_pedido', $entregedosSubquery)->count(),
                 ];
             }
             
@@ -1704,73 +1554,6 @@ class PedidosController extends Controller
             'success' => $success,
             'visto' => $success ? true : false
         ]);
-    }
-
-    /**
-     * Obtener datos de homologación de un EPP
-     */
-    public function obtenerDatosHomologacion($eppId): JsonResponse
-    {
-        try {
-            $eppNuevo = \App\Models\PedidoEpp::with('epp')->find($eppId);
-            
-            if (!$eppNuevo) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'EPP no encontrado'
-                ], 404);
-            }
-
-            // Obtener el EPP anterior (homologado_de)
-            $eppAnterior = null;
-            if ($eppNuevo->homologado_de) {
-                $eppAnterior = \App\Models\PedidoEpp::withTrashed()
-                    ->with('epp')
-                    ->find($eppNuevo->homologado_de);
-            }
-
-            if (!$eppAnterior) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'EPP anterior no encontrado. Este EPP no fue homologado.'
-                ], 404);
-            }
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'epp_anterior' => [
-                        'id' => $eppAnterior->id,
-                        'nombre' => $eppAnterior->epp->nombre_completo ?? $eppAnterior->epp->nombre ?? 'EPP Sin nombre',
-                        'cantidad' => $eppAnterior->cantidad,
-                        'observaciones' => $eppAnterior->observaciones,
-                        'deleted_at' => $eppAnterior->deleted_at,
-                    ],
-                    'epp_nuevo' => [
-                        'id' => $eppNuevo->id,
-                        'nombre' => $eppNuevo->epp->nombre_completo ?? $eppNuevo->epp->nombre ?? 'EPP Sin nombre',
-                        'cantidad' => $eppNuevo->cantidad,
-                        'observaciones' => $eppNuevo->observaciones,
-                        'created_at' => $eppNuevo->created_at,
-                    ],
-                    'cambios' => [
-                        'epp_cambio' => $eppAnterior->epp->nombre_completo !== $eppNuevo->epp->nombre_completo,
-                        'cantidad_cambio' => $eppAnterior->cantidad !== $eppNuevo->cantidad,
-                        'observaciones_cambio' => $eppAnterior->observaciones !== $eppNuevo->observaciones,
-                        'cantidad_anterior' => $eppAnterior->cantidad,
-                        'cantidad_nueva' => $eppNuevo->cantidad,
-                    ]
-                ]
-            ], 200);
-
-        } catch (\Exception $e) {
-            \Log::error('Error en obtenerDatosHomologacion: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al obtener datos de homologación'
-            ], 500);
-        }
     }
 
     /**

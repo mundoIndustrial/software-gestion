@@ -88,7 +88,7 @@ class BodegaPedidoService
         // para que el listado siempre muestre los pedidos anulados.
         $todosLosPedidos = ReciboPrenda::with(['asesor'])
             ->whereIn('numero_pedido', $numerosAnulados)
-            ->orderBy('updated_at', 'desc')
+            ->orderBy('numero_pedido', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -117,32 +117,85 @@ class BodegaPedidoService
         // Determinar configuración según rol
         $areasPermitidas = $this->roleService->obtenerAreasPermitidas($rolesDelUsuario);
 
-        // Obtener números de pedidos que tengan estado 'Entregado' en pedidos_produccion
-        $numerosEntregados = PedidoProduccion::where('estado', 'Entregado')
+        // Obtener números de pedidos que tienen items con estado 'Entregado'
+        $numerosConEntregados = DB::table('bodega_detalles_talla')
+            ->where('estado_bodega', WarehouseConstants::STATE_DELIVERED)
             ->pluck('numero_pedido')
             ->filter(fn($n) => !empty($n))
             ->unique()
             ->values();
 
-        // Cargar recibos de pedidos entregados
+        // Cargar recibos por número de pedido que tengan items entregados
         $todosLosPedidos = ReciboPrenda::with(['asesor'])
-            ->whereIn('numero_pedido', $numerosEntregados)
-            ->orderBy('updated_at', 'desc')
+            ->whereIn('numero_pedido', $numerosConEntregados)
+            ->orderBy('numero_pedido', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();
 
         // Filtrar por áreas según rol
         $pedidosFiltradosPorRol = $this->filtrarPedidosPorArea($todosLosPedidos, $areasPermitidas);
 
-        // Paginar (incluye filtrado por búsqueda)
+        // Paginar
         $paginacion = $this->paginarPedidos($pedidosFiltradosPorRol, $request);
+
+        // Procesar datos para vista de lista con cálculo de estados
+        $pedidosPorPagina = [];
+        $pedidosAgrupados = $pedidosFiltradosPorRol->groupBy('numero_pedido');
+
+        foreach ($pedidosAgrupados as $numeroPedido => $pedidosDelNumero) {
+            $primerPedido = $pedidosDelNumero->first();
+            $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+            
+            // Calcular estados del pedido usando la calculadora centralizada
+            $estadosPedido = $this->estadoCalculator->calcular($numeroPedido);
+            
+            $tieneItemsPendientes = $estadosPedido['tiene_pendientes'];
+            $totalItems = $estadosPedido['total_items'];
+            $itemsEntregados = $estadosPedido['items_entregados'];
+            $itemsPendientes = $estadosPedido['items_pendientes'];
+            $todosEntregados = $estadosPedido['todos_entregados'];
+            $todosPendientes = $estadosPedido['todos_pendientes'];
+            
+            // Verificar si el pedido ha sido marcado como visto por el usuario actual
+            $userId = auth()->id();
+            $vistoPorUsuario = PedidoVistoSupervisor::where('pedido_id', $primerPedido->id)
+                ->where('user_id', $userId)
+                ->first();
+
+            // Verificar si el pedido ha sido revisado por el usuario actual
+            $pedidoRevisado = PedidoRevisado::where('pedido_id', $numeroPedido)
+                ->where('user_id', $userId)
+                ->first();
+
+            $pedidosPorPagina[] = [
+                'id' => $numeroPedido,
+                'numero_pedido' => $numeroPedido,
+                'cliente' => $primerPedido->cliente ?? WarehouseConstants::DEFAULT_NA,
+                'asesor' => $primerPedido->asesor?->nombre ?? $primerPedido->asesor?->name ?? WarehouseConstants::DEFAULT_NA,
+                'estado' => $pedidoProduccion?->estado ?? $primerPedido->estado,
+                'fecha_pedido' => $primerPedido->created_at ?? $primerPedido->fecha_pedido,
+                'cantidad_items' => $pedidosDelNumero->count(),
+                'viewed_at' => $vistoPorUsuario?->created_at, // Usar la fecha de la tabla pedidos_vistos_supervisor
+                'pedido_revisado' => !empty($pedidoRevisado),
+                'tiene_pendientes' => $tieneItemsPendientes,
+                'todos_pendientes' => $todosPendientes,
+                'todos_entregados' => $todosEntregados,
+            ];
+
+        }
 
         // Procesar datos para vista
         if ($request->query('view') === WarehouseConstants::VIEW_DETAILS) {
             return $this->procesarVistaDetallada($paginacion, $rolesDelUsuario, $areasPermitidas);
         }
 
-        return $this->procesarVistaLista($paginacion, $pedidosFiltradosPorRol);
+        return [
+            'view_type' => WarehouseConstants::VIEW_LIST,
+            'pedidos_por_pagina' => $pedidosPorPagina,
+            'total_pedidos' => count($pedidosPorPagina),
+            'pagina_actual' => $paginacion['pagina_actual'],
+            'por_pagina' => $paginacion['por_pagina'],
+        ];
     }
 
     /**
@@ -155,73 +208,31 @@ class BodegaPedidoService
         $areasPermitidas = $this->roleService->obtenerAreasPermitidas($rolesDelUsuario);
         $estadosPermitidos = $this->obtenerEstadosPermitidos();
         
-        \Log::info('[obtenerDetallePedido] Iniciando búsqueda', ['pedidoId' => $pedidoId]);
+        // Obtener el recibo base
+        $primerRecibo = ReciboPrenda::findOrFail($pedidoId);
+        $numeroPedido = $primerRecibo->numero_pedido;
         
-        // Obtener el recibo base buscando por numero_pedido (o por id como fallback)
-        $primerRecibo = ReciboPrenda::where('numero_pedido', $pedidoId)
-            ->orWhere('id', $pedidoId)
-            ->first();
-        
-        \Log::info('[obtenerDetallePedido] ReciboPrenda encontrado', [
-            'tiene_recibo' => !!$primerRecibo, 
-            'recibo_numero_pedido' => $primerRecibo?->numero_pedido ?? 'null',
-            'recibo_id' => $primerRecibo?->id ?? 'null'
-        ]);
-        
-        // Si no hay ReciboPrenda, buscar en PedidoProduccion
-        if (!$primerRecibo || empty($primerRecibo->numero_pedido)) {
-            $pedidoProduccion = PedidoProduccion::where('numero_pedido', $pedidoId)
-                ->orWhere('id', $pedidoId)
-                ->first();
-            
-            \Log::info('[obtenerDetallePedido] ReciboPrenda sin numero_pedido, buscando PedidoProduccion', [
-                'tiene_pedido' => !!$pedidoProduccion, 
-                'pedido_numero' => $pedidoProduccion?->numero_pedido ?? 'null'
+        // Validar que el recibo tenga número de pedido
+        if (empty($numeroPedido)) {
+            \Log::error('ReciboPrenda sin numero_pedido', [
+                'recibo_id' => $pedidoId,
+                'recibo_data' => $primerRecibo->toArray()
             ]);
-            
-            if (!$pedidoProduccion) {
-                throw new \Exception("Pedido no encontrado (numero_pedido: $pedidoId)");
-            }
-            
-            $numeroPedido = $pedidoProduccion->numero_pedido;
-            
-            // Crear un objeto ReciboPrenda ficticio para mantener compatibilidad
-            $primerRecibo = new ReciboPrenda([
-                'id' => $pedidoProduccion->id,
-                'numero_pedido' => $numeroPedido,
-                'estado' => $pedidoProduccion->estado,
-                'cliente' => $pedidoProduccion->cliente,
-                'asesor_id' => $pedidoProduccion->asesor_id,
-            ]);
-        } else {
-            $numeroPedido = $primerRecibo?->numero_pedido;
-            if (!$numeroPedido) {
-                throw new \Exception("ReciboPrenda sin numero_pedido (ID: $pedidoId)");
-            }
+            throw new \Exception('El recibo (ID: ' . $pedidoId . ') no tiene número de pedido asociado');
         }
         
         // Obtener info del pedido principal
         $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
 
         // Obtener todos los recibos del pedido
-        // Si el pedido principal está ANULADO/ANULADA o ENTREGADO, no filtrar por estadosPermitidos
-        // porque normalmente esa lista excluye ANULADA y ENTREGADO.
+        // Si el pedido principal está ANULADO/ANULADA, no filtrar por estadosPermitidos
+        // porque normalmente esa lista excluye ANULADA.
         $estadoPP = strtoupper(trim($pedidoProduccion?->estado ?? ''));
         $esAnulada = str_starts_with($estadoPP, 'ANULAD');
-        $esEntregada = $estadoPP === 'ENTREGADO';
 
-        \Log::info('[obtenerDetallePedido] Estado del pedido', [
-            'numero_pedido' => $numeroPedido,
-            'estado' => $estadoPP,
-            'es_anulada' => $esAnulada,
-            'es_entregada' => $esEntregada
-        ]);
-
-        $recibos = ($esAnulada || $esEntregada)
+        $recibos = $esAnulada
             ? ReciboPrenda::with(['asesor'])->where('numero_pedido', $numeroPedido)->get()
             : $this->bodegaRepository->obtenerRecibosPedido($numeroPedido, $estadosPermitidos);
-        
-        \Log::info('[obtenerDetallePedido] Recibos obtenidos', ['count' => $recibos->count(), 'es_anulada' => $esAnulada, 'es_entregada' => $esEntregada]);
         
         // Procesar ítems
         $items = $paraDespacho 
@@ -233,11 +244,11 @@ class BodegaPedidoService
         
         return [
             'pedido' => [
-                'id' => $primerRecibo->id ?? null,
-                'numero_pedido' => $numeroPedido ?? null,
-                'estado' => $pedidoProduccion?->estado ?? $primerRecibo?->estado ?? 'Desconocido',
-                'cliente' => $primerRecibo?->cliente ?? $pedidoProduccion?->cliente ?? 'Cliente no especificado',
-                'asesor' => $primerRecibo?->asesor?->nombre ?? $primerRecibo?->asesor?->name ?? null,
+                'id' => $primerRecibo->id,
+                'numero_pedido' => $numeroPedido,
+                'estado' => $pedidoProduccion?->estado ?? $primerRecibo->estado,
+                'cliente' => $primerRecibo->cliente ?? 'Cliente no especificado',
+                'asesor' => $primerRecibo->asesor?->nombre ?? $primerRecibo->asesor?->name ?? null,
             ],
             'items' => $items,
         ];
@@ -593,12 +604,7 @@ class BodegaPedidoService
                 }
                 
                 if (isset($datosCompletos->epps) && is_array($datosCompletos->epps)) {
-                    $eppsProcesados = $this->procesarEpps($datosCompletos->epps, $recibo, $rolesDelUsuario, $areasPermitidas, $pedidoProduccion);
-                    \Log::debug('[procesarItemsPedido] EPPs procesados', [
-                        'cantidad' => count($eppsProcesados),
-                        'areas' => array_map(fn($epp) => $epp['area'] ?? 'null', $eppsProcesados)
-                    ]);
-                    $items = array_merge($items, $eppsProcesados);
+                    $items = array_merge($items, $this->procesarEpps($datosCompletos->epps, $recibo, $rolesDelUsuario, $areasPermitidas, $pedidoProduccion));
                 }
                 
             } catch (\Exception $e) {
@@ -663,76 +669,10 @@ class BodegaPedidoService
     private function procesarEpps(array $epps, ReciboPrenda $recibo, array $rolesDelUsuario, array $areasPermitidas, ?PedidoProduccion $pedidoProduccion): array
     {
         $items = [];
-        $eppsProcesados = []; // Para evitar duplicados
-        
-        \Log::debug('[procesarEpps] Iniciando procesamiento', [
-            'cantidad_epps' => count($epps),
-            'numero_pedido' => $recibo->numero_pedido,
-            'epps_ids' => array_map(fn($epp) => $epp['pedido_epp_id'] ?? 'null', $epps)
-        ]);
         
         foreach ($epps as $eppEnriquecido) {
-            $pedidoEppId = $eppEnriquecido['pedido_epp_id'] ?? null;
-            
-            // Saltar si ya fue procesado
-            if (in_array($pedidoEppId, $eppsProcesados)) {
-                continue;
-            }
-            
-            \Log::debug('[procesarEpps] Procesando EPP', [
-                'pedido_epp_id' => $pedidoEppId,
-                'epp_nombre' => $eppEnriquecido['nombre'] ?? 'unknown'
-            ]);
-            
-            if ($pedidoEppId) {
-                $pedidoEpp = \App\Models\PedidoEpp::withTrashed()->find($pedidoEppId);
-                
-                if ($pedidoEpp) {
-                    // SOLO PROCESAR EPPs ORIGINALES (homologado_de IS NULL)
-                    if ($pedidoEpp->homologado_de === null) {
-                        \Log::debug('[procesarEpps] EPP ORIGINAL encontrado', [
-                            'pedido_epp_id' => $pedidoEppId,
-                            'deleted_at' => $pedidoEpp->deleted_at
-                        ]);
-                        
-                        // Obtener historial completo de cambios
-                        $historialeHomologaciones = $this->obtenerHistorialEpp($pedidoEppId);
-                        
-                        // Crear item pasando el historial
-                        $items[] = $this->crearItemEpp(
-                            $eppEnriquecido,
-                            $recibo,
-                            $rolesDelUsuario,
-                            $areasPermitidas,
-                            $pedidoProduccion,
-                            $historialeHomologaciones
-                        );
-                        
-                        $eppsProcesados[] = $pedidoEppId;
-                        
-                        \Log::debug('[procesarEpps] EPP ORIGINAL incluido en tabla', [
-                            'pedido_epp_id' => $pedidoEppId,
-                            'historial_cambios' => count($historialeHomologaciones)
-                        ]);
-                    } else {
-                        // Este EPP es un cambio de otro, será procesado como parte del historial del original
-                        \Log::debug('[procesarEpps] EPP de cambio ignorado en tabla (se mostrará en expansión)', [
-                            'pedido_epp_id' => $pedidoEppId,
-                            'homologado_de' => $pedidoEpp->homologado_de
-                        ]);
-                    }
-                } else {
-                    \Log::debug('[procesarEpps] PedidoEpp NO encontrado', [
-                        'pedido_epp_id' => $pedidoEppId
-                    ]);
-                }
-            }
+            $items[] = $this->crearItemEpp($eppEnriquecido, $recibo, $rolesDelUsuario, $areasPermitidas, $pedidoProduccion);
         }
-        
-        \Log::debug('[procesarEpps] Resultado final', [
-            'items_creados' => count($items),
-            'numero_pedido' => $recibo->numero_pedido
-        ]);
         
         return $items;
     }
@@ -852,60 +792,7 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
         ];
     }
 
-    /**
-     * Obtener historial completo de homologaciones de un EPP original
-     * Sigue la cadena: 371 → 372 → 373
-     */
-    private function obtenerHistorialEpp(int $pedidoEppIdOriginal): array
-    {
-        $historial = [];
-        $pedidoEppIdActual = $pedidoEppIdOriginal;
-        $intentos = 0;
-        $maxIntentos = 10; // Protección contra loops infinitos
-        
-        while ($pedidoEppIdActual !== null && $intentos < $maxIntentos) {
-            $intentos++;
-            
-            $pedidoEpp = \App\Models\PedidoEpp::withTrashed()
-                ->with('epp')
-                ->find($pedidoEppIdActual);
-            
-            if (!$pedidoEpp) {
-                \Log::warning('[obtenerHistorialEpp] EPP no encontrado', [
-                    'pedido_epp_id' => $pedidoEppIdActual
-                ]);
-                break;
-            }
-            
-            // Agregar al historial
-            $historial[] = [
-                'pedido_epp_id' => $pedidoEpp->id,
-                'epp_id' => $pedidoEpp->epp_id,
-                'epp_nombre' => $pedidoEpp->epp->nombre_completo ?? 'EPP sin nombre',
-                'cantidad' => $pedidoEpp->cantidad,
-                'fecha_creacion' => $pedidoEpp->created_at?->format('Y-m-d H:i'),
-                'deleted_at' => $pedidoEpp->deleted_at?->format('Y-m-d H:i'),
-                'observaciones' => $pedidoEpp->observaciones ?? '',
-                'es_original' => $pedidoEpp->homologado_de === null,
-            ];
-            
-            // Buscar el siguiente en la cadena (el que tiene homologado_de = id actual)
-            $siguiente = \App\Models\PedidoEpp::where('homologado_de', $pedidoEppIdActual)
-                ->withTrashed()
-                ->first();
-            
-            $pedidoEppIdActual = $siguiente?->id;
-        }
-        
-        \Log::debug('[obtenerHistorialEpp] Historial completo obtenido', [
-            'pedido_epp_id_original' => $pedidoEppIdOriginal,
-            'cantidad_cambios' => count($historial)
-        ]);
-        
-        return $historial;
-    }
-
-    private function crearItemEpp(array $eppEnriquecido, ReciboPrenda $recibo, array $rolesDelUsuario, array $areasPermitidas, ?PedidoProduccion $pedidoProduccion, array $historialeHomologaciones = []): array
+    private function crearItemEpp(array $eppEnriquecido, ReciboPrenda $recibo, array $rolesDelUsuario, array $areasPermitidas, ?PedidoProduccion $pedidoProduccion): array
     {
         $eppNombre = $eppEnriquecido['nombre'] ?? WarehouseConstants::AREA_EPP;
         $eppCantidad = $eppEnriquecido['cantidad'] ?? 0;
@@ -915,26 +802,10 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
         // El pedido_epp_id ya viene en los datos enriquecidos, no hay que buscarlo
         $pedidoEppId = $eppEnriquecido['pedido_epp_id'] ?? null;
         
-        // PROCESAR HISTORIAL DE HOMOLOGACIONES
-        // Si hay más de 1 registro en el historial, existe un botón "Ver cambios"
-        $tieneHistorial = count($historialeHomologaciones) > 1;
-        
-        \Log::debug('[crearItemEpp] Historial recibido', [
-            'pedido_epp_id' => $pedidoEppId,
-            'cantidad_registros_en_historial' => count($historialeHomologaciones),
-            'tiene_botón_ver_cambios' => $tieneHistorial
-        ]);
+        // Ya no necesitamos buscar en BD, el ID viene directamente
         
         // Obtener datos de bodega
         $bodegaData = $this->obtenerDatosBodega($recibo->numero_pedido, $eppId, $eppNombre, $eppCantidad, $rolesDelUsuario);
-        
-        \Log::debug('[crearItemEpp] Datos obtenidos de bodega', [
-            'eppNombre' => $eppNombre,
-            'eppId' => $eppId,
-            'bodegaData_keys' => array_keys($bodegaData),
-            'area' => $bodegaData['area'] ?? 'NULL',
-            'estado_bodega' => $bodegaData['estado_bodega'] ?? 'NULL'
-        ]);
         
         // Obtener asesor de forma segura
         $asesor = 'N/A';
@@ -945,57 +816,38 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
         // Obtener empresa
         $empresa = $recibo->cliente ?? 'N/A';
         
-        // NO asignar valores por defecto si no hay registro en bodega_detalles_talla
-        $area = $bodegaData['area'] ?? null;
-        $estadoBodega = $bodegaData['estado_bodega'] ?? null;
-        $cantidad = $bodegaData['cantidad'] ?? $eppCantidad;
-        $pendientes = $bodegaData['pendientes'] ?? null;
-        $fechaEntrega = $bodegaData['fecha_entrega'] ?? null;
-        $fechaPedido = $bodegaData['fecha_pedido'] ?? null;
-        
-        $itemEpp = [
+        return [
             'id' => $recibo->id,
             'tipo' => WarehouseConstants::AREA_EPP,
             'numero_pedido' => $recibo->numero_pedido,
             'pedido_produccion_id' => $pedidoProduccion?->id,
             'recibo_prenda_id' => $recibo->id,
             'pedido_epp_id' => $pedidoEppId,
-            'tiene_historial' => $tieneHistorial,
-            'historial_homologaciones' => $historialeHomologaciones,
             'asesor' => $asesor,
             'empresa' => $empresa,
             'descripcion' => $eppEnriquecido,
             'talla' => $eppId,
-            'cantidad' => $cantidad,
+            'cantidad' => $bodegaData['cantidad'] ?? $eppCantidad,
             'cantidad_total' => $eppCantidad,
             'observaciones' => $bodegaData['observaciones'] ?? null,
-            'pendientes' => $pendientes,
-            'fecha_entrega' => $fechaEntrega,
-            'fecha_pedido' => $fechaPedido,
-            'estado_bodega' => $estadoBodega,
+            'pendientes' => $bodegaData['pendientes'] ?? null,
+            'fecha_entrega' => $bodegaData['fecha_entrega'],
+            'fecha_pedido' => $bodegaData['fecha_pedido'],
+            'estado_bodega' => $bodegaData['estado_bodega'],
             'costura_estado' => $bodegaData['costura_estado'] ?? null,
             'epp_estado' => $bodegaData['epp_estado'] ?? null,
-            'area' => $area,
+            'area' => $bodegaData['area'],
             'tallas' => [[
                 'talla' => $eppId,
-                'cantidad' => $cantidad,
-                'pendientes' => $pendientes,
-                'area' => $area,
-                'estado_bodega' => $estadoBodega,
+                'cantidad' => $bodegaData['cantidad'] ?? $eppCantidad,
+                'pendientes' => $bodegaData['pendientes'] ?? 0,
+                'area' => $bodegaData['area'] ?? '',
+                'estado_bodega' => $bodegaData['estado_bodega'] ?? WarehouseConstants::STATE_PENDING,
                 'pedido_produccion_id' => $bodegaData['id'] ?? null,
                 'observaciones' => $bodegaData['observaciones'] ?? '',
-                'fecha_entrega' => $fechaEntrega ?? ''
+                'fecha_entrega' => $bodegaData['fecha_entrega'] ?? ''
             ]],
         ];
-        
-        \Log::debug('[crearItemEpp] Item creado', [
-            'area' => $itemEpp['area'],
-            'tipo' => $itemEpp['tipo'],
-            'eppNombre' => $eppNombre,
-            'tiene_historial' => $tieneHistorial
-        ]);
-        
-        return $itemEpp;
     }
 
     private function obtenerDatosBodega(string $numeroPedido, string $talla, ?string $prendaNombre, int $cantidad, array $rolesDelUsuario, ?int $tallaColorId = null, ?int $prendaId = null, ?string $genero = null): array
@@ -1059,9 +911,6 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
         $area = $datosFinales?->area ?? $bodegaDataBase?->area;
         $estadoEspecifico = $this->obtenerEstadoEspecifico($area, $estado, $datosFinales, $bodegaDataBase);
         
-        // NO asignar valores por defecto si no hay registro en bodega_detalles_talla
-        // Dejar null/vacío para que se vean como campos sin llenar
-        
         $resultado = [
             'id' => $datosFinales?->id,
             'estado' => $estadoEspecifico,
@@ -1076,14 +925,6 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
             WarehouseConstants::FIELD_FECHA_PEDIDO => $bodegaDataBase?->fecha_pedido ? Carbon::parse($bodegaDataBase->fecha_pedido)->format('Y-m-d') : null,
             'usuario_nombre' => $datosFinales?->usuario_bodega_nombre ?? $bodegaDataBase?->usuario_bodega_nombre,
         ];
-        
-        \Log::debug('[obtenerDatosBodega] Resultado final', [
-            'numeroPedido' => $numeroPedido,
-            'talla' => $talla,
-            'area' => $resultado[WarehouseConstants::FIELD_AREA],
-            'estado_bodega' => $resultado[WarehouseConstants::FIELD_ESTADO_BODEGA],
-            'bodegaDataBase_exists' => $bodegaDataBase ? true : false
-        ]);
         
         return $resultado;
     }
@@ -1202,9 +1043,6 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
             // Paso 5: Guardar
             $detalleExistente->fill($datosBasicos);
             $detalleExistente->save();
-            
-            // Actualizar el timestamp del pedido para que aparezca primero en la lista
-            $pedido->touch();
             
             return $detalleExistente;
             
@@ -1508,9 +1346,6 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
             ],
             $updateBase
         );
-        
-        // Actualizar el timestamp del pedido para que aparezca primero en la lista
-        $pedido->touch();
 
         return $guardado;
     }

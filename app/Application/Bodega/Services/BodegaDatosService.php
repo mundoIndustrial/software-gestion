@@ -153,18 +153,6 @@ class BodegaDatosService
                     // Estructura enriquecida que espera la vista pendiente-costura-show
                     'descripcion' => $descripcionData
                 ];
-                
-                // Si es un EPP, obtener el pedido_epp_id
-                if ($detalle->area === 'EPP') {
-                    // Buscar el pedido_epp correspondiente
-                    $pedidoEpp = DB::table('pedido_epp')
-                        ->where('pedido_produccion_id', $pedidoProduccion?->id)
-                        ->where('cantidad', $detalle->cantidad)
-                        ->orderBy('id', 'asc')
-                        ->first(['id']);
-                    
-                    $items[count($items) - 1]['pedido_epp_id'] = $pedidoEpp?->id ?? null;
-                }
             }
             
             // Obtener información del pedido principal
