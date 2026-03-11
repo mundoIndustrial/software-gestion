@@ -1525,6 +1525,7 @@ class InsumosController extends Controller
                 $data[] = [
                     'color' => $metraje->color,
                     'metraje' => $metraje->metraje,
+                    'tipo_modo' => $metraje->tipo_modo ?? 'color',
                     'prenda_id' => $prendaId
                 ];
             }

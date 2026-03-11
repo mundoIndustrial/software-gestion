@@ -1937,7 +1937,8 @@ class PedidoController extends Controller
                 $response['data'] = $metrajesPorColor->map(function ($item) {
                     return [
                         'color' => $item->color,
-                        'metraje' => $item->metraje
+                        'metraje' => $item->metraje,
+                        'tipo_modo' => $item->tipo_modo ?? 'color'
                     ];
                 })->toArray();
             }

@@ -477,10 +477,23 @@ export class ReceiptRenderer {
                         metrajeSpan.closest('span').style.display = 'block';
                     }
                     
-                    console.log('[ReceiptRenderer] Modo NORMAL: Ancho + Metraje en barra inferior');
+                    // Mostrar metrajes por color si existen
+                    const metrajesValidos = (data.data || []).filter(item => item.color && item.metraje);
+                    const contenedorMetrajes = document.getElementById('metrajes-por-color-container');
+                    
+                    if (contenedorMetrajes && metrajesValidos.length > 0) {
+                        contenedorMetrajes.innerHTML = '';
+                        metrajesValidos.forEach(item => {
+                            const span = document.createElement('span');
+                            span.textContent = `${item.color.toUpperCase()}: ${item.metraje} m`;
+                            contenedorMetrajes.appendChild(span);
+                        });
+                    }
+                    
+                    console.log('[ReceiptRenderer] Modo NORMAL: Ancho + Metraje en barra inferior + Metrajes por color');
                     
                 } else if (tipoModo === 'color') {
-                    // MODO POR COLOR: Solo Ancho en barra inferior, metraje en descripción por color
+                    // MODO POR COLOR: Solo Ancho en barra inferior, metraje en contenedor por color
                     if (contenedor) {
                         contenedor.style.display = 'block';
                         
@@ -497,12 +510,25 @@ export class ReceiptRenderer {
                         if (metrajeSpan) {
                             metrajeSpan.closest('span').style.display = 'none';
                         }
+                        
+                        // Agregar lista de metrajes por color en el contenedor dedicado
+                        const metrajesValidos = (data.data || []).filter(item => item.color && item.metraje);
+                        const contenedorMetrajes = document.getElementById('metrajes-por-color-container');
+                        
+                        if (contenedorMetrajes) {
+                            contenedorMetrajes.innerHTML = '';
+                            
+                            if (metrajesValidos.length > 0) {
+                                metrajesValidos.forEach(item => {
+                                    const span = document.createElement('span');
+                                    span.textContent = `${item.color.toUpperCase()}: ${item.metraje} m`;
+                                    contenedorMetrajes.appendChild(span);
+                                });
+                            }
+                        }
                     }
                     
-                    // Inyectar metrajes en la descripción (junto a cada color)
-                    this._inyectarMetrajesEnDescripcion(data.data);
-                    
-                    console.log('[ReceiptRenderer] Modo COLOR: Metraje inyectado en descripción por color');
+                    console.log('[ReceiptRenderer] Modo COLOR: Metrajes en contenedor por color');
                     
                 } else if (tipoModo === 'pieza') {
                     // MODO POR PIEZA: Ancho en columna izquierda + metrajes por color en columna derecha
@@ -575,6 +601,40 @@ export class ReceiptRenderer {
                     }
                     
                     console.log('[ReceiptRenderer] Modo A MANO: Contenido de texto libre');
+                    
+                } else {
+                    // SIN TIPO_MODO: Si hay metrajes por color, mostrarlos en el contenedor
+                    const metrajesValidos = (data.data || []).filter(item => item.color && item.metraje);
+                    
+                    if (metrajesValidos.length > 0 && contenedor) {
+                        contenedor.style.display = 'block';
+                        
+                        const vistaNormal = document.getElementById('ancho-metraje-normal');
+                        const vistaMano = document.getElementById('ancho-metraje-mano');
+                        if (vistaNormal) {
+                            vistaNormal.classList.remove('hidden-view');
+                            vistaNormal.style.display = 'block';
+                        }
+                        if (vistaMano) vistaMano.style.display = 'none';
+                        
+                        // Ocultar metraje de la barra inferior
+                        if (metrajeSpan) {
+                            metrajeSpan.closest('span').style.display = 'none';
+                        }
+                        
+                        // Mostrar metrajes por color en el contenedor
+                        const contenedorMetrajes = document.getElementById('metrajes-por-color-container');
+                        if (contenedorMetrajes) {
+                            contenedorMetrajes.innerHTML = '';
+                            metrajesValidos.forEach(item => {
+                                const span = document.createElement('span');
+                                span.textContent = `${item.color.toUpperCase()}: ${item.metraje} m`;
+                                contenedorMetrajes.appendChild(span);
+                            });
+                        }
+                        
+                        console.log('[ReceiptRenderer] Sin tipo_modo pero con metrajes por color: mostrados en contenedor');
+                    }
                 }
             })
             .catch(error => {

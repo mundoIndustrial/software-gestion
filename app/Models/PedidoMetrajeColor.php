@@ -13,6 +13,7 @@ class PedidoMetrajeColor extends Model
         'prenda_pedido_id',
         'color',
         'metraje',
+        'tipo_modo',
         'creado_por',
         'actualizado_por'
     ];
