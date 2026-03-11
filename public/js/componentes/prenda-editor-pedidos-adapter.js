@@ -829,6 +829,48 @@
         const prendaId = prenda.id || prenda.prenda_pedido_id;
         console.log('[PedidosAdapter] Editando prenda:', prenda.nombre_prenda || prenda.nombre, 'id:', prendaId, 'pedidoId:', pedidoId);
 
+        // ===== VALIDACIÓN: Bloquear edición si el pedido NO está en estados permitidos =====
+        const estadoPedido = window.datosEdicionPedido?.estado;
+        const estadoAtributo = document.querySelector(`[data-pedido-id="${pedidoId}"]`)?.getAttribute('data-estado');
+        const estadoActual = estadoAtributo || estadoPedido;
+        
+        // Estados permitidos para editar
+        const estadosPermitidos = ['pendiente_cartera', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA'];
+        const puedeEditar = estadosPermitidos.some(estado => 
+            estadoActual?.toUpperCase() === estado.toUpperCase()
+        );
+        
+        console.log('[PedidosAdapter] 🔍 DEBUG - Validación edición:', {
+            estadoPedido: estadoPedido,
+            estadoAtributo: estadoAtributo,
+            estadoActual: estadoActual,
+            puedeEditar: puedeEditar,
+            estadosPermitidos: estadosPermitidos
+        });
+        
+        if (!puedeEditar) {
+            console.warn('[PedidosAdapter] ⚠️ Pedido en estado no permitido para edición - Acceso bloqueado');
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '⛔ Pedido ya aprobado',
+                    html: '<p>Este pedido <strong>ya fue aprobado</strong> y por ende <strong>la prenda no se puede editar</strong>.</p><p style="margin-top: 1rem; color: #666;">Solo se pueden editar prendas en pedidos pendientes de aprobación.</p>',
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#1e40af',
+                    didOpen: (modal) => {
+                        const container = modal.closest('.swal2-container');
+                        if (container) {
+                            container.style.display = 'flex';
+                            container.style.alignItems = 'center';
+                            container.style.justifyContent = 'center';
+                            container.style.zIndex = '10000';
+                        }
+                    }
+                });
+            }
+            return;
+        }
+
         // Guardar contexto
         window._editandoPrendaDePedido = {
             pedidoId: pedidoId,
@@ -1281,6 +1323,48 @@
     window.abrirModalEliminarPrenda = function(prenda, prendaIndex, pedidoId) {
         const prendaId = prenda.id || prenda.prenda_pedido_id;
         console.log('[PedidosAdapter] 🗑️ Eliminando prenda:', prenda.nombre_prenda || prenda.nombre, 'id:', prendaId, 'pedidoId:', pedidoId);
+
+        // ===== VALIDACIÓN: Bloquear eliminación si el pedido NO está en estados permitidos =====
+        const estadoPedido = window.datosEdicionPedido?.estado;
+        const estadoAtributo = document.querySelector(`[data-pedido-id="${pedidoId}"]`)?.getAttribute('data-estado');
+        const estadoActual = estadoAtributo || estadoPedido;
+        
+        // Estados permitidos para eliminar
+        const estadosPermitidos = ['pendiente_cartera', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA'];
+        const puedeEliminar = estadosPermitidos.some(estado => 
+            estadoActual?.toUpperCase() === estado.toUpperCase()
+        );
+        
+        console.log('[PedidosAdapter] 🔍 DEBUG - Validación eliminación:', {
+            estadoPedido: estadoPedido,
+            estadoAtributo: estadoAtributo,
+            estadoActual: estadoActual,
+            puedeEliminar: puedeEliminar,
+            estadosPermitidos: estadosPermitidos
+        });
+        
+        if (!puedeEliminar) {
+            console.warn('[PedidosAdapter] ⚠️ Pedido en estado no permitido para eliminación - Acceso bloqueado');
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '⛔ Pedido ya aprobado',
+                    html: '<p>Este pedido <strong>ya fue aprobado</strong> y por ende <strong>la prenda no se puede eliminar</strong>.</p><p style="margin-top: 1rem; color: #666;">Solo se pueden eliminar prendas en pedidos pendientes de aprobación.</p>',
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#1e40af',
+                    didOpen: (modal) => {
+                        const container = modal.closest('.swal2-container');
+                        if (container) {
+                            container.style.display = 'flex';
+                            container.style.alignItems = 'center';
+                            container.style.justifyContent = 'center';
+                            container.style.zIndex = '10000';
+                        }
+                    }
+                });
+            }
+            return;
+        }
 
         if (!pedidoId || !prendaId) {
             console.error('[PedidosAdapter] Faltan pedidoId o prendaId para eliminar');
