@@ -41,107 +41,41 @@
                     <table class="w-full text-sm">
                         <thead class="bg-slate-50 border-b border-slate-200">
                             <tr>
-                                <th class="px-6 py-3 text-center font-medium text-slate-700 w-24">
-                                    Visto
+                                <th class="px-6 py-3 text-center font-medium text-slate-700 w-20">
+                                    Revisado
                                 </th>
-                                <th class="px-6 py-3 text-center font-medium text-slate-700 w-32">
+                                <th class="px-6 py-3 text-center font-medium text-slate-700 w-20">
                                     Acción
                                 </th>
                                 <th class="px-6 py-3 text-left font-medium text-slate-700">
-                                    <div class="flex items-center gap-2">
-                                        Nº Pedido
-                                        <button 
-                                            type="button"
-                                            onclick="abrirModalFiltros('numero_pedido')"
-                                            class="p-1 hover:bg-slate-200 rounded transition-colors"
-                                            title="Filtrar por número de pedido"
-                                        >
-                                            <span class="material-symbols-rounded text-slate-600 text-sm">filter_alt</span>
-                                        </button>
-                                    </div>
+                                    Nº Pedido
                                 </th>
                                 <th class="px-6 py-3 text-left font-medium text-slate-700">
-                                    <div class="flex items-center gap-2">
-                                        Cliente
-                                        <button 
-                                            type="button"
-                                            onclick="abrirModalFiltros('cliente')"
-                                            class="p-1 hover:bg-slate-200 rounded transition-colors"
-                                            title="Filtrar por cliente"
-                                        >
-                                            <span class="material-symbols-rounded text-slate-600 text-sm">filter_alt</span>
-                                        </button>
-                                    </div>
+                                    Cliente
                                 </th>
                                 <th class="px-6 py-3 text-left font-medium text-slate-700">
-                                    <div class="flex items-center gap-2">
-                                        Asesor
-                                        <button 
-                                            type="button"
-                                            onclick="abrirModalFiltros('asesor')"
-                                            class="p-1 hover:bg-slate-200 rounded transition-colors"
-                                            title="Filtrar por asesor"
-                                        >
-                                            <span class="material-symbols-rounded text-slate-600 text-sm">filter_alt</span>
-                                        </button>
-                                    </div>
-                                </th>
-                                <th class="px-6 py-3 text-left font-medium text-slate-700">
-                                    <div class="flex items-center gap-2">
-                                        Estado
-                                        <button 
-                                            type="button"
-                                            onclick="abrirModalFiltros('estado')"
-                                            class="p-1 hover:bg-slate-200 rounded transition-colors"
-                                            title="Filtrar por estado"
-                                        >
-                                            <span class="material-symbols-rounded text-slate-600 text-sm">filter_alt</span>
-                                        </button>
-                                    </div>
+                                    Asesor
                                 </th>
                                 <th class="px-6 py-3 text-center font-medium text-slate-700">
-                                    <div class="flex items-center justify-center gap-2">
-                                        Creación
-                                        <button 
-                                            type="button"
-                                            onclick="abrirModalFiltros('fecha')"
-                                            class="p-1 hover:bg-slate-200 rounded transition-colors"
-                                            title="Filtrar por fecha de creación"
-                                        >
-                                            <span class="material-symbols-rounded text-slate-600 text-sm">filter_alt</span>
-                                        </button>
-                                    </div>
+                                    Creación
                                 </th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200">
                             @foreach($pedidosPorPagina as $pedidoData)
-                                <tr class="hover:opacity-75 transition-opacity @if(auth()->user()->hasRole('EPP-Bodega') && !empty($pedidoData['viewed_at'])) bg-green-100 @elseif($pedidoData['tiene_pendientes'] ?? false) bg-yellow-100 @elseif($pedidoData['todos_entregados'] ?? false) bg-blue-100 @else bg-white @endif" data-pedido-id="{{ $pedidoData['id'] }}">
+                                <tr class="hover:opacity-75 transition-opacity @if($pedidoData['todos_pendientes'] ?? false) bg-yellow-100 @elseif($pedidoData['todos_entregados'] ?? false) bg-blue-100 @else bg-white @endif" data-pedido-id="{{ $pedidoData['id'] }}">
                                     <td class="px-6 py-4 text-center">
-                                        @if(auth()->user()->hasRole('EPP-Bodega'))
-                                            <input type="checkbox" 
-                                                   class="w-6 h-6 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 cursor-pointer transform hover:scale-110 transition-all duration-200" 
-                                                   @if(!empty($pedidoData['viewed_at'])) checked @endif
-                                                   onchange="marcarComoVisto({{ $pedidoData['id'] }}, this.checked)">
-                                        @else
-                                            <!-- Para otros roles, no mostrar nada -->
-                                        @endif
+                                        <input type="checkbox" 
+                                               class="w-5 h-5 rounded cursor-pointer" 
+                                               @if(!empty($pedidoData['pedido_revisado'])) checked @endif
+                                               onchange="guardarCheckPedido({{ $pedidoData['id'] }}, this.checked)"
+                                               title="Marcar pedido como revisado">
                                     </td>
                                     <td class="px-6 py-4 text-center">
-                                        <div class="flex gap-1 justify-center">
-                                            <a href="{{ route('gestion-bodega.pedidos-show', $pedidoData['id']) }}"
-                                               class="inline-block px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition-colors">
-                                                Ver
-                                            </a>
-                                            @if(!empty($pedidoData['viewed_at']) && !($pedidoData['tiene_pendientes'] ?? false) && !($pedidoData['todos_entregados'] ?? false))
-                                                <button type="button"
-                                                        onclick="desmarcarPedido({{ $pedidoData['id'] }}, this)"
-                                                        class="inline-block px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium rounded transition-colors"
-                                                        title="Desmarcar como no visto">
-                                                    ↶
-                                                </button>
-                                            @endif
-                                        </div>
+                                        <a href="{{ route('gestion-bodega.pedidos-show', $pedidoData['id']) }}"
+                                           class="inline-block px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition-colors">
+                                            Ver
+                                        </a>
                                     </td>
                                     <td class="px-6 py-4 font-medium text-black">
                                         {{ $pedidoData['numero_pedido'] }}
@@ -151,24 +85,6 @@
                                     </td>
                                     <td class="px-6 py-4 text-black">
                                         {{ $pedidoData['asesor'] ?? '—' }}
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        @php
-                                            $estado = strtoupper(trim($pedidoData['estado'] ?? ''));
-                                            $colorClase = match($estado) {
-                                                'ENTREGADO' => 'bg-green-50 text-green-700',
-                                                'EN EJECUCIÓN' => 'bg-blue-50 text-blue-700',
-                                                'PENDIENTE_SUPERVISOR' => 'bg-amber-50 text-amber-700',
-                                                'PENDIENTE_INSUMOS' => 'bg-orange-50 text-orange-700',
-                                                'NO INICIADO' => 'bg-slate-50 text-slate-700',
-                                                'ANULADA' => 'bg-red-50 text-red-700',
-                                                'DEVUELTO_A_ASESORA' => 'bg-purple-50 text-purple-700',
-                                                default => 'bg-slate-50 text-slate-700'
-                                            };
-                                        @endphp
-                                        <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded {{ $colorClase }}">
-                                            {{ str_replace('_', ' ', $estado) }}
-                                        </span>
                                     </td>
                                     <td class="px-6 py-4 text-center text-black">
                                         {{ \Carbon\Carbon::parse($pedidoData['fecha_pedido'])->format('d/m/Y h:i:s A') }}
@@ -717,6 +633,34 @@ document.addEventListener('keydown', function(e) {
         cerrarModalFiltros();
     }
 });
+
+// Función para guardar el check de revisión del pedido
+async function guardarCheckPedido(pedidoId, revisado) {
+    try {
+        const response = await fetch(`/gestion-bodega/pedidos/${pedidoId}/revisar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            body: JSON.stringify({ revisado: revisado })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            console.log(`Pedido ${pedidoId} marcado como ${revisado ? 'revisado' : 'no revisado'}`);
+            // Recargar la página para mostrar el estado guardado en la DB
+            setTimeout(() => {
+                location.reload();
+            }, 500);
+        } else {
+            console.error('Error al guardar revisión:', data.message);
+        }
+    } catch (error) {
+        console.error('Error en la petición:', error);
+    }
+}
 
 // Función para desmarcar un pedido como no visto
 async function desmarcarPedido(pedidoId, button) {
