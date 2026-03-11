@@ -28,6 +28,143 @@ if (window.catálogoTallasDisponibles === undefined) {
 
 // Variables para rastrear el estado del modal
 window.generoActualModal = null;
+
+/**
+ * ========== SINCRONIZACIÓN CON MODAL DE PROCESO ==========
+ * Cuando se actualizan las tallas de la prenda, sincronizar automáticamente
+ * el resumen de tallas en el modal del proceso (si está abierto)
+ */
+window.sincronizarTallasConModalProceso = function() {
+    try {
+        // Solo sincronizar si el modal del proceso está visible
+        const modalProceso = document.getElementById('modal-proceso-generico');
+        if (!modalProceso || modalProceso.style.display === 'none') {
+            console.log('[sincronizarTallasConModalProceso] ℹ️ Modal de proceso no visible, sincronización saltada');
+            return;
+        }
+        
+        console.log('[sincronizarTallasConModalProceso] 🔄 Iniciando sincronización...');
+        
+        // DETECTAR MODO: ¿Hay datos existentes en tallasCantidadesProceso?
+        const hayDatosExistentes = (
+            (window.tallasCantidadesProceso.dama && Object.keys(window.tallasCantidadesProceso.dama).length > 0) ||
+            (window.tallasCantidadesProceso.caballero && Object.keys(window.tallasCantidadesProceso.caballero).length > 0) ||
+            (window.tallasCantidadesProceso.sobremedida && Object.keys(window.tallasCantidadesProceso.sobremedida).length > 0)
+        );
+        const esEdicion = hayDatosExistentes;
+        
+        console.log(`[sincronizarTallasConModalProceso] 🔍 Modo detectado: ${esEdicion ? 'EDICIÓN' : 'CREACIÓN'}`);
+        
+        // 1. SINCRONIZAR window.tallasCantidadesProceso desde window.tallasRelacionales
+        // En CREACIÓN: reemplazar todo
+        // En EDICIÓN: agregar NUEVAS tallas sin sobrescribir existentes
+        if (window.tallasRelacionales) {
+            // DAMA
+            if (window.tallasRelacionales.DAMA && Object.keys(window.tallasRelacionales.DAMA).length > 0) {
+                if (esEdicion) {
+                    // EDICIÓN: Merge - agregar nuevas, mantener existentes
+                    window.tallasCantidadesProceso.dama = {
+                        ...window.tallasRelacionales.DAMA,  // Nuevas tallas
+                        ...window.tallasCantidadesProceso.dama  // Existentes (sobrescriben si hay duplicadas)
+                    };
+                    console.log('[sincronizarTallasConModalProceso] DAMA (EDICIÓN - MERGE):', window.tallasCantidadesProceso.dama);
+                } else {
+                    // CREACIÓN: Reemplazar
+                    window.tallasCantidadesProceso.dama = { ...window.tallasRelacionales.DAMA };
+                    console.log('[sincronizarTallasConModalProceso] DAMA (CREACIÓN):', window.tallasCantidadesProceso.dama);
+                }
+            }
+            
+            // CABALLERO
+            if (window.tallasRelacionales.CABALLERO && Object.keys(window.tallasRelacionales.CABALLERO).length > 0) {
+                if (esEdicion) {
+                    // EDICIÓN: Merge
+                    window.tallasCantidadesProceso.caballero = {
+                        ...window.tallasRelacionales.CABALLERO,
+                        ...window.tallasCantidadesProceso.caballero
+                    };
+                    console.log('[sincronizarTallasConModalProceso] CABALLERO (EDICIÓN - MERGE):', window.tallasCantidadesProceso.caballero);
+                } else {
+                    // CREACIÓN: Reemplazar
+                    window.tallasCantidadesProceso.caballero = { ...window.tallasRelacionales.CABALLERO };
+                    console.log('[sincronizarTallasConModalProceso] CABALLERO (CREACIÓN):', window.tallasCantidadesProceso.caballero);
+                }
+            }
+            
+            // SOBREMEDIDA
+            if (window.tallasRelacionales.SOBREMEDIDA && Object.keys(window.tallasRelacionales.SOBREMEDIDA).length > 0) {
+                if (esEdicion) {
+                    // EDICIÓN: Merge
+                    window.tallasCantidadesProceso.sobremedida = {
+                        ...window.tallasRelacionales.SOBREMEDIDA,
+                        ...window.tallasCantidadesProceso.sobremedida
+                    };
+                    console.log('[sincronizarTallasConModalProceso] SOBREMEDIDA (EDICIÓN - MERGE):', window.tallasCantidadesProceso.sobremedida);
+                } else {
+                    // CREACIÓN: Reemplazar
+                    window.tallasCantidadesProceso.sobremedida = { ...window.tallasRelacionales.SOBREMEDIDA };
+                    console.log('[sincronizarTallasConModalProceso] SOBREMEDIDA (CREACIÓN):', window.tallasCantidadesProceso.sobremedida);
+                }
+            }
+            
+            // UNISEX
+            if (window.tallasRelacionales.UNISEX && Object.keys(window.tallasRelacionales.UNISEX).length > 0) {
+                if (!window.tallasCantidadesProceso.unisex) {
+                    window.tallasCantidadesProceso.unisex = {};
+                }
+                if (esEdicion) {
+                    // EDICIÓN: Merge
+                    window.tallasCantidadesProceso.unisex = {
+                        ...window.tallasRelacionales.UNISEX,
+                        ...window.tallasCantidadesProceso.unisex
+                    };
+                    console.log('[sincronizarTallasConModalProceso] UNISEX (EDICIÓN - MERGE):', window.tallasCantidadesProceso.unisex);
+                } else {
+                    // CREACIÓN: Reemplazar
+                    window.tallasCantidadesProceso.unisex = { ...window.tallasRelacionales.UNISEX };
+                    console.log('[sincronizarTallasConModalProceso] UNISEX (CREACIÓN):', window.tallasCantidadesProceso.unisex);
+                }
+            }
+        }
+        
+        // 2. SINCRONIZAR window.tallasSeleccionadasProceso (qué tallas se seleccionaron)
+        // Esto indica cuáles tallas están disponibles para el proceso
+        if (window.tallasRelacionales && window.tallasSeleccionadasProceso) {
+            // Actualizar lista de tallas DAMA seleccionadas
+            if (window.tallasRelacionales.DAMA && Object.keys(window.tallasRelacionales.DAMA).length > 0) {
+                window.tallasSeleccionadasProceso.dama = Object.keys(window.tallasRelacionales.DAMA);
+                console.log('[sincronizarTallasConModalProceso] Tallas DAMA seleccionadas:', window.tallasSeleccionadasProceso.dama);
+            } else {
+                window.tallasSeleccionadasProceso.dama = [];
+            }
+            
+            // Actualizar lista de tallas CABALLERO seleccionadas
+            if (window.tallasRelacionales.CABALLERO && Object.keys(window.tallasRelacionales.CABALLERO).length > 0) {
+                window.tallasSeleccionadasProceso.caballero = Object.keys(window.tallasRelacionales.CABALLERO);
+                console.log('[sincronizarTallasConModalProceso] Tallas CABALLERO seleccionadas:', window.tallasSeleccionadasProceso.caballero);
+            } else {
+                window.tallasSeleccionadasProceso.caballero = [];
+            }
+            
+            // SOBREMEDIDA - actualizar si existe
+            if (window.tallasRelacionales.SOBREMEDIDA && Object.keys(window.tallasRelacionales.SOBREMEDIDA).length > 0) {
+                window.tallasSeleccionadasProceso.sobremedida = window.tallasRelacionales.SOBREMEDIDA;
+                console.log('[sincronizarTallasConModalProceso] Sobremedida seleccionada:', window.tallasSeleccionadasProceso.sobremedida);
+            }
+        }
+        
+        // 3. ACTUALIZAR EL RESUMEN EN EL MODAL DEL PROCESO
+        if (typeof window.actualizarResumenTallasProceso === 'function') {
+            window.actualizarResumenTallasProceso();
+            console.log('[sincronizarTallasConModalProceso] ✅ Resumen de tallas del proceso actualizado');
+        } else {
+            console.warn('[sincronizarTallasConModalProceso] ⚠️ Función actualizarResumenTallasProceso no disponible');
+        }
+        
+    } catch (error) {
+        console.error('[sincronizarTallasConModalProceso] ❌ Error durante sincronización:', error);
+    }
+};
 window.tipoTallaSeleccionado = null;
 
 // Helper: asegurar que tallasRelacionales nunca sea null
@@ -646,7 +783,9 @@ window.crearTarjetaGenero = function(genero, tallas) {
         
         // Actualizar total
         actualizarTotalPrendas();
-
+        
+        // 🔄 SINCRONIZAR CON MODAL DE PROCESO cuando se elimina un género
+        window.sincronizarTallasConModalProceso();
     };
     btnGroupAcciones.appendChild(btnEliminar);
     
@@ -676,8 +815,14 @@ window.crearTarjetaGenero = function(genero, tallas) {
             console.log(`[crearTarjetaGenero] ${genero} - ${talla}: ${input.value}`);  //  Logging
             guardarCantidadTalla(genero, talla, input.value);
             actualizarTotalPrendas();
+            // 🔄 SINCRONIZAR CON MODAL DE PROCESO cuando se actualizan tallas
+            window.sincronizarTallasConModalProceso();
         };
-        input.onkeyup = () => actualizarTotalPrendas();
+        input.onkeyup = () => {
+            actualizarTotalPrendas();
+            // 🔄 SINCRONIZAR CON MODAL DE PROCESO en tiempo real mientras se escriben cantidades
+            window.sincronizarTallasConModalProceso();
+        };
         
         itemDiv.appendChild(label);
         itemDiv.appendChild(input);

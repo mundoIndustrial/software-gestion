@@ -199,7 +199,7 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
             }
         }
         
-        // Mostrar modal
+        // Mostrar modal PRIMERO
         modal.style.display = 'flex';
         // ⚡ CRÍTICO: Forzar z-index MÁXIMO para que esté siempre al frente
         modal.style.zIndex = '999999999';
@@ -208,6 +208,15 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
         // 🔴 NUEVO: Remover aria-hidden para que los elementos dentro sean accesibles
         // Esto evita el warning "Blocked aria-hidden on an element because its descendant retained focus"
         modal.removeAttribute('aria-hidden');
+        
+        // 🔄 SINCRONIZACIÓN UNIVERSAL: Ahora que el modal es visible, sincronizar tallas
+        // Esto asegura que:
+        // 1. En CREACIÓN: copia todas las tallas de la prenda
+        // 2. En EDICIÓN: agrega las NUEVAS tallas que se crearon en la prenda después del proceso
+        console.log('[abrirModalProcesoGenerico] 🔄 Sincronizando tallas de la prenda con el proceso...');
+        if (typeof window.sincronizarTallasConModalProceso === 'function') {
+            window.sincronizarTallasConModalProceso();
+        }
         console.log(' [MODAL-PROCESO] aria-hidden removido para accesibilidad');
 
         // 🎯 NUEVO: Aplicar automáticamente todas las tallas cuando se crea un proceso nuevo
