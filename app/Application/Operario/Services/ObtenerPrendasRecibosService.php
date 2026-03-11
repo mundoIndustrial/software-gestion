@@ -14,7 +14,9 @@ class ObtenerPrendasRecibosService
     public function obtenerPrendasConRecibosTodosCostura(): Collection
     {
         // Vista global: listar todos los recibos COSTURA activos (incluye módulos 1/2/3)
-        // Sin filtrar por encargado/usuario. Se mantiene la lógica de armado de estructura.
+        // Filtra por:
+        // - Área: Solo "Costura"
+        // - Encargado: Debe estar asignado (no vacío/null)
         $usuarioFake = new User();
         $usuarioFake->name = 'VISTA GLOBAL';
 
@@ -24,7 +26,7 @@ class ObtenerPrendasRecibosService
 
         $recibos = ConsecutivoReciboPedido::where('activo', 1)
             ->whereIn('tipo_recibo', $tiposRecibo)
-            ->whereIn('area', ['Corte', 'Costura', 'Control de Calidad', 'Control Calidad'])
+            ->where('area', 'Costura')
             ->with(['prenda', 'prenda.pedidoProduccion', 'prenda.procesosPrenda', 'prenda.tallas', 'pedido', 'pedido.prendas', 'pedido.prendas.tallas'])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -66,6 +68,26 @@ class ObtenerPrendasRecibosService
                     continue;
                 }
 
+                // Filtrar recibos que tengan encargado de costura asignado
+                $recibosConEncargado = $recibosDelTipo->filter(function ($recibo) {
+                    $procesos = $recibo->prenda && $recibo->prenda->relationLoaded('procesosPrenda')
+                        ? $recibo->prenda->procesosPrenda
+                        : collect();
+
+                    $procesoCostura = $procesos
+                        ->filter(fn($p) => is_string($p->proceso ?? null) && strtolower(trim((string) $p->proceso)) === 'costura')
+                        ->sortByDesc(fn($p) => $p->created_at)
+                        ->first();
+
+                    // Solo incluir si tiene encargado asignado
+                    return $procesoCostura && !empty($procesoCostura->encargado);
+                })->values();
+
+                // Si no hay recibos con encargado, saltar esta prenda
+                if ($recibosConEncargado->count() === 0) {
+                    continue;
+                }
+
                 $resultados[] = [
                     'prenda_id' => $prenda->id,
                     'pedido_id' => $pedido->id,
@@ -86,7 +108,7 @@ class ObtenerPrendasRecibosService
                             'colores' => $talla->colores,
                         ];
                     })->toArray() : [],
-                    'recibos' => $recibosDelTipo->map(function ($recibo) {
+                    'recibos' => $recibosConEncargado->map(function ($recibo) {
                         $procesos = $recibo->prenda && $recibo->prenda->relationLoaded('procesosPrenda')
                             ? $recibo->prenda->procesosPrenda
                             : collect();
@@ -123,7 +145,7 @@ class ObtenerPrendasRecibosService
                             'encargado_control_calidad' => $procesoControlCalidad ? $procesoControlCalidad->encargado : null,
                         ];
                     })->toArray(),
-                    'total_recibos' => $recibosDelTipo->count(),
+                    'total_recibos' => $recibosConEncargado->count(),
                     'fecha_creacion' => $prenda->created_at,
                 ];
             }
