@@ -840,10 +840,9 @@ class PedidosController extends Controller
                 DB::raw('MIN(talla) as talla_ejemplo')
             ])
             ->groupBy('numero_pedido')
-            ->orderBy('numero_pedido', 'desc'); // Ordenar por número de pedido descendente
-            // orderBy temporalmente eliminado para evitar conflicto con count()
+            ->orderByRaw('CAST(numero_pedido AS UNSIGNED) DESC'); // Ordenar numéricamente por número de pedido descendente
 
-            \Log::info('Query con groupBy simplificado construida');
+            \Log::info('Query con groupBy y ordenamiento numérico construida');
 
             // Aplicar búsqueda general
             if ($request->filled('search')) {
