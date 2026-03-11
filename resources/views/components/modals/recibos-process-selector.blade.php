@@ -478,7 +478,8 @@
                 // Usar la ruta de registros recibos-datos
                 apiUrl = `/registros/${pedidoId}/recibos-datos`;
             } else {
-                apiUrl = `/api/pedidos/${pedidoId}`;
+                // Usar la ruta que incluye los consecutivos (obtenerDetalleCompleto)
+                apiUrl = `/pedidos-public/${pedidoId}/recibos-datos`;
             }
             
             console.log('[abrirSelectorRecibos] Fetching URL:', apiUrl);
@@ -570,13 +571,71 @@
             if (!esVistaVisualizadorLogo && !excluirCosturaBodega) {
                 //  RECIBO BASE - SOLO EN OTRAS VISTAS
                 const reciboCosturaActual = prenda?.recibos?.COSTURA || prenda?.consecutivos?.COSTURA || null;
+                
+                console.log('[renderizarPrendasEnSelector] DEBUG - Datos de costura:', {
+                    prendaId: prenda.id,
+                    prendaNombre: prenda.nombre,
+                    recibos: prenda?.recibos,
+                    consecutivos: prenda?.consecutivos,
+                    reciboCosturaActual,
+                    tipoReciboCosturaActual: typeof reciboCosturaActual,
+                    esNull: reciboCosturaActual === null,
+                    esUndefined: reciboCosturaActual === undefined,
+                    esObject: typeof reciboCosturaActual === 'object'
+                });
+                
+                // Determinar el estado correcto usando el campo 'activo' de la BD
+                let estadoRecibo = 'PENDIENTE';
+                let numeroRecibo = null;
+                let activoValue = 0;
+                
+                if (reciboCosturaActual) {
+                    // Nuevo formato: objeto con datos completos
+                    if (typeof reciboCosturaActual === 'object' && reciboCosturaActual.activo !== undefined) {
+                        estadoRecibo = reciboCosturaActual.activo === 1 ? 'APROBADO' : 'PENDIENTE';
+                        numeroRecibo = reciboCosturaActual.consecutivo_actual || null;
+                        activoValue = reciboCosturaActual.activo;
+                        
+                        console.log('[renderizarPrendasEnSelector] DEBUG - Usando nuevo formato:', {
+                            activo: reciboCosturaActual.activo,
+                            consecutivo_actual: reciboCosturaActual.consecutivo_actual,
+                            estadoDeterminado: estadoRecibo,
+                            numeroRecibo
+                        });
+                    } 
+                    // Formato antiguo: solo el número de consecutivo
+                    else if (reciboCosturaActual) {
+                        estadoRecibo = 'APROBADO';
+                        numeroRecibo = reciboCosturaActual;
+                        activoValue = 1;
+                        
+                        console.log('[renderizarPrendasEnSelector] DEBUG - Usando formato antiguo:', {
+                            reciboCosturaActual,
+                            estadoDeterminado: estadoRecibo,
+                            numeroRecibo
+                        });
+                    }
+                } else {
+                    console.log('[renderizarPrendasEnSelector] DEBUG - No hay datos de recibo, manteniendo PENDIENTE');
+                }
+                
                 const reciboBase = {
                     tipo: prenda.de_bodega == 1 ? "costura-bodega" : "costura",
                     nombre: prenda.de_bodega == 1 ? "Bodega" : "Costura",
-                    estado: reciboCosturaActual ? 'APROBADO' : 'PENDIENTE',
+                    estado: estadoRecibo,
                     es_base: true,
-                    numero_recibo: reciboCosturaActual
+                    numero_recibo: numeroRecibo,
+                    activo: activoValue // Agregar campo activo para referencia
                 };
+                
+                console.log('[renderizarPrendasEnSelector] Recibo base construido FINAL:', {
+                    prendaId: prenda.id,
+                    tipo: reciboBase.tipo,
+                    estado: reciboBase.estado,
+                    numero_recibo: reciboBase.numero_recibo,
+                    activo: reciboBase.activo,
+                    reciboCosturaActual
+                });
                 
                 // Agregar recibo base (permite tanto costura como costura-bodega)
                 recibos.push(reciboBase);
@@ -612,6 +671,45 @@
                     es_parcial: proc.es_parcial || false,
                     pedido_parcial_id: proc.pedido_parcial_id || null,
                     numero_recibo: proc.numero_recibo || null
+                });
+            });
+
+            //  RECIBOS PARCIALES (ANEXOS)
+            const parciales = prenda.recibos?.parciales || [];
+            console.log('[renderizarPrendasEnSelector] Parciales encontrados para prenda:', {
+                prendaId: prenda.id,
+                prendaNombre: prenda.nombre,
+                totalParciales: parciales.length,
+                parciales
+            });
+            
+            parciales.forEach((parcial, index) => {
+                // Determinar el estado del parcial
+                const estadoParcial = parcial.activo === 1 ? 'APROBADO' : (parcial.estado || 'PENDIENTE');
+                
+                // Crear nombre descriptivo para el parcial
+                const nombreParcial = `${parcial.tipo_recibo} ANEXO ${index + 1}`;
+                
+                recibos.push({
+                    tipo: parcial.tipo_recibo,
+                    nombre: nombreParcial,
+                    estado: estadoParcial,
+                    es_base: false,
+                    es_parcial: true,
+                    pedido_parcial_id: parcial.id,
+                    numero_recibo: parcial.consecutivo_actual || null,
+                    activo: parcial.activo || 0,
+                    created_at: parcial.created_at,
+                    origen: 'PARCIAL'
+                });
+                
+                console.log('[renderizarPrendasEnSelector] Parcial agregado:', {
+                    prendaId: prenda.id,
+                    parcialId: parcial.id,
+                    tipo: parcial.tipo_recibo,
+                    nombre: nombreParcial,
+                    estado: estadoParcial,
+                    activo: parcial.activo
                 });
             });
 
@@ -736,12 +834,66 @@
                     // Determinar si el recibo está activo
                     // Para procesos normales: estado APROBADO + numero_recibo
                     // Para parciales/anexos: estado APROBADO
-                    const estaActivo = !recibo.es_base && recibo.estado === 'APROBADO' && (recibo.numero_recibo || esParcial);
-                    const puedeActivar = !recibo.es_base && recibo.estado === 'PENDIENTE';
+                    // Para costura (base): usar el campo 'activo' o el estado
+                    let estaActivo = false;
+                    let puedeActivar = false;
+                    
+                    console.log('[renderizarPrendasEnSelector] DEBUG - Lógica de activación:', {
+                        reciboTipo: recibo.tipo,
+                        reciboEstado: recibo.estado,
+                        reciboEsBase: recibo.es_base,
+                        reciboActivo: recibo.activo,
+                        reciboNumeroRecibo: recibo.numero_recibo,
+                        esParcial
+                    });
+                    
+                    if (recibo.es_base) {
+                        // Recibo base (costura/costura-bodega)
+                        if (recibo.activo !== undefined) {
+                            // Nuevo formato: usar campo 'activo' explícito
+                            estaActivo = recibo.activo === 1;
+                            puedeActivar = recibo.activo === 0;
+                            
+                            console.log('[renderizarPrendasEnSelector] DEBUG - Recibo base con campo activo:', {
+                                activo: recibo.activo,
+                                estaActivo,
+                                puedeActivar
+                            });
+                        } else {
+                            // Formato antiguo: basado en estado y número de recibo
+                            estaActivo = recibo.estado === 'APROBADO' && recibo.numero_recibo;
+                            puedeActivar = recibo.estado === 'PENDIENTE';
+                            
+                            console.log('[renderizarPrendasEnSelector] DEBUG - Recibo base formato antiguo:', {
+                                estado: recibo.estado,
+                                numero_recibo: recibo.numero_recibo,
+                                estaActivo,
+                                puedeActivar
+                            });
+                        }
+                    } else {
+                        // Procesos adicionales
+                        estaActivo = recibo.estado === 'APROBADO' && (recibo.numero_recibo || esParcial);
+                        puedeActivar = recibo.estado === 'PENDIENTE';
+                        
+                        console.log('[renderizarPrendasEnSelector] DEBUG - Proceso adicional:', {
+                            estado: recibo.estado,
+                            numero_recibo: recibo.numero_recibo,
+                            esParcial,
+                            estaActivo,
+                            puedeActivar
+                        });
+                    }
                     
                     //  CRÍTICO: Solo supervisor_pedidos puede activar/desactivar recibos
                     const usuarioEsSupervisor = window.selectorRecibosState?.esSupervisorPedidos || window.selectorRecibosState?.esSupervisor;
-                    const puedeModificarRecibo = puedeActivar && usuarioEsSupervisor;
+                    
+                    // Variables básicas del recibo
+                    const tipoStringLower = String(tipoString || '').toLowerCase();
+                    
+                    // Para recibos base (costura), no usar el botón general de activación
+                    const esReciboBaseCostura = recibo.es_base && (tipoStringLower === 'costura' || tipoStringLower === 'costura-bodega');
+                    const puedeModificarRecibo = puedeActivar && usuarioEsSupervisor && !esReciboBaseCostura;
                     const puedeDesactivarRecibo = estaActivo && usuarioEsSupervisor;
                     
                     const reciboClass = estaActivo ? 'recibo-activo' : '';
@@ -751,13 +903,12 @@
                                                window.selectorRecibosState?.esSupervisorPedidos === 'true';
 
                     // No permitir recibo por talla en Costura (ni costura-bodega)
-                    const tipoStringLower = String(tipoString || '').toLowerCase();
                     const puedeCrearPorTalla = esSupervisorRecibos && (tipoStringLower !== 'costura' && tipoStringLower !== 'costura-bodega');
 
                     const pedidoEstado = window.selectorRecibosState?.pedidoEstado;
                     const pedidoYaAprobado = pedidoEstado && String(pedidoEstado).toUpperCase() !== 'PENDIENTE_SUPERVISOR';
 
-                    const puedeActivarBaseCostura = recibo.es_base && tipoStringLower === 'costura' && !recibo.numero_recibo && pedidoYaAprobado && usuarioEsSupervisor;
+                    const puedeActivarBaseCostura = recibo.es_base && tipoStringLower === 'costura' && puedeActivar && pedidoYaAprobado && usuarioEsSupervisor;
                     
                     // DEBUG: Mostrar decisión de visibilidad del botón
                     console.log(`🔘 Prenda ${prenda.id}: esSupervisorRecibos=${esSupervisorRecibos}, esSupervisorPedidos=${window.selectorRecibosState?.esSupervisorPedidos}`);
@@ -1103,46 +1254,89 @@
      */
     async function ejecutarAnularRecibo(prendaId, tipoProceso) {
         try {
-            let procesoId = null;
-            const prenda = window.selectorRecibosState.prendas.find(p => p.id == prendaId);
-
-            if (prenda && prenda.procesos) {
-                const proceso = prenda.procesos.find(p =>
-                    String(p.tipo_proceso || p.nombre_proceso || '') === tipoProceso
-                );
-                if (proceso) {
-                    procesoId = proceso.id;
-                }
-            }
-
-            if (!procesoId) {
-                alert('Error: No se encontró el proceso para anular');
-                return;
-            }
-
-            const response = await fetch(`/api/procesos/${procesoId}/anular-recibo`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                }
-            });
-
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                const textResponse = await response.text();
-                console.error('[ejecutarAnularRecibo] Respuesta no es JSON:', textResponse.substring(0, 200));
-                throw new Error('El servidor devolvió HTML en lugar de JSON. Posible problema de autenticación.');
-            }
-
-            const result = await response.json();
-            if (!response.ok) {
-                throw new Error(result.message || 'Error al anular el recibo');
-            }
-
-            mostrarMensajeExito(result.message);
-
             const pedidoId = window.selectorRecibosState.pedidoId;
+            
+            console.log('[ejecutarAnularRecibo] Iniciando anulación:', {
+                prendaId,
+                tipoProceso,
+                pedidoId
+            });
+            
+            // Determinar si es un recibo base (costura/costura-bodega) o un proceso
+            const tipoProcesoLower = String(tipoProceso || '').toLowerCase();
+            const esReciboBase = tipoProcesoLower === 'costura' || tipoProcesoLower === 'costura-bodega';
+            
+            if (esReciboBase) {
+                // Para recibos base (costura), usar el endpoint específico
+                console.log('[ejecutarAnularRecibo] Anulando recibo base (costura)');
+                
+                const response = await fetch(`/supervisor-pedidos/${pedidoId}/costura/${prendaId}/anular-recibo`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                    }
+                });
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const textResponse = await response.text();
+                    console.error('[ejecutarAnularRecibo] Respuesta no es JSON:', textResponse.substring(0, 200));
+                    throw new Error('El servidor devolvió HTML en lugar de JSON. Posible problema de autenticación.');
+                }
+                
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.message || 'Error al anular el recibo de costura');
+                }
+                
+                mostrarMensajeExito(result.message);
+                
+            } else {
+                // Para procesos adicionales, buscar el proceso ID
+                console.log('[ejecutarAnularRecibo] Anulando proceso adicional');
+                
+                let procesoId = null;
+                const prenda = window.selectorRecibosState.prendas.find(p => p.id == prendaId);
+
+                if (prenda && prenda.procesos) {
+                    const proceso = prenda.procesos.find(p =>
+                        String(p.tipo_proceso || p.nombre_proceso || '') === tipoProceso
+                    );
+                    if (proceso) {
+                        procesoId = proceso.id;
+                    }
+                }
+
+                if (!procesoId) {
+                    alert('Error: No se encontró el proceso para anular');
+                    return;
+                }
+
+                const response = await fetch(`/api/procesos/${procesoId}/anular-recibo`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                    }
+                });
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const textResponse = await response.text();
+                    console.error('[ejecutarAnularRecibo] Respuesta no es JSON:', textResponse.substring(0, 200));
+                    throw new Error('El servidor devolvió HTML en lugar de JSON. Posible problema de autenticación.');
+                }
+
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.message || 'Error al anular el recibo');
+                }
+
+                mostrarMensajeExito(result.message);
+            }
+
+            // Recargar datos en ambos casos
             try {
                 await cargarDatosRecibos(pedidoId);
             } catch (recargaError) {
@@ -1508,7 +1702,8 @@
             if (window.location.pathname.includes('/registros')) {
                 apiUrl = `/registros/${pedidoId}`;
             } else {
-                apiUrl = `/api/pedidos/${pedidoId}`;
+                // Usar la ruta que incluye los consecutivos (obtenerDetalleCompleto)
+                apiUrl = `/pedidos-public/${pedidoId}/recibos-datos`;
             }
             
             const response = await fetch(apiUrl);

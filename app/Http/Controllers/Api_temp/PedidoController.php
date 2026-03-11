@@ -1267,14 +1267,58 @@ class PedidoController extends Controller
             ]);
 
             // Obtener consecutivos para este pedido (incluyendo generales y específicos de prenda)
+            // Importante: traer tanto activos como inactivos para poder mostrar fecha vacía cuando no está activo
             $consecutivos = \Illuminate\Support\Facades\DB::table('consecutivos_recibos_pedidos')
                 ->where('pedido_produccion_id', $pedidoId)
-                ->where('activo', 1)
                 ->where(function($query) use ($prendaId) {
                     $query->where('prenda_id', $prendaId)
                           ->orWhereNull('prenda_id');
                 })
+                ->select([
+                    'id',
+                    'pedido_produccion_id', 
+                    'prenda_id',
+                    'tipo_recibo',
+                    'consecutivo_actual',
+                    'consecutivo_inicial',
+                    'activo',
+                    'marcar_plooter',
+                    'color_costura',
+                    'estado',
+                    'area',
+                    'notas',
+                    'created_at',
+                    'updated_at'
+                ])
                 ->get();
+
+            // Obtener recibos parciales (anexos) para esta prenda
+            $parciales = \Illuminate\Support\Facades\DB::table('pedidos_parciales')
+                ->where('pedido_produccion_id', $pedidoId)
+                ->where('prenda_pedido_id', $prendaId)
+                ->whereNull('deleted_at') // Solo traer activos
+                ->select([
+                    'id',
+                    'pedido_produccion_id',
+                    'prenda_pedido_id as prenda_id',
+                    'tipo_recibo',
+                    'consecutivo_actual',
+                    'consecutivo_inicial',
+                    'activo',
+                    'estado',
+                    'notas',
+                    'created_at',
+                    'updated_at',
+                    \Illuminate\Support\Facades\DB::raw("'PARCIAL' as origen")
+                ])
+                ->get();
+
+            \Log::info('[PedidoController] Parciales encontrados en BD', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'total_parciales' => $parciales->count(),
+                'datos_parciales' => $parciales->toArray()
+            ]);
 
             \Log::info('[PedidoController] Consecutivos encontrados en BD', [
                 'pedido_id' => $pedidoId,
@@ -1283,8 +1327,9 @@ class PedidoController extends Controller
                 'datos_crudos' => $consecutivos->toArray()
             ]);
 
-            if ($consecutivos->isEmpty()) {
-                \Log::info('[PedidoController] No hay consecutivos para prenda', [
+            // Si no hay ni consecutivos ni parciales, retornar null
+            if ($consecutivos->isEmpty() && $parciales->isEmpty()) {
+                \Log::info('[PedidoController] No hay consecutivos ni parciales para prenda', [
                     'pedido_id' => $pedidoId,
                     'prenda_id' => $prendaId
                 ]);
@@ -1355,10 +1400,14 @@ class PedidoController extends Controller
 				}
 			}
 
+            // Agregar los parciales al resultado
+            $recibos['parciales'] = $parciales->toArray();
+
             \Log::info('[PedidoController] Consecutivos estructurados para prenda', [
                 'pedido_id' => $pedidoId,
                 'prenda_id' => $prendaId,
-                'recibos' => $recibos
+                'recibos' => $recibos,
+                'total_parciales' => $parciales->count()
             ]);
 
             return $recibos;

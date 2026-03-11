@@ -169,6 +169,12 @@ export class ReceiptBuilder {
                 // provocando mezcla de imágenes entre procesos (ej: Reflectivo mostrando Bordado).
                 const procRecibo = { ...proc, imagenes: imagenesProceso };
                 
+                // Inicializar campos del recibo (importante para procesos pendientes)
+                procRecibo.activo = null;
+                procRecibo.created_at = null;
+                procRecibo.tipo_recibo = null;
+                procRecibo.consecutivo_actual = null;
+                
                 // Agregar datos del recibo (activo y created_at) si existen
                 if (prenda.recibos && prenda.recibos[tipoProceso.toUpperCase()]) {
                     const datosRecibo = prenda.recibos[tipoProceso.toUpperCase()];
@@ -179,9 +185,23 @@ export class ReceiptBuilder {
                     
                     console.log('[ReceiptBuilder] Datos de recibo agregados al proceso:', {
                         tipoProceso,
+                        tipoReciboKey: tipoProceso.toUpperCase(),
                         activo: datosRecibo.activo,
                         created_at: datosRecibo.created_at,
-                        consecutivo_actual: datosRecibo.consecutivo_actual
+                        consecutivo_actual: datosRecibo.consecutivo_actual,
+                        datosReciboCompleto: datosRecibo
+                    });
+                } else {
+                    // Proceso pendiente sin registro en consecutivos_recibos_pedidos
+                    procRecibo.activo = 0; // Marcar como no activo explícitamente
+                    procRecibo.tipo_recibo = tipoProceso.toUpperCase(); // Asignar tipo para identificación
+                    
+                    console.warn('[ReceiptBuilder] Proceso pendiente sin registro en consecutivos_recibos_pedidos:', {
+                        tipoProceso,
+                        tipoReciboKey: tipoProceso.toUpperCase(),
+                        recibosDisponibles: prenda.recibos ? Object.keys(prenda.recibos) : 'null',
+                        prendaRecibos: prenda.recibos,
+                        marcadoComoNoActivo: true
                     });
                 }
                 

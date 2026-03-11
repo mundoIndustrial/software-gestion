@@ -2329,6 +2329,10 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
         ->where(['pedidoId' => '[0-9]+', 'prendaId' => '[0-9]+'])
         ->name('costura.activar-recibo');
     
+    Route::post('/{pedidoId}/costura/{prendaId}/anular-recibo', [App\Http\Controllers\SupervisorPedidosController::class, 'anularReciboCostura'])
+        ->where(['pedidoId' => '[0-9]+', 'prendaId' => '[0-9]+'])
+        ->name('costura.anular-recibo');
+    
     // Detalles y aprobación de procesos
     Route::get('/procesos/{id}/detalles', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDetallesProceso'])->name('procesos.detalles');
     Route::post('/procesos/{id}/aprobar', [App\Http\Controllers\SupervisorPedidosController::class, 'aprobarProceso'])->name('procesos.aprobar');

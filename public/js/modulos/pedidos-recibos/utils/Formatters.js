@@ -1299,25 +1299,67 @@ export class Formatters {
     static parsearFecha(fechaStr) {
         if (!fechaStr) return new Date();
         
+        console.log('[Formatters.parsearFecha] Procesando fecha:', fechaStr);
+        
         let fecha = null;
         
+        // Formato ISO completo con hora (ej: "2026-03-10 17:49:21")
+        if (fechaStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+            // Separar fecha y hora para evitar problemas de zona horaria
+            const [fechaPart, horaPart] = fechaStr.split(' ');
+            const [year, month, day] = fechaPart.split('-');
+            const [hours, minutes, seconds] = horaPart.split(':');
+            
+            // Crear fecha usando UTC para evitar desfases
+            fecha = new Date(Date.UTC(
+                parseInt(year),
+                parseInt(month) - 1, // Los meses en JS son 0-11
+                parseInt(day),
+                parseInt(hours),
+                parseInt(minutes),
+                parseInt(seconds)
+            ));
+            
+            console.log('[Formatters.parsearFecha] Fecha ISO completa parseada:', {
+                original: fechaStr,
+                parsed: fecha,
+                utcString: fecha.toUTCString(),
+                localString: fecha.toLocaleString()
+            });
+        }
         // Formato d/m/Y (ej: "19/01/2026")
-        if (fechaStr.includes('/')) {
+        else if (fechaStr.includes('/')) {
             const [day, month, year] = fechaStr.split('/');
             fecha = new Date(year, parseInt(month) - 1, day);
+            
+            console.log('[Formatters.parsearFecha] Fecha d/m/Y parseada:', {
+                original: fechaStr,
+                parsed: fecha
+            });
         }
-        // Formato Y-m-d (ej: "2026-01-19")
-        else if (fechaStr.includes('-')) {
-            fecha = new Date(fechaStr + 'T00:00:00');
+        // Formato Y-m-d sin hora (ej: "2026-01-19")
+        else if (fechaStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            // Crear fecha sin hora para evitar problemas de zona horaria
+            const [year, month, day] = fechaStr.split('-');
+            fecha = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day)));
+            
+            console.log('[Formatters.parsearFecha] Fecha Y-m-d parseada:', {
+                original: fechaStr,
+                parsed: fecha
+            });
         }
-        // Otros formatos
+        // Otros formatos (incluyendo ISO con T)
         else {
             fecha = new Date(fechaStr);
+            console.log('[Formatters.parsearFecha] Fecha con formato estándar parseada:', {
+                original: fechaStr,
+                parsed: fecha
+            });
         }
         
         // Si la fecha es inválida, usar fecha actual
         if (isNaN(fecha.getTime())) {
-
+            console.warn('[Formatters.parsearFecha] Fecha inválida, usando fecha actual:', fechaStr);
             fecha = new Date();
         }
         
@@ -1328,10 +1370,19 @@ export class Formatters {
      * Formatea fecha a objeto {day, month, year}
      */
     static formatearFecha(fecha) {
-        return {
-            day: String(fecha.getDate()).padStart(2, '0'),
-            month: String(fecha.getMonth() + 1).padStart(2, '0'),
-            year: fecha.getFullYear()
+        const resultado = {
+            day: String(fecha.getUTCDate()).padStart(2, '0'),
+            month: String(fecha.getUTCMonth() + 1).padStart(2, '0'),
+            year: fecha.getUTCFullYear()
         };
+        
+        console.log('[Formatters.formatearFecha] Fecha formateada:', {
+            fechaOriginal: fecha,
+            fechaUTCString: fecha.toUTCString(),
+            fechaLocalString: fecha.toLocaleString(),
+            resultado
+        });
+        
+        return resultado;
     }
 }

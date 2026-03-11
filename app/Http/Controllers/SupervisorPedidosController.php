@@ -153,6 +153,77 @@ class SupervisorPedidosController extends Controller
         }
     }
 
+    public function anularReciboCostura(Request $request, int $pedidoId, int $prendaId): JsonResponse
+    {
+        try {
+            $pedido = PedidoProduccion::findOrFail($pedidoId);
+
+            if ($pedido->estado === 'PENDIENTE_SUPERVISOR') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El pedido aún no está aprobado'
+                ], 400);
+            }
+
+            $prenda = PrendaPedido::where('id', $prendaId)
+                ->where('pedido_produccion_id', $pedidoId)
+                ->first();
+
+            if (!$prenda) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Prenda no encontrada en el pedido'
+                ], 404);
+            }
+
+            $actualizado = \DB::transaction(function () use ($pedidoId, $prendaId, $pedido) {
+                $recibo = \DB::table('consecutivos_recibos_pedidos')
+                    ->where('tipo_recibo', 'COSTURA')
+                    ->where('pedido_produccion_id', $pedidoId)
+                    ->where('prenda_id', $prendaId)
+                    ->where('activo', 1)
+                    ->first();
+
+                if (!$recibo) {
+                    throw new \Exception('No se encontró un recibo de costura activo para esta prenda');
+                }
+
+                // Anular el recibo cambiando el estado a inactivo
+                $actualizado = \DB::table('consecutivos_recibos_pedidos')
+                    ->where('id', $recibo->id)
+                    ->update([
+                        'activo' => 0,
+                        'notas' => ($recibo->notas ?? '') . " | ANULADO manualmente para pedido #{$pedido->numero_pedido} - prenda #{$prendaId}",
+                        'updated_at' => now(),
+                    ]);
+
+                if (!$actualizado) {
+                    throw new \Exception('No se pudo anular el recibo de costura');
+                }
+
+                return [
+                    'id' => $recibo->id,
+                    'consecutivo' => $recibo->consecutivo_actual,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Recibo COSTURA anulado correctamente',
+                'data' => $actualizado,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[anularReciboCostura] Error: ' . $e->getMessage(), [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al anular recibo COSTURA: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function guardarFechaLlegadaRecibo($id)
     {
         try {

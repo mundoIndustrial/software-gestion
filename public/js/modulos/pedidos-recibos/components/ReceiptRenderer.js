@@ -205,12 +205,26 @@ export class ReceiptRenderer {
         const yearBox = document.querySelector('.year-box');
 
         if (dayBox && monthBox && yearBox) {
-            // Para recibos de procesos (no costura), verificar si está activo
-            if (recibo && recibo.tipo_recibo && recibo.tipo_recibo !== 'COSTURA') {
-                console.log('[ReceiptRenderer] Verificando estado de recibo de proceso:', {
+            // Determinar si aplicar lógica de estado para recibos de costura
+            const esReciboCostura = recibo && (
+                recibo.tipo_recibo === 'COSTURA' || 
+                recibo.tipo_recibo === 'COSTURA-BODEGA'
+            );
+            
+            // Para recibos parciales (anexos) de costura, aplicar lógica de estado
+            // Para recibos base de costura, usar fecha del pedido
+            const esReciboParcial = recibo && (recibo.es_parcial || recibo.origen === 'PARCIAL');
+            const aplicarLogicaEstado = (recibo && recibo.tipo_recibo && !esReciboCostura) || (esReciboCostura && esReciboParcial);
+            
+            if (aplicarLogicaEstado) {
+                console.log('[ReceiptRenderer] Verificando estado de recibo:', {
                     tipo_recibo: recibo.tipo_recibo,
+                    es_parcial: esReciboParcial,
+                    origen: recibo.origen,
                     activo: recibo.activo,
-                    created_at: recibo.created_at
+                    created_at: recibo.created_at,
+                    tieneDatosRecibo: !!(recibo.activo !== undefined || recibo.created_at !== undefined),
+                    reciboCompleto: recibo
                 });
 
                 if (recibo.activo === 1 && recibo.created_at) {
@@ -229,10 +243,21 @@ export class ReceiptRenderer {
                     monthBox.textContent = '--';
                     yearBox.textContent = '----';
                     
-                    console.log('[ReceiptRenderer] Recibo no activo - Fecha vacía');
+                    console.log('[ReceiptRenderer] Recibo no activo - Fecha vacía:', {
+                        motivo: !recibo.activo ? 'activo es false/undefined' : 'created_at es false/undefined',
+                        activo: recibo.activo,
+                        created_at: recibo.created_at
+                    });
                 }
             } else {
-                // Para costura o si no hay recibo: usar fecha del pedido (comportamiento original)
+                // Para costura base (no parciales) o si no hay recibo: usar fecha del pedido (comportamiento original)
+                console.log('[ReceiptRenderer] Usando fecha del pedido (costura base o sin recibo):', {
+                    tieneRecibo: !!recibo,
+                    tipo_recibo: recibo?.tipo_recibo,
+                    es_parcial: esReciboParcial,
+                    aplicarLogicaEstado
+                });
+                
                 const fecha = Formatters.parsearFecha(datosPedido.fecha);
                 const { day, month, year } = Formatters.formatearFecha(fecha);
                 
