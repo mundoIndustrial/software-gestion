@@ -178,6 +178,11 @@
                                                                 <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
                                                             @endif
                                                         </div>
+                                                        @if(isset($desc['descripcion']) && !empty($desc['descripcion']))
+                                                            <div class="text-slate-600 text-xs mb-2 italic">
+                                                                {{ $desc['descripcion'] }}
+                                                            </div>
+                                                        @endif
                                                         @if($tela || ($color && strtolower($color) !== 'sin color'))
                                                             <div class="text-black text-xs mb-1">
                                                                 @if($tela && $color && strtolower($color) !== 'sin color')
