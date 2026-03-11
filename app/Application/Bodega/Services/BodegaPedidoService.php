@@ -135,67 +135,15 @@ class BodegaPedidoService
         // Filtrar por áreas según rol
         $pedidosFiltradosPorRol = $this->filtrarPedidosPorArea($todosLosPedidos, $areasPermitidas);
 
-        // Paginar
+        // Paginar (incluye filtrado por búsqueda)
         $paginacion = $this->paginarPedidos($pedidosFiltradosPorRol, $request);
-
-        // Procesar datos para vista de lista con cálculo de estados
-        $pedidosPorPagina = [];
-        $pedidosAgrupados = $pedidosFiltradosPorRol->groupBy('numero_pedido');
-
-        foreach ($pedidosAgrupados as $numeroPedido => $pedidosDelNumero) {
-            $primerPedido = $pedidosDelNumero->first();
-            $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
-            
-            // Calcular estados del pedido usando la calculadora centralizada
-            $estadosPedido = $this->estadoCalculator->calcular($numeroPedido);
-            
-            $tieneItemsPendientes = $estadosPedido['tiene_pendientes'];
-            $totalItems = $estadosPedido['total_items'];
-            $itemsEntregados = $estadosPedido['items_entregados'];
-            $itemsPendientes = $estadosPedido['items_pendientes'];
-            $todosEntregados = $estadosPedido['todos_entregados'];
-            $todosPendientes = $estadosPedido['todos_pendientes'];
-            
-            // Verificar si el pedido ha sido marcado como visto por el usuario actual
-            $userId = auth()->id();
-            $vistoPorUsuario = PedidoVistoSupervisor::where('pedido_id', $primerPedido->id)
-                ->where('user_id', $userId)
-                ->first();
-
-            // Verificar si el pedido ha sido revisado por el usuario actual
-            $pedidoRevisado = PedidoRevisado::where('pedido_id', $numeroPedido)
-                ->where('user_id', $userId)
-                ->first();
-
-            $pedidosPorPagina[] = [
-                'id' => $numeroPedido,
-                'numero_pedido' => $numeroPedido,
-                'cliente' => $primerPedido->cliente ?? WarehouseConstants::DEFAULT_NA,
-                'asesor' => $primerPedido->asesor?->nombre ?? $primerPedido->asesor?->name ?? WarehouseConstants::DEFAULT_NA,
-                'estado' => $pedidoProduccion?->estado ?? $primerPedido->estado,
-                'fecha_pedido' => $primerPedido->created_at ?? $primerPedido->fecha_pedido,
-                'cantidad_items' => $pedidosDelNumero->count(),
-                'viewed_at' => $vistoPorUsuario?->created_at, // Usar la fecha de la tabla pedidos_vistos_supervisor
-                'pedido_revisado' => !empty($pedidoRevisado),
-                'tiene_pendientes' => $tieneItemsPendientes,
-                'todos_pendientes' => $todosPendientes,
-                'todos_entregados' => $todosEntregados,
-            ];
-
-        }
 
         // Procesar datos para vista
         if ($request->query('view') === WarehouseConstants::VIEW_DETAILS) {
             return $this->procesarVistaDetallada($paginacion, $rolesDelUsuario, $areasPermitidas);
         }
 
-        return [
-            'view_type' => WarehouseConstants::VIEW_LIST,
-            'pedidos_por_pagina' => $pedidosPorPagina,
-            'total_pedidos' => count($pedidosPorPagina),
-            'pagina_actual' => $paginacion['pagina_actual'],
-            'por_pagina' => $paginacion['por_pagina'],
-        ];
+        return $this->procesarVistaLista($paginacion, $pedidosFiltradosPorRol);
     }
 
     /**
