@@ -1185,77 +1185,127 @@ final class ActualizarPrendaCompletaUseCase
                         // Obtener datosExtendidos si existe (para ubicaciones y observaciones por talla)
                         $datosExtendidos = $proceso['datosExtendidos'] ?? [];
 
-                        // Crear nuevas tallas desde el payload
+                        // 🔧 FIX: Agrupar tallas por GENERO + TALLA (ignorando colores) para evitar duplicados
+                        $tallasAgrupadasPorGeneroTalla = [];
+                        $coloresPorGeneroTalla = [];
+                        
                         foreach ($proceso['tallas'] as $genero => $tallas) {
-                            if (!is_array($tallas)) {
-                                continue;
-                            }
-
+                            if (!is_array($tallas)) continue;
+                            
                             foreach ($tallas as $tallaKey => $cantidad) {
                                 if ($cantidad > 0) {
-                                    // Separar talla y color si viene como "talla__color"
+                                    // Separar talla y color: "L__AZUL CELESTE" → ["L", "AZUL CELESTE"]
                                     $partes = explode('__', (string)$tallaKey);
                                     $tallaReal = $partes[0];
                                     $colorNombre = isset($partes[1]) ? $partes[1] : null;
-
-                                    // Extraer ubicaciones y observaciones del datosExtendidos si existe
-                                    $ubicacionesTalla = null;
-                                    $observacionesTalla = null;
                                     
-                                    if (!empty($datosExtendidos)) {
-                                        $generoLower = strtolower($genero);
-                                        $tallaDatos = $datosExtendidos[$generoLower][$tallaKey] ?? null;
-                                        
-                                        if ($tallaDatos) {
-                                            if (isset($tallaDatos['ubicaciones']) && !empty($tallaDatos['ubicaciones'])) {
-                                                $ubicacionesTalla = json_encode($tallaDatos['ubicaciones']);
-                                            }
-                                            if (isset($tallaDatos['observaciones'])) {
-                                                $observacionesTalla = $tallaDatos['observaciones'];
-                                            }
-                                        }
+                                    $claveAgrupar = strtoupper($genero) . '_' . strtoupper($tallaReal);
+                                    
+                                    // Agrupar cantidades por genero+talla
+                                    if (!isset($tallasAgrupadasPorGeneroTalla[$claveAgrupar])) {
+                                        $tallasAgrupadasPorGeneroTalla[$claveAgrupar] = [
+                                            'genero' => strtoupper($genero),
+                                            'talla' => strtoupper($tallaReal),
+                                            'cantidad_total' => 0,
+                                        ];
+                                        $coloresPorGeneroTalla[$claveAgrupar] = [];
                                     }
-
-                                    $tallaCreada = $procesoExistente->tallas()->create([
-                                        'genero' => strtoupper($genero),
-                                        'talla' => strtoupper($tallaReal),
-                                        'cantidad' => (int)$cantidad,
-                                        'ubicaciones' => $ubicacionesTalla,
-                                        'observaciones' => $observacionesTalla,
-                                    ]);
-
-                                    // Si hay color, recrear registro en pedidos_procesos_prenda_talla_colores
+                                    
+                                    $tallasAgrupadasPorGeneroTalla[$claveAgrupar]['cantidad_total'] += (int)$cantidad;
+                                    
+                                    // Guardar info de cada color para esta talla
                                     if (!empty($colorNombre)) {
-                                        \DB::table('pedidos_procesos_prenda_talla_colores')->insert([
-                                            'pedidos_procesos_prenda_talla_id' => $tallaCreada->id,
+                                        $coloresPorGeneroTalla[$claveAgrupar][] = [
                                             'color_nombre' => $colorNombre,
-                                            'tela_nombre' => null,
                                             'cantidad' => (int)$cantidad,
-                                            'ubicaciones' => $ubicacionesTalla,
-                                            'observaciones' => $observacionesTalla,
-                                            'created_at' => now(),
-                                            'updated_at' => now(),
-                                        ]);
+                                            'tallaKey' => $tallaKey, // Para buscar datosExtendidos después
+                                        ];
                                     }
+                                }
+                            }
+                        }
+                        
+                        // Crear tallas ÚNICAS (UNA sola fila por GENERO+TALLA)
+                        foreach ($tallasAgrupadasPorGeneroTalla as $claveAgrupar => $datosTalla) {
+                            $genero = $datosTalla['genero'];
+                            $tallaReal = $datosTalla['talla'];
+                            $cantidadTotal = $datosTalla['cantidad_total'];
+                            
+                            // Extraer ubicaciones/observaciones (usar el primer color para obtener datos extendidos)
+                            $ubicacionesTalla = null;
+                            $observacionesTalla = null;
+                            
+                            if (!empty($datosExtendidos)) {
+                                $generoLower = strtolower($genero);
+                                // Buscar en datosExtendidos usando cualquier tallaKey que tenga esta talla
+                                $tallaKeyParaBuscar = null;
+                                if (!empty($coloresPorGeneroTalla[$claveAgrupar])) {
+                                    $tallaKeyParaBuscar = $coloresPorGeneroTalla[$claveAgrupar][0]['tallaKey'];
+                                } else {
+                                    $tallaKeyParaBuscar = $tallaReal; // Sin colores
+                                }
+                                
+                                $tallaDatos = $datosExtendidos[$generoLower][$tallaKeyParaBuscar] ?? null;
+                                if ($tallaDatos) {
+                                    if (isset($tallaDatos['ubicaciones']) && !empty($tallaDatos['ubicaciones'])) {
+                                        $ubicacionesTalla = json_encode($tallaDatos['ubicaciones']);
+                                    }
+                                    if (isset($tallaDatos['observaciones'])) {
+                                        $observacionesTalla = $tallaDatos['observaciones'];
+                                    }
+                                }
+                            }
 
-                                    // Re-vincular imágenes que pertenecían a esta talla (por mapKey exacto)
-                                    $mapKeyNueva = strtoupper($genero) . '_' . strtoupper($tallaReal);
-                                    if (!empty($colorNombre)) {
-                                        $mapKeyNueva .= '__' . $colorNombre;
-                                    }
-                                    if (!empty($mapaImagenesPorKey[$mapKeyNueva])) {
-                                        $imageIdsParaRevincular = $mapaImagenesPorKey[$mapKeyNueva];
+                            $tallaCreada = $procesoExistente->tallas()->create([
+                                'genero' => $genero,
+                                'talla' => $tallaReal,
+                                'cantidad' => $cantidadTotal,
+                                'ubicaciones' => $ubicacionesTalla,
+                                'observaciones' => $observacionesTalla,
+                            ]);
+
+                            // Crear registros de colores para esta talla
+                            if (!empty($coloresPorGeneroTalla[$claveAgrupar])) {
+                                foreach ($coloresPorGeneroTalla[$claveAgrupar] as $colorInfo) {
+                                        $detallesColor = $datosExtendidos[$generoLower][$colorInfo['tallaKey']] ?? [];
+                                        $ubicacionesColor = !empty($detallesColor['ubicaciones']) ? json_encode($detallesColor['ubicaciones']) : $ubicacionesTalla;
+                                        $observacionesColor = array_key_exists('observaciones', $detallesColor) ? $detallesColor['observaciones'] : $observacionesTalla;
+                                    \DB::table('pedidos_procesos_prenda_talla_colores')->insert([
+                                        'pedidos_procesos_prenda_talla_id' => $tallaCreada->id,
+                                        'color_nombre' => $colorInfo['color_nombre'],
+                                        'tela_nombre' => null,
+                                        'cantidad' => $colorInfo['cantidad'],
+                                            'ubicaciones' => $ubicacionesColor,
+                                            'observaciones' => $observacionesColor,
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ]);
+                                }
+                            }
+
+                            // Re-vincular imágenes que pertenecían a esta talla
+                            $mapKeyNueva = strtoupper($genero) . '_' . strtoupper($tallaReal);
+                            if (!empty($coloresPorGeneroTalla[$claveAgrupar])) {
+                                // Si hay colores, re-vincular imágenes de cada color
+                                foreach ($coloresPorGeneroTalla[$claveAgrupar] as $colorInfo) {
+                                    $mapKeyConColor = $mapKeyNueva . '__' . $colorInfo['color_nombre'];
+                                    if (!empty($mapaImagenesPorKey[$mapKeyConColor])) {
                                         \DB::table('pedidos_procesos_imagenes')
-                                            ->whereIn('id', $imageIdsParaRevincular)
+                                            ->whereIn('id', $mapaImagenesPorKey[$mapKeyConColor])
                                             ->update(['proceso_prenda_talla_id' => $tallaCreada->id]);
-                                        \Log::info('[ActualizarPrendaCompletaUseCase] Imágenes por talla re-vinculadas', [
+                                        \Log::info('[ActualizarPrendaCompletaUseCase] Imágenes por talla+color re-vinculadas', [
                                             'proceso_id' => $procesoExistente->id,
-                                            'mapKey' => $mapKeyNueva,
+                                            'mapKey' => $mapKeyConColor,
                                             'new_talla_id' => $tallaCreada->id,
-                                            'image_ids' => $imageIdsParaRevincular,
+                                            'image_ids' => $mapaImagenesPorKey[$mapKeyConColor],
                                         ]);
                                     }
                                 }
+                            } else if (!empty($mapaImagenesPorKey[$mapKeyNueva])) {
+                                // Sin colores, re-vincular directamente
+                                \DB::table('pedidos_procesos_imagenes')
+                                    ->whereIn('id', $mapaImagenesPorKey[$mapKeyNueva])
+                                    ->update(['proceso_prenda_talla_id' => $tallaCreada->id]);
                             }
                         }
 
@@ -1373,63 +1423,113 @@ final class ActualizarPrendaCompletaUseCase
                             // Obtener datosExtendidos si existe (para ubicaciones y observaciones por talla)
                             $datosExtendidos = $proceso['datosExtendidos'] ?? [];
                             
+                            // 🔧 FIX: Agrupar tallas por GENERO + TALLA (ignorando colores) para evitar duplicados
+                            $tallasAgrupadasYE = [];
+                            $coloresPorGeneroTallaYE = [];
+                            
                             foreach ($proceso['tallas'] as $genero => $tallas) {
                                 if (!is_array($tallas)) continue;
                                 foreach ($tallas as $tallaKey => $cantidad) {
                                     if ($cantidad > 0) {
-                                        // Separar talla y color si viene como "talla__color"
                                         $partes = explode('__', (string)$tallaKey);
                                         $tallaReal = $partes[0];
                                         $colorNombre = isset($partes[1]) ? $partes[1] : null;
-
-                                        // Extraer ubicaciones y observaciones del datosExtendidos si existe
-                                        $ubicacionesTalla = null;
-                                        $observacionesTalla = null;
                                         
-                                        if (!empty($datosExtendidos)) {
-                                            $generoLower = strtolower($genero);
-                                            $tallaDatos = $datosExtendidos[$generoLower][$tallaKey] ?? null;
-                                            
-                                            if ($tallaDatos) {
-                                                if (isset($tallaDatos['ubicaciones']) && !empty($tallaDatos['ubicaciones'])) {
-                                                    $ubicacionesTalla = json_encode($tallaDatos['ubicaciones']);
-                                                }
-                                                if (isset($tallaDatos['observaciones'])) {
-                                                    $observacionesTalla = $tallaDatos['observaciones'];
-                                                }
-                                            }
+                                        $claveAgrupar = strtoupper($genero) . '_' . strtoupper($tallaReal);
+                                        
+                                        if (!isset($tallasAgrupadasYE[$claveAgrupar])) {
+                                            $tallasAgrupadasYE[$claveAgrupar] = [
+                                                'genero' => strtoupper($genero),
+                                                'talla' => strtoupper($tallaReal),
+                                                'cantidad_total' => 0,
+                                            ];
+                                            $coloresPorGeneroTallaYE[$claveAgrupar] = [];
                                         }
-
-                                        $tallaCreada = $procesoExistente->tallas()->create([
-                                            'genero' => strtoupper($genero),
-                                            'talla' => strtoupper($tallaReal),
-                                            'cantidad' => (int)$cantidad,
-                                            'ubicaciones' => $ubicacionesTalla,
-                                            'observaciones' => $observacionesTalla,
-                                        ]);
-
-                                        // Si hay color, recrear registro en pedidos_procesos_prenda_talla_colores
+                                        
+                                        $tallasAgrupadasYE[$claveAgrupar]['cantidad_total'] += (int)$cantidad;
+                                        
                                         if (!empty($colorNombre)) {
-                                            \DB::table('pedidos_procesos_prenda_talla_colores')->insert([
-                                                'pedidos_procesos_prenda_talla_id' => $tallaCreada->id,
+                                            $coloresPorGeneroTallaYE[$claveAgrupar][] = [
                                                 'color_nombre' => $colorNombre,
-                                                'tela_nombre' => null,
                                                 'cantidad' => (int)$cantidad,
-                                                'ubicaciones' => $ubicacionesTalla,
-                                                'observaciones' => $observacionesTalla,
-                                                'created_at' => now(),
-                                                'updated_at' => now(),
-                                            ]);
+                                                'tallaKey' => $tallaKey,
+                                            ];
                                         }
+                                    }
+                                }
+                            }
+                            
+                            // Crear tallas ÚNICAS y re-vincular imágenes
+                            foreach ($tallasAgrupadasYE as $claveAgrupar => $datosTalla) {
+                                $genero = $datosTalla['genero'];
+                                $tallaReal = $datosTalla['talla'];
+                                $cantidadTotal = $datosTalla['cantidad_total'];
+                                
+                                // Extraer ubicaciones/observaciones desde datosExtendidos
+                                $ubicacionesTalla = null;
+                                $observacionesTalla = null;
+                                
+                                if (!empty($datosExtendidos)) {
+                                    $generoLower = strtolower($genero);
+                                    $tallaKeyParaBuscar = null;
+                                    if (!empty($coloresPorGeneroTallaYE[$claveAgrupar])) {
+                                        $tallaKeyParaBuscar = $coloresPorGeneroTallaYE[$claveAgrupar][0]['tallaKey'];
+                                    } else {
+                                        $tallaKeyParaBuscar = $tallaReal;
+                                    }
+                                    
+                                    $tallaDatos = $datosExtendidos[$generoLower][$tallaKeyParaBuscar] ?? null;
+                                    if ($tallaDatos) {
+                                        if (isset($tallaDatos['ubicaciones']) && !empty($tallaDatos['ubicaciones'])) {
+                                            $ubicacionesTalla = json_encode($tallaDatos['ubicaciones']);
+                                        }
+                                        if (isset($tallaDatos['observaciones'])) {
+                                            $observacionesTalla = $tallaDatos['observaciones'];
+                                        }
+                                    }
+                                }
 
-                                        // Re-vincular imágenes que pertenecían a esta talla
-                                        $mapKeyNueva = strtoupper($genero) . '_' . strtoupper($tallaReal);
-                                        if (!empty($colorNombre)) {
-                                            $mapKeyNueva .= '__' . $colorNombre;
-                                        }
-                                        if (!empty($mapaImagenesPorKeyYaExiste[$mapKeyNueva])) {
+                                $tallaCreada = $procesoExistente->tallas()->create([
+                                    'genero' => $genero,
+                                    'talla' => $tallaReal,
+                                    'cantidad' => $cantidadTotal,
+                                    'ubicaciones' => $ubicacionesTalla,
+                                    'observaciones' => $observacionesTalla,
+                                ]);
+
+                                // Crear registros de colores para esta talla
+                                if (!empty($coloresPorGeneroTallaYE[$claveAgrupar])) {
+                                    foreach ($coloresPorGeneroTallaYE[$claveAgrupar] as $colorInfo) {
+                                            $detallesColor = $datosExtendidos[$generoLower][$colorInfo['tallaKey']] ?? [];
+                                            $ubicacionesColor = !empty($detallesColor['ubicaciones']) ? json_encode($detallesColor['ubicaciones']) : $ubicacionesTalla;
+                                            $observacionesColor = array_key_exists('observaciones', $detallesColor) ? $detallesColor['observaciones'] : $observacionesTalla;
+                                        \DB::table('pedidos_procesos_prenda_talla_colores')->insert([
+                                            'pedidos_procesos_prenda_talla_id' => $tallaCreada->id,
+                                            'color_nombre' => $colorInfo['color_nombre'],
+                                            'tela_nombre' => null,
+                                            'cantidad' => $colorInfo['cantidad'],
+                                                'ubicaciones' => $ubicacionesColor,
+                                                'observaciones' => $observacionesColor,
+                                            'created_at' => now(),
+                                            'updated_at' => now(),
+                                        ]);
+                                    }
+                                }
+
+                                // Re-vincular imágenes: buscar por genero_talla (sin color)
+                                $mapKeyBase = $genero . '_' . $tallaReal;
+                                if (!empty($mapaImagenesPorKeyYaExiste[$mapKeyBase])) {
+                                    \DB::table('pedidos_procesos_imagenes')
+                                        ->whereIn('id', $mapaImagenesPorKeyYaExiste[$mapKeyBase])
+                                        ->update(['proceso_prenda_talla_id' => $tallaCreada->id]);
+                                }
+                                // También re-vincular por cada color individual
+                                if (!empty($coloresPorGeneroTallaYE[$claveAgrupar])) {
+                                    foreach ($coloresPorGeneroTallaYE[$claveAgrupar] as $colorInfo) {
+                                        $mapKeyColor = $genero . '_' . $tallaReal . '__' . $colorInfo['color_nombre'];
+                                        if (!empty($mapaImagenesPorKeyYaExiste[$mapKeyColor])) {
                                             \DB::table('pedidos_procesos_imagenes')
-                                                ->whereIn('id', $mapaImagenesPorKeyYaExiste[$mapKeyNueva])
+                                                ->whereIn('id', $mapaImagenesPorKeyYaExiste[$mapKeyColor])
                                                 ->update(['proceso_prenda_talla_id' => $tallaCreada->id]);
                                         }
                                     }
@@ -1462,54 +1562,101 @@ final class ActualizarPrendaCompletaUseCase
                     // Obtener datosExtendidos si existe (para ubicaciones y observaciones por talla)
                     $datosExtendidos = $proceso['datosExtendidos'] ?? [];
                     
+                    // 🔧 FIX: Agrupar tallas por GENERO + TALLA (ignorando colores) para evitar duplicados
+                    $tallasAgrupadasPorGeneroTalla = [];
+                    $coloresPorGeneroTalla = [];
+                    
                     foreach ($proceso['tallas'] as $genero => $tallas) {
                         if (!is_array($tallas)) continue;
+                        
                         foreach ($tallas as $tallaKey => $cantidad) {
                             if ($cantidad > 0) {
-                                // Separar talla y color si viene como "talla__color"
+                                // Separar talla y color: "L__AZUL CELESTE" → ["L", "AZUL CELESTE"]
                                 $partes = explode('__', (string)$tallaKey);
                                 $tallaReal = $partes[0];
                                 $colorNombre = isset($partes[1]) ? $partes[1] : null;
-
-                                // Extraer ubicaciones y observaciones del datosExtendidos si existe
-                                $ubicacionesTalla = null;
-                                $observacionesTalla = null;
                                 
-                                if (!empty($datosExtendidos)) {
-                                    $generoLower = strtolower($genero);
-                                    $tallaDatos = $datosExtendidos[$generoLower][$tallaKey] ?? null;
-                                    
-                                    if ($tallaDatos) {
-                                        if (isset($tallaDatos['ubicaciones']) && !empty($tallaDatos['ubicaciones'])) {
-                                            $ubicacionesTalla = json_encode($tallaDatos['ubicaciones']);
-                                        }
-                                        if (isset($tallaDatos['observaciones'])) {
-                                            $observacionesTalla = $tallaDatos['observaciones'];
-                                        }
-                                    }
+                                $claveAgrupar = strtoupper($genero) . '_' . strtoupper($tallaReal);
+                                
+                                // Agrupar cantidades por genero+talla
+                                if (!isset($tallasAgrupadasPorGeneroTalla[$claveAgrupar])) {
+                                    $tallasAgrupadasPorGeneroTalla[$claveAgrupar] = [
+                                        'genero' => strtoupper($genero),
+                                        'talla' => strtoupper($tallaReal),
+                                        'cantidad_total' => 0,
+                                    ];
+                                    $coloresPorGeneroTalla[$claveAgrupar] = [];
                                 }
-
-                                $tallaCreada = $procesoCreado->tallas()->create([
-                                    'genero' => strtoupper($genero),
-                                    'talla' => strtoupper($tallaReal),
-                                    'cantidad' => (int)$cantidad,
-                                    'ubicaciones' => $ubicacionesTalla,
-                                    'observaciones' => $observacionesTalla,
-                                ]);
-
-                                // Si hay color, crear registro en pedidos_procesos_prenda_talla_colores
+                                
+                                $tallasAgrupadasPorGeneroTalla[$claveAgrupar]['cantidad_total'] += (int)$cantidad;
+                                
+                                // Guardar info de cada color para esta talla
                                 if (!empty($colorNombre)) {
-                                    \DB::table('pedidos_procesos_prenda_talla_colores')->insert([
-                                        'pedidos_procesos_prenda_talla_id' => $tallaCreada->id,
+                                    $coloresPorGeneroTalla[$claveAgrupar][] = [
                                         'color_nombre' => $colorNombre,
-                                        'tela_nombre' => null,
                                         'cantidad' => (int)$cantidad,
-                                        'ubicaciones' => $ubicacionesTalla,
-                                        'observaciones' => $observacionesTalla,
-                                        'created_at' => now(),
-                                        'updated_at' => now(),
-                                    ]);
+                                        'tallaKey' => $tallaKey, // Para buscar datosExtendidos después
+                                    ];
                                 }
+                            }
+                        }
+                    }
+                    
+                    // Crear tallas ÚNICAS (UNA sola fila por GENERO+TALLA)
+                    foreach ($tallasAgrupadasPorGeneroTalla as $claveAgrupar => $datosTalla) {
+                        $genero = $datosTalla['genero'];
+                        $tallaReal = $datosTalla['talla'];
+                        $cantidadTotal = $datosTalla['cantidad_total'];
+                        
+                        // Extraer ubicaciones/observaciones (usar el primer color para obtener datos extendidos)
+                        $ubicacionesTalla = null;
+                        $observacionesTalla = null;
+                        
+                        if (!empty($datosExtendidos)) {
+                            $generoLower = strtolower($genero);
+                            // Buscar en datosExtendidos usando cualquier tallaKey que tenga esta talla
+                            $tallaKeyParaBuscar = null;
+                            if (!empty($coloresPorGeneroTalla[$claveAgrupar])) {
+                                $tallaKeyParaBuscar = $coloresPorGeneroTalla[$claveAgrupar][0]['tallaKey'];
+                            } else {
+                                $tallaKeyParaBuscar = $tallaReal; // Sin colores
+                            }
+                            
+                            $tallaDatos = $datosExtendidos[$generoLower][$tallaKeyParaBuscar] ?? null;
+                            if ($tallaDatos) {
+                                if (isset($tallaDatos['ubicaciones']) && !empty($tallaDatos['ubicaciones'])) {
+                                    $ubicacionesTalla = json_encode($tallaDatos['ubicaciones']);
+                                }
+                                if (isset($tallaDatos['observaciones'])) {
+                                    $observacionesTalla = $tallaDatos['observaciones'];
+                                }
+                            }
+                        }
+
+                        $tallaCreada = $procesoCreado->tallas()->create([
+                            'genero' => $genero,
+                            'talla' => $tallaReal,
+                            'cantidad' => $cantidadTotal,
+                            'ubicaciones' => $ubicacionesTalla,
+                            'observaciones' => $observacionesTalla,
+                        ]);
+
+                        // Crear registros de colores para esta talla
+                        if (!empty($coloresPorGeneroTalla[$claveAgrupar])) {
+                            foreach ($coloresPorGeneroTalla[$claveAgrupar] as $colorInfo) {
+                                    $detallesColor = $datosExtendidos[$generoLower][$colorInfo['tallaKey']] ?? [];
+                                    $ubicacionesColor = !empty($detallesColor['ubicaciones']) ? json_encode($detallesColor['ubicaciones']) : $ubicacionesTalla;
+                                    $observacionesColor = array_key_exists('observaciones', $detallesColor) ? $detallesColor['observaciones'] : $observacionesTalla;
+                                \DB::table('pedidos_procesos_prenda_talla_colores')->insert([
+                                    'pedidos_procesos_prenda_talla_id' => $tallaCreada->id,
+                                    'color_nombre' => $colorInfo['color_nombre'],
+                                    'tela_nombre' => null,
+                                    'cantidad' => $colorInfo['cantidad'],
+                                        'ubicaciones' => $ubicacionesColor,
+                                        'observaciones' => $observacionesColor,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
                             }
                         }
                     }
@@ -1966,13 +2113,19 @@ final class ActualizarPrendaCompletaUseCase
 
                         // Si hay color, recrear registro en pedidos_procesos_prenda_talla_colores
                         if (!empty($colorNombre)) {
+                            $detallesColor = $datosExtendidos[strtolower($genero)][$tallaKey] ?? null;
+                            $ubicacionesColor = !empty($detallesColor['ubicaciones']) ? json_encode($detallesColor['ubicaciones']) : $ubicacionesTalla;
+                            $observacionesColor = is_array($detallesColor) && array_key_exists('observaciones', $detallesColor)
+                                ? $detallesColor['observaciones']
+                                : $observacionesTalla;
+
                             \DB::table('pedidos_procesos_prenda_talla_colores')->insert([
                                 'pedidos_procesos_prenda_talla_id' => $tallaCreada->id,
                                 'color_nombre' => $colorNombre,
                                 'tela_nombre' => null,
                                 'cantidad' => (int)$cantidad,
-                                'ubicaciones' => $ubicacionesTalla,
-                                'observaciones' => $observacionesTalla,
+                                'ubicaciones' => $ubicacionesColor,
+                                'observaciones' => $observacionesColor,
                                 'created_at' => now(),
                                 'updated_at' => now(),
                             ]);

@@ -919,28 +919,28 @@ class FacturaPedidoService
                         foreach ($coloresConDetalles as $color) {
                             $colorNombre = $color->color_nombre ?? 'Sin color';
                             
-                            // EN MODO GENERAL: Usar observaciones de la talla, no del color
-                            // EN MODO ESPECIFICO: Usar observaciones específicas del color
-                            if ($modoTallas === 'general') {
-                                $observacionesActuales = $tallaProceso->observaciones ?? '';
-                                $ubicacionesActuales = $ubicaciones;
-                                $claveTalla = $talla; // Clave solo con la talla
-                            } else {
-                                $claveTalla = "{$talla}__" . $colorNombre; // Ej: L__AZUL CIELO
-                                
-                                // Parsear ubicaciones del color
-                                $ubicacionesActuales = [];
+                            // Clave SIEMPRE incluye el color para evitar que se pierdan colores
+                            // de la misma talla (ej: L con AZUL CELESTE y L con AZUL REY)
+                            $claveTalla = "{$talla}__{$colorNombre}";
+                           
+                                $ubicacionesColor = [];
                                 if ($color->ubicaciones) {
                                     if (is_array($color->ubicaciones)) {
-                                        $ubicacionesActuales = $color->ubicaciones;
+                                        $ubicacionesColor = $color->ubicaciones;
                                     } else if (is_string($color->ubicaciones)) {
-                                        $ubicacionesActuales = json_decode($color->ubicaciones, true) ?? [];
+                                        $ubicacionesColor = json_decode($color->ubicaciones, true) ?? [];
                                     }
                                 }
+                            
+                                // En modo general, priorizar el detalle del color y usar la talla como fallback.
+                            if ($modoTallas === 'general') {
+                                    $observacionesActuales = $color->observaciones ?? $tallaProceso->observaciones ?? '';
+                                    $ubicacionesActuales = !empty($ubicacionesColor) ? $ubicacionesColor : $ubicaciones;
+                            } else {
+                                    $ubicacionesActuales = $ubicacionesColor;
                                 $observacionesActuales = $color->observaciones ?? '';
                             }
                             
-                            // Asignar datos (evitar duplicados en modo general agrupando por talla)
                             if (!isset($tallesDetalles[$genero][$claveTalla])) {
                                 $tallesDetalles[$genero][$claveTalla] = [
                                     'ubicaciones' => $ubicacionesActuales,

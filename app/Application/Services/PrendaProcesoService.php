@@ -136,38 +136,75 @@ class PrendaProcesoService
                                 continue;
                             }
 
+                            // 🔧 FIX: Agrupar tallas por GENERO + TALLA (ignorando colores) para evitar duplicados
+                            $tallasAgrupadas = [];
+                            $coloresPorTalla = [];
+
                             foreach ($tallasArray as $tallaKey => $cantidad) {
                                 $cantidad = (int)$cantidad;
                                 if ($cantidad > 0) {
-                                    // Separar talla y color si viene como "talla__color"
                                     $partes = explode('__', (string)$tallaKey);
                                     $tallaReal = $partes[0];
                                     $colorNombre = isset($partes[1]) ? $partes[1] : null;
-                                    
-                                    // Obtener datos extendidos para esta talla
-                                    $detallesExtendidos = $datosExtendidos[strtolower($generoBD)][$tallaKey] ?? [];
-                                    
-                                    // Insertar en pedidos_procesos_prenda_tallas
-                                    $tallaProcesoPrendaId = DB::table('pedidos_procesos_prenda_tallas')->insertGetId([
-                                        'proceso_prenda_detalle_id' => $procesoDetalleId,
-                                        'genero' => $generoEnum,
-                                        'talla' => $tallaReal,
-                                        'cantidad' => $cantidad,
-                                        'ubicaciones' => !empty($detallesExtendidos['ubicaciones']) ? json_encode($detallesExtendidos['ubicaciones']) : null,
-                                        'observaciones' => $detallesExtendidos['observaciones'] ?? null,
-                                        'created_at' => now(),
-                                        'updated_at' => now(),
-                                    ]);
-                                    
-                                    // Si hay color, insertar en pedidos_procesos_prenda_talla_colores
+
+                                    $claveAgrupar = strtoupper($tallaReal);
+
+                                    if (!isset($tallasAgrupadas[$claveAgrupar])) {
+                                        $tallasAgrupadas[$claveAgrupar] = [
+                                            'talla' => $tallaReal,
+                                            'cantidad_total' => 0,
+                                            'tallaKey' => $tallaKey, // Para datosExtendidos
+                                        ];
+                                        $coloresPorTalla[$claveAgrupar] = [];
+                                    }
+
+                                    $tallasAgrupadas[$claveAgrupar]['cantidad_total'] += $cantidad;
+
                                     if (!empty($colorNombre)) {
+                                        $coloresPorTalla[$claveAgrupar][] = [
+                                            'color_nombre' => $colorNombre,
+                                            'cantidad' => $cantidad,
+                                            'tallaKey' => $tallaKey,
+                                        ];
+                                    }
+                                }
+                            }
+
+                            // Crear tallas ÚNICAS (UNA sola fila por GENERO+TALLA)
+                            foreach ($tallasAgrupadas as $claveAgrupar => $datosTalla) {
+                                $tallaReal = $datosTalla['talla'];
+                                $cantidadTotal = $datosTalla['cantidad_total'];
+
+                                // Obtener datos extendidos (usar el primer tallaKey disponible)
+                                $tallaKeyParaBuscar = !empty($coloresPorTalla[$claveAgrupar])
+                                    ? $coloresPorTalla[$claveAgrupar][0]['tallaKey']
+                                    : $datosTalla['tallaKey'];
+                                $detallesExtendidos = $datosExtendidos[strtolower($generoBD)][$tallaKeyParaBuscar] ?? [];
+
+                                $tallaProcesoPrendaId = DB::table('pedidos_procesos_prenda_tallas')->insertGetId([
+                                    'proceso_prenda_detalle_id' => $procesoDetalleId,
+                                    'genero' => $generoEnum,
+                                    'talla' => $tallaReal,
+                                    'cantidad' => $cantidadTotal,
+                                    'ubicaciones' => !empty($detallesExtendidos['ubicaciones']) ? json_encode($detallesExtendidos['ubicaciones']) : null,
+                                    'observaciones' => $detallesExtendidos['observaciones'] ?? null,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+
+                                // Crear registros de colores para esta talla
+                                if (!empty($coloresPorTalla[$claveAgrupar])) {
+                                    foreach ($coloresPorTalla[$claveAgrupar] as $colorInfo) {
+                                            $detallesColor = $datosExtendidos[strtolower($generoBD)][$colorInfo['tallaKey']] ?? [];
+                                            $ubicacionesColor = !empty($detallesColor['ubicaciones']) ? json_encode($detallesColor['ubicaciones']) : (!empty($detallesExtendidos['ubicaciones']) ? json_encode($detallesExtendidos['ubicaciones']) : null);
+                                            $observacionesColor = array_key_exists('observaciones', $detallesColor) ? $detallesColor['observaciones'] : ($detallesExtendidos['observaciones'] ?? null);
                                         DB::table('pedidos_procesos_prenda_talla_colores')->insert([
                                             'pedidos_procesos_prenda_talla_id' => $tallaProcesoPrendaId,
-                                            'color_nombre' => $colorNombre,
-                                            'tela_nombre' => null, // Podría venir en datos extendidos si es necesario
-                                            'cantidad' => $cantidad,
-                                            'ubicaciones' => !empty($detallesExtendidos['ubicaciones']) ? json_encode($detallesExtendidos['ubicaciones']) : null,
-                                            'observaciones' => $detallesExtendidos['observaciones'] ?? null,
+                                            'color_nombre' => $colorInfo['color_nombre'],
+                                            'tela_nombre' => null,
+                                            'cantidad' => $colorInfo['cantidad'],
+                                                'ubicaciones' => $ubicacionesColor,
+                                                'observaciones' => $observacionesColor,
                                             'created_at' => now(),
                                             'updated_at' => now(),
                                         ]);

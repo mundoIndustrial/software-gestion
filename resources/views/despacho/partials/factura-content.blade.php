@@ -108,11 +108,13 @@
                                             <table style="width: 100%; font-size: 9px; border-collapse: collapse; margin-bottom: 2px;">
                                                 <thead>
                                                     <tr style="background: #f3f4f6; border-bottom: 1px solid #d1d5db;">
-                                                        <th style="padding: 2px 4px; text-align: left; font-weight: 600; color: #374151; width: {{ $proceso['modo_tallas'] === 'especifico' ? '20%' : '50%' }};">Talla</th>
+                                                        <th style="padding: 2px 4px; text-align: left; font-weight: 600; color: #374151; width: 15%;">Talla</th>
+                                                        <th style="padding: 2px 4px; text-align: center; font-weight: 600; color: #374151; width: 10%;">Cantidad</th>
+                                                        <th style="padding: 2px 4px; text-align: left; font-weight: 600; color: #374151; width: {{ $proceso['modo_tallas'] === 'especifico' ? '20%' : '30%' }};">Color</th>
                                                         @if($proceso['modo_tallas'] === 'especifico')
-                                                            <th style="padding: 2px 4px; text-align: left; font-weight: 600; color: #374151; width: 30%;">Ubicación</th>
+                                                            <th style="padding: 2px 4px; text-align: left; font-weight: 600; color: #374151; width: 20%;">Ubicación</th>
                                                         @endif
-                                                        <th style="padding: 2px 4px; text-align: left; font-weight: 600; color: #374151; width: {{ $proceso['modo_tallas'] === 'especifico' ? '50%' : '50%' }};">Observaciones</th>
+                                                        <th style="padding: 2px 4px; text-align: left; font-weight: 600; color: #374151; width: {{ $proceso['modo_tallas'] === 'especifico' ? '35%' : '45%' }};">Observaciones</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -120,8 +122,18 @@
                                                         @if(is_array($tallasDatos))
                                                             @foreach($tallasDatos as $talla => $tallaDatos)
                                                                 @if(is_array($tallaDatos))
+                                                                    @php
+                                                                        // Parsear talla en caso de que venga con color: L__AZUL CELESTE
+                                                                        $tallaDisplay = $talla;
+                                                                        if (str_contains($talla, '__')) {
+                                                                            $partes = explode('__', $talla);
+                                                                            $tallaDisplay = $partes[0];
+                                                                        }
+                                                                    @endphp
                                                                     <tr style="border-bottom: 1px solid #f0f0f0;">
-                                                                        <td style="padding: 2px 4px; color: #1f2937; font-weight: 600;">{{ strtoupper($genero) }} {{ $talla }}</td>
+                                                                        <td style="padding: 2px 4px; color: #1f2937; font-weight: 600;">{{ strtoupper($genero) }} {{ $tallaDisplay }}</td>
+                                                                        <td style="padding: 2px 4px; color: #1f2937; font-weight: 600; text-align: center;">{{ $tallaDatos['cantidad'] ?? '—' }}</td>
+                                                                        <td style="padding: 2px 4px; color: #666;">{{ $tallaDatos['color'] ?? '—' }}</td>
                                                                         @if($proceso['modo_tallas'] === 'especifico')
                                                                             <td style="padding: 2px 4px; color: #666;">
                                                                                 @if(!empty($tallaDatos['ubicaciones']))
