@@ -210,12 +210,18 @@ function agregarImagenesGenerales(files) {
         // Marcar como procesado
         window._fotosGeneralesKeys.add(fileKey);
         
+        // NUEVO: Asignar UID único a cada File para mapeo backend
+        if (!file.uid) {
+            file.uid = `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            console.log('[agregarImagenesGenerales] 🆔 UID asignado al File:', file.uid, file.name);
+        }
+        
         // Agregar a los arrays
         const blobUrl = URL.createObjectURL(file);
         fotosGeneralesTemp.push(blobUrl);
         fotosGeneralesFilesTemp.push(file);
         
-        console.log('[agregarImagenesGenerales] ✅ Imagen agregada:', fileKey);
+        console.log('[agregarImagenesGenerales] ✅ Imagen agregada:', fileKey, 'UID:', file.uid);
     });
     
     console.log('[agregarImagenesGenerales] 🎉 Total en fotosGeneralesTemp después:', fotosGeneralesTemp.length);
@@ -696,6 +702,12 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
         
         datosGenerales.imagenesFiles.forEach(file => {
             if (file instanceof File) {
+                // NUEVO: Asignar UID único a cada File para mapeo backend
+                if (!file.uid) {
+                    file.uid = `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                    console.log('[por-tallas] 🆔 UID asignado al File restaurado:', file.uid, file.name);
+                }
+                
                 // Recrear blob URL para visualización
                 const blobUrl = URL.createObjectURL(file);
                 fotosGeneralesTemp.push(blobUrl);
@@ -787,6 +799,19 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
                 imagenes: imagenesExistentes,
                 imagenesFiles: []
             };
+            
+            // ✅ RESTAURAR FILES TEMPORALES de esta talla (archivos que aún no se subieron)
+            if (existente?.imagenesFiles && Array.isArray(existente.imagenesFiles) && existente.imagenesFiles.length > 0) {
+                console.log(`[por-tallas] 📸 Restaurando Files para ${key}:`, existente.imagenesFiles.length);
+                existente.imagenesFiles.forEach(file => {
+                    if (file instanceof File) {
+                        const blobUrl = URL.createObjectURL(file);
+                        datosPorTallaTemp[key].imagenes.push(blobUrl);
+                        datosPorTallaTemp[key].imagenesFiles.push(file);
+                    }
+                });
+            }
+            
             contDama.appendChild(crearTarjetaTalla('dama', tallaKey, cantidad, datosPorTallaTemp[key]));
         });
         
@@ -841,6 +866,19 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
                 imagenes: imagenesExistentes,
                 imagenesFiles: []
             };
+            
+            // ✅ RESTAURAR FILES TEMPORALES de esta talla (archivos que aún no se subieron)
+            if (existente?.imagenesFiles && Array.isArray(existente.imagenesFiles) && existente.imagenesFiles.length > 0) {
+                console.log(`[por-tallas] 📸 Restaurando Files para ${key}:`, existente.imagenesFiles.length);
+                existente.imagenesFiles.forEach(file => {
+                    if (file instanceof File) {
+                        const blobUrl = URL.createObjectURL(file);
+                        datosPorTallaTemp[key].imagenes.push(blobUrl);
+                        datosPorTallaTemp[key].imagenesFiles.push(file);
+                    }
+                });
+            }
+            
             contCab.appendChild(crearTarjetaTalla('caballero', tallaKey, cantidad, datosPorTallaTemp[key]));
         });
         
@@ -1429,14 +1467,28 @@ window.guardarProcesoPorTallas = function() {
             ubicaciones: datos.ubicaciones,
             observaciones: datos.observaciones,
             imagenesCount: datos.imagenes?.length,
-            imagenesFilesCount: datos.imagenesFiles?.length
+            imagenesFilesCount: datos.imagenesFiles?.length,
+            imagenesSample: datos.imagenes?.slice(0, 2).map(img => typeof img === 'string' ? img.substring(0, 60) : typeof img),
+            imagenesFilesSample: datos.imagenesFiles?.slice(0, 2).map(file => file instanceof File ? `File: ${file.name}` : typeof file)
+        });
+
+        // Filtrar blob URLs de imagenes - solo mantener URLs del servidor
+        const imagenesValidas = modoModalPorTallasActual === 'general' ? [] : (datos.imagenes || []).filter(img => {
+            if (typeof img === 'string') {
+                return !img.startsWith('blob:') && !img.startsWith('data:');
+            }
+            if (typeof img === 'object' && img) {
+                const url = img.url || img.ruta_webp || img.ruta_original || img.ruta || '';
+                return typeof url === 'string' && !url.startsWith('blob:') && !url.startsWith('data:');
+            }
+            return false;
         });
 
         datosExtendidos[genero][tallaKey] = {
             cantidadSeleccionada: datos.cantidadSeleccionada,
             ubicaciones: modoModalPorTallasActual === 'general' ? [] : (datos.ubicaciones || []),
             observaciones: datos.observaciones || '',
-            imagenes: modoModalPorTallasActual === 'general' ? [] : (datos.imagenes || []),
+            imagenes: imagenesValidas,
             imagenesFiles: modoModalPorTallasActual === 'general' ? [] : (datos.imagenesFiles || [])
         };
     });
@@ -1461,8 +1513,10 @@ window.guardarProcesoPorTallas = function() {
         ubicaciones: modoModalPorTallasActual === 'general' ? [ubicacionGeneralTemp] : [],
         observaciones: '',
         tallas: tallas,
-        imagenes: fotosGeneralesTemp, // Solo nuevas imágenes (File objects directos o blob URLs)
+        // 🔧 FIX: Copiar File objects de imagenesFiles a imagenes para que FormData los encuentre
+        imagenes: modoModalPorTallasActual === 'general' ? fotosGeneralesFilesTemp : [],
         imagenesFiles: fotosGeneralesFilesTemp, // File objects para las nuevas imágenes
+        fotosGeneralesFiles: fotosGeneralesFilesTemp, // Alias para compatibilidad con renderizador
         imagenes_existentes: fotosGeneralesExistentes, // URLs de BD que se van a mantener
         imagenes_a_eliminar: fotosGeneralesEliminadas, // URLs de BD que fueron eliminadas - NOMBRE CORRECTO para que adapter lo encuentre
         imagenesEliminadas: [],
@@ -1499,6 +1553,11 @@ window.guardarProcesoPorTallas = function() {
         window.renderizarTarjetasProcesos();
     }
 
+    // ❌ COMENTADO: Este bloque estaba agregando PROCESOS como TELAS a window.telasCreacion
+    // Los procesos (estampado, DTF, sublimado) NO son telas y no deberían estar en esta lista
+    // Las tallas reales ya están asignadas con sus telas correspondientes (ej: ANT BABILONIA)
+    
+    /* 
     // 🔥 FIX: Sincronizar nuevas tallas con window.telasCreacion para que se muestren en la tabla
     // Las nuevas tallas que se agregaron en el modal deben estar disponibles en telasCreacion
     // para que actualizarTablaResumen() las pueda mostrar
@@ -1544,6 +1603,7 @@ window.guardarProcesoPorTallas = function() {
             window.ColoresPorTalla.actualizarTablaResumen();
         }
     }
+    */
 
     // Cerrar modal
     const modal = document.getElementById('modal-proceso-por-tallas');

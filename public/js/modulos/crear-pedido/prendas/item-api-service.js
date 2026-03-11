@@ -849,6 +849,7 @@ class ItemAPIService {
                             return;
                         }
 
+                        // 1. Extraer imágenes originales (imagenes array)
                         let imagenes = [];
                         if (proceso.datos && Array.isArray(proceso.datos.imagenes)) {
                             imagenes = proceso.datos.imagenes;
@@ -856,21 +857,23 @@ class ItemAPIService {
                             imagenes = proceso.imagenes;
                         }
 
+                        let imagenIndex = 0;
                         imagenes.forEach((img, imgIdx) => {
                             if (img instanceof File) {
-                                const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][imagenes][${imgIdx}]`;
+                                const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][imagenes][${imagenIndex}]`;
                                 prendaData.procesos[procesoKey].imagenes.push({
                                     file: img,
                                     formdata_key: formdataKey,
                                     uid: img.uid || null  // ← AGREGADO: Capturar UID de la imagen del proceso si existe
                                 });
                                 estructura.archivosMap[formdataKey] = img;
-                                console.debug(`[extraerFiles] Prenda[${prendaIdx}].procesos[${procesoKey}][imagenes][${imgIdx}] = ${img.name} (key: ${formdataKey}, uid: ${img.uid || 'N/A'})`);
+                                console.debug(`[extraerFiles] Prenda[${prendaIdx}].procesos[${procesoKey}][imagenes][${imagenIndex}] = ${img.name} (key: ${formdataKey}, uid: ${img.uid || 'N/A'})`);
+                                imagenIndex++;
                             } else if (img.file && img.file.uid && this.fileRegistry.has(img.file.uid)) {
                                 //  RECUPERAR File desde el registro global por UID
                                 const fileOriginal = this.fileRegistry.get(img.file.uid);
                                 console.log(`[extraerFiles]  Recuperando File de proceso desde registry para uid:`, img.file.uid);
-                                const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][imagenes][${imgIdx}]`;
+                                const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][imagenes][${imagenIndex}]`;
                                 prendaData.procesos[procesoKey].imagenes.push({
                                     file: fileOriginal,
                                     formdata_key: formdataKey,
@@ -878,14 +881,74 @@ class ItemAPIService {
                                 });
                                 estructura.archivosMap[formdataKey] = fileOriginal;
                                 console.debug(`[extraerFiles]  File de proceso recuperado: ${fileOriginal.name}`);
+                                imagenIndex++;
                             } else if (img && (typeof img === 'string' || (typeof img === 'object' && (img.ruta || img.url)))) {
                                 //  CRÍTICO: Convertir URLs de cotización a File objects
-                                const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][imagenes][${imgIdx}]`;
+                                const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][imagenes][${imagenIndex}]`;
                                 const promise = this.convertirImagenDeCotizacionAFile(img, formdataKey, prendaData.procesos[procesoKey].imagenes, estructura.archivosMap, item.uid);
                                 
                                 if (promise) {
                                     conversionPromises.push(promise);
                                 }
+                                imagenIndex++;
+                            }
+                        });
+
+                        // 2. NUEVO: Extraer fotosGeneralesFiles (FILES nuevos subidos en modo GENERAL)
+                        let fotosGeneralesFiles = [];
+                        if (proceso.datos && Array.isArray(proceso.datos.fotosGeneralesFiles)) {
+                            fotosGeneralesFiles = proceso.datos.fotosGeneralesFiles;
+                        } else if (Array.isArray(proceso.fotosGeneralesFiles)) {
+                            fotosGeneralesFiles = proceso.fotosGeneralesFiles;
+                        }
+
+                        console.debug(`[extraerFiles] Proceso ${procesoKey}: Encontrados ${fotosGeneralesFiles.length} fotosGeneralesFiles`);
+                        fotosGeneralesFiles.forEach((file, fileIdx) => {
+                            if (file instanceof File) {
+                                const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][imagenes][${imagenIndex}]`;
+                                
+                                // NUEVO: Agregar formdata_key al File para que limpiarParaJSON() lo incluya en metadata JSON
+                                if (!file.formdata_key) {
+                                    file.formdata_key = formdataKey;
+                                }
+                                
+                                prendaData.procesos[procesoKey].imagenes.push({
+                                    file: file,
+                                    formdata_key: formdataKey,
+                                    uid: file.uid || null
+                                });
+                                estructura.archivosMap[formdataKey] = file;
+                                console.debug(`[extraerFiles] 📸 Prenda[${prendaIdx}].procesos[${procesoKey}].fotosGeneralesFiles[${fileIdx}] → imagenes[${imagenIndex}] = ${file.name} (key: ${formdataKey})`);
+                                imagenIndex++;
+                            }
+                        });
+
+                        // 3. NUEVO: Extraer imagenesFiles (alias de fotosGeneralesFiles)
+                        let imagenesFiles = [];
+                        if (proceso.datos && Array.isArray(proceso.datos.imagenesFiles)) {
+                            imagenesFiles = proceso.datos.imagenesFiles;
+                        } else if (Array.isArray(proceso.imagenesFiles)) {
+                            imagenesFiles = proceso.imagenesFiles;
+                        }
+
+                        console.debug(`[extraerFiles] Proceso ${procesoKey}: Encontrados ${imagenesFiles.length} imagenesFiles`);
+                        imagenesFiles.forEach((file, fileIdx) => {
+                            if (file instanceof File) {
+                                const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][imagenes][${imagenIndex}]`;
+                                
+                                // NUEVO: Agregar formdata_key al File para que limpiarParaJSON() lo incluya en metadata JSON
+                                if (!file.formdata_key) {
+                                    file.formdata_key = formdataKey;
+                                }
+                                
+                                prendaData.procesos[procesoKey].imagenes.push({
+                                    file: file,
+                                    formdata_key: formdataKey,
+                                    uid: file.uid || null
+                                });
+                                estructura.archivosMap[formdataKey] = file;
+                                console.debug(`[extraerFiles] 📸 Prenda[${prendaIdx}].procesos[${procesoKey}].imagenesFiles[${fileIdx}] → imagenes[${imagenIndex}] = ${file.name} (key: ${formdataKey})`);
+                                imagenIndex++;
                             }
                         });
                         

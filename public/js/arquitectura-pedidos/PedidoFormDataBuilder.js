@@ -124,11 +124,39 @@ export class PedidoFormDataBuilder {
 
             // Imágenes de procesos
             if (prenda.procesos) {
-                prenda.procesos.forEach((proceso, procesoIdx) => {
-                    if (proceso.imagenes) {
+                // Manejar procesos como objeto {estampado: {...}, ...} o como array
+                const procesosArray = Array.isArray(prenda.procesos) 
+                    ? prenda.procesos 
+                    : Object.values(prenda.procesos);
+                
+                procesosArray.forEach((proceso, procesoIdx) => {
+                    // 1. Imágenes existentes del servidor (formato objeto con .file)
+                    if (proceso.imagenes && Array.isArray(proceso.imagenes)) {
                         proceso.imagenes.forEach((img, imgIdx) => {
                             if (img.file instanceof File) {
                                 this.agregarImagenProceso(prendaIdx, procesoIdx, imgIdx, img.file);
+                            }
+                        });
+                    }
+                    
+                    // 2. Imágenes nuevas (fotosGeneralesFiles - Files temporales)
+                    if (proceso.fotosGeneralesFiles && Array.isArray(proceso.fotosGeneralesFiles)) {
+                        let offset = (proceso.imagenes && Array.isArray(proceso.imagenes)) ? proceso.imagenes.length : 0;
+                        proceso.fotosGeneralesFiles.forEach((file, fileIdx) => {
+                            if (file instanceof File) {
+                                console.log(`[FormDataBuilder] Agregando fotosGeneralesFiles[${fileIdx}] del proceso ${procesoIdx}: ${file.name}`);
+                                this.agregarImagenProceso(prendaIdx, procesoIdx, offset + fileIdx, file);
+                            }
+                        });
+                    }
+                    
+                    // 3. Imágenes nuevas (imagenesFiles - alias de fotosGeneralesFiles)
+                    else if (proceso.imagenesFiles && Array.isArray(proceso.imagenesFiles)) {
+                        let offset = (proceso.imagenes && Array.isArray(proceso.imagenes)) ? proceso.imagenes.length : 0;
+                        proceso.imagenesFiles.forEach((file, fileIdx) => {
+                            if (file instanceof File) {
+                                console.log(`[FormDataBuilder] Agregando imagenesFiles[${fileIdx}] del proceso ${procesoIdx}: ${file.name}`);
+                                this.agregarImagenProceso(prendaIdx, procesoIdx, offset + fileIdx, file);
                             }
                         });
                     }

@@ -505,8 +505,34 @@ function generarTarjetaProceso(tipo, datos) {
                     ? `<div style="padding: 0.3rem 0.5rem; background: #fef3c7; border-left: 2px solid #f59e0b; border-radius: 4px; font-size: 0.75rem; color: #78350f;">${obsTalla}</div>`
                     : '';
 
-                // Imágenes (array de blob URLs o strings)
-                const imgsTalla = (detalle.imagenes || []).filter(src => src);
+                // 🔴 PRIORIDAD: Combinar imágenes existentes con Files nuevos
+                let imgsTalla = [];
+                
+                // 1. Agregar imágenes existentes (URLs del servidor)
+                if (detalle.imagenes && Array.isArray(detalle.imagenes)) {
+                    imgsTalla = detalle.imagenes.filter(img => {
+                        if (!img) return false;
+                        if (typeof img === 'string') {
+                            return !img.startsWith('blob:') && !img.startsWith('data:');
+                        }
+                        return true;
+                    });
+                }
+                
+                // 2. Agregar Files nuevos (tienen prioridad)
+                if (detalle.imagenesFiles && Array.isArray(detalle.imagenesFiles) && detalle.imagenesFiles.length > 0) {
+                    console.log(`🖼️ [RENDER-TALLA-${genero}-${tallaKey}] Agregando imagenesFiles (${detalle.imagenesFiles.length}) a imgsTalla (${imgsTalla.length} existentes)`);
+                    imgsTalla = [...imgsTalla, ...detalle.imagenesFiles];
+                } else {
+                    console.log(`🖼️ [RENDER-TALLA-${genero}-${tallaKey}] Usando imagenes directamente:`, {
+                        imagenesCount: imgsTalla.length,
+                        imagenesFilesExists: !!detalle.imagenesFiles,
+                        imagenesFilesCount: detalle.imagenesFiles?.length || 0,
+                        imagenesFilesIsArray: Array.isArray(detalle.imagenesFiles),
+                        imagenesSample: imgsTalla.slice(0, 2).map(img => typeof img === 'string' ? img.substring(0, 50) : (img instanceof File ? 'File:' + img.name : typeof img))
+                    });
+                }
+                
                 // Compatibilidad con campo antiguo 'imagen' singular
                 if (imgsTalla.length === 0 && detalle.imagen) {
                     imgsTalla.push(detalle.imagen);
@@ -579,7 +605,30 @@ function generarTarjetaProceso(tipo, datos) {
             : String(datos.ubicaciones)
     )) || '';
     
-    const fotosDisplay = datos.fotosGenerales || datos.imagenes || [];
+    // 🔴 PRIORIDAD: Combinar imágenes existentes (del servidor) con Files nuevos (no subidos)
+    let fotosDisplay = [];
+    
+    // 1. Agregar imágenes existentes del servidor (URLs válidas)
+    if (datos.fotosGenerales && Array.isArray(datos.fotosGenerales) && datos.fotosGenerales.length > 0) {
+        fotosDisplay = [...datos.fotosGenerales];
+    } else if (datos.imagenes && Array.isArray(datos.imagenes) && datos.imagenes.length > 0) {
+        // Filtrar blob URLs de imagenes
+        fotosDisplay = datos.imagenes.filter(img => {
+            if (typeof img === 'string') {
+                return !img.startsWith('blob:') && !img.startsWith('data:');
+            }
+            return true;
+        });
+    }
+    
+    // 2. Agregar Files nuevos (tienen prioridad para renderizado)
+    if (datos.fotosGeneralesFiles && Array.isArray(datos.fotosGeneralesFiles) && datos.fotosGeneralesFiles.length > 0) {
+        console.log(`🖼️ [RENDER-TARJETA-${tipo}] Agregando fotosGeneralesFiles (${datos.fotosGeneralesFiles.length}) a fotosDisplay (${fotosDisplay.length} existentes)`);
+        fotosDisplay = [...fotosDisplay, ...datos.fotosGeneralesFiles];
+    } else if (datos.imagenesFiles && Array.isArray(datos.imagenesFiles) && datos.imagenesFiles.length > 0) {
+        console.log(`🖼️ [RENDER-TARJETA-${tipo}] Agregando imagenesFiles (${datos.imagenesFiles.length}) a fotosDisplay (${fotosDisplay.length} existentes)`);
+        fotosDisplay = [...fotosDisplay, ...datos.imagenesFiles];
+    }
     
     console.log(`🎨 [GENERAR-TARJETA-${tipo.toUpperCase()}] Mapeo de ubicaciones y fotos:`, {
         tipo: tipo,
@@ -589,6 +638,7 @@ function generarTarjetaProceso(tipo, datos) {
         ubicacionesDisplay: ubicacionesDisplay,
         datosImagenes: Array.isArray(datos.imagenes) ? `Array[${datos.imagenes.length}]` : typeof datos.imagenes,
         fotosGenerales: Array.isArray(datos.fotosGenerales) ? `Array[${datos.fotosGenerales.length}]` : typeof datos.fotosGenerales,
+        fotosGeneralesFiles: Array.isArray(datos.fotosGeneralesFiles) ? `Array[${datos.fotosGeneralesFiles.length}]` : typeof datos.fotosGeneralesFiles,
         fotosDisplay: Array.isArray(fotosDisplay) ? `Array[${fotosDisplay.length}]` : fotosDisplay,
         debeRenderizarUbicacionGeneral: (datos.modoTallas === 'general' || datos.modoTallas === 'generico') && !!ubicacionesDisplay,
         debeRenderizarFotosGenerales: (datos.modoTallas === 'general' || datos.modoTallas === 'generico') && fotosDisplay && fotosDisplay.length > 0

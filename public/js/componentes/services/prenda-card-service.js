@@ -753,10 +753,29 @@ window.PrendaCardService = {
                         `;
                     }
 
-                    if (datos.fotosGenerales && datos.fotosGenerales.length > 0) {
-                        const fotosThumb = datos.fotosGenerales.map((src, idx) => {
+                    // 🔴 PRIORIDAD: Combinar fotosGenerales (URLs) con fotosGeneralesFiles (Files temporales)
+                    let fotosDisplay = [];
+                    
+                    // 1. Agregar fotos existentes del servidor
+                    if (datos.fotosGenerales && Array.isArray(datos.fotosGenerales) && datos.fotosGenerales.length > 0) {
+                        fotosDisplay = [...datos.fotosGenerales];
+                    }
+                    
+                    // 2. Agregar Files nuevos (tienen prioridad para renderizado)
+                    if (datos.fotosGeneralesFiles && Array.isArray(datos.fotosGeneralesFiles) && datos.fotosGeneralesFiles.length > 0) {
+                        console.log(`[PrendaCardService] ✅ Agregando fotosGeneralesFiles (${datos.fotosGeneralesFiles.length}) a fotosDisplay`);
+                        fotosDisplay = [...fotosDisplay, ...datos.fotosGeneralesFiles];
+                    } else if (datos.imagenesFiles && Array.isArray(datos.imagenesFiles) && datos.imagenesFiles.length > 0) {
+                        console.log(`[PrendaCardService] ✅ Agregando imagenesFiles (${datos.imagenesFiles.length}) a fotosDisplay`);
+                        fotosDisplay = [...fotosDisplay, ...datos.imagenesFiles];
+                    }
+                    
+                    if (fotosDisplay.length > 0) {
+                        const fotosThumb = fotosDisplay.map((src, idx) => {
                             let imgSrc = src;
-                            if (typeof src === 'string') {
+                            if (src instanceof File) {
+                                imgSrc = URL.createObjectURL(src);
+                            } else if (typeof src === 'string') {
                                 imgSrc = src.startsWith('blob:') ? src : src;
                             }
                             return `<img src="${imgSrc}" style="width: 45px; height: 45px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db;">`;
@@ -765,7 +784,7 @@ window.PrendaCardService = {
                         fotosGeneralesHTML = `
                             <div style="margin-bottom: 0.75rem;">
                                 <strong style="font-size: 0.8rem; color: #333; display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem;">
-                                    <i class="fas fa-images"></i>FOTOS GENERALES (${datos.fotosGenerales.length})
+                                    <i class="fas fa-images"></i>FOTOS GENERALES (${fotosDisplay.length})
                                 </strong>
                                 <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
                                     ${fotosThumb}
@@ -955,14 +974,32 @@ window.PrendaCardService = {
                     `;
                 }
 
-                // Fotos Generales
-                const fotosGenerales = datos.fotosGenerales || datos.imagenes || [];
+                // Fotos Generales - Combinar URLs con Files temporales
+                let fotosGenerales = [];
+                
+                // 1. Agregar fotos existentes del servidor (URLs)
+                if (datos.fotosGenerales && Array.isArray(datos.fotosGenerales) && datos.fotosGenerales.length > 0) {
+                    fotosGenerales = [...datos.fotosGenerales];
+                }
+                
+                // 2. Agregar Files nuevos (tienen prioridad para renderizado)
+                if (datos.fotosGeneralesFiles && Array.isArray(datos.fotosGeneralesFiles) && datos.fotosGeneralesFiles.length > 0) {
+                    console.log(`[PrendaCardService-ReadonlyProceso] ✅ Agregando fotosGeneralesFiles (${datos.fotosGeneralesFiles.length}) a fotosDisplay`);
+                    fotosGenerales = [...fotosGenerales, ...datos.fotosGeneralesFiles];
+                } else if (datos.imagenesFiles && Array.isArray(datos.imagenesFiles) && datos.imagenesFiles.length > 0) {
+                    console.log(`[PrendaCardService-ReadonlyProceso] ✅ Agregando imagenesFiles (${datos.imagenesFiles.length}) a fotosDisplay`);
+                    fotosGenerales = [...fotosGenerales, ...datos.imagenesFiles];
+                } else if (datos.imagenes && Array.isArray(datos.imagenes) && datos.imagenes.length > 0 && fotosGenerales.length === 0) {
+                    fotosGenerales = [...datos.imagenes];
+                }
+                
                 let fotosGeneralesHTML = '';
                 if (fotosGenerales && fotosGenerales.length > 0) {
                     const fotosHTML = fotosGenerales.map((img, idx) => {
                         let src = '';
                         if (img instanceof File) {
                             src = URL.createObjectURL(img);
+                            console.log(`[PrendaCardService-ReadonlyProceso] 📸 File ${idx} convertido a blob: ${src.substring(0, 50)}...`);
                         } else if (typeof img === 'object' && img !== null) {
                             src = img.previewUrl || img.dataURL || img.src || img.url || img.blobUrl || img.ruta_webp || img.ruta_original || img.ruta || '';
                         } else if (typeof img === 'string') {

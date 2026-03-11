@@ -260,6 +260,9 @@ class PrendaFormCollector {
                                 ubicaciones: Array.isArray(proceso.datos.ubicaciones) ? [...proceso.datos.ubicaciones] : (proceso.datos.ubicaciones || []),
                                 tallas: proceso.datos.tallas ? JSON.parse(JSON.stringify(proceso.datos.tallas)) : {},
                                 imagenes: Array.isArray(proceso.datos.imagenes) ? [...proceso.datos.imagenes] : [],
+                                // 🔴 CRÍTICO: Preservar Files de fotos generales (modo general)
+                                fotosGeneralesFiles: Array.isArray(proceso.datos.fotosGeneralesFiles) ? [...proceso.datos.fotosGeneralesFiles] : [],
+                                imagenesFiles: Array.isArray(proceso.datos.imagenesFiles) ? [...proceso.datos.imagenesFiles] : [],
                                 // 🔴 CRÍTICO: Preservar datosExtendidos con imagenesFiles (File objects)
                                 datosExtendidos: proceso.datos.datosExtendidos ? JSON.parse(JSON.stringify(proceso.datos.datosExtendidos)) : {}
                             };
@@ -279,6 +282,11 @@ class PrendaFormCollector {
                                         });
                                     }
                                 });
+                            }
+                            
+                            // Log de fotos generales preservadas
+                            if (datosCopiados.fotosGeneralesFiles && datosCopiados.fotosGeneralesFiles.length > 0) {
+                                console.log(`[copiarProcesos] ✅ fotosGeneralesFiles preservados para ${tipoProceso}:`, datosCopiados.fotosGeneralesFiles.length, 'files');
                             }
                         }
                         copia[tipoProceso] = {

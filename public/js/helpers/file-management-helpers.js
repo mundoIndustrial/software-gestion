@@ -42,13 +42,27 @@ function extraerFilesDeEstructura(estructura) {
 }
 
 /**
- * Limpia estructura de datos removiendo File objects
+ * Limpia estructura de datos convirtiendo File objects a metadata
  * Dejando la estructura lista para JSON.stringify()
+ * 
+ * IMPORTANTE: Convierte Files a metadata en lugar de eliminarlos
+ * para que el backend pueda mapear UIDs con archivos en FormData
  */
 function limpiarParaJSON(objeto) {
     if (objeto === null || objeto === undefined) return objeto;
     
-    if (objeto instanceof File) return undefined; // Remover Files
+    // NUEVO: Convertir File a metadata en lugar de eliminarlo
+    if (objeto instanceof File) {
+        return {
+            uid: objeto.uid || `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            nombre_archivo: objeto.name,
+            size: objeto.size,
+            type: objeto.type,
+            formdata_key: objeto.formdata_key || null, // Key para encontrar File en FormData
+            // Marca para que backend sepa que es una imagen nueva
+            es_nuevo: true
+        };
+    }
     
     if (Array.isArray(objeto)) {
         return objeto
@@ -60,12 +74,19 @@ function limpiarParaJSON(objeto) {
         const limpio = {};
         for (const [key, value] of Object.entries(objeto)) {
             if (value instanceof File) {
-                continue; // Saltear Files
-            }
-            if (value instanceof Blob) {
-                continue; // Saltear Blobs
-            }
-            if (typeof value === 'object') {
+                // NUEVO: Convertir File a metadata
+                limpio[key] = {
+                    uid: value.uid || `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    nombre_archivo: value.name,
+                    size: value.size,
+                    type: value.type,
+                    formdata_key: value.formdata_key || null, // Key para encontrar File en FormData
+                    es_nuevo: true
+                };
+            } else if (value instanceof Blob) {
+                // Blobs sin nombre siguen siendo removidos
+                continue;
+            } else if (typeof value === 'object') {
                 limpio[key] = limpiarParaJSON(value);
             } else {
                 limpio[key] = value;
