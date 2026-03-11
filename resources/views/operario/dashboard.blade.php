@@ -1,13 +1,13 @@
 ﻿@extends('operario.layout')
 
-@section('title', 'Mis Ã“rdenes')
+@section('title', 'Mis Órdenes')
 @section('page-title', '')
 
 @php
     // Helper para obtener clase de estado
     function getEstadoClass($estado) {
         $estado = strtolower(trim($estado));
-        if (strpos($estado, 'ejecuciÃ³n') !== false || strpos($estado, 'proceso') !== false) {
+        if (strpos($estado, 'ejecución') !== false || strpos($estado, 'proceso') !== false) {
             return 'en-proceso';
         }
         if (strpos($estado, 'completada') !== false || strpos($estado, 'completado') !== false) {
@@ -52,7 +52,7 @@
                     const nuevoOrdenesList = doc.getElementById('ordenesList');
                     const actualOrdenesList = document.getElementById('ordenesList');
                     if (!nuevoOrdenesList || !actualOrdenesList) {
-                        throw new Error('No se encontrÃ³ #ordenesList en HTML');
+                        throw new Error('No se encontró #ordenesList en HTML');
                     }
 
                     actualOrdenesList.innerHTML = nuevoOrdenesList.innerHTML;
@@ -77,7 +77,7 @@
 
                     console.log('[Operario Dashboard] Lista actualizada sin recargar');
                 } catch (e) {
-                    console.warn('[Operario Dashboard] FallÃ³ actualizar lista sin recargar, recargando pÃ¡gina', e);
+                    console.warn('[Operario Dashboard] Falló actualizar lista sin recargar, recargando página', e);
                     window.location.reload();
                 }
             }
@@ -120,13 +120,13 @@
                             actualizarListaSinRecargar();
                         });
 
-                    // Fallback pÃºblico: evento de asignaciÃ³n de corte (compara por nombre)
+                    // Fallback público: evento de asignación de corte (compara por nombre)
                     window.EchoInstance.channel('operarios.corte')
                         .subscribed(() => {
-                            console.log('[Operario Dashboard] Suscrito OK a canal pÃºblico', 'operarios.corte');
+                            console.log('[Operario Dashboard] Suscrito OK a canal público', 'operarios.corte');
                         })
                         .error((err) => {
-                            console.error('[Operario Dashboard] Error suscribiendo canal pÃºblico operarios.corte', err);
+                            console.error('[Operario Dashboard] Error suscribiendo canal público operarios.corte', err);
                         })
                         .listen('.corte.asignado', (e) => {
                             const encargadoEvento = String(e?.encargado || '').trim().toLowerCase();
@@ -142,21 +142,82 @@
                                 console.log('[Operario Dashboard] Coincide encargado con usuario, actualizando lista sin recargar');
                                 actualizarListaSinRecargar();
                             }
+                        })
+                        // Nuevo: Escuchar cuando se asigna encargado a costura para eliminar recibo de vista del cortador
+                        .listen('.encargado.costura.asignado', (e) => {
+                            console.log('[Operario Dashboard] Encargado de costura asignado, eliminando recibo de vista del cortador:', e);
+                            
+                            // Para cortadores: eliminar el recibo que ya tiene encargado de costura
+                            if (String(window.USUARIO_ACTUAL?.rol || '').toLowerCase() === 'cortador') {
+                                const prendaId = e?.prenda_id;
+                                const pedidoId = e?.pedido_id;
+                                
+                                if (prendaId) {
+                                    // Mostrar notificación al cortador
+                                    if (window.NotificacionesPush && typeof window.NotificacionesPush.add === 'function') {
+                                        const mensaje = e?.mensaje || `El recibo #${e?.numero_recibo} ha sido asignado a ${e?.encargado} para costura`;
+                                        window.NotificacionesPush.add({
+                                            title: 'Recibo asignado a costura',
+                                            message: mensaje,
+                                            type: 'info',
+                                            icon: 'checkroom',
+                                            duration: 6000
+                                        });
+                                        console.log('[Operario Dashboard] ✅ Notificación push mostrada al cortador');
+                                    } else {
+                                        // Fallback: Notificación nativa del navegador
+                                        console.log('[Operario Dashboard] Cortador usando notificación nativa...');
+                                        if ('Notification' in window && Notification.permission === 'granted') {
+                                            new Notification('Recibo asignado a costura', {
+                                                body: e?.mensaje || `El recibo #${e?.numero_recibo} ha sido asignado a ${e?.encargado} para costura`,
+                                                icon: '/icon.png'
+                                            });
+                                            console.log('[Operario Dashboard] ✅ Notificación nativa mostrada al cortador');
+                                        } else if ('Notification' in window && Notification.permission !== 'denied') {
+                                            Notification.requestPermission().then(permission => {
+                                                if (permission === 'granted') {
+                                                    new Notification('Recibo asignado a costura', {
+                                                        body: e?.mensaje || `El recibo #${e?.numero_recibo} ha sido asignado a ${e?.encargado} para costura`,
+                                                        icon: '/icon.png'
+                                                    });
+                                                }
+                                            });
+                                        } else {
+                                            alert(`Recibo asignado: ${e?.mensaje || `El recibo #${e?.numero_recibo} ha sido asignado a ${e?.encargado} para costura`}`);
+                                        }
+                                    }
+                                    
+                                    // Buscar y eliminar la tarjeta del recibo
+                                    const card = document.querySelector(`.orden-card-simple[data-prenda-id="${prendaId}"]`);
+                                    if (card) {
+                                        console.log(`[Operario Dashboard] Eliminando tarjeta prenda_id: ${prendaId}`);
+                                        card.remove();
+                                        
+                                        // Actualizar contador de tarjetas
+                                        actualizarContadorTarjetas();
+                                        console.log('[Operario Dashboard] ✅ Tarjeta eliminada y contador actualizado');
+                                    } else {
+                                        console.warn(`[Operario Dashboard] No se encontró tarjeta con prenda_id: ${prendaId}`);
+                                    }
+                                }
+                            } else {
+                                console.log('[Operario Dashboard] No es cortador, no elimina tarjeta');
+                            }
                         });
 
-                    // Vista-costura: escuchar cuando insumos aprueba/envÃ­a el recibo a producciÃ³n (Ã¡rea Corte)
+                    // Vista-costura: escuchar cuando insumos aprueba/envía el recibo a producción (área Corte)
                     // Evento broadcast: App\Events\ReciboAprobado -> channel('recibos-costura') -> 'recibo.aprobado'
                     if (String(window.USUARIO_ACTUAL?.rol || '').toLowerCase() === 'vista-costura') {
                         window.EchoInstance.channel('recibos-costura')
                             .subscribed(() => {
-                                console.log('[Operario Dashboard] Suscrito OK a canal pÃºblico', 'recibos-costura');
+                                console.log('[Operario Dashboard] Suscrito OK a canal público', 'recibos-costura');
                             })
                             .error((err) => {
-                                console.error('[Operario Dashboard] Error suscribiendo canal pÃºblico recibos-costura', err);
+                                console.error('[Operario Dashboard] Error suscribiendo canal público recibos-costura', err);
                             })
                             .listen('.recibo.aprobado', (e) => {
                                 console.log('[Operario Dashboard] Evento recibo.aprobado recibido:', e);
-                                // Vista-costura ya no muestra recibos en Ã¡rea Corte; no refrescar aquÃ­.
+                                // Vista-costura ya no muestra recibos en área Corte; no refrescar aquí.
                             })
                             .listen('.recibo.completado', (e) => {
                                 console.log('[Operario Dashboard] Evento recibo.completado recibido:', e);
@@ -167,30 +228,99 @@
                                         const operario = String(e?.nombre_operario || '').trim();
                                         let titulo = 'Recibo completado';
                                         let detalle = `Recibo ${consecutivo}`.trim();
-
-                                        if (area.toLowerCase() === 'corte') {
-                                            titulo = 'Recibo enviado a Costura';
-                                            detalle = `Recibo ${consecutivo} completado en CORTE${operario ? ' por ' + operario : ''}`.trim();
-                                        } else if (area.toLowerCase() === 'costura') {
-                                            titulo = 'Recibo completado en Costura';
-                                            detalle = `Recibo ${consecutivo} completado en COSTURA${operario ? ' por ' + operario : ''}`.trim();
-                                        } else if (area.toLowerCase() === 'control de calidad' || area.toLowerCase() === 'control calidad') {
-                                            titulo = 'Recibo completado en Control de Calidad';
-                                            detalle = `Recibo ${consecutivo} completado en CONTROL DE CALIDAD${operario ? ' por ' + operario : ''}`.trim();
+                                        
+                                        if (area && operario) {
+                                            titulo += ` en ${area}`;
+                                            detalle += ` por ${operario}`;
                                         }
-
+                                        
                                         window.NotificacionesPush.add({
-                                            id: `recibo-completado-${String(e?.recibo_id || '')}-${String(e?.area || '')}-${String(e?.timestamp || '')}`,
-                                            titulo,
-                                            detalle,
-                                            fecha: '',
+                                            title: titulo,
+                                            message: detalle,
+                                            type: 'success',
+                                            icon: 'check_circle',
+                                            duration: 5000
                                         });
                                     }
                                 } catch (err) {
-                                    console.warn('[Operario Dashboard] Error creando notificaciÃ³n push', err);
+                                    console.warn('[Operario Dashboard] Error creando notificación push', err);
                                 }
                                 actualizarListaSinRecargar();
                             });
+                    }
+
+                    // Costurero: escuchar cuando se le asigna un recibo
+                    if (String(window.USUARIO_ACTUAL?.rol || '').toLowerCase() === 'costurero') {
+                        const nombreCosturero = String(window.USUARIO_ACTUAL?.nombre || '').trim();
+                        if (nombreCosturero) {
+                            // Normalizar el nombre igual que en PHP
+                            const nombreNormalizado = nombreCosturero.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_');
+                            
+                            console.log(`[Operario Dashboard] Costurero ${nombreCosturero} (normalizado: ${nombreNormalizado}) suscribiendo a canal privado`);
+                            
+                            window.EchoInstance.private(`costurero.${nombreNormalizado}`)
+                                .subscribed(() => {
+                                    console.log(`[Operario Dashboard] Costurero ${nombreCosturero} suscrito OK a canal privado`);
+                                })
+                                .error((err) => {
+                                    console.error(`[Operario Dashboard] Error suscribiendo costurero ${nombreCosturero}:`, err);
+                                })
+                                .listen('.recibo.asignado', (e) => {
+                                    console.log('[Operario Dashboard] ✅ Recibo asignado a costurero RECIBIDO:', e);
+                                    console.log('[Operario Dashboard] Datos del recibo:', {
+                                        pedido_id: e?.pedido_id,
+                                        prenda_id: e?.prenda_id,
+                                        numero_recibo: e?.numero_recibo,
+                                        nombre_prenda: e?.nombre_prenda,
+                                        encargado: e?.encargado,
+                                        mensaje: e?.mensaje
+                                    });
+                                    
+                                    // Mostrar notificación
+                                    if (window.NotificacionesPush && typeof window.NotificacionesPush.add === 'function') {
+                                        console.log('[Operario Dashboard] Mostrando notificación push...');
+                                        window.NotificacionesPush.add({
+                                            title: 'Nuevo recibo de costura asignado',
+                                            message: e?.mensaje || `Tienes un nuevo recibo: ${e?.nombre_prenda} #${e?.numero_recibo}`,
+                                            type: 'info',
+                                            icon: 'checkroom',
+                                            duration: 8000
+                                        });
+                                        console.log('[Operario Dashboard] ✅ Notificación push mostrada');
+                                    } else {
+                                        // Fallback: Notificación nativa del navegador
+                                        console.log('[Operario Dashboard] Usando notificación nativa del navegador...');
+                                        if ('Notification' in window && Notification.permission === 'granted') {
+                                            new Notification('Nuevo recibo de costura asignado', {
+                                                body: e?.mensaje || `Tienes un nuevo recibo: ${e?.nombre_prenda} #${e?.numero_recibo}`,
+                                                icon: '/icon.png', // Puedes ajustar el ícono
+                                                badge: '/icon.png'
+                                            });
+                                            console.log('[Operario Dashboard] ✅ Notificación nativa mostrada');
+                                        } else if ('Notification' in window && Notification.permission !== 'denied') {
+                                            // Pedir permiso para notificaciones
+                                            Notification.requestPermission().then(permission => {
+                                                if (permission === 'granted') {
+                                                    new Notification('Nuevo recibo de costura asignado', {
+                                                        body: e?.mensaje || `Tienes un nuevo recibo: ${e?.nombre_prenda} #${e?.numero_recibo}`,
+                                                        icon: '/icon.png'
+                                                    });
+                                                    console.log('[Operario Dashboard] ✅ Notificación nativa mostrada (permiso concedido)');
+                                                }
+                                            });
+                                        } else {
+                                            // Fallback final: Alert simple
+                                            console.log('[Operario Dashboard] Mostrando alert simple como fallback');
+                                            alert(`Nuevo recibo asignado: ${e?.mensaje || `Tienes un nuevo recibo: ${e?.nombre_prenda} #${e?.numero_recibo}`}`);
+                                        }
+                                    }
+                                    
+                                    // Actualizar la lista sin recargar para mostrar el nuevo recibo
+                                    console.log('[Operario Dashboard] Actualizando lista sin recargar...');
+                                    actualizarListaSinRecargar();
+                                    console.log('[Operario Dashboard] ✅ Lista actualizada');
+                                });
+                        }
                     }
                 } catch (e) {
                     console.error('[Operario Dashboard] Error initRealtimeListeners', e);
@@ -200,7 +330,7 @@
             initRealtimeListeners();
         })();
     </script>
-    <!-- BÃºsqueda -->
+    <!-- Búsqueda -->
     <div class="search-section">
         <span class="material-symbols-rounded">search</span>
         <input type="text" id="searchInput" class="search-box" placeholder="Buscar por # Recibo, Prenda o Cliente...">
@@ -271,9 +401,16 @@
                         @continue
                     @endif
 
-                    <div class="orden-card-simple" 
+                    @php
+                        // Definir variables necesarias para el card
+                        $reciboPrincipalCard = $prenda['recibos'][0] ?? null;
+                        $reciboCompletadoCostura = (bool) ($reciboPrincipalCard['completado_costura'] ?? false);
+                    @endphp
+
+                    <div class="orden-card-simple {{ (auth()->user()->hasRole('costurero') && $reciboCompletadoCostura) ? 'card-completado-costura' : '' }}" 
                          data-numero="{{ $prenda['numero_pedido'] }}" 
                          data-prenda="{{ strtolower($prenda['nombre_prenda']) }}"
+                         data-prenda-id="{{ $prenda['prenda_id'] }}"
                          data-cliente="{{ strtolower($prenda['cliente']) }}"
                          data-tipo-recibo="{{ $esReflectivo }}"
                          style="display: {{ $displayInicial }}">
@@ -343,8 +480,11 @@
                                         <span class="estado-badge {{ $estadoClass }}" data-estado="recibo-costura">
                                             {{ count(array_unique(array_map(fn($r) => strtoupper($r['tipo_recibo']), $prenda['recibos']))) }} RECIBOS
                                         </span>
+                                        @if(auth()->user()->hasRole('costurero') && $reciboCompletadoCostura)
+                                            <span class="badge-completado-costura is-on">COMPLETADO</span>
+                                        @endif
                                     </div>
-                                    <!-- BotÃ³n de mÃ¡s opciones para mobile -->
+                                    <!-- Botón de más opciones para mobile -->
                                     <button class="mobile-actions-toggle" onclick="toggleMobileActions({{ $prenda['prenda_id'] }})">
                                         <span class="material-symbols-rounded">more_horiz</span>
                                     </button>
@@ -404,6 +544,44 @@
                                         @endif
                                     @endif
                                     
+                                    @if(auth()->user()->hasRole('costurero'))
+                                        @php
+                                            $reciboPrincipal = $prenda['recibos'][0] ?? null;
+                                            $areaRecibo = strtolower(trim((string)($reciboPrincipal['area'] ?? '')));
+                                            $esCosturaRecibo = $areaRecibo === 'costura';
+                                            $reciboId = $reciboPrincipal['id'] ?? null;
+                                            $reciboCompletadoCostura = (bool) ($reciboPrincipal['completado_costura'] ?? false);
+                                        @endphp
+                                        
+                                        {{-- Botón para costureros: Marcar como completado (sin cambiar de área) --}}
+                                        @if($esCosturaRecibo && $reciboId && !$reciboCompletadoCostura)
+                                            <button class="btn-completar-costura" 
+                                                    id="btn-completar-costura-{{ $prenda['prenda_id'] }}"
+                                                    data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                    data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                    data-recibo-id="{{ $reciboId }}"
+                                                    data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                    onclick="completarCostura(this)">
+                                                <span class="material-symbols-rounded">check_circle</span>
+                                                COMPLETAR
+                                            </button>
+                                        @endif
+                                        
+                                        {{-- Botón para costureros: Deshacer (regresa a pendiente) --}}
+                                        @if($esCosturaRecibo && $reciboId && $reciboCompletadoCostura)
+                                            <button class="btn-deshacer-costura" 
+                                                    id="btn-deshacer-costura-{{ $prenda['prenda_id'] }}"
+                                                    data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                    data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                    data-recibo-id="{{ $reciboId }}"
+                                                    data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                    onclick="deshacerCostura(this)">
+                                                <span class="material-symbols-rounded">undo</span>
+                                                DESHACER
+                                            </button>
+                                        @endif
+                                    @endif
+                                    
                                     @if(auth()->user()->hasRole('vista-costura'))
                                         @php
                                             $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
@@ -419,7 +597,7 @@
                                             $mostrarComoDeshacerCostura = $esCosturaProceso && $tieneEncargadoCostura;
                                         @endphp
 
-                                        {{-- BotÃ³n "Pasar a Costura" o "DESHACER COSTURA" solo para recibos tipo COSTURA --}}
+                                        {{-- Botón "Pasar a Costura" o "DESHACER COSTURA" solo para recibos tipo COSTURA --}}
                                         @if($esTipoReciboCostura)
                                             <button class="btn-pasar-costura {{ $mostrarComoDeshacerCostura ? 'btn-deshacer-costura' : '' }}" 
                                                     id="btn-costura-{{ $prenda['prenda_id'] }}"
@@ -437,7 +615,7 @@
                                             </button>
                                         @endif
 
-                                        {{-- BotÃ³n "Pasar a C.C" o "DESHACER" --}}
+                                        {{-- Botón "Pasar a C.C" o "DESHACER" --}}
                                         <button class="btn-pasar-cc" 
                                                 id="btn-cc-{{ $prenda['prenda_id'] }}"
                                                 data-pedido-id="{{ $prenda['pedido_id'] }}"
@@ -487,7 +665,7 @@
                                         @endif
                                     @endif
                                     @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura'))
-                                        {{-- Para costura-reflectivo/vista-costura, crear un botÃ³n por cada TIPO de recibo (sin duplicados) --}}
+                                        {{-- Para costura-reflectivo/vista-costura, crear un botón por cada TIPO de recibo (sin duplicados) --}}
                                         @php
                                             $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
                                         @endphp
@@ -498,15 +676,15 @@
                                                 });
                                                 $pedidoParcialId = $reciboTipo['pedido_parcial_id'] ?? null;
                                             @endphp
-                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $tipoReciboUnico }}', {{ $pedidoParcialId ? (int)$pedidoParcialId : 'null' }})">
-                                                <span class="material-symbols-rounded">receipt</span>
-                                                {{ $tipoReciboUnico }}
+                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', 'VER RECIBO', {{ $pedidoParcialId ? (int)$pedidoParcialId : 'null' }})">
+                                                <span class="material-symbols-rounded">visibility</span>
+                                                VER RECIBO
                                             </button>
                                         @endforeach
                                     @else
-                                        {{-- Para otros operarios, un solo botÃ³n con tipo de recibo --}}
+                                        {{-- Para otros operarios, un solo botón con tipo de recibo --}}
                                         <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $prenda['recibos'][0]['tipo_recibo'] ?? '' }}', {{ !empty($prenda['recibos'][0]['pedido_parcial_id']) ? (int)$prenda['recibos'][0]['pedido_parcial_id'] : 'null' }})">
-                                            <span class="material-symbols-rounded">receipt</span>
+                                            <span class="material-symbols-rounded">visibility</span>
                                             VER RECIBOS
                                         </button>
                                     @endif
@@ -550,6 +728,42 @@
                                         @endif
                                     @endif
                                     
+                                    @if(auth()->user()->hasRole('costurero'))
+                                        @php
+                                            $reciboPrincipal = $prenda['recibos'][0] ?? null;
+                                            $areaRecibo = strtolower(trim((string)($reciboPrincipal['area'] ?? '')));
+                                            $esCosturaRecibo = $areaRecibo === 'costura';
+                                            $reciboId = $reciboPrincipal['id'] ?? null;
+                                            $reciboCompletadoCostura = (bool) ($reciboPrincipal['completado_costura'] ?? false);
+                                        @endphp
+                                        
+                                        {{-- Botón para costureros: Marcar como completado (sin cambiar de área) --}}
+                                        @if($esCosturaRecibo && $reciboId && !$reciboCompletadoCostura)
+                                            <button class="btn-completar-costura" 
+                                                    data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                    data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                    data-recibo-id="{{ $reciboId }}"
+                                                    data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                    onclick="completarCostura(this)">
+                                                <span class="material-symbols-rounded">check_circle</span>
+                                                COMPLETAR
+                                            </button>
+                                        @endif
+                                        
+                                        {{-- Botón para costureros: Deshacer (regresa a pendiente) --}}
+                                        @if($esCosturaRecibo && $reciboId && $reciboCompletadoCostura)
+                                            <button class="btn-deshacer-costura" 
+                                                    data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                    data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                    data-recibo-id="{{ $reciboId }}"
+                                                    data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                    onclick="deshacerCostura(this)">
+                                                <span class="material-symbols-rounded">undo</span>
+                                                DESHACER
+                                            </button>
+                                        @endif
+                                    @endif
+                                    
                                     @if(auth()->user()->hasRole('vista-costura'))
                                         @php
                                             $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
@@ -565,7 +779,7 @@
                                             $mostrarComoDeshacerCostura = $esCosturaProceso && $tieneEncargadoCostura;
                                         @endphp
 
-                                        {{-- BotÃ³n "Pasar a Costura" o "DESHACER COSTURA" solo para recibos tipo COSTURA --}}
+                                        {{-- Botón "Pasar a Costura" o "DESHACER COSTURA" solo para recibos tipo COSTURA --}}
                                         @if($esTipoReciboCostura)
                                             <button class="btn-pasar-costura {{ $mostrarComoDeshacerCostura ? 'btn-deshacer-costura' : '' }}" 
                                                     id="btn-costura-{{ $prenda['prenda_id'] }}"
@@ -583,7 +797,7 @@
                                             </button>
                                         @endif
 
-                                        {{-- BotÃ³n "Pasar a C.C" o "DESHACER" --}}
+                                        {{-- Botón "Pasar a C.C" o "DESHACER" --}}
                                         <button class="btn-pasar-cc" 
                                                 id="btn-cc-{{ $prenda['prenda_id'] }}"
                                                 data-pedido-id="{{ $prenda['pedido_id'] }}"
@@ -599,10 +813,6 @@
                                         </button>
                                     @endif
                                     
-                                    <button class="btn-agregar-novedad" onclick="abrirModalNovedad('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', {{ isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'] }})">
-                                        <span class="material-symbols-rounded">comment</span>
-                                        AGREGAR NOVEDAD
-                                    </button>
                                     @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura'))
                                         @php
                                             $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
@@ -614,14 +824,14 @@
                                                 });
                                                 $pedidoParcialId = $reciboTipo['pedido_parcial_id'] ?? null;
                                             @endphp
-                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $tipoReciboUnico }}', {{ $pedidoParcialId ? (int)$pedidoParcialId : 'null' }})">
-                                                <span class="material-symbols-rounded">receipt</span>
-                                                {{ $tipoReciboUnico }}
+                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', 'VER RECIBO', {{ $pedidoParcialId ? (int)$pedidoParcialId : 'null' }})">
+                                                <span class="material-symbols-rounded">visibility</span>
+                                                VER RECIBO
                                             </button>
                                         @endforeach
                                     @else
                                         <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $prenda['recibos'][0]['tipo_recibo'] ?? '' }}', {{ !empty($prenda['recibos'][0]['pedido_parcial_id']) ? (int)$prenda['recibos'][0]['pedido_parcial_id'] : 'null' }})">
-                                            <span class="material-symbols-rounded">receipt</span>
+                                            <span class="material-symbols-rounded">visibility</span>
                                             VER RECIBOS
                                         </button>
                                     @endif
@@ -675,36 +885,7 @@
 
                             <!-- Contenido Derecho -->
                             <div class="orden-right">
-                                {{-- Pie de pÃ¡gina con nÃºmero de pedido --}}
-                                <div class="orden-pedido-footer">
-                                    <small>PEDIDO #{{ $prenda['numero_pedido'] }}</small>
-                                </div>
-
                                 <div class="orden-right-center">
-                                    @if(isset($prenda['recibos'][0]['consecutivo_actual']))
-                                        {{-- Mostrar nÃºmero del recibo --}}
-                                        <div class="orden-fecha">
-                                            <span class="orden-fecha-label">RECIBO</span>
-                                            <span>#{{ $prenda['recibos'][0]['consecutivo_actual'] }}</span>
-                                        </div>
-                                    @else
-                                        {{-- Para otros roles, mostrar nÃºmero del pedido --}}
-                                        <div class="orden-fecha">
-                                            <span class="orden-fecha-label">PEDIDO</span>
-                                            <span>#{{ $prenda['numero_pedido'] }}</span>
-                                        </div>
-                                    @endif
-                                    <div class="orden-fecha">
-                                        <span class="orden-fecha-label">REGISTRO</span>
-                                        @php
-                                            $esParcial = !empty($prenda['recibos'][0]['es_parcial']);
-                                            $creadoEnRecibo = $prenda['recibos'][0]['creado_en'] ?? null;
-                                            $fechaRegistro = $esParcial && $creadoEnRecibo
-                                                ? \Carbon\Carbon::parse($creadoEnRecibo)
-                                                : ($prenda['fecha_creacion'] ?? null);
-                                        @endphp
-                                        <span>{{ $fechaRegistro ? $fechaRegistro->format('d/m/Y') : '-' }}</span>
-                                    </div>
                                     <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $prenda['recibos'][0]['tipo_recibo'] ?? '' }}'); return false;">
                                         <span class="material-symbols-rounded">arrow_forward</span>
                                     </a>
@@ -803,7 +984,7 @@
         }
     });
 
-    // FunciÃ³n para filtrar prendas por tipo de recibo
+    // Función para filtrar prendas por tipo de recibo
     window.filtrarPrendasPorRecibo = function(filtro) {
         console.log(' [FILTRO] Iniciando filtro:', filtro);
         
@@ -855,10 +1036,10 @@
         console.log(` Filtro completado: ${mostradas} mostradas, ${ocultadas} ocultadas`);
     };
 
-    // FunciÃ³n para abrir detalles de recibos
+    // Función para abrir detalles de recibos
     function abrirDetallesRecibos(numeroPedido, prendaId, nombrePrenda, tipoRecibo, pedidoParcialId = null) {
         console.log(' [ABRIR DETALLES RECIBOS] ===== INICIANDO =====');
-        console.log(' ParÃ¡metros recibidos:', {
+        console.log(' Parámetros recibidos:', {
             numeroPedido: numeroPedido,
             prendaId: prendaId,
             nombrePrenda: nombrePrenda,
@@ -866,14 +1047,14 @@
             pedidoParcialId: pedidoParcialId
         });
         
-        // Validar que tengamos el nÃºmero de pedido
+        // Validar que tengamos el número de pedido
         if (!numeroPedido || numeroPedido === '' || numeroPedido === null || numeroPedido === undefined) {
-            console.error(' ERROR: numeroPedido estÃ¡ vacÃ­o o undefined', numeroPedido);
-            alert('Error: No se pudo determinar el nÃºmero de pedido');
+            console.error(' ERROR: numeroPedido está vacío o undefined', numeroPedido);
+            alert('Error: No se pudo determinar el número de pedido');
             return false;
         }
         
-        // Convertir a string si es nÃºmero
+        // Convertir a string si es número
         const numeroPedidoStr = String(numeroPedido).trim();
         console.log(' numeroPedido normalizado:', numeroPedidoStr);
         
@@ -904,9 +1085,9 @@
         
         // Navegar
         try {
-            console.log(' Iniciando navegaciÃ³n...');
+            console.log(' Iniciando navegación...');
             window.location.href = url;
-            console.log(' NavegaciÃ³n iniciada exitosamente');
+            console.log(' Navegación iniciada exitosamente');
             return false;
         } catch (error) {
             console.error(' Error al navegar:', error);
@@ -914,7 +1095,7 @@
         }
     }
 
-    // FunciÃ³n para abrir modal de novedades
+    // Función para abrir modal de novedades
     function abrirModalNovedad(numeroPedido, prendaId, nombrePrenda, numeroRecibo) {
         console.log(' Abriendo modal novedad', {numeroPedido, prendaId, nombrePrenda, numeroRecibo});
         
@@ -937,7 +1118,7 @@
         modal.style.display = 'flex';
     }
 
-    // FunciÃ³n para cargar novedades del usuario
+    // Función para cargar novedades del usuario
     function cargarNovedadesDelUsuario(numeroPedido, prendaId) {
         console.log(' Cargando novedades', {numeroPedido, prendaId});
         
@@ -960,7 +1141,7 @@
         });
     }
 
-    // FunciÃ³n para mostrar novedades
+    // Función para mostrar novedades
     function mostrarNovedades(novedades) {
         const historial = document.getElementById('novedadesHistorial');
         if (!historial) {
@@ -1003,7 +1184,7 @@
         historial.innerHTML = html;
     }
 
-    // FunciÃ³n para cerrar modal de novedades
+    // Función para cerrar modal de novedades
     function cerrarModalNovedad() {
         const modal = document.getElementById('modalNovedad');
         if (modal) {
@@ -1013,7 +1194,7 @@
         }
     }
 
-    // FunciÃ³n para guardar novedad
+    // Función para guardar novedad
     function guardarNovedad() {
         const textareaDescripcion = document.getElementById('novedadDescripcionText');
         
@@ -1034,7 +1215,7 @@
         const btnGuardar = document.getElementById('btnGuardarNovedad');
         const textoOriginal = btnGuardar.innerHTML;
         
-        // Deshabilitar botÃ³n y mostrar loading
+        // Deshabilitar botón y mostrar loading
         btnGuardar.disabled = true;
         btnGuardar.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">refresh</span> Guardando...';
         
@@ -1056,14 +1237,14 @@
             if (data.success) {
                 textareaDescripcion.value = '';
                 cargarNovedadesDelUsuario(numeroPedido, prendaId);
-                mostrarExito('Ã‰xito', 'Novedad registrada correctamente');
+                mostrarExito('Éxito', 'Novedad registrada correctamente');
             } else {
                 mostrarError('Error', data.message || 'Error registrando novedad');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            mostrarError('Error', 'Error de conexiÃ³n');
+            mostrarError('Error', 'Error de conexión');
         })
         .finally(() => {
             btnGuardar.disabled = false;
@@ -1103,11 +1284,41 @@
         document.getElementById('costuraPrendaNombre').textContent = nombre;
         document.getElementById('costuraReciboNumero').textContent = recibo;
         document.getElementById('costuraTipoRecibo').textContent = tipoRecibo;
-        document.getElementById('costuraEncargado').value = '';
-        document.getElementById('costuraObservaciones').value = '';
         
-        window.costuraPendiente = { pedidoId, prendaId, tipoRecibo, btnId };
+        // Cargar usuarios con rol 'costura'
+        cargarUsuariosCostura();
+        
+        window.costuraPendiente = { pedidoId, prendaId, tipoRecibo, btnId, recibo };
         modal.style.display = 'flex';
+    }
+
+    function cargarUsuariosCostura() {
+        const select = document.getElementById('costuraEncargado');
+        select.innerHTML = '<option value="">Cargando...</option>';
+        
+        fetch('/api/usuarios/costura', {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            select.innerHTML = '<option value="">Seleccione un encargado...</option>';
+            if (data.success && data.usuarios) {
+                data.usuarios.forEach(usuario => {
+                    const option = document.createElement('option');
+                    option.value = usuario.name;
+                    option.textContent = usuario.name;
+                    select.appendChild(option);
+                });
+            } else {
+                select.innerHTML = '<option value="">No hay usuarios disponibles</option>';
+            }
+        })
+        .catch(error => {
+            console.error('Error cargando usuarios de costura:', error);
+            select.innerHTML = '<option value="">Error al cargar usuarios</option>';
+        });
     }
 
     function cerrarModalCostura() {
@@ -1119,14 +1330,31 @@
     function confirmarPasarACostura() {
         const encargado = document.getElementById('costuraEncargado').value.trim();
         if (!encargado) {
-            mostrarError('Error', 'Debes ingresar el nombre del encargado');
+            mostrarError('Error', 'Debes seleccionar un encargado de costura');
             return;
         }
 
-        if (!window.costuraPendiente) return;
+        if (!window.costuraPendiente) {
+            mostrarError('Error', 'No hay datos de la prenda pendiente');
+            return;
+        }
 
-        const { pedidoId, prendaId, tipoRecibo, btnId } = window.costuraPendiente;
-        const observaciones = document.getElementById('costuraObservaciones').value.trim();
+        const { pedidoId, prendaId, tipoRecibo, btnId, recibo } = window.costuraPendiente;
+        
+        // Validar que todos los datos necesarios estén presentes
+        if (!pedidoId || !prendaId || !tipoRecibo || !recibo) {
+            mostrarError('Error', 'Faltan datos necesarios para procesar la solicitud');
+            console.error('Datos incompletos:', { pedidoId, prendaId, tipoRecibo, recibo });
+            return;
+        }
+        
+        console.log('Datos del formulario:', {
+            pedidoId,
+            prendaId,
+            tipoRecibo,
+            recibo,
+            encargado
+        });
 
         const btn = document.getElementById(btnId);
         const originalHTML = btn.innerHTML;
@@ -1134,29 +1362,82 @@
         btn.disabled = true;
         btn.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">refresh</span> Procesando...';
 
-        fetch('/recibos-novedades/pasar-a-costura', {
-            method: 'POST',
+        // Crear un formulario dinámico para evitar problemas con fetch
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/recibos-novedades/${pedidoId}/${recibo}/pasar-a-costura`;
+        form.style.display = 'none';
+        
+        // Agregar CSRF token
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = '_token';
+        csrfToken.value = document.querySelector('meta[name="csrf-token"]').content;
+        form.appendChild(csrfToken);
+        
+        // Agregar datos como campos hidden
+        console.log('Datos del formulario:', {
+            pedidoId,
+            prendaId,
+            tipoRecibo,
+            recibo,
+            encargado
+        });
+        
+        const prendaIdInput = document.createElement('input');
+        prendaIdInput.type = 'hidden';
+        prendaIdInput.name = 'prenda_id';
+        prendaIdInput.value = prendaId;
+        form.appendChild(prendaIdInput);
+        
+        const encargadoInput = document.createElement('input');
+        encargadoInput.type = 'hidden';
+        encargadoInput.name = 'encargado';
+        encargadoInput.value = encargado;
+        form.appendChild(encargadoInput);
+        
+        const tipoReciboInput = document.createElement('input');
+        tipoReciboInput.type = 'hidden';
+        tipoReciboInput.name = 'tipo_recibo';
+        tipoReciboInput.value = tipoRecibo;
+        form.appendChild(tipoReciboInput);
+        
+        console.log('Campos del formulario:');
+        console.log('prenda_id:', prendaIdInput.value);
+        console.log('encargado:', encargadoInput.value);
+        console.log('tipo_recibo:', tipoReciboInput.value);
+        
+        // Agregar método spoofing si es necesario
+        const methodInput = document.createElement('input');
+        methodInput.type = 'hidden';
+        methodInput.name = '_method';
+        methodInput.value = 'POST';
+        form.appendChild(methodInput);
+        
+        document.body.appendChild(form);
+        
+        // Enviar el formulario via AJAX para evitar redirección
+        const formData = new FormData(form);
+        
+        fetch(form.action, {
+            method: form.method,
+            body: formData,
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({
-                pedido_id: pedidoId,
-                prenda_id: prendaId,
-                tipo_recibo: tipoRecibo,
-                encargado_costura: encargado,
-                observaciones: observaciones
-            })
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
         })
         .then(response => response.json())
         .then(data => {
+            console.log('Respuesta del servidor:', data);
+            
             if (data.success) {
                 btn.dataset.encargadoCostura = encargado;
                 btn.dataset.procesoId = data.data.proceso_id || '';
                 btn.classList.add('btn-deshacer-costura');
                 btn.innerHTML = '<span class="material-symbols-rounded">undo</span> DESHACER COSTURA';
                 cerrarModalCostura();
-                mostrarExito('Ã‰xito', 'Prenda asignada a costura correctamente');
+                mostrarExito('Éxito', data.message || 'Prenda asignada a costura correctamente');
             } else {
                 btn.innerHTML = originalHTML;
                 mostrarError('Error', data.message || 'Error asignando a costura');
@@ -1165,164 +1446,144 @@
         .catch(error => {
             console.error('Error:', error);
             btn.innerHTML = originalHTML;
-            mostrarError('Error', 'Error de conexiÃ³n');
+            mostrarError('Error', 'Error de conexión: ' + error.message);
         })
         .finally(() => {
             btn.disabled = false;
+            document.body.removeChild(form);
         });
     }
 
     function deshacerCostura(pedidoId, prendaId, tipoRecibo, btnId) {
+        console.log('[DESHACER-COSTURA] Iniciando función:', {pedidoId, prendaId, tipoRecibo, btnId});
+        
         const btn = document.getElementById(btnId);
         if (!btn || btn.disabled) return;
 
-        const originalHTML = btn.innerHTML;
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">refresh</span> Deshaciendo...';
+
+    console.log('[DESHACER-COSTURA] Enviando DELETE a:', `/recibos-novedades/${pedidoId}/${prendaId}/deshacer-costura`);
+
+    // Usar la ruta correcta con parámetros en la URL
+    fetch(`/recibos-novedades/${pedidoId}/${prendaId}/deshacer-costura`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            tipo_recibo: tipoRecibo
+        })
+    })
+    .then(response => {
+        console.log('[DESHACER-COSTURA] Respuesta recibida:', response.status, response.statusText);
+        
+        if (!response.ok) {
+            // Si la respuesta no es OK, podría ser una redirección
+            if (response.redirected) {
+                console.error('[DESHACER-COSTURA] La petición fue redirigida a:', response.url);
+            }
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return response.json();
+    })
+    .then(data => {
+        console.log('[DESHACER-COSTURA] Datos recibidos:', data);
+        if (data.success) {
+            btn.classList.remove('btn-deshacer-costura');
+            btn.dataset.encargadoCostura = '';
+            btn.dataset.procesoId = '';
+            btn.innerHTML = '<span class="material-symbols-rounded">checkroom</span> PASAR A COSTURA';
+            mostrarExito('Éxito', 'Asignación a costura deshecha correctamente');
+        } else {
+            btn.innerHTML = originalHTML;
+            mostrarError('Error', data.message || 'Error deshaciendo costura');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        btn.innerHTML = originalHTML;
+        mostrarError('Error', 'Error de conexión');
+    })
+    .finally(() => {
+        btn.disabled = false;
+    });
+}
+
+// Función para pasar a control de calidad
+function pasarAControlCalidad(btn) {
+    const pedidoId = btn.dataset.pedidoId;
+    const prendaId = btn.dataset.prendaId;
+    const nombre = btn.dataset.nombre;
+    const tipoRecibo = btn.dataset.tipoRecibo;
+    const recibo = btn.dataset.recibo;
+    const area = btn.dataset.area;
+    const procesoId = btn.dataset.procesoId;
+    const btnId = btn.id;
+
+    const esDeshacer = btn.textContent.includes('DESHACER');
+        
+    if (esDeshacer) {
+        // DESHACER C.C
+        const originalCCHTML = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">refresh</span> Deshaciendo...';
+        btn.style.opacity = '0.6';
+        btn.style.pointerEvents = 'none';
 
-        fetch('/recibos-novedades/deshacer-costura', {
+        fetch('/recibos-novedades/' + pedidoId + '/' + prendaId + '/deshacer-control-calidad', {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
             body: JSON.stringify({
-                pedido_id: pedidoId,
-                prenda_id: prendaId,
                 tipo_recibo: tipoRecibo
             })
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                btn.classList.remove('btn-deshacer-costura');
-                btn.dataset.encargadoCostura = '';
+                const nuevoArea = data.data.area_nueva;
+                btn.dataset.area = nuevoArea;
                 btn.dataset.procesoId = '';
-                btn.innerHTML = '<span class="material-symbols-rounded">checkroom</span> PASAR A COSTURA';
-                mostrarExito('Ã‰xito', 'AsignaciÃ³n a costura deshecha correctamente');
+                btn.innerHTML = '<span class="material-symbols-rounded">check_circle</span> PASAR A C.C';
+                console.log('✅ Control Calidad deshecho. Área restaurada a: ' + nuevoArea);
             } else {
                 btn.innerHTML = originalHTML;
-                mostrarError('Error', data.message || 'Error deshaciendo costura');
+                mostrarError('Error', data.message || 'Error deshaciendo control de calidad');
             }
         })
         .catch(error => {
             console.error('Error:', error);
             btn.innerHTML = originalHTML;
-            mostrarError('Error', 'Error de conexiÃ³n');
+            mostrarError('Error', 'Error de conexión');
         })
         .finally(() => {
             btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = '';
         });
+    } else {
+        // PASAR A C.C - implementación simplificada
+        mostrarError('Info', 'Función de pasar a Control Calidad no implementada completamente');
     }
-
-    // FunciÃ³n para pasar a control de calidad
-    function pasarAControlCalidad(btn) {
-        const pedidoId = btn.dataset.pedidoId;
-        const prendaId = btn.dataset.prendaId;
-        const nombre = btn.dataset.nombre;
-        const tipoRecibo = btn.dataset.tipoRecibo;
-        const recibo = btn.dataset.recibo;
-        const area = btn.dataset.area;
-        const procesoId = btn.dataset.procesoId;
-        const btnId = btn.id;
-
-        const esDeshacer = btn.textContent.includes('DESHACER');
-        
-        if (esDeshacer) {
-            // DESHACER C.C
-            const originalCCHTML = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">refresh</span> Deshaciendo...';
-            btn.style.opacity = '0.6';
-            btn.style.pointerEvents = 'none';
-
-            fetch('/recibos-novedades/' + pedidoId + '/' + prendaId + '/deshacer-control-calidad', {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({
-                    tipo_recibo: tipoRecibo
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const nuevoArea = data.data.area_nueva;
-                    btn.dataset.area = nuevoArea;
-                    btn.dataset.procesoId = '';
-                    btn.innerHTML = '<span class="material-symbols-rounded">check_circle</span> PASAR A C.C';
-                    console.log('âœ“ Control Calidad deshecho. Ãrea restaurada a: ' + nuevoArea);
-                } else {
-                    btn.innerHTML = originalCCHTML;
-                    console.error('âœ— Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                btn.innerHTML = originalCCHTML;
-            })
-            .finally(() => {
-                btn.disabled = false;
-                btn.style.opacity = '1';
-                btn.style.pointerEvents = '';
-            });
-        } else {
-            // PASAR A C.C
-            fetch('/recibos-novedades/' + pedidoId + '/' + recibo + '/cambiar-area-control-calidad', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({
-                    prenda_id: prendaId,
-                    tipo_recibo: tipoRecibo
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const dashboard = document.querySelector('.operario-dashboard');
-                    if (dashboard && dashboard.classList.contains('is-vista-costura')) {
-                        const card = btn.closest('.orden-card-simple');
-                        if (card) {
-                            card.remove();
-                        }
-                        mostrarExito('Ã‰xito', 'Recibo enviado a Control de Calidad');
-                        return;
-                    }
-
-                    const btnEl = document.getElementById(btnId);
-                    if (!btnEl) {
-                        mostrarExito('Ã‰xito', 'Recibo enviado a Control de Calidad');
-                        return;
-                    }
-                    btnEl.dataset.area = 'Control Calidad';
-                    btnEl.dataset.procesoId = data.data.proceso_id;
-                    btnEl.innerHTML = '<span class="material-symbols-rounded">undo</span> DESHACER';
-                    console.log('âœ“ Prenda enviada a Control Calidad');
-                } else {
-                    console.error('âœ— Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        }
-    }
+}
 
     // Funciones de utilidad para modales
     function mostrarExito(titulo, texto = '') {
-        mostrarMensaje(titulo, texto, 'exito', 'âœ“');
+        mostrarMensaje(titulo, texto, 'exito', '✅');
     }
 
     function mostrarError(titulo, texto = '') {
-        mostrarMensaje(titulo, texto, 'error', 'âœ—');
+        mostrarMensaje(titulo, texto, 'error', '❌');
     }
 
-    function mostrarMensaje(titulo, texto, tipo = 'exito', icono = 'âœ“') {
+    function mostrarMensaje(titulo, texto, tipo = 'exito', icono = '✅') {
         const modal = document.getElementById('modalMensaje');
         const contenido = document.getElementById('modalMensajeContenido');
         const iconoEl = document.getElementById('modalMensajeIcono');
@@ -1339,7 +1600,7 @@
         if (tituloEl) tituloEl.textContent = titulo;
         if (textoEl) textoEl.textContent = texto;
 
-        // Configurar estilos segÃºn tipo
+        // Configurar estilos según tipo
         const colores = {
             exito: { bg: '#10b981', border: '#059669' },
             error: { bg: '#ef4444', border: '#dc2626' },
@@ -1349,7 +1610,7 @@
         const color = colores[tipo] || colores.info;
         contenido.style.borderColor = color.border;
 
-        // Crear botÃ³n de cerrar
+        // Crear botón de cerrar
         const boton = document.createElement('button');
         boton.textContent = 'CERRAR';
         boton.style.cssText = `
@@ -1367,7 +1628,7 @@
         boton.onmouseout = function() { this.style.background = color.bg; };
         boton.onclick = cerrarModalMensaje;
         
-        // Eliminar botÃ³n anterior si existe
+        // Eliminar botón anterior si existe
         const botonAnterior = contenido.querySelector('button');
         if (botonAnterior) botonAnterior.remove();
         
@@ -1381,6 +1642,15 @@
         const modal = document.getElementById('modalMensaje');
         if (modal) {
             modal.style.display = 'none';
+        }
+    }
+
+    // Función para actualizar el contador de tarjetas
+    function actualizarContadorTarjetas() {
+        const contador = document.querySelector('.ordenes-count');
+        if (contador) {
+            const tarjetas = document.querySelectorAll('.orden-card-simple:not([style*="display: none"])');
+            contador.textContent = tarjetas.length;
         }
     }
 
@@ -1401,36 +1671,39 @@
         }
     });
 
-    // FunciÃ³n para toggle de acciones mobile
+    // Función para toggle de acciones mobile
     window.toggleMobileActions = function(prendaId) {
         const drawer = document.getElementById(`mobile-drawer-${prendaId}`);
-        const primaryAction = document.getElementById(`mobile-primary-${prendaId}`);
         const toggleBtns = document.querySelectorAll(`.mobile-actions-toggle[onclick*="${prendaId}"]`);
         
-        if (!drawer || !primaryAction) return;
+        if (!drawer) {
+            console.warn(`No se encontró el drawer mobile-drawer-${prendaId}`);
+            return;
+        }
         
         const isActive = drawer.classList.contains('active');
         
-        // Cerrar todos los demÃ¡s drawers y mostrar sus acciones primarias
+        // Cerrar todos los demás drawers
         document.querySelectorAll('.mobile-actions-drawer.active').forEach(d => {
-            d.classList.remove('active');
-        });
-        document.querySelectorAll('.mobile-actions-toggle.active').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        document.querySelectorAll('.mobile-primary-action').forEach(action => {
-            action.style.display = 'flex';
+            if (d.id !== `mobile-drawer-${prendaId}`) {
+                d.classList.remove('active');
+            }
         });
         
-        // Abrir/cerrar el drawer actual y ocultar/mostrar acciÃ³n primaria
+        // Quitar clase active de todos los botones excepto los del prenda actual
+        document.querySelectorAll('.mobile-actions-toggle.active').forEach(btn => {
+            if (!btn.onclick || !btn.onclick.toString().includes(prendaId)) {
+                btn.classList.remove('active');
+            }
+        });
+        
+        // Abrir/cerrar el drawer actual
         if (!isActive) {
             drawer.classList.add('active');
             toggleBtns.forEach(btn => btn.classList.add('active'));
-            primaryAction.style.display = 'none'; // Ocultar acciÃ³n primaria cuando drawer estÃ¡ abierto
         } else {
             drawer.classList.remove('active');
             toggleBtns.forEach(btn => btn.classList.remove('active'));
-            primaryAction.style.display = 'flex'; // Mostrar acciÃ³n primaria cuando drawer estÃ¡ cerrado
         }
     };
 
@@ -1471,12 +1744,6 @@
                 const drawerBtn = document.querySelector(`#mobile-drawer-${prendaId} .btn-completar-corte[data-recibo-id="${reciboId}"]`);
                 if (drawerBtn) {
                     actualizarInterfazCorte(drawerBtn.closest('.mobile-actions-drawer'), 'completado', drawerBtn);
-                }
-                
-                // Actualizar acción primaria mobile si existe
-                const primaryBtn = document.querySelector(`#mobile-primary-${prendaId} .btn-completar-corte[data-recibo-id="${reciboId}"]`);
-                if (primaryBtn) {
-                    actualizarInterfazCorte(primaryBtn.closest('.mobile-primary-action'), 'completado', primaryBtn);
                 }
             } else {
                 // En caso de error, restaurar botón
@@ -1529,12 +1796,6 @@
                 const drawerBtn = document.querySelector(`#mobile-drawer-${prendaId} .btn-deshacer-corte[data-recibo-id="${reciboId}"]`);
                 if (drawerBtn) {
                     actualizarInterfazCorte(drawerBtn.closest('.mobile-actions-drawer'), 'deshacer', drawerBtn);
-                }
-                
-                // Actualizar acción primaria mobile si existe
-                const primaryBtn = document.querySelector(`#mobile-primary-${prendaId} .btn-deshacer-corte[data-recibo-id="${reciboId}"]`);
-                if (primaryBtn) {
-                    actualizarInterfazCorte(primaryBtn.closest('.mobile-primary-action'), 'deshacer', primaryBtn);
                 }
             } else {
                 // En caso de error, restaurar botón
@@ -1605,6 +1866,178 @@
             });
         }
     }
+    
+    // Función para costureros: Marcar como completado (sin cambiar de área)
+    window.completarCostura = function(btn) {
+        const reciboId = btn.dataset.reciboId;
+        const pedidoId = btn.dataset.pedidoId;
+        const prendaId = btn.dataset.prendaId;
+        const nombre = btn.dataset.nombre;
+        const card = btn.closest('.orden-card-simple');
+        
+        if (!reciboId) {
+            return;
+        }
+        
+        // Deshabilitar botón y mostrar loading
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="material-symbols-rounded spin">refresh</span> PROCESANDO...';
+        
+        // Enviar solicitud AJAX a la misma ruta que usa el cortador
+        fetch(`/operario/api/recibos/${reciboId}/completar`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Actualizar la interfaz dinámicamente
+                actualizarInterfazCostura(card, 'completado', btn);
+                
+                // Actualizar también el drawer mobile si existe
+                const drawerBtn = document.querySelector(`#mobile-drawer-${prendaId} .btn-completar-costura[data-recibo-id="${reciboId}"]`);
+                if (drawerBtn) {
+                    actualizarInterfazCostura(drawerBtn.closest('.mobile-actions-drawer'), 'completado', drawerBtn);
+                }
+            } else {
+                // En caso de error, restaurar botón
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Error completando costura:', error);
+            // Restaurar botón en caso de error
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        });
+    };
+    
+    // Función para costureros: Deshacer (regresa a pendiente)
+    window.deshacerCostura = function(btn) {
+        const reciboId = btn.dataset.reciboId;
+        const pedidoId = btn.dataset.pedidoId;
+        const prendaId = btn.dataset.prendaId;
+        const nombre = btn.dataset.nombre;
+        const card = btn.closest('.orden-card-simple');
+        
+        if (!reciboId) {
+            return;
+        }
+        
+        // Deshabilitar botón y mostrar loading
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="material-symbols-rounded spin">refresh</span> PROCESANDO...';
+        
+        // Enviar solicitud AJAX a la misma ruta que usa el cortador
+        fetch(`/operario/api/recibos/${reciboId}/deshacer`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Actualizar la interfaz dinámicamente
+                actualizarInterfazCostura(card, 'deshacer', btn);
+                
+                // Actualizar también el drawer mobile si existe
+                const drawerBtn = document.querySelector(`#mobile-drawer-${prendaId} .btn-deshacer-costura[data-recibo-id="${reciboId}"]`);
+                if (drawerBtn) {
+                    actualizarInterfazCostura(drawerBtn.closest('.mobile-actions-drawer'), 'deshacer', drawerBtn);
+                }
+            } else {
+                // En caso de error, restaurar botón
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Error deshaciendo costura:', error);
+            // Restaurar botón en caso de error
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        });
+    };
+    
+    // Función para actualizar la interfaz de costura dinámicamente
+    function actualizarInterfazCostura(container, accion, btnActual) {
+        if (!container) return;
+        
+        const prendaId = btnActual.dataset.prendaId;
+        const reciboId = btnActual.dataset.reciboId;
+        const nombre = btnActual.dataset.nombre;
+        
+        if (accion === 'completado') {
+            // Cambiar fondo del card a azul claro
+            const card = container.closest('.orden-card-simple') || container;
+            if (card) {
+                card.classList.add('card-completado-costura');
+            }
+            
+            // Cambiar botón de completar a deshacer
+            const nuevoBtn = document.createElement('button');
+            nuevoBtn.className = 'btn-deshacer-costura';
+            nuevoBtn.setAttribute('data-pedido-id', btnActual.dataset.pedidoId);
+            nuevoBtn.setAttribute('data-prenda-id', prendaId);
+            nuevoBtn.setAttribute('data-recibo-id', reciboId);
+            nuevoBtn.setAttribute('data-nombre', nombre);
+            nuevoBtn.setAttribute('onclick', 'deshacerCostura(this)');
+            nuevoBtn.innerHTML = '<span class="material-symbols-rounded">undo</span> DESHACER';
+            
+            // Reemplazar botón en el contenedor
+            if (btnActual.parentNode) {
+                btnActual.parentNode.replaceChild(nuevoBtn, btnActual);
+            }
+            
+            // Actualizar badges de estado si existen
+            const badges = container.querySelectorAll('.badge-completado-costura, .badge-estado');
+            badges.forEach(badge => {
+                badge.classList.add('is-on');
+                badge.textContent = 'COMPLETADO';
+            });
+            
+        } else if (accion === 'deshacer') {
+            // Quitar fondo azul claro del card
+            const card = container.closest('.orden-card-simple') || container;
+            if (card) {
+                card.classList.remove('card-completado-costura');
+            }
+            
+            // Cambiar botón de deshacer a completar
+            const nuevoBtn = document.createElement('button');
+            nuevoBtn.className = 'btn-completar-costura';
+            nuevoBtn.setAttribute('data-pedido-id', btnActual.dataset.pedidoId);
+            nuevoBtn.setAttribute('data-prenda-id', prendaId);
+            nuevoBtn.setAttribute('data-recibo-id', reciboId);
+            nuevoBtn.setAttribute('data-nombre', nombre);
+            nuevoBtn.setAttribute('onclick', 'completarCostura(this)');
+            nuevoBtn.innerHTML = '<span class="material-symbols-rounded">check_circle</span> COMPLETAR';
+            
+            // Reemplazar botón en el contenedor
+            if (btnActual.parentNode) {
+                btnActual.parentNode.replaceChild(nuevoBtn, btnActual);
+            }
+            
+            // Actualizar badges de estado si existen
+            const badges = container.querySelectorAll('.badge-completado-costura, .badge-estado');
+            badges.forEach(badge => {
+                badge.classList.remove('is-on');
+                badge.textContent = 'PENDIENTE';
+            });
+        }
+    }
 
     // Cerrar drawers al hacer click fuera
     document.addEventListener('click', function(e) {
@@ -1615,19 +2048,98 @@
             document.querySelectorAll('.mobile-actions-toggle.active').forEach(btn => {
                 btn.classList.remove('active');
             });
-            // Mostrar todas las acciones primarias al cerrar
-            document.querySelectorAll('.mobile-primary-action').forEach(action => {
-                action.style.display = 'flex';
-            });
         }
     });
 
-    // Agregar estilos para animaciÃ³n de spin
+    // Agregar estilos para animación de spin
     const style = document.createElement('style');
     style.textContent = `
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
+        }
+        
+        /* Estilos para cards completados por costurero */
+        .card-completado-costura {
+            background-color: #e3f2fd !important;
+            border-left: 4px solid #2196f3 !important;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1) !important;
+        }
+        
+        /* Botones para costureros */
+        .btn-completar-costura {
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .btn-completar-costura:hover {
+            background: linear-gradient(135deg, #1976d2, #1565c0);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+        }
+        
+        .btn-deshacer-costura {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .btn-deshacer-costura:hover {
+            background: linear-gradient(135deg, #f57c00, #ef6c00);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+        }
+        
+        /* Badge para estado completado de costura */
+        .badge-completado-costura {
+            background: #2196f3;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .badge-completado-costura.is-on {
+            background: #1976d2;
+            box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+        }
+        
+        /* Responsive para mobile */
+        @media (max-width: 768px) {
+            .btn-completar-costura,
+            .btn-deshacer-costura {
+                padding: 0.75rem;
+                font-size: 0.8rem;
+                min-height: 44px;
+                justify-content: center;
+            }
+            
+            .btn-completar-costura span,
+            .btn-deshacer-costura span {
+                font-size: 1.2rem;
+            }
         }
     `;
     document.head.appendChild(style);
@@ -1678,14 +2190,11 @@
             <p style="margin: 0 0 1rem 0; color: #666;">Tipo: <strong id="costuraTipoRecibo"></strong></p>
         </div>
         
-        <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Nombre del encargado:</label>
-            <input type="text" id="costuraEncargado" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;" placeholder="Ingrese el nombre del encargado">
-        </div>
-        
         <div style="margin-bottom: 1.5rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Observaciones (opcional):</label>
-            <textarea id="costuraObservaciones" rows="3" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; resize: vertical;" placeholder="Observaciones adicionales..."></textarea>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Encargado de Costura:</label>
+            <select id="costuraEncargado" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; background: white;">
+                <option value="">Seleccione un encargado...</option>
+            </select>
         </div>
         
         <div style="display: flex; gap: 1rem; justify-content: flex-end;">

@@ -199,6 +199,8 @@
     transition: all 0.3s ease;
     overflow: hidden;
     position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
 .operario-dashboard .orden-card-simple:hover {
@@ -230,6 +232,7 @@
 /* Contenido de la tarjeta */
 .operario-dashboard .orden-body {
     padding: 1.25rem;
+    padding-bottom: 1.25rem;
 }
 
 .operario-dashboard .orden-body.recibo-completado-area {
@@ -476,8 +479,7 @@
 
 /* Contenido derecho */
 .operario-dashboard .orden-right {
-    border-top: 1px solid var(--slate-100);
-    padding-top: 1rem;
+    display: none;
 }
 
 .operario-dashboard .orden-pedido-footer {
@@ -849,8 +851,32 @@
         gap: 0.5rem;
     }
 
-    /* Ocultar COMPLETAMENTE todos los botones desktop en mobile */
+    /* Ocultar botón de toggle en mobile ya que no se necesita */
+    .mobile-actions-toggle {
+        display: none !important;
+    }
+
+    /* Mostrar botones desktop horizontalmente en mobile */
     .orden-buttons {
+        display: flex !important;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Ajustar tamaño de botones para mobile */
+    .orden-buttons button {
+        flex: 1 !important;
+        min-width: calc(50% - 0.125rem) !important;
+        max-width: calc(50% - 0.125rem) !important;
+        padding: 0.5rem 0.25rem !important;
+        font-size: 0.625rem !important;
+        min-height: 2.5rem !important;
+        justify-content: center;
+    }
+
+    /* Ocultar drawer mobile ya que no se necesita */
+    .mobile-actions-drawer {
         display: none !important;
     }
 
@@ -871,11 +897,7 @@
     }
 
     .orden-right {
-        margin-left: 0;
-        margin-top: 0;
-        padding-top: 1rem;
-        border-top: 1px solid var(--slate-100);
-        width: 100%;
+        display: none !important;
     }
 
     /* Mostrar botones en el drawer mobile */
@@ -1012,11 +1034,7 @@
     }
 
     .orden-right {
-        margin-left: 0;
-        margin-top: 0;
-        padding-top: 0.75rem;
-        border-top: 1px solid var(--slate-100);
-        width: 100%;
+        display: none !important;
     }
 
     .orden-pedido-footer {
@@ -1054,13 +1072,17 @@
     }
 
     /* Botones mobile con espaciado reducido */
-    .mobile-primary-action {
-        margin-top: 0.75rem;
+    .orden-buttons {
+        gap: 0.2rem !important;
+        margin-bottom: 0.25rem !important;
     }
 
-    .mobile-actions-drawer {
-        margin-top: 0.75rem;
-        padding-top: 0.75rem;
+    .orden-buttons button {
+        font-size: 0.5625rem !important;
+        padding: 0.375rem 0.125rem !important;
+        min-height: 2.25rem !important;
+        min-width: calc(50% - 0.1rem) !important;
+        max-width: calc(50% - 0.1rem) !important;
     }
 
     /* Reducir tamaño de texto en mobile */

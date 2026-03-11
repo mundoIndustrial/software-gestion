@@ -262,29 +262,30 @@ function setupNotificaciones() {
         fetchNotificaciones();
     }
 
-    if (isVistaCostura) {
-        window.NotificacionesPush = {
-            add: function(payload) {
-                const current = loadPushItems();
-                const id = payload?.id || (Date.now() + '-' + Math.random().toString(16).slice(2));
-                const next = [
-                    {
-                        id,
-                        titulo: payload?.titulo || 'Notificación',
-                        detalle: payload?.detalle || '',
-                        fecha: payload?.fecha || '',
-                    },
-                    ...current,
-                ].slice(0, 50);
+    // Inicializar NotificacionesPush para todos los roles (no solo vista-costura)
+    window.NotificacionesPush = {
+        add: function(payload) {
+            const current = loadPushItems();
+            const id = payload?.id || (Date.now() + '-' + Math.random().toString(16).slice(2));
+            const next = [
+                {
+                    id,
+                    titulo: payload?.title || payload?.titulo || 'Notificación',
+                    detalle: payload?.message || payload?.detalle || '',
+                    fecha: payload?.fecha || '',
+                    type: payload?.type || 'info',
+                    icon: payload?.icon || 'notifications'
+                },
+                ...current,
+            ].slice(0, 50);
 
-                savePushItems(next);
-                setBadgeCount(next.length);
-                if (menu.classList.contains('active')) {
-                    renderPushItems(next);
-                }
-            },
-        };
-    }
+            savePushItems(next);
+            setBadgeCount(next.length);
+            if (menu.classList.contains('active')) {
+                renderPushItems(next);
+            }
+        }
+    };
 
     // Realtime: refrescar notificaciones cuando llegue un evento de asignación
     // Se engancha a los mismos eventos ya usados en el dashboard.

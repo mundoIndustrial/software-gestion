@@ -104,3 +104,18 @@ Broadcast::channel('ordenes', function ($user) {
 Broadcast::channel('recibos-costura', function ($user) {
     return true; // Canal público para recibos de costura
 });
+
+/**
+ * Canal privado para costureros - recibos asignados específicamente
+ * Permite que un costurero escuche sus propios recibos asignados
+ */
+Broadcast::channel('costurero.{nombreCosturero}', function ($user, $nombreCosturero) {
+    // Normalizar el nombre para comparación (igual que en el evento)
+    $nombreNormalizado = strtolower(preg_replace('/[^a-zA-Z0-9]/', '_', $nombreCosturero));
+    $nombreUsuarioNormalizado = strtolower(preg_replace('/[^a-zA-Z0-9]/', '_', $user->name));
+    
+    // Permitir acceso si:
+    // 1. El usuario es un costurero Y
+    // 2. Su nombre normalizado coincide con el nombre del canal
+    return $user->hasRole('costurero') && $nombreUsuarioNormalizado === $nombreNormalizado;
+});
