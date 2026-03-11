@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 @php
                                     $primeraFila = $filasGroup->first();
 
-                                    // Si la prenda tiene colores por talla, separar visualmente en sub-items por color
+                                    // Si la prenda tiene colores por talla, separar en sub-items por color Y género
                                     $gruposPorColor = [];
                                     if ($primeraFila->objetoPrenda && isset($primeraFila->objetoPrenda['variantes']) && is_array($primeraFila->objetoPrenda['variantes'])) {
                                         foreach ($primeraFila->objetoPrenda['variantes'] as $variante) {
@@ -208,13 +208,16 @@ document.addEventListener('DOMContentLoaded', function() {
                                                     $tallaColorId = $colorDetalle['talla_color_id'] ?? null;
 
                                                     if (!empty($tallaVar) && $cantidadColor > 0) {
+                                                        // Nivel 1: por color
                                                         if (!isset($gruposPorColor[$colorKey])) {
-                                                            $gruposPorColor[$colorKey] = [
-                                                                'color' => $colorKey,
-                                                                'tallas' => [],
-                                                            ];
+                                                            $gruposPorColor[$colorKey] = [];
                                                         }
-                                                        $gruposPorColor[$colorKey]['tallas'][] = [
+                                                        // Nivel 2: por género dentro del color
+                                                        if (!isset($gruposPorColor[$colorKey][$generoVar])) {
+                                                            $gruposPorColor[$colorKey][$generoVar] = [];
+                                                        }
+                                                        // Nivel 3: tallas
+                                                        $gruposPorColor[$colorKey][$generoVar][] = [
                                                             'talla' => $tallaVar,
                                                             'tallaId' => $tallaIdVar,
                                                             'tallaColorId' => $tallaColorId,
@@ -223,30 +226,62 @@ document.addEventListener('DOMContentLoaded', function() {
                                                         ];
                                                     }
                                                 }
+                                            } else {
+                                                // No tiene colores detallados, agregar directamente con cantidad de la variante
+                                                $cantidadVar = (int)($variante['cantidad'] ?? 0);
+                                                if (!empty($tallaVar) && !empty($generoVar) && $cantidadVar > 0) {
+                                                    $colorKey = '__SIN_COLOR__';
+                                                    if (!isset($gruposPorColor[$colorKey])) {
+                                                        $gruposPorColor[$colorKey] = [];
+                                                    }
+                                                    if (!isset($gruposPorColor[$colorKey][$generoVar])) {
+                                                        $gruposPorColor[$colorKey][$generoVar] = [];
+                                                    }
+                                                    $gruposPorColor[$colorKey][$generoVar][] = [
+                                                        'talla' => $tallaVar,
+                                                        'tallaId' => $tallaIdVar,
+                                                        'tallaColorId' => null,
+                                                        'genero' => $variante['genero'] ?? null,
+                                                        'cantidad' => $cantidadVar,
+                                                    ];
+                                                }
                                             }
                                         }
                                     }
 
-                                    foreach ($gruposPorColor as &$grupoColor) {
-                                        usort($grupoColor['tallas'], function ($a, $b) {
-                                            $nA = is_numeric($a['talla']) ? (int)$a['talla'] : null;
-                                            $nB = is_numeric($b['talla']) ? (int)$b['talla'] : null;
-                                            if ($nA !== null && $nB !== null) return $nA - $nB;
-                                            return strcmp($a['talla'], $b['talla']);
-                                        });
+                                    // Ordenar tallas dentro de cada grupo género
+                                    foreach ($gruposPorColor as &$generosPorColor) {
+                                        foreach ($generosPorColor as &$tallasGenero) {
+                                            usort($tallasGenero, function ($a, $b) {
+                                                $nA = is_numeric($a['talla']) ? (int)$a['talla'] : null;
+                                                $nB = is_numeric($b['talla']) ? (int)$b['talla'] : null;
+                                                if ($nA !== null && $nB !== null) return $nA - $nB;
+                                                return strcmp($a['talla'], $b['talla']);
+                                            });
+                                        }
+                                        unset($tallasGenero);
                                     }
-                                    unset($grupoColor);
+                                    unset($generosPorColor);
 
                                     $tieneColoresPorTalla = !empty($gruposPorColor);
                                     $rowSpan = $filasGroup->count();
                                 @endphp
                                 @if($tieneColoresPorTalla)
-                                    @foreach($gruposPorColor as $indexColor => $grupoColor)
+                                    @foreach($gruposPorColor as $colorKey => $generosPorColor)
                                         @php
-                                            $rowSpanColor = count($grupoColor['tallas']);
-                                            $colorLabel = $grupoColor['color'] === '__SIN_COLOR__' ? null : $grupoColor['color'];
+                                            $colorLabel = $colorKey === '__SIN_COLOR__' ? null : $colorKey;
+                                            // Total de filas para este color (descripción rowspan)
+                                            $totalRowsColor = 0;
+                                            foreach ($generosPorColor as $tallasGen) {
+                                                $totalRowsColor += count($tallasGen);
+                                            }
+                                            $isFirstRowOfColor = true;
                                         @endphp
-                                        @foreach($grupoColor['tallas'] as $indexTalla => $t)
+                                        @foreach($generosPorColor as $generoKey => $tallasDelGenero)
+                                            @php
+                                                $rowSpanGenero = count($tallasDelGenero);
+                                            @endphp
+                                            @foreach($tallasDelGenero as $indexTalla => $t)
                                             <tr class="border-b border-slate-400 hover:bg-slate-50"
                                                 data-tipo="prenda"
                                                 data-id="{{ $primeraFila->id }}"
@@ -255,9 +290,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 data-genero="{{ $t['genero'] }}"
                                                 data-cantidad="{{ $t['cantidad'] }}">
 
-                                                {{-- CELDA DE DESCRIPCIÓN: Solo en la primera fila del grupo (por color) --}}
-                                                @if($indexTalla === 0)
-                                                    <td class="px-2 lg:px-4 py-3 text-slate-900 text-xs" rowspan="{{ $rowSpanColor }}">
+                                                {{-- CELDA DE DESCRIPCIÓN: Solo en la primera fila del color --}}
+                                                @if($isFirstRowOfColor)
+                                                    <td class="px-2 lg:px-4 py-3 text-slate-900 text-xs" rowspan="{{ $totalRowsColor }}">
                                                         <div class="font-semibold text-slate-900 mb-1">
                                                             {{ $primeraFila->objetoPrenda['nombre'] ?? $primeraFila->descripcion }}
                                                             @if($colorLabel)
@@ -296,7 +331,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 
                                                 @if($primeraFila->objetoPrenda && isset($primeraFila->objetoPrenda['variantes']) && is_array($primeraFila->objetoPrenda['variantes']) && count($primeraFila->objetoPrenda['variantes']) > 0)
                                                     @php
-                                                        // Obtener la primera variante para mostrar las características comunes
                                                         $primeraVariante = $primeraFila->objetoPrenda['variantes'][0];
                                                         $manga = $primeraVariante->manga ?? $primeraVariante['manga'] ?? null;
                                                         $manga_obs = $primeraVariante->manga_obs ?? $primeraVariante['manga_obs'] ?? '';
@@ -323,7 +357,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                                             @foreach($primeraFila->objetoPrenda['procesos'] as $proc)
                                                                 @php
                                                                     $ubicaciones = $proc->ubicaciones ?? $proc['ubicaciones'] ?? [];
-                                                                    // Si es string, intenta decodificar como JSON
                                                                     if (is_string($ubicaciones)) {
                                                                         $decoded = json_decode($ubicaciones, true);
                                                                         $ubicaciones = is_array($decoded) ? $decoded : [$ubicaciones];
@@ -339,13 +372,16 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 @endif
 
                                                     </td>
+                                                    @php $isFirstRowOfColor = false; @endphp
+                                                @endif
 
-                                                    {{-- CELDA DE GÉNERO: Solo en la primera fila del grupo (por color) --}}
-                                                    <td class="px-2 lg:px-4 py-3 text-center text-slate-600 text-xs" rowspan="{{ $rowSpanColor }}">
-                                                        @if($primeraFila && strtoupper($t['genero'] ?? '') === 'GENERICO')
+                                                {{-- CELDA DE GÉNERO: Solo en la primera fila de cada género --}}
+                                                @if($indexTalla === 0)
+                                                    <td class="px-2 lg:px-4 py-3 text-center text-slate-600 text-xs" rowspan="{{ $rowSpanGenero }}">
+                                                        @if(strtoupper($generoKey) === 'GENERICO')
                                                             —
                                                         @else
-                                                            {{ $t['genero'] ?? '—' }}
+                                                            {{ $generoKey }}
                                                         @endif
                                                     </td>
                                                 @endif
@@ -386,6 +422,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                    readonly>
                                         </td>
                                     </tr>
+                                            @endforeach
                                         @endforeach
                                     @endforeach
                                 @else
