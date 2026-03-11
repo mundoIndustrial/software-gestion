@@ -21,7 +21,8 @@ class BodegaServiceProvider extends ServiceProvider
                 $app->make(\App\Application\Pedidos\UseCases\ObtenerPedidoUseCase::class),
                 $app->make(\App\Domain\Pedidos\Repositories\PedidoProduccionRepository::class),
                 $app->make(BodegaRoleService::class),
-                $app->make(\App\Application\Bodega\Services\BodegaRepository::class)
+                $app->make(\App\Application\Bodega\Services\BodegaRepository::class),
+                $app->make(\App\Application\Bodega\Calculators\PedidoEstadoCalculator::class)
             );
         });
 
@@ -47,6 +48,11 @@ class BodegaServiceProvider extends ServiceProvider
         // BodegaRepository - Consultas de base de datos
         $this->app->singleton(\App\Application\Bodega\Services\BodegaRepository::class, function ($app) {
             return new \App\Application\Bodega\Services\BodegaRepository();
+        });
+
+        // PedidoEstadoCalculator - Cálculo centralizado de estados
+        $this->app->singleton(\App\Application\Bodega\Calculators\PedidoEstadoCalculator::class, function ($app) {
+            return new \App\Application\Bodega\Calculators\PedidoEstadoCalculator();
         });
     }
 

@@ -13,7 +13,7 @@ class EntregaService
     /**
      * Registrar la entrega de una prenda cuando un pedido cambia a estado 'Entregado'
      */
-    public function registrarEntregaPrenda(array $datosPrenda, int $pedidoProduccionId): BodegaDetallesTalla
+    public function registrarEntregaPrenda(array $datosPrenda, int $pedidoProduccionId)
     {
         try {
             // Obtener información del pedido
@@ -22,7 +22,9 @@ class EntregaService
                 throw new \Exception("Pedido no encontrado con ID: {$pedidoProduccionId}");
             }
             
-            // Registrar la entrega en bodega_detalles_talla
+            // DESACTIVADO: No crear automáticamente registros en bodega_detalles_talla
+            // Solo se deben crear cuando el usuario los ingrese manualmente
+            /*
             $entrega = BodegaDetallesTalla::create([
                 'pedido_produccion_id' => $pedidoProduccionId,
                 'numero_pedido' => $pedido->numero_pedido,
@@ -38,20 +40,25 @@ class EntregaService
                 'usuario_bodega_nombre' => auth()->user()->name ?? '',
                 'observaciones_bodega' => $datosPrenda['observaciones_entrega'] ?? 'Entregado desde bodega',
             ]);
+            */
             
-            \Log::info('[ENTREGA] Entrega de prenda registrada', [
+            \Log::info('[ENTREGA] Creación automática de entrega desactivada', [
                 'pedido_produccion_id' => $pedidoProduccionId,
                 'numero_pedido' => $pedido->numero_pedido,
                 'prenda' => $datosPrenda['prenda_nombre'],
                 'talla' => $datosPrenda['talla'],
                 'cantidad' => $datosPrenda['cantidad'],
                 'cliente' => $pedido->cliente,
-                'usuario' => auth()->user()->name,
-                'fecha_entrega' => $entrega->fecha_entrega->format('Y-m-d H:i:s'),
-                'estado_bodega' => $entrega->estado_bodega,
+                'nota' => 'El registro solo se creará cuando el usuario lo ingrese manualmente en bodega'
             ]);
             
-            return $entrega;
+            // Retornar un array simulado para mantener compatibilidad
+            return [
+                'success' => true,
+                'message' => 'Entrega registrada (sin crear en bodega_detalles_talla)',
+                'pedido_produccion_id' => $pedidoProduccionId,
+                'numero_pedido' => $pedido->numero_pedido,
+            ];
             
         } catch (\Exception $e) {
             \Log::error('[ENTREGA] Error al registrar entrega de prenda', [
