@@ -377,8 +377,8 @@ function buscarPedidos(busqueda) {
 /**
  * Agregar estilos dinámicos para dropdown
  */
-const style = document.createElement('style');
-style.textContent = `
+const layoutStyle = document.createElement('style');
+layoutStyle.textContent = `
     .user-menu {
         display: none;
         position: absolute;
@@ -529,4 +529,4 @@ style.textContent = `
         color: rgba(44, 62, 80, 0.7);
     }
 `;
-document.head.appendChild(style);
+document.head.appendChild(layoutStyle);
