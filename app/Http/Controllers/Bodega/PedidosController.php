@@ -755,7 +755,12 @@ class PedidosController extends Controller
             }
             
             $query = BodegaDetalleTalla::porArea('EPP')
-                ->porEstado('Pendiente');
+                ->porEstado('Pendiente')
+                ->whereNotIn('numero_pedido', function($subquery) {
+                    $subquery->select('numero_pedido')
+                        ->from('pedidos_produccion')
+                        ->where('estado', 'Entregado');
+                });
 
             \Log::info('Query construida, total registros: ' . $query->count());
 
@@ -873,13 +878,19 @@ class PedidosController extends Controller
 
             // Los resultados ya vienen ordenados por número de pedido descendente desde la query
 
-            // Obtener estadísticas
+            // Obtener estadísticas (excluyendo pedidos entregados del principal)
+            $entregedosSubquery = function($subquery) {
+                $subquery->select('numero_pedido')
+                    ->from('pedidos_produccion')
+                    ->where('estado', 'Entregado');
+            };
+            
             $estadisticas = [
-                'total' => BodegaDetalleTalla::porArea('EPP')->count(),
-                'pendientes' => BodegaDetalleTalla::porArea('EPP')->porEstado('Pendiente')->count(),
-                'entregados' => BodegaDetalleTalla::porArea('EPP')->porEstado('Entregado')->count(),
-                'anulados' => BodegaDetalleTalla::porArea('EPP')->porEstado('Anulado')->count(),
-                'retrasados' => BodegaDetalleTalla::porArea('EPP')->retrasados()->count(),
+                'total' => BodegaDetalleTalla::porArea('EPP')->whereNotIn('numero_pedido', $entregedosSubquery)->count(),
+                'pendientes' => BodegaDetalleTalla::porArea('EPP')->porEstado('Pendiente')->whereNotIn('numero_pedido', $entregedosSubquery)->count(),
+                'entregados' => BodegaDetalleTalla::porArea('EPP')->porEstado('Entregado')->whereNotIn('numero_pedido', $entregedosSubquery)->count(),
+                'anulados' => BodegaDetalleTalla::porArea('EPP')->porEstado('Anulado')->whereNotIn('numero_pedido', $entregedosSubquery)->count(),
+                'retrasados' => BodegaDetalleTalla::porArea('EPP')->retrasados()->whereNotIn('numero_pedido', $entregedosSubquery)->count(),
             ];
             
             \Log::info('Estadísticas obtenidas: ' . json_encode($estadisticas));
