@@ -902,6 +902,9 @@ class PedidosController extends Controller
                     ->where('numero_pedido', $detalle->numero_pedido)
                     ->first();
                 
+                // Verificar si el pedido está marcado como visto usando el ID de pedidos_produccion
+                $estaVisto = $pedidoProduccion && \App\Models\PedidoVistoSupervisor::where('pedido_id', $pedidoProduccion->id)->exists();
+                
                 return [
                     'id' => $detalle->id, // El detalle es lo que usa showPendienteEpp (/pendiente-epp/{id})
                     'pedido_produccion_id' => $pedidoProduccion?->id,
@@ -922,6 +925,7 @@ class PedidosController extends Controller
                     'usuario_bodega' => $detalle->usuario_bodega_nombre,
                     'created_at' => $detalle->created_at,
                     'updated_at' => $detalle->updated_at,
+                    'visto' => $estaVisto,
                     'tiene_pendientes' => $detalle->pendientes_total > 0, // Usar pendientes_total
                     'esta_retrasado' => $detalle->fecha_entrega && $detalle->fecha_entrega < now(),
                 ];

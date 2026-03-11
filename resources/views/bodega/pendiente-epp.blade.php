@@ -154,6 +154,7 @@
                                                     type="checkbox"
                                                     class="pedido-visto-toggle"
                                                     data-pedido-id="{{ $pedido['pedido_produccion_id'] }}"
+                                                    {{ $pedido['visto'] ? 'checked' : '' }}
                                                 >
                                             @else
                                                 <span class="text-slate-300">—</span>
