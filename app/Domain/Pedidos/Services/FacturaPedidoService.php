@@ -914,21 +914,23 @@ class FacturaPedidoService
                         'imagenes' => $imagenesTalla
                     ]);
                     
-                    // Si hay colores, crear entrada por cada color (pero usar observaciones según modo)
+                    // Si hay colores, crear entrada por cada color
                     if ($coloresConDetalles && $coloresConDetalles->count() > 0) {
                         foreach ($coloresConDetalles as $color) {
                             $colorNombre = $color->color_nombre ?? 'Sin color';
                             
-                            // EN MODO GENERAL: Usar observaciones de la talla, no del color
-                            // EN MODO ESPECIFICO: Usar observaciones específicas del color
+                            // 🔧 FIX: SIEMPRE incluir el color en la clave si hay múltiples colores
+                            // Esto evita perder variantes cuando hay varios colores para la misma talla
+                            
+                            $claveTalla = "{$talla}__" . $colorNombre; // Ej: L__AZUL PETROLEO
+                            
+                            // UBICACIÓN: depende del modo
+                            // - Modo general: usar ubicación general (de la talla)
+                            // - Modo específico: usar ubicación específica del color
                             if ($modoTallas === 'general') {
-                                $observacionesActuales = $tallaProceso->observaciones ?? '';
                                 $ubicacionesActuales = $ubicaciones;
-                                $claveTalla = $talla; // Clave solo con la talla
                             } else {
-                                $claveTalla = "{$talla}__" . $colorNombre; // Ej: L__AZUL CIELO
-                                
-                                // Parsear ubicaciones del color
+                                // Modo específico: usar ubicaciones del color
                                 $ubicacionesActuales = [];
                                 if ($color->ubicaciones) {
                                     if (is_array($color->ubicaciones)) {
@@ -937,19 +939,20 @@ class FacturaPedidoService
                                         $ubicacionesActuales = json_decode($color->ubicaciones, true) ?? [];
                                     }
                                 }
-                                $observacionesActuales = $color->observaciones ?? '';
                             }
                             
-                            // Asignar datos (evitar duplicados en modo general agrupando por talla)
-                            if (!isset($tallesDetalles[$genero][$claveTalla])) {
-                                $tallesDetalles[$genero][$claveTalla] = [
-                                    'ubicaciones' => $ubicacionesActuales,
-                                    'observaciones' => $observacionesActuales,
-                                    'imagenes' => $imagenesTalla,
-                                    'cantidad' => (int)$color->cantidad,
-                                    'color' => $colorNombre
-                                ];
-                            }
+                            // OBSERVACIONES: SIEMPRE vienen del color (de la tabla pedidos_procesos_prenda_talla_colores)
+                            $observacionesActuales = $color->observaciones ?? '';
+                            
+                            // Crear entrada (siempre, sin revisar si existe)
+                            // El color ya está en la clave, así que no habrá duplicados
+                            $tallesDetalles[$genero][$claveTalla] = [
+                                'ubicaciones' => $ubicacionesActuales,
+                                'observaciones' => $observacionesActuales,
+                                'imagenes' => $imagenesTalla,
+                                'cantidad' => (int)$color->cantidad,
+                                'color' => $colorNombre
+                            ];
                         }
                     } else {
                         // Si no hay colores, usar ubicaciones de la talla directamente
