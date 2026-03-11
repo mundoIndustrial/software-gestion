@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\ConsecutivoReciboPedido;
 use App\Models\PedidoProduccion;
 use App\Models\ProcesoPrenda;
+use App\Models\Prenda;
+use App\Events\EncargadoCosturaAsignado;
+use App\Events\ReciboAsignadoCosturero;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -337,6 +340,16 @@ class ReciboCosturaController extends Controller
     public function pasarACostura(Request $request, $pedidoId, $numeroRecibo)
     {
         try {
+            // Logging para debugging
+            Log::info('[COSTURA] Datos recibidos:', [
+                'request_all' => $request->all(),
+                'pedidoId' => $pedidoId,
+                'numeroRecibo' => $numeroRecibo,
+                'prenda_id' => $request->input('prenda_id'),
+                'encargado' => $request->input('encargado'),
+                'tipo_recibo' => $request->input('tipo_recibo')
+            ]);
+
             if (!auth()->user()->hasRole('vista-costura')) {
                 return response()->json([
                     'success' => false,
@@ -424,6 +437,27 @@ class ReciboCosturaController extends Controller
 
             DB::commit();
 
+            // Notificar a los cortadores que el recibo ya tiene encargado de costura
+            broadcast(new EncargadoCosturaAsignado(
+                $pedido->id,
+                $request->prenda_id,
+                $recibo->consecutivo_actual,
+                $request->encargado,
+                $nuevoProceso->id,
+                $prenda->nombre_prenda ?? 'Prenda sin nombre'
+            ));
+
+            // Notificar al costurero asignado que tiene un nuevo recibo
+            broadcast(new ReciboAsignadoCosturero(
+                $pedido->id,
+                $request->prenda_id,
+                $recibo->consecutivo_actual,
+                $prenda->nombre_prenda ?? 'Prenda sin nombre',
+                $request->encargado,
+                $nuevoProceso->id,
+                $request->encargado // El nombre del costurero asignado
+            ));
+
             Log::info('Recibo enviado a Costura', [
                 'pedido_id' => $pedidoId,
                 'numero_pedido' => $pedido->numero_pedido,
@@ -466,6 +500,28 @@ class ReciboCosturaController extends Controller
      */
     public function deshacerCostura(Request $request, $pedidoId, $prendaId)
     {
+        // Logging para debugging - mostrar todos los parámetros
+        Log::info('[DESHACER-COSTURA] Parámetros recibidos', [
+            'route_params' => func_get_args(),
+            'request_all' => $request->all(),
+            'pedidoId_param' => $pedidoId,
+            'prendaId_param' => $prendaId,
+            'request_prenda_id' => $request->prenda_id,
+            'request_tipo_recibo' => $request->tipo_recibo
+        ]);
+
+        // Logging para debugging
+        Log::info('[DESHACER-COSTURA] Iniciando proceso', [
+            'method' => $request->method(),
+            'url' => $request->fullUrl(),
+            'pedido_id' => $pedidoId,
+            'prenda_id' => $prendaId,
+            'user_agent' => $request->userAgent(),
+            'ip' => $request->ip(),
+            'user_id' => auth()->id(),
+            'tipo_recibo' => $request->tipo_recibo
+        ]);
+
         try {
             if (!auth()->user()->hasRole('vista-costura')) {
                 return response()->json([
@@ -480,13 +536,30 @@ class ReciboCosturaController extends Controller
 
             $pedido = PedidoProduccion::findOrFail($pedidoId);
 
-            // Buscar recibo en área Costura
+            // Obtener la prenda para tener el nombre
+            $prenda = Prenda::find($prendaId); // Usar el parámetro de ruta, no del request
+
+            Log::info('[DESHACER-COSTURA] Buscando recibo', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'prenda_id' => $prendaId, // Usar el parámetro de ruta
+                'tipo_recibo' => $request->tipo_recibo,
+                'prenda_encontrada' => $prenda ? true : false
+            ]);
+
+            // Buscar recibo en área Corte o sin área específica
             $recibo = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedido->id)
-                ->where('prenda_id', $prendaId)
+                ->where('prenda_id', $prendaId) // Usar el parámetro de ruta
                 ->whereRaw('UPPER(tipo_recibo) = ?', [strtoupper($request->tipo_recibo)])
-                ->whereRaw('LOWER(TRIM(area)) = ?', ['costura'])
                 ->where('activo', 1)
                 ->first();
+
+            Log::info('[DESHACER-COSTURA] Resultado búsqueda recibo', [
+                'recibo_encontrado' => $recibo ? true : false,
+                'recibo_id' => $recibo?->id,
+                'recibo_numero' => $recibo?->consecutivo_actual,
+                'recibo_area' => $recibo?->area
+            ]);
 
             if (!$recibo) {
                 return response()->json([
@@ -510,45 +583,35 @@ class ReciboCosturaController extends Controller
                 DB::rollBack();
                 return response()->json([
                     'success' => false,
-                    'message' => 'No se encontró proceso de Costura para eliminar'
+                    'message' => 'No se encontró proceso de Costura para limpiar encargado'
                 ], 404);
             }
 
-            // Buscar el proceso anterior más reciente (NO Costura y mismo recibo)
-            $procesoAnterior = ProcesoPrenda::where('prenda_pedido_id', $prendaId)
-                ->where('numero_pedido', $pedido->numero_pedido)
-                ->where('numero_recibo', $recibo->consecutivo_actual)
-                ->where('proceso', '!=', 'Costura')
-                ->whereNull('deleted_at')
-                ->latest('fecha_inicio')
-                ->first();
-
-            // Restaurar área al proceso anterior o vacío
-            $areaAnterior = $procesoAnterior ? $procesoAnterior->proceso : '';
-
-            $recibo->update([
-                'area' => $areaAnterior
+            // Limpiar solo el encargado del proceso (NO eliminar el proceso)
+            $procesoCostura->update([
+                'encargado' => null,
+                'estado_proceso' => 'Pendiente' // Cambiar estado a Pendiente al quitar encargado
             ]);
 
-            // Soft delete del proceso de Costura
-            $procesoCostura->delete();
+            // NO restaurar área - mantener el recibo en Costura para que siga visible en vista-costura
+            // El recibo permanecerá en área Costura pero sin encargado asignado
 
             DB::commit();
 
-            Log::info('Proceso de Costura deshecho', [
+            Log::info('Encargado de Costura limpiado', [
                 'pedido_id' => $pedidoId,
                 'prenda_id' => $prendaId,
                 'proceso_id' => $procesoCostura->id,
-                'area_restaurada' => $areaAnterior,
+                'area_mantenida' => 'Costura',
                 'usuario_id' => auth()->id()
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Proceso de Costura deshecho correctamente',
+                'message' => 'Encargado de Costura eliminado correctamente',
                 'data' => [
-                    'area_nueva' => $areaAnterior,
-                    'proceso_anterior' => $procesoAnterior ? $procesoAnterior->proceso : null
+                    'area_nueva' => 'Costura', // Mantener area Costura
+                    'proceso_anterior' => 'Costura'
                 ]
             ]);
 

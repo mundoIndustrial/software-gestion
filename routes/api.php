@@ -840,4 +840,19 @@ Route::withoutMiddleware(['api'])
         ->name('estado');
 });
 
+/**
+ * API Routes for Usuarios por Rol
+ * Obtiene usuarios filtrados por rol específico
+ */
+Route::withoutMiddleware(['api'])
+    ->middleware(['web', 'auth'])
+    ->prefix('usuarios')
+    ->name('usuarios.')
+    ->group(function () {
+    
+    // Obtener usuarios con rol 'costura'
+    Route::get('costura', [App\Http\Controllers\UsuarioRolController::class, 'getUsuariosCostura'])
+        ->name('costura');
+});
+
 
