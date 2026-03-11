@@ -91,6 +91,10 @@ Route::middleware(['auth', 'role:bodeguero,EPP-Bodega,supervisor_pedidos,supervi
     // Marcar pedido como visto (solo para rol EPP-Bodega)
     Route::post('/pedidos/{id}/marcar-visto', [PedidosController::class, 'marcarVisto'])
         ->name('marcar-visto');
+    
+    // Marcar detalle de bodega como visto
+    Route::post('/bodega-detalles/{id}/marcar-visto', [PedidosController::class, 'marcarVistoDetalle'])
+        ->name('marcar-visto-detalle');
 
     // Dashboard
     Route::get('/dashboard', [PedidosController::class, 'dashboard'])

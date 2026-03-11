@@ -153,6 +153,7 @@
                                                 <input
                                                     type="checkbox"
                                                     class="pedido-visto-toggle"
+                                                    data-detalle-id="{{ $pedido['id'] }}"
                                                     data-pedido-id="{{ $pedido['pedido_produccion_id'] }}"
                                                     {{ $pedido['visto'] ? 'checked' : '' }}
                                                 >
@@ -316,11 +317,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.pedido-visto-toggle').forEach(checkbox => {
         checkbox.addEventListener('change', async function() {
-            const pedidoId = this.dataset.pedidoId;
+            const detalleId = this.dataset.detalleId;
             const visto = this.checked;
 
             try {
-                const response = await fetch(`/gestion-bodega/pedidos/${pedidoId}/marcar-visto`, {
+                const response = await fetch(`/gestion-bodega/bodega-detalles/${detalleId}/marcar-visto`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

@@ -7,6 +7,7 @@ use App\Models\ReciboPrenda;
 use App\Models\PedidoProduccion;
 use App\Models\PedidoAuditoria;
 use App\Models\BodegaDetalleTalla;
+use App\Models\BodegaDetalleVisto;
 use App\Models\CosturaBodegaDetalle;
 use App\Application\Bodega\Services\BodegaPedidoService;
 use App\Application\Bodega\Services\BodegaRoleService;
@@ -540,6 +541,65 @@ class PedidosController extends Controller
     }
 
     /**
+     * Marcar detalle de bodega como visto
+     */
+    public function marcarVistoDetalle(Request $request, $detalleId): JsonResponse
+    {
+        try {
+            // Validar que el usuario tenga permisos
+            if (!auth()->user()->hasAnyRole(['EPP-Bodega', 'bodeguero'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permisos para realizar esta acción.'
+                ], 403);
+            }
+
+            $visto = $request->input('visto', false);
+            $userId = auth()->id();
+            
+            // Verificar que el detalle existe
+            BodegaDetalleTalla::findOrFail($detalleId);
+            
+            if ($visto) {
+                // Marcar como visto - crear registro en bodega_detalles_visto
+                $registroVisto = \App\Models\BodegaDetalleVisto::firstOrCreate([
+                    'bodega_detalle_id' => $detalleId,
+                    'user_id' => $userId,
+                ]);
+                
+                $actualizado = $registroVisto->wasRecentlyCreated || $registroVisto->exists;
+            } else {
+                // Desmarcar como visto - eliminar registro
+                $eliminados = \App\Models\BodegaDetalleVisto::where('bodega_detalle_id', $detalleId)
+                    ->where('user_id', $userId)
+                    ->delete();
+                    
+                $actualizado = $eliminados > 0;
+            }
+            
+            if ($actualizado) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $visto ? 'Detalle marcado como visto.' : 'Detalle desmarcado como visto.',
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pudo actualizar el estado del detalle.'
+                ], 400);
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Error en PedidosController@marcarVistoDetalle: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el detalle: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Mostrar pedidos pendientes de Costura
      */
     public function pendienteCostura(Request $request)
@@ -902,8 +962,8 @@ class PedidosController extends Controller
                     ->where('numero_pedido', $detalle->numero_pedido)
                     ->first();
                 
-                // Verificar si el pedido está marcado como visto usando el ID de pedidos_produccion
-                $estaVisto = $pedidoProduccion && \App\Models\PedidoVistoSupervisor::where('pedido_id', $pedidoProduccion->id)->exists();
+                // Verificar si el detalle está marcado como visto en la nueva tabla
+                $estaVisto = \App\Models\BodegaDetalleVisto::where('bodega_detalle_id', $detalle->id)->exists();
                 
                 return [
                     'id' => $detalle->id, // El detalle es lo que usa showPendienteEpp (/pendiente-epp/{id})
