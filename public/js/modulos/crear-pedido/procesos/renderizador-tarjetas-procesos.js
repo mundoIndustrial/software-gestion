@@ -176,6 +176,8 @@ function generarTarjetaProceso(tipo, datos) {
         if (!url) return '';
         if (url.startsWith('/')) return url;
         if (url.startsWith('http')) return url;
+        if (url.startsWith('blob:')) return url;
+        if (url.startsWith('data:')) return url;
         return '/storage/' + url;
     };
     
@@ -271,7 +273,16 @@ function generarTarjetaProceso(tipo, datos) {
     
     // HTML de imágenes
     let imagenesHTML = '';
-    if (datos.imagenes && datos.imagenes.length > 0) {
+    
+    // 🔴 PRIORIDAD: Usar imagenesFiles si están disponibles (para archivos que aún no se subieron)
+    // Esto evita depender de blob URLs antiguos que se invalidan
+    let imagenesParaRenderizar = datos.imagenes || [];
+    if (datos.imagenesFiles && Array.isArray(datos.imagenesFiles) && datos.imagenesFiles.length > 0) {
+        console.log(`🖼️ [RENDER-TARJETA-${tipo}] Usando imagenesFiles (${datos.imagenesFiles.length}) en lugar de imagenes (${imagenesParaRenderizar.length})`);
+        imagenesParaRenderizar = datos.imagenesFiles;
+    }
+    
+    if (imagenesParaRenderizar && imagenesParaRenderizar.length > 0) {
         // 🔴 CRÍTICO: Filtrar imágenes eliminadas usando imagenesEliminadas
         // imagenesEliminadas contiene null para imágenes eliminadas, objeto para válidas
         // IMPORTANTE: imagenesEliminadas solo contiene las imágenes ORIGINALES (de BD)
@@ -284,8 +295,8 @@ function generarTarjetaProceso(tipo, datos) {
             // Filtrar solo las imágenes originales usando imagenesEliminadas
             // Las primeras N imágenes corresponden a imagenesEliminadas
             const cantidadOriginales = datos.imagenesEliminadas.length;
-            const imagenesOriginales = datos.imagenes.slice(0, cantidadOriginales);
-            const imagenesNuevas = datos.imagenes.slice(cantidadOriginales);
+            const imagenesOriginales = imagenesParaRenderizar.slice(0, cantidadOriginales);
+            const imagenesNuevas = imagenesParaRenderizar.slice(cantidadOriginales);
             
             // Filtrar originales: solo incluir si no está marcada como null en imagenesEliminadas
             const originalesFiltradas = imagenesOriginales.filter((img, idx) => {
@@ -295,10 +306,10 @@ function generarTarjetaProceso(tipo, datos) {
             // Combinar: originales filtradas + todas las nuevas
             imagenesValidas = [...originalesFiltradas, ...imagenesNuevas];
             
-            console.log(`🖼️ [RENDER-TARJETA-${tipo}] Filtrando con imagenesEliminadas: ${imagenesValidas.length} válidas (${originalesFiltradas.length} originales + ${imagenesNuevas.length} nuevas) de ${datos.imagenes.length} totales`);
+            console.log(`🖼️ [RENDER-TARJETA-${tipo}] Filtrando con imagenesEliminadas: ${imagenesValidas.length} válidas (${originalesFiltradas.length} originales + ${imagenesNuevas.length} nuevas) de ${imagenesParaRenderizar.length} totales`);
         } else {
             // Sin imagenesEliminadas: incluir todas las imágenes válidas
-            imagenesValidas = datos.imagenes.filter(img => img !== null && img !== undefined);
+            imagenesValidas = imagenesParaRenderizar.filter(img => img !== null && img !== undefined);
             console.log(`🖼️ [RENDER-TARJETA-${tipo}] Sin imagenesEliminadas: ${imagenesValidas.length} imágenes válidas`);
         }
         
@@ -1349,7 +1360,7 @@ window.abrirGaleriaImagenesProceso = function(tipoProceso) {
         
         // Luego URLs de backend
         if (typeof img === 'string') {
-            const url = img.startsWith('/') || img.startsWith('http') ? img : '/storage/' + img;
+            const url = img.startsWith('/') || img.startsWith('http') || img.startsWith('blob:') || img.startsWith('data:') ? img : '/storage/' + img;
             console.log('  → Usando string directo:', url);
             return url;
         }
@@ -1360,7 +1371,7 @@ window.abrirGaleriaImagenesProceso = function(tipoProceso) {
                 console.warn('  → No se encontró URL en objeto:', Object.keys(img));
                 return '';
             }
-            const urlProcesada = typeof url === 'string' ? (url.startsWith('/') || url.startsWith('http') ? url : '/storage/' + url) : '';
+            const urlProcesada = typeof url === 'string' ? (url.startsWith('/') || url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:') ? url : '/storage/' + url) : '';
             console.log('  → Usando URL de objeto:', urlProcesada);
             return urlProcesada;
         }
@@ -1436,11 +1447,11 @@ window.navegarGaleriaImagenesProceso = function(direccion) {
             return img.dataURL;
         }
         if (typeof img === 'string') {
-            return img.startsWith('/') || img.startsWith('http') ? img : '/storage/' + img;
+            return img.startsWith('/') || img.startsWith('http') || img.startsWith('blob:') || img.startsWith('data:') ? img : '/storage/' + img;
         }
         if (typeof img === 'object' && img) {
             const url = img.url || img.ruta || img.ruta_webp || img.ruta_original;
-            return (typeof url === 'string') ? (url.startsWith('/') || url.startsWith('http') ? url : '/storage/' + url) : '';
+            return (typeof url === 'string') ? (url.startsWith('/') || url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:') ? url : '/storage/' + url) : '';
         }
         return '';
     };
@@ -1487,11 +1498,11 @@ window.irAImagenProceso = function(indice) {
             return img.dataURL;
         }
         if (typeof img === 'string') {
-            return img.startsWith('/') || img.startsWith('http') ? img : '/storage/' + img;
+            return img.startsWith('/') || img.startsWith('http') || img.startsWith('blob:') || img.startsWith('data:') ? img : '/storage/' + img;
         }
         if (typeof img === 'object' && img) {
             const url = img.url || img.ruta || img.ruta_webp || img.ruta_original;
-            return (typeof url === 'string') ? (url.startsWith('/') || url.startsWith('http') ? url : '/storage/' + url) : '';
+            return (typeof url === 'string') ? (url.startsWith('/') || url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:') ? url : '/storage/' + url) : '';
         }
         return '';
     };

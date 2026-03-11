@@ -316,6 +316,11 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         const agregarStorage = (url) => {
             if (!url) return '';
             
+            // Caso especial: URLs blob y data (generadas en el navegador)
+            if (url.startsWith('blob:') || url.startsWith('data:')) {
+                return url;
+            }
+            
             // Caso 1: URL ya es absoluta (empieza con /)
             if (url.startsWith('/')) {
                 // Si ya tiene /storage/, la dejamos intacta

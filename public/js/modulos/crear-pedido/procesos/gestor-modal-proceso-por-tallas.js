@@ -660,19 +660,69 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
     window._fotosGeneralesKeys = new Set(); // Resetear Set de claves para detectar duplicados
     
     if (datosGenerales?.fotosGenerales && Array.isArray(datosGenerales.fotosGenerales)) {
-        fotosGeneralesExistentes = [...datosGenerales.fotosGenerales];
+        // Filtrar URLs blob (temporales e inválidas) - solo mantener URLs del storage
+        fotosGeneralesExistentes = datosGenerales.fotosGenerales.filter(img => {
+            if (typeof img === 'string') {
+                // Rechazar blobs y data URLs - solo aceptar rutas del storage
+                return !img.startsWith('blob:') && !img.startsWith('data:');
+            }
+            if (typeof img === 'object' && img) {
+                // Para objetos, verificar que tengan una URL válida
+                const url = img.url || img.ruta_webp || img.ruta_original || img.ruta || '';
+                return typeof url === 'string' && !url.startsWith('blob:') && !url.startsWith('data:');
+            }
+            return false;
+        });
     } else if (datosGenerales?.imagenes && Array.isArray(datosGenerales.imagenes)) {
-        fotosGeneralesExistentes = [...datosGenerales.imagenes];
+        // Filtrar URLs blob (temporales e inválidas) - solo mantener URLs del storage
+        fotosGeneralesExistentes = datosGenerales.imagenes.filter(img => {
+            if (typeof img === 'string') {
+                // Rechazar blobs y data URLs - solo aceptar rutas del storage
+                return !img.startsWith('blob:') && !img.startsWith('data:');
+            }
+            if (typeof img === 'object' && img) {
+                // Para objetos, verificar que tengan una URL válida
+                const url = img.url || img.ruta_webp || img.ruta_original || img.ruta || '';
+                return typeof url === 'string' && !url.startsWith('blob:') && !url.startsWith('data:');
+            }
+            return false;
+        });
+    }
+    
+    // ✅ RESTAURAR FILES TEMPORALES: Si hay imagenesFiles (archivos que aún no se subieron al servidor),
+    // recrear los blobs para visualización
+    if (datosGenerales?.imagenesFiles && Array.isArray(datosGenerales.imagenesFiles) && datosGenerales.imagenesFiles.length > 0) {
+        console.log('[por-tallas] 📸 Restaurando Files temporales:', datosGenerales.imagenesFiles.length);
+        
+        datosGenerales.imagenesFiles.forEach(file => {
+            if (file instanceof File) {
+                // Recrear blob URL para visualización
+                const blobUrl = URL.createObjectURL(file);
+                fotosGeneralesTemp.push(blobUrl);
+                fotosGeneralesFilesTemp.push(file);
+                
+                // Registrar clave para evitar duplicados
+                const fileKey = `${file.name}_${file.size}_${file.type}`;
+                window._fotosGeneralesKeys.add(fileKey);
+            }
+        });
+        
+        console.log('[por-tallas] ✅ Files restaurados:', {
+            filesTemp: fotosGeneralesFilesTemp.length,
+            blobsTemp: fotosGeneralesTemp.length
+        });
     }
     
     console.log('[por-tallas] 🔄 Datos generales cargados:', {
         ubicacionDisplay: ubicacionDisplay,
         fotosExistentes: fotosGeneralesExistentes.length,
         fotosNuevas: fotosGeneralesTemp.length,
+        filesTemp: fotosGeneralesFilesTemp.length,
         datosGenerales_ubicacionGeneral: datosGenerales?.ubicacionGeneral,
         datosGenerales_ubicaciones: datosGenerales?.ubicaciones,
         datosGenerales_fotosGenerales: datosGenerales?.fotosGenerales,
-        datosGenerales_imagenes: datosGenerales?.imagenes
+        datosGenerales_imagenes: datosGenerales?.imagenes,
+        datosGenerales_imagenesFiles: datosGenerales?.imagenesFiles?.length
     });
     
     // Redibujar galería de fotos generales (con o sin fotos existentes)
@@ -707,12 +757,34 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
         tallasDama.forEach(([tallaKey, cantidad]) => {
             const key = `dama__${tallaKey}`;
             const existente = buscarDatosExistentesPorTalla('dama', tallaKey);
+            
+            // Filtrar imágenes: solo mantener URLs válidas del storage (no blobs ni data URLs)
+            let imagenesExistentes = [];
+            if (existente?.imagenes && Array.isArray(existente.imagenes)) {
+                imagenesExistentes = existente.imagenes.filter(img => {
+                    if (typeof img === 'string') {
+                        return !img.startsWith('blob:') && !img.startsWith('data:');
+                    }
+                    if (typeof img === 'object' && img) {
+                        const url = img.url || img.ruta_webp || img.ruta_original || img.ruta || '';
+                        return typeof url === 'string' && !url.startsWith('blob:') && !url.startsWith('data:');
+                    }
+                    return false;
+                });
+            } else if (existente?.imagen) {
+                // Imagen única (formato antiguo)
+                const img = existente.imagen;
+                if (typeof img === 'string' && !img.startsWith('blob:') && !img.startsWith('data:')) {
+                    imagenesExistentes = [img];
+                }
+            }
+            
             datosPorTallaTemp[key] = {
                 seleccionada: true,
                 cantidadSeleccionada: existente?.cantidadSeleccionada || cantidad,
                 ubicaciones: existente?.ubicaciones ? [...existente.ubicaciones] : [],
                 observaciones: existente?.observaciones || '',
-                imagenes: existente?.imagenes ? [...existente.imagenes] : (existente?.imagen ? [existente.imagen] : []),
+                imagenes: imagenesExistentes,
                 imagenesFiles: []
             };
             contDama.appendChild(crearTarjetaTalla('dama', tallaKey, cantidad, datosPorTallaTemp[key]));
@@ -740,12 +812,33 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
         tallasCaballero.forEach(([tallaKey, cantidad]) => {
             const key = `caballero__${tallaKey}`;
             const existente = buscarDatosExistentesPorTalla('caballero', tallaKey);
+            
+            // Filtrar imágenes: solo mantener URLs válidas del storage (no blobs ni data URLs)
+            let imagenesExistentes = [];
+            if (existente?.imagenes && Array.isArray(existente.imagenes)) {
+                imagenesExistentes = existente.imagenes.filter(img => {
+                    if (typeof img === 'string') {
+                        return !img.startsWith('blob:') && !img.startsWith('data:');
+                    }
+                    if (typeof img === 'object' && img) {
+                        const url = img.url || img.ruta_webp || img.ruta_original || img.ruta || '';
+                        return typeof url === 'string' && !url.startsWith('blob:') && !url.startsWith('data:');
+                    }
+                    return false;
+                });
+            } else if (existente?.imagen) {
+                const img = existente.imagen;
+                if (typeof img === 'string' && !img.startsWith('blob:') && !img.startsWith('data:')) {
+                    imagenesExistentes = [img];
+                }
+            }
+            
             datosPorTallaTemp[key] = {
                 seleccionada: true,
                 cantidadSeleccionada: existente?.cantidadSeleccionada || cantidad,
                 ubicaciones: existente?.ubicaciones ? [...existente.ubicaciones] : [],
                 observaciones: existente?.observaciones || '',
-                imagenes: existente?.imagenes ? [...existente.imagenes] : (existente?.imagen ? [existente.imagen] : []),
+                imagenes: imagenesExistentes,
                 imagenesFiles: []
             };
             contCab.appendChild(crearTarjetaTalla('caballero', tallaKey, cantidad, datosPorTallaTemp[key]));
@@ -1039,10 +1132,28 @@ function handlePasteGlobalPorTallas(e) {
         return;
     }
 
+    // ✅ CRÍTICO: Verificar que el paste ocurrió DENTRO del modal de procesos
+    // Si el usuario está en otro lugar de la página (ej: fotos de prenda o modal wizard), ignorar
+    const targetElement = e.target;
+    if (!modal.contains(targetElement)) {
+        console.log('[handlePasteGlobalPorTallas] ❌ Paste fuera del modal de procesos, ignorando');
+        return;
+    }
+    
+    // ✅ NUEVO: Si hay otro modal visible encima (como modal de edición wizard), ignorar
+    const modalEditWizard = document.getElementById('modal-editar-asignacion-wizard');
+    if (modalEditWizard && modalEditWizard.style.display !== 'none' && modalEditWizard.classList.contains('show')) {
+        console.log('[handlePasteGlobalPorTallas] ❌ Modal wizard de edición está abierto, delegando');
+        return;
+    }
+
     // Ignorar si el focus está en un input/textarea (el usuario está escribiendo)
-    const tag = document.activeElement?.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA') {
-        console.log('[handlePasteGlobalPorTallas] ⚠️ Focus en', tag, '- ignorando paste');
+    const activeEl = document.activeElement;
+    const tag = activeEl?.tagName;
+    const isContentEditable = activeEl?.isContentEditable || activeEl?.getAttribute('contenteditable') === 'true';
+    
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || isContentEditable) {
+        console.log('[handlePasteGlobalPorTallas] ⚠️ Focus en', tag, 'o contenteditable - ignorando paste');
         return;
     }
 
@@ -1064,12 +1175,23 @@ function handlePasteGlobalPorTallas(e) {
     if (files.length === 0) return;
 
     e.preventDefault();
-    e.stopPropagation();
+    e.stopImmediatePropagation(); // ✅ CRÍTICO: stopImmediatePropagation evita que otros listeners procesen este evento
 
     try {
+        // ✅ MEJORADO: Detectar automáticamente si el paste ocurrió en la galería general
+        const galeriaGeneral = document.getElementById('prt-galeria-general');
+        const targetIsInGeneral = galeriaGeneral && galeriaGeneral.contains(e.target);
+        
+        if (targetIsInGeneral) {
+            console.log('[handlePasteGlobalPorTallas] 📍 Paste detectado dentro de galería general (por target)');
+        }
+        
         // ─── Manejo para FOTOS GENERALES ───
-        if (tallaActivaParaPaste === 'GENERAL') {
-            console.log('[handlePasteGlobalPorTallas] 🖼️ Agregando a GENERAL');
+        if (tallaActivaParaPaste === 'GENERAL' || targetIsInGeneral) {
+            console.log('[handlePasteGlobalPorTallas] 🖼️ Agregando a GENERAL', {
+                porVariable: tallaActivaParaPaste === 'GENERAL',
+                porTarget: targetIsInGeneral
+            });
             agregarImagenesGenerales(files);
             const galeria = document.getElementById('prt-galeria-general');
             if (galeria) {
@@ -1347,7 +1469,9 @@ window.guardarProcesoPorTallas = function() {
         datosExtendidos: datosExtendidos,
         modoTallas: modoModalPorTallasActual,  // Guardar el modo: 'general' o 'especifico'
         ubicacionGeneral: modoModalPorTallasActual === 'general' ? ubicacionGeneralTemp : '',
-        fotosGenerales: modoModalPorTallasActual === 'general' ? [...fotosGeneralesExistentes, ...fotosGeneralesTemp] : [],
+        // CRÍTICO: Solo guardar URLs válidas del storage en fotosGenerales
+        // NO incluir blobs temporales - solo las existentes que ya están en el servidor
+        fotosGenerales: modoModalPorTallasActual === 'general' ? [...fotosGeneralesExistentes] : [],
         imagenes_por_talla: construirImagenesPorTalla(datosExtendidos)
     };
 
@@ -1578,12 +1702,20 @@ function configurarDragDropPasteGeneral() {
         tallaActivaParaPaste = 'GENERAL';
     };
     galeria.addEventListener('mouseenter', manejadorMouseEnter);
+    
+    // ─── Click: También marcar para paste por si el usuario hace click sin mover el mouse ───
+    const manejadorClick = () => {
+        tallaActivaParaPaste = 'GENERAL';
+        console.log('[configurarDragDropPasteGeneral] 🎯 Área general activada para paste');
+    };
+    galeria.addEventListener('click', manejadorClick);
 
     // Guardar referencias para poder remover después si es necesario
     galeria._manejadorDragOver = manejadorDragOver;
     galeria._manejadorDragLeave = manejadorDragLeave;
     galeria._manejadorDrop = manejadorDrop;
     galeria._manejadorMouseEnter = manejadorMouseEnter;
+    galeria._manejadorClick = manejadorClick;
 
     // Marcar como configurado para evitar listeners duplicados
     galeria._dragDropConfigured = true;

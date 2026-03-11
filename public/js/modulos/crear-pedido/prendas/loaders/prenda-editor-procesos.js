@@ -65,9 +65,9 @@ class PrendaEditorProcesos {
                             }
                             // Si es objeto, asegurar que tiene las rutas normalizadas
                             if (typeof img === 'object' && img !== null) {
-                                if (img.ruta_webp && !img.ruta_webp.startsWith('/')) img.ruta_webp = '/storage/' + img.ruta_webp;
-                                if (img.ruta_original && !img.ruta_original.startsWith('/')) img.ruta_original = '/storage/' + img.ruta_original;
-                                if (img.url && !img.url.startsWith('/')) img.url = '/storage/' + img.url;
+                                if (img.ruta_webp && !img.ruta_webp.startsWith('/') && !img.ruta_webp.startsWith('http') && !img.ruta_webp.startsWith('blob:') && !img.ruta_webp.startsWith('data:')) img.ruta_webp = '/storage/' + img.ruta_webp;
+                                if (img.ruta_original && !img.ruta_original.startsWith('/') && !img.ruta_original.startsWith('http') && !img.ruta_original.startsWith('blob:') && !img.ruta_original.startsWith('data:')) img.ruta_original = '/storage/' + img.ruta_original;
+                                if (img.url && !img.url.startsWith('/') && !img.url.startsWith('http') && !img.url.startsWith('blob:') && !img.url.startsWith('data:')) img.url = '/storage/' + img.url;
                             }
                             return img;
                         });

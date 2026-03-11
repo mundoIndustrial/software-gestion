@@ -244,11 +244,13 @@ class FormDataCaptureService {
             } else if (img?.blobUrl) {
                 return img.blobUrl;
             } else if (img?.ruta_webp) {
-                return '/storage/' + img.ruta_webp;
+                const ruta = img.ruta_webp;
+                return (ruta.startsWith('/') || ruta.startsWith('http') || ruta.startsWith('blob:') || ruta.startsWith('data:')) ? ruta : '/storage/' + ruta;
             } else if (img?.ruta_original) {
-                return '/storage/' + img.ruta_original;
+                const ruta = img.ruta_original;
+                return (ruta.startsWith('/') || ruta.startsWith('http') || ruta.startsWith('blob:') || ruta.startsWith('data:')) ? ruta : '/storage/' + ruta;
             } else if (typeof img === 'string') {
-                return img.startsWith('/storage/') ? img : '/storage/' + img;
+                return (img.startsWith('/') || img.startsWith('http') || img.startsWith('blob:') || img.startsWith('data:')) ? img : '/storage/' + img;
             } else if (img?.url) {
                 return img.url;
             } else if (img?.ruta) {

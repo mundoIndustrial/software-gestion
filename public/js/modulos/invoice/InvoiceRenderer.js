@@ -517,7 +517,7 @@ class InvoiceRenderer {
                                         const imgRutaRaw = tallasArr.find(t => t.imagen_ruta)?.imagen_ruta || null;
                                         // Normalizar ruta: Si no comienza con /storage/, agregarlo
                                         let imgRuta = imgRutaRaw;
-                                        if (imgRuta && !imgRuta.startsWith('/storage/')) {
+                                        if (imgRuta && !imgRuta.startsWith('/storage/') && !imgRuta.startsWith('http') && !imgRuta.startsWith('blob:') && !imgRuta.startsWith('data:')) {
                                             imgRuta = '/storage/' + (imgRuta.startsWith('/') ? imgRuta.slice(1) : imgRuta);
                                         }
                                         const imgHtml = imgRuta 
@@ -970,7 +970,7 @@ class InvoiceRenderer {
                     }
                     
                     // Asegurar que siempre incluya /storage/ para URLs relativas
-                    if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('/') && !imgUrl.startsWith('data:')) {
+                    if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('/') && !imgUrl.startsWith('data:') && !imgUrl.startsWith('blob:')) {
                         imgUrl = '/storage/' + imgUrl.replace(/^\/+/, '');
                     }
                     
