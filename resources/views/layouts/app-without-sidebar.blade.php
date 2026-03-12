@@ -111,6 +111,7 @@
                             </div>
                         </div>
                         <div class="menu-divider"></div>
+                        @if(Auth::check() && !Auth::user()->hasRole('bodeguero'))
                         <a href="{{ route('operario.dashboard', ['todas' => 1]) }}"
                            class="menu-item {{ Route::currentRouteName() === 'tableros-ordenes.index' ? 'active' : '' }}"
                            role="button"
@@ -119,6 +120,7 @@
                             <span class="material-symbols-rounded">list</span>
                             <span>Ver todas las ordenes</span>
                         </a>
+                        @endif
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit" class="menu-item logout">
