@@ -228,22 +228,40 @@ class ObtenerPrendasRecibosService
         $recibos = $query->orderBy('created_at', 'desc')->get();
 
         if ($tipoOperario === 'cortador') {
-            $recibos = $recibos->filter(function ($recibo) {
+            $usuarioNombre = strtolower(trim($usuario->name));
+            
+            // Obtener TODAS las prendas donde el usuario es encargado de Corte
+            $prendasDelCortador = \App\Models\ProcesoPrenda::whereRaw('LOWER(TRIM(encargado)) = ?', [$usuarioNombre])
+                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
+                ->pluck('prenda_pedido_id')
+                ->unique()
+                ->values();
+
+            $recibos = $recibos->filter(function ($recibo) use ($prendasDelCortador) {
                 $area = strtolower(trim((string) ($recibo->area ?? '')));
-                if ($area !== 'costura') {
-                    return true;
+                
+                // Si está en área Costura, verificar que sea prenda asignada al cortador
+                if ($area === 'costura') {
+                    if (empty($recibo->prenda_id)) {
+                        return false;
+                    }
+                    
+                    // 🔒 CRÍTICO: Solo mostrar prendas donde el cortador es encargado de Corte
+                    if (!$prendasDelCortador->contains($recibo->prenda_id)) {
+                        return false;
+                    }
+                    
+                    // Además, solo si aún no hay encargado de Costura asignado
+                    $procesoCostura = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
+                        ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                        ->whereNull('deleted_at')
+                        ->first();
+
+                    return !$procesoCostura || empty($procesoCostura->encargado);
                 }
-
-                if (empty($recibo->prenda_id)) {
-                    return false;
-                }
-
-                $procesoCostura = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
-                    ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                    ->whereNull('deleted_at')
-                    ->first();
-
-                return !$procesoCostura || empty($procesoCostura->encargado);
+                
+                // Área Corte: incluir siempre
+                return true;
             })->values();
         }
 
@@ -409,18 +427,20 @@ class ObtenerPrendasRecibosService
                     ]);
                 } else if (strtoupper($tipoRecibo) === 'COSTURA' || strtoupper($tipoRecibo) === 'COSTURA-BODEGA') {
                     if ($tipoOperario === 'cortador') {
-                        // Para cortadores: verificar que exista proceso "Corte" con encargado = usuario
+                        // Para cortadores: verificar que exista proceso "Corte" con encargado = usuario ESPECÍFICAMENTE PARA ESTA PRENDA
                         $usuarioNombre = strtolower(trim($usuario->name));
                         $tieneProcesoCorte = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                            ->where('prenda_pedido_id', $prenda->id)  // 🔒 CRÍTICO: Filtrar por PRENDA ESPECÍFICA
                             ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
                             ->whereRaw('LOWER(TRIM(encargado)) = ?', [$usuarioNombre])
                             ->exists();
                         
                         if (!$tieneProcesoCorte) {
-                            \Log::info(' [Filtro CORTADOR] No tiene proceso Corte asignado', [
+                            \Log::info(' [Filtro CORTADOR] No tiene proceso Corte asignado a ESTA PRENDA', [
                                 'prenda_id' => $prenda->id,
                                 'numero_pedido' => $pedido->numero_pedido,
-                                'usuario' => $usuario->name
+                                'usuario' => $usuario->name,
+                                'filtro_por_prenda' => 'SÍ'
                             ]);
                             continue;
                         }

@@ -997,6 +997,11 @@ function clearAllToasts() {
 
 async function cargarDatosParaAgregarProceso(pedidoId, prendaId, areaSeleccionada) {
     try {
+        // ⚠️ VALIDAR QUE SE PROPORCIONE UNA PRENDA ESPECÍFICA
+        if (!prendaId || prendaId === 'null' || prendaId === null) {
+            throw new Error('CRÍTICO: No se proporcionó una prenda específica. No se puede asignar encargado sin prenda definida.');
+        }
+        
         const response = await fetch(`/registros/${pedidoId}/recibos-datos`);
         if (!response.ok) throw new Error('Error al cargar datos del pedido');
         
@@ -1017,21 +1022,17 @@ async function cargarDatosParaAgregarProceso(pedidoId, prendaId, areaSeleccionad
         if (data.prendas && Array.isArray(data.prendas)) {
             let prendaEncontrada = null;
             
-            if (prendaId) {
-                prendaEncontrada = data.prendas.find(p => 
-                    String(p.id) === String(prendaId) || 
-                    String(p.prenda_pedido_id) === String(prendaId)
-                );
-            }
-            
-            if (!prendaEncontrada && data.prendas.length > 0) {
-                prendaEncontrada = data.prendas[0];
-            }
+            // 🔒 SER ESTRICTO: Buscar EXACTAMENTE la prenda especificada, SIN FALLBACK
+            prendaEncontrada = data.prendas.find(p => 
+                String(p.id) === String(prendaId) || 
+                String(p.prenda_pedido_id) === String(prendaId)
+            );
             
             if (prendaEncontrada) {
                 window.currentPrendaData = prendaEncontrada;
             } else {
-                throw new Error('No se encontró ninguna prenda para este pedido');
+                // 🛑 SIN FALLBACK: Si no se encuentra la prenda específica, lanzar error
+                throw new Error(`Prenda con ID ${prendaId} no encontrada en pedido ${pedidoId}. No se puede asignar encargado a una prenda desconocida.`);
             }
         } else {
             throw new Error('El pedido no tiene prendas asociadas');
