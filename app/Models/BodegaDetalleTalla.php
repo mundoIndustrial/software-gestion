@@ -180,12 +180,19 @@ class BodegaDetalleTalla extends Model
      */
     public static function obtenerEstadisticasCostura()
     {
+        // Subquery para excluir pedidos anulados
+        $anuladosSubquery = function($subquery) {
+            $subquery->select('numero_pedido')
+                ->from('pedidos_produccion')
+                ->where('estado', 'Anulada');
+        };
+        
         return [
-            'total' => self::porArea(self::AREA_COSTURA)->count(),
-            'pendientes' => self::porArea(self::AREA_COSTURA)->porEstado(self::ESTADO_PENDIENTE)->count(),
-            'entregados' => self::porArea(self::AREA_COSTURA)->porEstado(self::ESTADO_ENTREGADO)->count(),
-            'anulados' => self::porArea(self::AREA_COSTURA)->porEstado(self::ESTADO_ANULADO)->count(),
-            'retrasados' => self::porArea(self::AREA_COSTURA)->retrasados()->count(),
+            'total' => self::porArea(self::AREA_COSTURA)->whereNotIn('numero_pedido', $anuladosSubquery)->count(),
+            'pendientes' => self::porArea(self::AREA_COSTURA)->porEstado(self::ESTADO_PENDIENTE)->whereNotIn('numero_pedido', $anuladosSubquery)->count(),
+            'entregados' => self::porArea(self::AREA_COSTURA)->porEstado(self::ESTADO_ENTREGADO)->whereNotIn('numero_pedido', $anuladosSubquery)->count(),
+            'anulados' => self::porArea(self::AREA_COSTURA)->porEstado(self::ESTADO_ANULADO)->whereNotIn('numero_pedido', $anuladosSubquery)->count(),
+            'retrasados' => self::porArea(self::AREA_COSTURA)->retrasados()->whereNotIn('numero_pedido', $anuladosSubquery)->count(),
         ];
     }
 

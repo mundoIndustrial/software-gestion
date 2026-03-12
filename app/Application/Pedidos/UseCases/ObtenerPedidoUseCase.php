@@ -153,6 +153,16 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                                  ->orderBy('created_at', 'desc');
                           }
                       ]);
+                },
+                'epps' => function($q) {
+                    // Incluir EPPs DELETADOS para procesar historial de homologaciones
+                    $q->withTrashed()
+                      ->with([
+                          'epp',
+                          'imagenes' => function($q2) {
+                              $q2->orderBy('orden', 'asc');
+                          }
+                      ]);
                 }
             ])->find($pedidoId);
 
