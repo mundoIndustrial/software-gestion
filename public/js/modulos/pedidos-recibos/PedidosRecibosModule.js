@@ -550,6 +550,15 @@ export class PedidosRecibosModule {
      * Renderiza el recibo y configura componentes
      */
     _renderizarRecibo(prendaData, reciboIndice, tipoProceso, datosPedido, recibos) {
+        // Mantener prendaData y recibos actuales en el estado para impresión/navegación.
+        // (printReceiptModal lee prendaData desde el estado)
+        this.modalManager.setState({
+            prendaData,
+            procesosActuales: recibos,
+            procesoActualIndice: reciboIndice,
+            tipoProceso
+        });
+
         // Crear botón X
         CloseButtonManager.crearBotonCierre(this.modalManager);
 
@@ -663,6 +672,28 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
             const recibos = estado && Array.isArray(estado.procesosActuales) ? estado.procesosActuales : [];
             const reciboActual = (recibos && typeof estado?.procesoActualIndice === 'number') ? recibos[estado.procesoActualIndice] : null;
             const tipoProceso = estado && estado.tipoProceso ? estado.tipoProceso : (reciboActual?.tipo || reciboActual?.tipo_proceso || '');
+
+            // Fallback DOM: si por algún motivo el estado no trae datos (se ve en COSTURA en algunas vistas),
+            // leer lo que ya está pintado en el modal.
+            const getDomText = (sel) => {
+                try {
+                    const el = wrapper.querySelector(sel);
+                    if (!el) return '';
+                    return String(el.textContent || '').trim();
+                } catch (_) {
+                    return '';
+                }
+            };
+
+            const getDomHtmlText = (sel) => {
+                try {
+                    const el = wrapper.querySelector(sel);
+                    if (!el) return '';
+                    return String(el.innerText || el.textContent || '').trim();
+                } catch (_) {
+                    return '';
+                }
+            };
 
             const esc = (v) => {
                 const s = String(v ?? '');
@@ -865,20 +896,73 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                 }).filter(x => x.observaciones && x.observaciones.length > 0);
             };
 
-            const fecha = String(datosPedido.fecha || '').trim();
-            const asesor = String(datosPedido.asesor || datosPedido.asesora || '').trim();
-            const formaPago = String(datosPedido.forma_de_pago || '').trim();
-            const cliente = String(datosPedido.cliente || '').trim();
+            const fechaDOM = (() => {
+                const d = getDomText('.day-box');
+                const m = getDomText('.month-box');
+                const y = getDomText('.year-box');
+                if (d && m && y) return `${d}/${m}/${y}`;
+                return '';
+            })();
+            const fecha = String(datosPedido.fecha || fechaDOM || '').trim();
+            const asesor = String(datosPedido.asesor || datosPedido.asesora || getDomText('#asesora-value') || '').trim();
+            const formaPago = String(datosPedido.forma_de_pago || getDomText('#forma-pago-value') || '').trim();
+            const cliente = String(datosPedido.cliente || getDomText('#cliente-value') || '').trim();
 
-            const prendaNombre = String(prendaData?.nombre || prendaData?.nombre_prenda || '').trim();
-            const prendaColor = String(prendaData?.color || '').trim();
+            const descripcionDOM = getDomHtmlText('#descripcion-text');
 
-            const ubicaciones = normalizarLista(reciboActual?.ubicaciones);
+            // Intentar extraer nombre/color/tallas desde el texto del modal si prendaData no está.
+            const extraerDesdeDescripcion = (raw) => {
+                const out = { prendaNombre: '', prendaColor: '', tallas: '' };
+                const s = String(raw || '').replace(/\r/g, '').trim();
+                if (!s) return out;
+                const mPrenda = s.match(/PR\s*ENDA\s*\d+\s*:\s*([^\n]+)/i) || s.match(/PRENDA\s*\d+\s*:\s*([^\n]+)/i);
+                if (mPrenda && mPrenda[1]) out.prendaNombre = String(mPrenda[1]).trim();
+                const mTallas = s.match(/TALLAS\s*:\s*([^\n]+)/i);
+                if (mTallas && mTallas[1]) out.tallas = String(mTallas[1]).trim();
+                // Color: algunas vistas lo imprimen como "COLOR:" o como segunda línea fuerte.
+                const mColor = s.match(/COLOR\s*:\s*([^\n]+)/i);
+                if (mColor && mColor[1]) out.prendaColor = String(mColor[1]).trim();
+                return out;
+            };
 
-            const tallasResumen = buildTallasResumen(
-                reciboActual?.tallas || prendaData?.tallas || null,
-                reciboActual?.talla_colores || prendaData?.talla_colores || null
-            );
+            const extra = extraerDesdeDescripcion(descripcionDOM);
+
+            const prendaNombre = String(prendaData?.nombre || prendaData?.nombre_prenda || extra.prendaNombre || '').trim();
+            const prendaColor = String(prendaData?.color || extra.prendaColor || '').trim();
+
+            // COSTURA y algunos recibos base no traen `ubicaciones` en el objeto recibo.
+            // Para COSTURA: usar solo la descripción limpia de la prenda, sin repetir campos ya mostrados
+            const ubicaciones = (() => {
+                if (tipoProceso && tipoProceso.toUpperCase() === 'COSTURA') {
+                    // Para COSTURA: solo la descripción principal de la prenda
+                    const desc = prendaData?.descripcion || '';
+                    return desc ? [desc] : [];
+                }
+                
+                // Para otros tipos: mantener lógica original
+                const raw = (
+                    reciboActual?.ubicaciones ||
+                    reciboActual?.ubicaciones_array ||
+                    reciboActual?.observaciones ||
+                    prendaData?.descripcion
+                );
+
+                // Si no hay nada en data/estado, usar lo que se ve en el modal como bloque único.
+                if ((!raw || (Array.isArray(raw) && raw.length === 0)) && descripcionDOM) {
+                    return [descripcionDOM];
+                }
+
+                return normalizarLista(raw);
+            })();
+
+            const tallasResumen = (() => {
+                const str = buildTallasResumen(
+                    reciboActual?.tallas || prendaData?.tallas || null,
+                    reciboActual?.talla_colores || prendaData?.talla_colores || null
+                );
+                if (str) return str;
+                return String(extra.tallas || '').trim();
+            })();
             const observacionesPorTalla = buildObservacionesPorTalla();
 
             const receiptTitleEl = wrapper.querySelector('#receipt-title');
@@ -913,10 +997,42 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
             let currentBlocks = []; // [{type:'genero', genero} | {type:'talla', genero, talla, observaciones}]
             let currentHeightMm = 0;
 
-            const AVAILABLE_HEIGHT_MM = 110;
+            // Altura dinámica de la sección de observaciones por talla:
+            // - Arranca con una altura por defecto más parecida a la vista.
+            // - Crece gradualmente si el contenido lo requiere, hasta el máximo permitido en hoja.
+            const MIN_AVAILABLE_HEIGHT_MM = 75;
+            const MAX_AVAILABLE_HEIGHT_MM = 110;
             const GEN_HEADER_HEIGHT_MM = 4;
             const TALLA_TITLE_HEIGHT_MM = 6;
             const LINE_HEIGHT_MM = 3.2;
+
+            const estimarAlturaTotalNecesariaMm = (items) => {
+                if (!Array.isArray(items) || items.length === 0) return 0;
+                const gruposPorGenero = new Map();
+                items.forEach((t) => {
+                    const key = String(t?.genero || '').toUpperCase();
+                    if (!gruposPorGenero.has(key)) gruposPorGenero.set(key, []);
+                    gruposPorGenero.get(key).push(t);
+                });
+
+                let total = 0;
+                for (const [generoKey, tallasGrupo] of gruposPorGenero.entries()) {
+                    if (generoKey) total += GEN_HEADER_HEIGHT_MM;
+                    (tallasGrupo || []).forEach((tg) => {
+                        const obsLen = Array.isArray(tg?.observaciones) ? tg.observaciones.length : 0;
+                        total += TALLA_TITLE_HEIGHT_MM + (obsLen * LINE_HEIGHT_MM);
+                    });
+                }
+                return total;
+            };
+
+            const totalNecesarioMm = estimarAlturaTotalNecesariaMm(observacionesPorTalla);
+            const cabeEnUnaHojaConMax = totalNecesarioMm <= (MAX_AVAILABLE_HEIGHT_MM * 4);
+            const availableHeightMm = cabeEnUnaHojaConMax
+                ? Math.max(MIN_AVAILABLE_HEIGHT_MM, Math.min(MAX_AVAILABLE_HEIGHT_MM, Math.ceil(totalNecesarioMm / 4)))
+                : MAX_AVAILABLE_HEIGHT_MM;
+
+            const AVAILABLE_HEIGHT_MM = availableHeightMm;
             const TOTAL_COLUMN_CAPACITY_MM = AVAILABLE_HEIGHT_MM * 4;
 
             const pushPage = () => {
@@ -1008,30 +1124,179 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
             const totalPages = (pages && Array.isArray(pages) && pages.length > 0) ? pages.length : 1;
 
             const renderHeader = (pageNum) => {
-                const ubicHtml = (ubicaciones && ubicaciones.length > 0)
-                    ? ubicaciones.map(u => `<div>${esc(u).toUpperCase()}</div>`).join('')
-                    : '<div>-</div>';
-
                 const pageLabel = totalPages > 1 ? (`PÁGINA ${pageNum}`) : '';
 
                 // Mostrar el número real del recibo (ej: #7). Si no existe, no mostrar nada.
                 const reciboLabel = numeroParaImpresion ? numeroParaImpresion : '';
 
+                // Para COSTURA: renderizar estructura específica con campos separados
+                if (tipoProceso && tipoProceso.toUpperCase() === 'COSTURA') {
+                    const variantes = reciboActual?.variantes || prendaData?.variantes || [];
+                    const primeraVariante = variantes.length > 0 ? variantes[0] : {};
+                    
+                    // Extraer datos específicos de COSTURA
+                    const manga = primeraVariante?.manga || prendaData?.manga || '';
+                    const obsManga = primeraVariante?.manga_obs || primeraVariante?.obs_manga || prendaData?.obs_manga || '';
+                    const broche = primeraVariante?.broche || prendaData?.broche || '';
+                    const obsBroche = primeraVariante?.broche_obs || primeraVariante?.obs_broche || prendaData?.obs_broche || '';
+                    const tieneBolsillos = primeraVariante?.tiene_bolsillos || primeraVariante?.bolsillos || prendaData?.tiene_bolsillos || false;
+                    const obsBolsillos = primeraVariante?.bolsillos_obs || primeraVariante?.obs_bolsillos || prendaData?.obs_bolsillos || '';
+                    const tieneReflectivo = primeraVariante?.tiene_reflectivo || prendaData?.tiene_reflectivo || false;
+                    const obsReflectivo = primeraVariante?.obs_reflectivo || prendaData?.obs_reflectivo || '';
+                    
+                    return `
+                        <img src="/images/logo.png" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
+                        <div id="order-date" class="order-date">
+                          <div class="fec-label">FECHA</div>
+                          <div class="date-boxes">
+                            <div class="date-box day-box">${esc((fechaDOM || '').split('/')[0] || '')}</div>
+                            <div class="date-box month-box">${esc((fechaDOM || '').split('/')[1] || '')}</div>
+                            <div class="date-box year-box">${esc((fechaDOM || '').split('/')[2] || '')}</div>
+                          </div>
+                        </div>
+
+                        <div class="header-right">
+                          ${pageLabel ? `<div class="page-label">${esc(pageLabel)}</div>` : ''}
+                          <div class="receipt-title-print">${esc(titulo).toUpperCase()}</div>
+                          ${reciboLabel ? `<div class="recibo-number-print">${esc(reciboLabel)}</div>` : ''}
+                          <div class="cliente-print"><span class="label">CLIENTE:</span> <span class="value">${esc(cliente || '-')}</span></div>
+                        </div>
+
+                        <div class="meta">
+                          <div style="grid-column: 1 / 3;"><span class="label">ASESOR:</span> <span class="value">${esc(asesor || '-')}</span></div>
+                          <div style="grid-column: 1 / 3;"><span class="label">FORMA DE PAGO:</span> <span class="value">${esc(formaPago || '-')}</span></div>
+                        </div>
+
+                        <div class="prenda-info">
+                          <div class="prenda-name">${esc(prendaNombre || '-').toUpperCase()}</div>
+                        </div>
+                        
+                        <div class="costura-section">
+                          <div class="costura-row">
+                            <div class="costura-field">
+                              <span class="label">COLOR:</span>
+                              <span class="value">${esc(prendaColor || '-')}</span>
+                            </div>
+                          </div>
+                          
+                          <div class="costura-row">
+                            <div class="costura-field">
+                              <span class="label">TELA:</span>
+                              <span class="value">${esc(prendaData?.tela || '-')}</span>
+                            </div>
+                          </div>
+                          
+                          <div class="costura-row">
+                            <div class="costura-field">
+                              <span class="label">TIPO MANGA:</span>
+                              <span class="value">${esc(manga || '-')}</span>
+                            </div>
+                            ${obsManga ? `<div class="costura-obs">${esc(obsManga)}</div>` : ''}
+                          </div>
+                          
+                          <div class="costura-row">
+                            <div class="costura-field">
+                              <span class="label">BROCHE/BOTÓN:</span>
+                              <span class="value">${esc(broche || '-')}</span>
+                            </div>
+                            ${obsBroche ? `<div class="costura-obs">${esc(obsBroche)}</div>` : ''}
+                          </div>
+                          
+                          ${tieneBolsillos ? `
+                          <div class="costura-row">
+                            <div class="costura-field">
+                              <span class="label">TIENE BOLSILLOS:</span>
+                              <span class="value">SÍ</span>
+                            </div>
+                            ${obsBolsillos ? `<div class="costura-obs">${esc(obsBolsillos)}</div>` : ''}
+                          </div>
+                          ` : ''}
+                          
+                          ${tieneReflectivo ? `
+                          <div class="costura-row">
+                            <div class="costura-field">
+                              <span class="label">TIENE REFLECTIVO:</span>
+                              <span class="value">SÍ</span>
+                            </div>
+                            ${obsReflectivo ? `<div class="costura-obs">${esc(obsReflectivo)}</div>` : ''}
+                          </div>
+                          ` : ''}
+                        </div>
+                        
+                        <div class="section">
+                          <h4>TALLAS:</h4>
+                          <div class="tallas-resumen">${esc(tallasResumen || '-')}</div>
+                        </div>
+                        
+                        ${observacionesPorTalla.length > 0 ? `
+                        <div class="section observations-section">
+                          <h4>OBSERVACIONES POR TALLA:</h4>
+                          <div class="tallas-columns">
+                            ${(function() {
+                                const grupos = new Map();
+                                observacionesPorTalla.forEach((t) => {
+                                    const key = t.genero || '';
+                                    if (!grupos.has(key)) grupos.set(key, []);
+                                    grupos.get(key).push(t);
+                                });
+                                
+                                let html = '';
+                                for (const [generoKey, tallasGrupo] of grupos.entries()) {
+                                    const generoUpper = generoKey ? generoKey.toUpperCase() : '';
+                                    if (generoUpper) {
+                                        html += `<div class="genero-header">${esc(generoUpper)}</div>`;
+                                    }
+                                    tallasGrupo.forEach((tallaItem) => {
+                                        const lis = (tallaItem.observaciones || []).map(obs => `<li>${esc(obs).toUpperCase()}</li>`).join('');
+                                        html += `
+                                            <div class="talla-item">
+                                              <div class="talla-title">${esc(tallaItem.talla).toUpperCase()}</div>
+                                              <ul class="observaciones-list">${lis}</ul>
+                                            </div>
+                                        `;
+                                    });
+                                }
+                                return html;
+                            })()}
+                          </div>
+                        </div>
+                        ` : ''}
+                        
+                        <div class="section">
+                          <h4>DESCRIPCIÓN:</h4>
+                          <div class="descripcion-list">${(ubicaciones && ubicaciones.length > 0) ? ubicaciones.map(u => `<div>${esc(u).toUpperCase()}</div>`).join('') : '<div>-</div>'}</div>
+                        </div>
+                    `;
+                }
+                
+                // Para otros tipos de recibo: mantener estructura original
+                const ubicHtml = (ubicaciones && ubicaciones.length > 0)
+                    ? ubicaciones.map(u => `<div>${esc(u).toUpperCase()}</div>`).join('')
+                    : '<div>-</div>';
+
                 return `
-                    <div class="brand">
-                      <div class="logo">MUNDO<br>INDUSTRIAL</div>
-                      <div class="title">
-                        ${pageLabel ? `<div class="page-label">${esc(pageLabel)}</div>` : ''}
-                        <div class="receipt-title-print">${esc(titulo).toUpperCase()}</div>
+                    <img src="/images/logo.png" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
+                    <div id="order-date" class="order-date">
+                      <div class="fec-label">FECHA</div>
+                      <div class="date-boxes">
+                        <div class="date-box day-box">${esc((fechaDOM || '').split('/')[0] || '')}</div>
+                        <div class="date-box month-box">${esc((fechaDOM || '').split('/')[1] || '')}</div>
+                        <div class="date-box year-box">${esc((fechaDOM || '').split('/')[2] || '')}</div>
                       </div>
                     </div>
-                    <div class="page-indicator">${esc(reciboLabel)}</div>
-                    <div class="meta">
-                      <div><span class="label">FECHA:</span> <span class="value">${esc(fecha || '-')}</span></div>
-                      <div style="text-align:right"><span class="label">ASESOR:</span> <span class="value">${esc(asesor || '-')}</span></div>
-                      <div><span class="label">FORMA DE PAGO:</span> <span class="value">${esc(formaPago || '-')}</span></div>
-                      <div style="text-align:right"><span class="label">CLIENTE:</span> <span class="value">${esc(cliente || '-')}</span></div>
+
+                    <div class="header-right">
+                      ${pageLabel ? `<div class="page-label">${esc(pageLabel)}</div>` : ''}
+                      <div class="receipt-title-print">${esc(titulo).toUpperCase()}</div>
+                      ${reciboLabel ? `<div class="recibo-number-print">${esc(reciboLabel)}</div>` : ''}
+                      <div class="cliente-print"><span class="label">CLIENTE:</span> <span class="value">${esc(cliente || '-')}</span></div>
                     </div>
+
+                    <div class="meta">
+                      <div style="grid-column: 1 / 3;"><span class="label">ASESOR:</span> <span class="value">${esc(asesor || '-')}</span></div>
+                      <div style="grid-column: 1 / 3;"><span class="label">FORMA DE PAGO:</span> <span class="value">${esc(formaPago || '-')}</span></div>
+                    </div>
+
                     <div class="prenda-info">
                       <div class="prenda-name">${esc(prendaNombre || '-').toUpperCase()}</div>
                       <div class="prenda-color">${esc(prendaColor || '-').toUpperCase()}</div>
@@ -1039,10 +1304,6 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                     <div class="section">
                       <h4>UBICACIONES:</h4>
                       <div class="ubicaciones-list">${ubicHtml}</div>
-                    </div>
-                    <div class="section">
-                      <h4>TALLAS:</h4>
-                      <div class="tallas-resumen">${esc(tallasResumen || '-')}</div>
                     </div>
                 `;
             };
@@ -1111,10 +1372,10 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                   body { background: #fff; margin: 0; padding: 0; }
                   .no-print { display: none !important; }
                   .page { width: var(--page-width); height: var(--page-height); padding: var(--page-padding); page-break-after: always; position: relative; overflow: hidden; }
-                  .receipt-card { height: 100%; border-width: 1.2mm; border-radius: 6mm; padding: 6mm 6mm 60px 6mm; box-shadow: none; }
+                  .receipt-card { height: 100%; border: 4px solid #111; border-radius: 20px; padding: 30px 30px 60px 30px; box-shadow: none; }
                   /* Altura fija para que el contenido no sobrepase el separator/footer y fluya por columnas */
                   .tallas-columns {
-                    height: 110mm;
+                    height: ${AVAILABLE_HEIGHT_MM}mm;
                     overflow: hidden;
                     column-count: 4;
                     -webkit-column-count: 4;
@@ -1126,14 +1387,18 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                   }
                 }
                 .page { width: var(--page-width); min-height: var(--page-height); padding: var(--page-padding); box-sizing: border-box; position: relative; overflow: hidden; margin: 0 auto; }
-                .receipt-card { width: 100%; border: 2px solid #111; border-radius: 12px; padding: 20px 20px 70px 20px; position: relative; }
-                .brand { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 15px; }
-                .brand .logo { font-weight: 900; font-size: 24px; line-height: 1; }
-                .brand .title { font-weight: 900; text-align: right; text-transform: uppercase; display:flex; flex-direction: column; align-items:flex-end; }
-                .page-label { font-weight: 900; font-size: 11px; opacity: 0.85; line-height: 1; margin-bottom: 2px; }
-                .receipt-title-print { font-weight: 900; font-size: 16px; line-height: 1.1; }
-                .page-indicator { position:absolute; top: 40px; right: 30px; color:#d32f2f; font-weight: 900; font-size: 24px; }
-                .meta { display:grid; grid-template-columns: 1fr 1fr; gap: 5px 20px; font-size: 12px; font-weight: 700; margin-bottom: 15px; }
+                .receipt-card { width: 100%; border: 4px solid #111; border-radius: 20px; padding: 30px 30px 70px 30px; position: relative; }
+                .order-logo { display: block; margin: -70px auto 20px auto; width: 200px; height: auto; }
+                .order-date { position: absolute; top: 110px; left: 20px; background: #000; border-radius: 10px; padding: 8px; color: #fff; text-align: center; width: 180px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+                .fec-label { font-weight: 900; font-size: 12px; margin-bottom: 4px; text-transform: uppercase; }
+                .date-boxes { display: flex; justify-content: space-between; gap: 6px; }
+                .date-box { background: #fff; color: #000; border-radius: 6px; padding: 8px 0; width: 52px; font-weight: 900; font-size: 14px; }
+                .header-right { position: absolute; top: 110px; right: 30px; text-align: right; width: 55%; }
+                .page-label { font-weight: 900; font-size: 11px; opacity: 0.85; line-height: 1; margin: 0 0 2px 0; text-align: right; }
+                .receipt-title-print { font-weight: 900; text-transform: uppercase; text-align: right; font-size: 16px; line-height: 1.1; margin: 0; }
+                .recibo-number-print { color: #d32f2f; font-weight: 900; font-size: 24px; line-height: 1; margin-top: 2px; text-align: right; }
+                .cliente-print { font-weight: 900; font-size: 12px; margin-top: 6px; text-align: right; }
+                .meta { display:grid; grid-template-columns: 1fr 1fr; gap: 5px 20px; font-size: 12px; font-weight: 700; margin: 0 0 15px 0; padding-top: 35px; }
                 .meta .label { opacity: 0.7; }
                 .prenda-info { margin-bottom: 15px; }
                 .prenda-name { font-weight: 900; font-size: 16px; text-transform: uppercase; }
@@ -1141,9 +1406,20 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                 .section { margin-bottom: 15px; font-size: 12px; }
                 .section h4 { margin: 0 0 5px 0; font-weight: 900; text-transform: uppercase; font-size: 12px; }
                 .tallas-resumen { color:#d32f2f; font-weight: 900; }
+                
+                /* Estilos específicos para COSTURA */
+                .costura-section { margin-bottom: 15px; font-size: 11px; }
+                .costura-row { margin-bottom: 6px; }
+                .costura-field { display: flex; gap: 4px; margin-bottom: 2px; }
+                .costura-field .label { font-weight: 900; min-width: 140px; }
+                .costura-field .value { font-weight: 700; }
+                .costura-obs { margin-left: 144px; font-weight: 500; font-style: italic; color: #333; }
+                .descripcion-list { font-size: 11px; line-height: 1.3; }
+                .observations-section { margin-bottom: 15px; }
+                .observations-section h4 { margin: 0 0 5px 0; font-weight: 900; text-transform: uppercase; font-size: 12px; }
                 /* Vista previa en popup: mantener el mismo flujo por columnas que en impresión */
                 .tallas-columns {
-                  height: 110mm;
+                  height: ${AVAILABLE_HEIGHT_MM}mm;
                   overflow: hidden;
                   column-count: 4;
                   -webkit-column-count: 4;
@@ -1164,19 +1440,19 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                 .footer { position:absolute; bottom: 0; left:0; right:0; display:grid; grid-template-columns: 1fr 1fr; font-size: 11px; font-weight: 800; }
                 .footer > div { padding: 10px 15px; border-right: 1mm solid #111; min-height: 50px; }
                 .footer > div:last-child { border-right: none; }
-
-                body.singlepage .page {
-                  min-height: var(--page-height) !important;
-                  height: var(--page-height) !important;
-                  overflow: hidden !important;
-                }
                 body.singlepage .receipt-card {
-                  height: 100% !important;
+                  height: auto !important;
                   min-height: 0 !important;
                   padding: 20px 20px 70px 20px;
                   display: block;
                 }
-                body.singlepage .tallas-columns { height: 110mm !important; overflow: hidden !important; }
+                /* Singlepage: NO forzar el recibo a ocupar toda la hoja; solo usar la altura necesaria */
+                body.singlepage .page {
+                  height: auto !important;
+                  min-height: 0 !important;
+                  overflow: visible !important;
+                }
+                body.singlepage .tallas-columns { height: ${AVAILABLE_HEIGHT_MM}mm !important; overflow: hidden !important; }
                 body.singlepage .separator-line { position: absolute !important; bottom: 60px !important; left: 0 !important; right: 0 !important; }
                 body.singlepage .footer { position: absolute !important; bottom: 0 !important; left: 0 !important; right: 0 !important; }
             `;
