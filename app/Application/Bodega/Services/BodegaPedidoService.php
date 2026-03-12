@@ -956,11 +956,11 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
         // Obtener empresa
         $empresa = $recibo->cliente ?? 'N/A';
         
-        // Safeguards para EPPs sin registro en bodega_detalles_talla
-        $area = $bodegaData['area'] ?? WarehouseConstants::AREA_EPP;
-        $estadoBodega = $bodegaData['estado_bodega'] ?? WarehouseConstants::STATE_PENDING;
+        // NO asignar valores por defecto si no hay registro en bodega_detalles_talla
+        $area = $bodegaData['area'] ?? null;
+        $estadoBodega = $bodegaData['estado_bodega'] ?? null;
         $cantidad = $bodegaData['cantidad'] ?? $eppCantidad;
-        $pendientes = $bodegaData['pendientes'] ?? 0;
+        $pendientes = $bodegaData['pendientes'] ?? null;
         $fechaEntrega = $bodegaData['fecha_entrega'] ?? null;
         $fechaPedido = $bodegaData['fecha_pedido'] ?? null;
         
@@ -1070,15 +1070,8 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
         $area = $datosFinales?->area ?? $bodegaDataBase?->area;
         $estadoEspecifico = $this->obtenerEstadoEspecifico($area, $estado, $datosFinales, $bodegaDataBase);
         
-        // Asegurar que el área tiene valor (especialmente para EPPs sin registro en BD)
-        if (empty($area)) {
-            $area = WarehouseConstants::AREA_EPP;
-        }
-        
-        // Asegurar que estado_bodega tiene valor por defecto
-        if (empty($estado)) {
-            $estado = WarehouseConstants::STATE_PENDING;
-        }
+        // NO asignar valores por defecto si no hay registro en bodega_detalles_talla
+        // Dejar null/vacío para que se vean como campos sin llenar
         
         $resultado = [
             'id' => $datosFinales?->id,

@@ -354,7 +354,9 @@
 
                                                     <!-- TALLA -->
                                                     <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
-                                                        @if(($t['talla'] ?? null) === 'SIN_ESPECIFICAR')
+                                                        @if(($baseItem['tipo'] ?? null) === 'epp' || ($baseItem['area'] ?? null) === 'EPP' || preg_match('/^[a-f0-9]{32}$/i', $baseItem['talla'] ?? ''))
+                                                            —
+                                                        @elseif(($t['talla'] ?? null) === 'SIN_ESPECIFICAR')
                                                             —
                                                         @else
                                                             {{ $t['talla'] ?? '—' }}
@@ -731,7 +733,7 @@
                                                 
                                                 <!-- TALLA -->
                                                 <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
-                                                    @if(($item['tipo'] ?? null) === 'epp' || ($item['area'] ?? null) === 'EPP')
+                                                    @if(($item['tipo'] ?? null) === 'epp' || ($item['area'] ?? null) === 'EPP' || preg_match('/^[a-f0-9]{32}$/i', $item['talla'] ?? ''))
                                                         —
                                                     @elseif(($item['talla'] ?? null) === 'SIN_ESPECIFICAR')
                                                         —
