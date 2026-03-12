@@ -303,12 +303,24 @@ class PedidosController extends Controller
             \Log::debug('[PedidosController@show] Datos obtenidos del servicio', [
                 'items_count' => count($datos['items'] ?? []),
                 'items_tipos' => array_unique(array_map(fn($item) => $item['tipo'] ?? 'unknown', $datos['items'] ?? [])),
+                'items_areas' => array_unique(array_map(fn($item) => $item['area'] ?? 'null', $datos['items'] ?? [])),
                 'rolesDelUsuario' => $this->getUserRoles(),
             ]);
             
             // Verificar si el usuario es de solo lectura
             $rolesDelUsuario = $this->getUserRoles();
             $esReadOnly = $this->isReadOnly();
+            
+            // Log antes de filtrar
+            $itemsAntesDeFiltro = $datos['items'] ?? [];
+            \Log::debug('[PedidosController@show] Items ANTES de filtro', [
+                'count' => count($itemsAntesDeFiltro),
+                'items' => array_map(fn($item) => [
+                    'tipo' => $item['tipo'] ?? 'unknown',
+                    'area' => $item['area'] ?? 'null',
+                    'estado_bodega' => $item['estado_bodega'] ?? 'null'
+                ], $itemsAntesDeFiltro)
+            ]);
             
             // Filtrar items según el rol del usuario
             if (in_array('EPP-Bodega', $rolesDelUsuario)) {
@@ -328,6 +340,12 @@ class PedidosController extends Controller
                     $datos['items'] = array_values($datos['items']);
                 }
             }
+            
+            // Log después de filtrar
+            \Log::debug('[PedidosController@show] Items DESPUÉS de filtro', [
+                'count' => count($datos['items'] ?? []),
+                'filtro_aplicado' => in_array('EPP-Bodega', $rolesDelUsuario) ? 'EPP-Bodega' : (in_array('Costura-Bodega', $rolesDelUsuario) ? 'Costura-Bodega' : 'ninguno')
+            ]);
             
             // Agregar la variable esReadOnly a los datos
             $datos['esReadOnly'] = $esReadOnly;

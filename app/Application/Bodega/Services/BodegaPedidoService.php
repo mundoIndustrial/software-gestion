@@ -622,21 +622,76 @@ class BodegaPedidoService
     private function procesarEpps(array $epps, ReciboPrenda $recibo, array $rolesDelUsuario, array $areasPermitidas, ?PedidoProduccion $pedidoProduccion): array
     {
         $items = [];
+        $eppsProcesados = []; // Para evitar duplicados
+        
+        \Log::debug('[procesarEpps] Iniciando procesamiento', [
+            'cantidad_epps' => count($epps),
+            'numero_pedido' => $recibo->numero_pedido,
+            'epps_ids' => array_map(fn($epp) => $epp['pedido_epp_id'] ?? 'null', $epps)
+        ]);
         
         foreach ($epps as $eppEnriquecido) {
-            // Excluir EPPs que son resultados de homologación (tienen homologado_de != NULL)
-            // Mostrar: EPPs normales sin cambios O EPPs deletados que fueron homologados
             $pedidoEppId = $eppEnriquecido['pedido_epp_id'] ?? null;
-            if ($pedidoEppId) {
-                $pedidoEpp = \App\Models\PedidoEpp::withTrashed()->find($pedidoEppId);
-                // Si tiene homologado_de != NULL, es un "nuevo" que reemplaza otro, no lo mostramos
-                if ($pedidoEpp && $pedidoEpp->homologado_de !== null) {
-                    continue;
-                }
+            
+            // Saltar si ya fue procesado
+            if (in_array($pedidoEppId, $eppsProcesados)) {
+                continue;
             }
             
-            $items[] = $this->crearItemEpp($eppEnriquecido, $recibo, $rolesDelUsuario, $areasPermitidas, $pedidoProduccion);
+            \Log::debug('[procesarEpps] Procesando EPP', [
+                'pedido_epp_id' => $pedidoEppId,
+                'epp_nombre' => $eppEnriquecido['nombre'] ?? 'unknown'
+            ]);
+            
+            if ($pedidoEppId) {
+                $pedidoEpp = \App\Models\PedidoEpp::withTrashed()->find($pedidoEppId);
+                
+                if ($pedidoEpp) {
+                    // SOLO PROCESAR EPPs ORIGINALES (homologado_de IS NULL)
+                    if ($pedidoEpp->homologado_de === null) {
+                        \Log::debug('[procesarEpps] EPP ORIGINAL encontrado', [
+                            'pedido_epp_id' => $pedidoEppId,
+                            'deleted_at' => $pedidoEpp->deleted_at
+                        ]);
+                        
+                        // Obtener historial completo de cambios
+                        $historialeHomologaciones = $this->obtenerHistorialEpp($pedidoEppId);
+                        
+                        // Crear item pasando el historial
+                        $items[] = $this->crearItemEpp(
+                            $eppEnriquecido,
+                            $recibo,
+                            $rolesDelUsuario,
+                            $areasPermitidas,
+                            $pedidoProduccion,
+                            $historialeHomologaciones
+                        );
+                        
+                        $eppsProcesados[] = $pedidoEppId;
+                        
+                        \Log::debug('[procesarEpps] EPP ORIGINAL incluido en tabla', [
+                            'pedido_epp_id' => $pedidoEppId,
+                            'historial_cambios' => count($historialeHomologaciones)
+                        ]);
+                    } else {
+                        // Este EPP es un cambio de otro, será procesado como parte del historial del original
+                        \Log::debug('[procesarEpps] EPP de cambio ignorado en tabla (se mostrará en expansión)', [
+                            'pedido_epp_id' => $pedidoEppId,
+                            'homologado_de' => $pedidoEpp->homologado_de
+                        ]);
+                    }
+                } else {
+                    \Log::debug('[procesarEpps] PedidoEpp NO encontrado', [
+                        'pedido_epp_id' => $pedidoEppId
+                    ]);
+                }
+            }
         }
+        
+        \Log::debug('[procesarEpps] Resultado final', [
+            'items_creados' => count($items),
+            'numero_pedido' => $recibo->numero_pedido
+        ]);
         
         return $items;
     }
@@ -756,7 +811,60 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
         ];
     }
 
-    private function crearItemEpp(array $eppEnriquecido, ReciboPrenda $recibo, array $rolesDelUsuario, array $areasPermitidas, ?PedidoProduccion $pedidoProduccion): array
+    /**
+     * Obtener historial completo de homologaciones de un EPP original
+     * Sigue la cadena: 371 → 372 → 373
+     */
+    private function obtenerHistorialEpp(int $pedidoEppIdOriginal): array
+    {
+        $historial = [];
+        $pedidoEppIdActual = $pedidoEppIdOriginal;
+        $intentos = 0;
+        $maxIntentos = 10; // Protección contra loops infinitos
+        
+        while ($pedidoEppIdActual !== null && $intentos < $maxIntentos) {
+            $intentos++;
+            
+            $pedidoEpp = \App\Models\PedidoEpp::withTrashed()
+                ->with('epp')
+                ->find($pedidoEppIdActual);
+            
+            if (!$pedidoEpp) {
+                \Log::warning('[obtenerHistorialEpp] EPP no encontrado', [
+                    'pedido_epp_id' => $pedidoEppIdActual
+                ]);
+                break;
+            }
+            
+            // Agregar al historial
+            $historial[] = [
+                'pedido_epp_id' => $pedidoEpp->id,
+                'epp_id' => $pedidoEpp->epp_id,
+                'epp_nombre' => $pedidoEpp->epp->nombre_completo ?? 'EPP sin nombre',
+                'cantidad' => $pedidoEpp->cantidad,
+                'fecha_creacion' => $pedidoEpp->created_at?->format('Y-m-d H:i'),
+                'deleted_at' => $pedidoEpp->deleted_at?->format('Y-m-d H:i'),
+                'observaciones' => $pedidoEpp->observaciones ?? '',
+                'es_original' => $pedidoEpp->homologado_de === null,
+            ];
+            
+            // Buscar el siguiente en la cadena (el que tiene homologado_de = id actual)
+            $siguiente = \App\Models\PedidoEpp::where('homologado_de', $pedidoEppIdActual)
+                ->withTrashed()
+                ->first();
+            
+            $pedidoEppIdActual = $siguiente?->id;
+        }
+        
+        \Log::debug('[obtenerHistorialEpp] Historial completo obtenido', [
+            'pedido_epp_id_original' => $pedidoEppIdOriginal,
+            'cantidad_cambios' => count($historial)
+        ]);
+        
+        return $historial;
+    }
+
+    private function crearItemEpp(array $eppEnriquecido, ReciboPrenda $recibo, array $rolesDelUsuario, array $areasPermitidas, ?PedidoProduccion $pedidoProduccion, array $historialeHomologaciones = []): array
     {
         $eppNombre = $eppEnriquecido['nombre'] ?? WarehouseConstants::AREA_EPP;
         $eppCantidad = $eppEnriquecido['cantidad'] ?? 0;
@@ -766,45 +874,15 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
         // El pedido_epp_id ya viene en los datos enriquecidos, no hay que buscarlo
         $pedidoEppId = $eppEnriquecido['pedido_epp_id'] ?? null;
         
-        // Obtener si este EPP FUE HOMOLOGADO (si está soft-deleted)
-        // El EPP deletado debe mostrar el botón "Ver Homologación"
-        $homologadoDe = null;
-        $homologadoPor = null; // Información del EPP que lo reemplazó
+        // PROCESAR HISTORIAL DE HOMOLOGACIONES
+        // Si hay más de 1 registro en el historial, existe un botón "Ver cambios"
+        $tieneHistorial = count($historialeHomologaciones) > 1;
         
-        if ($pedidoEppId) {
-            try {
-                $pedidoEpp = \App\Models\PedidoEpp::withTrashed()->find($pedidoEppId);
-                
-                if ($pedidoEpp && $pedidoEpp->deleted_at !== null) {
-                    // El EPP está soft-deleted, significa que fue homologado
-                    // Usar el ID del EPP para que aparezca el botón
-                    $homologadoDe = $pedidoEppId;
-                    
-                    // Buscar el EPP que lo reemplazó (el nuevo EPP que tiene homologado_de = $pedidoEppId)
-                    $eppNuevo = \App\Models\PedidoEpp::where('homologado_de', $pedidoEppId)
-                        ->with('epp')
-                        ->first();
-                    
-                    if ($eppNuevo && $eppNuevo->epp) {
-                        $homologadoPor = [
-                            'pedido_epp_id' => $eppNuevo->id,
-                            'epp_id' => $eppNuevo->epp_id,
-                            'epp_nombre' => $eppNuevo->epp->nombre ?? 'EPP sin nombre',
-                            'cantidad' => $eppNuevo->cantidad,
-                            'fecha_homologacion' => $eppNuevo->created_at ? $eppNuevo->created_at->format('Y-m-d') : null,
-                            'observaciones' => $eppNuevo->observaciones,
-                        ];
-                    }
-                }
-            } catch (\Exception $e) {
-                \Log::warning('[Bodega EPP] Error al buscar EPP homologado', [
-                    'pedido_epp_id' => $pedidoEppId,
-                    'error' => $e->getMessage()
-                ]);
-            }
-        }
-        
-        // Ya no necesitamos buscar en BD, el ID viene directamente
+        \Log::debug('[crearItemEpp] Historial recibido', [
+            'pedido_epp_id' => $pedidoEppId,
+            'cantidad_registros_en_historial' => count($historialeHomologaciones),
+            'tiene_botón_ver_cambios' => $tieneHistorial
+        ]);
         
         // Obtener datos de bodega
         $bodegaData = $this->obtenerDatosBodega($recibo->numero_pedido, $eppId, $eppNombre, $eppCantidad, $rolesDelUsuario);
@@ -841,8 +919,8 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
             'pedido_produccion_id' => $pedidoProduccion?->id,
             'recibo_prenda_id' => $recibo->id,
             'pedido_epp_id' => $pedidoEppId,
-            'homologado_de' => $homologadoDe,
-            'homologado_por' => $homologadoPor,
+            'tiene_historial' => $tieneHistorial,
+            'historial_homologaciones' => $historialeHomologaciones,
             'asesor' => $asesor,
             'empresa' => $empresa,
             'descripcion' => $eppEnriquecido,
@@ -872,7 +950,8 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
         \Log::debug('[crearItemEpp] Item creado', [
             'area' => $itemEpp['area'],
             'tipo' => $itemEpp['tipo'],
-            'eppNombre' => $eppNombre
+            'eppNombre' => $eppNombre,
+            'tiene_historial' => $tieneHistorial
         ]);
         
         return $itemEpp;
