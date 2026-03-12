@@ -256,8 +256,60 @@
                             // Normalizar el nombre igual que en PHP
                             const nombreNormalizado = nombreCosturero.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_');
                             
-                            console.log(`[Operario Dashboard] Costurero ${nombreCosturero} (normalizado: ${nombreNormalizado}) suscribiendo a canal privado`);
+                            console.log(`[Operario Dashboard] Costurero ${nombreCosturero} (normalizado: ${nombreNormalizado}) suscribiendo a canales`);
                             
+                            // Suscribir al canal público para recibir eventos de Control de Calidad
+                            window.EchoInstance.channel('recibos-costura')
+                                .subscribed(() => {
+                                    console.log(`[Operario Dashboard] Costurero ${nombreCosturero} suscrito OK a canal público recibos-costura`);
+                                })
+                                .error((err) => {
+                                    console.error(`[Operario Dashboard] Error suscribiendo costurero ${nombreCosturero} a canal público:`, err);
+                                })
+                                .listen('.recibo.pasado.control.calidad', (e) => {
+                                    console.log('[Operario Dashboard] 🚫 Recibo pasado a Control Calidad - eliminar de vista:', e);
+                                    
+                                    // Eliminar la tarjeta del recibo de la vista del costurero
+                                    const prendaId = e?.prenda_id;
+                                    if (prendaId) {
+                                        const tarjeta = document.querySelector(`.orden-card-simple[data-prenda-id="${prendaId}"]`);
+                                        if (tarjeta) {
+                                            console.log(`[Operario Dashboard] Eliminando tarjeta con prenda_id: ${prendaId}`);
+                                            
+                                            // Animación de desvanecimiento antes de eliminar
+                                            tarjeta.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-out';
+                                            tarjeta.style.opacity = '0';
+                                            tarjeta.style.transform = 'translateX(-100%)';
+                                            
+                                            setTimeout(() => {
+                                                tarjeta.remove();
+                                                console.log('[Operario Dashboard] ✅ Tarjeta eliminada de la vista');
+                                                
+                                                // Mostrar notificación al costurero
+                                                if (window.NotificacionesPush && typeof window.NotificacionesPush.add === 'function') {
+                                                    window.NotificacionesPush.add({
+                                                        title: 'Recibo movido a Control de Calidad',
+                                                        message: e?.mensaje || `El recibo #${e?.numero_recibo} ya no está disponible en costura`,
+                                                        type: 'info',
+                                                        duration: 5000
+                                                    });
+                                                } else {
+                                                    // Fallback: Notificación nativa
+                                                    if ('Notification' in window && Notification.permission === 'granted') {
+                                                        new Notification('Recibo movido a Control de Calidad', {
+                                                            body: e?.mensaje || `El recibo #${e?.numero_recibo} (${e?.nombre_prenda}) ha pasado a Control de Calidad`,
+                                                            icon: '/icon.png'
+                                                        });
+                                                    }
+                                                }
+                                            }, 500);
+                                        } else {
+                                            console.warn(`[Operario Dashboard] No se encontró tarjeta con prenda_id: ${prendaId}`);
+                                        }
+                                    }
+                                });
+                            
+                            // Suscribir al canal privado para recibir asignaciones específicas
                             window.EchoInstance.private(`costurero.${nombreNormalizado}`)
                                 .subscribed(() => {
                                     console.log(`[Operario Dashboard] Costurero ${nombreCosturero} suscrito OK a canal privado`);
@@ -442,16 +494,46 @@
                         <div class="orden-body {{ ($reciboCompletadoArea || (auth()->user()->hasRole('vista-costura') && $completadoVistaSegunArea)) ? 'recibo-completado-area' : '' }}">
                             @php
                                 $encargadoVista = null;
-                                if ($areaReciboNormalizada === 'corte') {
-                                    $encargadoVista = $reciboPrincipal['encargado_corte'] ?? null;
-                                } elseif ($areaReciboNormalizada === 'costura') {
-                                    $encargadoVista = $reciboPrincipal['encargado_costura'] ?? null;
-                                } elseif (in_array($areaReciboNormalizada, ['control calidad', 'control de calidad'], true)) {
-                                    $encargadoVista = $reciboPrincipal['encargado_control_calidad'] ?? null;
+                                // Para vista-costura, buscar el encargado según el área actual del recibo
+                                if (auth()->user()->hasRole('vista-costura')) {
+                                    // Buscar el encargado del proceso correspondiente al área actual
+                                    $procesoActual = null;
+                                    if ($areaReciboNormalizada === 'corte') {
+                                        $procesoActual = \App\Models\ProcesoPrenda::where('numero_pedido', $prenda['numero_pedido'])
+                                            ->where('prenda_pedido_id', $prenda['prenda_id'])
+                                            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
+                                            ->whereNull('deleted_at')
+                                            ->latest('fecha_inicio')
+                                            ->first();
+                                    } elseif ($areaReciboNormalizada === 'costura') {
+                                        $procesoActual = \App\Models\ProcesoPrenda::where('numero_pedido', $prenda['numero_pedido'])
+                                            ->where('prenda_pedido_id', $prenda['prenda_id'])
+                                            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                                            ->whereNull('deleted_at')
+                                            ->latest('fecha_inicio')
+                                            ->first();
+                                    } elseif (in_array($areaReciboNormalizada, ['control calidad', 'control de calidad'], true)) {
+                                        $procesoActual = \App\Models\ProcesoPrenda::where('numero_pedido', $prenda['numero_pedido'])
+                                            ->where('prenda_pedido_id', $prenda['prenda_id'])
+                                            ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
+                                            ->whereNull('deleted_at')
+                                            ->latest('fecha_inicio')
+                                            ->first();
+                                    }
+                                    $encargadoVista = $procesoActual ? $procesoActual->encargado : null;
+                                } else {
+                                    // Lógica original para otros roles
+                                    if ($areaReciboNormalizada === 'corte') {
+                                        $encargadoVista = $reciboPrincipal['encargado_corte'] ?? null;
+                                    } elseif ($areaReciboNormalizada === 'costura') {
+                                        $encargadoVista = $reciboPrincipal['encargado_costura'] ?? null;
+                                    } elseif (in_array($areaReciboNormalizada, ['control calidad', 'control de calidad'], true)) {
+                                        $encargadoVista = $reciboPrincipal['encargado_control_calidad'] ?? null;
+                                    }
                                 }
                                 $encargadoVista = is_string($encargadoVista) ? trim($encargadoVista) : $encargadoVista;
                             @endphp
-                            @if(!auth()->user()->hasRole('vista-costura') && !auth()->user()->hasRole('cortador') && !auth()->user()->hasRole('costura-reflectivo'))
+                            @if(!auth()->user()->hasRole('vista-costura') && !auth()->user()->hasRole('cortador') && !auth()->user()->hasRole('costura-reflectivo') && !auth()->user()->hasRole('costurero'))
                                 <div class="orden-encargado-corner" onclick="event.stopPropagation();">
                                     <strong>Encargado:</strong>
                                     <span>{{ $encargadoVista ? strtoupper($encargadoVista) : 'SIN ENCARGADO' }}</span>
@@ -484,6 +566,10 @@
                                             <span class="badge-completado-costura is-on">COMPLETADO</span>
                                         @endif
                                     </div>
+                                    <!-- Badge completado para costurero - posicionado en esquina superior derecha solo en mobile -->
+                                    @if(auth()->user()->hasRole('costurero') && $reciboCompletadoCostura)
+                                        <span class="badge-completado-costura is-on mobile-top-right">COMPLETADO</span>
+                                    @endif
                                     <!-- Botón de más opciones para mobile -->
                                     <button class="mobile-actions-toggle" onclick="toggleMobileActions({{ $prenda['prenda_id'] }})">
                                         <span class="material-symbols-rounded">more_horiz</span>
@@ -493,6 +579,14 @@
                                 <div class="orden-cliente">
                                     <p class="cliente-label">CLIENTE</p>
                                     <p class="cliente-name">{{ $prenda['cliente'] }}</p>
+                                </div>
+
+                                <!-- Botón Ver Recibo (debajo del estado para mobile) -->
+                                <div class="mobile-ver-recibo-section">
+                                    <button class="btn-ver-recibos mobile-under-state" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $prenda['recibos'][0]['tipo_recibo'] ?? '' }}', {{ !empty($prenda['recibos'][0]['pedido_parcial_id']) ? (int)$prenda['recibos'][0]['pedido_parcial_id'] : 'null' }})">
+                                        <span class="material-symbols-rounded">visibility</span>
+                                        VER RECIBO
+                                    </button>
                                 </div>
 
                                 <div class="orden-prendas">
@@ -587,7 +681,17 @@
                                             $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
                                             $areaActual = $prenda['recibos'][0]['area'] ?? null;
                                             $procesoId = $prenda['recibos'][0]['proceso_id_costura'] ?? null;
-                                            $encargadoCostura = $prenda['recibos'][0]['encargado_costura'] ?? null;
+                                            // Para vista-costura, buscar el encargado real del proceso de costura
+                                            $encargadoCostura = null;
+                                            if (strtolower(trim($areaActual ?? '')) === 'costura') {
+                                                $procesoCosturaReal = \App\Models\ProcesoPrenda::where('numero_pedido', $prenda['numero_pedido'])
+                                                    ->where('prenda_pedido_id', $prenda['prenda_id'])
+                                                    ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                                                    ->whereNull('deleted_at')
+                                                    ->latest('fecha_inicio')
+                                                    ->first();
+                                                $encargadoCostura = $procesoCosturaReal ? $procesoCosturaReal->encargado : null;
+                                            }
                                             $tipoRecibo = strtoupper($tiposUnicos->first() ?? 'COSTURA');
                                             $esCC = in_array(strtolower(trim($areaActual ?? '')), ['control calidad', 'control de calidad']);
                                             $esCosturaProceso = strtolower(trim($areaActual ?? '')) === 'costura';
@@ -769,7 +873,17 @@
                                             $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
                                             $areaActual = $prenda['recibos'][0]['area'] ?? null;
                                             $procesoId = $prenda['recibos'][0]['proceso_id_costura'] ?? null;
-                                            $encargadoCostura = $prenda['recibos'][0]['encargado_costura'] ?? null;
+                                            // Para vista-costura, buscar el encargado real del proceso de costura
+                                            $encargadoCostura = null;
+                                            if (strtolower(trim($areaActual ?? '')) === 'costura') {
+                                                $procesoCosturaReal = \App\Models\ProcesoPrenda::where('numero_pedido', $prenda['numero_pedido'])
+                                                    ->where('prenda_pedido_id', $prenda['prenda_id'])
+                                                    ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                                                    ->whereNull('deleted_at')
+                                                    ->latest('fecha_inicio')
+                                                    ->first();
+                                                $encargadoCostura = $procesoCosturaReal ? $procesoCosturaReal->encargado : null;
+                                            }
                                             $tipoRecibo = strtoupper($tiposUnicos->first() ?? 'COSTURA');
                                             $esCC = in_array(strtolower(trim($areaActual ?? '')), ['control calidad', 'control de calidad']);
                                             $esCosturaProceso = strtolower(trim($areaActual ?? '')) === 'costura';
@@ -1271,7 +1385,7 @@
         const esDeshacer = btn.classList.contains('btn-deshacer-costura');
         
         if (esDeshacer) {
-            deshacerCostura(pedidoId, prendaId, tipoRecibo, btnId);
+            deshacerCosturaVista(pedidoId, prendaId, tipoRecibo, btnId);
         } else {
             abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, btnId);
         }
@@ -1454,7 +1568,7 @@
         });
     }
 
-    function deshacerCostura(pedidoId, prendaId, tipoRecibo, btnId) {
+    function deshacerCosturaVista(pedidoId, prendaId, tipoRecibo, btnId) {
         console.log('[DESHACER-COSTURA] Iniciando función:', {pedidoId, prendaId, tipoRecibo, btnId});
         
         const btn = document.getElementById(btnId);
@@ -1569,8 +1683,75 @@ function pasarAControlCalidad(btn) {
             btn.style.pointerEvents = '';
         });
     } else {
-        // PASAR A C.C - implementación simplificada
-        mostrarError('Info', 'Función de pasar a Control Calidad no implementada completamente');
+        // PASAR A C.C - crear proceso en Control de Calidad
+        console.log('Pasando a Control de Calidad:', {pedidoId, prendaId, nombre, tipoRecibo, recibo});
+        
+        // Crear formulario dinámico para enviar a Control de Calidad
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/recibos-novedades/${pedidoId}/${recibo}/cambiar-area-control-calidad`;
+        form.style.display = 'none';
+        
+        // Agregar CSRF token
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = '_token';
+        csrfToken.value = document.querySelector('meta[name="csrf-token"]').content;
+        form.appendChild(csrfToken);
+        
+        // Agregar datos como campos hidden
+        const prendaIdInput = document.createElement('input');
+        prendaIdInput.type = 'hidden';
+        prendaIdInput.name = 'prenda_id';
+        prendaIdInput.value = prendaId;
+        form.appendChild(prendaIdInput);
+        
+        const tipoReciboInput = document.createElement('input');
+        tipoReciboInput.type = 'hidden';
+        tipoReciboInput.name = 'tipo_recibo';
+        tipoReciboInput.value = tipoRecibo;
+        form.appendChild(tipoReciboInput);
+        
+        document.body.appendChild(form);
+        
+        // Enviar el formulario via AJAX
+        const formData = new FormData(form);
+        
+        fetch(form.action, {
+            method: form.method,
+            body: formData,
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Respuesta del servidor (Control Calidad):', data);
+            
+            if (data.success) {
+                // Actualizar botón
+                btn.dataset.area = 'Control Calidad';
+                btn.dataset.procesoId = data.data.proceso_id || '';
+                btn.innerHTML = '<span class="material-symbols-rounded">undo</span> DESHACER';
+                mostrarExito('Éxito', data.message || 'Recibo enviado a Control de Calidad correctamente');
+            } else {
+                btn.innerHTML = originalHTML;
+                mostrarError('Error', data.message || 'Error enviando a Control de Calidad');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            btn.innerHTML = originalHTML;
+            mostrarError('Error', 'Error de conexión: ' + error.message);
+        })
+        .finally(() => {
+            // Restaurar estado del botón
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = '';
+            document.body.removeChild(form);
+        });
     }
 }
 
@@ -1921,6 +2102,12 @@ function pasarAControlCalidad(btn) {
     
     // Función para costureros: Deshacer (regresa a pendiente)
     window.deshacerCostura = function(btn) {
+        // Validar que btn sea un elemento válido
+        if (!btn || !btn.dataset) {
+            console.error('[DESHACER-COSTURA] Botón inválido o sin dataset');
+            return;
+        }
+        
         const reciboId = btn.dataset.reciboId;
         const pedidoId = btn.dataset.pedidoId;
         const prendaId = btn.dataset.prendaId;
@@ -1928,6 +2115,7 @@ function pasarAControlCalidad(btn) {
         const card = btn.closest('.orden-card-simple');
         
         if (!reciboId) {
+            console.error('[DESHACER-COSTURA] No se encontró reciboId en el botón');
             return;
         }
         
@@ -2126,8 +2314,71 @@ function pasarAControlCalidad(btn) {
             box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
         }
         
+        /* Posicionamiento especial para mobile */
+        .badge-completado-costura.mobile-top-right {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 10;
+            font-size: 0.65rem;
+            padding: 0.2rem 0.6rem;
+            display: none; /* Oculto por defecto, solo visible en mobile */
+        }
+        
+        /* Sección del botón ver recibo para mobile */
+        .mobile-ver-recibo-section {
+            display: none;
+            margin: 8px 0;
+            text-align: center;
+        }
+        
+        .mobile-ver-recibo-section .btn-ver-recibos {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
         /* Responsive para mobile */
         @media (max-width: 768px) {
+            .orden-top {
+                position: relative;
+            }
+            
+            .mobile-ver-recibo-section {
+                display: block;
+            }
+            
+            /* Mostrar badge completado en esquina superior derecha solo en mobile */
+            .badge-completado-costura.mobile-top-right {
+                display: inline-block;
+            }
+            
+            /* Ocultar badge completado del desktop en mobile */
+            .orden-numero-section .badge-completado-costura:not(.mobile-top-right) {
+                display: none;
+            }
+            
+            /* Estilos específicos para botón ver recibo en mobile - EXCEPTO para vista-costura */
+            .mobile-ver-recibo-section .btn-ver-recibos:not(.vista-costura-mobile) {
+                border-radius: 12px !important;
+                border: 1px solid #e0e0e0 !important;
+                box-shadow: none !important;
+            }
+            
+            /* Ocultar botones ver recibo originales en mobile - EXCEPTO para vista-costura */
+            .orden-buttons .btn-ver-recibos:not(.mobile-under-state):not(.vista-costura-mobile) {
+                display: none;
+            }
+            
+            /* Para vista-costura, ocultar el botón mobile y mostrar el original */
+            body[data-user-role="vista-costura"] .mobile-ver-recibo-section {
+                display: none !important;
+            }
+            
+            body[data-user-role="vista-costura"] .orden-buttons .btn-ver-recibos {
+                display: inline-flex !important;
+            }
+            
             .btn-completar-costura,
             .btn-deshacer-costura {
                 padding: 0.75rem;
