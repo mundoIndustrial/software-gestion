@@ -522,6 +522,54 @@ window.llenarReciboCosturaMobile = function(data) {
     };
     
     /**
+     * 🎨 Transformar array de variantes a estructura compatible con renderizado
+     * Input: [{talla, genero, cantidad, ...}, ...]
+     * Output: { DAMA: { TALLA: cantidad }, CABALLERO: { TALLA: cantidad }, UNISEX: { TALLA: cantidad } }
+     */
+    const transformarVariantesAEstructura = (variantesArray) => {
+        console.log('[OPERARIO] Transformando variantes:', variantesArray);
+        
+        if (!Array.isArray(variantesArray) || variantesArray.length === 0) {
+            console.warn('[OPERARIO] Array de variantes vacío o inválido');
+            return {};
+        }
+
+        const estructura = {
+            DAMA: {},
+            CABALLERO: {},
+            UNISEX: {}
+        };
+
+        // Procesar cada variante
+        variantesArray.forEach((variante, idx) => {
+            const genero = (variante.genero || '').toUpperCase();
+            const talla = (variante.talla || '').trim().toUpperCase();
+            const cantidad = parseInt(variante.cantidad || 0, 10);
+
+            console.log(`[OPERARIO] Variante ${idx}: genero=${genero}, talla=${talla}, cant=${cantidad}`);
+
+            // Validar datos mínimos
+            if (!genero || !talla || cantidad <= 0) {
+                console.warn(`[OPERARIO] Variante inválida: saltando`);
+                return;
+            }
+
+            // Verificar que el género sea válido
+            if (!estructura.hasOwnProperty(genero)) {
+                console.warn(`[OPERARIO] Género inválido: ${genero}`);
+                return;
+            }
+
+            // Agregar la talla con su cantidad
+            estructura[genero][talla] = cantidad;
+            console.log(`[OPERARIO]   Agregado: ${genero} ${talla} = ${cantidad}`);
+        });
+
+        console.log('[OPERARIO] Estructura final de variantes:', JSON.stringify(estructura, null, 2));
+        return estructura;
+    };
+    
+    /**
      * 🎨 Transformar array de talla_colores a estructura compatible con renderizado
      * Input: [{genero, talla, color_nombre, cantidad, ...}, ...]
      * Output: { DAMA: { TALLA: [{color, cantidad}, ...] }, CABALLERO: {...} }
@@ -1342,6 +1390,12 @@ window.llenarReciboCosturaMobile = function(data) {
         // FALLBACK: Generar descripción dinámica desde prendas (igual que asesores)
         console.log('📱 [RECIBO MOBILE]  USANDO RAMA: Fallback dinámico (descripcion_prendas vacía)');
         console.log(' [MOBILE] Usando lógica de construcción dinámica (descripcion_prendas vacía)');
+        console.log(' [DEBUG] Rol del usuario:', userRole);
+        console.log(' [DEBUG] Datos de prendas:', todasLasPrendas);
+        if (todasLasPrendas.length > 0) {
+            console.log(' [DEBUG] Primera prenda - tallas:', todasLasPrendas[0].tallas);
+            console.log(' [DEBUG] Primera prenda - talla_colores:', todasLasPrendas[0].talla_colores);
+        }
         
         const startIndex = window.prendaCarouselIndex || 0;
         const endIndex = startIndex + PRENDAS_POR_PAGINA;
@@ -1456,7 +1510,14 @@ window.llenarReciboCosturaMobile = function(data) {
                 // 🎨 PRIORIZAR talla_colores si está disponible (como en recibos de costura)
                 if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
                     console.log('📱 [RECIBO MOBILE] Usando talla_colores de la prenda:', prenda.talla_colores);
+                    console.log(' [DEBUG] Rol actual:', userRole, '- talla_colores encontrado:', prenda.talla_colores.length, 'items');
                     tallasFuente = transformarTallaColoresAEstructura(prenda.talla_colores);
+                } else if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+                    console.log('📱 [RECIBO MOBILE] Usando variantes de la prenda:', prenda.variantes);
+                    console.log(' [DEBUG] Rol actual:', userRole, '- variantes encontrado:', prenda.variantes.length, 'items');
+                    tallasFuente = transformarVariantesAEstructura(prenda.variantes);
+                } else {
+                    console.log(' [DEBUG] Rol actual:', userRole, '- NO hay talla_colores ni variantes, usando tallas normales');
                 }
                 try {
                     if (procesoActualSeleccionado && procesoActualSeleccionado.toUpperCase() === 'COSTURA' && prenda.procesos && Array.isArray(prenda.procesos)) {
