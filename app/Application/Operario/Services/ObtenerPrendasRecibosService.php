@@ -198,8 +198,8 @@ class ObtenerPrendasRecibosService
             $tiposRecibo = ['COSTURA', 'REFLECTIVO'];
         }
         if ($tipoOperario === 'costura-reflectivo') {
-            // Para costura-reflectivo: por defecto solo REFLECTIVO
-            $tiposRecibo = ['REFLECTIVO'];
+            // Para costura-reflectivo: mostrar COSTURA y REFLECTIVO
+            $tiposRecibo = ['COSTURA', 'REFLECTIVO'];
         }
 
         // Obtener todos los recibos de costura activos con relaciones (incluyendo procesos)
@@ -313,26 +313,35 @@ class ObtenerPrendasRecibosService
             return ($recibo->prenda_id ?: ('pedido_' . $recibo->pedido_produccion_id)) . '_' . $recibo->tipo_recibo;
         })->values();
 
-        // vista-costura: solo debe ver recibos que estén actualmente en el área Costura
+        // vista-costura: ver recibos COSTURA en área Costura, pero REFLECTIVO en cualquier área
         if ($tipoOperario === 'vista-costura') {
             $recibos = $recibos
                 ->filter(function ($recibo) {
                     $area = strtolower(trim((string) ($recibo->area ?? '')));
-                    return $area === 'costura';
+                    $tipoRecibo = strtoupper(trim((string) ($recibo->tipo_recibo ?? '')));
+                    
+                    // Mostrar COSTURA solo si está en área costura
+                    if ($tipoRecibo === 'COSTURA' || $tipoRecibo === 'COSTURA-BODEGA') {
+                        return $area === 'costura';
+                    }
+                    
+                    // Mostrar REFLECTIVO sin importar el área
+                    if ($tipoRecibo === 'REFLECTIVO') {
+                        return true;
+                    }
+                    
+                    return false;
                 })
                 ->values();
         }
 
-        // costura-reflectivo: ver REFLECTIVO sin filtrar por área
+        // costura-reflectivo: ver COSTURA y REFLECTIVO sin filtrar por área
         if ($tipoOperario === 'costura-reflectivo') {
             $recibos = $recibos
                 ->filter(function ($recibo) {
-                    if (strtoupper(trim((string) ($recibo->tipo_recibo ?? ''))) !== 'REFLECTIVO') {
-                        return false;
-                    }
-
-                    // Ya NO se filtra por área ni se requiere encargado: el recibo aparece cuando el supervisor lo activa
-                    return true;
+                    $tipoRecibo = strtoupper(trim((string) ($recibo->tipo_recibo ?? '')));
+                    // Mostrar COSTURA y REFLECTIVO sin importar el área
+                    return $tipoRecibo === 'COSTURA' || $tipoRecibo === 'REFLECTIVO';
                 })
                 ->values();
         }
@@ -462,38 +471,53 @@ class ObtenerPrendasRecibosService
                                 'usuario' => $usuario->name
                             ]);
                         } else if ($tipoOperario === 'costura-reflectivo') {
-                            $usuarioNombre = strtolower(trim($usuario->name));
+                            // Para costura-reflectivo: verificar que tenga encargado asignado con rol costura-reflectivo
+                            $encargadoDelRecibo = null;
                             
-                            // Buscar proceso Costura específicamente para esta prenda
-                            $procesoCosturaDelaPrenda = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
-                                ->where('prenda_pedido_id', $prenda->id)
-                                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                                ->first();
+                            // Buscar encargado en el recibo (para REFLECTIVO)
+                            if (strtoupper($tipoRecibo) === 'REFLECTIVO') {
+                                $encargadoDelRecibo = $primeRecibo->encargado_costura;
+                            } 
+                            // Buscar encargado en el proceso (para COSTURA)
+                            else if (strtoupper($tipoRecibo) === 'COSTURA') {
+                                $procesoCosturaDelaPrenda = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                                    ->where('prenda_pedido_id', $prenda->id)
+                                    ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                                    ->first();
+                                $encargadoDelRecibo = $procesoCosturaDelaPrenda->encargado ?? null;
+                            }
                             
-                            if (!$procesoCosturaDelaPrenda || !$procesoCosturaDelaPrenda->encargado) {
-                                \Log::info(' [Filtro COSTURA-REFLECTIVO] Prenda sin proceso Costura asignado', [
+                            if (!$encargadoDelRecibo) {
+                                \Log::info(' [Filtro COSTURA-REFLECTIVO] Recibo sin encargado asignado', [
                                     'prenda_id' => $prenda->id,
                                     'numero_pedido' => $pedido->numero_pedido,
+                                    'tipo_recibo' => $tipoRecibo,
                                     'usuario' => $usuario->name
                                 ]);
                                 continue;
                             }
                             
-                            $encargadoDelProceso = strtolower(trim($procesoCosturaDelaPrenda->encargado));
+                            // Verificar que el encargado tenga rol costura-reflectivo
+                            $usuarioEncargado = \App\Models\User::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($encargadoDelRecibo))])
+                                ->first();
                             
-                            if ($encargadoDelProceso !== $usuarioNombre) {
-                                \Log::info(' [Filtro COSTURA-REFLECTIVO] Usuario no es encargado de la prenda', [
+                            if (!$usuarioEncargado || !$usuarioEncargado->hasRole('costura-reflectivo')) {
+                                \Log::info(' [Filtro COSTURA-REFLECTIVO] Encargado no tiene rol costura-reflectivo', [
                                     'prenda_id' => $prenda->id,
                                     'numero_pedido' => $pedido->numero_pedido,
-                                    'usuario_actual' => $usuario->name,
-                                    'encargado_prenda' => $procesoCosturaDelaPrenda->encargado
+                                    'tipo_recibo' => $tipoRecibo,
+                                    'encargado' => $encargadoDelRecibo,
+                                    'tiene_rol_costura_reflectivo' => $usuarioEncargado ? 'NO' : 'USUARIO_NO_EXISTE',
+                                    'usuario' => $usuario->name
                                 ]);
                                 continue;
                             }
                             
-                            \Log::info(' [Filtro COSTURA-REFLECTIVO] ✓ Usuario es encargado de esta prenda', [
+                            \Log::info(' [Filtro COSTURA-REFLECTIVO] ✓ Recibo con encargado válido', [
                                 'prenda_id' => $prenda->id,
                                 'numero_pedido' => $pedido->numero_pedido,
+                                'tipo_recibo' => $tipoRecibo,
+                                'encargado' => $encargadoDelRecibo,
                                 'usuario' => $usuario->name
                             ]);
                         }

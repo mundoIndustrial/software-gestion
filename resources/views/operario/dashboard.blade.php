@@ -412,7 +412,12 @@
                     Reflectivo
                 </button>
             @else
-                <button class="badge-filtro badge-filtro-active" data-filtro="reflectivo" onclick="filtrarPrendasPorRecibo('reflectivo')">
+                <!-- Para costura-reflectivo: mostrar ambos tags -->
+                <button class="badge-filtro badge-filtro-active" data-filtro="costura" onclick="filtrarPrendasPorRecibo('costura')">
+                    <span class="material-symbols-rounded">checkroom</span>
+                    Costura
+                </button>
+                <button class="badge-filtro" data-filtro="reflectivo" onclick="filtrarPrendasPorRecibo('reflectivo')">
                     <span class="material-symbols-rounded">auto_awesome</span>
                     Reflectivo
                 </button>
@@ -430,19 +435,33 @@
                         }
                         
                         // Determinar tipo de recibo para filtro
-                        // Si ALGUNO de los recibos es REFLECTIVO, marcar la tarjeta como REFLECTIVO
+                        // Para vista-costura y costura-reflectivo: una prenda puede tener ambos tipos de recibos
+                        // Para otros roles: solo muestra reflectivos
                         $tiposRecibos = array_map(function($r) { return strtoupper($r['tipo_recibo']); }, $prenda['recibos']);
                         $tieneReflectivo = in_array('REFLECTIVO', $tiposRecibos);
-                        $esReflectivo = $tieneReflectivo ? 'reflectivo' : 'costura';
+                        $tieneCostura = in_array('COSTURA', $tiposRecibos) || in_array('COSTURA-BODEGA', $tiposRecibos);
+                        
+                        // Para vista-costura y costura-reflectivo, guardar ambos tipos en el atributo data
+                        if (auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('costura-reflectivo')) {
+                            // Guardar tipos separados por comas para poder filtrar correctamente
+                            $tiposParaFiltro = [];
+                            if ($tieneCostura) $tiposParaFiltro[] = 'costura';
+                            if ($tieneReflectivo) $tiposParaFiltro[] = 'reflectivo';
+                            $esReflectivo = implode(',', $tiposParaFiltro); // "costura,reflectivo" o "costura" o "reflectivo"
+                        } else {
+                            // Para otros roles, solo mostrar reflectivos
+                            $esReflectivo = $tieneReflectivo ? 'reflectivo' : 'costura';
+                        }
                         
                         // Por defecto:
-                        // - costura-reflectivo: mostrar solo tarjetas REFLECTIVO
-                        // - vista-costura: mantener comportamiento actual (mostrar COSTURA por defecto)
+                        // - costura-reflectivo: mostrar COSTURA por defecto (pero incluir las que tienen ambos)
+                        // - vista-costura: mostrar COSTURA por defecto (pero incluir las que tienen ambos)
                         $displayInicial = '';
-                        if (auth()->user()->hasRole('costura-reflectivo')) {
-                            $displayInicial = $esReflectivo === 'reflectivo' ? '' : 'none';
+                        if (auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura')) {
+                            // Mostrar por defecto las que tienen costura (incluyendo las que tienen ambos)
+                            $displayInicial = $tieneCostura ? '' : 'none';
                         } else {
-                            $displayInicial = $esReflectivo === 'reflectivo' ? 'none' : '';
+                            $displayInicial = $tieneReflectivo ? '' : 'none';
                         }
 
                         $reciboPrincipalFiltro = $prenda['recibos'][0] ?? null;
@@ -533,7 +552,7 @@
                                 }
                                 $encargadoVista = is_string($encargadoVista) ? trim($encargadoVista) : $encargadoVista;
                             @endphp
-                            @if(!auth()->user()->hasRole('vista-costura') && !auth()->user()->hasRole('cortador') && !auth()->user()->hasRole('costura-reflectivo') && !auth()->user()->hasRole('costurero'))
+                            @if(!auth()->user()->hasRole('vista-costura') && !auth()->user()->hasRole('cortador') && !auth()->user()->hasRole('costurero'))
                                 <div class="orden-encargado-corner" onclick="event.stopPropagation();">
                                     <strong>Encargado:</strong>
                                     <span>{{ $encargadoVista ? strtoupper($encargadoVista) : 'SIN ENCARGADO' }}</span>
@@ -751,7 +770,7 @@
                                             $areaReciboRef = $reciboReflectivo['area'] ?? '';
                                             $esCosturaAreaRef = strtolower(trim((string)$areaReciboRef)) === 'costura';
                                         @endphp
-                                        @if($tieneReciboReflectivo && $esCosturaAreaRef && auth()->user()->hasRole('vista-costura'))
+                                        @if($tieneReciboReflectivo && auth()->user()->hasRole('vista-costura'))
                                             <button class="btn-pasar-costura {{ $tieneEncargadoCosturaRef ? 'btn-deshacer-costura' : '' }}" 
                                                     id="btn-costura-reflectivo-{{ $prenda['prenda_id'] }}"
                                                     data-pedido-id="{{ $prenda['pedido_id'] }}"
@@ -1119,7 +1138,7 @@
         }
 
         const ordenCards = ordenesList.querySelectorAll('.orden-card-simple');
-        console.log(' Total de tarjetas:', ordenCards.length);
+        console.log(` [FILTRO] Tarjetas encontradas: ${ordenCards.length}`);
         
         let mostradas = 0;
         let ocultadas = 0;
@@ -1135,19 +1154,23 @@
                 card.style.display = '';
                 mostradas++;
             } else {
-                if (tipoRecibo === filtro) {
-                    console.log(`  âœ“ Mostrando (coincide con filtro "${filtro}")`);
+                // Para vista-costura, tipoRecibo puede tener múltiples valores separados por comas
+                // Ej: "costura,reflectivo" o "costura" o "reflectivo"
+                const tipos = tipoRecibo ? tipoRecibo.split(',').map(t => t.trim()) : [];
+                
+                if (tipos.includes(filtro)) {
+                    console.log(`  Mostrando (contiene "${filtro}" en [${tipos.join(', ')}])`);
                     card.style.display = '';
                     mostradas++;
                 } else {
-                    console.log(`  âœ— Ocultando (tipo="${tipoRecibo}" !== filtro="${filtro}")`);
+                    console.log(`  Ocultando (no contiene "${filtro}" en [${tipos.join(', ')}])`);
                     card.style.display = 'none';
                     ocultadas++;
                 }
             }
         });
         
-        console.log(` Filtro completado: ${mostradas} mostradas, ${ocultadas} ocultadas`);
+        console.log(` [FILTRO] Filtro completado: ${mostradas} mostradas, ${ocultadas} ocultadas`);
     };
 
     // Función para abrir detalles de recibos

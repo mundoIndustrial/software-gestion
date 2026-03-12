@@ -186,6 +186,13 @@
                             </a>
                             <div class="menu-divider"></div>
                         @endif
+                        @if(Auth::user()->hasRole('costura-reflectivo'))
+                            <a href="{{ url('/tableros_ordenes') }}" class="menu-item">
+                                <span class="material-symbols-rounded">dashboard</span>
+                                <span>Ver Tableros</span>
+                            </a>
+                            <div class="menu-divider"></div>
+                        @endif
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit" class="menu-item logout">
