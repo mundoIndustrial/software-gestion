@@ -198,6 +198,13 @@
         flex-shrink: 0;
     }
 
+    /* Estilos para el botón de acciones (menú) */
+    .btn-acciones {
+        position: relative;
+        min-width: 40px;
+        flex-shrink: 0;
+    }
+
     .btn-check-row.checked {
         background-color: #a78bfa !important;
         color: white !important;
@@ -391,10 +398,303 @@
             alert('Error al guardar el estado');
         });
     }
+
+    // Variable global para rastrear el botón del dropdown abierto
+    let dropdownAbiertoButton = null;
+
+    /**
+     * Crear dropdown de acciones posicionado de forma fija
+     */
+    function crearDropdownAcciones(event, button) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Si el dropdown está abierto del mismo botón, cerrarlo
+        if (dropdownAbiertoButton === button) {
+            cerrarDropdownAcciones();
+            dropdownAbiertoButton = null;
+            return;
+        }
+        
+        // Cerrar dropdown anterior si existe
+        cerrarDropdownAcciones();
+        
+        // Guardar referencia al botón actual
+        dropdownAbiertoButton = button;
+        
+        const container = document.getElementById('dropdowns-container');
+        if (!container) return;
+        
+        // Obtener datos del botón
+        const pedidoProduccionId = button.getAttribute('data-pedido-produccion-id');
+        const prendaId = button.getAttribute('data-prenda-id');
+        const reciboId = button.getAttribute('data-recibo-id');
+        const consecutivo = button.getAttribute('data-consecutivo');
+        const estado = button.getAttribute('data-estado');
+        const tipoRecibo = button.getAttribute('data-tipo-recibo');
+        
+        // Obtener posición del botón
+        const rect = button.getBoundingClientRect();
+        
+        // Crear elemento del dropdown
+        const dropdown = document.createElement('div');
+        dropdown.className = 'acciones-dropdown-fixed';
+        dropdown.style.cssText = `
+            position: fixed;
+            top: ${rect.bottom + 8}px;
+            left: ${rect.right + 8}px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            min-width: 220px;
+            z-index: 999999;
+            overflow: visible;
+            pointer-events: auto;
+        `;
+        
+        let html = `
+            <button style="
+                width: 100%;
+                text-align: left;
+                padding: 0.875rem 1rem;
+                border: none;
+                background: transparent;
+                cursor: pointer;
+                color: #374151;
+                font-size: 0.875rem;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-weight: 500;
+                border-bottom: 1px solid #f3f4f6;
+            " onclick="abrirModalInsumos('${pedidoProduccionId}', '${prendaId}'); cerrarDropdownAcciones();" 
+            onmouseover="this.style.background='#f0fdf4'" 
+            onmouseout="this.style.background='transparent'">
+                <i class="fas fa-box" style="color: #10b981; font-size: 1rem;"></i>
+                <span>Gestionar materiales</span>
+            </button>
+            
+            <button style="
+                width: 100%;
+                text-align: left;
+                padding: 0.875rem 1rem;
+                border: none;
+                background: transparent;
+                cursor: pointer;
+                color: #374151;
+                font-size: 0.875rem;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-weight: 500;
+                border-bottom: 1px solid #f3f4f6;
+            " onclick="abrirModalAnchoMetraje('${pedidoProduccionId}', '${prendaId}'); cerrarDropdownAcciones();" 
+            onmouseover="this.style.background='#fef3c7'" 
+            onmouseout="this.style.background='transparent'">
+                <i class="fas fa-ruler" style="color: #f59e0b; font-size: 1rem;"></i>
+                <span>Ancho y metraje</span>
+            </button>
+            
+            <button style="
+                width: 100%;
+                text-align: left;
+                padding: 0.875rem 1rem;
+                border: none;
+                background: transparent;
+                cursor: pointer;
+                color: #374151;
+                font-size: 0.875rem;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-weight: 500;
+                border-bottom: 1px solid #f3f4f6;
+            " onclick="abrirModalPasarRevisar('${reciboId}', '${pedidoProduccionId}'); cerrarDropdownAcciones();" 
+            onmouseover="this.style.background='#fde4e4'" 
+            onmouseout="this.style.background='transparent'">
+                <i class="fas fa-arrow-rotate-left" style="color: #dc2626; font-size: 1rem;"></i>
+                <span>Pasar a Revisar</span>
+            </button>
+        `;
+        
+        // Agregar botón de envío solo si está en estado Pendiente
+        if (estado === 'Pendiente' || estado === 'PENDIENTE_INSUMOS' || estado === 'Pendiente_Insumos') {
+            html += `
+            <button style="
+                width: 100%;
+                text-align: left;
+                padding: 0.875rem 1rem;
+                border: none;
+                background: transparent;
+                cursor: pointer;
+                color: #374151;
+                font-size: 0.875rem;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-weight: 500;
+            " onclick="cambiarEstadoRecibo('${reciboId}', '${consecutivo}'); cerrarDropdownAcciones();" 
+            onmouseover="this.style.background='#dbeafe'" 
+            onmouseout="this.style.background='transparent'">
+                <i class="fas fa-paper-plane" style="color: #3b82f6; font-size: 1rem;"></i>
+                <span>Enviar a producción</span>
+            </button>
+            `;
+        }
+        
+        dropdown.innerHTML = html;
+        container.appendChild(dropdown);
+    }
+
+    /**
+     * Cerrar todos los dropdowns de acciones
+     */
+    function cerrarDropdownAcciones() {
+        document.querySelectorAll('.acciones-dropdown-fixed').forEach(menu => {
+            menu.remove();
+        });
+        dropdownAbiertoButton = null;
+    }
+
+    /**
+     * Abre el detalle del recibo
+     */
+    function abrirDetalleRecibo(pedidoId, prendaId, tipoRecibo) {
+        // Convertir parámetros correctamente
+        pedidoId = parseInt(pedidoId) || null;
+        
+        // Convertir la string 'null' a null real, o convertir a número si tiene valor
+        if (prendaId === 'null' || prendaId === '' || !prendaId) {
+            prendaId = null;
+        } else {
+            prendaId = parseInt(prendaId) || null;
+        }
+        
+        // Verificar si existe la función openOrderDetailModalWithProcess
+        if (typeof openOrderDetailModalWithProcess === 'function') {
+            openOrderDetailModalWithProcess(pedidoId, prendaId, tipoRecibo);
+        } else {
+            console.error('Función openOrderDetailModalWithProcess no disponible');
+        }
+    }
+
+    /**
+     * Abre el modal para pasar a revisar
+     */
+    function abrirModalPasarRevisar(reciboId, pedidoId) {
+        const modal = document.getElementById('modalPasarRevisar');
+        if (!modal) {
+            console.error('Modal no encontrado');
+            return;
+        }
+        
+        // Actualizar datos en el modal
+        document.getElementById('reciboIdPasarRevisar').value = reciboId;
+        document.getElementById('pedidoIdPasarRevisar').value = pedidoId;
+        document.getElementById('formPasarRevisar').reset();
+        document.getElementById('contadorPasarRevisar').textContent = '0';
+        
+        // Mostrar modal
+        modal.style.display = 'flex';
+    }
+
+    /**
+     * Cierra el modal de pasar a revisar
+     */
+    function cerrarModalPasarRevisar() {
+        const modal = document.getElementById('modalPasarRevisar');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    /**
+     * Confirma pasar a revisar
+     */
+    function confirmarPasarRevisar(event) {
+        event.preventDefault();
+        
+        const reciboId = document.getElementById('reciboIdPasarRevisar').value;
+        const motivo = document.getElementById('motivoPasarRevisar').value;
+        
+        if (!motivo.trim()) {
+            alert('Por favor ingresa el motivo');
+            return;
+        }
+        
+        // Mostrar cargando
+        const btnConfirmar = document.getElementById('btnConfirmarPasarRevisar');
+        btnConfirmar.disabled = true;
+        btnConfirmar.textContent = 'Procesando...';
+        
+        // Enviar petición
+        fetch(`/insumos/materiales/${reciboId}/pasar-revisar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                motivo: motivo
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Recibo pasado a revisión correctamente', 'success');
+                cerrarModalPasarRevisar();
+                // Recargar la tabla
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showToast(data.message || 'Error al pasar a revisión', 'error');
+                btnConfirmar.disabled = false;
+                btnConfirmar.innerHTML = '<i class="fas fa-arrow-rotate-left"></i> Pasar a Revisar';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error al procesar la solicitud', 'error');
+            btnConfirmar.disabled = false;
+            btnConfirmar.innerHTML = '<i class="fas fa-arrow-rotate-left"></i> Pasar a Revisar';
+        });
+    }
+
+    /**
+     * Actualizar contador de caracteres
+     */
+    document.addEventListener('input', function(e) {
+        if (e.target.id === 'motivoPasarRevisar') {
+            const contador = document.getElementById('contadorPasarRevisar');
+            if (contador) {
+                contador.textContent = e.target.value.length;
+            }
+        }
+    });
+
+    /**
+     * Cerrar modal al hacer clic fuera
+     */
+    document.addEventListener('click', function(e) {
+        const modal = document.getElementById('modalPasarRevisar');
+        if (modal && e.target === modal) {
+            cerrarModalPasarRevisar();
+        }
+    });
 </script>
 
 {{-- Toast Container --}}
 <div id="toastContainer" style="position: fixed; top: 24px; right: 24px; z-index: 99999; display: flex; flex-direction: column; gap: 12px; pointer-events: none;"></div>
+
+{{-- Dropdowns Container (visible encima de todo) --}}
+<div id="dropdowns-container" style="position: fixed; top: 0; left: 0; z-index: 999999; pointer-events: none;"></div>
 
 {{-- Loading Overlay --}}
 <div id="loadingOverlay" class="loading-overlay">
@@ -572,6 +872,15 @@
                             data-pedido-produccion-id="{{ $orden->pedido_produccion_id ?? '' }}">
                                 <td class="py-4 px-6 text-center" style="min-width: 250px; overflow: visible; background: white; position: relative; z-index: 5;">
                                     <div class="flex items-center justify-center gap-3" style="display: flex !important; flex-wrap: wrap; overflow: visible;">
+                                        {{-- Definir variables primero --}}
+                                        @php
+                                            $userRole = auth()->user()->role;
+                                            $roleName = is_object($userRole) ? $userRole->name : $userRole;
+                                            $isPatronista = $roleName === 'patronista';
+                                            $reciboId = $orden->id;
+                                            $pedidoProduccionId = $orden->pedido_produccion_id;
+                                        @endphp
+                                        
                                         {{-- Botón Check (marca) en purple --}}
                                         <button 
                                             class="btn-check-row btn-tooltip p-2 text-purple-600 hover:bg-purple-50 rounded transition @if(isset($orden->marcar_plooter) && $orden->marcar_plooter) checked @endif"
@@ -582,49 +891,31 @@
                                             <i class="fas fa-check text-lg"></i>
                                         </button>
 
-                                        {{-- Botón Ver (con dropdown) --}}
-                                        @php
-                                            $numeroRecibo = $orden->numero_pedido; // Este es el consecutivo del recibo
-                                            $reciboId = $orden->id;
-                                            $pedidoProduccionId = $orden->pedido_produccion_id;
-                                        @endphp
-                                        <button class="btn-ver-dropdown btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition" data-menu-id="menu-ver-{{ str_replace('#', '', $numeroRecibo) }}" data-pedido="{{ str_replace('#', '', $numeroRecibo) }}" data-pedido-id="{{ $pedidoProduccionId }}" data-prenda-id="{{ $orden->prenda_id ?? '' }}" data-tipo-recibo="{{ $orden->tipo_recibo ?? 'COSTURA' }}" data-es-parcial="{{ !empty($orden->es_parcial) ? 'true' : 'false' }}" data-pedido-parcial-id="{{ $orden->pedido_parcial_id ?? '' }}" title="Ver Opciones">
+                                        {{-- Botón Ver Recibo (visible siempre) --}}
+                                        <button 
+                                            class="btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
+                                            onclick="abrirDetalleRecibo('{{ $pedidoProduccionId }}', '{{ $orden->prenda_id ?? 'null' }}', '{{ $orden->tipo_recibo ?? 'COSTURA' }}')"
+                                            data-tooltip="Ver recibo"
+                                            title="Ver recibo"
+                                        >
                                             <i class="fas fa-eye text-lg"></i>
                                         </button>
 
-                                        {{-- Botones adicionales (solo para no-patronistas) --}}
-                                        @php
-                                            $userRole = auth()->user()->role;
-                                            $roleName = is_object($userRole) ? $userRole->name : $userRole;
-                                            $isPatronista = $roleName === 'patronista';
-                                        @endphp
+                                        {{-- Dropdown de Acciones (solo para no-patronistas) --}}
                                         @if(!$isPatronista)
-                                            {{-- Botón Materiales --}}
                                             <button 
-                                                class="btn-tooltip p-2 text-green-600 hover:bg-green-50 rounded transition"
-                                                onclick="abrirModalInsumos('{{ $pedidoProduccionId }}', '{{ $orden->prenda_id ?? '' }}')"
-                                                data-tooltip="Gestionar materiales"
+                                                class="btn-acciones p-2 text-gray-600 hover:bg-gray-100 rounded transition"
+                                                onclick="crearDropdownAcciones(event, this)"
+                                                data-pedido-produccion-id="{{ $pedidoProduccionId }}"
+                                                data-prenda-id="{{ $orden->prenda_id ?? '' }}"
+                                                data-recibo-id="{{ $reciboId }}"
+                                                data-consecutivo="{{ $orden->consecutivo_actual }}"
+                                                data-estado="{{ $orden->estado ?? '' }}"
+                                                data-tipo-recibo="{{ $orden->tipo_recibo ?? 'COSTURA' }}"
+                                                title="Más opciones"
                                             >
-                                                <i class="fas fa-box text-lg"></i>
+                                                <i class="fas fa-ellipsis-v text-lg"></i>
                                             </button>
-                                            {{-- Botón Ancho y Metraje --}}
-                                            <button 
-                                                class="btn-tooltip p-2 text-orange-600 hover:bg-orange-50 rounded transition"
-                                                onclick="abrirModalAnchoMetraje('{{ $pedidoProduccionId }}', '{{ $orden->prenda_id }}')"
-                                                data-tooltip="Ingresar ancho y metraje"
-                                            >
-                                                <i class="fas fa-ruler text-lg"></i>
-                                            </button>
-                                            {{-- Botón enviar a producción: solo visible para estado Pendiente o PENDIENTE_INSUMOS --}}
-                                            @if($orden->estado === 'Pendiente' || $orden->estado === 'PENDIENTE_INSUMOS' || $orden->estado === 'Pendiente_Insumos')
-                                                <button 
-                                                    class="btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
-                                                    onclick="cambiarEstadoRecibo('{{ $reciboId }}', '{{ $orden->consecutivo_actual }}')"
-                                                    data-tooltip="Enviar recibo a producción"
-                                                >
-                                                    <i class="fas fa-paper-plane text-lg"></i>
-                                                </button>
-                                            @endif
                                         @endif
                                     </div>
                                 </td>
@@ -641,18 +932,29 @@
                                     @php
                                         $estadoClass = '';
                                         $estadoColor = '';
+                                        $estadoDisplay = '';
+                                        
                                         if ($orden->estado === 'No iniciado') {
                                             $estadoClass = 'bg-gray-400 text-white';
+                                            $estadoDisplay = 'No iniciado';
                                         } elseif ($orden->estado === 'En Ejecución') {
                                             $estadoClass = 'bg-blue-100 text-blue-800';
+                                            $estadoDisplay = 'En Ejecución';
                                         } elseif ($orden->estado === 'Anulada') {
                                             $estadoClass = 'bg-amber-100 text-amber-800';
+                                            $estadoDisplay = 'Anulada';
                                         } elseif ($orden->estado === 'PENDIENTE_INSUMOS' || $orden->estado === 'Pendiente_Insumos') {
                                             $estadoClass = 'bg-green-500 text-white';
+                                            $estadoDisplay = 'Pendiente Insumos';
+                                        } elseif ($orden->estado === 'DEVUELTO_ASESOR') {
+                                            $estadoClass = 'bg-red-500 text-white';
+                                            $estadoDisplay = 'Devuelto Asesor';
+                                        } else {
+                                            $estadoDisplay = str_replace('_', ' ', $orden->estado ?? 'N/A');
                                         }
                                     @endphp
                                     <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold {{ $estadoClass }}">
-                                        {{ ($orden->estado === 'PENDIENTE_INSUMOS' || $orden->estado === 'Pendiente_Insumos') ? 'Pendiente Insumos' : ($orden->estado ?? 'N/A') }}
+                                        {{ $estadoDisplay }}
                                     </span>
                                 </td>
                                 <td class="py-4 px-6 text-center">
@@ -4903,5 +5205,38 @@ function abrirModalSeguimientoDirectoInsumos(pedidoId, prendaIdTarget) {
     `;
     document.head.appendChild(style);
 </script>
+
+{{-- Modal: Pasar a Revisar --}}
+<div id="modalPasarRevisar" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); max-width: 500px; width: 90%; padding: 0; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; padding: 1.5rem; display: flex; align-items: center; gap: 1rem;">
+            <i class="fas fa-arrow-rotate-left" style="font-size: 1.5rem;"></i>
+            <div>
+                <h2 style="margin: 0; font-size: 1.25rem; font-weight: bold;">¿Pasar a Revisión?</h2>
+                <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">Recibo a revisión por asesor</p>
+            </div>
+        </div>
+
+        <div style="padding: 1.5rem;">
+            <p style="margin: 0 0 1rem 0; color: #6b7280; font-size: 0.95rem;">
+                Esta acción devolverá el recibo para que sea corregido.
+            </p>
+
+            <form id="formPasarRevisar" onsubmit="confirmarPasarRevisar(event)">
+                <input type="hidden" id="reciboIdPasarRevisar" value=""><input type="hidden" id="pedidoIdPasarRevisar" value="">
+                <div style="margin-bottom: 1rem;">
+                    <label for="motivoPasarRevisar" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Motivo de la revisión *</label>
+                    <textarea id="motivoPasarRevisar" name="motivo_pasar_revisar" rows="4" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; font-size: 0.95rem; resize: vertical;" placeholder="Ej: Revisar especificaciones, cambios en cantidad..." required minlength="10" maxlength="500"></textarea>
+                    <small style="display: block; margin-top: 0.5rem; color: #6b7280; text-align: right;"><span id="contadorPasarRevisar">0</span>/500 caracteres</small>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" onclick="cerrarModalPasarRevisar()" style="padding: 0.75rem 1.5rem; border: 1px solid #d1d5db; background: white; color: #374151; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s;">Cancelar</button>
+                    <button type="submit" id="btnConfirmarPasarRevisar" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s;"><i class="fas fa-arrow-rotate-left"></i> Pasar a Revisión</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection
 

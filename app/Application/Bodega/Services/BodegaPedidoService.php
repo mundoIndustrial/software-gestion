@@ -88,7 +88,7 @@ class BodegaPedidoService
         // para que el listado siempre muestre los pedidos anulados.
         $todosLosPedidos = ReciboPrenda::with(['asesor'])
             ->whereIn('numero_pedido', $numerosAnulados)
-            ->orderBy('numero_pedido', 'desc')
+            ->orderBy('updated_at', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -117,18 +117,17 @@ class BodegaPedidoService
         // Determinar configuración según rol
         $areasPermitidas = $this->roleService->obtenerAreasPermitidas($rolesDelUsuario);
 
-        // Obtener números de pedidos que tienen items con estado 'Entregado'
-        $numerosConEntregados = DB::table('bodega_detalles_talla')
-            ->where('estado_bodega', WarehouseConstants::STATE_DELIVERED)
+        // Obtener números de pedidos que tengan estado 'Entregado' en pedidos_produccion
+        $numerosEntregados = PedidoProduccion::where('estado', 'Entregado')
             ->pluck('numero_pedido')
             ->filter(fn($n) => !empty($n))
             ->unique()
             ->values();
 
-        // Cargar recibos por número de pedido que tengan items entregados
+        // Cargar recibos de pedidos entregados
         $todosLosPedidos = ReciboPrenda::with(['asesor'])
-            ->whereIn('numero_pedido', $numerosConEntregados)
-            ->orderBy('numero_pedido', 'desc')
+            ->whereIn('numero_pedido', $numerosEntregados)
+            ->orderBy('updated_at', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -208,31 +207,73 @@ class BodegaPedidoService
         $areasPermitidas = $this->roleService->obtenerAreasPermitidas($rolesDelUsuario);
         $estadosPermitidos = $this->obtenerEstadosPermitidos();
         
-        // Obtener el recibo base
-        $primerRecibo = ReciboPrenda::findOrFail($pedidoId);
-        $numeroPedido = $primerRecibo->numero_pedido;
+        \Log::info('[obtenerDetallePedido] Iniciando búsqueda', ['pedidoId' => $pedidoId]);
         
-        // Validar que el recibo tenga número de pedido
-        if (empty($numeroPedido)) {
-            \Log::error('ReciboPrenda sin numero_pedido', [
-                'recibo_id' => $pedidoId,
-                'recibo_data' => $primerRecibo->toArray()
+        // Obtener el recibo base buscando por numero_pedido (o por id como fallback)
+        $primerRecibo = ReciboPrenda::where('numero_pedido', $pedidoId)
+            ->orWhere('id', $pedidoId)
+            ->first();
+        
+        \Log::info('[obtenerDetallePedido] ReciboPrenda encontrado', [
+            'tiene_recibo' => !!$primerRecibo, 
+            'recibo_numero_pedido' => $primerRecibo?->numero_pedido ?? 'null',
+            'recibo_id' => $primerRecibo?->id ?? 'null'
+        ]);
+        
+        // Si no hay ReciboPrenda, buscar en PedidoProduccion
+        if (!$primerRecibo || empty($primerRecibo->numero_pedido)) {
+            $pedidoProduccion = PedidoProduccion::where('numero_pedido', $pedidoId)
+                ->orWhere('id', $pedidoId)
+                ->first();
+            
+            \Log::info('[obtenerDetallePedido] ReciboPrenda sin numero_pedido, buscando PedidoProduccion', [
+                'tiene_pedido' => !!$pedidoProduccion, 
+                'pedido_numero' => $pedidoProduccion?->numero_pedido ?? 'null'
             ]);
-            throw new \Exception('El recibo (ID: ' . $pedidoId . ') no tiene número de pedido asociado');
+            
+            if (!$pedidoProduccion) {
+                throw new \Exception("Pedido no encontrado (numero_pedido: $pedidoId)");
+            }
+            
+            $numeroPedido = $pedidoProduccion->numero_pedido;
+            
+            // Crear un objeto ReciboPrenda ficticio para mantener compatibilidad
+            $primerRecibo = new ReciboPrenda([
+                'id' => $pedidoProduccion->id,
+                'numero_pedido' => $numeroPedido,
+                'estado' => $pedidoProduccion->estado,
+                'cliente' => $pedidoProduccion->cliente,
+                'asesor_id' => $pedidoProduccion->asesor_id,
+            ]);
+        } else {
+            $numeroPedido = $primerRecibo?->numero_pedido;
+            if (!$numeroPedido) {
+                throw new \Exception("ReciboPrenda sin numero_pedido (ID: $pedidoId)");
+            }
         }
         
         // Obtener info del pedido principal
         $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
 
         // Obtener todos los recibos del pedido
-        // Si el pedido principal está ANULADO/ANULADA, no filtrar por estadosPermitidos
-        // porque normalmente esa lista excluye ANULADA.
+        // Si el pedido principal está ANULADO/ANULADA o ENTREGADO, no filtrar por estadosPermitidos
+        // porque normalmente esa lista excluye ANULADA y ENTREGADO.
         $estadoPP = strtoupper(trim($pedidoProduccion?->estado ?? ''));
         $esAnulada = str_starts_with($estadoPP, 'ANULAD');
+        $esEntregada = $estadoPP === 'ENTREGADO';
 
-        $recibos = $esAnulada
+        \Log::info('[obtenerDetallePedido] Estado del pedido', [
+            'numero_pedido' => $numeroPedido,
+            'estado' => $estadoPP,
+            'es_anulada' => $esAnulada,
+            'es_entregada' => $esEntregada
+        ]);
+
+        $recibos = ($esAnulada || $esEntregada)
             ? ReciboPrenda::with(['asesor'])->where('numero_pedido', $numeroPedido)->get()
             : $this->bodegaRepository->obtenerRecibosPedido($numeroPedido, $estadosPermitidos);
+        
+        \Log::info('[obtenerDetallePedido] Recibos obtenidos', ['count' => $recibos->count(), 'es_anulada' => $esAnulada, 'es_entregada' => $esEntregada]);
         
         // Procesar ítems
         $items = $paraDespacho 
@@ -244,11 +285,11 @@ class BodegaPedidoService
         
         return [
             'pedido' => [
-                'id' => $primerRecibo->id,
-                'numero_pedido' => $numeroPedido,
-                'estado' => $pedidoProduccion?->estado ?? $primerRecibo->estado,
-                'cliente' => $primerRecibo->cliente ?? 'Cliente no especificado',
-                'asesor' => $primerRecibo->asesor?->nombre ?? $primerRecibo->asesor?->name ?? null,
+                'id' => $primerRecibo->id ?? null,
+                'numero_pedido' => $numeroPedido ?? null,
+                'estado' => $pedidoProduccion?->estado ?? $primerRecibo?->estado ?? 'Desconocido',
+                'cliente' => $primerRecibo?->cliente ?? $pedidoProduccion?->cliente ?? 'Cliente no especificado',
+                'asesor' => $primerRecibo?->asesor?->nombre ?? $primerRecibo?->asesor?->name ?? null,
             ],
             'items' => $items,
         ];
@@ -1214,6 +1255,9 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
             $detalleExistente->fill($datosBasicos);
             $detalleExistente->save();
             
+            // Actualizar el timestamp del pedido para que aparezca primero en la lista
+            $pedido->touch();
+            
             return $detalleExistente;
             
         } catch (\Throwable $e) {
@@ -1516,6 +1560,9 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
             ],
             $updateBase
         );
+        
+        // Actualizar el timestamp del pedido para que aparezca primero en la lista
+        $pedido->touch();
 
         return $guardado;
     }

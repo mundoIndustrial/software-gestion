@@ -87,6 +87,7 @@ class PedidosController extends Controller
                 'paginaActual' => $datos['pagina_actual'] ?? 1,
                 'porPagina' => $datos['por_pagina'] ?? 20,
                 'search' => $request->query('search', ''),
+                'routeName' => 'gestion-bodega.pedidos',
             ]);
             
         } catch (\Exception $e) {
@@ -126,6 +127,7 @@ class PedidosController extends Controller
                 'paginaActual' => $datos['pagina_actual'] ?? 1,
                 'porPagina' => $datos['por_pagina'] ?? 20,
                 'search' => $request->query('search', ''),
+                'routeName' => 'gestion-bodega.pedidos-anulados',
             ]);
         } catch (\Exception $e) {
             \Log::error('Error en PedidosController@anulados: ' . $e->getMessage());
@@ -164,6 +166,7 @@ class PedidosController extends Controller
                 'paginaActual' => $datos['pagina_actual'] ?? 1,
                 'porPagina' => $datos['por_pagina'] ?? 20,
                 'search' => $request->query('search', ''),
+                'routeName' => 'gestion-bodega.pedidos-entregados',
             ]);
         } catch (\Exception $e) {
             \Log::error('Error en PedidosController@entregados: ' . $e->getMessage());
@@ -388,11 +391,23 @@ class PedidosController extends Controller
     public function show(Request $request, $pedidoId)
     {
         try {
-            // Obtener el ReciboPrenda para conseguir el numero_pedido
-            $reciboPrenda = ReciboPrenda::findOrFail($pedidoId);
+            // Obtener el ReciboPrenda buscando por numero_pedido (parámetro es numero_pedido, no id)
+            $reciboPrenda = ReciboPrenda::where('numero_pedido', $pedidoId)
+                ->orWhere('id', $pedidoId) // Fallback para compatibilidad con id directo
+                ->first();
             
-            // Marcar pedido como visto usando el numero_pedido
-            PedidoProduccion::where('numero_pedido', $reciboPrenda->numero_pedido)
+            // Si no encuentra ReciboPrenda, buscar en PedidoProduccion directamente
+            if (!$reciboPrenda) {
+                $pedidoProduccion = PedidoProduccion::where('numero_pedido', $pedidoId)
+                    ->orWhere('id', $pedidoId)
+                    ->firstOrFail();
+                $numeroPedidoFinal = $pedidoProduccion->numero_pedido;
+            } else {
+                $numeroPedidoFinal = $reciboPrenda->numero_pedido;
+            }
+            
+            // Marcar pedido como visto usando el numero_pedido (en ambos casos)
+            PedidoProduccion::where('numero_pedido', $numeroPedidoFinal)
                 ->update(['viewed_at' => Carbon::now()]);
             
             $datos = $this->bodegaPedidoService->obtenerDetallePedido($pedidoId);
@@ -538,20 +553,21 @@ class PedidosController extends Controller
                 ->porEstado('Pendiente');
 
             // Excluir pedidos anulados para ambas áreas
+            // IMPORTANTE: excluir values NULL de la subquery para evitar problema de NOT IN (NULL, ...)
             $query->whereNotIn('numero_pedido', function($subquery) {
                 $subquery->select('numero_pedido')
                     ->from('pedidos_produccion')
-                    ->where('estado', 'Anulada');
+                    ->where('estado', 'Anulada')
+                    ->whereNotNull('numero_pedido');  // <-- Excluir NULL de la subquery
             });
 
-            // Para EPP, excluir pedidos entregados del principal
-            if ($area === 'EPP') {
-                $query->whereNotIn('numero_pedido', function($subquery) {
-                    $subquery->select('numero_pedido')
-                        ->from('pedidos_produccion')
-                        ->where('estado', 'Entregado');
-                });
-            }
+            // Excluir pedidos entregados del principal para ambas áreas (Costura y EPP)
+            $query->whereNotIn('numero_pedido', function($subquery) {
+                $subquery->select('numero_pedido')
+                    ->from('pedidos_produccion')
+                    ->where('estado', 'Entregado')
+                    ->whereNotNull('numero_pedido');  // <-- Excluir NULL de la subquery
+            });
 
             \Log::info('Query construida, total registros: ' . $query->count());
 
