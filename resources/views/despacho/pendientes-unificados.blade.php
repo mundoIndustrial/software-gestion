@@ -1305,6 +1305,22 @@ function connectWebSocket() {
     }
 }
 
+// Esperar a que waitForEcho esté disponible (definido en bootstrap.js)
+function initializeWebSocket() {
+    // Verificar si waitForEcho está disponible
+    if (typeof window.waitForEcho === 'function') {
+        console.log('✅ waitForEcho disponible, iniciando...');
+        // Usar el sistema waitForEcho para asegurar que Echo esté disponible
+        window.waitForEcho(function() {
+            console.log('🚀 Echo está listo, conectando WebSocket para lista de despacho...');
+            connectWebSocket();
+        });
+    } else {
+        console.log('⏳ waitForEcho aún no disponible, reintentando en 100ms...');
+        setTimeout(initializeWebSocket, 100);
+    }
+}
+
 // Inicializar cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 DOM cargado - Iniciando WebSocket de despacho...');
@@ -1318,11 +1334,8 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('⚠️ No estamos en /despacho/pendientes, estamos en:', window.location.pathname);
     }
     
-    // Usar el sistema waitForEcho para asegurar que Echo esté disponible
-    window.waitForEcho(function() {
-        console.log('🚀 Echo está listo, conectando WebSocket para lista de despacho...');
-        connectWebSocket();
-    });
+    // Intentar inicializar WebSocket (con reintentos si waitForEcho no está listo)
+    initializeWebSocket();
 });
 </script>
 @endpush
