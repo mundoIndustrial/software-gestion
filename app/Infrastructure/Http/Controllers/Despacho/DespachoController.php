@@ -1587,13 +1587,19 @@ class DespachoController extends Controller
             $itemsPendientes = [];
             if (isset($datosCompletos['items']) && is_array($datosCompletos['items'])) {
                 foreach ($datosCompletos['items'] as $item) {
-                    $tipo = $item['tipo'] ?? null;
+                    $tipo = strtolower($item['tipo'] ?? '');  // Convertir a minúsculas para comparación
                     $area = $item['area'] ?? null;
                     $estadoBodega = $item['estado_bodega'] ?? null;
                     $deBodega = (bool) ($item['de_bodega'] ?? ($item['descripcion']['de_bodega'] ?? ($item['objetoPrenda']['de_bodega'] ?? false)));
                     $procesos = $item['descripcion']['procesos'] ?? [];
 
-                    $esEppPendiente = ($tipo === 'epp') && ($area === 'EPP') && ($estadoBodega === 'Pendiente');
+                    // Para EPP, usar epp_estado si está disponible, sino fallback a estado_bodega
+                    // para prendas, siempre usar estado_bodega
+                    $estadoPendiente = ($tipo === 'epp') 
+                        ? (($item['epp_estado'] ?? null) === 'Pendiente' || (!($item['epp_estado']) && $estadoBodega === 'Pendiente'))
+                        : ($estadoBodega === 'Pendiente');
+                    
+                    $esEppPendiente = ($tipo === 'epp') && ($area === 'EPP') && $estadoPendiente;
                     // IMPORTANTE:
                     // Para prendas "de bodega" sin procesos, el item viene por talla.
                     // Solo debemos mostrar las tallas marcadas como Pendiente, no todas las tallas de la prenda.
@@ -1648,6 +1654,8 @@ class DespachoController extends Controller
                     'es_epp' => $es_epp,
                     'tipo' => $item['tipo'] ?? 'prenda',
                     'area' => $item['area'] ?? '',
+                    'tiene_historial' => $item['tiene_historial'] ?? false,
+                    'historial_homologaciones' => $item['historial_homologaciones'] ?? [],
                     'descripcion' => $item['descripcion'] ?? [
                         'nombre_prenda' => $prendaNombre,
                         'nombre' => $prendaNombre,

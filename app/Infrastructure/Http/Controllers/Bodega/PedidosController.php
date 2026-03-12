@@ -235,6 +235,53 @@ class PedidosController extends Controller
                             ?? null;
                     }
 
+                    // Si es un EPP, obtener el historial de homologaciones
+                    if (($item['area'] ?? '') === 'EPP' && !empty($item['pedido_epp_id'] ?? null)) {
+                        $pedidoEppId = $item['pedido_epp_id'];
+                        
+                        // Obtener historial de homologaciones incluyendo deleted_at para los re-creados
+                        $historial = DB::table('pedido_epp')
+                            ->leftJoin('epps', 'pedido_epp.epp_id', '=', 'epps.id')
+                            ->where(function($q) use ($pedidoEppId) {
+                                $q->where('pedido_epp.id', $pedidoEppId)
+                                  ->orWhere('pedido_epp.homologado_de', $pedidoEppId);
+                            })
+                            ->orderBy('pedido_epp.created_at', 'asc')
+                            ->select([
+                                'pedido_epp.id as pedido_epp_id',
+                                'pedido_epp.epp_id',
+                                'epps.nombre_completo as epp_nombre',
+                                'pedido_epp.cantidad',
+                                DB::raw("DATE_FORMAT(pedido_epp.created_at, '%Y-%m-%d %H:%i') as fecha_creacion"),
+                                'pedido_epp.deleted_at'
+                            ])
+                            ->get()
+                            ->toArray();
+                        
+                        // Procesar historial para que sea compatible con el JS
+                        if (!empty($historial)) {
+                            $historialeFormatted = array_map(function($h) {
+                                return [
+                                    'pedido_epp_id' => $h->pedido_epp_id,
+                                    'epp_id' => $h->epp_id,
+                                    'epp_nombre' => $h->epp_nombre,
+                                    'cantidad' => $h->cantidad,
+                                    'fecha_creacion' => $h->fecha_creacion,
+                                    'deleted_at' => $h->deleted_at,
+                                ];
+                            }, $historial);
+                            
+                            $item['tiene_historial'] = count($historialeFormatted) > 1;
+                            $item['historial_homologaciones'] = $historialeFormatted;
+                        } else {
+                            $item['tiene_historial'] = false;
+                            $item['historial_homologaciones'] = [];
+                        }
+                    } else {
+                        $item['tiene_historial'] = false;
+                        $item['historial_homologaciones'] = [];
+                    }
+
                     return $item;
                 }, $datos['items']);
                 
