@@ -102,21 +102,37 @@
                             Mostrando <span class="font-medium">{{ count($pedidosPorPagina) }}</span> de <span class="font-medium">{{ $totalPedidos }}</span> pedidos
                         </div>
                         <div class="flex gap-2">
+                            @php
+                                $totalPaginas = ceil($totalPedidos / $porPagina);
+                                $routeName = $routeName ?? 'gestion-bodega.pedidos';
+                                $queryParams = $search ? ['search' => $search] : [];
+                            @endphp
+                            
                             @if($paginaActual > 1)
-                                <a href="{{ route('gestion-bodega.pedidos', ['page' => $paginaActual - 1] + request()->query()) }}"
+                                <a href="{{ route($routeName, ['page' => 1] + $queryParams) }}"
+                                   class="px-3 py-1 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors"
+                                   title="Primera página">
+                                    « Primero
+                                </a>
+                                <a href="{{ route($routeName, ['page' => $paginaActual - 1] + $queryParams) }}"
                                    class="px-3 py-1 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors">
                                     ← Anterior
                                 </a>
                             @endif
                             
                             <span class="px-3 py-1 text-sm text-slate-600">
-                                Página {{ $paginaActual }} de {{ ceil($totalPedidos / $porPagina) }}
+                                Página {{ $paginaActual }} de {{ $totalPaginas }}
                             </span>
                             
-                            @if($paginaActual < ceil($totalPedidos / $porPagina))
-                                <a href="{{ route('gestion-bodega.pedidos', ['page' => $paginaActual + 1] + request()->query()) }}"
+                            @if($paginaActual < $totalPaginas)
+                                <a href="{{ route($routeName, ['page' => $paginaActual + 1] + $queryParams) }}"
                                    class="px-3 py-1 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors">
                                     Siguiente →
+                                </a>
+                                <a href="{{ route($routeName, ['page' => $totalPaginas] + $queryParams) }}"
+                                   class="px-3 py-1 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors"
+                                   title="Última página">
+                                    Último »
                                 </a>
                             @endif
                         </div>

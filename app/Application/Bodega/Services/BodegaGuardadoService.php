@@ -89,6 +89,9 @@ class BodegaGuardadoService
                 'talla_color_id' => $detalleGuardado->talla_color_id
             ]);
             
+            // Actualizar el timestamp del pedido para que aparezca primero en la lista
+            $pedido->touch();
+            
             // Registrar cambios en auditoría
             $this->registrarAuditoria($detalleAnterior, $detalleGuardado, $numeroPedido, $talla, $prendaNombre, $request);
 
