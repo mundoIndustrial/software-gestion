@@ -509,6 +509,15 @@
                                                                 @endif
                                                             </select>
 
+                                                            @if(($baseItem['homologado_de'] ?? null) && ($baseItem['pedido_epp_id'] ?? null))
+                                                            <button type="button" 
+                                                                    onclick="abrirModalHomologacionBodega({{ $baseItem['pedido_epp_id'] }})" 
+                                                                    title="Este EPP fue homologado del ID {{ $baseItem['homologado_de'] }}"
+                                                                    class="w-full px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold uppercase rounded transition">
+                                                                📋 Ver Homologación
+                                                            </button>
+                                                            @endif
+
                                                             @if(!($esReadOnly ?? false) && !auth()->user()->hasRole('supervisor_gerencia'))
                                                             <button
                                                                 type="button"
@@ -1086,25 +1095,151 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
- * Auto-resize textareas para Pendientes y Observaciones
+ * Abre modal mostrando detalles de la homologación
  */
-document.addEventListener('DOMContentLoaded', function() {
-    const textareas = document.querySelectorAll('.pendientes-input, .observaciones-input');
-    
-    function autoResizeTextarea(textarea) {
-        textarea.style.height = 'auto';
-        textarea.style.height = textarea.scrollHeight + 'px';
-    }
-    
-    textareas.forEach(textarea => {
-        autoResizeTextarea(textarea);
-        
-        textarea.addEventListener('input', function() {
-            autoResizeTextarea(this);
+function abrirModalHomologacionBodega(eppId) {
+    fetch(`/gestion-bodega/epp/${eppId}/homologacion`)
+        .then(response => {
+            if (!response.ok) throw new Error('Error al obtener datos de homologación');
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success || !data.data) {
+                Swal.fire('Error', 'No se encontraron datos de homologación', 'error');
+                return;
+            }
+
+            const { epp_anterior, epp_nuevo, cambios } = data.data;
+
+            let htmlContenido = `
+                <div class="space-y-6">
+                    <!-- EPP Anterior -->
+                    <div class="border border-red-300 bg-red-50 rounded-lg p-4">
+                        <h3 class="font-bold text-red-900 mb-3 text-lg">❌ EPP Anterior (Eliminado)</h3>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div class="bg-white p-2 rounded border border-red-200">
+                                <span class="text-slate-600">ID:</span>
+                                <p class="font-bold text-red-900">${epp_anterior.id}</p>
+                            </div>
+                            <div class="bg-white p-2 rounded border border-red-200">
+                                <span class="text-slate-600">Nombre:</span>
+                                <p class="font-bold text-red-900">${epp_anterior.nombre_epp || epp_anterior.nombre || 'N/A'}</p>
+                            </div>
+                            <div class="bg-white p-2 rounded border border-red-200">
+                                <span class="text-slate-600">Cantidad:</span>
+                                <p class="font-bold text-red-900">${epp_anterior.cantidad}</p>
+                            </div>
+                            <div class="bg-white p-2 rounded border border-red-200">
+                                <span class="text-slate-600">Eliminado:</span>
+                                <p class="font-bold text-red-900">${new Date(epp_anterior.deleted_at).toLocaleString('es-ES')}</p>
+                            </div>
+                            ${epp_anterior.observaciones ? `
+                            <div class="bg-white p-2 rounded border border-red-200 col-span-2">
+                                <span class="text-slate-600">Observaciones:</span>
+                                <p class="font-semibold text-red-900 text-xs mt-1">${epp_anterior.observaciones}</p>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <!-- EPP Nuevo -->
+                    <div class="border border-green-300 bg-green-50 rounded-lg p-4">
+                        <h3 class="font-bold text-green-900 mb-3 text-lg">✅ EPP Nuevo (Actual)</h3>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div class="bg-white p-2 rounded border border-green-200">
+                                <span class="text-slate-600">ID:</span>
+                                <p class="font-bold text-green-900">${epp_nuevo.id}</p>
+                            </div>
+                            <div class="bg-white p-2 rounded border border-green-200">
+                                <span class="text-slate-600">Nombre:</span>
+                                <p class="font-bold text-green-900">${epp_nuevo.nombre_epp || epp_nuevo.nombre || 'N/A'}</p>
+                            </div>
+                            <div class="bg-white p-2 rounded border border-green-200">
+                                <span class="text-slate-600">Cantidad:</span>
+                                <p class="font-bold text-green-900">${epp_nuevo.cantidad}</p>
+                            </div>
+                            <div class="bg-white p-2 rounded border border-green-200">
+                                <span class="text-slate-600">Creado:</span>
+                                <p class="font-bold text-green-900">${new Date(epp_nuevo.created_at).toLocaleString('es-ES')}</p>
+                            </div>
+                            ${epp_nuevo.observaciones ? `
+                            <div class="bg-white p-2 rounded border border-green-200 col-span-2">
+                                <span class="text-slate-600">Observaciones:</span>
+                                <p class="font-semibold text-green-900 text-xs mt-1">${epp_nuevo.observaciones}</p>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Cambios Realizados -->
+                    <div class="border border-blue-300 bg-blue-50 rounded-lg p-4">
+                        <h3 class="font-bold text-blue-900 mb-3 text-lg">📊 Cambios Realizados</h3>
+                        <div class="space-y-2 text-sm">
+                            ${cambios.cantidad_cambio ? `
+                            <div class="flex items-center gap-2 bg-white p-2 rounded border border-blue-200">
+                                <span class="material-symbols-rounded text-orange-600 text-lg">change_circle</span>
+                                <div>
+                                    <span class="text-slate-600">Cantidad: </span>
+                                    <span class="font-bold text-blue-900">${cambios.cantidad_anterior} → ${cambios.cantidad_nueva}</span>
+                                </div>
+                            </div>
+                            ` : ''}
+                            
+                            ${cambios.epp_cambio ? `
+                            <div class="flex items-center gap-2 bg-white p-2 rounded border border-blue-200">
+                                <span class="material-symbols-rounded text-orange-600 text-lg">swap_horiz</span>
+                                <div>
+                                    <span class="text-slate-600">EPP Modificado</span>
+                                    <p class="text-xs text-slate-500">Se cambió el EPP seleccionado</p>
+                                </div>
+                            </div>
+                            ` : ''}
+                            
+                            ${cambios.observaciones_cambio ? `
+                            <div class="flex items-center gap-2 bg-white p-2 rounded border border-blue-200">
+                                <span class="material-symbols-rounded text-orange-600 text-lg">edit_note</span>
+                                <div>
+                                    <span class="text-slate-600">Observaciones Modificadas</span>
+                                    <p class="text-xs text-slate-500">Se actualizaron las observaciones</p>
+                                </div>
+                            </div>
+                            ` : ''}
+                            
+                            ${!cambios.cantidad_cambio && !cambios.epp_cambio && !cambios.observaciones_cambio ? `
+                            <div class="text-center py-2 text-slate-500">
+                                <span class="material-symbols-rounded text-gray-400 text-lg">check_circle</span>
+                                <p class="text-xs mt-1">No se detectaron cambios significativos</p>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            Swal.fire({
+                title: '📋 Detalles de Homologación',
+                html: htmlContenido,
+                icon: 'info',
+                width: '700px',
+                allowOutsideClick: false,
+                allowEscapeKey: true,
+                confirmButtonText: '✓ Entendido',
+                confirmButtonColor: '#3b82f6',
+                didOpen: () => {
+                    const popup = Swal.getPopup();
+                    if (popup) {
+                        popup.style.maxHeight = '90vh';
+                    }
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire('Error', 'Error al cargar datos de homologación: ' + error.message, 'error');
         });
-    });
-});
-</script>
+}
+
+
 
 <!-- Modal de Confirmación (Eliminar Nota) -->
 <div id="modalConfirmarEliminar" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-9999" style="z-index: 100002;">
