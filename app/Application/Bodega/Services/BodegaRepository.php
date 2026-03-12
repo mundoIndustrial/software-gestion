@@ -25,7 +25,7 @@ class BodegaRepository
                     $q->orWhereRaw('UPPER(TRIM(estado)) = ?', [strtoupper($estado)]);
                 }
             })
-            ->orderBy('numero_pedido', 'desc')
+            ->orderBy('updated_at', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();
     }
