@@ -155,6 +155,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                       ]);
                 },
                 'epps' => function($q) {
+                    // Solo EPPs activos (sin soft delete) - los deletados aparecen en modal de homologación
                     $q->with([
                         'epp',
                         'imagenes' => function($q2) {

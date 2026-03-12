@@ -671,6 +671,17 @@ class BodegaPedidoService
         $items = [];
         
         foreach ($epps as $eppEnriquecido) {
+            // Excluir EPPs que son resultados de homologación (tienen homologado_de != NULL)
+            // Mostrar: EPPs normales sin cambios O EPPs deletados que fueron homologados
+            $pedidoEppId = $eppEnriquecido['pedido_epp_id'] ?? null;
+            if ($pedidoEppId) {
+                $pedidoEpp = \App\Models\PedidoEpp::withTrashed()->find($pedidoEppId);
+                // Si tiene homologado_de != NULL, es un "nuevo" que reemplaza otro, no lo mostramos
+                if ($pedidoEpp && $pedidoEpp->homologado_de !== null) {
+                    continue;
+                }
+            }
+            
             $items[] = $this->crearItemEpp($eppEnriquecido, $recibo, $rolesDelUsuario, $areasPermitidas, $pedidoProduccion);
         }
         
@@ -802,6 +813,19 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
         // El pedido_epp_id ya viene en los datos enriquecidos, no hay que buscarlo
         $pedidoEppId = $eppEnriquecido['pedido_epp_id'] ?? null;
         
+        // Obtener si este EPP FUE HOMOLOGADO (si está soft-deleted)
+        // El EPP deletado debe mostrar el botón "Ver Homologación"
+        $homologadoDe = null;
+        if ($pedidoEppId) {
+            $pedidoEpp = \App\Models\PedidoEpp::withTrashed()->find($pedidoEppId);
+            
+            if ($pedidoEpp && $pedidoEpp->deleted_at !== null) {
+                // El EPP está soft-deleted, significa que fue homologado
+                // Usar el ID del EPP para que aparezca el botón
+                $homologadoDe = $pedidoEppId;
+            }
+        }
+        
         // Ya no necesitamos buscar en BD, el ID viene directamente
         
         // Obtener datos de bodega
@@ -823,6 +847,7 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
             'pedido_produccion_id' => $pedidoProduccion?->id,
             'recibo_prenda_id' => $recibo->id,
             'pedido_epp_id' => $pedidoEppId,
+            'homologado_de' => $homologadoDe,
             'asesor' => $asesor,
             'empresa' => $empresa,
             'descripcion' => $eppEnriquecido,
