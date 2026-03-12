@@ -465,6 +465,7 @@ export class PedidosRecibosModule {
             const tallasFormato = parcialResult.data.tallas_formato;
             const tallasFormatoColores = parcialResult.data.tallas_formato_colores;
             const tallasArrayParcial = parcialResult.data.tallas;
+            const tallasDetalleParcial = parcialResult.data.tallas_detalle;
 
             console.log('[PedidosRecibosModule.abrirReciboParcial] Inyectando tallas del parcial:', {
                 tallasOriginales: recibo.tallas,
@@ -491,6 +492,14 @@ export class PedidosRecibosModule {
             // Asegurar consecutivo del anexo como fuente de verdad para el renderer
             if (consecutivoAnexo) {
                 recibo.numero_recibo = consecutivoAnexo;
+            }
+
+            // Inyectar detalles por talla (observaciones/ubicaciones) del anexo
+            // para que Formatters pinte OBSERVACIONES/UBICACIONES POR TALLA solo de las tallas anexadas.
+            if (Array.isArray(tallasDetalleParcial) && tallasDetalleParcial.length > 0) {
+                recibo.tallas_detalle = tallasDetalleParcial;
+            } else {
+                delete recibo.tallas_detalle;
             }
 
             this.modalManager.setState({
@@ -904,7 +913,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
             let currentBlocks = []; // [{type:'genero', genero} | {type:'talla', genero, talla, observaciones}]
             let currentHeightMm = 0;
 
-            const AVAILABLE_HEIGHT_MM = 150;
+            const AVAILABLE_HEIGHT_MM = 110;
             const GEN_HEADER_HEIGHT_MM = 4;
             const TALLA_TITLE_HEIGHT_MM = 6;
             const LINE_HEIGHT_MM = 3.2;
@@ -1093,7 +1102,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
             }).join('');
 
             const css = `
-                :root { --page-width: 210mm; --page-height: 297mm; --page-padding: 5mm; --brand-font: Inter, ui-sans-serif, system-ui, sans-serif; }
+                :root { --page-width: 180mm; --page-height: 297mm; --page-padding: 5mm; --brand-font: Inter, ui-sans-serif, system-ui, sans-serif; }
                 * { box-sizing: border-box; }
                 html, body { margin: 0; padding: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 body { font-family: var(--brand-font); color: #111; }
@@ -1105,7 +1114,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                   .receipt-card { height: 100%; border-width: 1.2mm; border-radius: 6mm; padding: 6mm 6mm 60px 6mm; box-shadow: none; }
                   /* Altura fija para que el contenido no sobrepase el separator/footer y fluya por columnas */
                   .tallas-columns {
-                    height: 150mm;
+                    height: 110mm;
                     overflow: hidden;
                     column-count: 4;
                     -webkit-column-count: 4;
@@ -1116,7 +1125,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                     -moz-column-gap: 3px;
                   }
                 }
-                .page { width: var(--page-width); min-height: var(--page-height); padding: var(--page-padding); box-sizing: border-box; position: relative; overflow: hidden; }
+                .page { width: var(--page-width); min-height: var(--page-height); padding: var(--page-padding); box-sizing: border-box; position: relative; overflow: hidden; margin: 0 auto; }
                 .receipt-card { width: 100%; border: 2px solid #111; border-radius: 12px; padding: 20px 20px 70px 20px; position: relative; }
                 .brand { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 15px; }
                 .brand .logo { font-weight: 900; font-size: 24px; line-height: 1; }
@@ -1134,7 +1143,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                 .tallas-resumen { color:#d32f2f; font-weight: 900; }
                 /* Vista previa en popup: mantener el mismo flujo por columnas que en impresión */
                 .tallas-columns {
-                  height: 150mm;
+                  height: 110mm;
                   overflow: hidden;
                   column-count: 4;
                   -webkit-column-count: 4;
@@ -1152,24 +1161,24 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                 .observaciones-list li { margin-bottom: 1px; line-height: 1.1; break-inside: auto; page-break-inside: auto; }
                 .observaciones-list li::before { content: "• "; margin-right: 1px; }
                 .separator-line { position: absolute; bottom: 60px; left: 0; right: 0; height: 1mm; background: #111; }
-                .footer { position:absolute; bottom: 0; left:0; right:0; display:grid; grid-template-columns: 1fr 1fr; font-size: 11px; font-weight: 800; border-top: 1mm solid #111; }
+                .footer { position:absolute; bottom: 0; left:0; right:0; display:grid; grid-template-columns: 1fr 1fr; font-size: 11px; font-weight: 800; }
                 .footer > div { padding: 10px 15px; border-right: 1mm solid #111; min-height: 50px; }
                 .footer > div:last-child { border-right: none; }
 
                 body.singlepage .page {
-                  min-height: auto !important;
-                  height: auto !important;
-                  overflow: visible !important;
+                  min-height: var(--page-height) !important;
+                  height: var(--page-height) !important;
+                  overflow: hidden !important;
                 }
                 body.singlepage .receipt-card {
-                  height: auto !important;
+                  height: 100% !important;
                   min-height: 0 !important;
-                  padding: 20px;
-                  display: inline-block;
+                  padding: 20px 20px 70px 20px;
+                  display: block;
                 }
-                body.singlepage .tallas-columns { height: auto !important; overflow: visible !important; }
-                body.singlepage .separator-line { position: static !important; margin-top: 12px; }
-                body.singlepage .footer { position: static !important; }
+                body.singlepage .tallas-columns { height: 110mm !important; overflow: hidden !important; }
+                body.singlepage .separator-line { position: absolute !important; bottom: 60px !important; left: 0 !important; right: 0 !important; }
+                body.singlepage .footer { position: absolute !important; bottom: 0 !important; left: 0 !important; right: 0 !important; }
             `;
 
             const bodyClass = totalPages > 1 ? 'multipage' : 'singlepage';

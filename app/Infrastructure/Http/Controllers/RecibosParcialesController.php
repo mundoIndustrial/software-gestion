@@ -226,6 +226,97 @@ class RecibosParcialesController extends Controller
                 $descripcionTallas .= '<strong>' . strtoupper($genero) . ':</strong> ' . implode(', ', $tallas_str) . '<br>';
             }
 
+            // === NUEVO: Detalles por talla (observaciones/ubicaciones) filtrados por tallas del anexo ===
+            // Fuente canónica: pedidos_procesos_prenda_tallas (+ pedidos_procesos_prenda_talla_colores si aplica)
+            $tallasDetalle = [];
+            try {
+                $tipoReciboDb = strtoupper((string) ($parcial->tipo_recibo ?? ''));
+                $prendaPedidoId = (int) ($parcial->prenda_pedido_id ?? 0);
+
+                // Resolver el proceso original asociado a esta prenda y tipo de recibo
+                // Se soportan matches por nombre o slug del tipo de proceso.
+                $proceso = DB::table('pedidos_procesos_prenda_detalles as ppd')
+                    ->join('tipos_procesos as tp', 'tp.id', '=', 'ppd.tipo_proceso_id')
+                    ->where('ppd.prenda_pedido_id', $prendaPedidoId)
+                    ->where(function ($q) use ($tipoReciboDb) {
+                        $q->whereRaw('UPPER(tp.nombre) = ?', [$tipoReciboDb])
+                          ->orWhereRaw('UPPER(tp.slug) = ?', [$tipoReciboDb]);
+                    })
+                    ->select('ppd.id as proceso_prenda_detalle_id', 'ppd.modo_tallas')
+                    ->first();
+
+                if ($proceso && $proceso->proceso_prenda_detalle_id) {
+                    $modoTallas = (string) ($proceso->modo_tallas ?? 'generico');
+
+                    // Indexar tallas base del proceso por genero+talla
+                    $tallasProceso = DB::table('pedidos_procesos_prenda_tallas')
+                        ->where('proceso_prenda_detalle_id', (int) $proceso->proceso_prenda_detalle_id)
+                        ->get(['id', 'genero', 'talla', 'ubicaciones', 'observaciones']);
+
+                    $indexTallasProceso = [];
+                    foreach ($tallasProceso as $tpRow) {
+                        $g = strtoupper((string) ($tpRow->genero ?? ''));
+                        $t = strtoupper((string) ($tpRow->talla ?? ''));
+                        if (!$g || !$t) continue;
+                        $indexTallasProceso[$g . '|' . $t] = $tpRow;
+                    }
+
+                    foreach ($tallas as $tallaParcial) {
+                        $genero = strtoupper((string) ($tallaParcial->genero ?? 'CABALLERO'));
+                        $tallaKey = strtoupper((string) ($tallaParcial->talla ?? ''));
+                        $colorNombre = isset($tallaParcial->color_nombre) && $tallaParcial->color_nombre
+                            ? (string) $tallaParcial->color_nombre
+                            : null;
+
+                        $base = $indexTallasProceso[$genero . '|' . $tallaKey] ?? null;
+                        if (!$base) {
+                            continue;
+                        }
+
+                        $ubicaciones = [];
+                        if ($base->ubicaciones) {
+                            if (is_array($base->ubicaciones)) $ubicaciones = $base->ubicaciones;
+                            else if (is_string($base->ubicaciones)) $ubicaciones = json_decode($base->ubicaciones, true) ?? [];
+                        }
+
+                        $observaciones = (string) ($base->observaciones ?? '');
+
+                        // Si el anexo especifica color y el modo es especifico, priorizar detalles por color
+                        if ($colorNombre && strtolower($modoTallas) === 'especifico') {
+                            $rowColor = DB::table('pedidos_procesos_prenda_talla_colores')
+                                ->where('pedidos_procesos_prenda_talla_id', (int) $base->id)
+                                ->whereRaw('UPPER(color_nombre) = ?', [strtoupper($colorNombre)])
+                                ->first(['ubicaciones', 'observaciones']);
+
+                            if ($rowColor) {
+                                $ubicacionesColor = [];
+                                if ($rowColor->ubicaciones) {
+                                    if (is_array($rowColor->ubicaciones)) $ubicacionesColor = $rowColor->ubicaciones;
+                                    else if (is_string($rowColor->ubicaciones)) $ubicacionesColor = json_decode($rowColor->ubicaciones, true) ?? [];
+                                }
+
+                                $ubicaciones = $ubicacionesColor;
+                                $observaciones = (string) ($rowColor->observaciones ?? '');
+                            }
+                        }
+
+                        $tallasDetalle[] = [
+                            'genero' => $genero,
+                            'talla' => $tallaKey,
+                            'cantidad' => (int) ($tallaParcial->cantidad ?? 0),
+                            'color_nombre' => $colorNombre,
+                            'ubicaciones' => $ubicaciones,
+                            'observaciones' => $observaciones,
+                        ];
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('[RecibosParcialesController@show] No se pudieron construir tallas_detalle para anexo', [
+                    'id' => $id,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -233,6 +324,7 @@ class RecibosParcialesController extends Controller
                     'tallas' => $tallas,
                     'tallas_formato' => $tallasFormato, // {CABALLERO: {M: 4, S: 1}} para Formatters
                     'tallas_formato_colores' => $tallasFormatoColores, // {CABALLERO: {M: [{color,cantidad}]}}
+                    'tallas_detalle' => $tallasDetalle,
                     'tallas_descripcion' => $descripcionTallas,
                     'total_tallas' => count($tallas),
                     'total_cantidad' => collect($tallas)->sum('cantidad'),
