@@ -94,15 +94,26 @@
                                 >
                                     <!-- DESCRIPCIÓN (PRENDA) -->
                                     <td class="px-4 py-3 text-xs text-black border-r border-slate-300" style="width: 22%;">
-                                        <div class="font-bold text-black mb-1">
+                                        <div class="font-bold text-black mb-1 flex items-center gap-2 flex-wrap">
                                             {{ $nombre }}
                                             @if($color)
                                                 <span class="font-bold"> - {{ strtoupper($color) }}</span>
                                             @endif
-                                            @if($deBodega)
-                                                <span class="font-bold" style="color: rgb(234, 88, 12);"> - SE SACA DE BODEGA</span>
+                                            @if(($item['tipo'] ?? null) === 'EPP' || ($item['area'] ?? null) === 'EPP')
+                                                @if($item['tiene_historial'] ?? false)
+                                                    <button type="button" 
+                                                            class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition flex items-center gap-1 relative"
+                                                            onclick="toggleHistorialEpp(this, {{ json_encode($item['historial_homologaciones']) }})">
+                                                        <span class="text-sm">🔽</span>
+                                                        <span>Ver cambios</span>
+                                                        <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{ count($item['historial_homologaciones']) - 1 }}</span>
+                                                    </button>
+                                                @endif
                                             @endif
                                         </div>
+                                        @if($deBodega)
+                                            <span class="font-bold" style="color: rgb(234, 88, 12);"> - SE SACA DE BODEGA</span>
+                                        @endif
                                         @if($tela)
                                             <div class="text-black text-xs mb-1">
                                                 Tela: {{ $tela }}
@@ -491,6 +502,93 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 </div>
+
+<script>
+// Función para mostrar el historial de homologaciones de EPP
+function toggleHistorialEpp(btn, historialHomologaciones) {
+    if (!Array.isArray(historialHomologaciones) || historialHomologaciones.length === 0) {
+        Swal.fire('Sin cambios', 'No hay cambios registrados para este EPP', 'info');
+        return;
+    }
+
+    // Construir tabla con header sticky
+    let tablaHtml = `
+        <div class="text-left overflow-y-auto" style="max-height: 50vh;">
+            <table class="w-full border-collapse text-sm">
+                <thead style="position: sticky; top: 0; z-index: 10;">
+                    <tr class="bg-blue-600 text-white shadow-md">
+                        <th class="px-4 py-3 text-left font-bold">Versión</th>
+                        <th class="px-4 py-3 text-left font-bold">Nombre EPP</th>
+                        <th class="px-4 py-3 text-center font-bold w-20">Cantidad</th>
+                        <th class="px-4 py-3 text-center font-bold w-32">Fecha & Hora</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    // Agregar EPP original
+    const original = historialHomologaciones[0];
+    tablaHtml += `
+        <tr class="border-b border-gray-300 bg-green-50 hover:bg-green-100 transition">
+            <td class="px-4 py-3">
+                <span class="inline-block bg-green-500 text-white font-bold px-3 py-1 rounded text-xs">● Original</span>
+            </td>
+            <td class="px-4 py-3 font-medium text-gray-800">${original.epp_nombre || 'N/A'}</td>
+            <td class="px-4 py-3 text-center font-semibold text-gray-800">${original.cantidad || 0}</td>
+            <td class="px-4 py-3 text-center text-gray-700 text-xs">${original.fecha_creacion || 'N/A'}</td>
+        </tr>
+    `;
+
+    // Agregar cambios
+    if (historialHomologaciones.length > 1) {
+        for (let i = 1; i < historialHomologaciones.length; i++) {
+            const cambio = historialHomologaciones[i];
+            const colorClass = i % 2 === 0 ? 'bg-blue-50 hover:bg-blue-100' : 'bg-white hover:bg-gray-50';
+            
+            tablaHtml += `
+                <tr class="border-b border-gray-300 ${colorClass} transition">
+                    <td class="px-4 py-3">
+                        <span class="inline-block bg-blue-500 text-white font-bold px-3 py-1 rounded text-xs">→ #${i}</span>
+                    </td>
+                    <td class="px-4 py-3 font-medium text-gray-800">${cambio.epp_nombre || 'N/A'}</td>
+                    <td class="px-4 py-3 text-center font-semibold text-gray-800">${cambio.cantidad || 0}</td>
+                    <td class="px-4 py-3 text-center text-gray-700 text-xs">${cambio.fecha_creacion || 'N/A'}</td>
+                </tr>
+            `;
+        }
+    }
+
+    tablaHtml += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    // Mostrar modal grande
+    Swal.fire({
+        title: '📋 Historial de Homologaciones',
+        html: tablaHtml,
+        icon: false,
+        width: '850px',
+        padding: '1rem',
+        allowOutsideClick: false,
+        allowEscapeKey: true,
+        showConfirmButton: false,
+        showCloseButton: true,
+        titleClass: 'text-lg font-bold text-gray-800',
+        didOpen: () => {
+            const popup = Swal.getPopup();
+            if (popup) {
+                popup.style.maxHeight = '85vh';
+                const htmlContainer = popup.querySelector('.swal2-html-container');
+                if (htmlContainer) {
+                    htmlContainer.style.padding = '1rem 0';
+                }
+            }
+        }
+    });
+}
+</script>
 
 <script src="{{ asset('js/bodega-pedidos.js') }}?v={{ time() }}"></script>
 @endsection

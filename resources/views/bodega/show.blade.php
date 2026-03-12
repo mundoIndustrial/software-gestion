@@ -1326,7 +1326,7 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
     Swal.fire({
         title: '📋 Historial de Homologaciones',
         html: tablaHtml,
-        icon: 'info',
+        icon: false,
         width: '850px',
         padding: '1rem',
         allowOutsideClick: false,
@@ -1334,7 +1334,6 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
         showConfirmButton: false,
         showCloseButton: true,
         titleClass: 'text-lg font-bold text-gray-800',
-        iconColor: '#3b82f6',
         didOpen: () => {
             const popup = Swal.getPopup();
             if (popup) {
@@ -1342,13 +1341,6 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
                 const htmlContainer = popup.querySelector('.swal2-html-container');
                 if (htmlContainer) {
                     htmlContainer.style.padding = '1rem 0';
-                }
-                // Hacer el icono más pequeño
-                const icon = popup.querySelector('.swal2-icon');
-                if (icon) {
-                    icon.style.width = '2.5rem';
-                    icon.style.height = '2.5rem';
-                    icon.style.marginTop = '0.5rem';
                 }
             }
         }
