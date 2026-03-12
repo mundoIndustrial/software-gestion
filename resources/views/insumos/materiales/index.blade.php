@@ -497,7 +497,11 @@
                 <i class="fas fa-ruler" style="color: #f59e0b; font-size: 1rem;"></i>
                 <span>Ancho y metraje</span>
             </button>
-            
+        `;
+        
+        // Agregar botón "Pasar a Revisar" solo si NO está en estado DEVUELTO_ASESOR
+        if (estado !== 'DEVUELTO_ASESOR') {
+            html += `
             <button style="
                 width: 100%;
                 text-align: left;
@@ -519,7 +523,8 @@
                 <i class="fas fa-arrow-rotate-left" style="color: #dc2626; font-size: 1rem;"></i>
                 <span>Pasar a Revisar</span>
             </button>
-        `;
+            `;
+        }
         
         // Agregar botón de envío solo si está en estado Pendiente
         if (estado === 'Pendiente' || estado === 'PENDIENTE_INSUMOS' || estado === 'Pendiente_Insumos') {
