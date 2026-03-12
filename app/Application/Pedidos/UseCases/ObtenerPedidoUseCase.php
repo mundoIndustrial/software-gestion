@@ -153,16 +153,6 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                                  ->orderBy('created_at', 'desc');
                           }
                       ]);
-                },
-                'epps' => function($q) {
-                    // Solo EPPs activos (sin soft delete) - los deletados aparecen en modal de homologación
-                    $q->with([
-                        'epp',
-                        'imagenes' => function($q2) {
-                            // FOTOS DE EPP - ORDENADAS POR ORDEN
-                            $q2->orderBy('orden', 'asc');
-                        }
-                    ]);
                 }
             ])->find($pedidoId);
 
@@ -188,6 +178,12 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
             }
 
             $prendasCompletas = $this->obtenerPrendasCompletas($modeloEloquent, $modeloEloquent->estado);
+            
+            // Cargar EPPs incluyendo soft-deleted (para mostrar EPPs homologados)
+            $eppsTrashedCollection = $modeloEloquent->eppsConTrashed()->get();
+            // Reemplazar la colección de EPPs con la que incluye soft-deleted
+            $modeloEloquent->setRelation('epps', $eppsTrashedCollection);
+            
             $eppsCompletos = $this->obtenerEppsCompletos($modeloEloquent);
 
             return new PedidoResponseDTO(
@@ -938,10 +934,27 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
 
         try {
             if (!$modeloEloquent || !$modeloEloquent->epps) {
+                \Log::debug('[obtenerEppsCompletos] Sin EPPs en modelo', [
+                    'modelo_existe' => $modeloEloquent ? true : false,
+                    'epps_existe' => $modeloEloquent && $modeloEloquent->epps ? true : false
+                ]);
                 return [];
             }
 
+            \Log::debug('[obtenerEppsCompletos] EPPs a procesar', [
+                'cantidad' => count($modeloEloquent->epps),
+                'ids' => $modeloEloquent->epps->pluck('id')->toArray(),
+                'nombres' => $modeloEloquent->epps->map(fn($e) => $e->epp?->nombre ?? 'sin nombre')->toArray(),
+                'deleted_at' => $modeloEloquent->epps->pluck('deleted_at')->toArray()
+            ]);
+
             foreach ($modeloEloquent->epps as $epp) {
+                \Log::debug('[obtenerEppsCompletos] Procesando EPP', [
+                    'id' => $epp->id,
+                    'nombre' => $epp->epp?->nombre ?? 'sin nombre',
+                    'deleted_at' => $epp->deleted_at
+                ]);
+                
                 $imagenes = [];
                 
                 // Obtener imágenes del EPP ordenadas

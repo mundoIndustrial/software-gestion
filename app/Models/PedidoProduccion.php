@@ -226,6 +226,16 @@ class PedidoProduccion extends Model
     }
 
     /**
+     * Relación: Un pedido tiene muchos EPP incluidos soft-deleted (para homologaciones)
+     */
+    public function eppsConTrashed()
+    {
+        return $this->hasMany(PedidoEpp::class, 'pedido_produccion_id')
+            ->withTrashed()
+            ->with('epp');  // Cargar también los datos del EPP
+    }
+
+    /**
      * Relación: Acceso directo a registros de pedido_epp
      */
     public function pedidoEpps(): HasMany
