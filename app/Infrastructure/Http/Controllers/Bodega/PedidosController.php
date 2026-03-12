@@ -300,6 +300,12 @@ class PedidosController extends Controller
             
             $datos = $this->bodegaPedidoService->obtenerDetallePedido($pedidoId);
             
+            \Log::debug('[PedidosController@show] Datos obtenidos del servicio', [
+                'items_count' => count($datos['items'] ?? []),
+                'items_tipos' => array_unique(array_map(fn($item) => $item['tipo'] ?? 'unknown', $datos['items'] ?? [])),
+                'rolesDelUsuario' => $this->getUserRoles(),
+            ]);
+            
             // Verificar si el usuario es de solo lectura
             $rolesDelUsuario = $this->getUserRoles();
             $esReadOnly = $this->isReadOnly();

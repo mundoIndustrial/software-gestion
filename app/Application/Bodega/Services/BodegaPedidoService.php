@@ -552,7 +552,12 @@ class BodegaPedidoService
                 }
                 
                 if (isset($datosCompletos->epps) && is_array($datosCompletos->epps)) {
-                    $items = array_merge($items, $this->procesarEpps($datosCompletos->epps, $recibo, $rolesDelUsuario, $areasPermitidas, $pedidoProduccion));
+                    $eppsProcesados = $this->procesarEpps($datosCompletos->epps, $recibo, $rolesDelUsuario, $areasPermitidas, $pedidoProduccion);
+                    \Log::debug('[procesarItemsPedido] EPPs procesados', [
+                        'cantidad' => count($eppsProcesados),
+                        'areas' => array_map(fn($epp) => $epp['area'] ?? 'null', $eppsProcesados)
+                    ]);
+                    $items = array_merge($items, $eppsProcesados);
                 }
                 
             } catch (\Exception $e) {
@@ -764,13 +769,38 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
         // Obtener si este EPP FUE HOMOLOGADO (si está soft-deleted)
         // El EPP deletado debe mostrar el botón "Ver Homologación"
         $homologadoDe = null;
+        $homologadoPor = null; // Información del EPP que lo reemplazó
+        
         if ($pedidoEppId) {
-            $pedidoEpp = \App\Models\PedidoEpp::withTrashed()->find($pedidoEppId);
-            
-            if ($pedidoEpp && $pedidoEpp->deleted_at !== null) {
-                // El EPP está soft-deleted, significa que fue homologado
-                // Usar el ID del EPP para que aparezca el botón
-                $homologadoDe = $pedidoEppId;
+            try {
+                $pedidoEpp = \App\Models\PedidoEpp::withTrashed()->find($pedidoEppId);
+                
+                if ($pedidoEpp && $pedidoEpp->deleted_at !== null) {
+                    // El EPP está soft-deleted, significa que fue homologado
+                    // Usar el ID del EPP para que aparezca el botón
+                    $homologadoDe = $pedidoEppId;
+                    
+                    // Buscar el EPP que lo reemplazó (el nuevo EPP que tiene homologado_de = $pedidoEppId)
+                    $eppNuevo = \App\Models\PedidoEpp::where('homologado_de', $pedidoEppId)
+                        ->with('epp')
+                        ->first();
+                    
+                    if ($eppNuevo && $eppNuevo->epp) {
+                        $homologadoPor = [
+                            'pedido_epp_id' => $eppNuevo->id,
+                            'epp_id' => $eppNuevo->epp_id,
+                            'epp_nombre' => $eppNuevo->epp->nombre ?? 'EPP sin nombre',
+                            'cantidad' => $eppNuevo->cantidad,
+                            'fecha_homologacion' => $eppNuevo->created_at ? $eppNuevo->created_at->format('Y-m-d') : null,
+                            'observaciones' => $eppNuevo->observaciones,
+                        ];
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::warning('[Bodega EPP] Error al buscar EPP homologado', [
+                    'pedido_epp_id' => $pedidoEppId,
+                    'error' => $e->getMessage()
+                ]);
             }
         }
         
@@ -778,6 +808,14 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
         
         // Obtener datos de bodega
         $bodegaData = $this->obtenerDatosBodega($recibo->numero_pedido, $eppId, $eppNombre, $eppCantidad, $rolesDelUsuario);
+        
+        \Log::debug('[crearItemEpp] Datos obtenidos de bodega', [
+            'eppNombre' => $eppNombre,
+            'eppId' => $eppId,
+            'bodegaData_keys' => array_keys($bodegaData),
+            'area' => $bodegaData['area'] ?? 'NULL',
+            'estado_bodega' => $bodegaData['estado_bodega'] ?? 'NULL'
+        ]);
         
         // Obtener asesor de forma segura
         $asesor = 'N/A';
@@ -788,7 +826,15 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
         // Obtener empresa
         $empresa = $recibo->cliente ?? 'N/A';
         
-        return [
+        // Safeguards para EPPs sin registro en bodega_detalles_talla
+        $area = $bodegaData['area'] ?? WarehouseConstants::AREA_EPP;
+        $estadoBodega = $bodegaData['estado_bodega'] ?? WarehouseConstants::STATE_PENDING;
+        $cantidad = $bodegaData['cantidad'] ?? $eppCantidad;
+        $pendientes = $bodegaData['pendientes'] ?? 0;
+        $fechaEntrega = $bodegaData['fecha_entrega'] ?? null;
+        $fechaPedido = $bodegaData['fecha_pedido'] ?? null;
+        
+        $itemEpp = [
             'id' => $recibo->id,
             'tipo' => WarehouseConstants::AREA_EPP,
             'numero_pedido' => $recibo->numero_pedido,
@@ -796,31 +842,40 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
             'recibo_prenda_id' => $recibo->id,
             'pedido_epp_id' => $pedidoEppId,
             'homologado_de' => $homologadoDe,
+            'homologado_por' => $homologadoPor,
             'asesor' => $asesor,
             'empresa' => $empresa,
             'descripcion' => $eppEnriquecido,
             'talla' => $eppId,
-            'cantidad' => $bodegaData['cantidad'] ?? $eppCantidad,
+            'cantidad' => $cantidad,
             'cantidad_total' => $eppCantidad,
             'observaciones' => $bodegaData['observaciones'] ?? null,
-            'pendientes' => $bodegaData['pendientes'] ?? null,
-            'fecha_entrega' => $bodegaData['fecha_entrega'],
-            'fecha_pedido' => $bodegaData['fecha_pedido'],
-            'estado_bodega' => $bodegaData['estado_bodega'],
+            'pendientes' => $pendientes,
+            'fecha_entrega' => $fechaEntrega,
+            'fecha_pedido' => $fechaPedido,
+            'estado_bodega' => $estadoBodega,
             'costura_estado' => $bodegaData['costura_estado'] ?? null,
             'epp_estado' => $bodegaData['epp_estado'] ?? null,
-            'area' => $bodegaData['area'],
+            'area' => $area,
             'tallas' => [[
                 'talla' => $eppId,
-                'cantidad' => $bodegaData['cantidad'] ?? $eppCantidad,
-                'pendientes' => $bodegaData['pendientes'] ?? 0,
-                'area' => $bodegaData['area'] ?? '',
-                'estado_bodega' => $bodegaData['estado_bodega'] ?? WarehouseConstants::STATE_PENDING,
+                'cantidad' => $cantidad,
+                'pendientes' => $pendientes,
+                'area' => $area,
+                'estado_bodega' => $estadoBodega,
                 'pedido_produccion_id' => $bodegaData['id'] ?? null,
                 'observaciones' => $bodegaData['observaciones'] ?? '',
-                'fecha_entrega' => $bodegaData['fecha_entrega'] ?? ''
+                'fecha_entrega' => $fechaEntrega ?? ''
             ]],
         ];
+        
+        \Log::debug('[crearItemEpp] Item creado', [
+            'area' => $itemEpp['area'],
+            'tipo' => $itemEpp['tipo'],
+            'eppNombre' => $eppNombre
+        ]);
+        
+        return $itemEpp;
     }
 
     private function obtenerDatosBodega(string $numeroPedido, string $talla, ?string $prendaNombre, int $cantidad, array $rolesDelUsuario, ?int $tallaColorId = null, ?int $prendaId = null, ?string $genero = null): array
@@ -884,6 +939,16 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
         $area = $datosFinales?->area ?? $bodegaDataBase?->area;
         $estadoEspecifico = $this->obtenerEstadoEspecifico($area, $estado, $datosFinales, $bodegaDataBase);
         
+        // Asegurar que el área tiene valor (especialmente para EPPs sin registro en BD)
+        if (empty($area)) {
+            $area = WarehouseConstants::AREA_EPP;
+        }
+        
+        // Asegurar que estado_bodega tiene valor por defecto
+        if (empty($estado)) {
+            $estado = WarehouseConstants::STATE_PENDING;
+        }
+        
         $resultado = [
             'id' => $datosFinales?->id,
             'estado' => $estadoEspecifico,
@@ -898,6 +963,14 @@ $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? WarehouseConstants
             WarehouseConstants::FIELD_FECHA_PEDIDO => $bodegaDataBase?->fecha_pedido ? Carbon::parse($bodegaDataBase->fecha_pedido)->format('Y-m-d') : null,
             'usuario_nombre' => $datosFinales?->usuario_bodega_nombre ?? $bodegaDataBase?->usuario_bodega_nombre,
         ];
+        
+        \Log::debug('[obtenerDatosBodega] Resultado final', [
+            'numeroPedido' => $numeroPedido,
+            'talla' => $talla,
+            'area' => $resultado[WarehouseConstants::FIELD_AREA],
+            'estado_bodega' => $resultado[WarehouseConstants::FIELD_ESTADO_BODEGA],
+            'bodegaDataBase_exists' => $bodegaDataBase ? true : false
+        ]);
         
         return $resultado;
     }

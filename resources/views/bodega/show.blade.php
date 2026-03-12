@@ -509,12 +509,12 @@
                                                                 @endif
                                                             </select>
 
-                                                            @if(($baseItem['homologado_de'] ?? null) && ($baseItem['pedido_epp_id'] ?? null))
+                                                            @if(($baseItem['homologado_de'] ?? null) && ($baseItem['pedido_epp_id'] ?? null) && ($baseItem['homologado_por'] ?? null))
                                                             <button type="button" 
-                                                                    onclick="abrirModalHomologacionBodega({{ $baseItem['pedido_epp_id'] }})" 
-                                                                    title="Este EPP fue homologado del ID {{ $baseItem['homologado_de'] }}"
-                                                                    class="w-full px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold uppercase rounded transition">
-                                                                📋 Ver Homologación
+                                                                    onclick="toggleHomologacionRow(this, {{ json_encode($baseItem['homologado_por']) }})" 
+                                                                    title="EPP homologado"
+                                                                    class="w-full px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold uppercase rounded transition toggle-homologacion-btn">
+                                                                🔽 Ver Homologación
                                                             </button>
                                                             @endif
 
@@ -1239,7 +1239,63 @@ function abrirModalHomologacionBodega(eppId) {
         });
 }
 
+/**
+ * Alternar visibilidad de la fila de homologación
+ * @param {HTMLElement} btn - El botón de alternancia
+ * @param {Object} datosHomologacion - Datos del EPP homologado
+ */
+function toggleHomologacionRow(btn, datosHomologacion) {
+    const tr = btn.closest('tr');
+    
+    // Verificar si la fila expandida ya existe
+    let filaExpandida = tr.nextElementSibling;
+    
+    if (filaExpandida && filaExpandida.classList.contains('homologacion-expandida')) {
+        // Ya está expandida, contraer
+        filaExpandida.classList.add('hidden');
+        btn.innerHTML = '🔽 Ver Homologación';
+        btn.classList.remove('bg-purple-700');
+        btn.classList.add('bg-purple-600');
+        return;
+    }
+    
+    if (!filaExpandida || !filaExpandida.classList.contains('homologacion-expandida')) {
+        // No existe, crear la fila expandida
+        const columnasCount = 9;
+        
+        let obsHtml = '';
+        if (datosHomologacion.observaciones) {
+            obsHtml = '<div class="mt-3 bg-purple-50 rounded p-2"><p class="text-xs text-purple-700 font-semibold mb-1">Observaciones</p><p class="text-sm text-purple-900">' + datosHomologacion.observaciones + '</p></div>';
+        }
+        
+        const html = `<tr class="homologacion-expandida bg-gradient-to-r from-purple-50 to-transparent border-t-2 border-purple-300"><td colspan="${columnasCount}" class="px-6 py-4"><div class="bg-white rounded-lg border border-purple-200 shadow-sm p-4"><div class="flex items-start gap-4"><div class="flex-shrink-0"><span class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-purple-100"><span class="text-purple-700 text-lg">✓</span></span></div><div class="flex-grow"><h4 class="text-sm font-bold text-purple-900 mb-3">EPP Nuevo (Reemplazo)</h4><div class="grid grid-cols-2 md:grid-cols-4 gap-3"><div class="bg-purple-50 rounded p-2"><p class="text-xs text-purple-700 font-semibold">Nombre</p><p class="text-sm text-purple-900 font-bold">${datosHomologacion.epp_nombre || 'N/A'}</p></div><div class="bg-purple-50 rounded p-2"><p class="text-xs text-purple-700 font-semibold">Cantidad</p><p class="text-sm text-purple-900 font-bold">${datosHomologacion.cantidad || 0}</p></div><div class="bg-purple-50 rounded p-2"><p class="text-xs text-purple-700 font-semibold">Fecha Homologación</p><p class="text-sm text-purple-900 font-bold">${datosHomologacion.fecha_homologacion ? new Date(datosHomologacion.fecha_homologacion).toLocaleDateString('es-ES') : 'N/A'}</p></div><div class="bg-purple-50 rounded p-2"><p class="text-xs text-purple-700 font-semibold">ID EPP</p><p class="text-sm text-purple-900 font-bold">#${datosHomologacion.epp_id || 'N/A'}</p></div></div>${obsHtml}</div></div></div></td></tr>`;
+        
+        const nuevaFila = document.createElement('tr');
+        nuevaFila.innerHTML = html;
+        nuevaFila.classList.add('homologacion-expandida');
+        tr.parentNode.insertBefore(nuevaFila, tr.nextSibling);
+    }
+    
+    btn.innerHTML = '🔼 Ocultar Homologación';
+    btn.classList.add('bg-purple-700');
+    btn.classList.remove('bg-purple-600');
+}
 
+// Limpiar filas expandidas cuando se cambia el estado
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('estado-select')) {
+        const tr = e.target.closest('tr');
+        const siguienteTr = tr.nextElementSibling;
+        
+        if (siguienteTr && siguienteTr.classList.contains('homologacion-expandida')) {
+            const btn = tr.querySelector('.toggle-homologacion-btn');
+            if (btn) {
+                btn.click(); // Contraer si estaba expandida
+            }
+        }
+    }
+}, true);
+</script>
 
 <!-- Modal de Confirmación (Eliminar Nota) -->
 <div id="modalConfirmarEliminar" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-9999" style="z-index: 100002;">
