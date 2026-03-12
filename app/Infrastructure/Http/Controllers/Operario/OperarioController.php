@@ -102,9 +102,10 @@ class OperarioController extends Controller
         // Obtener prendas con recibos del operario
         $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibos($usuario);
 
-        if ($verTodas || $usuario->hasRole('vista-costura') || $usuario->hasRole('administrador-costura')) {
+        if ($verTodas || $usuario->hasRole('administrador-costura')) {
             $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibosTodosCostura();
         }
+        // NOTA: vista-costura ya incluye REFLECTIVO en obtenerPrendasConRecibos(), no reemplazar
 
         $areaOperario = $usuario->hasRole('cortador') ? 'Corte' : ($usuario->hasRole('costurero') ? 'Costura' : null);
         if ($areaOperario) {

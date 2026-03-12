@@ -89,10 +89,10 @@
 <div class="tableros-ordenes-container">
     <div class="tableros-ordenes-grid">
         <div class="tablero-modulo" data-module="1">
-            <div class="tablero-modulo-header">MODULO 1</div>
+            <div class="tablero-modulo-header">{{ auth()->user()->hasRole('costura-reflectivo') ? '' : 'MODULO 1' }}</div>
             <div class="tablero-modulo-controls">
                 <div class="tablero-modulo-control">
-                    <label>Encargado: MÓDULO 1</label>
+                    <label>{{ auth()->user()->hasRole('costura-reflectivo') ? 'Encargado: ' : 'Encargado: MÓDULO 1' }}</label>
                 </div>
                 <div class="tablero-modulo-control">
                     <label>Seleccionar Orden</label>
@@ -116,10 +116,10 @@
         </div>
 
         <div class="tablero-modulo" data-module="2">
-            <div class="tablero-modulo-header">MODULO 2</div>
+            <div class="tablero-modulo-header">{{ auth()->user()->hasRole('costura-reflectivo') ? '' : 'MODULO 2' }}</div>
             <div class="tablero-modulo-controls">
                 <div class="tablero-modulo-control">
-                    <label>Encargado: MÓDULO 2</label>
+                    <label>{{ auth()->user()->hasRole('costura-reflectivo') ? 'Encargado: ' : 'Encargado: MÓDULO 2' }}</label>
                 </div>
                 <div class="tablero-modulo-control">
                     <label>Seleccionar Orden</label>
@@ -143,10 +143,10 @@
         </div>
 
         <div class="tablero-modulo" data-module="3">
-            <div class="tablero-modulo-header">MODULO 3</div>
+            <div class="tablero-modulo-header">{{ auth()->user()->hasRole('costura-reflectivo') ? '' : 'MODULO 3' }}</div>
             <div class="tablero-modulo-controls">
                 <div class="tablero-modulo-control">
-                    <label>Encargado: MÓDULO 3</label>
+                    <label>{{ auth()->user()->hasRole('costura-reflectivo') ? 'Encargado: ' : 'Encargado: MÓDULO 3' }}</label>
                 </div>
                 <div class="tablero-modulo-control">
                     <label>Seleccionar Orden</label>
@@ -185,36 +185,59 @@
                 const costureros = Array.isArray(json?.data) ? json.data : [];
                 
                 console.log('Costureros encontrados:', costureros);
+                console.log('Nombres de costureros:', costureros.map(c => c.name));
                 
-                // Filtrar solo los 3 usuarios específicos
-                const costurerosFiltrados = costureros.filter(c => 
-                    c.name === 'MODULO 1' || 
-                    c.name === 'MODULO 2' || 
-                    c.name === 'MODULO 3'
-                );
+                // Verificar si el usuario tiene rol costura-reflectivo
+                const isCosturaReflectivo = @json(auth()->user()->hasRole('costura-reflectivo'));
                 
-                console.log('Costureros filtrados (solo MODULO 1, 2, 3):', costurerosFiltrados);
-                
-                if (costurerosFiltrados.length === 3) {
-                    // Asignar los módulos específicos
+                if (isCosturaReflectivo) {
+                    // Para costura-reflectivo: no asignar encargados fijos, dejar módulos vacíos
+                    console.log('Usuario costura-reflectivo: módulos sin encargado fijo');
                     moduleEncargados = {
-                        '1': 'MODULO 1'.toLowerCase(),
-                        '2': 'MODULO 2'.toLowerCase(), 
-                        '3': 'MODULO 3'.toLowerCase()
+                        '1': '',
+                        '2': '', 
+                        '3': ''
                     };
                     
-                    console.log('Mapeo de encargados:', moduleEncargados);
-                    
-                    // Actualizar las etiquetas en la interfaz
-                    updateEncargadoLabels();
+                    // No actualizar etiquetas inicialmente (dejar vacías)
                 } else {
-                    console.warn('No se encontraron los 3 módulos requeridos. Encontrados:', costurerosFiltrados.length);
-                    // Asignar valores por defecto si no se encuentran los 3
-                    moduleEncargados = {
-                        '1': 'modulo1',
-                        '2': 'modulo2', 
-                        '3': 'modulo3'
-                    };
+                    // Para otros roles: filtrar los 3 usuarios específicos (búsqueda insensible a mayúsculas/minúsculas)
+                    const costurerosFiltrados = costureros.filter(c => {
+                        const name = (c.name || '').toLowerCase().trim();
+                        return name === 'modulo 1' || 
+                               name === 'modulo 2' || 
+                               name === 'modulo 3' ||
+                               name === 'módulo 1' || 
+                               name === 'módulo 2' || 
+                               name === 'módulo 3';
+                    });
+                    
+                    console.log('Costureros filtrados para otros roles:', costurerosFiltrados);
+                    
+                    if (costurerosFiltrados.length >= 1) {
+                        // Asignar encargados específicos para cada módulo
+                        const modulo1 = costurerosFiltrados.find(c => (c.name || '').toLowerCase().trim().includes('modulo 1') || (c.name || '').toLowerCase().trim().includes('módulo 1'))?.name || 'MODULO 1';
+                        const modulo2 = costurerosFiltrados.find(c => (c.name || '').toLowerCase().trim().includes('modulo 2') || (c.name || '').toLowerCase().trim().includes('módulo 2'))?.name || 'MODULO 2';
+                        const modulo3 = costurerosFiltrados.find(c => (c.name || '').toLowerCase().trim().includes('modulo 3') || (c.name || '').toLowerCase().trim().includes('módulo 3'))?.name || 'MODULO 3';
+                        
+                        moduleEncargados = {
+                            '1': modulo1,
+                            '2': modulo2, 
+                            '3': modulo3
+                        };
+                        
+                        console.log('ModuleEncargados inicializado (módulos específicos):', moduleEncargados);
+                        updateEncargadoLabels();
+                    } else {
+                        console.warn('No se encontraron módulos. Encontrados:', costurerosFiltrados.length);
+                        // Asignar valores por defecto si no se encuentran módulos
+                        moduleEncargados = {
+                            '1': 'MODULO 1',
+                            '2': 'MODULO 2', 
+                            '3': 'MODULO 3'
+                        };
+                        updateEncargadoLabels();
+                    }
                 }
             } catch (error) {
                 console.error('Error cargando encargados:', error);
@@ -231,11 +254,49 @@
         function updateEncargadoLabels() {
             Object.keys(moduleEncargados).forEach(module => {
                 const label = document.querySelector(`.tablero-modulo[data-module="${module}"] .tablero-modulo-control:first-child label`);
+                const header = document.querySelector(`.tablero-modulo[data-module="${module}"] .tablero-modulo-header`);
+                
                 if (label) {
                     const encargadoName = moduleEncargados[module];
-                    label.textContent = `Encargado: ${encargadoName.charAt(0).toUpperCase() + encargadoName.slice(1)}`;
+                    if (encargadoName && encargadoName.trim() !== '') {
+                        label.textContent = `Encargado: ${encargadoName.charAt(0).toUpperCase() + encargadoName.slice(1)}`;
+                    } else {
+                        // Para costura-reflectivo: mantener solo "Encargado: "
+                        label.textContent = 'Encargado: ';
+                    }
+                }
+                
+                if (header) {
+                    const encargadoName = moduleEncargados[module];
+                    if (encargadoName && encargadoName.trim() !== '') {
+                        header.textContent = encargadoName.toUpperCase();
+                    } else {
+                        // Para costura-reflectivo: mantener vacío
+                        header.textContent = '';
+                    }
                 }
             });
+        }
+        
+        // Función para actualizar el nombre de un módulo específico cuando se selecciona un recibo
+        function updateModuleName(module, encargadoName) {
+            if (!encargadoName || encargadoName.trim() === '') return;
+            
+            const label = document.querySelector(`.tablero-modulo[data-module="${module}"] .tablero-modulo-control:first-child label`);
+            const header = document.querySelector(`.tablero-modulo[data-module="${module}"] .tablero-modulo-header`);
+            
+            if (label) {
+                label.textContent = `Encargado: ${encargadoName}`;
+            }
+            
+            if (header) {
+                header.textContent = encargadoName.toUpperCase();
+            }
+            
+            // Actualizar también el objeto de encargados
+            moduleEncargados[module] = encargadoName.toLowerCase();
+            
+            console.log(`Módulo ${module} actualizado con encargado: ${encargadoName}`);
         }
 
         function escapeHtml(str) {
@@ -403,7 +464,19 @@
             const encargado = moduleEncargados[module];
             const q = searchInput.value.trim();
 
-            if (!encargado) {
+            // Verificar si el usuario tiene rol costura-reflectivo
+            const isCosturaReflectivo = @json(auth()->user()->hasRole('costura-reflectivo'));
+
+            console.log(`searchRecibos - Módulo ${module}:`, {
+                isCosturaReflectivo,
+                encargado,
+                q,
+                moduleEncargados
+            });
+
+            // Para costura-reflectivo: permitir búsqueda aunque no haya encargado asignado al módulo
+            if (!isCosturaReflectivo && !encargado) {
+                console.warn(`Búsqueda bloqueada - Módulo ${module}: no hay encargado asignado`);
                 hideResults(results);
                 return;
             }
@@ -414,8 +487,16 @@
             }
 
             const url = new URL(window.location.origin + '/tableros_ordenes/api/recibos/buscar');
-            url.searchParams.set('encargado_nombre', encargado);
-            url.searchParams.set('q', q);
+            
+            if (isCosturaReflectivo) {
+                // Para costura-reflectivo: buscar recibos de cualquier encargado con rol costura-reflectivo
+                url.searchParams.set('rol', 'costura-reflectivo');
+                url.searchParams.set('q', q);
+            } else {
+                // Para otros roles: filtrar por encargado específico del módulo
+                url.searchParams.set('encargado_nombre', encargado);
+                url.searchParams.set('q', q);
+            }
 
             try {
                 const json = await fetchJson(url.toString());
@@ -469,6 +550,14 @@
                 selectedReciboByModule[module] = recibo;
                 searchInput.value = `#${recibo.numero_recibo} - ${recibo.cliente || ''}`;
                 hideResults(results);
+
+                // Verificar si el usuario tiene rol costura-reflectivo
+                const isCosturaReflectivo = @json(auth()->user()->hasRole('costura-reflectivo'));
+
+                // Para costura-reflectivo: actualizar el nombre del módulo con el encargado del recibo
+                if (isCosturaReflectivo && recibo?.encargado_nombre) {
+                    updateModuleName(module, recibo.encargado_nombre);
+                }
 
                 const encargado = moduleEncargados[module];
                 if (encargado && recibo?.recibo_id) {
@@ -540,13 +629,44 @@
             // Reusar pipeline existente (renderiza dentro del wrapper)
             if (typeof window.openOrderDetailModalWithProcess === 'function') {
                 try {
-                    await window.openOrderDetailModalWithProcess(Number(pedidoId), Number(prendaId), 'costura');
+                    // Determinar el tipo de proceso según el tipo de recibo
+                    let proceso = 'costura'; // Por defecto para COSTURA
+                    
+                    // Para recibos REFLECTIVO, cargar el proceso REFLECTIVO
+                    if (recibo?.tipo_recibo === 'REFLECTIVO') {
+                        proceso = 'reflectivo'; // Los REFLECTIVO deben cargar su propio proceso
+                    }
+                    
+                    console.log(`Abriendo modal para módulo ${module}:`, {
+                        pedidoId: Number(pedidoId),
+                        prendaId: Number(prendaId),
+                        proceso: proceso,
+                        tipoRecibo: recibo?.tipo_recibo,
+                        reciboId: recibo?.recibo_id
+                    });
+                    
+                    await window.openOrderDetailModalWithProcess(Number(pedidoId), Number(prendaId), proceso);
                     
                     // Restaurar todo después de que se llene el modal
                     setTimeout(() => {
                         // Restaurar ID original
                         wrapper.id = 'order-detail-modal-wrapper-tablero';
                         wrapper.setAttribute('data-module', module);
+                        
+                        // IMPORTANTE: Forzar la actualización del campo del pedido con el consecutivo correcto
+                        const pedidoElement = wrapper.querySelector('#order-pedido');
+                        if (pedidoElement) {
+                            pedidoElement.textContent = `#${recibo.numero_recibo}`;
+                            console.log(`Campo pedido actualizado forzosamente: #${recibo.numero_recibo} (tipo: ${recibo.tipo_recibo})`);
+                        }
+                        
+                        // ACTUALIZAR TÍTULO DEL RECIBO según el tipo
+                        const receiptTitleElement = wrapper.querySelector('#receipt-title');
+                        if (receiptTitleElement) {
+                            const tipoReciboUpper = (recibo.tipo_recibo || 'COSTURA').toUpperCase();
+                            receiptTitleElement.textContent = `RECIBO DE ${tipoReciboUpper}`;
+                            console.log(`Título del recibo actualizado: RECIBO DE ${tipoReciboUpper}`);
+                        }
                         
                         // Restaurar los otros wrappers
                         otrosWrappersData.forEach(({ element, parent, nextSibling }) => {
@@ -557,8 +677,8 @@
                             }
                         });
                         
-                        console.log(`Restaurados ${otrosWrappersData.length} wrappers para módulo ${module}`);
-                    }, 1000);
+                        console.log(`Modal completado para módulo ${module} con recibo #${recibo.numero_recibo}`);
+                    }, 500); // Aumentar el tiempo para asegurar que el modal se cargue completamente
                 } catch (error) {
                     console.error(`Error abriendo modal para módulo ${module}:`, error);
                     
@@ -633,15 +753,17 @@
                         formaPagoElement.textContent = response.formaPago || '';
                     }
                     
-                    // Mostrar información básica si no hay descripción
-                    if (descripcionElement && !descripcionElement.textContent.trim()) {
+                    // Mostrar información completa del recibo
+                    if (descripcionElement) {
                         descripcionElement.innerHTML = `
                             <div style="text-align: center; margin: 20px 0;">
                                 <h4>RECIBO #${recibo.numero_recibo}</h4>
+                                <p><strong>Tipo de Recibo:</strong> ${recibo.tipo_recibo || 'COSTURA'}</p>
                                 <p><strong>Cliente:</strong> ${response.cliente || ''}</p>
                                 <p><strong>Asesor:</strong> ${response.asesor || ''}</p>
                                 <p><strong>Forma de pago:</strong> ${response.formaPago || ''}</p>
                                 <p><strong>Número pedido:</strong> ${response.numeroPedido || ''}</p>
+                                <p><strong>Encargado:</strong> ${recibo.encargado_nombre || 'No asignado'}</p>
                             </div>
                         `;
                     }
