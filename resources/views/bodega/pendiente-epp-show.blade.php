@@ -642,7 +642,7 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
             <table class="w-full border-collapse text-sm">
                 <thead style="position: sticky; top: 0; z-index: 10;">
                     <tr class="bg-blue-600 text-white shadow-md">
-                        <th class="px-4 py-3 text-left font-bold">Versión</th>
+                        <th class="px-2 py-3 text-center font-bold w-14">Versión</th>
                         <th class="px-4 py-3 text-left font-bold">Nombre EPP</th>
                         <th class="px-4 py-3 text-center font-bold w-20">Cantidad</th>
                         <th class="px-4 py-3 text-center font-bold w-32">Fecha & Hora</th>
@@ -655,8 +655,8 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
     const original = historialHomologaciones[0];
     tablaHtml += `
         <tr class="border-b border-gray-300 bg-green-50 hover:bg-green-100 transition">
-            <td class="px-4 py-3">
-                <span class="inline-block bg-green-500 text-white font-bold px-3 py-1 rounded text-xs">● Original</span>
+            <td class="px-2 py-3 text-center">
+                <span class="inline-block bg-green-500 text-white font-bold px-2 py-1 rounded text-xs">● Original</span>
             </td>
             <td class="px-4 py-3 font-medium text-gray-800">${original.epp_nombre || 'N/A'}</td>
             <td class="px-4 py-3 text-center font-semibold text-gray-800">${original.cantidad || 0}</td>
@@ -672,8 +672,8 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
             
             tablaHtml += `
                 <tr class="border-b border-gray-300 ${colorClass} transition">
-                    <td class="px-4 py-3">
-                        <span class="inline-block bg-blue-500 text-white font-bold px-3 py-1 rounded text-xs">→ #${i}</span>
+                    <td class="px-2 py-3 text-center">
+                        <span class="inline-block bg-blue-500 text-white font-bold px-2 py-1 rounded text-xs">→ #${i}</span>
                     </td>
                     <td class="px-4 py-3 font-medium text-gray-800">${cambio.epp_nombre || 'N/A'}</td>
                     <td class="px-4 py-3 text-center font-semibold text-gray-800">${cambio.cantidad || 0}</td>

@@ -111,7 +111,8 @@
                             </div>
                         </div>
                         <div class="menu-divider"></div>
-                        @if(Auth::check() && Auth::user()->hasRole('costura-reflectivo'))
+                        @if(Auth::check() && !Auth::user()->hasRole('bodeguero'))
+                            @if(Auth::user()->hasRole('costura-reflectivo'))
                             <a href="{{ route('operario.dashboard') }}"
                                class="menu-item {{ Route::currentRouteName() === 'tableros-ordenes.index' ? 'active' : '' }}"
                                role="button"
@@ -120,7 +121,7 @@
                                 <span class="material-symbols-rounded">list</span>
                                 <span>Ver todas las ordenes</span>
                             </a>
-                        @else
+                            @else
                             <a href="{{ route('operario.dashboard', ['todas' => 1]) }}"
                                class="menu-item {{ Route::currentRouteName() === 'tableros-ordenes.index' ? 'active' : '' }}"
                                role="button"
@@ -129,6 +130,7 @@
                                 <span class="material-symbols-rounded">list</span>
                                 <span>Ver todas las ordenes</span>
                             </a>
+                            @endif
                         @endif
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
