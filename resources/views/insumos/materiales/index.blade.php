@@ -696,105 +696,6 @@
 </div>
 
 <script>
-    /**
-     * Confirma la eliminación de un material y lo elimina inmediatamente
-     */
-    function confirmarEliminacion(checkbox, materialId) {
-        // Si se deselecciona, mostrar modal de confirmación
-        if (!checkbox.checked) {
-            // Obtener datos del material
-            const fila = checkbox.closest('tr');
-            const celdas = fila.querySelectorAll('td');
-            const nombreMaterial = celdas[0].textContent.trim().replace(/^[•●○◐◑\s]+/, '').trim();
-            
-            const inputsFecha = fila.querySelectorAll('input[type="date"]');
-            const fechaPedido = inputsFecha[0]?.value || 'No especificada';
-            const fechaLlegada = inputsFecha[1]?.value || 'No especificada';
-            
-            // Obtener el pedido del modal (es más confiable)
-            const ordenPedido = document.getElementById('modalPedido').textContent;
-            
-            // Mostrar modal de confirmación
-            Swal.fire({
-                title: '¿Eliminar Material?',
-                html: `<div style="text-align: left; margin: 20px 0;">
-                    <p><strong>Material:</strong> ${nombreMaterial}</p>
-                    <p><strong>Fecha Pedido:</strong> ${fechaPedido}</p>
-                    <p><strong>Fecha Llegada:</strong> ${fechaLlegada}</p>
-                    <p style="color: #ef4444; margin-top: 15px;"><strong><i class="fas fa-exclamation-triangle"></i> Se eliminará este registro y todos sus datos.</strong></p>
-                </div>`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Sí, eliminar',
-                cancelButtonText: 'Cancelar',
-                allowOutsideClick: false,
-                allowEscapeKey: false,
-                didOpen: () => {
-                    const swalContainer = document.querySelector('.swal2-container');
-                    if (swalContainer) {
-                        swalContainer.style.zIndex = '10020';
-                    }
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Eliminar inmediatamente sin guardar
-                    eliminarMaterialInmediatamente(nombreMaterial, ordenPedido, fila);
-                } else {
-                    // Volver a seleccionar si cancela
-                    checkbox.checked = true;
-                }
-            });
-        }
-    }
-
-    /**
-     * Elimina un material inmediatamente del servidor (elimina completamente)
-     */
-    function eliminarMaterialInmediatamente(nombreMaterial, ordenPedido, fila) {
-        Swal.showLoading();
-        
-        fetch(`/insumos/materiales/${ordenPedido}/eliminar`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            },
-            body: JSON.stringify({ 
-                nombre_material: nombreMaterial
-            }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Eliminar la fila con animación
-                fila.style.animation = 'slideOut 0.3s ease-out';
-                setTimeout(() => {
-                    fila.remove();
-                    showToast('Material eliminado correctamente', 'success');
-                    Swal.hideLoading();
-                    Swal.close();
-                }, 300);
-            } else {
-                showToast('Error al eliminar: ' + data.message, 'error');
-                Swal.hideLoading();
-                Swal.close();
-                // Volver a marcar el checkbox si falla
-                const checkbox = fila.querySelector('input[type="checkbox"]');
-                if (checkbox) checkbox.checked = true;
-            }
-        })
-        .catch(error => {
-            showToast('Error al eliminar el material', 'error');
-            Swal.hideLoading();
-            Swal.close();
-            // Volver a marcar el checkbox si falla
-            const checkbox = fila.querySelector('input[type="checkbox"]');
-            if (checkbox) checkbox.checked = true;
-        });
-    }
-
 </script>
 
 {{-- Modal para ver orden --}}
@@ -3141,6 +3042,10 @@
 <!-- FASE 2 Refactoring: Módulos de operaciones y formularios -->
 <script src="{{ asset('js/insumos/material-operations-insumos.js') }}"></script>
 <script src="{{ asset('js/insumos/form-handlers-insumos.js') }}"></script>
+
+<!-- FASE 3 Refactoring: Módulos de estado y ancho/metraje -->
+<script src="{{ asset('js/insumos/status-actions-insumos.js') }}"></script>
+<script src="{{ asset('js/insumos/modal-ancho-metraje-insumos.js') }}"></script>
 
 <!-- Script para el modal de seguimiento -->
 <script src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}?v={{ time() }}"></script>
