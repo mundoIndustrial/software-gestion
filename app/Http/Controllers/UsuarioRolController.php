@@ -9,23 +9,24 @@ use App\Models\Role;
 class UsuarioRolController extends Controller
 {
     /**
-     * Obtener usuarios con rol 'costurero' y 'costura-reflectivo'
+     * Obtener usuarios con rol 'costurero', 'costura-reflectivo' y 'confeccion-sobremedida'
      */
     public function getUsuariosCostura(Request $request)
     {
         try {
-            // Buscar ambos roles
+            // Buscar los tres roles
             $rolCosturero = Role::where('name', 'costurero')->first();
             $rolCosturaReflectivo = Role::where('name', 'costura-reflectivo')->first();
+            $rolConfeccionSobremedida = Role::where('name', 'confeccion-sobremedida')->first();
             
-            if (!$rolCosturero && !$rolCosturaReflectivo) {
+            if (!$rolCosturero && !$rolCosturaReflectivo && !$rolConfeccionSobremedida) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No se encontraron los roles "costurero" o "costura-reflectivo" en el sistema'
+                    'message' => 'No se encontraron los roles "costurero", "costura-reflectivo" o "confeccion-sobremedida" en el sistema'
                 ], 404);
             }
             
-            // Obtener usuarios que tienen cualquiera de los dos roles
+            // Obtener usuarios que tienen cualquiera de los tres roles
             $query = User::select('id', 'name', 'email')
                 ->orderBy('name');
             
@@ -39,7 +40,12 @@ class UsuarioRolController extends Controller
                 $query->orWhereJsonContains('roles_ids', $rolCosturaReflectivo->id);
             }
             
-            // Evitar duplicados si un usuario tiene ambos roles
+            // Si existe rol confeccion-sobremedida, incluir usuarios con ese rol
+            if ($rolConfeccionSobremedida) {
+                $query->orWhereJsonContains('roles_ids', $rolConfeccionSobremedida->id);
+            }
+            
+            // Evitar duplicados si un usuario tiene múltiples roles
             $usuarios = $query->distinct()->get();
 
             return response()->json([

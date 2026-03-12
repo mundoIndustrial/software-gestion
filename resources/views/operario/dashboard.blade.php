@@ -463,7 +463,7 @@
                         // - costurero: mostrar COSTURA por defecto
                         // - cortador: mostrar prendas con área "Corte" (independientemente del tipo de recibo)
                         $displayInicial = '';
-                        if (auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('costurero')) {
+                        if (auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('costurero') || auth()->user()->hasRole('administrador-costura')) {
                             // Mostrar por defecto las que tienen costura (incluyendo las que tienen ambos)
                             $displayInicial = $tieneCostura ? '' : 'none';
                         } elseif (auth()->user()->hasRole('cortador')) {

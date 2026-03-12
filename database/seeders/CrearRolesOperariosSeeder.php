@@ -57,6 +57,15 @@ class CrearRolesOperariosSeeder extends Seeder
             ]
         );
 
+        // Crear rol Confección Sobremedida
+        Role::firstOrCreate(
+            ['name' => 'confeccion-sobremedida'],
+            [
+                'description' => 'Operario encargado de la confección sobremedida',
+                'requires_credentials' => false,
+            ]
+        );
+
         $this->command->info(' Roles de operarios creados exitosamente');
     }
 }

@@ -876,6 +876,28 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
             const receiptTitle = receiptTitleEl ? receiptTitleEl.textContent.trim() : '';
             const titulo = receiptTitle || ('RECIBO DE ' + String(tipoProceso || '').toUpperCase());
 
+            // Consecutivo real del recibo actual (fuente de verdad para impresión)
+            // 1) Preferir el dato estructurado del estado (reciboActual.numero_recibo)
+            // 2) Fallback: leer lo que ya está pintado en el modal (#order-pedido)
+            const numeroReciboActual = reciboActual?.numero_recibo ?? reciboActual?.numeroRecibo ?? null;
+            const numeroReciboDesdeDOM = (() => {
+                try {
+                    const el = document.querySelector('#order-pedido') || document.querySelector('.pedido-number');
+                    const raw = el ? String(el.textContent || '').trim() : '';
+                    if (!raw) return '';
+                    // raw puede ser "#7" o "7"; normalizar a solo número
+                    return raw.startsWith('#') ? raw.slice(1).trim() : raw;
+                } catch (_) {
+                    return '';
+                }
+            })();
+
+            // Número a mostrar en impresión: si no existe, NO inventar un consecutivo.
+            const numeroReciboFinal = (numeroReciboActual !== null && numeroReciboActual !== undefined && String(numeroReciboActual).trim() !== '')
+                ? String(numeroReciboActual).trim()
+                : String(numeroReciboDesdeDOM || '').trim();
+            const numeroParaImpresion = numeroReciboFinal ? ('#' + numeroReciboFinal) : '';
+
             // Paginación (misma lógica del ejemplo): estimación por altura total de 4 columnas.
             // Ajuste: agrupar por género sin repetirlo en cada talla.
             const pages = [];
@@ -983,6 +1005,9 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
 
                 const pageLabel = totalPages > 1 ? (`PÁGINA ${pageNum}`) : '';
 
+                // Mostrar el número real del recibo (ej: #7). Si no existe, no mostrar nada.
+                const reciboLabel = numeroParaImpresion ? numeroParaImpresion : '';
+
                 return `
                     <div class="brand">
                       <div class="logo">MUNDO<br>INDUSTRIAL</div>
@@ -991,7 +1016,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                         <div class="receipt-title-print">${esc(titulo).toUpperCase()}</div>
                       </div>
                     </div>
-                    <div class="page-indicator">#${pageNum}</div>
+                    <div class="page-indicator">${esc(reciboLabel)}</div>
                     <div class="meta">
                       <div><span class="label">FECHA:</span> <span class="value">${esc(fecha || '-')}</span></div>
                       <div style="text-align:right"><span class="label">ASESOR:</span> <span class="value">${esc(asesor || '-')}</span></div>
