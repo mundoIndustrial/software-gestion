@@ -509,12 +509,13 @@
                                                                 @endif
                                                             </select>
 
-                                                            @if(($baseItem['homologado_de'] ?? null) && ($baseItem['pedido_epp_id'] ?? null) && ($baseItem['homologado_por'] ?? null))
+                                                            @if(($baseItem['tiene_historial'] ?? false))
                                                             <button type="button" 
-                                                                    onclick="toggleHomologacionRow(this, {{ json_encode($baseItem['homologado_por']) }})" 
-                                                                    title="EPP homologado"
-                                                                    class="w-full px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold uppercase rounded transition toggle-homologacion-btn">
-                                                                🔽 Ver Homologación
+                                                                    onclick="toggleHistorialEpp(this, {{ json_encode($baseItem['historial_homologaciones']) }})" 
+                                                                    title="Ver historial completo de cambios"
+                                                                    class="w-full px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase rounded transition toggle-homologacion-btn relative">
+                                                                🔽 Ver cambios
+                                                                <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{ count($baseItem['historial_homologaciones']) - 1 }}</span>
                                                             </button>
                                                             @endif
 
@@ -591,8 +592,19 @@
                                                             'tipoBroche_value' => $primeraVariante['tipoBroche_value'] ?? 'NULL'
                                                         ]);
                                                     @endphp
-                                                    <div class="font-bold text-black mb-1">
+                                                    <div class="font-bold text-black mb-1 flex items-center gap-2">
                                                         {{ $nombre }}
+                                                        @if(($item['tipo'] ?? null) === 'epp' || ($item['area'] ?? null) === 'EPP')
+                                                            @if($item['tiene_historial'] ?? false)
+                                                                <button type="button" 
+                                                                        class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition flex items-center gap-1 relative"
+                                                                        onclick="toggleHistorialEpp(this, {{ json_encode($item['historial_homologaciones']) }})">
+                                                                    <span class="text-sm">🔽</span>
+                                                                    <span>Ver cambios</span>
+                                                                    <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{ count($item['historial_homologaciones']) - 1 }}</span>
+                                                                </button>
+                                                            @endif
+                                                        @endif
                                                         @if(($item['de_bodega'] ?? ($desc['de_bodega'] ?? ($item['objetoPrenda']['de_bodega'] ?? false))) )
                                                             <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
                                                         @endif
@@ -1244,57 +1256,102 @@ function abrirModalHomologacionBodega(eppId) {
  * @param {HTMLElement} btn - El botón de alternancia
  * @param {Object} datosHomologacion - Datos del EPP homologado
  */
-function toggleHomologacionRow(btn, datosHomologacion) {
-    const tr = btn.closest('tr');
-    
-    // Verificar si la fila expandida ya existe
-    let filaExpandida = tr.nextElementSibling;
-    
-    if (filaExpandida && filaExpandida.classList.contains('homologacion-expandida')) {
-        // Ya está expandida, contraer
-        filaExpandida.classList.add('hidden');
-        btn.innerHTML = '🔽 Ver Homologación';
-        btn.classList.remove('bg-purple-700');
-        btn.classList.add('bg-purple-600');
+/**
+ * Mostrar historial completo de homologaciones en un modal amigable
+ * @param {HTMLElement} btn - El botón de alternancia
+ * @param {Array} historialHomologaciones - Array con todos los cambios en la cadena
+ */
+function toggleHistorialEpp(btn, historialHomologaciones) {
+    if (!Array.isArray(historialHomologaciones) || historialHomologaciones.length === 0) {
+        Swal.fire('Sin cambios', 'No hay cambios registrados para este EPP', 'info');
         return;
     }
-    
-    if (!filaExpandida || !filaExpandida.classList.contains('homologacion-expandida')) {
-        // No existe, crear la fila expandida
-        const columnasCount = 9;
-        
-        let obsHtml = '';
-        if (datosHomologacion.observaciones) {
-            obsHtml = '<div class="mt-3 bg-purple-50 rounded p-2"><p class="text-xs text-purple-700 font-semibold mb-1">Observaciones</p><p class="text-sm text-purple-900">' + datosHomologacion.observaciones + '</p></div>';
-        }
-        
-        const html = `<tr class="homologacion-expandida bg-gradient-to-r from-purple-50 to-transparent border-t-2 border-purple-300"><td colspan="${columnasCount}" class="px-6 py-4"><div class="bg-white rounded-lg border border-purple-200 shadow-sm p-4"><div class="flex items-start gap-4"><div class="flex-shrink-0"><span class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-purple-100"><span class="text-purple-700 text-lg">✓</span></span></div><div class="flex-grow"><h4 class="text-sm font-bold text-purple-900 mb-3">EPP Nuevo (Reemplazo)</h4><div class="grid grid-cols-2 md:grid-cols-4 gap-3"><div class="bg-purple-50 rounded p-2"><p class="text-xs text-purple-700 font-semibold">Nombre</p><p class="text-sm text-purple-900 font-bold">${datosHomologacion.epp_nombre || 'N/A'}</p></div><div class="bg-purple-50 rounded p-2"><p class="text-xs text-purple-700 font-semibold">Cantidad</p><p class="text-sm text-purple-900 font-bold">${datosHomologacion.cantidad || 0}</p></div><div class="bg-purple-50 rounded p-2"><p class="text-xs text-purple-700 font-semibold">Fecha Homologación</p><p class="text-sm text-purple-900 font-bold">${datosHomologacion.fecha_homologacion ? new Date(datosHomologacion.fecha_homologacion).toLocaleDateString('es-ES') : 'N/A'}</p></div><div class="bg-purple-50 rounded p-2"><p class="text-xs text-purple-700 font-semibold">ID EPP</p><p class="text-sm text-purple-900 font-bold">#${datosHomologacion.epp_id || 'N/A'}</p></div></div>${obsHtml}</div></div></div></td></tr>`;
-        
-        const nuevaFila = document.createElement('tr');
-        nuevaFila.innerHTML = html;
-        nuevaFila.classList.add('homologacion-expandida');
-        tr.parentNode.insertBefore(nuevaFila, tr.nextSibling);
-    }
-    
-    btn.innerHTML = '🔼 Ocultar Homologación';
-    btn.classList.add('bg-purple-700');
-    btn.classList.remove('bg-purple-600');
-}
 
-// Limpiar filas expandidas cuando se cambia el estado
-document.addEventListener('change', function(e) {
-    if (e.target.classList.contains('estado-select')) {
-        const tr = e.target.closest('tr');
-        const siguienteTr = tr.nextElementSibling;
-        
-        if (siguienteTr && siguienteTr.classList.contains('homologacion-expandida')) {
-            const btn = tr.querySelector('.toggle-homologacion-btn');
-            if (btn) {
-                btn.click(); // Contraer si estaba expandida
+    // Construir tabla con header sticky
+    let tablaHtml = `
+        <div class="text-left overflow-y-auto" style="max-height: 50vh;">
+            <table class="w-full border-collapse text-sm">
+                <thead style="position: sticky; top: 0; z-index: 10;">
+                    <tr class="bg-blue-600 text-white shadow-md">
+                        <th class="px-4 py-3 text-left font-bold">Versión</th>
+                        <th class="px-4 py-3 text-left font-bold">Nombre EPP</th>
+                        <th class="px-4 py-3 text-center font-bold w-20">Cantidad</th>
+                        <th class="px-4 py-3 text-center font-bold w-32">Fecha & Hora</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    // Agregar EPP original
+    const original = historialHomologaciones[0];
+    tablaHtml += `
+        <tr class="border-b border-gray-300 bg-green-50 hover:bg-green-100 transition">
+            <td class="px-4 py-3">
+                <span class="inline-block bg-green-500 text-white font-bold px-3 py-1 rounded text-xs">● Original</span>
+            </td>
+            <td class="px-4 py-3 font-medium text-gray-800">${original.epp_nombre || 'N/A'}</td>
+            <td class="px-4 py-3 text-center font-semibold text-gray-800">${original.cantidad || 0}</td>
+            <td class="px-4 py-3 text-center text-gray-700 text-xs">${original.fecha_creacion || 'N/A'}</td>
+        </tr>
+    `;
+
+    // Agregar cambios
+    if (historialHomologaciones.length > 1) {
+        for (let i = 1; i < historialHomologaciones.length; i++) {
+            const cambio = historialHomologaciones[i];
+            const colorClass = i % 2 === 0 ? 'bg-blue-50 hover:bg-blue-100' : 'bg-white hover:bg-gray-50';
+            
+            tablaHtml += `
+                <tr class="border-b border-gray-300 ${colorClass} transition">
+                    <td class="px-4 py-3">
+                        <span class="inline-block bg-blue-500 text-white font-bold px-3 py-1 rounded text-xs">→ #${i}</span>
+                    </td>
+                    <td class="px-4 py-3 font-medium text-gray-800">${cambio.epp_nombre || 'N/A'}</td>
+                    <td class="px-4 py-3 text-center font-semibold text-gray-800">${cambio.cantidad || 0}</td>
+                    <td class="px-4 py-3 text-center text-gray-700 text-xs">${cambio.fecha_creacion || 'N/A'}</td>
+                </tr>
+            `;
+        }
+    }
+
+    tablaHtml += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    // Mostrar modal grande
+    Swal.fire({
+        title: '📋 Historial de Homologaciones',
+        html: tablaHtml,
+        icon: 'info',
+        width: '850px',
+        padding: '1rem',
+        allowOutsideClick: false,
+        allowEscapeKey: true,
+        showConfirmButton: false,
+        showCloseButton: true,
+        titleClass: 'text-lg font-bold text-gray-800',
+        iconColor: '#3b82f6',
+        didOpen: () => {
+            const popup = Swal.getPopup();
+            if (popup) {
+                popup.style.maxHeight = '85vh';
+                const htmlContainer = popup.querySelector('.swal2-html-container');
+                if (htmlContainer) {
+                    htmlContainer.style.padding = '1rem 0';
+                }
+                // Hacer el icono más pequeño
+                const icon = popup.querySelector('.swal2-icon');
+                if (icon) {
+                    icon.style.width = '2.5rem';
+                    icon.style.height = '2.5rem';
+                    icon.style.marginTop = '0.5rem';
+                }
             }
         }
-    }
-}, true);
+    });
+}
 </script>
 
 <!-- Modal de Confirmación (Eliminar Nota) -->
