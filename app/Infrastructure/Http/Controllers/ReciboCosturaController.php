@@ -188,6 +188,28 @@ class ReciboCosturaController extends Controller
                 'area' => 'Control Calidad'
             ]);
 
+            // Notificar a los costureros que este recibo ya no está disponible
+            try {
+                broadcast(new \App\Events\ReciboPasadoControlCalidad(
+                    $pedido->id,
+                    $request->prenda_id,
+                    $recibo->consecutivo_actual,
+                    // Obtener nombre de la prenda
+                    \App\Models\Prenda::find($request->prenda_id)?->nombre ?? 'Prenda desconocida',
+                    $request->tipo_recibo
+                ));
+                
+                Log::info('Broadcast enviado a costureros - recibo pasado a Control Calidad', [
+                    'pedido_id' => $pedido->id,
+                    'prenda_id' => $request->prenda_id,
+                    'numero_recibo' => $recibo->consecutivo_actual
+                ]);
+            } catch (\Exception $e) {
+                Log::warning('Error al enviar broadcast a costureros', [
+                    'error' => $e->getMessage()
+                ]);
+            }
+
             DB::commit();
 
             Log::info('Recibo enviado a Control Calidad', [
@@ -296,8 +318,8 @@ class ReciboCosturaController extends Controller
                 'area' => $areaAnterior
             ]);
 
-            // Eliminar el proceso de Control de Calidad
-            $procesoCC->delete();
+            // Eliminar el proceso de Control de Calidad permanentemente
+            $procesoCC->forceDelete();
 
             DB::commit();
 

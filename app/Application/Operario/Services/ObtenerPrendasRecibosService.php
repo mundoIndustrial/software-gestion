@@ -131,6 +131,25 @@ class ObtenerPrendasRecibosService
                             ->sortByDesc(fn($p) => $p->created_at)
                             ->first();
 
+                        // Consultar si el recibo está completado por área
+                        $completadoCorte = \DB::table('prenda_recibo_completado')
+                            ->where('id_recibo', $recibo->id)
+                            ->where('area', 'corte')
+                            ->exists();
+                        
+                        $completadoCostura = \DB::table('prenda_recibo_completado')
+                            ->where('id_recibo', $recibo->id)
+                            ->where('area', 'costura')
+                            ->exists();
+                        
+                        $completadoControlCalidad = \DB::table('prenda_recibo_completado')
+                            ->where('id_recibo', $recibo->id)
+                            ->where(function($query) {
+                                $query->where('area', 'control calidad')
+                                      ->orWhere('area', 'control de calidad');
+                            })
+                            ->exists();
+
                         return [
                             'id' => $recibo->id,
                             'tipo_recibo' => $recibo->tipo_recibo,
@@ -143,6 +162,9 @@ class ObtenerPrendasRecibosService
                             'encargado_costura' => $procesoCostura ? $procesoCostura->encargado : null,
                             'encargado_corte' => $procesoCorte ? $procesoCorte->encargado : null,
                             'encargado_control_calidad' => $procesoControlCalidad ? $procesoControlCalidad->encargado : null,
+                            'completado_corte' => $completadoCorte,
+                            'completado_costura' => $completadoCostura,
+                            'completado_control_calidad' => $completadoControlCalidad,
                         ];
                     })->toArray(),
                     'total_recibos' => $recibosConEncargado->count(),
@@ -512,6 +534,25 @@ class ObtenerPrendasRecibosService
                             ->latest('created_at')
                             ->first();
 
+                        // Consultar si el recibo está completado por área
+                        $completadoCorte = \DB::table('prenda_recibo_completado')
+                            ->where('id_recibo', $recibo->id)
+                            ->where('area', 'corte')
+                            ->exists();
+                        
+                        $completadoCostura = \DB::table('prenda_recibo_completado')
+                            ->where('id_recibo', $recibo->id)
+                            ->where('area', 'costura')
+                            ->exists();
+                        
+                        $completadoControlCalidad = \DB::table('prenda_recibo_completado')
+                            ->where('id_recibo', $recibo->id)
+                            ->where(function($query) {
+                                $query->where('area', 'control calidad')
+                                      ->orWhere('area', 'control de calidad');
+                            })
+                            ->exists();
+
                         $parcialId = null;
                         $notas = isset($recibo->notas) ? (string) $recibo->notas : '';
                         if ($notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
@@ -545,6 +586,9 @@ class ObtenerPrendasRecibosService
                             'proceso_id' => $procesoCC ? $procesoCC->id : null,
                             'proceso_id_costura' => $procesoCostura ? $procesoCostura->id : null,
                             'encargado_costura' => $procesoCostura ? $procesoCostura->encargado : null,
+                            'completado_corte' => $completadoCorte,
+                            'completado_costura' => $completadoCostura,
+                            'completado_control_calidad' => $completadoControlCalidad,
                             'es_parcial' => $esParcial,
                             'pedido_parcial_id' => $parcialId,
                         ];

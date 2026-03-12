@@ -60,7 +60,7 @@
     </style>
 
 </head>
-<body>
+<body data-user-role="{{ auth()->user()->roles->first()->name ?? 'default' }}">
     <!-- Loading overlay global -->
     <div id="loading-overlay">
         <!-- Spinner mejorado -->
