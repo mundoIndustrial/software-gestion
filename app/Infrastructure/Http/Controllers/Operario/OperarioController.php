@@ -1295,8 +1295,9 @@ class OperarioController extends Controller
 
             $esCortador = $usuario->hasRole('cortador');
             $esCosturero = $usuario->hasRole('costurero');
+            $esCosturaReflectivo = $usuario->hasRole('costura-reflectivo');
             $esAdminCostura = $usuario->hasRole('administrador-costura');
-            $areaOperario = $esCortador ? 'Corte' : (($esCosturero || $esAdminCostura) ? 'Costura' : null);
+            $areaOperario = $esCortador ? 'Corte' : (($esCosturero || $esCosturaReflectivo || $esAdminCostura) ? 'Costura' : null);
             if (!$areaOperario) {
                 return response()->json([
                     'success' => false,
@@ -1435,8 +1436,9 @@ class OperarioController extends Controller
 
             $esCortador = $usuario->hasRole('cortador');
             $esCosturero = $usuario->hasRole('costurero');
+            $esCosturaReflectivo = $usuario->hasRole('costura-reflectivo');
             $esAdminCostura = $usuario->hasRole('administrador-costura');
-            $areaOperario = $esCortador ? 'Corte' : (($esCosturero || $esAdminCostura) ? 'Costura' : null);
+            $areaOperario = $esCortador ? 'Corte' : (($esCosturero || $esCosturaReflectivo || $esAdminCostura) ? 'Costura' : null);
             if (!$areaOperario) {
                 return response()->json([
                     'success' => false,

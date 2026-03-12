@@ -441,6 +441,10 @@
                         $tieneReflectivo = in_array('REFLECTIVO', $tiposRecibos);
                         $tieneCostura = in_array('COSTURA', $tiposRecibos) || in_array('COSTURA-BODEGA', $tiposRecibos);
                         
+                        // Obtener el área del recibo principal para filtros
+                        $reciboPrincipalFiltro = $prenda['recibos'][0] ?? null;
+                        $areaReciboFiltro = strtolower(trim((string) ($reciboPrincipalFiltro['area'] ?? '')));
+                        
                         // Para vista-costura y costura-reflectivo, guardar ambos tipos en el atributo data
                         if (auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('costura-reflectivo')) {
                             // Guardar tipos separados por comas para poder filtrar correctamente
@@ -456,16 +460,18 @@
                         // Por defecto:
                         // - costura-reflectivo: mostrar COSTURA por defecto (pero incluir las que tienen ambos)
                         // - vista-costura: mostrar COSTURA por defecto (pero incluir las que tienen ambos)
+                        // - costurero: mostrar COSTURA por defecto
+                        // - cortador: mostrar prendas con área "Corte" (independientemente del tipo de recibo)
                         $displayInicial = '';
-                        if (auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura')) {
+                        if (auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('costurero')) {
                             // Mostrar por defecto las que tienen costura (incluyendo las que tienen ambos)
                             $displayInicial = $tieneCostura ? '' : 'none';
+                        } elseif (auth()->user()->hasRole('cortador')) {
+                            // Para cortadores: mostrar las que tienen área "Corte"
+                            $displayInicial = $areaReciboFiltro === 'corte' ? '' : 'none';
                         } else {
                             $displayInicial = $tieneReflectivo ? '' : 'none';
                         }
-
-                        $reciboPrincipalFiltro = $prenda['recibos'][0] ?? null;
-                        $areaReciboFiltro = strtolower(trim((string) ($reciboPrincipalFiltro['area'] ?? '')));
                     @endphp
 
                     @if(auth()->user()->hasRole('vista-costura') && $areaReciboFiltro === 'corte')
@@ -478,7 +484,7 @@
                         $reciboCompletadoCostura = (bool) ($reciboPrincipalCard['completado_costura'] ?? false);
                     @endphp
 
-                    <div class="orden-card-simple {{ (auth()->user()->hasRole('costurero') && $reciboCompletadoCostura) ? 'card-completado-costura' : '' }}" 
+                    <div class="orden-card-simple {{ ((auth()->user()->hasRole('costurero') || auth()->user()->hasRole('costura-reflectivo')) && $reciboCompletadoCostura) ? 'card-completado-costura' : '' }}" 
                          data-numero="{{ $prenda['numero_pedido'] }}" 
                          data-prenda="{{ strtolower($prenda['nombre_prenda']) }}"
                          data-prenda-id="{{ $prenda['prenda_id'] }}"
@@ -584,9 +590,16 @@
                                         @if(auth()->user()->hasRole('costurero') && $reciboCompletadoCostura)
                                             <span class="badge-completado-costura is-on">COMPLETADO</span>
                                         @endif
+                                        @if(auth()->user()->hasRole('costura-reflectivo') && $reciboCompletadoCostura)
+                                            <span class="badge-completado-costura is-on">COMPLETADO</span>
+                                        @endif
                                     </div>
                                     <!-- Badge completado para costurero - posicionado en esquina superior derecha solo en mobile -->
                                     @if(auth()->user()->hasRole('costurero') && $reciboCompletadoCostura)
+                                        <span class="badge-completado-costura is-on mobile-top-right">COMPLETADO</span>
+                                    @endif
+                                    <!-- Badge completado para costura-reflectivo - posicionado en esquina superior derecha solo en mobile -->
+                                    @if(auth()->user()->hasRole('costura-reflectivo') && $reciboCompletadoCostura)
                                         <span class="badge-completado-costura is-on mobile-top-right">COMPLETADO</span>
                                     @endif
                                     <!-- Botón de más opciones para mobile -->
@@ -804,6 +817,61 @@
                                                 VER RECIBO
                                             </button>
                                         @endforeach
+                                        
+                                        {{-- Botones de completar/deshacer para costura-reflectivo --}}
+                                        @if(auth()->user()->hasRole('costura-reflectivo'))
+                                            @php
+                                                $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
+                                            @endphp
+                                            @foreach($tiposUnicos as $tipoReciboUnico)
+                                                @php
+                                                    $reciboTipo = collect($prenda['recibos'] ?? [])->first(function($r) use ($tipoReciboUnico) {
+                                                        return strtoupper((string)($r['tipo_recibo'] ?? '')) === strtoupper((string)$tipoReciboUnico);
+                                                    });
+                                                    $reciboId = $reciboTipo['id'] ?? null;
+                                                    $areaRecibo = strtolower(trim((string)($reciboTipo['area'] ?? '')));
+                                                    $esCosturaArea = $areaRecibo === 'costura';
+                                                    $reciboCompletadoArea = false;
+                                                    
+                                                    // Verificar si está completado según el área
+                                                    if ($esCosturaArea) {
+                                                        $reciboCompletadoArea = (bool) ($reciboTipo['completado_costura'] ?? false);
+                                                    } else {
+                                                        $reciboCompletadoArea = (bool) ($reciboTipo['completado_area'] ?? false);
+                                                    }
+                                                    
+                                                    $tipoReciboNormalizado = strtolower($tipoReciboUnico);
+                                                @endphp
+                                                
+                                                @if($reciboId && $esCosturaArea)
+                                                    @if(!$reciboCompletadoArea)
+                                                        <button class="btn-completar-costura" 
+                                                                id="btn-completar-{{ $tipoReciboNormalizado }}-{{ $prenda['prenda_id'] }}"
+                                                                data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                                data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                                data-recibo-id="{{ $reciboId }}"
+                                                                data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                                data-tipo-recibo="{{ $tipoReciboNormalizado }}"
+                                                                onclick="completarCostura(this)">
+                                                            <span class="material-symbols-rounded">check_circle</span>
+                                                            COMPLETAR {{ strtoupper($tipoReciboUnico) }}
+                                                        </button>
+                                                    @else
+                                                        <button class="btn-deshacer-costura" 
+                                                                id="btn-deshacer-{{ $tipoReciboNormalizado }}-{{ $prenda['prenda_id'] }}"
+                                                                data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                                data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                                data-recibo-id="{{ $reciboId }}"
+                                                                data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                                data-tipo-recibo="{{ $tipoReciboNormalizado }}"
+                                                                onclick="deshacerCostura(this)">
+                                                            <span class="material-symbols-rounded">undo</span>
+                                                            DESHACER {{ strtoupper($tipoReciboUnico) }}
+                                                        </button>
+                                                    @endif
+                                                @endif
+                                            @endforeach
+                                        @endif
                                     @else
                                         {{-- Para otros operarios, un solo botón con tipo de recibo --}}
                                         <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $prenda['recibos'][0]['tipo_recibo'] ?? '' }}', {{ !empty($prenda['recibos'][0]['pedido_parcial_id']) ? (int)$prenda['recibos'][0]['pedido_parcial_id'] : 'null' }})">
@@ -885,6 +953,59 @@
                                                 DESHACER
                                             </button>
                                         @endif
+                                    @endif
+                                    
+                                    {{-- Botones mobile para costura-reflectivo --}}
+                                    @if(auth()->user()->hasRole('costura-reflectivo'))
+                                        @php
+                                            $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
+                                        @endphp
+                                        @foreach($tiposUnicos as $tipoReciboUnico)
+                                            @php
+                                                $reciboTipo = collect($prenda['recibos'] ?? [])->first(function($r) use ($tipoReciboUnico) {
+                                                    return strtoupper((string)($r['tipo_recibo'] ?? '')) === strtoupper((string)$tipoReciboUnico);
+                                                });
+                                                $reciboId = $reciboTipo['id'] ?? null;
+                                                $areaRecibo = strtolower(trim((string)($reciboTipo['area'] ?? '')));
+                                                $esCosturaArea = $areaRecibo === 'costura';
+                                                $reciboCompletadoArea = false;
+                                                
+                                                // Verificar si está completado según el área
+                                                if ($esCosturaArea) {
+                                                    $reciboCompletadoArea = (bool) ($reciboTipo['completado_costura'] ?? false);
+                                                } else {
+                                                    $reciboCompletadoArea = (bool) ($reciboTipo['completado_area'] ?? false);
+                                                }
+                                                
+                                                $tipoReciboNormalizado = strtolower($tipoReciboUnico);
+                                            @endphp
+                                            
+                                            @if($reciboId && $esCosturaArea)
+                                                @if(!$reciboCompletadoArea)
+                                                    <button class="btn-completar-costura" 
+                                                            data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                            data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                            data-recibo-id="{{ $reciboId }}"
+                                                            data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                            data-tipo-recibo="{{ $tipoReciboNormalizado }}"
+                                                            onclick="completarCostura(this)">
+                                                        <span class="material-symbols-rounded">check_circle</span>
+                                                        COMPLETAR {{ strtoupper($tipoReciboUnico) }}
+                                                    </button>
+                                                @else
+                                                    <button class="btn-deshacer-costura" 
+                                                            data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                            data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                            data-recibo-id="{{ $reciboId }}"
+                                                            data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                            data-tipo-recibo="{{ $tipoReciboNormalizado }}"
+                                                            onclick="deshacerCostura(this)">
+                                                        <span class="material-symbols-rounded">undo</span>
+                                                        DESHACER {{ strtoupper($tipoReciboUnico) }}
+                                                    </button>
+                                                @endif
+                                            @endif
+                                        @endforeach
                                     @endif
                                     
                                     @if(auth()->user()->hasRole('vista-costura'))
@@ -2109,6 +2230,13 @@ function pasarAControlCalidad(btn) {
                 if (drawerBtn) {
                     actualizarInterfazCostura(drawerBtn.closest('.mobile-actions-drawer'), 'completado', drawerBtn);
                 }
+                
+                // Actualizar badges en el card principal si no se actualizaron
+                const cardBadges = card.querySelectorAll('.badge-completado-costura, .badge-estado');
+                cardBadges.forEach(badge => {
+                    badge.classList.add('is-on');
+                    badge.textContent = 'COMPLETADO';
+                });
             } else {
                 // En caso de error, restaurar botón
                 btn.disabled = false;
@@ -2168,6 +2296,13 @@ function pasarAControlCalidad(btn) {
                 if (drawerBtn) {
                     actualizarInterfazCostura(drawerBtn.closest('.mobile-actions-drawer'), 'deshacer', drawerBtn);
                 }
+                
+                // Actualizar badges en el card principal si no se actualizaron
+                const cardBadges = card.querySelectorAll('.badge-completado-costura, .badge-estado');
+                cardBadges.forEach(badge => {
+                    badge.classList.remove('is-on');
+                    badge.textContent = 'PENDIENTE';
+                });
             } else {
                 // En caso de error, restaurar botón
                 btn.disabled = false;
