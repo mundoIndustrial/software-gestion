@@ -1362,12 +1362,28 @@
             console.error('Modal no encontrado');
             return;
         }
+
+        const tituloModal = document.getElementById('modalNovedadHeaderTitulo');
+        if (tituloModal) {
+            tituloModal.textContent = `NOVEDADES - PEDIDO #${numeroPedido} - RECIBO ${numeroRecibo}`;
+        }
         
         // Configurar datos del modal
         document.getElementById('novedadNumeroPedido').value = numeroPedido;
         document.getElementById('novedadPrendaId').value = prendaId;
         document.getElementById('novedadPrendaNombre').textContent = nombrePrenda;
         document.getElementById('novedadReciboNumero').textContent = numeroRecibo;
+        
+        // Guardar el numero de recibo en un campo oculto para usarlo al guardar
+        let hiddenRecibo = document.getElementById('novedadNumeroRecibo');
+        if (!hiddenRecibo) {
+            hiddenRecibo = document.createElement('input');
+            hiddenRecibo.type = 'hidden';
+            hiddenRecibo.id = 'novedadNumeroRecibo';
+            hiddenRecibo.name = 'numero_recibo';
+            document.getElementById('modalNovedad').appendChild(hiddenRecibo);
+        }
+        hiddenRecibo.value = numeroRecibo;
         
         // Cargar novedades existentes
         cargarNovedadesDelUsuario(numeroPedido, prendaId);
@@ -1408,33 +1424,49 @@
         }
         
         if (novedades.length === 0) {
-            historial.innerHTML = '<p style="color: #999;">No hay novedades registradas</p>';
+            historial.innerHTML = '<div style="padding: 1rem; border: 1px solid #e5e7eb; border-radius: 0.75rem; background: #f9fafb; color: #6b7280; font-size: 0.9rem;">No hay novedades registradas</div>';
             return;
         }
         
         let html = '';
         novedades.forEach(novedad => {
-            const fecha = new Date(novedad.created_at).toLocaleString();
-            const esMia = novedad.es_mia;
+            const fecha = (novedad.creado_en || novedad.created_at || '').toString();
+            const esMia = !!(novedad.es_mia ?? novedad.created_by_me ?? novedad.esPropia ?? false);
+            const tipoRaw = (novedad.tipo_novedad || novedad.tipo || 'observacion').toString();
+            const tipo = tipoRaw.toUpperCase();
+            const usuarioNombre = (novedad.usuario_nombre || '').toString();
+            const usuarioRol = (novedad.usuario_rol || '').toString();
+            const descripcion = (novedad.descripcion || novedad.novedad_texto || '').toString();
+            const descripcionEscaped = descripcion.replace(/'/g, "\\'");
+            
+            // Verificar si la novedad fue editada
+            const editado = parseInt(novedad.editado || 0);
+            let fechaEdicion = '';
+            if (editado === 1 && novedad.editado_en) {
+                fechaEdicion = novedad.editado_en.toString();
+            }
+            
             html += `
-                <div style="padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; margin-bottom: 0.5rem; background: ${esMia ? '#f0f9ff' : '#f9fafb'}">
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
-                        <div>
-                            <strong style="color: #1f2937; font-size: 0.875rem;">${novedad.usuario_nombre}</strong>
-                            <span style="color: #6b7280; font-size: 0.75rem; margin-left: 0.5rem;">${fecha}</span>
+                <div style="padding: 1rem; border: 1px solid #e5e7eb; border-radius: 0.75rem; margin-bottom: 0.75rem; background: #f3f4f6;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                            <span style="background: #dbeafe; color: #1d4ed8; font-weight: 700; font-size: 0.7rem; padding: 0.25rem 0.6rem; border-radius: 0.5rem;">${tipo}</span>
+                            ${editado === 1 ? '<span style="background: #fbbf24; color: #92400e; font-weight: 700; font-size: 0.7rem; padding: 0.25rem 0.6rem; border-radius: 0.5rem;">EDITADO</span>' : ''}
+                            <span style="color: #6b7280; font-size: 0.85rem;">${usuarioNombre}</span>
+                            ${usuarioRol ? `<span style="background: #e5e7eb; color: #374151; font-weight: 700; font-size: 0.7rem; padding: 0.25rem 0.6rem; border-radius: 0.5rem;">${usuarioRol}</span>` : ''}
                         </div>
-                        ${esMia ? `
-                            <div style="display: flex; gap: 0.25rem;">
-                                <button onclick="editarNovedad(${novedad.id}, '${novedad.descripcion.replace(/'/g, "\\'")}', '${novedad.tipo}')" style="background: none; border: none; color: #3b82f6; cursor: pointer; padding: 0.25rem;">
-                                    <span class="material-symbols-rounded" style="font-size: 1rem;">edit</span>
-                                </button>
-                                <button onclick="eliminarNovedad(${novedad.id})" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 0.25rem;">
-                                    <span class="material-symbols-rounded" style="font-size: 1rem;">delete</span>
-                                </button>
-                            </div>
-                        ` : ''}
+                        <div style="color: #9ca3af; font-size: 0.8rem; white-space: nowrap;">${fecha}</div>
                     </div>
-                    <p style="color: #374151; font-size: 0.875rem; line-height: 1.4; margin: 0;">${novedad.descripcion}</p>
+                    <div style="margin-top: 0.75rem; color: #374151; font-size: 0.95rem; line-height: 1.4;">${descripcion}</div>
+                    ${editado === 1 && fechaEdicion ? `
+                        <div style="margin-top: 0.5rem; color: #92400e; font-size: 0.75rem; font-style: italic;">Editado: ${fechaEdicion}</div>
+                    ` : ''}
+                    ${esMia ? `
+                        <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
+                            <button onclick="editarNovedad(${novedad.id}, '${descripcionEscaped}', '${tipoRaw}')" style="background: #3b82f6; color: white; border: none; border-radius: 0.375rem; padding: 0.35rem 0.8rem; cursor: pointer; font-weight: 600; font-size: 0.85rem;">Editar</button>
+                            <button onclick="eliminarNovedad(${novedad.id})" style="background: #ef4444; color: white; border: none; border-radius: 0.375rem; padding: 0.35rem 0.8rem; cursor: pointer; font-weight: 600; font-size: 0.85rem;">Eliminar</button>
+                        </div>
+                    ` : ''}
                 </div>
             `;
         });
@@ -1469,6 +1501,7 @@
         
         const numeroPedido = document.getElementById('novedadNumeroPedido').value;
         const prendaId = document.getElementById('novedadPrendaId').value;
+        const numeroRecibo = document.getElementById('novedadNumeroRecibo').value;
         
         const btnGuardar = document.getElementById('btnGuardarNovedad');
         const textoOriginal = btnGuardar.innerHTML;
@@ -1477,7 +1510,7 @@
         btnGuardar.disabled = true;
         btnGuardar.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">refresh</span> Guardando...';
         
-        fetch('/operario/api/novedades', {
+        fetch('/operario/api/novedades/crear', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1486,8 +1519,9 @@
             body: JSON.stringify({
                 numero_pedido: numeroPedido,
                 prenda_id: prendaId,
-                descripcion: descripcion,
-                tipo: 'general'
+                numero_recibo: numeroRecibo,
+                novedad_texto: descripcion,
+                tipo_novedad: 'observacion'
             })
         })
         .then(response => response.json())
@@ -1501,14 +1535,142 @@
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            mostrarError('Error', 'Error de conexión');
+            console.error('Error guardando novedad:', error);
+            mostrarError('Error', 'Error guardando novedad');
         })
         .finally(() => {
             btnGuardar.disabled = false;
             btnGuardar.innerHTML = textoOriginal;
         });
     }
+
+    function normalizarTipoNovedad(tipo) {
+        const t = (tipo || 'observacion').toString().trim().toLowerCase();
+        const permitidos = ['observacion', 'problema', 'cambio', 'correccion', 'aprobacion', 'rechazo'];
+        return permitidos.includes(t) ? t : 'observacion';
+    }
+
+    function restaurarModoCrearNovedad() {
+        const btnGuardar = document.getElementById('btnGuardarNovedad');
+        if (btnGuardar) {
+            btnGuardar.onclick = guardarNovedad;
+            btnGuardar.textContent = 'Guardar Novedad';
+        }
+
+        const textarea = document.getElementById('novedadDescripcionText');
+        if (textarea) {
+            textarea.value = '';
+        }
+
+        const idEdit = document.getElementById('novedadEditId');
+        if (idEdit) {
+            idEdit.value = '';
+        }
+    }
+
+    window.editarNovedad = function(novedadId, textoActual, tipoActual) {
+        const textarea = document.getElementById('novedadDescripcionText');
+        const btnGuardar = document.getElementById('btnGuardarNovedad');
+        if (!textarea || !btnGuardar) {
+            mostrarError('Error', 'No se pudo iniciar la edición');
+            return;
+        }
+
+        let idEdit = document.getElementById('novedadEditId');
+        if (!idEdit) {
+            idEdit = document.createElement('input');
+            idEdit.type = 'hidden';
+            idEdit.id = 'novedadEditId';
+            document.getElementById('modalNovedad')?.appendChild(idEdit);
+        }
+        idEdit.value = novedadId;
+
+        textarea.value = (textoActual || '').toString();
+        textarea.focus();
+
+        btnGuardar.textContent = 'Actualizar Novedad';
+        btnGuardar.onclick = function() {
+            const descripcion = textarea.value.trim();
+            if (!descripcion) {
+                mostrarError('Error', 'Debes describir la novedad');
+                return;
+            }
+
+            const numeroPedido = document.getElementById('novedadNumeroPedido')?.value;
+            const prendaId = document.getElementById('novedadPrendaId')?.value;
+            const tipo = normalizarTipoNovedad(tipoActual);
+
+            const textoOriginal = btnGuardar.innerHTML;
+            btnGuardar.disabled = true;
+            btnGuardar.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">refresh</span> Actualizando...';
+
+            fetch(`/operario/api/novedades/${novedadId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    novedad_texto: descripcion,
+                    tipo_novedad: tipo
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    restaurarModoCrearNovedad();
+                    if (numeroPedido && prendaId) {
+                        cargarNovedadesDelUsuario(numeroPedido, prendaId);
+                    }
+                    mostrarExito('Éxito', 'Novedad actualizada correctamente');
+                } else {
+                    mostrarError('Error', data.message || 'Error actualizando novedad');
+                }
+            })
+            .catch(err => {
+                console.error('Error actualizando novedad:', err);
+                mostrarError('Error', 'Error actualizando novedad');
+            })
+            .finally(() => {
+                btnGuardar.disabled = false;
+                btnGuardar.innerHTML = 'Actualizar Novedad';
+            });
+        };
+    };
+
+    window.eliminarNovedad = function(novedadId) {
+        if (!confirm('¿Eliminar esta novedad?')) {
+            return;
+        }
+
+        const numeroPedido = document.getElementById('novedadNumeroPedido')?.value;
+        const prendaId = document.getElementById('novedadPrendaId')?.value;
+
+        fetch(`/operario/api/novedades/${novedadId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                if (numeroPedido && prendaId) {
+                    cargarNovedadesDelUsuario(numeroPedido, prendaId);
+                }
+                restaurarModoCrearNovedad();
+                mostrarExito('Éxito', 'Novedad eliminada correctamente');
+            } else {
+                mostrarError('Error', data.message || 'Error eliminando novedad');
+            }
+        })
+        .catch(err => {
+            console.error('Error eliminando novedad:', err);
+            mostrarError('Error', 'Error eliminando novedad');
+        });
+    };
 
     // Funciones para manejar costura
     function manejarPasarACostura(btn) {
@@ -2566,24 +2728,38 @@ function pasarAControlCalidad(btn) {
 
 <!-- Modal de Novedades -->
 <div id="modalNovedad" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
-    <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
-        <h3 style="margin: 0 0 1.5rem 0; font-size: 1.25rem; font-weight: 600;">Agregar Novedad</h3>
-        
-        <input type="hidden" id="novedadNumeroPedido">
-        <input type="hidden" id="novedadPrendaId">
-        
-        <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Descripción de la novedad:</label>
-            <textarea id="novedadDescripcionText" rows="4" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; resize: vertical;" placeholder="Describe la novedad..."></textarea>
+    <div style="background: white; border-radius: 12px; max-width: 760px; width: 92%; max-height: 85vh; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);">
+        <div style="background: #111827; color: white; padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between;">
+            <div id="modalNovedadHeaderTitulo" style="font-weight: 800; letter-spacing: 0.5px; font-size: 0.95rem; text-transform: uppercase;">NOVEDADES</div>
+            <button type="button" onclick="cerrarModalNovedad()" style="background: transparent; border: none; color: white; cursor: pointer; font-size: 1.25rem; line-height: 1; padding: 0.25rem;">×</button>
         </div>
-        
-        <div id="novedadesHistorial" style="margin-bottom: 1.5rem; max-height: 200px; overflow-y: auto;">
-            <!-- Historial de novedades se cargará aquí -->
-        </div>
-        
-        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-            <button type="button" onclick="cerrarModalNovedad()" style="padding: 0.75rem 1.5rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">Cancelar</button>
-            <button type="button" id="btnGuardarNovedad" onclick="guardarNovedad()" style="padding: 0.75rem 1.5rem; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer;">Guardar</button>
+
+        <div style="padding: 1.25rem; overflow-y: auto; max-height: calc(85vh - 56px);">
+            <input type="hidden" id="novedadNumeroPedido">
+            <input type="hidden" id="novedadPrendaId">
+
+            <div style="margin-bottom: 1rem;">
+                <div style="color: #111827; font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem;">Historial:</div>
+                <div id="novedadesHistorial" style="max-height: 220px; overflow-y: auto; padding-right: 0.25rem;"></div>
+            </div>
+
+            <div style="height: 1px; background: #e5e7eb; margin: 1rem 0;"></div>
+
+            <div style="color: #111827; font-weight: 800; font-size: 1rem; margin-bottom: 0.75rem;">Agregar Nueva Novedad:</div>
+
+            <div style="margin-bottom: 1rem;">
+                <textarea id="novedadDescripcionText" rows="5" style="width: 100%; padding: 0.9rem; border: 1px solid #d1d5db; border-radius: 10px; resize: vertical; font-size: 0.95rem;" placeholder="Escribe tu novedad aquí..."></textarea>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                <button type="button" id="btnGuardarNovedad" onclick="guardarNovedad()" style="padding: 0.85rem 1rem; background: #22c55e; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 800;">Guardar Novedad</button>
+                <button type="button" onclick="cerrarModalNovedad()" style="padding: 0.85rem 1rem; background: #94a3b8; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 800;">Cancelar</button>
+            </div>
+
+            <div style="display: none;">
+                <div id="novedadPrendaNombre"></div>
+                <div id="novedadReciboNumero"></div>
+            </div>
         </div>
     </div>
 </div>
