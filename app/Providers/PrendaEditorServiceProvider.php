@@ -26,7 +26,11 @@ class PrendaEditorServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        // Domain Services
+        // ===== PRIMERO: Registrar interfaces =====
+        $this->app->bind(PrendaRepositoryInterface::class, EloquentPrendaRepository::class);
+        $this->app->bind(CotizacionRepositoryInterface::class, EloquentCotizacionRepository::class);
+
+        // ===== SEGUNDO: Domain Services =====
         $this->app->singleton(TallaProcessorService::class, function ($app) {
             return new TallaProcessorService();
         });
@@ -47,7 +51,7 @@ class PrendaEditorServiceProvider extends ServiceProvider
             );
         });
         
-        // Application Services
+        // ===== TERCERO: Application Services (que dependen de interfaces) =====
         $this->app->singleton(PrendaEditorService::class, function ($app) {
             return new PrendaEditorService(
                 $app->make(PrendaRepositoryInterface::class),
@@ -55,10 +59,6 @@ class PrendaEditorServiceProvider extends ServiceProvider
                 $app->make(PrendaTransformadorService::class)
             );
         });
-        
-        // Repository Interfaces
-        $this->app->bind(PrendaRepositoryInterface::class, EloquentPrendaRepository::class);
-        $this->app->bind(CotizacionRepositoryInterface::class, EloquentCotizacionRepository::class);
     }
 
     /**

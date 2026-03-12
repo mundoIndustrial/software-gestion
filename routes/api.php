@@ -840,4 +840,29 @@ Route::withoutMiddleware(['api'])
         ->name('estado');
 });
 
-
+/**
+ * API Routes for Insumos (Materiales)
+ * Calcula demoras y proporciona datos de seguimiento de insumos
+ * 
+ * Prefix: /api/insumos
+ * Auth: middleware('auth')
+ * Controller: App\Infrastructure\Insumos\Controllers\Api\InsumosApiController
+ * 
+ * Implementa DDD delegation:
+ * - Domain: CalculadorDemoraService, DiasDemora ValueObject
+ * - Infrastructure: InsumosApiController
+ */
+Route::prefix('insumos')->name('insumos.')->middleware(['auth'])->group(function () {
+    
+    // Calcular demora entre dos fechas
+    Route::post('calcular-demora', [App\Infrastructure\Insumos\Controllers\Api\InsumosApiController::class, 'calcularDemora'])
+        ->name('calcular-demora');
+    
+    // Calcular demoras para múltiples materiales (bulk)
+    Route::post('calcular-demoras-bulk', [App\Infrastructure\Insumos\Controllers\Api\InsumosApiController::class, 'calcularDemorasBulk'])
+        ->name('calcular-demoras-bulk');
+    
+    // Evaluar si una demora es crítica
+    Route::get('demora-critica', [App\Infrastructure\Insumos\Controllers\Api\InsumosApiController::class, 'esCriticaDemora'])
+        ->name('demora-critica');
+});
