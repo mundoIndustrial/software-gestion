@@ -159,6 +159,10 @@ Route::middleware(['auth', 'role:bodeguero,EPP-Bodega,supervisor_pedidos,supervi
     Route::get('/filtro-datos/{tipo}', [PedidosController::class, 'obtenerDatosFiltro'])
         ->name('obtener-datos-filtro');
 
+    // API para obtener datos de homologación de EPP
+    Route::get('/epp/{eppId}/homologacion', [PedidosController::class, 'obtenerDatosHomologacion'])
+        ->name('obtener-datos-homologacion');
+
     // Notificaciones (campana)
     Route::get('/notificaciones', [PedidosController::class, 'getNotifications'])
         ->name('notificaciones');
