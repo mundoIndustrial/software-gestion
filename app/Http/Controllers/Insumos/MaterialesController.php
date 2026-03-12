@@ -37,7 +37,7 @@ class MaterialesController extends Controller
     }
 
     /**
-     * Listar materiales con filtros
+     * Listar materiales con filtros y información de demora
      */
     public function index(Request $request)
     {
@@ -50,9 +50,12 @@ class MaterialesController extends Controller
             'fecha_de_creacion_de_orden'
         ]);
 
+        // Obtener materiales enriquecidos con demoras
+        $conDemora = $request->boolean('con_demora', true);
         $materiales = $this->materialesService->obtenerMaterialesFiltrados(
             $filtros,
-            $request->get('per_page', 25)
+            $request->get('per_page', 25),
+            $conDemora
         );
 
         if ($request->wantsJson()) {
@@ -119,18 +122,22 @@ class MaterialesController extends Controller
     }
 
     /**
-     * Obtener materiales de una orden
+     * Obtener materiales de una orden con demoras
      */
     public function show($numeroPedido)
     {
         try {
             $materiales = $this->materialesService->obtenerMaterialesFiltrados([
                 'numero_pedido' => $numeroPedido
-            ]);
+            ], 1000, true); // Obtener todo sin paginación
+
+            // Obtener resumen de demoras
+            $resumenDemoras = $this->materialesService->obtenerResumenDemorasPorPedido($numeroPedido);
 
             return response()->json([
                 'success' => true,
-                'data' => $materiales->items(),
+                'data' => $materiales->items() ?? $materiales->toArray() ?? [],
+                'resumen_demoras' => $resumenDemoras,
             ]);
         } catch (\Exception $e) {
             \Log::error('Error al obtener materiales: ' . $e->getMessage());

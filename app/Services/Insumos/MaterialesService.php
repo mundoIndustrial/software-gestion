@@ -4,19 +4,28 @@ namespace App\Services\Insumos;
 
 use App\Repositories\Insumos\MaterialesRepository;
 use App\Models\PedidoProduccion;
+use App\Domain\Insumos\Services\CalculadorDemoraService;
 use Illuminate\Support\Collection;
 
 /**
  * Service para gestión de lógica de negocio de materiales
- * Implementa principios SOLID
+ * Implementa principios SOLID con DDD
+ * 
+ * Delegación:
+ * - CalculadorDemoraService: Cálculos de demora (Domain Service)
  */
 class MaterialesService
 {
     protected $repository;
+    protected $calculadorDemora;
 
-    public function __construct(MaterialesRepository $repository)
-    {
+    public function __construct(
+        MaterialesRepository $repository,
+        CalculadorDemoraService $calculadorDemora = null
+    ) {
         $this->repository = $repository;
+        // Lazy load del servicio de demora si no se inyecta
+        $this->calculadorDemora = $calculadorDemora ?? app(CalculadorDemoraService::class);
     }
 
     /**
@@ -36,14 +45,107 @@ class MaterialesService
     }
 
     /**
-     * Obtener materiales con filtros y paginación
+     * Obtener materiales con filtros y enriquecidos con información de demora
+     * 
+     * @param array $filtros
+     * @param int $perPage
+     * @param bool $conDemora
+     * @return mixed
      */
-    public function obtenerMaterialesFiltrados($filtros = [], $perPage = 25)
+    public function obtenerMaterialesFiltrados($filtros = [], $perPage = 25, $conDemora = true)
     {
         // Aplicar filtros por defecto
         $filtrosAplicados = $this->aplicarFiltrosDefecto($filtros);
 
-        return $this->repository->obtenerConFiltros($filtrosAplicados, $perPage);
+        $materiales = $this->repository->obtenerConFiltros($filtrosAplicados, $perPage);
+
+        // Enriquecer con información de demora si se solicita
+        if ($conDemora && $materiales) {
+            $materiales = $this->enriquecerMaterialesConDemora($materiales);
+        }
+
+        return $materiales;
+    }
+
+    /**
+     * Enriquecer una colección de materiales con información de demora
+     * Delegación al Domain Service
+     * 
+     * @param mixed $materiales Collection, Paginator, o array
+     * @return mixed
+     */
+    protected function enriquecerMaterialesConDemora($materiales)
+    {
+        // Soportar Collection, LengthAwarePaginator, o array
+        $items = $materiales instanceof \Illuminate\Pagination\LengthAwarePaginator
+            ? $materiales->items()
+            : (is_array($materiales) ? $materiales : $materiales->toArray());
+
+        $enriquecidos = array_map(function ($material) {
+            $materialArray = is_object($material) ? $material->toArray() : $material;
+            
+            // Si tiene fechas de pedido y llegada, calcular demora
+            if (
+                isset($materialArray['fecha_pedido']) && 
+                isset($materialArray['fecha_llegada_estimada'])
+            ) {
+                try {
+                    $demora = $this->calculadorDemora->calcularDemora(
+                        $materialArray['fecha_pedido'],
+                        $materialArray['fecha_llegada_estimada']
+                    );
+                    
+                    $materialArray['demora'] = $demora->toArray();
+                } catch (\Exception $e) {
+                    \Log::warning("Error calculando demora para material: {$e->getMessage()}");
+                    $materialArray['demora'] = null;
+                }
+            }
+            
+            return $materialArray;
+        }, $items);
+
+        // Si era paginador, retornar paginado
+        if ($materiales instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+            return $materiales->setCollection(collect($enriquecidos));
+        }
+
+        // Si era Collection, retornar Collection
+        if ($materiales instanceof \Illuminate\Support\Collection) {
+            return collect($enriquecidos);
+        }
+
+        // Si era array, retornar array
+        return $enriquecidos;
+    }
+
+    /**
+     * Obtener resumen de demoras para materiales de un pedido
+     * 
+     * @param string $numeroPedido
+     * @return array
+     */
+    public function obtenerResumenDemorasPorPedido($numeroPedido)
+    {
+        try {
+            $materiales = $this->repository->obtenerConFiltros([
+                'numero_pedido' => $numeroPedido,
+                'tiene_numero_pedido' => true
+            ], 1000); // Sin paginación para el resumen
+
+            $materialesArray = collect($materiales)->toArray();
+            
+            return $this->calculadorDemora->resumirDemorasPorEstado($materialesArray);
+        } catch (\Exception $e) {
+            \Log::error("Error obteniendo resumen de demoras: {$e->getMessage()}");
+            
+            return [
+                'rapido' => 0,
+                'normal' => 0,
+                'lento' => 0,
+                'critico' => 0,
+            ];
+        }
     }
 
     /**
