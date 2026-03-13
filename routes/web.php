@@ -1373,7 +1373,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/supervisor-pedidos/notifications/mark-all-read', [App\Http\Controllers\SupervisorPedidosController::class, 'markAllNotificationsAsRead'])->name('supervisor-pedidos.notifications.mark-all-read');
     
     // Insumos / Supervisor Planta (mantener compatibilidad)
-    Route::post('/insumos/notifications/marcar-leidas', [App\Http\Controllers\Insumos\InsumosController::class, 'markAllNotificationsAsRead'])->name('insumos.notifications.mark-all-read');
+    Route::post('/insumos/notifications/marcar-leidas', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'markAllNotificationsAsRead'])->name('insumos.notifications.mark-all-read');
     
     // ========================================
     // APIS DE CATÁLOGOS (Accesibles para todos los roles autenticados)
@@ -2262,26 +2262,27 @@ Route::middleware('auth')->get('/prenda-variaciones/{tipoPrendaId}', function($t
 
 // Rutas de Insumos
 Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.')->group(function () {
-    Route::get('/dashboard', [\App\Http\Controllers\Insumos\InsumosController::class, 'dashboard'])->name('dashboard');
-    Route::get('/materiales', [\App\Http\Controllers\Insumos\InsumosController::class, 'materiales'])->name('materiales.index');
-    Route::post('/materiales/{pedido}/guardar', [\App\Http\Controllers\Insumos\InsumosController::class, 'guardarMateriales'])->name('materiales.guardar');
-    Route::post('/materiales/{pedido}/eliminar', [\App\Http\Controllers\Insumos\InsumosController::class, 'eliminarMaterial'])->name('materiales.eliminar');
-    Route::post('/materiales/{numeroPedido}/guardar-ancho-metraje', [\App\Http\Controllers\Insumos\InsumosController::class, 'guardarAnchoMetraje'])->name('materiales.guardar-ancho-metraje');
-    Route::get('/materiales/{numeroPedido}/obtener-ancho-metraje', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerAnchoMetraje'])->name('materiales.obtener-ancho-metraje');
-    Route::get('/materiales/{numeroPedido}/obtener-prendas', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerPrendas'])->name('materiales.obtener-prendas');
-    Route::get('/materiales/{numeroPedido}/obtener-ancho-metraje-prenda/{prendaId}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerAnchoMetrajePrenda'])->name('materiales.obtener-ancho-metraje-prenda');
-    Route::post('/materiales/{numeroPedido}/guardar-ancho-metraje-prenda', [\App\Http\Controllers\Insumos\InsumosController::class, 'guardarAnchoMetrajePrenda'])->name('materiales.guardar-ancho-metraje-prenda');
-    Route::post('/materiales/{numeroPedido}/eliminar-ancho-metraje-prenda', [\App\Http\Controllers\Insumos\InsumosController::class, 'eliminarAnchoMetrajePrenda'])->name('materiales.eliminar-ancho-metraje-prenda');
-    Route::get('/materiales/{numeroPedido}/obtener-colores-prenda/{prendaId}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerColoresPrenda'])->name('materiales.obtener-colores-prenda');
-    Route::get('/materiales/{numeroPedido}/obtener-recibo-prenda/{prendaId}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerReciboPrenda'])->name('materiales.obtener-recibo-prenda');
-    Route::get('/api/materiales/{pedido}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerMateriales'])->name('api.materiales');
-    Route::get('/api/filtros/{column}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerValoresFiltro'])->name('api.filtros');
-    Route::get('/api/contar-costura-pendiente', [\App\Http\Controllers\Insumos\InsumosController::class, 'contarCosturaPendiente'])->name('api.contar.costura.pendiente');
-    Route::post('/api/recibo/{id}/marcar-visto', [\App\Http\Controllers\Insumos\InsumosController::class, 'marcarReciboVisto'])->name('api.recibo.marcar-visto');
-    Route::post('/materiales/{numeroPedido}/cambiar-estado', [\App\Http\Controllers\Insumos\InsumosController::class, 'cambiarEstado'])->name('materiales.cambiar-estado');
-    Route::post('/materiales/recibo/{reciboId}/cambiar-estado', [\App\Http\Controllers\Insumos\InsumosController::class, 'cambiarEstadoRecibo'])->name('materiales.recibo.cambiar-estado');
-    Route::post('/materiales/{materialId}/toggle-marcado', [\App\Http\Controllers\Insumos\MaterialesController::class, 'toggleMarcado'])->name('materiales.toggle-marcado');
-    Route::post('/materiales/{reciboId}/pasar-revisar', [\App\Http\Controllers\Insumos\MaterialesController::class, 'pasarRevisar'])->name('materiales.pasar-revisar');
+    Route::get('/dashboard', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'dashboard'])->name('dashboard');
+    Route::get('/materiales', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'materiales'])->name('materiales.index');
+    Route::post('/materiales/{pedido}/guardar', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'guardarMateriales'])->name('materiales.guardar');
+    Route::post('/materiales/{pedido}/eliminar', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'eliminarMaterial'])->name('materiales.eliminar');
+    Route::post('/materiales/{numeroPedido}/guardar-ancho-metraje', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'guardarAnchoMetraje'])->name('materiales.guardar-ancho-metraje');
+    Route::get('/materiales/{numeroPedido}/obtener-ancho-metraje', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'obtenerAnchoMetraje'])->name('materiales.obtener-ancho-metraje');
+    Route::get('/materiales/{numeroPedido}/obtener-prendas', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'obtenerPrendas'])->name('materiales.obtener-prendas');
+    Route::get('/materiales/{numeroPedido}/obtener-ancho-metraje-prenda/{prendaId}', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'obtenerAnchoMetrajePrenda'])->name('materiales.obtener-ancho-metraje-prenda');
+    Route::post('/materiales/{numeroPedido}/guardar-ancho-metraje-prenda', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'guardarAnchoMetrajePrenda'])->name('materiales.guardar-ancho-metraje-prenda');
+    Route::post('/materiales/{numeroPedido}/eliminar-ancho-metraje-prenda', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'eliminarAnchoMetrajePrenda'])->name('materiales.eliminar-ancho-metraje-prenda');
+    Route::get('/materiales/{numeroPedido}/obtener-colores-prenda/{prendaId}', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'obtenerColoresPrenda'])->name('materiales.obtener-colores-prenda');
+    Route::get('/materiales/{numeroPedido}/obtener-recibo-prenda/{prendaId}', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'obtenerReciboPrenda'])->name('materiales.obtener-recibo-prenda');
+    Route::get('/api/materiales/{pedido}', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'obtenerMateriales'])->name('api.materiales');
+    Route::get('/api/filtros/{column}', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'obtenerValoresFiltro'])->name('api.filtros');
+    Route::get('/api/contar-costura-pendiente', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'contarCosturaPendiente'])->name('api.contar.costura.pendiente');
+    Route::post('/api/recibo/{id}/marcar-visto', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'marcarReciboVisto'])->name('api.recibo.marcar-visto');
+    Route::post('/guardar-observaciones', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'guardarObservaciones'])->name('guardar-observaciones');
+    Route::post('/materiales/{numeroPedido}/cambiar-estado', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'cambiarEstado'])->name('materiales.cambiar-estado');
+    Route::post('/materiales/recibo/{reciboId}/cambiar-estado', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'cambiarEstadoRecibo'])->name('materiales.recibo.cambiar-estado');
+    Route::post('/materiales/{materialId}/toggle-marcado', [\App\Infrastructure\Http\Controllers\Insumos\RecibosController::class, 'toggleMarcado'])->name('materiales.toggle-marcado');
+    Route::post('/materiales/{reciboId}/pasar-revisar', [\App\Infrastructure\Http\Controllers\Insumos\RecibosController::class, 'pasarRevisar'])->name('materiales.pasar-revisar');
     Route::get('/materiales/recibos-costura', [\App\Infrastructure\Http\Controllers\RegistroOrdenController::class, 'recibosCostura'])->name('materiales.recibos-costura');
     Route::get('/test', function () {
         return view('insumos.test');

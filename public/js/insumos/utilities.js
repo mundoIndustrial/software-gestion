@@ -118,56 +118,306 @@ function debounce(func, wait) {
 }
 
 /**
- * Calcula los días de demora entre dos fechas usando el backend
- * Tiene fallback si el endpoint no está disponible
+ * Calcula los días de demora entre dos fechas (VERSIÓN MEJORADA)
+ * Utiliza cálculo local sin dependencia de endpoint
+ * 
  * @param {string} fechaInicio - Fecha en formato YYYY-MM-DD
  * @param {string} fechaFin - Fecha en formato YYYY-MM-DD
- * @param {Function} callback - Callback con el resultado
- * @deprecated Usar calcularDemoraAsync() para operaciones asincrónas
+ * @param {Function} callback - Callback con el resultado en días
  */
 function calcularDiasLaborales(fechaInicio, fechaFin, callback) {
-    // Fallback: si no hay fechas, retornar 0
     if (!fechaInicio || !fechaFin) {
         if (callback) callback(0);
         return;
     }
 
-    // Llamada al backend (ver calcularDemoraAsync para async/await)
-    fetch('/api/insumos/calcular-demora', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-        },
-        body: JSON.stringify({
-            fecha_pedido: fechaInicio,
-            fecha_llegada: fechaFin
-        }),
-        signal: AbortSignal.timeout(5000) // Timeout de 5 segundos
-    })
-    .then(response => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return response.json();
-    })
-    .then(data => {
-        if (callback) callback(data.dias !== undefined ? data.dias : 0);
-        return data.dias || 0;
-    })
-    .catch(error => {
-        console.warn('[calcularDiasLaborales] Fallback: endpoint no disponible', error.message);
+    try {
+        const dias = calcularDiasHabiles(fechaInicio, fechaFin);
+        if (callback) callback(dias);
+        return dias;
+    } catch (error) {
+        console.error('[calcularDiasLaborales] Error:', error);
         if (callback) callback(0);
-    });
+    }
 }
 
 /**
- * Calcula la demora de forma asincróna (Recomendado)
- * Con fallback seguro si el endpoint no está disponible
+ * Festivos Colombianos - Sistema de dos alternativas
+ * 1. Intenta obtener de API externa (más actualizado)
+ * 2. Fallback a festivos hardcodeados locales
+ * 3. Cachea resultados en localStorage
+ */
+const FESTIVOS_COLOMBIA = {
+    /**
+     * Obtener festivos con preferencia: API externa → Local
+     * @param {number} anio - Año a consultar
+     * @returns {Promise<Array>} Array de fechas en formato YYYY-MM-DD
+     */
+    obtenerConFallback: async function(anio) {
+        const cacheKey = `festivos_${anio}`;
+        
+        // 1. Verificar si está en cache local
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+            console.log(`[Festivos] Usando cache local para ${anio}`);
+            return JSON.parse(cached);
+        }
+
+        try {
+            // 2. Intentar API externa (Nager.Date - Gratuita, sin API key)
+            console.log(`[Festivos] Obteniendo festivos ${anio} desde API externa...`);
+            const festivos = await this.obtenerDelServicioExterno(anio);
+            
+            // Cachear por 30 días
+            localStorage.setItem(cacheKey, JSON.stringify(festivos));
+            console.log(`[Festivos] ✅ Obtenidos ${festivos.length} festivos desde API`);
+            
+            return festivos;
+        } catch (error) {
+            console.warn(`[Festivos] API externa falló (${error.message}), usando festivos locales`);
+            
+            // 3. Fallback a festivos locales
+            const festivosLocales = this.obtenerLocales(anio);
+            localStorage.setItem(cacheKey, JSON.stringify(festivosLocales));
+            
+            return festivosLocales;
+        }
+    },
+
+    /**
+     * Obteniendo festivos de API externa (Nager.Date)
+     * Incluye festivos colombianos públicos
+     * @param {number} anio
+     * @returns {Promise<Array>}
+     */
+    obtenerDelServicioExterno: async function(anio) {
+        const response = await fetch(`https://date.nager.at/api/v3/publicholidays/${anio}/CO`, {
+            method: 'GET',
+            signal: AbortSignal.timeout(3000) // Timeout 3 segundos
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status} - API no disponible`);
+        }
+
+        const data = await response.json();
+
+        // Mapear respuesta de API a formato YYYY-MM-DD
+        return data
+            .map(holiday => holiday.date)
+            .sort();
+    },
+
+    /**
+     * Festivos colombianos locales (7 fijos + movibles)
+     * Usados como fallback si la API falla
+     * @param {number} anio
+     * @returns {Array} Array de fechas en formato YYYY-MM-DD
+     */
+    obtenerLocales: function(anio) {
+        const festivos = [
+            // Festivos fijos
+            `${anio}-01-01`, // Año Nuevo
+            `${anio}-05-01`, // Día del Trabajo
+            `${anio}-07-01`, // Día de la Independencia
+            `${anio}-07-20`, // Grito de Independencia
+            `${anio}-08-07`, // Batalla de Boyacá
+            `${anio}-12-08`, // Inmaculada Concepción
+            `${anio}-12-25`, // Navidad
+        ];
+
+        // TODO: Agregar festivos movibles si es necesario:
+        // - Viernes Santo
+        // - Ascensión
+        // - Corpus Christi
+        // - Sagrado Corazón
+
+        return festivos.sort();
+    },
+
+    /**
+     * Wrapper sincrónico para compatibilidad (uso en calcularDiasHabiles)
+     * Nota: Retorna solo locales (no espera API)
+     * @param {number} anio
+     * @returns {Array}
+     */
+    obtener: function(anio) {
+        return this.obtenerLocales(anio);
+    },
+
+    /**
+     * Limpiar cache (útil para debugging)
+     */
+    limpiarCache: function() {
+        const keys = Object.keys(localStorage).filter(k => k.startsWith('festivos_'));
+        keys.forEach(k => localStorage.removeItem(k));
+        console.log(`[Festivos] Cache limpiado (${keys.length} entradas)`);
+    }
+};
+
+/**
+ * Inicializar festivos desde API (ejecutar al cargar la página)
+ * Precarga festivos del año actual y siguiente
+ */
+async function inicializarFestivos() {
+    const ahora = new Date();
+    const anoActual = ahora.getFullYear();
+    const anoProximo = anoActual + 1;
+
+    console.log('[Festivos] Inicializando sistema de festivos...');
+    
+    try {
+        // Precargar ambos años en paralelo
+        await Promise.all([
+            FESTIVOS_COLOMBIA.obtenerConFallback(anoActual),
+            FESTIVOS_COLOMBIA.obtenerConFallback(anoProximo)
+        ]);
+        
+        console.log('[Festivos] ✅ Sistema inicializado');
+    } catch (error) {
+        console.warn('[Festivos] Error en inicialización (usando locales):', error.message);
+    }
+}
+
+/**
+ * Calcula días hábiles entre dos fechas (VERSIÓN SINCRÓNA - Rápida)
+ * Usa festivos locales (no espera API)
+ * Excluye sábados, domingos y festivos colombianos
+ * 
+ * @param {string} fechaInicio - Formato YYYY-MM-DD
+ * @param {string} fechaFin - Formato YYYY-MM-DD
+ * @returns {number} Días hábiles calculados
+ */
+function calcularDiasHabiles(fechaInicio, fechaFin) {
+    if (!fechaInicio || !fechaFin) return 0;
+
+    const inicio = new Date(fechaInicio);
+    const fin = new Date(fechaFin);
+
+    // Validar fechas
+    if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return 0;
+    if (fin < inicio) return 0;
+    if (inicio.toDateString() === fin.toDateString()) return 0;
+
+    // Obtener festivos de ambos años si es necesario
+    const festivos = new Set([
+        ...FESTIVOS_COLOMBIA.obtener(inicio.getFullYear()),
+        ...(inicio.getFullYear() !== fin.getFullYear() ? 
+            FESTIVOS_COLOMBIA.obtener(fin.getFullYear()) : [])
+    ]);
+
+    let diasHabiles = 0;
+    const actual = new Date(inicio);
+
+    // Iterar desde inicio hasta fin
+    while (actual <= fin) {
+        const dayOfWeek = actual.getDay();
+        const dateString = actual.toISOString().split('T')[0]; // YYYY-MM-DD
+
+        // No es sábado (6) ni domingo (0) y no es festivo
+        if (dayOfWeek !== 0 && dayOfWeek !== 6 && !festivos.has(dateString)) {
+            diasHabiles++;
+        }
+
+        actual.setDate(actual.getDate() + 1);
+    }
+
+    // Restar 1 porque no se cuenta el día de inicio (como en backend)
+    return Math.max(0, diasHabiles - 1);
+}
+
+/**
+ * Calcula días hábiles entre dos fechas (VERSIÓN ASINCRÓNA - Precisa)
+ * Intenta obtener festivos de API externa, fallback a locales
+ * 
+ * @param {string} fechaInicio - Formato YYYY-MM-DD
+ * @param {string} fechaFin - Formato YYYY-MM-DD
+ * @returns {Promise<number>} Días hábiles calculados
+ */
+async function calcularDiasHabilesAsync(fechaInicio, fechaFin) {
+    if (!fechaInicio || !fechaFin) return 0;
+
+    const inicio = new Date(fechaInicio);
+    const fin = new Date(fechaFin);
+
+    // Validar fechas
+    if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return 0;
+    if (fin < inicio) return 0;
+    if (inicio.toDateString() === fin.toDateString()) return 0;
+
+    // Obtener festivos con fallback (intenta API externa primero)
+    const festivosInicio = await FESTIVOS_COLOMBIA.obtenerConFallback(inicio.getFullYear());
+    const festivosFin = inicio.getFullYear() !== fin.getFullYear() ? 
+        await FESTIVOS_COLOMBIA.obtenerConFallback(fin.getFullYear()) : [];
+    
+    const festivos = new Set([...festivosInicio, ...festivosFin]);
+
+    let diasHabiles = 0;
+    const actual = new Date(inicio);
+
+    // Iterar desde inicio hasta fin
+    while (actual <= fin) {
+        const dayOfWeek = actual.getDay();
+        const dateString = actual.toISOString().split('T')[0]; // YYYY-MM-DD
+
+        // No es sábado (6) ni domingo (0) y no es festivo
+        if (dayOfWeek !== 0 && dayOfWeek !== 6 && !festivos.has(dateString)) {
+            diasHabiles++;
+        }
+
+        actual.setDate(actual.getDate() + 1);
+    }
+
+    // Restar 1 porque no se cuenta el día de inicio (como en backend)
+    return Math.max(0, diasHabiles - 1);
+}
+
+/**
+ * Obtiene el estado y color basado en días de demora
+ * @param {number} dias
+ * @returns {Object} {estado, clase_bg, clase_text, color_hex, texto}
+ */
+function getEstadoDemora(dias) {
+    if (dias <= 5) {
+        return {
+            estado: 'rapido',
+            clase_bg: 'bg-green-100',
+            clase_text: 'text-green-700',
+            color_hex: '#10b981'
+        };
+    } else if (dias <= 10) {
+        return {
+            estado: 'normal',
+            clase_bg: 'bg-blue-100',
+            clase_text: 'text-blue-700',
+            color_hex: '#3b82f6'
+        };
+    } else if (dias <= 20) {
+        return {
+            estado: 'lento',
+            clase_bg: 'bg-orange-100',
+            clase_text: 'text-orange-700',
+            color_hex: '#f59e0b'
+        };
+    } else {
+        return {
+            estado: 'critico',
+            clase_bg: 'bg-red-100',
+            clase_text: 'text-red-700',
+            color_hex: '#ef4444'
+        };
+    }
+}
+
+/**
+ * Calcula la demora de forma asincróna (RECOMENDADO)
+ * Usa API externa para festivos si está disponible
+ * 
  * @param {string} fechaPedido - Fecha en formato YYYY-MM-DD
  * @param {string} fechaLlegada - Fecha en formato YYYY-MM-DD
- * @returns {Promise<Object>} Promesa con información de demora (o valor por defecto si falla)
+ * @returns {Promise<Object>} Promesa con información de demora
  */
 async function calcularDemoraAsync(fechaPedido, fechaLlegada) {
-    // Fallback si no hay fechas
     const fallback = {
         dias: 0,
         estado: 'sin_datos',
@@ -182,42 +432,22 @@ async function calcularDemoraAsync(fechaPedido, fechaLlegada) {
     }
 
     try {
-        const response = await fetch('/api/insumos/calcular-demora', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-            },
-            body: JSON.stringify({
-                fecha_pedido: fechaPedido,
-                fecha_llegada: fechaLlegada
-            }),
-            signal: AbortSignal.timeout(5000) // Timeout de 5 segundos
-        });
+        // Calcular días hábiles usando API externa (con fallback a locales)
+        const days = await calcularDiasHabilesAsync(fechaPedido, fechaLlegada);
+        const estadoDemora = getEstadoDemora(days);
 
-        if (!response.ok) {
-            console.warn('[calcularDemoraAsync] Response no OK:', response.status);
-            return fallback;
-        }
-        
-        const data = await response.json();
-        
-        // Validar que la respuesta tenga la estructura esperada
-        if (data.success && data.dias !== undefined) {
-            return {
-                dias: data.dias,
-                estado: data.estado || 'normal',
-                texto: data.texto || `${data.dias} días`,
-                clase_bg: data.clase_bg || 'bg-gray-100',
-                clase_text: data.clase_text || 'text-gray-700',
-                color_hex: data.color_hex || '#6b7280',
-                data: data.data
-            };
-        }
-        
-        return fallback;
+        console.log(`[calcularDemoraAsync] ${fechaPedido} → ${fechaLlegada} = ${days} días (${estadoDemora.estado})`);
+
+        return {
+            dias: days,
+            estado: estadoDemora.estado,
+            texto: days === 1 ? '1 día' : `${days} días`,
+            clase_bg: estadoDemora.clase_bg,
+            clase_text: estadoDemora.clase_text,
+            color_hex: estadoDemora.color_hex
+        };
     } catch (error) {
-        console.warn('[calcularDemoraAsync] Error (usando fallback):', error.message);
+        console.error('[calcularDemoraAsync] Error inesperado:', error);
         return fallback;
     }
 }

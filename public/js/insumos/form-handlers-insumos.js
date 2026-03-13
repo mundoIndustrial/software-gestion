@@ -74,93 +74,116 @@ function guardarEstadoMarcado(materialId, marcado, button) {
 
 // ===== FORM STATE MANAGEMENT =====
 
-function guardarCambios(ordenPedido) {
-    const materiales = [];
-    
-    // Obtener todos los checkboxes de materiales
-    const checkboxes = document.querySelectorAll(`input[type="checkbox"][id^="checkbox_"]`);
+/**
+ * Guarda cambios en materiales
+ * REFACTORIZADO: Usa window.insumoService (inyectado por bootstrap.js)
+ * - Validación centralizada en InsumoService
+ * - Caché automático invalidado
+ * - Manejo de errores tipados
+ */
+async function guardarCambios(ordenPedido) {
+    try {
+        const materiales = [];
+        
+        // Obtener todos los checkboxes de materiales
+        const checkboxes = document.querySelectorAll(`input[type="checkbox"][id^="checkbox_"]`);
 
-    checkboxes.forEach((inputCheckbox, index) => {
-        const fila = inputCheckbox.closest('tr');
-        if (!fila) return;
-        
-        const celdas = fila.querySelectorAll('td');
-        
-        // Obtener el nombre del material del primer celda (removiendo el punto de color)
-        const nombreMaterialEl = celdas[0];
-        let nombreMaterial = nombreMaterialEl.textContent.trim();
-        // Remover caracteres especiales del punto de color
-        nombreMaterial = nombreMaterial.replace(/^[•●○◐◑\s]+/, '').trim();
-        
-        // Obtener los inputs de fecha de esta fila
-        const inputsFecha = fila.querySelectorAll('input[type="date"]');
-        const checkboxElement = fila.querySelector('input[type="checkbox"]');
-        
-        const fechaPedidoInput = inputsFecha[0];
-        const fechaLlegadaInput = inputsFecha[1];
-        
-        const fechaPedido = fechaPedidoInput?.value || '';
-        const fechaLlegada = fechaLlegadaInput?.value || '';
-        const recibido = checkboxElement?.checked || false;
-        
-        // Obtener valores originales (comparar strings)
-        const originalCheckbox = checkboxElement?.dataset.original === 'true';
-        const originalFechaPedido = fechaPedidoInput?.dataset.original || '';
-        const originalFechaLlegada = fechaLlegadaInput?.dataset.original || '';
-        
-        // Detectar si hay cambios (comparar valores como strings)
-        const checkboxCambio = recibido !== originalCheckbox;
-        const fechaPedidoCambio = (fechaPedido || null) !== (originalFechaPedido || null);
-        const fechaLlegadaCambio = (fechaLlegada || null) !== (originalFechaLlegada || null);
-        const hayChangios = checkboxCambio || fechaPedidoCambio || fechaLlegadaCambio;
-        
-        // Guardar si el checkbox está marcado O si hay cambios
-        if (recibido || hayChangios) {
-            materiales.push({
-                nombre: nombreMaterial,
-                fecha_pedido: fechaPedido || null,
-                fecha_llegada: fechaLlegada || null,
-                recibido: recibido,
-            });
+        checkboxes.forEach((inputCheckbox, index) => {
+            const fila = inputCheckbox.closest('tr');
+            if (!fila) return;
+            
+            const celdas = fila.querySelectorAll('td');
+            
+            // Obtener el nombre del material del primer celda (removiendo el punto de color)
+            const nombreMaterialEl = celdas[0];
+            let nombreMaterial = nombreMaterialEl.textContent.trim();
+            // Remover caracteres especiales del punto de color
+            nombreMaterial = nombreMaterial.replace(/^[•●○◐◑\s]+/, '').trim();
+            
+            // Obtener los inputs de fecha de esta fila
+            const inputsFecha = fila.querySelectorAll('input[type="date"]');
+            const checkboxElement = fila.querySelector('input[type="checkbox"]');
+            
+            const fechaPedidoInput = inputsFecha[0];
+            const fechaLlegadaInput = inputsFecha[1];
+            
+            const fechaPedido = fechaPedidoInput?.value || '';
+            const fechaLlegada = fechaLlegadaInput?.value || '';
+            const recibido = checkboxElement?.checked || false;
+            
+            // Obtener valores originales (comparar strings)
+            const originalCheckbox = checkboxElement?.dataset.original === 'true';
+            const originalFechaPedido = fechaPedidoInput?.dataset.original || '';
+            const originalFechaLlegada = fechaLlegadaInput?.dataset.original || '';
+            
+            // Detectar si hay cambios (comparar valores como strings)
+            const checkboxCambio = recibido !== originalCheckbox;
+            const fechaPedidoCambio = (fechaPedido || null) !== (originalFechaPedido || null);
+            const fechaLlegadaCambio = (fechaLlegada || null) !== (originalFechaLlegada || null);
+            const hayChangios = checkboxCambio || fechaPedidoCambio || fechaLlegadaCambio;
+            
+            // Guardar si el checkbox está marcado O si hay cambios
+            if (recibido || hayChangios) {
+                materiales.push({
+                    nombre_material: nombreMaterial,
+                    fecha_pedido: fechaPedido || null,
+                    fecha_llegada: fechaLlegada || null,
+                    recibido: recibido,
+                });
+            }
+        });
+
+        // Validar que hay materiales
+        if (materiales.length === 0) {
+            showToast('No hay cambios para guardar', 'info');
+            return;
         }
-    });
-    
-    fetch(`/insumos/materiales/${ordenPedido}/guardar`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-        },
-        body: JSON.stringify({ materiales }),
-    })
-    .then(response => {
-        // Si no es JSON válido, mostrar error
-        if (!response.ok) {
-            return response.text().then(text => {
-                throw new Error(`HTTP ${response.status}: ${text.substring(0, 100)}`);
-            });
+
+        // Verificar que InsumoService está disponible
+        if (!window.insumoService) {
+            throw new Error('InsumoService no inicializado');
         }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            showToast('Guardado exitoso', 'success');
+
+        // Obtener prendaId si existe
+        const prendaIdEl = document.getElementById('modalPrendaId');
+        const prendaId = prendaIdEl ? parseInt(prendaIdEl.value) : null;
+
+        // Usar InsumoService para guardar (con validación y caché automático)
+        const resultado = await window.insumoService.guardarCambiosInsumos(
+            parseInt(ordenPedido),
+            prendaId,
+            materiales
+        );
+
+        if (resultado) {
+            showToast('Cambios guardados exitosamente', 'success');
+            // Opcionalmente recargar datos
+            if (window.recargarTabla) {
+                window.recargarTabla();
+            }
+        }
+
+    } catch (error) {
+        console.error('[guardarCambios Error]', error);
+
+        if (error instanceof ValidationError) {
+            showToast(`Error de validación: ${error.message}`, 'error');
+        } else if (error instanceof BusinessError) {
+            showToast(`Error de operación: ${error.message}`, 'error');
+        } else if (error instanceof HttpError) {
+            console.error(`HTTP Error: ${error.status} ${error.statusText}`);
+            showToast('Error al guardar en el servidor (reintentos completados)', 'error');
+        } else if (error instanceof RepositoryError) {
+            console.error('Repository Error:', error.originalError);
+            showToast('Error en caché local', 'error');
         } else {
-            showToast('Guardado exitoso', 'success');
+            let mensajeError = 'Error al guardar los cambios';
+            if (error.message) {
+                mensajeError = error.message;
+            }
+            showToast(mensajeError, 'error');
         }
-    })
-    .catch(error => {
-        let mensajeError = 'Error al guardar los cambios';
-        
-        // Si es un error JSON, extraer el mensaje
-        if (error.message.includes('HTTP')) {
-            mensajeError = error.message;
-        } else if (error instanceof SyntaxError) {
-            mensajeError = 'Error en el servidor (respuesta inválida)';
-        }
-        
-        showToast(mensajeError, 'error');
-    });
+    }
 }
 
 function limpiarFormulario(ordenId) {

@@ -124,4 +124,57 @@ class InsumosApiController extends Controller
             'dias' => $validated['dias'],
         ]);
     }
+
+    /**
+     * Guardar observaciones de un material
+     * POST /api/insumos/guardar-observaciones
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function guardarObservaciones(Request $request)
+    {
+        // Validar datos
+        $validated = $request->validate([
+            'numero_pedido' => 'required|string',
+            'nombre_material' => 'required|string',
+            'observaciones' => 'nullable|string|max:5000',
+        ]);
+
+        try {
+            // Buscar el registro en materiales_orden_insumos
+            $material = \App\Models\MaterialesOrdenInsumos::where('numero_pedido', $validated['numero_pedido'])
+                ->where('nombre_material', $validated['nombre_material'])
+                ->first();
+
+            if (!$material) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Material no encontrado',
+                ], 404);
+            }
+
+            // Actualizar observaciones
+            $material->update([
+                'observaciones' => $validated['observaciones'],
+            ]);
+
+            \Log::info("Observaciones guardadas para material: {$validated['nombre_material']} del pedido {$validated['numero_pedido']}");
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Observaciones guardadas exitosamente',
+                'material_id' => $material->id,
+                'observaciones' => $material->observaciones,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error guardando observaciones: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al guardar observaciones',
+                'message' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
+    }
 }

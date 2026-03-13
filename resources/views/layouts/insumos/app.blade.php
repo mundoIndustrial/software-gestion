@@ -198,6 +198,21 @@
 
     <!-- Scripts -->
     <script src="{{ asset('js/insumos/layout.js') }}"></script>
+    
+    <!-- CORE ARCHITECTURE LAYER - Hybrid DDD Implementation -->
+    <!-- ⚠️  CRITICAL: Order matters! Load in this sequence:
+         1. HttpClient (no dependencies)
+         2. Domain Repository (interface)
+         3. Infrastructure Repository (depends on HttpClient)
+         4. Application Service (depends on Repository)
+         5. Bootstrap DI Container (depends on all above)
+    -->
+    <script src="{{ asset('js/insumos/core/infrastructure/HttpClient.js') }}"></script>
+    <script src="{{ asset('js/insumos/core/domain/InsumoRepository.js') }}"></script>
+    <script src="{{ asset('js/insumos/core/infrastructure/SessionStorageInsumoRepository.js') }}"></script>
+    <script src="{{ asset('js/insumos/core/application/InsumoService.js') }}"></script>
+    <script src="{{ asset('js/insumos/core/bootstrap.js') }}"></script>
+    
     @stack('scripts')
 </body>
 </html>

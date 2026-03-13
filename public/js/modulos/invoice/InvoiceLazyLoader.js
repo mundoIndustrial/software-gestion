@@ -154,14 +154,36 @@ class InvoiceLazyLoader {
 
     /**
      * Carga un script dinámicamente
+     * Verifica si el script ya está en el DOM para evitar duplicados
      */
     cargarScript(url, modulo) {
         return new Promise((resolve, reject) => {
+            // Verificar si el script ya existe en el DOM
+            const scriptExistente = Array.from(document.querySelectorAll('script')).find(
+                script => script.src.includes(`/${modulo}.js`)
+            );
+            
+            if (scriptExistente) {
+                console.log(`[InvoiceLazyLoader] Script ${modulo} ya está en el DOM, usando existente`);
+                resolve();
+                return;
+            }
+
+            // Marcar el módulo en window para evitar re-declaraciones
+            if (window[`_loaded_${modulo}`]) {
+                console.log(`[InvoiceLazyLoader] Módulo ${modulo} ya fue cargado previamente`);
+                resolve();
+                return;
+            }
+
             const script = document.createElement('script');
             script.src = url;
             script.async = true;
+            script.setAttribute('data-module', modulo);
             
             script.onload = () => {
+                // Marcar como cargado
+                window[`_loaded_${modulo}`] = true;
                 console.log(`[InvoiceLazyLoader] Script ${modulo} cargado desde ${url}`);
                 resolve();
             };
