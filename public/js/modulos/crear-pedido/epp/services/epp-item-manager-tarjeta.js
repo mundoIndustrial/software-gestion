@@ -1,9 +1,9 @@
 /**
- * EppItemManagerNuevo - Gestión exclusiva para vista de crear nuevo pedido
+ * EppItemManagerTarjeta - Gestión exclusiva para vista de crear nuevo pedido
  * Patrón: Item Manager - Versión independiente para /asesores/pedidos-editable/crear-nuevo
  */
 
-class EppItemManagerNuevo {
+class EppItemManagerTarjeta {
     constructor() {
         this.listaItemsId = 'lista-items-pedido';
         // Cache para mantener referencias a las imágenes y archivos
@@ -40,7 +40,7 @@ class EppItemManagerNuevo {
     crearItem(id, nombre, categoria, cantidad, observaciones, imagenes = [], pedidoEppId = null, valorUnitario = null, total = null) {
         const listaItems = document.getElementById(this.listaItemsId);
         if (!listaItems) {
-            console.warn('[EppItemManagerNuevo] Contenedor no encontrado:', this.listaItemsId);
+            console.warn('[EppItemManagerTarjeta] Contenedor no encontrado:', this.listaItemsId);
             return;
         }
 
@@ -147,10 +147,10 @@ class EppItemManagerNuevo {
         // Guardar referencia a las imágenes en cache para mantenerlas vivas
         if (imagenes && imagenes.length > 0) {
             this.imagenesCache.set(id, imagenes);
-            console.log(`[EppItemManagerNuevo] Imágenes cacheadas para item: ${id}, total: ${imagenes.length}`);
+            console.log(`[EppItemManagerTarjeta] Imágenes cacheadas para item: ${id}, total: ${imagenes.length}`);
         }
         
-        console.log('[EppItemManagerNuevo] Tarjeta EPP creada:', id);
+        console.log('[EppItemManagerTarjeta] Tarjeta EPP creada:', id);
         this._inicializarInteractividad();
     }
 
@@ -169,7 +169,7 @@ class EppItemManagerNuevo {
                 imagenes.forEach(imagen => {
                     if (imagen.previewUrl && imagen.previewUrl.startsWith('blob:')) {
                         URL.revokeObjectURL(imagen.previewUrl);
-                        console.log(`[EppItemManagerNuevo] Blob URL revocada: ${imagen.previewUrl}`);
+                        console.log(`[EppItemManagerTarjeta] Blob URL revocada: ${imagen.previewUrl}`);
                     }
                 });
             }
@@ -179,9 +179,9 @@ class EppItemManagerNuevo {
             // Renumerar las tarjetas restantes
             this._renumerarItems();
             
-            console.log('[EppItemManagerNuevo] Item eliminado:', id, '- cache limpiado y URLs revocadas');
+            console.log('[EppItemManagerTarjeta] Item eliminado:', id, '- cache limpiado y URLs revocadas');
         } else {
-            console.warn('[EppItemManagerNuevo] Item no encontrado para eliminar:', id);
+            console.warn('[EppItemManagerTarjeta] Item no encontrado para eliminar:', id);
         }
     }
 
@@ -198,7 +198,7 @@ class EppItemManagerNuevo {
             const spanNumero = tarjeta.querySelector('span[style*="background: #e0f2fe"]');
             if (spanNumero) {
                 spanNumero.textContent = `EPP ${index + 1}`;
-                console.log(`[EppItemManagerNuevo] Tarjeta renumerada a: EPP ${index + 1}`);
+                console.log(`[EppItemManagerTarjeta] Tarjeta renumerada a: EPP ${index + 1}`);
             }
         });
     }
@@ -208,7 +208,7 @@ class EppItemManagerNuevo {
      */
     obtenerItem(id) {
         let item = document.querySelector(`.item-epp-card-nuevo[data-epp-id="${id}"]`);
-        console.log('[EppItemManagerNuevo] obtenerItem buscando ID:', id, 'encontrado:', !!item);
+        console.log('[EppItemManagerTarjeta] obtenerItem buscando ID:', id, 'encontrado:', !!item);
         return item;
     }
 
@@ -218,11 +218,11 @@ class EppItemManagerNuevo {
     actualizarItem(id, datos) {
         const item = this.obtenerItem(id);
         if (!item) {
-            console.warn('[EppItemManagerNuevo] Item no encontrado para actualizar:', id);
+            console.warn('[EppItemManagerTarjeta] Item no encontrado para actualizar:', id);
             return;
         }
 
-        console.log('[EppItemManagerNuevo] Actualizando item:', id, datos);
+        console.log('[EppItemManagerTarjeta] Actualizando item:', id, datos);
 
         // Actualizar nombre
         if (datos.nombre !== undefined && datos.nombre !== null) {
@@ -239,7 +239,7 @@ class EppItemManagerNuevo {
                 const etiquetas = detallesDiv.querySelectorAll('p');
                 if (etiquetas[1]) {
                     etiquetas[1].textContent = datos.cantidad;
-                    console.log('[EppItemManagerNuevo] Cantidad actualizada:', datos.cantidad);
+                    console.log('[EppItemManagerTarjeta] Cantidad actualizada:', datos.cantidad);
                 }
             }
         }
@@ -251,7 +251,7 @@ class EppItemManagerNuevo {
                 const etiquetas = detallesDiv.querySelectorAll('p');
                 if (etiquetas[3]) {
                     etiquetas[3].textContent = datos.observaciones || 'N/A';
-                    console.log('[EppItemManagerNuevo] Observaciones actualizadas:', datos.observaciones);
+                    console.log('[EppItemManagerTarjeta] Observaciones actualizadas:', datos.observaciones);
                 }
             }
         }
@@ -321,7 +321,7 @@ class EppItemManagerNuevo {
                 // Actualizar sección existente
                 const galeriaHTML = this._crearGaleriaHTML(datos.nombre || 'EPP', datos.imagenes);
                 seccionImagenes.innerHTML = galeriaHTML;
-                console.log('[EppItemManagerNuevo] Imágenes actualizadas:', datos.imagenes.length);
+                console.log('[EppItemManagerTarjeta] Imágenes actualizadas:', datos.imagenes.length);
             } else {
                 // Crear nueva sección de imágenes si hay imágenes
                 if (datos.imagenes.length > 0) {
@@ -329,12 +329,12 @@ class EppItemManagerNuevo {
                     const wrapper = document.createElement('div');
                     wrapper.innerHTML = galeriaHTML;
                     item.appendChild(wrapper);
-                    console.log('[EppItemManagerNuevo] Sección de imágenes creada:', datos.imagenes.length);
+                    console.log('[EppItemManagerTarjeta] Sección de imágenes creada:', datos.imagenes.length);
                 }
             }
         }
 
-        console.log('[EppItemManagerNuevo] Item actualizado correctamente');
+        console.log('[EppItemManagerTarjeta] Item actualizado correctamente');
     }
 
     /**
@@ -448,16 +448,16 @@ class EppItemManagerNuevo {
                             }
                         });
                         
-                        console.log(`[EppItemManagerNuevo] Eliminando EPP - tarjetaId: ${itemId}, eppOriginalId: ${eppOriginalId}, posición: ${posicionVisual}`);
+                        console.log(`[EppItemManagerTarjeta] Eliminando EPP - tarjetaId: ${itemId}, eppOriginalId: ${eppOriginalId}, posición: ${posicionVisual}`);
                         
                         // 1. Eliminar de gestionItemsUI ANTES de eliminar del DOM
                         if (window.gestionItemsUI && typeof window.gestionItemsUI.eliminarEPPPorTarjetaId === 'function') {
                             window.gestionItemsUI.eliminarEPPPorTarjetaId(itemId);
-                            console.log('[EppItemManagerNuevo] EPP eliminado de gestionItemsUI');
+                            console.log('[EppItemManagerTarjeta] EPP eliminado de gestionItemsUI');
                         }
                         
                         // 2. Eliminar del DOM
-                        window.eppItemManagerNuevo.eliminarItem(itemId);
+                        window.eppItemManagerTarjeta.eliminarItem(itemId);
                         
                         // 3. Eliminar del array global window.itemsPedido usando posición correcta
                         if (window.itemsPedido) {
@@ -478,7 +478,7 @@ class EppItemManagerNuevo {
                                 
                                 if (idxToRemove >= 0) {
                                     window.itemsPedido.splice(idxToRemove, 1);
-                                    console.log(`[EppItemManagerNuevo] EPP eliminado por posición ${posicionVisual}. Items: ${longitudAntes} → ${window.itemsPedido.length}`);
+                                    console.log(`[EppItemManagerTarjeta] EPP eliminado por posición ${posicionVisual}. Items: ${longitudAntes} → ${window.itemsPedido.length}`);
                                 }
                             }
                             
@@ -489,11 +489,11 @@ class EppItemManagerNuevo {
                                 );
                                 if (fallbackIdx >= 0) {
                                     window.itemsPedido.splice(fallbackIdx, 1);
-                                    console.log(`[EppItemManagerNuevo] EPP eliminado por epp_id fallback. Items: ${longitudAntes} → ${window.itemsPedido.length}`);
+                                    console.log(`[EppItemManagerTarjeta] EPP eliminado por epp_id fallback. Items: ${longitudAntes} → ${window.itemsPedido.length}`);
                                 }
                             }
                             
-                            console.log('[EppItemManagerNuevo] window.itemsPedido después de eliminar:', window.itemsPedido.length, 'items');
+                            console.log('[EppItemManagerTarjeta] window.itemsPedido después de eliminar:', window.itemsPedido.length, 'items');
                         }
                         
                         Swal.fire('Eliminado', 'EPP eliminado correctamente', 'success');
@@ -551,7 +551,7 @@ class EppItemManagerNuevo {
                 }
                 if (imagenesEnTarjeta.length > 0) {
                     eppData.imagenes = imagenesEnTarjeta;
-                    console.log('[EppItemManagerNuevo] Imágenes extraídas de tarjeta:', imagenesEnTarjeta.length);
+                    console.log('[EppItemManagerTarjeta] Imágenes extraídas de tarjeta:', imagenesEnTarjeta.length);
                 }
             }
             
@@ -562,7 +562,7 @@ class EppItemManagerNuevo {
             if (typeof window.editarEPPAgregado === 'function') {
                 window.editarEPPAgregado(eppData);
             } else {
-                console.warn('[EppItemManagerNuevo] Función editarEPPAgregado no encontrada');
+                console.warn('[EppItemManagerTarjeta] Función editarEPPAgregado no encontrada');
             }
         };
         listaItems.addEventListener('click', this._handleEditClick);
@@ -595,4 +595,4 @@ class EppItemManagerNuevo {
 }
 
 // Exportar instancia global exclusiva para nuevo pedido
-window.eppItemManagerNuevo = new EppItemManagerNuevo();
+window.eppItemManagerTarjeta = new EppItemManagerTarjeta();

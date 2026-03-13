@@ -442,7 +442,8 @@ NIT 1.093.738.433-3</textarea>
 <script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-notification-service.js') }}"></script>
 <script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-creation-service.js') }}"></script>
 <script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-form-manager.js') }}"></script>
-<script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-menu-handlers.js') }}"></script>
+<script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-menu-handler-base.js') }}"></script>
+<script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-menu-handlers-tabla.js') }}"></script>
 
 <script defer src="{{ asset('js/modulos/crear-pedido/epp/templates/epp-modal-template.js') }}"></script>
 <script defer src="{{ asset('js/modulos/crear-pedido/epp/interfaces/epp-modal-interface.js') }}"></script>
@@ -718,13 +719,13 @@ NIT 1.093.738.433-3</textarea>
                     window.itemsPedido = items;
                 }
 
-                if (window.eppItemManager && typeof window.eppItemManager.crearItem === 'function') {
+                if (window.eppItemManagerTabla && typeof window.eppItemManagerTabla.crearItem === 'function') {
                     const lista = document.getElementById('tabla-items-pedido');
                     if (lista) lista.innerHTML = '';
 
                     items.forEach((it) => {
                         const eppId = it.epp_id || it.id;
-                        window.eppItemManager.crearItem(
+                        window.eppItemManagerTabla.crearItem(
                             eppId,
                             it.nombre_epp || it.nombre || 'Sin nombre',
                             it.categoria || null,

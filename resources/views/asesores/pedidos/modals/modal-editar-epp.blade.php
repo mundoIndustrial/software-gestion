@@ -61,12 +61,9 @@
 
                 <!-- Zona de carga -->
                 <div class="space-y-3">
-                    <!-- Zona Drag & Drop -->
+                <!-- Zona Drag & Drop -->
                     <div id="modalEditarEPPFotoZona" 
-                        class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition"
-                        ondrop="manejarDropEnModalEditar(event)" 
-                        ondragover="event.preventDefault(); event.currentTarget.classList.add('bg-blue-50', 'border-blue-400')"
-                        ondragleave="event.currentTarget.classList.remove('bg-blue-50', 'border-blue-400')">
+                        class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition">
                         
                         <div class="flex flex-col items-center gap-2">
                             <i class="material-symbols-rounded text-3xl text-gray-400">cloud_upload</i>
@@ -272,56 +269,89 @@ function abrirModalEditarEPP(eppData) {
     // Mostrar modal
     document.getElementById('modalEditarEPP').classList.remove('hidden');
     
-    // Agregar listener de paste para la zona de fotos de este modal
+    // Configurar zona de fotos para recibir paste events
     const fotoZona = document.getElementById('modalEditarEPPFotoZona');
-    if (fotoZona && !window.__pasteListenerEditarEPP__) {
-        // Dar focus a la zona para que pueda recibir eventos
+    if (fotoZona) {
+        // Hacer que la zona sea focuseable (para paste events)
         fotoZona.setAttribute('tabindex', '0');
+        // NO hacer focus automático - deja que el usuario dicte dónde escribir
         
-        // Crear listener único para este modal
-        window.__pasteListenerEditarEPP__ = function(e) {
-            const modal = document.getElementById('modalEditarEPP');
-            if (!modal || modal.classList.contains('hidden')) return;
-            
-            const items = e.clipboardData?.items;
-            if (!items) return;
-            
-            let pegadasOk = 0;
-            for (let item of items) {
-                if (item.type.startsWith('image/')) {
-                    const file = item.getAsFile();
-                    if (!file) continue;
-                    
-                    const previewUrl = URL.createObjectURL(file);
-                    
-                    const imagen = {
-                        id: Date.now() + '_paste_' + Math.random().toString(36).substr(2, 5),
-                        file: file,
-                        previewUrl: previewUrl,
-                        nombre: file.name || 'pegado_' + Date.now() + '.png',
-                        extension: (file.name || '').split('.').pop().toLowerCase() || 'png',
-                        tamaño: file.size,
-                        pedido_epp_id: null,
-                        ruta_original: null,
-                        ruta_webp: null,
-                        principal: 0,
-                        orden: 0
-                    };
-                    
-                    if (!fotosEnEdicionIndividual) fotosEnEdicionIndividual = [];
-                    fotosEnEdicionIndividual.push(imagen);
-                    pegadasOk++;
+        // Agregar listener de paste DIRECTAMENTE en la zona
+        if (!fotoZona.__hasPasteListener) {
+            function handlePasteInFotoZona(e) {
+                // Solo procesar si el modal está visible
+                const modal = document.getElementById('modalEditarEPP');
+                if (!modal || modal.classList.contains('hidden')) return;
+                
+                e.preventDefault();
+                const items = e.clipboardData?.items;
+                if (!items) return;
+                
+                let pegadasOk = 0;
+                for (let item of items) {
+                    if (item.type.startsWith('image/')) {
+                        const file = item.getAsFile();
+                        if (!file) continue;
+                        
+                        const previewUrl = URL.createObjectURL(file);
+                        
+                        const imagen = {
+                            id: Date.now() + '_paste_' + Math.random().toString(36).substr(2, 5),
+                            file: file,
+                            previewUrl: previewUrl,
+                            nombre: file.name || 'pegado_' + Date.now() + '.png',
+                            extension: (file.name || '').split('.').pop().toLowerCase() || 'png',
+                            tamaño: file.size,
+                            pedido_epp_id: null,
+                            ruta_original: null,
+                            ruta_webp: null,
+                            principal: 0,
+                            orden: 0
+                        };
+                        
+                        if (!fotosEnEdicionIndividual) fotosEnEdicionIndividual = [];
+                        fotosEnEdicionIndividual.push(imagen);
+                        pegadasOk++;
+                    }
+                }
+                
+                if (pegadasOk > 0) {
+                    console.log('[modalEditarEPP] ✅ Imágenes pegadas via Ctrl+V:', pegadasOk);
+                    mostrarFotosEnModalEditar();
                 }
             }
             
-            if (pegadasOk > 0) {
-                console.log('[paste] ✅ Imágenes pegadas en modal editar EPP:', pegadasOk);
-                mostrarFotosEnModalEditar();
-            }
-        };
+            // Agregar listener en el DOCUMENT para capturar paste global cuando modal esté abierto
+            document.addEventListener('paste', handlePasteInFotoZona);
+            fotoZona.__hasPasteListener = true;
+            fotoZona.__pasteHandler = handlePasteInFotoZona;
+            console.log('[abrirModalEditarEPP] Paste listener agregado globalmente (activo cuando modal visible)');
+        }
         
-        document.addEventListener('paste', window.__pasteListenerEditarEPP__);
-        console.log('[abrirModalEditarEPP] Paste listener agregado para modal de edición');
+        // Agregar listeners de drag & drop
+        if (!fotoZona.__hasDragDropListener) {
+            fotoZona.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                fotoZona.classList.add('bg-blue-50', 'border-blue-400');
+            });
+            
+            fotoZona.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                fotoZona.classList.remove('bg-blue-50', 'border-blue-400');
+            });
+            
+            fotoZona.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                fotoZona.classList.remove('bg-blue-50', 'border-blue-400');
+                manejarDropEnModalEditar(e);
+            });
+            
+            fotoZona.__hasDragDropListener = true;
+            console.log('[abrirModalEditarEPP] Drag & drop listeners agregados');
+        }
     }
     
     console.log('[abrirModalEditarEPP] Modal abierto, EPP en edición:', eppEnEdicionIndividual, 'Índice:', indiceEPPEnEdicion, 'Tarjeta ID:', tarjetaEppIdEnEdicion);
@@ -464,17 +494,26 @@ function cerrarModalEditarEPP() {
     console.log('[cerrarModalEditarEPP] Cerrando modal');
     document.getElementById('modalEditarEPP').classList.add('hidden');
     document.getElementById('modalEditarEPPDropdown').classList.add('hidden');
+    
+    // Remover listeners de la fotoZona
+    const fotoZona = document.getElementById('modalEditarEPPFotoZona');
+    if (fotoZona) {
+        if (fotoZona.__pasteHandler) {
+            document.removeEventListener('paste', fotoZona.__pasteHandler);
+            fotoZona.__hasPasteListener = false;
+            fotoZona.__pasteHandler = null;
+            console.log('[cerrarModalEditarEPP] Paste listener removido del document');
+        }
+        // Los drag & drop listeners se quitan limpiando las referencias
+        fotoZona.__hasDragDropListener = false;
+        fotoZona.classList.remove('bg-blue-50', 'border-blue-400');
+    }
+    
+    // Limpiar referencias
     eppEnEdicionIndividual = null;
     fotosEnEdicionIndividual = [];
     indiceEPPEnEdicion = -1;
     tarjetaEppIdEnEdicion = null;
-    
-    // Remover listener de paste del modal de edición
-    if (window.__pasteListenerEditarEPP__) {
-        document.removeEventListener('paste', window.__pasteListenerEditarEPP__);
-        window.__pasteListenerEditarEPP__ = null;
-        console.log('[cerrarModalEditarEPP] Paste listener removido');
-    }
 }
 
 /**
