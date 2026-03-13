@@ -2613,6 +2613,9 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('ase
         ->name('crear');
     Route::post('borrador', [App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'guardarBorrador'])
         ->name('guardarBorrador');
+    Route::post('{pedidoId}/actualizar', [App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'actualizarBorrador'])
+        ->name('actualizar')
+        ->where('pedidoId', '[0-9]+');
 });
 
 // ========================================

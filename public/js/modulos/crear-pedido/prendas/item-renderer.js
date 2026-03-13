@@ -234,11 +234,20 @@ class ItemRenderer {
             <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #bfdbfe;">
                 <p style="margin: 0 0 0.75rem 0; font-size: 0.8rem; font-weight: 600; color: #0066cc; text-transform: uppercase; letter-spacing: 0.5px;">Imágenes</p>
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 0.5rem;">
-                    ${imagenes.map(img => `
-                        <div style="position: relative; border-radius: 4px; overflow: hidden; background: #f3f4f6; border: 1px solid #e5e7eb; aspect-ratio: 1;">
-                            <img src="${img.previewUrl || img.preview || img.url || img.ruta_web || ''}" alt="Imagen EPP" style="width: 100%; height: 100%; object-fit: cover; display: block;">
-                        </div>
-                    `).join('')}
+                    ${imagenes.map(img => {
+                        let imagenUrl = img.previewUrl || img.preview || img.url || img.ruta_web || '';
+                        
+                        // Si no es blob y no comienza con /, agregar /storage/
+                        if (imagenUrl && !imagenUrl.startsWith('blob:') && !imagenUrl.startsWith('/') && !imagenUrl.startsWith('http')) {
+                            imagenUrl = `/storage/${imagenUrl}`;
+                        }
+                        
+                        return `
+                            <div style="position: relative; border-radius: 4px; overflow: hidden; background: #f3f4f6; border: 1px solid #e5e7eb; aspect-ratio: 1;">
+                                <img src="${imagenUrl}" alt="Imagen EPP" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                            </div>
+                        `;
+                    }).join('')}
                 </div>
             </div>
         `;
