@@ -199,44 +199,82 @@ export class Formatters {
             });
         }
 
-        // 5. Tallas - Verificar ambas fuentes: prenda.tallas y prenda.talla_colores
-        console.log('[Formatters]  Procesando tallas...');
-        console.log('[Formatters]  Tipo de tallas:', typeof prenda.tallas, 'Es array:', Array.isArray(prenda.tallas));
-        console.log('[Formatters]  🎨 talla_colores disponible:', !!prenda.talla_colores, 'es array:', Array.isArray(prenda.talla_colores));
-        
-        // Determinar qué estructura de tallas usar (prioridad: talla_colores > tallas)
-        let tallasParaRenderizar = null;
-        
-        // Primero verificar si hay talla_colores (flujo 2 - tallas con colores)
-        if (Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
-            console.log('[Formatters]  📊 Usando talla_colores (flujo 2 - tallas con colores)');
-            tallasParaRenderizar = this._transformarTallaColoresAEstructura(prenda.talla_colores);
-            console.log('[Formatters]  Estructura de tallas transformada:', tallasParaRenderizar);
-        } else if (prenda.tallas) {
-            // Fallback a prenda.tallas (flujo 1 - tallas simples)
-            let tienesTallas = false;
-            
-            if (Array.isArray(prenda.tallas)) {
-                tienesTallas = prenda.tallas.length > 0;
-                console.log('[Formatters]  Tallas es ARRAY con', prenda.tallas.length, 'elementos');
-            } else {
-                tienesTallas = Object.keys(prenda.tallas).length > 0;
-                console.log('[Formatters]  Tallas es OBJETO con', Object.keys(prenda.tallas).length, 'claves');
-            }
-            
-            if (tienesTallas) {
-                console.log('[Formatters]  📊 Usando tallas (flujo 1 - tallas simples)');
-                tallasParaRenderizar = prenda.tallas;
-            }
-        }
-        
-        if (tallasParaRenderizar) {
-            console.log('[Formatters]  Tallas encontradas');
+        // 5. Tallas / Sobremedida
+        // Regla:
+        // - Si existen tallas con es_sobremedida => mostrar SOLO la sección SOBREMIDIDA (agrupada por género)
+        // - Si NO existen => mantener render normal de TALLAS (como antes)
+        console.log('[Formatters]  Procesando tallas/sobremedida...');
+
+        const variantes = Array.isArray(prenda?.variantes) ? prenda.variantes : [];
+        const sobremedidas = variantes.filter(v => v && (v.es_sobremedida === true || v.es_sobremedida === 1));
+
+        if (sobremedidas.length > 0) {
+            const porGenero = sobremedidas.reduce((acc, v) => {
+                const genero = String(v.genero || 'SIN_GENERO').toUpperCase();
+                const cantidad = parseInt(v.cantidad, 10) || 0;
+                acc[genero] = (acc[genero] || 0) + cantidad;
+                return acc;
+            }, {});
+
+            const ordenGeneros = ['CABALLERO', 'DAMA', 'UNISEX', 'GENERICO', 'SIN_GENERO'];
+            const generos = Object.keys(porGenero)
+                .sort((a, b) => {
+                    const ia = ordenGeneros.indexOf(a);
+                    const ib = ordenGeneros.indexOf(b);
+                    if (ia === -1 && ib === -1) return a.localeCompare(b, 'es');
+                    if (ia === -1) return 1;
+                    if (ib === -1) return -1;
+                    return ia - ib;
+                });
+
             lineas.push('');
-            lineas.push('<strong>TALLAS</strong>');
-            this._agregarTallasFormato(lineas, tallasParaRenderizar, prenda.genero, prenda);
+            lineas.push('<strong>SOBREMEDIDA:</strong>');
+            generos.forEach((g) => {
+                const qty = porGenero[g] || 0;
+                if (qty > 0) {
+                    lineas.push(`${g}: <span style="color: #d32f2f; font-weight: bold;">${qty}</span>`);
+                }
+            });
         } else {
-            console.log('[Formatters]  No hay tallas (vacío)');
+            // Render normal de tallas (flujo anterior)
+            console.log('[Formatters]  No hay sobremedida. Render normal de tallas...');
+            console.log('[Formatters]  Tipo de tallas:', typeof prenda.tallas, 'Es array:', Array.isArray(prenda.tallas));
+            console.log('[Formatters]  🎨 talla_colores disponible:', !!prenda.talla_colores, 'es array:', Array.isArray(prenda.talla_colores));
+
+            // Determinar qué estructura de tallas usar (prioridad: talla_colores > tallas)
+            let tallasParaRenderizar = null;
+
+            // Primero verificar si hay talla_colores (flujo 2 - tallas con colores)
+            if (Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
+                console.log('[Formatters]  📊 Usando talla_colores (flujo 2 - tallas con colores)');
+                tallasParaRenderizar = this._transformarTallaColoresAEstructura(prenda.talla_colores);
+                console.log('[Formatters]  Estructura de tallas transformada:', tallasParaRenderizar);
+            } else if (prenda.tallas) {
+                // Fallback a prenda.tallas (flujo 1 - tallas simples)
+                let tienesTallas = false;
+
+                if (Array.isArray(prenda.tallas)) {
+                    tienesTallas = prenda.tallas.length > 0;
+                    console.log('[Formatters]  Tallas es ARRAY con', prenda.tallas.length, 'elementos');
+                } else {
+                    tienesTallas = Object.keys(prenda.tallas).length > 0;
+                    console.log('[Formatters]  Tallas es OBJETO con', Object.keys(prenda.tallas).length, 'claves');
+                }
+
+                if (tienesTallas) {
+                    console.log('[Formatters]  📊 Usando tallas (flujo 1 - tallas simples)');
+                    tallasParaRenderizar = prenda.tallas;
+                }
+            }
+
+            if (tallasParaRenderizar) {
+                console.log('[Formatters]  Tallas encontradas');
+                lineas.push('');
+                lineas.push('<strong>TALLAS</strong>');
+                this._agregarTallasFormato(lineas, tallasParaRenderizar, prenda.genero, prenda);
+            } else {
+                console.log('[Formatters]  No hay tallas (vacío)');
+            }
         }
 
         // 6. REFLECTIVO - Si existe un proceso reflectivo, agregarlo después de tallas

@@ -535,6 +535,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                         'talla' => $talla->talla,
                         'genero' => $talla->genero,  //  Agregar género
                         'cantidad' => (int)$talla->cantidad,
+                        'es_sobremedida' => (bool) ($talla->es_sobremedida ?? false),
                         'color_info' => $colorInfo,  // NUEVO: información de colores por talla
                         'colores_detalle' => $coloresEspecificos,  // NUEVO: array detallado de colores
                         'tipo_manga_id' => $especificaciones['tipo_manga_id'] ?? null,  // ID de manga SIEMPRE
