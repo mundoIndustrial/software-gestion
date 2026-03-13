@@ -291,11 +291,27 @@ function abrirDetalleRecibo(pedidoId, prendaId, tipoRecibo) {
         prendaId = parseInt(prendaId) || null;
     }
     
-    // Verificar si existe la función openOrderDetailModalWithProcess
+    // Si la función no está disponible, cargar el módulo dinámicamente
     if (typeof openOrderDetailModalWithProcess === 'function') {
         openOrderDetailModalWithProcess(pedidoId, prendaId, tipoRecibo);
     } else {
-        console.error('Función openOrderDetailModalWithProcess no disponible');
+        console.warn('[modal-handlers-insumos] PedidosRecibosModule no disponible, cargando...');
+        
+        // Cargar el módulo dinámicamente
+        const script = document.createElement('script');
+        script.type = 'module';
+        script.textContent = `
+            import { PedidosRecibosModule } from '/js/modulos/pedidos-recibos/PedidosRecibosModule.js';
+            
+            const module = new PedidosRecibosModule();
+            window.openOrderDetailModalWithProcess = (pedidoId, prendaId, tipoRecibo, prendaIndex = null) => {
+                return module.abrirRecibo(pedidoId, prendaId, tipoRecibo, prendaIndex);
+            };
+            
+            // Llamar la función después de cargar
+            window.openOrderDetailModalWithProcess(${pedidoId}, ${prendaId}, '${tipoRecibo}');
+        `;
+        document.head.appendChild(script);
     }
 }
 

@@ -202,7 +202,22 @@ function abrirModalInsumos(pedido, prendaId) {
         .then(response => response.json())
         .then(data => {
             document.getElementById('modalPrendaNombre').textContent = prendaId ? `#${prendaId}` : 'General';
-            llenarTablaInsumos(data);
+            
+            // Extraer el array de materiales de la respuesta
+            // Soporta múltiples formatos: {data: [...]}, {materiales: [...]}, o array directo
+            let materiales = data;
+            if (Array.isArray(data)) {
+                materiales = data;
+            } else if (data.data && Array.isArray(data.data)) {
+                materiales = data.data;
+            } else if (data.materiales && Array.isArray(data.materiales)) {
+                materiales = data.materiales;
+            } else {
+                console.warn('[abrirModalInsumos] Estructura de respuesta inesperada:', data);
+                materiales = [];
+            }
+            
+            llenarTablaInsumos(materiales);
         })
         .catch(error => {
             console.error('[abrirModalInsumos] Error:', error);

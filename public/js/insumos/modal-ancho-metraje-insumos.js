@@ -133,10 +133,12 @@ function generarInputsPorColor(coloresData, datosData) {
     const anchoGeneralDiv = document.createElement('div');
     anchoGeneralDiv.className = 'bg-blue-50 border-l-4 border-blue-500 pl-4 py-3 rounded p-4';
     
-    // Buscar ancho general: puede estar en datosData.ancho (top-level) o dentro de data[]
+    // Buscar ancho general: puede estar en datosData.ancho_general o dentro de data[]
     let anchoGeneralGuardado = '';
     if (datosData.success) {
-        if (datosData.ancho) {
+        if (datosData.ancho_general) {
+            anchoGeneralGuardado = datosData.ancho_general;
+        } else if (datosData.ancho) {
             anchoGeneralGuardado = datosData.ancho;
         } else if (datosData.data && Array.isArray(datosData.data)) {
             const datosGeneral = datosData.data.find(d => d.ancho && !d.talla);
@@ -177,7 +179,21 @@ function generarInputsPorColor(coloresData, datosData) {
     
     // Crear UN input de metraje por color
     coloresData.forEach(colorData => {
-        const colorNombre = colorData.nombre || colorData.color || colorData.color_nombre;
+        // El servidor ahora devuelve estructura simplificada
+        // Prioridad: colorData.nombre > colorData.color?.nombre > 'Color'
+        let colorNombre = 'Color';
+        
+        if (typeof colorData === 'string') {
+            colorNombre = colorData;
+        } else if (colorData.nombre) {
+            colorNombre = colorData.nombre;
+        } else if (colorData.color && typeof colorData.color === 'object' && colorData.color.nombre) {
+            colorNombre = colorData.color.nombre;
+        } else if (colorData.color && typeof colorData.color === 'string') {
+            colorNombre = colorData.color;
+        }
+        
+        console.log('[generarInputsPorColor] Color procesado:', { colorData, colorNombre });
         
         // Buscar metraje guardado para este color (sin talla)
         let metrajeGuardado = '';
@@ -230,10 +246,12 @@ function generarInputsPorTallaColor(coloresData, datosData) {
     const anchoGeneralDiv = document.createElement('div');
     anchoGeneralDiv.className = 'bg-blue-50 border-l-4 border-blue-500 pl-4 py-3 rounded p-4';
     
-    // Buscar ancho general: puede estar en datosData.ancho (top-level) o dentro de data[]
+    // Buscar ancho general: puede estar en datosData.ancho_general o dentro de data[]
     let anchoGeneralGuardado = '';
     if (datosData.success) {
-        if (datosData.ancho) {
+        if (datosData.ancho_general) {
+            anchoGeneralGuardado = datosData.ancho_general;
+        } else if (datosData.ancho) {
             anchoGeneralGuardado = datosData.ancho;
         } else if (datosData.data && Array.isArray(datosData.data)) {
             const datosGeneral = datosData.data.find(d => d.ancho && !d.talla);
@@ -274,7 +292,21 @@ function generarInputsPorTallaColor(coloresData, datosData) {
     
     // Crear UN input de metraje por color
     coloresData.forEach(colorData => {
-        const colorNombre = colorData.nombre || colorData.color || colorData.color_nombre;
+        // El servidor ahora devuelve estructura simplificada
+        // Prioridad: colorData.nombre > colorData.color?.nombre > 'Color'
+        let colorNombre = 'Color';
+        
+        if (typeof colorData === 'string') {
+            colorNombre = colorData;
+        } else if (colorData.nombre) {
+            colorNombre = colorData.nombre;
+        } else if (colorData.color && typeof colorData.color === 'object' && colorData.color.nombre) {
+            colorNombre = colorData.color.nombre;
+        } else if (colorData.color && typeof colorData.color === 'string') {
+            colorNombre = colorData.color;
+        }
+        
+        console.log('[generarInputsPorTallaColor] Color procesado:', { colorData, colorNombre });
         
         // Buscar metraje guardado para este color (sin talla)
         let metrajeGuardado = '';
@@ -432,6 +464,16 @@ function cambiarModoAnchoMetraje(e) {
     document.getElementById('colorDataWarning')?.classList.add('hidden');
     document.getElementById('piezaDataWarning')?.classList.add('hidden');
     
+    // Mostrar/ocultar botón de eliminar basado en si hay datos guardados y el modo es el mismo
+    const btnEliminar = document.getElementById('btnEliminarAnchoMetraje');
+    if (btnEliminar) {
+        if (tieneDatosGuardados && tipoModoGuardado === modo) {
+            btnEliminar.classList.remove('hidden');
+        } else {
+            btnEliminar.classList.add('hidden');
+        }
+    }
+    
     if (modo === 'normal') {
         // MODO NORMAL - Un valor para toda la prenda
         normalView.classList.remove('hidden');
@@ -463,10 +505,11 @@ function cambiarModoAnchoMetraje(e) {
         const coloresData = modal.coloresData;
         const datosData = modal.datosData;
         
-        if (coloresData && coloresData.success && coloresData.colores && coloresData.colores.length > 0) {
+        // El servidor devuelve: coloresData.data en lugar de coloresData.colores
+        if (coloresData && coloresData.success && coloresData.data && coloresData.data.length > 0) {
             // Mostrar inputs por color
             console.log('[cambiarModoAnchoMetraje] Modo color: Generando inputs por color');
-            generarInputsPorColor(coloresData.colores, datosData);
+            generarInputsPorColor(coloresData.data, datosData);
         } else {
             // No hay datos de colores disponibles
             console.log('[cambiarModoAnchoMetraje] Sin datos de colores disponibles');
@@ -481,10 +524,11 @@ function cambiarModoAnchoMetraje(e) {
         const coloresData = modal.coloresData;
         const datosData = modal.datosData;
         
-        if (coloresData && coloresData.success && (coloresData.modo === 'piezas' || coloresData.modo === 'talla-color') && coloresData.colores) {
+        // El servidor devuelve: coloresData.data en lugar de coloresData.colores
+        if (coloresData && coloresData.success && coloresData.data && coloresData.data.length > 0) {
             // Mostrar matriz talla-color (mismo HTML que por color)
             console.log('[cambiarModoAnchoMetraje] Modo pieza: Usando estructura de color/talla');
-            generarInputsPorTallaColor(coloresData.colores, datosData);
+            generarInputsPorTallaColor(coloresData.data, datosData);
         } else {
             // No hay datos disponibles
             console.log('[cambiarModoAnchoMetraje] Sin datos de talla-color disponibles');
@@ -498,9 +542,9 @@ function cambiarModoAnchoMetraje(e) {
         // Cargar datos si están disponibles
         if (modal.datosData && modal.datosData.success) {
             const contenidoMano = modal.datosData.contenido_mano || '';
-            document.getElementById('manoAnchoMetrajeTextarea').value = contenidoMano;
+            document.getElementById('manoTexto').value = contenidoMano;
         } else {
-            document.getElementById('manoAnchoMetrajeTextarea').value = '';
+            document.getElementById('manoTexto').value = '';
         }
     }
 }
@@ -620,7 +664,7 @@ function guardarAnchoMetraje() {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
             },
             body: JSON.stringify({
-                prenda_id: prendaId,
+                prenda_pedido_id: prendaId,
                 color: null,
                 tipo_modo: 'normal',
                 ancho: ancho,
@@ -629,6 +673,8 @@ function guardarAnchoMetraje() {
         })
         .then(response => response.json())
         .then(data => {
+            console.log('[guardarAnchoMetraje] Respuesta del servidor:', data);
+            
             if (data.success) {
                 showToast('Ancho y metraje guardados correctamente', 'success');
                 
@@ -641,7 +687,8 @@ function guardarAnchoMetraje() {
                     cerrarModalAnchoMetraje();
                 }, 1000);
             } else {
-                showToast('Error al guardar los datos', 'error');
+                console.error('[guardarAnchoMetraje] Error del servidor:', data.error || data.message);
+                showToast('Error: ' + (data.error || data.message || 'Error al guardar los datos'), 'error');
             }
         })
         .catch(error => {
@@ -665,7 +712,7 @@ function guardarAnchoMetraje() {
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
                         },
                         body: JSON.stringify({
-                            prenda_id: prendaId,
+                            prenda_pedido_id: prendaId,
                             color: null,
                             tipo_modo: 'color',
                             ancho: anchoGeneral,
@@ -692,7 +739,7 @@ function guardarAnchoMetraje() {
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
                             },
                             body: JSON.stringify({
-                                prenda_id: prendaId,
+                                prenda_pedido_id: prendaId,
                                 color: colorNombre,
                                 tipo_modo: 'color',
                                 ancho: null,
@@ -724,6 +771,125 @@ function guardarAnchoMetraje() {
                 console.error('Error:', error);
                 showToast('Error al guardar los datos', 'error');
             });
+    } else if (modoSeleccionado === 'pieza') {
+        // GUARDAR MODO POR PIEZA - Idéntico a color pero con tipo_modo='pieza'
+        const promises = [];
+        
+        // Guardar ancho general si existe
+        const anchoGeneralPiezaInput = document.getElementById('anchoGeneralPiezaInput');
+        if (anchoGeneralPiezaInput && anchoGeneralPiezaInput.value.trim()) {
+            const anchoGeneral = parseFloat(anchoGeneralPiezaInput.value.trim());
+            if (!isNaN(anchoGeneral) && anchoGeneral > 0) {
+                promises.push(
+                    fetch(`/insumos/materiales/${pedido}/guardar-ancho-metraje-prenda`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                        },
+                        body: JSON.stringify({
+                            prenda_pedido_id: prendaId,
+                            color: null,
+                            tipo_modo: 'pieza',
+                            ancho: anchoGeneral,
+                            metraje: null
+                        })
+                    }).then(r => r.json())
+                );
+            }
+        }
+        
+        // Guardar metrajes por color (mismos inputs que color)
+        document.querySelectorAll('#piezaInputsContainer .colorMetraje').forEach(input => {
+            const colorNombre = input.dataset.color;
+            const metrajeVal = input.value.trim();
+            
+            if (metrajeVal) {
+                const metraje = parseFloat(metrajeVal);
+                if (!isNaN(metraje) && metraje > 0) {
+                    promises.push(
+                        fetch(`/insumos/materiales/${pedido}/guardar-ancho-metraje-prenda`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                            },
+                            body: JSON.stringify({
+                                prenda_pedido_id: prendaId,
+                                color: colorNombre,
+                                tipo_modo: 'pieza',
+                                ancho: null,
+                                metraje: metraje
+                            })
+                        }).then(r => r.json())
+                    );
+                }
+            }
+        });
+        
+        if (promises.length === 0) {
+            showToast('Por favor llena al menos un campo', 'warning');
+            return;
+        }
+        
+        Promise.all(promises)
+            .then(results => {
+                if (results.every(r => r.success)) {
+                    showToast('Ancho y metraje guardados correctamente', 'success');
+                    setTimeout(() => {
+                        cerrarModalAnchoMetraje();
+                    }, 1000);
+                } else {
+                    showToast('Error al guardar algunos datos', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error al guardar los datos', 'error');
+            });
+    } else if (modoSeleccionado === 'mano') {
+        // GUARDAR MODO A MANO - Guardar texto libre
+        const contenidoMano = document.getElementById('manoTexto').value.trim();
+        
+        if (!contenidoMano) {
+            showToast('Por favor ingresa el contenido', 'warning');
+            return;
+        }
+        
+        fetch(`/insumos/materiales/${pedido}/guardar-ancho-metraje-prenda`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            },
+            body: JSON.stringify({
+                prenda_pedido_id: prendaId,
+                color: null,
+                tipo_modo: 'mano',
+                ancho: null,
+                metraje: null,
+                contenido_mano: contenidoMano
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('[guardarAnchoMetraje] Respuesta del servidor (modo mano):', data);
+            
+            if (data.success) {
+                showToast('Ancho y metraje guardados correctamente', 'success');
+                
+                setTimeout(() => {
+                    cerrarModalAnchoMetraje();
+                }, 1000);
+            } else {
+                console.error('[guardarAnchoMetraje] Error del servidor:', data.error || data.message);
+                showToast('Error: ' + (data.error || data.message || 'Error al guardar los datos'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error al guardar ancho y metraje:', error);
+            showToast('Error al guardar los datos', 'error');
+        });
     }
 }
 
