@@ -27,6 +27,85 @@
             nombre: '{{ Auth::user()->name ?? '' }}'
         };
 
+    // Tabs para administrador-costura (sin recargar)
+    (function() {
+        function setActiveAdminTab(tab) {
+            document.querySelectorAll('[data-admin-tab]').forEach(btn => {
+                btn.classList.toggle('badge-filtro-active', btn.dataset.adminTab === tab);
+            });
+        }
+
+        async function cargarAdminTab(tab) {
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', tab);
+
+                const resp = await fetch(url.toString(), {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    credentials: 'same-origin',
+                });
+
+                if (!resp.ok) {
+                    throw new Error('HTTP ' + resp.status);
+                }
+
+                const html = await resp.text();
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const nuevoOrdenesList = doc.getElementById('ordenesList');
+                const actualOrdenesList = document.getElementById('ordenesList');
+
+                if (!nuevoOrdenesList || !actualOrdenesList) {
+                    throw new Error('No se encontró #ordenesList');
+                }
+
+                actualOrdenesList.innerHTML = nuevoOrdenesList.innerHTML;
+
+                // Re-inicializar búsqueda (si existe)
+                if (typeof window.__initDashboardSearch === 'function') {
+                    window.__initDashboardSearch();
+                }
+
+                // Actualizar URL sin recargar
+                window.history.pushState({ tab }, '', url.toString());
+
+                setActiveAdminTab(tab);
+            } catch (e) {
+                console.warn('[Operario Dashboard] Falló cargar tab admin, recargando página', e);
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', tab);
+                window.location.href = url.toString();
+            }
+        }
+
+        function initAdminTabs() {
+            const botones = document.querySelectorAll('[data-admin-tab]');
+            if (!botones.length) {
+                return;
+            }
+
+            botones.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tab = btn.dataset.adminTab;
+                    if (!tab) return;
+                    cargarAdminTab(tab);
+                });
+            });
+
+            window.addEventListener('popstate', function() {
+                const tab = new URL(window.location.href).searchParams.get('tab') || 'costura';
+                setActiveAdminTab(tab);
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initAdminTabs);
+        } else {
+            initAdminTabs();
+        }
+    })();
+
         // Tiempo real: escuchar cuando se asignen recibos/procesos al operario
         (function () {
             let intentos = 0;
@@ -203,6 +282,73 @@
                             } else {
                                 console.log('[Operario Dashboard] No es cortador, no elimina tarjeta');
                             }
+
+                            // Para administrador-costura: refrescar lista sin recargar
+                            if (String(window.USUARIO_ACTUAL?.rol || '').toLowerCase() === 'administrador-costura') {
+                                console.log('[Operario Dashboard] Admin-costura recibió encargado.costura.asignado (operarios.corte), refrescando lista');
+
+                                // Mostrar notificación (solo recibos que llegan a costureros / módulos)
+                                try {
+                                    window.__adminCosturaNotifsSeen = window.__adminCosturaNotifsSeen || {};
+                                    const encargadoStr = String(e?.encargado || '').trim();
+                                    const encargadoLower = encargadoStr.toLowerCase();
+                                    const pareceModuloOCosturero = encargadoLower.includes('modulo') || encargadoLower.includes('módulo') || encargadoLower.includes('costur') || encargadoLower.includes('sobremedida');
+                                    if (pareceModuloOCosturero) {
+                                        const notifKey = `${e?.proceso_id || ''}|${e?.proceso_updated_at || ''}|${e?.pedido_id || ''}|${e?.numero_recibo || ''}`;
+                                        if (window.__adminCosturaNotifsSeen[notifKey]) {
+                                            console.log('[Operario Dashboard] Admin-costura: notificación duplicada ignorada', notifKey);
+                                        } else {
+                                            window.__adminCosturaNotifsSeen[notifKey] = Date.now();
+                                        const cliente = String(e?.cliente || '').trim();
+                                        const dtRaw = e?.proceso_updated_at;
+                                        let fecha = '';
+                                        try {
+                                            if (dtRaw) {
+                                                const d = new Date(dtRaw);
+                                                if (!isNaN(d.getTime())) {
+                                                    const dd = String(d.getDate()).padStart(2, '0');
+                                                    const mm = String(d.getMonth() + 1).padStart(2, '0');
+                                                    const yyyy = d.getFullYear();
+                                                    const hh = String(d.getHours()).padStart(2, '0');
+                                                    const mi = String(d.getMinutes()).padStart(2, '0');
+                                                    fecha = `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
+                                                }
+                                            }
+                                        } catch (e) {
+                                            fecha = '';
+                                        }
+
+                                        const mensaje = `Pedido #${e?.pedido_id || ''}${cliente ? ` · ${cliente}` : ''} · Recibo #${e?.numero_recibo || ''} asignado a ${encargadoStr}`;
+                                        if (window.NotificacionesPush && typeof window.NotificacionesPush.add === 'function') {
+                                            window.NotificacionesPush.add({
+                                                id: e?.consecutivo_recibo_id || undefined,
+                                                title: 'Recibo asignado a costura',
+                                                message: mensaje,
+                                                fecha: fecha,
+                                                type: 'info',
+                                                icon: 'checkroom',
+                                                duration: 8000
+                                            });
+                                        } else if ('Notification' in window) {
+                                            if (Notification.permission === 'granted') {
+                                                new Notification('Recibo asignado a costura', {
+                                                    body: mensaje,
+                                                    icon: '/icon.png'
+                                                });
+                                            } else if (Notification.permission !== 'denied') {
+                                                Notification.requestPermission();
+                                            }
+                                        }
+                                        }
+                                    } else {
+                                        console.log('[Operario Dashboard] Admin-costura: asignación no parece a módulo/costurero, no notifica');
+                                    }
+                                } catch (err) {
+                                    console.warn('[Operario Dashboard] Admin-costura: error mostrando notificación', err);
+                                }
+
+                                actualizarListaSinRecargar();
+                            }
                         });
 
                     // Vista-costura: escuchar cuando insumos aprueba/envía el recibo a producción (área Corte)
@@ -245,6 +391,29 @@
                                 } catch (err) {
                                     console.warn('[Operario Dashboard] Error creando notificación push', err);
                                 }
+                                actualizarListaSinRecargar();
+                            });
+                    }
+
+                    // Administrador-costura: refrescar lista en tiempo real cuando se asigna/deshace costura
+                    if (String(window.USUARIO_ACTUAL?.rol || '').toLowerCase() === 'administrador-costura') {
+                        window.EchoInstance.channel('recibos-costura')
+                            .subscribed(() => {
+                                console.log('[Operario Dashboard] Admin-costura suscrito OK a canal público', 'recibos-costura');
+                            })
+                            .error((err) => {
+                                console.error('[Operario Dashboard] Error suscribiendo admin-costura a canal público recibos-costura', err);
+                            })
+                            .listen('.encargado.costura.asignado', (e) => {
+                                console.log('[Operario Dashboard] Admin-costura evento encargado.costura.asignado, refrescando lista:', e);
+                                actualizarListaSinRecargar();
+                            })
+                            .listen('.encargado.costura.deshacer', (e) => {
+                                console.log('[Operario Dashboard] Admin-costura evento encargado.costura.deshacer, refrescando lista:', e);
+                                actualizarListaSinRecargar();
+                            })
+                            .listen('.operario.recibos.actualizados', (e) => {
+                                console.log('[Operario Dashboard] Admin-costura evento operario.recibos.actualizados (canal público), refrescando lista:', e);
                                 actualizarListaSinRecargar();
                             });
                     }
@@ -425,15 +594,24 @@
         </div>
         @endif
 
+        @if(auth()->user()->hasRole('administrador-costura'))
+        <div class="filtros-badges">
+            <button type="button" class="badge-filtro {{ ($tab ?? 'costura') === 'costura' ? 'badge-filtro-active' : '' }}" data-admin-tab="costura">
+                <span class="material-symbols-rounded">checkroom</span>
+                Costura
+            </button>
+            <button type="button" class="badge-filtro {{ ($tab ?? 'costura') === 'sobremedida' ? 'badge-filtro-active' : '' }}" data-admin-tab="sobremedida">
+                <span class="material-symbols-rounded">straighten</span>
+                Sobremedida
+            </button>
+        </div>
+        @endif
+
         <div class="ordenes-list" id="ordenesList">
             @if(count($prendasConRecibos ?? []) > 0)
                 @foreach($prendasConRecibos as $prenda)
                     @php
-                        $estadoClass = 'pendiente'; // Por defecto pendiente
-                        if ($prenda['recibos']) {
-                            $estadoClass = count($prenda['recibos']) > 0 ? 'en-proceso' : 'pendiente';
-                        }
-                        
+                        $estadoClass = 'pendiente'; // Siempre pendiente, eliminar en-proceso
                         // Determinar tipo de recibo para filtro
                         // Para vista-costura y costura-reflectivo: una prenda puede tener ambos tipos de recibos
                         // Para otros roles: solo muestra reflectivos
@@ -484,7 +662,7 @@
                         $reciboCompletadoCostura = (bool) ($reciboPrincipalCard['completado_costura'] ?? false);
                     @endphp
 
-                    <div class="orden-card-simple {{ ((auth()->user()->hasRole('costurero') || auth()->user()->hasRole('costura-reflectivo')) && $reciboCompletadoCostura) ? 'card-completado-costura' : '' }}" 
+                    <div class="orden-card-simple {{ ((auth()->user()->hasRole('costurero') || auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('administrador-costura')) && $reciboCompletadoCostura) ? 'card-completado-costura' : '' }} {{ $tieneReflectivo ? 'borde-reflectivo' : '' }}" 
                          data-numero="{{ $prenda['numero_pedido'] }}" 
                          data-prenda="{{ strtolower($prenda['nombre_prenda']) }}"
                          data-prenda-id="{{ $prenda['prenda_id'] }}"
@@ -492,8 +670,8 @@
                          data-tipo-recibo="{{ $esReflectivo }}"
                          style="display: {{ $displayInicial }}">
                         
-                        <!-- Borde izquierdo coloreado -->
-                        <div class="orden-border {{ $estadoClass }}"></div>
+                        <!-- Borde izquierdo eliminado -->
+                        <!-- <div class="orden-border {{ $estadoClass }}"></div> -->
 
                         <!-- Contenido Izquierdo -->
                         @php
@@ -593,6 +771,9 @@
                                         @if(auth()->user()->hasRole('costura-reflectivo') && $reciboCompletadoCostura)
                                             <span class="badge-completado-costura is-on">COMPLETADO</span>
                                         @endif
+                                        @if(auth()->user()->hasRole('administrador-costura') && $reciboCompletadoCostura)
+                                            <span class="badge-completado-costura is-on">COMPLETADO</span>
+                                        @endif
                                     </div>
                                     <!-- Badge completado para costurero - posicionado en esquina superior derecha solo en mobile -->
                                     @if(auth()->user()->hasRole('costurero') && $reciboCompletadoCostura)
@@ -600,6 +781,10 @@
                                     @endif
                                     <!-- Badge completado para costura-reflectivo - posicionado en esquina superior derecha solo en mobile -->
                                     @if(auth()->user()->hasRole('costura-reflectivo') && $reciboCompletadoCostura)
+                                        <span class="badge-completado-costura is-on mobile-top-right">COMPLETADO</span>
+                                    @endif
+                                    <!-- Badge completado para administrador-costura - posicionado en esquina superior derecha solo en mobile -->
+                                    @if(auth()->user()->hasRole('administrador-costura') && $reciboCompletadoCostura)
                                         <span class="badge-completado-costura is-on mobile-top-right">COMPLETADO</span>
                                     @endif
                                     <!-- Botón de más opciones para mobile -->
@@ -783,7 +968,7 @@
                                             $areaReciboRef = $reciboReflectivo['area'] ?? '';
                                             $esCosturaAreaRef = strtolower(trim((string)$areaReciboRef)) === 'costura';
                                         @endphp
-                                        @if($tieneReciboReflectivo && auth()->user()->hasRole('vista-costura'))
+                                        @if($tieneReciboReflectivo && (auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('administrador-costura')))
                                             <button class="btn-pasar-costura {{ $tieneEncargadoCosturaRef ? 'btn-deshacer-costura' : '' }}" 
                                                     id="btn-costura-reflectivo-{{ $prenda['prenda_id'] }}"
                                                     data-pedido-id="{{ $prenda['pedido_id'] }}"
@@ -800,8 +985,8 @@
                                             </button>
                                         @endif
                                     @endif
-                                    @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura'))
-                                        {{-- Para costura-reflectivo/vista-costura, crear un botón por cada TIPO de recibo (sin duplicados) --}}
+                                    @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('administrador-costura'))
+                                        {{-- Para costura-reflectivo/vista-costura/administrador-costura, crear un botón por cada TIPO de recibo (sin duplicados) --}}
                                         @php
                                             $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
                                         @endphp
@@ -818,8 +1003,8 @@
                                             </button>
                                         @endforeach
                                         
-                                        {{-- Botones de completar/deshacer para costura-reflectivo --}}
-                                        @if(auth()->user()->hasRole('costura-reflectivo'))
+                                        {{-- Botones de completar/deshacer para costura-reflectivo y administrador-costura --}}
+                                        @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('administrador-costura'))
                                             @php
                                                 $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
                                             @endphp
@@ -840,10 +1025,27 @@
                                                         $reciboCompletadoArea = (bool) ($reciboTipo['completado_area'] ?? false);
                                                     }
                                                     
+                                                    // Para costura-reflectivo y administrador-costura: verificar si tiene encargado asignado SOLO en recibos REFLECTIVO
+                                                    // Para administrador-costura: permitir siempre (no requiere encargado)
+                                                    $tieneEncargadoAsignado = false;
+                                                    if (strtoupper($tipoReciboUnico) === 'REFLECTIVO') {
+                                                        $encargadoReflectivo = $reciboTipo['encargado_costura'] ?? null;
+                                                        $encargadoReflectivo = is_string($encargadoReflectivo) ? trim($encargadoReflectivo) : $encargadoReflectivo;
+                                                        $tieneEncargadoAsignado = !empty($encargadoReflectivo);
+                                                    } else {
+                                                        // Para otros tipos (COSTURA), se permite sin encargado
+                                                        $tieneEncargadoAsignado = true;
+                                                    }
+                                                    
+                                                    // Para administrador-costura: siempre permitir
+                                                    if (auth()->user()->hasRole('administrador-costura')) {
+                                                        $tieneEncargadoAsignado = true;
+                                                    }
+                                                    
                                                     $tipoReciboNormalizado = strtolower($tipoReciboUnico);
                                                 @endphp
                                                 
-                                                @if($reciboId && $esCosturaArea)
+                                                @if($reciboId && $esCosturaArea && $tieneEncargadoAsignado)
                                                     @if(!$reciboCompletadoArea)
                                                         <button class="btn-completar-costura" 
                                                                 id="btn-completar-{{ $tipoReciboNormalizado }}-{{ $prenda['prenda_id'] }}"
@@ -1706,17 +1908,24 @@
         document.getElementById('costuraTipoRecibo').textContent = tipoRecibo;
         
         // Cargar usuarios con rol 'costura'
-        cargarUsuariosCostura();
+        cargarUsuariosCostura(tipoRecibo);
         
         window.costuraPendiente = { pedidoId, prendaId, tipoRecibo, btnId, recibo };
         modal.style.display = 'flex';
     }
 
-    function cargarUsuariosCostura() {
+    function cargarUsuariosCostura(tipoRecibo = '') {
         const select = document.getElementById('costuraEncargado');
         select.innerHTML = '<option value="">Cargando...</option>';
+
+        const qs = new URLSearchParams();
+        const tr = String(tipoRecibo || '').trim().toUpperCase();
+        if (tr) {
+            qs.set('tipo_recibo', tr);
+        }
+        const url = qs.toString() ? `/api/usuarios/costura?${qs.toString()}` : '/api/usuarios/costura';
         
-        fetch('/api/usuarios/costura', {
+        fetch(url, {
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
             }
@@ -2393,12 +2602,8 @@ function pasarAControlCalidad(btn) {
                     actualizarInterfazCostura(drawerBtn.closest('.mobile-actions-drawer'), 'completado', drawerBtn);
                 }
                 
-                // Actualizar badges en el card principal si no se actualizaron
-                const cardBadges = card.querySelectorAll('.badge-completado-costura, .badge-estado');
-                cardBadges.forEach(badge => {
-                    badge.classList.add('is-on');
-                    badge.textContent = 'COMPLETADO';
-                });
+                // Actualizar/crear badge de completado en el card principal
+                asegurarBadgeCompletado(card, true);
             } else {
                 // En caso de error, restaurar botón
                 btn.disabled = false;
@@ -2459,12 +2664,8 @@ function pasarAControlCalidad(btn) {
                     actualizarInterfazCostura(drawerBtn.closest('.mobile-actions-drawer'), 'deshacer', drawerBtn);
                 }
                 
-                // Actualizar badges en el card principal si no se actualizaron
-                const cardBadges = card.querySelectorAll('.badge-completado-costura, .badge-estado');
-                cardBadges.forEach(badge => {
-                    badge.classList.remove('is-on');
-                    badge.textContent = 'PENDIENTE';
-                });
+                // Actualizar/quitar badge de completado en el card principal
+                asegurarBadgeCompletado(card, false);
             } else {
                 // En caso de error, restaurar botón
                 btn.disabled = false;
@@ -2509,8 +2710,8 @@ function pasarAControlCalidad(btn) {
                 btnActual.parentNode.replaceChild(nuevoBtn, btnActual);
             }
             
-            // Actualizar badges de estado si existen
-            const badges = container.querySelectorAll('.badge-completado-costura, .badge-estado');
+            // Actualizar badge de completado si existe
+            const badges = container.querySelectorAll('.badge-completado-costura');
             badges.forEach(badge => {
                 badge.classList.add('is-on');
                 badge.textContent = 'COMPLETADO';
@@ -2538,11 +2739,43 @@ function pasarAControlCalidad(btn) {
                 btnActual.parentNode.replaceChild(nuevoBtn, btnActual);
             }
             
-            // Actualizar badges de estado si existen
-            const badges = container.querySelectorAll('.badge-completado-costura, .badge-estado');
+            // Actualizar badge de completado si existe
+            const badges = container.querySelectorAll('.badge-completado-costura');
             badges.forEach(badge => {
                 badge.classList.remove('is-on');
                 badge.textContent = 'PENDIENTE';
+            });
+        }
+    }
+
+    function asegurarBadgeCompletado(card, estaCompletado) {
+        if (!card) return;
+
+        const badgesExistentes = card.querySelectorAll('.badge-completado-costura');
+
+        if (estaCompletado) {
+            if (badgesExistentes.length > 0) {
+                badgesExistentes.forEach(badge => {
+                    badge.classList.add('is-on');
+                    badge.textContent = 'COMPLETADO';
+                });
+                return;
+            }
+
+            const contenedorNumero = card.querySelector('.orden-numero-section');
+            const estadoBadge = contenedorNumero ? contenedorNumero.querySelector('.estado-badge') : null;
+            if (!contenedorNumero || !estadoBadge) {
+                return;
+            }
+
+            const badgeNuevo = document.createElement('span');
+            badgeNuevo.className = 'badge-completado-costura is-on';
+            badgeNuevo.textContent = 'COMPLETADO';
+
+            estadoBadge.insertAdjacentElement('afterend', badgeNuevo);
+        } else {
+            badgesExistentes.forEach(badge => {
+                badge.remove();
             });
         }
     }
@@ -2572,6 +2805,12 @@ function pasarAControlCalidad(btn) {
             background-color: #e3f2fd !important;
             border-left: 4px solid #2196f3 !important;
             box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1) !important;
+        }
+        
+        /* Borde verde para recibos reflectivos */
+        .borde-reflectivo {
+            border-left: 4px solid #4caf50 !important;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2) !important;
         }
         
         /* Botones para costureros */

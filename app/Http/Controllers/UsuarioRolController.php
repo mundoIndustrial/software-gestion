@@ -14,6 +14,8 @@ class UsuarioRolController extends Controller
     public function getUsuariosCostura(Request $request)
     {
         try {
+            $tipoRecibo = strtoupper(trim((string) $request->query('tipo_recibo', '')));
+
             // Buscar los tres roles
             $rolCosturero = Role::where('name', 'costurero')->first();
             $rolCosturaReflectivo = Role::where('name', 'costura-reflectivo')->first();
@@ -29,6 +31,22 @@ class UsuarioRolController extends Controller
             // Obtener usuarios que tienen cualquiera de los tres roles
             $query = User::select('id', 'name', 'email')
                 ->orderBy('name');
+
+            // Si el recibo es REFLECTIVO, el selector debe mostrar SOLO costura-reflectivo
+            if ($tipoRecibo === 'REFLECTIVO') {
+                if ($rolCosturaReflectivo) {
+                    $query->whereJsonContains('roles_ids', $rolCosturaReflectivo->id);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+
+                $usuarios = $query->distinct()->get();
+
+                return response()->json([
+                    'success' => true,
+                    'usuarios' => $usuarios
+                ]);
+            }
             
             // Si existe rol costurero, incluir usuarios con ese rol
             if ($rolCosturero) {

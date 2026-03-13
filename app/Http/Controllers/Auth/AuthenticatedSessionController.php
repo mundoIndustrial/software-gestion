@@ -172,6 +172,11 @@ class AuthenticatedSessionController extends Controller
                 return redirect(route('operario.dashboard', absolute: false));
             }
 
+            // Confección Sobremedida - Dashboard de operario
+            if ($roleName === 'confeccion-sobremedida') {
+                return redirect(route('operario.dashboard', absolute: false));
+            }
+
             // Bodeguero - Gestión de pedidos en bodega
             if ($roleName === 'bodeguero') {
                 return redirect(route('gestion-bodega.pedidos', absolute: false));

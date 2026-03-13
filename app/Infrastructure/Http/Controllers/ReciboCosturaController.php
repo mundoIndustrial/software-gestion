@@ -466,7 +466,10 @@ class ReciboCosturaController extends Controller
                 $recibo->consecutivo_actual,
                 $request->encargado,
                 $nuevoProceso->id,
-                $prenda->nombre_prenda ?? 'Prenda sin nombre'
+                $prenda->nombre_prenda ?? 'Prenda sin nombre',
+                optional($nuevoProceso->updated_at)->toIso8601String(),
+                (int) $recibo->id,
+                (string) ($pedido->cliente ?? '-')
             ));
 
             // Notificar al costurero asignado que tiene un nuevo recibo

@@ -961,6 +961,42 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                     reciboActual?.talla_colores || prendaData?.talla_colores || null
                 );
                 if (str) return str;
+                
+                // Fallback para COSTURA: intentar desde variantes
+                if (tipoProceso && tipoProceso.toUpperCase() === 'COSTURA') {
+                    const variantes = reciboActual?.variantes || prendaData?.variantes || [];
+                    if (Array.isArray(variantes) && variantes.length > 0) {
+                        const tallasMap = new Map();
+                        variantes.forEach(v => {
+                            const talla = v?.talla || '';
+                            const genero = v?.genero || '';
+                            const cantidad = Number(v?.cantidad || 0);
+                            if (talla && cantidad > 0) {
+                                const key = genero ? `${genero.toUpperCase()}:${talla.toUpperCase()}` : talla.toUpperCase();
+                                tallasMap.set(key, (tallasMap.get(key) || 0) + cantidad);
+                            }
+                        });
+                        
+                        if (tallasMap.size > 0) {
+                            const generosMap = new Map();
+                            tallasMap.forEach((cantidad, key) => {
+                                const [genero, talla] = key.includes(':') ? key.split(':') : ['', key];
+                                if (!generosMap.has(genero)) generosMap.set(genero, new Map());
+                                generosMap.get(genero).set(talla, cantidad);
+                            });
+                            
+                            const partes = [];
+                            generosMap.forEach((tallasGen, genero) => {
+                                const tallasStr = Array.from(tallasGen.entries())
+                                    .map(([t, c]) => `${t}-${c}`)
+                                    .join(' ');
+                                partes.push(genero ? `${genero}: ${tallasStr}` : tallasStr);
+                            });
+                            return partes.join(' | ');
+                        }
+                    }
+                }
+                
                 return String(extra.tallas || '').trim();
             })();
             const observacionesPorTalla = buildObservacionesPorTalla();
@@ -1172,35 +1208,43 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                         </div>
                         
                         <div class="costura-section">
+                          ${prendaColor ? `
                           <div class="costura-row">
                             <div class="costura-field">
                               <span class="label">COLOR:</span>
-                              <span class="value">${esc(prendaColor || '-')}</span>
+                              <span class="value">${esc(prendaColor)}</span>
                             </div>
                           </div>
+                          ` : ''}
                           
+                          ${prendaData?.tela ? `
                           <div class="costura-row">
                             <div class="costura-field">
                               <span class="label">TELA:</span>
-                              <span class="value">${esc(prendaData?.tela || '-')}</span>
+                              <span class="value">${esc(prendaData.tela)}</span>
                             </div>
                           </div>
+                          ` : ''}
                           
+                          ${manga ? `
                           <div class="costura-row">
                             <div class="costura-field">
                               <span class="label">TIPO MANGA:</span>
-                              <span class="value">${esc(manga || '-')}</span>
+                              <span class="value">${esc(manga)}</span>
                             </div>
                             ${obsManga ? `<div class="costura-obs">${esc(obsManga)}</div>` : ''}
                           </div>
+                          ` : ''}
                           
+                          ${broche ? `
                           <div class="costura-row">
                             <div class="costura-field">
                               <span class="label">BROCHE/BOTÓN:</span>
-                              <span class="value">${esc(broche || '-')}</span>
+                              <span class="value">${esc(broche)}</span>
                             </div>
                             ${obsBroche ? `<div class="costura-obs">${esc(obsBroche)}</div>` : ''}
                           </div>
+                          ` : ''}
                           
                           ${tieneBolsillos ? `
                           <div class="costura-row">
@@ -1223,10 +1267,12 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                           ` : ''}
                         </div>
                         
+                        ${tallasResumen ? `
                         <div class="section">
                           <h4>TALLAS:</h4>
-                          <div class="tallas-resumen">${esc(tallasResumen || '-')}</div>
+                          <div class="tallas-resumen">${esc(tallasResumen)}</div>
                         </div>
+                        ` : ''}
                         
                         ${observacionesPorTalla.length > 0 ? `
                         <div class="section observations-section">
@@ -1264,7 +1310,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                         
                         <div class="section">
                           <h4>DESCRIPCIÓN:</h4>
-                          <div class="descripcion-list">${(ubicaciones && ubicaciones.length > 0) ? ubicaciones.map(u => `<div>${esc(u).toUpperCase()}</div>`).join('') : '<div>-</div>'}</div>
+                          <div class="descripcion-list">${(ubicaciones && ubicaciones.length > 0 && ubicaciones[0]) ? ubicaciones.map(u => `<div>${esc(u).toUpperCase()}</div>`).join('') : '<div>-</div>'}</div>
                         </div>
                     `;
                 }

@@ -17,16 +17,19 @@ class EncargadoCosturaAsignado implements ShouldBroadcastNow
     public $pedidoId;
     public $prendaId;
     public $numeroRecibo;
+    public $consecutivoReciboId;
     public $encargado;
     public $procesoId;
     public $nombrePrenda;
+    public $cliente;
+    public $procesoUpdatedAt;
 
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($pedidoId, $prendaId, $numeroRecibo, $encargado, $procesoId, $nombrePrenda = null)
+    public function __construct($pedidoId, $prendaId, $numeroRecibo, $encargado, $procesoId, $nombrePrenda = null, $procesoUpdatedAt = null, $consecutivoReciboId = null, $cliente = null)
     {
         $this->pedidoId = $pedidoId;
         $this->prendaId = $prendaId;
@@ -34,6 +37,9 @@ class EncargadoCosturaAsignado implements ShouldBroadcastNow
         $this->encargado = $encargado;
         $this->procesoId = $procesoId;
         $this->nombrePrenda = $nombrePrenda;
+        $this->procesoUpdatedAt = $procesoUpdatedAt;
+        $this->consecutivoReciboId = $consecutivoReciboId;
+        $this->cliente = $cliente;
     }
 
     /**
@@ -67,18 +73,24 @@ class EncargadoCosturaAsignado implements ShouldBroadcastNow
             'pedido_id' => $this->pedidoId,
             'prenda_id' => $this->prendaId,
             'numero_recibo' => $this->numeroRecibo,
+            'consecutivo_recibo_id' => $this->consecutivoReciboId,
             'encargado' => $this->encargado,
             'proceso_id' => $this->procesoId,
-            'nombre_prenda' => $this->nombrePrenda
+            'nombre_prenda' => $this->nombrePrenda,
+            'cliente' => $this->cliente,
+            'proceso_updated_at' => $this->procesoUpdatedAt
         ]);
 
         return [
             'pedido_id' => $this->pedidoId,
             'prenda_id' => $this->prendaId,
             'numero_recibo' => $this->numeroRecibo,
+            'consecutivo_recibo_id' => $this->consecutivoReciboId,
             'encargado' => $this->encargado,
             'proceso_id' => $this->procesoId,
             'nombre_prenda' => $this->nombrePrenda,
+            'cliente' => $this->cliente,
+            'proceso_updated_at' => $this->procesoUpdatedAt,
             'mensaje' => "El recibo #{$this->numeroRecibo} ({$this->nombrePrenda}) ha sido asignado a {$this->encargado} para costura"
         ];
     }

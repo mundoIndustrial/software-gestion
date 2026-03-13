@@ -99,6 +99,8 @@ class OperarioController extends Controller
 
         $verTodas = $request->boolean('todas');
 
+        $tab = (string) $request->query('tab', 'costura');
+
         // Obtener prendas con recibos del operario
         $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibos($usuario);
 
@@ -106,6 +108,72 @@ class OperarioController extends Controller
             $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibosTodosCostura();
         }
         // NOTA: vista-costura ya incluye REFLECTIVO en obtenerPrendasConRecibos(), no reemplazar
+
+        if ($usuario->hasRole('administrador-costura') && in_array($tab, ['costura', 'sobremedida'], true)) {
+            $rolSobremedidaId = \App\Models\Role::where('name', 'confeccion-sobremedida')->value('id');
+            $usuariosSobremedida = collect();
+
+            if (!empty($rolSobremedidaId)) {
+                $usuariosSobremedida = \App\Models\User::query()
+                    ->where(function ($q) use ($rolSobremedidaId) {
+                        $q->whereJsonContains('roles_ids', (int) $rolSobremedidaId)
+                            ->orWhere('role_id', (int) $rolSobremedidaId);
+                    })
+                    ->pluck('name')
+                    ->map(function ($n) {
+                        return strtolower(trim((string) $n));
+                    })
+                    ->filter()
+                    ->unique()
+                    ->values();
+            }
+
+            if ($tab === 'sobremedida') {
+                $prendasConRecibos = $prendasConRecibos
+                    ->map(function ($prenda) use ($usuariosSobremedida) {
+                        $prenda['recibos'] = array_values(array_filter($prenda['recibos'] ?? [], function ($recibo) use ($usuariosSobremedida) {
+                            $tipo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
+                            if (!in_array($tipo, ['COSTURA', 'COSTURA-BODEGA'], true)) {
+                                return false;
+                            }
+
+                            $encargado = strtolower(trim((string) ($recibo['encargado_costura'] ?? '')));
+                            return $encargado !== '' && $usuariosSobremedida->contains($encargado);
+                        }));
+
+                        return $prenda;
+                    })
+                    ->filter(function ($prenda) {
+                        return !empty($prenda['recibos']);
+                    })
+                    ->values();
+            }
+
+            if ($tab === 'costura') {
+                $prendasConRecibos = $prendasConRecibos
+                    ->map(function ($prenda) use ($usuariosSobremedida) {
+                        $prenda['recibos'] = array_values(array_filter($prenda['recibos'] ?? [], function ($recibo) use ($usuariosSobremedida) {
+                            $tipo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
+                            if (!in_array($tipo, ['COSTURA', 'COSTURA-BODEGA'], true)) {
+                                return false;
+                            }
+
+                            $encargado = strtolower(trim((string) ($recibo['encargado_costura'] ?? '')));
+                            if ($encargado !== '' && $usuariosSobremedida->contains($encargado)) {
+                                return false;
+                            }
+
+                            return true;
+                        }));
+
+                        return $prenda;
+                    })
+                    ->filter(function ($prenda) {
+                        return !empty($prenda['recibos']);
+                    })
+                    ->values();
+            }
+        }
 
         $areaOperario = $usuario->hasRole('cortador') ? 'Corte' : ($usuario->hasRole('costurero') ? 'Costura' : null);
         if ($areaOperario) {
@@ -175,6 +243,7 @@ class OperarioController extends Controller
             'operario' => $datosOperario,
             'prendasConRecibos' => $prendasConRecibos,
             'usuario' => $usuario,
+            'tab' => $tab,
         ]);
     }
 
@@ -385,6 +454,7 @@ class OperarioController extends Controller
             $usuario = Auth::user();
 
             $tipoRecibo = strtoupper(trim((string) $request->query('tipo_recibo', 'COSTURA')));
+            $since = trim((string) $request->query('since', ''));
             $limit = (int) $request->query('limit', 50);
             if ($limit <= 0) {
                 $limit = 50;
@@ -403,6 +473,21 @@ class OperarioController extends Controller
                 ->orderByDesc('updated_at')
                 ->limit($limit)
                 ->with(['pedido:id,numero_pedido,cliente']);
+
+            // Para administrador-costura: no cargar historial completo al entrar.
+            // Solo retornar notificaciones recientes (últimos 5 min) a menos que el cliente envíe un `since` explícito.
+            if ($usuario->hasRole('administrador-costura')) {
+                if ($since !== '') {
+                    try {
+                        $sinceDt = \Carbon\Carbon::parse($since);
+                        $query->where('updated_at', '>=', $sinceDt);
+                    } catch (\Exception $e) {
+                        $query->where('updated_at', '>=', now()->subMinutes(5));
+                    }
+                } else {
+                    $query->where('updated_at', '>=', now()->subMinutes(5));
+                }
+            }
 
             // Notificaciones SOLO cuando el recibo esté ASIGNADO al usuario (encargado) en el proceso correspondiente
             $encargadoNormalizado = strtolower(trim((string) ($usuario->name ?? '')));
@@ -1325,7 +1410,9 @@ class OperarioController extends Controller
             }
 
             $nombreOperario = (string) $usuario->name;
-            if ($esAdminCostura) {
+            
+            // Para costura-reflectivo y administrador-costura: usar el nombre del encargado asignado
+            if ($esCosturaReflectivo || $esAdminCostura) {
                 $encargadoActual = null;
                 if (!empty($recibo->prenda_id)) {
                     $encargadoActual = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)

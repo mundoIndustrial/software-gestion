@@ -44,12 +44,28 @@ function setupNotificaciones() {
     const rolActual = String(window.USUARIO_ACTUAL?.rol || '').toLowerCase();
     const isVistaCostura = rolActual === 'vista-costura';
     const isCosturaReflectivo = rolActual === 'costura-reflectivo';
-    const storageKey = 'vista_costura_push_notificaciones';
+    const storageKey = `operario_push_notificaciones_${rolActual || 'anon'}`;
+    const sinceKey = `operario_notificaciones_since_${rolActual || 'anon'}`;
 
     const tipoReciboNotificaciones = isCosturaReflectivo ? 'REFLECTIVO' : 'COSTURA';
 
+    function loadSince() {
+        try {
+            return String(localStorage.getItem(sinceKey) || '').trim();
+        } catch {
+            return '';
+        }
+    }
+
+    function saveSince(value) {
+        try {
+            localStorage.setItem(sinceKey, String(value || ''));
+        } catch {
+            // ignore
+        }
+    }
+
     function loadPushItems() {
-        if (!isVistaCostura) return [];
         try {
             const raw = localStorage.getItem(storageKey);
             const data = raw ? JSON.parse(raw) : [];
@@ -60,7 +76,6 @@ function setupNotificaciones() {
     }
 
     function savePushItems(items) {
-        if (!isVistaCostura) return;
         try {
             localStorage.setItem(storageKey, JSON.stringify(items));
         } catch {
@@ -135,7 +150,16 @@ function setupNotificaciones() {
 
     async function fetchNotificaciones() {
         try {
-            const resp = await fetch(`/operario/api/notificaciones/recibos?tipo_recibo=${encodeURIComponent(tipoReciboNotificaciones)}&limit=50`, {
+            const since = !isVistaCostura ? loadSince() : '';
+            const qs = new URLSearchParams({
+                tipo_recibo: tipoReciboNotificaciones,
+                limit: '50',
+            });
+            if (since) {
+                qs.set('since', since);
+            }
+
+            const resp = await fetch(`/operario/api/notificaciones/recibos?${qs.toString()}`, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 },
@@ -148,9 +172,36 @@ function setupNotificaciones() {
             }
 
             renderItems(data.notificaciones || []);
+            return data.notificaciones || [];
         } catch (e) {
             console.warn('[Notificaciones] Error cargando notificaciones', e);
+            return [];
         }
+    }
+
+    function mergeServerItemsIntoPush(serverItems) {
+        const current = loadPushItems();
+        const map = new Map(current.map((n) => [String(n?.id), n]));
+
+        (serverItems || []).forEach((n) => {
+            const id = n?.id;
+            if (!id) return;
+            const key = String(id);
+            if (map.has(key)) return;
+
+            map.set(key, {
+                id,
+                titulo: `Nuevo recibo #${n?.numero_recibo}`,
+                detalle: `${n?.cliente || '-'}`,
+                fecha: n?.fecha || '',
+                type: 'info',
+                icon: 'checkroom'
+            });
+        });
+
+        const next = Array.from(map.values()).slice(0, 50);
+        savePushItems(next);
+        return next;
     }
 
     async function marcarLeida(id) {
@@ -193,10 +244,15 @@ function setupNotificaciones() {
         e.stopPropagation();
         const isOpen = menu.classList.toggle('active');
         if (isOpen) {
-            if (isVistaCostura) {
-                renderPushItems(loadPushItems());
+            if (!isVistaCostura) {
+                const serverItems = await fetchNotificaciones();
+                const merged = mergeServerItemsIntoPush(serverItems);
+                renderPushItems(merged);
+
+                // Guardar marca de tiempo de "última revisión" para traer solo nuevas la próxima vez
+                saveSince(new Date().toISOString());
             } else {
-                await fetchNotificaciones();
+                renderPushItems(loadPushItems());
             }
         }
     });
@@ -217,15 +273,21 @@ function setupNotificaciones() {
 
         try {
             actionBtn.disabled = true;
-            if (isVistaCostura || item?.dataset?.source === 'push') {
-                const current = loadPushItems();
-                const next = current.filter((n) => String(n.id) !== String(id));
-                savePushItems(next);
-                item.remove();
-            } else {
-                await marcarLeida(id);
-                item.remove();
+            const current = loadPushItems();
+            const next = current.filter((n) => String(n.id) !== String(id));
+            savePushItems(next);
+
+            // Si el payload corresponde a un recibo real (id numérico), registrar leído en BD
+            const numericId = Number(id);
+            if (Number.isFinite(numericId) && numericId > 0) {
+                try {
+                    await marcarLeida(numericId);
+                } catch (err) {
+                    console.warn('[Notificaciones] No se pudo marcar leída en BD', err);
+                }
             }
+
+            item.remove();
 
             const remaining = list.querySelectorAll('.notificacion-item').length;
             setBadgeCount(remaining);
@@ -240,12 +302,18 @@ function setupNotificaciones() {
         e.stopPropagation();
         try {
             markAllBtn.disabled = true;
-            if (isVistaCostura) {
-                savePushItems([]);
-                renderPushItems([]);
-            } else {
-                await marcarTodas();
-                renderItems([]);
+            const items = loadPushItems();
+            savePushItems([]);
+            renderPushItems([]);
+
+            // Intentar marcar como leídas en BD todas las que tengan id numérico
+            const anyNumeric = (items || []).some((n) => Number.isFinite(Number(n?.id)) && Number(n?.id) > 0);
+            if (anyNumeric) {
+                try {
+                    await marcarTodas();
+                } catch (err) {
+                    console.warn('[Notificaciones] No se pudo marcar todas en BD', err);
+                }
             }
         } catch (err) {
             console.warn('[Notificaciones] Error marcar todas', err);
@@ -255,18 +323,18 @@ function setupNotificaciones() {
     });
 
     // Carga inicial del badge (sin abrir)
-    if (isVistaCostura) {
-        const items = loadPushItems();
-        setBadgeCount(items.length);
-    } else {
-        fetchNotificaciones();
-    }
+    const items = loadPushItems();
+    setBadgeCount(items.length);
 
     // Inicializar NotificacionesPush para todos los roles (no solo vista-costura)
     window.NotificacionesPush = {
         add: function(payload) {
             const current = loadPushItems();
             const id = payload?.id || (Date.now() + '-' + Math.random().toString(16).slice(2));
+            const exists = current.some((n) => String(n?.id) === String(id));
+            if (exists) {
+                return;
+            }
             const next = [
                 {
                     id,
@@ -295,7 +363,7 @@ function setupNotificaciones() {
 
             window.EchoInstance.private(`App.Models.User.${window.OPERARIO_USUARIO.id}`)
                 .listen('.operario.recibos.actualizados', () => {
-                    fetchNotificaciones();
+                    renderPushItems(loadPushItems());
                 });
 
             window.EchoInstance.channel('operarios.corte')
@@ -303,7 +371,7 @@ function setupNotificaciones() {
                     const encargadoEvento = String(e?.encargado || '').trim().toLowerCase();
                     const nombreActual = String(window.OPERARIO_USUARIO?.nombre || '').trim().toLowerCase();
                     if (encargadoEvento && nombreActual && encargadoEvento === nombreActual) {
-                        fetchNotificaciones();
+                        renderPushItems(loadPushItems());
                     }
                 });
         } catch (e) {
