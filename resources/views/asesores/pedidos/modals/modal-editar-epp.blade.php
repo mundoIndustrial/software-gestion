@@ -225,7 +225,7 @@ function abrirModalEditarEPP(eppData) {
             fotosEnEdicionIndividual = eppEncontrado.imagenes.filter(img => {
                 // Validar que la imagen tiene una URL válida
                 if (!img) return false;
-                const hasValidUrl = img.previewUrl || img.url || img.src || img.ruta_webp || img.ruta_original;
+                const hasValidUrl = img.previewUrl || img.url || img.src || img.ruta_webp || img.ruta_web || img.ruta_original;
                 return !!hasValidUrl;
             });
             console.log('[abrirModalEditarEPP] Imágenes cargadas:', fotosEnEdicionIndividual.length, '/', eppEncontrado.imagenes.length);
@@ -251,7 +251,7 @@ function abrirModalEditarEPP(eppData) {
         if (eppData.imagenes && Array.isArray(eppData.imagenes)) {
             fotosEnEdicionIndividual = eppData.imagenes.filter(img => {
                 if (!img) return false;
-                const hasValidUrl = img.previewUrl || img.url || img.src || img.ruta_webp || img.ruta_original;
+                const hasValidUrl = img.previewUrl || img.url || img.src || img.ruta_webp || img.ruta_web || img.ruta_original;
                 return !!hasValidUrl;
             });
         }
@@ -464,7 +464,7 @@ function seleccionarEPPEnEdicion(epp) {
     if (eppEncontrado.imagenes && Array.isArray(eppEncontrado.imagenes)) {
         fotosEnEdicionIndividual = eppEncontrado.imagenes.filter(img => {
             if (!img) return false;
-            const hasValidUrl = img.previewUrl || img.url || img.src || img.ruta_webp || img.ruta_original;
+            const hasValidUrl = img.previewUrl || img.url || img.src || img.ruta_webp || img.ruta_web || img.ruta_original;
             return !!hasValidUrl;
         });
     }
@@ -527,7 +527,7 @@ function mostrarFotosEnModalEditar() {
     
     fotosEnEdicionIndividual.forEach((foto, index) => {
         // Obtener URL válida de la foto
-        const fotoUrl = foto.previewUrl || foto.url || foto.src || foto.ruta_webp || foto.ruta_original || (foto.file ? URL.createObjectURL(foto.file) : '');
+        const fotoUrl = foto.previewUrl || foto.url || foto.src || foto.ruta_webp || foto.ruta_web || foto.ruta_original || (foto.file ? URL.createObjectURL(foto.file) : '');
         
         // Validar que la URL sea válida
         if (!fotoUrl) {
@@ -535,12 +535,24 @@ function mostrarFotosEnModalEditar() {
             return;
         }
         
+        // Normalizar URL: agregar /storage/ si es una ruta relativa sin protocolo (blob: o http://)
+        let finalUrl = fotoUrl;
+        if (!fotoUrl.startsWith('blob:') && !fotoUrl.startsWith('http://') && !fotoUrl.startsWith('https://') && !fotoUrl.startsWith('/')) {
+            // Es una ruta relativa sin /storage/, agregar el prefijo
+            finalUrl = '/storage/' + fotoUrl;
+        } else if (!fotoUrl.startsWith('blob:') && !fotoUrl.startsWith('http://') && !fotoUrl.startsWith('https://') && fotoUrl.startsWith('/')) {
+            // Es una ruta absoluta que no comienza con /storage/, revisar si necesita agregarse
+            if (!fotoUrl.startsWith('/storage/')) {
+                finalUrl = '/storage' + fotoUrl;
+            }
+        }
+        
         const div = document.createElement('div');
         div.className = 'relative group rounded-lg overflow-hidden bg-gray-100 aspect-square';
         
         // Crear la imagen
         const img = document.createElement('img');
-        img.src = fotoUrl;
+        img.src = finalUrl;
         img.alt = `Foto ${index + 1}`;
         img.className = 'w-full h-full object-cover transition-opacity duration-200';
         img.style.width = '100%';
@@ -939,6 +951,29 @@ function guardarEdicionEnModalEditarEPP() {
                     eppEnLista.nombre_completo = eppEnEdicionIndividual.nombre_completo;
                 }
                 console.log('[guardarEdicionEnModalEditarEPP] ✅ eppAgregadosList sincronizado');
+                
+                // SINCRONIZACIÓN CRÍTICA: También actualizar window.gestionItemsUI.epps (usado por el renderer)
+                if (window.gestionItemsUI && window.gestionItemsUI.epps && Array.isArray(window.gestionItemsUI.epps)) {
+                    const eppEnGestión = window.gestionItemsUI.epps.find(e => {
+                        if (e.epp_id === eppActualizado.epp_id) return true;
+                        if (e.id === eppActualizado.id) return true;
+                        if (e.nombre_epp === eppActualizado.nombre_epp) return true;
+                        return false;
+                    });
+                    
+                    if (eppEnGestión) {
+                        eppEnGestión.cantidad = cantidad;
+                        eppEnGestión.observaciones = observaciones;
+                        eppEnGestión.imagenes = fotosEnEdicionIndividual;
+                        if (eppEnEdicionIndividual.nombre_completo) {
+                            eppEnGestión.nombre = eppEnEdicionIndividual.nombre_completo;
+                            eppEnGestión.nombre_epp = eppEnEdicionIndividual.nombre_completo;
+                            eppEnGestión.nombre_completo = eppEnEdicionIndividual.nombre_completo;
+                        }
+                        console.log('[guardarEdicionEnModalEditarEPP] ✅ window.gestionItemsUI.epps sincronizado');
+                    }
+                }
+                
                 // Actualizar tabla visual
                 if (typeof renderizarTablaEPPAgregados === 'function') {
                     renderizarTablaEPPAgregados();

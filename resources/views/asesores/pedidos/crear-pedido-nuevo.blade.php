@@ -582,6 +582,48 @@
                         const formData = new FormData();
 
                         // JSON del pedido (misma estructura que creación normal)
+                        // IMPORTANTE: Procesar imágenes de EPPs correctamente
+                        // Separar imágenes nuevas (File objects) de existentes (URLs)
+                        const eppsProcesados = (datos.epps || []).map((e, eppIndex) => {
+                            const imagenesExistentes = [];
+                            
+                            if (Array.isArray(e.imagenes)) {
+                                e.imagenes.forEach((img, imgIndex) => {
+                                    if (!img) return;
+                                    
+                                    // Si es un File object (nueva imagen del modal)
+                                    if (img instanceof File || (img.file && img.file instanceof File)) {
+                                        const file = img instanceof File ? img : img.file;
+                                        // Usar notación de punto que Laravel interpreta como array anidado
+                                        const fieldName = `epps.${eppIndex}.imagenes.${imgIndex}`;
+                                        formData.append(fieldName, file);
+                                        console.log(`[guardarComoBorrador] ✅ Archivo agregado a FormData: fieldName="${fieldName}", filename="${file.name}", size=${file.size}, epp_id=${e.epp_id}, eppIndex=${eppIndex}, imgIndex=${imgIndex}`);
+                                    }
+                                    // Si es una URL o propiedad con URL (imagen existente)
+                                    else {
+                                        let imageUrl = null;
+                                        if (typeof img === 'string') imageUrl = img;
+                                        else if (img.url) imageUrl = img.url;
+                                        else if (img.preview) imageUrl = img.preview;
+                                        else if (img.ruta_webp) imageUrl = img.ruta_webp;
+                                        else if (img.ruta) imageUrl = img.ruta;
+                                        
+                                        if (imageUrl) {
+                                            imagenesExistentes.push(imageUrl);
+                                            console.log(`[guardarComoBorrador] 🔗 URL existente agregada: ${imageUrl}`);
+                                        }
+                                    }
+                                });
+                            }
+                            
+                            return {
+                                epp_id: e.epp_id,
+                                cantidad: e.cantidad,
+                                observaciones: e.observaciones,
+                                imagenes: imagenesExistentes
+                            };
+                        });
+                        
                         const pedidoLimpio = {
                             cliente: datos.cliente || '',
                             asesora: datos.asesora || '',
@@ -601,22 +643,7 @@
                                 cantidades: p.cantidades,
                                 telas: (p.telas || []).map(t => ({tela: t.nombre_tela || t.tela, color: t.color, referencia: t.referencia}))
                             })),
-                            epps: (datos.epps || []).map(e => ({
-                                epp_id: e.epp_id,
-                                cantidad: e.cantidad,
-                                observaciones: e.observaciones,
-                                imagenes: Array.isArray(e.imagenes)
-                                    ? e.imagenes.map(img => {
-                                        if (!img) return null;
-                                        if (typeof img === 'string') return img;
-                                        if (img.url) return img.url;
-                                        if (img.preview) return img.preview;
-                                        if (img.ruta_webp) return img.ruta_webp;
-                                        if (img.ruta) return img.ruta;
-                                        return null;
-                                    }).filter(Boolean)
-                                    : []
-                            }))
+                            epps: eppsProcesados
                         };
                         formData.append('pedido', JSON.stringify(pedidoLimpio));
                         formData.append('_token', csrfToken);
@@ -624,8 +651,23 @@
                         console.debug('[guardarComoBorrador] Datos a enviar:', pedidoLimpio);
                         console.debug('[guardarComoBorrador] Prendas:', pedidoLimpio.prendas.length, 'EPPs:', pedidoLimpio.epps.length);
 
+                        // Determinar si es modo edición o creación
+                        const modoEdicion = window.modoEdicion || false;
+                        const pedidoId = window.pedidoEditarId || null;
+                        
+                        // Seleccionar endpoint según el modo
+                        let endpoint = '{{ route("asesores.pedidos-editable.guardarBorrador") }}';
+                        if (modoEdicion && pedidoId) {
+                            // En modo edición, actualizar el pedido existente
+                            endpoint = `/asesores/pedidos-editable/${pedidoId}/actualizar`;
+                            formData.append('pedido_id', pedidoId);
+                            console.debug('[guardarComoBorrador] MODO EDICIÓN - Actualizando pedido:', pedidoId);
+                        } else {
+                            console.debug('[guardarComoBorrador] MODO CREACIÓN - Creando nuevo borrador');
+                        }
+
                         // Enviar al servidor
-                        const response = await fetch('{{ route("asesores.pedidos-editable.guardarBorrador") }}', {
+                        const response = await fetch(endpoint, {
                             method: 'POST',
                             body: formData,
                             headers: {
@@ -637,28 +679,47 @@
                         const resultado = await response.json();
                         
                         if (resultado.success) {
-                            // Éxito: redirigir o mostrar mensaje
-                            Swal.fire({
-                                icon: 'success',
-                                title: ' ¡Borrador Guardado!',
-                                html: `
-                                    <div style="text-align: left;">
-                                        <p>Tu pedido ha sido guardado como borrador.</p>
-                                        <p style="margin-top: 10px; padding: 10px; background: #f0f7ff; border-left: 4px solid #0066cc; border-radius: 4px;">
-                                            <strong>ID:</strong> #${resultado.pedido_id}
-                                        </p>
-                                    </div>
-                                `,
-                                confirmButtonColor: '#0066cc',
-                                confirmButtonText: 'Aceptar'
-                            }).then(() => {
-                                // Redirigir a la página de pedidos
-                                if (resultado.redirect_url) {
-                                    window.location.href = resultado.redirect_url;
-                                } else {
-                                    window.location.href = '{{ route("asesores.pedidos.index") }}';
-                                }
-                            });
+                            // Éxito: mostrar mensaje según el modo (edición o creación)
+                            if (modoEdicion && pedidoId) {
+                                // Modo edición: Solo mostrar confirmación, sin redirigir
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: '✓ Cambios Guardados',
+                                    html: `
+                                        <div style="text-align: left;">
+                                            <p>El pedido ha sido actualizado correctamente.</p>
+                                            <p style="margin-top: 10px; padding: 10px; background: #f0f7ff; border-left: 4px solid #0066cc; border-radius: 4px;">
+                                                <strong>Pedido #${resultado.numero_pedido || pedidoId}</strong>
+                                            </p>
+                                        </div>
+                                    `,
+                                    confirmButtonColor: '#0066cc',
+                                    confirmButtonText: 'Aceptar'
+                                });
+                            } else {
+                                // Modo creación: Mostrar ID y redirigir
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: ' ¡Borrador Guardado!',
+                                    html: `
+                                        <div style="text-align: left;">
+                                            <p>Tu pedido ha sido guardado como borrador.</p>
+                                            <p style="margin-top: 10px; padding: 10px; background: #f0f7ff; border-left: 4px solid #0066cc; border-radius: 4px;">
+                                                <strong>ID:</strong> #${resultado.pedido_id}
+                                            </p>
+                                        </div>
+                                    `,
+                                    confirmButtonColor: '#0066cc',
+                                    confirmButtonText: 'Aceptar'
+                                }).then(() => {
+                                    // Redirigir a la página de pedidos
+                                    if (resultado.redirect_url) {
+                                        window.location.href = resultado.redirect_url;
+                                    } else {
+                                        window.location.href = '{{ route("asesores.pedidos.index") }}';
+                                    }
+                                });
+                            }
                         } else {
                             throw new Error(resultado.message || 'Error desconocido al guardar borrador');
                         }

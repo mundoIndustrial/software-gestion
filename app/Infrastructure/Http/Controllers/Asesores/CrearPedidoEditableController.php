@@ -1649,9 +1649,10 @@ class CrearPedidoEditableController extends Controller
      */
     private function procesarImagenesDeEpps(Request $request, int $pedidoId, array $epps): void
     {
-        Log::info('[CrearPedidoEditableController] procesarImagenesDeEpps() - Solo procesando imágenes', [
+        Log::info('[CrearPedidoEditableController] procesarImagenesDeEpps() - Iniciando procesamiento', [
             'pedido_id' => $pedidoId,
             'epps_count' => count($epps),
+            'all_request_files' => array_keys($request->allFiles()),
         ]);
 
         foreach ($epps as $eppIdx => $eppData) {
@@ -1671,19 +1672,35 @@ class CrearPedidoEditableController extends Controller
             Log::info('[CrearPedidoEditableController] Procesando imágenes para EPP existente', [
                 'pedido_epp_id' => $pedidoEpp->id,
                 'epp_id' => $eppData['epp_id'],
+                'eppIdx' => $eppIdx,
             ]);
 
             // ==================== PROCESAR ARCHIVOS FORMDATA ====================
             $imagenesGuardadas = 0;
             $imgIdx = 0;
             while (true) {
-                $formKey = "epps.{$eppIdx}.imagenes.{$imgIdx}";
+                // Laravel convierte puntos a underscores: epps.0.imagenes.0 → epps_0_imagenes_0
+                $formKey = "epps_{$eppIdx}_imagenes_{$imgIdx}";
+                
+                Log::debug('[CrearPedidoEditableController] Buscando archivo en FormData', [
+                    'formKey' => $formKey,
+                    'exists' => $request->hasFile($formKey),
+                    'eppIdx' => $eppIdx,
+                    'imgIdx' => $imgIdx,
+                ]);
+                
                 if (!$request->hasFile($formKey)) {
                     break;
                 }
 
                 try {
                     $archivo = $request->file($formKey);
+                    
+                    Log::info('[CrearPedidoEditableController] Archivo encontrado', [
+                        'formKey' => $formKey,
+                        'filename' => $archivo->getClientOriginalName(),
+                        'size' => $archivo->getSize(),
+                    ]);
                     
                     // Guardar imagen en carpeta del EPP con conversión a WebP
                     $resultado = $this->imageUploadService->guardarImagenDirecta(
@@ -2873,6 +2890,155 @@ class CrearPedidoEditableController extends Controller
                 'message' => 'Error al guardar borrador: ' . $e->getMessage(),
                 'error_line' => $e->getLine(),
                 'error_file' => $e->getFile(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Actualizar un pedido existente en modo edición
+     */
+    public function actualizarBorrador($pedidoId, Request $request): JsonResponse
+    {
+        $inicioTotal = microtime(true);
+
+        try {
+            Log::info('[ACTUALIZAR-BORRADOR] INICIANDO ACTUALIZACIÓN', [
+                'pedido_id' => $pedidoId,
+                'has_pedido_json' => !!$request->input('pedido'),
+                'timestamp' => now(),
+            ]);
+
+            // Validar que el pedido existe
+            $pedido = PedidoProduccion::findOrFail($pedidoId);
+            
+            // ====== PASO 1: Decodificar JSON del frontend ======
+            $pedidoJSON = $request->input('pedido');
+            if (!$pedidoJSON) {
+                throw new \Exception('Campo "pedido" JSON requerido');
+            }
+
+            $datosFrontend = json_decode($pedidoJSON, true);
+            if (!$datosFrontend) {
+                throw new \Exception('JSON inválido en campo "pedido"');
+            }
+
+            // ====== PASO 2: Iniciar transacción ======
+            DB::beginTransaction();
+
+            // ====== PASO 3: Actualizar datos básicos del pedido ======
+            $pedido->update([
+                'cliente' => trim($datosFrontend['cliente'] ?? ''),
+                'forma_de_pago' => $datosFrontend['forma_de_pago'] ?? '',
+                'observaciones' => $datosFrontend['observaciones'] ?? '',
+            ]);
+
+            Log::info('[ACTUALIZAR-BORRADOR] Datos básicos actualizados', [
+                'pedido_id' => $pedidoId,
+                'cliente' => $pedido->cliente,
+            ]);
+
+            // ====== PASO 4: Actualizar EPPs (cantidad, observaciones, e imágenes) ======
+            $eppsCrudos = $datosFrontend['epps'] ?? [];
+            if (!empty($eppsCrudos)) {
+                foreach ($eppsCrudos as $eppIndex => $eppData) {
+                    $eppId = $eppData['epp_id'] ?? null;
+                    $cantidad = $eppData['cantidad'] ?? 1;
+                    $observaciones = $eppData['observaciones'] ?? '';
+                    
+                    if (!$eppId) continue;
+                    
+                    // Buscar el registro PedidoEpp existente
+                    $pedidoEpp = \App\Models\PedidoEpp::where('pedido_produccion_id', $pedidoId)
+                        ->where('epp_id', $eppId)
+                        ->first();
+                    
+                    if ($pedidoEpp) {
+                        // ELIMINAR SIEMPRE IMÁGENES ANTIGUAS EN MODO EDICIÓN
+                        // Esto asegura que las imágenes se reemplacen completamente
+                        // si el usuario las editó (agregó, eliminó, o cambió)
+                        $imagenesAntiguas = \App\Models\PedidoEppImagen::where('pedido_epp_id', $pedidoEpp->id)->get();
+                        
+                        if (count($imagenesAntiguas) > 0) {
+                            Log::info('[ACTUALIZAR-BORRADOR] Eliminando imágenes antiguas de EPP (modo edición)', [
+                                'pedido_epp_id' => $pedidoEpp->id,
+                                'epp_id' => $eppId,
+                                'imagenes_a_eliminar' => count($imagenesAntiguas),
+                            ]);
+                            
+                            // Eliminar archivos del storage
+                            foreach ($imagenesAntiguas as $imagen) {
+                                if ($imagen->ruta_original && Storage::disk('public')->exists($imagen->ruta_original)) {
+                                    Storage::disk('public')->delete($imagen->ruta_original);
+                                }
+                                if ($imagen->ruta_web && $imagen->ruta_web !== $imagen->ruta_original && Storage::disk('public')->exists($imagen->ruta_web)) {
+                                    Storage::disk('public')->delete($imagen->ruta_web);
+                                }
+                                $imagen->delete();
+                            }
+                        }
+                        
+                        // Actualizar cantidad y observaciones
+                        $pedidoEpp->update([
+                            'cantidad' => $cantidad,
+                            'observaciones' => $observaciones,
+                        ]);
+                        
+                        Log::info('[ACTUALIZAR-BORRADOR] EPP actualizado', [
+                            'pedido_id' => $pedidoId,
+                            'epp_id' => $eppId,
+                            'cantidad' => $cantidad,
+                            'observaciones' => $observaciones,
+                        ]);
+                    }
+                }
+                
+                // Procesar imágenes de EPPs (nuevas o copiadas)
+                $this->procesarImagenesDeEpps($request, $pedidoId, $eppsCrudos);
+            }
+
+            // ====== PASO 5: Procesar imágenes de procesos ======
+            $procesosData = $datosFrontend['prendas'] ?? [];
+            if (!empty($procesosData)) {
+                foreach ($procesosData as $prendaIndex => $prendaData) {
+                    $procesos = $prendaData['procesos'] ?? [];
+                    if (!empty($procesos)) {
+                        $this->procesarImagenesDeProcesos($request, $pedidoId, $procesos, $prendaIndex);
+                    }
+                }
+            }
+
+            // ====== Confirmar transacción ======
+            DB::commit();
+
+            $tiempoTotal = round((microtime(true) - $inicioTotal) * 1000, 2);
+
+            Log::info('[ACTUALIZAR-BORRADOR] ✅ PEDIDO ACTUALIZADO EXITOSAMENTE', [
+                'pedido_id' => $pedidoId,
+                'numero_pedido' => $pedido->numero_pedido,
+                'tiempo_total_ms' => $tiempoTotal,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => '✅ Pedido actualizado exitosamente',
+                'pedido_id' => $pedidoId,
+                'numero_pedido' => $pedido->numero_pedido,
+                'estado' => $pedido->estado,
+                'tiempo_ms' => $tiempoTotal,
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('[ACTUALIZAR-BORRADOR] ❌ ERROR CRÍTICO', [
+                'pedido_id' => $pedidoId,
+                'error' => $e->getMessage(),
+                'linea' => $e->getLine(),
+                'archivo' => $e->getFile(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar pedido: ' . $e->getMessage(),
             ], 500);
         }
     }
