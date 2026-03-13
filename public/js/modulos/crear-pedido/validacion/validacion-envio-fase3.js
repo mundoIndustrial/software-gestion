@@ -115,7 +115,7 @@
         // ========== RECOPILACIÓN DE PRENDAS DEL GESTOR ==========
         // Usar gestor si existe, sino usar DOM
         if (window.gestorPrendaSinCotizacion && window.gestorPrendaSinCotizacion.prendas) {
-            const prendas = window.gestorPrendaSinCotizacion.obtenerActivas();
+            const prendas = window.gestorPrendaSinCotizacion.obtenerActivas() || [];
             const fotosNuevasGestor = window.gestorPrendaSinCotizacion.fotosNuevas || {};
             const telasNuevasGestor = window.gestorPrendaSinCotizacion.telasFotosNuevas || {};
 

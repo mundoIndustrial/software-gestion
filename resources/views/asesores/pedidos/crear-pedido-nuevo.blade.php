@@ -35,7 +35,32 @@
         window.pedidoEditarId = {{ $pedidoEditarId }};
         // Pasar datos completos con pedido, prendas, EPPs, etc.
         window.pedidoEditarData = {!! json_encode([
-            'pedido' => $pedido ?? [],
+            'pedido' => [
+                'id' => $pedido->id ?? null,
+                'numero_pedido' => $pedido->numero_pedido ?? null,
+                'cliente' => $pedido->cliente_nombre_display ?? '',
+                'forma_de_pago' => $pedido->forma_de_pago ?? '',
+                'observaciones' => $pedido->observaciones ?? '',
+                'estado' => $pedido->estado ?? '',
+                'prendas' => ($pedido->prendas ?? collect())->map(function($prenda) {
+                    return [
+                        'id' => $prenda->id,
+                        'nombre_prenda' => $prenda->nombre_prenda ?? '',
+                        'descripcion' => $prenda->descripcion ?? '',
+                        'de_bodega' => $prenda->de_bodega ?? 1,
+                        'genero' => $prenda->genero ?? '',
+                        'generosConTallas' => $prenda->generosConTallas ?? [],
+                        'cantidadesPorTalla' => $prenda->cantidadesPorTalla ?? [],
+                        'telasAgregadas' => $prenda->telasAgregadas ?? [],
+                        'fotos' => ($prenda->fotos ?? collect())->map(fn($f) => [
+                            'id' => $f->id,
+                            'ruta_webp' => $f->ruta_webp ?? $f->ruta ?? '',
+                        ])->toArray(),
+                        'procesos' => $prenda->procesos ?? [],
+                        'variaciones' => $prenda->variaciones ?? [],
+                    ];
+                })->toArray(),
+            ],
             'epps' => $epps ?? [],
             'estados' => $estados ?? [],
             'areas' => $areas ?? []
@@ -60,7 +85,7 @@
                         Cliente
                         <span id="cliente-requerido" style="color: #ef4444;">*</span>
                     </label>
-                    <input type="text" id="cliente_editable" name="cliente" value="{{ $pedido->cliente ?? '' }}">
+                    <input type="text" id="cliente_editable" name="cliente" value="{{ ($modoEdicion ?? false) ? ($pedido->cliente_nombre_display ?? '') : '' }}">
                 </div>
 
                 <div class="form-group">
@@ -70,14 +95,14 @@
 
                 <div class="form-group">
                     <label for="forma_de_pago_editable">Forma de Pago</label>
-                    <input type="text" id="forma_de_pago_editable" name="forma_de_pago" value="{{ $pedido->forma_de_pago ?? '' }}">
+                    <input type="text" id="forma_de_pago_editable" name="forma_de_pago" value="{{ ($modoEdicion ?? false) ? ($pedido->forma_de_pago ?? '') : '' }}">
                 </div>
             </div>
 
             <div style="width: 100%; margin-top: 1rem;">
                 <div class="form-group">
                     <label for="observaciones_editable">Observaciones</label>
-                    <textarea id="observaciones_editable" name="observaciones" rows="3" placeholder="Agrega cualquier observación adicional sobre el pedido...">{{ $pedido->observaciones ?? '' }}</textarea>
+                    <textarea id="observaciones_editable" name="observaciones" rows="3" placeholder="Agrega cualquier observación adicional sobre el pedido...">{{ ($modoEdicion ?? false) ? ($pedido->observaciones ?? '') : '' }}</textarea>
                 </div>
             </div>
         </div>
@@ -147,6 +172,10 @@
             <button type="submit" id="btn-submit" class="btn btn-primary" style="display: none; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; gap: 0.5rem;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(59, 130, 246, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(59, 130, 246, 0.2)'">
                 <span class="material-symbols-rounded" style="font-size: 1.1rem;">check_circle</span>
                 Crear Pedido
+            </button>
+            <button type="button" id="btn-guardar-borrador" class="btn btn-warning" style="background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s; box-shadow: 0 2px 4px rgba(251, 146, 60, 0.2); display: flex; align-items: center; justify-content: center; gap: 0.5rem;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(251, 146, 60, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(251, 146, 60, 0.2)'">
+                <span class="material-symbols-rounded" style="font-size: 1.1rem;">save</span>
+                Guardar Borrador
             </button>
             <a href="{{ route('asesores.pedidos.index') }}" class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.5rem;">
                 <span class="material-symbols-rounded" style="font-size: 1.1rem;">close</span>
@@ -296,6 +325,9 @@
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/prendas-wrappers.js') }}?v={{ $v }}"></script>
+
+    <!-- ─── Validación y envío ─── -->
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/validacion/validacion-envio-fase3.js') }}?v={{ $v }}"></script>
 
     <!-- ─── Gestores, Builders, Card Services ─── -->
     <script defer src="{{ js_asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}?v={{ $v }}"></script>
@@ -462,6 +494,210 @@
                 btnAgregarTipoInline.style.display = 'flex';
             }
         };
+    });
+</script>
+
+<!-- Script para manejar Guardar Borrador -->
+<script>
+    /**
+     * Función para enviar el formulario como BORRADOR
+     * POST /asesores/pedidos-editable/borrador
+     * 
+     * A diferencia de la creación normal, el borrador:
+     * - NO genera numero_pedido
+     * - Se guarda con estado 'Borrador'
+     * - Puede ser editado después
+     */
+    window.guardarComoBorrador = async function() {
+        try {
+            // Validar que hay al menos un ítem (prenda o EPP)
+            const listaPrendas = document.getElementById('prendas-container-editable');
+            const listaItems = document.getElementById('lista-items-pedido');
+            
+            const tienePrendas = listaPrendas && listaPrendas.querySelector('.prenda-item-card');
+            const tieneItems = listaItems && listaItems.children.length > 0;
+            
+            if (!tienePrendas && !tieneItems) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: ' Pedido Vacío',
+                    text: 'Agrega al menos una prenda o ítem EPP antes de guardar como borrador',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#fb923c'
+                });
+                return;
+            }
+            
+            // Mostrar confirmación
+            const result = await Swal.fire({
+                icon: 'question',
+                title: ' Guardar Borrador',
+                html: `
+                    <div style="text-align: left;">
+                        <p style="margin-bottom: 10px;">
+                            <strong>Este pedido se guardará como borrador</strong>
+                        </p>
+                        <ul style="margin: 10px 0; text-align: left; display: inline-block;">
+                            <li>✓ No se asignará número de pedido</li>
+                            <li>✓ Estado: Borrador</li>
+                            <li>✓ Podrás editarlo después</li>
+                        </ul>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonColor: '#fb923c',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Sí, guardar borrador',
+                cancelButtonText: 'Cancelar'
+            });
+            
+            if (!result.isConfirmed) {
+                return;
+            }
+            
+            // Mostrar loading
+            Swal.fire({
+                title: ' Guardando Borrador...',
+                html: '<div style="text-align: center;"><div style="width: 50px; height: 50px; border: 4px solid #e5e7eb; border-top-color: #fb923c; border-radius: 50%; margin: 20px auto; animation: spin 0.8s linear infinite;"></div></div>',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: async () => {
+                    try {
+                        // Reutilizar la misma función que usa "Crear Pedido" para recopilar datos
+                        const datos = (typeof window.prepararDatosParaEnvio === 'function')
+                            ? window.prepararDatosParaEnvio()
+                            : null;
+
+                        if (!datos) {
+                            throw new Error('No se pudo recopilar los datos del pedido. Recarga la página e intenta de nuevo.');
+                        }
+
+                        // Agregar observaciones (prepararDatosParaEnvio no las incluye)
+                        datos.observaciones = document.getElementById('observaciones_editable')?.value?.trim() || '';
+
+                        // Enviar al endpoint de borrador usando enviarDatosAlServidor si existe,
+                        // o construir manualmente el FormData igual que la creación normal
+                        const csrfToken = document.querySelector('input[name="_token"]')?.value ||
+                                        document.querySelector('meta[name="csrf-token"]')?.content;
+
+                        const formData = new FormData();
+
+                        // JSON del pedido (misma estructura que creación normal)
+                        const pedidoLimpio = {
+                            cliente: datos.cliente || '',
+                            asesora: datos.asesora || '',
+                            forma_de_pago: datos.forma_de_pago || '',
+                            observaciones: datos.observaciones || '',
+                            numero_cotizacion: datos.numero_cotizacion,
+                            es_sin_cotizacion: datos.es_sin_cotizacion,
+                            tipo_cotizacion: datos.tipo_cotizacion || null,
+                            logo: datos.logo || null,
+                            reflectivo: datos.reflectivo || null,
+                            prendas: (datos.prendas || []).map(p => ({
+                                tipo: p.tipo,
+                                nombre_producto: p.nombre_producto,
+                                descripcion: p.descripcion,
+                                de_bodega: p.de_bodega,
+                                genero: p.genero,
+                                cantidades: p.cantidades,
+                                telas: (p.telas || []).map(t => ({tela: t.nombre_tela || t.tela, color: t.color, referencia: t.referencia}))
+                            })),
+                            epps: (datos.epps || []).map(e => ({
+                                epp_id: e.epp_id,
+                                cantidad: e.cantidad,
+                                observaciones: e.observaciones,
+                                imagenes: Array.isArray(e.imagenes)
+                                    ? e.imagenes.map(img => {
+                                        if (!img) return null;
+                                        if (typeof img === 'string') return img;
+                                        if (img.url) return img.url;
+                                        if (img.preview) return img.preview;
+                                        if (img.ruta_webp) return img.ruta_webp;
+                                        if (img.ruta) return img.ruta;
+                                        return null;
+                                    }).filter(Boolean)
+                                    : []
+                            }))
+                        };
+                        formData.append('pedido', JSON.stringify(pedidoLimpio));
+                        formData.append('_token', csrfToken);
+
+                        console.debug('[guardarComoBorrador] Datos a enviar:', pedidoLimpio);
+                        console.debug('[guardarComoBorrador] Prendas:', pedidoLimpio.prendas.length, 'EPPs:', pedidoLimpio.epps.length);
+
+                        // Enviar al servidor
+                        const response = await fetch('{{ route("asesores.pedidos-editable.guardarBorrador") }}', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            }
+                        });
+                        
+                        const resultado = await response.json();
+                        
+                        if (resultado.success) {
+                            // Éxito: redirigir o mostrar mensaje
+                            Swal.fire({
+                                icon: 'success',
+                                title: ' ¡Borrador Guardado!',
+                                html: `
+                                    <div style="text-align: left;">
+                                        <p>Tu pedido ha sido guardado como borrador.</p>
+                                        <p style="margin-top: 10px; padding: 10px; background: #f0f7ff; border-left: 4px solid #0066cc; border-radius: 4px;">
+                                            <strong>ID:</strong> #${resultado.pedido_id}
+                                        </p>
+                                    </div>
+                                `,
+                                confirmButtonColor: '#0066cc',
+                                confirmButtonText: 'Aceptar'
+                            }).then(() => {
+                                // Redirigir a la página de pedidos
+                                if (resultado.redirect_url) {
+                                    window.location.href = resultado.redirect_url;
+                                } else {
+                                    window.location.href = '{{ route("asesores.pedidos.index") }}';
+                                }
+                            });
+                        } else {
+                            throw new Error(resultado.message || 'Error desconocido al guardar borrador');
+                        }
+                    } catch (error) {
+                        console.error('[guardarComoBorrador] Error:', error);
+                        
+                        Swal.fire({
+                            icon: 'error',
+                            title: ' Error al Guardar Borrador',
+                            text: error.message || 'No se pudo guardar el borrador. Intenta nuevamente.',
+                            confirmButtonColor: '#ef4444',
+                            confirmButtonText: 'Aceptar'
+                        });
+                    }
+                }
+            });
+            
+        } catch (error) {
+            console.error('[guardarComoBorrador] Error critical:', error);
+            Swal.fire({
+                icon: 'error',
+                title: ' Error Crítico',
+                text: 'Ocurrió un error inesperado. Revisa la consola.',
+                confirmButtonColor: '#ef4444'
+            });
+        }
+    };
+    
+    // Asignar evento al botón cuando se cargue el DOM
+    document.addEventListener('DOMContentLoaded', function() {
+        const btnGuardarBorrador = document.getElementById('btn-guardar-borrador');
+        if (btnGuardarBorrador) {
+            btnGuardarBorrador.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.guardarComoBorrador();
+            });
+        }
     });
 </script>
 

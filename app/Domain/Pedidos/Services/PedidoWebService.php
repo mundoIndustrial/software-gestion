@@ -103,6 +103,56 @@ class PedidoWebService
     }
 
     /**
+     * Crear pedido borrador (sin número de pedido)
+     * 
+     * Similar a crearPedidoCompleto pero sin generar numero_pedido
+     * Los borradores tienen estado 'Borrador' y pueden editarse antes de ser finalizados
+     */
+    public function crearPedidoBorrador(array $datosValidados, int $asesorId): PedidoProduccion
+    {
+        $tiempoInicio = microtime(true);
+        
+        return DB::transaction(function () use ($datosValidados, $asesorId, &$tiempoInicio) {
+            // 1. Crear pedido base SIN número de pedido
+            $tiempoInicioBase = microtime(true);
+            $pedido = $this->crearPedidoBaseBorrador($datosValidados, $asesorId);
+            $tiempoBase = (microtime(true) - $tiempoInicioBase) * 1000;
+            
+            Log::info('[PedidoWebService.crearPedidoBorrador]  Pedido borrador base creado', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido ?? 'NULL (Borrador)',
+                'estado' => $pedido->estado,
+                'tiempo_base_ms' => round($tiempoBase, 2),
+            ]);
+
+            // 2. Crear prendas con todas sus relaciones
+            if (isset($datosValidados['items']) && is_array($datosValidados['items'])) {
+                foreach ($datosValidados['items'] as $itemIndex => $itemData) {
+                    $this->crearItemCompleto($pedido, $itemData, $itemIndex);
+                }
+            }
+
+            // 3. Crear EPPs si existen
+            if (isset($datosValidados['epps']) && is_array($datosValidados['epps'])) {
+                foreach ($datosValidados['epps'] as $eppIndex => $eppData) {
+                    $this->crearEppCompleto($pedido, $eppData, $eppIndex);
+                }
+            }
+
+            Log::info('[PedidoWebService.crearPedidoBorrador]  Pedido borrador completo creado', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido ?? 'NULL (Borrador)',
+                'cantidad_prendas' => $pedido->prendas()->count(),
+                'cantidad_epps' => $pedido->epps()->count(),
+                'estado' => $pedido->estado,
+                'tiempo_total_ms' => round((microtime(true) - $tiempoInicio) * 1000, 2),
+            ]);
+
+            return $pedido;
+        });
+    }
+
+    /**
      * Crear pedido base
      */
     private function crearPedidoBase(array $datos, int $asesorId): PedidoProduccion
@@ -148,6 +198,49 @@ class PedidoWebService
             'cantidad_total' => 0,
             'area' => $area,  // AHORA SE GUARDA EL ÁREA CORRECTAMENTE
             'fecha_de_creacion_de_orden' => now(), // Fecha actual de creación de la orden
+        ]);
+
+        return $pedido;
+    }
+
+    /**
+     * Crear pedido base para BORRADOR (sin número de pedido)
+     * 
+     * Similar a crearPedidoBase pero sin generar numero_pedido
+     * Los borradores siempre van con estado 'Borrador'
+     */
+    private function crearPedidoBaseBorrador(array $datos, int $asesorId): PedidoProduccion
+    {
+        //  EXTRAER ÁREA CON DEFAULT
+        $area = $datos['area'] ?? $datos['estado_area'] ?? 'Creación Orden';
+        if (is_string($area)) {
+            $area = trim($area);
+            $area = empty($area) ? 'Creación Orden' : $area;
+        } else {
+            $area = 'creacion de pedido';
+        }
+
+        // Para borradores, siempre usar estado 'Borrador'
+        $estado = 'Borrador';
+
+        Log::info('[PedidoWebService.crearPedidoBaseBorrador]  Creando pedido borrador SIN número consecutivo', [
+            'numero_pedido' => 'NULL (Borrador)',
+            'area' => $area,
+            'estado' => $estado,
+        ]);
+
+        $pedido = PedidoProduccion::create([
+            'numero_pedido' => null, // NO generar número - es borrador
+            'cliente' => $datos['cliente'] ?? 'SIN NOMBRE',
+            'asesor_id' => $asesorId,
+            'cliente_id' => $datos['cliente_id'] ?? null,
+            'forma_de_pago' => $datos['forma_de_pago'] ?? 'CONTADO',
+            'novedades' => $datos['descripcion'] ?? null,
+            'observaciones' => $datos['observaciones'] ?? null,
+            'estado' => $estado, // Estado 'Borrador'
+            'cantidad_total' => 0,
+            'area' => $area,
+            'fecha_de_creacion_de_orden' => now(),
         ]);
 
         return $pedido;
