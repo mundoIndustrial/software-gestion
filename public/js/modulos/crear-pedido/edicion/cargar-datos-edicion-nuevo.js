@@ -404,6 +404,36 @@ function cargarEPPs(epps) {
             });
         }
         
+        // Registrar EPPs en eppAgregadosList e itemsPedido para que el modal de edición pueda encontrarlos
+        if (!window.eppAgregadosList) {
+            window.eppAgregadosList = [];
+        }
+        if (!window.itemsPedido) {
+            window.itemsPedido = [];
+        }
+        
+        epps.forEach((epp) => {
+            const eppNormalizado = {
+                id: epp.epp_id,
+                epp_id: epp.epp_id,
+                tarjetaId: String(epp.epp_id),
+                nombre: epp.nombre_epp || epp.nombre_completo || epp.nombre || '',
+                nombre_epp: epp.nombre_epp || epp.nombre_completo || epp.nombre || '',
+                nombre_completo: epp.nombre_completo || epp.nombre_epp || epp.nombre || '',
+                cantidad: epp.cantidad || 0,
+                observaciones: epp.observaciones || '',
+                imagenes: epp.imagenes || [],
+                imagen: '',
+                tipo: 'epp'
+            };
+            
+            window.eppAgregadosList.push(eppNormalizado);
+            window.itemsPedido.push(eppNormalizado);
+        });
+        
+        console.log('[cargar-datos-edicion] EPPs registrados en eppAgregadosList:', window.eppAgregadosList.length);
+        console.log('[cargar-datos-edicion] EPPs registrados en itemsPedido:', window.itemsPedido.length);
+        
         // Si el gestor tiene método para agregar EPPs
         if (window.gestorPrendaSinCotizacion && typeof window.gestorPrendaSinCotizacion.agregarEpp === 'function') {
             epps.forEach((epp, index) => {
@@ -502,26 +532,12 @@ function inicializarEventListenersEpp() {
             });
         }
         
-        // Botón EDITAR EPP
-        if (e.target.closest('.btn-editar-epp')) {
-            e.stopPropagation();
-            const btn = e.target.closest('.btn-editar-epp');
-            const eppIndex = parseInt(btn.dataset.eppIndex);
-            
-            console.log('[EPP] Editando EPP con índice:', eppIndex);
-            
-            // Obtener EPP desde window.eppsPedido (donde se almacenan)
-            if (window.eppsPedido && window.eppsPedido[eppIndex]) {
-                const epp = window.eppsPedido[eppIndex];
-                console.log('[EPP]  EPP encontrado:', epp);
-                
-                // TODO: Abrir modal para editar EPP
-                // Por ahora solo log
-                alert(`Editar EPP: ${epp.nombre} (ID: ${epp.id || 'nuevo'})`);
-            } else {
-                console.warn('[EPP]  EPP no encontrado en índice:', eppIndex);
-                alert('EPP no encontrado');
-            }
+        // Botón EDITAR EPP - MANEJADO POR ARQUITECTURA NUEVA DE HERENCIA
+        // El nuevo EppMenuHandlerTarjeta/Tabla maneja esto automáticamente
+        // a través de window.abrirModalEditarEPP() - no procesar aquí
+        if (e.target.closest('.btn-editar-epp-nuevo') || e.target.closest('.btn-editar-epp')) {
+            // El nuevo handler ya procesó el evento, ignorar
+            return;
         }
         
         // Botón ELIMINAR EPP

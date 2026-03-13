@@ -2187,7 +2187,7 @@ function guardarEdicionEPP() {
     
     if (esVistaNuevo) {
         // Vista de nuevo pedido - usar clases -nuevo
-        if (window.eppItemManagerNuevo && typeof window.eppItemManagerNuevo.actualizarItem === 'function') {
+        if (window.eppItemManagerTarjeta && typeof window.eppItemManagerTarjeta.actualizarItem === 'function') {
             // Buscar la tarjeta usando el ID original para obtener el ID único
             const tarjeta = document.querySelector(`.item-epp-card-nuevo[data-epp-original-id="${targetId}"]`);
             const tarjetaId = tarjeta ? tarjeta.getAttribute('data-epp-id') : targetId;
@@ -2198,7 +2198,7 @@ function guardarEdicionEPP() {
                 tarjetaEncontrada: !!tarjeta
             });
             
-            window.eppItemManagerNuevo.actualizarItem(tarjetaId, {
+            window.eppItemManagerTarjeta.actualizarItem(tarjetaId, {
                 nombre,
                 cantidad: parseInt(cantidad),
                 observaciones: observaciones || '-',
@@ -2209,8 +2209,8 @@ function guardarEdicionEPP() {
         }
     } else {
         // Vista de cotización - usar clases genéricas
-        if (window.eppItemManager && typeof window.eppItemManager.actualizarItem === 'function') {
-            window.eppItemManager.actualizarItem(targetId, {
+        if (window.eppItemManagerTabla && typeof window.eppItemManagerTabla.actualizarItem === 'function') {
+            window.eppItemManagerTabla.actualizarItem(targetId, {
                 nombre,
                 cantidad: parseInt(cantidad),
                 observaciones: observaciones || '-',
@@ -2405,8 +2405,8 @@ async function finalizarAgregarEPP() {
         
         if (esVistaNuevo) {
             // Vista de nuevo pedido - usar clases -nuevo
-            if (window.eppItemManagerNuevo && typeof window.eppItemManagerNuevo.crearItem === 'function') {
-                window.eppItemManagerNuevo.crearItem(
+            if (window.eppItemManagerTarjeta && typeof window.eppItemManagerTarjeta.crearItem === 'function') {
+                window.eppItemManagerTarjeta.crearItem(
                     epp.id,                    // id
                     epp.nombre_completo,        // nombre
                     'EPP',                     // categoria
@@ -2429,12 +2429,12 @@ async function finalizarAgregarEPP() {
                 
                 console.log(` [finalizarAgregarEPP] EPP agregado a tarjeta (nuevo): ${epp.nombre_completo}`);
             } else {
-                console.warn(' [finalizarAgregarEPP] eppItemManagerNuevo no disponible');
+                console.warn(' [finalizarAgregarEPP] eppItemManagerTarjeta no disponible');
             }
         } else {
             // Vista de cotización - usar clases genéricas
-            if (window.eppItemManager && typeof window.eppItemManager.crearItem === 'function') {
-                window.eppItemManager.crearItem(
+            if (window.eppItemManagerTabla && typeof window.eppItemManagerTabla.crearItem === 'function') {
+                window.eppItemManagerTabla.crearItem(
                     epp.id,                    // id
                     epp.nombre_completo,        // nombre
                     'EPP',                     // categoria
@@ -2458,7 +2458,7 @@ async function finalizarAgregarEPP() {
                 
                 console.log(` [finalizarAgregarEPP] EPP agregado a tarjeta (cotización): ${epp.nombre_completo}`);
             } else {
-                console.warn(' [finalizarAgregarEPP] eppItemManager no disponible');
+                console.warn(' [finalizarAgregarEPP] eppItemManagerTabla no disponible');
             }
         }
         
@@ -3425,15 +3425,15 @@ function finalizarAgregarPrenda() {
         }
     }
     
-    // Renderizar en la tabla principal usando eppItemManager
-    if (window.eppItemManager && typeof window.eppItemManager.crearItem === 'function') {
+    // Renderizar en la tabla principal usando eppItemManagerTabla
+    if (window.eppItemManagerTabla && typeof window.eppItemManagerTabla.crearItem === 'function') {
         if (enModoEdicion) {
             // MODO EDICIÓN: Actualizar item existente
             console.log('[finalizarAgregarPrenda] 📝 ACTUALIZANDO prenda en tabla principal');
             const targetId = prendaEnEdicion.id || prendaEnEdicion.prenda_id || prendaEnEdicion.epp_id;
             
-            if (typeof window.eppItemManager.actualizarItem === 'function') {
-                window.eppItemManager.actualizarItem(targetId, {
+            if (typeof window.eppItemManagerTabla.actualizarItem === 'function') {
+                window.eppItemManagerTabla.actualizarItem(targetId, {
                     nombre: descripcion,
                     cantidad: cantidad,
                     observaciones: observaciones || '-',
@@ -3452,7 +3452,7 @@ function finalizarAgregarPrenda() {
         } else {
             // MODO CREACIÓN: Crear nuevo item
             console.log('[finalizarAgregarPrenda] ➕ Creando nueva prenda en tabla principal');
-            window.eppItemManager.crearItem(
+            window.eppItemManagerTabla.crearItem(
                 prenda.id,                // id
                 descripcion,               // nombre
                 'prenda',                  // categoria
@@ -3470,7 +3470,7 @@ function finalizarAgregarPrenda() {
             );
         }
     } else {
-        console.warn('[finalizarAgregarPrenda] eppItemManager no disponible');
+        console.warn('[finalizarAgregarPrenda] eppItemManagerTabla no disponible');
     }
     
     // Registrar en gestionItemsUI si está disponible
