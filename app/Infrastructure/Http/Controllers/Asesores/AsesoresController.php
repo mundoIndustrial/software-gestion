@@ -1461,4 +1461,41 @@ class AsesoresController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Mostrar vista de borradores de pedidos
+     * 
+     * GET /asesores/pedidos/borradores
+     */
+    public function borradores(Request $request)
+    {
+        try {
+            // Obtener borradores del usuario actual (estado = 'Borrador')
+            $user = Auth::user();
+            
+            // Obtener todos los borradores del asesor
+            $borradores = PedidoProduccion::where('estado', 'Borrador')
+                ->where('asesor_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->paginate(15);
+            
+            \Log::info('[AsesoresController.borradores] Listando borradores', [
+                'asesor_id' => $user->id,
+                'count' => $borradores->count(),
+                'total' => $borradores->total(),
+            ]);
+            
+            return view('asesores.pedidos.borradores', [
+                'borradores' => $borradores,
+                'asesor' => $user
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('[AsesoresController.borradores] Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->back()->with('error', 'Error al listar borradores: ' . $e->getMessage());
+        }
+    }
 }

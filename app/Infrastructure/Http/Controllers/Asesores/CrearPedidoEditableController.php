@@ -300,6 +300,84 @@ class CrearPedidoEditableController extends Controller
         ]);
         
         // ========================================
+        // MODO EDICIÓN: Cargar pedido existente si ?edit=ID
+        // ========================================
+        $modoEdicion = false;
+        $pedidoEditar = null;
+        $pedidoEditarId = null;
+        $eppsEditar = [];
+
+        $editId = $request->query('edit');
+        if ($editId) {
+            $editId = (int) $editId;
+            $pedidoEditar = PedidoProduccion::with([
+                'prendas.tallas',
+                'prendas.fotos',
+                'prendas.coloresTelas',
+                'prendas.procesos',
+                'epps.epp',
+                'epps.imagenes',
+            ])->find($editId);
+
+            if ($pedidoEditar) {
+                $modoEdicion = true;
+                $pedidoEditarId = $pedidoEditar->id;
+
+                // Usar el campo 'cliente' directo (string) de la tabla pedidos_produccion
+                // Si está vacío, buscar via relación cliente_id
+                $clienteNombre = $pedidoEditar->getOriginal('cliente') 
+                    ?? optional(Cliente::find($pedidoEditar->cliente_id))->nombre 
+                    ?? '';
+                $pedidoEditar->cliente_nombre_display = $clienteNombre;
+
+                // Preparar prendas con sus relaciones cargadas
+                $pedidoEditar->prendas->each(function ($prenda) {
+                    $prenda->generosConTallas = $prenda->tallas->groupBy('genero')->map(function ($tallasGenero) {
+                        return $tallasGenero->pluck('cantidad', 'talla');
+                    });
+                    $prenda->cantidadesPorTalla = $prenda->tallas->pluck('cantidad', 'talla');
+                    $prenda->telasAgregadas = $prenda->coloresTelas->map(function ($ct) {
+                        return [
+                            'tela' => $ct->tela ?? '',
+                            'nombre_tela' => $ct->tela ?? '',
+                            'color' => $ct->color ?? '',
+                            'color_nombre' => $ct->color ?? '',
+                            'referencia' => $ct->referencia ?? '',
+                        ];
+                    });
+                });
+
+                // Preparar EPPs
+                $eppsEditar = $pedidoEditar->epps->map(function ($pedidoEpp) {
+                    $nombre = $pedidoEpp->epp?->nombre_completo ?? 'EPP #' . $pedidoEpp->epp_id;
+                    return [
+                        'epp_id' => $pedidoEpp->epp_id,
+                        'nombre_completo' => $nombre,
+                        'nombre_epp' => $nombre,
+                        'tipo' => 'epp',
+                        'cantidad' => $pedidoEpp->cantidad,
+                        'observaciones' => $pedidoEpp->observaciones,
+                        'imagenes' => $pedidoEpp->imagenes->map(function ($img) {
+                            return [
+                                'id' => $img->id,
+                                'ruta_web' => $img->ruta_web,
+                                'principal' => $img->principal,
+                            ];
+                        })->toArray(),
+                    ];
+                })->toArray();
+
+                Log::info('[CREAR-PEDIDO-NUEVO] ✏️ MODO EDICIÓN activado', [
+                    'pedido_id' => $pedidoEditarId,
+                    'prendas' => $pedidoEditar->prendas->count(),
+                    'epps' => count($eppsEditar),
+                ]);
+            } else {
+                Log::warning('[CREAR-PEDIDO-NUEVO] ⚠️ Pedido no encontrado para edición', ['edit_id' => $editId]);
+            }
+        }
+
+        // ========================================
         // RETORNAR VIEW CON TODOS LOS DATOS
         // ========================================
         
@@ -311,7 +389,12 @@ class CrearPedidoEditableController extends Controller
             'tallas' => $tallas,
             'tecnicas' => $tecnicas,
             'formasPago' => $formasPago,
-            'modoEdicion' => false
+            'modoEdicion' => $modoEdicion,
+            'pedidoEditarId' => $pedidoEditarId,
+            'pedido' => $pedidoEditar,
+            'epps' => $eppsEditar,
+            'estados' => [],
+            'areas' => [],
         ]);
         $tiempoView = round((microtime(true) - $inicioView) * 1000, 2);
         
@@ -322,6 +405,7 @@ class CrearPedidoEditableController extends Controller
             'tiempo_pedidos_ms' => $tiempoPedidos,
             'tiempo_clientes_ms' => $tiempoClientes,
             'tiempo_view_ms' => $tiempoView,
+            'modo_edicion' => $modoEdicion,
             'resumen' => "Tallas: {$tiempoTallas}ms | Pedidos: {$tiempoPedidos}ms | Clientes: {$tiempoClientes}ms | View: {$tiempoView}ms | TOTAL: {$tiempoTotalMs}ms",
         ]);
         
@@ -2611,6 +2695,184 @@ class CrearPedidoEditableController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener prendas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Guardar pedido como BORRADOR (sin número de pedido)
+     * 
+     * POST /asesores/pedidos-editable/borrador
+     * 
+     * Similar a crearPedido pero sin generar numero_pedido
+     * El borrador se guarda con estado 'Borrador' y puede editarse después
+     */
+    public function guardarBorrador(Request $request): JsonResponse
+    {
+        $pedidoId = null;
+        $inicioTotal = microtime(true);
+
+        try {
+            Log::info('[GUARDAR-BORRADOR]  INICIANDO GUARDADO DE BORRADOR', [
+                'has_pedido_json' => !!$request->input('pedido'),
+                'archivos_count' => count($request->allFiles()),
+                'timestamp' => now(),
+            ]);
+            
+            // Obtener todos los inputs (incluyendo archivos anidados)
+            $allInputs = $request->all();
+            $archivosRecibidos = [];
+            $this->buscarArchivosAnidados($allInputs, '', $archivosRecibidos);
+            
+            Log::debug('[GUARDAR-BORRADOR] 📤 Archivos en FormData', [
+                'total_archivos' => count($archivosRecibidos),
+                'archivos' => $archivosRecibidos,
+            ]);
+
+            // ====== PASO 1: Decodificar JSON del frontend ======
+            $pedidoJSON = $request->input('pedido');
+            if (!$pedidoJSON) {
+                throw new \Exception('Campo "pedido" JSON requerido');
+            }
+
+            $datosFrontend = json_decode($pedidoJSON, true);
+            if (!$datosFrontend) {
+                throw new \Exception('JSON inválido en campo "pedido"');
+            }
+            
+            $this->validarJsonSinFiles($datosFrontend);
+            Log::info('[GUARDAR-BORRADOR]  JSON decodificado');
+
+            // ====== PASO 2: Obtener/crear cliente ======
+            $clienteNombre = trim($datosFrontend['cliente'] ?? '');
+            $cliente = $this->obtenerOCrearCliente($clienteNombre);
+
+            Log::info('[GUARDAR-BORRADOR]  Cliente obtenido/creado', [
+                'cliente_id' => $cliente->id,
+                'nombre' => $cliente->nombre,
+            ]);
+
+            // ====== PASO 3: Normalizar usando DTO ======
+            $dtoPedido = PedidoNormalizadorDTO::fromFrontendJSON(
+                $datosFrontend,
+                $cliente->id
+            );
+
+            Log::info('[GUARDAR-BORRADOR]  Pedido normalizado (DTO)', [
+                'cliente_id' => $dtoPedido->cliente_id,
+                'prendas' => count($dtoPedido->prendas),
+                'epps' => count($dtoPedido->epps),
+            ]);
+
+            // ====== PASO 4: Iniciar transacción ======
+            DB::beginTransaction();
+
+            // ====== PASO 5: Crear pedido borrador (sin número) ======
+            $datosParaServicio = [
+                'cliente' => $dtoPedido->cliente,
+                'asesora' => $dtoPedido->asesora,
+                'forma_de_pago' => $dtoPedido->forma_de_pago,
+                'observaciones' => $dtoPedido->observaciones,
+                'cliente_id' => $dtoPedido->cliente_id,
+                'items' => $dtoPedido->prendas,
+                'epps' => $dtoPedido->epps,
+            ];
+
+            $pedido = $this->pedidoWebService->crearPedidoBorrador(
+                $datosParaServicio,
+                Auth::id()
+            );
+
+            $pedidoId = $pedido->id;
+
+            Log::info('[GUARDAR-BORRADOR]  Pedido borrador creado', [
+                'pedido_id' => $pedidoId,
+                'numero_pedido' => $pedido->numero_pedido ?? 'NULL',
+                'estado' => $pedido->estado,
+            ]);
+
+            // ====== PASO 6: Crear carpetas ======
+            $this->crearCarpetasPedido($pedidoId);
+
+            // ====== PASO 7: Mapear y procesar imágenes ======
+            $this->mapeoImagenes->mapearYCrearFotos(
+                $dtoPedido,
+                $pedidoId,
+                $request
+            );
+
+            Log::info('[GUARDAR-BORRADOR]  Imágenes mapeadas', [
+                'pedido_id' => $pedidoId,
+                'imagenes_mapeadas' => count($dtoPedido->imagen_uid_a_ruta),
+            ]);
+
+            // ====== PASO 8: Procesar imágenes de EPPs ======
+            $eppsCrudos = $datosFrontend['epps'] ?? [];
+            if (!empty($eppsCrudos)) {
+                $this->procesarImagenesDeEpps($request, $pedidoId, $eppsCrudos);
+            }
+
+            // ====== PASO 9: Procesar imágenes de procesos ======
+            $procesosData = $datosFrontend['prendas'] ?? [];
+            if (!empty($procesosData)) {
+                foreach ($procesosData as $prendaIndex => $prendaData) {
+                    $procesos = $prendaData['procesos'] ?? [];
+                    if (!empty($procesos)) {
+                        $this->procesarImagenesDeProcesos($request, $pedidoId, $procesos, $prendaIndex);
+                    }
+                }
+            }
+
+            // ====== Confirmar transacción ======
+            DB::commit();
+
+            $tiempoTotal = round((microtime(true) - $inicioTotal) * 1000, 2);
+
+            Log::info('[GUARDAR-BORRADOR]  ✅ BORRADOR GUARDADO EXITOSAMENTE', [
+                'pedido_id' => $pedidoId,
+                'numero_pedido' => $pedido->numero_pedido ?? 'NULL (Borrador)',
+                'estado' => $pedido->estado,
+                'tiempo_total_ms' => $tiempoTotal,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => '✅ Borrador guardado exitosamente',
+                'pedido_id' => $pedidoId,
+                'numero_pedido' => $pedido->numero_pedido ?? null,
+                'estado' => $pedido->estado,
+                'redirect_url' => route('asesores.pedidos.show', ['pedido' => $pedidoId]),
+                'tiempo_ms' => $tiempoTotal,
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            Log::error('[GUARDAR-BORRADOR] ❌ Errores de validación', [
+                'pedido_id' => $pedidoId,
+                'errores' => $e->errors(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Errores de validación',
+                'errors' => $e->errors(),
+            ], 422);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('[GUARDAR-BORRADOR] ❌ ERROR CRÍTICO', [
+                'pedido_id' => $pedidoId,
+                'error' => $e->getMessage(),
+                'linea' => $e->getLine(),
+                'archivo' => $e->getFile(),
+                'trace_resumen' => substr($e->getTraceAsString(), 0, 500),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar borrador: ' . $e->getMessage(),
+                'error_line' => $e->getLine(),
+                'error_file' => $e->getFile(),
             ], 500);
         }
     }
