@@ -120,13 +120,13 @@ function mostrarErrorEPP(mensaje) {
 }
 
 function crearItemEPP(id, nombre, codigo, categoria, cantidad, observaciones, imagenes = []) {
-    if (window.eppItemManager) {
-        window.eppItemManager.crearItem(id, nombre, codigo, categoria, cantidad, observaciones, imagenes);
+    if (window.eppItemManagerTabla) {
+        window.eppItemManagerTabla.crearItem(id, nombre, codigo, categoria, cantidad, observaciones, imagenes);
     }
 }
 
 function configurarEventListenersItem(id) {
-    if (window.eppItemManager) {
+    if (window.eppItemManagerTabla) {
         const btnMenu = document.querySelector(`[data-item-id="${id}"].btn-menu-epp`);
         const submenu = document.querySelector(`[data-item-id="${id}"].submenu-epp`);
         const btnEditar = document.querySelector(`[data-item-id="${id}"].btn-editar-epp`);

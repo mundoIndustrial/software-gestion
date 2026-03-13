@@ -1,9 +1,10 @@
 /**
- * EppItemManager - Gestiona los items de EPP en el pedido
+ * EppItemManagerTabla - Gestiona los items de EPP en estructura de TABLA
  * Patrón: Item Manager
+ * Renderiza filas <tr> para vistas que usan tabla (e.g., cotizaciones)
  */
 
-class EppItemManager {
+class EppItemManagerTabla {
     constructor() {
         this.listaItemsId = 'tabla-items-pedido';
         // Cache para mantener referencias a las imágenes y archivos
@@ -40,7 +41,7 @@ class EppItemManager {
     crearItem(id, nombre, categoria, cantidad, observaciones, imagenes = [], pedidoEppId = null, valorUnitario = null, total = null, tipo = 'epp') {
         const listaItems = document.getElementById(this.listaItemsId);
         if (!listaItems) {
-            console.warn('[EppItemManager] Contenedor no encontrado:', this.listaItemsId);
+            console.warn('[EppItemManagerTabla] Contenedor no encontrado:', this.listaItemsId);
             return;
         }
 
@@ -128,10 +129,10 @@ class EppItemManager {
         // Guardar referencia a las imágenes en cache para mantenerlas vivas
         if (imagenes && imagenes.length > 0) {
             this.imagenesCache.set(id, imagenes);
-            console.log(`[EppItemManager] Imágenes cacheadas para item: ${id}, total: ${imagenes.length}`);
+            console.log(`[EppItemManagerTabla] Imágenes cacheadas para item: ${id}, total: ${imagenes.length}`);
         }
         
-        console.log('[EppItemManager] Item creado como fila de tabla:', id, 'tipo:', tipo);
+        console.log('[EppItemManagerTabla] Item creado como fila de tabla:', id, 'tipo:', tipo);
     }
 
     /**
@@ -155,7 +156,7 @@ class EppItemManager {
                 imagenes.forEach(imagen => {
                     if (imagen.previewUrl && imagen.previewUrl.startsWith('blob:')) {
                         URL.revokeObjectURL(imagen.previewUrl);
-                        console.log(`[EppItemManager] Blob URL revocada: ${imagen.previewUrl}`);
+                        console.log(`[EppItemManagerTabla] Blob URL revocada: ${imagen.previewUrl}`);
                     }
                 });
             }
@@ -165,9 +166,9 @@ class EppItemManager {
             // Renumerar los items restantes
             this._renumerarItems();
             
-            console.log('[EppItemManager] Item eliminado:', id, '- cache limpiado y URLs revocadas');
+            console.log('[EppItemManagerTabla] Item eliminado:', id, '- cache limpiado y URLs revocadas');
         } else {
-            console.warn('[EppItemManager]  Item no encontrado para eliminar:', id);
+            console.warn('[EppItemManagerTabla]  Item no encontrado para eliminar:', id);
         }
     }
 
@@ -183,14 +184,14 @@ class EppItemManager {
             const numeroSpan = fila.querySelector('td > div > span:first-child');
             if (numeroSpan) {
                 numeroSpan.textContent = String(index + 1);
-                console.log(`[EppItemManager] Item renumerado a: ${index + 1}`);
+                console.log(`[EppItemManagerTabla] Item renumerado a: ${index + 1}`);
             }
         });
         
         // Recalcular totales después de renumerar (solo si no hay store activo)
         if (!window.eppStore && typeof window.syncTotales === 'function') {
             window.syncTotales();
-            console.log('[EppItemManager] Totales recalculados después de eliminar item (fallback)');
+            console.log('[EppItemManagerTabla] Totales recalculados después de eliminar item (fallback)');
         }
     }
 
@@ -206,7 +207,7 @@ class EppItemManager {
             item = document.querySelector(`.item-epp-card[data-epp-id="${id}"]`);
         }
         
-        console.log('[EppItemManager]  obtenerItem buscando ID:', id, 'encontrado:', !!item);
+        console.log('[EppItemManagerTabla]  obtenerItem buscando ID:', id, 'encontrado:', !!item);
         return item;
     }
 
@@ -216,21 +217,21 @@ class EppItemManager {
     actualizarItem(id, datos) {
         const item = this.obtenerItem(id);
         if (!item) {
-            console.warn('[EppItemManager]  Item no encontrado para actualizar:', id);
+            console.warn('[EppItemManagerTabla]  Item no encontrado para actualizar:', id);
             return;
         }
 
-        console.log('[EppItemManager]  Actualizando item:', id, datos);
+        console.log('[EppItemManagerTabla]  Actualizando item:', id, datos);
 
         // Detectar tipo de estructura: tabla o tarjeta
         const esTabla = item.tagName === 'TR';
         const esTarjeta = item.classList.contains('item-epp-card');
         
-        console.log('[EppItemManager] Tipo de estructura - tabla:', esTabla, 'tarjeta:', esTarjeta);
+        console.log('[EppItemManagerTabla] Tipo de estructura - tabla:', esTabla, 'tarjeta:', esTarjeta);
 
         if (esTabla) {
             // ========== ACTUALIZAR ESTRUCTURA DE TABLA ==========
-            console.log('[EppItemManager] Actualizando item en TABLA');
+            console.log('[EppItemManagerTabla] Actualizando item en TABLA');
             const celdas = item.querySelectorAll('td');
             
             if (celdas.length >= 7) {
@@ -240,20 +241,20 @@ class EppItemManager {
                     const span = descCell.querySelector('span');
                     if (span) {
                         span.textContent = String(datos.nombre);
-                        console.log('[EppItemManager] Nombre actualizado en tabla:', datos.nombre);
+                        console.log('[EppItemManagerTabla] Nombre actualizado en tabla:', datos.nombre);
                     }
                 }
                 
                 // Actualizar cantidad (celda 3)
                 if (datos.cantidad !== undefined) {
                     celdas[3].textContent = String(datos.cantidad);
-                    console.log('[EppItemManager] Cantidad actualizada en tabla:', datos.cantidad);
+                    console.log('[EppItemManagerTabla] Cantidad actualizada en tabla:', datos.cantidad);
                 }
                 
                 // Actualizar observaciones (celda 4)
                 if (datos.observaciones !== undefined) {
                     celdas[4].textContent = datos.observaciones || '-';
-                    console.log('[EppItemManager] Observaciones actualizadas en tabla:', datos.observaciones);
+                    console.log('[EppItemManagerTabla] Observaciones actualizadas en tabla:', datos.observaciones);
                 }
                 
                 // Actualizar valor unitario (celda 5)
@@ -263,7 +264,7 @@ class EppItemManager {
                         ? String(vu)
                         : 'N/A';
                     celdas[5].textContent = vuText;
-                    console.log('[EppItemManager] Valor unitario actualizado en tabla:', vuText);
+                    console.log('[EppItemManagerTabla] Valor unitario actualizado en tabla:', vuText);
                 }
                 
                 // Actualizar total (celda 6)
@@ -293,7 +294,7 @@ class EppItemManager {
                     const spanTotal = celdas[6].querySelector('div > span:first-child');
                     if (spanTotal) {
                         spanTotal.textContent = formatearNumero(totalCalc);
-                        console.log('[EppItemManager] Total actualizado en tabla:', formatearNumero(totalCalc));
+                        console.log('[EppItemManagerTabla] Total actualizado en tabla:', formatearNumero(totalCalc));
                     }
                 }
                 
@@ -301,12 +302,12 @@ class EppItemManager {
                 // (solo fallback si no hay store — el store notifica automáticamente)
                 if (!window.eppStore && typeof window.syncTotales === 'function') {
                     window.syncTotales();
-                    console.log('[EppItemManager] Totales recalculados después de actualizar item en tabla (fallback)');
+                    console.log('[EppItemManagerTabla] Totales recalculados después de actualizar item en tabla (fallback)');
                 }
             }
         } else if (esTarjeta) {
             // ========== ACTUALIZAR ESTRUCTURA DE TARJETA ==========
-            console.log('[EppItemManager] Actualizando item en TARJETA');
+            console.log('[EppItemManagerTabla] Actualizando item en TARJETA');
 
             // Actualizar nombre
             if (datos.nombre !== undefined && datos.nombre !== null) {
@@ -323,7 +324,7 @@ class EppItemManager {
                     const etiquetas = detallesDiv.querySelectorAll('p');
                     if (etiquetas[1]) {
                         etiquetas[1].textContent = datos.cantidad;
-                        console.log('[EppItemManager] Cantidad actualizada:', datos.cantidad);
+                        console.log('[EppItemManagerTabla] Cantidad actualizada:', datos.cantidad);
                     }
                 }
             }
@@ -394,14 +395,14 @@ class EppItemManager {
                     const etiquetas = detallesDiv.querySelectorAll('p');
                     if (etiquetas[3]) {
                         etiquetas[3].textContent = datos.observaciones || 'N/A';
-                        console.log('[EppItemManager] Observaciones actualizadas:', datos.observaciones);
+                        console.log('[EppItemManagerTabla] Observaciones actualizadas:', datos.observaciones);
                     }
                 }
             }
 
             // Actualizar imágenes si existen
             if (datos.imagenes !== undefined) {
-                console.log('[EppItemManager] 🖼️ Procesando imágenes:', datos.imagenes.length);
+                console.log('[EppItemManagerTabla] 🖼️ Procesando imágenes:', datos.imagenes.length);
 
                 // Buscar y actualizar la sección de galería existente
                 const galeriaSeccion = item.querySelector('div[style*="border-top: 1px solid #bfdbfe"]');
@@ -412,18 +413,18 @@ class EppItemManager {
                         const nombreEPP = item.querySelector('h4')?.textContent || 'Imagen EPP';
                         const nuevoHTML = this._crearGaleriaHTML(nombreEPP, datos.imagenes);
                         galeriaSeccion.outerHTML = nuevoHTML;
-                        console.log('[EppItemManager] Galería actualizada con', datos.imagenes.length, 'imágenes');
+                        console.log('[EppItemManagerTabla] Galería actualizada con', datos.imagenes.length, 'imágenes');
                     } else {
                         // Si no hay imágenes, remover la sección de galería
                         galeriaSeccion.remove();
-                        console.log('[EppItemManager] Sección de galería removida (sin imágenes)');
+                        console.log('[EppItemManagerTabla] Sección de galería removida (sin imágenes)');
                     }
                 } else if (datos.imagenes.length > 0) {
                     // Si no existe la galería pero hay imágenes, crearla
                     const nombreEPP = item.querySelector('h4')?.textContent || 'Imagen EPP';
                     const nuevoHTML = this._crearGaleriaHTML(nombreEPP, datos.imagenes);
                     item.insertAdjacentHTML('beforeend', nuevoHTML);
-                    console.log('[EppItemManager] Galería creada con', datos.imagenes.length, 'imágenes');
+                    console.log('[EppItemManagerTabla] Galería creada con', datos.imagenes.length, 'imágenes');
                 }
             }
         }
@@ -496,4 +497,4 @@ class EppItemManager {
 }
 
 // Exportar instancia global
-window.eppItemManager = new EppItemManager();
+window.eppItemManagerTabla = new EppItemManagerTabla();

@@ -214,7 +214,7 @@
 @include('asesores.pedidos.modals.modal-proceso-por-tallas')
 @include('asesores.pedidos.modals.modal-proceso-generico')
 @include('asesores.pedidos.modals.modal-confirmar-eliminar-imagen-proceso')
-@include('asesores.pedidos.modals.modal-agregar-epp')
+@include('asesores.pedidos.modals.modal-agregar-editar-epp')
 @include('asesores.pedidos.modals.modal-editar-epp')
 
 @push('scripts')
@@ -267,7 +267,8 @@
     <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-notification-service.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-creation-service.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-form-manager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-menu-handlers.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-menu-handler-base.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-menu-handlers-tabla.js') }}?v={{ time() }}"></script>
     
     <!-- EPP Templates e Interfaces -->
     <script src="{{ asset('js/modulos/crear-pedido/epp/templates/epp-modal-template.js') }}?v={{ time() }}"></script>

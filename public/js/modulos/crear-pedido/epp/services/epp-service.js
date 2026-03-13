@@ -8,7 +8,8 @@ class EppService {
         this.apiService = window.eppApiService;
         this.stateManager = window.eppStateManager;
         this.modalManager = null;
-        this.itemManager = window.eppItemManager;
+        // Detectar cuál item manager está disponible (tabla o tarjeta)
+        this.itemManager = window.eppItemManagerTabla || window.eppItemManagerTarjeta || window.eppItemManager;
         this.imagenManager = null;
         
         // Debouncing y caché para búsqueda

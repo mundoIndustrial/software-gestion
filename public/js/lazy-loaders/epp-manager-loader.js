@@ -33,7 +33,8 @@ window.EPPManagerLoader = (function() {
         // ========== SERVICIOS DE NEGOCIO ==========
         '/js/modulos/crear-pedido/epp/services/epp-creation-service.js',
         '/js/modulos/crear-pedido/epp/services/epp-form-manager.js',
-        '/js/modulos/crear-pedido/epp/services/epp-menu-handlers.js',
+        '/js/modulos/crear-pedido/epp/services/epp-menu-handler-base.js',
+        '/js/modulos/crear-pedido/epp/services/epp-menu-handlers-tabla.js',
         '/js/modulos/crear-pedido/epp/services/epp-service.js',
         
         // ========== TEMPLATES E INTERFACES ==========
