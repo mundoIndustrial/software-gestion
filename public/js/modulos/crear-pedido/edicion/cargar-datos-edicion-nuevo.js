@@ -77,6 +77,9 @@ function cargarDatosEdicion() {
             cargarEPPs(datosCompletos.epps);
         }
 
+        // 2.6. Renderizar tarjetas registradas en gestionItemsUI
+        renderizarItemsRegistrados();
+
         // 3. Actualizar título
         const titulo = `Editando Pedido #${window.pedidoEditarId}`;
         const pageHeader = document.querySelector('.page-header h1');
@@ -333,6 +336,34 @@ function cargarPrendas(prendas) {
 }
 
 
+
+/**
+ * Renderizar items (prendas + EPPs) que ya fueron registrados en gestionItemsUI
+ * Usa reintentos porque gestionItemsUI.renderer puede no estar listo aún (scripts defer)
+ */
+function renderizarItemsRegistrados(intentos = 0) {
+    const MAX_INTENTOS = 30;
+    
+    if (window.gestionItemsUI && window.gestionItemsUI.renderer) {
+        const items = window.gestionItemsUI.obtenerItemsOrdenados();
+        console.log('[cargar-datos-edicion] renderizarItemsRegistrados - items:', items.length);
+        
+        if (items.length > 0) {
+            window.gestionItemsUI.renderer.actualizar(items);
+            console.log('[cargar-datos-edicion] Tarjetas renderizadas correctamente');
+        } else {
+            console.warn('[cargar-datos-edicion] No hay items para renderizar');
+        }
+        return;
+    }
+    
+    if (intentos < MAX_INTENTOS) {
+        console.log('[cargar-datos-edicion] Esperando gestionItemsUI.renderer... intento', intentos + 1);
+        setTimeout(() => renderizarItemsRegistrados(intentos + 1), 200);
+    } else {
+        console.error('[cargar-datos-edicion] gestionItemsUI.renderer no disponible después de', MAX_INTENTOS, 'intentos');
+    }
+}
 
 /**
  * Cargar EPPs al pedido

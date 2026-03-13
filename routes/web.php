@@ -1855,6 +1855,7 @@ Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_produc
     
     // Pedidos - VISTAS (AsesoresController)
     Route::get('/pedidos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'index'])->name('pedidos.index');
+    Route::get('/pedidos/borradores', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'borradores'])->name('pedidos.borradores');
     Route::get('/cotizaciones/create', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'create'])->name('pedidos.create');
     Route::get('/cotizaciones/{id}/edit', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'editCotizacion'])->name('cotizaciones.edit');
     Route::get('/pedidos/next-pedido', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'getNextPedido'])->name('next-pedido');
@@ -2610,6 +2611,8 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('ase
         ->name('validar');
     Route::post('crear', [App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'crearPedido'])
         ->name('crear');
+    Route::post('borrador', [App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'guardarBorrador'])
+        ->name('guardarBorrador');
 });
 
 // ========================================

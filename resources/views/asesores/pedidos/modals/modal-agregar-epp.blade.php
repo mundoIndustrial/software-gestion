@@ -1740,8 +1740,8 @@ function prepararDatosParaEnvio(itemsPedido) {
     };
 }
 
-// Hacer la función disponible globalmente
-window.prepararDatosParaEnvio = prepararDatosParaEnvio;
+// Hacer la función disponible globalmente (nombre específico para no pisar la versión principal)
+window.prepararDatosEppParaFormData = prepararDatosParaEnvio;
 
 function agregarEPPALista() {
     if (!productoSeleccionadoEPP) {

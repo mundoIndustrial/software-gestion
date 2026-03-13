@@ -139,10 +139,10 @@ class ItemAPIService {
             console.debug('[validarPedido] 📦 Preparando datos para envío...');
             let datosParaEnvio;
             
-            // Verificar si existe la función prepararDatosParaEnvio (nuestro sistema EPP)
-            if (typeof window.prepararDatosParaEnvio === 'function') {
-                datosParaEnvio = window.prepararDatosParaEnvio([pedidoData]);
-                console.debug('[validarPedido] 📸 Usando prepararDatosParaEnvio para EPPs');
+            // Verificar si existe la función prepararDatosEppParaFormData (nuestro sistema EPP)
+            if (typeof window.prepararDatosEppParaFormData === 'function') {
+                datosParaEnvio = window.prepararDatosEppParaFormData([pedidoData]);
+                console.debug('[validarPedido] 📸 Usando prepararDatosEppParaFormData para EPPs');
             } else {
                 // Fallback para prendas (sin imágenes)
                 datosParaEnvio = {

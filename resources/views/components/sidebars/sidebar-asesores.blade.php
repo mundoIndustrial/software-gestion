@@ -137,6 +137,14 @@
                                 <span class="menu-label">Pedido Nuevo</span>
                             </a>
                         </li>
+                        <li class="submenu-item">
+                            <a href="{{ route('asesores.pedidos.borradores') }}"
+                               class="menu-link {{ request()->routeIs('asesores.pedidos.borradores') ? 'active' : '' }}"
+                               aria-label="Ver borradores de pedidos">
+                                <span class="material-symbols-rounded">draft</span>
+                                <span class="menu-label">Borradores</span>
+                            </a>
+                        </li>
                     </ul>
                 </li>
                 <li class="menu-item">
