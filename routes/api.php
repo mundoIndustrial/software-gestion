@@ -4,7 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api_temp\V1\OrdenController;
 use App\Http\Controllers\PrendaController;
 use App\Http\Controllers\Api_temp\ProcesosController;
-use App\Http\Controllers\Api_temp\PedidoController;
+use App\Infrastructure\Http\Controllers\PedidoCommandController;
+use App\Infrastructure\Http\Controllers\PedidoQueryController;
 use App\Infrastructure\Http\Controllers\CotizacionPrendaController;
 use App\Modules\Pedidos\Infrastructure\Http\Controllers\PedidoEppController;
 use App\Infrastructure\Http\Controllers\AsistenciaPersonalController;
@@ -290,10 +291,10 @@ Route::middleware('api')->group(function () {
     Route::get('prendas/search', [PrendaController::class, 'search'])->name('prendas.search');
     
     Route::prefix('pedidos')->name('pedidos.')->group(function () {
-        Route::get('{id}', [PedidoController::class, 'show'])
+        Route::get('{id}', [PedidoQueryController::class, 'show'])
             ->name('mostrar');
         
-        Route::get('cliente/{clienteId}', [PedidoController::class, 'listarPorCliente'])
+        Route::get('cliente/{clienteId}', [PedidoQueryController::class, 'listarPorCliente'])
             ->name('listar-por-cliente');
     });
 });
@@ -306,19 +307,19 @@ Route::withoutMiddleware(['api']) // Remover el middleware api global
     Route::apiResource('prendas', PrendaController::class, ['only' => ['store', 'update', 'destroy']]);
     
     Route::prefix('pedidos')->name('pedidos.')->group(function () {
-        Route::post('/', [PedidoController::class, 'store'])
+        Route::post('/', [PedidoCommandController::class, 'store'])
             ->name('crear');
         
-        Route::patch('{id}/confirmar', [PedidoController::class, 'confirmar'])
+        Route::patch('{id}/confirmar', [PedidoCommandController::class, 'confirmar'])
             ->name('confirmar');
         
-        Route::patch('{id}/actualizar-descripcion', [PedidoController::class, 'actualizarDescripcion'])
+        Route::patch('{id}/actualizar-descripcion', [PedidoCommandController::class, 'actualizarDescripcion'])
             ->name('actualizar-descripcion');
         
-        Route::patch('{id}/actualizar-estado', [PedidoController::class, 'actualizarEstado'])
+        Route::patch('{id}/actualizar-estado', [PedidoCommandController::class, 'actualizarEstado'])
             ->name('actualizar-estado');
         
-        Route::delete('{id}/cancelar', [PedidoController::class, 'cancelar'])
+        Route::delete('{id}/cancelar', [PedidoCommandController::class, 'cancelar'])
             ->name('cancelar');
     });
     

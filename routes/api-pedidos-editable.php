@@ -1,7 +1,7 @@
 <?php
 
 use App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController;
-use App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController;
+use App\Infrastructure\Http\Controllers\Asesores\PrendasPedidoController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:web', 'role:asesor,admin,supervisor_pedidos'])->group(function () {
@@ -23,6 +23,6 @@ Route::middleware(['auth:web', 'role:asesor,admin,supervisor_pedidos'])->group(f
         Route::post('/subir-imagenes', [CrearPedidoEditableController::class, 'subirImagenesPrenda'])->name('subir-imagenes');
         
         // Renderizar componente item-card
-        Route::post('/render-item-card', [PedidosProduccionController::class, 'renderItemCard'])->name('render-item-card');
+        Route::post('/render-item-card', [PrendasPedidoController::class, 'renderItemCard'])->name('render-item-card');
     });
 });

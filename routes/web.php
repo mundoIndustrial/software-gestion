@@ -1324,12 +1324,12 @@ Route::middleware('auth')->group(function () {
         ->name('pedidos.public.factura-datos');
     
     // Ruta pública para recibos-datos (acceso para cualquier usuario autenticado)
-    Route::get('/pedidos-public/{id}/recibos-datos', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerDetalleCompleto'])
+    Route::get('/pedidos-public/{id}/recibos-datos', [App\Infrastructure\Http\Controllers\PedidoQueryController::class, 'obtenerDetalleCompleto'])
         ->where('id', '[0-9]+')
         ->name('pedidos.public.recibos-datos');
     
     // Ruta pública para obtener ancho y metraje de una prenda (acceso público)
-    Route::get('/pedidos-public/{pedidoId}/ancho-metraje-prenda/{prendaId}', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerAnchoMetrajePrendaPublico'])
+    Route::get('/pedidos-public/{pedidoId}/ancho-metraje-prenda/{prendaId}', [App\Infrastructure\Http\Controllers\PedidoQueryController::class, 'obtenerAnchoMetrajePrendaPublico'])
         ->where('pedidoId', '[0-9]+')
         ->where('prendaId', '[0-9]+')
         ->name('pedidos.public.ancho-metraje-prenda');
@@ -1379,13 +1379,13 @@ Route::middleware('auth')->group(function () {
     // APIS DE CATÁLOGOS (Accesibles para todos los roles autenticados)
     // ========================================
     // Esto permite a supervisores y otros roles acceder a catálogos sin restricciones de roles
-    Route::get('/api/public/tipos-manga', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerTiposManga'])->name('api.public.tipos-manga');
-    Route::post('/api/public/tipos-manga', [App\Http\Controllers\Api_temp\PedidoController::class, 'crearObtenerTipoManga'])->name('api.public.tipos-manga.create');
-    Route::get('/api/public/tipos-broche-boton', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerTiposBrocheBoton'])->name('api.public.tipos-broche-boton');
-    Route::get('/api/public/telas', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerTelas'])->name('api.public.telas');
-    Route::post('/api/public/telas', [App\Http\Controllers\Api_temp\PedidoController::class, 'crearObtenerTela'])->name('api.public.telas.create');
-    Route::get('/api/public/colores', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerColores'])->name('api.public.colores');
-    Route::post('/api/public/colores', [App\Http\Controllers\Api_temp\PedidoController::class, 'crearObtenerColor'])->name('api.public.colores.create');
+    Route::get('/api/public/tipos-manga', [App\Infrastructure\Http\Controllers\CatalogoController::class, 'obtenerTiposManga'])->name('api.public.tipos-manga');
+    Route::post('/api/public/tipos-manga', [App\Infrastructure\Http\Controllers\CatalogoController::class, 'crearObtenerTipoManga'])->name('api.public.tipos-manga.create');
+    Route::get('/api/public/tipos-broche-boton', [App\Infrastructure\Http\Controllers\CatalogoController::class, 'obtenerTiposBrocheBoton'])->name('api.public.tipos-broche-boton');
+    Route::get('/api/public/telas', [App\Infrastructure\Http\Controllers\CatalogoController::class, 'obtenerTelas'])->name('api.public.telas');
+    Route::post('/api/public/telas', [App\Infrastructure\Http\Controllers\CatalogoController::class, 'crearObtenerTela'])->name('api.public.telas.create');
+    Route::get('/api/public/colores', [App\Infrastructure\Http\Controllers\CatalogoController::class, 'obtenerColores'])->name('api.public.colores');
+    Route::post('/api/public/colores', [App\Infrastructure\Http\Controllers\CatalogoController::class, 'crearObtenerColor'])->name('api.public.colores.create');
 });
 
 // Rutas para tableros_ordenes
@@ -1492,13 +1492,13 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/facturas/{numeroPedido}/download', [App\Http\Controllers\InvoiceController::class, 'download'])->name('invoices.download');
 
     Route::get('/api/bodega/{numero_pedido}/dias', [RegistroBodegaController::class, 'calcularDiasAPI'])->name('api.bodega.dias');
-    Route::get('/api/ordenes/{id}/procesos', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'getProcesos'])->name('api.ordenes.procesos');
+    Route::get('/api/ordenes/{id}/procesos', [App\Infrastructure\Http\Controllers\Asesores\ProcesosPedidoController::class, 'getProcesos'])->name('api.ordenes.procesos');
     Route::post('/api/ordenes/{numero_pedido}/novedades', [RegistroOrdenController::class, 'updateNovedades'])->name('api.ordenes.novedades');
     Route::post('/api/ordenes/{numero_pedido}/novedades/add', [RegistroOrdenController::class, 'addNovedad'])->name('api.ordenes.novedades.add');
     Route::post('/api/bodega/{pedido}/novedades', [RegistroBodegaController::class, 'updateNovedadesBodega'])->name('api.bodega.novedades');
     Route::post('/api/bodega/{pedido}/novedades/add', [RegistroBodegaController::class, 'addNovedadBodega'])->name('api.bodega.novedades.add');
-    Route::put('/api/procesos/{id}/editar', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'editarProceso'])->name('api.procesos.editar');
-    Route::delete('/api/procesos/{id}/eliminar', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'eliminarProceso'])->name('api.procesos.eliminar');
+    Route::put('/api/procesos/{id}/editar', [App\Infrastructure\Http\Controllers\Asesores\ProcesosPedidoController::class, 'editarProceso'])->name('api.procesos.editar');
+    Route::delete('/api/procesos/{id}/eliminar', [App\Infrastructure\Http\Controllers\Asesores\ProcesosPedidoController::class, 'eliminarProceso'])->name('api.procesos.eliminar');
     Route::get('/api/tabla-original-bodega/{numeroPedido}/procesos', [RegistroBodegaController::class, 'getProcesosTablaOriginal'])->name('api.tabla-original-bodega.procesos');
     Route::get('/bodega', [RegistroBodegaController::class, 'index'])->name('bodega.index');
     Route::post('/bodega/search', [RegistroBodegaController::class, 'searchOrders'])->name('bodega.search');
@@ -1994,8 +1994,8 @@ Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_produc
     // ========================================
     
     // Rutas API CQRS - Pedidos de Producción (retorna JSON)
-    Route::get('/pedidos-produccion', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'index'])->name('pedidos-produccion.index');
-    Route::get('/pedidos-produccion/{id}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'show'])->name('pedidos-produccion.show');
+    Route::get('/pedidos-produccion', [App\Infrastructure\Http\Controllers\Asesores\PedidosController::class, 'index'])->name('pedidos-produccion.index');
+    Route::get('/pedidos-produccion/{id}', [App\Infrastructure\Http\Controllers\Asesores\PedidosController::class, 'show'])->name('pedidos-produccion.show');
     
     // Obtener datos de cotización para crear pedido
     Route::get('/pedidos-produccion/obtener-datos-cotizacion/{cotizacionId}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionViewController::class, 'obtenerDatosCotizacion'])->name('pedidos-produccion.obtener-datos-cotizacion');
@@ -2004,19 +2004,19 @@ Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_produc
     Route::get('/pedidos-produccion/obtener-prenda-completa/{cotizacionId}/{prendaId}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionViewController::class, 'obtenerPrendaCompleta'])->name('pedidos-produccion.obtener-prenda-completa')->where(['cotizacionId' => '[0-9]+', 'prendaId' => '[0-9]+']);
     
     // Obtener datos de una prenda específica con procesos para edición modal
-    Route::get('/pedidos-produccion/{pedidoId}/prenda/{prendaId}/datos', [\App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerDatosPrendaEdicion'])->where('pedidoId', '[0-9]+')->where('prendaId', '[0-9]+')->name('pedidos.prenda-datos');
+    Route::get('/pedidos-produccion/{pedidoId}/prenda/{prendaId}/datos', [\App\Infrastructure\Http\Controllers\Asesores\PrendasPedidoController::class, 'obtenerDatosPrendaEdicion'])->where('pedidoId', '[0-9]+')->where('prendaId', '[0-9]+')->name('pedidos.prenda-datos');
     
     // Obtener datos completos de un pedido para edición (GET)
-    Route::get('/api/pedidos/{id}', [\App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerDatosEdicion'])->where('id', '[0-9]+')->name('api.pedidos.obtener-datos');
+    Route::get('/api/pedidos/{id}', [\App\Infrastructure\Http\Controllers\PedidoQueryController::class, 'obtenerDatosEdicion'])->where('id', '[0-9]+')->name('api.pedidos.obtener-datos');
     
-    Route::post('/api/pedidos', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'store'])->name('api.pedidos.store');
-    Route::put('/api/pedidos/{id}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'update'])->name('api.pedidos.update');
-    Route::put('/api/pedidos/{id}/estado', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'cambiarEstado'])->name('api.pedidos.cambiar-estado');
-    Route::post('/api/pedidos/{id}/prendas', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'agregarPrenda'])->name('api.pedidos.agregar-prenda');
-    Route::delete('/api/pedidos/{id}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'destroy'])->name('api.pedidos.destroy');
-    Route::get('/api/pedidos/filtro/estado', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'filtrarPorEstado'])->name('api.pedidos.filtrar-estado');
-    Route::get('/api/pedidos/buscar/{numero}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'buscarPorNumero'])->name('api.pedidos.buscar');
-    Route::get('/api/pedidos/{id}/prendas', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerPrendas'])->name('api.pedidos.obtener-prendas');
+    Route::post('/api/pedidos', [App\Infrastructure\Http\Controllers\Asesores\PedidosController::class, 'store'])->name('api.pedidos.store');
+    Route::put('/api/pedidos/{id}', [App\Infrastructure\Http\Controllers\Asesores\PedidosController::class, 'update'])->name('api.pedidos.update');
+    Route::put('/api/pedidos/{id}/estado', [App\Infrastructure\Http\Controllers\Asesores\PedidosController::class, 'cambiarEstado'])->name('api.pedidos.cambiar-estado');
+    Route::post('/api/pedidos/{id}/prendas', [App\Infrastructure\Http\Controllers\Asesores\PrendasPedidoController::class, 'agregarPrenda'])->name('api.pedidos.agregar-prenda');
+    Route::delete('/api/pedidos/{id}', [App\Infrastructure\Http\Controllers\Asesores\PedidosController::class, 'destroy'])->name('api.pedidos.destroy');
+    Route::get('/api/pedidos/filtro/estado', [App\Infrastructure\Http\Controllers\Asesores\PedidosController::class, 'filtrarPorEstado'])->name('api.pedidos.filtrar-estado');
+    Route::get('/api/pedidos/buscar/{numero}', [App\Infrastructure\Http\Controllers\Asesores\PedidosController::class, 'buscarPorNumero'])->name('api.pedidos.buscar');
+    Route::get('/api/pedidos/{id}/prendas', [App\Infrastructure\Http\Controllers\Asesores\PrendasPedidoController::class, 'obtenerPrendas'])->name('api.pedidos.obtener-prendas');
     
     // ========================================
     // CLIENTES - Gestión de clientes
@@ -2077,21 +2077,21 @@ Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_produc
     Route::delete('/cotizaciones/bordado/{cotizacion}', [CotizacionBordadoController::class, 'destroy'])->name('cotizaciones-bordado.destroy');
     
     // Actualizar prenda completa (con novedades) en un pedido existente
-    Route::post('/pedidos/{id}/actualizar-prenda', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'actualizarPrendaCompleta'])->where('id', '[0-9]+')->name('pedidos.actualizar-prenda-completa');
+    Route::post('/pedidos/{id}/actualizar-prenda', [App\Infrastructure\Http\Controllers\Asesores\PrendasPedidoController::class, 'actualizarPrendaCompleta'])->where('id', '[0-9]+')->name('pedidos.actualizar-prenda-completa');
 
     // Eliminar imagen de prenda, tela o proceso
-    Route::delete('/pedidos/{pedidoId}/imagen/{tipo}/{id}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'eliminarImagen'])->where(['pedidoId' => '[0-9]+', 'id' => '[0-9]+'])->name('pedidos.eliminar-imagen');
+    Route::delete('/pedidos/{pedidoId}/imagen/{tipo}/{id}', [App\Infrastructure\Http\Controllers\Asesores\PrendasPedidoController::class, 'eliminarImagen'])->where(['pedidoId' => '[0-9]+', 'id' => '[0-9]+'])->name('pedidos.eliminar-imagen');
 
     // ========================================
     // DATOS DE CATÁLOGOS (tipos de broche, manga, telas, colores, etc)
     // ========================================
-    Route::get('/api/tipos-broche-boton', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerTiposBrocheBoton'])->name('api.tipos-broche-boton');
-    Route::get('/api/tipos-manga', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerTiposManga'])->name('api.tipos-manga');
-    Route::post('/api/tipos-manga', [App\Http\Controllers\Api_temp\PedidoController::class, 'crearObtenerTipoManga'])->name('api.tipos-manga.create');
-    Route::get('/api/telas', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerTelas'])->name('api.telas');
-    Route::post('/api/telas', [App\Http\Controllers\Api_temp\PedidoController::class, 'crearObtenerTela'])->name('api.telas.create');
-    Route::get('/api/colores', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerColores'])->name('api.colores');
-    Route::post('/api/colores', [App\Http\Controllers\Api_temp\PedidoController::class, 'crearObtenerColor'])->name('api.colores.create');
+    Route::get('/api/tipos-broche-boton', [App\Infrastructure\Http\Controllers\CatalogoController::class, 'obtenerTiposBrocheBoton'])->name('api.tipos-broche-boton');
+    Route::get('/api/tipos-manga', [App\Infrastructure\Http\Controllers\CatalogoController::class, 'obtenerTiposManga'])->name('api.tipos-manga');
+    Route::post('/api/tipos-manga', [App\Infrastructure\Http\Controllers\CatalogoController::class, 'crearObtenerTipoManga'])->name('api.tipos-manga.create');
+    Route::get('/api/telas', [App\Infrastructure\Http\Controllers\CatalogoController::class, 'obtenerTelas'])->name('api.telas');
+    Route::post('/api/telas', [App\Infrastructure\Http\Controllers\CatalogoController::class, 'crearObtenerTela'])->name('api.telas.create');
+    Route::get('/api/colores', [App\Infrastructure\Http\Controllers\CatalogoController::class, 'obtenerColores'])->name('api.colores');
+    Route::post('/api/colores', [App\Infrastructure\Http\Controllers\CatalogoController::class, 'crearObtenerColor'])->name('api.colores.create');
     Route::get('/api/prendas/autocomplete', [App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'obtenerPrendasAutocomplete'])->name('api.prendas.autocomplete');
 });
 
@@ -2099,45 +2099,45 @@ Route::middleware(['auth', 'role:asesor,admin,lider_produccion,supervisor_produc
 // API ROUTES - CATÁLOGOS - Tallas, variantes, colores/telas de prendas
 // ========================================
 Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('api')->name('api.')->group(function () {
-    Route::get('/tallas-disponibles', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerTallasDisponibles'])->name('tallas.disponibles');
-    Route::get('/prenda-pedido/{prendaId}/tallas', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerTallasPrenda'])->name('prenda.tallas');
-    Route::get('/prenda-pedido/{prendaId}/variantes', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerVariantesPrenda'])->name('prenda.variantes');
-    Route::get('/prenda-pedido/{prendaId}/colores-telas', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerColoresTelasPrenda'])->name('prenda.colores-telas');
+    Route::get('/tallas-disponibles', [App\Infrastructure\Http\Controllers\Asesores\VariantesPrendaController::class, 'obtenerTallasDisponibles'])->name('tallas.disponibles');
+    Route::get('/prenda-pedido/{prendaId}/tallas', [App\Infrastructure\Http\Controllers\Asesores\VariantesPrendaController::class, 'obtenerTallasPrenda'])->name('prenda.tallas');
+    Route::get('/prenda-pedido/{prendaId}/variantes', [App\Infrastructure\Http\Controllers\Asesores\VariantesPrendaController::class, 'obtenerVariantesPrenda'])->name('prenda.variantes');
+    Route::get('/prenda-pedido/{prendaId}/colores-telas', [App\Infrastructure\Http\Controllers\Asesores\VariantesPrendaController::class, 'obtenerColoresTelasPrenda'])->name('prenda.colores-telas');
 
     // ================================================
     // EDICIÓN SEGURA DE PRENDAS (Separado de creación)
     // ================================================
     Route::prefix('prendas-pedido')->group(function () {
         // Editar prenda completa (PATCH)
-        Route::patch('/{id}/editar', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'editPrenda'])->name('editar');
+        Route::patch('/{id}/editar', [App\Infrastructure\Http\Controllers\Asesores\PrendaPedidoEditController::class, 'editPrenda'])->name('editar');
         
         // Editar solo campos simples de prenda
-        Route::patch('/{id}/editar/campos', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'editPrendaFields'])->name('editar-campos');
+        Route::patch('/{id}/editar/campos', [App\Infrastructure\Http\Controllers\Asesores\PrendaPedidoEditController::class, 'editPrendaFields'])->name('editar-campos');
         
         // Editar solo tallas (MERGE)
-        Route::patch('/{id}/editar/tallas', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'editTallas'])->name('editar-tallas');
+        Route::patch('/{id}/editar/tallas', [App\Infrastructure\Http\Controllers\Asesores\PrendaPedidoEditController::class, 'editTallas'])->name('editar-tallas');
         
         //  NUEVA RUTA: Actualizar un proceso específico de la prenda
         //  FIX: Acepta POST también (con _method=PATCH en FormData para mejor compatibilidad)
-        Route::match(['patch', 'post'], '/{prendaId}/procesos/{procesoId}', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'actualizarProcesoEspecifico'])->name('proceso-actualizar');
+        Route::match(['patch', 'post'], '/{prendaId}/procesos/{procesoId}', [App\Infrastructure\Http\Controllers\Asesores\PrendaPedidoEditController::class, 'actualizarProcesoEspecifico'])->name('proceso-actualizar');
         
         // Obtener estado actual (para auditoría)
-        Route::get('/{id}/estado', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'getPrendaState'])->name('estado');
+        Route::get('/{id}/estado', [App\Infrastructure\Http\Controllers\Asesores\PrendaPedidoEditController::class, 'getPrendaState'])->name('estado');
         
         // Editar variante específica
-        Route::patch('/{prendaId}/variantes/{varianteId}/editar', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'editVariante'])->name('variante-editar');
+        Route::patch('/{prendaId}/variantes/{varianteId}/editar', [App\Infrastructure\Http\Controllers\Asesores\PrendaPedidoEditController::class, 'editVariante'])->name('variante-editar');
         
         // Editar solo campos simples de variante
-        Route::patch('/{prendaId}/variantes/{varianteId}/editar/campos', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'editVarianteFields'])->name('variante-editar-campos');
+        Route::patch('/{prendaId}/variantes/{varianteId}/editar/campos', [App\Infrastructure\Http\Controllers\Asesores\PrendaPedidoEditController::class, 'editVarianteFields'])->name('variante-editar-campos');
         
         // Editar solo colores de variante (MERGE)
-        Route::patch('/{prendaId}/variantes/{varianteId}/colores', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'editVarianteColores'])->name('variante-colores');
+        Route::patch('/{prendaId}/variantes/{varianteId}/colores', [App\Infrastructure\Http\Controllers\Asesores\PrendaPedidoEditController::class, 'editVarianteColores'])->name('variante-colores');
         
         // Editar solo telas de variante (MERGE)
-        Route::patch('/{prendaId}/variantes/{varianteId}/telas', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'editVarianteTelas'])->name('variante-telas');
+        Route::patch('/{prendaId}/variantes/{varianteId}/telas', [App\Infrastructure\Http\Controllers\Asesores\PrendaPedidoEditController::class, 'editVarianteTelas'])->name('variante-telas');
         
         // Obtener estado de variante (para auditoría)
-        Route::get('/{prendaId}/variantes/{varianteId}/estado', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'getVarianteState'])->name('variante-estado');
+        Route::get('/{prendaId}/variantes/{varianteId}/estado', [App\Infrastructure\Http\Controllers\Asesores\PrendaPedidoEditController::class, 'getVarianteState'])->name('variante-estado');
     });
 });
 
@@ -2388,16 +2388,16 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
     Route::post('/{id}/actualizar', [App\Http\Controllers\SupervisorPedidosController::class, 'update'])->name('actualizar.post');
     
     // Obtener datos de una prenda específica para edición modal (supervisor)
-    Route::get('/{pedidoId}/prenda/{prendaId}/datos', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerDatosPrendaEdicion'])->where('pedidoId', '[0-9]+')->where('prendaId', '[0-9]+')->name('prenda-datos');
+    Route::get('/{pedidoId}/prenda/{prendaId}/datos', [App\Infrastructure\Http\Controllers\Asesores\PrendasPedidoController::class, 'obtenerDatosPrendaEdicion'])->where('pedidoId', '[0-9]+')->where('prendaId', '[0-9]+')->name('prenda-datos');
     
     // Actualizar prenda completa (con novedades) - Ruta adicional para edición de prendas desde el modal
-    Route::post('/{id}/actualizar-prenda', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'actualizarPrendaCompleta'])->where('id', '[0-9]+')->name('pedidos.actualizar-prenda-completa');
+    Route::post('/{id}/actualizar-prenda', [App\Infrastructure\Http\Controllers\Asesores\PrendasPedidoController::class, 'actualizarPrendaCompleta'])->where('id', '[0-9]+')->name('pedidos.actualizar-prenda-completa');
     
     // Agregar prenda nueva a pedido existente (desde modal de edición)
-    Route::post('/{id}/agregar-prenda', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'agregarPrendaCompleta'])->where('id', '[0-9]+')->name('pedidos.agregar-prenda-completa');
+    Route::post('/{id}/agregar-prenda', [App\Infrastructure\Http\Controllers\Asesores\PrendasPedidoController::class, 'agregarPrendaCompleta'])->where('id', '[0-9]+')->name('pedidos.agregar-prenda-completa');
     
     // Actualizar proceso específico de una prenda (para supervisor)
-    Route::match(['patch', 'post'], '/{prendaId}/procesos/{procesoId}', [App\Infrastructure\Http\Controllers\Api_tempp\PrendaPedidoEditController::class, 'actualizarProcesoEspecifico'])->where(['prendaId' => '[0-9]+', 'procesoId' => '[0-9]+'])->name('procesos-actualizar');
+    Route::match(['patch', 'post'], '/{prendaId}/procesos/{procesoId}', [App\Infrastructure\Http\Controllers\Asesores\PrendaPedidoEditController::class, 'actualizarProcesoEspecifico'])->where(['prendaId' => '[0-9]+', 'procesoId' => '[0-9]+'])->name('procesos-actualizar');
     
     // Eliminar imagen de prenda
     Route::delete('/imagen/{tipo}/{id}', [App\Http\Controllers\SupervisorPedidosController::class, 'deleteImage'])->name('imagen.eliminar');

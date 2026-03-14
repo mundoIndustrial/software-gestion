@@ -69,4 +69,19 @@ interface PrendaRepositoryInterface
      * Obtiene procesos de una prenda
      */
     public function obtenerProcesos(int $prendaId): array;
+
+    /**
+     * Obtiene tallas de una prenda de pedido
+     */
+    public function obtenerTallasPedido(int $prendaId): array;
+
+    /**
+     * Obtiene variantes de una prenda de pedido
+     */
+    public function obtenerVariantesPedido(int $prendaId): array;
+
+    /**
+     * Obtiene colores y telas de una prenda de pedido
+     */
+    public function obtenerColoresTelasPedido(int $prendaId): array;
 }
