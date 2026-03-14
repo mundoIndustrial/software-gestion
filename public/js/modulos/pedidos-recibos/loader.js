@@ -10,6 +10,9 @@
 import { PedidosRecibosModule } from './PedidosRecibosModule.js';
 import { Formatters } from './utils/Formatters.js';
 
+// Importar el script completo para que printReceiptModal esté disponible globalmente
+import './PedidosRecibosModule.js';
+
 // Inicializar módulo
 const module = new PedidosRecibosModule();
 
@@ -26,4 +29,13 @@ window.openOrderDetailModalWithProcess = (pedidoId, prendaId, tipoRecibo, prenda
 window.cerrarModalRecibos = () => {
     return module.cerrarRecibo();
 };
+
+// Exponer función de impresión para compatibilidad con botones HTML
+// La función printReceiptModal se define globalmente en PedidosRecibosModule.js
+// simplemente la reasignamos a window para que sea accesible desde HTML
+setTimeout(() => {
+    if (typeof printReceiptModal === 'function') {
+        window.printReceiptModal = printReceiptModal;
+    }
+}, 100);
 

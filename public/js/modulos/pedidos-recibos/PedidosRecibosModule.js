@@ -667,11 +667,28 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                 ? window.pedidosRecibosModule.getEstado()
                 : null;
 
+            console.log('[printReceiptModal] 🎯 ESTADO COMPLETO:', {
+                estado,
+                'estado.datosCompletos': estado?.datosCompletos,
+                'estado.prendaData': estado?.prendaData,
+                'estado.procesosActuales': estado?.procesosActuales,
+                'estado.procesoActualIndice': estado?.procesoActualIndice,
+                'estado.tipoProceso': estado?.tipoProceso
+            });
+
             const datosPedido = estado && estado.datosCompletos ? estado.datosCompletos : {};
             const prendaData = estado && estado.prendaData ? estado.prendaData : null;
             const recibos = estado && Array.isArray(estado.procesosActuales) ? estado.procesosActuales : [];
             const reciboActual = (recibos && typeof estado?.procesoActualIndice === 'number') ? recibos[estado.procesoActualIndice] : null;
             const tipoProceso = estado && estado.tipoProceso ? estado.tipoProceso : (reciboActual?.tipo || reciboActual?.tipo_proceso || '');
+
+            console.log('[printReceiptModal] 📋 DATOS EXTRAÍDOS:', {
+                datosPedido,
+                prendaData,
+                recibos,
+                reciboActual,
+                tipoProceso
+            });
 
             // Fallback DOM: si por algún motivo el estado no trae datos (se ve en COSTURA en algunas vistas),
             // leer lo que ya está pintado en el modal.
@@ -785,16 +802,51 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                 // === 2) Array simple: [{genero,talla,cantidad}] (agrupar por género sin repetir) ===
                 if (Array.isArray(tallas)) {
                     const mapGeneroATallas = {};
+                    const mapSobremedida = {}; // Separar sobremedida por género
+                    
                     tallas.forEach((t) => {
                         const genero = normalizarGenero(t?.genero);
-                        const talla = normalizarTalla(t?.talla);
                         const cantidad = Number(t?.cantidad || 0);
-                        if (!genero || !talla || !cantidad) return;
-                        if (!mapGeneroATallas[genero]) mapGeneroATallas[genero] = new Map();
-                        const m = mapGeneroATallas[genero];
-                        m.set(talla, (Number(m.get(talla) || 0) + cantidad));
+                        if (!genero || !cantidad) return;
+                        
+                        // Si es sobremedida, manejarlo por separado
+                        if (t?.es_sobremedida) {
+                            if (!mapSobremedida[genero]) mapSobremedida[genero] = 0;
+                            mapSobremedida[genero] += cantidad;
+                        } else {
+                            const talla = normalizarTalla(t?.talla);
+                            if (!talla) return;
+                            if (!mapGeneroATallas[genero]) mapGeneroATallas[genero] = new Map();
+                            const m = mapGeneroATallas[genero];
+                            m.set(talla, (Number(m.get(talla) || 0) + cantidad));
+                        }
                     });
-                    return formatGeneroGroup(mapGeneroATallas);
+                    
+                    const generosSobremedida = Object.keys(mapSobremedida);
+                    const tieneSobremedida = generosSobremedida.length > 0;
+                    const tieneTallasNormales = Object.keys(mapGeneroATallas).length > 0;
+                    
+                    // Si solo hay sobremedida, devolver formato especial sin "TALLAS:"
+                    if (tieneSobremedida && !tieneTallasNormales) {
+                        const partesSobremedida = generosSobremedida.map(g => `${g}: ${mapSobremedida[g]}`);
+                        return 'SOBREMEDIDA_SIN_TALLAS:' + partesSobremedida.join('|');
+                    }
+                    
+                    const partes = [];
+                    
+                    // Primero agregar sobremedida si existe
+                    if (tieneSobremedida) {
+                        const partesSobremedida = generosSobremedida.map(g => `${g}: ${mapSobremedida[g]}`);
+                        partes.push('SOBREMEDIDA_CON_TALLAS:' + partesSobremedida.join('|'));
+                    }
+                    
+                    // Luego agregar tallas normales
+                    const tallasNormalesStr = formatGeneroGroup(mapGeneroATallas);
+                    if (tallasNormalesStr) {
+                        partes.push(tallasNormalesStr);
+                    }
+                    
+                    return partes.join('\n');
                 }
 
                 // === 3) Objeto: {GENERO: {talla: cantidad}} o {GENERO: {talla: [{color,cantidad}]}} ===
@@ -877,7 +929,8 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                 if (!Array.isArray(detalle) || detalle.length === 0) return [];
 
                 return detalle.map((d) => {
-                    const talla = String(d?.talla || d?.nombre_talla || '').trim();
+                    // Si es sobremedida, usar "SOBREMEDIDA" como talla
+                    const talla = d?.es_sobremedida ? 'SOBREMEDIDA' : String(d?.talla || d?.nombre_talla || '').trim();
                     const genero = String(d?.genero || '').trim();
 
                     // Observaciones/ubicaciones: soportar múltiples formatos
@@ -956,10 +1009,69 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
             })();
 
             const tallasResumen = (() => {
+                // Para procesos, priorizar tallas_detalle que viene desde la BD
+                let tallasProceso = null;
+                console.log('[printReceiptModal] 🔍 DEBUG - Datos de tallas disponibles:', {
+                    tipoProceso,
+                    reciboActual,
+                    prendaData,
+                    'reciboActual.tallas_detalle': reciboActual?.tallas_detalle,
+                    'reciboActual.tallas': reciboActual?.tallas,
+                    'prendaData.tallas': prendaData?.tallas,
+                    'ES COSTURA': tipoProceso?.toUpperCase() === 'COSTURA',
+                    'variantes': reciboActual?.variantes || prendaData?.variantes
+                });
+                
+                if (reciboActual) {
+                    // Para cualquier tipo de recibo (incluyendo COSTURA), usar tallas_detalle si está disponible
+                    if (Array.isArray(reciboActual.tallas_detalle) && reciboActual.tallas_detalle.length > 0) {
+                        tallasProceso = reciboActual.tallas_detalle;
+                        console.log('[printReceiptModal] ✅ Usando tallas_detalle del reciboActual:', tallasProceso);
+                    } else if (tipoProceso.toUpperCase() === 'COSTURA') {
+                        // Para COSTURA: usar variantes si no hay tallas_detalle
+                        const variantes = reciboActual?.variantes || prendaData?.variantes || [];
+                        console.log('[printReceiptModal] 🎯 COSTURA - Variantes encontradas:', variantes);
+                        
+                        if (variantes.length > 0) {
+                            // Convertir variantes al formato tallas_detalle
+                            tallasProceso = variantes.map(v => ({
+                                genero: v.genero || '',
+                                talla: v.talla || '',
+                                cantidad: v.cantidad || 0,
+                                es_sobremedida: v.es_sobremedida || false,
+                                observaciones: v.observaciones || []
+                            }));
+                            console.log('[printReceiptModal] ✅ COSTURA - Variantes convertidas a tallas_detalle:', tallasProceso);
+                        }
+                    } else if (prendaData?.procesos && Array.isArray(prendaData.procesos)) {
+                        // Buscar el proceso actual en prendaData.procesos por tipo
+                        const procesoActual = prendaData.procesos.find(p => 
+                            (p.tipo_proceso || '').toUpperCase() === tipoProceso.toUpperCase() ||
+                            (p.nombre_proceso || '').toUpperCase() === tipoProceso.toUpperCase() ||
+                            (p.tipo || '').toUpperCase() === tipoProceso.toUpperCase()
+                        );
+                        
+                        if (procesoActual && Array.isArray(procesoActual.tallas_detalle) && procesoActual.tallas_detalle.length > 0) {
+                            tallasProceso = procesoActual.tallas_detalle;
+                            console.log('[printReceiptModal] ✅ Usando tallas_detalle del proceso encontrado en prendaData:', tallasProceso);
+                        } else if (procesoActual && procesoActual.tallas_detalle) {
+                            console.log('[printReceiptModal] ⚠️ procesoActual.tallas_detalle existe pero no es array válido:', procesoActual.tallas_detalle);
+                        }
+                        
+                        // Si no hay tallas_detalle, intentar con tallas del proceso
+                        if (!tallasProceso && procesoActual?.tallas) {
+                            tallasProceso = procesoActual.tallas;
+                            console.log('[printReceiptModal] ✅ Usando tallas del proceso encontrado en prendaData:', tallasProceso);
+                        }
+                    }
+                }
+                
+                // Usar tallas del proceso si existen, sino usar las tallas generales
                 const str = buildTallasResumen(
-                    reciboActual?.tallas || prendaData?.tallas || null,
+                    tallasProceso || reciboActual?.tallas || prendaData?.tallas || null,
                     reciboActual?.talla_colores || prendaData?.talla_colores || null
                 );
+                console.log('[printReceiptModal] 📊 Resultado buildTallasResumen:', str);
                 if (str) return str;
                 
                 // Fallback para COSTURA: intentar desde variantes
@@ -1000,6 +1112,15 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                 return String(extra.tallas || '').trim();
             })();
             const observacionesPorTalla = buildObservacionesPorTalla();
+
+            console.log('[printReceiptModal] 🏁 VALORES FINALES PARA HTML:', {
+                tallasResumen,
+                observacionesPorTalla,
+                'tallasResumen tipo': typeof tallasResumen,
+                'tallasResumen longitud': tallasResumen?.length,
+                'tallasResumen vacío': !tallasResumen,
+                'observacionesPorTalla longitud': observacionesPorTalla?.length
+            });
 
             const receiptTitleEl = wrapper.querySelector('#receipt-title');
             const receiptTitle = receiptTitleEl ? receiptTitleEl.textContent.trim() : '';
@@ -1272,7 +1393,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                           <h4>TALLAS:</h4>
                           <div class="tallas-resumen">${esc(tallasResumen)}</div>
                         </div>
-                        ` : ''}
+                        ` : '<!-- SIN TALLAS - tallasResumen está vacío -->'}
                         
                         ${observacionesPorTalla.length > 0 ? `
                         <div class="section observations-section">
@@ -1351,8 +1472,56 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                       <h4>UBICACIONES:</h4>
                       <div class="ubicaciones-list">${ubicHtml}</div>
                     </div>
+                    ${tallasResumen ? (() => {
+                        let htmlFinal = '';
+                        let mostrarTituloTallas = true;
+                        let contenidoTallas = tallasResumen;
+                        
+                        // Procesar marcadores especiales
+                        if (tallasResumen.startsWith('SOBREMEDIDA_SIN_TALLAS:')) {
+                            const partes = tallasResumen.substring('SOBREMEDIDA_SIN_TALLAS:'.length).split('|');
+                            mostrarTituloTallas = false;
+                            contenidoTallas = '<span style="color: #000; font-weight: 900;">SOBREMEDIDA:</span><br>' + 
+                                partes.map(p => `<span style="color: #d32f2f; font-weight: 900;">${p}</span>`).join(' | ');
+                        } else if (tallasResumen.includes('SOBREMEDIDA_CON_TALLAS:')) {
+                            const lineas = tallasResumen.split('\n');
+                            contenidoTallas = lineas.map(linea => {
+                                if (linea.startsWith('SOBREMEDIDA_CON_TALLAS:')) {
+                                    const partes = linea.substring('SOBREMEDIDA_CON_TALLAS:'.length).split('|');
+                                    return '<span style="color: #000; font-weight: 900;">SOBREMEDIDA:</span><br>' + 
+                                        partes.map(p => `<span style="color: #d32f2f; font-weight: 900;">${p}</span>`).join(' | ');
+                                }
+                                return `<span style="color: #d32f2f; font-weight: 900;">${linea}</span>`;
+                            }).join('<br>');
+                        } else {
+                            // Tallas normales sin sobremedida
+                            contenidoTallas = `<span style="color: #d32f2f; font-weight: 900;">${tallasResumen}</span>`;
+                        }
+                        
+                        return `
+                        <div class="section">
+                          ${mostrarTituloTallas ? '<h4>TALLAS:</h4>' : ''}
+                          <div class="tallas-resumen" style="color: inherit; font-weight: 900; white-space: pre-line;">${contenidoTallas}</div>
+                        </div>
+                        `;
+                    })() : ''}
                 `;
             };
+
+            // Detectar si es solo sobremedida (basado en el contenido procesado)
+            const esSoloSobremedida = tallasResumen && tallasResumen.includes('SOBREMEDIDA:</span>') && !tallasResumen.includes('<span style="color: #d32f2f');
+            
+            // Para impresión, necesitamos saber si el contenido original era solo sobremedida
+            const contenidoOriginalEsSoloSobremedida = (() => {
+                if (Array.isArray(reciboActual?.tallas_detalle) && reciboActual.tallas_detalle.length > 0) {
+                    return reciboActual.tallas_detalle.every(t => t.es_sobremedida);
+                }
+                if (tipoProceso?.toUpperCase() === 'COSTURA') {
+                    const variantes = reciboActual?.variantes || prendaData?.variantes || [];
+                    return variantes.length > 0 && variantes.every(v => v.es_sobremedida);
+                }
+                return false;
+            })();
 
             const renderTallaItem = (t) => {
                 const lis = (t.observaciones || []).map(obs => `<li>${esc(obs).toUpperCase()}</li>`).join('');
@@ -1520,6 +1689,14 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
   </script>
 </body>
 </html>`;
+
+            console.log('[printReceiptModal] 🖨️ HTML FINAL PARA IMPRESIÓN:', {
+                'longitud HTML': html?.length,
+                'contiene TALLAS': html?.includes('TALLAS'),
+                'contiene tallas-resumen': html?.includes('tallas-resumen'),
+                'contiene CABALLERO': html?.includes('CABALLERO'),
+                'fragmento TALLAS': html?.match(/<h4>TALLAS:<\/h4>.*?<\/div>/s)?.[0]?.substring(0, 200)
+            });
 
             const w = window.open('', '_blank');
             if (!w) {
