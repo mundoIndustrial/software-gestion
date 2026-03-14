@@ -1,0 +1,88 @@
+<?php
+
+namespace App\Application\UseCases\Pedidos;
+
+use Illuminate\Http\Request;
+
+/**
+ * DTO de entrada para CrearPedidoCompleteUseCase
+ * 
+ * Encapsula los datos necesarios para crear un pedido completo
+ * Decodifica el JSON y normaliza los datos
+ */
+class CrearPedidoInput
+{
+    /**
+     * @param array $datosFrontend Datos decodificados del JSON "pedido"
+     * @param Request $request Request HTTP con archivos
+     * @param int $usuarioId ID del usuario autenticado
+     */
+    public function __construct(
+        public readonly array $datosFrontend,
+        public readonly Request $request,
+        public readonly int $usuarioId
+    ) {}
+
+    /**
+     * Factory method para crear desde Request
+     * 
+     * @param Request $request
+     * @param int $usuarioId
+     * @return self
+     * @throws \Exception
+     */
+    public static function fromRequest(Request $request, int $usuarioId): self
+    {
+        $pedidoJSON = $request->input('pedido');
+        if (!$pedidoJSON) {
+            throw new \Exception('Campo "pedido" JSON requerido');
+        }
+
+        $datosFrontend = json_decode($pedidoJSON, true);
+        if (!$datosFrontend) {
+            throw new \Exception('JSON inválido en campo "pedido"');
+        }
+
+        return new self($datosFrontend, $request, $usuarioId);
+    }
+
+    /**
+     * Get cliente name
+     */
+    public function getClienteNombre(): string
+    {
+        return trim($this->datosFrontend['cliente'] ?? '');
+    }
+
+    /**
+     * Has prendas
+     */
+    public function hasPrendas(): bool
+    {
+        return !empty($this->datosFrontend['prendas']) && count($this->datosFrontend['prendas']) > 0;
+    }
+
+    /**
+     * Has EPPs
+     */
+    public function hasEpps(): bool
+    {
+        return !empty($this->datosFrontend['epps']) && count($this->datosFrontend['epps']) > 0;
+    }
+
+    /**
+     * Get prendas
+     */
+    public function getPrendas(): array
+    {
+        return $this->datosFrontend['prendas'] ?? [];
+    }
+
+    /**
+     * Get EPPs
+     */
+    public function getEpps(): array
+    {
+        return $this->datosFrontend['epps'] ?? [];
+    }
+}

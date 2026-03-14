@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-const ip = '192.168.80.118';
-=======
-const ip = '192.168.0.169';
->>>>>>> 24f57a91 (Refactor code structure for improved readability and maintainability)
+const ip = '192.168.0.167';
 export default {
   viteHmrHost: ip,
   viteHmrPort: 5173,
