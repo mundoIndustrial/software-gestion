@@ -2,15 +2,15 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api_temp\V1\OrdenController;
-use App\Http\Controllers\PrendaController;
-use App\Http\Controllers\Api_temp\ProcesosController;
+use App\Infrastructure\Http\Controllers\PrendaController;
+use App\Infrastructure\Http\Controllers\ProcesosPrendaDetalleController;
 use App\Infrastructure\Http\Controllers\PedidoCommandController;
 use App\Infrastructure\Http\Controllers\PedidoQueryController;
 use App\Infrastructure\Http\Controllers\CotizacionPrendaController;
 use App\Modules\Pedidos\Infrastructure\Http\Controllers\PedidoEppController;
 use App\Infrastructure\Http\Controllers\AsistenciaPersonalController;
 use App\Infrastructure\Http\Controllers\PrendaEditorController;
-use App\Http\Controllers\ProcesoSeguimientoController;
+use App\Infrastructure\Http\Controllers\ProcesoSeguimientoController;
 
 /**
  * RUTAS PÚBLICAS - DATOS GENERALES (SIN AUTENTICACIÓN)
@@ -335,49 +335,49 @@ Route::withoutMiddleware(['api']) // Remover el middleware api global
 // Rutas de procesos (DDD)
 Route::middleware('auth')->prefix('procesos')->name('procesos.')->group(function () {
     // Obtener tipos de procesos disponibles
-    Route::get('tipos', [ProcesosController::class, 'tipos'])
+    Route::get('tipos', [ProcesosPrendaDetalleController::class, 'tipos'])
             ->name('tipos');
 
         // Procesos de una prenda
         Route::prefix('prendas/{prendaId}')->name('prenda.')->group(function () {
-            Route::get('/', [ProcesosController::class, 'obtenerPorPrenda'])
+            Route::get('/', [ProcesosPrendaDetalleController::class, 'obtenerPorPrenda'])
                 ->name('listar');
             
-            Route::post('/', [ProcesosController::class, 'crear'])
+            Route::post('/', [ProcesosPrendaDetalleController::class, 'crear'])
                 ->name('crear');
         });
 
         // Operaciones en procesos específicos
         Route::prefix('{procesoId}')->name('proceso.')->group(function () {
-            Route::put('/', [ProcesosController::class, 'actualizar'])
+            Route::put('/', [ProcesosPrendaDetalleController::class, 'actualizar'])
                 ->name('actualizar');
             
-            Route::delete('/', [ProcesosController::class, 'eliminar'])
+            Route::delete('/', [ProcesosPrendaDetalleController::class, 'eliminar'])
                 ->name('eliminar');
             
             // Cambios de estado
-            Route::post('aprobar', [ProcesosController::class, 'aprobar'])
+            Route::post('aprobar', [ProcesosPrendaDetalleController::class, 'aprobar'])
                 ->name('aprobar');
             
-            Route::post('rechazar', [ProcesosController::class, 'rechazar'])
+            Route::post('rechazar', [ProcesosPrendaDetalleController::class, 'rechazar'])
                 ->name('rechazar');
 
             // Activar/Desactivar recibo
-            Route::post('activar-recibo', [ProcesosController::class, 'activarRecibo'])
+            Route::post('activar-recibo', [ProcesosPrendaDetalleController::class, 'activarRecibo'])
                 ->name('activar-recibo');
 
             // Gestión de imágenes
             Route::prefix('imagenes')->name('imagenes.')->group(function () {
-                Route::get('/', [ProcesosController::class, 'obtenerImagenes'])
+                Route::get('/', [ProcesosPrendaDetalleController::class, 'obtenerImagenes'])
                     ->name('listar');
                 
-                Route::post('/', [ProcesosController::class, 'subirImagen'])
+                Route::post('/', [ProcesosPrendaDetalleController::class, 'subirImagen'])
                     ->name('subir');
                 
-                Route::post('{imagenId}/principal', [ProcesosController::class, 'marcarComoPrincipal'])
+                Route::post('{imagenId}/principal', [ProcesosPrendaDetalleController::class, 'marcarComoPrincipal'])
                     ->name('principal');
                 
-                Route::delete('{imagenId}', [ProcesosController::class, 'eliminarImagen'])
+                Route::delete('{imagenId}', [ProcesosPrendaDetalleController::class, 'eliminarImagen'])
                     ->name('eliminar');
             });
         });
@@ -385,10 +385,10 @@ Route::middleware('auth')->prefix('procesos')->name('procesos.')->group(function
 
 // Ruta específica para activar recibos - con middleware api
 Route::middleware(['api'])->prefix('api/procesos')->group(function () {
-    Route::post('{procesoId}/activar-recibo', [ProcesosController::class, 'activarRecibo'])
+    Route::post('{procesoId}/activar-recibo', [ProcesosPrendaDetalleController::class, 'activarRecibo'])
         ->name('procesos.activar-recibo');
 
-    Route::post('{procesoId}/anular-recibo', [ProcesosController::class, 'anularRecibo'])
+    Route::post('{procesoId}/anular-recibo', [ProcesosPrendaDetalleController::class, 'anularRecibo'])
         ->name('procesos.anular-recibo');
 });
 

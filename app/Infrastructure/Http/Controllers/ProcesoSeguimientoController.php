@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Infrastructure\Http\Controllers;
 
+use App\Application\ProcesoSeguimiento\DTOs\GuardarProcesoSeguimientoDTO;
+use App\Application\ProcesoSeguimiento\UseCases\GuardarProcesoSeguimientoUseCase;
+use App\Infrastructure\Http\Requests\GuardarProcesoSeguimientoRequest;
 use App\Models\ProcesoPrenda;
 use App\Models\PrendaPedido;
-use App\Models\PedidoProduccion;
 use App\Models\ConsecutivoReciboPedido;
 use App\Events\OperarioRecibosActualizados;
 use App\Events\CorteAsignadoOperario;
@@ -12,328 +14,68 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
-use Carbon\Carbon;
 
 class ProcesoSeguimientoController extends Controller
 {
-    public function __construct()
-    {
-        \Log::info('[ProcesoSeguimientoController] Constructor ejecutado');
-    }
+    public function __construct(
+        private readonly GuardarProcesoSeguimientoUseCase $guardarUseCase,
+    ) {}
     
     /**
-     * Guardar un nuevo proceso de seguimiento para una prenda
+     * Guardar un nuevo proceso de seguimiento para una prenda.
+     *
+     * La validación vive en GuardarProcesoSeguimientoRequest.
+     * La lógica de negocio vive en GuardarProcesoSeguimientoUseCase.
      */
-    public function guardar(Request $request): JsonResponse
+    public function guardar(GuardarProcesoSeguimientoRequest $request): JsonResponse
     {
-        \Log::info('[ProcesoSeguimientoController] MÉTODO GUARDAR - INICIO');
-        
-        // Verificar si hay sesión activa (sin usar guards específicos)
-        if (!session()->has('user_id') && !auth()->check()) {
-            \Log::error('[ProcesoSeguimientoController] No hay sesión activa');
-            return response()->json([
-                'success' => false,
-                'message' => 'Usuario no autenticado'
-            ], 401);
-        }
-        
-        // Intentar obtener usuario autenticado
-        $user = auth()->user();
-        if (!$user) {
-            \Log::error('[ProcesoSeguimientoController] No se pudo obtener usuario autenticado');
-            return response()->json([
-                'success' => false,
-                'message' => 'Usuario no autenticado'
-            ], 401);
-        }
-        
-        \Log::info('[ProcesoSeguimientoController] Usuario autenticado: ' . $user->name);
-        
-        // Debug: Ver qué datos recibimos
-        \Log::info('[ProcesoSeguimientoController] INICIO - Request recibido');
-        \Log::info('[ProcesoSeguimientoController] Método: ' . $request->method());
-        \Log::info('[ProcesoSeguimientoController] URI: ' . $request->getRequestUri());
-        \Log::info('[ProcesoSeguimientoController] Datos recibidos:', $request->all());
-        \Log::info('[ProcesoSeguimientoController] Usuario autenticado:', ['user_id' => auth()->id(), 'user' => auth()->user()?->name]);
-        
-        $validator = Validator::make($request->all(), [
-            'pedido_produccion_id' => 'required|integer|exists:pedidos_produccion,numero_pedido',
-            'prenda_id' => 'required|integer|exists:prendas_pedido,id',
-            'area' => 'required|string|max:255',
-            'estado' => 'required|in:Pendiente,En Progreso,Completado,Pausado',
-            'encargado' => 'required|string|max:100',
-            'observaciones' => 'nullable|string|max:1000'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Datos inválidos',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         try {
-            // Debug: Ver datos antes de crear
-            \Log::info('[ProcesoSeguimientoController] Iniciando guardar proceso con datos:', [
-                'pedido_produccion_id' => $request->pedido_produccion_id,
-                'prenda_id' => $request->prenda_id,
-                'area' => $request->area,
-                'estado' => $request->estado,
-                'encargado' => $request->encargado,
-                'observaciones' => $request->observaciones,
-            ]);
+            $resultado = $this->guardarUseCase->execute(
+                GuardarProcesoSeguimientoDTO::fromRequest($request)
+            );
 
-            // ✅ VERIFICAR SI EL PROCESO YA EXISTE PARA ESTA ÁREA ESPECÍFICA
-            // Buscar si ya existe un proceso de CORTE, COSTURA, BORDADO, etc. para esta prenda
-            // Si existe, reutilizarlo (no crear duplicado de la misma área)
-            // Ignora procesos completados
-            $procesoExistente = ProcesoPrenda::where([
-                ['numero_pedido', '=', $request->pedido_produccion_id],
-                ['prenda_pedido_id', '=', $request->prenda_id],
-                ['proceso', '=', $request->area],  // ← Busca por ÁREA específica
-                ['estado_proceso', '!=', 'Completado']
-            ])->first();
+            $proceso = $resultado->proceso;
 
-            \Log::info('[ProcesoSeguimientoController] Búsqueda de proceso existente:', [
-                'area_buscada' => $request->area,
-                'proceso_existente' => $procesoExistente ? 'SÍ ENCONTRADO' : 'NO ENCONTRADO',
-                'proceso_id' => $procesoExistente?->id,
-                'encargado_anterior' => $procesoExistente?->encargado,
-                'estado_actual' => $procesoExistente?->estado_proceso
-            ]);
-
-            // Generar código de referencia único
-            $codigoReferencia = $procesoExistente ? $procesoExistente->codigo_referencia : $this->generarCodigoReferencia($request->area, $request->prenda_id);
-            \Log::info('[ProcesoSeguimientoController] Código referencia:', ['codigo_referencia' => $codigoReferencia]);
-
-            if ($procesoExistente) {
-                // ✅ ACTUALIZAR PROCESO EXISTENTE DE ESTA ÁREA (reutilizar, no crear)
-                \Log::info('[ProcesoSeguimientoController] ACTUALIZANDO proceso existente con ID: ' . $procesoExistente->id);
-                
-                $procesoExistente->update([
-                    'estado_proceso' => $request->estado,
-                    'encargado' => $request->encargado,
-                    'observaciones' => $request->observaciones ?? $procesoExistente->observaciones,
-                    'fecha_inicio' => $procesoExistente->fecha_inicio, // Mantener fecha original
-                ]);
-                
-                $proceso = $procesoExistente;
-                $accion = 'actualizado';
-                
-                \Log::info('[ProcesoSeguimientoController] Proceso actualizado:', [
-                    'proceso_id' => $proceso->id,
-                    'area' => $proceso->proceso,
-                    'nuevo_encargado' => $proceso->encargado
-                ]);
-            } else {
-                // ✅ CREAR NUEVO PROCESO si no existe para ESTA ÁREA
-                // Permite múltiples procesos de diferentes áreas para la misma prenda
-                \Log::info('[ProcesoSeguimientoController] CREANDO nuevo proceso para área: ' . $request->area);
-                
-                $proceso = ProcesoPrenda::create([
-                    'numero_pedido' => $request->pedido_produccion_id,
-                    'prenda_pedido_id' => $request->prenda_id,
-                    'proceso' => $request->area,
-                    'fecha_inicio' => now(),
-                    'estado_proceso' => $request->estado,
-                    'encargado' => $request->encargado,
-                    'observaciones' => $request->observaciones,
-                    'codigo_referencia' => $codigoReferencia,
-                ]);
-                
-                $accion = 'creado';
-                
-                \Log::info('[ProcesoSeguimientoController] Proceso creado:', ['proceso_id' => $proceso->id, 'area' => $request->area]);
-            }
-
-            // Broadcast: cuando se asigna/actualiza CORTE a un encargado, notificar al operario en tiempo real
-            try {
-                $areaNormalizada = strtolower(trim((string) $request->area));
-                if ($areaNormalizada === 'corte') {
-                    $encargadoNormalizado = strtolower(trim((string) $request->encargado));
-
-                    \Log::info('[ProcesoSeguimientoController] Broadcast CORTE - inicio', [
-                        'broadcasting_default' => config('broadcasting.default'),
-                        'area' => (string) $request->area,
-                        'encargado' => (string) $request->encargado,
-                        'pedido_produccion_id' => (int) $request->pedido_produccion_id,
-                        'prenda_id' => (int) $request->prenda_id,
-                        'proceso_id' => (int) $proceso->id,
-                    ]);
-
-                    // Canal público (fallback): permite que el dashboard del cortador reaccione comparando por nombre
-                    broadcast(new CorteAsignadoOperario([
-                        'area' => $request->area,
-                        'accion' => $accion,
-                        'numero_pedido' => (int) $request->pedido_produccion_id,
-                        'prenda_id' => (int) $request->prenda_id,
-                        'proceso_id' => (int) $proceso->id,
-                        'encargado' => (string) $request->encargado,
-                    ]));
-
-                    \Log::info('[ProcesoSeguimientoController] Broadcast CORTE - emitido a canal publico operarios.corte');
-
-                    if ($encargadoNormalizado !== '') {
-                        $operario = User::query()
-                            ->whereRaw('LOWER(TRIM(name)) = ?', [$encargadoNormalizado])
-                            ->first();
-
-                        if ($operario && $operario->hasRole('cortador')) {
-                            broadcast(new OperarioRecibosActualizados(
-                                userId: (int) $operario->id,
-                                payload: [
-                                    'area' => $request->area,
-                                    'accion' => $accion,
-                                    'numero_pedido' => (int) $request->pedido_produccion_id,
-                                    'prenda_id' => (int) $request->prenda_id,
-                                    'proceso_id' => (int) $proceso->id,
-                                ]
-                            ));
-
-                            \Log::info('[ProcesoSeguimientoController] Broadcast CORTE - emitido a canal privado App.Models.User', [
-                                'user_id' => (int) $operario->id,
-                            ]);
-                        }
-                    }
-                }
-
-                // Broadcast: cuando se asigna/actualiza COSTURA a un encargado, notificar al operario (costura-reflectivo)
-                // Esto permite que el dashboard de costura-reflectivo se refresque en tiempo real al asignar el encargado.
-                if ($areaNormalizada === 'costura') {
-                    $encargadoNormalizado = strtolower(trim((string) $request->encargado));
-
-                    if ($encargadoNormalizado !== '') {
-                        $operario = User::query()
-                            ->whereRaw('LOWER(TRIM(name)) = ?', [$encargadoNormalizado])
-                            ->first();
-
-                        if ($operario && $operario->hasRole('costura-reflectivo')) {
-                            broadcast(new OperarioRecibosActualizados(
-                                userId: (int) $operario->id,
-                                payload: [
-                                    'area' => $request->area,
-                                    'accion' => $accion,
-                                    'numero_pedido' => (int) $request->pedido_produccion_id,
-                                    'prenda_id' => (int) $request->prenda_id,
-                                    'proceso_id' => (int) $proceso->id,
-                                ]
-                            ));
-
-                            \Log::info('[ProcesoSeguimientoController] Broadcast COSTURA - emitido a canal privado App.Models.User', [
-                                'user_id' => (int) $operario->id,
-                            ]);
-                        }
-                    }
-                }
-            } catch (\Exception $broadcastError) {
-                \Log::warning('[ProcesoSeguimientoController] Error broadcasting a operario: ' . $broadcastError->getMessage(), [
-                    'file' => $broadcastError->getFile(),
-                    'line' => $broadcastError->getLine(),
-                ]);
-            }
-
-            // Actualizar el area en consecutivos_recibos_pedidos
-            try {
-                // Obtener el ID del pedido a través de la prenda
-                $prenda = PrendaPedido::find($request->prenda_id);
-                
-                if ($prenda && $prenda->pedido_produccion_id) {
-                    $consecutivo = ConsecutivoReciboPedido::where('pedido_produccion_id', $prenda->pedido_produccion_id)
-                        ->where('prenda_id', $request->prenda_id)
-                        ->first();
-
-                    if ($consecutivo) {
-                        // ✅ Preparar datos a actualizar
-                        $datosActualizar = [
-                            'area' => $request->area
-                        ];
-                        
-                        // ✅ Si el área es "Insumos", cambiar el estado a "Pendiente_Insumos"
-                        if ($request->area === 'Insumos') {
-                            $datosActualizar['estado'] = 'Pendiente_Insumos';
-                            \Log::info('[ProcesoSeguimientoController] INSUMOS detectado - Cambiando estado a Pendiente_Insumos');
-                        }
-                        
-                        $consecutivo->update($datosActualizar);
-                        
-                        \Log::info('[ProcesoSeguimientoController] Consecutivo actualizado:', [
-                            'consecutivo_id' => $consecutivo->id,
-                            'area' => $request->area,
-                            'estado' => $consecutivo->estado
-                        ]);
-                    } else {
-                        \Log::warning('[ProcesoSeguimientoController] No se encontró consecutivo para actualizar:', [
-                            'pedido_id' => $prenda->pedido_produccion_id,
-                            'prenda_id' => $request->prenda_id
-                        ]);
-                    }
-                } else {
-                    \Log::warning('[ProcesoSeguimientoController] No se encontró prenda o no tiene pedido asociado:', [
-                        'prenda_id' => $request->prenda_id
-                    ]);
-                }
-            } catch (\Exception $consecutivoError) {
-                \Log::warning('[ProcesoSeguimientoController] Error actualizando consecutivo: ' . $consecutivoError->getMessage());
-                // Continuar sin actualizar el consecutivo
-            }
-
-            // Cargar relaciones para la respuesta con manejo de errores
-            try {
-                $proceso->load(['prenda', 'pedido']);
-                \Log::info('[ProcesoSeguimientoController] Relaciones cargadas exitosamente');
-            } catch (\Exception $relationError) {
-                \Log::warning('[ProcesoSeguimientoController] Error cargando relaciones: ' . $relationError->getMessage());
-                // Continuar sin las relaciones
-            }
-
-            // Obtener datos completos de la prenda con seguimientos actualizados
-            try {
-                $registroController = new \App\Http\Controllers\RegistroOrdenQueryController();
-                $seguimientoResponse = $registroController->getSeguimientoPorPrenda($request->pedido_produccion_id);
-                $seguimientoData = json_decode($seguimientoResponse->getContent(), true);
-                \Log::info('[ProcesoSeguimientoController] Seguimiento obtenido exitosamente');
-            } catch (\Exception $seguimientoError) {
-                \Log::warning('[ProcesoSeguimientoController] Error obteniendo seguimiento: ' . $seguimientoError->getMessage());
-                $seguimientoData = ['prendas' => []];
-            }
-            
-            // Buscar la prenda actualizada en los datos de seguimiento
+            // Cargar seguimiento actualizado para la respuesta
             $prendaActualizada = null;
-            if (isset($seguimientoData['prendas']) && is_array($seguimientoData['prendas'])) {
-                foreach ($seguimientoData['prendas'] as $prenda) {
+            try {
+                $registroController = new \App\Infrastructure\Http\Controllers\RegistroOrdenQueryController();
+                $seguimientoResponse = $registroController->getSeguimientoPorPrenda($request->pedido_produccion_id);
+                $seguimientoData     = json_decode($seguimientoResponse->getContent(), true);
+
+                foreach ($seguimientoData['prendas'] ?? [] as $prenda) {
                     if ($prenda['id'] == $request->prenda_id) {
                         $prendaActualizada = $prenda;
                         break;
                     }
                 }
+            } catch (\Exception $e) {
+                \Log::warning('[ProcesoSeguimientoController] Error obteniendo seguimiento: ' . $e->getMessage());
+            }
+
+            try {
+                $proceso->load(['prenda', 'pedido']);
+            } catch (\Exception $e) {
+                \Log::warning('[ProcesoSeguimientoController] Error cargando relaciones: ' . $e->getMessage());
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Proceso de seguimiento ' . $accion . ' correctamente',
-                'action' => $accion,
-                'data' => [
+                'message' => 'Proceso de seguimiento ' . $resultado->accion . ' correctamente',
+                'action'  => $resultado->accion,
+                'data'    => [
                     'proceso' => $proceso,
-                    'prenda' => $prendaActualizada,
-                    'pedido' => isset($proceso->pedido) ? $proceso->pedido : null
-                ]
+                    'prenda'  => $prendaActualizada,
+                    'pedido'  => $proceso->pedido ?? null,
+                ],
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('[ProcesoSeguimientoController] Error al guardar proceso de seguimiento: ' . $e->getMessage());
-            \Log::error('[ProcesoSeguimientoController] Stack trace: ' . $e->getTraceAsString());
-            \Log::error('[ProcesoSeguimientoController] Línea: ' . $e->getLine());
-            \Log::error('[ProcesoSeguimientoController] Archivo: ' . $e->getFile());
-            
+            \Log::error('[ProcesoSeguimientoController] Error en guardar: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error al guardar el proceso: ' . $e->getMessage(),
-                'debug_info' => [
-                    'line' => $e->getLine(),
-                    'file' => $e->getFile(),
-                    'trace' => $e->getTraceAsString()
-                ]
             ], 500);
         }
     }
@@ -685,23 +427,6 @@ class ProcesoSeguimientoController extends Controller
                 'message' => 'Error al eliminar el proceso'
             ], 500);
         }
-    }
-
-    /**
-     * Generar código de referencia único para el proceso
-     */
-    private function generarCodigoReferencia(string $area, int $prendaId): string
-    {
-        // Obtener las primeras 3 letras del área
-        $areaAbrev = strtoupper(substr($area, 0, 3));
-        
-        // Obtener el ID de la prenda y formatearlo a 4 dígitos
-        $prendaIdFormateado = str_pad($prendaId, 4, '0', STR_PAD_LEFT);
-        
-        // Generar número secuencial simple (basado en timestamp)
-        $secuencial = date('His');
-        
-        return $areaAbrev . '-' . $prendaIdFormateado . '-' . $secuencial;
     }
 
     /**
