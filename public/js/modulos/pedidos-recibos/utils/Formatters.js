@@ -566,13 +566,63 @@ export class Formatters {
         }
         
         if (tallasAMostrar && Object.keys(tallasAMostrar).length > 0) {
-            lineas.push('');
-            lineas.push('<strong>TALLAS</strong>');
-            this._agregarTallasFormato(lineas, tallasAMostrar, prenda.genero, prenda);
+            // Si el proceso trae tallas_detalle con es_sobremedida, aplicar lógica de SOBREMIDIDA
+            const tallasDetalle = proceso.tallas_detalle;
+            const esSobremedidaFlag = (val) => {
+                if (val === true) return true;
+                if (val === 1) return true;
+                if (val === '1') return true;
+                if (typeof val === 'string' && val.trim().toLowerCase() === 'true') return true;
+                return false;
+            };
+
+            const esSobremedidaPorTalla = (t) => {
+                if (!t) return false;
+                if (esSobremedidaFlag(t.es_sobremedida)) return true;
+                // Fallback: si talla viene null/vacía, suele representar sobremedida
+                const tallaVal = t.talla;
+                return tallaVal === null || tallaVal === undefined || String(tallaVal).trim() === '';
+            };
+
+            const tallasSobremedida = Array.isArray(tallasDetalle)
+                ? tallasDetalle.filter(esSobremedidaPorTalla)
+                : [];
+
+            if (tallasSobremedida.length > 0) {
+                const porGenero = tallasSobremedida.reduce((acc, t) => {
+                    const genero = String(t.genero || 'SIN_GENERO').toUpperCase();
+                    const cantidad = parseInt(t.cantidad, 10) || 0;
+                    acc[genero] = (acc[genero] || 0) + cantidad;
+                    return acc;
+                }, {});
+
+                const ordenGeneros = ['CABALLERO', 'DAMA', 'UNISEX', 'SIN_GENERO'];
+                const generos = Object.keys(porGenero)
+                    .sort((a, b) => {
+                        const ia = ordenGeneros.indexOf(a);
+                        const ib = ordenGeneros.indexOf(b);
+                        if (ia === -1 && ib === -1) return a.localeCompare(b, 'es');
+                        if (ia === -1) return 1;
+                        if (ib === -1) return -1;
+                        return ia - ib;
+                    });
+
+                lineas.push('');
+                lineas.push('<strong>SOBREMEDIDA:</strong>');
+                generos.forEach((g) => {
+                    const qty = porGenero[g] || 0;
+                    if (qty > 0) {
+                        lineas.push(`${g}: <span style="color: #d32f2f; font-weight: bold;">${qty}</span>`);
+                    }
+                });
+            } else {
+                lineas.push('');
+                lineas.push('<strong>TALLAS</strong>');
+                this._agregarTallasFormato(lineas, tallasAMostrar, prenda.genero, prenda);
+            }
 
             // NUEVO: Ubicaciones por talla (solo para procesos que manejan ubicaciones por talla)
             // Se apoya en `proceso.tallas_detalle` del backend: [{genero,talla,cantidad,ubicaciones,...}, ...]
-            const tallasDetalle = proceso.tallas_detalle;
             if (Array.isArray(tallasDetalle) && tallasDetalle.length > 0) {
                 const normalizarUbicaciones = (raw) => {
                     if (!raw) return [];

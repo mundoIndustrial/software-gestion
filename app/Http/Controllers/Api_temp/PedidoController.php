@@ -438,12 +438,22 @@ class PedidoController extends Controller
                                     'caballero' => [],
                                     'unisex' => []
                                 ];
+
+                                // NUEVO: Detalle plano de tallas del proceso (incluye es_sobremedida)
+                                $tallasDetalle = [];
                                 
                                 foreach ($tallas as $talla) {
                                     $genero = strtolower($talla->genero ?? 'caballero');
                                     if ($genero === 'dama') $genero = 'dama';
                                     else if ($genero === 'caballero') $genero = 'caballero';
                                     else $genero = 'unisex';
+
+                                    $tallasDetalle[] = [
+                                        'genero' => strtoupper((string) ($talla->genero ?? '')),
+                                        'talla' => $talla->talla,
+                                        'cantidad' => (int) ($talla->cantidad ?? 0),
+                                        'es_sobremedida' => (int) ($talla->es_sobremedida ?? 0),
+                                    ];
                                     
                                     // Obtener colores para esta talla
                                     $colores = \DB::table('pedidos_procesos_prenda_talla_colores')
@@ -482,6 +492,9 @@ class PedidoController extends Controller
                                 
                                 // Agregar al proceso con nombre 'tallas' para que el renderer lo encuentre
                                 $proceso['tallas'] = $talasTransformadas;
+
+                                // NUEVO: Exponer detalle con es_sobremedida (para render de SOBREMIDIDA en modal)
+                                $proceso['tallas_detalle'] = $tallasDetalle;
 
                                 // NUEVO: observaciones por talla para modo_tallas = general
                                 // Fuente canónica: pedidos_procesos_prenda_tallas.observaciones
@@ -899,6 +912,29 @@ class PedidoController extends Controller
                     foreach ($prendaProc['procesos'] as &$procesoProc) {
                         if (!isset($procesoProc['id'])) {
                             continue;
+                        }
+
+                        // NUEVO: tallas_detalle del proceso (incluye es_sobremedida)
+                        // Fuente: pedidos_procesos_prenda_tallas
+                        try {
+                            $tallasProceso = \DB::table('pedidos_procesos_prenda_tallas')
+                                ->where('proceso_prenda_detalle_id', $procesoProc['id'])
+                                ->get(['genero', 'talla', 'cantidad', 'es_sobremedida', 'ubicaciones', 'observaciones']);
+
+                            if ($tallasProceso->count() > 0) {
+                                $procesoProc['tallas_detalle'] = $tallasProceso->map(function ($t) {
+                                    return [
+                                        'genero' => strtoupper((string) ($t->genero ?? '')),
+                                        'talla' => $t->talla,
+                                        'cantidad' => (int) ($t->cantidad ?? 0),
+                                        'es_sobremedida' => (int) ($t->es_sobremedida ?? 0),
+                                        'ubicaciones' => $t->ubicaciones,
+                                        'observaciones' => $t->observaciones,
+                                    ];
+                                })->toArray();
+                            }
+                        } catch (\Exception $e) {
+                            // silencioso
                         }
 
                         // ubicaciones_array
