@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api_temp;
+namespace App\Infrastructure\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Application\Actions\Procesos\CrearProcesoAction;
@@ -10,6 +10,8 @@ use App\Domain\Procesos\Repositories\TipoProcesoRepository;
 use App\Domain\Procesos\Services\AprobarProcesoPrendaService;
 use App\Domain\Procesos\Services\RechazarProcesoPrendaService;
 use App\Domain\Procesos\Services\SubirImagenProcesoService;
+use App\Domain\Procesos\Services\ActivarReciboProcesoService;
+use App\Domain\Procesos\Services\AnularReciboProcesoService;
 use App\DTOs\CrearProcesoPrendaDTO;
 use App\Models\PedidoAuditoria;
 use Illuminate\Http\Request;
@@ -17,7 +19,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
-class ProcesosController extends Controller
+class ProcesosPrendaDetalleController extends Controller
 {
     public function __construct(
         private CrearProcesoAction $crearProcesoAction,
@@ -27,6 +29,8 @@ class ProcesosController extends Controller
         private ProcesoPrendaDetalleRepository $procesoRepository,
         private ProcesoPrendaImagenRepository $imagenRepository,
         private TipoProcesoRepository $tipoProcesoRepository,
+        private ActivarReciboProcesoService $activarReciboService,
+        private AnularReciboProcesoService $anularReciboService,
     ) {}
 
     /**
@@ -520,43 +524,15 @@ class ProcesosController extends Controller
      */
     public function activarRecibo(Request $request, $procesoId)
     {
-        \Log::info('[ProcesosController::activarRecibo] Iniciando', [
-            'proceso_id' => $procesoId,
-            'user_authenticated' => auth()->check(),
-            'user_id' => auth()->id(),
-            'user' => auth()->user() ? [
-                'id' => auth()->user()->id,
-                'nombre' => auth()->user()->nombre,
-                'email' => auth()->user()->email,
-            ] : null,
-            'request_data' => $request->all()
-        ]);
-
-        // Verificar autenticación
         if (!auth()->check()) {
-            \Log::warning('[ProcesosController::activarRecibo] Usuario no autenticado', ['proceso_id' => $procesoId]);
             return response()->json([
                 'success' => false,
                 'message' => 'Debe estar autenticado para realizar esta acción',
             ], 401);
         }
 
-        // Verificar permisos (solo supervisores pueden activar recibos)
         $usuario = auth()->user();
-        \Log::info('[ProcesosController::activarRecibo] Verificando permisos', [
-            'usuario_id' => $usuario->id,
-            'usuario_nombre' => $usuario->nombre,
-            'hasRole_supervisor' => $usuario->hasRole('supervisor'),
-            'hasRole_supervisor_pedidos' => $usuario->hasRole('supervisor_pedidos'),
-            'all_roles' => $usuario->roles->pluck('nombre')->toArray()
-        ]);
-
-        if (!$usuario || (!$usuario->hasRole('supervisor') && !$usuario->hasRole('supervisor_pedidos'))) {
-            \Log::warning('[ProcesosController::activarRecibo] Usuario sin permisos', [
-                'proceso_id' => $procesoId,
-                'user_id' => auth()->id(),
-                'roles' => $usuario ? $usuario->roles->pluck('nombre') : []
-            ]);
+        if (!$usuario->hasRole('supervisor') && !$usuario->hasRole('supervisor_pedidos')) {
             return response()->json([
                 'success' => false,
                 'message' => 'No tiene permisos para realizar esta acción',
@@ -564,56 +540,17 @@ class ProcesosController extends Controller
         }
 
         try {
-            $proceso = $this->procesoRepository->obtenerPorId($procesoId);
-
-            if (!$proceso) {
-                \Log::warning('[ProcesosController::activarRecibo] Proceso no encontrado', ['proceso_id' => $procesoId]);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Proceso no encontrado',
-                ], 404);
-            }
-
             $request->validate([
                 'activar' => 'required|boolean',
             ]);
 
-            $activar = $request->input('activar');
+            $procesoActualizado = $this->activarReciboService->ejecutar(
+                $procesoId,
+                $request->boolean('activar'),
+                $usuario->id
+            );
 
-            \Log::info('[ProcesosController::activarRecibo] Datos válidos', [
-                'activar' => $activar
-            ]);
-
-            // Actualizar estado - NUNCA generar numero_recibo
-            if ($activar) {
-                // Usar el método aprobar() de la entidad
-                $proceso->aprobar(auth()->id());
-                // MANTENER numero_recibo existente - NO GENERAR NUNCA
-            } else {
-                // Para desactivar, necesitamos volver a PENDIENTE manualmente
-                // ya que no hay un método específico para eso
-                $reflection = new \ReflectionClass($proceso);
-                $estadoProperty = $reflection->getProperty('estado');
-                $estadoProperty->setAccessible(true);
-                $estadoProperty->setValue($proceso, 'PENDIENTE');
-                
-                $fechaProperty = $reflection->getProperty('fechaAprobacion');
-                $fechaProperty->setAccessible(true);
-                $fechaProperty->setValue($proceso, null);
-                
-                $aprobadoProperty = $reflection->getProperty('aprobadoPor');
-                $aprobadoProperty->setAccessible(true);
-                $aprobadoProperty->setValue($proceso, null);
-                
-                // MANTENER numero_recibo existente - NO ELIMINAR
-            }
-
-            $procesoActualizado = $this->procesoRepository->actualizar($proceso);
-
-            \Log::info('[ProcesosController::activarRecibo] Proceso actualizado exitosamente', [
-                'proceso_id' => $procesoId,
-                'estado' => $procesoActualizado->getEstado(),
-            ]);
+            $activar = $request->boolean('activar');
 
             return response()->json([
                 'success' => true,
@@ -621,13 +558,17 @@ class ProcesosController extends Controller
                 'data' => $procesoActualizado->toArray(),
             ]);
 
+        } catch (\DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
         } catch (\Exception $e) {
-            \Log::error('[ProcesosController::activarRecibo] Error', [
+            Log::error('[ProcesosController::activarRecibo] Error', [
                 'proceso_id' => $procesoId,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error al actualizar estado del recibo',
@@ -642,12 +583,6 @@ class ProcesosController extends Controller
      */
     public function anularRecibo(Request $request, $procesoId)
     {
-        \Log::info('[ProcesosController::anularRecibo] Iniciando', [
-            'proceso_id' => $procesoId,
-            'user_authenticated' => auth()->check(),
-            'user_id' => auth()->id(),
-        ]);
-
         if (!auth()->check()) {
             return response()->json([
                 'success' => false,
@@ -656,7 +591,7 @@ class ProcesosController extends Controller
         }
 
         $usuario = auth()->user();
-        if (!$usuario || (!$usuario->hasRole('supervisor') && !$usuario->hasRole('supervisor_pedidos'))) {
+        if (!$usuario->hasRole('supervisor') && !$usuario->hasRole('supervisor_pedidos')) {
             return response()->json([
                 'success' => false,
                 'message' => 'No tiene permisos para realizar esta acción',
@@ -664,30 +599,7 @@ class ProcesosController extends Controller
         }
 
         try {
-            $proceso = $this->procesoRepository->obtenerPorId($procesoId);
-
-            if (!$proceso) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Proceso no encontrado',
-                ], 404);
-            }
-
-            // Cambiar estado a ANULADO usando reflection para evitar acoplarse a un método inexistente en la entidad
-            $reflection = new \ReflectionClass($proceso);
-            $estadoProperty = $reflection->getProperty('estado');
-            $estadoProperty->setAccessible(true);
-            $estadoProperty->setValue($proceso, 'ANULADO');
-
-            $fechaProperty = $reflection->getProperty('fechaAprobacion');
-            $fechaProperty->setAccessible(true);
-            $fechaProperty->setValue($proceso, null);
-
-            $aprobadoProperty = $reflection->getProperty('aprobadoPor');
-            $aprobadoProperty->setAccessible(true);
-            $aprobadoProperty->setValue($proceso, null);
-
-            $procesoActualizado = $this->procesoRepository->actualizar($proceso);
+            $procesoActualizado = $this->anularReciboService->ejecutar($procesoId);
 
             return response()->json([
                 'success' => true,
@@ -695,8 +607,13 @@ class ProcesosController extends Controller
                 'data' => $procesoActualizado->toArray(),
             ]);
 
+        } catch (\DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
         } catch (\Exception $e) {
-            \Log::error('[ProcesosController::anularRecibo] Error', [
+            Log::error('[ProcesosController::anularRecibo] Error', [
                 'proceso_id' => $procesoId,
                 'error' => $e->getMessage(),
             ]);

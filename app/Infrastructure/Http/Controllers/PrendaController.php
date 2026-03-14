@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Infrastructure\Http\Controllers;
 
 use App\Application\Actions\CrearPrendaAction;
 use App\Application\DTOs\CrearPrendaDTO;

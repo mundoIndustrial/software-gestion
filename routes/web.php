@@ -2253,8 +2253,8 @@ Route::middleware(['auth'])->prefix('inventario-telas')->name('inventario-telas.
 
 // API Routes para Prendas (Reconocimiento)
 Route::middleware('auth')->prefix('api')->name('api.')->group(function () {
-    Route::get('/tipos-prenda', [App\Http\Controllers\Api_temp\PrendaController::class, 'tiposPrenda'])->name('tipos-prenda');
-    Route::post('/prenda/reconocer', [App\Http\Controllers\Api_temp\PrendaController::class, 'reconocer'])->name('prenda.reconocer');
+    Route::get('/tipos-prenda', [App\Infrastructure\Http\Controllers\CatalogoController::class, 'tiposPrenda'])->name('tipos-prenda');
+    Route::post('/prenda/reconocer', [App\Infrastructure\Http\Controllers\CatalogoController::class, 'reconocerPrenda'])->name('prenda.reconocer');
 });
 
 // Rutas para variaciones de prendas
@@ -2935,23 +2935,23 @@ Broadcast::channel('asesores.observaciones', function ($user) {
 Route::prefix('seguimiento-proceso')->name('seguimiento-proceso.')->group(function () {
     
     // Guardar un nuevo proceso de seguimiento
-    Route::post('/guardar', [App\Http\Controllers\ProcesoSeguimientoController::class, 'guardar'])
+    Route::post('/guardar', [App\Infrastructure\Http\Controllers\ProcesoSeguimientoController::class, 'guardar'])
         ->name('guardar');
     
     // Obtener procesos de una prenda
-    Route::get('/prenda/{prendaId}', [App\Http\Controllers\ProcesoSeguimientoController::class, 'obtenerPorPrenda'])
+    Route::get('/prenda/{prendaId}', [App\Infrastructure\Http\Controllers\ProcesoSeguimientoController::class, 'obtenerPorPrenda'])
         ->name('obtener-por-prenda');
     
     // Actualizar estado de un proceso
-    Route::put('/{procesoId}/estado', [App\Http\Controllers\ProcesoSeguimientoController::class, 'actualizarEstado'])
+    Route::put('/{procesoId}/estado', [App\Infrastructure\Http\Controllers\ProcesoSeguimientoController::class, 'actualizarEstado'])
         ->name('actualizar-estado');
     
     // Actualizar un proceso completo
-    Route::put('/{procesoId}', [App\Http\Controllers\ProcesoSeguimientoController::class, 'actualizar'])
+    Route::put('/{procesoId}', [App\Infrastructure\Http\Controllers\ProcesoSeguimientoController::class, 'actualizar'])
         ->name('actualizar');
     
     // Eliminar un proceso
-    Route::delete('/{procesoId}', [App\Http\Controllers\ProcesoSeguimientoController::class, 'eliminar'])
+    Route::delete('/{procesoId}', [App\Infrastructure\Http\Controllers\ProcesoSeguimientoController::class, 'eliminar'])
         ->name('eliminar');
 });
 

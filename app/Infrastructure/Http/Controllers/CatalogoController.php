@@ -5,6 +5,7 @@ namespace App\Infrastructure\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use App\Models\TipoPrenda;
 
 /**
  * CatalogoController
@@ -271,5 +272,45 @@ class CatalogoController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * GET /api/tipos-prenda
+     */
+    public function tiposPrenda(): JsonResponse
+    {
+        $tipos = TipoPrenda::where('activo', true)->get();
+
+        return response()->json($tipos);
+    }
+
+    /**
+     * POST /api/prenda/reconocer
+     */
+    public function reconocerPrenda(Request $request): JsonResponse
+    {
+        $nombre = $request->input('nombre');
+
+        if (!$nombre) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nombre de prenda requerido'
+            ], 400);
+        }
+
+        $tipo = TipoPrenda::reconocerPorNombre($nombre);
+
+        if (!$tipo) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tipo de prenda no reconocido',
+                'nombre' => $nombre
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'tipo' => $tipo
+        ]);
     }
 }
