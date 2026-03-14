@@ -1,6 +1,25 @@
 <link rel="stylesheet" href="{{ asset('css/order-detail-modal-mobile.css') }}">
 
-<div class="order-detail-modal-container" style="
+<style>
+    @media (max-width: 768px) {
+        .order-detail-modal-container--mobile-full {
+            padding: 2px !important;
+            margin: 0 !important;
+            width: 100vw !important;
+            max-width: 100% !important;
+            justify-content: stretch !important;
+            box-sizing: border-box !important;
+        }
+
+        .order-detail-card--mobile-full {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 auto !important;
+        }
+    }
+</style>
+
+<div class="order-detail-modal-container order-detail-modal-container--mobile-full" style="
     max-width: 100%;
     padding: 0.5rem;
     display: flex;
@@ -9,7 +28,7 @@
     min-height: 100vh;
     background: transparent;
 ">
-    <div class="order-detail-card" style="
+    <div class="order-detail-card order-detail-card--mobile-full" style="
         position: relative;
         width: 100%;
         max-width: 600px;
@@ -545,11 +564,17 @@ window.llenarReciboCosturaMobile = function(data) {
             const genero = (variante.genero || '').toUpperCase();
             const talla = (variante.talla || '').trim().toUpperCase();
             const cantidad = parseInt(variante.cantidad || 0, 10);
+            const esSobremedida = variante.es_sobremedida || false;
 
-            console.log(`[OPERARIO] Variante ${idx}: genero=${genero}, talla=${talla}, cant=${cantidad}`);
+            console.log(`[OPERARIO] Variante ${idx}: genero=${genero}, talla=${talla}, cant=${cantidad}, es_sobremedida=${esSobremedida}`);
+            
+            // Si es sobremedida, usar "SOBREMEDIDA" como talla
+            const tallaFinal = esSobremedida ? 'SOBREMEDIDA' : talla;
+            
+            console.log(`[OPERARIO] Variante ${idx}: tallaFinal=${tallaFinal}`);
 
             // Validar datos mínimos
-            if (!genero || !talla || cantidad <= 0) {
+            if (!genero || !tallaFinal || cantidad <= 0) {
                 console.warn(`[OPERARIO] Variante inválida: saltando`);
                 return;
             }
@@ -561,12 +586,41 @@ window.llenarReciboCosturaMobile = function(data) {
             }
 
             // Agregar la talla con su cantidad
-            estructura[genero][talla] = cantidad;
-            console.log(`[OPERARIO]   Agregado: ${genero} ${talla} = ${cantidad}`);
+            estructura[genero][tallaFinal] = cantidad;
+            console.log(`[OPERARIO]   Agregado: ${genero} ${tallaFinal} = ${cantidad}`);
         });
 
         console.log('[OPERARIO] Estructura final de variantes:', JSON.stringify(estructura, null, 2));
         return estructura;
+    };
+
+    // Derivar `talla_colores` desde `variantes` cuando el backend no lo entrega explícitamente
+    // pero sí incluye `colores_detalle` por talla.
+    // Output compatible con transformarTallaColoresAEstructura:
+    // [{genero, talla, color_nombre, cantidad}, ...]
+    const derivarTallaColoresDesdeVariantes = (variantesArray) => {
+        if (!Array.isArray(variantesArray) || variantesArray.length === 0) {
+            return [];
+        }
+
+        const out = [];
+        variantesArray.forEach((v) => {
+            const genero = (v?.genero || '').toString().trim().toUpperCase();
+            const talla = (v?.talla || '').toString().trim().toUpperCase();
+            if (!genero || !talla) return;
+
+            const detalles = Array.isArray(v?.colores_detalle) ? v.colores_detalle : [];
+            if (detalles.length === 0) return;
+
+            detalles.forEach((d) => {
+                const color = (d?.color || '').toString().trim().toUpperCase();
+                const cantidad = parseInt(d?.cantidad || 0, 10) || 0;
+                if (!cantidad) return;
+                out.push({ genero, talla, color_nombre: color || 'SIN COLOR', cantidad });
+            });
+        });
+
+        return out;
     };
     
     /**
@@ -1240,15 +1294,72 @@ window.llenarReciboCosturaMobile = function(data) {
         // Reorganizar: Extraer TALLAS y ponerlas al final
         let descSinTallas = descripcionFormateada;
         let tallasExtraidas = '';
-        
+
         // Buscar y extraer TALLAS usando regex
         const tallasRegex = /(<strong>TALLAS?<\/strong><br>.*?)(?=<\/div>|$)/is;
         const tallasMatch = descripcionFormateada.match(tallasRegex);
-        
+
         if (tallasMatch) {
             tallasExtraidas = tallasMatch[1].trim();
             // Remover TALLAS de la descripción
             descSinTallas = descripcionFormateada.replace(tallasMatch[0], '').trim();
+        }
+
+        // Si la prenda tiene talla_colores, SIEMPRE preferir construir el bloque de tallas desde talla_colores
+        // para garantizar el agrupamiento por color (ej: ROJO: M-5) aunque la descripción ya venga con tallas simples.
+        try {
+            if (todasLasPrendas && Array.isArray(todasLasPrendas) && todasLasPrendas.length > 0) {
+                const prendaRefPreferida = todasLasPrendas[0];
+                if (prendaRefPreferida?.talla_colores && Array.isArray(prendaRefPreferida.talla_colores) && prendaRefPreferida.talla_colores.length > 0) {
+                    console.log('📱 [TALLAS OVERRIDE] Forzando bloque de TALLAS desde talla_colores (agrupado por color)');
+                    const tallasStruct = transformarTallaColoresAEstructura(prendaRefPreferida.talla_colores);
+
+                    const lineas = [];
+                    const generos = Object.keys(tallasStruct || {});
+                    generos.forEach((genero) => {
+                        const generoLabel = (genero || '').toString().toUpperCase();
+                        const tallasGenero = tallasStruct[genero] || {};
+                        const porColor = {};
+
+                        Object.entries(tallasGenero).forEach(([tallaRaw, val]) => {
+                            const tallaKey = (tallaRaw || '').toString().trim().toUpperCase();
+                            if (!tallaKey) return;
+                            if (!Array.isArray(val)) return;
+                            val.forEach((item) => {
+                                const colorRaw = (item?.color || item?.color_nombre || '').toString().trim();
+                                const colorKey = (colorRaw && colorRaw.toLowerCase() !== 'sin color') ? colorRaw.toUpperCase() : '__SIN_COLOR__';
+                                const qty = parseInt(item?.cantidad || 0, 10) || 0;
+                                if (!qty) return;
+                                if (!porColor[colorKey]) porColor[colorKey] = [];
+                                porColor[colorKey].push({ talla: tallaKey, cantidad: qty });
+                            });
+                        });
+
+                        const coloresReales = Object.keys(porColor).filter(c => c !== '__SIN_COLOR__');
+                        const sinColor = porColor['__SIN_COLOR__'] || [];
+
+                        if (coloresReales.length > 0) {
+                            lineas.push(`<strong>${generoLabel}:</strong>`);
+                            coloresReales.forEach((color) => {
+                                const arr = (porColor[color] || []).filter(x => x && x.talla && x.cantidad);
+                                if (!arr.length) return;
+                                const tallasStr = arr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
+                                lineas.push(`<span style="color: #d32f2f; font-weight: bold;"><strong>${color}:</strong> ${tallasStr}</span>`);
+                            });
+                            if (sinColor.length > 0) {
+                                const tallasStr = sinColor.map(t => `${t.talla}-${t.cantidad}`).join(', ');
+                                lineas.push(`<span style="color: #d32f2f; font-weight: bold;"><strong>SIN COLOR:</strong> ${tallasStr}</span>`);
+                            }
+                        }
+                    });
+
+                    if (lineas.length > 0) {
+                        tallasExtraidas = `<strong>TALLAS</strong><br>` + lineas.join('<br>');
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('⚠️ [TALLAS OVERRIDE] Error forzando tallas por color:', e);
         }
 
         // Fallback: si no hay bloque de TALLAS en la descripción, construirlo desde prenda.tallas o prenda.talla_colores
@@ -1270,28 +1381,58 @@ window.llenarReciboCosturaMobile = function(data) {
                 const generos = Object.keys(tallasParaUsar);
                 generos.forEach((genero) => {
                     const tallasGenero = tallasParaUsar[genero] || {};
-                    const tallas = [];
-                    Object.keys(tallasGenero).forEach((talla) => {
-                        let val = tallasGenero[talla];
-                        let cantidad = 0;
-                        if (Array.isArray(val)) {
-                            cantidad = val.reduce((acc, item) => {
-                                const c = (item && typeof item === 'object') ? (parseInt(item.cantidad) || 0) : (parseInt(item) || 0);
-                                return acc + c;
-                            }, 0);
-                        } else if (val && typeof val === 'object') {
-                            cantidad = parseInt(val.cantidad) || 0;
-                        } else {
-                            cantidad = parseInt(val) || 0;
-                        }
+                    const generoLabel = (genero || '').toString().toUpperCase();
 
-                        if (cantidad > 0) {
-                            tallas.push(`${talla}: <span style="color: #d32f2f;"><strong>${cantidad}</strong></span>`);
-                        }
-                    });
+                    // Si el valor por talla es array (estructura con colores), agrupar por color y renderizar como:
+                    // ROJO: M-5, S-2
+                    const tieneColores = Object.values(tallasGenero).some(v => Array.isArray(v));
+                    if (tieneColores) {
+                        const porColor = {};
+                        Object.entries(tallasGenero).forEach(([tallaRaw, val]) => {
+                            const tallaKey = (tallaRaw || '').toString().trim().toUpperCase();
+                            if (!tallaKey) return;
+                            if (!Array.isArray(val)) return;
+                            val.forEach((item) => {
+                                const colorRaw = (item?.color || item?.color_nombre || '').toString().trim();
+                                const colorKey = (colorRaw && colorRaw.toLowerCase() !== 'sin color') ? colorRaw.toUpperCase() : '__SIN_COLOR__';
+                                const qty = parseInt(item?.cantidad || 0, 10) || 0;
+                                if (!qty) return;
+                                if (!porColor[colorKey]) porColor[colorKey] = [];
+                                porColor[colorKey].push({ talla: tallaKey, cantidad: qty });
+                            });
+                        });
 
-                    if (tallas.length > 0) {
-                        lineas.push(`<strong>${(genero || '').toString().toUpperCase()}:</strong> ${tallas.join(', ')}`);
+                        const coloresReales = Object.keys(porColor).filter(c => c !== '__SIN_COLOR__');
+                        const sinColor = porColor['__SIN_COLOR__'] || [];
+
+                        if (coloresReales.length > 0) {
+                            lineas.push(`<strong>${generoLabel}:</strong>`);
+                            coloresReales.forEach((color) => {
+                                const arr = (porColor[color] || []).filter(x => x && x.talla && x.cantidad);
+                                if (!arr.length) return;
+                                const tallasStr = arr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
+                                lineas.push(`<span style="color: #d32f2f; font-weight: bold;"><strong>${color}:</strong> ${tallasStr}</span>`);
+                            });
+                            if (sinColor.length > 0) {
+                                const tallasStr = sinColor.map(t => `${t.talla}-${t.cantidad}`).join(', ');
+                                lineas.push(`<span style="color: #d32f2f; font-weight: bold;"><strong>SIN COLOR:</strong> ${tallasStr}</span>`);
+                            }
+                        } else if (sinColor.length > 0) {
+                            const tallasSimple = sinColor.map(t => `${t.talla}: <span style="color: #d32f2f;"><strong>${t.cantidad}</strong></span>`);
+                            lineas.push(`<strong>${generoLabel}:</strong> ${tallasSimple.join(', ')}`);
+                        }
+                    } else {
+                        // Sin colores - formato simple
+                        const tallas = [];
+                        Object.keys(tallasGenero).forEach((talla) => {
+                            const cantidad = parseInt(tallasGenero[talla] || 0, 10) || 0;
+                            if (cantidad > 0) {
+                                tallas.push(`${talla}: <span style="color: #d32f2f;"><strong>${cantidad}</strong></span>`);
+                            }
+                        });
+                        if (tallas.length > 0) {
+                            lineas.push(`<strong>${generoLabel}:</strong> ${tallas.join(', ')}`);
+                        }
                     }
                 });
 
@@ -1393,8 +1534,10 @@ window.llenarReciboCosturaMobile = function(data) {
         console.log(' [DEBUG] Rol del usuario:', userRole);
         console.log(' [DEBUG] Datos de prendas:', todasLasPrendas);
         if (todasLasPrendas.length > 0) {
-            console.log(' [DEBUG] Primera prenda - tallas:', todasLasPrendas[0].tallas);
-            console.log(' [DEBUG] Primera prenda - talla_colores:', todasLasPrendas[0].talla_colores);
+            const pr = todasLasPrendas[0];
+            console.log(' [DEBUG] Primera prenda - tallas:', pr.tallas);
+            console.log(' [DEBUG] Primera prenda - talla_colores:', pr.talla_colores);
+            console.log(' [DEBUG] Primera prenda - variantes:', pr.variantes);
         }
         
         const startIndex = window.prendaCarouselIndex || 0;
@@ -1508,6 +1651,16 @@ window.llenarReciboCosturaMobile = function(data) {
                 let tallasFuente = prenda.tallas;
                 
                 // 🎨 PRIORIZAR talla_colores si está disponible (como en recibos de costura)
+                // Si viene vacío pero las variantes tienen `colores_detalle`, derivarlo para agrupar por color.
+                const tallaColoresDerivada = (!prenda?.talla_colores || (Array.isArray(prenda.talla_colores) && prenda.talla_colores.length === 0))
+                    ? derivarTallaColoresDesdeVariantes(prenda?.variantes)
+                    : [];
+
+                if (tallaColoresDerivada.length > 0) {
+                    console.log('📱 [RECIBO MOBILE] Derivando talla_colores desde variantes:', tallaColoresDerivada);
+                    prenda.talla_colores = tallaColoresDerivada;
+                }
+
                 if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
                     console.log('📱 [RECIBO MOBILE] Usando talla_colores de la prenda:', prenda.talla_colores);
                     console.log(' [DEBUG] Rol actual:', userRole, '- talla_colores encontrado:', prenda.talla_colores.length, 'items');
@@ -1549,6 +1702,17 @@ window.llenarReciboCosturaMobile = function(data) {
                         const tallasGenero = tallasFuente[genero] || {};
                         
                         if (typeof tallasGenero === 'object' && !Array.isArray(tallasGenero)) {
+                            // Detectar si hay sobremedida
+                            const tieneSobremedida = tallasGenero.hasOwnProperty('SOBREMEDIDA');
+                            
+                            // Si solo hay sobremedida, mostrar formato especial
+                            if (tieneSobremedida && Object.keys(tallasGenero).length === 1) {
+                                const cantidad = tallasGenero['SOBREMEDIDA'];
+                                tallasLineas.push(`<strong>SOBREMEDIDA</strong><br>${(genero || '').toString().toUpperCase()}: ${cantidad}`);
+                                console.log(`📱 [RECIBO MOBILE] ${genero} SOBREMEDIDA: ${cantidad}`);
+                                return; // Salir del forEach para no procesar más
+                            }
+                            
                             // Detectar si hay colores reales (no "SIN COLOR")
                             let tieneColoresReales = false;
                             const coloresMap = {}; // { COLOR: [{talla, cantidad}] }

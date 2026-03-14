@@ -321,6 +321,28 @@
         padding: 1rem;
     }
 
+    @media (max-width: 768px) {
+        .pedido-modal-section {
+            max-height: none !important;
+            min-height: auto !important;
+            height: auto !important;
+            overflow-y: auto !important;
+            overflow-x: auto !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+        }
+
+        .factura-container {
+            max-height: none !important;
+            height: auto !important;
+            overflow: auto !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+    }
+
     /* Contenedor de Factura */
     .factura-container {
         width: 100%;
@@ -355,12 +377,65 @@
         padding: 1.5rem;
     }
 
+    @media (max-width: 768px) {
+        .pedido-content {
+            padding: 0;
+            margin: 0;
+            background: transparent;
+            overflow-y: auto;
+            height: auto;
+            min-height: 100vh;
+        }
+
+        .tab-content {
+            padding: 0;
+            margin: 0;
+            background: transparent;
+            overflow-y: auto;
+            height: auto;
+        }
+
+        .tab-content.active {
+            display: block;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+            height: auto;
+        }
+
+        /* Eliminar bordes y márgenes de la sección del modal */
+        .pedido-modal-section {
+            padding: 0;
+            margin: 0;
+            border: none;
+            max-height: none !important;
+            min-height: auto !important;
+            height: auto !important;
+            background: transparent;
+            overflow-y: auto !important;
+            overflow-x: auto !important;
+        }
+
+        .factura-container {
+            max-height: none !important;
+            height: auto !important;
+            overflow: auto !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+    }
+
     .tab-content {
         display: none;
+        padding: 0;
+        margin: 0;
     }
 
     .tab-content.active {
         display: block;
+        padding: 0;
+        margin: 0;
     }
 
     /* Fotos Grid */
@@ -629,15 +704,19 @@
 
         /* Móvil - Factura siempre 764px (sin escalar) */
         .pedido-modal-section {
-            max-height: auto;
+            max-height: none !important;
             width: 100%;
             margin: 0;
-            padding: 1rem;
+            padding: 0;
             overflow-x: auto;
             overflow-y: auto;
             touch-action: manipulation;
             user-select: none;
             justify-content: flex-start;
+            background: transparent;
+            border: none;
+            min-height: auto;
+            height: auto;
         }
 
         .factura-img {
@@ -649,10 +728,14 @@
 
         .ver-pedido-fullscreen {
             overflow: hidden;
+            background: transparent;
         }
 
         .pedido-content {
             overflow-x: hidden;
+            background: transparent;
+            margin: 0;
+            padding: 0;
         }
     }
 
@@ -913,7 +996,26 @@
     /* Responsive */
     @media (max-width: 768px) {
         .ver-pedido-container {
+            padding: 0;
+            margin: 0;
+            max-width: 100vw;
+        }
+
+        .pedido-header {
+            margin: 0;
             padding: 1rem;
+            border-radius: 0;
+        }
+
+        .pedido-details {
+            margin: 0;
+            gap: 0;
+        }
+
+        .details-section {
+            margin: 0;
+            padding: 1rem;
+            border-radius: 0;
         }
 
         .pedido-numero {
@@ -931,6 +1033,47 @@
         .btn-accion {
             width: 100%;
             justify-content: center;
+        }
+
+        /* Eliminar cualquier espacio blanco residual */
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+
+        html, body {
+            height: auto;
+            min-height: 100%;
+            overflow-x: hidden;
+        }
+
+        /* Asegurar que no haya espacios en el fondo */
+        * {
+            box-sizing: border-box;
+        }
+
+        /* Eliminar cualquier margen inferior del último elemento */
+        .order-detail-modal-container--mobile-full {
+            margin-bottom: 0 !important;
+            padding-bottom: 0 !important;
+            height: auto !important;
+            min-height: auto !important;
+        }
+
+        .order-detail-card--mobile-full {
+            margin-bottom: 0 !important;
+            padding-bottom: 0 !important;
+            height: auto !important;
+            min-height: auto !important;
+        }
+
+        /* Asegurar scroll completo en todos los niveles */
+        html, body, .pedido-content, .tab-content, .tab-content.active, .pedido-modal-section, .factura-container {
+            height: auto !important;
+            min-height: auto !important;
+            max-height: none !important;
+            overflow-y: auto !important;
         }
     }
 </style>

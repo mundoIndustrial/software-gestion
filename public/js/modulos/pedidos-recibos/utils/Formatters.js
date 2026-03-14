@@ -1241,6 +1241,18 @@ export class Formatters {
         const renderizarTallasGenero = (tallasObj, generoLabel) => {
             if (Object.keys(tallasObj).length === 0) return;
             
+            // Detectar si hay sobremedida
+            const tieneSobremedida = tallasObj.hasOwnProperty('SOBREMEDIDA');
+            
+            // Si solo hay sobremedida, mostrar formato especial
+            if (tieneSobremedida && Object.keys(tallasObj).length === 1) {
+                const cantidad = tallasObj['SOBREMEDIDA'];
+                lineas.push(`<strong>SOBREMEDIDA</strong>`);
+                lineas.push(`${generoLabel}: ${cantidad}`);
+                console.log(`[Formatters._agregarTallasFormato]  ${generoLabel} SOBREMEDIDA: ${cantidad}`);
+                return;
+            }
+            
             // Detectar si hay colores (datos son arrays de objetos)
             const tieneColores = Object.values(tallasObj).some(datos => Array.isArray(datos));
             
