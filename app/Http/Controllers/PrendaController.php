@@ -6,7 +6,7 @@ use App\Application\Actions\CrearPrendaAction;
 use App\Application\DTOs\CrearPrendaDTO;
 use App\Application\Services\PrendaServiceNew;
 use App\Http\Requests\CrearPrendaRequest;
-use App\Http\Resources\PrendaResource;
+use App\Infrastructure\Http\Resources\PrendaResource;
 use App\Http\Resources\PrendaColeccionResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

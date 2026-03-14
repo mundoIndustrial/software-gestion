@@ -4,8 +4,8 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Application\Pedidos\UseCases\ObtenerProcesosPorPedidoUseCase;
-use App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController;
-use App\Http\Controllers\Api_temp\PedidoController;
+use App\Infrastructure\Http\Controllers\Asesores\ProcesosPedidoController;
+use App\Infrastructure\Http\Controllers\PedidoController;
 
 class AnalizarTrackingDatos extends Command
 {
@@ -97,7 +97,7 @@ class AnalizarTrackingDatos extends Command
         $this->line("─────────────────────────────────────────────────────────────────");
 
         try {
-            $controller = app(PedidosProduccionController::class);
+            $controller = app(ProcesosPedidoController::class);
             $response = $controller->getProcesos($pedidoId);
             $apiData = json_decode($response->getContent(), true);
             

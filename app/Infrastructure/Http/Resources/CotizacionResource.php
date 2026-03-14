@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Infrastructure\Http\Resources;
 
 use App\Helpers\EstadoHelper;
 use Illuminate\Http\Request;
