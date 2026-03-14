@@ -4,6 +4,8 @@ namespace App\Application\UseCases\Pedidos;
 
 use Illuminate\Support\Facades\Log;
 use App\Domain\Clientes\Services\ClienteService;
+use App\Domain\Pedidos\Events\PedidoValidatedEvent;
+use Illuminate\Support\Facades\Event;
 
 /**
  * UseCase: Validar Pedido
@@ -86,6 +88,17 @@ class ValidarPedidoUseCase
                 'cliente_nombre' => $cliente->nombre,
                 'items_counts' => $input->getItemCounts(),
             ]);
+
+            // ====== Domain Event: Pedido Validado ======
+            Event::dispatch(new PedidoValidatedEvent(
+                pedidoId: $cliente->id,
+                usuarioId: $input->userId,
+                validacionesPasadas: ['cliente', 'items'],
+                metadata: [
+                    'cliente_nombre' => $cliente->nombre,
+                    'items_counts' => $input->getItemCounts(),
+                ]
+            ));
 
             return ValidarPedidoOutput::success(
                 $cliente->id,

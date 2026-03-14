@@ -197,4 +197,131 @@ class EppRepository implements EppRepositoryInterface
             'epp_id' => $modelo->id,
         ]);
     }
+
+    /**
+     * Obtener items de una cotización de EPPs
+     * 
+     * FASE 7 (Marzo 2026): Extraído del Controller para encapsular BD
+     * 
+     * @param int $cotizacionId
+     * @return Collection
+     */
+    public function obtenerItemsCotizacion(int $cotizacionId): Collection
+    {
+        return \Illuminate\Support\Facades\DB::table('epp_items_cot')
+            ->where('cotizacion_id', $cotizacionId)
+            ->orderBy('id')
+            ->get(['id', 'nombre', 'cantidad', 'observaciones']);
+    }
+
+    /**
+     * Obtener imágenes asociadas a items de cotización
+     * 
+     * FASE 7 (Marzo 2026): Extraído del Controller para encapsular BD
+     * 
+     * @param array $itemIds
+     * @return array
+     */
+    public function obtenerImagenesCotizacion(array $itemIds): array
+    {
+        if (empty($itemIds)) {
+            return [];
+        }
+
+        return \Illuminate\Support\Facades\DB::table('epp_img_cot')
+            ->whereIn('epp_item_id', $itemIds)
+            ->orderBy('id')
+            ->get(['epp_item_id', 'ruta'])
+            ->groupBy('epp_item_id')
+            ->map(function ($rows) {
+                return $rows->pluck('ruta')->filter()->values()->all();
+            })
+            ->toArray();
+    }
+
+    /**
+     * Obtener EPPs existentes por nombres (case-insensitive)
+     * 
+     * FASE 7 (Marzo 2026): Extraído del Controller para encapsular BD
+     * 
+     * @param array $nombres
+     * @return array
+     */
+    public function obtenerEppsPorNombres(array $nombres): array
+    {
+        if (empty($nombres)) {
+            return [];
+        }
+
+        return \Illuminate\Support\Facades\DB::table('epps')
+            ->whereIn(
+                \Illuminate\Support\Facades\DB::raw('LOWER(nombre_completo)'),
+                array_map('mb_strtolower', $nombres)
+            )
+            ->pluck('id', 'nombre_completo')
+            ->toArray();
+    }
+
+    /**
+     * Insertar múltiples EPPs de una sola vez (batch insert)
+     * 
+     * FASE 7 (Marzo 2026): Extraído del Controller para encapsular BD
+     * 
+     * @param array $eppsData Array con estructura: ['nombre_completo', 'marca', 'tipo', etc]
+     * @return void
+     */
+    public function insertarEppsBatch(array $eppsData): void
+    {
+        if (!empty($eppsData)) {
+            \Illuminate\Support\Facades\DB::table('epps')->insert($eppsData);
+        }
+    }
+
+    /**
+     * Obtener EPPs recién insertados por nombres
+     * 
+     * FASE 7 (Marzo 2026): Extraído del Controller para encapsular BD
+     * 
+     * @param array $nombres
+     * @return array
+     */
+    public function obtenerEppsRecienInsertados(array $nombres): array
+    {
+        if (empty($nombres)) {
+            return [];
+        }
+
+        return \Illuminate\Support\Facades\DB::table('epps')
+            ->whereIn(
+                \Illuminate\Support\Facades\DB::raw('LOWER(nombre_completo)'),
+                array_map('mb_strtolower', $nombres)
+            )
+            ->pluck('id', 'nombre_completo')
+            ->toArray();
+    }
+
+    /**
+     * Crear registros de datos para inserción de EPPs
+     * 
+     * Prepara el array con todos los campos necesarios
+     * 
+     * @param array $nombres
+     * @return array
+     */
+    public function construirDatosInsercion(array $nombres): array
+    {
+        return array_map(function($nombre) {
+            return [
+                'nombre_completo' => $nombre,
+                'marca' => null,
+                'tipo' => null,
+                'talla' => null,
+                'color' => null,
+                'descripcion' => null,
+                'activo' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }, $nombres);
+    }
 }

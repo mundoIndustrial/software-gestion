@@ -45,6 +45,15 @@ use App\Application\Pedidos\UseCases\ObtenerHistorialProcesosUseCase;
 
 // ======================================== ASESORES
 use App\Application\Services\Asesores\AsesoresApplicationFacadeService;
+
+// ======================================== INTERFACES PEDIDOS (Fase 14)
+use App\Application\Services\Pedidos\Contracts\ObtenerItemsServiceInterface;
+use App\Application\Services\Pedidos\Contracts\PrepararCrearPedidoServiceInterface;
+use App\Application\Services\Pedidos\Contracts\CargarDatosCompartidosServiceInterface;
+use App\Application\Services\Pedidos\ObtenerItemsEppCotizacionService;
+use App\Application\Services\Pedidos\PrepararCrearPedidoNuevoService;
+use App\Application\Services\Pedidos\CargarDatosCompartidosService;
+
 use App\Application\Services\Asesores\DashboardService;
 use App\Application\Services\Asesores\NotificacionesService;
 use App\Application\Services\Asesores\PerfilService;
@@ -225,6 +234,24 @@ class DomainServiceProvider extends ServiceProvider
                 $app->make(ObtenerPedidoDetalleService::class),
             );
         });
+
+        // ========================================
+        // PEDIDOS EDITABLE - Interfaces → Implementaciones (Fase 14)
+        // ========================================
+        $this->app->bind(
+            ObtenerItemsServiceInterface::class,
+            ObtenerItemsEppCotizacionService::class
+        );
+
+        $this->app->bind(
+            PrepararCrearPedidoServiceInterface::class,
+            PrepararCrearPedidoNuevoService::class
+        );
+
+        $this->app->bind(
+            CargarDatosCompartidosServiceInterface::class,
+            CargarDatosCompartidosService::class
+        );
     }
 
     public function boot(): void
@@ -235,8 +262,11 @@ class DomainServiceProvider extends ServiceProvider
 
     private function registerDomainEventListeners(): void
     {
-        // Los listeners se registran aquí cuando estén listos
+        // Domain Events de Pedidos - Fase 14
+        // Los listeners concretos se agregan aquí conforme se implementen.
         // Ejemplo:
-        // $this->app['events']->listen(\App\Domain\Ordenes\Events\OrdenCreada::class, ...);
+        // Event::listen(PedidoCreatedEvent::class, NotificarPedidoCreadoListener::class);
+        // Event::listen(PedidoValidatedEvent::class, LogValidacionListener::class);
+        // Event::listen(ItemsObtuvieronEvent::class, AuditItemsListener::class);
     }
 }

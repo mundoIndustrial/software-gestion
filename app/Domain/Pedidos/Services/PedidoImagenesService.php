@@ -13,6 +13,7 @@ use App\Models\PedidoEpp;
 use App\Models\PedidoEppImagen;
 use App\Models\PedidosProcessImagenes;
 use App\Application\Services\ImageUploadService;
+use App\Domain\Pedidos\Services\ProcesoImagenService;
 
 /**
  * Service: Gestión de Imágenes de Pedidos
@@ -32,6 +33,7 @@ class PedidoImagenesService
 {
     public function __construct(
         private ImageUploadService $imageUploadService,
+        private ProcesoImagenService $procesoImagenService,
     ) {}
 
     /**
@@ -452,4 +454,395 @@ class PedidoImagenesService
             }
         }
     }
+
+    /**
+     * Procesar imágenes de EPPs (método público llamado desde UseCase)
+     * 
+     * @param Request $request
+     * @param int $pedidoId
+     * @param array $epps
+     * @return void
+     */
+    public function procesarImagenesDeEpps($request, int $pedidoId, array $epps): void
+    {
+        Log::info('[PedidoImagenesService] Procesando imágenes de EPPs', [
+            'pedido_id' => $pedidoId,
+            'epps_count' => count($epps),
+        ]);
+
+        // OPCIÓN A OPTIMIZATION: Batch query en lugar de N+1
+        // 1 query: Traer TODOS los EPPs para este pedido, mapear por epp_id
+        $eppIds = array_map(fn($e) => $e['epp_id'], $epps);
+        $pedidosEppMapeados = PedidoEpp::where('pedido_produccion_id', $pedidoId)
+            ->whereIn('epp_id', $eppIds)
+            ->get()
+            ->keyBy('epp_id'); // Map por epp_id para acceso O(1)
+
+        foreach ($epps as $eppIdx => $eppData) {
+            // Acceso en memoria O(1) - no DB query
+            $pedidoEpp = $pedidosEppMapeados->get($eppData['epp_id']);
+
+            if (!$pedidoEpp) {
+                Log::warning('[PedidoImagenesService] EPP no encontrado para procesar imágenes', [
+                    'pedido_id' => $pedidoId,
+                    'epp_id' => $eppData['epp_id'],
+                ]);
+                continue;
+            }
+
+            $imagenesGuardadas = 0;
+            $imgIdx = 0;
+
+            // Procesar archivos FormData
+            while (true) {
+                $formKey = "epps_{$eppIdx}_imagenes_{$imgIdx}";
+
+                if (!$request->hasFile($formKey)) {
+                    break;
+                }
+
+                try {
+                    $archivo = $request->file($formKey);
+
+                    $resultado = $this->imageUploadService->guardarImagenDirecta(
+                        $archivo,
+                        $pedidoId,
+                        'epps',
+                        null,
+                        "epp_{$eppData['epp_id']}_img_{$imgIdx}"
+                    );
+
+                    PedidoEppImagen::create([
+                        'pedido_epp_id' => $pedidoEpp->id,
+                        'ruta_original' => $resultado['webp'],
+                        'ruta_web' => $resultado['webp'],
+                        'orden' => $imgIdx + 1,
+                        'principal' => $imgIdx === 0 ? 1 : 0,
+                    ]);
+
+                    $imagenesGuardadas++;
+                    Log::debug('[PedidoImagenesService] Imagen EPP guardada', [
+                        'pedido_epp_id' => $pedidoEpp->id,
+                        'webp' => $resultado['webp'],
+                        'orden' => $imgIdx + 1,
+                    ]);
+
+                    $imgIdx++;
+                } catch (\Exception $e) {
+                    Log::error('[PedidoImagenesService] Error procesando imagen EPP', [
+                        'pedido_epp_id' => $pedidoEpp->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    throw $e;
+                }
+            }
+
+            // Copiar desde URLs existentes (modo edición)
+            if ($imagenesGuardadas === 0) {
+                $imagenesJson = $eppData['imagenes'] ?? [];
+                if (is_array($imagenesJson) && count($imagenesJson) > 0) {
+                    $this->copiarImagenesEppDesdeUrls($pedidoEpp, $eppData, $imagenesJson, $pedidoId);
+                }
+            }
+        }
+
+        Log::info('[PedidoImagenesService] Imágenes de EPPs procesadas', [
+            'pedido_id' => $pedidoId,
+        ]);
+    }
+
+    /**
+     * Copiar imágenes de EPP desde URLs existentes (modo edición)
+     * 
+     * @param PedidoEpp $pedidoEpp
+     * @param array $eppData
+     * @param array $imagenesJson
+     * @param int $pedidoId
+     * @return void
+     */
+    private function copiarImagenesEppDesdeUrls($pedidoEpp, $eppData, $imagenesJson, int $pedidoId): void
+    {
+        $destDir = "pedidos/{$pedidoId}/epp";
+        if (!Storage::disk('public')->exists($destDir)) {
+            Storage::disk('public')->makeDirectory($destDir);
+        }
+
+        $orden = 1;
+        foreach ($imagenesJson as $img) {
+            $url = is_string($img) ? $img : ($img['url'] ?? $img['preview'] ?? null);
+
+            if (!$url) {
+                continue;
+            }
+
+            $path = parse_url($url, PHP_URL_PATH) ?: '';
+            $pos = strpos($path, '/storage/');
+            $relative = '';
+
+            if ($pos !== false) {
+                $relative = ltrim(substr($path, $pos + strlen('/storage/')), '/');
+            } else {
+                $relative = ltrim($path !== '' ? $path : $url, '/');
+            }
+
+            if (str_starts_with($relative, 'storage/')) {
+                $relative = substr($relative, strlen('storage/'));
+            }
+
+            if ($relative === '' || !Storage::disk('public')->exists($relative)) {
+                Log::warning('[PedidoImagenesService] Imagen EPP no existe para copiar', [
+                    'pedido_epp_id' => $pedidoEpp->id,
+                    'url' => $url,
+                ]);
+                continue;
+            }
+
+            $destName = "epp_{$eppData['epp_id']}_img_" . ($orden - 1) . '.webp';
+            $destRelative = $destDir . '/' . $destName;
+
+            try {
+                $copiado = Storage::disk('public')->copy($relative, $destRelative);
+                if ($copiado) {
+                    PedidoEppImagen::create([
+                        'pedido_epp_id' => $pedidoEpp->id,
+                        'ruta_original' => $destRelative,
+                        'ruta_web' => $destRelative,
+                        'orden' => $orden,
+                        'principal' => $orden === 1 ? 1 : 0,
+                    ]);
+                }
+            } catch (\Exception $e) {
+                Log::error('[PedidoImagenesService] Error copiando imagen EPP', [
+                    'pedido_epp_id' => $pedidoEpp->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            $orden++;
+        }
+    }
+
+    /**
+     * Procesar imágenes por talla (delegación a ProcesoImagenService)
+     * 
+     * @param Request $request
+     * @param int $pedidoId
+     * @param array $prendas
+     * @return int
+     */
+    public function procesarImagenesPorTalla($request, int $pedidoId, array $prendas): int
+    {
+        $contadorTotal = 0;
+
+        foreach ($prendas as $prendaIdx => $prenda) {
+            $procesos = $prenda['procesos'] ?? [];
+            $procesoNumerico = 0;
+
+            foreach ($procesos as $procesoKey => $proceso) {
+                $modeTallas = $proceso['modo_tallas'] ?? 'para_todas';
+                $datosExtendidos = $proceso['datosExtendidos'] ?? $proceso['datos_extendidos'] ?? null;
+
+                if (($modeTallas === 'por_tallas' || $modeTallas === 'especifico') && !empty($datosExtendidos)) {
+                    $contadorTotal += $this->procesoImagenService->procesarImagenesPorTalla(
+                        $request,
+                        $pedidoId,
+                        $prendaIdx,
+                        $procesoNumerico,
+                        $procesoKey,
+                        $datosExtendidos
+                    );
+                }
+                $procesoNumerico++;
+            }
+        }
+
+        return $contadorTotal;
+    }
+
+    /**
+     * Procesar imágenes de colores y actualizarlas en la BD
+     * 
+     * @param Request $request
+     * @param int $pedidoId
+     * @param array $prendas
+     * @return void
+     */
+    public function procesarImagenesDeColores($request, int $pedidoId, array $prendas): void
+    {
+        $fotosColorFiles = $request->file('fotos_color') ?? [];
+        $fotosColorMetaAll = $request->input('fotos_color_meta') ?? [];
+
+        if (empty($fotosColorFiles)) {
+            return;
+        }
+
+        $colorFotoServiceCrear = new \App\Domain\Pedidos\Services\TelaFotoService();
+        $fotosColorMeta = [];
+        $imagenesProcesadas = 0;
+
+        foreach ($fotosColorFiles as $indice => $archivo) {
+            if ($archivo && $archivo->isValid()) {
+                try {
+                    $rutas = $colorFotoServiceCrear->procesarFoto($archivo, (int)$pedidoId, true);
+                    $metaRaw = $fotosColorMetaAll[$indice] ?? null;
+                    $meta = is_string($metaRaw) ? json_decode($metaRaw, true) : $metaRaw;
+
+                    $fotosColorMeta[] = [
+                        'ruta_webp' => $rutas['ruta_webp'] ?? $rutas['ruta_original'],
+                        'clave' => $meta['clave'] ?? '',
+                        'color_nombre' => $meta['color_nombre'] ?? '',
+                    ];
+
+                    $imagenesProcesadas++;
+                } catch (\Exception $e) {
+                    Log::warning('[PedidoImagenesService] Error procesando imagen de color', [
+                        'pedido_id' => $pedidoId,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+        }
+
+        // Inyectar rutas en asignaciones_colores
+        if (!empty($fotosColorMeta)) {
+            foreach ($prendas as $prendaIdx => $prenda) {
+                $asignacionesColores = $prenda['asignacionesColoresPorTalla'] ?? [];
+
+                foreach ($fotosColorMeta as $fotoMeta) {
+                    $clave = $fotoMeta['clave'];
+                    $colorNombre = strtoupper($fotoMeta['color_nombre']);
+
+                    if (isset($asignacionesColores[$clave]) && !empty($asignacionesColores[$clave]['colores'])) {
+                        foreach ($asignacionesColores[$clave]['colores'] as &$colorItem) {
+                            if (strtoupper($colorItem['nombre'] ?? '') === $colorNombre) {
+                                // OPCIÓN A OPTIMIZATION: Reemplazar triple whereHas() con JOINs directos
+                                // whereHas() crea 3 JOINs implícitos - acá lo hacemos explícito y optimizado
+                                DB::table('prenda_pedido_talla_color as pptc')
+                                    ->join('prendas_pedido_talla as ppt', 'pptc.prenda_pedido_talla_id', '=', 'ppt.id')
+                                    ->join('prendas_pedido as pp', 'ppt.prenda_pedido_id', '=', 'pp.id')
+                                    ->where('pptc.color_nombre', $colorNombre)
+                                    ->where('pp.pedido_produccion_id', $pedidoId)
+                                    ->update(['pptc.imagen_ruta' => $fotoMeta['ruta_webp']]);
+
+                                break;
+                            }
+                        }
+                        unset($colorItem);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Procesar imágenes de procesos productivos
+     * 
+     * FASE 7 (Marzo 2026): Implementado para completar flujo de de gustos
+     * 
+     * Procesa imágenes asociadas a procesos (bordado, estampado, DTF, sublimado, etc)
+     * Guarda referencias en tabla `pedidos_procesos_imagenes`
+     * 
+     * Estructura esperada en $procesos:
+     * [
+     *   {
+     *     'tipo_proceso_id': 1,
+     *     'tipo_proceso': 'bordado',
+     *     'imagenes': [...formdata_keys...],
+     *     'ubicaciones': [...]
+     *   },
+     *   ...
+     * ]
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @param int $pedidoId
+     * @param array $procesos Array de procesos con imagenes
+     * @param int $prendaIndex Índice de la prenda en el array de prendas
+     * @return void
+     */
+    public function procesarImagenesDeProcesos($request, int $pedidoId, array $procesos, int $prendaIndex): void
+    {
+        Log::info('[PedidoImagenesService] Procesando imágenes de procesos', [
+            'pedido_id' => $pedidoId,
+            'prenda_index' => $prendaIndex,
+            'procesos_count' => count($procesos),
+        ]);
+
+        $procesosConImagenes = 0;
+
+        foreach ($procesos as $procesoIdx => $procesoData) {
+            $tipoProcesoId = $procesoData['tipo_proceso_id'] ?? null;
+            $tipoProcesoNombre = $procesoData['tipo_proceso'] ?? 'desconocido';
+            $imagenes = $procesoData['imagenes'] ?? [];
+            $ubicaciones = $procesoData['ubicaciones'] ?? [];
+
+            if (!$tipoProcesoId || empty($imagenes)) {
+                Log::debug('[PedidoImagenesService] Proceso sin tipo o sin imágenes, saltando', [
+                    'prenda_index' => $prendaIndex,
+                    'proceso_index' => $procesoIdx,
+                    'tipo_proceso' => $tipoProcesoNombre,
+                ]);
+                continue;
+            }
+
+            $imgIdx = 0;
+
+            // Procesar archivos FormData
+            while (true) {
+                $formKey = "procesos_{$prendaIndex}_{$procesoIdx}_imagenes_{$imgIdx}";
+
+                if (!$request->hasFile($formKey)) {
+                    break;
+                }
+
+                try {
+                    $archivo = $request->file($formKey);
+
+                    // Guardar imagen con estructura: pedidos/{id}/procesos/{tipo_proceso}/
+                    $resultado = $this->imageUploadService->guardarImagenDirecta(
+                        $archivo,
+                        $pedidoId,
+                        'procesos',
+                        $tipoProcesoNombre,
+                        "proceso_{$tipoProcesoNombre}_{$imgIdx}"
+                    );
+
+                    // Crear registro en pedidos_procesos_imagenes
+                    $imagenGuardada = PedidosProcessImagenes::create([
+                        'pedido_id' => $pedidoId,
+                        'prenda_index' => $prendaIndex,
+                        'tipo_proceso_id' => $tipoProcesoId,
+                        'tipo_proceso' => $tipoProcesoNombre,
+                        'ruta_original' => $resultado['webp'],
+                        'ruta_web' => $resultado['webp'],
+                        'orden' => $imgIdx + 1,
+                        'principal' => $imgIdx === 0 ? 1 : 0,
+                        'ubicaciones' => $ubicaciones, // Si es JSON, Eloquent lo serializa
+                    ]);
+
+                    $procesosConImagenes++;
+                    Log::debug('[PedidoImagenesService] Imagen de proceso guardada', [
+                        'pedido_id' => $pedidoId,
+                        'tipo_proceso' => $tipoProcesoNombre,
+                        'webp' => $resultado['webp'],
+                        'orden' => $imgIdx + 1,
+                    ]);
+
+                    $imgIdx++;
+                } catch (\Exception $e) {
+                    Log::error('[PedidoImagenesService] Error procesando imagen de proceso', [
+                        'pedido_id' => $pedidoId,
+                        'tipo_proceso' => $tipoProcesoNombre,
+                        'error' => $e->getMessage(),
+                    ]);
+                    throw $e;
+                }
+            }
+        }
+
+        Log::info('[PedidoImagenesService] Imágenes de procesos completadas', [
+            'pedido_id' => $pedidoId,
+            'procesos_con_imagenes' => $procesosConImagenes,
+        ]);
+    }
 }
+

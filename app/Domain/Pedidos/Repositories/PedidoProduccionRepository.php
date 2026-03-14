@@ -159,5 +159,92 @@ class PedidoProduccionRepository
         // Si no comienza ni con /storage/ ni con storage/, agregar /storage/ al inicio
         return '/storage/' . ltrim($ruta, '/');
     }
+
+    /**
+     * REFACTOR FASE 8: Obtener pedido por ID y validar que pertenece al asesor
+     * 
+     * Responsabilidad: Encapsular la validación de seguridad + obtención
+     * Uso: En los UseCases (ActualizarBorradorUseCase, etc.)
+     * 
+     * @param int $pedidoId
+     * @param int $asesorId
+     * @return PedidoProduccion|null
+     */
+    public function obtenerPorIdYAsesor(int $pedidoId, int $asesorId): ?PedidoProduccion
+    {
+        return PedidoProduccion::where('id', $pedidoId)
+            ->where('asesor_id', $asesorId)
+            ->first();
+    }
+
+    /**
+     * REFACTOR FASE 8: Actualizar datos básicos de un pedido
+     * 
+     * Responsabilidad: Encapsular la lógica de actualización de campos simples
+     * Uso: En ActualizarBorradorUseCase
+     * 
+     * @param PedidoProduccion $pedido
+     * @param array $datos Campos a actualizar: ['cliente', 'forma_de_pago', 'observaciones', etc]
+     * @return void
+     */
+    public function actualizarDatosBasicos(PedidoProduccion $pedido, array $datos): void
+    {
+        $pedido->update($datos);
+    }
+
+    /**
+     * REFACTOR FASE 8: Obtener pedido con EPPs e imágenes
+     * 
+     * Responsabilidad: Encapsular la query para obtener EPPs con sus imágenes
+     * Uso: En ActualizarBorradorUseCase al procesar EPPs
+     * 
+     * @param int $pedidoId
+     * @param int $eppId
+     * @return \App\Models\PedidoEpp|null
+     */
+    public function obtenerEppConImagenes(int $pedidoId, int $eppId): ?\App\Models\PedidoEpp
+    {
+        return \App\Models\PedidoEpp::where('pedido_produccion_id', $pedidoId)
+            ->where('epp_id', $eppId)
+            ->with(['imagenes'])
+            ->first();
+    }
+
+    /**
+     * REFACTOR FASE 8: Eliminar imágenes de EPP
+     * 
+     * Responsabilidad: Encapsular la lógica de eliminación de imágenes
+     * Maneja:
+     * - Eliminar archivos del storage
+     * - Eliminar registros de BD
+     * 
+     * Uso: En ActualizarBorradorUseCase
+     * 
+     * @param int $pedidoEppId
+     * @return int Cantidad de imágenes eliminadas
+     */
+    public function eliminarImagenesEpp(int $pedidoEppId): int
+    {
+        $imagenes = \App\Models\PedidoEppImagen::where('pedido_epp_id', $pedidoEppId)->get();
+        $cantidad = 0;
+
+        foreach ($imagenes as $imagen) {
+            // Eliminar archivos del storage
+            if ($imagen->ruta_original && \Illuminate\Support\Facades\Storage::disk('public')->exists($imagen->ruta_original)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($imagen->ruta_original);
+            }
+
+            if ($imagen->ruta_web && $imagen->ruta_web !== $imagen->ruta_original && 
+                \Illuminate\Support\Facades\Storage::disk('public')->exists($imagen->ruta_web)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($imagen->ruta_web);
+            }
+
+            // Eliminar registro
+            $imagen->delete();
+            $cantidad++;
+        }
+
+        return $cantidad;
+    }
 }
 

@@ -173,4 +173,97 @@ class PedidoRepositoryImpl implements PedidoRepository
         // Que usa pedido_produccion_id como FK
         // Esto se implementará en una segunda fase: PrendaPedidoRepository
     }
+
+    /**
+     * FASE 5: Calcular cantidad total de prendas en un pedido
+     * 
+     * @param int $pedidoId
+     * @return int
+     */
+    public function calcularCantidadTotalPrendas(int $pedidoId): int
+    {
+        try {
+            $cantidad = \DB::table('pedidos_procesos_prenda_tallas as pppt')
+                ->selectRaw('COALESCE(SUM(pppt.cantidad), 0) as total')
+                ->join('pedidos_procesos_prenda_detalles as ppd', 'pppt.proceso_prenda_detalle_id', '=', 'ppd.id')
+                ->join('prendas_pedido as pp', 'ppd.prenda_pedido_id', '=', 'pp.id')
+                ->where('pp.pedido_produccion_id', $pedidoId)
+                ->value('total');
+
+            return (int) $cantidad ?? 0;
+        } catch (\Exception $e) {
+            \Log::warning('[PEDIDO-REPOSITORY] Error calculando cantidad de prendas', [
+                'pedido_id' => $pedidoId,
+                'error' => $e->getMessage(),
+            ]);
+            return 0;
+        }
+    }
+
+    /**
+     * FASE 5: Calcular cantidad total de EPPs en un pedido
+     * 
+     * @param int $pedidoId
+     * @return int
+     */
+    public function calcularCantidadTotalEpps(int $pedidoId): int
+    {
+        try {
+            $cantidad = \DB::table('pedido_epp')
+                ->where('pedido_produccion_id', $pedidoId)
+                ->sum('cantidad');
+
+            return (int) $cantidad ?? 0;
+        } catch (\Exception $e) {
+            \Log::warning('[PEDIDO-REPOSITORY] Error calculando cantidad de EPPs', [
+                'pedido_id' => $pedidoId,
+                'error' => $e->getMessage(),
+            ]);
+            return 0;
+        }
+    }
+
+    /**
+     * FASE 5: Crear notificación de pedido creado
+     * 
+     * @param object $pedido PedidoProduccion model
+     * @param object $cliente Cliente model
+     * @param int $usuarioId ID usuario creador
+     * @param int $cantidadPrendas Cantidad de prendas
+     * @param int $cantidadEpps Cantidad de EPPs
+     * @return void
+     */
+    public function crearNotificacionPedido($pedido, $cliente, int $usuarioId, int $cantidadPrendas, int $cantidadEpps): void
+    {
+        try {
+            $user = \Auth::user();
+            $nombreAsesor = $user->name ?? 'Sistema';
+
+            \App\Models\News::create([
+                'event_type' => 'pedido_creado',
+                'table_name' => 'pedidos_produccion',
+                'record_id' => $pedido->id,
+                'description' => "Asesor {$nombreAsesor} creó el Pedido #{$pedido->numero_pedido} - Cliente: {$cliente->nombre}",
+                'user_id' => $usuarioId,
+                'pedido' => $pedido->numero_pedido,
+                'metadata' => [
+                    'tipo' => 'pedido_creado',
+                    'pedido_id' => $pedido->id,
+                    'cliente' => $cliente->nombre,
+                    'prendas' => $cantidadPrendas,
+                    'epps' => $cantidadEpps,
+                ],
+            ]);
+
+            \Log::info('[PEDIDO-REPOSITORY] Notificación creada', [
+                'pedido_id' => $pedido->id,
+                'usuario_id' => $usuarioId,
+            ]);
+        } catch (\Exception $e) {
+            \Log::warning('[PEDIDO-REPOSITORY] Error creando News', [
+                'pedido_id' => $pedido->id ?? null,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
 }
