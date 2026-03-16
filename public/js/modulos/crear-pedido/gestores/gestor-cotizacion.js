@@ -102,7 +102,7 @@ class GestorCotizacion {
         }
         
         return `
-            <div onclick="window.gestorCotizacion.seleccionar(${cot.id}, '${cot.numero}', '${cot.cliente}', '${cot.asesora}', '${cot.formaPago || ''}', '${tipoCotizacion}')" 
+            <div onclick="window.gestorCotizacion.seleccionar(${cot.id}, '${cot.numero}', '${cot.cliente}', '${cot.ordenCompra || ''}', '${cot.asesora}', '${cot.formaPago || ''}', '${tipoCotizacion}')" 
                  style="padding: 0.75rem 1rem; border-bottom: 1px solid #e5e7eb; cursor: pointer; transition: background 0.2s;"
                  onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='white'">
                 <div style="font-weight: 600; color: #1f2937;">${cot.numero}</div>
@@ -126,15 +126,17 @@ class GestorCotizacion {
      * @param {number} id - ID de la cotización
      * @param {string} numero - Número de cotización
      * @param {string} cliente - Nombre del cliente
+     * @param {string} ordenCompra - Orden de compra
      * @param {string} asesora - Nombre de la asesora
      * @param {string} formaPago - Forma de pago
      * @param {string} tipoCotizacion - Tipo de cotización  //  Agregar parámetro tipo
      */
-    seleccionar(id, numero, cliente, asesora, formaPago, tipoCotizacion) {
+    seleccionar(id, numero, cliente, ordenCompra, asesora, formaPago, tipoCotizacion) {
         this.cotizacionSeleccionada = {
             id,
             numero,
             cliente,
+            ordenCompra,
             asesora,
             formaPago,
             tipoCotizacion  //  Guardar tipo
