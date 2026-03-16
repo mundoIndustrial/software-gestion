@@ -9,4 +9,5 @@ return [
     App\Providers\BodegaServiceProvider::class,
     Intervention\Image\ImageManagerServiceProvider::class,
     App\Modules\Pedidos\Infrastructure\Providers\PedidosServiceProvider::class,
+    App\Providers\PedidoServiceProvider::class,
 ];

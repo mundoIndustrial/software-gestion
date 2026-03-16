@@ -44,6 +44,7 @@
     40 => 'App\\Providers\\CQRSServiceProvider',
     41 => 'App\\Providers\\BodegaServiceProvider',
     42 => 'App\\Modules\\Pedidos\\Infrastructure\\Providers\\PedidosServiceProvider',
+    43 => 'App\\Providers\\PedidoServiceProvider',
   ),
   'eager' => 
   array (
@@ -72,6 +73,7 @@
     22 => 'App\\Providers\\CQRSServiceProvider',
     23 => 'App\\Providers\\BodegaServiceProvider',
     24 => 'App\\Modules\\Pedidos\\Infrastructure\\Providers\\PedidosServiceProvider',
+    25 => 'App\\Providers\\PedidoServiceProvider',
   ),
   'deferred' => 
   array (
