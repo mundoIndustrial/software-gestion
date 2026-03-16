@@ -3,12 +3,11 @@
 namespace App\Application\ProcesoSeguimiento\UseCases;
 
 use App\Application\ProcesoSeguimiento\DTOs\GuardarProcesoSeguimientoDTO;
-use App\Events\CorteAsignadoOperario;
-use App\Events\OperarioRecibosActualizados;
-use App\Models\ConsecutivoReciboPedido;
+use App\Application\ProcesoSeguimiento\Services\ProcesoSeguimientoBroadcastService;
+use App\Domain\ProcesoSeguimiento\Repositories\ConsecutivoReciboPedidoRepository;
+use App\Domain\ProcesoSeguimiento\Repositories\ProcesoPrendaSeguimientoRepository;
 use App\Models\PrendaPedido;
 use App\Models\ProcesoPrenda;
-use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -29,40 +28,42 @@ use Illuminate\Support\Facades\Log;
  */
 final class GuardarProcesoSeguimientoUseCase
 {
+    public function __construct(
+        private readonly ProcesoSeguimientoBroadcastService   $broadcastService,
+        private readonly ProcesoPrendaSeguimientoRepository   $procesosRepo,
+        private readonly ConsecutivoReciboPedidoRepository    $consecutivosRepo,
+    ) {}
+
     /**
      * @return GuardarProcesoSeguimientoResultado
      */
     public function execute(GuardarProcesoSeguimientoDTO $dto): GuardarProcesoSeguimientoResultado
     {
         // ── 1. Upsert por área ─────────────────────────────────────────────
-        $procesoExistente = ProcesoPrenda::where([
-            ['numero_pedido',   '=', $dto->pedidoProduccionId],
-            ['prenda_pedido_id','=', $dto->prendaId],
-            ['proceso',         '=', $dto->area],
-            ['estado_proceso',  '!=', 'Completado'],
-        ])->first();
+        $procesoExistente = $this->procesosRepo->encontrarActivoPorArea(
+            $dto->pedidoProduccionId, $dto->prendaId, $dto->area
+        );
 
         if ($procesoExistente) {
-            $procesoExistente->update([
-                'estado_proceso' => $dto->estado,
-                'encargado'      => $dto->encargado,
-                'observaciones'  => $dto->observaciones ?? $procesoExistente->observaciones,
-                'fecha_inicio'   => $procesoExistente->fecha_inicio,
-            ]);
+            $procesoExistente->estado_proceso = $dto->estado;
+            $procesoExistente->encargado      = $dto->encargado;
+            $procesoExistente->observaciones  = $dto->observaciones ?? $procesoExistente->observaciones;
+            $this->procesosRepo->guardar($procesoExistente);
             $proceso = $procesoExistente;
             $accion  = 'actualizado';
         } else {
-            $proceso = ProcesoPrenda::create([
-                'numero_pedido'    => $dto->pedidoProduccionId,
-                'prenda_pedido_id' => $dto->prendaId,
-                'proceso'          => $dto->area,
-                'fecha_inicio'     => now(),
-                'estado_proceso'   => $dto->estado,
-                'encargado'        => $dto->encargado,
-                'observaciones'    => $dto->observaciones,
-                'codigo_referencia'=> $this->generarCodigoReferencia($dto->area, $dto->prendaId),
+            $nuevo = new ProcesoPrenda([
+                'numero_pedido'     => $dto->pedidoProduccionId,
+                'prenda_pedido_id'  => $dto->prendaId,
+                'proceso'           => $dto->area,
+                'fecha_inicio'      => now(),
+                'estado_proceso'    => $dto->estado,
+                'encargado'         => $dto->encargado,
+                'observaciones'     => $dto->observaciones,
+                'codigo_referencia' => $this->generarCodigoReferencia($dto->area, $dto->prendaId),
             ]);
-            $accion = 'creado';
+            $proceso = $this->procesosRepo->guardar($nuevo);
+            $accion  = 'creado';
         }
 
         Log::info('[GuardarProcesoSeguimientoUseCase] Proceso ' . $accion, [
@@ -72,7 +73,14 @@ final class GuardarProcesoSeguimientoUseCase
         ]);
 
         // ── 2. Broadcasts a operarios ──────────────────────────────────────
-        $this->dispararBroadcasts($dto, $proceso, $accion);
+        $this->broadcastService->disparar(
+            area:          $dto->area,
+            encargado:     $dto->encargado,
+            accion:        $accion,
+            numeroPedido:  $dto->pedidoProduccionId,
+            prendaId:      $dto->prendaId,
+            procesoId:     $proceso->id,
+        );
 
         // ── 3. Sincronizar consecutivo de recibos ──────────────────────────
         $this->sincronizarConsecutivo($dto);
@@ -91,66 +99,6 @@ final class GuardarProcesoSeguimientoUseCase
         return $areaAbrev . '-' . $prendaIdFormateado . '-' . $secuencial;
     }
 
-    private function dispararBroadcasts(GuardarProcesoSeguimientoDTO $dto, ProcesoPrenda $proceso, string $accion): void
-    {
-        try {
-            $areaNormalizada      = strtolower(trim($dto->area));
-            $encargadoNormalizado = strtolower(trim($dto->encargado));
-
-            if ($areaNormalizada === 'corte') {
-                broadcast(new CorteAsignadoOperario([
-                    'area'          => $dto->area,
-                    'accion'        => $accion,
-                    'numero_pedido' => $dto->pedidoProduccionId,
-                    'prenda_id'     => $dto->prendaId,
-                    'proceso_id'    => $proceso->id,
-                    'encargado'     => $dto->encargado,
-                ]));
-
-                if ($encargadoNormalizado !== '') {
-                    $operario = User::query()
-                        ->whereRaw('LOWER(TRIM(name)) = ?', [$encargadoNormalizado])
-                        ->first();
-
-                    if ($operario && $operario->hasRole('cortador')) {
-                        broadcast(new OperarioRecibosActualizados(
-                            userId: $operario->id,
-                            payload: [
-                                'area'          => $dto->area,
-                                'accion'        => $accion,
-                                'numero_pedido' => $dto->pedidoProduccionId,
-                                'prenda_id'     => $dto->prendaId,
-                                'proceso_id'    => $proceso->id,
-                            ]
-                        ));
-                    }
-                }
-            }
-
-            if ($areaNormalizada === 'costura' && $encargadoNormalizado !== '') {
-                $operario = User::query()
-                    ->whereRaw('LOWER(TRIM(name)) = ?', [$encargadoNormalizado])
-                    ->first();
-
-                if ($operario && $operario->hasRole('costura-reflectivo')) {
-                    broadcast(new OperarioRecibosActualizados(
-                        userId: $operario->id,
-                        payload: [
-                            'area'          => $dto->area,
-                            'accion'        => $accion,
-                            'numero_pedido' => $dto->pedidoProduccionId,
-                            'prenda_id'     => $dto->prendaId,
-                            'proceso_id'    => $proceso->id,
-                        ]
-                    ));
-                }
-            }
-        } catch (\Exception $e) {
-            // El fallo de broadcast no debe interrumpir la operación principal.
-            Log::warning('[GuardarProcesoSeguimientoUseCase] Error en broadcast: ' . $e->getMessage());
-        }
-    }
-
     private function sincronizarConsecutivo(GuardarProcesoSeguimientoDTO $dto): void
     {
         try {
@@ -160,23 +108,17 @@ final class GuardarProcesoSeguimientoUseCase
                 return;
             }
 
-            $consecutivo = ConsecutivoReciboPedido::where('pedido_produccion_id', $prenda->pedido_produccion_id)
-                ->where('prenda_id', $dto->prendaId)
-                ->first();
+            $consecutivo = $this->consecutivosRepo->encontrarPorPedidoYPrenda(
+                (int) $prenda->pedido_produccion_id, $dto->prendaId
+            );
 
             if (!$consecutivo) {
                 return;
             }
 
-            $datos = ['area' => $dto->area];
-
-            if ($dto->area === 'Insumos') {
-                $datos['estado'] = 'Pendiente_Insumos';
-            }
-
-            $consecutivo->update($datos);
+            $estado = $dto->area === 'Insumos' ? 'Pendiente_Insumos' : null;
+            $this->consecutivosRepo->actualizarArea($consecutivo, $dto->area, $estado);
         } catch (\Exception $e) {
-            // El fallo de sincronización no debe interrumpir la operación principal.
             Log::warning('[GuardarProcesoSeguimientoUseCase] Error sincronizando consecutivo: ' . $e->getMessage());
         }
     }

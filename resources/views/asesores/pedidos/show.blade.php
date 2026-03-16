@@ -39,6 +39,10 @@
                 <span class="value">#{{ $pedidoData->pedido }}</span>
             </div>
             <div class="info-item">
+                <label>Orden de Compra:</label>
+                <span class="value">{{ $pedidoData->orden_compra ?? 'No especificada' }}</span>
+            </div>
+            <div class="info-item">
                 <label>Cliente:</label>
                 <span class="value">{{ $pedidoData->cliente }}</span>
             </div>

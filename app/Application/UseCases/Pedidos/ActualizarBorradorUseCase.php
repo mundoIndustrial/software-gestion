@@ -75,6 +75,7 @@ class ActualizarBorradorUseCase
             // ====== PASO 4: Actualizar datos básicos ======
             $this->pedidoRepository->actualizarDatosBasicos($pedido, [
                 'cliente' => trim($input->datosFrontend['cliente'] ?? ''),
+                'orden_compra' => $input->getOrdenCompra(),
                 'forma_de_pago' => $input->datosFrontend['forma_de_pago'] ?? '',
                 'observaciones' => $input->datosFrontend['observaciones'] ?? '',
             ]);

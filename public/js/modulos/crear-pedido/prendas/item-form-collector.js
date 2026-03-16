@@ -338,6 +338,7 @@ class ItemFormCollector {
         
         const pedidoFinal = {
             cliente: document.getElementById('cliente_editable')?.value || '',
+            orden_compra: document.getElementById('orden_compra_editable')?.value || '',
             asesora: document.getElementById('asesora_editable')?.value || '',
             forma_de_pago: document.getElementById('forma_de_pago_editable')?.value || '',
             observaciones: document.getElementById('observaciones_editable')?.value || '',

@@ -38,6 +38,7 @@
             'pedido' => [
                 'id' => $pedido->id ?? null,
                 'numero_pedido' => $pedido->numero_pedido ?? null,
+                'orden_compra' => $pedido->orden_compra ?? '',
                 'cliente' => $pedido->cliente_nombre_display ?? '',
                 'forma_de_pago' => $pedido->forma_de_pago ?? '',
                 'observaciones' => $pedido->observaciones ?? '',
@@ -86,6 +87,11 @@
                         <span id="cliente-requerido" style="color: #ef4444;">*</span>
                     </label>
                     <input type="text" id="cliente_editable" name="cliente" value="{{ ($modoEdicion ?? false) ? ($pedido->cliente_nombre_display ?? '') : '' }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="orden_compra_editable">Orden de Compra</label>
+                    <input type="text" id="orden_compra_editable" name="orden_compra" value="{{ ($modoEdicion ?? false) ? ($pedido->orden_compra ?? '') : '' }}" placeholder="Opcional: Ingrese el número de orden de compra">
                 </div>
 
                 <div class="form-group">

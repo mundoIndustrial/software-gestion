@@ -188,6 +188,7 @@ class PedidoWebService
 
         $pedido = PedidoProduccion::create([
             'numero_pedido' => $numeroPedido, // Número asignado automáticamente
+            'orden_compra' => $datos['orden_compra'] ?? null,
             'cliente' => $datos['cliente'] ?? 'SIN NOMBRE',
             'asesor_id' => $asesorId,
             'cliente_id' => $datos['cliente_id'] ?? null,
@@ -231,6 +232,7 @@ class PedidoWebService
 
         $pedido = PedidoProduccion::create([
             'numero_pedido' => null, // NO generar número - es borrador
+            'orden_compra' => $datos['orden_compra'] ?? null,
             'cliente' => $datos['cliente'] ?? 'SIN NOMBRE',
             'asesor_id' => $asesorId,
             'cliente_id' => $datos['cliente_id'] ?? null,

@@ -69,6 +69,7 @@ class CrearPedidoCompleteUseCase
             // Crear pedido base
             $datosParaServicio = [
                 'cliente' => $dtoPedido->cliente,
+                'orden_compra' => $input->getOrdenCompra(),
                 'asesora' => $dtoPedido->asesora,
                 'forma_de_pago' => $dtoPedido->forma_de_pago,
                 'observaciones' => $dtoPedido->observaciones,
