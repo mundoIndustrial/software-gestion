@@ -41,6 +41,7 @@ class ProtectorDatosPrincipales {
         
         const camposAProteger = [
             'cliente_editable',
+            'orden_compra_editable',
             'forma_de_pago_editable',
             'asesora_editable',
             'numero_pedido_editable'

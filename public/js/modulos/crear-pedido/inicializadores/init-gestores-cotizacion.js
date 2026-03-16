@@ -27,7 +27,7 @@
             '#cotizacion_search_editable',
             '#cotizacion_dropdown_editable',
             '#cotizacion_selected_editable',
-            function(id, numero, cliente, asesora, formaPago, tipoCotizacion) {  //  Agregar parámetro tipo
+            function(id, numero, cliente, ordenCompra, asesora, formaPago, tipoCotizacion) {  //  Agregar parámetro ordenCompra
                 // Callback cuando se selecciona una cotización
 
                 
@@ -35,6 +35,7 @@
                 document.getElementById('cotizacion_id_editable').value = id;
                 document.getElementById('numero_cotizacion_editable').value = numero;
                 document.getElementById('cliente_editable').value = cliente;
+                document.getElementById('orden_compra_editable').value = ordenCompra || '';
                 document.getElementById('asesora_editable').value = asesora;
                 document.getElementById('forma_de_pago_editable').value = formaPago || '';
                 document.getElementById('cotizacion_selected_text_editable').textContent = `${numero} - ${cliente} (${asesora}) - Tipo: ${tipoCotizacion}`;  //  Incluir tipo
@@ -149,6 +150,7 @@
         // Datos básicos del pedido
         datosFormulario.numero_cotizacion = document.getElementById('numero_cotizacion_editable')?.value;
         datosFormulario.cliente = document.getElementById('cliente_editable')?.value;
+        datosFormulario.orden_compra = document.getElementById('orden_compra_editable')?.value;
         datosFormulario.asesora = document.getElementById('asesora_editable')?.value;
         datosFormulario.forma_pago = document.getElementById('forma_de_pago_editable')?.value;
 
