@@ -36,6 +36,13 @@
             tieneDatos = true;
         }
 
+        // Verificar Orden de Compra
+        const ordenCompraInput = document.getElementById('orden_compra_editable');
+        if (ordenCompraInput && ordenCompraInput.value.trim()) {
+            detalles.push(`Orden de compra: "${ordenCompraInput.value}"`);
+            tieneDatos = true;
+        }
+
         // Verificar Prendas cargadas
         const prendasContainer = document.getElementById('prendas-container-editable');
         if (prendasContainer) {
@@ -70,6 +77,10 @@
         // Limpiar Forma de Pago
         const formaPagoInput = document.getElementById('forma_de_pago_editable');
         if (formaPagoInput) formaPagoInput.value = '';
+
+        // Limpiar Orden de Compra
+        const ordenCompraInput = document.getElementById('orden_compra_editable');
+        if (ordenCompraInput) ordenCompraInput.value = '';
 
         // Limpiar Cotización
         const cotizacionId = document.getElementById('cotizacion_id_editable');

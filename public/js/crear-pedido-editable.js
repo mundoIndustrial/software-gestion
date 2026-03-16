@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             dropdown.innerHTML = opciones.map(cot => {
                 return `
-                    <div onclick="seleccionarCotizacion(${cot.id}, '${cot.numero}', '${cot.cliente}', '${cot.asesora}', '${cot.formaPago}')" 
+                    <div onclick="seleccionarCotizacion(${cot.id}, '${cot.numero}', '${cot.cliente}', '${cot.ordenCompra || ''}', '${cot.asesora}', '${cot.formaPago}')" 
                          style="padding: 0.75rem 1rem; border-bottom: 1px solid #e5e7eb; cursor: pointer; transition: background 0.2s;"
                          onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='white'">
                         <div style="font-weight: 600; color: #1f2937;">${cot.numero}</div>
@@ -252,7 +252,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    window.seleccionarCotizacion = function(id, numero, cliente, asesora, formaPago) {
+    window.seleccionarCotizacion = function(id, numero, cliente, ordenCompra, asesora, formaPago) {
         // Verificar si agregarCotizacionAItems existe (sistema de ítems dinámicos)
         if (typeof window.abrirModalSeleccionPrendas === 'function') {
             // Abrir modal para seleccionar prendas y definir origen
