@@ -962,14 +962,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const row = buttonElement.closest('[data-recibo-row="1"]');
         const estaCompletado = row && row.dataset.completado === '1';
         
-        const confirmMsg = estaCompletado 
-            ? '¿Deshacer el completado de este recibo?' 
-            : '¿Marcar este recibo como completado?';
-        
-        if (!confirm(confirmMsg)) {
-            return;
-        }
-        
         buttonElement.disabled = true;
         buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         

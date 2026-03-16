@@ -595,6 +595,12 @@ class ObtenerPrendasRecibosService
                             ->latest('created_at')
                             ->first();
 
+                        $procesoCorte = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
+                            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
+                            ->whereNull('deleted_at')
+                            ->latest('created_at')
+                            ->first();
+
                         // Consultar si el recibo está completado por área
                         $completadoCorte = \DB::table('prenda_recibo_completado')
                             ->where('id_recibo', $recibo->id)
@@ -647,6 +653,7 @@ class ObtenerPrendasRecibosService
                             'proceso_id' => $procesoCC ? $procesoCC->id : null,
                             'proceso_id_costura' => $procesoCostura ? $procesoCostura->id : null,
                             'encargado_costura' => $procesoCostura ? $procesoCostura->encargado : null,
+                            'encargado_corte' => $procesoCorte ? $procesoCorte->encargado : null,
                             'completado_corte' => $completadoCorte,
                             'completado_costura' => $completadoCostura,
                             'completado_control_calidad' => $completadoControlCalidad,

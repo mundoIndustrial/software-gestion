@@ -71,7 +71,7 @@ class DashboardController extends Controller
             }
 
             if ($roleName === 'administrador-costura') {
-                return redirect()->route('tableros-ordenes.index');
+                return redirect()->route('operario.dashboard', ['todas' => 1, 'tab' => 'costura']);
             }
 
             if ($roleName === 'cartera') {

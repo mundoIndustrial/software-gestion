@@ -787,11 +787,22 @@
                                     }
                                 }
                                 $encargadoVista = is_string($encargadoVista) ? trim($encargadoVista) : $encargadoVista;
+                                
+                                // Obtener encargado de corte para mostrar en el card (excepto cortadores)
+                                $encargadoCorte = $reciboPrincipal['encargado_corte'] ?? null;
+                                $encargadoCorte = is_string($encargadoCorte) ? trim($encargadoCorte) : $encargadoCorte;
                             @endphp
                             @if(!auth()->user()->hasRole('vista-costura') && !auth()->user()->hasRole('cortador') && !auth()->user()->hasRole('costurero'))
                                 <div class="orden-encargado-corner" onclick="event.stopPropagation();">
                                     <strong>Encargado:</strong>
                                     <span>{{ $encargadoVista ? strtoupper($encargadoVista) : 'SIN ENCARGADO' }}</span>
+                                </div>
+                            @endif
+                            {{-- Mostrar encargado de corte para todos excepto cortadores --}}
+                            @if(!auth()->user()->hasRole('cortador'))
+                                <div class="orden-encargado-corte" onclick="event.stopPropagation();" style="background: #fef3c7; padding: 6px 10px; border-radius: 6px; margin-bottom: 8px; display: inline-flex; align-items: center; gap: 8px; width: fit-content;">
+                                    <strong style="color: #92400e; font-size: 12px;">Encargado Corte:</strong>
+                                    <span style="color: #78350f; font-size: 12px; font-weight: 600;">{{ $encargadoCorte ? strtoupper($encargadoCorte) : 'SIN ASIGNAR' }}</span>
                                 </div>
                             @endif
                             @if(auth()->user()->hasRole('vista-costura'))
@@ -2929,7 +2940,8 @@ function pasarAControlCalidad(btn) {
         .badge-completado-costura.mobile-top-right {
             position: absolute;
             top: 8px;
-            right: 8px;
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 10;
             font-size: 0.65rem;
             padding: 0.2rem 0.6rem;
