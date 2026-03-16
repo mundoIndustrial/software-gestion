@@ -153,6 +153,9 @@ class GestorCotizacion {
         if (document.getElementById('cliente_editable')) {
             document.getElementById('cliente_editable').value = cliente;
         }
+        if (document.getElementById('orden_compra_editable')) {
+            document.getElementById('orden_compra_editable').value = ordenCompra || '';
+        }
         if (document.getElementById('asesora_editable')) {
             document.getElementById('asesora_editable').value = asesora;
         }
