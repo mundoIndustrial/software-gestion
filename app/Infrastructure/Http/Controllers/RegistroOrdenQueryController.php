@@ -1980,9 +1980,11 @@ class RegistroOrdenQueryController extends Controller
                     'total_procesos' => $prenda->procesos->count(),
                     'total_variantes' => $prenda->variantes->count(),
                     'ultimo_proceso_area' => $ultimoProcesoArea, // Área del proceso más reciente
+                    'ultimo_proceso_area_display' => $this->formatearEstado($ultimoProcesoArea),
                     'ultimo_proceso_encargado' => $ultimoProcesoEncargado,
                     'ultimo_proceso_id' => $ultimoProcesoId,
                     'ultimo_proceso_estado' => $ultimoProcesoEstado,
+                    'ultimo_proceso_estado_display' => $this->formatearEstado($ultimoProcesoEstado),
                     'ultimo_proceso_fecha_inicio' => $ultimoProcesoFechaInicio,
                     'ultimo_proceso_fecha_fin' => $ultimoProcesoFechaFin,
                     'ultimo_proceso_observaciones' => $ultimoProcesoObservaciones,
@@ -2060,5 +2062,18 @@ class RegistroOrdenQueryController extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Transformar estado desde formato underscore a formato display
+     * Ej: 'pendiente_insumos' → 'PENDIENTE INSUMOS'
+     */
+    private function formatearEstado($estado)
+    {
+        if (!$estado) {
+            return '-';
+        }
+        
+        return strtoupper(str_replace('_', ' ', $estado));
     }
 }

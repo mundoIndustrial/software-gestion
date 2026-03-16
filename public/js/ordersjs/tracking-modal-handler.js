@@ -1108,7 +1108,8 @@ const trackingTableStyles = `
     
     document.getElementById('trackingOrderNumber').textContent = orderData.numero_pedido || '-';
     document.getElementById('trackingOrderClient').textContent = orderData.cliente || '-';
-    document.getElementById('trackingOrderStatus').textContent = (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
+    // ✅ CAMBIO: Usar estado_display del backend en lugar de transformar en Frontend
+    document.getElementById('trackingOrderStatus').textContent = orderData.estado_display || (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
     document.getElementById('trackingOrderDate').textContent = formatDate(orderData.fecha_creacion || orderData.fecha_de_creacion_de_orden || orderData.created_at) || '-';
     document.getElementById('trackingEstimatedDate').textContent = formatDate(orderData.fecha_estimada_entrega) || '-';
     document.getElementById('trackingTotalDays').textContent = orderData.total_dias || '0';
@@ -1153,7 +1154,8 @@ const trackingTableStyles = `
       selectorOrderClient.textContent = orderData.cliente || '-';
     }
     if (selectorOrderStatus) {
-      selectorOrderStatus.textContent = (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
+      // ✅ CAMBIO: Usar estado_display del backend
+      selectorOrderStatus.textContent = orderData.estado_display || (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
     }
     if (selectorOrderStartDate) {
       // Actualizar fecha de inicio
@@ -1249,78 +1251,31 @@ const trackingTableStyles = `
       trackingOrderClient.textContent = orderData.cliente || '-';
     }
     if (trackingOrderStatus) {
-      trackingOrderStatus.textContent = (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
+      trackingOrderStatus.textContent = orderData.estado_display || (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
     }
     if (trackingOrderRecibo) {
-      // Buscar específicamente recibos de COSTURA (excluir COSTURA-BODEGA)
-      let ultimoReciboCostura = '-';
+      // ✅ CAMBIO: Usar ultimo_recibo_numero que ya viene del Backend
+      // El Backend obtiene esto correctamente en getSeguimientoPorPrenda()
+      // para la prenda actual (currentPrendaData), así que obtenemos directamente
+      let numeroReciboCostura = '-';
       
-      console.log('[updateOrderInfo] Buscando recibo COSTURA en orderData:', {
-        prendas_count: orderData.prendas ? orderData.prendas.length : 0,
-        prendas: orderData.prendas
-      });
-      
-      // Si tenemos datos de prendas con consecutivos, buscar COSTURA
-      if (orderData.prendas && orderData.prendas.length > 0) {
-        let reciboCosturaEncontrado = null;
-        let totalRecibosEncontrados = 0;
-        
-        // Buscar entre todas las prendas el recibo de COSTURA
-        for (const prenda of orderData.prendas) {
-          console.log('[updateOrderInfo] Analizando prenda:', {
-            prenda_id: prenda.id,
-            prenda_nombre: prenda.nombre_prenda,
-            consecutivos: prenda.consecutivos
-          });
-          
-          // Los consecutivos vienen como objeto, no como array
-          if (prenda.consecutivos && typeof prenda.consecutivos === 'object') {
-            // Convertir el objeto de consecutivos a un array para procesar
-            const recibosArray = [];
-            for (const [tipo, datos] of Object.entries(prenda.consecutivos)) {
-              if (datos !== null && datos !== undefined) {
-                recibosArray.push({
-                  tipo_recibo: tipo,
-                  consecutivo_actual: datos.consecutivo_actual || datos,
-                  activo: datos.activo !== undefined ? datos.activo : 1,
-                  created_at: datos.created_at || new Date().toISOString()
-                });
-              }
-            }
-            
-            console.log('[updateOrderInfo] Recibos convertidos a array:', recibosArray);
-            
-            for (const recibo of recibosArray) {
-              console.log('[updateOrderInfo] Analizando recibo:', recibo);
-              totalRecibosEncontrados++;
-              
-              // Solo buscar recibos de tipo COSTURA (excluir COSTURA-BODEGA)
-              if (recibo.activo === 1 && recibo.tipo_recibo === 'COSTURA') {
-                reciboCosturaEncontrado = recibo;
-                console.log('[updateOrderInfo] Recibo COSTURA encontrado:', reciboCosturaEncontrado);
-                break; // Encontramos el primero, no necesitamos seguir buscando
-              }
-            }
-          }
-          
-          // Si ya encontramos un recibo COSTURA, salir del bucle de prendas
-          if (reciboCosturaEncontrado) {
-            break;
-          }
-        }
-        
-        console.log('[updateOrderInfo] Resumen de búsqueda:', {
-          total_recibos_encontrados: totalRecibosEncontrados,
-          recibo_costura_encontrado: reciboCosturaEncontrado
-        });
-        
-        if (reciboCosturaEncontrado) {
-          ultimoReciboCostura = `COSTURA #${reciboCosturaEncontrado.consecutivo_actual}`;
+      if (currentPrendaData && currentPrendaData.ultimo_recibo_numero) {
+        numeroReciboCostura = `COSTURA #${currentPrendaData.ultimo_recibo_numero}`;
+      } else if (orderData.prendas && orderData.prendas.length > 0) {
+        // Fallback: usar la primera prenda (código anterior simplificado)
+        const primeraPrend = orderData.prendas[0];
+        if (primeraPrend && primeraPrend.ultimo_recibo_numero) {
+          numeroReciboCostura = `COSTURA #${primeraPrend.ultimo_recibo_numero}`;
         }
       }
       
-      console.log('[updateOrderInfo] Resultado final para trackingOrderRecibo:', ultimoReciboCostura);
-      trackingOrderRecibo.textContent = ultimoReciboCostura;
+      console.log('[updateOrderInfo] Recibo COSTURA final:', {
+        numero: numeroReciboCostura,
+        desde_prenda_actual: currentPrendaData?.ultimo_recibo_numero,
+        desde_backend: orderData.prendas?.[0]?.ultimo_recibo_numero
+      });
+      
+      trackingOrderRecibo.textContent = numeroReciboCostura;
     }
     if (selectorOrderEstimatedDate) {
       selectorOrderEstimatedDate.style.color = '#1f2937';

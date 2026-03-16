@@ -46,14 +46,31 @@ class ProcesoSeguimientoController extends Controller
                 $seguimientoResponse = $registroController->getSeguimientoPorPrenda($request->pedido_produccion_id);
                 $seguimientoData     = json_decode($seguimientoResponse->getContent(), true);
 
+                if (!isset($seguimientoData['prendas']) || empty($seguimientoData['prendas'])) {
+                    throw new \Exception('No se obtuvo información de prendas.');
+                }
+
                 foreach ($seguimientoData['prendas'] ?? [] as $prenda) {
                     if ($prenda['id'] == $request->prenda_id) {
                         $prendaActualizada = $prenda;
                         break;
                     }
                 }
+
+                // Si aún no tenemos prenda actualizada, lanzar excepción para usar fallback
+                if (!$prendaActualizada) {
+                    throw new \Exception('Prenda no encontrada en seguimiento.');
+                }
+
             } catch (\Exception $e) {
                 \Log::warning('[ProcesoSeguimientoController] Error obteniendo seguimiento: ' . $e->getMessage());
+                
+                // FALLBACK: Si falla el seguimiento, al menos retornar datos básicos de la prenda
+                $prendaActualizada = [
+                    'id' => $request->prenda_id,
+                    'updated_at' => now()->toIso8601String(),
+                    'notice' => 'Datos parciales - seguimiento no disponible'
+                ];
             }
 
             try {
