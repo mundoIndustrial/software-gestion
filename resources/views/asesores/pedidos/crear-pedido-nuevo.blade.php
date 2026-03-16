@@ -45,20 +45,20 @@
                 'estado' => $pedido->estado ?? '',
                 'prendas' => ($pedido->prendas ?? collect())->map(function($prenda) {
                     return [
-                        'id' => $prenda->id,
-                        'nombre_prenda' => $prenda->nombre_prenda ?? '',
-                        'descripcion' => $prenda->descripcion ?? '',
-                        'de_bodega' => $prenda->de_bodega ?? 1,
-                        'genero' => $prenda->genero ?? '',
-                        'generosConTallas' => $prenda->generosConTallas ?? [],
-                        'cantidadesPorTalla' => $prenda->cantidadesPorTalla ?? [],
-                        'telasAgregadas' => $prenda->telasAgregadas ?? [],
-                        'fotos' => ($prenda->fotos ?? collect())->map(fn($f) => [
-                            'id' => $f->id,
-                            'ruta_webp' => $f->ruta_webp ?? $f->ruta ?? '',
+                        'id' => $prenda['id'] ?? null,
+                        'nombre_prenda' => $prenda['nombre'] ?? $prenda['nombre_prenda'] ?? '',
+                        'descripcion' => $prenda['descripcion'] ?? '',
+                        'de_bodega' => $prenda['de_bodega'] ?? 1,
+                        'genero' => $prenda['genero'] ?? '',
+                        'generosConTallas' => $prenda['generosConTallas'] ?? [],
+                        'cantidadesPorTalla' => $prenda['cantidadesPorTalla'] ?? [],
+                        'telasAgregadas' => $prenda['telasAgregadas'] ?? [],
+                        'fotos' => collect($prenda['fotos'] ?? [])->map(fn($f) => [
+                            'id' => $f['id'] ?? null,
+                            'ruta_webp' => $f['url'] ?? $f['ruta_webp'] ?? $f['ruta'] ?? '',
                         ])->toArray(),
-                        'procesos' => $prenda->procesos ?? [],
-                        'variaciones' => $prenda->variaciones ?? [],
+                        'procesos' => $prenda['procesos'] ?? [],
+                        'variaciones' => $prenda['variaciones'] ?? [],
                     ];
                 })->toArray(),
             ],
@@ -570,7 +570,7 @@
                     try {
                         // Reutilizar la misma función que usa "Crear Pedido" para recopilar datos
                         const datos = (typeof window.prepararDatosParaEnvio === 'function')
-                            ? window.prepararDatosParaEnvio()
+                            ? window.prepararDatosParaEnvio({ soloConCantidades: false })
                             : null;
 
                         if (!datos) {
@@ -630,11 +630,56 @@
                             };
                         });
                         
+                        // Collect new prendas added via modal (stored in gestionItemsUI.prendas)
+                        const nuevasPrendasJson = [];
+                        if (window.gestionItemsUI && Array.isArray(window.gestionItemsUI.prendas)) {
+                            window.gestionItemsUI.prendas.forEach((p, prendaIdx) => {
+                                // Upload prenda images
+                                const imagenesArr = Array.isArray(p.imagenes) ? p.imagenes : [];
+                                imagenesArr.forEach((img, imgIdx) => {
+                                    const file = (img instanceof File) ? img : (img && img.file instanceof File ? img.file : null);
+                                    if (file) {
+                                        formData.append(`nuevas_prendas.${prendaIdx}.imagenes.${imgIdx}`, file);
+                                    }
+                                });
+
+                                // Upload tela images
+                                const telasArr = Array.isArray(p.telasAgregadas) ? p.telasAgregadas : (Array.isArray(p.telas) ? p.telas : []);
+                                telasArr.forEach((tela, telaIdx) => {
+                                    const imagenesTelaArr = Array.isArray(tela.imagenes) ? tela.imagenes : [];
+                                    imagenesTelaArr.forEach((imgTela, imgIdx) => {
+                                        const file = (imgTela instanceof File) ? imgTela : (imgTela && imgTela.file instanceof File ? imgTela.file : null);
+                                        if (file) {
+                                            formData.append(`nuevas_prendas.${prendaIdx}.telas.${telaIdx}.imagenes.${imgIdx}`, file);
+                                        }
+                                    });
+                                });
+
+                                nuevasPrendasJson.push({
+                                    tipo: 'prenda',
+                                    nombre_prenda: p.nombre_prenda || p.nombre_producto || '',
+                                    nombre_producto: p.nombre_producto || p.nombre_prenda || '',
+                                    descripcion: p.descripcion || '',
+                                    de_bodega: p.de_bodega !== undefined ? p.de_bodega : 1,
+                                    genero: p.genero || '',
+                                    cantidad_talla: p.cantidad_talla || p.cantidades || {},
+                                    telas: telasArr.map(t => ({
+                                        tela: t.nombre_tela || t.tela || '',
+                                        color: t.color || t.color_nombre || '',
+                                        referencia: t.referencia || ''
+                                    })),
+                                    procesos: (typeof p.procesos === 'object' && p.procesos) ? p.procesos : {},
+                                    asignacionesColoresPorTalla: p.asignacionesColoresPorTalla || {}
+                                });
+                            });
+                        }
+
                         const pedidoLimpio = {
                             cliente: datos.cliente || '',
                             asesora: datos.asesora || '',
                             forma_de_pago: datos.forma_de_pago || '',
                             observaciones: datos.observaciones || '',
+                            orden_compra: datos.orden_compra || document.getElementById('orden_compra_editable')?.value?.trim() || '',
                             numero_cotizacion: datos.numero_cotizacion,
                             es_sin_cotizacion: datos.es_sin_cotizacion,
                             tipo_cotizacion: datos.tipo_cotizacion || null,
@@ -642,20 +687,23 @@
                             reflectivo: datos.reflectivo || null,
                             prendas: (datos.prendas || []).map(p => ({
                                 tipo: p.tipo,
-                                nombre_producto: p.nombre_producto,
+                                nombre_prenda: p.nombre_producto || p.nombre_prenda || '',
+                                nombre_producto: p.nombre_producto || p.nombre_prenda || '',
                                 descripcion: p.descripcion,
                                 de_bodega: p.de_bodega,
                                 genero: p.genero,
-                                cantidades: p.cantidades,
+                                cantidad_talla: p.cantidades || {},
+                                cantidades: p.cantidades || {},
                                 telas: (p.telas || []).map(t => ({tela: t.nombre_tela || t.tela, color: t.color, referencia: t.referencia}))
                             })),
+                            nuevas_prendas: nuevasPrendasJson,
                             epps: eppsProcesados
                         };
                         formData.append('pedido', JSON.stringify(pedidoLimpio));
                         formData.append('_token', csrfToken);
 
                         console.debug('[guardarComoBorrador] Datos a enviar:', pedidoLimpio);
-                        console.debug('[guardarComoBorrador] Prendas:', pedidoLimpio.prendas.length, 'EPPs:', pedidoLimpio.epps.length);
+                        console.debug('[guardarComoBorrador] Prendas:', pedidoLimpio.prendas.length, 'Nuevas prendas:', pedidoLimpio.nuevas_prendas.length, 'EPPs:', pedidoLimpio.epps.length);
 
                         // Determinar si es modo edición o creación
                         const modoEdicion = window.modoEdicion || false;

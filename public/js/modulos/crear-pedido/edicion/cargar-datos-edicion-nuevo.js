@@ -196,21 +196,28 @@ function cargarPrendas(prendas) {
 
             
             // Agregar la prenda al gestor con datos correctos
-            const prendasIndex = window.gestorPrendaSinCotizacion.agregarPrenda({
+            const datosPrenda = {
+                id: prenda.id || null,
                 nombre_producto: prenda.nombre_prenda || '',
+                nombre_prenda: prenda.nombre_prenda || '',
                 descripcion: prenda.descripcion || '',
                 genero: genero,
-                generosConTallas: generosConTallas,
-                tallas: tallas,  //  Pasar tallas extraídas
-                cantidadesPorTalla: prenda.cantidadesPorTalla || {},
+                // cantidad_talla es el formato que usa PrendaCardService._construirTallasYCantidades
+                // El backend devuelve generosConTallas: { DAMA: { S: 5, M: 3 } } — misma estructura
+                cantidad_talla: generosConTallas || {},
+                // generosConTallas vacío para que el renderer lo construya desde cantidad_talla
+                generosConTallas: {},
+                tallas: tallas,
+                cantidadesPorTalla: {},
                 telas: prenda.telas || [],
                 telasAgregadas: prenda.telasAgregadas || [],
                 fotos: prenda.fotos || [],
                 telaFotos: prenda.telaFotos || [],
-                imagenes: prenda.imagenes || prenda.fotos || [],  //  Asegurar imagenes
+                imagenes: prenda.imagenes || prenda.fotos || [],
                 origen: prenda.origen || 'bodega',
                 de_bodega: prenda.de_bodega || 1,
                 procesos: procesos,
+                variantes: variaciones,
                 variaciones: variaciones,
                 tipo_manga: prenda.tipo_manga,
                 obs_manga: prenda.obs_manga,
@@ -220,7 +227,16 @@ function cargarPrendas(prendas) {
                 obs_bolsillos: prenda.obs_bolsillos,
                 tiene_reflectivo: prenda.tiene_reflectivo,
                 obs_reflectivo: prenda.obs_reflectivo,
-            });
+            };
+            const prendasIndex = window.gestorPrendaSinCotizacion.agregarPrenda(datosPrenda);
+
+            // Registrar también en gestionItemsUI para renderizado unificado con EPPs
+            if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarPrendaAlOrden === 'function') {
+                const prendaAlmacenada = window.gestorPrendaSinCotizacion.prendas[prendasIndex];
+                if (prendaAlmacenada) {
+                    window.gestionItemsUI.agregarPrendaAlOrden(prendaAlmacenada);
+                }
+            }
 
 
 

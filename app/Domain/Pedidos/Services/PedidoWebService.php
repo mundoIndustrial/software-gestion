@@ -251,6 +251,15 @@ class PedidoWebService
     /**
      * Crear item (prenda) completo con tallas, variantes, procesos e imágenes
      */
+    /**
+     * Agregar un item (prenda) a un pedido existente
+     * Usado por ActualizarBorradorUseCase al añadir prendas en modo edición
+     */
+    public function agregarItemAPedido(PedidoProduccion $pedido, array $itemData, int $index): PrendaPedido
+    {
+        return $this->crearItemCompleto($pedido, $itemData, $index);
+    }
+
     private function crearItemCompleto(PedidoProduccion $pedido, array $itemData, int $itemIndex): PrendaPedido
     {
         // CREAR TIPO DE PRENDA SI NO EXISTE

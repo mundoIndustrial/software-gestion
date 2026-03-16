@@ -751,8 +751,77 @@ class PedidoImagenesService
      *     'ubicaciones': [...]
      *   },
      *   ...
-     * ]
-     * 
+     * ]     * Procesar imágenes de nuevas prendas añadidas en modo actualización de borrador.
+     * Usa el prefijo 'nuevas_prendas' en las claves FormData:
+     *   - Prenda: nuevas_prendas.{i}.imagenes.{j}
+     *   - Tela:   nuevas_prendas.{i}.telas.{k}.imagenes.{m}
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param array $nuevasPrendasIds Array of PrendaPedido IDs created
+     * @param array $items Array of prenda item data (for telas structure)
+     * @return void
+     */
+    public function procesarImagenesNuevasPrendas($request, array $nuevasPrendasIds, array $items): void
+    {
+        foreach ($nuevasPrendasIds as $i => $prendaId) {
+            $prenda = \App\Models\PrendaPedido::with(['coloresTelas'])->find($prendaId);
+            if (!$prenda) {
+                continue;
+            }
+
+            // Prenda images
+            $imgIdx = 0;
+            while (true) {
+                $formKey = "nuevas_prendas.{$i}.imagenes.{$imgIdx}";
+                if (!$request->hasFile($formKey)) {
+                    break;
+                }
+                $archivo = $request->file($formKey);
+                $resultado = $this->imageUploadService->guardarImagenDirecta(
+                    $archivo, $prenda->pedido_produccion_id, 'prendas', null, null
+                );
+                PrendaFotoPedido::create([
+                    'prenda_pedido_id' => $prenda->id,
+                    'ruta_original' => $resultado['original'],
+                    'ruta_webp' => $resultado['webp'],
+                    'orden' => $imgIdx + 1,
+                ]);
+                Log::debug('[PedidoImagenesService] Nueva prenda imagen guardada', ['prenda_id' => $prenda->id]);
+                $imgIdx++;
+            }
+
+            // Tela images
+            $telaRelaciones = $prenda->coloresTelas()->get();
+            $telas = $items[$i]['telas'] ?? [];
+            foreach ($telas as $telaIdx => $tela) {
+                if (!isset($telaRelaciones[$telaIdx])) {
+                    continue;
+                }
+                $telaRelacion = $telaRelaciones[$telaIdx];
+                $imgIdx = 0;
+                while (true) {
+                    $formKey = "nuevas_prendas.{$i}.telas.{$telaIdx}.imagenes.{$imgIdx}";
+                    if (!$request->hasFile($formKey)) {
+                        break;
+                    }
+                    $archivo = $request->file($formKey);
+                    $resultado = $this->imageUploadService->guardarImagenDirecta(
+                        $archivo, $prenda->pedido_produccion_id, 'telas', null, null
+                    );
+                    PrendaFotoTelaPedido::create([
+                        'prenda_pedido_colores_telas_id' => $telaRelacion->id,
+                        'ruta_original' => $resultado['original'],
+                        'ruta_webp' => $resultado['webp'],
+                    ]);
+                    Log::debug('[PedidoImagenesService] Nueva prenda tela imagen guardada', ['tela_id' => $telaRelacion->id]);
+                    $imgIdx++;
+                }
+            }
+        }
+    }
+
+    /**
+     * Procesar imágenes de procesos productivos (fuera del flow principal de prendas)     * 
      * @param \Illuminate\Http\Request $request
      * @param int $pedidoId
      * @param array $procesos Array de procesos con imagenes

@@ -86,7 +86,8 @@
      * 
      * @returns {Object} Datos formateados para servidor
      */
-    window.prepararDatosParaEnvio = function() {
+    window.prepararDatosParaEnvio = function(options) {
+        const soloConCantidades = !options || options.soloConCantidades !== false;
         const cotizacionId = document.getElementById('cotizacion_id_editable')?.value;
         const seccionCotizacion = document.getElementById('cotizacion_search_editable')?.closest('.form-section');
         const esSinCotizacion = seccionCotizacion && seccionCotizacion.style.display === 'none';
@@ -140,8 +141,8 @@
                     }))
                 };
 
-                // Solo agregar si tiene cantidades
-                if (Object.keys(prendaParaEnviar.cantidades).length > 0) {
+                // Solo agregar si tiene cantidades (o si es modo borrador: incluir aunque estén vacías)
+                if (!soloConCantidades || Object.keys(prendaParaEnviar.cantidades).length > 0) {
                     datos.prendas.push(prendaParaEnviar);
                     datos.items.push(prendaParaEnviar);  //  AGREGADO: también en items
                 }
@@ -210,8 +211,8 @@
                     }
                 });
 
-                // Solo agregar si tiene cantidades
-                if (Object.keys(prenda.cantidades).length > 0) {
+                // Solo agregar si tiene cantidades (o si es modo borrador: incluir aunque estén vacías)
+                if (!soloConCantidades || Object.keys(prenda.cantidades).length > 0) {
                     datos.prendas.push(prenda);
                     datos.items.push(prenda);  //  AGREGADO: también en items
                 }

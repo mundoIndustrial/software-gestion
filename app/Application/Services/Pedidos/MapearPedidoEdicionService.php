@@ -93,7 +93,7 @@ class MapearPedidoEdicionService
         return $pedido->prendas->map(function ($prenda) {
             return [
                 'id' => $prenda->id,
-                'nombre' => $prenda->nombre,
+                'nombre' => $prenda->nombre_prenda,
                 'genero' => $prenda->genero,
                 'color' => $prenda->color,
                 'observaciones' => $prenda->observaciones,
@@ -108,10 +108,10 @@ class MapearPedidoEdicionService
                 // Telas/colores
                 'telasAgregadas' => $prenda->coloresTelas->map(function ($ct) {
                     return [
-                        'tela' => $ct->tela ?? '',
-                        'nombre_tela' => $ct->tela ?? '',
-                        'color' => $ct->color ?? '',
-                        'color_nombre' => $ct->color ?? '',
+                        'tela' => $ct->tela?->nombre ?? '',
+                        'nombre_tela' => $ct->tela?->nombre ?? '',
+                        'color' => $ct->color?->nombre ?? '',
+                        'color_nombre' => $ct->color?->nombre ?? '',
                         'referencia' => $ct->referencia ?? '',
                     ];
                 })->toArray(),

@@ -91,7 +91,8 @@ class PrepararCrearPedidoNuevoService implements PrepararCrearPedidoServiceInter
         return PedidoProduccion::with([
             'prendas.tallas',
             'prendas.fotos',
-            'prendas.coloresTelas',
+            'prendas.coloresTelas.tela',
+            'prendas.coloresTelas.color',
             'prendas.procesos',
             'epps.epp',
             'epps.imagenes',

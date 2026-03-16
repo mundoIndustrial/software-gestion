@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\PedidoEpp;
 use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
 use App\Domain\Pedidos\Services\PedidoImagenesService;
+use App\Domain\Pedidos\Services\PedidoWebService;
 
 /**
  * ActualizarBorradorUseCase
@@ -31,6 +32,7 @@ class ActualizarBorradorUseCase
     public function __construct(
         private PedidoProduccionRepository $pedidoRepository,
         private PedidoImagenesService $pedidoImagenesService,
+        private PedidoWebService $pedidoWebService,
     ) {}
 
     /**
@@ -87,6 +89,25 @@ class ActualizarBorradorUseCase
 
             // ====== PASO 5: Actualizar EPPs ======
             $this->actualizarEpps($input->pedidoId, $input->datosFrontend['epps'] ?? [], $input->request);
+
+            // ====== PASO 5b: Crear nuevas prendas ======
+            $nuevasPrendas = $input->datosFrontend['nuevas_prendas'] ?? [];
+            if (!empty($nuevasPrendas)) {
+                $nuevasPrendasIds = [];
+                foreach ($nuevasPrendas as $index => $itemData) {
+                    $prendaCreada = $this->pedidoWebService->agregarItemAPedido($pedido, $itemData, (int)$index);
+                    $nuevasPrendasIds[] = $prendaCreada->id;
+                }
+                $this->pedidoImagenesService->procesarImagenesNuevasPrendas(
+                    $input->request,
+                    $nuevasPrendasIds,
+                    $nuevasPrendas
+                );
+                Log::info('[ActualizarBorradorUseCase] Nuevas prendas creadas', [
+                    'pedido_id' => $input->pedidoId,
+                    'cantidad' => count($nuevasPrendasIds),
+                ]);
+            }
 
             // ====== PASO 6: Procesar imágenes de procesos ======
             $this->procesarImagenesDeProcesos(
@@ -181,8 +202,8 @@ class ActualizarBorradorUseCase
                     ]);
                 }
 
-                // Actualizar cantidad y observaciones (via Repository)
-                $this->pedidoRepository->actualizarDatosBasicos($pedidoEpp, [
+                // Actualizar cantidad y observaciones directamente en PedidoEpp
+                $pedidoEpp->update([
                     'cantidad' => $cantidad,
                     'observaciones' => $observaciones,
                 ]);
