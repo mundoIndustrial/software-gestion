@@ -116,7 +116,7 @@ class MaterialesService
 
         $filtrosDefecto = [
             'estado' => ['No iniciado', 'En Ejecución', 'Anulada'],
-            'area' => ['Corte', 'Creación de orden', 'Creación']
+            'area' => ['Corte', 'Creación de orden', 'Creación', 'Costura']
         ];
 
         return $this->repository->obtenerValoresUnicos($column, $filtrosDefecto);
@@ -130,7 +130,7 @@ class MaterialesService
         // Estados permitidos
         $filtrosDefecto = [
             'estado' => ['No iniciado', 'En Ejecución', 'Anulada'],
-            'area' => ['Corte', 'Creación de orden', 'Creación'],
+            'area' => ['Corte', 'Creación de orden', 'Creación', 'Costura'],
             'tiene_numero_pedido' => true // Excluir pedidos sin número de pedido
         ];
 

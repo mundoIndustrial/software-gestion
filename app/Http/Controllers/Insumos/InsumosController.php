@@ -223,18 +223,11 @@ class InsumosController extends Controller
                 'pedidos_produccion.fecha_estimada_de_entrega'
             );
         
-        // Aplicar filtros de estados permitidos para recibos (excluyendo PENDIENTE_SUPERVISOR)
+        // Mostrar recibos cuya área sea Insumos, Corte o Costura sin importar el estado
         $baseQuery->where(function($q) {
-            $q->where('pedidos_produccion.estado', 'PENDIENTE_INSUMOS')
-              ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR')
-              ->orWhere(function($q2) {
-                  $q2->where('pedidos_produccion.area', 'LIKE', '%Corte%')
-                     ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR')
-                     ->orWhere('pedidos_produccion.area', 'LIKE', '%Creación%orden%')
-                     ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR')
-                     ->orWhere('pedidos_produccion.area', 'LIKE', '%Creación de orden%')
-                     ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR');
-              });
+            $q->where('consecutivos_recibos_pedidos.area', 'LIKE', '%Insumos%')
+              ->orWhere('consecutivos_recibos_pedidos.area', 'LIKE', '%Corte%')
+              ->orWhere('consecutivos_recibos_pedidos.area', 'LIKE', '%Costura%');
         });
         
         // Aplicar múltiples filtros (nuevo sistema)
