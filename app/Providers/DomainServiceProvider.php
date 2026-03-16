@@ -58,6 +58,17 @@ use App\Application\Services\Asesores\DashboardService;
 use App\Application\Services\Asesores\NotificacionesService;
 use App\Application\Services\Asesores\PerfilService;
 use App\Application\Services\Asesores\EliminarPedidoService;
+
+// ======================================== PROCESO SEGUIMIENTO
+use App\Domain\ProcesoSeguimiento\Repositories\ProcesoPrendaSeguimientoRepository;
+use App\Domain\ProcesoSeguimiento\Repositories\ConsecutivoReciboPedidoRepository;
+use App\Infrastructure\ProcesoSeguimiento\Persistence\Eloquent\EloquentProcesoPrendaSeguimientoRepository;
+use App\Infrastructure\ProcesoSeguimiento\Persistence\Eloquent\EloquentConsecutivoReciboPedidoRepository;
+use App\Application\ProcesoSeguimiento\Services\ProcesoSeguimientoBroadcastService;
+use App\Application\ProcesoSeguimiento\UseCases\GuardarProcesoSeguimientoUseCase;
+use App\Application\ProcesoSeguimiento\UseCases\ActualizarProcesoSeguimientoUseCase;
+use App\Application\ProcesoSeguimiento\UseCases\ActualizarEstadoProcesoUseCase;
+use App\Application\ProcesoSeguimiento\UseCases\EliminarProcesoSeguimientoUseCase;
 use App\Application\Services\Asesores\ObtenerFotosService;
 use App\Application\Services\Asesores\AnularPedidoService;
 use App\Application\Services\Asesores\ObtenerPedidosService;
@@ -252,6 +263,25 @@ class DomainServiceProvider extends ServiceProvider
             CargarDatosCompartidosServiceInterface::class,
             CargarDatosCompartidosService::class
         );
+
+        // ========================================
+        // PROCESO SEGUIMIENTO - Repos + Use Cases
+        // ========================================
+        $this->app->singleton(
+            ProcesoPrendaSeguimientoRepository::class,
+            EloquentProcesoPrendaSeguimientoRepository::class
+        );
+
+        $this->app->singleton(
+            ConsecutivoReciboPedidoRepository::class,
+            EloquentConsecutivoReciboPedidoRepository::class
+        );
+
+        $this->app->singleton(ProcesoSeguimientoBroadcastService::class);
+        $this->app->singleton(GuardarProcesoSeguimientoUseCase::class);
+        $this->app->singleton(ActualizarProcesoSeguimientoUseCase::class);
+        $this->app->singleton(ActualizarEstadoProcesoUseCase::class);
+        $this->app->singleton(EliminarProcesoSeguimientoUseCase::class);
     }
 
     public function boot(): void

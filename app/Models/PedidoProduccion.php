@@ -60,6 +60,7 @@ class PedidoProduccion extends Model
         'cotizacion_id',
         'numero_cotizacion',
         'numero_pedido',
+        'orden_compra',
         'cliente',
         'cliente_id',
         'novedades',

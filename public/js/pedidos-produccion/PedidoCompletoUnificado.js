@@ -341,6 +341,7 @@ class PedidoCompletoUnificado {
      */
     reset() {
         this._cliente = null;
+        this._ordenCompra = null;
         this._asesora = null;
         this._formaPago = 'contado';
         this._items = [];
@@ -360,6 +361,14 @@ class PedidoCompletoUnificado {
      */
     setCliente(cliente) {
         this._cliente = SanitizadorDefensivo.cleanString(cliente);
+        return this;
+    }
+
+    /**
+     * Establecer orden de compra
+     */
+    setOrdenCompra(ordenCompra) {
+        this._ordenCompra = SanitizadorDefensivo.cleanString(ordenCompra);
         return this;
     }
 
@@ -705,6 +714,7 @@ class PedidoCompletoUnificado {
 
         const payload = {
             cliente: this._cliente,
+            orden_compra: this._ordenCompra,
             asesora: this._asesora,
             forma_de_pago: this._formaPago,
             items: this._items

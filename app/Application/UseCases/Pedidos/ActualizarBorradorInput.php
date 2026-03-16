@@ -56,4 +56,12 @@ class ActualizarBorradorInput
             datosFrontend: $datosFrontend,
         );
     }
+
+    /**
+     * Get orden de compra
+     */
+    public function getOrdenCompra(): ?string
+    {
+        return trim($this->datosFrontend['orden_compra'] ?? '') ?: null;
+    }
 }

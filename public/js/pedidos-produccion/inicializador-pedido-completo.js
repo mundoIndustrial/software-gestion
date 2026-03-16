@@ -44,6 +44,7 @@ window.crearPedidoConBuilderUnificado = async function() {
         
         // 2. Datos generales
         const cliente = document.getElementById('cliente_editable')?.value;
+        const ordenCompra = document.getElementById('orden_compra_editable')?.value;
         const asesora = document.getElementById('asesora_editable')?.value;
         const formaPago = document.getElementById('forma_de_pago_editable')?.value;
         
@@ -53,6 +54,7 @@ window.crearPedidoConBuilderUnificado = async function() {
         const builder = new PedidoCompletoUnificado();
         builder
             .setCliente(cliente)
+            .setOrdenCompra(ordenCompra)
             .setAsesora(asesora)
             .setFormaPago(formaPago);
         

@@ -55,6 +55,14 @@ class CrearPedidoInput
     }
 
     /**
+     * Get orden de compra
+     */
+    public function getOrdenCompra(): ?string
+    {
+        return trim($this->datosFrontend['orden_compra'] ?? '') ?: null;
+    }
+
+    /**
      * Has prendas
      */
     public function hasPrendas(): bool

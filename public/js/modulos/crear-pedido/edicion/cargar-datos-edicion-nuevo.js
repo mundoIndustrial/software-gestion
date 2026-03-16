@@ -101,6 +101,7 @@ function cargarInformacionGeneral(pedido) {
     try {
         const campos = {
             'cliente_editable': pedido.cliente,
+            'orden_compra_editable': pedido.orden_compra,
             'forma_de_pago_editable': pedido.forma_de_pago,
         };
 
