@@ -37,6 +37,9 @@
 <!-- Styles Component -->
 <x-recibos.recibos-costura-styles />
 
+<!-- CSS para tracking modal de seguimiento de prendas -->
+<link rel="stylesheet" href="{{ asset('css/tracking-modal-handler.css') }}">
+
 <!-- Estilos adicionales para el modal de agregar proceso -->
 <style>
 .add-proceso-modal.show {

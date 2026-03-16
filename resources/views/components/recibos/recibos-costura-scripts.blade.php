@@ -2,7 +2,18 @@
 <!-- Scripts para Recibos/Procesos -->
 <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
 
-<!-- Script para el modal de seguimiento -->
+<!-- Helpers y Utilidades - DEBEN CARGARSE ANTES DE tracking-modal-handler.js -->
+<!-- Utilidades de formateo -->
+<script src="{{ asset('js/ordersjs/utils/DateFormatter.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/utils/StatusFormatter.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/utils/DOMManipulator.js') }}?v={{ time() }}"></script>
+
+<!-- Helpers de dominio -->
+<script src="{{ asset('js/ordersjs/helpers/AreaResolver.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/helpers/ModalHelper.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/helpers/TrackingHelper.js') }}?v={{ time() }}"></script>
+
+<!-- Script para el modal de seguimiento (depende de helpers anteriores) -->
 <script src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}?v={{ time() }}"></script>
 
 <!-- Scripts para la funcionalidad de Día de Entrega -->

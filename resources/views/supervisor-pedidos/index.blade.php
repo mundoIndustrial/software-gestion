@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="{{ asset('css/componentes/prendas.css') }}">
     <link rel="stylesheet" href="{{ asset('css/modales/modal-exito-pedido.css') }}">
     <link rel="stylesheet" href="{{ asset('css/modulos/epp-modal.css') }}">
+    <!-- CSS para tracking modal de seguimiento de prendas -->
+    <link rel="stylesheet" href="{{ asset('css/tracking-modal-handler.css') }}">
     
     <!-- 🚨 FIX: Asegurar z-index correcto para modal de prendas en supervisor-pedidos -->
     <style>
@@ -1534,6 +1536,19 @@
     
     <!-- Scripts específicos de supervisor -->
     <script src="{{ asset('js/supervisor-pedidos/supervisor-pedidos-detail-modal.js') }}"></script>
+    
+    <!-- Helpers y Utilidades - DEBEN CARGARSE ANTES DE tracking-modal-handler.js -->
+    <!-- Utilidades de formateo -->
+    <script src="{{ asset('js/ordersjs/utils/DateFormatter.js') }}"></script>
+    <script src="{{ asset('js/ordersjs/utils/StatusFormatter.js') }}"></script>
+    <script src="{{ asset('js/ordersjs/utils/DOMManipulator.js') }}"></script>
+    
+    <!-- Helpers de dominio -->
+    <script src="{{ asset('js/ordersjs/helpers/AreaResolver.js') }}"></script>
+    <script src="{{ asset('js/ordersjs/helpers/ModalHelper.js') }}"></script>
+    <script src="{{ asset('js/ordersjs/helpers/TrackingHelper.js') }}"></script>
+    
+    <!-- Script principal (depende de los helpers anteriores) -->
     <script src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}"></script>
     
     <!-- Script para abrir el modal de seguimiento (inline para asegurar disponibilidad) -->

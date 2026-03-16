@@ -1,1392 +1,191 @@
 /**
  * Tracking Modal Handler - Seguimiento por Prenda
- * Maneja la integración del modal de seguimiento con la vista de órdenes
- * Funcionalidad completa de seguimiento por prenda con áreas y procesos
+ * Maneja la integración del modal de seguimiento con la vista de órdenes.
+ * Depende de: DateFormatter, StatusFormatter, DOMManipulator, LoadingIndicator,
+ * ApiService, ValidationService, NotificationService, AreaResolver, ModalHelper,
+ * TrackingHelper, IconSvgProvider
  */
-
-// Agregar estilos CSS para tabla estilo TNS
-const trackingTableStyles = `
-.tracking-prenda-table {
-  margin: 8px 0;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  overflow: hidden;
-  background: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.tracking-prenda-table:hover {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
-}
-
-.tracking-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 13px;
-}
-
-.tracking-table-header {
-  background: linear-gradient(135deg, #1e40af 0%, #3730a3 100%);
-  color: white;
-  font-weight: 600;
-  font-size: 14px;
-  text-align: center;
-  padding: 12px 8px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-.tracking-table-row:nth-child(even) {
-  background-color: #f9fafb;
-}
-
-.tracking-table-row:hover {
-  background-color: #f3f4f6;
-}
-
-.tracking-table-label {
-  padding: 8px 12px;
-  font-weight: 600;
-  color: #374151;
-  border-right: 1px solid #e5e7eb;
-  width: 35%;
-  text-align: left;
-  background-color: #f8fafc;
-}
-
-.tracking-table-value {
-  padding: 8px 12px;
-  color: #1f2937;
-  text-align: left;
-  font-weight: 500;
-}
-
-.tracking-procesos-lista {
-  padding: 8px 12px;
-  background: #fef3c7;
-  border-left: 3px solid #f59e0b;
-}
-
-.tracking-proceso-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 4px 0;
-  border-bottom: 1px solid #fde68a;
-}
-
-.tracking-proceso-item:last-child {
-  border-bottom: none;
-}
-
-.proceso-nombre {
-  font-weight: 500;
-  color: #92400e;
-}
-
-.proceso-estado {
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 12px;
-  background: #fbbf24;
-  color: #78350f;
-  font-weight: 600;
-}
-
-.tracking-bodega-indicador {
-  padding: 8px 12px;
-  background: #dcfce7;
-  border-left: 3px solid #22c55e;
-  color: #166534;
-  font-weight: 600;
-  font-size: 12px;
-  text-align: center;
-}
-
-.tracking-seguimiento-badge {
-  display: inline-block;
-  margin: 2px;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.tracking-seguimiento-badge.completado {
-  background: #dcfce7;
-  color: #166534;
-  border: 1px solid #bbf7d0;
-}
-
-.tracking-seguimiento-badge.pendiente {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
-}
-
-/* ===== MODAL Y OVERLAY DE PRENDAS ===== */
-.tracking-prendas-selector-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s ease;
-  padding: 20px;
-  box-sizing: border-box;
-}
-
-.tracking-prendas-selector-overlay.show {
-  opacity: 1;
-  visibility: visible;
-}
-
-.tracking-prendas-selector-content {
-  background: white;
-  border-radius: 12px;
-  max-width: 95vw;
-  max-height: 95vh;  /* Aumentado para permitir más espacio */
-  width: 1200px;
-  height: auto;
-  overflow-y: auto;  /* Permitir scroll vertical */
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  transform: scale(0.95);
-  transition: all 0.3s ease;
-  display: flex;
-  flex-direction: column;
-}
-
-.tracking-prendas-selector-overlay.show .tracking-prendas-selector-content {
-  transform: scale(1);
-}
-
-.tracking-prendas-selector-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
-  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-  border-radius: 12px 12px 0 0;
-}
-
-.tracking-prendas-selector-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  border-radius: 8px;
-  color: white;
-  margin-right: 16px;
-}
-
-.tracking-prendas-selector-icon svg {
-  width: 20px;
-  height: 20px;
-}
-
-.tracking-prendas-selector-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0;
-  flex: 1;
-}
-
-.tracking-prendas-selector-close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: #ef4444;
-  border: none;
-  border-radius: 6px;
-  color: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.tracking-prendas-selector-close:hover {
-  background: #dc2626;
-  transform: scale(1.1);
-}
-
-.tracking-prendas-selector-close svg {
-  width: 16px;
-  height: 16px;
-}
-
-.tracking-prendas-selector-body {
-  padding: 24px;
-  overflow: hidden;  /* Sin scroll - el scroll es del contenedor principal */
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  width: 100%;
-  min-height: 0; /* Permitir que el contenedor se encoja */
-}
-
-.tracking-prendas-info {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  padding: 16px;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  /* Sin scroll individual - el scroll es del modal completo */
-}
-
-.tracking-prendas-info-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  min-width: 140px;
-  flex-shrink: 0;
-}
-
-.tracking-prendas-info-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.tracking-prendas-info-value {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.tracking-prendas-list {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  min-height: 0; /* Permitir que el contenedor se encoja */
-}
-
-.tracking-prendas-list-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 16px 0;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #e5e7eb;
-}
-
-.tracking-prendas-selector-container {
-  flex: 1;
-  width: 100%;
-  height: 100%;
-  min-height: 0; /* Permitir que el contenedor se encoja */
-  overflow: visible; /* Permitir que el scroll del contenedor principal funcione */
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-}
-
-/* ===== TABLA DE PRENDAS (ESTILO REPORTE) ===== */
-.prendas-table-container {
-  background: white;
-  border-radius: 8px;
-  overflow: visible;  /* Permitir scroll */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin: 0;
-  width: 100%;
-  height: 100%;
-  min-height: 0; /* Permitir que el contenedor se encoja */
-}
-
-.prendas-report-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 13px;
-  background: white;
-  table-layout: fixed; /* Distribuir columnas uniformemente */
-}
-
-.prendas-report-table thead {
-  background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
-  color: white;
-}
-
-.prendas-report-table th {
-  padding: 12px 8px;
-  text-align: center;
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  vertical-align: middle;
-}
-
-.prendas-report-table th:first-child {
-  text-align: left;
-  width: 25%; /* Prenda - más ancha */
-}
-
-.prendas-report-table th:nth-child(2) {
-  width: 10%; /* Cantidad */
-}
-
-.prendas-report-table th:nth-child(3) {
-  width: 25%; /* Procesos - más ancha */
-}
-
-.prendas-report-table th:nth-child(4) {
-  width: 12%; /* Área */
-}
-
-.prendas-report-table th:nth-child(5) {
-  width: 12%; /* Estado */
-}
-
-.prendas-report-table th:nth-child(6) {
-  width: 16%; /* Acciones - más ancha para el botón */
-  border-right: none;
-}
-
-.prendas-table-row:nth-child(even) {
-  background-color: #f9fafb;
-}
-
-.prendas-table-row:hover {
-  background-color: #f3f4f6;
-}
-
-.prendas-table-cell {
-  padding: 12px 8px;
-  border-bottom: 1px solid #e5e7eb;
-  vertical-align: middle;
-  text-align: center;
-  word-wrap: break-word;
-  overflow: hidden;
-}
-
-.prendas-table-cell:first-child {
-  text-align: left;
-}
-
-.prendas-name-cell {
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.prendas-name {
-  font-size: 14px;
-  margin-bottom: 4px;
-}
-
-.bodega-badge {
-  display: inline-block;
-  font-size: 9px;
-  padding: 2px 8px;
-  background: #f59e0b;  /* Amarillo */
-  color: #92400e;      /* Texto oscuro para contraste */
-  border-radius: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-}
-
-.confeciona-badge {
-  display: inline-block;
-  font-size: 9px;
-  padding: 2px 8px;
-  background: #10b981;  /* Verde */
-  color: #ffffff;      /* Texto blanco para contraste */
-  border-radius: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-}
-
-.procesos-cell {
-  text-align: left;
-}
-
-.procesos-info {
-  font-size: 11px;
-  line-height: 1.4;
-  color: #6b7280;
-}
-
-.estado-badge {
-  display: inline-block;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.estado-badge.estado-completado {
-  background: #dcfce7;
-  color: #166534;
-  border: 1px solid #bbf7d0;
-}
-
-.estado-badge.estado-en-ejecución {
-  background: #dbeafe;
-  color: #1e40af;
-  border: 1px solid #93c5fd;
-}
-
-.estado-badge.estado-en-ejecucion {
-  background: #dbeafe;
-  color: #1e40af;
-  border: 1px solid #93c5fd;
-}
-
-.estado-badge.estado-no-iniciado {
-  background: #f3f4f6;
-  color: #6b7280;
-  border: 1px solid #d1d5db;
-}
-
-.estado-badge.estado-pendiente_cartera {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
-}
-
-.estado-badge.estado-rechazado_cartera {
-  background: #fecaca;
-  color: #991b1b;
-  border: 1px solid #fca5a5;
-}
-
-.estado-badge.estado-pendiente_insumos {
-  background: #fed7aa;
-  color: #9a3412;
-  border: 1px solid #fdba74;
-}
-
-.estado-badge.estado-devuelto_a_asesora {
-  background: #e9d5ff;
-  color: #6b21a8;
-  border: 1px solid #d8b4fe;
-}
-
-.estado-badge.estado-pendiente_supervisor {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
-}
-
-.estado-badge.estado-pendiente {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
-}
-
-.estado-badge.estado-sin-procesos {
-  background: #f3f4f6;
-  color: #6b7280;
-  border: 1px solid #d1d5db;
-}
-
-.acciones-cell {
-  text-align: center;
-}
-
-.btn-ver-seguimiento {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
-  min-width: 80px;
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-ver-seguimiento::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
-}
-
-.btn-ver-seguimiento:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-.btn-ver-seguimiento:hover::before {
-  left: 100%;
-}
-
-.btn-ver-seguimiento:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
-}
-
-.btn-ver-seguimiento.disabled {
-  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.btn-ver-seguimiento.disabled:hover {
-  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
-  transform: none;
-  box-shadow: none;
-}
-
-.btn-ver-seguimiento.disabled:active {
-  transform: none;
-  box-shadow: none;
-}
-
-.btn-ver-seguimiento.disabled svg {
-  opacity: 0.7;
-}
-
-.btn-ver-seguimiento svg {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-}
-
-/* Responsive para pantallas pequeñas */
-@media (max-width: 768px) {
-  .prendas-report-table {
-    font-size: 11px;
-  }
-  
-  .prendas-report-table th {
-    padding: 8px 4px;
-    font-size: 10px;
-  }
-  
-  .prendas-table-cell {
-    padding: 8px 4px;
-  }
-  
-  .prendas-name {
-    font-size: 12px;
-  }
-  
-  .btn-ver-seguimiento {
-    padding: 6px 12px;
-    font-size: 11px;
-    min-width: 70px;
-    gap: 4px;
-  }
-  
-  .btn-ver-seguimiento svg {
-    width: 14px;
-    height: 14px;
-  }
-}
-
-/* Responsive para modal y tabla */
-@media (max-width: 1200px) {
-  .tracking-prendas-selector-content {
-    max-width: 98vw;
-    width: 100%;
-  }
-}
-
-@media (max-width: 768px) {
-  .tracking-prendas-selector-overlay {
-    padding: 10px;
-  }
-  
-  .tracking-prendas-selector-content {
-    max-width: 95vw;
-    width: 100%;
-    margin: 0;
-  }
-  
-  .tracking-prendas-selector-header {
-    padding: 16px 20px;
-  }
-  
-  .tracking-prendas-selector-icon {
-    width: 32px;
-    height: 32px;
-    margin-right: 12px;
-  }
-  
-  .tracking-prendas-selector-icon svg {
-    width: 16px;
-    height: 16px;
-  }
-  
-  .tracking-prendas-selector-title {
-    font-size: 16px;
-  }
-  
-  .tracking-prendas-selector-body {
-    padding: 16px;
-    gap: 16px;
-  }
-  
-  .tracking-prendas-info {
-    grid-template-columns: 1fr;
-    gap: 12px;
-    padding: 12px;
-    width: 100%;
-  }
-  
-  .tracking-prendas-list {
-    width: 100%;
-    min-height: 0;
-  }
-  
-  .tracking-prendas-selector-container {
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-  }
-  
-  .prendas-table-container {
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-  }
-  
-  .prendas-report-table {
-    font-size: 11px;
-  }
-  
-  .prendas-report-table th {
-    padding: 8px 4px;
-    font-size: 10px;
-  }
-  
-  .prendas-table-cell {
-    padding: 8px 4px;
-  }
-  
-  .prendas-name {
-    font-size: 12px;
-  }
-  
-  .btn-ver-seguimiento {
-    padding: 6px 12px;
-    font-size: 11px;
-    min-width: 70px;
-    gap: 4px;
-  }
-  
-  .btn-ver-seguimiento svg {
-    width: 14px;
-    height: 14px;
-  }
-}
-
-@media (max-width: 600px) {
-  .tracking-prendas-selector-overlay {
-    padding: 5px;
-  }
-  
-  .tracking-prendas-selector-content {
-    max-width: 98vw;
-    width: 100%;
-    border-radius: 8px;
-  }
-  
-  .tracking-prendas-selector-header {
-    padding: 12px 16px;
-  }
-  
-  .tracking-prendas-selector-icon {
-    width: 28px;
-    height: 28px;
-    margin-right: 8px;
-  }
-  
-  .tracking-prendas-selector-icon svg {
-    width: 14px;
-    height: 14px;
-  }
-  
-  .tracking-prendas-selector-title {
-    font-size: 14px;
-  }
-  
-  .tracking-prendas-selector-body {
-    padding: 12px;
-    gap: 12px;
-  }
-  
-  .tracking-prendas-info {
-    padding: 8px;
-    gap: 8px;
-    width: 100%;
-  }
-  
-  .tracking-prendas-list {
-    width: 100%;
-    min-height: 0;
-  }
-  
-  .tracking-prendas-selector-container {
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-  }
-  
-  .prendas-table-container {
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-  }
-  
-  .tracking-prendas-info-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-  }
-  
-  .tracking-prendas-list-title {
-    font-size: 14px;
-    margin: 0 0 12px 0;
-    padding-bottom: 6px;
-  }
-  
-  .prendas-report-table {
-    font-size: 10px;
-  }
-  
-  .prendas-report-table th {
-    padding: 6px 2px;
-    font-size: 9px;
-  }
-  
-  .prendas-table-cell {
-    padding: 6px 2px;
-  }
-  
-  .prendas-name {
-    font-size: 11px;
-  }
-  
-  .btn-ver-seguimiento {
-    padding: 4px 6px;
-    font-size: 10px;
-    min-width: 50px;
-    gap: 2px;
-  }
-  
-  .btn-ver-seguimiento svg {
-    width: 12px;
-    height: 12px;
-  }
-}
-
-  .prendas-report-table th:first-child {
-    width: 30%;
-  }
-  
-  .prendas-report-table th:nth-child(2) {
-    width: 12%;
-  }
-  
-  .prendas-report-table th:nth-child(3) {
-    width: 20%;
-  }
-  
-  .prendas-report-table th:nth-child(4) {
-    width: 14%;
-  }
-  
-  .prendas-report-table th:nth-child(5) {
-    width: 12%;
-  }
-  
-  .btn-ver-seguimiento {
-    padding: 4px 6px;
-    font-size: 10px;
-    min-width: 50px;
-    gap: 2px;
-  }
-  
-  .btn-ver-seguimiento svg {
-    width: 12px;
-    height: 12px;
-  }
-}
-  
-  .prendas-report-table th:nth-child(2) {
-    width: 12%;
-  }
-  
-  .prendas-report-table th:nth-child(3) {
-    width: 12%;
-  }
-  
-  .prendas-report-table th:nth-child(4) {
-    width: 12%;
-  }
-  
-  .prendas-report-table th:nth-child(5) {
-    width: 17%;
-  }
-  
-  .prendas-report-table th:nth-child(6) {
-    width: 12%;
-  }
-  
-  .prendas-report-table th:nth-child(7) {
-    width: 10%;
-  }
-  
-  .btn-ver-seguimiento {
-    padding: 4px 8px;
-    font-size: 10px;
-    min-width: 60px;
-    gap: 2px;
-  }
-  
-  .btn-ver-seguimiento svg {
-    width: 12px;
-    height: 12px;
-  }
-}
-`;
 
 (function() {
   'use strict';
+  
+  // Logger centralizado
+  const log = (fn, msg, data) => console.log(`[${fn}] ${msg}`, data || '');
+  const err = (fn, msg, e) => console.error(`[${fn}] ${msg}`, e);
 
-  // Inyectar estilos CSS para tabla estilo TNS
-  function injectTrackingTableStyles() {
-    if (!document.getElementById('tracking-table-styles')) {
-      const styleElement = document.createElement('style');
-      styleElement.id = 'tracking-table-styles';
-      styleElement.textContent = trackingTableStyles;
-      document.head.appendChild(styleElement);
-    }
-  }
-
-  // Inicializar listeners del modal
   function initTrackingModalListeners() {
-    // Inyectar estilos
-    injectTrackingTableStyles();
-    
-    // Cerrar modal al hacer clic en el overlay
-    const overlay = document.getElementById('trackingModalOverlay');
-    if (overlay) {
-      overlay.addEventListener('click', closeTrackingModal);
-    }
+    DOMManipulator.addEventListeners([
+      {
+        elementId: 'trackingModalOverlay',
+        eventName: 'click',
+        handler: closeTrackingModal
+      },
+      {
+        elementId: 'btnOpenAddProcesoModal',
+        eventName: 'click',
+        handler: openAddProcesoModal
+      },
+      {
+        elementId: 'closeAddProcesoModal',
+        eventName: 'click',
+        handler: closeAddProcesoModal
+      },
+      {
+        elementId: 'btnCancelAddProceso',
+        eventName: 'click',
+        handler: closeAddProcesoModal
+      },
+      {
+        elementId: 'addProcesoOverlay',
+        eventName: 'click',
+        handler: closeAddProcesoModal
+      }
+    ]);
 
-    // Cerrar modal con botón X (si existe)
-    const closeBtn = document.querySelector('.tracking-modal-close');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', closeTrackingModal);
-    }
-
-    // Botón de volver a prendas (se configura en setupBackButton)
-    const backBtn = document.getElementById('backToPrendasBtn');
-    // No agregar event listener aquí, se maneja en setupBackButton()
-
-    // Botón de abrir modal agregar proceso
-    const btnOpenAddProcesoModal = document.getElementById('btnOpenAddProcesoModal');
-    if (btnOpenAddProcesoModal) {
-      btnOpenAddProcesoModal.addEventListener('click', openAddProcesoModal);
-    }
-
-    // Botones del modal agregar proceso
-    const closeAddProcesoBtn = document.getElementById('closeAddProcesoModal');
-    if (closeAddProcesoBtn) {
-      closeAddProcesoBtn.addEventListener('click', closeAddProcesoModal);
-    }
-
-    const btnCancelAddProceso = document.getElementById('btnCancelAddProceso');
-    if (btnCancelAddProceso) {
-      btnCancelAddProceso.addEventListener('click', closeAddProcesoModal);
-    }
-
-    const btnConfirmAddProceso = document.getElementById('btnConfirmAddProceso');
+    const btnConfirmAddProceso = DOMManipulator.getElementById('btnConfirmAddProceso', false);
     if (btnConfirmAddProceso) {
       const nuevoBtnConfirm = btnConfirmAddProceso.cloneNode(true);
       btnConfirmAddProceso.parentNode.replaceChild(nuevoBtnConfirm, btnConfirmAddProceso);
       nuevoBtnConfirm.onclick = handleAgregarProceso;
     }
 
-    // Cerrar modal al hacer clic en el overlay
-    const addProcesoOverlay = document.getElementById('addProcesoOverlay');
-    if (addProcesoOverlay) {
-      addProcesoOverlay.addEventListener('click', closeAddProcesoModal);
-    }
-
-    // Cerrar con ESC
-    document.addEventListener('keydown', (e) => {
-      const modal = document.getElementById('orderTrackingModal');
-      if (e.key === 'Escape' && modal && modal.style.display !== 'none') {
-        closeTrackingModal();
-      }
-    });
-  }
-
-  // Cerrar modal
-  function closeTrackingModal() {
-    const modal = document.getElementById('orderTrackingModal');
-    if (modal) {
-      modal.classList.remove('show');
-      modal.style.display = 'none';
-      // Resetear vistas (sin llamar a showPrendasView para evitar recursividad)
-      console.log('[closeTrackingModal] Modal de seguimiento cerrado');
-    }
-  }
-
-  // Función para abrir el modal de agregar proceso
-  function openAddProcesoModal() {
-    console.log('[openAddProcesoModal] Abriendo modal de agregar proceso');
-    const modal = document.getElementById('addProcesoModal');
-    console.log('[openAddProcesoModal] Modal encontrado:', !!modal);
-    
-    if (modal) {
-      // Si no estamos editando, abrir limpio para agregar una nueva área
-      if (!window.editingProcessId) {
-        if (typeof resetFormButton === 'function') {
-          resetFormButton();
-        }
-        if (typeof limpiarFormularioProceso === 'function') {
-          limpiarFormularioProceso();
-        }
-      }
-
-      modal.classList.add('show');
-      
-      // FORZAR ESTILO DIRECTAMENTE CON JAVASCRIPT
-      modal.style.setProperty('display', 'flex', 'important');
-      modal.style.setProperty('visibility', 'visible', 'important');
-      modal.style.setProperty('opacity', '1', 'important');
-      modal.style.setProperty('z-index', '10000000', 'important');
-      
-      console.log('[openAddProcesoModal] Modal configurado y mostrado');
-      
-      // Asegurar que los botones de cerrar funcionen
-      setupAddProcesoModalListeners();
-    } else {
-      console.error('[openAddProcesoModal] No se encontró el modal addProcesoModal');
-    }
-  }
-
-  // Configurar listeners del modal agregar proceso
-  function setupAddProcesoModalListeners() {
-    const closeBtn = document.getElementById('closeAddProcesoModal');
+    const closeBtn = DOMManipulator.querySelector('.tracking-modal-close');
     if (closeBtn) {
-      closeBtn.onclick = closeAddProcesoModal;
+      closeBtn.addEventListener('click', closeTrackingModal);
     }
 
-    const cancelBtn = document.getElementById('btnCancelAddProceso');
-    if (cancelBtn) {
-      cancelBtn.onclick = closeAddProcesoModal;
-    }
-
-    const overlay = document.getElementById('addProcesoOverlay');
-    if (overlay) {
-      overlay.onclick = closeAddProcesoModal;
-    }
+    ModalHelper.setupEscapeListener('orderTrackingModal', closeTrackingModal);
   }
 
-  // Función para cerrar el modal de agregar proceso
+  function closeTrackingModal() {
+    ModalHelper.close('orderTrackingModal');
+    log('closeTrackingModal', 'Modal cerrado');
+  }
+
+  function openAddProcesoModal() {
+    log('openAddProcesoModal', 'Abriendo modal');
+    
+    if (!window.editingProcessId) {
+      if (typeof resetFormButton === 'function') {
+        resetFormButton();
+      }
+      if (typeof limpiarFormularioProceso === 'function') {
+        limpiarFormularioProceso();
+      }
+    }
+
+    ModalHelper.open('addProcesoModal', 10000000);
+    setupAddProcesoModalListeners();
+  }
+
+  function setupAddProcesoModalListeners() {
+    ModalHelper.setupOverlayClose('addProcesoOverlay', 'addProcesoModal');
+    DOMManipulator.addEventListener('closeAddProcesoModal', 'click', closeAddProcesoModal);
+    DOMManipulator.addEventListener('btnCancelAddProceso', 'click', closeAddProcesoModal);
+  }
+
   function closeAddProcesoModal() {
-    const modal = document.getElementById('addProcesoModal');
-    if (modal) {
-      modal.classList.remove('show');
-      modal.style.display = 'none';
-    }
+    ModalHelper.close('addProcesoModal');
   }
 
-  // Configurar botón volver
   function setupBackButton() {
     const backBtn = document.getElementById('backToPrendasBtn');
     if (backBtn) {
       backBtn.onclick = showPrendasView;
-      console.log('[setupBackButton] Botón volver configurado');
+      log('setupBackButton', 'Configurado');
     } else {
-      console.warn('[setupBackButton] Botón volver no encontrado');
+      err('setupBackButton', 'No encontrado');
     }
   }
 
-  // Abrir selector de prendas (overlay)
   window.openOrderTracking = async function(orderId, mostrarSelector = true) {
     try {
-      console.log('[openOrderTracking] Abriendo selector de prendas para orden:', orderId, 'mostrarSelector:', mostrarSelector);
-      
-      // Cargar datos básicos del pedido
       await loadOrderBasicData(orderId);
-      
-      // Cargar prendas con seguimiento
       await loadPrendasWithTracking(orderId);
-      
-      // Mostrar overlay de prendas solo si se solicita
-      if (mostrarSelector) {
-        showPrendasSelector();
-      }
-      
-      console.log('[openOrderTracking] Datos cargados correctamente. currentOrderData:', window.currentOrderData);
-      
+      if (mostrarSelector) showPrendasSelector();
     } catch (error) {
-      console.error('[openOrderTracking] Error:', error);
+      err('openOrderTracking', 'Error', error);
       showError('Error al cargar datos de seguimiento');
     }
   };
 
-  // Cargar datos básicos del pedido
   async function loadOrderBasicData(orderId) {
     try {
-      const response = await fetch(`/registros/${orderId}/recibos-datos`);
-      if (!response.ok) throw new Error('Error al cargar datos del pedido');
-      
-      const result = await response.json();
-      console.log('[loadOrderBasicData] Respuesta del endpoint:', result);
-      
-      // Extraer datos desde la estructura del endpoint
+      const result = await ApiService.ordenes.getDatos(orderId);
       const data = result.data || result;
-      console.log('[loadOrderBasicData] Datos extraídos:', data);
-      
       window.currentOrderData = data;
-      
-      // Actualizar información del pedido en el modal
       updateOrderInfo(data);
-      
     } catch (error) {
-      console.error('[loadOrderBasicData] Error:', error);
+      err('loadOrderBasicData', 'Error', error);
       throw error;
     }
   }
 
-  // Actualizar información del pedido en el modal y selector
   function updateOrderInfo(orderData) {
-    console.log('[updateOrderInfo] Datos recibidos:', orderData);
-    console.log('[updateOrderInfo] numero_pedido:', orderData.numero_pedido);
-    console.log('[updateOrderInfo] cliente:', orderData.cliente);
-    console.log('[updateOrderInfo] estado:', orderData.estado);
-    
-    // Actualizar modal principal
-    console.log('[updateOrderInfo] Campos de fecha disponibles:', {
-      fecha_creacion: orderData.fecha_creacion,
-      fecha_de_creacion_de_orden: orderData.fecha_de_creacion_de_orden,
-      created_at: orderData.created_at,
-      fecha_estimada_entrega: orderData.fecha_estimada_entrega
-    });
-    
-    document.getElementById('trackingOrderNumber').textContent = orderData.numero_pedido || '-';
-    document.getElementById('trackingOrderClient').textContent = orderData.cliente || '-';
-    // ✅ CAMBIO: Usar estado_display del backend en lugar de transformar en Frontend
-    document.getElementById('trackingOrderStatus').textContent = orderData.estado_display || (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
-    document.getElementById('trackingOrderDate').textContent = formatDate(orderData.fecha_creacion || orderData.fecha_de_creacion_de_orden || orderData.created_at) || '-';
-    document.getElementById('trackingEstimatedDate').textContent = formatDate(orderData.fecha_estimada_entrega) || '-';
-    document.getElementById('trackingTotalDays').textContent = orderData.total_dias || '0';
+    try {
+      const statusDisplay = StatusFormatter.getDisplayStatus(orderData);
+      const dateStart = DateFormatter.getFirstValid(orderData.fecha_creacion, orderData.fecha_de_creacion_de_orden, orderData.created_at);
+      const dateEstimated = DateFormatter.format(orderData.fecha_estimada_entrega);
 
-    // Actualizar selector de prendas
-    const selectorOrderNumber = document.getElementById('selectorOrderNumber');
-    const selectorOrderClient = document.getElementById('selectorOrderClient');
-    const selectorOrderStatus = document.getElementById('selectorOrderStatus');
-    const selectorOrderStartDate = document.getElementById('selectorOrderStartDate');
-    const selectorOrderEstimatedDate = document.getElementById('selectorOrderEstimatedDate');
-    
-    console.log('[updateOrderInfo] Elementos encontrados:', {
-      selectorOrderNumber: !!selectorOrderNumber,
-      selectorOrderClient: !!selectorOrderClient,
-      selectorOrderStatus: !!selectorOrderStatus,
-      selectorOrderStartDate: !!selectorOrderStartDate,
-      selectorOrderEstimatedDate: !!selectorOrderEstimatedDate
-    });
-    
-    // Actualizar información del modal principal
-    const trackingOrderNumber = document.getElementById('trackingOrderNumber');
-    const trackingOrderClient = document.getElementById('trackingOrderClient');
-    const trackingOrderStatus = document.getElementById('trackingOrderStatus');
-    const trackingOrderRecibo = document.getElementById('trackingOrderRecibo');
-    
-    console.log('[updateOrderInfo] Elementos encontrados:', {
-      selectorOrderNumber: !!selectorOrderNumber,
-      selectorOrderClient: !!selectorOrderClient,
-      selectorOrderStatus: !!selectorOrderStatus,
-      selectorOrderEstimatedDate: !!selectorOrderEstimatedDate,
-      trackingOrderNumber: !!trackingOrderNumber,
-      trackingOrderClient: !!trackingOrderClient,
-      trackingOrderStatus: !!trackingOrderStatus,
-      trackingOrderRecibo: !!trackingOrderRecibo
-    });
-    
-    // Actualizar selector
-    if (selectorOrderNumber) {
-      selectorOrderNumber.textContent = orderData.numero_pedido || '-';
-    }
-    if (selectorOrderClient) {
-      selectorOrderClient.textContent = orderData.cliente || '-';
-    }
-    if (selectorOrderStatus) {
-      // ✅ CAMBIO: Usar estado_display del backend
-      selectorOrderStatus.textContent = orderData.estado_display || (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
-    }
-    if (selectorOrderStartDate) {
-      // Actualizar fecha de inicio
-      let fechaInicio = orderData.fecha_creacion || orderData.fecha_de_creacion_de_orden || orderData.created_at;
-      
-      if (fechaInicio) {
-        // Formatear fecha
-        let fechaFormateada = '';
-        if (typeof fechaInicio === 'string') {
-          try {
-            const date = new Date(fechaInicio);
-            if (!isNaN(date.getTime())) {
-              fechaFormateada = date.toLocaleDateString('es-ES', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-              });
-            } else {
-              fechaFormateada = fechaInicio;
-            }
-          } catch (e) {
-            fechaFormateada = fechaInicio;
-          }
-        } else if (fechaInicio instanceof Date) {
-          fechaFormateada = fechaInicio.toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          });
-        } else if (fechaInicio && fechaInicio.date) {
-          fechaFormateada = new Date(fechaInicio.date).toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          });
-        }
-        
-        selectorOrderStartDate.textContent = fechaFormateada || '-';
-      } else {
-        selectorOrderStartDate.textContent = '-';
-      }
-    }
-    if (selectorOrderEstimatedDate) {
-      // Actualizar fecha estimada de entrega
-      let fechaEstimada = orderData.fecha_estimada_de_entrega;
-      
-      if (fechaEstimada) {
-        // Formatear fecha datetime
-        let fechaFormateada = '';
-        if (typeof fechaEstimada === 'string') {
-          // Si es string, intentar parsear y formatear
-          try {
-            const date = new Date(fechaEstimada);
-            if (!isNaN(date.getTime())) {
-              fechaFormateada = date.toLocaleDateString('es-ES', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-              });
-            } else {
-              fechaFormateada = fechaEstimada;
-            }
-          } catch (e) {
-            fechaFormateada = fechaEstimada;
-          }
-        } else if (fechaEstimada instanceof Date) {
-          // Si es un objeto Date, formatearlo
-          fechaFormateada = fechaEstimada.toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          });
-        } else if (fechaEstimada && fechaEstimada.date) {
-          // Si es un objeto Carbon/Laravel
-          fechaFormateada = new Date(fechaEstimada.date).toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          });
-        }
-        
-        selectorOrderEstimatedDate.textContent = fechaFormateada || '-';
-      } else {
-        selectorOrderEstimatedDate.textContent = '-';
-      }
-    }
-    
-    // Actualizar modal principal
-    if (trackingOrderNumber) {
-      trackingOrderNumber.textContent = orderData.numero_pedido || '-';
-    }
-    if (trackingOrderClient) {
-      trackingOrderClient.textContent = orderData.cliente || '-';
-    }
-    if (trackingOrderStatus) {
-      trackingOrderStatus.textContent = orderData.estado_display || (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
-    }
-    if (trackingOrderRecibo) {
-      // ✅ CAMBIO: Usar ultimo_recibo_numero que ya viene del Backend
-      // El Backend obtiene esto correctamente en getSeguimientoPorPrenda()
-      // para la prenda actual (currentPrendaData), así que obtenemos directamente
-      let numeroReciboCostura = '-';
-      
-      if (currentPrendaData && currentPrendaData.ultimo_recibo_numero) {
-        numeroReciboCostura = `COSTURA #${currentPrendaData.ultimo_recibo_numero}`;
-      } else if (orderData.prendas && orderData.prendas.length > 0) {
-        // Fallback: usar la primera prenda (código anterior simplificado)
-        const primeraPrend = orderData.prendas[0];
-        if (primeraPrend && primeraPrend.ultimo_recibo_numero) {
-          numeroReciboCostura = `COSTURA #${primeraPrend.ultimo_recibo_numero}`;
-        }
-      }
-      
-      console.log('[updateOrderInfo] Recibo COSTURA final:', {
-        numero: numeroReciboCostura,
-        desde_prenda_actual: currentPrendaData?.ultimo_recibo_numero,
-        desde_backend: orderData.prendas?.[0]?.ultimo_recibo_numero
+      DOMManipulator.updateMultiple({
+        'trackingOrderNumber': orderData.numero_pedido,
+        'trackingOrderClient': orderData.cliente,
+        'trackingOrderStatus': statusDisplay,
+        'trackingOrderDate': dateStart,
+        'trackingEstimatedDate': dateEstimated,
+        'trackingTotalDays': orderData.total_dias || '0',
+        'selectorOrderNumber': orderData.numero_pedido,
+        'selectorOrderClient': orderData.cliente,
+        'selectorOrderStatus': statusDisplay,
+        'selectorOrderStartDate': dateStart,
+        'selectorOrderEstimatedDate': dateEstimated
       });
-      
-      trackingOrderRecibo.textContent = numeroReciboCostura;
-    }
-    if (selectorOrderEstimatedDate) {
-      selectorOrderEstimatedDate.style.color = '#1f2937';
-      selectorOrderEstimatedDate.style.fontWeight = '600';
-    } else {
-      selectorOrderEstimatedDate.textContent = 'No definida';
-      selectorOrderEstimatedDate.style.color = '#9ca3af';
-      selectorOrderEstimatedDate.style.fontWeight = '400';
+      const reciboCostura = TrackingHelper.resolveReciboCostura(window.currentPrendaData, orderData);
+      DOMManipulator.setText('trackingOrderRecibo', reciboCostura);
+      DOMManipulator.setStyles('selectorOrderEstimatedDate', {
+        'color': dateEstimated !== '-' ? '#1f2937' : '#9ca3af',
+        'font-weight': dateEstimated !== '-' ? '600' : '400'
+      });
+    } catch (error) {
+      err('updateOrderInfo', 'Error', error);
     }
   }
 
-  // Cargar prendas con seguimiento
   async function loadPrendasWithTracking(orderId) {
     try {
-      console.log('[loadPrendasWithTracking] Cargando prendas para orden:', orderId);
-      
-      const response = await fetch(`/registros/${orderId}/seguimiento-prenda`);
-      if (!response.ok) throw new Error('Error al cargar seguimiento de prendas');
-      
-      const data = await response.json();
-      console.log('[loadPrendasWithTracking] Datos recibidos:', data);
-      
-      // Renderizar prendas
+      const data = await ApiService.prendas.getSeguimiento(orderId);
       renderPrendas(data.prendas || []);
-      
     } catch (error) {
-      console.error('[loadPrendasWithTracking] Error:', error);
+      err('loadPrendasWithTracking', 'Error', error);
       throw error;
     }
   }
 
-  // Renderizar tabla única de prendas en el overlay
   function renderPrendas(prendas) {
     const container = document.getElementById('trackingPrendasSelectorContainer');
     if (!container) return;
-    
-    console.log('[renderPrendas] Renderizando tabla de prendas:', prendas.length);
-    
-    container.innerHTML = '';
-    
-    if (prendas.length === 0) {
-      container.innerHTML = `
-        <div class="tracking-no-prendas">
-          <p>No hay prendas registradas para este pedido</p>
-        </div>
-      `;
-      return;
-    }
-    
-    // Crear tabla única con todas las prendas
-    const tableHtml = createPrendasTable(prendas);
-    container.innerHTML = tableHtml;
-    
-    // Actualizar fecha estimada de entrega del pedido
+    container.innerHTML = prendas.length === 0 ? 
+      '<div class="tracking-no-prendas"><p>No hay prendas registradas</p></div>' : 
+      createPrendasTable(prendas);
     updateEstimatedDeliveryDate();
   }
 
-  // Actualizar fecha estimada de entrega del pedido
   function updateEstimatedDeliveryDate() {
-    const fechaEstimadaElement = document.getElementById('selectorOrderEstimatedDate');
+    const fechaEstimadaElement = DOMManipulator.getElementById('selectorOrderEstimatedDate');
     if (!fechaEstimadaElement || !window.currentOrderData) return;
+
+    const fechaEstimada = window.currentOrderData.fecha_estimada_de_entrega;
+    const fechaFormateada = DateFormatter.format(fechaEstimada);
+
+    DOMManipulator.setText('selectorOrderEstimatedDate', fechaFormateada);
     
-    // Obtener fecha estimada del pedido (campo correcto)
-    let fechaEstimada = window.currentOrderData.fecha_estimada_de_entrega;
-    
-    if (fechaEstimada) {
-      // Formatear fecha datetime
-      let fechaFormateada = '';
-      if (typeof fechaEstimada === 'string') {
-        // Si es string, intentar parsear y formatear
-        try {
-          const date = new Date(fechaEstimada);
-          if (!isNaN(date.getTime())) {
-            fechaFormateada = date.toLocaleDateString('es-ES', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric'
-            });
-          } else {
-            fechaFormateada = fechaEstimada;
-          }
-        } catch (e) {
-          fechaFormateada = fechaEstimada;
-        }
-      } else if (fechaEstimada instanceof Date) {
-        // Si es un objeto Date, formatearlo
-        fechaFormateada = fechaEstimada.toLocaleDateString('es-ES', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        });
-      } else if (fechaEstimada && fechaEstimada.date) {
-        // Si es un objeto Carbon/Laravel
-        fechaFormateada = new Date(fechaEstimada.date).toLocaleDateString('es-ES', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        });
-      }
-      
-      fechaEstimadaElement.textContent = fechaFormateada;
-      fechaEstimadaElement.style.color = '#1f2937';
-      fechaEstimadaElement.style.fontWeight = '600';
-    } else {
-      fechaEstimadaElement.textContent = 'No definida';
-      fechaEstimadaElement.style.color = '#9ca3af';
-      fechaEstimadaElement.style.fontWeight = '400';
-    }
+    const isValid = fechaFormateada !== '-';
+    DOMManipulator.setStyles('selectorOrderEstimatedDate', {
+      'color': isValid ? '#1f2937' : '#9ca3af',
+      'font-weight': isValid ? '600' : '400'
+    });
   }
 
-  // Crear tabla HTML con todas las prendas
   function createPrendasTable(prendas) {
     let tableHtml = `
       <div class="prendas-table-container">
@@ -1404,81 +203,38 @@ const trackingTableStyles = `
           <tbody>
     `;
     
-    // Almacenar las prendas globalmente para acceso desde onclick
     window.prendasData = prendas;
     
-    prendas.forEach((prenda, index) => {
-      // Logging para depuración
-      console.log(`[createPrendasTable] Prenda ${index}:`, {
-        nombre: prenda.nombre_prenda,
-        tipos_recibo_procesos: prenda.tipos_recibo_procesos,
-        procesos_generales: prenda.procesos
-      });
-      
-      // Extraer información de la prenda
-      const nombrePrenda = prenda.nombre_prenda || `Prenda ${index + 1}`;
-      const cantidad = prenda.cantidad || 0;
-      const totalProcesos = prenda.total_procesos || 0;
-      
-      // Extraer tipos de recibo que son procesos (ESTAMPADO, BORDADO, REFLECTIVO, DTF, SUBLIMADO)
-      let procesosInfo = '-';
-      if (prenda.tipos_recibo_procesos && prenda.tipos_recibo_procesos.length > 0) {
-        procesosInfo = prenda.tipos_recibo_procesos.map(p => {
-          const nombre = p.nombre || 'Proceso';
-          const estado = (p.estado || 'PENDIENTE').replace(/_/g, ' '); // Reemplazar guiones bajos por espacios
-          return `${nombre} (${estado})`;
-        }).join(', ');
-      } else if (prenda.procesos && prenda.procesos.length > 0) {
-        // Fallback a procesos generales si no hay tipos de recibo
-        procesosInfo = prenda.procesos.map(p => {
-          const tipoProceso = p.tipo_proceso;
-          const nombre = tipoProceso?.nombre || 'Proceso';
-          const estado = (p.estado || 'PENDIENTE').replace(/_/g, ' '); // Reemplazar guiones bajos por espacios
-          return `${nombre} (${estado})`;
-        }).join(', ');
-      }
-      
-      // Extraer área basada en el proceso más reciente
-      let area = '-';
-      if (prenda.ultimo_proceso_area) {
-        // Si ya viene el área del último proceso, usarla
-        area = prenda.ultimo_proceso_area;
-      } else if (prenda.area && prenda.area.trim() !== '') {
-        // Si tiene área asignada directamente, usarla
-        area = prenda.area;
-      }
-      
-      // Usar el estado del pedido en lugar del estado calculado de procesos
+    const prendasEnriquecidas = TrackingHelper.enrichPrendas(prendas, window.currentOrderData);
+    
+    prendasEnriquecidas.forEach((prenda, index) => {
+      const displayInfo = TrackingHelper.getPrendaDisplayInfo(prenda);
+      const procesosInfo = TrackingHelper.getProcesosInfo(prenda);
+      const area = AreaResolver.resolve(prenda, window.currentOrderData, 
+        window.location.pathname.includes('/recibos-costura'));
       const estadoPedido = window.currentOrderData?.estado || 'Sin estado';
-      const estadoFormateado = estadoPedido.replace(/_/g, ' ').toUpperCase();
+      const estadoFormateado = StatusFormatter.format(estadoPedido);
+      const estadoCSSClass = StatusFormatter.getCSSClass(estadoPedido);
       
-      // Determinar si el botón debe estar desactivado (para prendas de bodega)
-      const esDeBodega = prenda.de_bodega || false;
-      const botonDisabled = esDeBodega ? 'disabled' : '';
-      const botonTitle = esDeBodega ? 'Prenda de bodega - no disponible para seguimiento' : 'Ver seguimiento detallado';
-      const botonClass = esDeBodega ? 'btn-ver-seguimiento disabled' : 'btn-ver-seguimiento';
-      
-      // Badge de origen de prenda
-      let badgeHtml = '';
-      if (prenda.de_bodega) {
-        badgeHtml = '<span class="bodega-badge">SE SACA DE BODEGA</span>';
-      } else {
-        badgeHtml = '<span class="confeciona-badge">SE CONFECCIONA</span>';
-      }
+      const botonDisabled = TrackingHelper.shouldDisableTrackingButton(prenda) ? 'disabled' : '';
+      const botonTitle = TrackingHelper.getTrackingButtonTitle(prenda);
+      const botonClass = TrackingHelper.shouldDisableTrackingButton(prenda) 
+        ? 'btn-ver-seguimiento disabled' 
+        : 'btn-ver-seguimiento';
       
       tableHtml += `
         <tr class="prendas-table-row" data-prenda-index="${index}">
           <td class="prendas-table-cell prendas-name-cell">
-            <div class="prendas-name">${nombrePrenda}</div>
-            ${badgeHtml}
+            <div class="prendas-name">${displayInfo.nombre}</div>
+            <span class="${displayInfo.badgeClass}">${displayInfo.badge}</span>
           </td>
-          <td class="prendas-table-cell">${cantidad}</td>
+          <td class="prendas-table-cell">${prenda.cantidad || 0}</td>
           <td class="prendas-table-cell procesos-cell">
             <div class="procesos-info">${procesosInfo}</div>
           </td>
           <td class="prendas-table-cell">${area}</td>
           <td class="prendas-table-cell">
-            <span class="estado-badge estado-${estadoPedido.toLowerCase().replace(/_/g, '-')}">${estadoFormateado}</span>
+            <span class="estado-badge ${estadoCSSClass}">${estadoFormateado}</span>
           </td>
           <td class="prendas-table-cell acciones-cell">
             <button class="${botonClass}" ${botonDisabled} onclick="showPrendaTrackingFromTable(${index})" title="${botonTitle}">
@@ -1502,7 +258,6 @@ const trackingTableStyles = `
     return tableHtml;
   }
 
-  // Mostrar selector de prendas (overlay)
   function showPrendasSelector() {
     const overlay = document.getElementById('trackingPrendasSelectorOverlay');
     console.log('[showPrendasSelector] Overlay encontrado:', !!overlay);
@@ -1514,7 +269,6 @@ const trackingTableStyles = `
     }
   }
 
-  // Cerrar selector de prendas
   window.cerrarSelectorPrendas = function() {
     const overlay = document.getElementById('trackingPrendasSelectorOverlay');
     if (overlay) {
@@ -1523,12 +277,10 @@ const trackingTableStyles = `
     }
   };
 
-  // Crear tabla simple de prenda (estilo TNS)
   function createPrendaCard(prenda, index) {
     const card = document.createElement('div');
     card.className = 'tracking-prenda-table';
     
-    // Añadir event listener con debug
     card.addEventListener('click', function(e) {
       console.log('[createPrendaCard] Click en tabla de prenda:', prenda);
       e.preventDefault();
@@ -1538,19 +290,13 @@ const trackingTableStyles = `
     
     const seguimientosHtml = renderSeguimientosBadges(prenda.seguimientos || {});
     const areasHtml = renderAreasBadges(prenda.seguimientos_por_area || {});
-    
-    // Construir HTML de procesos en formato de fila
     let procesosHtml = '';
     if (prenda.procesos && prenda.procesos.length > 0) {
       procesosHtml = '<tr><td colspan="2"><div class="tracking-procesos-lista">';
       prenda.procesos.forEach(proceso => {
-        // Acceder correctamente a los datos del tipo_proceso
         const tipoProceso = proceso.tipo_proceso;
         const procesoNombre = tipoProceso?.nombre || 'Proceso';
         const procesoEstado = proceso.estado || 'PENDIENTE';
-        
-        console.log('[createPrendaCard] Proceso:', proceso);
-        console.log('[createPrendaCard] TipoProceso:', tipoProceso);
         
         procesosHtml += `
           <div class="tracking-proceso-item">
@@ -1562,7 +308,6 @@ const trackingTableStyles = `
       procesosHtml += '</div></td></tr>';
     }
 
-    // Badge de bodega si aplica
     let bodegaBadge = '';
     if (prenda.de_bodega) {
       bodegaBadge = '<tr><td colspan="2"><div class="tracking-bodega-indicador">Se saca de bodega</div></td></tr>';
@@ -1597,7 +342,6 @@ const trackingTableStyles = `
     return card;
   }
 
-  // Permite editar el área actual incluso si no existe proceso (creación rápida con prefill)
   window.handleCrearProcesoDesdeArea = function(areaName, event, encargadoPrefill = '') {
     try {
       if (event) {
@@ -1610,7 +354,6 @@ const trackingTableStyles = `
         return;
       }
 
-      // Asegurar que sea modo "agregar" (no edición)
       if (typeof resetFormButton === 'function') {
         resetFormButton();
       } else {
@@ -1622,7 +365,6 @@ const trackingTableStyles = `
       const procesoArea = document.getElementById('procesoArea');
       if (procesoArea) procesoArea.value = areaName || '';
 
-      // En modo "editar área actual" (sin id) prellenar encargado si lo tenemos
       const procesoEncargado = document.getElementById('procesoEncargado');
       const encargadoFallback = window.currentConsecutivoCosturaData?.encargado || '';
       const encargadoFinal = String(encargadoPrefill || encargadoFallback || '').trim();
@@ -1634,7 +376,6 @@ const trackingTableStyles = `
     }
   };
 
-  // Renderizar badges de seguimientos por tipo de recibo
   function renderSeguimientosBadges(seguimientos) {
     if (Object.keys(seguimientos).length === 0) {
       return '';
@@ -1656,7 +397,6 @@ const trackingTableStyles = `
     return badgesHtml;
   }
 
-  // Renderizar badges de áreas/procesos
   function renderAreasBadges(areas) {
     if (Object.keys(areas).length === 0) {
       return '';
@@ -1678,12 +418,10 @@ const trackingTableStyles = `
     return badgesHtml;
   }
 
-  // Mostrar seguimiento de una prenda específica desde la tabla
   window.showPrendaTrackingFromTable = async function(index) {
     try {
       console.log('[showPrendaTrackingFromTable] INICIO - Índice:', index);
       
-      // Obtener la prenda desde el array global
       const prenda = window.prendasData[index];
       if (!prenda) {
         console.error('[showPrendaTrackingFromTable] Prenda no encontrada en índice:', index);
@@ -1692,7 +430,6 @@ const trackingTableStyles = `
       
       console.log('[showPrendaTrackingFromTable] Prenda encontrada:', prenda);
       
-      // Llamar a la función original con el objeto prenda
       await showPrendaTracking(prenda);
       
     } catch (error) {
@@ -1701,181 +438,39 @@ const trackingTableStyles = `
     }
   };
 
-  // Mostrar seguimiento de una prenda específica
   window.showPrendaTracking = async function(prenda) {
     try {
       console.log('[showPrendaTracking] INICIO - Mostrando seguimiento para prenda:', prenda);
 
-      try {
-        const tieneSeguimiento = prenda && (
-          (prenda.seguimientos_por_area && Object.keys(prenda.seguimientos_por_area).length > 0) ||
-          (prenda.seguimientos && Object.keys(prenda.seguimientos).length > 0) ||
-          (prenda.ultimo_recibo_numero && prenda.ultimo_recibo_numero !== '-')
-        );
-
-        if (!tieneSeguimiento && Array.isArray(window.prendasData) && window.prendasData.length > 0) {
-          const prendaId = prenda?.id || prenda?.prenda_pedido_id;
-          const prendaEnriquecida = window.prendasData.find(p =>
-            String(p?.id) === String(prendaId) || String(p?.prenda_pedido_id) === String(prendaId)
-          );
-
-          if (prendaEnriquecida) {
-            prenda = Object.assign({}, prendaEnriquecida, prenda);
-            console.log('[showPrendaTracking] Usando prenda enriquecida desde prendasData:', prendaEnriquecida);
-          }
-        }
-      } catch (e) {
-        console.warn('[showPrendaTracking] Error hidratando prenda desde prendasData:', e);
-      }
-      
+      prenda = TrackingHelper.enrichPrenda(prenda, window.prendasData);
       window.currentPrendaData = prenda;
       
-      // Cerrar overlay de prendas
-      const overlaySelector = document.getElementById('trackingPrendasSelectorOverlay');
-      if (overlaySelector) {
-        console.log('[showPrendaTracking] Cerrando overlay selector...');
+      if (DOMManipulator.exists('trackingPrendasSelectorOverlay')) {
         cerrarSelectorPrendas();
       }
       
-      // Mostrar modal de seguimiento
-      console.log('[showPrendaTracking] Buscando modal...');
-      const modal = document.getElementById('orderTrackingModal');
-      if (modal) {
-        console.log('[showPrendaTracking] Modal encontrado, agregando clase show...');
-        modal.classList.add('show');
-        
-        // FORZAR ESTILO DIRECTAMENTE CON JAVASCRIPT
-        modal.style.setProperty('display', 'flex', 'important');
-        modal.style.setProperty('visibility', 'visible', 'important');
-        modal.style.setProperty('opacity', '1', 'important');
-        modal.style.setProperty('z-index', '9999999', 'important');
-        modal.style.setProperty('position', 'fixed', 'important');
-        modal.style.setProperty('top', '0', 'important');
-        modal.style.setProperty('left', '0', 'important');
-        modal.style.setProperty('width', '100vw', 'important');
-        modal.style.setProperty('height', '100vh', 'important');
-        modal.style.setProperty('background', 'rgba(0, 0, 0, 0.5)', 'important');
-        modal.style.setProperty('align-items', 'center', 'important');
-        modal.style.setProperty('justify-content', 'center', 'important');
-        
-        // Asegurar que el botón volver funcione
-        setupBackButton();
-        
-        console.log('[showPrendaTracking] Modal mostrado con estilos forzados');
-        
-        // Debug visual - verificar estado del modal
-        setTimeout(() => {
-          const modalElement = document.getElementById('orderTrackingModal');
-          const computedStyle = window.getComputedStyle(modalElement);
-          console.log('[showPrendaTracking] DEBUG - Estado del modal:', {
-            display: computedStyle.display,
-            visibility: computedStyle.visibility,
-            opacity: computedStyle.opacity,
-            zIndex: computedStyle.zIndex,
-            hasClass: modalElement.classList.contains('show'),
-            inlineDisplay: modalElement.style.display,
-            inlineVisibility: modalElement.style.visibility
-          });
-        }, 100);
-      } else {
-        console.error('[showPrendaTracking] Modal no encontrado');
-        return;
-      }
+      ModalHelper.applyDialogStyles('orderTrackingModal', 9999999);
+      ModalHelper.open('orderTrackingModal', 9999999);
+      setupBackButton();
       
-      // Ocultar vista de prendas y mostrar timeline
-      console.log('[showPrendaTracking] Actualizando vistas...');
-      document.getElementById('trackingPrendasContainer').parentElement.style.display = 'none';
-      document.getElementById('trackingTimelineSection').style.display = 'block';
+      DOMManipulator.setVisible('trackingPrendasContainer', false);
+      DOMManipulator.setVisible('trackingTimelineSection', true, 'block');
       
-      // Actualizar nombre de la prenda y número de recibo
-      console.log('[showPrendaTracking] Actualizar nombre de la prenda y número de recibo');
+      const displayInfo = TrackingHelper.getPrendaDisplayInfo(prenda);
+      DOMManipulator.setText('trackingPrendaName', displayInfo.nombre);
       
-      const nombreElement = document.getElementById('trackingPrendaName');
-      if (nombreElement) {
-        nombreElement.textContent = prenda.nombre_prenda || `Prenda ${prenda.id}`;
-      }
+      const esRecibosCostura = window.location.pathname.includes('/recibos-costura');
+      const areaActual = AreaResolver.resolve(prenda, window.currentOrderData, esRecibosCostura);
+      const reciboActivo = TrackingHelper.getActiveRecibo(prenda);
+      const numeroRecibo = reciboActivo 
+        ? TrackingHelper.formatReciboDisplay(reciboActivo)
+        : 'Sin recibo';
       
-      // Actualizar el header del recibo con el número más reciente
-      const reciboHeaderElement = document.getElementById('trackingPrendaReciboHeader');
-      if (reciboHeaderElement) {
-        // Resolver área actual (prioridad: último proceso > área en prenda > área del pedido)
-        let areaActual = '-';
-        if (prenda.ultimo_proceso_area) {
-          areaActual = prenda.ultimo_proceso_area;
-        } else if (prenda.area && String(prenda.area).trim() !== '') {
-          areaActual = prenda.area;
-        } else if (!window.location.pathname.includes('/recibos-costura') && window.currentOrderData?.area && String(window.currentOrderData.area).trim() !== '') {
-          areaActual = window.currentOrderData.area;
-        }
-
-        // Resolver encargado real (solo desde proceso)
-        const encargadoActual = prenda.ultimo_proceso_encargado || null;
-
-        // Debug: Ver qué datos tenemos
-        console.log('[DEBUG] Datos de prenda para recibo:', {
-          'ultimo_recibo_numero': prenda.ultimo_recibo_numero,
-          'consecutivos': prenda.consecutivos,
-          'consecutivos_length': prenda.consecutivos ? prenda.consecutivos.length : 'undefined',
-          'area_actual_resuelta': areaActual
-        });
-        
-        // Mostrar el número de recibo más reciente
-        const numeroRecibo = prenda.ultimo_recibo_numero;
-        if (numeroRecibo && numeroRecibo !== '-') {
-          reciboHeaderElement.textContent = areaActual && areaActual !== '-'
-            ? `Recibo #${numeroRecibo} - ${areaActual}`
-            : `Recibo #${numeroRecibo}`;
-          console.log('[DEBUG] Usando ultimo_recibo_numero:', numeroRecibo);
-        } else {
-          reciboHeaderElement.textContent = areaActual && areaActual !== '-'
-            ? `Sin recibo - ${areaActual}`
-            : 'Sin recibo';
-          console.log('[DEBUG] ultimo_recibo_numero vacío o inválido');
-        }
-      }
+      const reciboHeader = AreaResolver.getReciboHeader(numeroRecibo, areaActual);
+      DOMManipulator.setText('trackingPrendaReciboHeader', reciboHeader);
+      DOMManipulator.setText('trackingPrendaRecibo', numeroRecibo);
       
-      // Determinar número de recibo desde la tabla consecutivos_recibos_pedidos
-      let numeroRecibo = 'Sin recibo';
-      if (prenda.consecutivos && prenda.consecutivos.length > 0) {
-        console.log('[DEBUG] Procesando consecutivos:', prenda.consecutivos);
-        
-        // Buscar el primer recibo activo
-        const reciboActivo = prenda.consecutivos.find(r => r.activo === 1);
-        if (reciboActivo) {
-          numeroRecibo = `${reciboActivo.tipo_recibo} #${reciboActivo.consecutivo_actual}`;
-          console.log('[DEBUG] Recibo activo encontrado:', reciboActivo);
-        } else if (prenda.consecutivos[0]) {
-          // Si no hay activo, tomar el primero
-          const primerRecibo = prenda.consecutivos[0];
-          numeroRecibo = `${primerRecibo.tipo_recibo} #${primerRecibo.consecutivo_actual}`;
-          console.log('[DEBUG] Usando primer recibo:', primerRecibo);
-        }
-      } else {
-        console.log('[DEBUG] No hay consecutivos en la prenda');
-      }
-      
-      // Actualizar tanto el subtítulo del header como el del timeline
-      if (reciboHeaderElement) {
-        // Mantener el área en el header (si existe)
-        const match = String(numeroRecibo || '');
-        const areaActual = prenda?.ultimo_proceso_area
-          || prenda?.area
-          || (!window.location.pathname.includes('/recibos-costura') ? (window.currentOrderData?.area || '') : '');
-        reciboHeaderElement.textContent = areaActual && String(areaActual).trim() !== ''
-          ? `${match} - ${areaActual}`
-          : match;
-        console.log('[DEBUG] Header actualizado con:', numeroRecibo);
-      }
-      
-      const reciboElement = document.getElementById('trackingPrendaRecibo');
-      if (reciboElement) {
-        reciboElement.textContent = numeroRecibo;
-      }
-      
-      // Renderizar timeline de seguimiento
-      console.log('[showPrendaTracking] Renderizando timeline...');
       renderPrendaTrackingTimeline(prenda);
-      
       console.log('[showPrendaTracking] FINALIZADO - Seguimiento mostrado exitosamente');
       
     } catch (error) {
@@ -1884,34 +479,20 @@ const trackingTableStyles = `
     }
   };
 
-  // Renderizar timeline de seguimiento de prenda
   function renderPrendaTrackingTimeline(prenda) {
     const container = document.getElementById('trackingTimelineContainer');
     if (!container) return;
 
-    console.log('[renderPrendaTrackingTimeline] Renderizando timeline para prenda:', prenda);
-    console.log('[renderPrendaTrackingTimeline] Seguimientos por área en prenda:', prenda.seguimientos_por_area);
-
-    // Botón de volver (eliminado - ya está en el header)
     container.innerHTML = '';
-
-    // Renderizar seguimientos por área (procesos de producción)
     renderSeguimientosPorArea(prenda, container);
-
-    // Renderizar seguimientos por tipo de recibo (ELIMINADO - no mostrar recibos en modal de seguimiento)
-    // renderSeguimientosPorTipo(prenda, container);
-
-    // Si no hay seguimientos por área, mostrar mensaje
     if (!prenda.seguimientos_por_area || Object.keys(prenda.seguimientos_por_area).length === 0) {
       renderNoSeguimiento(container);
     }
   }
 
-  // Renderizar seguimientos por área (procesos)
   function renderSeguimientosPorArea(prenda, container) {
     const seguimientosPorArea = prenda.seguimientos_por_area || {};
     if (Object.keys(seguimientosPorArea).length > 0) {
-      // Crear header con título y mover el botón "Agregar Área"
       const headerContainer = document.createElement('div');
       headerContainer.style.display = 'flex';
       headerContainer.style.justifyContent = 'space-between';
@@ -1926,12 +507,10 @@ const trackingTableStyles = `
       seguimientosTitle.style.fontWeight = '700';
       seguimientosTitle.style.color = '#1f2937';
       
-      // Mover el botón original al header
       const originalBtn = document.getElementById('btnOpenAddProcesoModal');
 
       headerContainer.appendChild(seguimientosTitle);
       if (originalBtn) {
-        // Mover el botón original (evita duplicados)
         originalBtn.style.display = '';
         headerContainer.appendChild(originalBtn);
       }
@@ -1944,33 +523,15 @@ const trackingTableStyles = `
     }
   }
 
-  // Renderizar seguimientos por tipo de recibo
-  function renderSeguimientosPorTipo(prenda, container) {
-    const seguimientosPorTipo = prenda.seguimientos || {};
-    if (Object.keys(seguimientosPorTipo).length > 0) {
-      const recibosTitle = document.createElement('h4');
-      recibosTitle.textContent = 'Seguimiento por Tipo de Recibo';
-      recibosTitle.style.marginTop = '24px';
-      container.appendChild(recibosTitle);
-      
-      Object.entries(seguimientosPorTipo).forEach(([tipo, data]) => {
-        const seguimientoCard = createSeguimientoCard(tipo, data);
-        container.appendChild(seguimientoCard);
-      });
-    }
-  }
 
-  // Mostrar mensaje si no hay seguimientos
+
   function renderNoSeguimiento(container) {
     const noSeguimiento = document.createElement('div');
     noSeguimiento.className = 'tracking-no-seguimiento';
 
-    // Mantener el mensaje original
     noSeguimiento.innerHTML = '<p>No hay seguimientos registrados para esta prenda</p>';
     container.appendChild(noSeguimiento);
 
-    // Usar la UI original del tracking para mostrar el área actual y encargado si se puede
-    // (sin inventar una vista nueva). La edición/creación se hace con el botón "Agregar Área".
     const prenda = window.currentPrendaData || {};
     const esRecibosCostura = window.location.pathname.includes('/recibos-costura');
 
@@ -1982,12 +543,10 @@ const trackingTableStyles = `
       || (!esRecibosCostura && window.currentOrderData?.area && String(window.currentOrderData.area).trim() !== '' ? window.currentOrderData.area : null)
       || null;
 
-    // Encargado real solo desde procesos_prenda; fallback a /consecutivo-costura si está disponible
     const encargadoActual = prenda?.ultimo_proceso_encargado
       || window.currentConsecutivoCosturaData?.encargado
       || null;
 
-    // Si hay algo que mostrar, renderizar una tarjeta estándar de área.
     if (tieneProcesoReal && areaActual && typeof createAreaCard === 'function') {
       const estadoUltimo = prenda?.ultimo_proceso_estado || 'Pendiente';
       const estaActivo = estadoUltimo !== 'Completado';
@@ -2012,188 +571,109 @@ const trackingTableStyles = `
     }
   }
 
-  // Manejar eliminación de proceso
   window.handleEliminarProceso = async function(procesoId, areaName, event) {
-    // Detener propagación para evitar que se cierre el modal
     if (event) {
       event.stopPropagation();
     }
     
-    // Mostrar modal de confirmación
     showConfirmDeleteModal(procesoId, areaName);
   };
 
-  // Mostrar modal de confirmación para eliminar
   function showConfirmDeleteModal(procesoId, areaName) {
     console.log('[showConfirmDeleteModal] Mostrando confirmación para eliminar:', { procesoId, areaName });
     
-    const modal = document.getElementById('confirmDeleteModal');
-    const processNameSpan = document.getElementById('deleteProcessName');
+    DOMManipulator.setText('deleteProcessName', areaName);
+    ModalHelper.open('confirmDeleteModal', 10000001, true);
+    window.processToDelete = { id: procesoId, name: areaName };
+    setupConfirmDeleteModalListeners();
     
-    if (modal && processNameSpan) {
-      // Establecer el nombre del proceso
-      processNameSpan.textContent = areaName;
-      
-      // Mostrar el modal
-      modal.classList.add('show');
-      modal.style.setProperty('display', 'flex', 'important');
-      modal.style.setProperty('visibility', 'visible', 'important');
-      modal.style.setProperty('opacity', '1', 'important');
-      modal.style.setProperty('z-index', '10000001', 'important');
-      
-      // Guardar el ID del proceso a eliminar
-      window.processToDelete = { id: procesoId, name: areaName };
-      
-      // Configurar listeners
-      setupConfirmDeleteModalListeners();
-      
-      console.log('[showConfirmDeleteModal] Modal de confirmación mostrado');
-    } else {
-      console.error('[showConfirmDeleteModal] No se encontró el modal o el span del nombre');
-    }
+    console.log('[showConfirmDeleteModal] Modal de confirmación mostrado');
   }
 
-  // Configurar listeners del modal de confirmación
   function setupConfirmDeleteModalListeners() {
-    // Botón cancelar
-    const btnCancel = document.getElementById('btnCancelDelete');
-    if (btnCancel) {
-      btnCancel.onclick = closeConfirmDeleteModal;
-    }
-    
-    // Botón cerrar (X)
-    const btnClose = document.getElementById('closeConfirmDeleteModal');
-    if (btnClose) {
-      btnClose.onclick = closeConfirmDeleteModal;
-    }
-    
-    // Botón confirmar eliminar
-    const btnConfirm = document.getElementById('btnConfirmDelete');
-    if (btnConfirm) {
-      btnConfirm.onclick = executeDeleteProcess;
-    }
-    
-    // Cerrar al hacer clic en el overlay
-    const overlay = document.querySelector('.confirm-delete-overlay');
+    DOMManipulator.addEventListeners([
+      {
+        elementId: 'btnCancelDelete',
+        eventName: 'click',
+        handler: closeConfirmDeleteModal
+      },
+      {
+        elementId: 'closeConfirmDeleteModal',
+        eventName: 'click',
+        handler: closeConfirmDeleteModal
+      },
+      {
+        elementId: 'btnConfirmDelete',
+        eventName: 'click',
+        handler: executeDeleteProcess
+      }
+    ]);
+
+    const overlay = DOMManipulator.querySelector('.confirm-delete-overlay');
     if (overlay) {
-      overlay.onclick = closeConfirmDeleteModal;
+      overlay.addEventListener('click', closeConfirmDeleteModal);
     }
   }
 
-  // Cerrar modal de confirmación
   function closeConfirmDeleteModal() {
-    const modal = document.getElementById('confirmDeleteModal');
-    if (modal) {
-      modal.classList.remove('show');
-      modal.style.display = 'none';
-      window.processToDelete = null;
-    }
+    ModalHelper.close('confirmDeleteModal');
+    window.processToDelete = null;
   }
 
-  // Ejecutar la eliminación del proceso
   async function executeDeleteProcess() {
     if (!window.processToDelete) return;
     
-    // Mostrar indicador de carga
-    const btnContent = document.getElementById('deleteButtonContent');
-    const btnLoading = document.getElementById('deleteButtonLoading');
-    const btnConfirm = document.getElementById('btnConfirmDelete');
-    
-    if (btnContent && btnLoading && btnConfirm) {
-      btnContent.style.display = 'none';
-      btnLoading.style.display = 'flex';
-      btnConfirm.disabled = true;
-    }
+    LoadingIndicator.show('btnConfirmDelete');
     
     const { id: procesoId, name: areaName } = window.processToDelete;
     
     try {
       console.log('[executeDeleteProcess] Eliminando proceso:', { procesoId, areaName });
 
-      const response = await fetch('/seguimiento-proceso/' + procesoId, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al eliminar proceso');
-      }
-
-      const result = await response.json();
-      console.log('[executeDeleteProcess] Proceso eliminado:', result);
-
-      // Cerrar modal de confirmación
+      const result = await ApiService.proceso.eliminar(procesoId);
       closeConfirmDeleteModal();
-
-      // Recargar seguimientos de la prenda
-      console.log('[executeDeleteProcess] Recargando seguimientos para orden:', window.currentOrderData.id);
       await loadPrendasWithTracking(window.currentOrderData.id);
 
-      // Refrescar consecutivo/area/encargado/fechas (fallback del modal)
       try {
         if (window.location.pathname.includes('/recibos-costura') && window.currentOrderData?.id && window.currentPrendaData?.id) {
-          const url = `/registros/${window.currentOrderData.id}/consecutivo-costura?prenda_id=${window.currentPrendaData.id}`;
-          const resp = await fetch(url);
-          if (resp.ok) {
-            window.currentConsecutivoCosturaData = await resp.json();
-          }
+          window.currentConsecutivoCosturaData = await ApiService.ordenes.getConsecutivoCostura(window.currentOrderData.id, window.currentPrendaData.id);
         }
       } catch (e) {
         console.warn('[executeDeleteProcess] No se pudo refrescar consecutivo-costura:', e);
       }
-      
-      console.log('[executeDeleteProcess] Seguimientos recargados');
-      
-      // Buscar la prenda actualizada en los datos recargados
       if (window.prendasData && window.prendasData.length > 0 && window.currentPrendaData) {
         const prendaActualizada = window.prendasData.find(p => p.id == window.currentPrendaData.id);
         if (prendaActualizada) {
           window.currentPrendaData = prendaActualizada;
-          console.log('[executeDeleteProcess] Prenda actualizada encontrada:', window.currentPrendaData);
         }
       }
       
-      // Actualizar vista actual
       if (window.currentPrendaData && window.currentPrendaData.id) {
-        console.log('[executeDeleteProcess] Actualizando timeline con prenda actualizada:', window.currentPrendaData);
         renderPrendaTrackingTimeline(window.currentPrendaData);
       } else {
-        console.log('[executeDeleteProcess] No hay currentPrendaData válida, intentando obtener del DOM');
-        // Si no hay currentPrendaData, intentar obtener la primera prenda del DOM
         const prendaCards = document.querySelectorAll('.prenda-card');
         if (prendaCards.length > 0) {
           const firstCard = prendaCards[0];
           const prendaId = parseInt(firstCard.dataset.prendaId);
-          
-          // Buscar en prendasData
           let prendaParaRender = null;
           if (window.prendasData) {
             prendaParaRender = window.prendasData.find(p => p.id == prendaId);
           }
           
           if (prendaParaRender) {
-            console.log('[executeDeleteProcess] Usando prendaData de prendasData:', prendaParaRender);
             window.currentPrendaData = prendaParaRender;
             renderPrendaTrackingTimeline(prendaParaRender);
           } else {
-            // Fallback: crear objeto con el ID
             const prendaData = {
               id: prendaId,
               nombre_prenda: firstCard.querySelector('.prenda-name')?.textContent,
             };
-            console.log('[executeDeleteProcess] Usando prendaData del DOM:', prendaData);
             renderPrendaTrackingTimeline(prendaData);
           }
         }
       }
 
-      // Mostrar mensaje de éxito
       showSuccess('Proceso eliminado correctamente');
-      
-      // Actualizar el área en la tabla de recibos-costura si estamos en esa página
       actualizarAreaEnTablaRecibos();
 
     } catch (error) {
@@ -2201,27 +681,13 @@ const trackingTableStyles = `
       showError('Error al eliminar proceso: ' + error.message);
       closeConfirmDeleteModal();
     } finally {
-      // Ocultar indicador de carga
-      const btnContent = document.getElementById('deleteButtonContent');
-      const btnLoading = document.getElementById('deleteButtonLoading');
-      const btnConfirm = document.getElementById('btnConfirmDelete');
-      
-      if (btnContent && btnLoading && btnConfirm) {
-        btnContent.style.display = 'flex';
-        btnLoading.style.display = 'none';
-        btnConfirm.disabled = false;
-      }
+      LoadingIndicator.hide('btnConfirmDelete');
     }
   }
   
-  // Actualizar el área en la tabla de recibos-costura
   async function actualizarAreaEnTablaRecibos() {
     try {
-      console.log('[actualizarAreaEnTablaRecibos] Verificando si estamos en recibos-costura');
-      
-      // Verificar si estamos en la página de recibos-costura
       if (!window.location.pathname.includes('/recibos-costura')) {
-        console.log('[actualizarAreaEnTablaRecibos] No estamos en recibos-costura, omitiendo actualización');
         return;
       }
 
@@ -2239,34 +705,18 @@ const trackingTableStyles = `
       }
 
       const row = findReciboCosturaRow(pedidoId, prendaId, numeroRecibo);
-      if (!row) {
-        console.warn('[actualizarAreaEnTablaRecibos] No se encontró fila a actualizar', {
-          pedidoId,
-          prendaId,
-          numeroRecibo
-        });
-        return;
-      }
+      if (!row) return;
 
-      const url = `/registros/${pedidoId}/consecutivo-costura?prenda_id=${encodeURIComponent(prendaId)}`;
-      const resp = await fetch(url);
-      if (!resp.ok) {
-        throw new Error(`Error HTTP ${resp.status} al refrescar consecutivo-costura`);
-      }
-      const data = await resp.json();
-      console.log('[actualizarAreaEnTablaRecibos] Respuesta consecutivo-costura:', data);
-
+      const data = await ApiService.ordenes.getConsecutivoCostura(pedidoId, prendaId);
       if (!data || !data.success) {
         return;
       }
 
-      // Área (columna 3)
       const areaBadge = row.querySelector('td:nth-child(3) .badge');
       if (areaBadge && data.area) {
         areaBadge.textContent = data.area;
       }
 
-      // Encargado orden (última columna)
       const encargadoSpan = row.querySelector('td:last-child span');
       if (encargadoSpan) {
         encargadoSpan.textContent = (data.encargado && String(data.encargado).trim() !== '')
@@ -2296,61 +746,34 @@ const trackingTableStyles = `
     return null;
   }
 
-  // Manejar edición de proceso
   window.handleEditarProceso = function(procesoId, areaName, processData, event) {
-    // Detener propagación para evitar que se cierre el modal
-    if (event) {
-      event.stopPropagation();
+    if (event) event.stopPropagation();
+    log('handleEditarProceso', 'Editando', { procesoId, areaName });
+    
+    const elems = {
+      area: document.getElementById('procesoArea'),
+      estado: document.getElementById('procesoEstado'),
+      fechaInicio: document.getElementById('procesoFechaInicio'),
+      encargado: document.getElementById('procesoEncargado'),
+      observaciones: document.getElementById('procesoObservaciones')
+    };
+    
+    if (elems.area) elems.area.value = processData.area || areaName;
+    if (elems.estado) elems.estado.value = processData.estado || 'Pendiente';
+    if (elems.fechaInicio && processData.fecha_inicio) {
+      const d = new Date(processData.fecha_inicio);
+      elems.fechaInicio.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
+    if (elems.encargado) elems.encargado.value = processData.encargado || '';
+    if (elems.observaciones) elems.observaciones.value = processData.observaciones || '';
     
-    console.log('[handleEditarProceso] Editando proceso:', { procesoId, areaName, processData });
-    
-    // Verificar si los elementos del formulario existen
-    const procesoArea = document.getElementById('procesoArea');
-    const procesoEstado = document.getElementById('procesoEstado');
-    const procesoFechaInicio = document.getElementById('procesoFechaInicio');
-    const procesoEncargado = document.getElementById('procesoEncargado');
-    const procesoObservaciones = document.getElementById('procesoObservaciones');
-    
-    console.log('[handleEditarProceso] Elementos del formulario:', {
-      procesoArea: !!procesoArea,
-      procesoEstado: !!procesoEstado,
-      procesoFechaInicio: !!procesoFechaInicio,
-      procesoEncargado: !!procesoEncargado,
-      procesoObservaciones: !!procesoObservaciones
-    });
-    
-    // Llenar el formulario con los datos actuales
-    if (procesoArea) procesoArea.value = processData.area || areaName;
-    if (procesoEstado) procesoEstado.value = processData.estado || 'Pendiente';
-    if (procesoFechaInicio) {
-      // Formatear la fecha para el input date (YYYY-MM-DD)
-      const fechaInicio = processData.fecha_inicio;
-      if (fechaInicio) {
-        const date = new Date(fechaInicio);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        procesoFechaInicio.value = `${year}-${month}-${day}`;
-      }
-    }
-    if (procesoEncargado) procesoEncargado.value = processData.encargado || '';
-    if (procesoObservaciones) procesoObservaciones.value = processData.observaciones || '';
-    
-    // Guardar el ID del proceso que se está editando
     window.editingProcessId = procesoId;
-    
-    // Cambiar el texto del botón a "Actualizar"
-    const btnConfirmar = document.getElementById('btnConfirmAddProceso');
-    if (btnConfirmar) {
-      btnConfirmar.textContent = 'Actualizar Proceso';
-      btnConfirmar.onclick = function() { handleActualizarProceso(procesoId); };
+    const btn = document.getElementById('btnConfirmAddProceso');
+    if (btn) {
+      btn.textContent = 'Actualizar Proceso';
+      btn.onclick = () => handleActualizarProceso(procesoId);
     }
-    
-    // Abrir el modal de agregar/editar proceso
     openAddProcesoModal();
-    
-    console.log('[handleEditarProceso] Modal de agregar/editar proceso abierto');
   };
 
   // Manejar actualización de proceso
@@ -2376,26 +799,13 @@ const trackingTableStyles = `
         procesoId, area, estado, fechaInicio, encargado, observaciones
       });
 
-      const response = await fetch('/seguimiento-proceso/' + procesoId, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-        },
-        body: JSON.stringify({
-          area: area,
-          estado: estado,
-          fecha_inicio: fechaInicio || null,
-          encargado: encargado,
-          observaciones: observaciones
-        })
+      const result = await ApiService.proceso.actualizar(procesoId, {
+        area: area,
+        estado: estado,
+        fecha_inicio: fechaInicio || null,
+        encargado: encargado,
+        observaciones: observaciones
       });
-
-      if (!response.ok) {
-        throw new Error('Error al actualizar proceso');
-      }
-
-      const result = await response.json();
       console.log('[handleActualizarProceso] Proceso actualizado:', result);
 
       // Limpiar formulario y resetear botón
@@ -2469,12 +879,11 @@ const trackingTableStyles = `
     window.editingProcessId = null;
   }
 
-  // Crear tarjeta de área/proceso
   function createAreaCard(area, data) {
     const card = document.createElement('div');
     card.className = `tracking-area-card ${data.esta_activo ? 'pending' : 'completed'}`;
     
-    const iconSvg = getIconSvg(data.icono || 'description');
+    const iconSvg = IconSvgProvider.get(data.icono || 'description');
     
     card.innerHTML = `
       <div class="tracking-area-name">
@@ -2530,7 +939,6 @@ const trackingTableStyles = `
     return card;
   }
 
-  // Crear tarjeta de seguimiento
   function createSeguimientoCard(tipo, data) {
     const card = document.createElement('div');
     card.className = 'tracking-area-card';
@@ -2578,53 +986,21 @@ const trackingTableStyles = `
     return card;
   }
 
-  // Obtener SVG del icono
-  function getIconSvg(iconName) {
-    const icons = {
-      'description': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>',
-      'inventory_2': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"></path></svg>',
-      'content_cut': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"></circle><circle cx="18" cy="18" r="3"></circle><path d="M20.41 3.59l-7.06 7.06a2 2 0 01-2.83 0l-2.12-2.12a2 2 0 010-2.83l7.06-7.06a2 2 0 012.83 0l2.12 2.12a2 2 0 010 2.83z"></path></svg>',
-      'brush': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.71 4.63l-1.34-1.34a1 1 0 00-1.41 0L9 12.59 10.41 14l8.3-8.3a1 1 0 000-1.41z"></path><path d="M18 13l3 3"></path><path d="M3 21l9-9"></path></svg>',
-      'print': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>',
-      'dry_cleaning': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v8"></path><path d="M8 12h8"></path></svg>',
-      'checkroom': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7l-10-5z"></path><path d="M12 22V12"></path></svg>',
-      'construction': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 21l6-6m0 0V9m0 6h6m-6-6l6-6m6 0l6 6m0 0v6m0-6h-6m6 6l-6 6"></path></svg>',
-      'local_laundry_service': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7l-10-5z"></path><circle cx="12" cy="13" r="4"></circle></svg>',
-      'handyman': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v7m0 0l3-3m-3 3l-3-3"></path><path d="M12 22v-7m0 0l3 3m-3-3l-3 3"></path><path d="M2 12h7m0 0l-3-3m3 3l-3 3"></path><path d="M22 12h-7m0 0l3-3m-3 3l3 3"></path></svg>',
-      'verified': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
-      'local_shipping': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><polyline points="14,2 14,8 20,8"></polyline><line x1="16" y1="13" x2="16" y2="21"></line><line x1="8" y1="13" x2="8" y2="21"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>',
-      'directions_car': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17l2-2h8l2 2M5 7l2 2h8l2-2"></path><path d="M7 12h10"></path></svg>',
-      'highlight': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11H3m6 0v6m0-6l-6 6m12 0h6m-6 0v6m0-6l6 6"></path></svg>',
-      'search': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>'
-    };
-    
-    return icons[iconName] || icons.description;
-  }
 
-  // Mostrar vista de prendas (cerrar modal de seguimiento y volver a prendas)
+
   function showPrendasView() {
-    console.log('[showPrendasView] Cerrando modal de seguimiento y volviendo a prendas...');
-    
-    // Cerrar el modal de seguimiento
     closeTrackingModal();
-    
-    // Mostrar el overlay de selección de prendas
     showPrendasSelector();
-    
-    console.log('[showPrendasView] Modal de seguimiento cerrado y selector de prendas mostrado');
   }
 
-  // Formatear fecha
   function formatDate(dateString) {
     if (!dateString) return null;
     
     try {
-      // Si el formato es d/m/Y, convertirlo a Y-m-d para el constructor Date
       if (typeof dateString === 'string' && dateString.includes('/')) {
         const parts = dateString.split('/');
         if (parts.length === 3) {
           const [day, month, year] = parts;
-          // Crear fecha en formato Y-m-d
           const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
           const date = new Date(isoDate);
           return date.toLocaleDateString('es-ES', {
@@ -2635,7 +1011,6 @@ const trackingTableStyles = `
         }
       }
       
-      // Para formatos estándar (ISO, etc.)
       const date = new Date(dateString);
       return date.toLocaleDateString('es-ES', {
         day: '2-digit',
@@ -2643,210 +1018,65 @@ const trackingTableStyles = `
         year: 'numeric'
       });
     } catch (error) {
-      console.warn('[formatDate] Error formateando fecha:', dateString, error);
       return dateString;
     }
   }
 
-  // Mostrar error
   function showError(message) {
-    console.error('[showError] ' + message);
-    // Usar el sistema global de toasts
-    if (window.showToast) {
-      window.showToast(message, 'error');
-    }
+    NotificationService.error(message, { fallbackAlert: false });
   }
 
-  // Manejar agregar proceso
   async function handleAgregarProceso() {
     try {
-      // Mostrar indicador de carga
-      const btnContent = document.getElementById('addProcesoButtonContent');
-      const btnLoading = document.getElementById('addProcesoButtonLoading');
-      const btnConfirm = document.getElementById('btnConfirmAddProceso');
-      
-      if (btnContent && btnLoading && btnConfirm) {
-        btnContent.style.display = 'none';
-        btnLoading.style.display = 'flex';
-        btnConfirm.disabled = true;
-      }
-
+      LoadingIndicator.show('btnConfirmAddProceso');
       const area = document.getElementById('procesoArea').value;
-      
-      // Obtener encargado del campo visible (select o input)
-      // Verificar primero si el input está visible, si no, intentar del select
       const inputEncargado = document.getElementById('procesoEncargado');
       const selectEncargado = document.getElementById('procesoEncargadoSelect');
-      
-      let encargado = '';
-      
-      // Si el input está visible (display != 'none'), usar su valor
-      if (inputEncargado && inputEncargado.style.display !== 'none') {
-        encargado = inputEncargado.value;
-      } 
-      // Si el select está visible, usar su valor
-      else if (selectEncargado && selectEncargado.style.display !== 'none') {
-        encargado = selectEncargado.value;
-      }
-      // Fallback: intentar ambos en orden
-      else {
-        encargado = inputEncargado?.value || selectEncargado?.value || '';
-      }
-      
-      encargado = encargado.toUpperCase();
+      const encargado = (inputEncargado?.style.display !== 'none' ? inputEncargado?.value : selectEncargado?.value || '').toUpperCase();
 
-      if (!area) {
-        showError('Por favor selecciona un área/proceso');
-        // Ocultar indicador de carga
-        if (btnContent && btnLoading && btnConfirm) {
-          btnContent.style.display = 'flex';
-          btnLoading.style.display = 'none';
-          btnConfirm.disabled = false;
-        }
+      const validation = ValidationService.proceso.validar(area, encargado, window.currentPrendaData, window.currentOrderData);
+      if (!validation.isValid) {
+        showError(validation.error);
+        LoadingIndicator.hide('btnConfirmAddProceso');
         return;
       }
 
-      if (!encargado.trim()) {
-        showError('Por favor ingresa el nombre del encargado');
-        // Ocultar indicador de carga
-        if (btnContent && btnLoading && btnConfirm) {
-          btnContent.style.display = 'flex';
-          btnLoading.style.display = 'none';
-          btnConfirm.disabled = false;
-        }
-        return;
-      }
-
-      if (!window.currentPrendaData || !window.currentOrderData) {
-        showError('No hay datos de la prenda o pedido');
-        // Ocultar indicador de carga
-        if (btnContent && btnLoading && btnConfirm) {
-          btnContent.style.display = 'flex';
-          btnLoading.style.display = 'none';
-          btnConfirm.disabled = false;
-        }
-        return;
-      }
-
-      console.log('[handleAgregarProceso] Agregando proceso:', {
-        area,
-        encargado,
+      const result = await ApiService.proceso.guardar({
+        pedido_produccion_id: window.currentOrderData.numero_pedido,
         prenda_id: window.currentPrendaData.id,
-        currentOrderData: window.currentOrderData
+        area, encargado, estado: 'Pendiente'
       });
-
-      // Verificar que los datos necesarios existan
-      console.log('[handleAgregarProceso] Verificando estructura de datos:', {
-        currentOrderData: window.currentOrderData,
-        'currentOrderData.numero_pedido': window.currentOrderData?.numero_pedido,
-        'currentOrderData.pedido': window.currentOrderData?.pedido
-      });
-      
-      if (!window.currentOrderData) {
-        throw new Error('No hay datos del pedido');
-      }
-      
-      if (!window.currentOrderData.numero_pedido) {
-        throw new Error('No hay número de pedido');
-      }
-
-      // Enviar datos al backend
-      // Estado y fecha_inicio se establecen automáticamente en el backend
-      const response = await fetch('/seguimiento-proceso/guardar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-        },
-        body: JSON.stringify({
-          pedido_produccion_id: window.currentOrderData.numero_pedido,
-          prenda_id: window.currentPrendaData.id,
-          area: area,
-          encargado: encargado,
-          estado: 'Pendiente'
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al agregar proceso');
-      }
-
-      const result = await response.json();
-      console.log('[handleAgregarProceso] Proceso guardado:', result);
-
-      // Limpiar formulario
       limpiarFormularioProceso();
-
-      // Cerrar modal de agregar proceso
       const modal = document.getElementById('addProcesoModal');
-      if (modal) {
-        modal.classList.remove('show');
-        modal.style.display = 'none';
-      }
+      if (modal) modal.classList.remove('show'), modal.style.display = 'none';
 
-      // Actualizar datos de la prenda con la respuesta del backend
-      if (result.data && result.data.prenda) {
-        currentPrendaData = result.data.prenda;
-        console.log('[handleAgregarProceso] Prenda actualizada desde backend:', currentPrendaData);
-        
-        // Renderizar timeline con los datos actualizados
-        renderPrendaTrackingTimeline(currentPrendaData);
+      if (result.data?.prenda) {
+        window.currentPrendaData = result.data.prenda;
+        renderPrendaTrackingTimeline(window.currentPrendaData);
       } else {
-        // Si no vienen datos de la prenda, recargar desde el endpoint
-        console.log('[handleAgregarProceso] Recargando datos desde endpoint...');
-        await loadPrendasWithTracking(currentOrderData.id);
-        
-        // Buscar la prenda actualizada en los datos cargados
-        if (window.prendasData && window.prendasData.length > 0) {
-          const prendaActualizada = window.prendasData.find(p => p.id == currentPrendaData.id);
+        await loadPrendasWithTracking(window.currentOrderData.id);
+        if (window.prendasData?.length > 0) {
+          const prendaActualizada = window.prendasData.find(p => p.id == window.currentPrendaData.id);
           if (prendaActualizada) {
-            currentPrendaData = prendaActualizada;
-            renderPrendaTrackingTimeline(currentPrendaData);
+            window.currentPrendaData = prendaActualizada;
+            renderPrendaTrackingTimeline(window.currentPrendaData);
           }
         }
       }
-
-      // ✅ Mostrar mensaje diferente según si fue creado o actualizado
-      const mensaje = result.action === 'actualizado' 
-        ? 'Proceso actualizado correctamente' 
-        : 'Proceso agregado correctamente';
-      showSuccess(mensaje);
-
-      // Actualizar la fila en la tabla de recibos-costura si estamos en esa página
+      showSuccess(result.action === 'actualizado' ? 'Actualizado correctamente' : 'Agregado correctamente');
       await actualizarAreaEnTablaRecibos();
-
     } catch (error) {
-      console.error('[handleAgregarProceso] Error:', error);
-      showError('Error al agregar proceso: ' + error.message);
+      err('handleAgregarProceso', 'Error', error);
+      showError('Error: ' + error.message);
     } finally {
-      // Ocultar indicador de carga
-      const btnContent = document.getElementById('addProcesoButtonContent');
-      const btnLoading = document.getElementById('addProcesoButtonLoading');
-      const btnConfirm = document.getElementById('btnConfirmAddProceso');
-      
-      if (btnContent && btnLoading && btnConfirm) {
-        btnContent.style.display = 'flex';
-        btnLoading.style.display = 'none';
-        btnConfirm.disabled = false;
-      }
+      LoadingIndicator.hide('btnConfirmAddProceso');
     }
   }
 
-  // Limpiar formulario de proceso
-  function limpiarFormularioProceso() {
-    document.getElementById('procesoArea').value = '';
-    document.getElementById('procesoEncargado').value = '';
-  }
-
-  // Mostrar mensaje de éxito
   function showSuccess(message) {
-    // Usar el sistema global de toasts
-    if (window.showToast) {
-      window.showToast(message, 'success');
-    }
+    NotificationService.success(message);
   }
 
-  // Inicializar cuando el DOM esté listo
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initTrackingModalListeners);
   } else {

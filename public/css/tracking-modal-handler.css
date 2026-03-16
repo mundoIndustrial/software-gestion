@@ -1,0 +1,781 @@
+/* ===================================
+   Tracking Modal Handler Styles
+   Estilos para modal de seguimiento de prendas
+   =================================== */
+
+.tracking-prenda-table {
+  margin: 8px 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tracking-prenda-table:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.tracking-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 13px;
+}
+
+.tracking-table-header {
+  background: linear-gradient(135deg, #1e40af 0%, #3730a3 100%);
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  text-align: center;
+  padding: 12px 8px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.tracking-table-row:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.tracking-table-row:hover {
+  background-color: #f3f4f6;
+}
+
+.tracking-table-label {
+  padding: 8px 12px;
+  font-weight: 600;
+  color: #374151;
+  border-right: 1px solid #e5e7eb;
+  width: 35%;
+  text-align: left;
+  background-color: #f8fafc;
+}
+
+.tracking-table-value {
+  padding: 8px 12px;
+  color: #1f2937;
+  text-align: left;
+  font-weight: 500;
+}
+
+.tracking-procesos-lista {
+  padding: 8px 12px;
+  background: #fef3c7;
+  border-left: 3px solid #f59e0b;
+}
+
+.tracking-proceso-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid #fde68a;
+}
+
+.tracking-proceso-item:last-child {
+  border-bottom: none;
+}
+
+.proceso-nombre {
+  font-weight: 500;
+  color: #92400e;
+}
+
+.proceso-estado {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 12px;
+  background: #fbbf24;
+  color: #78350f;
+  font-weight: 600;
+}
+
+.tracking-bodega-indicador {
+  padding: 8px 12px;
+  background: #dcfce7;
+  border-left: 3px solid #22c55e;
+  color: #166534;
+  font-weight: 600;
+  font-size: 12px;
+  text-align: center;
+}
+
+.tracking-seguimiento-badge {
+  display: inline-block;
+  margin: 2px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tracking-seguimiento-badge.completado {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.tracking-seguimiento-badge.pendiente {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+/* ===== MODAL Y OVERLAY DE PRENDAS ===== */
+.tracking-prendas-selector-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.tracking-prendas-selector-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.tracking-prendas-selector-content {
+  background: white;
+  border-radius: 12px;
+  max-width: 95vw;
+  max-height: 95vh;
+  width: 1200px;
+  height: auto;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  transform: scale(0.95);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.tracking-prendas-selector-overlay.show .tracking-prendas-selector-content {
+  transform: scale(1);
+}
+
+.tracking-prendas-selector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.tracking-prendas-selector-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 8px;
+  color: white;
+  margin-right: 16px;
+}
+
+.tracking-prendas-selector-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.tracking-prendas-selector-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+  flex: 1;
+}
+
+.tracking-prendas-selector-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #ef4444;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tracking-prendas-selector-close:hover {
+  background: #dc2626;
+  transform: scale(1.1);
+}
+
+.tracking-prendas-selector-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.tracking-prendas-selector-body {
+  padding: 24px;
+  overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  min-height: 0;
+}
+
+.tracking-prendas-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.tracking-prendas-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-width: 140px;
+  flex-shrink: 0;
+}
+
+.tracking-prendas-info-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tracking-prendas-info-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.tracking-prendas-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+}
+
+.tracking-prendas-list-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.tracking-prendas-selector-container {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: visible;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+/* ===== TABLA DE PRENDAS (ESTILO REPORTE) ===== */
+.prendas-table-container {
+  background: white;
+  border-radius: 8px;
+  overflow: visible;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.prendas-report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 13px;
+  background: white;
+  table-layout: fixed;
+}
+
+.prendas-report-table thead {
+  background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+  color: white;
+}
+
+.prendas-report-table th {
+  padding: 12px 8px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  vertical-align: middle;
+}
+
+.prendas-report-table th:first-child {
+  text-align: left;
+  width: 25%;
+}
+
+.prendas-report-table th:nth-child(2) {
+  width: 10%;
+}
+
+.prendas-report-table th:nth-child(3) {
+  width: 25%;
+}
+
+.prendas-report-table th:nth-child(4) {
+  width: 12%;
+}
+
+.prendas-report-table th:nth-child(5) {
+  width: 12%;
+}
+
+.prendas-report-table th:nth-child(6) {
+  width: 16%;
+  border-right: none;
+}
+
+.prendas-table-row:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.prendas-table-row:hover {
+  background-color: #f3f4f6;
+}
+
+.prendas-table-cell {
+  padding: 12px 8px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
+  text-align: center;
+  word-wrap: break-word;
+  overflow: hidden;
+}
+
+.prendas-table-cell:first-child {
+  text-align: left;
+}
+
+.prendas-name-cell {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.prendas-name {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.bodega-badge {
+  display: inline-block;
+  font-size: 9px;
+  padding: 2px 8px;
+  background: #f59e0b;
+  color: #92400e;
+  border-radius: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.confeciona-badge {
+  display: inline-block;
+  font-size: 9px;
+  padding: 2px 8px;
+  background: #10b981;
+  color: #ffffff;
+  border-radius: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.procesos-cell {
+  text-align: left;
+}
+
+.procesos-info {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #6b7280;
+}
+
+.estado-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.estado-badge.estado-completado {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.estado-badge.estado-en-ejecución {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+.estado-badge.estado-en-ejecucion {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+.estado-badge.estado-no-iniciado {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+.estado-badge.estado-pendiente_cartera {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.estado-badge.estado-rechazado_cartera {
+  background: #fecaca;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.estado-badge.estado-pendiente_insumos {
+  background: #fed7aa;
+  color: #9a3412;
+  border: 1px solid #fdba74;
+}
+
+.estado-badge.estado-devuelto_a_asesora {
+  background: #e9d5ff;
+  color: #6b21a8;
+  border: 1px solid #d8b4fe;
+}
+
+.estado-badge.estado-pendiente_supervisor {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.estado-badge.estado-pendiente {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.estado-badge.estado-sin-procesos {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+.acciones-cell {
+  text-align: center;
+}
+
+.btn-ver-seguimiento {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+  min-width: 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-ver-seguimiento::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-ver-seguimiento:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-ver-seguimiento:hover::before {
+  left: 100%;
+}
+
+.btn-ver-seguimiento:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.btn-ver-seguimiento.disabled {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-ver-seguimiento.disabled:hover {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-ver-seguimiento.disabled:active {
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-ver-seguimiento.disabled svg {
+  opacity: 0.7;
+}
+
+.btn-ver-seguimiento svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1200px) {
+  .tracking-prendas-selector-content {
+    max-width: 98vw;
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .prendas-report-table {
+    font-size: 11px;
+  }
+  
+  .prendas-report-table th {
+    padding: 8px 4px;
+    font-size: 10px;
+  }
+  
+  .prendas-table-cell {
+    padding: 8px 4px;
+  }
+  
+  .prendas-name {
+    font-size: 12px;
+  }
+  
+  .btn-ver-seguimiento {
+    padding: 6px 12px;
+    font-size: 11px;
+    min-width: 70px;
+    gap: 4px;
+  }
+  
+  .btn-ver-seguimiento svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .tracking-prendas-selector-overlay {
+    padding: 10px;
+  }
+  
+  .tracking-prendas-selector-content {
+    max-width: 95vw;
+    width: 100%;
+    margin: 0;
+  }
+  
+  .tracking-prendas-selector-header {
+    padding: 16px 20px;
+  }
+  
+  .tracking-prendas-selector-icon {
+    width: 32px;
+    height: 32px;
+    margin-right: 12px;
+  }
+  
+  .tracking-prendas-selector-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .tracking-prendas-selector-title {
+    font-size: 16px;
+  }
+  
+  .tracking-prendas-selector-body {
+    padding: 16px;
+    gap: 16px;
+  }
+  
+  .tracking-prendas-info {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
+    width: 100%;
+  }
+  
+  .tracking-prendas-list {
+    width: 100%;
+    min-height: 0;
+  }
+  
+  .tracking-prendas-selector-container {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+  
+  .prendas-table-container {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .tracking-prendas-selector-overlay {
+    padding: 5px;
+  }
+  
+  .tracking-prendas-selector-content {
+    max-width: 98vw;
+    width: 100%;
+    border-radius: 8px;
+  }
+  
+  .tracking-prendas-selector-header {
+    padding: 12px 16px;
+  }
+  
+  .tracking-prendas-selector-icon {
+    width: 28px;
+    height: 28px;
+    margin-right: 8px;
+  }
+  
+  .tracking-prendas-selector-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .tracking-prendas-selector-title {
+    font-size: 14px;
+  }
+  
+  .tracking-prendas-selector-body {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .tracking-prendas-info {
+    padding: 8px;
+    gap: 8px;
+    width: 100%;
+  }
+  
+  .tracking-prendas-list {
+    width: 100%;
+    min-height: 0;
+  }
+  
+  .tracking-prendas-selector-container {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+  
+  .prendas-table-container {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+  
+  .tracking-prendas-info-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .tracking-prendas-list-title {
+    font-size: 14px;
+    margin: 0 0 12px 0;
+    padding-bottom: 6px;
+  }
+  
+  .prendas-report-table {
+    font-size: 10px;
+  }
+  
+  .prendas-report-table th {
+    padding: 6px 2px;
+    font-size: 9px;
+  }
+  
+  .prendas-table-cell {
+    padding: 6px 2px;
+  }
+  
+  .prendas-name {
+    font-size: 11px;
+  }
+  
+  .btn-ver-seguimiento {
+    padding: 4px 6px;
+    font-size: 10px;
+    min-width: 50px;
+    gap: 2px;
+  }
+  
+  .btn-ver-seguimiento svg {
+    width: 12px;
+    height: 12px;
+  }
+}
