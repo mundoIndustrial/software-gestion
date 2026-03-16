@@ -1390,8 +1390,8 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                         
                         ${tallasResumen ? `
                         <div class="section">
-                          <h4>TALLAS:</h4>
-                          <div class="tallas-resumen">${esc(tallasResumen)}</div>
+                          ${mostrarTituloTallas ? '<h4>TALLAS:</h4>' : ''}
+                          <div class="tallas-resumen" style="color: inherit; font-weight: 900; white-space: pre-line;">${contenidoTallasFinal}</div>
                         </div>
                         ` : '<!-- SIN TALLAS - tallasResumen está vacío -->'}
                         
@@ -1472,39 +1472,12 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                       <h4>UBICACIONES:</h4>
                       <div class="ubicaciones-list">${ubicHtml}</div>
                     </div>
-                    ${tallasResumen ? (() => {
-                        let htmlFinal = '';
-                        let mostrarTituloTallas = true;
-                        let contenidoTallas = tallasResumen;
-                        
-                        // Procesar marcadores especiales
-                        if (tallasResumen.startsWith('SOBREMEDIDA_SIN_TALLAS:')) {
-                            const partes = tallasResumen.substring('SOBREMEDIDA_SIN_TALLAS:'.length).split('|');
-                            mostrarTituloTallas = false;
-                            contenidoTallas = '<span style="color: #000; font-weight: 900;">SOBREMEDIDA:</span><br>' + 
-                                partes.map(p => `<span style="color: #d32f2f; font-weight: 900;">${p}</span>`).join(' | ');
-                        } else if (tallasResumen.includes('SOBREMEDIDA_CON_TALLAS:')) {
-                            const lineas = tallasResumen.split('\n');
-                            contenidoTallas = lineas.map(linea => {
-                                if (linea.startsWith('SOBREMEDIDA_CON_TALLAS:')) {
-                                    const partes = linea.substring('SOBREMEDIDA_CON_TALLAS:'.length).split('|');
-                                    return '<span style="color: #000; font-weight: 900;">SOBREMEDIDA:</span><br>' + 
-                                        partes.map(p => `<span style="color: #d32f2f; font-weight: 900;">${p}</span>`).join(' | ');
-                                }
-                                return `<span style="color: #d32f2f; font-weight: 900;">${linea}</span>`;
-                            }).join('<br>');
-                        } else {
-                            // Tallas normales sin sobremedida
-                            contenidoTallas = `<span style="color: #d32f2f; font-weight: 900;">${tallasResumen}</span>`;
-                        }
-                        
-                        return `
-                        <div class="section">
-                          ${mostrarTituloTallas ? '<h4>TALLAS:</h4>' : ''}
-                          <div class="tallas-resumen" style="color: inherit; font-weight: 900; white-space: pre-line;">${contenidoTallas}</div>
-                        </div>
-                        `;
-                    })() : ''}
+                    ${tallasResumen ? `
+                    <div class="section">
+                      ${mostrarTituloTallas ? '<h4>TALLAS:</h4>' : ''}
+                      <div class="tallas-resumen" style="color: inherit; font-weight: 900; white-space: pre-line;">${contenidoTallasFinal}</div>
+                    </div>
+                    ` : ''}
                 `;
             };
 
@@ -1522,6 +1495,43 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                 }
                 return false;
             })();
+
+            let mostrarTituloTallas = true;
+            let contenidoTallasFinal = tallasResumen;
+            
+            console.log('[printReceiptModal] 🐛 DEBUG tallasResumen original:', tallasResumen);
+            
+            if (tallasResumen) {
+                if (tallasResumen.startsWith('SOBREMEDIDA_SIN_TALLAS:')) {
+                    console.log('[printReceiptModal] 🐛 Procesando SOBREMEDIDA_SIN_TALLAS');
+                    const partes = tallasResumen.substring('SOBREMEDIDA_SIN_TALLAS:'.length).split('|');
+                    mostrarTituloTallas = false;
+                    contenidoTallasFinal = '<span style="color: #000; font-weight: 900;">SOBREMEDIDA:</span><br>' + 
+                        partes.map(p => `<span style="color: #d32f2f; font-weight: 900;">${p}</span>`).join(' | ');
+                    console.log('[printReceiptModal] 🐛 Resultado procesado:', contenidoTallasFinal);
+                } else if (tallasResumen.includes('SOBREMEDIDA_CON_TALLAS:')) {
+                    console.log('[printReceiptModal] 🐛 Procesando SOBREMEDIDA_CON_TALLAS');
+                    const lineas = tallasResumen.split('\n');
+                    contenidoTallasFinal = lineas.map(linea => {
+                        if (linea.startsWith('SOBREMEDIDA_CON_TALLAS:')) {
+                            const partes = linea.substring('SOBREMEDIDA_CON_TALLAS:'.length).split('|');
+                            return '<span style="color: #000; font-weight: 900;">SOBREMEDIDA:</span><br>' + 
+                                partes.map(p => `<span style="color: #d32f2f; font-weight: 900;">${p}</span>`).join(' | ');
+                        }
+                        return `<span style="color: #d32f2f; font-weight: 900;">${linea}</span>`;
+                    }).join('<br>');
+                    console.log('[printReceiptModal] 🐛 Resultado procesado:', contenidoTallasFinal);
+                } else {
+                    console.log('[printReceiptModal] 🐛 Tallas normales');
+                    // Tallas normales sin sobremedida
+                    contenidoTallasFinal = `<span style="color: #d32f2f; font-weight: 900;">${tallasResumen}</span>`;
+                }
+                
+                console.log('[printReceiptModal] 🐛 Variables finales:', {
+                    mostrarTituloTallas,
+                    contenidoTallasFinal
+                });
+            }
 
             const renderTallaItem = (t) => {
                 const lis = (t.observaciones || []).map(obs => `<li>${esc(obs).toUpperCase()}</li>`).join('');
