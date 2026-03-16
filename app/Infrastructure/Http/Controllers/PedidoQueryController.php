@@ -60,11 +60,20 @@ class PedidoQueryController extends Controller
                                     'unisex' => []
                                 ];
 
+                                $tallasDetalle = [];
+
                                 foreach ($tallas as $talla) {
                                     $genero = strtolower($talla->genero ?? 'caballero');
                                     if ($genero === 'dama') $genero = 'dama';
                                     elseif ($genero === 'caballero') $genero = 'caballero';
                                     else $genero = 'unisex';
+
+                                    $tallasDetalle[] = [
+                                        'genero'         => strtoupper((string) ($talla->genero ?? '')),
+                                        'talla'          => $talla->talla,
+                                        'cantidad'       => (int) ($talla->cantidad ?? 0),
+                                        'es_sobremedida' => (int) ($talla->es_sobremedida ?? 0),
+                                    ];
 
                                     $colores = \DB::table('pedidos_procesos_prenda_talla_colores')
                                         ->where('pedidos_procesos_prenda_talla_id', $talla->id)
@@ -92,6 +101,7 @@ class PedidoQueryController extends Controller
                                 }
 
                                 $proceso['tallas'] = $talasTransformadas;
+                                $proceso['tallas_detalle'] = $tallasDetalle;
 
                                 $modoTallas = $proceso['modo_tallas'] ?? null;
                                 if ($modoTallas === 'general') {
@@ -433,6 +443,28 @@ class PedidoQueryController extends Controller
                             if (is_array($decodedUb)) {
                                 $procesoProc['ubicaciones_array'] = $decodedUb;
                             }
+                        }
+
+                        // tallas_detalle con es_sobremedida
+                        try {
+                            $tallasProceso = \DB::table('pedidos_procesos_prenda_tallas')
+                                ->where('proceso_prenda_detalle_id', $procesoProc['id'])
+                                ->get(['genero', 'talla', 'cantidad', 'es_sobremedida', 'ubicaciones', 'observaciones']);
+
+                            if ($tallasProceso->count() > 0) {
+                                $procesoProc['tallas_detalle'] = $tallasProceso->map(function ($t) {
+                                    return [
+                                        'genero'         => strtoupper((string) ($t->genero ?? '')),
+                                        'talla'          => $t->talla,
+                                        'cantidad'       => (int) ($t->cantidad ?? 0),
+                                        'es_sobremedida' => (int) ($t->es_sobremedida ?? 0),
+                                        'ubicaciones'    => $t->ubicaciones,
+                                        'observaciones'  => $t->observaciones,
+                                    ];
+                                })->toArray();
+                            }
+                        } catch (\Exception $e) {
+                            // silencioso
                         }
 
                         $modoTallas = $procesoProc['modo_tallas'] ?? null;
