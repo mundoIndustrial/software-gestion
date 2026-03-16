@@ -543,6 +543,58 @@
                                 });
                         }
                     }
+
+                    // Costura-reflectivo: escuchar cuando un recibo REFLECTIVO pase a Control de Calidad
+                    if (String(window.USUARIO_ACTUAL?.rol || '').toLowerCase() === 'costura-reflectivo') {
+                        console.log('[Operario Dashboard] Costura-reflectivo suscribiendo a canal recibos-costura para escuchar cambios de área');
+                        
+                        window.EchoInstance.channel('recibos-costura')
+                            .subscribed(() => {
+                                console.log('[Operario Dashboard] Costura-reflectivo suscrito OK a canal público recibos-costura');
+                            })
+                            .error((err) => {
+                                console.error('[Operario Dashboard] Error suscribiendo costura-reflectivo a canal público:', err);
+                            })
+                            .listen('.recibo.pasado.control.calidad', (e) => {
+                                console.log('[Operario Dashboard] Costura-reflectivo: Recibo pasado a Control Calidad:', e);
+                                
+                                // Solo procesar si es un recibo REFLECTIVO
+                                const tipoRecibo = String(e?.tipo_recibo || '').toUpperCase();
+                                if (tipoRecibo !== 'REFLECTIVO') {
+                                    console.log('[Operario Dashboard] Costura-reflectivo: No es REFLECTIVO, ignorando');
+                                    return;
+                                }
+                                
+                                const prendaId = e?.prenda_id;
+                                if (prendaId) {
+                                    const tarjeta = document.querySelector(`.orden-card-simple[data-prenda-id="${prendaId}"]`);
+                                    if (tarjeta) {
+                                        console.log(`[Operario Dashboard] Costura-reflectivo: Eliminando tarjeta REFLECTIVO con prenda_id: ${prendaId}`);
+                                        
+                                        // Animación de desvanecimiento
+                                        tarjeta.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-out';
+                                        tarjeta.style.opacity = '0';
+                                        tarjeta.style.transform = 'translateX(-100%)';
+                                        
+                                        setTimeout(() => {
+                                            tarjeta.remove();
+                                            console.log('[Operario Dashboard] ✅ Tarjeta REFLECTIVO eliminada de vista costura-reflectivo');
+                                            
+                                            // Notificación
+                                            if (window.NotificacionesPush && typeof window.NotificacionesPush.add === 'function') {
+                                                window.NotificacionesPush.add({
+                                                    title: 'Recibo REFLECTIVO movido',
+                                                    message: e?.mensaje || `El recibo #${e?.numero_recibo} pasó a Control de Calidad`,
+                                                    type: 'info',
+                                                    icon: 'auto_awesome',
+                                                    duration: 5000
+                                                });
+                                            }
+                                        }, 500);
+                                    }
+                                }
+                            });
+                    }
                 } catch (e) {
                     console.error('[Operario Dashboard] Error initRealtimeListeners', e);
                 }

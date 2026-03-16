@@ -2824,22 +2824,33 @@ Route::middleware(['auth'])->post('procesos/{procesoId}/activar-recibo', functio
             // Broadcast: si se activó un recibo REFLECTIVO, notificar a costura-reflectivo
             if ($nombreTipo === 'REFLECTIVO') {
                 try {
-                    $operarios = \App\Models\User::query()
-                        ->whereHas('roles', function ($q) {
-                            $q->where('name', 'costura-reflectivo');
-                        })
-                        ->get(['id']);
+                    // Obtener el ID del rol costura-reflectivo
+                    $rolReflectivo = \DB::table('roles')->where('name', 'costura-reflectivo')->first();
+                    
+                    if ($rolReflectivo) {
+                        // Buscar usuarios que tengan el ID del rol en su roles_ids (JSON)
+                        $operarios = \App\Models\User::whereRaw("JSON_CONTAINS(roles_ids, '\"" . $rolReflectivo->id . "\"') OR JSON_CONTAINS(roles_ids, '" . $rolReflectivo->id . "')")
+                            ->get(['id']);
 
-                    foreach ($operarios as $operario) {
-                        broadcast(new \App\Events\OperarioRecibosActualizados(
-                            userId: (int) $operario->id,
-                            payload: [
-                                'evento' => 'recibo_activado',
-                                'tipo_recibo' => 'REFLECTIVO',
-                                'proceso_id' => (int) $procesoId,
-                                'prenda_id' => (int) ($proceso->prenda_pedido_id ?? 0),
-                            ]
-                        ));
+                        \Log::info('[Activar] Broadcast REFLECTIVO - Usuarios encontrados', [
+                            'rol_id' => $rolReflectivo->id,
+                            'total_usuarios' => $operarios->count(),
+                            'usuario_ids' => $operarios->pluck('id')->toArray()
+                        ]);
+
+                        foreach ($operarios as $operario) {
+                            broadcast(new \App\Events\OperarioRecibosActualizados(
+                                userId: (int) $operario->id,
+                                payload: [
+                                    'evento' => 'recibo_activado',
+                                    'tipo_recibo' => 'REFLECTIVO',
+                                    'proceso_id' => (int) $procesoId,
+                                    'prenda_id' => (int) ($proceso->prenda_pedido_id ?? 0),
+                                ]
+                            ));
+                        }
+                    } else {
+                        \Log::warning('[Activar] Broadcast REFLECTIVO - Rol costura-reflectivo no encontrado');
                     }
                 } catch (\Throwable $e) {
                     \Log::warning('[Activar] Broadcast REFLECTIVO falló', [

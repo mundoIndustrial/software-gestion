@@ -379,15 +379,32 @@ class ObtenerPrendasRecibosService
                 ->values();
         }
 
-        // costura-reflectivo: ver COSTURA y REFLECTIVO solo si el área es Costura
+        // costura-reflectivo: ver COSTURA solo si área es Costura, REFLECTIVO sin importar área (pero no si pasó a Control Calidad)
         if ($tipoOperario === 'costura-reflectivo') {
             $recibos = $recibos
                 ->filter(function ($recibo) {
                     $tipoRecibo = strtoupper(trim((string) ($recibo->tipo_recibo ?? '')));
                     $area = strtolower(trim((string) ($recibo->area ?? '')));
                     
-                    // Solo mostrar si el área es específicamente Costura
-                    return ($tipoRecibo === 'COSTURA' || $tipoRecibo === 'REFLECTIVO') && $area === 'costura';
+                    // COSTURA: solo si área es Costura
+                    if ($tipoRecibo === 'COSTURA' || $tipoRecibo === 'COSTURA-BODEGA') {
+                        return $area === 'costura';
+                    }
+                    
+                    // REFLECTIVO: mostrar sin importar el área, PERO no mostrar si ya pasó a Control de Calidad
+                    if ($tipoRecibo === 'REFLECTIVO') {
+                        // Verificar si el área es Control de Calidad (ya pasó)
+                        if (in_array($area, ['control calidad', 'control de calidad'])) {
+                            \Log::info(' [Filtro COSTURA-REFLECTIVO] REFLECTIVO excluido - ya pasó a Control de Calidad', [
+                                'recibo_id' => $recibo->id,
+                                'area' => $recibo->area
+                            ]);
+                            return false;
+                        }
+                        return true;
+                    }
+                    
+                    return false;
                 })
                 ->values();
         }
