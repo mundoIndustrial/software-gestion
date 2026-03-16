@@ -982,6 +982,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
 
             const prendaNombre = String(prendaData?.nombre || prendaData?.nombre_prenda || extra.prendaNombre || '').trim();
             const prendaColor = String(prendaData?.color || extra.prendaColor || '').trim();
+            const prendaDescripcion = String(prendaData?.descripcion || '').trim();
 
             // COSTURA y algunos recibos base no traen `ubicaciones` en el objeto recibo.
             // Para COSTURA: usar solo la descripción limpia de la prenda, sin repetir campos ya mostrados
@@ -1466,7 +1467,8 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
 
                     <div class="prenda-info">
                       <div class="prenda-name">${esc(prendaNombre || '-').toUpperCase()}</div>
-                      <div class="prenda-color">${esc(prendaColor || '-').toUpperCase()}</div>
+                      ${prendaColor && prendaColor !== '-' ? `<div class="prenda-color">${esc(prendaColor).toUpperCase()}</div>` : ''}
+                      ${prendaDescripcion ? `<div class="prenda-descripcion" style="font-size: 11px; margin-top: 4px; color: #333;">${esc(prendaDescripcion)}</div>` : ''}
                     </div>
                     <div class="section">
                       <h4>UBICACIONES:</h4>
