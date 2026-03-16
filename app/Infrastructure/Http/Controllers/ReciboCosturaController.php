@@ -7,8 +7,10 @@ use App\Models\ConsecutivoReciboPedido;
 use App\Models\PedidoProduccion;
 use App\Models\ProcesoPrenda;
 use App\Models\Prenda;
+use App\Models\User;
 use App\Events\EncargadoCosturaAsignado;
 use App\Events\ReciboAsignadoCosturero;
+use App\Events\OperarioRecibosActualizados;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -482,6 +484,136 @@ class ReciboCosturaController extends Controller
                 $nuevoProceso->id,
                 $request->encargado // El nombre del costurero asignado
             ));
+
+            // Notificar al encargado si tiene rol costura-reflectivo o lider-reflectivo
+            $encargadoNormalizado = strtolower(trim((string) $request->encargado));
+            if ($encargadoNormalizado !== '') {
+                $operarioAsignado = User::query()
+                    ->whereRaw('LOWER(TRIM(name)) = ?', [$encargadoNormalizado])
+                    ->first();
+
+                if ($operarioAsignado && ($operarioAsignado->hasRole('costura-reflectivo') || $operarioAsignado->hasRole('lider-reflectivo'))) {
+                    broadcast(new OperarioRecibosActualizados(
+                        userId: (int) $operarioAsignado->id,
+                        payload: [
+                            'area' => 'Costura',
+                            'accion' => 'asignado',
+                            'numero_pedido' => (int) $pedido->id,
+                            'prenda_id' => (int) $request->prenda_id,
+                            'proceso_id' => (int) $nuevoProceso->id,
+                            'tipo_recibo' => (string) $recibo->tipo_recibo,
+                            'numero_recibo' => (int) $recibo->consecutivo_actual,
+                            'encargado' => (string) $request->encargado,
+                            'mensaje' => "Se te asignó el recibo #{$recibo->consecutivo_actual} de {$recibo->tipo_recibo}",
+                        ]
+                    ));
+
+                    Log::info('[COSTURA] Broadcast a costura-reflectivo/lider-reflectivo (asignado)', [
+                        'user_id' => $operarioAsignado->id,
+                        'rol' => $operarioAsignado->roles->first()->name ?? 'sin rol',
+                        'recibo' => $recibo->consecutivo_actual,
+                        'tipo_recibo' => $recibo->tipo_recibo,
+                    ]);
+                }
+            }
+
+            // Si es un recibo REFLECTIVO, notificar a TODOS los usuarios con rol costura-reflectivo y lider-reflectivo
+            // para que vean el recibo en su dashboard y se actualice el badge del encargado
+            $tipoReciboUpper = strtoupper(trim((string) $recibo->tipo_recibo));
+            
+            Log::info('[COSTURA] Verificando tipo de recibo para broadcast', [
+                'tipo_recibo_original' => $recibo->tipo_recibo,
+                'tipo_recibo_upper' => $tipoReciboUpper,
+            ]);
+            
+            // Para recibos REFLECTIVO: notificar a TODOS los costura-reflectivo y lider-reflectivo
+            if ($tipoReciboUpper === 'REFLECTIVO') {
+                $usuariosReflectivos = User::all()->filter(function($user) {
+                    return $user->hasRole('costura-reflectivo') || $user->hasRole('lider-reflectivo');
+                });
+
+                Log::info('[COSTURA] Broadcast REFLECTIVO a todos los costura-reflectivo/lider-reflectivo', [
+                    'total_usuarios' => $usuariosReflectivos->count(),
+                    'usuario_ids' => $usuariosReflectivos->pluck('id')->toArray(),
+                    'recibo' => $recibo->consecutivo_actual,
+                    'encargado' => $request->encargado,
+                ]);
+
+                foreach ($usuariosReflectivos as $usuarioReflectivo) {
+                    broadcast(new OperarioRecibosActualizados(
+                        userId: (int) $usuarioReflectivo->id,
+                        payload: [
+                            'area' => 'Costura',
+                            'accion' => 'recibo_asignado_reflectivo',
+                            'numero_pedido' => (int) $pedido->id,
+                            'prenda_id' => (int) $request->prenda_id,
+                            'proceso_id' => (int) $nuevoProceso->id,
+                            'tipo_recibo' => (string) $recibo->tipo_recibo,
+                            'numero_recibo' => (int) $recibo->consecutivo_actual,
+                            'encargado' => (string) $request->encargado,
+                            'mensaje' => "El recibo #{$recibo->consecutivo_actual} de REFLECTIVO fue asignado a {$request->encargado}",
+                        ]
+                    ));
+                    
+                    Log::info('[COSTURA] Broadcast REFLECTIVO enviado a usuario', [
+                        'user_id' => $usuarioReflectivo->id,
+                        'user_name' => $usuarioReflectivo->name,
+                    ]);
+                }
+            }
+            
+            // Para recibos COSTURA: notificar a lider-reflectivo SOLO si el encargado tiene rol costura-reflectivo
+            if ($tipoReciboUpper === 'COSTURA' || $tipoReciboUpper === 'COSTURA-BODEGA') {
+                // Verificar si el encargado asignado tiene rol costura-reflectivo
+                $encargadoUsuario = User::query()
+                    ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($request->encargado))])
+                    ->first();
+                
+                $notificarLideres = $encargadoUsuario && $encargadoUsuario->hasRole('costura-reflectivo');
+                
+                if ($notificarLideres) {
+                    $usuariosLiderReflectivo = User::all()->filter(function($user) {
+                        return $user->hasRole('lider-reflectivo');
+                    });
+
+                    Log::info('[COSTURA] Broadcast COSTURA a lider-reflectivo (encargado es costura-reflectivo)', [
+                        'total_usuarios' => $usuariosLiderReflectivo->count(),
+                        'usuario_ids' => $usuariosLiderReflectivo->pluck('id')->toArray(),
+                        'recibo' => $recibo->consecutivo_actual,
+                        'encargado' => $request->encargado,
+                        'encargado_tiene_rol_costura_reflectivo' => true,
+                    ]);
+
+                    foreach ($usuariosLiderReflectivo as $usuarioLider) {
+                        broadcast(new OperarioRecibosActualizados(
+                            userId: (int) $usuarioLider->id,
+                            payload: [
+                                'area' => 'Costura',
+                                'accion' => 'recibo_asignado_costura',
+                                'numero_pedido' => (int) $pedido->id,
+                                'prenda_id' => (int) $request->prenda_id,
+                                'proceso_id' => (int) $nuevoProceso->id,
+                                'tipo_recibo' => (string) $recibo->tipo_recibo,
+                                'numero_recibo' => (int) $recibo->consecutivo_actual,
+                                'encargado' => (string) $request->encargado,
+                                'mensaje' => "El recibo #{$recibo->consecutivo_actual} de COSTURA fue asignado a {$request->encargado}",
+                            ]
+                        ));
+                        
+                        Log::info('[COSTURA] Broadcast COSTURA enviado a lider-reflectivo', [
+                            'user_id' => $usuarioLider->id,
+                            'user_name' => $usuarioLider->name,
+                        ]);
+                    }
+                } else {
+                    Log::info('[COSTURA] NO se notifica a lider-reflectivo (encargado no tiene rol costura-reflectivo)', [
+                        'recibo' => $recibo->consecutivo_actual,
+                        'encargado' => $request->encargado,
+                        'encargado_existe' => !empty($encargadoUsuario),
+                        'encargado_tiene_rol_costura_reflectivo' => false,
+                    ]);
+                }
+            }
 
             Log::info('Recibo enviado a Costura', [
                 'pedido_id' => $pedidoId,

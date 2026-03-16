@@ -187,6 +187,11 @@ class AuthenticatedSessionController extends Controller
                 return redirect(route('operario.dashboard', absolute: false));
             }
 
+            // Lider-Reflectivo - Dashboard de operario
+            if ($roleName === 'lider-reflectivo') {
+                return redirect(route('operario.dashboard', absolute: false));
+            }
+
             // Vista Costura - Dashboard de operario
             if ($roleName === 'vista-costura') {
                 return redirect(route('operario.dashboard', absolute: false));

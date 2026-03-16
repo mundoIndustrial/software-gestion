@@ -66,6 +66,15 @@ class CrearRolesOperariosSeeder extends Seeder
             ]
         );
 
+        // Crear rol Lider-Reflectivo
+        Role::firstOrCreate(
+            ['name' => 'lider-reflectivo'],
+            [
+                'description' => 'Líder encargado del área de costura reflexiva',
+                'requires_credentials' => false,
+            ]
+        );
+
         $this->command->info(' Roles de operarios creados exitosamente');
     }
 }

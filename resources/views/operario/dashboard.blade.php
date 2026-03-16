@@ -196,6 +196,75 @@
                         })
                         .listen('.operario.recibos.actualizados', (e) => {
                             console.log('[Operario Dashboard] Evento operario.recibos.actualizados recibido (privado):', e);
+                            
+                            // Mostrar notificación si es una asignación o recibo_asignado_reflectivo o recibo_asignado_costura o recibo_completado o recibo_deshecho
+                            const accionesNotificar = ['asignado', 'recibo_asignado_reflectivo', 'recibo_asignado_costura', 'recibo_completado', 'recibo_deshecho'];
+                            if (accionesNotificar.includes(e?.accion) && e?.mensaje) {
+                                const tipoRecibo = String(e?.tipo_recibo || '').toUpperCase();
+                                let icono = 'checkroom';
+                                let tipoNotif = 'info';
+                                
+                                if (e?.accion === 'recibo_completado') {
+                                    icono = 'check_circle';
+                                    tipoNotif = 'success';
+                                } else if (e?.accion === 'recibo_deshecho') {
+                                    icono = 'undo';
+                                    tipoNotif = 'warning';
+                                } else if (tipoRecibo === 'REFLECTIVO') {
+                                    icono = 'auto_awesome';
+                                }
+                                
+                                let titulo = 'Recibo de ' + (tipoRecibo || 'Costura') + ' asignado';
+                                if (e?.accion === 'recibo_completado') {
+                                    titulo = 'Recibo completado';
+                                } else if (e?.accion === 'recibo_deshecho') {
+                                    titulo = 'Recibo deshecho';
+                                }
+                                
+                                if (window.NotificacionesPush && typeof window.NotificacionesPush.add === 'function') {
+                                    window.NotificacionesPush.add({
+                                        title: titulo,
+                                        message: e.mensaje,
+                                        type: tipoNotif,
+                                        icon: icono,
+                                        duration: 8000
+                                    });
+                                } else if ('Notification' in window && Notification.permission === 'granted') {
+                                    new Notification(titulo, {
+                                        body: e.mensaje,
+                                        icon: '/icon.png'
+                                    });
+                                }
+                            }
+                            
+                            // Si es recibo_completado, marcar el card en azul
+                            if (e?.accion === 'recibo_completado' && e?.prenda_id) {
+                                const card = document.querySelector(`.orden-card-simple[data-prenda-id="${e.prenda_id}"]`);
+                                if (card) {
+                                    card.classList.add('card-completado-costura');
+                                    const body = card.querySelector('.orden-body');
+                                    if (body) {
+                                        body.classList.add('recibo-completado-area');
+                                    }
+                                    // Agregar badge de completado si no existe
+                                    asegurarBadgeCompletado(card, true);
+                                }
+                            }
+                            
+                            // Si es recibo_deshecho, quitar el estilo de completado del card
+                            if (e?.accion === 'recibo_deshecho' && e?.prenda_id) {
+                                const card = document.querySelector(`.orden-card-simple[data-prenda-id="${e.prenda_id}"]`);
+                                if (card) {
+                                    card.classList.remove('card-completado-costura');
+                                    const body = card.querySelector('.orden-body');
+                                    if (body) {
+                                        body.classList.remove('recibo-completado-area');
+                                    }
+                                    // Quitar badge de completado
+                                    asegurarBadgeCompletado(card, false);
+                                }
+                            }
+                            
                             actualizarListaSinRecargar();
                         });
 
@@ -544,24 +613,25 @@
                         }
                     }
 
-                    // Costura-reflectivo: escuchar cuando un recibo REFLECTIVO pase a Control de Calidad
-                    if (String(window.USUARIO_ACTUAL?.rol || '').toLowerCase() === 'costura-reflectivo') {
-                        console.log('[Operario Dashboard] Costura-reflectivo suscribiendo a canal recibos-costura para escuchar cambios de área');
+                    // Costura-reflectivo y lider-reflectivo: escuchar cuando un recibo REFLECTIVO pase a Control de Calidad
+                    const rolUsuario = String(window.USUARIO_ACTUAL?.rol || '').toLowerCase();
+                    if (rolUsuario === 'costura-reflectivo' || rolUsuario === 'lider-reflectivo') {
+                        console.log('[Operario Dashboard] Costura-reflectivo/Lider-reflectivo suscribiendo a canal recibos-costura para escuchar cambios de área');
                         
                         window.EchoInstance.channel('recibos-costura')
                             .subscribed(() => {
-                                console.log('[Operario Dashboard] Costura-reflectivo suscrito OK a canal público recibos-costura');
+                                console.log('[Operario Dashboard] Costura-reflectivo/Lider-reflectivo suscrito OK a canal público recibos-costura');
                             })
                             .error((err) => {
-                                console.error('[Operario Dashboard] Error suscribiendo costura-reflectivo a canal público:', err);
+                                console.error('[Operario Dashboard] Error suscribiendo costura-reflectivo/lider-reflectivo a canal público:', err);
                             })
                             .listen('.recibo.pasado.control.calidad', (e) => {
-                                console.log('[Operario Dashboard] Costura-reflectivo: Recibo pasado a Control Calidad:', e);
+                                console.log('[Operario Dashboard] Costura-reflectivo/Lider-reflectivo: Recibo pasado a Control Calidad:', e);
                                 
                                 // Solo procesar si es un recibo REFLECTIVO
                                 const tipoRecibo = String(e?.tipo_recibo || '').toUpperCase();
                                 if (tipoRecibo !== 'REFLECTIVO') {
-                                    console.log('[Operario Dashboard] Costura-reflectivo: No es REFLECTIVO, ignorando');
+                                    console.log('[Operario Dashboard] Costura-reflectivo/Lider-reflectivo: No es REFLECTIVO, ignorando');
                                     return;
                                 }
                                 
@@ -569,7 +639,7 @@
                                 if (prendaId) {
                                     const tarjeta = document.querySelector(`.orden-card-simple[data-prenda-id="${prendaId}"]`);
                                     if (tarjeta) {
-                                        console.log(`[Operario Dashboard] Costura-reflectivo: Eliminando tarjeta REFLECTIVO con prenda_id: ${prendaId}`);
+                                        console.log(`[Operario Dashboard] Costura-reflectivo/Lider-reflectivo: Eliminando tarjeta REFLECTIVO con prenda_id: ${prendaId}`);
                                         
                                         // Animación de desvanecimiento
                                         tarjeta.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-out';
@@ -578,7 +648,7 @@
                                         
                                         setTimeout(() => {
                                             tarjeta.remove();
-                                            console.log('[Operario Dashboard] ✅ Tarjeta REFLECTIVO eliminada de vista costura-reflectivo');
+                                            console.log('[Operario Dashboard] ✅ Tarjeta REFLECTIVO eliminada de vista costura-reflectivo/lider-reflectivo');
                                             
                                             // Notificación
                                             if (window.NotificacionesPush && typeof window.NotificacionesPush.add === 'function') {
@@ -620,8 +690,8 @@
             <span class="ordenes-count">{{ count($prendasConRecibos ?? []) }}</span>
         </div>
 
-        <!-- Filtros por tipo de recibo para costura-reflectivo y vista-costura -->
-        @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura'))
+        <!-- Filtros por tipo de recibo para costura-reflectivo, lider-reflectivo y vista-costura -->
+        @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('vista-costura'))
         <div class="filtros-badges">
             @if(auth()->user()->hasRole('vista-costura'))
                 <button class="badge-filtro badge-filtro-active" data-filtro="costura" onclick="filtrarPrendasPorRecibo('costura')">
@@ -633,7 +703,7 @@
                     Reflectivo
                 </button>
             @else
-                <!-- Para costura-reflectivo: mostrar ambos tags -->
+                <!-- Para costura-reflectivo y lider-reflectivo: mostrar ambos tags -->
                 <button class="badge-filtro badge-filtro-active" data-filtro="costura" onclick="filtrarPrendasPorRecibo('costura')">
                     <span class="material-symbols-rounded">checkroom</span>
                     Costura
@@ -676,7 +746,7 @@
                         $areaReciboFiltro = strtolower(trim((string) ($reciboPrincipalFiltro['area'] ?? '')));
                         
                         // Para vista-costura y costura-reflectivo, guardar ambos tipos en el atributo data
-                        if (auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('costura-reflectivo')) {
+                        if (auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo')) {
                             // Guardar tipos separados por comas para poder filtrar correctamente
                             $tiposParaFiltro = [];
                             if ($tieneCostura) $tiposParaFiltro[] = 'costura';
@@ -693,7 +763,7 @@
                         // - costurero: mostrar COSTURA por defecto
                         // - cortador: mostrar prendas con área "Corte" (independientemente del tipo de recibo)
                         $displayInicial = '';
-                        if (auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('costurero') || auth()->user()->hasRole('administrador-costura')) {
+                        if (auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('costurero') || auth()->user()->hasRole('administrador-costura')) {
                             // Mostrar por defecto las que tienen costura (incluyendo las que tienen ambos)
                             $displayInicial = $tieneCostura ? '' : 'none';
                         } elseif (auth()->user()->hasRole('cortador')) {
@@ -714,7 +784,7 @@
                         $reciboCompletadoCostura = (bool) ($reciboPrincipalCard['completado_costura'] ?? false);
                     @endphp
 
-                    <div class="orden-card-simple {{ ((auth()->user()->hasRole('costurero') || auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('administrador-costura')) && $reciboCompletadoCostura) ? 'card-completado-costura' : '' }} {{ $tieneReflectivo ? 'borde-reflectivo' : '' }}" 
+                    <div class="orden-card-simple {{ ((auth()->user()->hasRole('costurero') || auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('administrador-costura')) && $reciboCompletadoCostura) ? 'card-completado-costura' : '' }} {{ $tieneReflectivo ? 'borde-reflectivo' : '' }}" 
                          data-numero="{{ $prenda['numero_pedido'] }}" 
                          data-prenda="{{ strtolower($prenda['nombre_prenda']) }}"
                          data-prenda-id="{{ $prenda['prenda_id'] }}"
@@ -835,6 +905,9 @@
                                         @if(auth()->user()->hasRole('costura-reflectivo') && $reciboCompletadoCostura)
                                             <span class="badge-completado-costura is-on">COMPLETADO</span>
                                         @endif
+                                        @if(auth()->user()->hasRole('lider-reflectivo') && $reciboCompletadoCostura)
+                                            <span class="badge-completado-costura is-on">COMPLETADO</span>
+                                        @endif
                                         @if(auth()->user()->hasRole('administrador-costura') && $reciboCompletadoCostura)
                                             <span class="badge-completado-costura is-on">COMPLETADO</span>
                                         @endif
@@ -845,6 +918,10 @@
                                     @endif
                                     <!-- Badge completado para costura-reflectivo - posicionado en esquina superior derecha solo en mobile -->
                                     @if(auth()->user()->hasRole('costura-reflectivo') && $reciboCompletadoCostura)
+                                        <span class="badge-completado-costura is-on mobile-top-right">COMPLETADO</span>
+                                    @endif
+                                    <!-- Badge completado para lider-reflectivo - posicionado en esquina superior derecha solo en mobile -->
+                                    @if(auth()->user()->hasRole('lider-reflectivo') && $reciboCompletadoCostura)
                                         <span class="badge-completado-costura is-on mobile-top-right">COMPLETADO</span>
                                     @endif
                                     <!-- Badge completado para administrador-costura - posicionado en esquina superior derecha solo en mobile -->
@@ -1020,7 +1097,7 @@
                                         <span class="material-symbols-rounded">comment</span>
                                         AGREGAR NOVEDAD
                                     </button>
-                                    @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura'))
+                                    @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('vista-costura'))
                                         @php
                                             $reciboReflectivo = collect($prenda['recibos'] ?? [])->first(function($r) {
                                                 return strtoupper((string)($r['tipo_recibo'] ?? '')) === 'REFLECTIVO';
@@ -1032,7 +1109,19 @@
                                             $areaReciboRef = $reciboReflectivo['area'] ?? '';
                                             $esCosturaAreaRef = strtolower(trim((string)$areaReciboRef)) === 'costura';
                                         @endphp
-                                        @if($tieneReciboReflectivo && (auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('administrador-costura')))
+                                        
+                                        {{-- Botón PASAR A COSTURA/DESHACER COSTURA para vista-costura --}}
+                                        @if($tieneReciboReflectivo && auth()->user()->hasRole('vista-costura'))
+                                            @php
+                                                $pedidoParcialId = $reciboReflectivo['pedido_parcial_id'] ?? null;
+                                            @endphp
+                                            
+                                            {{-- Botón VER RECIBO para vista-costura --}}
+                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', 'VER RECIBO', {{ $pedidoParcialId ? (int)$pedidoParcialId : 'null' }})">
+                                                <span class="material-symbols-rounded">visibility</span>
+                                                VER RECIBO
+                                            </button>
+                                            
                                             <button class="btn-pasar-costura {{ $tieneEncargadoCosturaRef ? 'btn-deshacer-costura' : '' }}" 
                                                     id="btn-costura-reflectivo-{{ $prenda['prenda_id'] }}"
                                                     data-pedido-id="{{ $prenda['pedido_id'] }}"
@@ -1048,14 +1137,83 @@
                                                 {{ $tieneEncargadoCosturaRef ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
                                             </button>
                                         @endif
+                                        
+                                        {{-- Botones de completar/deshacer para REFLECTIVO (solo para costura-reflectivo y lider-reflectivo) --}}
+                                        @if($tieneReciboReflectivo && (auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo')))
+                                            @php
+                                                $reciboId = $reciboReflectivo['id'] ?? null;
+                                                $reciboCompletadoArea = false;
+                                                
+                                                // Verificar si está completado según el área
+                                                if ($esCosturaAreaRef) {
+                                                    $reciboCompletadoArea = (bool) ($reciboReflectivo['completado_costura'] ?? false);
+                                                } else {
+                                                    $reciboCompletadoArea = (bool) ($reciboReflectivo['completado_area'] ?? false);
+                                                }
+                                                
+                                                $tieneEncargadoAsignado = false;
+                                                
+// Para REFLECTIVO: verificar que tenga encargado asignado
+$encargadoReflectivo = $reciboReflectivo['encargado_costura'] ?? null;
+$encargadoReflectivo = is_string($encargadoReflectivo) ? trim($encargadoReflectivo) : $encargadoReflectivo;
+$tieneEncargadoAsignado = !empty($encargadoReflectivo);
+                                                
+// Para administrador-costura: siempre permitir
+if (auth()->user()->hasRole('administrador-costura')) {
+    $tieneEncargadoAsignado = true;
+}
+                                                
+                                                $tipoReciboNormalizado = strtolower('REFLECTIVO');
+                                                $pedidoParcialId = $reciboReflectivo['pedido_parcial_id'] ?? null;
+                                            @endphp
+                                            
+                                            {{-- Botón VER RECIBO para REFLECTIVO --}}
+                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', 'VER RECIBO', {{ $pedidoParcialId ? (int)$pedidoParcialId : 'null' }})">
+                                                <span class="material-symbols-rounded">visibility</span>
+                                                VER RECIBO
+                                            </button>
+                                            
+                                            @if($reciboId && $esCosturaAreaRef && $tieneEncargadoAsignado)
+                                                @if(!$reciboCompletadoArea)
+                                                    <button class="btn-completar-costura" 
+                                                            id="btn-completar-{{ $tipoReciboNormalizado }}-{{ $prenda['prenda_id'] }}"
+                                                            data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                            data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                            data-recibo-id="{{ $reciboId }}"
+                                                            data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                            data-tipo-recibo="{{ $tipoReciboNormalizado }}"
+                                                            onclick="completarCostura(this)">
+                                                        <span class="material-symbols-rounded">check_circle</span>
+                                                        COMPLETAR {{ strtoupper('REFLECTIVO') }}
+                                                    </button>
+                                                @else
+                                                    <button class="btn-deshacer-costura" 
+                                                            id="btn-deshacer-{{ $tipoReciboNormalizado }}-{{ $prenda['prenda_id'] }}"
+                                                            data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                            data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                            data-recibo-id="{{ $reciboId }}"
+                                                            data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                            data-tipo-recibo="{{ $tipoReciboNormalizado }}"
+                                                            onclick="deshacerCostura(this)">
+                                                        <span class="material-symbols-rounded">undo</span>
+                                                        DESHACER {{ strtoupper('REFLECTIVO') }}
+                                                    </button>
+                                                @endif
+                                            @endif
+                                        @endif
                                     @endif
-                                    @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('administrador-costura'))
-                                        {{-- Para costura-reflectivo/vista-costura/administrador-costura, crear un botón por cada TIPO de recibo (sin duplicados) --}}
+                                    @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('administrador-costura'))
+                                        {{-- Para costura-reflectivo/lider-reflectivo/vista-costura/administrador-costura, crear un botón por cada TIPO de recibo (sin duplicados) --}}
                                         @php
                                             $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
                                         @endphp
                                         @foreach($tiposUnicos as $tipoReciboUnico)
                                             @php
+                                                // Omitir REFLECTIVO porque ya tiene su propio bloque arriba
+                                                if (strtoupper($tipoReciboUnico) === 'REFLECTIVO') {
+                                                    continue;
+                                                }
+                                                
                                                 $reciboTipo = collect($prenda['recibos'] ?? [])->first(function($r) use ($tipoReciboUnico) {
                                                     return strtoupper((string)($r['tipo_recibo'] ?? '')) === strtoupper((string)$tipoReciboUnico);
                                                 });
@@ -1067,13 +1225,18 @@
                                             </button>
                                         @endforeach
                                         
-                                        {{-- Botones de completar/deshacer para costura-reflectivo y administrador-costura --}}
-                                        @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('administrador-costura'))
+                                        {{-- Botones de completar/deshacer para costura-reflectivo, lider-reflectivo y administrador-costura --}}
+                                        @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('administrador-costura'))
                                             @php
                                                 $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
                                             @endphp
                                             @foreach($tiposUnicos as $tipoReciboUnico)
                                                 @php
+                                                    // Omitir REFLECTIVO porque ya tiene su propio bloque arriba
+                                                    if (strtoupper($tipoReciboUnico) === 'REFLECTIVO') {
+                                                        continue;
+                                                    }
+                                                    
                                                     $reciboTipo = collect($prenda['recibos'] ?? [])->first(function($r) use ($tipoReciboUnico) {
                                                         return strtoupper((string)($r['tipo_recibo'] ?? '')) === strtoupper((string)$tipoReciboUnico);
                                                     });
@@ -1089,20 +1252,20 @@
                                                         $reciboCompletadoArea = (bool) ($reciboTipo['completado_area'] ?? false);
                                                     }
                                                     
-                                                    // Para costura-reflectivo y administrador-costura: verificar si tiene encargado asignado SOLO en recibos REFLECTIVO
-                                                    // Para administrador-costura: permitir siempre (no requiere encargado)
+                                                    // Para COSTURA: verificar que el encargado tenga rol costura-reflectivo si es lider-reflectivo
+                                                    // Para costura-reflectivo y administrador-costura: permitir siempre
                                                     $tieneEncargadoAsignado = false;
-                                                    if (strtoupper($tipoReciboUnico) === 'REFLECTIVO') {
-                                                        $encargadoReflectivo = $reciboTipo['encargado_costura'] ?? null;
-                                                        $encargadoReflectivo = is_string($encargadoReflectivo) ? trim($encargadoReflectivo) : $encargadoReflectivo;
-                                                        $tieneEncargadoAsignado = !empty($encargadoReflectivo);
-                                                    } else {
-                                                        // Para otros tipos (COSTURA), se permite sin encargado
-                                                        $tieneEncargadoAsignado = true;
-                                                    }
+                                                    $esLiderReflectivo = auth()->user()->hasRole('lider-reflectivo');
                                                     
-                                                    // Para administrador-costura: siempre permitir
-                                                    if (auth()->user()->hasRole('administrador-costura')) {
+                                                    if ($esLiderReflectivo) {
+                                                        $encargadoCostura = $reciboTipo['encargado_costura'] ?? null;
+                                                        $encargadoCostura = is_string($encargadoCostura) ? trim($encargadoCostura) : $encargadoCostura;
+                                                        if (!empty($encargadoCostura)) {
+                                                            $encargadoUsuario = \App\Models\User::whereRaw('LOWER(TRIM(name)) = ?', [strtolower($encargadoCostura)])->first();
+                                                            $tieneEncargadoAsignado = $encargadoUsuario && $encargadoUsuario->hasRole('costura-reflectivo');
+                                                        }
+                                                    } else {
+                                                        // Para costura-reflectivo y administrador-costura: permitir siempre
                                                         $tieneEncargadoAsignado = true;
                                                     }
                                                     

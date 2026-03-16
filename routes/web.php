@@ -2824,19 +2824,22 @@ Route::middleware(['auth'])->post('procesos/{procesoId}/activar-recibo', functio
                 }
             }
 
-            // Broadcast: si se activó un recibo REFLECTIVO, notificar a costura-reflectivo
+            // Broadcast: si se activó un recibo REFLECTIVO, notificar a costura-reflectivo y lider-reflectivo
             if ($nombreTipo === 'REFLECTIVO') {
                 try {
-                    // Obtener el ID del rol costura-reflectivo
-                    $rolReflectivo = \DB::table('roles')->where('name', 'costura-reflectivo')->first();
+                    // Obtener los IDs de los roles costura-reflectivo y lider-reflectivo
+                    $rolReflectivoIds = \DB::table('roles')->whereIn('name', ['costura-reflectivo', 'lider-reflectivo'])->pluck('id')->toArray();
                     
-                    if ($rolReflectivo) {
-                        // Buscar usuarios que tengan el ID del rol en su roles_ids (JSON)
-                        $operarios = \App\Models\User::whereRaw("JSON_CONTAINS(roles_ids, '\"" . $rolReflectivo->id . "\"') OR JSON_CONTAINS(roles_ids, '" . $rolReflectivo->id . "')")
-                            ->get(['id']);
+                    if (count($rolReflectivoIds) > 0) {
+                        // Buscar usuarios que tengan cualquiera de los IDs del rol en su roles_ids (JSON)
+                        $operarios = \App\Models\User::where(function($q) use ($rolReflectivoIds) {
+                            foreach ($rolReflectivoIds as $rolId) {
+                                $q->orWhereRaw("JSON_CONTAINS(roles_ids, '\"" . $rolId . "\"') OR JSON_CONTAINS(roles_ids, '" . $rolId . "')");
+                            }
+                        })->get(['id']);
 
                         \Log::info('[Activar] Broadcast REFLECTIVO - Usuarios encontrados', [
-                            'rol_id' => $rolReflectivo->id,
+                            'rol_ids' => $rolReflectivoIds,
                             'total_usuarios' => $operarios->count(),
                             'usuario_ids' => $operarios->pluck('id')->toArray()
                         ]);
@@ -2853,7 +2856,7 @@ Route::middleware(['auth'])->post('procesos/{procesoId}/activar-recibo', functio
                             ));
                         }
                     } else {
-                        \Log::warning('[Activar] Broadcast REFLECTIVO - Rol costura-reflectivo no encontrado');
+                        \Log::warning('[Activar] Broadcast REFLECTIVO - Roles costura-reflectivo/lider-reflectivo no encontrados');
                     }
                 } catch (\Throwable $e) {
                     \Log::warning('[Activar] Broadcast REFLECTIVO falló', [

@@ -1381,8 +1381,9 @@ class OperarioController extends Controller
             $esCortador = $usuario->hasRole('cortador');
             $esCosturero = $usuario->hasRole('costurero');
             $esCosturaReflectivo = $usuario->hasRole('costura-reflectivo');
+            $esLiderReflectivo = $usuario->hasRole('lider-reflectivo');
             $esAdminCostura = $usuario->hasRole('administrador-costura');
-            $areaOperario = $esCortador ? 'Corte' : (($esCosturero || $esCosturaReflectivo || $esAdminCostura) ? 'Costura' : null);
+            $areaOperario = $esCortador ? 'Corte' : (($esCosturero || $esCosturaReflectivo || $esLiderReflectivo || $esAdminCostura) ? 'Costura' : null);
             if (!$areaOperario) {
                 return response()->json([
                     'success' => false,
@@ -1411,8 +1412,8 @@ class OperarioController extends Controller
 
             $nombreOperario = (string) $usuario->name;
             
-            // Para costura-reflectivo y administrador-costura: usar el nombre del encargado asignado
-            if ($esCosturaReflectivo || $esAdminCostura) {
+            // Para costura-reflectivo, lider-reflectivo y administrador-costura: usar el nombre del encargado asignado
+            if ($esCosturaReflectivo || $esLiderReflectivo || $esAdminCostura) {
                 $encargadoActual = null;
                 if (!empty($recibo->prenda_id)) {
                     $encargadoActual = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
@@ -1492,6 +1493,32 @@ class OperarioController extends Controller
                     'area' => (string) $areaOperario,
                     'nombre_operario' => (string) $nombreOperario,
                 ]));
+                
+                // Notificar a todos los usuarios con rol vista-costura
+                $usuariosVistaCostura = \App\Models\User::all()->filter(function($user) {
+                    return $user->hasRole('vista-costura');
+                });
+                
+                foreach ($usuariosVistaCostura as $usuarioVistaCostura) {
+                    broadcast(new \App\Events\OperarioRecibosActualizados(
+                        userId: (int) $usuarioVistaCostura->id,
+                        payload: [
+                            'area' => (string) $areaOperario,
+                            'accion' => 'recibo_completado',
+                            'recibo_id' => (int) $recibo->id,
+                            'consecutivo' => (int) ($recibo->consecutivo_actual ?? 0),
+                            'prenda_id' => $recibo->prenda_id ? (int) $recibo->prenda_id : null,
+                            'tipo_recibo' => (string) ($recibo->tipo_recibo ?? ''),
+                            'nombre_operario' => (string) $nombreOperario,
+                            'mensaje' => "El recibo #{$recibo->consecutivo_actual} fue completado por {$nombreOperario}",
+                        ]
+                    ));
+                }
+                
+                \Log::info('[OperarioController] Broadcast a vista-costura enviado', [
+                    'recibo_id' => (int) $idRecibo,
+                    'total_vista_costura' => $usuariosVistaCostura->count(),
+                ]);
             } catch (\Exception $e) {
                 \Log::warning('[OperarioController] Error al broadcast ReciboCompletado', [
                     'recibo_id' => (int) $idRecibo,
@@ -1524,8 +1551,9 @@ class OperarioController extends Controller
             $esCortador = $usuario->hasRole('cortador');
             $esCosturero = $usuario->hasRole('costurero');
             $esCosturaReflectivo = $usuario->hasRole('costura-reflectivo');
+            $esLiderReflectivo = $usuario->hasRole('lider-reflectivo');
             $esAdminCostura = $usuario->hasRole('administrador-costura');
-            $areaOperario = $esCortador ? 'Corte' : (($esCosturero || $esCosturaReflectivo || $esAdminCostura) ? 'Costura' : null);
+            $areaOperario = $esCortador ? 'Corte' : (($esCosturero || $esCosturaReflectivo || $esLiderReflectivo || $esAdminCostura) ? 'Costura' : null);
             if (!$areaOperario) {
                 return response()->json([
                     'success' => false,
@@ -1609,6 +1637,41 @@ class OperarioController extends Controller
                 ->where('id_recibo', (int) $idRecibo)
                 ->where('area', $areaOperario)
                 ->delete();
+
+            // Notificar a todos los usuarios con rol vista-costura
+            try {
+                $recibo = \App\Models\ConsecutivoReciboPedido::where('id', $idRecibo)->first();
+                if ($recibo) {
+                    $usuariosVistaCostura = \App\Models\User::all()->filter(function($user) {
+                        return $user->hasRole('vista-costura');
+                    });
+                    
+                    foreach ($usuariosVistaCostura as $usuarioVistaCostura) {
+                        broadcast(new \App\Events\OperarioRecibosActualizados(
+                            userId: (int) $usuarioVistaCostura->id,
+                            payload: [
+                                'area' => (string) $areaOperario,
+                                'accion' => 'recibo_deshecho',
+                                'recibo_id' => (int) $recibo->id,
+                                'consecutivo' => (int) ($recibo->consecutivo_actual ?? 0),
+                                'prenda_id' => $recibo->prenda_id ? (int) $recibo->prenda_id : null,
+                                'tipo_recibo' => (string) ($recibo->tipo_recibo ?? ''),
+                                'mensaje' => "El recibo #{$recibo->consecutivo_actual} fue deshecho",
+                            ]
+                        ));
+                    }
+                    
+                    \Log::info('[OperarioController] Broadcast deshacer a vista-costura enviado', [
+                        'recibo_id' => (int) $idRecibo,
+                        'total_vista_costura' => $usuariosVistaCostura->count(),
+                    ]);
+                }
+            } catch (\Exception $e) {
+                \Log::warning('[OperarioController] Error al broadcast deshacer a vista-costura', [
+                    'recibo_id' => (int) $idRecibo,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             return response()->json([
                 'success' => true,

@@ -572,7 +572,9 @@ class ObtenerPrendasRecibosService
                             ]);
                         } else if ($tipoOperario === 'costura-reflectivo') {
                             // Para costura-reflectivo: el encargado debe ser el usuario logueado
+                            // Para lider-reflectivo: el encargado debe tener rol costura-reflectivo
                             $usuarioNombre = strtolower(trim($usuario->name));
+                            $usuarioLiderReflectivo = $usuario->hasRole('lider-reflectivo');
                             
                             // Buscar encargado en el proceso Costura
                             $procesoCosturaDelaPrenda = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
@@ -582,15 +584,46 @@ class ObtenerPrendasRecibosService
                                 
                             $encargadoAsignado = $procesoCosturaDelaPrenda ? strtolower(trim((string)$procesoCosturaDelaPrenda->encargado)) : null;
                             
-                            if (!$encargadoAsignado || $encargadoAsignado !== $usuarioNombre) {
-                                \Log::info(' [Filtro COSTURA-REFLECTIVO] Usuario no es el encargado asignado', [
+                            if (!$encargadoAsignado) {
+                                \Log::info(' [Filtro COSTURA-REFLECTIVO] Sin encargado asignado', [
                                     'prenda_id' => $prenda->id,
                                     'numero_pedido' => $pedido->numero_pedido,
-                                    'usuario_actual' => $usuario->name,
-                                    'encargado_asignado' => $encargadoAsignado
                                 ]);
                                 continue;
                             }
+                            
+                            if ($usuarioLiderReflectivo) {
+                                // lider-reflectivo: verificar que el encargado tenga rol costura-reflectivo
+                                $encargadoUsuario = \App\Models\User::whereRaw('LOWER(TRIM(name)) = ?', [$encargadoAsignado])->first();
+                                if (!$encargadoUsuario || !$encargadoUsuario->hasRole('costura-reflectivo')) {
+                                    \Log::info(' [Filtro LIDER-REFLECTIVO] Encargado no tiene rol costura-reflectivo', [
+                                        'prenda_id' => $prenda->id,
+                                        'numero_pedido' => $pedido->numero_pedido,
+                                        'encargado' => $encargadoAsignado,
+                                        'tiene_rol_costura_reflectivo' => $encargadoUsuario ? ($encargadoUsuario->hasRole('costura-reflectivo') ? 'SI' : 'NO') : 'USUARIO_NO_ENCONTRADO'
+                                    ]);
+                                    continue;
+                                }
+                            } else {
+                                // costura-reflectivo: solo ve los que le fueron asignados a él
+                                if ($encargadoAsignado !== $usuarioNombre) {
+                                    \Log::info(' [Filtro COSTURA-REFLECTIVO] Usuario no es el encargado asignado', [
+                                        'prenda_id' => $prenda->id,
+                                        'numero_pedido' => $pedido->numero_pedido,
+                                        'usuario_actual' => $usuario->name,
+                                        'encargado_asignado' => $encargadoAsignado
+                                    ]);
+                                    continue;
+                                }
+                            }
+                            
+                            \Log::info(' [Filtro COSTURA-REFLECTIVO/LIDER-REFLECTIVO] Recibo de COSTURA visible', [
+                                'prenda_id' => $prenda->id,
+                                'numero_pedido' => $pedido->numero_pedido,
+                                'usuario_actual' => $usuario->name,
+                                'encargado_asignado' => $encargadoAsignado,
+                                'es_lider_reflectivo' => $usuarioLiderReflectivo ? 'SI' : 'NO'
+                            ]);
                         }
                     }
                 }
@@ -833,6 +866,10 @@ class ObtenerPrendasRecibosService
 
         if ($usuario->hasRole('costura-reflectivo')) {
             return 'costura-reflectivo';
+        }
+
+        if ($usuario->hasRole('lider-reflectivo')) {
+            return 'costura-reflectivo'; // Mismo comportamiento que costura-reflectivo
         }
 
         return 'desconocido';

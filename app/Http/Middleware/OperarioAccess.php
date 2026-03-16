@@ -22,8 +22,8 @@ class OperarioAccess
 
         $usuario = auth()->user();
 
-        // Verificar si tiene rol de cortador, costurero, bodeguero, costura-reflectivo o vista-costura
-        if (!$usuario->hasAnyRole(['cortador', 'costurero', 'bodeguero', 'costura-reflectivo', 'vista-costura', 'administrador-costura', 'confeccion-sobremedida'])) {
+        // Verificar si tiene rol de cortador, costurero, bodeguero, costura-reflectivo, lider-reflectivo o vista-costura
+        if (!$usuario->hasAnyRole(['cortador', 'costurero', 'bodeguero', 'costura-reflectivo', 'lider-reflectivo', 'vista-costura', 'administrador-costura', 'confeccion-sobremedida'])) {
             return redirect()->route('login')
                 ->with('error', 'No tienes acceso a esta sección');
         }

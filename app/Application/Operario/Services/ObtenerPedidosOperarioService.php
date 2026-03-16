@@ -172,6 +172,10 @@ class ObtenerPedidosOperarioService
             return 'costura-reflectivo';
         }
 
+        if ($usuario->hasRole('lider-reflectivo')) {
+            return 'costura-reflectivo'; // Mismo comportamiento que costura-reflectivo
+        }
+
         return 'desconocido';
     }
 

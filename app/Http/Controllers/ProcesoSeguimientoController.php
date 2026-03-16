@@ -162,24 +162,14 @@ class ProcesoSeguimientoController extends Controller
                         'proceso_id' => (int) $proceso->id,
                     ]);
 
-                    // Canal público (fallback): permite que el dashboard del cortador reaccione comparando por nombre
-                    broadcast(new CorteAsignadoOperario([
-                        'area' => $request->area,
-                        'accion' => $accion,
-                        'numero_pedido' => (int) $request->pedido_produccion_id,
-                        'prenda_id' => (int) $request->prenda_id,
-                        'proceso_id' => (int) $proceso->id,
-                        'encargado' => (string) $request->encargado,
-                    ]));
-
-                    \Log::info('[ProcesoSeguimientoController] Broadcast CORTE - emitido a canal publico operarios.corte');
-
+                    // Notificar solo al cortador asignado (canal privado)
                     if ($encargadoNormalizado !== '') {
                         $operario = User::query()
                             ->whereRaw('LOWER(TRIM(name)) = ?', [$encargadoNormalizado])
                             ->first();
 
                         if ($operario && $operario->hasRole('cortador')) {
+                            // Notificación privada al cortador asignado
                             broadcast(new OperarioRecibosActualizados(
                                 userId: (int) $operario->id,
                                 payload: [
@@ -188,11 +178,57 @@ class ProcesoSeguimientoController extends Controller
                                     'numero_pedido' => (int) $request->pedido_produccion_id,
                                     'prenda_id' => (int) $request->prenda_id,
                                     'proceso_id' => (int) $proceso->id,
+                                    'mensaje' => "Tienes un nuevo recibo de corte asignado: Pedido #{$request->pedido_produccion_id}",
                                 ]
                             ));
 
-                            \Log::info('[ProcesoSeguimientoController] Broadcast CORTE - emitido a canal privado App.Models.User', [
+                            \Log::info('[ProcesoSeguimientoController] Broadcast CORTE - emitido a canal privado cortador', [
                                 'user_id' => (int) $operario->id,
+                                'user_name' => $operario->name,
+                            ]);
+                        }
+                    }
+                    
+                    // Eliminar el broadcast público para cortadores (ya no deben recibir notificaciones de otros cortadores)
+                    \Log::info('[ProcesoSeguimientoController] Broadcast CORTE - NO se emite a canal público (solo privado al cortador asignado)');
+                }
+                
+                // Notificar a administrador-costura cuando se asigna a costurero o confeccion-sobremedida
+                if (strtolower(trim((string) $request->area)) === 'costura') {
+                    $encargadoNormalizado = strtolower(trim((string) $request->encargado));
+                    
+                    if ($encargadoNormalizado !== '') {
+                        $operario = User::query()
+                            ->whereRaw('LOWER(TRIM(name)) = ?', [$encargadoNormalizado])
+                            ->first();
+
+                        // Verificar si el encargado tiene rol costurero o confeccion-sobremedida
+                        if ($operario && ($operario->hasRole('costurero') || $operario->hasRole('confeccion-sobremedida'))) {
+                            // Notificar a todos los administradores-costura
+                            $usuariosAdminCostura = User::all()->filter(function($user) {
+                                return $user->hasRole('administrador-costura');
+                            });
+                            
+                            foreach ($usuariosAdminCostura as $admin) {
+                                $rolOperario = $operario->roles->first()->name ?? 'sin rol';
+                                broadcast(new OperarioRecibosActualizados(
+                                    userId: (int) $admin->id,
+                                    payload: [
+                                        'area' => $request->area,
+                                        'accion' => 'recibo_asignado_costura',
+                                        'numero_pedido' => (int) $request->pedido_produccion_id,
+                                        'prenda_id' => (int) $request->prenda_id,
+                                        'proceso_id' => (int) $proceso->id,
+                                        'encargado' => (string) $request->encargado,
+                                        'mensaje' => "El recibo fue asignado a {$request->encargado} ({$rolOperario})",
+                                    ]
+                                ));
+                            }
+                            
+                            \Log::info('[ProcesoSeguimientoController] Broadcast a administrador-costura (encargado es costurero/confeccion-sobremedida)', [
+                                'encargado' => $request->encargado,
+                                'encargado_rol' => $operario->roles->first()->name ?? 'sin rol',
+                                'total_admins' => $usuariosAdminCostura->count(),
                             ]);
                         }
                     }
@@ -208,7 +244,7 @@ class ProcesoSeguimientoController extends Controller
                             ->whereRaw('LOWER(TRIM(name)) = ?', [$encargadoNormalizado])
                             ->first();
 
-                        if ($operario && $operario->hasRole('costura-reflectivo')) {
+                        if ($operario && ($operario->hasRole('costura-reflectivo') || $operario->hasRole('lider-reflectivo'))) {
                             broadcast(new OperarioRecibosActualizados(
                                 userId: (int) $operario->id,
                                 payload: [
@@ -412,7 +448,7 @@ class ProcesoSeguimientoController extends Controller
 
             $proceso->save();
 
-            // Broadcast en actualización: si se asigna/actualiza CORTE, notificar al operario en tiempo real
+            // Broadcast en actualización: si se asigna/actualiza CORTE, notificar solo al cortador asignado
             try {
                 $areaNormalizada = strtolower(trim((string) $request->area));
                 if ($areaNormalizada === 'corte') {
@@ -427,17 +463,7 @@ class ProcesoSeguimientoController extends Controller
                         'proceso_id' => (int) $proceso->id,
                     ]);
 
-                    broadcast(new CorteAsignadoOperario([
-                        'area' => (string) $request->area,
-                        'accion' => 'actualizado',
-                        'numero_pedido' => (int) ($proceso->numero_pedido ?? 0),
-                        'prenda_id' => (int) ($proceso->prenda_pedido_id ?? 0),
-                        'proceso_id' => (int) $proceso->id,
-                        'encargado' => (string) ($request->encargado ?? ''),
-                    ]));
-
-                    \Log::info('[ProcesoSeguimientoController] Broadcast CORTE (actualizar) - emitido a canal publico operarios.corte');
-
+                    // Notificar solo al cortador asignado (canal privado)
                     if ($encargadoNormalizado !== '') {
                         $operario = User::query()
                             ->whereRaw('LOWER(TRIM(name)) = ?', [$encargadoNormalizado])
@@ -452,14 +478,19 @@ class ProcesoSeguimientoController extends Controller
                                     'numero_pedido' => (int) ($proceso->numero_pedido ?? 0),
                                     'prenda_id' => (int) ($proceso->prenda_pedido_id ?? 0),
                                     'proceso_id' => (int) $proceso->id,
+                                    'mensaje' => "Tu recibo de corte ha sido actualizado: Pedido #" . ($proceso->numero_pedido ?? 0),
                                 ]
                             ));
 
-                            \Log::info('[ProcesoSeguimientoController] Broadcast CORTE (actualizar) - emitido a canal privado App.Models.User', [
+                            \Log::info('[ProcesoSeguimientoController] Broadcast CORTE (actualizar) - emitido a canal privado cortador', [
                                 'user_id' => (int) $operario->id,
+                                'user_name' => $operario->name,
                             ]);
                         }
                     }
+                    
+                    // Eliminar el broadcast público para cortadores
+                    \Log::info('[ProcesoSeguimientoController] Broadcast CORTE (actualizar) - NO se emite a canal público (solo privado al cortador asignado)');
                 }
 
                 // Broadcast en actualización: si se asigna/actualiza COSTURA, notificar al operario costura-reflectivo
@@ -471,7 +502,7 @@ class ProcesoSeguimientoController extends Controller
                             ->whereRaw('LOWER(TRIM(name)) = ?', [$encargadoNormalizado])
                             ->first();
 	
-                        if ($operario && $operario->hasRole('costura-reflectivo')) {
+                        if ($operario && ($operario->hasRole('costura-reflectivo') || $operario->hasRole('lider-reflectivo'))) {
                             broadcast(new OperarioRecibosActualizados(
                                 userId: (int) $operario->id,
                                 payload: [
