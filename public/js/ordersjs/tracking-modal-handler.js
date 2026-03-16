@@ -1,18 +1,77 @@
 /**
- * Tracking Modal Handler - Seguimiento por Prenda
+ * TRACKING MODAL HANDLER - Seguimiento por Prenda
+ * 
  * Maneja la integración del modal de seguimiento con la vista de órdenes.
- * Depende de: DateFormatter, StatusFormatter, DOMManipulator, LoadingIndicator,
- * ApiService, ValidationService, NotificationService, AreaResolver, ModalHelper,
- * TrackingHelper, IconSvgProvider
+ * 
+ * RESPONSABILIDADES PRINCIPALES:
+ * - Gestión de modales (tracking, agregar proceso, confirmación)
+ * - Carga y renderizado de órdenes y prendas con seguimiento
+ * - CRUD de procesos (crear, leer, actualizar, eliminar)
+ * - Actualización de tabla de recibos de costura
+ * - Manejo de estado global de seguimiento
+ * 
+ * DEPENDENCIAS EXTERNAS REQUERIDAS:
+ * - ApiService: Llamadas a backend
+ * - DOMManipulator: Operaciones seguras del DOM
+ * - ModalHelper: Gestión de modales
+ * - DateFormatter: Formateo de fechas
+ * - StatusFormatter: Formateo de estados
+ * - ValidationService: Validación de datos
+ * - NotificationService: Notificaciones al usuario
+ * - LoadingIndicator: Indicador de carga
+ * - AreaResolver: Resolución de áreas de procesos
+ * - TrackingHelper: Helpers específicos de seguimiento
+ * - IconSvgProvider: Iconos SVG dinámicos
+ * 
+ * ESTADO GLOBAL (window.*):
+ * - window.currentOrderData: Orden actual siendo visualizada
+ * - window.currentPrendaData: Prenda actual siendo visualizada
+ * - window.currentConsecutivoCosturaData: Data de costura para recibos
+ * - window.prendasData: Cache de prendas cargadas
+ * - window.editingProcessId: ID del proceso en edición (null si nuevo)
+ * - window.processToDelete: Objeto {id, name} del proceso a eliminar
+ * 
+ * @version 1.0.0 (Pre-refactor)
+ * @createdAt 2026-03-16
  */
 
 (function() {
   'use strict';
   
-  // Logger centralizado
+  // ============================================================================
+  // SECCIÓN 1: LOGGING CENTRALIZADO
+  // Responsabilidad: Funciones de logging para debugging
+  // ============================================================================
+  
+  /**
+   * Logger centralizado para información
+   * @param {string} fnName - Nombre de la función que llama
+   * @param {string} message - Mensaje a loguear
+   * @param {*} data - Datos adicionales (opcional)
+   */
   const log = (fn, msg, data) => console.log(`[${fn}] ${msg}`, data || '');
+  
+  /**
+   * Logger centralizado para errores
+   * @param {string} fnName - Nombre de la función que llama
+   * @param {string} message - Mensaje de error
+   * @param {Error} error - Objeto error
+   */
   const err = (fn, msg, e) => console.error(`[${fn}] ${msg}`, e);
 
+  // ============================================================================
+  // SECCIÓN 2: INICIALIZACIÓN Y LISTENERS PRINCIPALES
+  // Responsabilidad: Setup inicial de listeners del modal de tracking
+  // Funciones:
+  //   - initTrackingModalListeners()
+  //   - setupBackButton()
+  // ============================================================================
+
+  /**
+   * Inicializa todos los listeners del modal de tracking
+   * Ejecutado al cargar el DOM. 
+   * Configura: listeners de overlay, botones principales, cierre por ESC
+   */
   function initTrackingModalListeners() {
     DOMManipulator.addEventListeners([
       {
@@ -57,11 +116,42 @@
     ModalHelper.setupEscapeListener('orderTrackingModal', closeTrackingModal);
   }
 
+  /**
+   * Configura el botón "Volver a prendas"
+   * @private
+   */
+  function setupBackButton() {
+    const backBtn = document.getElementById('backToPrendasBtn');
+    if (backBtn) {
+      backBtn.onclick = showPrendasView;
+      log('setupBackButton', 'Configurado');
+    } else {
+      err('setupBackButton', 'No encontrado');
+    }
+  }
+
+  // ============================================================================
+  // SECCIÓN 3: GESTIÓN DE MODALES
+  // Responsabilidad: Abrir, cerrar y configurar modales
+  // Funciones:
+  //   - closeTrackingModal()
+  //   - openAddProcesoModal()
+  //   - closeAddProcesoModal()
+  //   - setupAddProcesoModalListeners()
+  // ============================================================================
+
+  /**
+   * Cierra el modal principal de tracking de órdenes
+   */
   function closeTrackingModal() {
     ModalHelper.close('orderTrackingModal');
     log('closeTrackingModal', 'Modal cerrado');
   }
 
+  /**
+   * Abre el modal para agregar o editar un nuevo proceso
+   * Si no estamos editando, limpia el formulario
+   */
   function openAddProcesoModal() {
     log('openAddProcesoModal', 'Abriendo modal');
     
@@ -78,26 +168,38 @@
     setupAddProcesoModalListeners();
   }
 
+  /**
+   * Configura los listeners necesarios para el modal de agregar proceso
+   * @private
+   */
   function setupAddProcesoModalListeners() {
     ModalHelper.setupOverlayClose('addProcesoOverlay', 'addProcesoModal');
     DOMManipulator.addEventListener('closeAddProcesoModal', 'click', closeAddProcesoModal);
     DOMManipulator.addEventListener('btnCancelAddProceso', 'click', closeAddProcesoModal);
   }
 
+  /**
+   * Cierra el modal de agregar/editar proceso
+   */
   function closeAddProcesoModal() {
     ModalHelper.close('addProcesoModal');
   }
 
-  function setupBackButton() {
-    const backBtn = document.getElementById('backToPrendasBtn');
-    if (backBtn) {
-      backBtn.onclick = showPrendasView;
-      log('setupBackButton', 'Configurado');
-    } else {
-      err('setupBackButton', 'No encontrado');
-    }
-  }
+  // ============================================================================
+  // SECCIÓN 4: CARGA DE DATOS
+  // Responsabilidad: Operaciones asincrónicas para obtener datos del backend
+  // Funciones:
+  //   - window.openOrderTracking()
+  //   - loadOrderBasicData()
+  //   - loadPrendasWithTracking()
+  // ============================================================================
 
+  /**
+   * API PÚBLICA: Abre el modal de tracking para una orden
+   * @param {number|string} orderId - ID de la orden a visualizar
+   * @param {boolean} mostrarSelector - Si mostrar selector de prendas (default: true)
+   * @throws {Error} Si no se pueden cargar los datos
+   */
   window.openOrderTracking = async function(orderId, mostrarSelector = true) {
     try {
       await loadOrderBasicData(orderId);
@@ -109,6 +211,14 @@
     }
   };
 
+  /**
+   * Carga datos básicos de la orden desde el backend
+   * Guarda en: window.currentOrderData
+   * Llama a: updateOrderInfo() para actualizar UI
+   * @param {number|string} orderId - ID de la orden
+   * @throws {Error} Si falla la llamada a API
+   * @private
+   */
   async function loadOrderBasicData(orderId) {
     try {
       const result = await ApiService.ordenes.getDatos(orderId);
@@ -121,6 +231,22 @@
     }
   }
 
+  // ============================================================================
+  // SECCIÓN 5: RENDERIZADO DE INFORMACIÓN DE ORDEN
+  // Responsabilidad: Actualizar UI con datos de orden y prendas
+  // Funciones:
+  //   - updateOrderInfo()
+  //   - updateEstimatedDateDisplay()
+  //   - updateEstimatedDeliveryDate()
+  // ============================================================================
+
+  /**
+   * Actualiza la información de la orden en la UI
+   * Actualiza: número, cliente, estado, fechas, total de días
+   * Se ejecuta automáticamente después de cargar datos
+   * @param {Object} orderData - Datos de la orden del backend
+   * @private
+   */
   function updateOrderInfo(orderData) {
     try {
       const statusDisplay = StatusFormatter.getDisplayStatus(orderData);
@@ -151,6 +277,46 @@
     }
   }
 
+  /**
+   * Actualiza el display de la fecha estimada (color y peso según validez)
+   * FUNCIÓN REUTILIZABLE - Elimina duplicación de código
+   * @param {string} elementId - ID del elemento a actualizar
+   * @param {string} fechaFormateada - Fecha ya formateada (dd/mm/yyyy)
+   * @private
+   */
+  function updateEstimatedDateDisplay(elementId, fechaFormateada) {
+    DOMManipulator.setText(elementId, fechaFormateada);
+    
+    const isValid = fechaFormateada !== '-';
+    DOMManipulator.setStyles(elementId, {
+      'color': isValid ? '#1f2937' : '#9ca3af',
+      'font-weight': isValid ? '600' : '400'
+    });
+  }
+
+  /**
+   * Actualiza la fecha estimada en el selector de prendas
+   * Llamado cada vez que se renderizan las prendas
+   * @private
+   */
+  function updateEstimatedDeliveryDate() {
+    const fechaEstimadaElement = DOMManipulator.getElementById('selectorOrderEstimatedDate');
+    if (!fechaEstimadaElement || !window.currentOrderData) return;
+
+    const fechaEstimada = window.currentOrderData.fecha_estimada_de_entrega;
+    const fechaFormateada = DateFormatter.format(fechaEstimada);
+
+    updateEstimatedDateDisplay('selectorOrderEstimatedDate', fechaFormateada);
+  }
+
+  /**
+   * Carga las prendas con su información de seguimiento
+   * Guarda en: window.prendasData
+   * Llama a: renderPrendas() para renderizar la tabla
+   * @param {number|string} orderId - ID de la orden
+   * @throws {Error} Si falla la llamada a API
+   * @private
+   */
   async function loadPrendasWithTracking(orderId) {
     try {
       const data = await ApiService.prendas.getSeguimiento(orderId);
@@ -161,6 +327,22 @@
     }
   }
 
+  // ============================================================================
+  // SECCIÓN 6: RENDERIZADO DE TABLA DE PRENDAS
+  // Responsabilidad: Renderizar selector de prendas con información de seguimiento
+  // Funciones:
+  //   - renderPrendas()
+  //   - createPrendasTable()
+  //   - showPrendasSelector()
+  //   - cerrarSelectorPrendas()
+  // ============================================================================
+
+  /**
+   * Renderiza la lista de prendas en el selector
+   * Muestra tabla de prendas o mensaje si no hay
+   * @param {Array} prendas - Array de prendas con información de seguimiento
+   * @private
+   */
   function renderPrendas(prendas) {
     const container = document.getElementById('trackingPrendasSelectorContainer');
     if (!container) return;
@@ -170,22 +352,14 @@
     updateEstimatedDeliveryDate();
   }
 
-  function updateEstimatedDeliveryDate() {
-    const fechaEstimadaElement = DOMManipulator.getElementById('selectorOrderEstimatedDate');
-    if (!fechaEstimadaElement || !window.currentOrderData) return;
-
-    const fechaEstimada = window.currentOrderData.fecha_estimada_de_entrega;
-    const fechaFormateada = DateFormatter.format(fechaEstimada);
-
-    DOMManipulator.setText('selectorOrderEstimatedDate', fechaFormateada);
-    
-    const isValid = fechaFormateada !== '-';
-    DOMManipulator.setStyles('selectorOrderEstimatedDate', {
-      'color': isValid ? '#1f2937' : '#9ca3af',
-      'font-weight': isValid ? '600' : '400'
-    });
-  }
-
+  /**
+   * Crea la tabla HTML de prendas
+   * Incluye: nombre, cantidad, procesos, área y estado
+   * Almacena datos en: window.prendasData
+   * @param {Array} prendas - Array de prendas
+   * @returns {string} HTML de la tabla con todas las filas
+   * @private
+   */
   function createPrendasTable(prendas) {
     let tableHtml = `
       <div class="prendas-table-container">
@@ -258,6 +432,11 @@
     return tableHtml;
   }
 
+  /**
+   * Muestra el overlay del selector de prendas
+   * Agrega clase 'show' para mostrar con transición CSS
+   * @private
+   */
   function showPrendasSelector() {
     const overlay = document.getElementById('trackingPrendasSelectorOverlay');
     console.log('[showPrendasSelector] Overlay encontrado:', !!overlay);
@@ -269,6 +448,10 @@
     }
   }
 
+  /**
+   * API PÚBLICA: Cierra el selector de prendas
+   * Elimina clase 'show' y la visibilidad
+   */
   window.cerrarSelectorPrendas = function() {
     const overlay = document.getElementById('trackingPrendasSelectorOverlay');
     if (overlay) {
