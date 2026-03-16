@@ -401,7 +401,7 @@ function setupSearch() {
     if (!searchInput) return;
 
     // Actualizar placeholder
-    searchInput.placeholder = 'Buscar por # Recibo o Cliente...';
+    searchInput.placeholder = 'Buscar por Consecutivo, Prenda o Cliente...';
 
     searchInput.addEventListener('input', function(e) {
         const busqueda = e.target.value.trim().toLowerCase();
@@ -410,25 +410,24 @@ function setupSearch() {
         const ordenCards = document.querySelectorAll('.orden-card-simple');
 
         ordenCards.forEach(card => {
-            // Obtener número de RECIBO desde .orden-right (lado derecho)
-            // Buscar el texto que está después de "RECIBO"
-            const reciboElem = card.querySelector('.orden-right .orden-fecha span:not(.orden-fecha-label)');
-            const numeroRecibo = reciboElem ? reciboElem.textContent?.toLowerCase().trim() : '';
-            
-            // Obtener nombre del cliente
+            // Usar data attributes para búsqueda (más confiable)
+            const numeroRecibo = String(card.dataset.numeroRecibo || '').toLowerCase();
             const clienteName = card.querySelector('.cliente-name')?.textContent?.toLowerCase().trim() || '';
+            const nombrePrenda = String(card.dataset.prenda || '').toLowerCase();
 
             console.log('🔍 Filtro:', {
                 busqueda: busqueda,
                 numeroRecibo: numeroRecibo,
                 clienteName: clienteName,
-                coincide: !busqueda || numeroRecibo.includes(busqueda) || clienteName.includes(busqueda)
+                nombrePrenda: nombrePrenda,
+                coincide: !busqueda || numeroRecibo.includes(busqueda) || clienteName.includes(busqueda) || nombrePrenda.includes(busqueda)
             });
 
-            // Mostrar si coincide con recibo o cliente (búsqueda vacía muestra todos)
+            // Mostrar si coincide con consecutivo, cliente o prenda (búsqueda vacía muestra todos)
             const coincide = !busqueda || 
                              numeroRecibo.includes(busqueda) || 
-                             clienteName.includes(busqueda);
+                             clienteName.includes(busqueda) ||
+                             nombrePrenda.includes(busqueda);
 
             card.style.display = coincide ? '' : 'none';
         });

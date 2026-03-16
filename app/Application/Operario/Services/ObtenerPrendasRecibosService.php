@@ -17,12 +17,30 @@ class ObtenerPrendasRecibosService
         // Filtra por:
         // - Área: Solo "Costura"
         // - Encargado: Debe estar asignado (no vacío/null)
+        // - EXCLUYE: Recibos asignados a usuarios con rol costura-reflectivo
         $usuarioFake = new User();
         $usuarioFake->name = 'VISTA GLOBAL';
 
         // Reutilizar la lógica marcando el rol como vista-costura a nivel de tipos.
         // Aquí no usamos hasRole; simplemente construimos el query base para COSTURA.
         $tiposRecibo = ['COSTURA', 'COSTURA-BODEGA'];
+
+        // Obtener usuarios con rol costura-reflectivo para excluirlos
+        $rolCosturaReflectivoId = \App\Models\Role::where('name', 'costura-reflectivo')->value('id');
+        $usuariosCosturaReflectivo = collect();
+        
+        if ($rolCosturaReflectivoId) {
+            $usuariosCosturaReflectivo = \App\Models\User::query()
+                ->where(function ($q) use ($rolCosturaReflectivoId) {
+                    $q->whereJsonContains('roles_ids', (int) $rolCosturaReflectivoId)
+                        ->orWhere('role_id', (int) $rolCosturaReflectivoId);
+                })
+                ->pluck('name')
+                ->map(fn($n) => strtolower(trim((string) $n)))
+                ->filter()
+                ->unique()
+                ->values();
+        }
 
         $recibos = ConsecutivoReciboPedido::where('activo', 1)
             ->whereIn('tipo_recibo', $tiposRecibo)
@@ -42,7 +60,7 @@ class ObtenerPrendasRecibosService
                 return 'prenda_' . $recibo->prenda_id;
             }
             return 'pedido_' . $recibo->pedido_produccion_id;
-        })->flatMap(function ($recibosDelaPrenda) {
+        })->flatMap(function ($recibosDelaPrenda) use ($usuariosCosturaReflectivo) {
             $primeRecibo = $recibosDelaPrenda->first();
 
             if ($primeRecibo->prenda_id && $primeRecibo->prenda) {
@@ -69,7 +87,8 @@ class ObtenerPrendasRecibosService
                 }
 
                 // Filtrar recibos que tengan encargado de costura asignado
-                $recibosConEncargado = $recibosDelTipo->filter(function ($recibo) {
+                // Y EXCLUIR los asignados a usuarios con rol costura-reflectivo
+                $recibosConEncargado = $recibosDelTipo->filter(function ($recibo) use ($usuariosCosturaReflectivo) {
                     $procesos = $recibo->prenda && $recibo->prenda->relationLoaded('procesosPrenda')
                         ? $recibo->prenda->procesosPrenda
                         : collect();
@@ -91,7 +110,22 @@ class ObtenerPrendasRecibosService
                         ->first();
 
                     // Solo incluir si tiene encargado asignado
-                    return $procesoCostura && !empty($procesoCostura->encargado);
+                    if (!$procesoCostura || empty($procesoCostura->encargado)) {
+                        return false;
+                    }
+
+                    // EXCLUIR si el encargado tiene rol costura-reflectivo
+                    $encargadoNormalizado = strtolower(trim((string) $procesoCostura->encargado));
+                    if ($usuariosCosturaReflectivo->contains($encargadoNormalizado)) {
+                        \Log::info('🔍 [administrador-costura] Excluyendo recibo asignado a costura-reflectivo', [
+                            'recibo_id' => $recibo->id,
+                            'encargado' => $procesoCostura->encargado,
+                            'prenda_id' => $recibo->prenda_id
+                        ]);
+                        return false;
+                    }
+
+                    return true;
                 })->values();
 
                 // Si no hay recibos con encargado, saltar esta prenda

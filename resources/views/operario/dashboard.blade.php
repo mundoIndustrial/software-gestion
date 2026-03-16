@@ -606,7 +606,7 @@
     <!-- Búsqueda -->
     <div class="search-section">
         <span class="material-symbols-rounded">search</span>
-        <input type="text" id="searchInput" class="search-box" placeholder="Buscar por # Recibo, Prenda o Cliente...">
+        <input type="text" id="searchInput" class="search-box" placeholder="Buscar por Consecutivo, Prenda o Cliente...">
         <button id="clearFilterBtn" class="clear-filter-btn" title="Limpiar filtro" style="display: none;">
             <span class="material-symbols-rounded">close</span>
         </button>
@@ -720,6 +720,7 @@
                          data-prenda-id="{{ $prenda['prenda_id'] }}"
                          data-cliente="{{ strtolower($prenda['cliente']) }}"
                          data-tipo-recibo="{{ $esReflectivo }}"
+                         data-numero-recibo="{{ $prenda['recibos'][0]['consecutivo_actual'] ?? $prenda['numero_pedido'] }}"
                          style="display: {{ $displayInicial }}">
                         
                         <!-- Borde izquierdo eliminado -->
@@ -1480,18 +1481,18 @@
                 const cardsActuales = ordenesListActual ? ordenesListActual.querySelectorAll('.orden-card-simple') : [];
 
                 cardsActuales.forEach(card => {
-                    const reciboDom = card.querySelector('.orden-right .orden-fecha span:not(.orden-fecha-label)');
-                    const numeroRecibo = reciboDom ? reciboDom.textContent.toLowerCase().trim() : '';
+                    // Usar data attributes para búsqueda
+                    const numeroRecibo = String(card.dataset.numeroRecibo || '').toLowerCase();
                     const cliente = String(card.dataset.cliente || '').toLowerCase();
+                    const nombrePrenda = String(card.dataset.prenda || '').toLowerCase();
 
-                    const prendaDom = card.querySelector('.orden-prendas .prendas-label strong');
-                    const nombrePrenda = prendaDom ? prendaDom.textContent.toLowerCase().trim() : '';
+                    // Buscar solo en: consecutivo (número de recibo), cliente, nombre de prenda
+                    const coincide = numeroRecibo.includes(busqueda) || 
+                                     cliente.includes(busqueda) || 
+                                     nombrePrenda.includes(busqueda) || 
+                                     busqueda === '';
 
-                    if (numeroRecibo.includes(busqueda) || cliente.includes(busqueda) || nombrePrenda.includes(busqueda) || busqueda === '') {
-                        card.style.display = '';
-                    } else {
-                        card.style.display = 'none';
-                    }
+                    card.style.display = coincide ? '' : 'none';
                 });
             };
 
