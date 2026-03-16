@@ -1535,8 +1535,8 @@ class RegistroOrdenQueryController extends Controller
                 'pedido_id' => $pedidoId
             ]);
             
-            // Resolver PedidoController correctamente desde el contenedor
-            $pedidoController = app()->make(\App\Infrastructure\Http\Controllers\PedidoController::class);
+            // Resolver PedidoQueryController correctamente desde el contenedor
+            $pedidoController = app()->make(\App\Infrastructure\Http\Controllers\PedidoQueryController::class);
             
             // Detectar si viene de insumos para evitar filtro de de_bodega
             $esInsumos = request()->headers->get('referer') && str_contains(request()->headers->get('referer'), 'insumos/materiales');

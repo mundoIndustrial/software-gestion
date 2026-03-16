@@ -18,7 +18,7 @@ function getCsrfToken() {
 /**
  * Mostrar alerta
  */
-function mostrarAlerta(titulo, mensaje, tipo = 'info') {
+window.mostrarAlerta = function(titulo, mensaje, tipo = 'info') {
     const modal = document.getElementById('modalAlerta');
     if (!modal) {
         alert(`${titulo}: ${mensaje}`);
@@ -76,7 +76,7 @@ function mostrarAlerta(titulo, mensaje, tipo = 'info') {
 /**
  * Cerrar modal de alerta
  */
-function cerrarModalAlerta() {
+window.cerrarModalAlerta = function() {
     const modal = document.getElementById('modalAlerta');
     if (modal) {
         modal.classList.add('hidden');
@@ -88,7 +88,7 @@ function cerrarModalAlerta() {
 /**
  * Abrir modal de novedades de recibo (Estilo Despacho)
  */
-function abrirModalNovedadesRecibo(pedidoId, numeroRecibo) {
+window.abrirModalNovedadesRecibo = function(pedidoId, numeroRecibo) {
     console.log('[abrirModalNovedadesRecibo] 🚀 Iniciando apertura de modal');
     console.log('[abrirModalNovedadesRecibo] 📋 Pedido ID:', pedidoId, 'Número Recibo:', numeroRecibo);
     
@@ -272,7 +272,7 @@ function getTipoColor(tipo) {
 /**
  * Guardar nueva novedad
  */
-async function guardarNovedad() {
+window.guardarNovedad = async function() {
     console.log('[guardarNovedad] 🚀 Iniciando guardado de nueva novedad');
     
     try {
@@ -361,7 +361,7 @@ async function guardarNovedad() {
 /**
  * Eliminar novedad
  */
-async function eliminarNovedad(novedadId) {
+window.eliminarNovedad = async function(novedadId) {
     console.log('[eliminarNovedad] 🚀 Iniciando eliminación de novedad ID:', novedadId);
     
     try {
@@ -487,7 +487,7 @@ async function eliminarNovedad(novedadId) {
 /**
  * Cerrar modal de novedades
  */
-function cerrarModalNovedades() {
+window.cerrarModalNovedades = function() {
     const modal = document.getElementById('novedadesEditModal');
     if (modal) {
         modal.classList.add('hidden');
@@ -502,7 +502,7 @@ function cerrarModalNovedades() {
 /**
  * Editar novedad existente
  */
-function editarNovedad(novedadId, textoActual) {
+window.editarNovedad = function(novedadId, textoActual) {
     try {
         // Verificación de seguridad adicional en frontend
         const ctx = window.__novedadesContext || {};
@@ -576,7 +576,7 @@ function editarNovedad(novedadId, textoActual) {
 /**
  * Guardar edición de novedad
  */
-async function guardarEdicionNovedad(novedadId) {
+window.guardarEdicionNovedad = async function(novedadId) {
     try {
         const textarea = document.getElementById('editarNovedadTextarea');
         if (!textarea) return;
@@ -702,7 +702,7 @@ async function actualizarBotonNovedadesEnTabla(pedidoId, numeroRecibo) {
 /**
  * Cerrar modal de confirmación
  */
-function cerrarModalConfirmarEliminar() {
+window.cerrarModalConfirmarEliminar = function() {
     console.log('[cerrarModalConfirmarEliminar] 🚀 Iniciando cierre de modal');
     
     const modal = document.getElementById('modalConfirmarEliminar');
@@ -720,7 +720,7 @@ function cerrarModalConfirmarEliminar() {
 /**
  * Cerrar modal de edición
  */
-function cerrarModalEditarNovedad() {
+window.cerrarModalEditarNovedad = function() {
     const modal = document.getElementById('modalEditarNovedad');
     if (modal) {
         modal.remove();

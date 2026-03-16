@@ -854,6 +854,14 @@ Route::withoutMiddleware(['api'])
     // Obtener usuarios con rol 'costura'
     Route::get('costura', [App\Http\Controllers\UsuarioRolController::class, 'getUsuariosCostura'])
         ->name('costura');
+
+    // Obtener usuarios con rol 'corte'
+    Route::get('corte', [App\Http\Controllers\UsuarioRolController::class, 'getUsuariosCorte'])
+        ->name('corte');
+
+    // Obtener usuarios por múltiples roles (genérico)
+    Route::get('por-roles', [App\Http\Controllers\UsuarioRolController::class, 'getUsuariosPorRoles'])
+        ->name('por-roles');
 });
 
 /**

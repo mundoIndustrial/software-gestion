@@ -78,4 +78,94 @@ class UsuarioRolController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Obtener usuarios con rol 'corte'
+     */
+    public function getUsuariosCorte(Request $request)
+    {
+        try {
+            // Buscar el rol corte
+            $rolCorte = Role::where('name', 'corte')->first();
+            
+            if (!$rolCorte) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró el rol "corte" en el sistema'
+                ], 404);
+            }
+            
+            // Obtener usuarios con rol corte
+            $usuarios = User::select('id', 'name', 'email')
+                ->whereJsonContains('roles_ids', $rolCorte->id)
+                ->orderBy('name')
+                ->distinct()
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'usuarios' => $usuarios
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener usuarios de corte: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener usuarios por múltiples roles (genérico)
+     * Query params: roles (comma-separated) ej: /api/usuarios/por-roles?roles=costurero,corte
+     */
+    public function getUsuariosPorRoles(Request $request)
+    {
+        try {
+            $rolesStr = $request->query('roles', '');
+            
+            if (empty($rolesStr)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Debe proporcionar al menos un rol'
+                ], 400);
+            }
+
+            $rolesArray = array_map('trim', explode(',', $rolesStr));
+            
+            // Buscar los roles
+            $roles = Role::whereIn('name', $rolesArray)->get();
+            
+            if ($roles->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontraron los roles especificados'
+                ], 404);
+            }
+
+            $roleIds = $roles->pluck('id')->toArray();
+            
+            // Obtener usuarios que tienen cualquiera de los roles especificados
+            $usuarios = User::select('id', 'name', 'email')
+                ->orderBy('name');
+
+            // Añadir condiciones OR para cada rol
+            foreach ($roleIds as $roleId) {
+                $usuarios->orWhereJsonContains('roles_ids', $roleId);
+            }
+
+            $usuarios = $usuarios->distinct()->get();
+
+            return response()->json([
+                'success' => true,
+                'usuarios' => $usuarios
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener usuarios: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

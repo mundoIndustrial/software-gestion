@@ -1052,7 +1052,27 @@ async function handleAgregarProcesoDesdeBadge() {
         }
 
         const area = document.getElementById('procesoArea').value;
-        const encargado = document.getElementById('procesoEncargado').value.toUpperCase();
+        
+        // Obtener encargado del campo visible (select o input)
+        const inputEncargado = document.getElementById('procesoEncargado');
+        const selectEncargado = document.getElementById('procesoEncargadoSelect');
+        
+        let encargado = '';
+        
+        // Si el input está visible (display != 'none'), usar su valor
+        if (inputEncargado && inputEncargado.style.display !== 'none') {
+            encargado = inputEncargado.value;
+        } 
+        // Si el select está visible, usar su valor
+        else if (selectEncargado && selectEncargado.style.display !== 'none') {
+            encargado = selectEncargado.value;
+        }
+        // Fallback: intentar ambos en orden
+        else {
+            encargado = inputEncargado?.value || selectEncargado?.value || '';
+        }
+        
+        encargado = encargado.toUpperCase();
 
         if (!area) {
             showError('Por favor selecciona un área/proceso');
@@ -1661,32 +1681,54 @@ if (document.readyState === 'loading') {
 function initializeReciboAprobadoListener() {
     console.log('🔴 [ReciboAprobado] Inicializando listener en tiempo real...');
     
-    // Esperar a que Echo esté listo
-    window.waitForEcho(function() {
-        try {
-            console.log('🔴 [ReciboAprobado] Echo está listo, conectando al canal...');
-            
-            // Conectar al canal y escuchar el evento
-            window.EchoInstance.channel('recibos-costura')
-                .listen('recibo.aprobado', function(data) {
-                    console.log('🔴 [ReciboAprobado] ¡Evento recibido en tiempo real!', data);
-                    
-                    // Mostrar notificación visual
-                    showRecibAprobadoNotification(data);
-                    
-                    // Recargar la tabla dinámicamente
-                    recargarTablaRecibosEnTiempoReal(data);
-                    
-                    // Reproducir sonido de notificación (opcional)
-                    playNotificationSound();
+    // waitForEcho se define en bootstrap.js cargado vía Vite.
+    // Si Vite no está corriendo (dev) y no hay build de producción, Echo no estará disponible.
+    if (typeof window.waitForEcho === 'function') {
+        window.waitForEcho(function() {
+            _connectReciboAprobadoChannel();
+        });
+    } else {
+        // Esperar a que Vite termine de cargar el módulo (máx 3s)
+        var attempts = 0;
+        var checkInterval = setInterval(function() {
+            attempts++;
+            if (typeof window.waitForEcho === 'function') {
+                clearInterval(checkInterval);
+                window.waitForEcho(function() {
+                    _connectReciboAprobadoChannel();
                 });
-            
-            console.log('✅ [ReciboAprobado] Listener configurado correctamente');
-            
-        } catch (error) {
-            console.error('❌ [ReciboAprobado] Error al configurar el listener:', error);
-        }
-    });
+            } else if (attempts >= 6) {
+                clearInterval(checkInterval);
+                console.info('[ReciboAprobado] Tiempo real no disponible (Vite/Echo no cargado). Las actualizaciones serán por recarga de página.');
+            }
+        }, 500);
+    }
+}
+
+function _connectReciboAprobadoChannel() {
+    try {
+        console.log('🔴 [ReciboAprobado] Echo está listo, conectando al canal...');
+        
+        // Conectar al canal y escuchar el evento
+        window.EchoInstance.channel('recibos-costura')
+            .listen('recibo.aprobado', function(data) {
+                console.log('🔴 [ReciboAprobado] ¡Evento recibido en tiempo real!', data);
+                
+                // Mostrar notificación visual
+                showRecibAprobadoNotification(data);
+                
+                // Recargar la tabla dinámicamente
+                recargarTablaRecibosEnTiempoReal(data);
+                
+                // Reproducir sonido de notificación (opcional)
+                playNotificationSound();
+            });
+        
+        console.log('✅ [ReciboAprobado] Listener configurado correctamente');
+        
+    } catch (error) {
+        console.error('❌ [ReciboAprobado] Error al configurar el listener:', error);
+    }
 }
 
 /**

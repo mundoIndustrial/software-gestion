@@ -2,6 +2,7 @@
 
 namespace App\Infrastructure\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Domain\Pedidos\Services\ColoresPorTallaService;
 use App\Domain\Pedidos\ValueObjects\AsignacionColor;
 use Illuminate\Http\Request;

@@ -287,7 +287,27 @@
                     </div>
                     <div class="add-proceso-form-group">
                         <label for="procesoEncargado">Encargado:</label>
-                        <input type="text" id="procesoEncargado" class="add-proceso-input" placeholder="Nombre del encargado" style="text-transform: uppercase;">
+                        
+                        <!-- Input con datalist para áreas genéricas -->
+                        <input 
+                            type="text" 
+                            id="procesoEncargado" 
+                            class="add-proceso-input" 
+                            placeholder="Nombre del encargado"
+                            list="encargadoList"
+                            style="text-transform: uppercase;" 
+                            data-input-type="datalist">
+                        
+                        <datalist id="encargadoList"></datalist>
+                        
+                        <!-- Select para Costura/Corte (se oculta por defecto) -->
+                        <select 
+                            id="procesoEncargadoSelect" 
+                            class="add-proceso-select" 
+                            style="display: none;"
+                            data-input-type="select">
+                            <option value="">Seleccionar encargado...</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -1937,10 +1957,28 @@
     transition: all 0.3s ease !important;
 }
 
-.add-proceso-btn-primary:hover {
+.add-proceso-btn-primary:hover:not(:disabled) {
     background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
     transform: translateY(-1px) !important;
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+}
+
+.add-proceso-btn-primary:active:not(:disabled) {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Estado deshabilitado - cargando */
+.add-proceso-btn-primary:disabled {
+    background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%) !important;
+    cursor: not-allowed !important;
+    opacity: 0.9 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15) !important;
+}
+
+.add-proceso-btn-primary:disabled:hover {
+    background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%) !important;
+    transform: none !important;
 }
 
 .add-proceso-btn-primary svg {
@@ -1956,6 +1994,10 @@
     justify-content: center !important;
 }
 
+.btn-content {
+    display: flex !important;
+}
+
 .btn-loading {
     display: none !important;
 }
@@ -1964,10 +2006,12 @@
     width: 18px !important;
     height: 18px !important;
     animation: spin 1s linear infinite !important;
+    stroke: white !important;
 }
 
 .btn-loading .spinner-circle {
     animation: spin 1s linear infinite !important;
+    stroke: currentColor !important;
 }
 
 @keyframes spin {
@@ -2709,3 +2753,6 @@ html[data-theme="light"] .tracking-info-value {
     animation: spin 1s linear infinite !important;
 }
 </style>
+
+<!-- Script para selector dinámico de encargado por área -->
+<script src="{{ asset('js/ordersjs/tracking-modal-area-selector.js') }}"></script>

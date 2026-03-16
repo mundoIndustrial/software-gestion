@@ -2,6 +2,7 @@
 
 namespace App\Infrastructure\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Application\ProcesoSeguimiento\DTOs\GuardarProcesoSeguimientoDTO;
 use App\Application\ProcesoSeguimiento\DTOs\ActualizarProcesoSeguimientoDTO;
 use App\Application\ProcesoSeguimiento\UseCases\GuardarProcesoSeguimientoUseCase;
@@ -41,7 +42,7 @@ class ProcesoSeguimientoController extends Controller
             // Cargar seguimiento actualizado para la respuesta
             $prendaActualizada = null;
             try {
-                $registroController = new \App\Infrastructure\Http\Controllers\RegistroOrdenQueryController();
+                $registroController = app()->make(\App\Infrastructure\Http\Controllers\RegistroOrdenQueryController::class);
                 $seguimientoResponse = $registroController->getSeguimientoPorPrenda($request->pedido_produccion_id);
                 $seguimientoData     = json_decode($seguimientoResponse->getContent(), true);
 

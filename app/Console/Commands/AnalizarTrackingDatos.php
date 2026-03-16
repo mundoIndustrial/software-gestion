@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Application\Pedidos\UseCases\ObtenerProcesosPorPedidoUseCase;
 use App\Infrastructure\Http\Controllers\Asesores\ProcesosPedidoController;
-use App\Infrastructure\Http\Controllers\PedidoController;
+use App\Infrastructure\Http\Controllers\PedidoQueryController;
 
 class AnalizarTrackingDatos extends Command
 {
@@ -119,7 +119,7 @@ class AnalizarTrackingDatos extends Command
         $this->line("─────────────────────────────────────────────────────────────────");
 
         try {
-            $pedidoController = app(PedidoController::class);
+            $pedidoController = app(PedidoQueryController::class);
             $response = $pedidoController->obtenerDetalleCompleto($pedidoId, false);
             $detalleData = json_decode($response->getContent(), true);
             

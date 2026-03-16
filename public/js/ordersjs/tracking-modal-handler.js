@@ -2717,7 +2717,28 @@ const trackingTableStyles = `
       }
 
       const area = document.getElementById('procesoArea').value;
-      const encargado = document.getElementById('procesoEncargado').value.toUpperCase();
+      
+      // Obtener encargado del campo visible (select o input)
+      // Verificar primero si el input está visible, si no, intentar del select
+      const inputEncargado = document.getElementById('procesoEncargado');
+      const selectEncargado = document.getElementById('procesoEncargadoSelect');
+      
+      let encargado = '';
+      
+      // Si el input está visible (display != 'none'), usar su valor
+      if (inputEncargado && inputEncargado.style.display !== 'none') {
+        encargado = inputEncargado.value;
+      } 
+      // Si el select está visible, usar su valor
+      else if (selectEncargado && selectEncargado.style.display !== 'none') {
+        encargado = selectEncargado.value;
+      }
+      // Fallback: intentar ambos en orden
+      else {
+        encargado = inputEncargado?.value || selectEncargado?.value || '';
+      }
+      
+      encargado = encargado.toUpperCase();
 
       if (!area) {
         showError('Por favor selecciona un área/proceso');
