@@ -3,6 +3,7 @@
 namespace App\Application\PedidosLogo\UseCases;
 
 use App\Domain\PedidosLogo\Repositories\ProcesoPrendaDetalleReadRepositoryInterface;
+use App\Models\PrendaReciboCompletado;
 use App\Services\CalculadorDiasService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
@@ -39,7 +40,16 @@ final class ListPedidosLogoUseCase
             $perPage
         );
 
-        $recibos->getCollection()->transform(function ($proceso) use ($isMinimalLogoRole) {
+        // Obtener IDs de recibos completados para bordador
+        $areaCompletado = $isBordador ? 'BORDANDO' : null;
+        $recibosCompletadosIds = [];
+        if ($areaCompletado) {
+            $recibosCompletadosIds = PrendaReciboCompletado::where('area', $areaCompletado)
+                ->pluck('id_recibo')
+                ->toArray();
+        }
+
+        $recibos->getCollection()->transform(function ($proceso) use ($isMinimalLogoRole, $recibosCompletadosIds, $isBordador) {
             $pedido = $proceso->prenda?->pedidoProduccion;
             $clienteNombre = $pedido?->cliente?->nombre
                 ?? $pedido?->cliente
@@ -64,6 +74,9 @@ final class ListPedidosLogoUseCase
             $fechaFinDias = $fechaEntrega ? \Carbon\Carbon::parse($fechaEntrega) : now();
             $totalDias = CalculadorDiasService::calcularDiasHabiles($proceso->created_at, $fechaFinDias) ?? 0;
 
+            // Verificar si está completado (solo para bordador)
+            $completado = $isBordador && in_array($proceso->id, $recibosCompletadosIds);
+
             if ($isMinimalLogoRole) {
                 return [
                     'id' => $proceso->id,
@@ -77,6 +90,7 @@ final class ListPedidosLogoUseCase
                     'tipo_proceso_id' => $proceso->tipo_proceso_id,
                     'es_parcial' => (bool)($proceso->es_parcial ?? false),
                     'pedido_parcial_id' => $proceso->pedido_parcial_id ?? null,
+                    'completado' => $completado,
                 ];
             }
 

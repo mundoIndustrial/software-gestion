@@ -75,7 +75,9 @@
                             @endif
                         </div>
                         <div style="color: #cbd5e1;">Fecha Creación</div>
-                        @if($isMinimalLogoRole)
+                        @if($isBordador)
+                            <div style="color: #cbd5e1;">Completado</div>
+                        @elseif($isMinimalLogoRole)
                             <div style="color: #cbd5e1;">Estado</div>
                         @endif
                         @if(!$isMinimalLogoRole)
@@ -696,6 +698,84 @@ document.addEventListener('DOMContentLoaded', function() {
             const pedidoParcialId = recibo.pedido_parcial_id || null;
             const nombreProceso = recibo.nombre_proceso || recibo.tipo_proceso || '';
             const procesoPrendaDetalleId = recibo.id;
+            const completado = recibo.completado || false;
+
+            if (window.__isBordadorRole) {
+                const rowBgColor = completado ? '#a7cdff' : 'white';
+                const rowBorderColor = completado ? '#0284c7' : 'transparent';
+                const btnBg = completado 
+                    ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' 
+                    : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+                const btnShadow = completado 
+                    ? '0 2px 8px rgba(34, 197, 94, 0.2)' 
+                    : '0 2px 8px rgba(245, 158, 11, 0.2)';
+                const btnTitle = completado ? 'Click para deshacer completado' : 'Marcar como completado';
+                
+                return `
+                    <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-completado="${completado ? '1' : '0'}" style="
+                        min-width: 900px;
+                        display: grid;
+                        grid-template-columns: 100px 200px 340px 180px 140px;
+                        gap: 1rem;
+                        padding: 1rem 1.5rem;
+                        align-items: center;
+                        transition: all 0.3s ease;
+                        background: ${rowBgColor};
+                        border-left: 4px solid ${rowBorderColor};
+                        border-bottom: 1px solid #e2e8f0;
+                    ">
+                        <div style="display: flex; justify-content: center; gap: 0.5rem;">
+                            <button 
+                               onclick="verRecibo(${pedidoId}, ${prendaId}, '${String(tipoProceso || '').replace(/'/g, "\\'")}', ${esParcial ? 'true' : 'false'}, ${pedidoParcialId ? Number(pedidoParcialId) : 'null'}, '${String(nombreProceso || '').replace(/'/g, "\\'")}')"
+                               title="Ver detalles"
+                               style="
+                                   background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+                                   color: white;
+                                   border: none;
+                                   padding: 0.6rem;
+                                   border-radius: 8px;
+                                   cursor: pointer;
+                                   font-size: 1rem;
+                                   transition: all 0.3s ease;
+                                   display: flex;
+                                   align-items: center;
+                                   justify-content: center;
+                                   width: 40px;
+                                   height: 40px;
+                                   box-shadow: 0 2px 8px rgba(14, 165, 233, 0.2);
+                               " onmouseover="this.style.transform='translateY(-3px) scale(1.1)'; this.style.boxShadow='0 6px 16px rgba(14, 165, 233, 0.35)'" onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 2px 8px rgba(14, 165, 233, 0.2)'">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div style="font-weight: 700; color: #0ea5e9; font-size: 0.95rem;">${numeroRecibo}</div>
+                        <div style="color: #334155; font-size: 0.95rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${nombreCliente}</div>
+                        <div style="color: #64748b; font-size: 0.95rem;">${formatearFecha(fechaCreacion)}</div>
+                        <div style="display: flex; justify-content: center;">
+                            <button 
+                               onclick="marcarReciboCompletado(${procesoPrendaDetalleId}, ${numeroRecibo}, this)"
+                               title="${btnTitle}"
+                               style="
+                                   background: ${btnBg};
+                                   color: white;
+                                   border: none;
+                                   padding: 0.6rem;
+                                   border-radius: 8px;
+                                   cursor: pointer;
+                                   font-size: 1rem;
+                                   transition: all 0.3s ease;
+                                   display: flex;
+                                   align-items: center;
+                                   justify-content: center;
+                                   width: 40px;
+                                   height: 40px;
+                                   box-shadow: ${btnShadow};
+                               " onmouseover="this.style.transform='translateY(-3px) scale(1.1)'" onmouseout="this.style.transform='translateY(0) scale(1)'">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
 
             if (window.__isDisenadorLogos) {
                 return `
@@ -876,6 +956,82 @@ document.addEventListener('DOMContentLoaded', function() {
         window.__actualizarDiasYColoresLogo();
         window.__programarActualizacionDiariaLogo();
     }
+    
+    // Función para marcar/desmarcar recibo como completado (bordador)
+    window.marcarReciboCompletado = async function(idRecibo, numeroRecibo, buttonElement) {
+        const row = buttonElement.closest('[data-recibo-row="1"]');
+        const estaCompletado = row && row.dataset.completado === '1';
+        
+        const confirmMsg = estaCompletado 
+            ? '¿Deshacer el completado de este recibo?' 
+            : '¿Marcar este recibo como completado?';
+        
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+        
+        buttonElement.disabled = true;
+        buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        try {
+            const response = await fetch('{{ route("visualizador-logo.pedidos-logo.marcar-completado") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    id_recibo: idRecibo,
+                    numero_recibo: numeroRecibo,
+                }),
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                const nuevoCompletado = data.completado === true;
+                
+                // Actualizar dataset de la fila
+                if (row) {
+                    row.dataset.completado = nuevoCompletado ? '1' : '0';
+                    
+                    // Cambiar color de la fila
+                    if (nuevoCompletado) {
+                        row.style.background = '#a7cdff';
+                        row.style.borderLeftColor = '#0284c7';
+                    } else {
+                        row.style.background = 'white';
+                        row.style.borderLeftColor = 'transparent';
+                    }
+                }
+                
+                // Actualizar botón
+                if (nuevoCompletado) {
+                    buttonElement.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+                    buttonElement.style.boxShadow = '0 2px 8px rgba(34, 197, 94, 0.2)';
+                    buttonElement.title = 'Click para deshacer completado';
+                    buttonElement.style.cursor = 'pointer';
+                } else {
+                    buttonElement.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+                    buttonElement.style.boxShadow = '0 2px 8px rgba(245, 158, 11, 0.2)';
+                    buttonElement.title = 'Marcar como completado';
+                }
+                
+                buttonElement.innerHTML = '<i class="fas fa-check"></i>';
+                buttonElement.disabled = false;
+            } else {
+                alert('Error: ' + (data.message || 'No se pudo procesar'));
+                buttonElement.disabled = false;
+                buttonElement.innerHTML = '<i class="fas fa-check"></i>';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error de conexión. Intenta de nuevo.');
+            buttonElement.disabled = false;
+            buttonElement.innerHTML = '<i class="fas fa-check"></i>';
+        }
+    };
     
     function formatearFecha(fecha) {
         if (!fecha) return '-';

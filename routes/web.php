@@ -2201,6 +2201,9 @@ Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,lider_prod
     Route::get('/pedidos-logo', [App\Http\Controllers\VisualizadorLogoController::class, 'pedidosLogo'])->name('pedidos-logo');
     Route::get('/pedidos-logo/data', [App\Infrastructure\Http\Controllers\VisualizadorLogo\PedidosLogoController::class, 'data'])->name('pedidos-logo.data');
     Route::post('/pedidos-logo/area-novedad', [App\Infrastructure\Http\Controllers\VisualizadorLogo\PedidosLogoController::class, 'guardarAreaNovedad'])->name('pedidos-logo.area-novedad');
+    Route::post('/pedidos-logo/marcar-completado', [App\Infrastructure\Http\Controllers\VisualizadorLogo\PedidosLogoController::class, 'marcarCompletado'])
+        ->middleware('role:bordador,admin')
+        ->name('pedidos-logo.marcar-completado');
 
     Route::get('/disenos-logo', [App\Http\Controllers\VisualizadorLogoController::class, 'disenosLogo'])->name('disenos-logo');
     Route::get('/disenos-logo/data', [App\Http\Controllers\VisualizadorLogoController::class, 'disenosLogoData'])->name('disenos-logo.data');
