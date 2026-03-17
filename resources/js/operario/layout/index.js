@@ -1,29 +1,24 @@
-/**
- * Script: layout.js
- * Gestiona interactividad del layout de operarios
- */
-
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     setupUserDropdown();
     setupNotificaciones();
-    setupSearch();
+
+    if (typeof window.__initDashboardSearch !== 'function') {
+        setupSearch();
+    }
 });
 
-/**
- * Configurar dropdown de usuario
- */
 function setupUserDropdown() {
     const userBtn = document.getElementById('userBtn');
     const userMenu = document.getElementById('userMenu');
 
     if (!userBtn || !userMenu) return;
 
-    userBtn.addEventListener('click', function(e) {
+    userBtn.addEventListener('click', function (e) {
         e.stopPropagation();
         userMenu.classList.toggle('active');
     });
 
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         if (!userBtn.contains(e.target) && !userMenu.contains(e.target)) {
             userMenu.classList.remove('active');
         }
@@ -161,9 +156,9 @@ function setupNotificaciones() {
 
             const resp = await fetch(`/operario/api/notificaciones/recibos?${qs.toString()}`, {
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
-                credentials: 'same-origin'
+                credentials: 'same-origin',
             });
 
             const data = await resp.json();
@@ -195,7 +190,7 @@ function setupNotificaciones() {
                 detalle: `${n?.cliente || '-'}`,
                 fecha: n?.fecha || '',
                 type: 'info',
-                icon: 'checkroom'
+                icon: 'checkroom',
             });
         });
 
@@ -210,10 +205,10 @@ function setupNotificaciones() {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'Content-Type': 'application/json',
-                ...(csrf ? { 'X-CSRF-TOKEN': csrf } : {})
+                ...(csrf ? { 'X-CSRF-TOKEN': csrf } : {}),
             },
             credentials: 'same-origin',
-            body: JSON.stringify({ tipo_recibo: tipoReciboNotificaciones })
+            body: JSON.stringify({ tipo_recibo: tipoReciboNotificaciones }),
         });
 
         const data = await resp.json().catch(() => null);
@@ -228,10 +223,10 @@ function setupNotificaciones() {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'Content-Type': 'application/json',
-                ...(csrf ? { 'X-CSRF-TOKEN': csrf } : {})
+                ...(csrf ? { 'X-CSRF-TOKEN': csrf } : {}),
             },
             credentials: 'same-origin',
-            body: JSON.stringify({ tipo_recibo: tipoReciboNotificaciones })
+            body: JSON.stringify({ tipo_recibo: tipoReciboNotificaciones }),
         });
 
         const data = await resp.json().catch(() => null);
@@ -240,7 +235,7 @@ function setupNotificaciones() {
         }
     }
 
-    btn.addEventListener('click', async function(e) {
+    btn.addEventListener('click', async function (e) {
         e.stopPropagation();
         const isOpen = menu.classList.toggle('active');
         if (isOpen) {
@@ -249,7 +244,6 @@ function setupNotificaciones() {
                 const merged = mergeServerItemsIntoPush(serverItems);
                 renderPushItems(merged);
 
-                // Guardar marca de tiempo de "última revisión" para traer solo nuevas la próxima vez
                 saveSince(new Date().toISOString());
             } else {
                 renderPushItems(loadPushItems());
@@ -257,13 +251,13 @@ function setupNotificaciones() {
         }
     });
 
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         if (!btn.contains(e.target) && !menu.contains(e.target)) {
             menu.classList.remove('active');
         }
     });
 
-    list.addEventListener('click', async function(e) {
+    list.addEventListener('click', async function (e) {
         const actionBtn = e.target?.closest('button[data-action="leer"]');
         if (!actionBtn) return;
 
@@ -277,7 +271,6 @@ function setupNotificaciones() {
             const next = current.filter((n) => String(n.id) !== String(id));
             savePushItems(next);
 
-            // Si el payload corresponde a un recibo real (id numérico), registrar leído en BD
             const numericId = Number(id);
             if (Number.isFinite(numericId) && numericId > 0) {
                 try {
@@ -298,7 +291,7 @@ function setupNotificaciones() {
         }
     });
 
-    markAllBtn.addEventListener('click', async function(e) {
+    markAllBtn.addEventListener('click', async function (e) {
         e.stopPropagation();
         try {
             markAllBtn.disabled = true;
@@ -306,7 +299,6 @@ function setupNotificaciones() {
             savePushItems([]);
             renderPushItems([]);
 
-            // Intentar marcar como leídas en BD todas las que tengan id numérico
             const anyNumeric = (items || []).some((n) => Number.isFinite(Number(n?.id)) && Number(n?.id) > 0);
             if (anyNumeric) {
                 try {
@@ -322,15 +314,13 @@ function setupNotificaciones() {
         }
     });
 
-    // Carga inicial del badge (sin abrir)
     const items = loadPushItems();
     setBadgeCount(items.length);
 
-    // Inicializar NotificacionesPush para todos los roles (no solo vista-costura)
     window.NotificacionesPush = {
-        add: function(payload) {
+        add: function (payload) {
             const current = loadPushItems();
-            const id = payload?.id || (Date.now() + '-' + Math.random().toString(16).slice(2));
+            const id = payload?.id || Date.now() + '-' + Math.random().toString(16).slice(2);
             const exists = current.some((n) => String(n?.id) === String(id));
             if (exists) {
                 return;
@@ -342,7 +332,7 @@ function setupNotificaciones() {
                     detalle: payload?.message || payload?.detalle || '',
                     fecha: payload?.fecha || '',
                     type: payload?.type || 'info',
-                    icon: payload?.icon || 'notifications'
+                    icon: payload?.icon || 'notifications',
                 },
                 ...current,
             ].slice(0, 50);
@@ -352,34 +342,32 @@ function setupNotificaciones() {
             if (menu.classList.contains('active')) {
                 renderPushItems(next);
             }
-        }
+        },
     };
 
-    // Realtime: refrescar notificaciones cuando llegue un evento de asignación
-    // Se engancha a los mismos eventos ya usados en el dashboard.
     function hookRealtimeRefresh() {
         try {
             if (!window.EchoInstance || !window.OPERARIO_USUARIO?.id) return;
 
-            window.EchoInstance.private(`App.Models.User.${window.OPERARIO_USUARIO.id}`)
-                .listen('.operario.recibos.actualizados', () => {
+            window.EchoInstance.private(`App.Models.User.${window.OPERARIO_USUARIO.id}`).listen(
+                '.operario.recibos.actualizados',
+                () => {
                     renderPushItems(loadPushItems());
-                });
+                }
+            );
 
-            window.EchoInstance.channel('operarios.corte')
-                .listen('.corte.asignado', (e) => {
-                    const encargadoEvento = String(e?.encargado || '').trim().toLowerCase();
-                    const nombreActual = String(window.OPERARIO_USUARIO?.nombre || '').trim().toLowerCase();
-                    if (encargadoEvento && nombreActual && encargadoEvento === nombreActual) {
-                        renderPushItems(loadPushItems());
-                    }
-                });
+            window.EchoInstance.channel('operarios.corte').listen('.corte.asignado', (e) => {
+                const encargadoEvento = String(e?.encargado || '').trim().toLowerCase();
+                const nombreActual = String(window.OPERARIO_USUARIO?.nombre || '').trim().toLowerCase();
+                if (encargadoEvento && nombreActual && encargadoEvento === nombreActual) {
+                    renderPushItems(loadPushItems());
+                }
+            });
         } catch (e) {
             console.warn('[Notificaciones] No se pudo enganchar realtime', e);
         }
     }
 
-    // Esperar un poco a EchoInstance (Vite/Echo carga async)
     let tries = 0;
     (function waitEcho() {
         tries += 1;
@@ -392,59 +380,34 @@ function setupNotificaciones() {
     })();
 }
 
-/**
- * Configurar búsqueda de pedidos
- */
 function setupSearch() {
     const searchInput = document.getElementById('searchInput');
 
     if (!searchInput) return;
 
-    // Actualizar placeholder
     searchInput.placeholder = 'Buscar por Consecutivo, Prenda o Cliente...';
 
-    searchInput.addEventListener('input', function(e) {
+    searchInput.addEventListener('input', function (e) {
         const busqueda = e.target.value.trim().toLowerCase();
 
-        // Obtener todas las tarjetas de orden
         const ordenCards = document.querySelectorAll('.orden-card-simple');
 
-        ordenCards.forEach(card => {
-            // Usar data attributes para búsqueda (más confiable)
+        ordenCards.forEach((card) => {
             const numeroRecibo = String(card.dataset.numeroRecibo || '').toLowerCase();
             const clienteName = card.querySelector('.cliente-name')?.textContent?.toLowerCase().trim() || '';
             const nombrePrenda = String(card.dataset.prenda || '').toLowerCase();
 
-            console.log('🔍 Filtro:', {
-                busqueda: busqueda,
-                numeroRecibo: numeroRecibo,
-                clienteName: clienteName,
-                nombrePrenda: nombrePrenda,
-                coincide: !busqueda || numeroRecibo.includes(busqueda) || clienteName.includes(busqueda) || nombrePrenda.includes(busqueda)
-            });
-
-            // Mostrar si coincide con consecutivo, cliente o prenda (búsqueda vacía muestra todos)
-            const coincide = !busqueda || 
-                             numeroRecibo.includes(busqueda) || 
-                             clienteName.includes(busqueda) ||
-                             nombrePrenda.includes(busqueda);
+            const coincide =
+                !busqueda ||
+                numeroRecibo.includes(busqueda) ||
+                clienteName.includes(busqueda) ||
+                nombrePrenda.includes(busqueda);
 
             card.style.display = coincide ? '' : 'none';
         });
     });
 }
 
-/**
- * Buscar pedidos (función deprecated - ahora el filtro es client-side)
- */
-function buscarPedidos(busqueda) {
-    // Ya no se usa - el filtro es client-side más eficiente
-    console.log('[BUSCAR] Búsqueda client-side:', busqueda);
-}
-
-/**
- * Agregar estilos dinámicos para dropdown
- */
 const layoutStyle = document.createElement('style');
 layoutStyle.textContent = `
     .user-menu {
@@ -523,7 +486,6 @@ layoutStyle.textContent = `
         overflow: hidden;
     }
 
-    /* Mejoras para mobile */
     @media (max-width: 768px) {
         .notificaciones-menu {
             width: 320px;
@@ -531,29 +493,29 @@ layoutStyle.textContent = `
             right: -10px;
             margin-top: 0.25rem;
         }
-        
+
         .notificaciones-header {
             padding: 10px 12px;
         }
-        
+
         .notificaciones-title {
             font-size: 14px;
         }
-        
+
         .notificaciones-markall {
             font-size: 12px;
             padding: 4px 8px;
         }
-        
+
         .notificaciones-list {
             max-height: 300px;
         }
-        
+
         .notificacion-item {
             padding: 10px 12px;
             gap: 8px;
         }
-        
+
         .notificacion-title {
             font-size: 13px;
             line-height: 1.3;
@@ -561,7 +523,7 @@ layoutStyle.textContent = `
             word-break: break-word;
             hyphens: auto;
         }
-        
+
         .notificacion-meta {
             font-size: 11px;
             margin-top: 3px;
@@ -569,7 +531,7 @@ layoutStyle.textContent = `
             word-wrap: break-word;
             word-break: break-word;
         }
-        
+
         .notificacion-read {
             padding: 6px 8px;
             font-size: 11px;
@@ -577,7 +539,7 @@ layoutStyle.textContent = `
             min-width: 70px;
         }
     }
-    
+
     @media (max-width: 480px) {
         .notificaciones-menu {
             width: 280px;
@@ -585,46 +547,46 @@ layoutStyle.textContent = `
             right: -15px;
             left: auto;
         }
-        
+
         .notificaciones-header {
             padding: 8px 10px;
         }
-        
+
         .notificaciones-title {
             font-size: 13px;
         }
-        
+
         .notificaciones-markall {
             font-size: 11px;
             padding: 3px 6px;
         }
-        
+
         .notificaciones-list {
             max-height: 250px;
         }
-        
+
         .notificacion-item {
             padding: 8px 10px;
             gap: 6px;
             flex-direction: column;
             align-items: stretch;
         }
-        
+
         .notificacion-main {
             flex: 1;
             margin-bottom: 6px;
         }
-        
+
         .notificacion-title {
             font-size: 12px;
             line-height: 1.4;
         }
-        
+
         .notificacion-meta {
             font-size: 10px;
             margin-top: 2px;
         }
-        
+
         .notificacion-read {
             padding: 6px 8px;
             font-size: 10px;
@@ -633,26 +595,26 @@ layoutStyle.textContent = `
             margin-top: 4px;
         }
     }
-    
+
     @media (max-width: 360px) {
         .notificaciones-menu {
             width: 260px;
             max-width: 99vw;
             right: -20px;
         }
-        
+
         .notificaciones-title {
             font-size: 12px;
         }
-        
+
         .notificacion-item {
             padding: 6px 8px;
         }
-        
+
         .notificacion-title {
             font-size: 11px;
         }
-        
+
         .notificacion-meta {
             font-size: 9px;
         }
@@ -732,4 +694,5 @@ layoutStyle.textContent = `
         color: rgba(44, 62, 80, 0.7);
     }
 `;
+
 document.head.appendChild(layoutStyle);

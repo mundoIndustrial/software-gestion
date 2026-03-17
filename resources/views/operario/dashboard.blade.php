@@ -169,42 +169,12 @@
                         <div class="orden-body {{ ($reciboCompletadoArea || (auth()->user()->hasRole('vista-costura') && $completadoVistaSegunArea)) ? 'recibo-completado-area' : '' }}">
                             @php
                                 $encargadoVista = null;
-                                // Para vista-costura, buscar el encargado según el área actual del recibo
-                                if (auth()->user()->hasRole('vista-costura')) {
-                                    // Buscar el encargado del proceso correspondiente al área actual
-                                    $procesoActual = null;
-                                    if ($areaReciboNormalizada === 'corte') {
-                                        $procesoActual = \App\Models\ProcesoPrenda::where('numero_pedido', $prenda['numero_pedido'])
-                                            ->where('prenda_pedido_id', $prenda['prenda_id'])
-                                            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
-                                            ->whereNull('deleted_at')
-                                            ->latest('fecha_inicio')
-                                            ->first();
-                                    } elseif ($areaReciboNormalizada === 'costura') {
-                                        $procesoActual = \App\Models\ProcesoPrenda::where('numero_pedido', $prenda['numero_pedido'])
-                                            ->where('prenda_pedido_id', $prenda['prenda_id'])
-                                            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                                            ->whereNull('deleted_at')
-                                            ->latest('fecha_inicio')
-                                            ->first();
-                                    } elseif (in_array($areaReciboNormalizada, ['control calidad', 'control de calidad'], true)) {
-                                        $procesoActual = \App\Models\ProcesoPrenda::where('numero_pedido', $prenda['numero_pedido'])
-                                            ->where('prenda_pedido_id', $prenda['prenda_id'])
-                                            ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
-                                            ->whereNull('deleted_at')
-                                            ->latest('fecha_inicio')
-                                            ->first();
-                                    }
-                                    $encargadoVista = $procesoActual ? $procesoActual->encargado : null;
-                                } else {
-                                    // Lógica original para otros roles
-                                    if ($areaReciboNormalizada === 'corte') {
-                                        $encargadoVista = $reciboPrincipal['encargado_corte'] ?? null;
-                                    } elseif ($areaReciboNormalizada === 'costura') {
-                                        $encargadoVista = $reciboPrincipal['encargado_costura'] ?? null;
-                                    } elseif (in_array($areaReciboNormalizada, ['control calidad', 'control de calidad'], true)) {
-                                        $encargadoVista = $reciboPrincipal['encargado_control_calidad'] ?? null;
-                                    }
+                                if ($areaReciboNormalizada === 'corte') {
+                                    $encargadoVista = $reciboPrincipal['encargado_corte'] ?? null;
+                                } elseif ($areaReciboNormalizada === 'costura') {
+                                    $encargadoVista = $reciboPrincipal['encargado_costura'] ?? null;
+                                } elseif (in_array($areaReciboNormalizada, ['control calidad', 'control de calidad'], true)) {
+                                    $encargadoVista = $reciboPrincipal['encargado_control_calidad'] ?? null;
                                 }
                                 $encargadoVista = is_string($encargadoVista) ? trim($encargadoVista) : $encargadoVista;
                                 
@@ -388,17 +358,7 @@
                                             $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
                                             $areaActual = $prenda['recibos'][0]['area'] ?? null;
                                             $procesoId = $prenda['recibos'][0]['proceso_id_costura'] ?? null;
-                                            // Para vista-costura, buscar el encargado real del proceso de costura
-                                            $encargadoCostura = null;
-                                            if (strtolower(trim($areaActual ?? '')) === 'costura') {
-                                                $procesoCosturaReal = \App\Models\ProcesoPrenda::where('numero_pedido', $prenda['numero_pedido'])
-                                                    ->where('prenda_pedido_id', $prenda['prenda_id'])
-                                                    ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                                                    ->whereNull('deleted_at')
-                                                    ->latest('fecha_inicio')
-                                                    ->first();
-                                                $encargadoCostura = $procesoCosturaReal ? $procesoCosturaReal->encargado : null;
-                                            }
+                                            $encargadoCostura = $prenda['recibos'][0]['encargado_costura'] ?? null;
                                             $tipoRecibo = strtoupper($tiposUnicos->first() ?? 'COSTURA');
                                             $esCC = in_array(strtolower(trim($areaActual ?? '')), ['control calidad', 'control de calidad']);
                                             $esCosturaProceso = strtolower(trim($areaActual ?? '')) === 'costura';
@@ -791,17 +751,7 @@ if (auth()->user()->hasRole('administrador-costura')) {
                                             $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
                                             $areaActual = $prenda['recibos'][0]['area'] ?? null;
                                             $procesoId = $prenda['recibos'][0]['proceso_id_costura'] ?? null;
-                                            // Para vista-costura, buscar el encargado real del proceso de costura
-                                            $encargadoCostura = null;
-                                            if (strtolower(trim($areaActual ?? '')) === 'costura') {
-                                                $procesoCosturaReal = \App\Models\ProcesoPrenda::where('numero_pedido', $prenda['numero_pedido'])
-                                                    ->where('prenda_pedido_id', $prenda['prenda_id'])
-                                                    ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                                                    ->whereNull('deleted_at')
-                                                    ->latest('fecha_inicio')
-                                                    ->first();
-                                                $encargadoCostura = $procesoCosturaReal ? $procesoCosturaReal->encargado : null;
-                                            }
+                                            $encargadoCostura = $prenda['recibos'][0]['encargado_costura'] ?? null;
                                             $tipoRecibo = strtoupper($tiposUnicos->first() ?? 'COSTURA');
                                             $esCC = in_array(strtolower(trim($areaActual ?? '')), ['control calidad', 'control de calidad']);
                                             $esCosturaProceso = strtolower(trim($areaActual ?? '')) === 'costura';

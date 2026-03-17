@@ -153,7 +153,38 @@ class ObtenerPrendasRecibosService
                             'colores' => $talla->colores,
                         ];
                     })->toArray() : [],
-                    'recibos' => $recibosConEncargado->map(function ($recibo) {
+                    'recibos' => (function () use ($recibosConEncargado) {
+                        $reciboIds = $recibosConEncargado->pluck('id')->filter()->values()->all();
+
+                        $completadosRows = empty($reciboIds)
+                            ? collect()
+                            : \DB::table('prenda_recibo_completado')
+                                ->whereIn('id_recibo', $reciboIds)
+                                ->select(['id_recibo', 'area'])
+                                ->get();
+
+                        $completadosCorte = $completadosRows
+                            ->filter(fn($r) => strtolower(trim((string) ($r->area ?? ''))) === 'corte')
+                            ->pluck('id_recibo')
+                            ->map(fn($id) => (int) $id)
+                            ->flip();
+
+                        $completadosCostura = $completadosRows
+                            ->filter(fn($r) => strtolower(trim((string) ($r->area ?? ''))) === 'costura')
+                            ->pluck('id_recibo')
+                            ->map(fn($id) => (int) $id)
+                            ->flip();
+
+                        $completadosControlCalidad = $completadosRows
+                            ->filter(function ($r) {
+                                $a = strtolower(trim((string) ($r->area ?? '')));
+                                return $a === 'control calidad' || $a === 'control de calidad';
+                            })
+                            ->pluck('id_recibo')
+                            ->map(fn($id) => (int) $id)
+                            ->flip();
+
+                        return $recibosConEncargado->map(function ($recibo) use ($completadosCorte, $completadosCostura, $completadosControlCalidad) {
                         $procesos = $recibo->prenda && $recibo->prenda->relationLoaded('procesosPrenda')
                             ? $recibo->prenda->procesosPrenda
                             : collect();
@@ -187,24 +218,10 @@ class ObtenerPrendasRecibosService
                             ->sortByDesc(fn($p) => $p->created_at)
                             ->first();
 
-                        // Consultar si el recibo está completado por área
-                        $completadoCorte = \DB::table('prenda_recibo_completado')
-                            ->where('id_recibo', $recibo->id)
-                            ->where('area', 'corte')
-                            ->exists();
-                        
-                        $completadoCostura = \DB::table('prenda_recibo_completado')
-                            ->where('id_recibo', $recibo->id)
-                            ->where('area', 'costura')
-                            ->exists();
-                        
-                        $completadoControlCalidad = \DB::table('prenda_recibo_completado')
-                            ->where('id_recibo', $recibo->id)
-                            ->where(function($query) {
-                                $query->where('area', 'control calidad')
-                                      ->orWhere('area', 'control de calidad');
-                            })
-                            ->exists();
+                        $rid = (int) $recibo->id;
+                        $completadoCorte = $completadosCorte->has($rid);
+                        $completadoCostura = $completadosCostura->has($rid);
+                        $completadoControlCalidad = $completadosControlCalidad->has($rid);
 
                         return [
                             'id' => $recibo->id,
@@ -222,7 +239,8 @@ class ObtenerPrendasRecibosService
                             'completado_costura' => $completadoCostura,
                             'completado_control_calidad' => $completadoControlCalidad,
                         ];
-                    })->toArray(),
+                    })->toArray();
+                    })(),
                     'total_recibos' => $recibosConEncargado->count(),
                     'fecha_creacion' => $prenda->created_at,
                 ];

@@ -13,6 +13,10 @@ use App\Observers\ProcesoPrendaObserver;
 use App\Observers\PedidoProduccionObserver;
 use App\Domain\Operario\Repositories\OperarioRepository;
 use App\Infrastructure\Persistence\Eloquent\OperarioRepositoryImpl;
+use App\Domain\Operario\Repositories\ConsecutivoReciboPedidoRepository;
+use App\Domain\Operario\Repositories\ProcesoPrendaRepository;
+use App\Infrastructure\Persistence\Eloquent\ConsecutivoReciboPedidoRepositoryImpl;
+use App\Infrastructure\Persistence\Eloquent\ProcesoPrendaRepositoryImpl;
 use App\Infrastructure\Providers\AsesoresServiceProvider;
 use App\Infrastructure\Providers\PedidosLogoServiceProvider;
 use App\Infrastructure\Providers\PedidosProduccionServiceProvider;
@@ -35,6 +39,16 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             OperarioRepository::class,
             OperarioRepositoryImpl::class
+        );
+
+        $this->app->bind(
+            ConsecutivoReciboPedidoRepository::class,
+            ConsecutivoReciboPedidoRepositoryImpl::class
+        );
+
+        $this->app->bind(
+            ProcesoPrendaRepository::class,
+            ProcesoPrendaRepositoryImpl::class
         );
 
         // Registrar implementaciones de Procesos (DDD)

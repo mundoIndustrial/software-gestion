@@ -23,13 +23,14 @@ class EncargadoCosturaAsignado implements ShouldBroadcastNow
     public $nombrePrenda;
     public $cliente;
     public $procesoUpdatedAt;
+    public $encargadoRol;
 
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($pedidoId, $prendaId, $numeroRecibo, $encargado, $procesoId, $nombrePrenda = null, $procesoUpdatedAt = null, $consecutivoReciboId = null, $cliente = null)
+    public function __construct($pedidoId, $prendaId, $numeroRecibo, $encargado, $procesoId, $nombrePrenda = null, $procesoUpdatedAt = null, $consecutivoReciboId = null, $cliente = null, $encargadoRol = null)
     {
         $this->pedidoId = $pedidoId;
         $this->prendaId = $prendaId;
@@ -40,6 +41,7 @@ class EncargadoCosturaAsignado implements ShouldBroadcastNow
         $this->procesoUpdatedAt = $procesoUpdatedAt;
         $this->consecutivoReciboId = $consecutivoReciboId;
         $this->cliente = $cliente;
+        $this->encargadoRol = $encargadoRol;
     }
 
     /**
@@ -75,6 +77,7 @@ class EncargadoCosturaAsignado implements ShouldBroadcastNow
             'numero_recibo' => $this->numeroRecibo,
             'consecutivo_recibo_id' => $this->consecutivoReciboId,
             'encargado' => $this->encargado,
+            'encargado_rol' => $this->encargadoRol,
             'proceso_id' => $this->procesoId,
             'nombre_prenda' => $this->nombrePrenda,
             'cliente' => $this->cliente,
@@ -87,6 +90,7 @@ class EncargadoCosturaAsignado implements ShouldBroadcastNow
             'numero_recibo' => $this->numeroRecibo,
             'consecutivo_recibo_id' => $this->consecutivoReciboId,
             'encargado' => $this->encargado,
+            'encargado_rol' => $this->encargadoRol,
             'proceso_id' => $this->procesoId,
             'nombre_prenda' => $this->nombrePrenda,
             'cliente' => $this->cliente,

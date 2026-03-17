@@ -146,8 +146,8 @@
         </main>
     </div>
 
+    @vite(['resources/js/app.js'])
     <script src="{{ asset('js/configuraciones/toast-notifications.js') }}"></script>
-    <script src="{{ asset('js/operario/layout.js') }}"></script>
     @stack('scripts')
 </body>
 </html>

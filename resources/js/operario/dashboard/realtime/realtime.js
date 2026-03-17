@@ -269,6 +269,15 @@ export function initRealtimeListeners() {
                             '[Operario Dashboard] Admin-costura recibió encargado.costura.asignado (operarios.corte), refrescando lista'
                         );
 
+                        const encargadoRol = String(e?.encargado_rol || '').trim().toLowerCase();
+                        if (encargadoRol === 'costura-reflectivo') {
+                            console.log(
+                                '[Operario Dashboard] Admin-costura: encargado es costura-reflectivo, no notifica (solo refresca lista)'
+                            );
+                            actualizarListaSinRecargar();
+                            return;
+                        }
+
                         try {
                             window.__adminCosturaNotifsSeen = window.__adminCosturaNotifsSeen || {};
                             const encargadoStr = String(e?.encargado || '').trim();

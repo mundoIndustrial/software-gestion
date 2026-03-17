@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Application\Operario\Services\ObtenerPedidosOperarioService;
 use App\Application\Operario\Services\ObtenerPrendasRecibosService;
 use App\Application\Operario\UseCases\GetOperarioDashboardUseCase;
+use App\Application\Operario\UseCases\CompletarReciboOperarioUseCase;
+use App\Application\Operario\UseCases\DeshacerReciboOperarioUseCase;
 use App\Domain\Operario\Repositories\OperarioRepository;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Models\PedidoAnchoGeneral;
@@ -29,6 +31,8 @@ class OperarioController extends Controller
         private OperarioRepository $operarioRepository,
         private ObtenerPedidoUseCase $obtenerPedidoUseCase,
         private GetOperarioDashboardUseCase $getOperarioDashboardUseCase,
+        private CompletarReciboOperarioUseCase $completarReciboOperarioUseCase,
+        private DeshacerReciboOperarioUseCase $deshacerReciboOperarioUseCase,
     ) {
         $this->middleware('auth')->except(['getPedidoData']);
         $this->middleware('operario-access')->except(['getPedidoData']);
@@ -1235,319 +1239,22 @@ class OperarioController extends Controller
 
     public function completarRecibo(Request $request, $idRecibo)
     {
-        try {
-            $usuario = Auth::user();
+        $result = $this->completarReciboOperarioUseCase->execute((int) $idRecibo);
 
-            $esCortador = $usuario->hasRole('cortador');
-            $esCosturero = $usuario->hasRole('costurero');
-            $esCosturaReflectivo = $usuario->hasRole('costura-reflectivo');
-            $esLiderReflectivo = $usuario->hasRole('lider-reflectivo');
-            $esAdminCostura = $usuario->hasRole('administrador-costura');
-            $areaOperario = $esCortador ? 'Corte' : (($esCosturero || $esCosturaReflectivo || $esLiderReflectivo || $esAdminCostura) ? 'Costura' : null);
-            if (!$areaOperario) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Rol no autorizado'
-                ], 403);
-            }
-
-            $recibo = \App\Models\ConsecutivoReciboPedido::where('id', $idRecibo)
-                ->where('activo', 1)
-                ->first();
-
-            if (!$recibo) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Recibo no encontrado'
-                ], 404);
-            }
-
-            $areaRecibo = trim((string) ($recibo->area ?? ''));
-            if (strcasecmp($areaRecibo, $areaOperario) !== 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Este recibo no está en tu área actual'
-                ], 403);
-            }
-
-            $nombreOperario = (string) $usuario->name;
-            
-            // Para costura-reflectivo, lider-reflectivo y administrador-costura: usar el nombre del encargado asignado
-            if ($esCosturaReflectivo || $esLiderReflectivo || $esAdminCostura) {
-                $encargadoActual = null;
-                if (!empty($recibo->prenda_id)) {
-                    $encargadoActual = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
-                        ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                        ->whereNull('deleted_at')
-                        ->latest('created_at')
-                        ->value('encargado');
-                }
-
-                $encargadoActual = is_string($encargadoActual) ? trim($encargadoActual) : $encargadoActual;
-                if (empty($encargadoActual)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'El recibo no tiene encargado de Costura asignado'
-                    ], 422);
-                }
-                $nombreOperario = (string) $encargadoActual;
-            }
-
-            if ($esCortador) {
-                DB::transaction(function () use ($recibo) {
-                    $recibo->area = 'Costura';
-                    $recibo->save();
-
-                    if (!empty($recibo->prenda_id)) {
-                        $prenda = \App\Models\PrendaPedido::where('id', $recibo->prenda_id)
-                            ->with(['pedidoProduccion'])
-                            ->first();
-
-                        $numeroPedido = $prenda && $prenda->pedidoProduccion
-                            ? (int) $prenda->pedidoProduccion->numero_pedido
-                            : null;
-
-                        if (!empty($numeroPedido)) {
-                            $procesoCostura = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
-                                ->where('prenda_pedido_id', $recibo->prenda_id)
-                                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                                ->whereNull('deleted_at')
-                                ->first();
-
-                            if (!$procesoCostura) {
-                                $procesoCostura = \App\Models\ProcesoPrenda::create([
-                                    'numero_pedido' => $numeroPedido,
-                                    'prenda_pedido_id' => $recibo->prenda_id,
-                                    'numero_recibo' => $recibo->consecutivo_actual,
-                                    'proceso' => 'Costura',
-                                    'fecha_inicio' => now(),
-                                    'encargado' => null,
-                                    'estado_proceso' => 'Pendiente',
-                                    'codigo_referencia' => 'COS-' . ($recibo->consecutivo_actual ?? 0) . '-' . date('YmdHis'),
-                                ]);
-                            } else {
-                                $procesoCostura->encargado = null;
-                                $procesoCostura->save();
-                            }
-                        }
-                    }
-                });
-            }
-
-            DB::table('prenda_recibo_completado')->updateOrInsert(
-                ['id_recibo' => (int) $recibo->id, 'area' => $areaOperario],
-                [
-                    'numero_recibo' => (int) ($recibo->consecutivo_actual ?? 0),
-                    'nombre_operario' => $nombreOperario,
-                    'fecha_completado' => now(),
-                ]
-            );
-
-            try {
-                event(new \App\Events\ReciboCompletado([
-                    'recibo_id' => (int) $recibo->id,
-                    'consecutivo' => (int) ($recibo->consecutivo_actual ?? 0),
-                    'pedido_produccion_id' => (int) ($recibo->pedido_produccion_id ?? 0),
-                    'prenda_id' => $recibo->prenda_id ? (int) $recibo->prenda_id : null,
-                    'tipo_recibo' => (string) ($recibo->tipo_recibo ?? ''),
-                    'area' => (string) $areaOperario,
-                    'nombre_operario' => (string) $nombreOperario,
-                ]));
-                
-                // Notificar a todos los usuarios con rol vista-costura
-                $usuariosVistaCostura = \App\Models\User::all()->filter(function($user) {
-                    return $user->hasRole('vista-costura');
-                });
-                
-                foreach ($usuariosVistaCostura as $usuarioVistaCostura) {
-                    broadcast(new \App\Events\OperarioRecibosActualizados(
-                        userId: (int) $usuarioVistaCostura->id,
-                        payload: [
-                            'area' => (string) $areaOperario,
-                            'accion' => 'recibo_completado',
-                            'recibo_id' => (int) $recibo->id,
-                            'consecutivo' => (int) ($recibo->consecutivo_actual ?? 0),
-                            'prenda_id' => $recibo->prenda_id ? (int) $recibo->prenda_id : null,
-                            'tipo_recibo' => (string) ($recibo->tipo_recibo ?? ''),
-                            'nombre_operario' => (string) $nombreOperario,
-                            'mensaje' => "El recibo #{$recibo->consecutivo_actual} fue completado por {$nombreOperario}",
-                        ]
-                    ));
-                }
-                
-                \Log::info('[OperarioController] Broadcast a vista-costura enviado', [
-                    'recibo_id' => (int) $idRecibo,
-                    'total_vista_costura' => $usuariosVistaCostura->count(),
-                ]);
-            } catch (\Exception $e) {
-                \Log::warning('[OperarioController] Error al broadcast ReciboCompletado', [
-                    'recibo_id' => (int) $idRecibo,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Recibo marcado como completado',
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Error al completar recibo: ' . $e->getMessage(), [
-                'id_recibo' => $idRecibo,
-                'exception' => $e,
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al completar el recibo'
-            ], 500);
-        }
+        return response()->json([
+            'success' => $result->success,
+            'message' => $result->message,
+        ], $result->statusCode);
     }
 
     public function deshacerRecibo(Request $request, $idRecibo)
     {
-        try {
-            $usuario = Auth::user();
+        $result = $this->deshacerReciboOperarioUseCase->execute((int) $idRecibo);
 
-            $esCortador = $usuario->hasRole('cortador');
-            $esCosturero = $usuario->hasRole('costurero');
-            $esCosturaReflectivo = $usuario->hasRole('costura-reflectivo');
-            $esLiderReflectivo = $usuario->hasRole('lider-reflectivo');
-            $esAdminCostura = $usuario->hasRole('administrador-costura');
-            $areaOperario = $esCortador ? 'Corte' : (($esCosturero || $esCosturaReflectivo || $esLiderReflectivo || $esAdminCostura) ? 'Costura' : null);
-            if (!$areaOperario) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Rol no autorizado'
-                ], 403);
-            }
-
-            if ($esCortador) {
-                $recibo = \App\Models\ConsecutivoReciboPedido::where('id', $idRecibo)
-                    ->where('activo', 1)
-                    ->first();
-
-                if ($recibo) {
-                    $areaRecibo = strtolower(trim((string) ($recibo->area ?? '')));
-                    if ($areaRecibo === 'costura') {
-                        $sinEncargadoCostura = true;
-                        if (!empty($recibo->prenda_id)) {
-                            $numeroPedido = null;
-                            $prenda = \App\Models\PrendaPedido::where('id', $recibo->prenda_id)
-                                ->with(['pedidoProduccion'])
-                                ->first();
-                            if ($prenda && $prenda->pedidoProduccion) {
-                                $numeroPedido = (int) $prenda->pedidoProduccion->numero_pedido;
-                            }
-
-                            $queryProcesoCostura = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
-                                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                                ->where('numero_recibo', $recibo->consecutivo_actual)
-                                ->whereNull('deleted_at');
-
-                            if (!empty($numeroPedido)) {
-                                $queryProcesoCostura->where('numero_pedido', $numeroPedido);
-                            }
-
-                            $procesoCostura = $queryProcesoCostura
-                                ->latest('fecha_inicio')
-                                ->first();
-                            if ($procesoCostura && !empty($procesoCostura->encargado)) {
-                                $sinEncargadoCostura = false;
-                            }
-
-                            // Fallback: si no se encontró proceso por numero_recibo,
-                            // buscar proceso de Costura por prenda (+ numero_pedido) sin exigir numero_recibo.
-                            // Esto cubre registros antiguos o creados sin numero_recibo.
-                            if ($sinEncargadoCostura && empty($procesoCostura)) {
-                                $queryProcesoCosturaFallback = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
-                                    ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                                    ->whereNull('deleted_at');
-
-                                if (!empty($numeroPedido)) {
-                                    $queryProcesoCosturaFallback->where('numero_pedido', $numeroPedido);
-                                }
-
-                                $procesoCosturaFallback = $queryProcesoCosturaFallback
-                                    ->latest('fecha_inicio')
-                                    ->first();
-
-                                if ($procesoCosturaFallback && !empty($procesoCosturaFallback->encargado)) {
-                                    $sinEncargadoCostura = false;
-                                }
-
-                                if (empty($procesoCostura) && !empty($procesoCosturaFallback)) {
-                                    $procesoCostura = $procesoCosturaFallback;
-                                }
-                            }
-                        }
-
-                        if ($sinEncargadoCostura) {
-                            $recibo->area = 'Corte';
-                            $recibo->save();
-
-                            if (!empty($procesoCostura)) {
-                                $procesoCostura->forceDelete();
-                            }
-                        }
-                    }
-                }
-            }
-
-            DB::table('prenda_recibo_completado')
-                ->where('id_recibo', (int) $idRecibo)
-                ->where('area', $areaOperario)
-                ->delete();
-
-            // Notificar a todos los usuarios con rol vista-costura
-            try {
-                $recibo = \App\Models\ConsecutivoReciboPedido::where('id', $idRecibo)->first();
-                if ($recibo) {
-                    $usuariosVistaCostura = \App\Models\User::all()->filter(function($user) {
-                        return $user->hasRole('vista-costura');
-                    });
-                    
-                    foreach ($usuariosVistaCostura as $usuarioVistaCostura) {
-                        broadcast(new \App\Events\OperarioRecibosActualizados(
-                            userId: (int) $usuarioVistaCostura->id,
-                            payload: [
-                                'area' => (string) $areaOperario,
-                                'accion' => 'recibo_deshecho',
-                                'recibo_id' => (int) $recibo->id,
-                                'consecutivo' => (int) ($recibo->consecutivo_actual ?? 0),
-                                'prenda_id' => $recibo->prenda_id ? (int) $recibo->prenda_id : null,
-                                'tipo_recibo' => (string) ($recibo->tipo_recibo ?? ''),
-                                'mensaje' => "El recibo #{$recibo->consecutivo_actual} fue deshecho",
-                            ]
-                        ));
-                    }
-                    
-                    \Log::info('[OperarioController] Broadcast deshacer a vista-costura enviado', [
-                        'recibo_id' => (int) $idRecibo,
-                        'total_vista_costura' => $usuariosVistaCostura->count(),
-                    ]);
-                }
-            } catch (\Exception $e) {
-                \Log::warning('[OperarioController] Error al broadcast deshacer a vista-costura', [
-                    'recibo_id' => (int) $idRecibo,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Marca de completado eliminada',
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Error al deshacer recibo: ' . $e->getMessage(), [
-                'id_recibo' => $idRecibo,
-                'exception' => $e,
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al deshacer el recibo'
-            ], 500);
-        }
+        return response()->json([
+            'success' => $result->success,
+            'message' => $result->message,
+        ], $result->statusCode);
     }
 
     /**
