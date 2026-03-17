@@ -607,6 +607,21 @@ class DespachoController extends Controller
                 'fecha_entrega_nueva' => $despacho->fecha_entrega,
             ]);
 
+            $estadoAnteriorPedido = $pedido->estado;
+            if ($pedido->estado !== 'En Ejecución') {
+                $pedido->update([
+                    'estado' => 'En Ejecución',
+                    'updated_at' => now(),
+                ]);
+            }
+
+            \Log::info('[DespachoController] Estado general del pedido ajustado por deshacer entregado', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'estado_anterior' => $estadoAnteriorPedido,
+                'estado_nuevo' => $pedido->fresh()->estado,
+            ]);
+
             // Verificar si el estado del pedido debe cambiar de "Entregado" a "Pendiente"
             $this->verificarYActualizarEstadoPedido($pedido);
 
@@ -1772,31 +1787,6 @@ class DespachoController extends Controller
                     'numero_pedido' => $pedido->numero_pedido,
                     'estado_anterior' => $estadoAnterior,
                     'estado_nuevo' => 'Entregado',
-                ]);
-            }
-            
-            // Si el pedido estaba en "Entregado" pero ya no todos los ítems están entregados, volver a "Pendiente"
-            elseif ($pedido->estado === 'Entregado' && $itemsRestantes > 0) {
-                $estadoAnterior = $pedido->estado;
-                
-                $pedido->update([
-                    'estado' => 'Pendiente',
-                    'updated_at' => now(),
-                ]);
-                
-                // Disparar evento WebSocket para notificar en tiempo real
-                event(new DespachoPedidoActualizado($pedido, [
-                    'accion' => 'estado_cambiado',
-                    'nuevo_estado' => 'Pendiente',
-                    'anterior_estado' => $estadoAnterior,
-                    'mensaje' => 'Pedido vuelto a pendiente'
-                ]));
-                
-                \Log::info('[Despacho] Pedido vuelto a Pendiente y evento WebSocket despacho disparado', [
-                    'pedido_id' => $pedido->id,
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'estado_anterior' => $estadoAnterior,
-                    'estado_nuevo' => 'Pendiente',
                 ]);
             }
             
