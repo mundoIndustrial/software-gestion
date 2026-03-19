@@ -286,12 +286,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
 
                     if (typeof showPrendaTracking === 'function' && window.currentPrendaData) {
+                        // Marcar como readonly si el usuario tiene rol insumos
+                        if (window.isInsumos) {
+                            window.currentPrendaData.readonly = true;
+                        }
                         showPrendaTracking(window.currentPrendaData);
                     }
                 })
                 .catch(error => {
                     console.error('[Insumos] Error al obtener consecutivo:', error);
                     if (typeof showPrendaTracking === 'function' && window.currentPrendaData) {
+                        // Marcar como readonly si el usuario tiene rol insumos
+                        if (window.isInsumos) {
+                            window.currentPrendaData.readonly = true;
+                        }
                         showPrendaTracking(window.currentPrendaData);
                     }
                 });

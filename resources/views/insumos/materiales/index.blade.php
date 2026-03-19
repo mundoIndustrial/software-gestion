@@ -518,6 +518,117 @@
         }
     }
 
+    /**
+     * Aplica modo readonly al modal de tracking para desactivar edición
+     * Oculta botones de editar, eliminar y agregar proceso
+     */
+    function aplicarModoReadonly() {
+        console.log('[aplicarModoReadonly] ========== INICIANDO ==========');
+        
+        // Función para aplicar los estilos
+        function aplicarReadonly() {
+            console.log('[aplicarModoReadonly] Buscando modal...');
+            const modal = document.getElementById('orderTrackingModal');
+            
+            if (!modal) {
+                console.warn('[aplicarModoReadonly] ⚠ Modal NO encontrado');
+                return false;
+            }
+            
+            console.log('[aplicarModoReadonly] ✓ Modal encontrado, aplicando estilos...');
+            
+            let modificados = 0;
+            
+            // 1. OCULTAR BOTONES DE EDICIÓN (tracking-edit-btn)
+            const editButtons = modal.querySelectorAll('button.tracking-edit-btn');
+            console.log('[aplicarModoReadonly] Botones EDITAR encontrados:', editButtons.length);
+            editButtons.forEach((btn, index) => {
+                console.log('[aplicarModoReadonly]   • Ocultando EDITAR #' + (index + 1));
+                btn.style.display = 'none !important';
+                btn.style.visibility = 'hidden';
+                btn.style.position = 'absolute';
+                btn.style.pointerEvents = 'none';
+                btn.disabled = true;
+                modificados++;
+            });
+            
+            // 2. OCULTAR BOTONES DE ELIMINACIÓN (tracking-delete-btn)
+            const deleteButtons = modal.querySelectorAll('button.tracking-delete-btn');
+            console.log('[aplicarModoReadonly] Botones ELIMINAR encontrados:', deleteButtons.length);
+            deleteButtons.forEach((btn, index) => {
+                console.log('[aplicarModoReadonly]   • Ocultando ELIMINAR #' + (index + 1));
+                btn.style.display = 'none !important';
+                btn.style.visibility = 'hidden';
+                btn.style.position = 'absolute';
+                btn.style.pointerEvents = 'none';
+                btn.disabled = true;
+                modificados++;
+            });
+            
+            // 3. OCULTAR BOTÓN "AGREGAR ÁREA / PROCESO" (btnOpenAddProcesoModal)
+            const btnAgregar = document.getElementById('btnOpenAddProcesoModal');
+            console.log('[aplicarModoReadonly] Botón AGREGAR ÁREA:', btnAgregar ? 'ENCONTRADO' : 'NO ENCONTRADO');
+            if (btnAgregar) {
+                console.log('[aplicarModoReadonly]   • Ocultando AGREGAR ÁREA');
+                btnAgregar.style.display = 'none !important';
+                btnAgregar.style.visibility = 'hidden';
+                btnAgregar.style.position = 'absolute';
+                btnAgregar.style.pointerEvents = 'none';
+                btnAgregar.disabled = true;
+                modificados++;
+            }
+            
+            console.log('[aplicarModoReadonly] ✓ TOTAL DE CAMBIOS APLICADOS:', modificados);
+            return modificados > 0;
+        }
+        
+        // Intentar aplicar inmediatamente
+        console.log('[aplicarModoReadonly] Intento 1: aplicando inmediatamente...');
+        let aplicado = aplicarReadonly();
+        
+        if (!aplicado) {
+            // Si no se aplicó, esperar y reintentar
+            console.log('[aplicarModoReadonly] Intento 1 fallido, esperando 300ms...');
+            setTimeout(() => {
+                console.log('[aplicarModoReadonly] Intento 2: reintentando después de espera...');
+                aplicarReadonly();
+            }, 300);
+        }
+        
+        // Intento 3: Después de 800ms
+        setTimeout(() => {
+            console.log('[aplicarModoReadonly] Intento 3: después de 800ms...');
+            aplicarReadonly();
+        }, 800);
+        
+        // Crear observador para cambios dinámicos
+        console.log('[aplicarModoReadonly] Configurando observador de mutaciones...');
+        const observer = new MutationObserver((mutations) => {
+            setTimeout(() => {
+                const resultado = aplicarReadonly();
+                if (resultado) {
+                    console.log('[aplicarModoReadonly] Readonly re-aplicado después de mutación');
+                }
+            }, 100);
+        });
+        
+        // Observar cambios en el modal
+        const modal = document.getElementById('orderTrackingModal');
+        if (modal) {
+            console.log('[aplicarModoReadonly] ✓ Observador iniciado en modal');
+            observer.observe(modal, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeOldValue: true
+            });
+        } else {
+            console.warn('[aplicarModoReadonly] ⚠ No se pudo iniciar observador (modal no encontrado)');
+        }
+        
+        console.log('[aplicarModoReadonly] ========== FINALIZADO ==========');
+    }
+
     // Funciones de modal 'Pasar a Revisar' movidas a pasar-a-revisar-insumos.js
     // - abrirModalPasarRevisar()
     // - cerrarModalPasarRevisar()
@@ -686,6 +797,7 @@
                                             $userRole = auth()->user()->role;
                                             $roleName = is_object($userRole) ? $userRole->name : $userRole;
                                             $isPatronista = $roleName === 'patronista';
+                                            $isInsumos = $roleName === 'insumos';
                                             $reciboId = $orden->id;
                                             $pedidoProduccionId = $orden->pedido_produccion_id;
                                         @endphp
@@ -922,6 +1034,12 @@
     
     // Función movida a status-actions-insumos.js: confirmarEnvioProduccion()
     
+    // ========== EXPONER FUNCIONES A WINDOW GLOBAL ==========
+    // Esto permite que otros scripts accedan a estas funciones
+    window.abrirModalInsumos = abrirModalInsumos;
+    window.cerrarModalInsumos = cerrarModalInsumos;
+    window.abrirSeguimientoRecibo = abrirSeguimientoRecibo;
+    
     console.timeEnd('RENDER_TOTAL');
     console.log(` Total de órdenes: {{ $ordenes->total() }}`);
     
@@ -1045,6 +1163,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- Scripts para Recibos/Procesos (SIN defer para carga rápida) -->
 <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
+
+<!-- Detectar rol insumos y aplicar readonly automáticamente -->
+<script>
+    // Variable global para el rol del usuario
+    window.userRole = '{{ $roleName ?? "guest" }}';
+    window.isInsumos = window.userRole === 'insumos';
+    
+    console.log('[Sistema] Rol del usuario:', window.userRole);
+    console.log('[Sistema] ¿Es rol INSUMOS?:', window.isInsumos);
+    
+    if (window.isInsumos) {
+        console.log('[Sistema] ✓ MODO READONLY ACTIVADO - Usuario con rol INSUMOS puede solo VER, no editar');
+    }
+</script>
 
 @endsection
 

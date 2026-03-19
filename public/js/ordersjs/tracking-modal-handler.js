@@ -1847,6 +1847,20 @@ const trackingTableStyles = `
       document.getElementById('trackingPrendasContainer').parentElement.style.display = 'none';
       document.getElementById('trackingTimelineSection').style.display = 'block';
       
+      // CONTROLAR VISIBILIDAD DE BOTÓN AGREGAR BASADO EN READONLY
+      const btnAgregar = document.getElementById('btnOpenAddProcesoModal');
+      if (btnAgregar) {
+        if (prenda?.readonly) {
+          console.log('[showPrendaTracking] Modo READONLY: Ocultando botón AGREGAR ÁREA');
+          btnAgregar.style.display = 'none';
+          btnAgregar.disabled = true;
+        } else {
+          console.log('[showPrendaTracking] Modo NORMAL: Mostrando botón AGREGAR ÁREA');
+          btnAgregar.style.display = 'block';
+          btnAgregar.disabled = false;
+        }
+      }
+      
       // Actualizar nombre de la prenda y número de recibo
       console.log('[showPrendaTracking] Actualizar nombre de la prenda y número de recibo');
       
@@ -2149,7 +2163,7 @@ const trackingTableStyles = `
     });
 
     orderedEntries.forEach(([area, data]) => {
-      const areaCard = createAreaCard(area, data);
+      const areaCard = createAreaCard(area, data, prenda?.readonly || false);
       areasSection.appendChild(areaCard);
     });
   }
@@ -2201,7 +2215,7 @@ const trackingTableStyles = `
         codigo_referencia: prenda?.ultimo_proceso_codigo_referencia || null,
         dias_duracion: prenda?.ultimo_proceso_dias_duracion || null,
         esta_activo: estaActivo,
-      });
+      }, prenda?.readonly || false);
       container.appendChild(card);
     }
   }
@@ -2664,9 +2678,14 @@ const trackingTableStyles = `
   }
 
   // Crear tarjeta de área/proceso
-  function createAreaCard(area, data) {
+  function createAreaCard(area, data, readonly = false) {
     const card = document.createElement('div');
     card.className = `tracking-area-card tracking-area-card-v2 ${data.esta_activo ? 'pending' : 'completed'}`;
+    
+    // Si es readonly, agregar clase visual
+    if (readonly) {
+      card.classList.add('tracking-readonly-mode');
+    }
     
     const iconSvg = getIconSvg(data.icono || 'description');
     
@@ -2703,7 +2722,8 @@ const trackingTableStyles = `
       return formatDurationHuman(Math.max(0, fin.getTime() - ini.getTime()));
     })();
 
-    const accionesHtml = `${(data.id || data.can_edit) ? `
+    // SOLO generar botones si NO es readonly
+    const accionesHtml = readonly ? '' : `${(data.id || data.can_edit) ? `
             <button class="tracking-edit-btn" onclick="${data.id ? `handleEditarProceso(${data.id}, '${area}', ${JSON.stringify(data).replace(/"/g, '&quot;')}, event)` : `handleCrearProcesoDesdeArea('${area}', event, '${String(data.encargado || '').replace(/'/g, "\\'")}')`}" title="Editar proceso">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
