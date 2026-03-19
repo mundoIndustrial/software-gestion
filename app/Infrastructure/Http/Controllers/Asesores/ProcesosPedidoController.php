@@ -35,13 +35,16 @@ class ProcesosPedidoController
     /**
      * GET /api/ordenes/{id}/procesos
      * Obtener procesos de un pedido con cálculo de días hábiles
+     * Query parameter:
+     *   - prenda_id (optional): ID de la prenda específica para filtrar procesos
      */
-    public function getProcesos($id): JsonResponse
+    public function getProcesos(Request $request, $id): JsonResponse
     {
         try {
-            Log::info('[ProcesosPedidoController] GET /procesos', ['id' => $id]);
+            $prendaId = $request->query('prenda_id');
+            Log::info('[ProcesosPedidoController] GET /procesos', ['id' => $id, 'prenda_id' => $prendaId]);
 
-            $resultado = $this->obtenerProcesosPedidoUseCase->ejecutar($id);
+            $resultado = $this->obtenerProcesosPedidoUseCase->ejecutar($id, $prendaId);
 
             return response()->json($resultado['procesos'] ?? [], 200);
 

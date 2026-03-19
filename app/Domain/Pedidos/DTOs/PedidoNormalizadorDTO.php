@@ -113,18 +113,21 @@ class PedidoNormalizadorDTO
         $itemTransformer = app(ItemTransformerService::class);
         
         return array_map(function ($prenda) use ($itemTransformer) {
+            $cantidadTalla = $prenda['cantidad_talla'] ?? [];
+            $procesosNorm = self::normalizarProcesos($prenda['procesos'] ?? []);
+            
             return [
                 'uid' => $prenda['uid'] ?? null,
                 'nombre_prenda' => trim($prenda['nombre_prenda'] ?? ''),
                 'descripcion' => trim($prenda['descripcion'] ?? ''),
-                'de_bodega' => $itemTransformer->determinardeBodega($prenda),  // Use ItemTransformerService to correctly determine de_bodega from origen
-                'cantidad_talla' => $prenda['cantidad_talla'] ?? [],
+                'de_bodega' => $itemTransformer->determinardeBodega($prenda),
+                'cantidad_talla' => $cantidadTalla,
                 'variaciones' => $prenda['variaciones'] ?? [],
                 'telas' => self::normalizarTelas($prenda['telas'] ?? []),
-                'procesos' => self::normalizarProcesos($prenda['procesos'] ?? []),
+                'procesos' => $procesosNorm,
                 'imagenes' => self::normalizarImagenes($prenda['imagenes'] ?? []),
-                'asignacionesColoresPorTalla' => $prenda['asignacionesColoresPorTalla'] ?? [],  //  Capture color assignments per talla from frontend
-                'flujo' => $prenda['flujo'] ?? 'simple',  // 'wizard' si usó colores-por-talla, 'simple' si solo tela/color
+                'asignacionesColoresPorTalla' => $prenda['asignacionesColoresPorTalla'] ?? [],
+                'flujo' => $prenda['flujo'] ?? 'simple',
             ];
         }, $prendas);
     }
@@ -172,11 +175,18 @@ class PedidoNormalizadorDTO
      */
     private static function normalizarProcesos(array $procesos): array
     {
-        return array_map(function ($proceso) {
+        $resultado = [];
+        foreach ($procesos as $key => $proceso) {
             $modoTallas = $proceso['modoTallas'] ?? $proceso['modo_tallas'] ?? 'para_todas';
             $datosExtendidos = $proceso['datosExtendidos'] ?? $proceso['datos_extendidos'] ?? null;
             
-            // NUEVO: Construir imagenes_por_talla desde datosExtendidos
+            // FIX: Obtener nombre del tipo de proceso desde 'tipo' o 'nombre'
+            $nombreProceso = strtolower(trim($proceso['tipo'] ?? $proceso['nombre'] ?? ''));
+            
+            // FIX: Si la clave es numérica (array), usar el nombre del proceso como clave
+            $claveReal = is_numeric($key) ? ($nombreProceso ?: (string)$key) : $key;
+            
+            // Construir imagenes_por_talla desde datosExtendidos
             $imagenesPorTalla = [];
             if ($modoTallas === 'por_tallas' && $datosExtendidos && is_array($datosExtendidos)) {
                 foreach ($datosExtendidos as $genero => $tallasDatos) {
@@ -192,18 +202,19 @@ class PedidoNormalizadorDTO
                 }
             }
             
-            return [
+            $resultado[$claveReal] = [
                 'uid' => $proceso['uid'] ?? null,
-                'nombre' => strtolower(trim($proceso['nombre'] ?? '')),
+                'nombre' => $nombreProceso,
                 'ubicaciones' => self::normalizarUbicaciones($proceso['ubicaciones'] ?? []),
                 'observaciones' => trim($proceso['observaciones'] ?? ''),
                 'tallas' => $proceso['tallas'] ?? [],
                 'imagenes' => self::normalizarImagenes($proceso['imagenes'] ?? []),
                 'modo_tallas' => $modoTallas,
-                'imagenes_por_talla' => $imagenesPorTalla,  // NUEVO: Estructura para modo por_tallas
-                'datos_extendidos' => $datosExtendidos  // Preservar datos por talla (ubicaciones, obs, imagenes por talla)
+                'imagenes_por_talla' => $imagenesPorTalla,
+                'datos_extendidos' => $datosExtendidos
             ];
-        }, $procesos);
+        }
+        return $resultado;
     }
 
     /**

@@ -91,7 +91,8 @@
             formData.append(`${prefijo}${clave}`, archivo);
         };
 
-        const tallasData = prenda.tallas || prenda.cantidad_talla || {};
+        // FIX: prenda.tallas es [] (truthy) de crearPrendaBase() — usar cantidad_talla (fuente canónica relacional)
+        const tallasData = (Array.isArray(prenda.cantidad_talla) ? {} : prenda.cantidad_talla) || {};
         const variantes = prenda.variantes && Object.keys(prenda.variantes).length > 0 ? prenda.variantes : null;
         const asignacionesColores = prenda.asignacionesColoresPorTalla !== undefined && prenda.asignacionesColoresPorTalla !== null
             ? prenda.asignacionesColoresPorTalla

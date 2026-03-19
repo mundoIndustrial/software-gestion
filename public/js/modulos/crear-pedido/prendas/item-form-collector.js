@@ -63,7 +63,7 @@ class ItemFormCollector {
                 de_bodega: item.de_bodega,  // Preserve de_bodega from PrendaFormCollector
                 procesos: item.procesos || {},
                 tallas: item.tallas || [],
-                cantidad_talla: item.cantidad_talla || {}, //  AGREGAR cantidad_talla aquí
+                cantidad_talla: (Array.isArray(item.cantidad_talla) ? {} : item.cantidad_talla) || {},
                 variaciones: item.variantes || item.variaciones || {},
                 telas: item.telas || item.telasAgregadas || [],
                 asignacionesColoresPorTalla: item.asignacionesColoresPorTalla || {}, //  Agregar asignaciones de colores
@@ -121,7 +121,9 @@ class ItemFormCollector {
         });
         
         // AGREGAR PRENDAS SIN COTIZACIÓN
-        if (window.gestorPrendaSinCotizacion && window.gestorPrendaSinCotizacion.obtenerActivas().length > 0) {
+        // Solo agregar si gestionItemsUI NO proporcionó prendas (evita duplicados)
+        const prendasYaRecolectadas = itemsFormato.filter(item => item !== null && item.tipo !== 'epp').length;
+        if (prendasYaRecolectadas === 0 && window.gestorPrendaSinCotizacion && window.gestorPrendaSinCotizacion.obtenerActivas().length > 0) {
 
             const prendasSinCot = window.gestorPrendaSinCotizacion.obtenerActivas();
             
@@ -343,7 +345,11 @@ class ItemFormCollector {
             forma_de_pago: document.getElementById('forma_de_pago_editable')?.value || '',
             observaciones: document.getElementById('observaciones_editable')?.value || '',
             prendas: prendas,
-            epps: epps
+            epps: epps,
+            // Si editamos un borrador, enviar su ID para que el backend lo convierta
+            borrador_pedido_id: (window.modoEdicion && window.pedidoEditarId && window.pedidoEditarData?.pedido?.estado === 'Borrador')
+                ? window.pedidoEditarId
+                : null,
         };
         
         // AGREGAR UIDs a prendas, telas, procesos y EPPs (CRÍTICO)

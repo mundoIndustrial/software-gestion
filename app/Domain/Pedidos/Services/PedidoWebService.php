@@ -153,6 +153,44 @@ class PedidoWebService
     }
 
     /**
+     * Convertir un borrador existente en un pedido real.
+     * Solo asigna número consecutivo y cambia el estado.
+     * Las prendas e imágenes ya están correctamente guardadas en el borrador.
+     */
+    public function convertirBorradorEnPedido(PedidoProduccion $borrador, array $datosValidados, int $asesorId): PedidoProduccion
+    {
+        $tienePrendas = $borrador->prendas()->count() > 0;
+        $tieneEpps    = $borrador->epps()->count() > 0;
+        $estado = ($tieneEpps && !$tienePrendas) ? 'En Ejecución' : 'pendiente_cartera';
+
+        $numeroPedido = $this->pedidoSequenceService->generarNumeroPedido();
+
+        Log::info('[PedidoWebService] Convirtiendo borrador en pedido real', [
+            'borrador_id'   => $borrador->id,
+            'numero_pedido' => $numeroPedido,
+            'estado'        => $estado,
+        ]);
+
+        $borrador->update([
+            'numero_pedido'              => $numeroPedido,
+            'estado'                     => $estado,
+            'cliente'                    => $datosValidados['cliente']      ?? $borrador->cliente,
+            'cliente_id'                 => $datosValidados['cliente_id']   ?? $borrador->cliente_id,
+            'orden_compra'               => $datosValidados['orden_compra'] ?? $borrador->orden_compra,
+            'forma_de_pago'              => $datosValidados['forma_de_pago'] ?? $borrador->forma_de_pago,
+            'observaciones'              => $datosValidados['observaciones'] ?? $borrador->observaciones,
+            'fecha_de_creacion_de_orden' => now(),
+        ]);
+
+        Log::info('[PedidoWebService] Borrador convertido exitosamente', [
+            'pedido_id'     => $borrador->id,
+            'numero_pedido' => $numeroPedido,
+        ]);
+
+        return $borrador->fresh();
+    }
+
+    /**
      * Crear pedido base
      */
     private function crearPedidoBase(array $datos, int $asesorId): PedidoProduccion
@@ -916,6 +954,11 @@ class PedidoWebService
                     'tipo_datos' => gettype($procesoData),
                 ]);
                 continue;
+            }
+
+            // FIX: Si la clave es numérica (array indexado), extraer el tipo real desde los datos
+            if (is_numeric($tipoProceso)) {
+                $tipoProceso = strtolower(trim($procesoData['tipo'] ?? $procesoData['nombre'] ?? (string)$tipoProceso));
             }
 
             \Log::info('[PedidoWebService]  Procesando tipo: ' . $tipoProceso, [

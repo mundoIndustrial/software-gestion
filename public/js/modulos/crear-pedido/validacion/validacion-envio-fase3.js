@@ -285,6 +285,10 @@
                 asesora: datos.asesora || '',
                 forma_de_pago: datos.forma_de_pago || '',
                 numero_cotizacion: datos.numero_cotizacion,
+                // Si estamos editando un borrador, enviar su ID para que el backend lo convierta
+                borrador_pedido_id: (window.modoEdicion && window.pedidoEditarId && window.pedidoEditarData?.pedido?.estado === 'Borrador')
+                    ? window.pedidoEditarId
+                    : null,
                 es_sin_cotizacion: datos.es_sin_cotizacion,
                 tipo_cotizacion: datos.tipo_cotizacion || null,
                 logo: datos.logo || null,

@@ -42,7 +42,7 @@
     }
 
     function normalizarTallas(tallasRaw) {
-        if (!tallasRaw || typeof tallasRaw !== 'object') return {};
+        if (!tallasRaw || typeof tallasRaw !== 'object' || Array.isArray(tallasRaw)) return {};
         const tallasNorm = {};
         Object.entries(tallasRaw).forEach(function([genero, tallasCant]) {
             if (!tallasCant || typeof tallasCant !== 'object') {
@@ -128,6 +128,12 @@
             // Si viene anidado en 'datos', extrae de ahí; si no, usa el nivel superior
             const datosReales = datoProceso.datos || datoProceso;
             
+            // FIX: Si la clave es numérica (procesos viene como array), usar el campo 'tipo' como clave
+            let claveReal = tipoProceso;
+            if (/^\d+$/.test(tipoProceso)) {
+                claveReal = (datosReales.tipo || datoProceso.tipo || datosReales.nombre || datoProceso.nombre || tipoProceso).toString().toLowerCase();
+            }
+            
             // Extraer ubicaciones de forma robusta
             let ubicaciones = datosReales.ubicaciones || datoProceso.ubicaciones || [];
             if (!Array.isArray(ubicaciones)) {
@@ -137,7 +143,7 @@
             // Extraer observaciones y limpiar
             let observaciones = (datosReales.observaciones || datoProceso.observaciones || '').trim();
             
-            procesosNorm[tipoProceso] = {
+            procesosNorm[claveReal] = {
                 uid: datoProceso.uid || null,  // ← NUEVO: Preservar UID del proceso
                 tipo: datosReales.tipo || datoProceso.tipo || tipoProceso,
                 ubicaciones: ubicaciones,
@@ -404,7 +410,8 @@
             forma_de_pago: pedidoRaw.forma_de_pago || '',
             observaciones: pedidoRaw.observaciones || '',
             prendas: [],
-            epps: []
+            epps: [],
+            borrador_pedido_id: pedidoRaw.borrador_pedido_id || null,
         };
 
         // Normalizar prendas

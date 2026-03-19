@@ -10,7 +10,7 @@ use Carbon\Carbon;
 /**
  * ObtenerProcesosPorPedidoUseCase
  * 
- * Caso de uso para obtener todos los procesos de un pedido con cÃ¡lculo de dÃ­as hÃ¡biles
+ * Caso de uso para obtener todos los procesos de un pedido con calculo de dias habiles
  * Responsabilidad: Orquestar la obtención de procesos e información relacionada
  * 
  * Patrón: Use Case (Application Layer - DDD)
@@ -20,11 +20,12 @@ class ObtenerProcesosPorPedidoUseCase
     /**
      * Ejecutar caso de uso
      * 
-     * @param int|string $id - nÃºmero de pedido o ID
+     * @param int|string $id - número de pedido o ID
+     * @param int|null $prendaId - ID de la prenda específica (opcional)
      * @return array - Datos del pedido con procesos
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      */
-    public function ejecutar($id): array
+    public function ejecutar($id, $prendaId = null): array
     {
         // Buscar por numero_pedido o id
         $orden = PedidoProduccion::where('numero_pedido', $id)
@@ -35,12 +36,18 @@ class ObtenerProcesosPorPedidoUseCase
         $festivos = Festivo::pluck('fecha')->toArray();
 
         // Obtener procesos ordenados por fecha_inicio (solo procesos_prenda sin soft-delete)
-        $procesos = DB::table('procesos_prenda')
+        $query = DB::table('procesos_prenda')
             ->where('numero_pedido', $orden->numero_pedido)
             ->whereNull('deleted_at')
             ->orderBy('fecha_inicio', 'asc')
-            ->select('id', 'numero_pedido', 'proceso', 'fecha_inicio', 'encargado', 'estado_proceso')
-            ->get()
+            ->select('id', 'numero_pedido', 'prenda_pedido_id', 'proceso', 'fecha_inicio', 'encargado', 'estado_proceso');
+
+        // Filtrar por prenda_pedido_id si se proporciona
+        if ($prendaId !== null) {
+            $query->where('prenda_pedido_id', $prendaId);
+        }
+
+        $procesos = $query->get()
             ->groupBy('proceso')
             ->map(function($grupo) {
                 // Mantener el registro más reciente de cada proceso
@@ -49,7 +56,7 @@ class ObtenerProcesosPorPedidoUseCase
             })
             ->values();
 
-        // Calcular dÃ­as hÃ¡biles totales
+        // Calcular dias habiles totales
         $totalDiasHabiles = $this->calcularDiasHabilesBatch(
             $procesos->count() > 0 
                 ? Carbon::parse($procesos->first()->fecha_inicio)
@@ -70,7 +77,7 @@ class ObtenerProcesosPorPedidoUseCase
     }
 
     /**
-     * Obtener la fecha final para el cÃ¡lculo de dÃ­as hÃ¡biles
+     * Obtener la fecha final para el calculo de dias habiles
      */
     private function obtenerFechaFinal($procesos): Carbon
     {
@@ -92,7 +99,7 @@ class ObtenerProcesosPorPedidoUseCase
     }
 
     /**
-     * Calcular dÃ­as hÃ¡biles entre dos fechas
+     * Calcular dias habiles entre dos fechas
      */
     private function calcularDiasHabilesBatch(Carbon $inicio, Carbon $fin, array $festivos): int
     {

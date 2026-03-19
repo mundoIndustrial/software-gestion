@@ -142,9 +142,9 @@ class RecibosQueryService
     /**
      * Transforma recibos crudos en objetos para la vista
      */
-    public function transformarRecibos($recibos, $parcialCreatedAtMap, $calcularDiasCallback)
+    public function transformarRecibos($recibos, $parcialCreatedAtMap, $calcularDiasCallback, $materialesMap = [])
     {
-        return $recibos->map(function($recibo) use ($parcialCreatedAtMap, $calcularDiasCallback) {
+        return $recibos->map(function($recibo) use ($parcialCreatedAtMap, $calcularDiasCallback, $materialesMap) {
             $diasCalculados = 0;
             if ($recibo->fecha_de_creacion_de_orden) {
                 $fechaInicio = Carbon::parse($recibo->fecha_de_creacion_de_orden);
@@ -162,6 +162,12 @@ class RecibosQueryService
             if ($esParcial && $parcialId !== null && isset($parcialCreatedAtMap[$parcialId]) && $parcialCreatedAtMap[$parcialId]) {
                 $fechaInicioOrden = $parcialCreatedAtMap[$parcialId];
             }
+
+            // Obtener conteo de materiales para este pedido + prenda
+            $numeroPedido = $recibo->numero_pedido;
+            $prendaId = $recibo->prenda_id;
+            $materialesKey = $numeroPedido . '_' . $prendaId;
+            $cantidadMateriales = isset($materialesMap[$materialesKey]) ? $materialesMap[$materialesKey] : 0;
 
             return (object)[
                 'id' => $recibo->id,
@@ -184,8 +190,46 @@ class RecibosQueryService
                 'pedido_parcial_id' => $parcialId,
                 'created_at' => $recibo->created_at,
                 'updated_at' => $recibo->updated_at,
+                'tiene_materiales' => $cantidadMateriales > 0,
+                'cantidad_materiales' => $cantidadMateriales,
             ];
         });
+    }
+
+    /**
+     * Obtiene el conteo de materiales registrados para cada número de pedido + prenda_id
+     */
+    public function obtenerMapaMateriales($recibos)
+    {
+        $materiales = $recibos
+            ->map(function($recibo) {
+                return [
+                    'numero_pedido' => $recibo->numero_pedido,
+                    'prenda_id' => $recibo->prenda_id,
+                ];
+            })
+            ->unique(function($item) {
+                return $item['numero_pedido'] . '_' . $item['prenda_id'];
+            })
+            ->values()
+            ->all();
+
+        if (empty($materiales)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($materiales as $material) {
+            $count = DB::table('materiales_orden_insumos')
+                ->where('numero_pedido', $material['numero_pedido'])
+                ->where('prenda_id', $material['prenda_id'])
+                ->count();
+            
+            $key = $material['numero_pedido'] . '_' . $material['prenda_id'];
+            $result[$key] = $count;
+        }
+
+        return $result;
     }
 
     /**
@@ -218,9 +262,17 @@ class RecibosQueryService
             \Log::warning('Error obteniendo parciales: ' . $e->getMessage());
             $parcialCreatedAtMap = [];
         }
+
+        // 5.5 Obtener mapa de materiales
+        try {
+            $materialesMap = $this->obtenerMapaMateriales($allRecibos);
+        } catch (\Exception $e) {
+            \Log::warning('Error obteniendo materiales: ' . $e->getMessage());
+            $materialesMap = [];
+        }
         
         // 6. Transformar recibos
-        $recibosTransformados = $this->transformarRecibos($allRecibos, $parcialCreatedAtMap, $calcularDiasCallback);
+        $recibosTransformados = $this->transformarRecibos($allRecibos, $parcialCreatedAtMap, $calcularDiasCallback, $materialesMap);
         
         // 7. Paginar manualmente
         $page = $request->get('page', 1);

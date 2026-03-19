@@ -202,13 +202,14 @@ class MapeoImagenesService
                         'uid' => $imagenUID,
                         'ruta' => $rutaFinal,
                     ]);
-                } elseif ($isExistingFromCotizacion && $rutaExistente) {
-                    // NUEVO: Usar ruta de cotización existente
+                } elseif ($rutaExistente) {
+                    // Usar ruta existente (cotización o borrador guardado previo)
                     $rutaFinal = $rutaExistente;
-                    Log::info('[MapeoImagenesService]  IMAGEN EXISTENTE DE COTIZACIÓN - USANDO RUTA DIRECTA', [
+                    Log::info('[MapeoImagenesService]  IMAGEN EXISTENTE - USANDO RUTA DIRECTA', [
                         'prenda_id' => $prenda->id,
                         'uid' => $imagenUID,
                         'ruta' => $rutaFinal,
+                        'es_cotizacion' => $isExistingFromCotizacion,
                     ]);
                 }
 
@@ -288,13 +289,14 @@ class MapeoImagenesService
                             'uid' => $imagenUID,
                             'ruta' => $rutaFinal,
                         ]);
-                    } elseif ($isExistingFromCotizacion && $rutaExistente) {
-                        // NUEVO: Usar ruta de cotización existente
+                    } elseif ($rutaExistente) {
+                        // Usar ruta existente (cotización o borrador guardado previo)
                         $rutaFinal = $rutaExistente;
-                        Log::info('[MapeoImagenesService]  IMAGEN TELA EXISTENTE DE COTIZACIÓN - USANDO RUTA DIRECTA', [
+                        Log::info('[MapeoImagenesService]  IMAGEN TELA EXISTENTE - USANDO RUTA DIRECTA', [
                             'tela_id' => $telaEnBD->id,
                             'uid' => $imagenUID,
                             'ruta' => $rutaFinal,
+                            'es_cotizacion' => $isExistingFromCotizacion,
                         ]);
                     }
 
@@ -423,13 +425,14 @@ class MapeoImagenesService
                             'uid' => $imagenUID,
                             'ruta' => $rutaFinal,
                         ]);
-                    } elseif ($isExistingFromCotizacion && $rutaExistente) {
-                        // NUEVO: Usar ruta de cotización existente
+                    } elseif ($rutaExistente) {
+                        // Usar ruta existente (cotización o borrador guardado previo)
                         $rutaFinal = $rutaExistente;
-                        Log::info('[MapeoImagenesService]  IMAGEN PROCESO EXISTENTE DE COTIZACIÓN - USANDO RUTA DIRECTA', [
+                        Log::info('[MapeoImagenesService]  IMAGEN PROCESO EXISTENTE - USANDO RUTA DIRECTA', [
                             'proceso_id' => $procesoEnBD->id,
                             'uid' => $imagenUID,
                             'ruta' => $rutaFinal,
+                            'es_cotizacion' => $isExistingFromCotizacion,
                         ]);
                     }
 

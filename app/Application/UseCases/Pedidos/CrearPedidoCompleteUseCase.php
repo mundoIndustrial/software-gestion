@@ -78,27 +78,45 @@ class CrearPedidoCompleteUseCase
                 'epps' => $dtoPedido->epps,
             ];
 
-            $pedido = $this->pedidoWebService->crearPedidoCompleto($datosParaServicio, $input->usuarioId);
+            // Si se está convirtiendo un borrador, solo actualizar número/estado (prendas e imágenes ya existen)
+            $borradorId = $input->getBorradorPedidoId();
+            $esBorrador = false;
+            \Log::info('[CrearPedidoCompleteUseCase] Borrador check', [
+                'borrador_pedido_id' => $borradorId,
+                'tiene_borrador' => !empty($borradorId),
+            ]);
+            if ($borradorId) {
+                $borrador = PedidoProduccion::where('id', $borradorId)
+                    ->where('estado', 'Borrador')
+                    ->first();
+                if ($borrador) {
+                    $pedido = $this->pedidoWebService->convertirBorradorEnPedido($borrador, $datosParaServicio, $input->usuarioId);
+                    $esBorrador = true;
+                } else {
+                    $pedido = $this->pedidoWebService->crearPedidoCompleto($datosParaServicio, $input->usuarioId);
+                }
+            } else {
+                $pedido = $this->pedidoWebService->crearPedidoCompleto($datosParaServicio, $input->usuarioId);
+            }
             $pedidoId = $pedido->id;
 
-            // Crear carpetas e imágenes
-            $this->pedidoImagenesService->crearCarpetasPedido($pedidoId);
-            $this->mapeoImagenes->mapearYCrearFotos($dtoPedido, $pedidoId, $input->request);
+            // Solo crear carpetas e imágenes cuando es pedido nuevo (no conversión de borrador)
+            if (!$esBorrador) {
+                $this->pedidoImagenesService->crearCarpetasPedido($pedidoId);
+                $this->mapeoImagenes->mapearYCrearFotos($dtoPedido, $pedidoId, $input->request);
 
-            // Imágenes de EPPs
-            $eppsData = $input->getEpps();
-            if (!empty($eppsData)) {
-                $this->pedidoImagenesService->procesarImagenesDeEpps($input->request, $pedidoId, $eppsData);
+                $eppsData = $input->getEpps();
+                if (!empty($eppsData)) {
+                    $this->pedidoImagenesService->procesarImagenesDeEpps($input->request, $pedidoId, $eppsData);
+                }
+
+                $prendas = $input->getPrendas();
+                if (!empty($prendas)) {
+                    $this->pedidoImagenesService->procesarImagenesPorTalla($input->request, $pedidoId, $prendas);
+                }
+
+                $this->pedidoImagenesService->procesarImagenesDeColores($input->request, $pedidoId, $prendas);
             }
-
-            // Imágenes por talla
-            $prendas = $input->getPrendas();
-            if (!empty($prendas)) {
-                $this->pedidoImagenesService->procesarImagenesPorTalla($input->request, $pedidoId, $prendas);
-            }
-
-            // Imágenes de colores
-            $this->pedidoImagenesService->procesarImagenesDeColores($input->request, $pedidoId, $prendas);
 
             // Calcular cantidades y commit
             $cantidadTotalPrendas = $this->pedidoRepository->calcularCantidadTotalPrendas($pedidoId);

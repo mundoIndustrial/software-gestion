@@ -62,6 +62,113 @@
 
     // Variable global para rastrear el botón del dropdown abierto
     let dropdownAbiertoButton = null;
+    let dropdownVerAbiertoButton = null;
+
+    /**
+     * Crear dropdown para Ver Recibo / Seguimiento
+     */
+    function crearDropdownVerRecibo(event, button) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Si el dropdown está abierto del mismo botón, cerrarlo
+        if (dropdownVerAbiertoButton === button) {
+            cerrarDropdownVerRecibo();
+            dropdownVerAbiertoButton = null;
+            return;
+        }
+        
+        // Cerrar dropdown anterior si existe
+        cerrarDropdownVerRecibo();
+        
+        // Guardar referencia al botón actual
+        dropdownVerAbiertoButton = button;
+        
+        const container = document.getElementById('dropdowns-container');
+        if (!container) return;
+        
+        // Obtener datos del botón
+        const pedidoId = button.getAttribute('data-pedido-id') || button.getAttribute('data-pedido-produccion-id');
+        const prendaId = button.getAttribute('data-prenda-id');
+        
+        // Obtener posición del botón relativa al viewport
+        const rect = button.getBoundingClientRect();
+        
+        // Crear elemento del dropdown
+        const dropdown = document.createElement('div');
+        dropdown.className = 'dropdown-ver-fixed';
+        dropdown.style.cssText = `
+            position: absolute;
+            top: ${rect.bottom}px;
+            left: ${rect.left}px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            min-width: 180px;
+            z-index: 999999;
+            overflow: visible;
+            pointer-events: auto;
+        `;
+        
+        const html = `
+            <button style="
+                width: 100%;
+                text-align: left;
+                padding: 0.875rem 1rem;
+                border: none;
+                background: transparent;
+                cursor: pointer;
+                color: #374151;
+                font-size: 0.875rem;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-weight: 500;
+                border-bottom: 1px solid #f3f4f6;
+            " onclick="abrirDetalleRecibo('${pedidoId}', '${prendaId ?? 'null'}', 'COSTURA'); cerrarDropdownVerRecibo();" 
+            onmouseover="this.style.background='#dbeafe'" 
+            onmouseout="this.style.background='transparent'">
+                <i class="fas fa-file-lines" style="color: #3b82f6; font-size: 1rem;"></i>
+                <span>Ver recibo</span>
+            </button>
+            
+            <button style="
+                width: 100%;
+                text-align: left;
+                padding: 0.875rem 1rem;
+                border: none;
+                background: transparent;
+                cursor: pointer;
+                color: #374151;
+                font-size: 0.875rem;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-weight: 500;
+            " onclick="abrirSeguimientoRecibo('${pedidoId}', '${prendaId ?? ''}'); cerrarDropdownVerRecibo();" 
+            onmouseover="this.style.background='#e0f2fe'" 
+            onmouseout="this.style.background='transparent'">
+                <i class="fas fa-map-location-dot" style="color: #0284c7; font-size: 1rem;"></i>
+                <span>Seguimiento</span>
+            </button>
+        `;
+        
+        dropdown.innerHTML = html;
+        container.appendChild(dropdown);
+    }
+
+    /**
+     * Cerrar dropdown Ver Recibo
+     */
+    function cerrarDropdownVerRecibo() {
+        document.querySelectorAll('.dropdown-ver-fixed').forEach(menu => {
+            menu.remove();
+        });
+        dropdownVerAbiertoButton = null;
+    }
 
     /**
      * Crear dropdown de acciones posicionado de forma fija
@@ -94,16 +201,16 @@
         const estado = button.getAttribute('data-estado');
         const tipoRecibo = button.getAttribute('data-tipo-recibo');
         
-        // Obtener posición del botón
+        // Obtener posición del botón relativa al viewport
         const rect = button.getBoundingClientRect();
         
-        // Crear elemento del dropdown
+        // Crear elemento del dropdown con position absolute dentro del contenedor fixed
         const dropdown = document.createElement('div');
         dropdown.className = 'acciones-dropdown-fixed';
         dropdown.style.cssText = `
-            position: fixed;
-            top: ${rect.bottom + 8}px;
-            left: ${rect.right + 8}px;
+            position: absolute;
+            top: ${rect.bottom}px;
+            left: ${rect.right}px;
             background: white;
             border: 1px solid #e5e7eb;
             border-radius: 8px;
@@ -228,6 +335,36 @@
     }
 
     /**
+     * Cerrar dropdown cuando se hace scroll (similar a contador)
+     */
+    window.addEventListener('scroll', function() {
+        if (dropdownAbiertoButton) {
+            cerrarDropdownAcciones();
+        }
+        if (dropdownVerAbiertoButton) {
+            cerrarDropdownVerRecibo();
+        }
+    }, { passive: true });
+
+    /**
+     * Cerrar dropdowns cuando se hace click fuera
+     */
+    document.addEventListener('click', function(e) {
+        const isClickInsideDropdownVer = e.target.closest('.dropdown-ver-fixed');
+        const isClickInsideDropdownAcciones = e.target.closest('.acciones-dropdown-fixed');
+        
+        // Cerrar dropdown de ver si el click es fuera
+        if (dropdownVerAbiertoButton && !isClickInsideDropdownVer && e.target !== dropdownVerAbiertoButton && !dropdownVerAbiertoButton.contains(e.target)) {
+            cerrarDropdownVerRecibo();
+        }
+        
+        // Cerrar dropdown de acciones si el click es fuera
+        if (dropdownAbiertoButton && !isClickInsideDropdownAcciones && e.target !== dropdownAbiertoButton && !dropdownAbiertoButton.contains(e.target)) {
+            cerrarDropdownAcciones();
+        }
+    }, false);
+
+    /**
      * Abre el detalle del recibo
      */
     function abrirDetalleRecibo(pedidoId, prendaId, tipoRecibo) {
@@ -246,6 +383,62 @@
             openOrderDetailModalWithProcess(pedidoId, prendaId, tipoRecibo);
         } else {
             console.error('Función openOrderDetailModalWithProcess no disponible');
+        }
+    }
+
+    /**
+     * Abrir modal de seguimiento del recibo
+     */
+    async function abrirSeguimientoRecibo(pedidoId, prendaId) {
+        pedidoId = parseInt(pedidoId) || null;
+        prendaId = parseInt(prendaId) || null;
+        
+        if (!pedidoId) {
+            console.error('pedidoId es requerido para abrir el seguimiento');
+            return;
+        }
+        
+        try {
+            // Cargar procesos de la prenda específica
+            let procesos = [];
+            if (prendaId) {
+                const response = await fetch(`/api/ordenes/${pedidoId}/procesos?prenda_id=${prendaId}`);
+                if (response.ok) {
+                    procesos = await response.json();
+                    console.log('[abrirSeguimientoRecibo] Procesos cargados para prenda:', procesos);
+                } else {
+                    console.warn('[abrirSeguimientoRecibo] Error al cargar procesos, continuando sin ellos');
+                }
+            }
+
+            // Crear objeto prenda con procesos cargados
+            const prenda = {
+                id: prendaId,
+                pedido_produccion_id: pedidoId,
+                numero_prenda: prendaId,
+                procesos: procesos,
+                // Estructurar procesos por área para compatibilidad con seguimientos_por_area
+                seguimientos_por_area: procesos.reduce((acc, proceso) => {
+                    const area = proceso.proceso || 'Desconocida';
+                    if (!acc[area]) {
+                        acc[area] = [];
+                    }
+                    acc[area].push(proceso);
+                    return acc;
+                }, {})
+            };
+            
+            console.log('[abrirSeguimientoRecibo] Objeto prenda creado:', prenda);
+            
+            // Llamar a showPrendaTracking si existe
+            if (typeof showPrendaTracking === 'function') {
+                showPrendaTracking(prenda);
+            } else {
+                console.error('Función showPrendaTracking no disponible');
+            }
+        } catch (error) {
+            console.error('[abrirSeguimientoRecibo] Error:', error);
+            alert('Error al cargar el seguimiento: ' + error.message);
         }
     }
 
@@ -399,6 +592,18 @@
                             data-material-id="{{ $orden->id ?? '' }}"
                             data-pedido-produccion-id="{{ $orden->pedido_produccion_id ?? '' }}">
                                 <td class="py-4 px-6 text-center" style="min-width: 250px; overflow: visible; background: white; position: relative; z-index: 5;">
+                                    {{-- Indicador de materiales (punto rojo en esquina izquierda) --}}
+                                    @if(isset($orden->tiene_materiales) && $orden->tiene_materiales)
+                                        <div 
+                                            class="btn-tooltip"
+                                            data-tooltip="Contiene {{ $orden->cantidad_materiales }} material(es)"
+                                            title="Contiene {{ $orden->cantidad_materiales }} material(es)"
+                                            style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); display: inline-flex; align-items: center; justify-content: center;"
+                                        >
+                                            <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse" style="box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);"></div>
+                                        </div>
+                                    @endif
+
                                     <div class="flex items-center justify-center gap-3" style="display: flex !important; flex-wrap: wrap; overflow: visible;">
                                         {{-- Definir variables primero --}}
                                         @php
@@ -419,12 +624,15 @@
                                             <i class="fas fa-check text-lg"></i>
                                         </button>
 
-                                        {{-- Botón Ver Recibo (visible siempre) --}}
+                                        {{-- Dropdown Ver Recibo / Seguimiento --}}
                                         <button 
-                                            class="btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
-                                            onclick="abrirDetalleRecibo('{{ $pedidoProduccionId }}', '{{ $orden->prenda_id ?? 'null' }}', '{{ $orden->tipo_recibo ?? 'COSTURA' }}')"
-                                            data-tooltip="Ver recibo"
-                                            title="Ver recibo"
+                                            class="btn-ver-dropdown btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition relative"
+                                            onclick="crearDropdownVerRecibo(event, this)"
+                                            data-pedido-id="{{ $pedidoProduccionId }}"
+                                            data-pedido-produccion-id="{{ $pedidoProduccionId }}"
+                                            data-prenda-id="{{ $orden->prenda_id ?? '' }}"
+                                            data-tooltip="Ver recibo o seguimiento"
+                                            title="Ver recibo o seguimiento"
                                         >
                                             <i class="fas fa-eye text-lg"></i>
                                         </button>
@@ -574,7 +782,7 @@
 {{-- Incluir todos los modales de insumos consolidados --}}
 @include('insumos.materiales.partials.modales-insumos')
 
-<!-- Contenedor para dropdowns dinámicos -->
+<!-- Contenedor para dropdowns dinámicos con position fixed -->
 <div id="dropdowns-container" style="position: fixed; top: 0; left: 0; z-index: 999999; pointer-events: none;"></div>
 
 <script>

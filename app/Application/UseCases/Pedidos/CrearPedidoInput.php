@@ -93,4 +93,13 @@ class CrearPedidoInput
     {
         return $this->datosFrontend['epps'] ?? [];
     }
+
+    /**
+     * Get borrador pedido ID to convert (if editing an existing borrador)
+     */
+    public function getBorradorPedidoId(): ?int
+    {
+        $id = $this->datosFrontend['borrador_pedido_id'] ?? null;
+        return ($id && $id > 0) ? (int) $id : null;
+    }
 }
