@@ -12,6 +12,7 @@ use App\Models\Cliente;
 use App\Models\ConsecutivoReciboPedido;
 use App\Models\PedidoAnchoGeneral;
 use App\Models\PedidoMetrajeColor;
+use App\Models\PedidoAnexoHistorial;
 use App\Services\CalculadorDiasService;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -171,6 +172,14 @@ class PedidoProduccion extends Model
     public function prendas(): HasMany
     {
         return $this->hasMany(PrendaPedido::class, 'pedido_produccion_id');
+    }
+
+    /**
+     * Relación: Historial de anexos agregados al pedido (prendas parciales y EPP)
+     */
+    public function anexosHistorial(): HasMany
+    {
+        return $this->hasMany(PedidoAnexoHistorial::class, 'pedido_produccion_id');
     }
 
     /**

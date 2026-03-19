@@ -25,6 +25,7 @@ use App\Application\Pedidos\DTOs\ObtenerProduccionPedidoDTO;
 use App\Application\Services\Pedidos\ProcesarImagenesPrendaService;
 use App\Application\Services\Asesores\ObtenerPedidoDetalleService;
 use App\Infrastructure\Http\Resources\PrendaPedidoResource;
+use App\Models\PedidoAnexoHistorial;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 
@@ -82,6 +83,13 @@ class PrendasPedidoController
             Log::info('[PrendasPedidoController] Prenda agregada exitosamente', [
                 'pedido_id' => $pedido->id,
             ]);
+
+            // Registrar en historial: prenda nueva agregada a pedido existente
+            PedidoAnexoHistorial::registrarPrendaNueva(
+                (int)$pedido->id,
+                null,
+                $validated['nombre_prenda'] ?? 'PRENDA'
+            );
 
             return response()->json($pedido, 201);
 
@@ -268,6 +276,13 @@ class PrendasPedidoController
                 'prenda_id' => $prenda->id,
             ]);
 
+            // Registrar en historial: prenda nueva agregada a pedido existente
+            PedidoAnexoHistorial::registrarPrendaNueva(
+                (int)$id,
+                $prenda->id,
+                $validated['nombre_prenda'] ?? 'PRENDA'
+            );
+
             return response()->json([
                 'success' => true,
                 'message' => 'Prenda agregada correctamente a la base de datos',
@@ -410,6 +425,13 @@ class PrendasPedidoController
                 'procesos.imagenes',
                 'procesos.tallas',
             ]);
+
+            // Registrar en historial: prenda editada en pedido existente
+            PedidoAnexoHistorial::registrarPrendaEditada(
+                (int)$id,
+                $prenda->id,
+                $prenda->nombre_prenda ?? $validated['nombre_prenda'] ?? 'PRENDA'
+            );
 
             return response()->json([
                 'success' => true,

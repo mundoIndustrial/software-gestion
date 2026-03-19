@@ -5,6 +5,7 @@ namespace App\Modules\Pedidos\Infrastructure\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\PedidoProduccion;
 use App\Models\PedidoEpp;
+use App\Models\PedidoAnexoHistorial;
 use App\Services\PedidoEppService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -56,6 +57,11 @@ class PedidoEppController extends Controller
 
             $epps = $this->eppService->guardarEppsDelPedido($pedido, $validated['epps']);
 
+            // Registrar en historial para que el pedido aparezca primero en vistas de supervisor/bodega/despacho
+            foreach ($epps as $epp) {
+                PedidoAnexoHistorial::registrarEppNuevo($pedido->id, $epp->id, $epp->epp_id);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => count($epps) . ' EPP agregados al pedido',
@@ -96,6 +102,9 @@ class PedidoEppController extends Controller
             ]);
 
             $this->eppService->actualizarEpp($pedidoEpp, $validated);
+
+            // Registrar en historial: EPP editado en pedido existente
+            PedidoAnexoHistorial::registrarEppEditado($pedido->id, $pedidoEpp->id, $pedidoEpp->epp_id);
 
             return response()->json([
                 'success' => true,

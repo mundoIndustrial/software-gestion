@@ -499,8 +499,14 @@ class SupervisorPedidosController extends Controller
             $query->whereDate('fecha_de_creacion_de_orden', '<=', $request->fecha_hasta);
         }
 
-        // Ordenar por número de pedido descendente
-        $ordenes = $query->orderBy('numero_pedido', 'desc')
+        // Ordenar: primero pedidos con anexos recientes, luego por número de pedido desc
+        $ordenes = $query->orderByRaw('
+                (SELECT MAX(created_at) FROM pedido_anexos_historial WHERE pedido_produccion_id = pedidos_produccion.id) IS NULL ASC
+            ')
+                        ->orderByRaw('
+                (SELECT MAX(created_at) FROM pedido_anexos_historial WHERE pedido_produccion_id = pedidos_produccion.id) DESC
+            ')
+                        ->orderBy('numero_pedido', 'desc')
                         ->paginate(15)
                         ->appends($request->query());
 

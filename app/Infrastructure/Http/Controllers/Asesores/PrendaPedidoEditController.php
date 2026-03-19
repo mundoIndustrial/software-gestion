@@ -9,6 +9,7 @@ use App\Infrastructure\Services\Edit\PrendaPedidoEditService;
 use App\Infrastructure\Services\Edit\PrendaVariantePedidoEditService;
 use App\Models\PrendaPedido;
 use App\Models\PrendaVariantePed;
+use App\Models\PedidoAnexoHistorial;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
@@ -86,6 +87,13 @@ class PrendaPedidoEditController extends Controller
             // Ejecutar edición
             $resultado = $this->prendaEditService->edit($prenda, $dto);
 
+            // Registrar en historial: prenda editada en pedido existente
+            PedidoAnexoHistorial::registrarPrendaEditada(
+                $prenda->pedido_produccion_id,
+                $id,
+                $prenda->nombre_prenda ?? 'PRENDA'
+            );
+
             return response()->json($resultado);
         } catch (ValidationException $e) {
             return response()->json([
@@ -128,6 +136,13 @@ class PrendaPedidoEditController extends Controller
             $prenda = PrendaPedido::findOrFail($id);
 
             $resultado = $this->prendaEditService->updateBasic($prenda, $request->all());
+
+            // Registrar en historial: prenda editada en pedido existente
+            PedidoAnexoHistorial::registrarPrendaEditada(
+                $prenda->pedido_produccion_id,
+                $id,
+                $prenda->nombre_prenda ?? 'PRENDA'
+            );
 
             return response()->json($resultado);
         } catch (ValidationException $e) {
@@ -173,6 +188,13 @@ class PrendaPedidoEditController extends Controller
             }
 
             $resultado = $this->prendaEditService->updateTallas($prenda, $request->input('tallas'));
+
+            // Registrar en historial: prenda editada (tallas) en pedido existente
+            PedidoAnexoHistorial::registrarPrendaEditada(
+                $prenda->pedido_produccion_id,
+                $id,
+                $prenda->nombre_prenda ?? 'PRENDA'
+            );
 
             return response()->json($resultado);
         } catch (ValidationException $e) {

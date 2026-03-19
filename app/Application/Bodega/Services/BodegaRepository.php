@@ -25,6 +25,8 @@ class BodegaRepository
                     $q->orWhereRaw('UPPER(TRIM(estado)) = ?', [strtoupper($estado)]);
                 }
             })
+            ->orderByRaw('(SELECT MAX(created_at) FROM pedido_anexos_historial WHERE pedido_produccion_id = pedidos_produccion.id) IS NULL ASC')
+            ->orderByRaw('(SELECT MAX(created_at) FROM pedido_anexos_historial WHERE pedido_produccion_id = pedidos_produccion.id) DESC')
             ->orderBy('updated_at', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();

@@ -116,6 +116,8 @@ class DespachoController extends Controller
             ->whereIn('estado', ['Pendiente', 'En Ejecución', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
             ->whereNotNull('numero_pedido') // Excluir pedidos sin número de pedido
             ->where('numero_pedido', '!=', '') // Excluir números de pedido vacíos
+            ->orderByRaw('(SELECT MAX(created_at) FROM pedido_anexos_historial WHERE pedido_produccion_id = pedidos_produccion.id) IS NULL ASC')
+            ->orderByRaw('(SELECT MAX(created_at) FROM pedido_anexos_historial WHERE pedido_produccion_id = pedidos_produccion.id) DESC')
             ->orderByDesc('created_at');
         
         if ($search) {
