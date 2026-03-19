@@ -25,6 +25,7 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
                 'palp.novedades as novedades',
                 'palp.fechas_areas as fechas_areas',
                 DB::raw('crp.consecutivo_actual as numero_recibo_consecutivo'),
+                DB::raw('crp.created_at as fecha_creacion_recibo'),
                 DB::raw("CASE WHEN crp.notas LIKE '%parcial_id:%' THEN 1 ELSE 0 END as es_parcial"),
                 DB::raw("CASE WHEN crp.notas LIKE '%parcial_id:%' THEN CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(crp.notas, 'parcial_id:', -1), ')', 1) AS UNSIGNED) ELSE NULL END as pedido_parcial_id"),
             ])
@@ -58,7 +59,7 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
             });
         }
 
-        $query->orderBy('created_at', 'desc');
+        $query->orderByDesc('crp.consecutivo_actual');
 
         return $query->paginate($perPage);
     }
