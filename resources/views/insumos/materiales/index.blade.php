@@ -171,9 +171,45 @@
     }
 
     /**
-     * Crear dropdown de acciones posicionado de forma fija
+     * Abre el tracking directamente desde el botón VER, obteniendo datos de la fila
      */
-    function crearDropdownAcciones(event, button) {
+    function abrirTrackingDesdeBotonVer(event, button) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        console.log('[abrirTrackingDesdeBotonVer] Iniciando...');
+        
+        // Obtener datos del botón VER
+        const pedidoProduccionId = button.getAttribute('data-pedido-produccion-id');
+        const prendaId = button.getAttribute('data-prenda-id');
+        
+        // Buscar la fila (tr) más cercana
+        const fila = button.closest('tr');
+        if (!fila) {
+            console.error('[abrirTrackingDesdeBotonVer] No se encontró la fila');
+            return;
+        }
+        
+        // Buscar el botón de acciones ("...") en la misma fila para obtener los datos completos
+        const btnAcciones = fila.querySelector('.btn-acciones');
+        let consecutivo = null;
+        let estado = null;
+        let tipoRecibo = null;
+        
+        if (btnAcciones) {
+            consecutivo = btnAcciones.getAttribute('data-consecutivo');
+            estado = btnAcciones.getAttribute('data-estado');
+            tipoRecibo = btnAcciones.getAttribute('data-tipo-recibo');
+            console.log('[abrirTrackingDesdeBotonVer] Datos obtenidos del botón acciones:', {
+                consecutivo, estado, tipoRecibo
+            });
+        } else {
+            console.warn('[abrirTrackingDesdeBotonVer] No se encontró btn-acciones, continuando sin esos datos');
+        }
+        
+        // Abrir modal con los datos completos
+        abrirModalInsumos(pedidoProduccionId, prendaId, consecutivo, estado, tipoRecibo);
+    }
         event.preventDefault();
         event.stopPropagation();
         
@@ -237,7 +273,7 @@
                 gap: 0.75rem;
                 font-weight: 500;
                 border-bottom: 1px solid #f3f4f6;
-            " onclick="abrirModalInsumos('${pedidoProduccionId}', '${prendaId}'); cerrarDropdownAcciones();" 
+            " onclick="crearDropdownVerRecibo(event, this, '${pedidoProduccionId}', '${prendaId}'); cerrarDropdownAcciones();" 
             onmouseover="this.style.background='#f0fdf4'" 
             onmouseout="this.style.background='transparent'">
                 <i class="fas fa-box" style="color: #10b981; font-size: 1rem;"></i>
@@ -387,11 +423,21 @@
     }
 
     /**
-     * Abrir modal de seguimiento del recibo
+     * Abrir modal de seguimiento del recibo con datos completos
      */
-    async function abrirSeguimientoRecibo(pedidoId, prendaId) {
+    async function abrirSeguimientoRecibo(pedidoId, prendaId, consecutivo = null, estado = null, tipoRecibo = null) {
+        console.log('[abrirSeguimientoRecibo] 1. INICIANDO FUNCIÓN');
+        
         pedidoId = parseInt(pedidoId) || null;
         prendaId = parseInt(prendaId) || null;
+        
+        console.log('[abrirSeguimientoRecibo] 2. Parámetros procesados:', {
+            pedidoId,
+            prendaId,
+            consecutivo,
+            estado,
+            tipoRecibo
+        });
         
         if (!pedidoId) {
             console.error('pedidoId es requerido para abrir el seguimiento');
@@ -399,24 +445,40 @@
         }
         
         try {
+            console.log('[abrirSeguimientoRecibo] 3. Buscando procesos...');
+            
             // Cargar procesos de la prenda específica
             let procesos = [];
             if (prendaId) {
-                const response = await fetch(`/api/ordenes/${pedidoId}/procesos?prenda_id=${prendaId}`);
+                const url = `/api/ordenes/${pedidoId}/procesos?prenda_id=${prendaId}`;
+                console.log('[abrirSeguimientoRecibo] 4. URL de procesos:', url);
+                
+                const response = await fetch(url);
+                console.log('[abrirSeguimientoRecibo] 5. Response status:', response.status, response.ok);
+                
                 if (response.ok) {
                     procesos = await response.json();
-                    console.log('[abrirSeguimientoRecibo] Procesos cargados para prenda:', procesos);
+                    console.log('[abrirSeguimientoRecibo] 6. Procesos cargados:', procesos);
                 } else {
-                    console.warn('[abrirSeguimientoRecibo] Error al cargar procesos, continuando sin ellos');
+                    const errorText = await response.text();
+                    console.warn('[abrirSeguimientoRecibo] Error en respuesta:', errorText);
                 }
             }
 
-            // Crear objeto prenda con procesos cargados
+            console.log('[abrirSeguimientoRecibo] 7. Construyendo objeto prenda...');
+            
+            // Crear objeto prenda con procesos cargados e información del recibo
             const prenda = {
                 id: prendaId,
                 pedido_produccion_id: pedidoId,
                 numero_prenda: prendaId,
                 procesos: procesos,
+                // Información del recibo para el header del modal
+                ultimo_recibo_numero: consecutivo || null,
+                consecutivos: consecutivo ? [consecutivo] : [],
+                estado: estado || 'PENDIENTE_INSUMOS',
+                tipo_recibo: tipoRecibo || 'COSTURA',
+                area: estado === 'En Ejecución' ? 'Costura' : estado || 'Insumos',
                 // Estructurar procesos por área para compatibilidad con seguimientos_por_area
                 seguimientos_por_area: procesos.reduce((acc, proceso) => {
                     const area = proceso.proceso || 'Desconocida';
@@ -428,16 +490,30 @@
                 }, {})
             };
             
-            console.log('[abrirSeguimientoRecibo] Objeto prenda creado:', prenda);
+            console.log('[abrirSeguimientoRecibo] 8. Objeto prenda completo:', prenda);
+            console.log('[abrirSeguimientoRecibo] 9. typeof showPrendaTracking:', typeof showPrendaTracking);
+            console.log('[abrirSeguimientoRecibo] 10. showPrendaTracking disponible?', window.showPrendaTracking ? 'SÍ' : 'NO');
             
             // Llamar a showPrendaTracking si existe
             if (typeof showPrendaTracking === 'function') {
-                showPrendaTracking(prenda);
+                console.log('[abrirSeguimientoRecibo] 11. Llamando a showPrendaTracking...');
+                const resultado = showPrendaTracking(prenda);
+                console.log('[abrirSeguimientoRecibo] 12. showPrendaTracking retornó:', resultado);
             } else {
-                console.error('Función showPrendaTracking no disponible');
+                console.error('[abrirSeguimientoRecibo] 11. showPrendaTracking NO es una función');
+                console.error('window.showPrendaTracking:', window.showPrendaTracking);
+                
+                // Intentar buscar en objetos globales
+                console.log('[DEBUG] Buscando showPrendaTracking en window...');
+                for (let key in window) {
+                    if (key.toLowerCase().includes('tracking') || key.toLowerCase().includes('prenda')) {
+                        console.log('[DEBUG] Encontrado:', key, typeof window[key]);
+                    }
+                }
             }
         } catch (error) {
-            console.error('[abrirSeguimientoRecibo] Error:', error);
+            console.error('[abrirSeguimientoRecibo] ERROR CAPTURADO:', error);
+            console.error('[abrirSeguimientoRecibo] Stack:', error.stack);
             alert('Error al cargar el seguimiento: ' + error.message);
         }
     }
@@ -627,7 +703,7 @@
                                         {{-- Dropdown Ver Recibo / Seguimiento --}}
                                         <button 
                                             class="btn-ver-dropdown btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition relative"
-                                            onclick="crearDropdownVerRecibo(event, this)"
+                                            onclick="abrirTrackingDesdeBotonVer(event, this)"
                                             data-pedido-id="{{ $pedidoProduccionId }}"
                                             data-pedido-produccion-id="{{ $pedidoProduccionId }}"
                                             data-prenda-id="{{ $orden->prenda_id ?? '' }}"
@@ -779,9 +855,6 @@
 <!-- Modal de Seguimiento del Pedido -->
 <x-orders-components.order-tracking-modal />
 
-{{-- Incluir todos los modales de insumos consolidados --}}
-@include('insumos.materiales.partials.modales-insumos')
-
 <!-- Contenedor para dropdowns dinámicos con position fixed -->
 <div id="dropdowns-container" style="position: fixed; top: 0; left: 0; z-index: 999999; pointer-events: none;"></div>
 
@@ -816,430 +889,25 @@
     // Funciones stub movidas a index-blade-handlers.js en FASE 6
 
     /**
-     * Abre el modal de insumos para una orden y prenda específica
+     * Abre el modal de seguimiento usando el tracking de recibos-costura con datos completos
      */
-    function abrirModalInsumos(pedido, prendaId) {
-        // Mostrar el modal
-        const modal = document.getElementById('insumosModal');
-        modal.style.display = 'flex';
-        
-        // Remover aria-hidden del contenido principal para evitar conflictos
-        const mainContent = document.getElementById('mainContent');
-        if (mainContent) {
-            mainContent.removeAttribute('aria-hidden');
-        }
-
-        // Establecer el pedido y prenda
-        document.getElementById('modalPedido').textContent = pedido;
-        document.getElementById('modalPrendaId').value = prendaId || '';
-        document.getElementById('modalPrendaNombre').textContent = prendaId ? `Cargando...` : 'General';
-
-        // Construir URL con prenda_id si existe
-        let url = `/insumos/api/materiales/${pedido}`;
-        if (prendaId) {
-            url += `?prenda_id=${prendaId}`;
-        }
-
-        // Cargar los insumos de la orden filtrados por prenda
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                // Actualizar nombre de prenda si viene en la respuesta
-                if (data.nombre_prenda) {
-                    document.getElementById('modalPrendaNombre').textContent = data.nombre_prenda;
-                } else if (prendaId) {
-                    document.getElementById('modalPrendaNombre').textContent = `Prenda #${prendaId}`;
-                }
-                llenarTablaInsumos(data.materiales || []);
-            })
-            .catch(error => {
-                showToast('Error al cargar los insumos', 'error');
-            });
+    function abrirModalInsumos(pedido, prendaId, consecutivo = null, estado = null, tipoRecibo = null) {
+        console.log('[abrirModalInsumos] INICIANDO - Parámetros recibidos:', {
+            pedido,
+            prendaId,
+            consecutivo,
+            estado,
+            tipoRecibo
+        });
+        // Delegar al modal de tracking de recibos-costura
+        abrirSeguimientoRecibo(pedido, prendaId, consecutivo, estado, tipoRecibo);
     }
 
     /**
-     * Cierra el modal de insumos
+     * Cierra el modal (ya no necesaria, pero se mantiene por compatibilidad)
      */
     function cerrarModalInsumos() {
-        const modal = document.getElementById('insumosModal');
-        modal.style.display = 'none';
-        
-        // Restaurar aria-hidden al contenido principal
-        const mainContent = document.getElementById('mainContent');
-        if (mainContent) {
-            mainContent.setAttribute('aria-hidden', 'false');
-        }
-    }
-
-    /**
-     * Llena la tabla de insumos del modal
-     */
-    function llenarTablaInsumos(materiales) {
-        const tbody = document.getElementById('insumosTableBody');
-        tbody.innerHTML = '';
-
-        const pedido = document.getElementById('modalPedido').textContent;
-        
-        // Mostrar SOLO los materiales que ya están guardados (sin mostrar estándar por defecto)
-        materiales.forEach((materialData, index) => {
-            crearFilaMaterial(materialData.nombre_material, materialData, index, pedido, tbody);
-        });
-    }
-
-    /**
-     * Crea una fila de material en la tabla
-     */
-    function crearFilaMaterial(nombreMaterial, materialData, index, pedido, tbody) {
-        const sanitizedMaterial = nombreMaterial.replace(/\s+/g, '_').toLowerCase();
-        const materialId = `material_modal_${pedido}_${index}_${sanitizedMaterial}`;
-
-        const row = document.createElement('tr');
-        row.className = 'border-b border-gray-200 hover:bg-gray-50 transition';
-        row.id = `row_${materialId}`;
-        row.setAttribute('data-guardado', 'true');
-        
-        const colores = ['bg-green-500', 'bg-yellow-500', 'bg-gray-400'];
-        const colorPunto = colores[index % 3];
-
-        row.innerHTML = `
-            <td class="py-3 px-4 font-medium text-gray-900 min-w-max">
-                <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full ${colorPunto}"></div>
-                    <span>${nombreMaterial}</span>
-                </div>
-            </td>
-            <td class="py-3 px-3 text-center">
-                <input 
-                    type="checkbox" 
-                    id="checkbox_${materialId}"
-                    class="w-5 h-5 cursor-pointer material-checkbox accent-green-500"
-                    ${materialData.recibido ? 'checked' : ''}
-                    data-original="${materialData.recibido ? 'true' : 'false'}"
-                >
-            </td>
-            <td class="py-3 px-3 text-center">
-                <input 
-                    type="date" 
-                    id="fecha_orden_${materialId}"
-                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-                    value="${materialData.fecha_orden ? materialData.fecha_orden : ''}"
-                    data-original="${materialData.fecha_orden ? materialData.fecha_orden : ''}"
-                >
-            </td>
-            <td class="py-3 px-3 text-center">
-                <input 
-                    type="date" 
-                    id="fecha_pedido_${materialId}"
-                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-                    value="${materialData.fecha_pedido ? materialData.fecha_pedido : ''}"
-                    data-original="${materialData.fecha_pedido ? materialData.fecha_pedido : ''}"
-                >
-            </td>
-            <td class="py-3 px-3 text-center">
-                <input 
-                    type="date" 
-                    id="fecha_pago_${materialId}"
-                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
-                    value="${materialData.fecha_pago ? materialData.fecha_pago : ''}"
-                    data-original="${materialData.fecha_pago ? materialData.fecha_pago : ''}"
-                >
-            </td>
-            <td class="py-3 px-3 text-center">
-                <input 
-                    type="date" 
-                    id="fecha_despacho_${materialId}"
-                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full"
-                    value="${materialData.fecha_despacho ? materialData.fecha_despacho : ''}"
-                    data-original="${materialData.fecha_despacho ? materialData.fecha_despacho : ''}"
-                >
-            </td>
-            <td class="py-3 px-3 text-center">
-                <input 
-                    type="date" 
-                    id="fecha_llegada_${materialId}"
-                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 w-full"
-                    value="${materialData.fecha_llegada ? materialData.fecha_llegada : ''}"
-                    data-original="${materialData.fecha_llegada ? materialData.fecha_llegada : ''}"
-                >
-            </td>
-            <td class="py-3 px-3 text-center">
-                <span class="inline-block px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-600 flex items-center justify-center gap-1">
-                    ${materialData.dias_demora !== null && materialData.dias_demora !== undefined ? 
-                        (materialData.dias_demora <= 0 ? '<i class="fas fa-check text-green-600"></i>' : 
-                         materialData.dias_demora <= 5 ? '<i class="fas fa-exclamation-triangle text-yellow-600"></i>' : 
-                         '<i class="fas fa-times text-red-600"></i>') + 
-                        materialData.dias_demora + 'd' 
-                        : '-'}
-                </span>
-            </td>
-            <td class="py-3 px-3 text-center">
-                <button 
-                    onclick="abrirModalObservaciones('${materialId}', '${nombreMaterial}')"
-                    class="px-2 py-1 bg-blue-100 text-blue-600 font-medium rounded hover:bg-blue-200 transition text-sm flex items-center gap-1 justify-center"
-                    title="Ver/Editar observaciones"
-                >
-                    <i class="fas fa-eye"></i>
-                </button>
-                <input type="hidden" id="observaciones_${materialId}" value="${materialData.observaciones ? materialData.observaciones.replace(/"/g, '&quot;') : ''}">
-            </td>
-            <td class="py-3 px-3 text-center">
-                <button 
-                    onclick="eliminarFilaMaterial('${materialId}')"
-                    class="px-2 py-1 bg-red-100 text-red-600 font-medium rounded hover:bg-red-200 transition text-sm flex items-center gap-1 justify-center"
-                    title="Eliminar"
-                >
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-            </td>
-        `;
-
-        tbody.appendChild(row);
-    }
-
-    /**
-     * Mostrar modal para agregar nuevo material
-     */
-    function agregarMaterialModal() {
-        const materialesEstandar = [
-            'Tela', 
-            'Reflectivo', 
-            'Cierre', 
-            'Cuello y puños',
-            'Sesgo Relleno',
-            'Sesgo Tela',
-            'Sesgo en la misma Tela',
-            'Hiladillo',
-            'Citafalla',
-            'Cordón'
-        ];
-        const tbody = document.getElementById('insumosTableBody');
-        
-        // Obtener materiales ya agregados
-        const materialesAgregados = new Set();
-        tbody.querySelectorAll('tr').forEach(fila => {
-            const nombre = fila.querySelector('td:first-child span').textContent.trim();
-            materialesAgregados.add(nombre);
-        });
-        
-        // Filtrar materiales estándar que no estén agregados
-        const materialesDisponibles = materialesEstandar.filter(m => !materialesAgregados.has(m));
-        
-        // Crear opciones HTML con datalist
-        const opcionesHTML = `
-            <div style="text-align: left;">
-                <label style="display: block; margin-bottom: 10px; font-weight: bold;">Seleccionar o Escribir Insumo:</label>
-                <input 
-                    type="text" 
-                    id="materialInput" 
-                    list="materialesList"
-                    placeholder="Selecciona o escribe un insumo..."
-                    style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;"
-                    autocomplete="off"
-                >
-                <datalist id="materialesList">
-                    ${materialesDisponibles.map(m => `<option value="${m}">`).join('')}
-                </datalist>
-            </div>
-        `;
-        
-        Swal.fire({
-            title: 'Agregar Insumo',
-            html: opcionesHTML,
-            icon: 'info',
-            showCancelButton: true,
-            confirmButtonColor: '#10b981',
-            cancelButtonColor: '#6b7280',
-            confirmButtonText: 'Agregar',
-            cancelButtonText: 'Cancelar',
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            customClass: {
-                container: 'swal-container-top',
-                popup: 'swal-popup-top'
-            },
-            didOpen: () => {
-                const inputElement = document.getElementById('materialInput');
-                if (inputElement) {
-                    inputElement.focus();
-                }
-                
-                // Asegurar z-index superior
-                const swalContainer = document.querySelector('.swal2-container');
-                if (swalContainer) {
-                    swalContainer.style.zIndex = '10010';
-                }
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const inputElement = document.getElementById('materialInput');
-                const nombreMaterial = inputElement?.value.trim() || '';
-                
-                if (!nombreMaterial) {
-                    showToast('Debes seleccionar o ingresar un material', 'warning');
-                    return;
-                }
-                
-                agregarMaterialATabla(nombreMaterial);
-            }
-        });
-    }
-
-    /**
-     * Agregar material a la tabla
-     */
-    function agregarMaterialATabla(nombreMaterial) {
-        const tbody = document.getElementById('insumosTableBody');
-        const pedido = document.getElementById('modalPedido').textContent;
-        const index = tbody.children.length;
-        const sanitizedMaterial = nombreMaterial.replace(/\s+/g, '_').toLowerCase();
-        const materialId = `material_modal_${pedido}_${index}_${sanitizedMaterial}`;
-
-        const colores = ['bg-green-500', 'bg-yellow-500', 'bg-gray-400'];
-        const colorPunto = colores[index % 3];
-
-        const row = document.createElement('tr');
-        row.className = 'border-b border-gray-200 hover:bg-gray-50 transition';
-        row.id = `row_${materialId}`;
-        
-        // Marcar como fila nueva (no guardada en BD)
-        row.setAttribute('data-nuevo', 'true');
-        // Inicializar atributo data-observaciones vacío
-        row.setAttribute('data-observaciones', '');
-
-        row.innerHTML = `
-            <td class="py-3 px-4 font-medium text-gray-900 min-w-max">
-                <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full ${colorPunto}"></div>
-                    <span>${nombreMaterial}</span>
-                </div>
-            </td>
-            <td class="py-3 px-3 text-center">
-                <input 
-                    type="checkbox" 
-                    id="checkbox_${materialId}"
-                    class="w-5 h-5 cursor-pointer material-checkbox accent-green-500"
-                    data-original="false"
-                >
-            </td>
-            <td class="py-3 px-3 text-center">
-                <input 
-                    type="date" 
-                    id="fecha_orden_${materialId}"
-                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-                    data-original=""
-                >
-            </td>
-            <td class="py-3 px-3 text-center">
-                <input 
-                    type="date" 
-                    id="fecha_pedido_${materialId}"
-                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-                    data-original=""
-                >
-            </td>
-            <td class="py-3 px-3 text-center">
-                <input 
-                    type="date" 
-                    id="fecha_pago_${materialId}"
-                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
-                    data-original=""
-                >
-            </td>
-            <td class="py-3 px-3 text-center">
-                <input 
-                    type="date" 
-                    id="fecha_llegada_${materialId}"
-                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 w-full"
-                    data-original=""
-                >
-            </td>
-            <td class="py-3 px-3 text-center">
-                <input 
-                    type="date" 
-                    id="fecha_despacho_${materialId}"
-                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full"
-                    data-original=""
-                >
-            </td>
-            <td class="py-3 px-3 text-center">
-                <span class="inline-block px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-600">-</span>
-            </td>
-            <td class="py-3 px-3 text-center">
-                <button 
-                    onclick="abrirModalObservaciones('${materialId}', '${nombreMaterial}')"
-                    class="px-2 py-1 bg-blue-100 text-blue-600 font-medium rounded hover:bg-blue-200 transition text-sm flex items-center gap-1 justify-center"
-                    title="Ver/Editar observaciones"
-                >
-                    <i class="fas fa-eye"></i>
-                </button>
-            </td>
-            <td class="py-3 px-3 text-center">
-                <button 
-                    onclick="eliminarFilaMaterial('${materialId}')"
-                    class="px-2 py-1 bg-red-100 text-red-600 font-medium rounded hover:bg-red-200 transition text-sm flex items-center gap-1 justify-center"
-                    title="Eliminar"
-                >
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-            </td>
-        `;
-
-        tbody.appendChild(row);
-        showToast(`Material "${nombreMaterial}" agregado`, 'success');
-    }
-
-
-    /**
-     * Cierra el modal al hacer clic fuera de él
-     */
-    document.getElementById('insumosModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            cerrarModalInsumos();
-        }
-    });
-
-    /**
-     * Event listener para checkboxes de materiales en el modal
-     */
-    document.addEventListener('change', function(e) {
-        if (e.target.classList.contains('material-checkbox')) {
-            const checkbox = e.target;
-            const materialId = checkbox.id.replace('checkbox_', '');
-            confirmarEliminacion(checkbox, materialId);
-        }
-        
-        // Recalcular días de demora cuando cambian las fechas
-        if (e.target.type === 'date') {
-            const fila = e.target.closest('tr');
-            if (fila) {
-                actualizarDiasDemora(fila);
-            }
-        }
-    });
-    
-    /**
-     * Actualiza los días de demora en tiempo real
-     * Delegado a calcularDemora() que usa API asincrónica
-     */
-    async function actualizarDiasDemora(fila) {
-        const todosInputsFecha = fila.querySelectorAll('input[type="date"]');
-        const diasSpan = fila.querySelector('span[class*="bg-"]');
-        
-        if (!diasSpan) {
-            return;
-        }
-        
-        // Si no hay fechas completas, mostrar "-"
-        if (!todosInputsFecha[0]?.value || !todosInputsFecha[1]?.value) {
-            diasSpan.textContent = '-';
-            diasSpan.className = 'inline-block px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-600';
-            return;
-        }
-        
-        // Obtener demora desde API
-        const demora = await window.calcularDemoraAsync(todosInputsFecha[0].value, todosInputsFecha[1].value);
-        diasSpan.textContent = demora.texto;
-        diasSpan.className = `inline-block px-3 py-1 rounded-full text-sm font-semibold ${demora.clase_bg} ${demora.clase_text}`;
+        // El modal de tracking se cierra por su propio handler
     }
 
     // Filtro functions han sido movidas a filter-modal-insumos.js
@@ -1265,6 +933,64 @@
             }
         });
     });
+</script>
+
+<!-- Script de Diagnóstico del Tracking Modal -->
+<script>
+    console.log('\n========================================');
+    console.log('DIAGNÓSTICO: Tracking Modal en Materiales');
+    console.log('========================================\n');
+    
+    // Esperar a que el DOM esté completamente listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', runDiagnostico);
+    } else {
+        // DOM ya está listo
+        setTimeout(runDiagnostico, 500);
+    }
+    
+    function runDiagnostico() {
+        console.log('[CHECK 1] ¿showPrendaTracking existe?');
+        console.log('  Type:', typeof window.showPrendaTracking);
+        console.log('  Value:', window.showPrendaTracking);
+        
+        console.log('\n[CHECK 2] ¿Modal existe?');
+        const modal = document.getElementById('orderTrackingModal');
+        console.log('  Encontrado:', !!modal);
+        
+        console.log('\n[CHECK 3] ¿abrirModalInsumos funciona?');
+        console.log('  Type:', typeof window.abrirModalInsumos);
+        
+        console.log('\n[CHECK 4] Scripts en la página:');
+        const scripts = document.querySelectorAll('script[src*="tracking"]');
+        console.log('  Tracking scripts encontrados:', scripts.length);
+        scripts.forEach(s => {
+            console.log(`    • ${s.src}`);
+            console.log(`      Defer: ${s.defer}, Async: ${s.async}`);
+        });
+        
+        console.log('\n[CHECK 5] Esperando 3 segundos más para defer scripts...');
+        setTimeout(() => {
+            console.log('  showPrendaTracking ahora?', typeof window.showPrendaTracking);
+            if (typeof window.showPrendaTracking !== 'function') {
+                console.error('  ❌ PROBLEMA: showPrendaTracking no está disponible');
+                console.log('\n[DEBUG] Buscando funciones que contengan "tracking":');
+                Object.keys(window).forEach(key => {
+                    if (key.includes('tracking') || key.includes('Tracking') || 
+                        key.includes('prenda') || key.includes('Prenda')) {
+                        console.log(`    • ${key}: ${typeof window[key]}`);
+                    }
+                });
+            } else {
+                console.log('  ✅ showPrendaTracking está disponible');
+            }
+        }, 3000);
+    }
+    
+    // Test manual: En la consola ejecuta:
+    console.log('\n[INSTRUCCIÓN] Para testear manualmente, ejecuta en consola:');
+    console.log('  abrirModalInsumos(8, 5, "1", "PENDIENTE_INSUMOS", "COSTURA")');
+    console.log('  O verifica la consola para más detalles...\n');
 </script>
 
 <!-- Scripts para el modal de órdenes (defer para no-críticos) -->
