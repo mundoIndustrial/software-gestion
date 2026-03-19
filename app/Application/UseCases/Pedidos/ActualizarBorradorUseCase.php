@@ -329,6 +329,7 @@ class ActualizarBorradorUseCase
             'tallas' => isset($prendaPayload['tallas']) ? json_encode($prendaPayload['tallas']) : null,
             'variantes' => isset($prendaPayload['variantes']) ? json_encode($prendaPayload['variantes']) : null,
             'colores_telas' => isset($prendaPayload['colores_telas']) ? json_encode($prendaPayload['colores_telas']) : null,
+            'fotos_telas' => isset($prendaPayload['fotos_telas']) ? json_encode($prendaPayload['fotos_telas']) : null,
             'procesos' => isset($prendaPayload['procesos']) ? json_encode($prendaPayload['procesos']) : null,
             'novedad' => $prendaPayload['novedad'] ?? 'Actualización desde guardado de borrador',
             'asignaciones_colores' => array_key_exists('asignaciones_colores', $prendaPayload)

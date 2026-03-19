@@ -70,7 +70,8 @@ class PedidoProduccionRepository
                 'pedidos_produccion.*',
                 'pedidos_produccion.area'  // Asegurar que se incluye el campo area
             ])
-            ->with(['cotizacion', 'prendas']);
+            ->with(['cotizacion', 'prendas'])
+            ->where('estado', '!=', 'Borrador');
 
         // Si el usuario es asesor, solo mostrar sus pedidos
         // Otros roles pueden ver todos los pedidos

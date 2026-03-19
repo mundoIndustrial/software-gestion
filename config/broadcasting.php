@@ -43,8 +43,8 @@ return [
             ],
             'client_options' => [
                 // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
-                'timeout' => 5, // Timeout normal - el broadcast se ejecuta en background sin bloquear
-                'connect_timeout' => 3,
+                'timeout' => 5,
+                'connect_timeout' => 1, // Reducido: evita bloquear 3 segundos cuando Reverb no está disponible
             ],
         ],
 

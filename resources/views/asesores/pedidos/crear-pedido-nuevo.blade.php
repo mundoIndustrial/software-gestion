@@ -17,7 +17,7 @@
     <h1>
         <span class="material-symbols-rounded" style="vertical-align: middle; margin-right: 8px;">description</span>
         @if($modoEdicion ?? false)
-            Editar Pedido #{{ $pedidoEditarId }}
+            Editando pedido de: {{ $pedido->cliente_nombre_display ?? 'Pedido #'.$pedidoEditarId }}
         @else
             Crear Nuevo Pedido de Producción
         @endif

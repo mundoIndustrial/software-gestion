@@ -10,84 +10,89 @@
             background: white;
             border: 1px solid #e5e7eb;
             border-left: 4px solid #fb923c;
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            transition: all 0.3s ease;
+            border-radius: 6px;
+            padding: 0.65rem 1rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 2rem;
+            gap: 1rem;
         }
 
         .borrador-item:hover {
-            box-shadow: 0 4px 12px rgba(251, 146, 60, 0.15);
-            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(251, 146, 60, 0.12);
+            background: #fffbf7;
         }
 
         .borrador-info {
             flex: 1;
             min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            flex-wrap: wrap;
         }
 
         .borrador-cliente {
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             font-weight: 600;
             color: #1f2937;
-            margin-bottom: 0.5rem;
             word-break: break-word;
+            min-width: 160px;
         }
 
         .borrador-fecha {
-            font-size: 0.875rem;
-            color: #6b7280;
+            font-size: 0.8rem;
+            color: #9ca3af;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.35rem;
+            white-space: nowrap;
         }
 
         .borrador-meta {
             display: flex;
-            gap: 1.5rem;
-            margin-top: 0.75rem;
+            gap: 0.75rem;
             flex-wrap: wrap;
+            align-items: center;
         }
 
         .borrador-meta-item {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            font-size: 0.875rem;
+            gap: 0.25rem;
+            font-size: 0.8rem;
             color: #6b7280;
         }
 
         .borrador-meta-badge {
             background: #f3f4f6;
-            padding: 0.25rem 0.75rem;
-            border-radius: 4px;
-            font-size: 0.8rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.75rem;
             font-weight: 500;
         }
 
         .borrador-actions {
             display: flex;
-            gap: 0.75rem;
+            gap: 0.5rem;
             flex-shrink: 0;
             align-items: center;
         }
 
         .btn-action {
-            padding: 0.5rem 1rem;
+            padding: 0.35rem 0.75rem;
             border: none;
-            border-radius: 6px;
+            border-radius: 5px;
             cursor: pointer;
             font-weight: 500;
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
-            transition: all 0.3s ease;
+            gap: 0.35rem;
+            transition: all 0.2s ease;
             white-space: nowrap;
         }
 
@@ -203,7 +208,6 @@
         <span class="material-symbols-rounded">draft</span>
         Borradores de Pedidos
     </h1>
-    <p>Gestiona tus pedidos sin número - completa y crea cuando esté listo</p>
 </div>
 
 @if($borradores->isEmpty())

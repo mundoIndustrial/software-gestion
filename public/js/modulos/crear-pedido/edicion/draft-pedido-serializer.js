@@ -98,23 +98,40 @@
             : null;
 
         const telas = prenda.telasAgregadas || prenda.colores_telas || prenda.telas || [];
+        const fotosTelaJSON = [];
+
         const telasJSON = telas.map((t, idx) => {
+            const colorTelaId = t.id || t._original_id || null;
+
             if (Array.isArray(t.imagenes)) {
                 t.imagenes.forEach((img) => {
                     const file = img instanceof File ? img : (img?.file instanceof File ? img.file : null);
                     if (file) {
                         agregarArchivo(`fotos_tela[${idx}]`, file);
+                        return;
+                    }
+                    // Imagen existente guardada en DB — incluir en fotos_telas JSON
+                    const ruta = img?.ruta_original || img?.ruta_webp || img?.url || img?.ruta || null;
+                    if (colorTelaId && (ruta || img?.id)) {
+                        fotosTelaJSON.push({
+                            prenda_pedido_colores_telas_id: colorTelaId,
+                            id: img?.id || undefined,
+                            ruta_original: ruta || '',
+                            ruta_webp: img?.ruta_webp || ''
+                        });
                     }
                 });
             }
-            // También leer del gestor (imágenes subidas en modal pero no propagadas a t.imagenes)
+
+            // Imágenes de tela pre-subidas al servidor desde el modal (ya tienen rutas, no son Files)
             const telasFotosGestor = window.gestorPrendaSinCotizacion?.telasFotosNuevas?.[prendaIndex]?.[idx];
-            if (telasFotosGestor && telasFotosGestor.length > 0) {
+            if (colorTelaId && Array.isArray(telasFotosGestor) && telasFotosGestor.length > 0) {
                 telasFotosGestor.forEach(foto => {
-                    const file = foto instanceof File ? foto : (foto?.file instanceof File ? foto.file : null);
-                    if (file) {
-                        agregarArchivo(`fotos_tela[${idx}]`, file);
-                    }
+                    fotosTelaJSON.push({
+                        prenda_pedido_colores_telas_id: colorTelaId,
+                        ruta_original: foto.ruta_original || foto.url || '',
+                        ruta_webp: foto.ruta_webp || ''
+                    });
                 });
             }
 
@@ -246,6 +263,7 @@
             variantes,
             asignaciones_colores: asignacionesColores,
             colores_telas: telasJSON,
+            fotos_telas: fotosTelaJSON.length > 0 ? fotosTelaJSON : undefined,
             procesos: procesosArray,
             imagenes_existentes: imagenesExistentes,
             imagenes_a_eliminar: imagenesAEliminar,

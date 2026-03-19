@@ -66,21 +66,12 @@
             imagenesArr.forEach((img) => {
                 const file = (img instanceof File) ? img : (img && img.file instanceof File ? img.file : null);
                 if (file) {
-                    formData.append(`nuevas_prendas.${nuevaPrendaIdx}.imagenes.${imgFileIdx}`, file);
+                    // Bracket notation so PHP builds nested $_FILES['nuevas_prendas'][i]['imagenes'][j]
+                    // which Laravel can find via dot-notation: hasFile('nuevas_prendas.i.imagenes.j')
+                    formData.append(`nuevas_prendas[${nuevaPrendaIdx}][imagenes][${imgFileIdx}]`, file);
                     imgFileIdx++;
                 }
             });
-            // También del gestor de imágenes por si no están en p.imagenes
-            const fotosNuevasGestor = window.gestorPrendaSinCotizacion?.fotosNuevas?.[prendaIdx];
-            if (fotosNuevasGestor && fotosNuevasGestor.length > 0) {
-                fotosNuevasGestor.forEach(foto => {
-                    const file = foto instanceof File ? foto : (foto?.file instanceof File ? foto.file : null);
-                    if (file) {
-                        formData.append(`nuevas_prendas.${nuevaPrendaIdx}.imagenes.${imgFileIdx}`, file);
-                        imgFileIdx++;
-                    }
-                });
-            }
 
             const telasArr = Array.isArray(p.telasAgregadas) ? p.telasAgregadas : (Array.isArray(p.telas) ? p.telas : []);
             telasArr.forEach((tela, telaIdx) => {
@@ -89,21 +80,10 @@
                 imagenesTelaArr.forEach((imgTela) => {
                     const file = (imgTela instanceof File) ? imgTela : (imgTela && imgTela.file instanceof File ? imgTela.file : null);
                     if (file) {
-                        formData.append(`nuevas_prendas.${nuevaPrendaIdx}.telas.${telaIdx}.imagenes.${telaImgFileIdx}`, file);
+                        formData.append(`nuevas_prendas[${nuevaPrendaIdx}][telas][${telaIdx}][imagenes][${telaImgFileIdx}]`, file);
                         telaImgFileIdx++;
                     }
                 });
-                // También del gestor
-                const telasFotosGestor = window.gestorPrendaSinCotizacion?.telasFotosNuevas?.[prendaIdx]?.[telaIdx];
-                if (telasFotosGestor && telasFotosGestor.length > 0) {
-                    telasFotosGestor.forEach(foto => {
-                        const file = foto instanceof File ? foto : (foto?.file instanceof File ? foto.file : null);
-                        if (file) {
-                            formData.append(`nuevas_prendas.${nuevaPrendaIdx}.telas.${telaIdx}.imagenes.${telaImgFileIdx}`, file);
-                            telaImgFileIdx++;
-                        }
-                    });
-                }
             });
 
             nuevasPrendasJson.push({

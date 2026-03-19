@@ -157,7 +157,7 @@ class PedidoImagenesService
 
             PrendaFotoPedido::create([
                 'prenda_pedido_id' => $prenda->id,
-                'ruta_original' => $resultado['original'],
+                'ruta_original' => null,
                 'ruta_webp' => $resultado['webp'],
                 'orden' => $imgIdx + 1,
             ]);
@@ -216,7 +216,7 @@ class PedidoImagenesService
 
                 PrendaFotoTelaPedido::create([
                     'prenda_pedido_colores_telas_id' => $telaRelacion->id,
-                    'ruta_original' => $resultado['original'],
+                    'ruta_original' => null,
                     'ruta_webp' => $resultado['webp'],
                 ]);
 
@@ -271,7 +271,7 @@ class PedidoImagenesService
                 if ($procesoDetalleId) {
                     PedidosProcessImagenes::create([
                         'proceso_prenda_detalle_id' => $procesoDetalleId,
-                        'ruta_original' => $resultado['original'],
+                        'ruta_original' => null,
                         'ruta_webp' => $resultado['webp'],
                     ]);
 
@@ -782,7 +782,7 @@ class PedidoImagenesService
                 );
                 PrendaFotoPedido::create([
                     'prenda_pedido_id' => $prenda->id,
-                    'ruta_original' => $resultado['original'],
+                    'ruta_original' => null,
                     'ruta_webp' => $resultado['webp'],
                     'orden' => $imgIdx + 1,
                 ]);
@@ -810,7 +810,7 @@ class PedidoImagenesService
                     );
                     PrendaFotoTelaPedido::create([
                         'prenda_pedido_colores_telas_id' => $telaRelacion->id,
-                        'ruta_original' => $resultado['original'],
+                        'ruta_original' => null,
                         'ruta_webp' => $resultado['webp'],
                     ]);
                     Log::debug('[PedidoImagenesService] Nueva prenda tela imagen guardada', ['tela_id' => $telaRelacion->id]);
