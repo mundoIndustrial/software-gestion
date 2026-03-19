@@ -24,10 +24,10 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
                 'palp.area as area',
                 'palp.novedades as novedades',
                 'palp.fechas_areas as fechas_areas',
-                DB::raw('crp.consecutivo_actual as numero_recibo_consecutivo'),
-                DB::raw('crp.created_at as fecha_creacion_recibo'),
-                DB::raw("CASE WHEN crp.notas LIKE '%parcial_id:%' THEN 1 ELSE 0 END as es_parcial"),
-                DB::raw("CASE WHEN crp.notas LIKE '%parcial_id:%' THEN CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(crp.notas, 'parcial_id:', -1), ')', 1) AS UNSIGNED) ELSE NULL END as pedido_parcial_id"),
+                DB::raw('COALESCE(ppar.consecutivo_actual, crp.consecutivo_actual) as numero_recibo_consecutivo'),
+                DB::raw('COALESCE(ppar.created_at, crp.created_at) as fecha_creacion_recibo'),
+                DB::raw('CASE WHEN ppar.id IS NOT NULL THEN 1 ELSE 0 END as es_parcial'),
+                DB::raw('ppar.id as pedido_parcial_id'),
             ])
             ->leftJoin('prenda_areas_logo_pedido as palp', 'palp.proceso_prenda_detalle_id', '=', 'pedidos_procesos_prenda_detalles.id')
             ->leftJoin('prendas_pedido as pp', 'pp.id', '=', 'pedidos_procesos_prenda_detalles.prenda_pedido_id')
@@ -37,14 +37,27 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
                     ->where('crp.activo', 1)
                     ->whereRaw("crp.tipo_recibo = ({$tipoReciboCase})");
             })
+            ->leftJoin('pedidos_parciales as ppar', function ($join) use ($tipoReciboCase) {
+                $join->on('ppar.pedido_produccion_id', '=', 'pp.pedido_produccion_id')
+                    ->on('ppar.prenda_pedido_id', '=', 'pp.id')
+                    ->where('ppar.estado', 'APROBADO')
+                    ->where('ppar.activo', 1)
+                    ->whereNull('ppar.deleted_at')
+                    ->whereRaw("ppar.tipo_recibo = ({$tipoReciboCase})");
+            })
             ->with([
                 'tipoProceso',
                 'prenda.pedidoProduccion.cliente',
                 'prenda.pedidoProduccion.asesora',
             ])
             ->whereIn('tipo_proceso_id', $tipoProcesoIds)
-            ->where('pedidos_procesos_prenda_detalles.estado', 'APROBADO')
-            ->whereNotNull('crp.consecutivo_actual');
+            ->where(function ($q) {
+                $q->whereNotNull('ppar.id')
+                    ->orWhere(function ($q2) {
+                        $q2->where('pedidos_procesos_prenda_detalles.estado', 'APROBADO')
+                            ->whereNotNull('crp.consecutivo_actual');
+                    });
+            });
 
         if ($soloMinimalRole && $areaFija) {
             $query->where('palp.area', $areaFija);
@@ -53,13 +66,14 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('crp.consecutivo_actual', 'like', "%{$search}%")
+                    ->orWhere('ppar.consecutivo_actual', 'like', "%{$search}%")
                     ->orWhereHas('prenda.pedidoProduccion.cliente', function ($subQ) use ($search) {
                         $subQ->where('nombre', 'like', "%{$search}%");
                     });
             });
         }
 
-        $query->orderByDesc('crp.consecutivo_actual');
+        $query->orderByRaw('COALESCE(ppar.consecutivo_actual, crp.consecutivo_actual) DESC');
 
         return $query->paginate($perPage);
     }
