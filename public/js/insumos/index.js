@@ -21,8 +21,6 @@ import {
     abrirModalAnchoMetraje,
     cerrarModalAnchoMetraje,
     guardarAnchoMetraje,
-    abrirModalInsumos,
-    cerrarModalInsumos,
     abrirModalObservaciones,
     cerrarModalObservaciones,
     actualizarReciboConAnchoMetraje
@@ -31,7 +29,6 @@ import {
 // Importar event listeners
 import {
     initializeEventListeners,
-    cerrarDropdownAcciones,
     actualizarDiasDemora,
     toggleRowCheck,
     guardarEstadoMarcado
@@ -52,15 +49,12 @@ window.showConfirmDialog = showConfirmDialog;
 window.abrirModalAnchoMetraje = abrirModalAnchoMetraje;
 window.cerrarModalAnchoMetraje = cerrarModalAnchoMetraje;
 window.guardarAnchoMetraje = guardarAnchoMetraje;
-window.abrirModalInsumos = abrirModalInsumos;
-window.cerrarModalInsumos = cerrarModalInsumos;
 window.abrirModalObservaciones = abrirModalObservaciones;
 window.cerrarModalObservaciones = cerrarModalObservaciones;
 window.actualizarReciboConAnchoMetraje = actualizarReciboConAnchoMetraje;
 
 // Exponer event listeners
 window.initializeEventListeners = initializeEventListeners;
-window.cerrarDropdownAcciones = cerrarDropdownAcciones;
 window.actualizarDiasDemora = actualizarDiasDemora;
 window.toggleRowCheck = toggleRowCheck;
 window.guardarEstadoMarcado = guardarEstadoMarcado;
@@ -92,13 +86,10 @@ export {
     abrirModalAnchoMetraje,
     cerrarModalAnchoMetraje,
     guardarAnchoMetraje,
-    abrirModalInsumos,
-    cerrarModalInsumos,
     abrirModalObservaciones,
     cerrarModalObservaciones,
     actualizarReciboConAnchoMetraje,
     initializeEventListeners,
-    cerrarDropdownAcciones,
     actualizarDiasDemora,
     toggleRowCheck,
     guardarEstadoMarcado

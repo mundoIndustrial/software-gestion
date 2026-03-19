@@ -360,8 +360,6 @@ document.addEventListener('DOMContentLoaded', function() {
     window.mostrarBotonesAnchoMetraje = mostrarBotonesAnchoMetraje;
     window.abrirModalConfirmacionEliminar = abrirModalConfirmacionEliminar;
     window.cerrarModalConfirmacionEliminar = cerrarModalConfirmacionEliminar;
-    window.abrirModalInsumos = abrirModalInsumos;
-    window.cerrarModalInsumos = cerrarModalInsumos;
     window.abrirModalObservaciones = abrirModalObservaciones;
     window.cerrarModalObservaciones = cerrarModalObservaciones;
     window.abrirDetalleRecibo = abrirDetalleRecibo;
