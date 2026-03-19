@@ -7,6 +7,7 @@ use App\DTOs\Edit\EditPrendaPedidoDTO;
 use App\DTOs\Edit\EditPrendaVariantePedidoDTO;
 use App\Infrastructure\Services\Edit\PrendaPedidoEditService;
 use App\Infrastructure\Services\Edit\PrendaVariantePedidoEditService;
+use App\Infrastructure\Services\Procesos\ProcesoActualizarService;
 use App\Models\PrendaPedido;
 use App\Models\PrendaVariantePed;
 use App\Models\PedidoAnexoHistorial;
@@ -15,48 +16,51 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
 
 /**
- * PrendaPedidoEditController - Controlador de edición segura de prendas
+ * PrendaPedidoEditController - Controlador de ediciÃ³n segura de prendas
  * 
  * RESPONSABILIDAD:
- * ─────────────────
- * Manejar endpoints PATCH para edición segura de prendas persistidas.
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ * Manejar endpoints PATCH para ediciÃ³n segura de prendas persistidas.
  * 
- * SEPARACIÓN CLARA:
- * ────────────────
- * POST /api/prendas-pedido               → Crear (construcción desde DOM)
- * PATCH /api/prendas-pedido/{id}/editar → Editar (parcial seguro)
+ * SEPARACIÃ“N CLARA:
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ * POST /api/prendas-pedido               â†’ Crear (construcciÃ³n desde DOM)
+ * PATCH /api/prendas-pedido/{id}/editar â†’ Editar (parcial seguro)
  * 
- * MÉTODOS:
- * ────────
+ * MÃ‰TODOS:
+ * â”€â”€â”€â”€â”€â”€â”€â”€
  * editPrenda()        - Editar prenda completa (PATCH)
  * editPrendaFields()  - Editar solo campos simples
  * editTallas()        - Editar solo tallas (MERGE)
  * editVariante()      - Editar variante
  * editVarianteFields()- Editar solo variante campos simples
  * 
- * GARANTÍAS:
- * ──────────
- * ✓ No reconstruye desde DOM
- * ✓ Solo actualiza lo enviado
- * ✓ Valida restricciones de negocio
- * ✓ MERGE en relaciones (no borrado)
- * ✓ Separado de lógica de creación
+ * GARANTÃAS:
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ * âœ“ No reconstruye desde DOM
+ * âœ“ Solo actualiza lo enviado
+ * âœ“ Valida restricciones de negocio
+ * âœ“ MERGE en relaciones (no borrado)
+ * âœ“ Separado de lÃ³gica de creaciÃ³n
  */
 class PrendaPedidoEditController extends Controller
 {
     protected PrendaPedidoEditService $prendaEditService;
     protected PrendaVariantePedidoEditService $varianteEditService;
+    protected ProcesoActualizarService $procesoActualizarService;
 
     public function __construct(
         PrendaPedidoEditService $prendaEditService,
-        PrendaVariantePedidoEditService $varianteEditService
+        PrendaVariantePedidoEditService $varianteEditService,
+        ProcesoActualizarService $procesoActualizarService
     ) {
         $this->prendaEditService = $prendaEditService;
         $this->varianteEditService = $varianteEditService;
+        $this->procesoActualizarService = $procesoActualizarService;
     }
 
     /**
-     * Editar prenda completa (operación PATCH)
+     * Editar prenda completa (operaciÃ³n PATCH)
      * 
      * POST: /api/prendas-pedido/{id}/editar
      * 
@@ -84,14 +88,31 @@ class PrendaPedidoEditController extends Controller
             $dto = EditPrendaPedidoDTO::fromPayload($request->all());
             $dto->id = $id;
 
-            // Ejecutar edición
+            // Capturar campos antes del cambio para el diff
+            $camposAntes = $prenda->only(['nombre_prenda', 'cantidad', 'descripcion', 'de_bodega']);
+
+            // Ejecutar ediciÃ³n
             $resultado = $this->prendaEditService->edit($prenda, $dto);
+
+            // Construir diff de campos bÃ¡sicos enviados
+            $cambiosDetalle = [];
+            foreach (['nombre_prenda', 'cantidad', 'descripcion', 'de_bodega'] as $campo) {
+                if (array_key_exists($campo, $dto->toArray() ?? [])) {
+                    $vAntes = (string)($camposAntes[$campo] ?? '');
+                    $vDespues = (string)($dto->$campo ?? $camposAntes[$campo] ?? '');
+                    if ($vAntes !== $vDespues) {
+                        $cambiosDetalle[] = $campo . ': "' . $vAntes . '" â†’ "' . $vDespues . '"';
+                    }
+                }
+            }
 
             // Registrar en historial: prenda editada en pedido existente
             PedidoAnexoHistorial::registrarPrendaEditada(
                 $prenda->pedido_produccion_id,
                 $id,
-                $prenda->nombre_prenda ?? 'PRENDA'
+                $prenda->nombre_prenda ?? 'PRENDA',
+                'campos generales',
+                $cambiosDetalle ? implode(' | ', $cambiosDetalle) : null
             );
 
             return response()->json($resultado);
@@ -121,7 +142,7 @@ class PrendaPedidoEditController extends Controller
      * Payload:
      * {
      *   "nombre_prenda": "NUEVO NOMBRE",
-     *   "descripcion": "Nueva descripción",
+     *   "descripcion": "Nueva descripciÃ³n",
      *   "cantidad": 120,
      *   "de_bodega": true
      * }
@@ -135,13 +156,30 @@ class PrendaPedidoEditController extends Controller
         try {
             $prenda = PrendaPedido::findOrFail($id);
 
+            // Capturar campos antes del cambio
+            $camposAntes = $prenda->only(['nombre_prenda', 'cantidad', 'descripcion', 'de_bodega']);
+
             $resultado = $this->prendaEditService->updateBasic($prenda, $request->all());
+
+            // Construir diff
+            $cambiosDetalle = [];
+            foreach (['nombre_prenda', 'cantidad', 'descripcion', 'de_bodega'] as $campo) {
+                if ($request->has($campo)) {
+                    $vAntes = (string)($camposAntes[$campo] ?? '');
+                    $vDespues = (string)$request->input($campo);
+                    if ($vAntes !== $vDespues) {
+                        $cambiosDetalle[] = $campo . ': "' . $vAntes . '" â†’ "' . $vDespues . '"';
+                    }
+                }
+            }
 
             // Registrar en historial: prenda editada en pedido existente
             PedidoAnexoHistorial::registrarPrendaEditada(
                 $prenda->pedido_produccion_id,
                 $id,
-                $prenda->nombre_prenda ?? 'PRENDA'
+                $prenda->nombre_prenda ?? 'PRENDA',
+                'campos bÃ¡sicos',
+                $cambiosDetalle ? implode(' | ', $cambiosDetalle) : null
             );
 
             return response()->json($resultado);
@@ -187,13 +225,31 @@ class PrendaPedidoEditController extends Controller
                 ], 422);
             }
 
+            // Capturar tallas antes del cambio
+            $tallasAntes = $prenda->tallas()->get()->keyBy(
+                fn($t) => strtoupper($t->genero ?? '') . '_' . strtoupper($t->talla ?? '')
+            );
+
             $resultado = $this->prendaEditService->updateTallas($prenda, $request->input('tallas'));
+
+            // Construir diff de tallas
+            $cambiosDetalle = [];
+            foreach ($request->input('tallas', []) as $t) {
+                $clave = strtoupper($t['genero'] ?? '') . '_' . strtoupper($t['talla'] ?? '');
+                $antes = (int)($tallasAntes[$clave]->cantidad ?? 0);
+                $despues = (int)($t['cantidad'] ?? 0);
+                if ($antes !== $despues) {
+                    $cambiosDetalle[] = ($t['genero'] ?? '?') . ' ' . ($t['talla'] ?? '?') . ': ' . $antes . 'â†’' . $despues;
+                }
+            }
 
             // Registrar en historial: prenda editada (tallas) en pedido existente
             PedidoAnexoHistorial::registrarPrendaEditada(
                 $prenda->pedido_produccion_id,
                 $id,
-                $prenda->nombre_prenda ?? 'PRENDA'
+                $prenda->nombre_prenda ?? 'PRENDA',
+                'tallas',
+                $cambiosDetalle ? implode(' | ', $cambiosDetalle) : null
             );
 
             return response()->json($resultado);
@@ -248,8 +304,33 @@ class PrendaPedidoEditController extends Controller
                 ], 422);
             }
 
-            // Ejecutar edición
+            // Capturar campos de variante antes del cambio
+            $varianteAntes = $variante->only(['tipo_manga_id', 'tipo_broche_boton_id', 'tiene_bolsillos', 'manga_obs', 'broche_boton_obs', 'bolsillos_obs']);
+
+            // Ejecutar ediciÃ³n
             $resultado = $this->varianteEditService->edit($variante, $dto);
+
+            // Construir diff de variante
+            $cambiosDetalle = [];
+            $data = $request->all();
+            foreach (['tipo_manga_id', 'tipo_broche_boton_id', 'tiene_bolsillos', 'manga_obs', 'broche_boton_obs', 'bolsillos_obs'] as $campo) {
+                if (array_key_exists($campo, $data)) {
+                    $vAntes = (string)($varianteAntes[$campo] ?? '');
+                    $vDespues = (string)($data[$campo] ?? '');
+                    if ($vAntes !== $vDespues) {
+                        $cambiosDetalle[] = $campo . ': "' . $vAntes . '" â†’ "' . $vDespues . '"';
+                    }
+                }
+            }
+
+            // Registrar en historial: variante de prenda editada en pedido existente
+            PedidoAnexoHistorial::registrarPrendaEditada(
+                $prenda->pedido_produccion_id,
+                $prendaId,
+                $prenda->nombre_prenda ?? 'PRENDA',
+                'variante',
+                $cambiosDetalle ? implode(' | ', $cambiosDetalle) : null
+            );
 
             return response()->json($resultado);
         } catch (ValidationException $e) {
@@ -286,7 +367,31 @@ class PrendaPedidoEditController extends Controller
             $prenda = PrendaPedido::findOrFail($prendaId);
             $variante = $prenda->variantes()->findOrFail($varianteId);
 
+            // Capturar campos de variante antes del cambio
+            $varianteAntes = $variante->only(['tipo_manga_id', 'tipo_broche_boton_id', 'tiene_bolsillos', 'manga_obs', 'broche_boton_obs', 'bolsillos_obs']);
+
             $resultado = $this->varianteEditService->updateBasic($variante, $request->all());
+
+            // Construir diff
+            $cambiosDetalle = [];
+            foreach (['tipo_manga_id', 'tipo_broche_boton_id', 'tiene_bolsillos', 'manga_obs', 'broche_boton_obs', 'bolsillos_obs'] as $campo) {
+                if ($request->has($campo)) {
+                    $vAntes = (string)($varianteAntes[$campo] ?? '');
+                    $vDespues = (string)$request->input($campo);
+                    if ($vAntes !== $vDespues) {
+                        $cambiosDetalle[] = $campo . ': "' . $vAntes . '" â†’ "' . $vDespues . '"';
+                    }
+                }
+            }
+
+            // Registrar en historial: campos de variante editados en pedido existente
+            PedidoAnexoHistorial::registrarPrendaEditada(
+                $prenda->pedido_produccion_id,
+                $prendaId,
+                $prenda->nombre_prenda ?? 'PRENDA',
+                'campos de variante',
+                $cambiosDetalle ? implode(' | ', $cambiosDetalle) : null
+            );
 
             return response()->json($resultado);
         } catch (\Exception $e) {
@@ -320,7 +425,31 @@ class PrendaPedidoEditController extends Controller
                 ], 422);
             }
 
+            // Capturar colores antes del cambio
+            $coloresAntes = $prenda->coloresTelas()
+                ->whereNotNull('color_id')
+                ->with('color')
+                ->get()
+                ->map(fn($ct) => $ct->color->nombre ?? '#' . $ct->color_id)
+                ->unique()->values()->toArray();
+
             $resultado = $this->varianteEditService->updateColores($variante, $request->input('colores'));
+
+            // Capturar colores despuÃ©s del cambio (desde request)
+            $colorIdsNuevos = collect($request->input('colores', []))
+                ->pluck('color_id')->filter()->unique()->values()->toArray();
+            $coloresDespues = \App\Models\ColorPrenda::whereIn('id', $colorIdsNuevos)->pluck('nombre')->toArray();
+            $detalleColores = 'Antes: ' . (implode(', ', $coloresAntes) ?: 'ninguno')
+                . ' â†’ DespuÃ©s: ' . (implode(', ', $coloresDespues) ?: 'ninguno');
+
+            // Registrar en historial: colores de variante editados en pedido existente
+            PedidoAnexoHistorial::registrarPrendaEditada(
+                $prenda->pedido_produccion_id,
+                $prendaId,
+                $prenda->nombre_prenda ?? 'PRENDA',
+                'colores',
+                $detalleColores
+            );
 
             return response()->json($resultado);
         } catch (\Exception $e) {
@@ -354,7 +483,31 @@ class PrendaPedidoEditController extends Controller
                 ], 422);
             }
 
+            // Capturar telas antes del cambio
+            $telasAntes = $prenda->coloresTelas()
+                ->whereNotNull('tela_id')
+                ->with('tela')
+                ->get()
+                ->map(fn($ct) => $ct->tela->nombre ?? '#' . $ct->tela_id)
+                ->unique()->values()->toArray();
+
             $resultado = $this->varianteEditService->updateTelas($variante, $request->input('telas'));
+
+            // Capturar telas despuÃ©s del cambio (desde request)
+            $telaIdsNuevos = collect($request->input('telas', []))
+                ->pluck('tela_id')->filter()->unique()->values()->toArray();
+            $telasDespues = \App\Models\TelaPrenda::whereIn('id', $telaIdsNuevos)->pluck('nombre')->toArray();
+            $detalleTelas = 'Antes: ' . (implode(', ', $telasAntes) ?: 'ninguna')
+                . ' â†’ DespuÃ©s: ' . (implode(', ', $telasDespues) ?: 'ninguna');
+
+            // Registrar en historial: telas de variante editadas en pedido existente
+            PedidoAnexoHistorial::registrarPrendaEditada(
+                $prenda->pedido_produccion_id,
+                $prendaId,
+                $prenda->nombre_prenda ?? 'PRENDA',
+                'telas',
+                $detalleTelas
+            );
 
             return response()->json($resultado);
         } catch (\Exception $e) {
@@ -366,7 +519,7 @@ class PrendaPedidoEditController extends Controller
     }
 
     /**
-     * Obtener estado actual de una prenda (para auditoría)
+     * Obtener estado actual de una prenda (para auditorÃ­a)
      * 
      * GET: /api/prendas-pedido/{id}/estado
      * 
@@ -392,7 +545,7 @@ class PrendaPedidoEditController extends Controller
     }
 
     /**
-     * Obtener estado actual de una variante (para auditoría)
+     * Obtener estado actual de una variante (para auditorÃ­a)
      * 
      * GET: /api/prendas-pedido/{prendaId}/variantes/{varianteId}/estado
      * 
@@ -422,592 +575,47 @@ class PrendaPedidoEditController extends Controller
     public function actualizarProcesoEspecifico(int $prendaId, int $procesoId, Request $request): JsonResponse
     {
         try {
-            // Validar que la prenda existe
-            $prenda = PrendaPedido::findOrFail($prendaId);
-
-            // Obtener el proceso
+            $prenda  = PrendaPedido::findOrFail($prendaId);
             $proceso = $prenda->procesos()->findOrFail($procesoId);
 
-            // ============ FIX: PARSEAR FormData CON PATCH ============
-            // Cuando se envía FormData con PATCH desde fetch, PHP/Laravel a veces no parsea
-            // los parámetros correctamente.
-            // SOLUCIÓN: El cliente envía POST con _method=PATCH en el FormData
-            // Laravel lo reconoce automáticamente y routea a este método
-            // Necesitamos usar $request->all() que ya debería funcionar con POST + FormData
+            // FormData enviado como POST + _method=PATCH: usar all() con fallback a $_POST
             $inputData = $request->all();
-            
-            // Fallback: Si request->all() está vacío pero hay datos en $_POST, usarlos
             if (empty($inputData) && !empty($_POST)) {
                 $inputData = $_POST;
             }
 
-            // ============ LOG INICIAL ============
-            \Log::info('[PROCESOS-ACTUALIZAR-PATCH] Recibido PATCH (POST con _method)', [
-                'prenda_id' => $prendaId,
-                'proceso_id' => $procesoId,
-                'request_method' => $request->getMethod(),
-                'request_keys' => array_keys($inputData),
-                'ubicaciones' => $inputData['ubicaciones'] ?? 'NOT_SET',
-                'observaciones' => substr($inputData['observaciones'] ?? '', 0, 50),
-                'has_files' => $request->hasFile('imagenes_nuevas'),
-                'files_count' => count((array)$request->file('imagenes_nuevas') ?? []),
-                '_method' => $inputData['_method'] ?? 'NOT_SET'
-            ]);
-
-            // ============ NUEVO: PROCESAR IMÁGENES NUEVAS (FILES) DEL FORMDATA ============
-            $imagenesNuevasRutas = [];
+            // Recolectar archivos de imÃ¡genes nuevas
+            $archivos = [];
             if ($request->hasFile('imagenes_nuevas')) {
-                $files = $request->file('imagenes_nuevas');
-                if (!is_array($files)) {
-                    $files = [$files];
-                }
-                
-                \Log::info('[PROCESOS-ACTUALIZAR] Archivos de imágenes recibidos:', [
-                    'cantidad' => count($files),
-                    'archivos' => array_map(function($f) { return $f->getClientOriginalName() ?? 'unknown'; }, $files)
-                ]);
-                
-                $procesoFotoService = new \App\Domain\Pedidos\Services\ProcesoFotoService();
-                foreach ($files as $imagen) {
-                    if ($imagen && $imagen->isValid()) {
-                        try {
-                            $rutas = $procesoFotoService->procesarFoto($imagen);
-                            $imagenesNuevasRutas[] = $rutas['ruta_webp'] ?? $rutas;
-                            \Log::info('[PROCESOS-ACTUALIZAR] Imagen nueva de proceso procesada', [
-                                'archivo' => $imagen->getClientOriginalName(),
-                                'ruta_webp' => $rutas['ruta_webp'] ?? 'N/A'
-                            ]);
-                        } catch (\Exception $e) {
-                            \Log::warning('[PROCESOS-ACTUALIZAR] Error procesando imagen nueva de proceso', [
-                                'error' => $e->getMessage(),
-                                'archivo' => $imagen->getClientOriginalName()
-                            ]);
-                        }
-                    }
-                }
-                
-                \Log::info('[PROCESOS-ACTUALIZAR] Imágenes nuevas procesadas:', [
-                    'total' => count($imagenesNuevasRutas),
-                    'rutas' => $imagenesNuevasRutas
-                ]);
-            } else {
-                \Log::info('[PROCESOS-ACTUALIZAR] Sin archivos de imágenes en el request');
+                $files    = $request->file('imagenes_nuevas');
+                $archivos = is_array($files) ? $files : [$files];
             }
 
-            // Limpieza y preparación de datos ANTES de validar
-            // IMPORTANTE: Usar $inputData que ya fue parseado correctamente
-            $data = $inputData;
-
-            // Decodificar ubicaciones si vienen como JSON string
-            if (isset($data['ubicaciones']) && is_string($data['ubicaciones'])) {
-                try {
-                    $ubicacionesDecodificadas = json_decode($data['ubicaciones'], true);
-                    if (is_array($ubicacionesDecodificadas)) {
-                        $data['ubicaciones'] = $ubicacionesDecodificadas;
-                    }
-                } catch (\Exception $e) {
-                    // Si no es JSON válido, mantener como está
-                }
-            }
-
-            // LOG: Confirmar que los datos se recibieron después del fix
-            \Log::info('[PROCESOS-ACTUALIZAR-PATCH] Datos después del FIX de parseo', [
-                'data_keys' => array_keys($data),
-                'ubicaciones_presente' => isset($data['ubicaciones']),
-                'observaciones_presente' => isset($data['observaciones']),
-                'ubicaciones_valor' => $data['ubicaciones'] ?? 'NULL',
-                'observaciones_valor' => substr($data['observaciones'] ?? '', 0, 100)
-            ]);
-
-            // ============ NUEVO: PROCESAR IMÁGENES EXISTENTES Y NUEVAS ============
-            $imagenesExistentes = [];
-            if (isset($data['imagenes_existentes']) && is_string($data['imagenes_existentes'])) {
-                try {
-                    $imagenesExistentes = json_decode($data['imagenes_existentes'], true) ?? [];
-                    if (!is_array($imagenesExistentes)) {
-                        $imagenesExistentes = [];
-                    }
-                    \Log::info('[PROCESOS-ACTUALIZAR] Imágenes existentes recuperadas', [
-                        'cantidad' => count($imagenesExistentes),
-                        'detalles' => $imagenesExistentes
-                    ]);
-                } catch (\Exception $e) {
-                    \Log::warning('[PROCESOS-ACTUALIZAR] Error decodificando imágenes_existentes', [
-                        'error' => $e->getMessage()
-                    ]);
-                }
-            }
-
-            // ============ NUEVO: CONSTRUIR LISTA FINAL DE IMÁGENES (SIN DUPLICADOS) ============
-            // LÓGICA CORRECTA:
-            // 1. Si vienen imagenes (JSON del cambio) → el usuario SÍ cambió imágenes, usar esa lista
-            // 2. Sino, Si vienen imagenes_existentes → el usuario NO cambió imágenes, mantener existentes
-            // 3. Siempre agregar imagenes_nuevas (files) si existen
-            
-            $debeActualizarImagenes = false;
-            $imagenesFinales = [];
-            $imagenesDeJSON = [];
-            
-            // CASO 1: Cliente envió "imagenes" (cambios explícitos)
-            // Esto significa: el usuario modificó la lista de imágenes en el cliente
-            if (isset($data['imagenes'])) {
-                if (is_string($data['imagenes'])) {
-                    try {
-                        $imagenesDeJSON = json_decode($data['imagenes'], true) ?? [];
-                    } catch (\Exception $e) {
-                        // Ignorar si no es JSON válido
-                    }
-                } elseif (is_array($data['imagenes'])) {
-                    $imagenesDeJSON = $data['imagenes'];
-                }
-                
-                // Usar las imágenes del cambio como base
-                $imagenesFinales = $imagenesDeJSON;
-                $debeActualizarImagenes = true;
-                
-                \Log::info('[PROCESOS-ACTUALIZAR] Imágenes desde CAMBIO del cliente', [
-                    'cantidad' => count($imagenesFinales),
-                    'imagenes' => $imagenesFinales,
-                    'debe_actualizar' => true
-                ]);
-            }
-            // CASO 2: No hay "imagenes" en cambios, pero sí imagenes_existentes
-            // Esto significa: el usuario NO cambió imágenes, mantener las que ya están
-            elseif (!empty($imagenesExistentes)) {
-                $imagenesFinales = $imagenesExistentes;
-                $debeActualizarImagenes = false; // NO actualizar si no hubo cambios
-                
-                \Log::info('[PROCESOS-ACTUALIZAR] Imágenes desde EXISTENTES (no se modificaron)', [
-                    'cantidad' => count($imagenesFinales),
-                    'imagenes' => $imagenesFinales,
-                    'debe_actualizar' => false
-                ]);
-            }
-            
-            // CASO 3: Agregar imágenes nuevas del upload (siempre, si existen)
-            if (!empty($imagenesNuevasRutas)) {
-                $imagenesFinales = array_merge($imagenesFinales, $imagenesNuevasRutas);
-                $debeActualizarImagenes = true; // SÍ actualizar si hay imágenes nuevas
-                
-                \Log::info('[PROCESOS-ACTUALIZAR] Añadiendo imágenes nuevas del upload', [
-                    'nuevas' => count($imagenesNuevasRutas),
-                    'total_ahora' => count($imagenesFinales),
-                    'debe_actualizar' => true
-                ]);
-            }
-            
-            // Eliminar duplicados y reindexar
-            $imagenesFinales = array_values(array_unique($imagenesFinales));
-            
-            // IMPORTANTE: Solo actualizar $data['imagenes'] si DEBE actualizarse
-            // Si NO cambiaron las imágenes, NO incluir en validated para evitar procesarlas en BD
-            if ($debeActualizarImagenes) {
-                $data['imagenes'] = $imagenesFinales;
-            } else {
-                // Remover la clave 'imagenes' de $data para que NO se procese en el validador
-                unset($data['imagenes']);
-            }
-            
-            \Log::info('[PROCESOS-ACTUALIZAR] Lista final de imágenes determinada', [
-                'del_cambio' => count($imagenesDeJSON ?? []),
-                'existentes' => count($imagenesExistentes),
-                'nuevas_upload' => count($imagenesNuevasRutas),
-                'total_final' => count($imagenesFinales),
-                'debe_actualizar' => $debeActualizarImagenes
-            ]);
-
-            // Limpiar imágenes: convertir a strings, eliminar nulls/vacíos
-            if (isset($data['imagenes']) && is_array($data['imagenes'])) {
-                $imagenesLimpias = [];
-                
-                foreach ($data['imagenes'] as $img) {
-                    // Saltar nulls y vacíos
-                    if ($img === null || $img === '') {
-                        continue;
-                    }
-                    
-                    // Si es un string, usar directamente
-                    if (is_string($img)) {
-                        if (!empty($img) && $img !== 'null') {
-                            $imagenesLimpias[] = $img;
-                        }
-                        continue;
-                    }
-                    
-                    // Si es un objeto, intentar obtener ruta_webp
-                    if (is_object($img)) {
-                        if (isset($img->ruta_webp) && !empty($img->ruta_webp)) {
-                            $imagenesLimpias[] = (string)$img->ruta_webp;
-                        }
-                        continue;
-                    }
-                    
-                    // Si es un array, intentar obtener la ruta
-                    if (is_array($img)) {
-                        if (isset($img['ruta_webp']) && !empty($img['ruta_webp'])) {
-                            $imagenesLimpias[] = (string)$img['ruta_webp'];
-                        } elseif (isset($img[0]) && is_string($img[0]) && !empty($img[0])) {
-                            $imagenesLimpias[] = (string)$img[0];
-                        }
-                        continue;
-                    }
-                }
-                
-                $data['imagenes'] = $imagenesLimpias;
-            }
-
-            // ============ FIX: DECODIFICAR JSON STRINGS ANTES DE VALIDAR ============
-            // Cuando se envía FormData, los JSON strings llegan como strings, no arrays
-            // Necesitamos decodificarlos ANTES de la validación
-            
-            // Decodificar tallas si es string
-            if (isset($data['tallas']) && is_string($data['tallas'])) {
-                try {
-                    $tallasDecodificadas = json_decode($data['tallas'], true);
-                    if (is_array($tallasDecodificadas)) {
-                        $data['tallas'] = $tallasDecodificadas;
-                    }
-                } catch (\Exception $e) {
-                    // Si no parsea, dejar como está
-                }
-            }
-            
-            // Decodificar imagenes si es string
-            if (isset($data['imagenes']) && is_string($data['imagenes'])) {
-                try {
-                    $imagenesDecodificadas = json_decode($data['imagenes'], true);
-                    if (is_array($imagenesDecodificadas)) {
-                        $data['imagenes'] = $imagenesDecodificadas;
-                    }
-                } catch (\Exception $e) {
-                    // Si no parsea, dejar como está
-                }
-            }
-
-            // Validar manualmente con datos limpios (no usar $request->validate para evitar validar request original)
-            $validator = \Validator::make($data, [
-                'tipo_proceso_id' => 'nullable|integer|exists:tipos_proceso,id',
-                'ubicaciones' => 'nullable|array',
-                'ubicaciones.*' => 'string|nullable',
-                'imagenes' => 'nullable|array',
-                'imagenes.*' => 'string|nullable',
-                'observaciones' => 'nullable|string|max:1000',
-                'tallas' => 'nullable|array',
-                'tallas.dama' => 'nullable|array',
-                'tallas.caballero' => 'nullable|array',
-            ]);
-
-            if ($validator->fails()) {
-                throw new \Illuminate\Validation\ValidationException($validator);
-            }
-
-            $validated = $validator->validated();
-
-            \Log::info('[PROCESOS-ACTUALIZAR] Actualizando proceso:', [
-                'prenda_id' => $prendaId,
-                'proceso_id' => $procesoId,
-                'cambios' => array_keys($validated)
-            ]);
-
-            // Actualizar ubicaciones (REEMPLAZO completo, no merge)
-            if (isset($validated['ubicaciones'])) {
-                // Normalizar ubicaciones para evitar JSON doble-encodeado
-                $ubicacionesNormalizadas = $this->normalizarUbicaciones($validated['ubicaciones']);
-                
-                $ubicacionesLimpias = array_filter($ubicacionesNormalizadas);
-                $proceso->ubicaciones = json_encode($ubicacionesLimpias);
-                \Log::info('[PROCESOS-ACTUALIZAR] Ubicaciones actualizadas:', [
-                    'nuevas' => $ubicacionesLimpias,
-                    'json_final' => $proceso->ubicaciones
-                ]);
-            }
-
-            // Actualizar observaciones
-            if (isset($validated['observaciones'])) {
-                $proceso->observaciones = $validated['observaciones'];
-            }
-
-            // Actualizar tipo_proceso_id si se proporciona
-            if (isset($validated['tipo_proceso_id'])) {
-                $proceso->tipo_proceso_id = $validated['tipo_proceso_id'];
-            }
-
-            // Guardar cambios en tabla principal
-            $proceso->save();
-
-            // ============ ACTUALIZAR IMÁGENES (EN TABLA SEPARADA) ============
-            if (isset($validated['imagenes']) && is_array($validated['imagenes'])) {
-                \Log::info('[PROCESOS-ACTUALIZAR] Procesando imágenes:', [
-                    'raw_imagenes' => $validated['imagenes'],
-                    'total_recibidas' => count($validated['imagenes'])
-                ]);
-
-                // Obtener imágenes actuales
-                $imagenesActuales = \DB::table('pedidos_procesos_imagenes')
-                    ->where('proceso_prenda_detalle_id', $proceso->id)
-                    ->pluck('ruta_webp')
-                    ->toArray();
-
-                // Limpiar y filtrar imágenes: remover nulls, vacíos y strings "null"
-                $imagenesNuevas = array_values(array_filter($validated['imagenes'], function($img) {
-                    return !empty($img) && $img !== 'null' && is_string($img) && trim($img) !== '';
-                }));
-
-                \Log::info('[PROCESOS-ACTUALIZAR] Imágenes después de filtrado:', [
-                    'actuales' => $imagenesActuales,
-                    'nuevas' => $imagenesNuevas,
-                    'total_nuevas' => count($imagenesNuevas)
-                ]);
-
-                // Eliminar SOLO las imágenes que ya no están en la nueva lista
-                $imagenesAEliminar = array_diff($imagenesActuales, $imagenesNuevas);
-                if (!empty($imagenesAEliminar)) {
-                    \DB::table('pedidos_procesos_imagenes')
-                        ->where('proceso_prenda_detalle_id', $proceso->id)
-                        ->whereIn('ruta_webp', $imagenesAEliminar)
-                        ->delete();
-
-                    \Log::info('[PROCESOS-ACTUALIZAR] Imágenes eliminadas:', [
-                        'cantidad' => count($imagenesAEliminar),
-                        'rutas' => $imagenesAEliminar
-                    ]);
-                }
-
-                // Agregar SOLO las imágenes nuevas que no existen
-                $imagenesAAgregar = array_diff($imagenesNuevas, $imagenesActuales);
-                if (!empty($imagenesAAgregar)) {
-                    $proximoOrden = \DB::table('pedidos_procesos_imagenes')
-                        ->where('proceso_prenda_detalle_id', $proceso->id)
-                        ->max('orden') ?? 0;
-
-                    foreach ($imagenesAAgregar as $idx => $ruta) {
-                        if ($ruta && is_string($ruta) && trim($ruta) !== '') {
-                            \DB::table('pedidos_procesos_imagenes')->insert([
-                                'proceso_prenda_detalle_id' => $proceso->id,
-                                'ruta_original' => null,
-                                'ruta_webp' => trim($ruta),
-                                'orden' => $proximoOrden + $idx + 1,
-                                'es_principal' => 0,
-                                'created_at' => now(),
-                                'updated_at' => now()
-                            ]);
-                        }
-                    }
-
-                    \Log::info('[PROCESOS-ACTUALIZAR] Imágenes agregadas:', [
-                        'cantidad' => count($imagenesAAgregar),
-                        'rutas' => $imagenesAAgregar
-                    ]);
-                }
-
-                \Log::info('[PROCESOS-ACTUALIZAR] Resumen imágenes:', [
-                    'eliminadas' => count($imagenesAEliminar),
-                    'agregadas' => count($imagenesAAgregar),
-                    'total_final' => count($imagenesNuevas)
-                ]);
-            }
-
-            // ============ ACTUALIZAR TALLAS (EN TABLA SEPARADA) ============
-            if (isset($validated['tallas'])) {
-                // Obtener tallas actuales organizadas por género
-                $tallasActuales = \DB::table('pedidos_procesos_prenda_tallas')
-                    ->where('proceso_prenda_detalle_id', $proceso->id)
-                    ->get()
-                    ->groupBy('genero')
-                    ->map(function ($grupo) {
-                        return $grupo->pluck('cantidad', 'talla')->toArray();
-                    })
-                    ->toArray();
-
-                $tallasDama = $validated['tallas']['dama'] ?? [];
-                $tallasHombre = $validated['tallas']['caballero'] ?? [];
-                $tallasActualDama = $tallasActuales['DAMA'] ?? [];
-                $tallasActualHombre = $tallasActuales['CABALLERO'] ?? [];
-
-                // DAMA: Eliminar tallas que ya no existen o quedaron en 0
-                foreach ($tallasActualDama as $talla => $cantidad) {
-                    if (!isset($tallasDama[$talla]) || $tallasDama[$talla] == 0) {
-                        \DB::table('pedidos_procesos_prenda_tallas')
-                            ->where('proceso_prenda_detalle_id', $proceso->id)
-                            ->where('genero', 'DAMA')
-                            ->where('talla', $talla)
-                            ->delete();
-                    }
-                }
-
-                // DAMA: Insertar/Actualizar tallas nuevas o modificadas
-                foreach ($tallasDama as $talla => $cantidad) {
-                    if ($cantidad > 0) {
-                        \DB::table('pedidos_procesos_prenda_tallas')
-                            ->updateOrInsert(
-                                [
-                                    'proceso_prenda_detalle_id' => $proceso->id,
-                                    'genero' => 'DAMA',
-                                    'talla' => $talla
-                                ],
-                                [
-                                    'cantidad' => (int)$cantidad,
-                                    'updated_at' => now()
-                                ]
-                            );
-                    }
-                }
-
-                // CABALLERO: Eliminar tallas que ya no existen o quedaron en 0
-                foreach ($tallasActualHombre as $talla => $cantidad) {
-                    if (!isset($tallasHombre[$talla]) || $tallasHombre[$talla] == 0) {
-                        \DB::table('pedidos_procesos_prenda_tallas')
-                            ->where('proceso_prenda_detalle_id', $proceso->id)
-                            ->where('genero', 'CABALLERO')
-                            ->where('talla', $talla)
-                            ->delete();
-                    }
-                }
-
-                // CABALLERO: Insertar/Actualizar tallas nuevas o modificadas
-                foreach ($tallasHombre as $talla => $cantidad) {
-                    if ($cantidad > 0) {
-                        \DB::table('pedidos_procesos_prenda_tallas')
-                            ->updateOrInsert(
-                                [
-                                    'proceso_prenda_detalle_id' => $proceso->id,
-                                    'genero' => 'CABALLERO',
-                                    'talla' => $talla
-                                ],
-                                [
-                                    'cantidad' => (int)$cantidad,
-                                    'updated_at' => now()
-                                ]
-                            );
-                    }
-                }
-
-                \Log::info('[PROCESOS-ACTUALIZAR] Tallas actualizadas:', [
-                    'tallas' => $validated['tallas']
-                ]);
-            }
-
-            \Log::info('[PROCESOS-ACTUALIZAR] Proceso actualizado exitosamente:', [
-                'proceso_id' => $procesoId,
-                'prenda_id' => $prendaId
-            ]);
+            $resultado = $this->procesoActualizarService->actualizar($proceso, $inputData, $archivos);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Proceso actualizado correctamente',
-                'data' => [
-                    'id' => $proceso->id,
-                    'tipo' => $proceso->tipo_proceso,
-                    'actualizados' => array_keys($validated)
-                ]
-            ], 200);
-
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            \Log::warning('[PROCESOS-ACTUALIZAR] Proceso no encontrado:', [
-                'prenda_id' => $prendaId,
-                'proceso_id' => $procesoId
+                'data'    => $resultado,
             ]);
 
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
             return response()->json([
                 'success' => false,
-                'error' => 'Proceso no encontrado en la prenda especificada',
+                'error'   => 'Proceso no encontrado en la prenda especificada',
             ], 404);
 
         } catch (ValidationException $e) {
-            \Log::warning('[PROCESOS-ACTUALIZAR] Error de validación:', [
-                'errores' => $e->errors()
-            ]);
-
             return response()->json([
                 'success' => false,
-                'errors' => $e->errors(),
+                'errors'  => $e->errors(),
             ], 422);
 
         } catch (\Exception $e) {
-            \Log::error('[PROCESOS-ACTUALIZAR] Error inesperado:', [
-                'error' => $e->getMessage(),
-                'stack' => $e->getTraceAsString()
-            ]);
-
             return response()->json([
                 'success' => false,
-                'error' => 'Error al actualizar el proceso: ' . $e->getMessage(),
+                'error'   => 'Error al actualizar el proceso: ' . $e->getMessage(),
             ], 500);
         }
     }
-
-    /**
-     * Normalizar ubicaciones para evitar JSON doble-encodeado
-     * Convierte elementos JSON-encodados de vuelta a valores simples
-     * @private
-     */
-    private function normalizarUbicaciones(array $ubicaciones): array
-    {
-        $normalizadas = [];
-
-        foreach ($ubicaciones as $ub) {
-            $valor = $this->extraerValorUbicacion($ub);
-
-            // Agregar si no es vacío
-            if (!empty($valor) && is_string($valor) && trim($valor) !== '') {
-                $normalizadas[] = trim($valor);
-            }
-        }
-
-        return $normalizadas;
-    }
-
-    /**
-     * Extraer el valor simple de una ubicación (que puede ser JSON-encodeada)
-     * @private
-     */
-    private function extraerValorUbicacion($ub): ?string
-    {
-        // Si es string, limpiar comillas escapadas primero
-        if (is_string($ub)) {
-            // Remover comillas escapadas: "\"valor\"" → "valor"
-            $ub = preg_replace('/^["\\\\]*|["\\\\]*$/','', $ub);
-            $ub = trim($ub);
-        }
-
-        // Si es string que parece JSON
-        if (is_string($ub) && (strpos($ub, '[') === 0 || strpos($ub, '{') === 0)) {
-            return $this->parseJsonUbicacion($ub);
-        }
-
-        // Si es array con 'ubicacion', extraer valor
-        if (is_array($ub) && isset($ub['ubicacion'])) {
-            return (string)$ub['ubicacion'];
-        }
-
-        // Retornar como string
-        return is_string($ub) ? $ub : null;
-    }
-
-    /**
-     * Parsear ubicación que viene como JSON string
-     * @private
-     */
-    private function parseJsonUbicacion(string $jsonString): ?string
-    {
-        try {
-            $parsed = json_decode($jsonString, true);
-
-            // Si parsea a array, extraer primer elemento
-            if (is_array($parsed) && !empty($parsed)) {
-                return (string)$parsed[0];
-            }
-
-            // Si parsea a objeto, extraer propiedad ubicacion
-            if (is_array($parsed) && isset($parsed['ubicacion'])) {
-                return (string)$parsed['ubicacion'];
-            }
-
-            return null;
-        } catch (\Exception $e) {
-            // Si no parsea, retornar null
-            return null;
-        }
-    }
 }
-

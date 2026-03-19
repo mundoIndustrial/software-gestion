@@ -9,6 +9,7 @@ use App\Application\Pedidos\UseCases\EliminarEppUseCase;
 use App\Application\Pedidos\UseCases\HomologarEppUseCase;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
+use App\Models\PedidoAnexoHistorial;
 
 /**
  * EppsPedidoController
@@ -113,6 +114,12 @@ class EppsPedidoController
                 (int) $validated['cantidad'],
                 $validated['observaciones'] ?? null,
                 isset($validated['epp_id']) ? (int) $validated['epp_id'] : null
+            );
+
+            PedidoAnexoHistorial::registrarEppNuevo(
+                (int) $id,
+                (int) $resultado['epp_id_nuevo'],
+                (int) ($resultado['cambios']['epp_id_nuevo'] ?? 0)
             );
 
             return response()->json($resultado, 200);

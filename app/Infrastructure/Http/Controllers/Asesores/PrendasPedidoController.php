@@ -430,7 +430,8 @@ class PrendasPedidoController
             PedidoAnexoHistorial::registrarPrendaEditada(
                 (int)$id,
                 $prenda->id,
-                $prenda->nombre_prenda ?? $validated['nombre_prenda'] ?? 'PRENDA'
+                $prenda->nombre_prenda ?? $validated['nombre_prenda'] ?? 'PRENDA',
+                'prenda completa'
             );
 
             return response()->json([
@@ -484,6 +485,13 @@ class PrendasPedidoController
             }
 
             $resultado = $this->eliminarImagenPedidoUseCase->ejecutar($id, $tipo);
+
+            // Registrar en historial: foto de prenda/tela/proceso eliminada en pedido existente
+            PedidoAnexoHistorial::registrarPrendaEditada(
+                $pedidoId,
+                $id,
+                strtoupper($tipo) . ' (foto eliminada)'
+            );
 
             return response()->json($resultado);
 

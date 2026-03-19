@@ -4,10 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\Epp;
 use App\Models\PedidoAnexoHistorial;
-use App\Models\PedidoEpp;
 use App\Models\PedidoProduccion;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
@@ -57,6 +57,7 @@ class PedidoAnexoHistorialTest extends TestCase
     // Helpers
     // ─────────────────────────────────────────────────────────────────────────
 
+    
     private function pedidoExistente(): PedidoProduccion
     {
         $pedido = PedidoProduccion::whereNotNull('numero_pedido')
@@ -91,7 +92,7 @@ class PedidoAnexoHistorialTest extends TestCase
     // Tests
     // ─────────────────────────────────────────────────────────────────────────
 
-    /** @test */
+    #[Test]
     public function registra_prenda_nueva_correctamente(): void
     {
         $pedido = $this->pedidoExistente();
@@ -113,7 +114,7 @@ class PedidoAnexoHistorialTest extends TestCase
         echo "\n  ✓ Prenda nueva registrada — ID historial: {$registro->id}, pedido: {$pedido->numero_pedido}\n";
     }
 
-    /** @test */
+    #[Test]
     public function registra_prenda_editada_correctamente(): void
     {
         $pedido = $this->pedidoExistente();
@@ -134,7 +135,7 @@ class PedidoAnexoHistorialTest extends TestCase
         echo "\n  ✓ Prenda editada registrada — ID historial: {$registro->id}, pedido: {$pedido->numero_pedido}\n";
     }
 
-    /** @test */
+    #[Test]
     public function registra_epp_nuevo_correctamente(): void
     {
         $pedido = $this->pedidoExistente();
@@ -157,7 +158,7 @@ class PedidoAnexoHistorialTest extends TestCase
         echo "\n  ✓ EPP nuevo registrado — ID historial: {$registro->id}, epp_id: {$epp->id}\n";
     }
 
-    /** @test */
+    #[Test]
     public function registra_epp_editado_correctamente(): void
     {
         $pedido = $this->pedidoExistente();
@@ -179,7 +180,7 @@ class PedidoAnexoHistorialTest extends TestCase
         echo "\n  ✓ EPP editado registrado — ID historial: {$registro->id}, epp_id: {$epp->id}\n";
     }
 
-    /** @test */
+    #[Test]
     public function created_by_corresponde_al_usuario_autenticado(): void
     {
         $pedido  = $this->pedidoExistente();
@@ -194,7 +195,7 @@ class PedidoAnexoHistorialTest extends TestCase
         echo "\n  ✓ created_by correcto — user_id: {$usuario->id}\n";
     }
 
-    /** @test */
+    #[Test]
     public function multiples_anexos_del_mismo_pedido_se_registran_independientemente(): void
     {
         $pedido = $this->pedidoExistente();
@@ -215,7 +216,7 @@ class PedidoAnexoHistorialTest extends TestCase
         echo "\n  ✓ 3 registros independientes creados para pedido #{$pedido->numero_pedido}\n";
     }
 
-    /** @test */
+    #[Test]
     public function pedidos_con_anexos_recientes_aparecen_primero_en_supervisor(): void
     {
         $pedido = $this->pedidoExistente();
@@ -247,7 +248,7 @@ class PedidoAnexoHistorialTest extends TestCase
         echo "\n  ✓ Pedido con anexo reciente aparece primero — #{$pedido->numero_pedido} (ID: {$pedido->id})\n";
     }
 
-    /** @test */
+    #[Test]
     public function pedidos_con_anexos_recientes_aparecen_primero_en_bodega(): void
     {
         $pedido = $this->pedidoExistente();
@@ -276,7 +277,7 @@ class PedidoAnexoHistorialTest extends TestCase
         echo "\n  ✓ Ordenamiento bodega correcto — #{$pedido->numero_pedido} es el primero\n";
     }
 
-    /** @test */
+    #[Test]
     public function relacion_pedido_carga_correctamente(): void
     {
         $pedido = $this->pedidoExistente();

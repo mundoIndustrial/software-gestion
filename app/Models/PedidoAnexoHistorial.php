@@ -14,6 +14,7 @@ class PedidoAnexoHistorial extends Model
         'tipo',
         'referencia_id',
         'descripcion',
+        'detalle',
         'created_by',
     ];
 
@@ -55,13 +56,20 @@ class PedidoAnexoHistorial extends Model
     public static function registrarPrendaEditada(
         int $pedidoProduccionId,
         int $prendaId,
-        string $nombrePrenda = 'PRENDA'
+        string $nombrePrenda = 'PRENDA',
+        string $accion = '',
+        ?string $detalle = null
     ): self {
+        $descripcion = 'PRENDA EDITADA: ' . strtoupper($nombrePrenda);
+        if ($accion !== '') {
+            $descripcion .= ' (' . $accion . ')';
+        }
         return self::create([
             'pedido_produccion_id' => $pedidoProduccionId,
             'tipo'                 => 'PRENDA',
             'referencia_id'        => $prendaId,
-            'descripcion'          => 'PRENDA EDITADA: ' . strtoupper($nombrePrenda),
+            'descripcion'          => $descripcion,
+            'detalle'              => $detalle,
             'created_by'           => auth()->id(),
         ]);
     }
