@@ -44,6 +44,16 @@
         </a>
       </li>
 
+      <!-- Gestion Plooter -->
+      <li class="menu-item">
+        <a href="{{ route('insumos.plooter.index') }}"
+           class="menu-link {{ request()->routeIs('insumos.plooter.*') ? 'active' : '' }}"
+           aria-label="Gestion Plooter">
+          <span class="material-symbols-rounded" aria-hidden="true">description</span>
+          <span class="menu-label">Gestion Plooter</span>
+        </a>
+      </li>
+
       <!-- Inventario de Telas -->
       <li class="menu-item">
         <a href="{{ route('inventario-telas.index') }}"

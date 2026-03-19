@@ -44,6 +44,14 @@ class ConsecutivosRecibosPedidos extends Model
     }
 
     /**
+     * Relación: Un consecutivo puede tener un registro en plooter
+     */
+    public function plooter()
+    {
+        return $this->hasOne(Plooter::class, 'consecutivo_recibo_pedido_id');
+    }
+
+    /**
      * Scope para obtener consecutivos activos
      */
     public function scopeActivos($query)

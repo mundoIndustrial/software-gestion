@@ -2296,6 +2296,17 @@ Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.
     Route::get('/metrajes', function () {
         return view('insumos.metrajes.index');
     })->name('metrajes.index');
+    
+    // Gestión de Plooter
+    Route::prefix('plooter')->name('plooter.')->group(function () {
+        Route::get('/', [\App\Infrastructure\Http\Controllers\Insumos\PlooterController::class, 'index'])->name('index');
+        Route::get('/datos', [\App\Infrastructure\Http\Controllers\Insumos\PlooterController::class, 'obtenerDatos'])->name('datos');
+        Route::get('/estadisticas', [\App\Infrastructure\Http\Controllers\Insumos\PlooterController::class, 'obtenerEstadisticas'])->name('estadisticas');
+        Route::get('/estado/{estado}', [\App\Infrastructure\Http\Controllers\Insumos\PlooterController::class, 'filtrarPorEstado'])->name('filtrar-estado');
+        Route::delete('/{id}', [\App\Infrastructure\Http\Controllers\Insumos\PlooterController::class, 'remover'])->name('remover');
+        Route::post('/{reciboId}/registrar-fecha-envio', [\App\Infrastructure\Http\Controllers\Insumos\PlooterController::class, 'registrarFechaEnvio'])->name('registrar-fecha-envio');
+        Route::post('/{reciboId}/registrar-fecha-llegada', [\App\Infrastructure\Http\Controllers\Insumos\PlooterController::class, 'registrarFechaLlegada'])->name('registrar-fecha-llegada');
+    });
 });
 
 // ========================================

@@ -4,7 +4,9 @@ namespace App\Infrastructure\Http\Controllers\Insumos;
 
 use App\Http\Controllers\Controller;
 use App\Models\ConsecutivosRecibosPedidos;
+use App\Models\Plooter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Controller para acciones sobre recibos en el módulo Insumos
@@ -20,6 +22,8 @@ class RecibosController extends Controller
 
     /**
      * Alterar el estado de marcado de un recibo (marcar_plooter)
+     * Si marcado es true, crea un registro en la tabla plooter
+     * Si marcado es false, elimina el registro en la tabla plooter
      */
     public function toggleMarcado(Request $request, $reciboId)
     {
@@ -29,7 +33,26 @@ class RecibosController extends Controller
             ]);
 
             $recibo = ConsecutivosRecibosPedidos::findOrFail($reciboId);
-            $recibo->update(['marcar_plooter' => $request->boolean('marcado')]);
+            $marcado = $request->boolean('marcado');
+            
+            // Actualizar marcación en consecutivos_recibos_pedidos
+            $recibo->update(['marcar_plooter' => $marcado]);
+
+            // Crear o eliminar registro en tabla plooter
+            if ($marcado) {
+                // Crear registro en plooter si no existe
+                $plooter = Plooter::firstOrCreate(
+                    ['consecutivo_recibo_pedido_id' => $reciboId],
+                    ['fecha_envio' => now()]
+                );
+                
+                Log::info('Recibo marcado para plooter', ['recibo_id' => $reciboId, 'fecha_envio' => $plooter->fecha_envio]);
+            } else {
+                // Eliminar registro en plooter si existe
+                Plooter::where('consecutivo_recibo_pedido_id', $reciboId)->delete();
+                
+                Log::info('Recibo desmarcado de plooter', ['recibo_id' => $reciboId]);
+            }
 
             return response()->json([
                 'success' => true,
@@ -37,7 +60,7 @@ class RecibosController extends Controller
                 'data' => $recibo,
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error al actualizar marcado: ' . $e->getMessage());
+            Log::error('Error al actualizar marcado: ' . $e->getMessage());
             
             return response()->json([
                 'success' => false,
@@ -70,7 +93,7 @@ class RecibosController extends Controller
                 'data' => $recibo,
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error al pasar a revisar: ' . $e->getMessage());
+            Log::error('Error al pasar a revisar: ' . $e->getMessage());
             
             return response()->json([
                 'success' => false,
@@ -79,3 +102,4 @@ class RecibosController extends Controller
         }
     }
 }
+

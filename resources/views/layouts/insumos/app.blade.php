@@ -106,17 +106,17 @@
                             </a>
                         </li>
                         <li class="menu-item">
+                            <a href="{{ route('insumos.plooter.index') }}" 
+                               class="menu-link {{ request()->routeIs('insumos.plooter.*') ? 'active' : '' }}">
+                                <span class="material-symbols-rounded">description</span>
+                                <span class="menu-label">Gestion Plooter</span>
+                            </a>
+                        </li>
+                        <li class="menu-item">
                             <a href="{{ route('inventario-telas.index') }}" 
                                class="menu-link {{ request()->routeIs('inventario-telas.*') ? 'active' : '' }}">
                                 <span class="material-symbols-rounded">checkroom</span>
                                 <span class="menu-label">Inventario de Telas</span>
-                            </a>
-                        </li>
-                        <li class="menu-item">
-                            <a href="{{ route('insumos.metrajes.index') }}" 
-                               class="menu-link {{ request()->routeIs('insumos.metrajes.*') ? 'active' : '' }}">
-                                <span class="material-symbols-rounded">straighten</span>
-                                <span class="menu-label">Cálculo de Metrajes</span>
                             </a>
                         </li>
                     </ul>
