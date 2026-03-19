@@ -18,7 +18,10 @@ window.ImageConverterService = {
 
         // Si es un string (URL)
         if (typeof img === 'string') {
-            return img;
+            if (img.startsWith('/') || img.startsWith('http') || img.startsWith('blob:') || img.startsWith('data:')) {
+                return img;
+            }
+            return `/storage/${img}`;
         }
 
         // Si es un File object directo
@@ -33,20 +36,40 @@ window.ImageConverterService = {
 
         // Si tiene propiedad url
         if (img && img.url) {
-            return img.url;
+            if (img.url.startsWith('/') || img.url.startsWith('http') || img.url.startsWith('blob:') || img.url.startsWith('data:')) {
+                return img.url;
+            }
+            return `/storage/${img.url}`;
         }
 
         // Si tiene propiedades de BD
         if (img && img.ruta_webp) {
-            return img.ruta_webp;
+            if (img.ruta_webp.startsWith('/') || img.ruta_webp.startsWith('http') || img.ruta_webp.startsWith('blob:') || img.ruta_webp.startsWith('data:')) {
+                return img.ruta_webp;
+            }
+            return `/storage/${img.ruta_webp}`;
         }
         if (img && img.ruta_original) {
-            return img.ruta_original;
+            if (img.ruta_original.startsWith('/') || img.ruta_original.startsWith('http') || img.ruta_original.startsWith('blob:') || img.ruta_original.startsWith('data:')) {
+                return img.ruta_original;
+            }
+            return `/storage/${img.ruta_original}`;
         }
 
         // Si tiene previewUrl
         if (img && img.previewUrl) {
             return img.previewUrl;
+        }
+
+        if (img && img.preview) {
+            return img.preview;
+        }
+
+        if (img && img.src) {
+            if (img.src.startsWith('/') || img.src.startsWith('http') || img.src.startsWith('blob:') || img.src.startsWith('data:')) {
+                return img.src;
+            }
+            return `/storage/${img.src}`;
         }
 
         return null;
@@ -73,13 +96,21 @@ window.ImageConverterService = {
             return this.obtenerPrimeraImagen(telaItem.imagenes);
         }
 
+        // Fuente 1b: fotos (algunos flujos legacy)
+        if (telaItem.fotos && Array.isArray(telaItem.fotos) && telaItem.fotos.length > 0) {
+            return this.obtenerPrimeraImagen(telaItem.fotos);
+        }
+
         // Fuente 2: telaFotos (desde BD)
         if (telaItem.telaFotos && Array.isArray(telaItem.telaFotos) && telaItem.telaFotos.length > 0) {
             return this.obtenerPrimeraImagen(telaItem.telaFotos);
         }
 
+        if (telaItem.imagenes_tela && Array.isArray(telaItem.imagenes_tela) && telaItem.imagenes_tela.length > 0) {
+            return this.obtenerPrimeraImagen(telaItem.imagenes_tela);
+        }
+
         return null;
     }
 };
-
 

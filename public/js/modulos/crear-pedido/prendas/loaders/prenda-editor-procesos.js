@@ -43,11 +43,15 @@ class PrendaEditorProcesos {
                     // 🔴 CRÍTICO: Extraer nombre del tipo de proceso - puede venir en diferentes formatos
                     let tipoOriginal = proceso.tipo 
                         || proceso.nombre 
+                        || proceso.tipo_proceso
                         || (proceso.tipoProceso && proceso.tipoProceso.nombre)  // ← Nombre desde relación anidada (servidor)
                         || `proceso_${idx}`;
                     
-                    // 🔴 Normalizar a lowercase para que matchee iconos/nombres del renderizador
-                    const tipo = tipoOriginal.toLowerCase().trim();
+                    // 🔴 Normalizar a slug lowercase para que matchee iconos/nombres del renderizador
+                    const tipo = String(tipoOriginal)
+                        .toLowerCase()
+                        .trim()
+                        .replace(/\s+/g, '-');
                     
                     // 🔴 Normalizar imágenes: asegurar prefijo /storage/ para rutas de servidor
                     const datosNormalizados = { ...proceso, tipo: tipo };
@@ -108,22 +112,44 @@ class PrendaEditorProcesos {
                 Object.entries(prenda.procesos).forEach(([key, proceso]) => {
                     // Si el valor es un objeto con datos, usarlo directamente
                     if (proceso && typeof proceso === 'object' && (proceso.datos || proceso.tipo || proceso.ubicaciones)) {
-                        window.procesosSeleccionados[key] = {
-                            tipo: key,
-                            datos: proceso.datos || proceso
+                        const datosProceso = proceso.datos || proceso;
+                        const tipoNormalizado = String(
+                            datosProceso.tipo ||
+                            datosProceso.tipo_proceso ||
+                            datosProceso.nombre ||
+                            datosProceso.nombre_proceso ||
+                            datosProceso.tipoProceso?.nombre ||
+                            key
+                        ).toLowerCase().trim().replace(/\s+/g, '-');
+
+                        window.procesosSeleccionados[tipoNormalizado] = {
+                            tipo: tipoNormalizado,
+                            datos: {
+                                ...datosProceso,
+                                tipo: tipoNormalizado,
+                                nombre: datosProceso.nombre || datosProceso.tipo_proceso || datosProceso.nombre_proceso || datosProceso.tipoProceso?.nombre || tipoNormalizado
+                            }
                         };
                     } else if (proceso === true || proceso === 1) {
                         // Si es solo un boolean/flag, crear objeto mínimo
-                        window.procesosSeleccionados[key] = {
-                            tipo: key,
+                        const tipoNormalizado = String(key).toLowerCase().trim().replace(/\s+/g, '-');
+                        window.procesosSeleccionados[tipoNormalizado] = {
+                            tipo: tipoNormalizado,
                             datos: {
-                                tipo: key,
+                                tipo: tipoNormalizado,
                                 ubicaciones: [],
                                 tallas: { dama: {}, caballero: {}, sobremedida: {} },
                                 observaciones: '',
                                 imagenes: []
                             }
                         };
+                        return;
+                    }
+
+                    if (window.procesosSeleccionados[key]) {
+                        const procesoActual = window.procesosSeleccionados[key];
+                        delete window.procesosSeleccionados[key];
+                        window.procesosSeleccionados[procesoActual.tipo] = procesoActual;
                     }
                 });
             }

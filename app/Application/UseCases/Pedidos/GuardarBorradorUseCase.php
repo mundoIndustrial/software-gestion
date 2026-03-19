@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Domain\Clientes\Services\ClienteService;
 use App\Domain\Pedidos\DTOs\PedidoNormalizadorDTO;
+use App\Domain\Pedidos\Repositories\PedidoRepository;
 use App\Domain\Pedidos\Services\PedidoWebService;
 use App\Domain\Pedidos\Services\PedidoImagenesService;
 use App\Domain\Pedidos\Services\MapeoImagenesService;
@@ -38,6 +39,7 @@ class GuardarBorradorUseCase
         private PedidoWebService $pedidoWebService,
         private PedidoImagenesService $pedidoImagenesService,
         private MapeoImagenesService $mapeoImagenes,
+        private PedidoRepository $pedidoRepository,
     ) {}
 
     /**
@@ -105,6 +107,27 @@ class GuardarBorradorUseCase
 
             $pedidoId = $pedido->id;
 
+            $nuevasPrendas = $input->datosFrontend['nuevas_prendas'] ?? [];
+            if (!empty($nuevasPrendas)) {
+                $nuevasPrendasIds = [];
+
+                foreach ($nuevasPrendas as $index => $itemData) {
+                    $prendaCreada = $this->pedidoWebService->agregarItemAPedido($pedido, $itemData, (int) $index);
+                    $nuevasPrendasIds[] = $prendaCreada->id;
+                }
+
+                $this->pedidoImagenesService->procesarImagenesNuevasPrendas(
+                    $input->request,
+                    $nuevasPrendasIds,
+                    $nuevasPrendas
+                );
+
+                Log::info('[GuardarBorradorUseCase] Nuevas prendas agregadas al borrador', [
+                    'pedido_id' => $pedidoId,
+                    'cantidad' => count($nuevasPrendasIds),
+                ]);
+            }
+
             Log::info('[GuardarBorradorUseCase] Pedido borrador creado', [
                 'pedido_id' => $pedidoId,
                 'numero_pedido' => $pedido->numero_pedido ?? 'NULL',
@@ -153,6 +176,12 @@ class GuardarBorradorUseCase
             }
 
             // ====== Confirmar transacción ======
+            $cantidadTotalPrendas = $this->pedidoRepository->calcularCantidadTotalPrendas($pedidoId);
+            $cantidadTotalEpps = $this->pedidoRepository->calcularCantidadTotalEpps($pedidoId);
+            $pedido->update([
+                'cantidad_total' => $cantidadTotalPrendas + $cantidadTotalEpps,
+            ]);
+
             DB::commit();
 
             $tiempoTotal = round((microtime(true) - $inicioTotal) * 1000, 2);

@@ -20,6 +20,128 @@ use Illuminate\Support\Facades\Log;
  */
 class MapearPedidoEdicionService
 {
+    private function normalizarRutaImagen(?string $ruta): ?string
+    {
+        if (!$ruta) {
+            return null;
+        }
+
+        $ruta = str_replace('\\', '/', $ruta);
+
+        if (str_starts_with($ruta, 'http') || str_starts_with($ruta, 'blob:') || str_starts_with($ruta, 'data:')) {
+            return $ruta;
+        }
+
+        if (str_starts_with($ruta, '/storage/')) {
+            return $ruta;
+        }
+
+        if (str_starts_with($ruta, 'storage/')) {
+            return '/' . $ruta;
+        }
+
+        return '/storage/' . ltrim($ruta, '/');
+    }
+
+    private function decodificarJsonSeguro($valor, array $default = []): array
+    {
+        if (is_array($valor)) {
+            return $valor;
+        }
+
+        if (empty($valor) || !is_string($valor)) {
+            return $default;
+        }
+
+        $decodificado = json_decode($valor, true);
+        return is_array($decodificado) ? $decodificado : $default;
+    }
+
+    private function mapearImagenesProceso($proceso): array
+    {
+        return $proceso->imagenes->map(function ($img) {
+            $rutaOriginal = $this->normalizarRutaImagen($img->ruta_original ?? null);
+            $rutaWebp = $this->normalizarRutaImagen($img->ruta_webp ?? $img->ruta_original ?? null);
+            $url = $rutaWebp ?: $rutaOriginal;
+
+            return [
+                'id' => $img->id,
+                'ruta_original' => $rutaOriginal,
+                'ruta_webp' => $rutaWebp,
+                'url' => $url,
+                'orden' => (int) ($img->orden ?? 0),
+                'es_principal' => (bool) ($img->es_principal ?? false),
+            ];
+        })->values()->toArray();
+    }
+
+    private function construirTallasProceso($proceso): array
+    {
+        $tallas = [
+            'dama' => [],
+            'caballero' => [],
+            'unisex' => [],
+            'sobremedida' => [],
+        ];
+
+        foreach ($proceso->tallas as $talla) {
+            $genero = strtolower((string) ($talla->genero ?? ''));
+            if (!in_array($genero, ['dama', 'caballero', 'unisex'], true)) {
+                $genero = 'caballero';
+            }
+
+            $claveTalla = $talla->es_sobremedida ? ('SOBREMEDIDA__' . ($talla->talla ?? 'SM')) : (string) $talla->talla;
+            $cantidad = (int) ($talla->cantidad ?? 0);
+
+            if ($talla->es_sobremedida) {
+                $tallas['sobremedida'][$claveTalla] = $cantidad;
+                continue;
+            }
+
+            $tallas[$genero][$claveTalla] = $cantidad;
+        }
+
+        return $tallas;
+    }
+
+    private function construirDatosExtendidosProceso($proceso): array
+    {
+        $datosExtendidos = [
+            'dama' => [],
+            'caballero' => [],
+            'unisex' => [],
+            'sobremedida' => [],
+        ];
+
+        foreach ($proceso->tallas as $talla) {
+            $genero = strtolower((string) ($talla->genero ?? ''));
+            if (!in_array($genero, ['dama', 'caballero', 'unisex'], true)) {
+                $genero = 'caballero';
+            }
+
+            $claveTalla = $talla->es_sobremedida ? ('SOBREMEDIDA__' . ($talla->talla ?? 'SM')) : (string) $talla->talla;
+            $ubicaciones = $this->decodificarJsonSeguro($talla->ubicaciones);
+            $observaciones = $talla->observaciones ?? '';
+
+            if ($talla->es_sobremedida) {
+                $datosExtendidos['sobremedida'][$claveTalla] = [
+                    'ubicaciones' => $ubicaciones,
+                    'observaciones' => $observaciones,
+                    'imagenes' => [],
+                ];
+                continue;
+            }
+
+            $datosExtendidos[$genero][$claveTalla] = [
+                'ubicaciones' => $ubicaciones,
+                'observaciones' => $observaciones,
+                'imagenes' => [],
+            ];
+        }
+
+        return $datosExtendidos;
+    }
+
     /**
      * Preparar datos de pedido para modo edición
      * 
@@ -113,24 +235,58 @@ class MapearPedidoEdicionService
                         'color' => $ct->color?->nombre ?? '',
                         'color_nombre' => $ct->color?->nombre ?? '',
                         'referencia' => $ct->referencia ?? '',
+                        'imagenes' => $ct->fotos->map(function ($foto) {
+                            $rutaOriginal = $this->normalizarRutaImagen($foto->ruta_original ?? null);
+                            $rutaWebp = $this->normalizarRutaImagen($foto->ruta_webp ?? $foto->ruta_original ?? null);
+
+                            return [
+                                'id' => $foto->id,
+                                'ruta_original' => $rutaOriginal,
+                                'ruta_webp' => $rutaWebp,
+                                'url' => $rutaWebp ?: $rutaOriginal,
+                                'orden' => (int) ($foto->orden ?? 0),
+                                'es_principal' => (bool) ($foto->es_principal ?? false),
+                            ];
+                        })->values()->toArray(),
                     ];
                 })->toArray(),
 
                 // Imágenes
                 'fotos' => $prenda->fotos->map(function ($foto) {
+                    $rutaOriginal = $this->normalizarRutaImagen($foto->ruta_original ?? null);
+                    $rutaWebp = $this->normalizarRutaImagen($foto->ruta_webp ?? $foto->ruta_original ?? null);
+
                     return [
                         'id' => $foto->id,
-                        'url' => $foto->url,
+                        'url' => $rutaWebp ?: $rutaOriginal,
+                        'ruta_original' => $rutaOriginal,
+                        'ruta_webp' => $rutaWebp,
                         'principal' => $foto->principal ?? false,
                     ];
                 })->toArray(),
 
                 // Procesos
                 'procesos' => $prenda->procesos->map(function ($proceso) {
+                    $tipoProceso = $proceso->tipoProceso?->nombre
+                        ?? $proceso->tipo_proceso
+                        ?? $proceso->nombre
+                        ?? 'Proceso';
+
                     return [
                         'id' => $proceso->id,
-                        'nombre' => $proceso->nombre,
-                        'tecnica' => $proceso->tecnica,
+                        'tipo_proceso_id' => $proceso->tipo_proceso_id,
+                        'tipo_proceso' => $tipoProceso,
+                        'tipo' => $tipoProceso,
+                        'nombre' => $tipoProceso,
+                        'tecnica' => $tipoProceso,
+                        'ubicaciones' => $this->decodificarJsonSeguro($proceso->ubicaciones),
+                        'observaciones' => $proceso->observaciones ?? '',
+                        'estado' => $proceso->estado,
+                        'modo_tallas' => $proceso->modo_tallas ?? 'generico',
+                        'datos_adicionales' => $this->decodificarJsonSeguro($proceso->datos_adicionales),
+                        'tallas' => $this->construirTallasProceso($proceso),
+                        'datosExtendidos' => $this->construirDatosExtendidosProceso($proceso),
+                        'imagenes' => $this->mapearImagenesProceso($proceso),
                     ];
                 })->toArray(),
             ];

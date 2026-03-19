@@ -4,11 +4,113 @@
  */
 
 window.PrendaCardService = {
+    _esTipoProcesoValido(valor) {
+        if (valor === null || valor === undefined) return false;
+        const texto = String(valor).trim();
+        if (!texto) return false;
+        if (/^\d+$/.test(texto)) return false;
+        if (/^proceso[_-\s]?\d+$/i.test(texto)) return false;
+        return true;
+    },
+
+    _normalizarTipoProceso(...candidatos) {
+        for (const candidato of candidatos) {
+            if (!this._esTipoProcesoValido(candidato)) continue;
+            return String(candidato).toLowerCase().trim().replace(/\s+/g, '-');
+        }
+
+        return 'proceso';
+    },
+
+    _obtenerObjetoGenero(obj, genero) {
+        if (!obj || typeof obj !== 'object') return {};
+        return obj[genero] || obj[genero.toUpperCase()] || obj[genero.toLowerCase()] || {};
+    },
+
+    _normalizarUbicaciones(ubicaciones) {
+        if (!ubicaciones) return [];
+        const lista = Array.isArray(ubicaciones) ? ubicaciones : [ubicaciones];
+
+        return lista
+            .map((ubicacion) => {
+                if (!ubicacion) return '';
+                if (typeof ubicacion === 'string') return ubicacion.trim();
+                if (typeof ubicacion === 'object') {
+                    return String(
+                        ubicacion.ubicacion ||
+                        ubicacion.nombre ||
+                        ubicacion.descripcion ||
+                        ubicacion.label ||
+                        ''
+                    ).trim();
+                }
+                return String(ubicacion).trim();
+            })
+            .filter(Boolean);
+    },
+
+    _normalizarTelas(telas) {
+        if (!telas) return [];
+        if (Array.isArray(telas)) return telas;
+        if (typeof telas === 'object') return Object.values(telas);
+        return [];
+    },
+
+    _normalizarImagenes(imagenes) {
+        if (!imagenes) return [];
+        if (Array.isArray(imagenes)) return imagenes;
+        if (typeof imagenes === 'object') return Object.values(imagenes);
+        return [];
+    },
+
+    _normalizarProcesos(procesos) {
+        if (!procesos) return {};
+        if (!Array.isArray(procesos) && typeof procesos === 'object') {
+            const normalizados = {};
+            Object.entries(procesos).forEach(([key, value]) => {
+                if (!value) return;
+                const datos = value.datos || value;
+                const tipo = this._normalizarTipoProceso(
+                    datos.tipo,
+                    datos.tipo_proceso,
+                    datos.nombre,
+                    datos.nombre_proceso,
+                    datos.tipoProceso?.nombre,
+                    key
+                );
+                const nombre = datos.nombre || datos.tipo_proceso || datos.nombre_proceso || datos.tipoProceso?.nombre || tipo;
+                normalizados[tipo] = value.datos
+                    ? { ...value, tipo, datos: { ...datos, tipo, nombre } }
+                    : { tipo, datos: { ...datos, tipo, nombre } };
+            });
+            return normalizados;
+        }
+
+        const normalizados = {};
+        procesos.forEach((value, idx) => {
+            if (!value) return;
+            const datos = value.datos || value;
+            const tipo = this._normalizarTipoProceso(
+                datos.tipo,
+                datos.tipo_proceso,
+                datos.nombre,
+                datos.nombre_proceso,
+                datos.tipoProceso?.nombre,
+                `proceso_${idx}`
+            );
+            const nombre = datos.nombre || datos.tipo_proceso || datos.nombre_proceso || datos.tipoProceso?.nombre || tipo;
+            normalizados[tipo] = value.datos
+                ? { ...value, tipo, datos: { ...datos, tipo, nombre } }
+                : { tipo, datos: { ...datos, tipo, nombre } };
+        });
+        return normalizados;
+    },
+
     generar(prenda, indice) {
 
         
         // Usar las propiedades correctas
-        const imagenes = prenda.imagenes || prenda.fotos || [];
+        const imagenes = this._normalizarImagenes(prenda.imagenes || prenda.fotos || prenda.fotos_prenda || []);
         
         // Usar servicio centralizado para convertir imágenes
         const fotoPrincipal = window.ImageConverterService ? 
@@ -24,8 +126,11 @@ window.PrendaCardService = {
         let telaFoto = null;
         
         // Obtener información de tela desde múltiples fuentes
-        if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas) && prenda.telasAgregadas.length > 0) {
-            const telaPrincipal = prenda.telasAgregadas[0];
+        const telasAgregadasNormalizadas = this._normalizarTelas(prenda.telasAgregadas);
+        const telasNormalizadas = this._normalizarTelas(prenda.telas);
+        
+        if (telasAgregadasNormalizadas.length > 0) {
+            const telaPrincipal = telasAgregadasNormalizadas[0];
             tela = telaPrincipal.tela || 'N/A';
             color = telaPrincipal.color || 'N/A';
             referencia = telaPrincipal.referencia || 'N/A';
@@ -43,8 +148,8 @@ window.PrendaCardService = {
                 null;
 
         }
-        else if (prenda.telas && Array.isArray(prenda.telas) && prenda.telas.length > 0) {
-            const telaPrincipal = prenda.telas[0];
+        else if (telasNormalizadas.length > 0) {
+            const telaPrincipal = telasNormalizadas[0];
             tela = telaPrincipal.nombre_tela || telaPrincipal.tela || 'N/A';
             color = telaPrincipal.color || 'N/A';
             referencia = telaPrincipal.referencia || 'N/A';
@@ -488,10 +593,10 @@ window.PrendaCardService = {
     _construirSeccionCombinada(prenda, indice) {
         // ── Obtener telas ──
         let telas = [];
-        if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas)) {
-            telas = prenda.telasAgregadas;
-        } else if (prenda.telas && Array.isArray(prenda.telas)) {
-            telas = prenda.telas;
+        if (prenda.telasAgregadas) {
+            telas = this._normalizarTelas(prenda.telasAgregadas);
+        } else if (prenda.telas) {
+            telas = this._normalizarTelas(prenda.telas);
         }
 
         // ── Obtener tallas (misma lógica de _construirTallasYCantidades) ──
@@ -702,7 +807,7 @@ window.PrendaCardService = {
 
     _construirProcesos(prenda, indice) {
 
-        const procesos = prenda.procesos || {};
+        const procesos = this._normalizarProcesos(prenda.procesos || {});
 
         
         const procesosConDatos = Object.entries(procesos).filter(([_, proc]) => proc && (proc.datos !== null || proc.tipo));
@@ -725,7 +830,7 @@ window.PrendaCardService = {
         procesosConDatos.forEach(([tipoProceso, proceso]) => {
             const datos = proceso.datos || {};
             const icono = iconosProcesos[tipoProceso] || '<i class="fas fa-cog"></i>';
-            const nombreProceso = tipoProceso.charAt(0).toUpperCase() + tipoProceso.slice(1);
+            const nombreProceso = datos.nombre || tipoProceso.charAt(0).toUpperCase() + tipoProceso.slice(1);
             const modoTallasResuelto = datos.modoTallas || proceso.modoTallas || 'generico';
             const esGeneralMode = modoTallasResuelto === 'general' || modoTallasResuelto === 'generico';
             const esPorTallas = !esGeneralMode && (!!(datos.datosExtendidos) || proceso.modoTallas === 'por_tallas');
@@ -876,11 +981,8 @@ window.PrendaCardService = {
             // ─── Modo GENERAL (renderizado especial) ───
             if (esGeneralMode) {
                 // Ubicación General
-                const ubicacionGeneral = datos.ubicacionGeneral || (datos.ubicaciones && (
-                    Array.isArray(datos.ubicaciones) 
-                        ? datos.ubicaciones.filter(u => u && typeof u === 'string').join(', ')
-                        : String(datos.ubicaciones)
-                )) || '';
+                const ubicacionesNormalizadas = this._normalizarUbicaciones(datos.ubicaciones);
+                const ubicacionGeneral = datos.ubicacionGeneral || ubicacionesNormalizadas.join(', ') || '';
                 
                 let ubicacionGeneralHTML = '';
                 if (ubicacionGeneral) {
@@ -901,9 +1003,9 @@ window.PrendaCardService = {
                 // Tallas agrupadas por género
                 let tallasGeneralesHTML = '';
                 if (datos.tallas) {
-                    const damaObj = datos.tallas.dama || {};
-                    const caballeroObj = datos.tallas.caballero || {};
-                    const sobremedidaObj = datos.tallas.sobremedida || {};
+                    const damaObj = this._obtenerObjetoGenero(datos.tallas, 'dama');
+                    const caballeroObj = this._obtenerObjetoGenero(datos.tallas, 'caballero');
+                    const sobremedidaObj = this._obtenerObjetoGenero(datos.tallas, 'sobremedida');
                     const damaHasTallas = Object.keys(damaObj).length > 0;
                     const caballeroHasTallas = Object.keys(caballeroObj).length > 0;
                     const sobremedidaHasTallas = Object.keys(sobremedidaObj).length > 0;
@@ -1304,10 +1406,10 @@ window.PrendaCardService = {
         let telas = [];
 
         // Obtener telas de diferentes fuentes
-        if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas)) {
-            telas = prenda.telasAgregadas;
-        } else if (prenda.telas && Array.isArray(prenda.telas)) {
-            telas = prenda.telas;
+        if (prenda.telasAgregadas) {
+            telas = this._normalizarTelas(prenda.telasAgregadas);
+        } else if (prenda.telas) {
+            telas = this._normalizarTelas(prenda.telas);
         } else if (prenda.imagenes_tela && Array.isArray(prenda.imagenes_tela)) {
             // Convertir imagenes_tela a formato de telas
             telas = prenda.imagenes_tela.map(img => ({
@@ -1390,5 +1492,3 @@ window.PrendaCardService = {
         `;
     }
 };
-
-

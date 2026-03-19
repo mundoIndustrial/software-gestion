@@ -2,12 +2,18 @@
 
 namespace App\Application\UseCases\Pedidos;
 
+use App\Application\Pedidos\DTOs\ActualizarPrendaCompletaDTO;
+use App\Application\Pedidos\UseCases\ActualizarPrendaCompletaUseCase;
+use App\Application\Pedidos\UseCases\EliminarProcesosListaUseCase;
+use App\Application\Services\Pedidos\ProcesarImagenesPrendaService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Models\PedidoEpp;
+use App\Models\PrendaPedido;
 use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
 use App\Domain\Pedidos\Services\PedidoImagenesService;
 use App\Domain\Pedidos\Services\PedidoWebService;
+use Illuminate\Http\Request;
 
 /**
  * ActualizarBorradorUseCase
@@ -33,6 +39,9 @@ class ActualizarBorradorUseCase
         private PedidoProduccionRepository $pedidoRepository,
         private PedidoImagenesService $pedidoImagenesService,
         private PedidoWebService $pedidoWebService,
+        private ActualizarPrendaCompletaUseCase $actualizarPrendaCompletaUseCase,
+        private ProcesarImagenesPrendaService $procesarImagenesPrendaService,
+        private EliminarProcesosListaUseCase $eliminarProcesosListaUseCase,
     ) {}
 
     /**
@@ -89,6 +98,9 @@ class ActualizarBorradorUseCase
 
             // ====== PASO 5: Actualizar EPPs ======
             $this->actualizarEpps($input->pedidoId, $input->datosFrontend['epps'] ?? [], $input->request);
+
+            // ====== PASO 5a: Actualizar prendas existentes ======
+            $this->actualizarPrendasExistentes($pedido->id, $input);
 
             // ====== PASO 5b: Crear nuevas prendas ======
             $nuevasPrendas = $input->datosFrontend['nuevas_prendas'] ?? [];
@@ -245,6 +257,149 @@ class ActualizarBorradorUseCase
                 );
             }
         }
+    }
+
+    /**
+     * Actualiza las prendas existentes dentro de la misma transacción del borrador.
+     */
+    private function actualizarPrendasExistentes(int $pedidoId, ActualizarBorradorInput $input): void
+    {
+        $prendasExistentes = $input->datosFrontend['prendas_existentes'] ?? [];
+        if (empty($prendasExistentes)) {
+            return;
+        }
+
+        foreach ($prendasExistentes as $prendaIndex => $prendaPayload) {
+            $prendaId = (int) ($prendaPayload['prenda_id'] ?? $prendaPayload['id'] ?? $prendaPayload['prenda_pedido_id'] ?? 0);
+            if ($prendaId <= 0) {
+                continue;
+            }
+
+            $prenda = PrendaPedido::query()
+                ->where('pedido_id', $pedidoId)
+                ->where('id', $prendaId)
+                ->first();
+
+            if (!$prenda) {
+                throw new \RuntimeException("La prenda {$prendaId} no pertenece al pedido {$pedidoId}");
+            }
+
+            $subRequest = $this->crearSubRequestPrendaExistente($input->request, $prendaPayload, (int) $prendaIndex);
+
+            $procesosAEliminar = $this->decodificarJsonArray($prendaPayload['procesos_a_eliminar'] ?? []);
+            if (!empty($procesosAEliminar)) {
+                $this->eliminarProcesosListaUseCase->ejecutar($procesosAEliminar);
+            }
+
+            $imagenes = $this->procesarImagenesPrendaService->procesarParaActualizar($subRequest, $pedidoId);
+
+            $dto = ActualizarPrendaCompletaDTO::fromRequest(
+                $prendaId,
+                $prendaPayload,
+                $imagenes['imagenes_guardadas'],
+                $imagenes['imagenes_existentes'],
+                $imagenes['fotos_telas_procesadas'],
+                $imagenes['fotos_proceso_nuevo'],
+                $imagenes['fotos_color_procesadas'],
+                $imagenes['fotos_proceso_tallas_nuevo'],
+            );
+
+            $this->actualizarPrendaCompletaUseCase->ejecutar($dto);
+
+            Log::info('[ActualizarBorradorUseCase] Prenda existente actualizada dentro del borrador', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'prenda_index' => $prendaIndex,
+            ]);
+        }
+    }
+
+    /**
+     * Construye un Request aislado por prenda para reutilizar el pipeline de actualización completa.
+     */
+    private function crearSubRequestPrendaExistente(Request $requestOriginal, array $prendaPayload, int $prendaIndex): Request
+    {
+        $request = new Request();
+        $request->replace([
+            'prenda_id' => $prendaPayload['prenda_id'] ?? $prendaPayload['id'] ?? $prendaPayload['prenda_pedido_id'] ?? null,
+            'nombre_prenda' => $prendaPayload['nombre_prenda'] ?? '',
+            'descripcion' => $prendaPayload['descripcion'] ?? '',
+            'origen' => $prendaPayload['origen'] ?? null,
+            'de_bodega' => $prendaPayload['de_bodega'] ?? null,
+            'tallas' => isset($prendaPayload['tallas']) ? json_encode($prendaPayload['tallas']) : null,
+            'variantes' => isset($prendaPayload['variantes']) ? json_encode($prendaPayload['variantes']) : null,
+            'colores_telas' => isset($prendaPayload['colores_telas']) ? json_encode($prendaPayload['colores_telas']) : null,
+            'procesos' => isset($prendaPayload['procesos']) ? json_encode($prendaPayload['procesos']) : null,
+            'novedad' => $prendaPayload['novedad'] ?? 'Actualización desde guardado de borrador',
+            'asignaciones_colores' => array_key_exists('asignaciones_colores', $prendaPayload)
+                ? json_encode($prendaPayload['asignaciones_colores'])
+                : null,
+            'imagenes_existentes' => isset($prendaPayload['imagenes_existentes']) ? json_encode($prendaPayload['imagenes_existentes']) : null,
+            'imagenes_a_eliminar' => isset($prendaPayload['imagenes_a_eliminar']) ? json_encode($prendaPayload['imagenes_a_eliminar']) : null,
+            'procesos_a_eliminar' => isset($prendaPayload['procesos_a_eliminar']) ? json_encode($prendaPayload['procesos_a_eliminar']) : null,
+        ]);
+
+        $request->files->add($this->extraerArchivosPrendaExistente($requestOriginal, $prendaIndex));
+
+        return $request;
+    }
+
+    /**
+     * Extrae los archivos asociados a una prenda existente desde el request principal.
+     */
+    private function extraerArchivosPrendaExistente(Request $requestOriginal, int $prendaIndex): array
+    {
+        $archivos = [];
+        $prefijo = 'prenda_existente_' . $prendaIndex . '_';
+
+        foreach ($requestOriginal->allFiles() as $key => $value) {
+            if (!is_string($key) || strpos($key, $prefijo) !== 0) {
+                continue;
+            }
+
+            $claveNormalizada = substr($key, strlen($prefijo));
+
+            if (preg_match('/^imagenes(?:\[\])?$/', $claveNormalizada)) {
+                $archivos['imagenes'] = is_array($value) ? $value : [$value];
+                continue;
+            }
+
+            if (preg_match('/^fotos_tela\[(\d+)\]$/', $claveNormalizada, $matches)) {
+                $archivos['fotos_tela[' . $matches[1] . ']'] = $value;
+                continue;
+            }
+
+            if (preg_match('/^fotosProcesoNuevo_(\d+)(?:\[\])?$/', $claveNormalizada, $matches)) {
+                $archivos['fotosProcesoNuevo_' . $matches[1]] = is_array($value) ? $value : [$value];
+                continue;
+            }
+
+            if (preg_match('/^fotosProcesoTallasNuevo_(\d+)_([a-zA-Z]+)_(.+?)(?:\[\])?$/', $claveNormalizada, $matches)) {
+                $archivos['fotosProcesoTallasNuevo_' . $matches[1] . '_' . $matches[2] . '_' . $matches[3]] = is_array($value) ? $value : [$value];
+                continue;
+            }
+
+            if (preg_match('/^fotos_color\[(\d+)\]$/', $claveNormalizada, $matches)) {
+                $archivos['fotos_color'][$matches[1]] = $value;
+            }
+        }
+
+        return $archivos;
+    }
+
+    private function decodificarJsonArray(mixed $valor): array
+    {
+        if (is_array($valor)) {
+            return $valor;
+        }
+
+        if (!is_string($valor) || trim($valor) === '') {
+            return [];
+        }
+
+        $decodificado = json_decode($valor, true);
+
+        return is_array($decodificado) ? $decodificado : [];
     }
 
     /**

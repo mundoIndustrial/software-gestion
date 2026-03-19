@@ -238,20 +238,8 @@
     <script defer src="{{ js_asset('js/services/epp/EppHttpService.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}?v={{ $v }}"></script>
 
-    <!-- Inicializar storages cuando scripts defer hayan cargado -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (!window.imagenesPrendaStorage) {
-                window.imagenesPrendaStorage = new ImageStorageService(3);
-            }
-            if (!window.imagenesTelaStorage) {
-                window.imagenesTelaStorage = new ImageStorageService(3);
-            }
-            if (!window.imagenesReflectivoStorage) {
-                window.imagenesReflectivoStorage = new ImageStorageService(3);
-            }
-        });
-    </script>
+    <!-- ─── Inicialización de Image Storage (Fase 3) ─── -->
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/inicializacion/image-storage-init.js') }}?v={{ $v }}"></script>
 
     <!-- ─── EPP Services ─── -->
     <script defer src="{{ js_asset('js/modulos/crear-pedido/epp/services/epp-api-service.js') }}?v={{ $v }}"></script>
@@ -352,496 +340,60 @@
     <script defer src="{{ js_asset('js/componentes/modal-prenda-dinamico-constantes.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/modal-prenda-dinamico.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/prenda-card-editar-simple.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/edicion/draft-pedido-serializer.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/edicion/draft-pedido-serializer-helpers.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/edicion/draft-pedido-builder.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/edicion/draft-pedido-save-service.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/edicion/draft-pedido-orchestrator.js') }}?v={{ $v }}"></script>
+
+    <!-- ─── Inicialización UI: Formatters, Buttons, Dropdowns, Handlers ─── -->
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/inicializacion/input-formatter-init.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/inicializacion/leave-button-setup.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/inicializacion/items-dropdown-init.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/inicializacion/item-type-handlers.js') }}?v={{ $v }}"></script>
 
 <script>
+    window.routeGuardarBorradorUrl = '{{ route("asesores.pedidos-editable.guardarBorrador") }}';
+    window.routePedidosIndexUrl = '{{ route("asesores.pedidos.index") }}';
     window.asesorActualNombre = '{{ Auth::user()->name ?? '' }}';
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Configurar asesora
-        document.getElementById('asesora_editable').value = '{{ Auth::user()->name ?? '' }}';
+        console.log('[crear-pedido-nuevo] Inicializando componentes de la página...');
         
-        // ========== CONFIGURAR INPUTS EN MAYÚSCULAS ==========
-        function setupUpperCaseInput(inputId) {
-            const input = document.getElementById(inputId);
-            if (input) {
-                console.log('🔤 Configurando input para mayúsculas:', inputId);
-                
-                // Función para convertir a mayúsculas preservando posición del cursor
-                function forceUpperCase() {
-                    const currentValue = input.value;
-                    const upperValue = currentValue.toUpperCase();
-                    if (currentValue !== upperValue) {
-                        // Guardar posición del cursor
-                        const start = input.selectionStart;
-                        const end = input.selectionEnd;
-                        
-                        // Actualizar valor
-                        input.value = upperValue;
-                        
-                        // Restaurar posición del cursor
-                        input.setSelectionRange(start, end);
-                        
-                        console.log('🔤 Convertido a mayúsculas:', currentValue, '→', upperValue);
-                    }
-                }
-                
-                // Eventos para cubrir todos los casos
-                input.addEventListener('input', forceUpperCase);
-                input.addEventListener('keyup', forceUpperCase);
-                input.addEventListener('change', forceUpperCase);
-                input.addEventListener('paste', function(e) {
-                    setTimeout(forceUpperCase, 10);
-                });
-                input.addEventListener('blur', forceUpperCase);
-                
-                // Convertir valor inicial si existe
-                if (input.value) {
-                    input.value = input.value.toUpperCase();
-                    console.log('🔤 Valor inicial convertido:', input.value);
-                }
-                
-                // Forzar mayúsculas cada segundo por si acaso
-                const intervalId = setInterval(forceUpperCase, 1000);
-                
-                // Limpiar intervalo después de 10 segundos para no consumir recursos
-                setTimeout(() => clearInterval(intervalId), 10000);
-            } else {
-                console.warn('⚠️ Input no encontrado:', inputId);
-            }
+        // Inicializar image storage (Fase 3)
+        if (typeof InitializeImageStorages === 'function') {
+            InitializeImageStorages();
         }
         
-        // Aplicar a los inputs especificados
-        setupUpperCaseInput('cliente_editable');
-        setupUpperCaseInput('asesora_editable');
-        setupUpperCaseInput('forma_de_pago_editable');
-        setupUpperCaseInput('observaciones_editable');
-        
-        // Mostrar botones
-        const btnSubmit = document.getElementById('btn-submit');
-        btnSubmit.textContent = '✓ Crear Pedido';
-        btnSubmit.style.display = 'block';
-
-        // ========== OCULTAR LOADING Y MOSTRAR SELECT DE TIPO DE PEDIDO ==========
-        const tipoPedidoLoading = document.getElementById('tipo-pedido-loading');
-        const tipoPedidoSelect = document.getElementById('tipo_pedido_nuevo');
-        
-        if (tipoPedidoLoading && tipoPedidoSelect) {
-            setTimeout(() => {
-                tipoPedidoLoading.style.display = 'none';
-                tipoPedidoSelect.style.display = 'block';
-                tipoPedidoSelect.removeAttribute('disabled');
-            }, 500);
+        // Inicializar componentes modularizados (Fase 2 - Refactoring)
+        if (typeof InitializeInputFormatters === 'function') {
+            InitializeInputFormatters();
         }
-
-        // ========== GESTIÓN DE ÍTEMS ==========
-        const selectTipoPedidoNuevo = document.getElementById('tipo_pedido_nuevo');
-        const seccionItems = document.getElementById('seccion-items-pedido');
         
-        if (seccionItems) {
-            seccionItems.style.display = 'block';
+        if (typeof InitializeLeaveButtons === 'function') {
+            InitializeLeaveButtons();
         }
-
-        // Agregar ítem de tipo nuevo desde el botón inline
-        const btnAgregarItemTipoInline = document.getElementById('btn-agregar-item-tipo-inline');
-        if (btnAgregarItemTipoInline) {
-            btnAgregarItemTipoInline.addEventListener('click', function(e) {
-                e.preventDefault();
-                const tipoPedido = selectTipoPedidoNuevo.value;
-                
-                if (!tipoPedido) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: ' Tipo de Ítem Requerido',
-                        text: 'Por favor selecciona un ítem primero',
-                        confirmButtonText: 'Entendido',
-                        confirmButtonColor: '#0066cc'
-                    });
-                    return;
-                }
-                
-                // Feedback visual: deshabilitar y mostrar estado cargando
-                btnAgregarItemTipoInline.disabled = true;
-                btnAgregarItemTipoInline.style.opacity = '0.6';
-                const textoOriginal = btnAgregarItemTipoInline.innerHTML;
-                btnAgregarItemTipoInline.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.25rem; animation: spin 0.8s linear infinite;">refresh</span>';
-                
-                // Auto-habilitar después de 600ms
-                setTimeout(() => {
-                    btnAgregarItemTipoInline.disabled = false;
-                    btnAgregarItemTipoInline.style.opacity = '1';
-                    btnAgregarItemTipoInline.innerHTML = textoOriginal;
-                }, 600);
-                
-                // Manejar diferentes tipos de pedido
-                if (tipoPedido === 'P') {
-                    window.abrirModalPrendaNueva();
-                } else if (tipoPedido === 'EPP') {
-                    window.abrirModalAgregarEPP();
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: ' Tipo Desconocido',
-                        text: 'Tipo de pedido "' + tipoPedido + '" desconocido',
-                        confirmButtonText: 'Aceptar',
-                        confirmButtonColor: '#ef4444'
-                    });
-                }
-            });
+        
+        if (typeof InitializeItemsDropdown === 'function') {
+            InitializeItemsDropdown();
         }
-
-        // Manejar cambio de tipo de pedido nuevo
-        window.manejarCambiaTipoPedido = function() {
-            const tipoPedido = selectTipoPedidoNuevo.value;
-            if (!tipoPedido) return;
-            const btnAgregarTipoInline = document.getElementById('btn-agregar-item-tipo-inline');
-            if (btnAgregarTipoInline) {
-                btnAgregarTipoInline.style.display = 'flex';
-            }
-        };
+        
+        if (typeof InitializeItemTypeHandlers === 'function') {
+            InitializeItemTypeHandlers();
+        }
+        
+        console.log('[crear-pedido-nuevo] Componentes inicializados ✓');
     });
 </script>
 
 <!-- Script para manejar Guardar Borrador -->
 <script>
-    /**
-     * Función para enviar el formulario como BORRADOR
-     * POST /asesores/pedidos-editable/borrador
-     * 
-     * A diferencia de la creación normal, el borrador:
-     * - NO genera numero_pedido
-     * - Se guarda con estado 'Borrador'
-     * - Puede ser editado después
-     */
-    window.guardarComoBorrador = async function() {
-        try {
-            // Validar que hay al menos un ítem (prenda o EPP)
-            const listaPrendas = document.getElementById('prendas-container-editable');
-            const listaItems = document.getElementById('lista-items-pedido');
-            
-            const tienePrendas = listaPrendas && listaPrendas.querySelector('.prenda-item-card');
-            const tieneItems = listaItems && listaItems.children.length > 0;
-            
-            if (!tienePrendas && !tieneItems) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: ' Pedido Vacío',
-                    text: 'Agrega al menos una prenda o ítem EPP antes de guardar como borrador',
-                    confirmButtonText: 'Entendido',
-                    confirmButtonColor: '#fb923c'
-                });
-                return;
-            }
-            
-            // Mostrar confirmación
-            const result = await Swal.fire({
-                icon: 'question',
-                title: ' Guardar Borrador',
-                html: `
-                    <div style="text-align: left;">
-                        <p style="margin-bottom: 10px;">
-                            <strong>Este pedido se guardará como borrador</strong>
-                        </p>
-                        <ul style="margin: 10px 0; text-align: left; display: inline-block;">
-                            <li>✓ No se asignará número de pedido</li>
-                            <li>✓ Estado: Borrador</li>
-                            <li>✓ Podrás editarlo después</li>
-                        </ul>
-                    </div>
-                `,
-                showCancelButton: true,
-                confirmButtonColor: '#fb923c',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Sí, guardar borrador',
-                cancelButtonText: 'Cancelar'
-            });
-            
-            if (!result.isConfirmed) {
-                return;
-            }
-            
-            // Mostrar loading
-            Swal.fire({
-                title: ' Guardando Borrador...',
-                html: '<div style="text-align: center;"><div style="width: 50px; height: 50px; border: 4px solid #e5e7eb; border-top-color: #fb923c; border-radius: 50%; margin: 20px auto; animation: spin 0.8s linear infinite;"></div></div>',
-                allowOutsideClick: false,
-                allowEscapeKey: false,
-                showConfirmButton: false,
-                didOpen: async () => {
-                    try {
-                        // Reutilizar la misma función que usa "Crear Pedido" para recopilar datos
-                        const datos = (typeof window.prepararDatosParaEnvio === 'function')
-                            ? window.prepararDatosParaEnvio({ soloConCantidades: false })
-                            : null;
-
-                        if (!datos) {
-                            throw new Error('No se pudo recopilar los datos del pedido. Recarga la página e intenta de nuevo.');
-                        }
-
-                        // Agregar observaciones (prepararDatosParaEnvio no las incluye)
-                        datos.observaciones = document.getElementById('observaciones_editable')?.value?.trim() || '';
-
-                        // Enviar al endpoint de borrador usando enviarDatosAlServidor si existe,
-                        // o construir manualmente el FormData igual que la creación normal
-                        const csrfToken = document.querySelector('input[name="_token"]')?.value ||
-                                        document.querySelector('meta[name="csrf-token"]')?.content;
-
-                        const formData = new FormData();
-
-                        // JSON del pedido (misma estructura que creación normal)
-                        // IMPORTANTE: Procesar imágenes de EPPs correctamente
-                        // Separar imágenes nuevas (File objects) de existentes (URLs)
-                        const eppsProcesados = (datos.epps || []).map((e, eppIndex) => {
-                            const imagenesExistentes = [];
-                            
-                            if (Array.isArray(e.imagenes)) {
-                                e.imagenes.forEach((img, imgIndex) => {
-                                    if (!img) return;
-                                    
-                                    // Si es un File object (nueva imagen del modal)
-                                    if (img instanceof File || (img.file && img.file instanceof File)) {
-                                        const file = img instanceof File ? img : img.file;
-                                        // Usar notación de punto que Laravel interpreta como array anidado
-                                        const fieldName = `epps.${eppIndex}.imagenes.${imgIndex}`;
-                                        formData.append(fieldName, file);
-                                        console.log(`[guardarComoBorrador] ✅ Archivo agregado a FormData: fieldName="${fieldName}", filename="${file.name}", size=${file.size}, epp_id=${e.epp_id}, eppIndex=${eppIndex}, imgIndex=${imgIndex}`);
-                                    }
-                                    // Si es una URL o propiedad con URL (imagen existente)
-                                    else {
-                                        let imageUrl = null;
-                                        if (typeof img === 'string') imageUrl = img;
-                                        else if (img.url) imageUrl = img.url;
-                                        else if (img.preview) imageUrl = img.preview;
-                                        else if (img.ruta_webp) imageUrl = img.ruta_webp;
-                                        else if (img.ruta) imageUrl = img.ruta;
-                                        
-                                        if (imageUrl) {
-                                            imagenesExistentes.push(imageUrl);
-                                            console.log(`[guardarComoBorrador] 🔗 URL existente agregada: ${imageUrl}`);
-                                        }
-                                    }
-                                });
-                            }
-                            
-                            return {
-                                epp_id: e.epp_id,
-                                cantidad: e.cantidad,
-                                observaciones: e.observaciones,
-                                imagenes: imagenesExistentes
-                            };
-                        });
-                        
-                        // Collect new prendas added via modal (stored in gestionItemsUI.prendas)
-                        const nuevasPrendasJson = [];
-                        if (window.gestionItemsUI && Array.isArray(window.gestionItemsUI.prendas)) {
-                            window.gestionItemsUI.prendas.forEach((p, prendaIdx) => {
-                                // Upload prenda images
-                                const imagenesArr = Array.isArray(p.imagenes) ? p.imagenes : [];
-                                imagenesArr.forEach((img, imgIdx) => {
-                                    const file = (img instanceof File) ? img : (img && img.file instanceof File ? img.file : null);
-                                    if (file) {
-                                        formData.append(`nuevas_prendas.${prendaIdx}.imagenes.${imgIdx}`, file);
-                                    }
-                                });
-
-                                // Upload tela images
-                                const telasArr = Array.isArray(p.telasAgregadas) ? p.telasAgregadas : (Array.isArray(p.telas) ? p.telas : []);
-                                telasArr.forEach((tela, telaIdx) => {
-                                    const imagenesTelaArr = Array.isArray(tela.imagenes) ? tela.imagenes : [];
-                                    imagenesTelaArr.forEach((imgTela, imgIdx) => {
-                                        const file = (imgTela instanceof File) ? imgTela : (imgTela && imgTela.file instanceof File ? imgTela.file : null);
-                                        if (file) {
-                                            formData.append(`nuevas_prendas.${prendaIdx}.telas.${telaIdx}.imagenes.${imgIdx}`, file);
-                                        }
-                                    });
-                                });
-
-                                nuevasPrendasJson.push({
-                                    tipo: 'prenda',
-                                    nombre_prenda: p.nombre_prenda || p.nombre_producto || '',
-                                    nombre_producto: p.nombre_producto || p.nombre_prenda || '',
-                                    descripcion: p.descripcion || '',
-                                    de_bodega: p.de_bodega !== undefined ? p.de_bodega : 1,
-                                    genero: p.genero || '',
-                                    cantidad_talla: p.cantidad_talla || p.cantidades || {},
-                                    telas: telasArr.map(t => ({
-                                        tela: t.nombre_tela || t.tela || '',
-                                        color: t.color || t.color_nombre || '',
-                                        referencia: t.referencia || ''
-                                    })),
-                                    procesos: (typeof p.procesos === 'object' && p.procesos) ? p.procesos : {},
-                                    asignacionesColoresPorTalla: p.asignacionesColoresPorTalla || {}
-                                });
-                            });
-                        }
-
-                        const pedidoLimpio = {
-                            cliente: datos.cliente || '',
-                            asesora: datos.asesora || '',
-                            forma_de_pago: datos.forma_de_pago || '',
-                            observaciones: datos.observaciones || '',
-                            orden_compra: datos.orden_compra || document.getElementById('orden_compra_editable')?.value?.trim() || '',
-                            numero_cotizacion: datos.numero_cotizacion,
-                            es_sin_cotizacion: datos.es_sin_cotizacion,
-                            tipo_cotizacion: datos.tipo_cotizacion || null,
-                            logo: datos.logo || null,
-                            reflectivo: datos.reflectivo || null,
-                            prendas: (datos.prendas || []).map(p => ({
-                                tipo: p.tipo,
-                                nombre_prenda: p.nombre_producto || p.nombre_prenda || '',
-                                nombre_producto: p.nombre_producto || p.nombre_prenda || '',
-                                descripcion: p.descripcion,
-                                de_bodega: p.de_bodega,
-                                genero: p.genero,
-                                cantidad_talla: p.cantidades || {},
-                                cantidades: p.cantidades || {},
-                                telas: (p.telas || []).map(t => ({tela: t.nombre_tela || t.tela, color: t.color, referencia: t.referencia}))
-                            })),
-                            nuevas_prendas: nuevasPrendasJson,
-                            epps: eppsProcesados
-                        };
-                        formData.append('pedido', JSON.stringify(pedidoLimpio));
-                        formData.append('_token', csrfToken);
-
-                        console.debug('[guardarComoBorrador] Datos a enviar:', pedidoLimpio);
-                        console.debug('[guardarComoBorrador] Prendas:', pedidoLimpio.prendas.length, 'Nuevas prendas:', pedidoLimpio.nuevas_prendas.length, 'EPPs:', pedidoLimpio.epps.length);
-
-                        // Determinar si es modo edición o creación
-                        const modoEdicion = window.modoEdicion || false;
-                        const pedidoId = window.pedidoEditarId || null;
-                        
-                        // Seleccionar endpoint según el modo
-                        let endpoint = '{{ route("asesores.pedidos-editable.guardarBorrador") }}';
-                        if (modoEdicion && pedidoId) {
-                            // En modo edición, actualizar el pedido existente
-                            endpoint = `/asesores/pedidos-editable/${pedidoId}/actualizar`;
-                            formData.append('pedido_id', pedidoId);
-                            console.debug('[guardarComoBorrador] MODO EDICIÓN - Actualizando pedido:', pedidoId);
-                        } else {
-                            console.debug('[guardarComoBorrador] MODO CREACIÓN - Creando nuevo borrador');
-                        }
-
-                        // Enviar al servidor
-                        const response = await fetch(endpoint, {
-                            method: 'POST',
-                            body: formData,
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json'
-                            }
-                        });
-                        
-                        const resultado = await response.json();
-                        
-                        if (resultado.success) {
-                            // Éxito: mostrar mensaje según el modo (edición o creación)
-                            if (modoEdicion && pedidoId) {
-                                // Modo edición: Solo mostrar confirmación, sin redirigir
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: '✓ Cambios Guardados',
-                                    html: `
-                                        <div style="text-align: left;">
-                                            <p>El pedido ha sido actualizado correctamente.</p>
-                                            <p style="margin-top: 10px; padding: 10px; background: #f0f7ff; border-left: 4px solid #0066cc; border-radius: 4px;">
-                                                <strong>Pedido #${resultado.numero_pedido || pedidoId}</strong>
-                                            </p>
-                                        </div>
-                                    `,
-                                    confirmButtonColor: '#0066cc',
-                                    confirmButtonText: 'Aceptar'
-                                });
-                            } else {
-                                // Modo creación: Mostrar ID y redirigir
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: ' ¡Borrador Guardado!',
-                                    html: `
-                                        <div style="text-align: left;">
-                                            <p>Tu pedido ha sido guardado como borrador.</p>
-                                            <p style="margin-top: 10px; padding: 10px; background: #f0f7ff; border-left: 4px solid #0066cc; border-radius: 4px;">
-                                                <strong>ID:</strong> #${resultado.pedido_id}
-                                            </p>
-                                        </div>
-                                    `,
-                                    confirmButtonColor: '#0066cc',
-                                    confirmButtonText: 'Aceptar'
-                                }).then(() => {
-                                    // Redirigir a la página de pedidos
-                                    if (resultado.redirect_url) {
-                                        window.location.href = resultado.redirect_url;
-                                    } else {
-                                        window.location.href = '{{ route("asesores.pedidos.index") }}';
-                                    }
-                                });
-                            }
-                        } else {
-                            throw new Error(resultado.message || 'Error desconocido al guardar borrador');
-                        }
-                    } catch (error) {
-                        console.error('[guardarComoBorrador] Error:', error);
-                        
-                        Swal.fire({
-                            icon: 'error',
-                            title: ' Error al Guardar Borrador',
-                            text: error.message || 'No se pudo guardar el borrador. Intenta nuevamente.',
-                            confirmButtonColor: '#ef4444',
-                            confirmButtonText: 'Aceptar'
-                        });
-                    }
-                }
-            });
-            
-        } catch (error) {
-            console.error('[guardarComoBorrador] Error critical:', error);
-            Swal.fire({
-                icon: 'error',
-                title: ' Error Crítico',
-                text: 'Ocurrió un error inesperado. Revisa la consola.',
-                confirmButtonColor: '#ef4444'
-            });
-        }
-    };
-    
     // Asignar evento al botón cuando se cargue el DOM
     document.addEventListener('DOMContentLoaded', function() {
-        const btnGuardarBorrador = document.getElementById('btn-guardar-borrador');
-        if (btnGuardarBorrador) {
-            btnGuardarBorrador.addEventListener('click', function(e) {
-                e.preventDefault();
-                window.guardarComoBorrador();
-            });
+        if (window.DraftPedidoOrchestrator && typeof window.DraftPedidoOrchestrator.registrarBotonGuardarBorrador === 'function') {
+            window.DraftPedidoOrchestrator.registrarBotonGuardarBorrador();
         }
     });
-</script>
-
-<!-- Script para cargar datos en modo edición -->
-@if($modoEdicion ?? false)
-<script defer src="{{ js_asset('js/modulos/crear-pedido/edicion/cargar-datos-edicion-nuevo.js') }}?v={{ $v }}"></script>
-@endif
-
-<!-- Invoice Preview: Lazy-loaded cuando se necesite -->
-<script>
-    window._invoiceScriptsLoaded = false;
-    window.cargarModulosInvoice = function() {
-        if (window._invoiceScriptsLoaded) return Promise.resolve();
-        return new Promise(function(resolve) {
-            var scripts = [
-                '{{ asset("js/modulos/invoice/ImageGalleryManager.js") }}?v={{ $v }}',
-                '{{ asset("js/modulos/invoice/FormDataCaptureService.js") }}?v={{ $v }}',
-                '{{ asset("js/modulos/invoice/InvoiceRenderer.js") }}?v={{ $v }}',
-                '{{ asset("js/modulos/invoice/ModalManager.js") }}?v={{ $v }}',
-                '{{ asset("js/modulos/invoice/InvoiceExportService.js") }}?v={{ $v }}',
-                '{{ asset("js/invoice-preview-live.js") }}?v={{ $v }}'
-            ];
-            var loaded = 0;
-            scripts.forEach(function(src) {
-                var s = document.createElement('script');
-                s.src = src;
-                s.onload = function() { if (++loaded === scripts.length) { window._invoiceScriptsLoaded = true; resolve(); } };
-                document.head.appendChild(s);
-            });
-        });
-    };
 </script>
 
 <!-- ─── Final UI Scripts ─── -->
@@ -854,4 +406,3 @@
 <script defer src="{{ js_asset('js/tests/prenda-editor-test.js') }}?v={{ $v }}"></script>
 @endif
 @endpush
-

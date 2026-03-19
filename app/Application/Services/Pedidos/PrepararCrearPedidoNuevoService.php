@@ -93,7 +93,10 @@ class PrepararCrearPedidoNuevoService implements PrepararCrearPedidoServiceInter
             'prendas.fotos',
             'prendas.coloresTelas.tela',
             'prendas.coloresTelas.color',
-            'prendas.procesos',
+            'prendas.coloresTelas.fotos',
+            'prendas.procesos.tipoProceso',
+            'prendas.procesos.imagenes',
+            'prendas.procesos.tallas',
             'epps.epp',
             'epps.imagenes',
         ])->find($pedidoId);

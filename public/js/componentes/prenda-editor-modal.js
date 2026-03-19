@@ -905,10 +905,18 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                 
                 // El backend retorna 'tipo' directamente (ej: 'Reflectivo')
                 const tipoProcesoBackend = proc.tipo || proc.tipo_proceso || '';
+                const tipoProcesoNormalizado = String(
+                    tipoProcesoBackend ||
+                    proc.nombre ||
+                    proc.nombre_proceso ||
+                    proc.tipoProceso?.nombre ||
+                    ''
+                ).toLowerCase().trim().replace(/\s+/g, '-');
                 
                 console.log(' [EDITAR-PRENDA-PROCESOS] Transformando proceso:', {
                     procesoId: proc.id,
                     tipoBackend: tipoProcesoBackend,
+                    tipoNormalizado: tipoProcesoNormalizado,
                     nombre: proc.nombre,
                     nombre_proceso: proc.nombre_proceso,
                     tieneImagenes: !!proc.imagenes,
@@ -919,6 +927,8 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                 
                 const procesoTransformado = {
                     ...proc,
+                    tipo: tipoProcesoNormalizado || proc.tipo,
+                    nombre: proc.nombre || proc.tipo_proceso || proc.nombre_proceso || tipoProcesoBackend,
                     imagenes: (proc.imagenes || []).map(img => {
                         // Manejar tanto strings como objetos
                         let url = '';
@@ -1879,4 +1889,3 @@ window.diagnosticarDelayModalCierre = function() {
 };
 
 // console.log('💡 Tip: Ejecuta "diagnosticarDelayModalCierre()" en la consola para ver recomendaciones');
-

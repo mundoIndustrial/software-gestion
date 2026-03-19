@@ -716,12 +716,21 @@
             const result = await response.json();
             console.log('[PedidosAdapter] ✅ Prenda guardada:', result);
 
-            // Actualizar datos locales para que la lista refleje cambios
+            // Actualizar datos locales con la respuesta real del backend
             if (window.datosEdicionPedido?.prendas && prendaIndex !== null && prendaIndex !== undefined) {
-                Object.assign(window.datosEdicionPedido.prendas[prendaIndex], datos);
-                if (datos.nombre_prenda) {
-                    window.datosEdicionPedido.prendas[prendaIndex].nombre = datos.nombre_prenda;
-                    window.datosEdicionPedido.prendas[prendaIndex].nombre_prenda = datos.nombre_prenda;
+                const prendaActualizada = result?.prenda ? _normalizarDatosBD(result.prenda) : null;
+
+                if (prendaActualizada) {
+                    window.datosEdicionPedido.prendas[prendaIndex] = {
+                        ...window.datosEdicionPedido.prendas[prendaIndex],
+                        ...prendaActualizada,
+                    };
+                } else {
+                    Object.assign(window.datosEdicionPedido.prendas[prendaIndex], datos);
+                    if (datos.nombre_prenda) {
+                        window.datosEdicionPedido.prendas[prendaIndex].nombre = datos.nombre_prenda;
+                        window.datosEdicionPedido.prendas[prendaIndex].nombre_prenda = datos.nombre_prenda;
+                    }
                 }
             }
 

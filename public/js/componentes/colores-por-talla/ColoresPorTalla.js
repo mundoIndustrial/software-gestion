@@ -805,14 +805,22 @@ window.ColoresPorTalla = (function() {
                 if (img instanceof File || img instanceof Blob) {
                     imgHtml = '<img src="' + URL.createObjectURL(img) + '" style="width:32px;height:32px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;" alt="img">';
                 } else if (typeof img === 'string') {
-                    imgHtml = '<img src="' + img + '" style="width:32px;height:32px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;" alt="img">';
+                    const src = (img.startsWith('/') || img.startsWith('http') || img.startsWith('blob:') || img.startsWith('data:'))
+                        ? img
+                        : '/storage/' + img;
+                    imgHtml = '<img src="' + src + '" style="width:32px;height:32px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;" alt="img">';
                 } else if (typeof img === 'object' && img !== null) {
-                    // 🔴 FIX: Manejar objetos con ruta y ruta_webp (desde backend cotización)
-                    const rutaFinal = img.ruta || img.ruta_webp || img.url || img.src;
+                    // 🔴 FIX: Manejar objetos temporales del modal y objetos desde backend
+                    let rutaFinal = '';
+                    if (img.file instanceof File) {
+                        rutaFinal = URL.createObjectURL(img.file);
+                    } else {
+                        rutaFinal = img.previewUrl || img.blobUrl || img.dataURL || img.ruta || img.ruta_webp || img.url || img.src || img.ruta_original;
+                    }
                     if (rutaFinal) {
                         // Normalizar ruta si es necesaria
                         let urlFinal = rutaFinal;
-                        if (!urlFinal.startsWith('/') && !urlFinal.startsWith('http')) {
+                        if (!urlFinal.startsWith('/') && !urlFinal.startsWith('http') && !urlFinal.startsWith('blob:') && !urlFinal.startsWith('data:')) {
                             urlFinal = '/storage/' + urlFinal;
                         }
                         imgHtml = '<img src="' + urlFinal + '" style="width:32px;height:32px;object-fit:cover;border-radius:3px;border:1px solid #d1d5db;" alt="img">';

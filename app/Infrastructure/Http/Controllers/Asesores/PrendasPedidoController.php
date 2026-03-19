@@ -397,7 +397,19 @@ class PrendasPedidoController
                 'prenda_id' => $prenda->id,
             ]);
 
-            $prenda = $prenda->fresh(['fotos', 'coloresTelas', 'fotosTelas', 'variantes', 'procesos', 'tallas']);
+            $prenda = $prenda->fresh([
+                'fotos',
+                'tallas',
+                'variantes.tipoManga',
+                'variantes.tipoBroche',
+                'coloresTelas.color',
+                'coloresTelas.tela',
+                'coloresTelas.fotos',
+                'fotosTelas',
+                'procesos.tipoProceso',
+                'procesos.imagenes',
+                'procesos.tallas',
+            ]);
 
             return response()->json([
                 'success' => true,
