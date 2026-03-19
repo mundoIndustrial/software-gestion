@@ -8,6 +8,7 @@ use App\Application\ProcesoSeguimiento\UseCases\GuardarProcesoSeguimientoUseCase
 use App\Application\ProcesoSeguimiento\UseCases\ActualizarProcesoSeguimientoUseCase;
 use App\Application\ProcesoSeguimiento\UseCases\ActualizarEstadoProcesoUseCase;
 use App\Application\ProcesoSeguimiento\UseCases\EliminarProcesoSeguimientoUseCase;
+use App\Http\Controllers\Controller;
 use App\Infrastructure\Http\Requests\GuardarProcesoSeguimientoRequest;
 use App\Infrastructure\Http\Requests\ActualizarProcesoSeguimientoRequest;
 use App\Infrastructure\Http\Requests\ActualizarEstadoProcesoRequest;
@@ -41,7 +42,7 @@ class ProcesoSeguimientoController extends Controller
             // Cargar seguimiento actualizado para la respuesta
             $prendaActualizada = null;
             try {
-                $registroController = new \App\Infrastructure\Http\Controllers\RegistroOrdenQueryController();
+                $registroController = app()->make(\App\Infrastructure\Http\Controllers\RegistroOrdenQueryController::class);
                 $seguimientoResponse = $registroController->getSeguimientoPorPrenda($request->pedido_produccion_id);
                 $seguimientoData     = json_decode($seguimientoResponse->getContent(), true);
 

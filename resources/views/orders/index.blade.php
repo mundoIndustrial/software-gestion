@@ -1316,6 +1316,7 @@
     <script src="{{ asset('js/order-tracking/orderTracking-v2.js') }}?v={{ time() }}"></script>
 
     <!-- TRACKING MODAL HANDLER -->
+    <script src="{{ asset('js/ordersjs/tracking-modal-utils.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}?v={{ time() }}"></script>
 
     <!-- DEBUG SIDEBAR WIDTHS -->

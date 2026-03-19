@@ -1067,6 +1067,23 @@ const trackingTableStyles = `
     }
   };
 
+  // Compatibilidad con implementación vieja (tracking-modal-script.blade.php)
+  // Algunas vistas (ej. supervisor-pedidos) llaman mostrarTrackingModal(pedidoData).
+  window.mostrarTrackingModal = function(pedidoData) {
+    try {
+      const orderId = pedidoData?.id || pedidoData?.pedido_id || pedidoData?.pedido?.id || null;
+      if (!orderId) {
+        console.error('[mostrarTrackingModal] No se encontró orderId en pedidoData:', pedidoData);
+        return;
+      }
+
+      // El flujo nuevo carga datos desde /registros/{id}/... y abre el selector de prendas.
+      window.openOrderTracking(orderId, true);
+    } catch (e) {
+      console.error('[mostrarTrackingModal] Error:', e);
+    }
+  };
+
   // Cargar datos básicos del pedido
   async function loadOrderBasicData(orderId) {
     try {
@@ -1109,7 +1126,6 @@ const trackingTableStyles = `
     document.getElementById('trackingOrderNumber').textContent = orderData.numero_pedido || '-';
     document.getElementById('trackingOrderClient').textContent = orderData.cliente || '-';
     document.getElementById('trackingOrderStatus').textContent = (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
-    document.getElementById('trackingOrderDate').textContent = formatDate(orderData.fecha_creacion || orderData.fecha_de_creacion_de_orden || orderData.created_at) || '-';
     document.getElementById('trackingEstimatedDate').textContent = formatDate(orderData.fecha_estimada_entrega) || '-';
     document.getElementById('trackingTotalDays').textContent = orderData.total_dias || '0';
 
@@ -1742,7 +1758,6 @@ const trackingTableStyles = `
       
     } catch (error) {
       console.error('[showPrendaTrackingFromTable] Error:', error);
-      showError('Error al cargar seguimiento de la prenda');
     }
   };
 
@@ -1881,17 +1896,18 @@ const trackingTableStyles = `
       
       // Determinar número de recibo desde la tabla consecutivos_recibos_pedidos
       let numeroRecibo = 'Sin recibo';
-      if (prenda.consecutivos && prenda.consecutivos.length > 0) {
-        console.log('[DEBUG] Procesando consecutivos:', prenda.consecutivos);
-        
-        // Buscar el primer recibo activo
-        const reciboActivo = prenda.consecutivos.find(r => r.activo === 1);
+      const consecutivosList = normalizeConsecutivos(prenda?.consecutivos);
+      if (consecutivosList.length > 0) {
+        console.log('[DEBUG] Procesando consecutivos:', consecutivosList);
+
+        // Preferir COSTURA activo
+        const reciboCosturaActivo = consecutivosList.find(r => String(r.tipo_recibo || '').toUpperCase() === 'COSTURA' && (r.activo === 1 || r.activo === true));
+        const reciboActivo = reciboCosturaActivo || consecutivosList.find(r => (r.activo === 1 || r.activo === true));
         if (reciboActivo) {
           numeroRecibo = `${reciboActivo.tipo_recibo} #${reciboActivo.consecutivo_actual}`;
           console.log('[DEBUG] Recibo activo encontrado:', reciboActivo);
-        } else if (prenda.consecutivos[0]) {
-          // Si no hay activo, tomar el primero
-          const primerRecibo = prenda.consecutivos[0];
+        } else if (consecutivosList[0]) {
+          const primerRecibo = consecutivosList[0];
           numeroRecibo = `${primerRecibo.tipo_recibo} #${primerRecibo.consecutivo_actual}`;
           console.log('[DEBUG] Usando primer recibo:', primerRecibo);
         }
@@ -1955,54 +1971,187 @@ const trackingTableStyles = `
   // Renderizar seguimientos por área (procesos)
   function renderSeguimientosPorArea(prenda, container) {
     const seguimientosPorArea = prenda.seguimientos_por_area || {};
-    if (Object.keys(seguimientosPorArea).length > 0) {
-      // Crear header con título y mover el botón "Agregar Área"
-      const headerContainer = document.createElement('div');
-      headerContainer.style.display = 'flex';
-      headerContainer.style.justifyContent = 'space-between';
-      headerContainer.style.alignItems = 'center';
-      headerContainer.style.marginTop = '0px';
-      headerContainer.style.marginBottom = '16px';
-      
-      const seguimientosTitle = document.createElement('h4');
-      seguimientosTitle.textContent = 'Seguimiento por Áreas/Procesos';
-      seguimientosTitle.style.margin = '0';
-      seguimientosTitle.style.fontSize = '20px';
-      seguimientosTitle.style.fontWeight = '700';
-      seguimientosTitle.style.color = '#1f2937';
-      
-      // Mover el botón original al header
-      const originalBtn = document.getElementById('btnOpenAddProcesoModal');
+    if (Object.keys(seguimientosPorArea).length === 0) {
+      return;
+    }
 
-      headerContainer.appendChild(seguimientosTitle);
-      if (originalBtn) {
-        // Mover el botón original (evita duplicados)
-        originalBtn.style.display = '';
-        headerContainer.appendChild(originalBtn);
+    let reciboCreatedAt = null;
+
+    let activationSection = null;
+    let areasSection = null;
+
+    // Sección: fechas relevantes (creación de orden / activación del recibo)
+    try {
+      activationSection = document.createElement('div');
+      activationSection.className = 'tracking-section tracking-section-activation';
+
+      const activationTitle = document.createElement('div');
+      activationTitle.className = 'tracking-section-title';
+      activationTitle.textContent = 'Activación del recibo:';
+      activationSection.appendChild(activationTitle);
+
+      const fechasWrapper = document.createElement('div');
+      fechasWrapper.className = 'tracking-info-row';
+
+      const fechaCreacionOrden = window.currentOrderData?.fecha_de_creacion_de_orden || null;
+
+      const consecutivosList = normalizeConsecutivos(prenda?.consecutivos);
+      if (consecutivosList.length > 0) {
+        const reciboCosturaActivo = consecutivosList.find(r => String(r.tipo_recibo || '').toUpperCase() === 'COSTURA' && (r.activo === 1 || r.activo === true));
+        const reciboActivo = reciboCosturaActivo || consecutivosList.find(r => (r.activo === 1 || r.activo === true)) || consecutivosList[0];
+        reciboCreatedAt = reciboActivo?.created_at || null;
       }
-      container.appendChild(headerContainer);
 
-      Object.entries(seguimientosPorArea).forEach(([area, data]) => {
-        const areaCard = createAreaCard(area, data);
-        container.appendChild(areaCard);
-      });
-    }
-  }
+      const cardCreacionOrden = document.createElement('div');
+      cardCreacionOrden.className = 'tracking-info-card';
+      cardCreacionOrden.innerHTML = `
+        <div class="tracking-info-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </div>
+        <div class="tracking-info-content">
+          <span class="tracking-info-label">Fecha creación orden</span>
+          <span class="tracking-info-value">${formatDateTime(fechaCreacionOrden) || '-'}</span>
+        </div>
+      `;
 
-  // Renderizar seguimientos por tipo de recibo
-  function renderSeguimientosPorTipo(prenda, container) {
-    const seguimientosPorTipo = prenda.seguimientos || {};
-    if (Object.keys(seguimientosPorTipo).length > 0) {
-      const recibosTitle = document.createElement('h4');
-      recibosTitle.textContent = 'Seguimiento por Tipo de Recibo';
-      recibosTitle.style.marginTop = '24px';
-      container.appendChild(recibosTitle);
-      
-      Object.entries(seguimientosPorTipo).forEach(([tipo, data]) => {
-        const seguimientoCard = createSeguimientoCard(tipo, data);
-        container.appendChild(seguimientoCard);
-      });
+      const cardActivacionRecibo = document.createElement('div');
+      cardActivacionRecibo.className = 'tracking-info-card';
+      cardActivacionRecibo.innerHTML = `
+        <div class="tracking-info-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 14l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            <path d="M12 6v4m0 2h2"></path>
+          </svg>
+        </div>
+        <div class="tracking-info-content">
+          <span class="tracking-info-label">Fecha activación recibo</span>
+          <span class="tracking-info-value">${formatDateTime(reciboCreatedAt) || '-'}</span>
+        </div>
+      `;
+
+      // Tiempo transcurrido: mostrar duración real (días/h/m/s). Además, mostrar días hábiles como referencia.
+      let tiempoTranscurridoText = '-';
+      const fechaCreacionDate = toDateObject(fechaCreacionOrden);
+      const reciboActDate = toDateObject(reciboCreatedAt);
+      if (fechaCreacionDate && reciboActDate) {
+        const diffMs = Math.max(0, reciboActDate.getTime() - fechaCreacionDate.getTime());
+        const human = formatDurationHuman(diffMs);
+        const diasHabiles = calcularDiasHabilesSimple(fechaCreacionDate, reciboActDate);
+        tiempoTranscurridoText = diasHabiles > 0
+          ? `${human} (${diasHabiles} días hábiles)`
+          : human;
+      }
+
+      const cardTiempoTrans = document.createElement('div');
+      cardTiempoTrans.className = 'tracking-info-card';
+      cardTiempoTrans.innerHTML = `
+        <div class="tracking-info-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 6v6l4 2"></path>
+          </svg>
+        </div>
+        <div class="tracking-info-content">
+          <span class="tracking-info-label">Tiempo transcurrido</span>
+          <span class="tracking-info-value">${tiempoTranscurridoText}</span>
+        </div>
+      `;
+
+      fechasWrapper.appendChild(cardCreacionOrden);
+      fechasWrapper.appendChild(cardActivacionRecibo);
+      fechasWrapper.appendChild(cardTiempoTrans);
+      activationSection.appendChild(fechasWrapper);
+      container.appendChild(activationSection);
+    } catch (e) {
+      console.warn('[renderSeguimientosPorArea] No se pudo renderizar sección de fechas:', e);
     }
+
+    // Sección: Seguimiento por áreas + botón Agregar Área
+    areasSection = document.createElement('div');
+    areasSection.className = 'tracking-section tracking-section-areas';
+
+    const areasHeader = document.createElement('div');
+    areasHeader.className = 'tracking-section-header';
+
+    const headerTitle = document.createElement('div');
+    headerTitle.className = 'tracking-section-title';
+    headerTitle.textContent = 'Seguimiento por áreas:';
+    areasHeader.appendChild(headerTitle);
+
+    const btnAgregarArea = document.getElementById('btnAgregarArea');
+    if (btnAgregarArea) {
+      areasHeader.appendChild(btnAgregarArea);
+    }
+
+    areasSection.appendChild(areasHeader);
+    container.appendChild(areasSection);
+
+    // Insertar área virtual "Insumos" (fecha llegada = activación recibo)
+    const mergedAreas = { ...seguimientosPorArea };
+    const hasInsumos = Object.keys(mergedAreas).some(k => String(k || '').toLowerCase() === 'insumos');
+    if (!hasInsumos && reciboCreatedAt) {
+      const areaCorteKey = Object.keys(mergedAreas).find(k => String(k || '').toLowerCase().includes('corte')) || null;
+      let areaEnvioProduccionKey = areaCorteKey;
+      let fechaEnvioProduccion = areaCorteKey ? (mergedAreas[areaCorteKey]?.fecha_inicio || null) : null;
+
+      // Fallback: si no hay Corte, usar la primera área con fecha_inicio más temprana (lo más cercano a "envío")
+      if (!fechaEnvioProduccion) {
+        let bestKey = null;
+        let bestDate = null;
+        Object.entries(mergedAreas).forEach(([k, v]) => {
+          if (String(k || '').toLowerCase() === 'insumos') return;
+          const d = toDateObject(v?.fecha_inicio);
+          if (!d) return;
+          if (!bestDate || d.getTime() < bestDate.getTime()) {
+            bestDate = d;
+            bestKey = k;
+          }
+        });
+        if (bestKey && bestDate) {
+          areaEnvioProduccionKey = bestKey;
+          fechaEnvioProduccion = mergedAreas[bestKey]?.fecha_inicio || null;
+        }
+      }
+
+      const yaEnviadoAProduccion = Boolean(fechaEnvioProduccion);
+
+      mergedAreas['Insumos'] = {
+        estado: yaEnviadoAProduccion ? 'Enviado a producción' : 'Llegó a insumos',
+        encargado: '-',
+        fecha_inicio: reciboCreatedAt,
+        fecha_fin: fechaEnvioProduccion,
+        duracion_dias: null,
+        icono: 'inventory_2',
+        esta_activo: !yaEnviadoAProduccion,
+        can_edit: false,
+        hide_encargado: true,
+        tiempo_transcurrido: (function() {
+          const ini = toDateObject(reciboCreatedAt);
+          const fin = toDateObject(fechaEnvioProduccion);
+          if (!ini || !fin) return null;
+          return formatDurationHuman(Math.max(0, fin.getTime() - ini.getTime()));
+        })()
+      };
+    }
+
+    const orderedEntries = [];
+    if (mergedAreas['Insumos']) {
+      orderedEntries.push(['Insumos', mergedAreas['Insumos']]);
+    }
+    Object.entries(mergedAreas).forEach(([area, data]) => {
+      if (String(area || '').toLowerCase() === 'insumos') return;
+      orderedEntries.push([area, data]);
+    });
+
+    orderedEntries.forEach(([area, data]) => {
+      const areaCard = createAreaCard(area, data);
+      areasSection.appendChild(areaCard);
+    });
   }
 
   // Mostrar mensaje si no hay seguimientos
@@ -2517,60 +2666,143 @@ const trackingTableStyles = `
   // Crear tarjeta de área/proceso
   function createAreaCard(area, data) {
     const card = document.createElement('div');
-    card.className = `tracking-area-card ${data.esta_activo ? 'pending' : 'completed'}`;
+    card.className = `tracking-area-card tracking-area-card-v2 ${data.esta_activo ? 'pending' : 'completed'}`;
     
     const iconSvg = getIconSvg(data.icono || 'description');
     
-    card.innerHTML = `
-      <div class="tracking-area-name">
-        ${iconSvg}
-        ${area}
-        <div class="tracking-action-buttons">
-          ${(data.id || data.can_edit) ? `
-          <button class="tracking-edit-btn" onclick="${data.id ? `handleEditarProceso(${data.id}, '${area}', ${JSON.stringify(data).replace(/"/g, '&quot;')}, event)` : `handleCrearProcesoDesdeArea('${area}', event, '${String(data.encargado || '').replace(/'/g, "\\'")}')`}" title="Editar proceso">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-          </button>
-          ${data.id ? `
-          <button class="tracking-delete-btn" onclick="handleEliminarProceso(${data.id}, '${area}', event)" title="Eliminar proceso">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"/>
-            </svg>
-          </button>
-          ` : ''}
-          ` : ''}
+    const fechaCompletadoDisplay = data.fecha_completado || null;
+    const fechaFinParaDuracion = fechaCompletadoDisplay || data.fecha_fin || null;
+
+    const totalDiasArea = (function() {
+      const ini = toDateObject(data.fecha_inicio);
+      const fin = toDateObject(fechaFinParaDuracion);
+      if (!ini || !fin) return null;
+      const diffMs = Math.max(0, fin.getTime() - ini.getTime());
+      const diffDays = Math.floor(diffMs / 86400000);
+      return diffDays;
+    })();
+
+    const isInsumos = String(area || '').toLowerCase() === 'insumos';
+
+    const fechaLlegada = formatDate(data.fecha_inicio) || '---';
+    const fechaFin = formatDate(data.fecha_fin) || (data.esta_activo ? '---' : '---');
+
+    const fechaAsignacion = '---';
+    const duracionAsignacion = '---';
+
+    const duracionEnArea = (function() {
+      if (totalDiasArea === null) return '---';
+      return `${totalDiasArea} ${totalDiasArea === 1 ? 'Día' : 'Días'}`;
+    })();
+    const tiempoCompletadoDisplay = (function() {
+      if (data.tiempo_transcurrido) return data.tiempo_transcurrido;
+      if (!fechaCompletadoDisplay) return null;
+      const ini = toDateObject(data.fecha_inicio);
+      const fin = toDateObject(fechaCompletadoDisplay);
+      if (!ini || !fin) return null;
+      return formatDurationHuman(Math.max(0, fin.getTime() - ini.getTime()));
+    })();
+
+    const accionesHtml = `${(data.id || data.can_edit) ? `
+            <button class="tracking-edit-btn" onclick="${data.id ? `handleEditarProceso(${data.id}, '${area}', ${JSON.stringify(data).replace(/"/g, '&quot;')}, event)` : `handleCrearProcesoDesdeArea('${area}', event, '${String(data.encargado || '').replace(/'/g, "\\'")}')`}" title="Editar proceso">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </button>
+            ${data.id ? `
+            <button class="tracking-delete-btn" onclick="handleEliminarProceso(${data.id}, '${area}', event)" title="Eliminar proceso">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"/>
+              </svg>
+            </button>
+            ` : ''}
+            ` : ''}`;
+
+    if (isInsumos) {
+      card.innerHTML = `
+        <div class="tracking-area-v2-left">
+          <div class="tracking-area-v2-icon">${iconSvg}</div>
+          <div class="tracking-area-v2-name">${area}</div>
         </div>
-      </div>
-      <div class="tracking-area-details">
-        <div class="tracking-detail-row">
-          <span class="tracking-detail-label">Estado</span>
-          <span class="tracking-detail-value">
-            <span class="tracking-days-badge ${data.esta_activo ? '' : 'tracking-days-badge-zero'}">
-              ${data.estado}
-            </span>
-          </span>
+
+        <div class="tracking-area-v2-body">
+          <div class="tracking-area-v2-row">
+            <div class="tracking-area-v2-field">
+              <div class="tracking-area-v2-label">Fecha de llegada:</div>
+              <div class="tracking-area-v2-pill">${fechaLlegada}</div>
+            </div>
+            <div class="tracking-area-v2-field">
+              <div class="tracking-area-v2-label">Fecha de envío a producción</div>
+              <div class="tracking-area-v2-pill">${fechaFin}</div>
+            </div>
+            <div class="tracking-area-v2-field tracking-area-v2-field-right"></div>
+          </div>
+
+          <div class="tracking-area-v2-footer">
+            <div class="tracking-area-v2-status">
+              <span class="tracking-days-badge ${data.esta_activo ? '' : 'tracking-days-badge-zero'}">${data.estado}</span>
+            </div>
+            <div class="tracking-area-v2-actions">${accionesHtml}</div>
+            <div class="tracking-area-v2-total-days">
+              <span class="tracking-area-v2-total-label">Total Días:</span>
+              <span class="tracking-area-v2-total-value">${totalDiasArea === null ? '---' : totalDiasArea}</span>
+            </div>
+          </div>
         </div>
-        <div class="tracking-detail-row">
-          <span class="tracking-detail-label">Encargado</span>
-          <span class="tracking-detail-value">${data.encargado || 'No asignado'}</span>
+      `;
+    } else {
+      card.innerHTML = `
+        <div class="tracking-area-v2-left">
+          <div class="tracking-area-v2-icon">${iconSvg}</div>
+          <div class="tracking-area-v2-name">${area}</div>
         </div>
-        <div class="tracking-detail-row">
-          <span class="tracking-detail-label">Fecha Inicio</span>
-          <span class="tracking-detail-value">${formatDate(data.fecha_inicio) || 'No iniciado'}</span>
+
+        <div class="tracking-area-v2-body">
+          <div class="tracking-area-v2-row">
+            <div class="tracking-area-v2-field">
+              <div class="tracking-area-v2-label">Fecha de llegada:</div>
+              <div class="tracking-area-v2-pill">${fechaLlegada}</div>
+            </div>
+            <div class="tracking-area-v2-field">
+              <div class="tracking-area-v2-label">Fecha de asignación de ${String(area).toLowerCase()}:</div>
+              <div class="tracking-area-v2-pill">${fechaAsignacion}</div>
+            </div>
+            <div class="tracking-area-v2-field tracking-area-v2-field-right">
+              <div class="tracking-area-v2-label">Duración asignación de ${String(area).toLowerCase()}:</div>
+              <div class="tracking-area-v2-badge">${duracionAsignacion}</div>
+            </div>
+          </div>
+
+          <div class="tracking-area-v2-row">
+            ${data.hide_encargado ? '' : `
+            <div class="tracking-area-v2-field">
+              <div class="tracking-area-v2-label">Encargado:</div>
+              <div class="tracking-area-v2-pill">${data.encargado || '---'}</div>
+            </div>
+            `}
+            <div class="tracking-area-v2-field">
+              <div class="tracking-area-v2-label">Fecha fin</div>
+              <div class="tracking-area-v2-pill">${fechaFin}</div>
+            </div>
+            <div class="tracking-area-v2-field tracking-area-v2-field-right">
+              <div class="tracking-area-v2-label">Duración en ${area}</div>
+              <div class="tracking-area-v2-badge">${duracionEnArea}</div>
+            </div>
+          </div>
+
+          <div class="tracking-area-v2-footer">
+            <div class="tracking-area-v2-status">
+              <span class="tracking-days-badge ${data.esta_activo ? '' : 'tracking-days-badge-zero'}">${data.estado}</span>
+            </div>
+            <div class="tracking-area-v2-actions">${accionesHtml}</div>
+            <div class="tracking-area-v2-total-days">
+              <span class="tracking-area-v2-total-label">Total Días:</span>
+              <span class="tracking-area-v2-total-value">${totalDiasArea === null ? '---' : totalDiasArea}</span>
+            </div>
+          </div>
         </div>
-        <div class="tracking-detail-row">
-          <span class="tracking-detail-label">Fecha Fin</span>
-          <span class="tracking-detail-value">${formatDate(data.fecha_fin) || 'En progreso'}</span>
-        </div>
-        ${data.duracion_dias ? `
-        <div class="tracking-detail-row">
-          <span class="tracking-detail-label">Duración</span>
-          <span class="tracking-detail-value">${data.duracion_dias} días</span>
-        </div>
-        ` : ''}
-      </div>
-    `;
+      `;
+    }
     
     return card;
   }
@@ -2661,6 +2893,9 @@ const trackingTableStyles = `
 
   // Formatear fecha
   function formatDate(dateString) {
+    if (window.formatDate && window.formatDate !== formatDate) {
+      return window.formatDate(dateString);
+    }
     if (!dateString) return null;
     
     try {
@@ -2691,6 +2926,122 @@ const trackingTableStyles = `
       console.warn('[formatDate] Error formateando fecha:', dateString, error);
       return dateString;
     }
+  }
+
+  // Formatear fecha con hora (mostrar fecha + hora completa)
+  function formatDateTime(dateString) {
+    if (window.formatDateTime && window.formatDateTime !== formatDateTime) {
+      return window.formatDateTime(dateString);
+    }
+    if (!dateString) return null;
+
+    try {
+      const raw = (dateString && typeof dateString === 'object' && dateString.date)
+        ? dateString.date
+        : dateString;
+
+      const date = raw instanceof Date ? raw : new Date(raw);
+      if (isNaN(date.getTime())) return String(dateString);
+
+      return date.toLocaleString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+    } catch (error) {
+      console.warn('[formatDateTime] Error formateando fecha:', dateString, error);
+      return String(dateString);
+    }
+  }
+
+  // Normalizar consecutivos (puede venir como array o como objeto indexado)
+  function normalizeConsecutivos(consecutivos) {
+    if (window.normalizeConsecutivos && window.normalizeConsecutivos !== normalizeConsecutivos) {
+      return window.normalizeConsecutivos(consecutivos);
+    }
+    if (!consecutivos) return [];
+    if (Array.isArray(consecutivos)) return consecutivos;
+
+    if (typeof consecutivos === 'object') {
+      try {
+        return Object.values(consecutivos).filter(Boolean);
+      } catch (e) {
+        return [];
+      }
+    }
+
+    return [];
+  }
+
+  function toDateObject(value) {
+    if (window.toDateObject && window.toDateObject !== toDateObject) {
+      return window.toDateObject(value);
+    }
+    if (!value) return null;
+    try {
+      const raw = (value && typeof value === 'object' && value.date)
+        ? value.date
+        : value;
+      const date = raw instanceof Date ? raw : new Date(raw);
+      if (isNaN(date.getTime())) return null;
+      return date;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Conteo de días hábiles simple (misma idea que la tabla: empieza al día siguiente y no cuenta fines de semana)
+  function calcularDiasHabilesSimple(inicio, fin) {
+    if (window.calcularDiasHabilesSimple && window.calcularDiasHabilesSimple !== calcularDiasHabilesSimple) {
+      return window.calcularDiasHabilesSimple(inicio, fin);
+    }
+    if (!inicio || !fin) return 0;
+    const start = inicio instanceof Date ? inicio : new Date(inicio);
+    const end = fin instanceof Date ? fin : new Date(fin);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0;
+    if (end.getTime() <= start.getTime()) return 0;
+
+    const current = new Date(start.getTime());
+    current.setDate(current.getDate() + 1);
+
+    let totalDays = 0;
+    let iterations = 0;
+    const maxIterations = 3660;
+
+    while (current.getTime() <= end.getTime() && iterations < maxIterations) {
+      const day = current.getDay();
+      const isWeekend = day === 0 || day === 6;
+      if (!isWeekend) {
+        totalDays++;
+      }
+
+      current.setDate(current.getDate() + 1);
+      iterations++;
+    }
+
+    return Math.max(0, totalDays);
+  }
+
+  function formatDurationHuman(diffMs) {
+    if (window.formatDurationHuman && window.formatDurationHuman !== formatDurationHuman) {
+      return window.formatDurationHuman(diffMs);
+    }
+    const totalSeconds = Math.floor((diffMs || 0) / 1000);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    const parts = [];
+    if (days > 0) parts.push(`${days} ${days === 1 ? 'día' : 'días'}`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    if (seconds > 0 || parts.length === 0) parts.push(`${seconds}s`);
+    return parts.join(' ');
   }
 
   // Mostrar error

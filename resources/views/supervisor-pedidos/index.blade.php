@@ -1440,9 +1440,6 @@
 <!-- Modal Seguimiento del Pedido -->
 <x-orders-components.order-tracking-modal />
 
-<!-- Script para funcionalidad del modal de seguimiento -->
-@include('components.orders-components.tracking-modal-script')
-
 <!-- Modal para Selector de Recibos (desde asesores) -->
 @include('components.modals.recibos-process-selector')
 
@@ -1534,6 +1531,7 @@
     
     <!-- Scripts específicos de supervisor -->
     <script src="{{ asset('js/supervisor-pedidos/supervisor-pedidos-detail-modal.js') }}"></script>
+    <script src="{{ asset('js/ordersjs/tracking-modal-utils.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}"></script>
     
     <!-- Script para abrir el modal de seguimiento (inline para asegurar disponibilidad) -->

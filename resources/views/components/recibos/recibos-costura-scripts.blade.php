@@ -3,6 +3,7 @@
 <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
 
 <!-- Script para el modal de seguimiento -->
+<script src="{{ asset('js/ordersjs/tracking-modal-utils.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}?v={{ time() }}"></script>
 
 <!-- Scripts para la funcionalidad de Día de Entrega -->

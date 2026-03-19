@@ -1101,6 +1101,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="{{ asset('js/insumos/search-debounce.js') }}"></script>
 
 <!-- Scripts no-críticos (defer) -->
+<script defer src="{{ asset('js/ordersjs/tracking-modal-utils.js') }}?v={{ time() }}"></script>
 <script defer src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}?v={{ time() }}"></script>
 <script defer src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
 <script defer src="{{ asset('js/modulos/invoice/InvoiceLazyLoader.js') }}?v={{ time() }}"></script>

@@ -1557,6 +1557,17 @@ class RegistroOrdenQueryController extends Controller
             
             // Extraer datos de la estructura de respuesta
             $datos = $responseData['data'] ?? $responseData;
+
+            try {
+                $fechaCreacionOrden = $pedidoModel->fecha_de_creacion_de_orden ?? $pedidoModel->created_at ?? null;
+                if ($fechaCreacionOrden) {
+                    $datos['fecha_de_creacion_de_orden'] = $fechaCreacionOrden instanceof \DateTimeInterface
+                        ? $fechaCreacionOrden->format('Y-m-d H:i:s')
+                        : (string) $fechaCreacionOrden;
+                }
+            } catch (\Exception $e) {
+                // silencioso
+            }
             
             \Log::info(' [getRecibosDatos] ESTRUCTURA COMPLETA DE RESPUESTA', [
                 'numero_pedido' => $pedido,
@@ -1771,10 +1782,33 @@ class RegistroOrdenQueryController extends Controller
                 // Derivar numero_recibo COSTURA (consecutivo_actual) para poder vincular procesos_prenda
                 // cuando prenda_pedido_id viene NULL en procesos_prenda.
                 $numeroReciboCostura = null;
+                $reciboCosturaId = null;
                 foreach ($consecutivos as $c) {
                     if (($c->tipo_recibo ?? null) === 'COSTURA' && !empty($c->consecutivo_actual)) {
                         $numeroReciboCostura = (int) $c->consecutivo_actual;
+                        $reciboCosturaId = $c->id ?? null;
                         break;
+                    }
+                }
+
+                // Obtener fechas de completado por área desde prenda_recibo_completado (si existe)
+                $completadosPorArea = [];
+                if (!empty($reciboCosturaId)) {
+                    try {
+                        $rowsCompletado = \DB::table('prenda_recibo_completado')
+                            ->select(['area', 'fecha_completado'])
+                            ->where('id_recibo', $reciboCosturaId)
+                            ->get();
+
+                        foreach ($rowsCompletado as $row) {
+                            $key = strtolower(trim((string) ($row->area ?? '')));
+                            if ($key === '') {
+                                continue;
+                            }
+                            $completadosPorArea[$key] = $row->fecha_completado;
+                        }
+                    } catch (\Exception $e) {
+                        // silencioso
                     }
                 }
                 
@@ -1831,6 +1865,8 @@ class RegistroOrdenQueryController extends Controller
                 // Agrupar procesos por área
                 $seguimientosPorArea = [];
                 foreach ($procesosSeguimiento as $proceso) {
+                    $areaKey = strtolower(trim((string) $proceso->proceso));
+                    $fechaCompletadoArea = $completadosPorArea[$areaKey] ?? null;
                     $seguimientosPorArea[$proceso->proceso] = [
                         'id' => $proceso->id,
                         'proceso_prenda_id' => $proceso->prenda_pedido_id,
@@ -1838,6 +1874,7 @@ class RegistroOrdenQueryController extends Controller
                         'estado' => $proceso->estado_proceso,
                         'fecha_inicio' => $proceso->fecha_inicio,
                         'fecha_fin' => $proceso->fecha_fin,
+                        'fecha_completado' => $fechaCompletadoArea,
                         'encargado' => $proceso->encargado,
                         'observaciones' => $proceso->observaciones,
                         'codigo_referencia' => $proceso->codigo_referencia,
