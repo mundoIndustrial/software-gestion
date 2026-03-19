@@ -1028,10 +1028,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function formatearFecha(fecha) {
         if (!fecha) return '-';
         const date = new Date(fecha);
-        return date.toLocaleDateString('es-ES', { 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric' 
+        return date.toLocaleString('es-ES', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
         });
     }
     
