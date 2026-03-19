@@ -390,9 +390,12 @@ document.addEventListener('DOMContentLoaded', function() {
     /**
      * Cierre de modal al hacer clic fuera
      */
-    document.getElementById('insumosModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            window.cerrarModalInsumos();
-        }
-    });
+    const insumosModal = document.getElementById('insumosModal');
+    if (insumosModal) {
+        insumosModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                window.cerrarModalInsumos();
+            }
+        });
+    }
 });

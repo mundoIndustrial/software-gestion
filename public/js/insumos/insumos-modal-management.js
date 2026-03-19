@@ -23,6 +23,11 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     window.abrirModalInsumos = function(pedido, prendaId) {
         const modal = document.getElementById('insumosModal');
+        if (!modal) {
+            console.error('[abrirModalInsumos] Modal no encontrado: insumosModal');
+            return;
+        }
+        
         modal.style.display = 'flex';
         
         const mainContent = document.getElementById('mainContent');
@@ -30,9 +35,13 @@ document.addEventListener('DOMContentLoaded', function() {
             mainContent.removeAttribute('aria-hidden');
         }
 
-        document.getElementById('modalPedido').textContent = pedido;
-        document.getElementById('modalPrendaId').value = prendaId || '';
-        document.getElementById('modalPrendaNombre').textContent = prendaId ? `Cargando...` : 'General';
+        const modalPedidoEl = document.getElementById('modalPedido');
+        const modalPrendaIdEl = document.getElementById('modalPrendaId');
+        const modalPrendaNombreEl = document.getElementById('modalPrendaNombre');
+        
+        if (modalPedidoEl) modalPedidoEl.textContent = pedido;
+        if (modalPrendaIdEl) modalPrendaIdEl.value = prendaId || '';
+        if (modalPrendaNombreEl) modalPrendaNombreEl.textContent = prendaId ? `Cargando...` : 'General';
 
         let url = `/insumos/api/materiales/${pedido}`;
         if (prendaId) {
@@ -42,14 +51,20 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(url)
             .then(response => response.json())
             .then(data => {
-                if (data.nombre_prenda) {
-                    document.getElementById('modalPrendaNombre').textContent = data.nombre_prenda;
-                } else if (prendaId) {
-                    document.getElementById('modalPrendaNombre').textContent = `Prenda #${prendaId}`;
+                const prendaNombreEl = document.getElementById('modalPrendaNombre');
+                if (prendaNombreEl) {
+                    if (data.nombre_prenda) {
+                        prendaNombreEl.textContent = data.nombre_prenda;
+                    } else if (prendaId) {
+                        prendaNombreEl.textContent = `Prenda #${prendaId}`;
+                    }
                 }
-                window.llenarTablaInsumos(data.materiales || []);
+                if (typeof window.llenarTablaInsumos === 'function') {
+                    window.llenarTablaInsumos(data.materiales || []);
+                }
             })
             .catch(error => {
+                console.error('[abrirModalInsumos] Error al cargar los insumos:', error);
                 showToast('Error al cargar los insumos', 'error');
             });
     };
@@ -59,7 +74,9 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     window.cerrarModalInsumos = function() {
         const modal = document.getElementById('insumosModal');
-        modal.style.display = 'none';
+        if (modal) {
+            modal.style.display = 'none';
+        }
         
         const mainContent = document.getElementById('mainContent');
         if (mainContent) {
@@ -72,12 +89,24 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     window.llenarTablaInsumos = function(materiales) {
         const tbody = document.getElementById('insumosTableBody');
+        if (!tbody) {
+            console.error('[llenarTablaInsumos] Tabla body no encontrada');
+            return;
+        }
+        
         tbody.innerHTML = '';
 
-        const pedido = document.getElementById('modalPedido').textContent;
+        const pedidoEl = document.getElementById('modalPedido');
+        const pedido = pedidoEl ? pedidoEl.textContent : 'N/A';
+        
+        if (!Array.isArray(materiales)) {
+            return;
+        }
         
         materiales.forEach((materialData, index) => {
-            window.crearFilaMaterial(materialData.nombre_material, materialData, index, pedido, tbody);
+            if (typeof window.crearFilaMaterial === 'function') {
+                window.crearFilaMaterial(materialData.nombre_material, materialData, index, pedido, tbody);
+            }
         });
     };
 

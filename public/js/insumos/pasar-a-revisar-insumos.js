@@ -19,10 +19,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Actualizar datos en el modal
-        document.getElementById('reciboIdPasarRevisar').value = reciboId;
-        document.getElementById('pedidoIdPasarRevisar').value = pedidoId;
-        document.getElementById('formPasarRevisar').reset();
-        document.getElementById('contadorPasarRevisar').textContent = '0';
+        const reciboIdField = document.getElementById('reciboIdPasarRevisar');
+        const pedidoIdField = document.getElementById('pedidoIdPasarRevisar');
+        const form = document.getElementById('formPasarRevisar');
+        const counter = document.getElementById('contadorPasarRevisar');
+        
+        if (reciboIdField) reciboIdField.value = reciboId;
+        if (pedidoIdField) pedidoIdField.value = pedidoId;
+        if (form) form.reset();
+        if (counter) counter.textContent = '0';
         
         // Mostrar modal
         modal.style.display = 'flex';

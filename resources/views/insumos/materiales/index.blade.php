@@ -210,6 +210,11 @@
         // Abrir modal con los datos completos
         abrirModalInsumos(pedidoProduccionId, prendaId, consecutivo, estado, tipoRecibo);
     }
+
+    /**
+     * Crear dropdown de acciones para gestionar insumos, ancho/metraje, pasar a revisar, enviar
+     */
+    function crearDropdownAcciones(event, button) {
         event.preventDefault();
         event.stopPropagation();
         
@@ -273,11 +278,11 @@
                 gap: 0.75rem;
                 font-weight: 500;
                 border-bottom: 1px solid #f3f4f6;
-            " onclick="crearDropdownVerRecibo(event, this, '${pedidoProduccionId}', '${prendaId}'); cerrarDropdownAcciones();" 
+            " onclick="abrirModalInsumos('${pedidoProduccionId}', '${prendaId}', '${consecutivo}', '${estado}', '${tipoRecibo}'); cerrarDropdownAcciones();" 
             onmouseover="this.style.background='#f0fdf4'" 
             onmouseout="this.style.background='transparent'">
                 <i class="fas fa-box" style="color: #10b981; font-size: 1rem;"></i>
-                <span>Gestionar materiales</span>
+                <span>Gestionar insumos</span>
             </button>
             
             <button style="
@@ -303,8 +308,12 @@
             </button>
         `;
         
-        // Agregar botón "Pasar a Revisar" solo si NO está en estado DEVUELTO_ASESOR
-        if (estado !== 'DEVUELTO_ASESOR') {
+        // Agregar botón "Pasar a Revisar" solo si NO está en estado DEVUELTO_ASESOR y NO está en producción (CORTE)
+        // No mostrar si: DEVUELTO_ASESOR o ya está en producción/corte/ejecución
+        const estadosProduccion = ['CORTE', 'EN_CORTE', 'ENVIADO_PRODUCCION', 'EN_PRODUCCION', 'CORTANDO', 'EN_EJECUCIÓN', 'En Ejecución', 'EN_COSTURA'];
+        const yaEnProduccion = estadosProduccion.some(statusProd => estado && estado.toUpperCase().includes(statusProd.toUpperCase()));
+        
+        if (estado !== 'DEVUELTO_ASESOR' && !yaEnProduccion) {
             html += `
             <button style="
                 width: 100%;
@@ -326,32 +335,6 @@
             onmouseout="this.style.background='transparent'">
                 <i class="fas fa-arrow-rotate-left" style="color: #dc2626; font-size: 1rem;"></i>
                 <span>Pasar a Revisar</span>
-            </button>
-            `;
-        }
-        
-        // Agregar botón de envío solo si está en estado Pendiente
-        if (estado === 'Pendiente' || estado === 'PENDIENTE_INSUMOS' || estado === 'Pendiente_Insumos') {
-            html += `
-            <button style="
-                width: 100%;
-                text-align: left;
-                padding: 0.875rem 1rem;
-                border: none;
-                background: transparent;
-                cursor: pointer;
-                color: #374151;
-                font-size: 0.875rem;
-                transition: all 0.2s ease;
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-                font-weight: 500;
-            " onclick="cambiarEstadoRecibo('${reciboId}', '${consecutivo}'); cerrarDropdownAcciones();" 
-            onmouseover="this.style.background='#dbeafe'" 
-            onmouseout="this.style.background='transparent'">
-                <i class="fas fa-paper-plane" style="color: #3b82f6; font-size: 1rem;"></i>
-                <span>Enviar a producción</span>
             </button>
             `;
         }
@@ -827,6 +810,18 @@
 
                                         {{-- Dropdown de Acciones (solo para no-patronistas) --}}
                                         @if(!$isPatronista)
+                                            {{-- Botón Enviar a Producción (visible en la fila) --}}
+                                            @if($orden->estado === 'PENDIENTE_INSUMOS' || $orden->estado === 'Pendiente_Insumos')
+                                                <button 
+                                                    class="btn-enviar-produccion btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
+                                                    onclick="cambiarEstadoRecibo('{{ $reciboId }}', '{{ $orden->consecutivo_actual }}'); cerrarDropdownAcciones();"
+                                                    data-tooltip="Enviar a producción"
+                                                    title="Enviar a producción"
+                                                >
+                                                    <i class="fas fa-paper-plane text-lg"></i>
+                                                </button>
+                                            @endif
+                                            
                                             <button 
                                                 class="btn-acciones p-2 text-gray-600 hover:bg-gray-100 rounded transition"
                                                 onclick="crearDropdownAcciones(event, this)"
@@ -1039,6 +1034,8 @@
     window.abrirModalInsumos = abrirModalInsumos;
     window.cerrarModalInsumos = cerrarModalInsumos;
     window.abrirSeguimientoRecibo = abrirSeguimientoRecibo;
+    window.crearDropdownAcciones = crearDropdownAcciones;
+    window.cerrarDropdownAcciones = cerrarDropdownAcciones;
     
     console.timeEnd('RENDER_TOTAL');
     console.log(` Total de órdenes: {{ $ordenes->total() }}`);
@@ -1163,6 +1160,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- Scripts para Recibos/Procesos (SIN defer para carga rápida) -->
 <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
+
+{{-- Incluir modales de insumos --}}
+@include('insumos.materiales.partials.modales-insumos')
 
 <!-- Detectar rol insumos y aplicar readonly automáticamente -->
 <script>

@@ -23,6 +23,11 @@
  */
 function abrirModalAnchoMetraje(pedido, prendaId) {
     const modal = document.getElementById('modalAnchoMetraje');
+    if (!modal) {
+        console.error('[abrirModalAnchoMetraje] Modal no encontrado: modalAnchoMetraje');
+        return;
+    }
+    
     modal.style.display = 'flex';
     
     // Obtener el número de recibo
