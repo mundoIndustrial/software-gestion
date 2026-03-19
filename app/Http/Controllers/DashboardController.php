@@ -81,6 +81,10 @@ class DashboardController extends Controller
             if ($roleName === 'Despacho' || $roleName === 'despacho') {
                 return redirect()->route('despacho.index');
             }
+
+            if ($roleName === 'visualizador_plooter') {
+                return redirect()->route('insumos.plooter.index');
+            }
         }
 
         return view('dashboard');

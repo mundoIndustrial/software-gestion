@@ -192,6 +192,11 @@
             @foreach($recibosPlooter as $plooter)
             <tr>
                 <td style="text-align: center;">
+                    @php
+                        $userRoles = auth()->user()->roles->pluck('name')->toArray();
+                        $esVisualizador = in_array('visualizador_plooter', $userRoles) && count($userRoles) === 1;
+                    @endphp
+                    
                     @if($plooter->fecha_llegada)
                         <button type="button" class="btn btn-sm btn-warning" onclick="eliminarFechaLlegada({{ $plooter->recibo->id }}, {{ $plooter->id }})" title="Eliminar fecha de llegada">
                             <i class="fas fa-undo"></i>

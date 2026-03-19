@@ -751,6 +751,7 @@ body.dark-theme .sidebar-header .header-logo {
     flex-direction: column;
     overflow: hidden;
     animation: slideDown 0.2s ease-out;
+    z-index: 1000;
 }
 
 .user-menu.show {
@@ -1116,6 +1117,14 @@ body.dark-theme .logout-btn {
 body.dark-theme .logout-btn:hover {
     background: #dc2626 !important;
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+/* ========================================
+   VISUALIZADOR PLOOTER - SIN SIDEBAR
+   ======================================== */
+body.sin-sidebar .main-content {
+    margin-left: 0;
+    width: 100%;
 }
 
 

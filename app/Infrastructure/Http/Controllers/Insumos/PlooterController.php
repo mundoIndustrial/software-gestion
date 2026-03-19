@@ -13,6 +13,22 @@ use Illuminate\Support\Facades\Log;
 class PlooterController extends Controller
 {
     /**
+     * Verificar si el usuario tiene permisos para modificar (no es visualizador_plooter)
+     */
+    private function verificarPermisoModificacion()
+    {
+        $user = Auth::user();
+        $roles = $user->roles->pluck('name')->toArray();
+        
+        // Si el usuario tiene SOLO el rol visualizador_plooter, no puede modificar
+        if (in_array('visualizador_plooter', $roles) && count($roles) === 1) {
+            return false;
+        }
+        
+        return true;
+    }
+
+    /**
      * Mostrar página de gestión de Plooter
      */
     public function index()
@@ -97,6 +113,15 @@ class PlooterController extends Controller
      */
     public function remover($id)
     {
+        // Verificar permisos de modificación
+        if (!$this->verificarPermisoModificacion()) {
+            Log::warning('PlooterController - Intento de eliminar por usuario visualizador', ['user_id' => Auth::id()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permiso para eliminar registros de plooter',
+            ], 403);
+        }
+
         try {
             $plooter = Plooter::findOrFail($id);
             $plooter->delete();
@@ -118,6 +143,15 @@ class PlooterController extends Controller
      */
     public function registrarFechaEnvio($reciboId)
     {
+        // Verificar permisos de modificación
+        if (!$this->verificarPermisoModificacion()) {
+            Log::warning('PlooterController - Intento de registrar fecha envío por user visualizador', ['user_id' => Auth::id()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permiso para registrar fechas en plooter',
+            ], 403);
+        }
+
         try {
             $recibo = ConsecutivoReciboPedido::findOrFail($reciboId);
             
@@ -158,6 +192,24 @@ class PlooterController extends Controller
      */
     public function registrarFechaLlegada(Request $request, $reciboId)
     {
+        // NOTA: visualizador_plooter SOLO puede registrar fecha de llegada
+        // para los demás casos, verificar permisos de modificación completa
+        $user = Auth::user();
+        $roles = $user->roles->pluck('name')->toArray();
+        $esVisualizador = in_array('visualizador_plooter', $roles) && count($roles) === 1;
+        
+        if (!$esVisualizador) {
+            // Para roles normales, verificar permisos de modificación
+            if (!$this->verificarPermisoModificacion()) {
+                Log::warning('PlooterController - Intento de registrar fecha llegada por user no autorizado', ['user_id' => Auth::id()]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permiso para registrar fechas de llegada en plooter',
+                ], 403);
+            }
+        }
+        // Si es visualizador_plooter, permitir registrar fecha de llegada
+
         try {
             $request->validate([
                 'fecha_llegada' => 'nullable|date',

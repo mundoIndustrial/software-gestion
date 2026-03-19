@@ -37,15 +37,15 @@ class InsumosAccess
             $userRoles = \App\Models\Role::whereIn('id', $user->roles_ids)->pluck('name')->toArray();
             Log::info('InsumosAccess: Roles del usuario', ['roles' => $userRoles]);
 
-            if (in_array('admin', $userRoles) || in_array('supervisor-admin', $userRoles) || in_array('supervisor_planta', $userRoles) || in_array('patronista', $userRoles)) {
+            if (in_array('admin', $userRoles) || in_array('supervisor-admin', $userRoles) || in_array('supervisor_planta', $userRoles) || in_array('patronista', $userRoles) || in_array('visualizador_plooter', $userRoles)) {
                 Log::info('InsumosAccess: Acceso permitido');
                 return $next($request);
             }
         }
 
-        // Verificar si el usuario tiene rol de insumos o patronista
-        if ($user->hasRole('insumos') || $user->hasRole('patronista')) {
-            Log::info('InsumosAccess: Rol insumos o patronista permitido');
+        // Verificar si el usuario tiene rol de insumos, patronista o visualizador_plooter
+        if ($user->hasRole('insumos') || $user->hasRole('patronista') || $user->hasRole('visualizador_plooter')) {
+            Log::info('InsumosAccess: Rol insumos, patronista o visualizador_plooter permitido');
             return $next($request);
         }
 

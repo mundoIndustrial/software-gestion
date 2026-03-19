@@ -61,7 +61,13 @@
     
     @stack('styles')
 </head>
-<body class="light-theme">
+<body class="light-theme {{ $esVisualizador ? 'sin-sidebar' : '' }}"
+    @php
+        $userRoles = auth()->user()->roles->pluck('name')->toArray();
+        $esVisualizador = in_array('visualizador_plooter', $userRoles) && count($userRoles) === 1;
+    @endphp
+
+    @if(!$esVisualizador)
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -154,6 +160,7 @@
             </form>
         </div>
     </aside>
+    @endif
 
     <!-- Main Content -->
     <div class="main-content" id="mainContent">
@@ -186,6 +193,40 @@
                             <span class="user-role">Insumos</span>
                         </div>
                     </button>
+                    <div class="user-menu" id="userMenu">
+                        <div class="user-menu-header">
+                            <div class="user-avatar-large">
+                                @if(Auth::user()->avatar)
+                                    <img src="{{ route('storage.serve', ['path' => 'avatars/' . Auth::user()->avatar]) }}" alt="{{ Auth::user()->name }}">
+                                @else
+                                    <div class="avatar-placeholder" style="display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.8rem; width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);">
+                                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                                    </div>
+                                @endif
+                            </div>
+                            <div>
+                                <p class="user-menu-name">{{ Auth::user()->name }}</p>
+                                <p class="user-menu-email">{{ Auth::user()->email }}</p>
+                            </div>
+                        </div>
+                        <div class="menu-divider"></div>
+                        <a href="#" class="menu-item">
+                            <span class="material-symbols-rounded">person</span>
+                            <span>Mi Perfil</span>
+                        </a>
+                        <a href="#" class="menu-item">
+                            <span class="material-symbols-rounded">settings</span>
+                            <span>Configuración</span>
+                        </a>
+                        <div class="menu-divider"></div>
+                        <form method="POST" action="{{ route('logout') }}" style="width: 100%;">
+                            @csrf
+                            <button type="submit" class="menu-item logout" style="border: none; background: none; cursor: pointer; width: 100%; text-align: left; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.75rem; color: var(--danger-color);">
+                                <span class="material-symbols-rounded">logout</span>
+                                <span>Cerrar Sesión</span>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </header>
@@ -198,6 +239,23 @@
 
     <!-- Scripts -->
     <script src="{{ asset('js/insumos/layout.js') }}"></script>
+    
+    <!-- Toggle user menu -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('userBtn')?.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const menu = document.getElementById('userMenu');
+                menu?.classList.toggle('show');
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.user-dropdown')) {
+                    document.getElementById('userMenu')?.classList.remove('show');
+                }
+            });
+        });
+    </script>
     
     <!-- CORE ARCHITECTURE LAYER - Hybrid DDD Implementation -->
     <!-- ⚠️  CRITICAL: Order matters! Load in this sequence:
