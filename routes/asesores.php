@@ -61,6 +61,7 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     Route::get('/pedidos/{id}', [AsesoresController::class, 'show'])->where('id', '[0-9]+')->name('pedidos.show');
     Route::get('/pedidos/{id}/edit', [AsesoresController::class, 'edit'])->where('id', '[0-9]+')->name('pedidos.edit');
     Route::put('/pedidos/{id}', [AsesoresController::class, 'update'])->where('id', '[0-9]+')->name('pedidos.update');
+    Route::delete('/pedidos/borradores/{id}', [AsesoresController::class, 'destroyBorrador'])->where('id', '[0-9]+')->name('pedidos.borradores.destroy');
     Route::delete('/pedidos/{id}', [AsesoresController::class, 'destroy'])->where('id', '[0-9]+')->name('pedidos.destroy');
 
     // ========================================

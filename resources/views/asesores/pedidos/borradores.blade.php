@@ -304,7 +304,7 @@
                 // Crear un formulario temporal para enviar la solicitud DELETE
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = `{{ route('asesores.pedidos.destroy', ['pedido' => 'PEDIDO_ID']) }}`.replace('PEDIDO_ID', pedidoId);
+                form.action = `{{ route('asesores.pedidos.borradores.destroy', ['id' => 'PEDIDO_ID']) }}`.replace('PEDIDO_ID', pedidoId);
 
                 const csrfInput = document.createElement('input');
                 csrfInput.type = 'hidden';

@@ -1499,4 +1499,38 @@ class AsesoresController extends Controller
             return redirect()->back()->with('error', 'Error al listar borradores: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Eliminar borrador de pedido
+     * 
+     * DELETE /asesores/pedidos/borradores/{id}
+     */
+    public function destroyBorrador(Request $request, $id)
+    {
+        try {
+            $user = Auth::user();
+
+            $borrador = PedidoProduccion::where('id', $id)
+                ->where('estado', 'Borrador')
+                ->where('asesor_id', $user->id)
+                ->whereNull('numero_pedido')
+                ->firstOrFail();
+
+            $borrador->delete();
+
+            \Log::info('[AsesoresController.destroyBorrador] Borrador eliminado', [
+                'pedido_id' => $id,
+                'asesor_id' => $user->id,
+            ]);
+
+            return redirect()->back()->with('success', 'Borrador eliminado exitosamente');
+
+        } catch (\Exception $e) {
+            \Log::error('[AsesoresController.destroyBorrador] Error', [
+                'pedido_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+            return redirect()->back()->with('error', 'Error al eliminar el borrador: ' . $e->getMessage());
+        }
+    }
 }
