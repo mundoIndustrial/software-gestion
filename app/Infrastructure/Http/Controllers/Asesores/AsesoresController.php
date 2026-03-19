@@ -1473,9 +1473,10 @@ class AsesoresController extends Controller
             // Obtener borradores del usuario actual (estado = 'Borrador')
             $user = Auth::user();
             
-            // Obtener todos los borradores del asesor
+            // Obtener todos los borradores del asesor (sin número de pedido asignado)
             $borradores = PedidoProduccion::where('estado', 'Borrador')
                 ->where('asesor_id', $user->id)
+                ->whereNull('numero_pedido')
                 ->orderBy('created_at', 'desc')
                 ->paginate(15);
             
