@@ -1056,7 +1056,8 @@ function abrirModalAgregarEPP() {
     
     // ===== REGISTRAR MODAL EPP COMO SUB-MODAL EN DRAGDROPMANAGER =====
     // Esto da prioridad automática al modal EPP cuando se pega
-    if (window.DragDropManager) {
+    // Patrón consistente con modal-agregar-prenda-nueva y ColoresPorTalla.js
+    if (window.DragDropManager && typeof window.DragDropManager.registrarSubModal === 'function') {
         window.DragDropManager.registrarSubModal('modalAgregarEPP', function(file) {
             console.log('[Paste Handler EPP] Imagen pegada via DragDropManager:', file.name);
             
@@ -1119,10 +1120,12 @@ function abrirModalAgregarEPP() {
             }
         });
         console.log('[abrirModalAgregarEPP] ✅ Modal EPP registrado en DragDropManager');
-    } else {
-        // Fallback: usar listener manual SOLO si DragDropManager no está
+    } else if (window.handlePasteEPP && typeof window.handlePasteEPP === 'function') {
+        // Fallback SOLO si DragDropManager no está y handlePasteEPP está disponible
+        // Asegurarse que no esté registrado ya
+        document.removeEventListener('paste', window.handlePasteEPP, true);
         document.addEventListener('paste', window.handlePasteEPP, true);
-        console.log('[abrirModalAgregarEPP] ⚠️ DragDropManager no disponible, fallback a listener manual');
+        console.log('[abrirModalAgregarEPP] ⚠️ Fallback: usando listener manual (DragDropManager no disponible)');
     }
     
     console.log('[abrirModalAgregarEPP] Modal abierto - EPPs agregados:', eppAgregadosList.length);
@@ -1236,13 +1239,14 @@ function cerrarModalAgregarEPPConfirmado() {
     modal.style.display = 'none';
     
     // ===== DESREGISTRAR DEL DRAGDROPMANAGER =====
-    if (window.DragDropManager) {
+    // Patrón consistente con otros modales
+    if (window.DragDropManager && typeof window.DragDropManager.desregistrarSubModal === 'function') {
         window.DragDropManager.desregistrarSubModal('modalAgregarEPP');
         console.log('[cerrarModalAgregarEPP] Modal EPP desregistrado de DragDropManager');
-    } else {
-        // Fallback: remover listener manual
+    } else if (window.handlePasteEPP && window.DragDropManager === undefined) {
+        // Fallback SOLO si DragDropManager no está disponible
         document.removeEventListener('paste', window.handlePasteEPP, true);
-        console.log('[cerrarModalAgregarEPP] Listener manual removido');
+        console.log('[cerrarModalAgregarEPP] Listener manual removido (fallback)');
     }
     
     document.body.style.overflow = 'auto';
