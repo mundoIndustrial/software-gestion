@@ -46,6 +46,8 @@
             return { prendasExistentesJson, nuevasPrendasJson };
         }
 
+        let nuevaPrendaIdx = 0; // Contador independiente para nuevas prendas (el backend itera desde 0)
+
         window.gestionItemsUI.prendas.forEach((p, prendaIdx) => {
             const esPrendaExistente = !!(p?.prenda_pedido_id || p?.id);
             if (esPrendaExistente) {
@@ -60,22 +62,48 @@
             }
 
             const imagenesArr = Array.isArray(p.imagenes) ? p.imagenes : [];
-            imagenesArr.forEach((img, imgIdx) => {
+            let imgFileIdx = 0;
+            imagenesArr.forEach((img) => {
                 const file = (img instanceof File) ? img : (img && img.file instanceof File ? img.file : null);
                 if (file) {
-                    formData.append(`nuevas_prendas.${prendaIdx}.imagenes.${imgIdx}`, file);
+                    formData.append(`nuevas_prendas.${nuevaPrendaIdx}.imagenes.${imgFileIdx}`, file);
+                    imgFileIdx++;
                 }
             });
+            // También del gestor de imágenes por si no están en p.imagenes
+            const fotosNuevasGestor = window.gestorPrendaSinCotizacion?.fotosNuevas?.[prendaIdx];
+            if (fotosNuevasGestor && fotosNuevasGestor.length > 0) {
+                fotosNuevasGestor.forEach(foto => {
+                    const file = foto instanceof File ? foto : (foto?.file instanceof File ? foto.file : null);
+                    if (file) {
+                        formData.append(`nuevas_prendas.${nuevaPrendaIdx}.imagenes.${imgFileIdx}`, file);
+                        imgFileIdx++;
+                    }
+                });
+            }
 
             const telasArr = Array.isArray(p.telasAgregadas) ? p.telasAgregadas : (Array.isArray(p.telas) ? p.telas : []);
             telasArr.forEach((tela, telaIdx) => {
+                let telaImgFileIdx = 0;
                 const imagenesTelaArr = Array.isArray(tela.imagenes) ? tela.imagenes : [];
-                imagenesTelaArr.forEach((imgTela, imgIdx) => {
+                imagenesTelaArr.forEach((imgTela) => {
                     const file = (imgTela instanceof File) ? imgTela : (imgTela && imgTela.file instanceof File ? imgTela.file : null);
                     if (file) {
-                        formData.append(`nuevas_prendas.${prendaIdx}.telas.${telaIdx}.imagenes.${imgIdx}`, file);
+                        formData.append(`nuevas_prendas.${nuevaPrendaIdx}.telas.${telaIdx}.imagenes.${telaImgFileIdx}`, file);
+                        telaImgFileIdx++;
                     }
                 });
+                // También del gestor
+                const telasFotosGestor = window.gestorPrendaSinCotizacion?.telasFotosNuevas?.[prendaIdx]?.[telaIdx];
+                if (telasFotosGestor && telasFotosGestor.length > 0) {
+                    telasFotosGestor.forEach(foto => {
+                        const file = foto instanceof File ? foto : (foto?.file instanceof File ? foto.file : null);
+                        if (file) {
+                            formData.append(`nuevas_prendas.${nuevaPrendaIdx}.telas.${telaIdx}.imagenes.${telaImgFileIdx}`, file);
+                            telaImgFileIdx++;
+                        }
+                    });
+                }
             });
 
             nuevasPrendasJson.push({
@@ -94,6 +122,7 @@
                 procesos: (typeof p.procesos === 'object' && p.procesos) ? p.procesos : {},
                 asignacionesColoresPorTalla: p.asignacionesColoresPorTalla || {}
             });
+            nuevaPrendaIdx++;
         });
 
         return { prendasExistentesJson, nuevasPrendasJson };

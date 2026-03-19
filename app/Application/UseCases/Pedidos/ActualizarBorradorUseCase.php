@@ -276,7 +276,7 @@ class ActualizarBorradorUseCase
             }
 
             $prenda = PrendaPedido::query()
-                ->where('pedido_id', $pedidoId)
+                ->where('pedido_produccion_id', $pedidoId)
                 ->where('id', $prendaId)
                 ->first();
 

@@ -107,6 +107,16 @@
                     }
                 });
             }
+            // También leer del gestor (imágenes subidas en modal pero no propagadas a t.imagenes)
+            const telasFotosGestor = window.gestorPrendaSinCotizacion?.telasFotosNuevas?.[prendaIndex]?.[idx];
+            if (telasFotosGestor && telasFotosGestor.length > 0) {
+                telasFotosGestor.forEach(foto => {
+                    const file = foto instanceof File ? foto : (foto?.file instanceof File ? foto.file : null);
+                    if (file) {
+                        agregarArchivo(`fotos_tela[${idx}]`, file);
+                    }
+                });
+            }
 
             return {
                 tela: t.tela || t.nombre_tela || '',
@@ -119,10 +129,12 @@
         });
 
         const imagenesExistentes = [];
+        const archivosYaAgregados = new Set();
         (Array.isArray(prenda.imagenes) ? prenda.imagenes : []).forEach((img) => {
             const file = img instanceof File ? img : (img?.file instanceof File ? img.file : null);
             if (file) {
                 agregarArchivo('imagenes[]', file);
+                archivosYaAgregados.add(file);
                 return;
             }
 
@@ -131,6 +143,7 @@
                 imagenesExistentes.push({ id: img.id, url });
             }
         });
+
 
         const procesosRaw = prenda.procesos || {};
         const procesosArray = [];
