@@ -1,0 +1,352 @@
+/**
+ * =====================================================
+ * SUPERVISOR PEDIDOS - REALTIME LISTENER
+ * =====================================================
+ * Se suscribe a canales WebSocket (Laravel Echo / Pusher)
+ * y actualiza la tabla de pedidos en tiempo real.
+ */
+
+function actualizarFilaEnTabla(fila, orden) {
+    console.log(`[Realtime] Actualizando fila para pedido #${orden.numero_pedido}`);
+    const celdas = fila.querySelectorAll('[data-field]');
+    celdas.forEach(celda => {
+        const field = celda.getAttribute('data-field');
+        if (orden[field]) {
+            const newValue = orden[field];
+            if (celda.textContent !== newValue) {
+                celda.textContent = newValue;
+                celda.style.backgroundColor = '#fff9e6';
+                setTimeout(() => { celda.style.backgroundColor = ''; }, 1500);
+            }
+        }
+    });
+    fila.style.backgroundColor = '#f0f9ff';
+    setTimeout(() => { fila.style.backgroundColor = 'white'; }, 2000);
+}
+
+function agregarNuevaFilaATabla(orden) {
+    console.log(`[Realtime] Agregando nueva fila para pedido #${orden.numero_pedido}`);
+    const tableContainer = document.querySelector('.table-scroll-container');
+    if (!tableContainer) {
+        console.warn('[Realtime] No se encontró el contenedor de tabla');
+        return;
+    }
+    const numeroPedido = orden.numero_pedido || orden.numero;
+    const filaHTML = `
+        <div data-pedido-id="${orden.id}" style="
+            display: grid;
+            grid-template-columns: 200px 140px 200px 140px 150px 150px;
+            gap: 1.2rem;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            align-items: center;
+            min-width: min-content;
+            background: #f0f9ff;
+            animation: slideInDown 0.5s ease;
+            transition: background 0.2s ease;
+        " onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='#f0f9ff'">
+            <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
+                <button class="btn-ver-dropdown" onclick="editarPedido(${orden.id})" title="Editar" style="
+                    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+                    color: white; border: none; padding: 0.5rem; border-radius: 6px;
+                    cursor: pointer; font-size: 1rem; transition: all 0.3s ease;
+                ">
+                    <span class="material-symbols-rounded">edit</span>
+                </button>
+            </div>
+            <div data-field="numero_pedido" style="font-weight: 600; color: #1e3a8a;">#${numeroPedido}</div>
+            <div data-field="cliente" style="color: #2c3e50;">${orden.cliente || 'Sin especificar'}</div>
+            <div data-field="novedades" style="color: #666; font-size: 0.9rem;">${orden.novedades || '-'}</div>
+            <div data-field="asesor" style="color: #666;">${orden.asesor?.name || orden.asesor || 'Sin asignar'}</div>
+            <div data-field="forma_pago" style="color: #666;">${orden.forma_pago || 'No especificada'}</div>
+        </div>
+    `;
+    tableContainer.innerHTML += filaHTML;
+    tableContainer.scrollLeft = tableContainer.scrollWidth;
+}
+
+function supervisorPedidosMostrarNotificacionNuevoPedido(orden) {
+    try {
+        const numero  = orden?.numero_pedido || orden?.numero || '';
+        const cliente = orden?.cliente ? ` - ${orden.cliente}` : '';
+        const mensaje = `Nuevo pedido${numero ? ' #' + numero : ''}${cliente}`;
+
+        try {
+            const badge = document.getElementById('notificationBadge');
+            if (badge) {
+                const count = (parseInt(badge.textContent) || 0) + 1;
+                badge.textContent = String(count);
+                badge.style.display = count > 0 ? 'block' : 'none';
+            }
+            if (window.__supervisorPedidosNotifSyncT) clearTimeout(window.__supervisorPedidosNotifSyncT);
+            window.__supervisorPedidosNotifSyncT = setTimeout(() => {
+                try {
+                    if (typeof window.supervisorPedidosRefreshNotificaciones === 'function') {
+                        window.supervisorPedidosRefreshNotificaciones();
+                    } else if (typeof cargarNotificacionesPendientes === 'function') {
+                        cargarNotificacionesPendientes();
+                    } else {
+                        window.dispatchEvent(new CustomEvent('supervisorPedidos:notificacionesRefresh'));
+                    }
+                } catch (e) { /* noop */ }
+            }, 1200);
+        } catch (e) { /* noop */ }
+
+        if (window.PedidosRealtimeRefresh?.instance?.showRealtimeToast) {
+            window.PedidosRealtimeRefresh.instance.showRealtimeToast(mensaje, 'success');
+            return;
+        }
+
+        const container = document.getElementById('toastContainer') || (() => {
+            let div = document.createElement('div');
+            div.id = 'toastContainer';
+            div.className = 'toast-container';
+            div.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px;';
+            document.body.appendChild(div);
+            return div;
+        })();
+
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            background: #16a34a; color: white; padding: 12px 14px;
+            border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+            font-size: 13px; font-weight: 600; max-width: 360px;
+            transform: translateX(120%); transition: transform 0.25s ease;
+        `;
+        toast.textContent = mensaje;
+        container.appendChild(toast);
+        requestAnimationFrame(() => { toast.style.transform = 'translateX(0)'; });
+        setTimeout(() => {
+            toast.style.transform = 'translateX(120%)';
+            setTimeout(() => toast.remove(), 250);
+        }, 3500);
+    } catch (e) { /* silencioso */ }
+}
+
+function supervisorPedidosMaybeNotifyFromActualizado(payload) {
+    try {
+        const pedido   = payload?.pedido || payload?.orden || payload || {};
+        const nuevo    = payload?.nuevo_estado?.new || payload?.nuevo_estado || pedido?.estado || '';
+        const anterior = payload?.anterior_estado || payload?.nuevo_estado?.old || '';
+
+        if (String(nuevo).toUpperCase() !== 'PENDIENTE_SUPERVISOR') return;
+        if (String(anterior).toUpperCase() === 'PENDIENTE_SUPERVISOR') return;
+
+        if (!window.__supervisorPedidosNotifiedIds) window.__supervisorPedidosNotifiedIds = new Set();
+        const key = String(pedido?.id || payload?.pedido_id || payload?.id || '');
+        if (!key || window.__supervisorPedidosNotifiedIds.has(key)) return;
+        window.__supervisorPedidosNotifiedIds.add(key);
+        supervisorPedidosMostrarNotificacionNuevoPedido(pedido);
+    } catch (e) { /* noop */ }
+}
+
+function supervisorPedidosInsertarFilaNuevaAlInicio(orden) {
+    const tableContainer = document.querySelector('.table-scroll-container');
+    if (!tableContainer) return;
+
+    const header       = tableContainer.querySelector('[style*="grid-template-columns: 200px 140px 200px 150px 140px 150px 150px"]');
+    const numeroPedido = orden?.numero_pedido || orden?.numero || 'N/A';
+    const estado       = orden?.estado || 'PENDIENTE_SUPERVISOR';
+
+    const estadoColors = {
+        'PENDIENTE_SUPERVISOR': { bg: '#fff3cd', text: '#856404', label: 'Pendiente Supervisor' },
+        'PENDIENTE_INSUMOS':    { bg: '#d1ecf1', text: '#0c5460', label: 'Pendiente Insumos' },
+        'En Ejecución':         { bg: '#d4edda', text: '#155724', label: 'En Ejecución' },
+        'No iniciado':          { bg: '#e2e3e5', text: '#383d41', label: 'No Iniciado' },
+        'Entregado':            { bg: '#d4edda', text: '#155724', label: 'Entregado' },
+        'Finalizada':           { bg: '#d4edda', text: '#155724', label: 'Finalizada' },
+        'Anulada':              { bg: '#f8d7da', text: '#721c24', label: 'Anulada' },
+        'DEVUELTO_A_ASESORA':   { bg: '#f8d7da', text: '#721c24', label: 'Devuelto' },
+    };
+    const estadoInfo = estadoColors[estado] || { bg: '#e2e3e5', text: '#383d41', label: estado };
+    const safeNumero = String(numeroPedido).replace('#', '');
+
+    const fila = document.createElement('div');
+    fila.setAttribute('data-pedido-id', String(orden?.id || ''));
+    fila.style.cssText = `
+        display: grid;
+        grid-template-columns: 60px 220px 120px 200px 150px 140px 150px 150px 150px;
+        gap: 1.2rem; padding: 1rem; border-bottom: 1px solid #e5e7eb;
+        align-items: center; min-width: min-content;
+        background: #f0f9ff; animation: slideInDown 0.5s ease; transition: background 0.2s ease;
+    `;
+    fila.onmouseover = function() { this.style.background = '#f9fafb'; };
+    fila.onmouseout  = function() { this.style.background = 'white'; };
+    fila.innerHTML = `
+        <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
+            <button class="btn-ver-dropdown"
+                data-menu-id="menu-ver-${safeNumero}"
+                data-pedido="${safeNumero}"
+                data-pedido-id="${orden?.id || ''}"
+                title="Ver Opciones"
+                style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+                    color: white; border: none; padding: 0.5rem; border-radius: 6px;
+                    cursor: pointer; font-size: 1rem; transition: all 0.3s ease;
+                    display: flex; align-items: center; justify-content: center;
+                    width: 36px; height: 36px; box-shadow: 0 2px 4px rgba(37,99,235,0.3);">
+                <i class="fas fa-eye"></i>
+            </button>
+        </div>
+        <div><span style="font-weight: 600; color: #1e5ba8;">#${numeroPedido}</span></div>
+        <div><span>${orden?.cliente || ''}</span></div>
+        <div>
+            <span style="background: ${estadoInfo.bg}; color: ${estadoInfo.text};
+                padding: 4px 10px; border-radius: 12px; font-size: 0.75rem;
+                font-weight: bold; white-space: nowrap; display: inline-block;">
+                ${estadoInfo.label}
+            </span>
+        </div>
+        <div>
+            <span style="background: #f3f4f6; color: #9ca3af;
+                padding: 4px 10px; border-radius: 12px; font-size: 0.75rem;
+                font-weight: bold; white-space: nowrap;">
+                Sin novedades
+            </span>
+        </div>
+        <div><span>${orden?.asesora || orden?.asesor || 'N/A'}</span></div>
+        <div><span>${orden?.forma_pago || orden?.forma_de_pago || 'N/A'}</span></div>
+    `;
+
+    if (header && header.parentNode === tableContainer) {
+        header.insertAdjacentElement('afterend', fila);
+    } else {
+        tableContainer.prepend(fila);
+    }
+    setTimeout(() => { fila.style.backgroundColor = 'white'; }, 2000);
+}
+
+// Agregar estilos de animación si no existen
+if (!document.querySelector('style[data-realtime]')) {
+    const style = document.createElement('style');
+    style.setAttribute('data-realtime', 'true');
+    style.textContent = `
+        @keyframes slideInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(100px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideOutRight {
+            from { opacity: 1; transform: translateX(0); }
+            to   { opacity: 0; transform: translateX(100px); }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+console.log('[Realtime Supervisor] ⏳ Esperando a que window.waitForEcho esté disponible...');
+
+function initializeRealtimeListener() {
+    if (typeof window.waitForEcho !== 'function') {
+        console.log('[Realtime Supervisor] ⏳ window.waitForEcho aún no disponible, reintentando en 100ms...');
+        setTimeout(initializeRealtimeListener, 100);
+        return;
+    }
+
+    console.log('[Realtime Supervisor] window.waitForEcho está disponible, inicializando listener...');
+
+    window.waitForEcho(() => {
+        console.log('[Realtime Supervisor] ✅ Echo está listo, inicializando suscripción...');
+
+        try {
+            const echo = window.EchoInstance || window.Echo;
+            if (!echo || typeof echo.channel !== 'function') {
+                console.error('[Realtime Supervisor] ❌ EchoInstance no disponible o inválido');
+                return;
+            }
+
+            const refreshTabla = async (payload, eventName) => {
+                console.log(`[Realtime Supervisor] 🔄 Refresh solicitado por ${eventName}:`, payload);
+
+                if (eventName && String(eventName).includes('pedidos.creados:.pedido.creado')) {
+                    const pedido = payload?.pedido || payload?.orden || payload || {};
+                    supervisorPedidosInsertarFilaNuevaAlInicio(pedido);
+                    supervisorPedidosMostrarNotificacionNuevoPedido(pedido);
+                    return;
+                }
+
+                if (eventName && String(eventName).includes('despacho.pedidos:.pedido.actualizado')) {
+                    supervisorPedidosMaybeNotifyFromActualizado(payload);
+                }
+
+                if (window.__realtimeSupervisorRefreshTimeout) {
+                    clearTimeout(window.__realtimeSupervisorRefreshTimeout);
+                }
+
+                window.__realtimeSupervisorRefreshTimeout = setTimeout(async () => {
+                    try {
+                        const response = await fetch(window.location.href, {
+                            method: 'GET',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                        if (!response.ok) {
+                            console.error('[Realtime Supervisor] ❌ No se pudo refrescar la tabla:', response.status);
+                            return;
+                        }
+                        const html = await response.text();
+                        const doc  = new DOMParser().parseFromString(html, 'text/html');
+                        const nuevaTabla  = doc.querySelector('.table-scroll-container');
+                        const tablaActual = document.querySelector('.table-scroll-container');
+                        if (!nuevaTabla || !tablaActual) {
+                            console.warn('[Realtime Supervisor] ⚠️ No se encontró .table-scroll-container');
+                            return;
+                        }
+                        tablaActual.innerHTML = nuevaTabla.innerHTML;
+                    } catch (error) {
+                        console.error('[Realtime Supervisor] ❌ Error refrescando tabla:', error);
+                    }
+                }, 450);
+            };
+
+            if (!window.__supervisorPedidosRealtimeCustomBound) {
+                window.__supervisorPedidosRealtimeCustomBound = true;
+
+                window.addEventListener('supervisorPedidos:realtimePedidoCreado', (e) => {
+                    const pedido = e?.detail?.pedido || e?.detail?.raw?.pedido || {};
+                    supervisorPedidosInsertarFilaNuevaAlInicio(pedido);
+                    supervisorPedidosMostrarNotificacionNuevoPedido(pedido);
+                });
+
+                window.addEventListener('supervisorPedidos:realtimePedidoActualizado', (e) => {
+                    refreshTabla(
+                        e?.detail?.raw || e?.detail?.pedido || {},
+                        e?.detail?.source || 'custom:.pedido.actualizado'
+                    );
+                });
+            }
+
+            echo.channel('despacho.pedidos')
+                .listen('.pedido.actualizado', (data) => refreshTabla(data, 'despacho.pedidos:.pedido.actualizado'))
+                .on('pusher:subscription_succeeded', () => {
+                    console.log('[Realtime Supervisor] ✅ Subscripción exitosa al canal despacho.pedidos');
+                })
+                .on('pusher:subscription_error', (error) => {
+                    console.error('[Realtime Supervisor] ❌ Error en subscripción despacho.pedidos:', error);
+                });
+
+            const channelSupervisor = echo.channel('supervisor-pedidos');
+            channelSupervisor.subscribed(() => {
+                console.log('[Realtime Supervisor] ✅ Suscripción exitosa al canal supervisor-pedidos');
+            });
+            channelSupervisor.error((error) => {
+                console.error('[Realtime Supervisor] ❌ Error en suscripción al canal supervisor-pedidos:', error);
+            });
+            channelSupervisor.listen('OrdenUpdated', (data) => refreshTabla(data, 'supervisor-pedidos:OrdenUpdated'));
+
+            echo.channel('pedidos.creados')
+                .listen('.pedido.creado', (data) => refreshTabla(data, 'pedidos.creados:.pedido.creado'));
+
+            console.log('[Realtime Supervisor] ✅ Sistema de tiempo real inicializado correctamente');
+        } catch (error) {
+            console.error('[Realtime Supervisor] ❌ Error inicializando listener:', error);
+        }
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeRealtimeListener);
+} else {
+    initializeRealtimeListener();
+}
