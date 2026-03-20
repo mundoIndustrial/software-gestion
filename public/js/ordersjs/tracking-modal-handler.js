@@ -2329,16 +2329,16 @@ function initTrackingModalListeners() {
           fin = toDateObject(fechaFinRaw);
           if (!fin) return '---';
         }
-        
-        const diffMs = fin.getTime() - asg.getTime();
-        return formatBadgeDuration(diffMs);
+
+        const diasHabiles = calcularDiasHabilesSync(asg, fin);
+        return diasHabiles === 0 ? '0 días' : `${diasHabiles} día${diasHabiles !== 1 ? 's' : ''}`;
       } else {
         // Para procesos sin encargado: calcular desde inicio hasta fin
         const ini = toDateObject(data.fecha_inicio);
         const fin = toDateObject(fechaFinRaw);
         if (!ini || !fin) return '---';
-        const diffMs = fin.getTime() - ini.getTime();
-        return formatBadgeDuration(diffMs);
+        const diasHabiles = calcularDiasHabilesSync(ini, fin);
+        return diasHabiles === 0 ? '0 días' : `${diasHabiles} día${diasHabiles !== 1 ? 's' : ''}`;
       }
     })();
 
@@ -2361,23 +2361,34 @@ function initTrackingModalListeners() {
         return diasHabiles === 0 ? '0 días' : `${diasHabiles} día${diasHabiles !== 1 ? 's' : ''}`;
       }
 
-      // Para procesos con encargado: calcular suma de asignación + duración en área
+      // Para procesos con encargado
       const ini = toDateObject(data.fecha_inicio);
       const asg = toDateObject(data.fecha_de_asignacion_encargado);
       
-      let fin;
-      // Si no hay fecha fin, usar hoy (dinámico)
+      // Si no hay fecha fin, sumar duración asignación + duración en área (dinámico)
       if (!fechaFinRaw) {
-        fin = new Date();
-      } else {
-        fin = toDateObject(fechaFinRaw);
+        // Extraer valor numérico de duracionAsignacion
+        const asignacionNum = (() => {
+          if (duracionAsignacion === '---') return 0;
+          const match = String(duracionAsignacion).match(/(\d+)/);
+          return match ? parseInt(match[1], 10) : 0;
+        })();
+        // Extraer valor numérico de duracionEnArea
+        const areaNum = (() => {
+          if (duracionEnArea === '---') return 0;
+          const match = String(duracionEnArea).match(/(\d+)/);
+          return match ? parseInt(match[1], 10) : 0;
+        })();
+        const suma = asignacionNum + areaNum;
+        return suma === 0 ? '0 días' : `${suma} día${suma !== 1 ? 's' : ''}`;
       }
-      
+
+      // Si hay fecha fin, contar desde inicio o asignación hasta fin (estático)
+      const fin = toDateObject(fechaFinRaw);
       if (!ini || !fin) {
         return totalDiasArea === null ? '---' : (totalDiasArea === 0 ? '0 días' : `${totalDiasArea} día${totalDiasArea !== 1 ? 's' : ''}`);
       }
 
-      // Si hay encargado asignado, contar desde asignación; sino desde inicio
       const inicioCalculo = asg || ini;
       const diasTotales = calcularDiasHabilesSync(inicioCalculo, fin);
       return diasTotales === 0 ? '0 días' : `${diasTotales} día${diasTotales !== 1 ? 's' : ''}`;
@@ -2754,8 +2765,10 @@ function initTrackingModalListeners() {
         actual.setDate(actual.getDate() + 1);
       }
 
-      // Restar 1 porque no se cuenta el día de inicio (igual que backend)
-      return Math.max(0, diasHabiles - 1);
+      // Excluir el día de inicio solo si es un día hábil (si cae en fin de semana/festivo ya no fue contado)
+      const inicioStr = inicio.toISOString().slice(0, 10);
+      const inicioEsDiaHabil = inicio.getDay() !== 0 && inicio.getDay() !== 6 && !festivos.includes(inicioStr);
+      return Math.max(0, diasHabiles - (inicioEsDiaHabil ? 1 : 0));
     } catch (error) {
       console.error('[calcularDiasHabiles] Error:', error);
       // Fallback a cálculo simple sin festivos
@@ -2825,8 +2838,10 @@ function initTrackingModalListeners() {
       actual.setDate(actual.getDate() + 1);
     }
 
-    // Restar 1 porque no se cuenta el día de inicio (igual que backend)
-    return Math.max(0, diasHabiles - 1);
+    // Excluir el día de inicio solo si es un día hábil (si cae en fin de semana/festivo ya no fue contado)
+    const inicioStr = inicio.toISOString().slice(0, 10);
+    const inicioEsDiaHabil = inicio.getDay() !== 0 && inicio.getDay() !== 6 && !festivos.includes(inicioStr);
+    return Math.max(0, diasHabiles - (inicioEsDiaHabil ? 1 : 0));
   }
 
   function formatDurationHuman(diffMs) {
