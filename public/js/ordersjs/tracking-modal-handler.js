@@ -1,910 +1,24 @@
-/**
- * Tracking Modal Handler - Seguimiento por Prenda
- * Maneja la integración del modal de seguimiento con la vista de órdenes
- * Funcionalidad completa de seguimiento por prenda con áreas y procesos
- */
-
-// Agregar estilos CSS para tabla estilo TNS
-const trackingTableStyles = `
-.tracking-prenda-table {
-  margin: 8px 0;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  overflow: hidden;
-  background: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.tracking-prenda-table:hover {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
-}
-
-.tracking-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 13px;
-}
-
-.tracking-table-header {
-  background: linear-gradient(135deg, #1e40af 0%, #3730a3 100%);
-  color: white;
-  font-weight: 600;
-  font-size: 14px;
-  text-align: center;
-  padding: 12px 8px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-.tracking-table-row:nth-child(even) {
-  background-color: #f9fafb;
-}
-
-.tracking-table-row:hover {
-  background-color: #f3f4f6;
-}
-
-.tracking-table-label {
-  padding: 8px 12px;
-  font-weight: 600;
-  color: #374151;
-  border-right: 1px solid #e5e7eb;
-  width: 35%;
-  text-align: left;
-  background-color: #f8fafc;
-}
-
-.tracking-table-value {
-  padding: 8px 12px;
-  color: #1f2937;
-  text-align: left;
-  font-weight: 500;
-}
-
-.tracking-procesos-lista {
-  padding: 8px 12px;
-  background: #fef3c7;
-  border-left: 3px solid #f59e0b;
-}
-
-.tracking-proceso-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 4px 0;
-  border-bottom: 1px solid #fde68a;
-}
-
-.tracking-proceso-item:last-child {
-  border-bottom: none;
-}
-
-.proceso-nombre {
-  font-weight: 500;
-  color: #92400e;
-}
-
-.proceso-estado {
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 12px;
-  background: #fbbf24;
-  color: #78350f;
-  font-weight: 600;
-}
-
-.tracking-bodega-indicador {
-  padding: 8px 12px;
-  background: #dcfce7;
-  border-left: 3px solid #22c55e;
-  color: #166534;
-  font-weight: 600;
-  font-size: 12px;
-  text-align: center;
-}
-
-.tracking-seguimiento-badge {
-  display: inline-block;
-  margin: 2px;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.tracking-seguimiento-badge.completado {
-  background: #dcfce7;
-  color: #166534;
-  border: 1px solid #bbf7d0;
-}
-
-.tracking-seguimiento-badge.pendiente {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
-}
-
-/* ===== MODAL Y OVERLAY DE PRENDAS ===== */
-.tracking-prendas-selector-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s ease;
-  padding: 20px;
-  box-sizing: border-box;
-}
-
-.tracking-prendas-selector-overlay.show {
-  opacity: 1;
-  visibility: visible;
-}
-
-.tracking-prendas-selector-content {
-  background: white;
-  border-radius: 12px;
-  max-width: 95vw;
-  max-height: 95vh;  /* Aumentado para permitir más espacio */
-  width: 1200px;
-  height: auto;
-  overflow-y: auto;  /* Permitir scroll vertical */
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  transform: scale(0.95);
-  transition: all 0.3s ease;
-  display: flex;
-  flex-direction: column;
-}
-
-.tracking-prendas-selector-overlay.show .tracking-prendas-selector-content {
-  transform: scale(1);
-}
-
-.tracking-prendas-selector-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
-  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-  border-radius: 12px 12px 0 0;
-}
-
-.tracking-prendas-selector-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  border-radius: 8px;
-  color: white;
-  margin-right: 16px;
-}
-
-.tracking-prendas-selector-icon svg {
-  width: 20px;
-  height: 20px;
-}
-
-.tracking-prendas-selector-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0;
-  flex: 1;
-}
-
-.tracking-prendas-selector-close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: #ef4444;
-  border: none;
-  border-radius: 6px;
-  color: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.tracking-prendas-selector-close:hover {
-  background: #dc2626;
-  transform: scale(1.1);
-}
-
-.tracking-prendas-selector-close svg {
-  width: 16px;
-  height: 16px;
-}
-
-.tracking-prendas-selector-body {
-  padding: 24px;
-  overflow: hidden;  /* Sin scroll - el scroll es del contenedor principal */
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  width: 100%;
-  min-height: 0; /* Permitir que el contenedor se encoja */
-}
-
-.tracking-prendas-info {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  padding: 16px;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  /* Sin scroll individual - el scroll es del modal completo */
-}
-
-.tracking-prendas-info-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  min-width: 140px;
-  flex-shrink: 0;
-}
-
-.tracking-prendas-info-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.tracking-prendas-info-value {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.tracking-prendas-list {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  min-height: 0; /* Permitir que el contenedor se encoja */
-}
-
-.tracking-prendas-list-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 16px 0;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #e5e7eb;
-}
-
-.tracking-prendas-selector-container {
-  flex: 1;
-  width: 100%;
-  height: 100%;
-  min-height: 0; /* Permitir que el contenedor se encoja */
-  overflow: visible; /* Permitir que el scroll del contenedor principal funcione */
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-}
-
-/* ===== TABLA DE PRENDAS (ESTILO REPORTE) ===== */
-.prendas-table-container {
-  background: white;
-  border-radius: 8px;
-  overflow: visible;  /* Permitir scroll */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin: 0;
-  width: 100%;
-  height: 100%;
-  min-height: 0; /* Permitir que el contenedor se encoja */
-}
-
-.prendas-report-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 13px;
-  background: white;
-  table-layout: fixed; /* Distribuir columnas uniformemente */
-}
-
-.prendas-report-table thead {
-  background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
-  color: white;
-}
-
-.prendas-report-table th {
-  padding: 12px 8px;
-  text-align: center;
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  vertical-align: middle;
-}
-
-.prendas-report-table th:first-child {
-  text-align: left;
-  width: 25%; /* Prenda - más ancha */
-}
-
-.prendas-report-table th:nth-child(2) {
-  width: 10%; /* Cantidad */
-}
-
-.prendas-report-table th:nth-child(3) {
-  width: 25%; /* Procesos - más ancha */
-}
-
-.prendas-report-table th:nth-child(4) {
-  width: 12%; /* Área */
-}
-
-.prendas-report-table th:nth-child(5) {
-  width: 12%; /* Estado */
-}
-
-.prendas-report-table th:nth-child(6) {
-  width: 16%; /* Acciones - más ancha para el botón */
-  border-right: none;
-}
-
-.prendas-table-row:nth-child(even) {
-  background-color: #f9fafb;
-}
-
-.prendas-table-row:hover {
-  background-color: #f3f4f6;
-}
-
-.prendas-table-cell {
-  padding: 12px 8px;
-  border-bottom: 1px solid #e5e7eb;
-  vertical-align: middle;
-  text-align: center;
-  word-wrap: break-word;
-  overflow: hidden;
-}
-
-.prendas-table-cell:first-child {
-  text-align: left;
-}
-
-.prendas-name-cell {
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.prendas-name {
-  font-size: 14px;
-  margin-bottom: 4px;
-}
-
-.bodega-badge {
-  display: inline-block;
-  font-size: 9px;
-  padding: 2px 8px;
-  background: #f59e0b;  /* Amarillo */
-  color: #92400e;      /* Texto oscuro para contraste */
-  border-radius: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-}
-
-.confeciona-badge {
-  display: inline-block;
-  font-size: 9px;
-  padding: 2px 8px;
-  background: #10b981;  /* Verde */
-  color: #ffffff;      /* Texto blanco para contraste */
-  border-radius: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-}
-
-.procesos-cell {
-  text-align: left;
-}
-
-.procesos-info {
-  font-size: 11px;
-  line-height: 1.4;
-  color: #6b7280;
-}
-
-.estado-badge {
-  display: inline-block;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.estado-badge.estado-completado {
-  background: #dcfce7;
-  color: #166534;
-  border: 1px solid #bbf7d0;
-}
-
-.estado-badge.estado-en-ejecución {
-  background: #dbeafe;
-  color: #1e40af;
-  border: 1px solid #93c5fd;
-}
-
-.estado-badge.estado-en-ejecucion {
-  background: #dbeafe;
-  color: #1e40af;
-  border: 1px solid #93c5fd;
-}
-
-.estado-badge.estado-no-iniciado {
-  background: #f3f4f6;
-  color: #6b7280;
-  border: 1px solid #d1d5db;
-}
-
-.estado-badge.estado-pendiente_cartera {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
-}
-
-.estado-badge.estado-rechazado_cartera {
-  background: #fecaca;
-  color: #991b1b;
-  border: 1px solid #fca5a5;
-}
-
-.estado-badge.estado-pendiente_insumos {
-  background: #fed7aa;
-  color: #9a3412;
-  border: 1px solid #fdba74;
-}
-
-.estado-badge.estado-devuelto_a_asesora {
-  background: #e9d5ff;
-  color: #6b21a8;
-  border: 1px solid #d8b4fe;
-}
-
-.estado-badge.estado-pendiente_supervisor {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
-}
-
-.estado-badge.estado-pendiente {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
-}
-
-.estado-badge.estado-sin-procesos {
-  background: #f3f4f6;
-  color: #6b7280;
-  border: 1px solid #d1d5db;
-}
-
-.acciones-cell {
-  text-align: center;
-}
-
-.btn-ver-seguimiento {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
-  min-width: 80px;
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-ver-seguimiento::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
-}
-
-.btn-ver-seguimiento:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-.btn-ver-seguimiento:hover::before {
-  left: 100%;
-}
-
-.btn-ver-seguimiento:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
-}
-
-.btn-ver-seguimiento.disabled {
-  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.btn-ver-seguimiento.disabled:hover {
-  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
-  transform: none;
-  box-shadow: none;
-}
-
-.btn-ver-seguimiento.disabled:active {
-  transform: none;
-  box-shadow: none;
-}
-
-.btn-ver-seguimiento.disabled svg {
-  opacity: 0.7;
-}
-
-.btn-ver-seguimiento svg {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-}
-
-/* Responsive para pantallas pequeñas */
-@media (max-width: 768px) {
-  .prendas-report-table {
-    font-size: 11px;
-  }
-  
-  .prendas-report-table th {
-    padding: 8px 4px;
-    font-size: 10px;
-  }
-  
-  .prendas-table-cell {
-    padding: 8px 4px;
-  }
-  
-  .prendas-name {
-    font-size: 12px;
-  }
-  
-  .btn-ver-seguimiento {
-    padding: 6px 12px;
-    font-size: 11px;
-    min-width: 70px;
-    gap: 4px;
-  }
-  
-  .btn-ver-seguimiento svg {
-    width: 14px;
-    height: 14px;
-  }
-}
-
-/* Responsive para modal y tabla */
-@media (max-width: 1200px) {
-  .tracking-prendas-selector-content {
-    max-width: 98vw;
-    width: 100%;
-  }
-}
-
-@media (max-width: 768px) {
-  .tracking-prendas-selector-overlay {
-    padding: 10px;
-  }
-  
-  .tracking-prendas-selector-content {
-    max-width: 95vw;
-    width: 100%;
-    margin: 0;
-  }
-  
-  .tracking-prendas-selector-header {
-    padding: 16px 20px;
-  }
-  
-  .tracking-prendas-selector-icon {
-    width: 32px;
-    height: 32px;
-    margin-right: 12px;
-  }
-  
-  .tracking-prendas-selector-icon svg {
-    width: 16px;
-    height: 16px;
-  }
-  
-  .tracking-prendas-selector-title {
-    font-size: 16px;
-  }
-  
-  .tracking-prendas-selector-body {
-    padding: 16px;
-    gap: 16px;
-  }
-  
-  .tracking-prendas-info {
-    grid-template-columns: 1fr;
-    gap: 12px;
-    padding: 12px;
-    width: 100%;
-  }
-  
-  .tracking-prendas-list {
-    width: 100%;
-    min-height: 0;
-  }
-  
-  .tracking-prendas-selector-container {
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-  }
-  
-  .prendas-table-container {
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-  }
-  
-  .prendas-report-table {
-    font-size: 11px;
-  }
-  
-  .prendas-report-table th {
-    padding: 8px 4px;
-    font-size: 10px;
-  }
-  
-  .prendas-table-cell {
-    padding: 8px 4px;
-  }
-  
-  .prendas-name {
-    font-size: 12px;
-  }
-  
-  .btn-ver-seguimiento {
-    padding: 6px 12px;
-    font-size: 11px;
-    min-width: 70px;
-    gap: 4px;
-  }
-  
-  .btn-ver-seguimiento svg {
-    width: 14px;
-    height: 14px;
-  }
-}
-
-@media (max-width: 600px) {
-  .tracking-prendas-selector-overlay {
-    padding: 5px;
-  }
-  
-  .tracking-prendas-selector-content {
-    max-width: 98vw;
-    width: 100%;
-    border-radius: 8px;
-  }
-  
-  .tracking-prendas-selector-header {
-    padding: 12px 16px;
-  }
-  
-  .tracking-prendas-selector-icon {
-    width: 28px;
-    height: 28px;
-    margin-right: 8px;
-  }
-  
-  .tracking-prendas-selector-icon svg {
-    width: 14px;
-    height: 14px;
-  }
-  
-  .tracking-prendas-selector-title {
-    font-size: 14px;
-  }
-  
-  .tracking-prendas-selector-body {
-    padding: 12px;
-    gap: 12px;
-  }
-  
-  .tracking-prendas-info {
-    padding: 8px;
-    gap: 8px;
-    width: 100%;
-  }
-  
-  .tracking-prendas-list {
-    width: 100%;
-    min-height: 0;
-  }
-  
-  .tracking-prendas-selector-container {
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-  }
-  
-  .prendas-table-container {
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-  }
-  
-  .tracking-prendas-info-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-  }
-  
-  .tracking-prendas-list-title {
-    font-size: 14px;
-    margin: 0 0 12px 0;
-    padding-bottom: 6px;
-  }
-  
-  .prendas-report-table {
-    font-size: 10px;
-  }
-  
-  .prendas-report-table th {
-    padding: 6px 2px;
-    font-size: 9px;
-  }
-  
-  .prendas-table-cell {
-    padding: 6px 2px;
-  }
-  
-  .prendas-name {
-    font-size: 11px;
-  }
-  
-  .btn-ver-seguimiento {
-    padding: 4px 6px;
-    font-size: 10px;
-    min-width: 50px;
-    gap: 2px;
-  }
-  
-  .btn-ver-seguimiento svg {
-    width: 12px;
-    height: 12px;
-  }
-}
-
-  .prendas-report-table th:first-child {
-    width: 30%;
-  }
-  
-  .prendas-report-table th:nth-child(2) {
-    width: 12%;
-  }
-  
-  .prendas-report-table th:nth-child(3) {
-    width: 20%;
-  }
-  
-  .prendas-report-table th:nth-child(4) {
-    width: 14%;
-  }
-  
-  .prendas-report-table th:nth-child(5) {
-    width: 12%;
-  }
-  
-  .btn-ver-seguimiento {
-    padding: 4px 6px;
-    font-size: 10px;
-    min-width: 50px;
-    gap: 2px;
-  }
-  
-  .btn-ver-seguimiento svg {
-    width: 12px;
-    height: 12px;
-  }
-}
-  
-  .prendas-report-table th:nth-child(2) {
-    width: 12%;
-  }
-  
-  .prendas-report-table th:nth-child(3) {
-    width: 12%;
-  }
-  
-  .prendas-report-table th:nth-child(4) {
-    width: 12%;
-  }
-  
-  .prendas-report-table th:nth-child(5) {
-    width: 17%;
-  }
-  
-  .prendas-report-table th:nth-child(6) {
-    width: 12%;
-  }
-  
-  .prendas-report-table th:nth-child(7) {
-    width: 10%;
-  }
-  
-  .btn-ver-seguimiento {
-    padding: 4px 8px;
-    font-size: 10px;
-    min-width: 60px;
-    gap: 2px;
-  }
-  
-  .btn-ver-seguimiento svg {
-    width: 12px;
-    height: 12px;
-  }
-}
-`;
-
-(function() {
-  'use strict';
-
-  // Inyectar estilos CSS para tabla estilo TNS
-  function injectTrackingTableStyles() {
-    if (!document.getElementById('tracking-table-styles')) {
-      const styleElement = document.createElement('style');
-      styleElement.id = 'tracking-table-styles';
-      styleElement.textContent = trackingTableStyles;
-      document.head.appendChild(styleElement);
+'use strict';
+
+  // Precargar festivos del año actual y siguiente
+  async function precargarFestivos() {
+    const anioActual = new Date().getFullYear();
+    const anioSiguiente = anioActual + 1;
+    
+    try {
+      // Precargar en paralelo
+      await Promise.all([
+        obtenerFestivos(anioActual),
+        obtenerFestivos(anioSiguiente)
+      ]);
+      console.log('[precargarFestivos] Festivos precargados correctamente');
+    } catch (error) {
+      console.warn('[precargarFestivos] Error precargando festivos:', error);
     }
   }
 
-  // Inicializar listeners del modal
-  function initTrackingModalListeners() {
-    // Inyectar estilos
-    injectTrackingTableStyles();
-    
+// Inicializar listeners del modal
+function initTrackingModalListeners() {
     // Cerrar modal al hacer clic en el overlay
     const overlay = document.getElementById('trackingModalOverlay');
     if (overlay) {
@@ -917,47 +31,114 @@ const trackingTableStyles = `
       closeBtn.addEventListener('click', closeTrackingModal);
     }
 
-    // Botón de volver a prendas (se configura en setupBackButton)
-    const backBtn = document.getElementById('backToPrendasBtn');
-    // No agregar event listener aquí, se maneja en setupBackButton()
+    // Configurar listeners del modal agregar proceso
+    setupAddProcesoModalListeners();
 
-    // Botón de abrir modal agregar proceso
-    const btnOpenAddProcesoModal = document.getElementById('btnOpenAddProcesoModal');
-    if (btnOpenAddProcesoModal) {
-      btnOpenAddProcesoModal.addEventListener('click', openAddProcesoModal);
+    // Configurar listeners del modal de confirmación
+    setupConfirmDeleteModalListeners();
+
+    // Configurar botón volver
+    setupBackButton();
+
+    // Precargar festivos para mejorar rendimiento
+    precargarFestivos();
+  }
+
+  // Timer para actualizar contadores dinámicos
+  let contadorTimer = null;
+
+  // Actualizar contadores de días dinámicos (procesos sin fecha fin)
+  function actualizarContadoresDinamicos() {
+    try {
+      // Buscar todas las tarjetas de áreas que tengan contadores dinámicos
+      const areaCards = document.querySelectorAll('.tracking-area-card');
+      
+      areaCards.forEach(card => {
+        const areaElement = card.querySelector('.tracking-area-name');
+        if (!areaElement) return;
+        
+        const area = areaElement.textContent.trim();
+        const totalDiasElement = card.querySelector('.tracking-total-dias');
+        const duracionAreaElement = card.querySelector('.tracking-duracion-area');
+        
+        if (!totalDiasElement || !duracionAreaElement) return;
+        
+        // Obtener datos del proceso (desde data attributes o recalcular)
+        const processData = window.currentPrendaData?.seguimientos_por_area?.[area];
+        if (!processData) return;
+        
+        // Recalcular días dinámicamente
+        const ini = toDateObject(processData.fecha_inicio);
+        if (!ini) return;
+        
+        // Si no hay fecha fin/completado, contar hasta hoy
+        if (!processData.fecha_fin && !processData.fecha_completado) {
+          const diasHabiles = calcularDiasHabilesSync(ini, new Date());
+          const diasText = diasHabiles === 0 ? '0 días' : `${diasHabiles} día${diasHabiles !== 1 ? 's' : ''}`;
+          
+          // Actualizar visualización
+          if (totalDiasElement.textContent.includes('día')) {
+            totalDiasElement.textContent = diasText;
+          }
+          if (duracionAreaElement.textContent.includes('día')) {
+            duracionAreaElement.textContent = diasText;
+          }
+        }
+      });
+      
+      console.log('[actualizarContadoresDinamicos] Contadores actualizados');
+    } catch (error) {
+      console.error('[actualizarContadoresDinamicos] Error:', error);
     }
+  }
 
-    // Botones del modal agregar proceso
-    const closeAddProcesoBtn = document.getElementById('closeAddProcesoModal');
-    if (closeAddProcesoBtn) {
-      closeAddProcesoBtn.addEventListener('click', closeAddProcesoModal);
+  // Iniciar timer para actualización automática de contadores
+  function iniciarTimerContadores() {
+    // Detener timer existente
+    if (contadorTimer) {
+      clearInterval(contadorTimer);
     }
+    
+    // Actualizar inmediatamente
+    actualizarContadoresDinamicos();
+    
+    // Configurar timer para actualizar cada día a medianoche
+    const ahora = new Date();
+    const manana = new Date(ahora);
+    manana.setDate(manana.getDate() + 1);
+    manana.setHours(0, 0, 0, 0);
+    
+    const msHastaManana = manana.getTime() - ahora.getTime();
+    
+    // Primer actualización a medianoche
+    setTimeout(() => {
+      actualizarContadoresDinamicos();
+      
+      // Luego actualizar cada 24 horas
+      contadorTimer = setInterval(actualizarContadoresDinamicos, 24 * 60 * 60 * 1000);
+    }, msHastaManana);
+    
+    console.log('[iniciarTimerContadores] Timer configurado para actualizar diariamente');
+  }
 
-    const btnCancelAddProceso = document.getElementById('btnCancelAddProceso');
-    if (btnCancelAddProceso) {
-      btnCancelAddProceso.addEventListener('click', closeAddProcesoModal);
+  // Detener timer de contadores
+  function detenerTimerContadores() {
+    if (contadorTimer) {
+      clearInterval(contadorTimer);
+      contadorTimer = null;
+      console.log('[detenerTimerContadores] Timer detenido');
     }
+  }
 
-    const btnConfirmAddProceso = document.getElementById('btnConfirmAddProceso');
-    if (btnConfirmAddProceso) {
-      const nuevoBtnConfirm = btnConfirmAddProceso.cloneNode(true);
-      btnConfirmAddProceso.parentNode.replaceChild(nuevoBtnConfirm, btnConfirmAddProceso);
-      nuevoBtnConfirm.onclick = handleAgregarProceso;
-    }
+  // Función para abrir el modal de agregar proceso
+  const closeAddProcesoBtn = document.getElementById('closeAddProcesoModal');
+  if (closeAddProcesoBtn) {
+    closeAddProcesoBtn.addEventListener('click', closeAddProcesoModal);
+  }
 
-    // Cerrar modal al hacer clic en el overlay
-    const addProcesoOverlay = document.getElementById('addProcesoOverlay');
-    if (addProcesoOverlay) {
-      addProcesoOverlay.addEventListener('click', closeAddProcesoModal);
-    }
-
-    // Cerrar con ESC
-    document.addEventListener('keydown', (e) => {
-      const modal = document.getElementById('orderTrackingModal');
-      if (e.key === 'Escape' && modal && modal.style.display !== 'none') {
-        closeTrackingModal();
-      }
-    });
+  const btnCancelAddProceso = document.getElementById('btnCancelAddProceso');
+  if (btnCancelAddProceso) {
+    btnCancelAddProceso.addEventListener('click', closeAddProcesoModal);
   }
 
   // Cerrar modal
@@ -1808,6 +989,9 @@ const trackingTableStyles = `
         modal.style.setProperty('display', 'flex', 'important');
         modal.style.setProperty('visibility', 'visible', 'important');
         modal.style.setProperty('opacity', '1', 'important');
+        
+        // Iniciar timer para contadores dinámicos
+        iniciarTimerContadores();
         modal.style.setProperty('z-index', '9999999', 'important');
         modal.style.setProperty('position', 'fixed', 'important');
         modal.style.setProperty('top', '0', 'important');
@@ -2055,7 +1239,7 @@ const trackingTableStyles = `
       if (fechaCreacionDate && reciboActDate) {
         const diffMs = Math.max(0, reciboActDate.getTime() - fechaCreacionDate.getTime());
         const human = formatDurationHuman(diffMs);
-        const diasHabiles = calcularDiasHabilesSimple(fechaCreacionDate, reciboActDate);
+        const diasHabiles = calcularDiasHabilesSync(fechaCreacionDate, reciboActDate);
         tiempoTranscurridoText = diasHabiles > 0
           ? `${human} (${diasHabiles} días hábiles)`
           : human;
@@ -2680,7 +1864,6 @@ const trackingTableStyles = `
   // Crear tarjeta de área/proceso
   function createAreaCard(area, data, readonly = false) {
     const card = document.createElement('div');
-    card.className = `tracking-area-card tracking-area-card-v2 ${data.esta_activo ? 'pending' : 'completed'}`;
     
     // Si es readonly, agregar clase visual
     if (readonly) {
@@ -2694,32 +1877,161 @@ const trackingTableStyles = `
 
     const totalDiasArea = (function() {
       const ini = toDateObject(data.fecha_inicio);
+      
+      // Si no hay fecha de fin o completado, contar hasta hoy (dinámico)
+      if (!fechaFinParaDuracion) {
+        if (!ini) return null;
+        return calcularDiasHabilesSync(ini, new Date());
+      }
+      
+      // Si hay fecha fin/completado, contar hasta esa fecha (estático)
       const fin = toDateObject(fechaFinParaDuracion);
       if (!ini || !fin) return null;
-      const diffMs = Math.max(0, fin.getTime() - ini.getTime());
-      const diffDays = Math.floor(diffMs / 86400000);
-      return diffDays;
+      
+      // Usar cálculo de días hábiles con festivos (igual que recibos-costura)
+      return calcularDiasHabilesSync(ini, fin);
     })();
 
     const isInsumos = String(area || '').toLowerCase() === 'insumos';
+    const isCorte = String(area || '').toLowerCase().includes('corte');
+    const isCostura = String(area || '').toLowerCase().includes('costura');
+    const isControlCalidad = String(area || '').toLowerCase().includes('control') && String(area || '').toLowerCase().includes('calidad');
+    
+    // Procesos que requieren encargado y usan fecha_completado como fecha_fin
+    const needsEncargado = isCorte || isCostura || isControlCalidad;
+    const shouldShowAssignmentDuration = needsEncargado;
+    
+    // Determinar si se debe ocultar el campo de encargado
+    const shouldHideEncargado = isInsumos || !needsEncargado;
+
+    const hasFechaCompletado = !isInsumos && Boolean(toDateObject(data.fecha_completado));
+    const estadoDisplay = isInsumos ? (data.estado || 'Pendiente') : (hasFechaCompletado ? 'Completado' : 'Pendiente');
+    const estaActivoDisplay = isInsumos ? Boolean(data.esta_activo) : !hasFechaCompletado;
+
+    card.className = `tracking-area-card tracking-area-card-v2 ${estaActivoDisplay ? 'pending' : 'completed'}`;
+
+    const formatBadgeDuration = function(diffMs) {
+      const ms = Math.max(0, Number(diffMs) || 0);
+      const minutes = Math.floor(ms / 60000);
+      const hours = Math.floor(ms / 3600000);
+      const days = Math.floor(ms / 86400000);
+      
+      if (days >= 1) {
+        return `${days} ${days === 1 ? 'Día' : 'Días'}`;
+      } else if (hours >= 1) {
+        return `${hours}h`;
+      } else if (minutes >= 1) {
+        return `${minutes}min`;
+      } else {
+        return '< 1min';
+      }
+    };
 
     const fechaLlegada = formatDate(data.fecha_inicio) || '---';
-    const fechaFin = formatDate(data.fecha_fin) || (data.esta_activo ? '---' : '---');
+    
+    // Lógica dinámica para fecha_fin según el tipo de proceso
+    let fechaFinRaw = null;
+    if (isInsumos) {
+      fechaFinRaw = data.fecha_fin || null;
+    } else if (needsEncargado) {
+      // Para Corte, Costura, Control Calidad: usar fecha_completado
+      fechaFinRaw = data.fecha_completado || null;
+    } else {
+      // Para otros procesos (Entrega, Despacho, etc.): usar fecha_fin o determinar dinámicamente
+      fechaFinRaw = data.fecha_fin || null;
+      
+      // Si no hay fecha_fin, podríamos intentar determinarla por el siguiente proceso
+      // Esto requeriría datos adicionales de los otros procesos
+    }
+    
+    const fechaFin = formatDate(fechaFinRaw) || (data.esta_activo ? '---' : '---');
 
-    const fechaAsignacion = '---';
-    const duracionAsignacion = '---';
+    const fechaAsignacion = formatDate(data.fecha_de_asignacion_encargado) || '---';
+    const duracionAsignacion = (function() {
+      if (!shouldShowAssignmentDuration) return '---';
+      const ini = toDateObject(data.fecha_inicio);
+      const asg = toDateObject(data.fecha_de_asignacion_encargado);
+      if (!ini || !asg) return '---';
+      const diffMs = asg.getTime() - ini.getTime();
+      return formatBadgeDuration(diffMs);
+    })();
 
     const duracionEnArea = (function() {
-      if (totalDiasArea === null) return '---';
-      return `${totalDiasArea} ${totalDiasArea === 1 ? 'Día' : 'Días'}`;
+      if (needsEncargado) {
+        // Para procesos con encargado: calcular desde asignación hasta completado
+        const asg = toDateObject(data.fecha_de_asignacion_encargado);
+        const fin = toDateObject(fechaFinRaw);
+        if (!asg || !fin) return '---';
+        const diffMs = fin.getTime() - asg.getTime();
+        return formatBadgeDuration(diffMs);
+      } else {
+        // Para procesos sin encargado: calcular desde inicio hasta fin
+        const ini = toDateObject(data.fecha_inicio);
+        const fin = toDateObject(fechaFinRaw);
+        if (!ini || !fin) return '---';
+        const diffMs = fin.getTime() - ini.getTime();
+        return formatBadgeDuration(diffMs);
+      }
     })();
+
+    const totalDiasAreaDisplay = (function() {
+      if (!needsEncargado) {
+        // Para procesos sin encargado: calcular duración total
+        const ini = toDateObject(data.fecha_inicio);
+        
+        // Si no hay fecha fin, contar hasta hoy (dinámico)
+        if (!fechaFinRaw) {
+          if (!ini) return '---';
+          const diasHabiles = calcularDiasHabilesSync(ini, new Date());
+          return diasHabiles === 0 ? '0 días' : `${diasHabiles} día${diasHabiles !== 1 ? 's' : ''}`;
+        }
+        
+        // Si hay fecha fin, contar hasta esa fecha (estático)
+        const fin = toDateObject(fechaFinRaw);
+        if (!ini || !fin) return '---';
+        const diasHabiles = calcularDiasHabilesSync(ini, fin);
+        return diasHabiles === 0 ? '0 días' : `${diasHabiles} día${diasHabiles !== 1 ? 's' : ''}`;
+      }
+
+      // Para procesos con encargado: calcular suma de asignación + duración en área
+      const ini = toDateObject(data.fecha_inicio);
+      const asg = toDateObject(data.fecha_de_asignacion_encargado);
+      
+      let fin;
+      // Si no hay fecha fin, usar hoy (dinámico)
+      if (!fechaFinRaw) {
+        fin = new Date();
+      } else {
+        fin = toDateObject(fechaFinRaw);
+      }
+      
+      if (!ini || !fin) {
+        return totalDiasArea === null ? '---' : (totalDiasArea === 0 ? '0 días' : `${totalDiasArea} día${totalDiasArea !== 1 ? 's' : ''}`);
+      }
+
+      // Si hay encargado asignado, contar desde asignación; sino desde inicio
+      const inicioCalculo = asg || ini;
+      const diasTotales = calcularDiasHabilesSync(inicioCalculo, fin);
+      return diasTotales === 0 ? '0 días' : `${diasTotales} día${diasTotales !== 1 ? 's' : ''}`;
+    })();
+
     const tiempoCompletadoDisplay = (function() {
       if (data.tiempo_transcurrido) return data.tiempo_transcurrido;
-      if (!fechaCompletadoDisplay) return null;
+      
       const ini = toDateObject(data.fecha_inicio);
-      const fin = toDateObject(fechaCompletadoDisplay);
-      if (!ini || !fin) return null;
-      return formatDurationHuman(Math.max(0, fin.getTime() - ini.getTime()));
+      if (!ini) return null;
+      
+      let fin;
+      // Si no hay fecha completado, usar hoy (dinámico)
+      if (!fechaCompletadoDisplay) {
+        fin = new Date();
+      } else {
+        fin = toDateObject(fechaCompletadoDisplay);
+        if (!fin) return null;
+      }
+      
+      const diasHabiles = calcularDiasHabilesSync(ini, fin);
+      return diasHabiles === 0 ? '0 días' : `${diasHabiles} día${diasHabiles !== 1 ? 's' : ''}`;
     })();
 
     // SOLO generar botones si NO es readonly
@@ -2760,12 +2072,12 @@ const trackingTableStyles = `
 
           <div class="tracking-area-v2-footer">
             <div class="tracking-area-v2-status">
-              <span class="tracking-days-badge ${data.esta_activo ? '' : 'tracking-days-badge-zero'}">${data.estado}</span>
+              <span class="tracking-days-badge ${estaActivoDisplay ? '' : 'tracking-days-badge-zero'}">${estadoDisplay}</span>
             </div>
             <div class="tracking-area-v2-actions">${accionesHtml}</div>
             <div class="tracking-area-v2-total-days">
               <span class="tracking-area-v2-total-label">Total Días:</span>
-              <span class="tracking-area-v2-total-value">${totalDiasArea === null ? '---' : totalDiasArea}</span>
+              <span class="tracking-area-v2-total-value">${totalDiasAreaDisplay}</span>
             </div>
           </div>
         </div>
@@ -2783,6 +2095,12 @@ const trackingTableStyles = `
               <div class="tracking-area-v2-label">Fecha de llegada:</div>
               <div class="tracking-area-v2-pill">${fechaLlegada}</div>
             </div>
+            ${!data.encargado || data.encargado.trim() === '' ? `
+            <div class="tracking-area-v2-field tracking-area-v2-field-right">
+              <div class="tracking-area-v2-label">Fecha fin</div>
+              <div class="tracking-area-v2-pill">${fechaFin}</div>
+            </div>
+            ` : `
             <div class="tracking-area-v2-field">
               <div class="tracking-area-v2-label">Fecha de asignación de ${String(area).toLowerCase()}:</div>
               <div class="tracking-area-v2-pill">${fechaAsignacion}</div>
@@ -2791,10 +2109,12 @@ const trackingTableStyles = `
               <div class="tracking-area-v2-label">Duración asignación de ${String(area).toLowerCase()}:</div>
               <div class="tracking-area-v2-badge">${duracionAsignacion}</div>
             </div>
+            `}
           </div>
 
           <div class="tracking-area-v2-row">
-            ${data.hide_encargado ? '' : `
+            ${!data.encargado || data.encargado.trim() === '' ? '' : `
+            ${shouldHideEncargado || data.hide_encargado ? '' : `
             <div class="tracking-area-v2-field">
               <div class="tracking-area-v2-label">Encargado:</div>
               <div class="tracking-area-v2-pill">${data.encargado || '---'}</div>
@@ -2808,16 +2128,17 @@ const trackingTableStyles = `
               <div class="tracking-area-v2-label">Duración en ${area}</div>
               <div class="tracking-area-v2-badge">${duracionEnArea}</div>
             </div>
+            `}
           </div>
 
           <div class="tracking-area-v2-footer">
             <div class="tracking-area-v2-status">
-              <span class="tracking-days-badge ${data.esta_activo ? '' : 'tracking-days-badge-zero'}">${data.estado}</span>
+              <span class="tracking-days-badge ${estaActivoDisplay ? '' : 'tracking-days-badge-zero'}">${estadoDisplay}</span>
             </div>
             <div class="tracking-area-v2-actions">${accionesHtml}</div>
             <div class="tracking-area-v2-total-days">
               <span class="tracking-area-v2-total-label">Total Días:</span>
-              <span class="tracking-area-v2-total-value">${totalDiasArea === null ? '---' : totalDiasArea}</span>
+              <span class="tracking-area-v2-total-value">${totalDiasAreaDisplay}</span>
             </div>
           </div>
         </div>
@@ -2827,57 +2148,10 @@ const trackingTableStyles = `
     return card;
   }
 
-  // Crear tarjeta de seguimiento
-  function createSeguimientoCard(tipo, data) {
-    const card = document.createElement('div');
-    card.className = 'tracking-area-card';
-    
-    const statusClass = data.tiene_disponibles ? 'pending' : 'completed';
-    const statusText = data.tiene_disponibles ? 'En Progreso' : 'Completado';
-    
-    card.innerHTML = `
-      <div class="tracking-area-name">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-        </svg>
-        ${tipo}
-      </div>
-      <div class="tracking-area-details">
-        <div class="tracking-detail-row">
-          <span class="tracking-detail-label">Consecutivo Actual</span>
-          <span class="tracking-detail-value">${data.consecutivo_actual}</span>
-        </div>
-        <div class="tracking-detail-row">
-          <span class="tracking-detail-label">Consecutivo Inicial</span>
-          <span class="tracking-detail-value">${data.consecutivo_inicial}</span>
-        </div>
-        <div class="tracking-detail-row">
-          <span class="tracking-detail-label">Siguiente Consecutivo</span>
-          <span class="tracking-detail-value">${data.siguiente_consecutivo}</span>
-        </div>
-        <div class="tracking-detail-row">
-          <span class="tracking-detail-label">Estado</span>
-          <span class="tracking-detail-value">
-            <span class="tracking-days-badge ${data.tiene_disponibles ? '' : 'tracking-days-badge-zero'}">
-              ${statusText}
-            </span>
-          </span>
-        </div>
-        ${data.notas ? `
-        <div class="tracking-detail-row">
-          <span class="tracking-detail-label">Notas</span>
-          <span class="tracking-detail-value">${data.notas}</span>
-        </div>
-        ` : ''}
-      </div>
-    `;
-    
-    return card;
-  }
-
   // Obtener SVG del icono
   function getIconSvg(iconName) {
     const icons = {
+      // Iconos genéricos existentes
       'description': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>',
       'inventory_2': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"></path></svg>',
       'content_cut': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"></circle><circle cx="18" cy="18" r="3"></circle><path d="M20.41 3.59l-7.06 7.06a2 2 0 01-2.83 0l-2.12-2.12a2 2 0 010-2.83l7.06-7.06a2 2 0 012.83 0l2.12 2.12a2 2 0 010 2.83z"></path></svg>',
@@ -2887,15 +2161,21 @@ const trackingTableStyles = `
       'checkroom': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7l-10-5z"></path><path d="M12 22V12"></path></svg>',
       'construction': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 21l6-6m0 0V9m0 6h6m-6-6l6-6m6 0l6 6m0 0v6m0-6h-6m6 6l-6 6"></path></svg>',
       'local_laundry_service': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7l-10-5z"></path><circle cx="12" cy="13" r="4"></circle></svg>',
-      'handyman': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v7m0 0l3-3m-3 3l-3-3"></path><path d="M12 22v-7m0 0l3 3m-3-3l-3 3"></path><path d="M2 12h7m0 0l-3-3m3 3l-3 3"></path><path d="M22 12h-7m0 0l3-3m-3 3l3 3"></path></svg>',
-      'verified': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
-      'local_shipping': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><polyline points="14,2 14,8 20,8"></polyline><line x1="16" y1="13" x2="16" y2="21"></line><line x1="8" y1="13" x2="8" y2="21"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>',
-      'directions_car': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17l2-2h8l2 2M5 7l2 2h8l2-2"></path><path d="M7 12h10"></path></svg>',
-      'highlight': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11H3m6 0v6m0-6l-6 6m12 0h6m-6 0v6m0-6l6 6"></path></svg>',
-      'search': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>'
+      
+      // Iconos específicos para áreas
+      'Corte': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 7a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M3 17a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M8.6 8.6l10.4 10.4" /><path d="M8.6 15.4l10.4 -10.4" /></svg>',
+      'Bordado': '<svg viewBox="0 0 24 24" fill="currentColor"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 2c5.498 0 10 4.002 10 9c0 1.351 -.6 2.64 -1.654 3.576c-1.03 .914 -2.412 1.424 -3.846 1.424h-2.516a1 1 0 0 0 -.5 1.875a1 1 0 0 1 .194 .14a2.3 2.3 0 0 1 -1.597 3.99l-.156 -.009l.068 .004l-.273 -.004c-5.3 -.146 -9.57 -4.416 -9.716 -9.716l-.004 -.28c0 -5.523 4.477 -10 10 -10m-3.5 6.5a2 2 0 0 0 -1.995 1.85l-.005 .15a2 2 0 1 0 2 -2m8 0a2 2 0 0 0 -1.995 1.85l-.005 .15a2 2 0 1 0 2 -2m-4 -3a2 2 0 0 0 -1.995 1.85l-.005 .15a2 2 0 1 0 2 -2" /></svg>',
+      'Estampado': '<svg viewBox="0 0 24 24" fill="currentColor"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 2c5.498 0 10 4.002 10 9c0 1.351 -.6 2.64 -1.654 3.576c-1.03 .914 -2.412 1.424 -3.846 1.424h-2.516a1 1 0 0 0 -.5 1.875a1 1 0 0 1 .194 .14a2.3 2.3 0 0 1 -1.597 3.99l-.156 -.009l.068 .004l-.273 -.004c-5.3 -.146 -9.57 -4.416 -9.716 -9.716l-.004 -.28c0 -5.523 4.477 -10 10 -10m-3.5 6.5a2 2 0 0 0 -1.995 1.85l-.005 .15a2 2 0 1 0 2 -2m8 0a2 2 0 0 0 -1.995 1.85l-.005 .15a2 2 0 1 0 2 -2m-4 -3a2 2 0 0 0 -1.995 1.85l-.005 .15a2 2 0 1 0 2 -2" /></svg>',
+      'Costura': '<svg viewBox="0 0 24 24" fill="currentColor"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14.883 3.007l.095 -.007l.112 .004l.113 .017l.113 .03l6 2a1 1 0 0 1 .677 .833l.007 .116v5a1 1 0 0 1 -.883 .993l-.117 .007h-2v7a2 2 0 0 1 -1.85 1.995l-.15 .005h-10a2 2 0 0 1 -1.995 -1.85l-.005 -.15v-7h-2a1 1 0 0 1 -.993 -.883l-.007 -.117v-5a1 1 0 0 1 .576 -.906l.108 -.043l6 -2a1 1 0 0 1 1.316 .949a2 2 0 0 0 3.995 .15l.009 -.24l.017 -.113l.037 -.134l.044 -.103l.05 -.092l.068 -.093l.069 -.08c.056 -.054 .113 -.1 .175 -.14l.096 -.053l.103 -.044l.108 -.032l.112 -.02z" /></svg>',
+      'Taller': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21h18"/><path d="M5.5 21l-1.5 -6l6 -1"/><path d="M18.5 21l1.5 -6l-6 -1"/><path d="M8 12l4 -4l4 4"/><path d="M12 8v13"/></svg>',
+      'Lavandería': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/><path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M12 3v6"/></svg>',
+      'Control de Calidad': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 12l5 5l10 -10"/></svg>',
+      'Despacho': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 2l8 4.5v9l-8 4.5l-8 -4.5v-9z"/><path d="M12 12l8 -4.5"/><path d="M12 12v9"/><path d="M12 12l-8 -4.5"/></svg>',
+      'Entrega': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 21l-8 -4.5v-9l8 -4.5l8 4.5v4.5" /><path d="M12 12l8 -4.5" /><path d="M12 12v9" /><path d="M12 12l-8 -4.5" /><path d="M15 18h7" /><path d="M19 15l3 3l-3 3" /></svg>',
+      'Insumos': '<svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><line x1="20" y1="140" x2="180" y2="140" /><line x1="20" y1="40" x2="20" y2="140" /><line x1="20" y1="40" x2="60" y2="40" /><circle cx="60" cy="170" r="15" /><circle cx="140" cy="170" r="15" /><rect x="40" y="90" width="50" height="40" /><rect x="55" y="90" width="20" height="10" /><rect x="100" y="90" width="50" height="40" /><rect x="115" y="90" width="20" height="10" /><rect x="75" y="50" width="50" height="40" /><rect x="90" y="50" width="20" height="10" /></svg>'
     };
     
-    return icons[iconName] || icons.description;
+    return icons[iconName] || icons['description'];
   }
 
   // Mostrar vista de prendas (cerrar modal de seguimiento y volver a prendas)
@@ -3014,36 +2294,171 @@ const trackingTableStyles = `
     }
   }
 
-  // Conteo de días hábiles simple (misma idea que la tabla: empieza al día siguiente y no cuenta fines de semana)
-  function calcularDiasHabilesSimple(inicio, fin) {
-    if (window.calcularDiasHabilesSimple && window.calcularDiasHabilesSimple !== calcularDiasHabilesSimple) {
-      return window.calcularDiasHabilesSimple(inicio, fin);
+  // Cache para festivos por año
+  const festivosCache = new Map();
+
+  // Obtener festivos desde la API (con cache)
+  async function obtenerFestivos(anio) {
+    if (festivosCache.has(anio)) {
+      return festivosCache.get(anio);
     }
-    if (!inicio || !fin) return 0;
-    const start = inicio instanceof Date ? inicio : new Date(inicio);
-    const end = fin instanceof Date ? fin : new Date(fin);
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0;
-    if (end.getTime() <= start.getTime()) return 0;
 
-    const current = new Date(start.getTime());
-    current.setDate(current.getDate() + 1);
+    try {
+      const response = await fetch(`/api/festivos?year=${anio}`);
+      if (!response.ok) throw new Error('Error al obtener festivos');
+      
+      const data = await response.json();
+      if (data.success && data.data) {
+        festivosCache.set(anio, data.data);
+        return data.data;
+      }
+      
+      // Fallback: festivos fijos colombianos si la API falla
+      const festivosFijos = [
+        `${anio}-01-01`, // Año Nuevo
+        `${anio}-05-01`, // Día del Trabajo
+        `${anio}-07-01`, // Día de la Independencia
+        `${anio}-07-20`, // Grito de Independencia
+        `${anio}-08-07`, // Batalla de Boyacá
+        `${anio}-12-08`, // Inmaculada Concepción
+        `${anio}-12-25`, // Navidad
+      ];
+      
+      festivosCache.set(anio, festivosFijos);
+      return festivosFijos;
+    } catch (error) {
+      console.warn('[obtenerFestivos] Error obteniendo festivos, usando fallback:', error);
+      
+      // Fallback: festivos fijos colombianos
+      const festivosFijos = [
+        `${anio}-01-01`, // Año Nuevo
+        `${anio}-05-01`, // Día del Trabajo
+        `${anio}-07-01`, // Día de la Independencia
+        `${anio}-07-20`, // Grito de Independencia
+        `${anio}-08-07`, // Batalla de Boyacá
+        `${anio}-12-08`, // Inmaculada Concepción
+        `${anio}-12-25`, // Navidad
+      ];
+      
+      festivosCache.set(anio, festivosFijos);
+      return festivosFijos;
+    }
+  }
 
-    let totalDays = 0;
-    let iterations = 0;
-    const maxIterations = 3660;
+  // Calcular días hábiles entre dos fechas (replicando lógica exacta del backend)
+  async function calcularDiasHabiles(fechaInicio, fechaFin) {
+    if (!fechaInicio || !fechaFin) return 0;
 
-    while (current.getTime() <= end.getTime() && iterations < maxIterations) {
-      const day = current.getDay();
-      const isWeekend = day === 0 || day === 6;
-      if (!isWeekend) {
-        totalDays++;
+    const inicio = fechaInicio instanceof Date ? fechaInicio : new Date(fechaInicio);
+    const fin = fechaFin instanceof Date ? fechaFin : new Date(fechaFin);
+
+    // Validar fechas
+    if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return 0;
+    if (fin < inicio) return 0;
+    
+    // Si las fechas son iguales, retornar 0 (no cuenta el mismo día)
+    if (inicio.toDateString() === fin.toDateString()) return 0;
+
+    try {
+      // Obtener festivos del año de inicio
+      let festivos = await obtenerFestivos(inicio.getFullYear());
+      
+      // Agregar festivos del siguiente año si es necesario
+      if (fin.getFullYear() > inicio.getFullYear()) {
+        const festivosSiguiente = await obtenerFestivos(fin.getFullYear());
+        festivos = [...festivos, ...festivosSiguiente];
       }
 
-      current.setDate(current.getDate() + 1);
-      iterations++;
+      let diasHabiles = 0;
+      const actual = new Date(inicio);
+      
+      // Iterar desde la fecha de inicio hasta la fecha fin (inclusive)
+      while (actual <= fin) {
+        // Verificar si no es sábado (6) ni domingo (0)
+        if (actual.getDay() !== 0 && actual.getDay() !== 6) {
+          // Verificar si no es festivo
+          const fechaStr = actual.toISOString().slice(0, 10);
+          if (!festivos.includes(fechaStr)) {
+            diasHabiles++;
+          }
+        }
+        
+        actual.setDate(actual.getDate() + 1);
+      }
+
+      // Restar 1 porque no se cuenta el día de inicio (igual que backend)
+      return Math.max(0, diasHabiles - 1);
+    } catch (error) {
+      console.error('[calcularDiasHabiles] Error:', error);
+      // Fallback a cálculo simple sin festivos
+      return calcularDiasHabilesSimple(fechaInicio, fechaFin);
+    }
+  }
+
+  // Versión síncrona para compatibilidad (usa cache o fallback)
+  function calcularDiasHabilesSync(fechaInicio, fechaFin) {
+    if (!fechaInicio || !fechaFin) return 0;
+
+    const inicio = fechaInicio instanceof Date ? fechaInicio : new Date(fechaInicio);
+    const fin = fechaFin instanceof Date ? fechaFin : new Date(fechaFin);
+
+    // Validar fechas
+    if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return 0;
+    if (fin < inicio) return 0;
+    
+    // Si las fechas son iguales, retornar 0 (no cuenta el mismo día)
+    if (inicio.toDateString() === fin.toDateString()) return 0;
+
+    // Usar festivos del cache si están disponibles, sino usar fallback
+    const anio = inicio.getFullYear();
+    let festivos = festivosCache.get(anio);
+    
+    if (!festivos) {
+      // Fallback: festivos fijos colombianos
+      festivos = [
+        `${anio}-01-01`, // Año Nuevo
+        `${anio}-05-01`, // Día del Trabajo
+        `${anio}-07-01`, // Día de la Independencia
+        `${anio}-07-20`, // Grito de Independencia
+        `${anio}-08-07`, // Batalla de Boyacá
+        `${anio}-12-08`, // Inmaculada Concepción
+        `${anio}-12-25`, // Navidad
+      ];
     }
 
-    return Math.max(0, totalDays);
+    // Agregar festivos del siguiente año si es necesario
+    if (fin.getFullYear() > inicio.getFullYear()) {
+      const festivosSiguiente = festivosCache.get(fin.getFullYear()) || [
+        `${fin.getFullYear()}-01-01`,
+        `${fin.getFullYear()}-05-01`,
+        `${fin.getFullYear()}-07-01`,
+        `${fin.getFullYear()}-07-20`,
+        `${fin.getFullYear()}-08-07`,
+        `${fin.getFullYear()}-12-08`,
+        `${fin.getFullYear()}-12-25`,
+      ];
+      festivos = [...festivos, ...festivosSiguiente];
+    }
+
+    let diasHabiles = 0;
+    const actual = new Date(inicio);
+    
+    // Iterar desde la fecha de inicio hasta la fecha fin (inclusive)
+    while (actual <= fin) {
+      // Verificar si no es sábado (6) ni domingo (0)
+      if (actual.getDay() !== 0 && actual.getDay() !== 6) {
+        // Verificar si no es festivo
+        const fechaStr = actual.toISOString().slice(0, 10);
+        if (!festivos.includes(fechaStr)) {
+          diasHabiles++;
+        }
+      }
+      
+      actual.setDate(actual.getDate() + 1);
+    }
+
+    // Restar 1 porque no se cuenta el día de inicio (igual que backend)
+    return Math.max(0, diasHabiles - 1);
   }
 
   function formatDurationHuman(diffMs) {
@@ -3101,7 +2516,12 @@ const trackingTableStyles = `
         return;
       }
 
-      if (!encargado.trim()) {
+      // Validar encargado solo para áreas que lo requieren
+      const areaLower = area.toLowerCase();
+      const needsEncargado = ['corte', 'costura', 'control de calidad'];
+      const areaRequiresEncargado = needsEncargado.some(reqArea => areaLower.includes(reqArea));
+      
+      if (areaRequiresEncargado && !encargado.trim()) {
         showError('Por favor ingresa el nombre del encargado');
         // Ocultar indicador de carga
         if (btnContent && btnLoading && btnConfirm) {
@@ -3163,7 +2583,31 @@ const trackingTableStyles = `
       });
 
       if (!response.ok) {
-        throw new Error('Error al agregar proceso');
+        // Intentar obtener más información del error
+        const errorText = await response.text();
+        console.error('[handleAgregarProceso] Error response:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText.substring(0, 500) // Primeros 500 caracteres
+        });
+        
+        // Si es HTML, probablemente es un error de Laravel
+        if (errorText.includes('<!DOCTYPE html>') || errorText.includes('<html')) {
+          throw new Error('Error del servidor. Posiblemente un error de validación o permisos.');
+        }
+        
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      // Verificar que la respuesta sea JSON antes de parsear
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const responseText = await response.text();
+        console.error('[handleAgregarProceso] Respuesta no es JSON:', {
+          contentType: contentType,
+          body: responseText.substring(0, 500)
+        });
+        throw new Error('El servidor devolvió una respuesta inesperada. Contacte al administrador.');
       }
 
       const result = await response.json();
@@ -3212,7 +2656,14 @@ const trackingTableStyles = `
 
     } catch (error) {
       console.error('[handleAgregarProceso] Error:', error);
-      showError('Error al agregar proceso: ' + error.message);
+      
+      // Manejar específicamente errores de JSON
+      if (error instanceof SyntaxError && error.message.includes('JSON')) {
+        console.error('[handleAgregarProceso] Error de JSON - el servidor devolvió HTML en lugar de JSON');
+        showError('Error del servidor: La respuesta no es válida. Posiblemente un error de permisos o validación.');
+      } else {
+        showError('Error al agregar proceso: ' + error.message);
+      }
     } finally {
       // Ocultar indicador de carga
       const btnContent = document.getElementById('addProcesoButtonContent');
@@ -3247,5 +2698,3 @@ const trackingTableStyles = `
   } else {
     initTrackingModalListeners();
   }
-
-})();

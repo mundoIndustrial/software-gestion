@@ -71,10 +71,18 @@ class PasarACosturaUseCase
             );
 
             if ($procesoExistente) {
-                $this->procesos->update($procesoExistente, [
+                // Registrar fecha de asignación si el encargado cambia o si no tenía fecha
+                $datosActualizacion = [
                     'encargado' => $cmd->encargado,
                     'estado_proceso' => $procesoExistente->estado_proceso === 'Pendiente' ? 'En Progreso' : $procesoExistente->estado_proceso,
-                ]);
+                ];
+                
+                // Solo registrar fecha_de_asignacion_encargado si el encargado cambia o si no tenía fecha previa
+                if (trim($procesoExistente->encargado ?? '') !== trim($cmd->encargado) || !$procesoExistente->fecha_de_asignacion_encargado) {
+                    $datosActualizacion['fecha_de_asignacion_encargado'] = now();
+                }
+                
+                $this->procesos->update($procesoExistente, $datosActualizacion);
                 $nuevoProceso = $procesoExistente;
             } else {
                 $nuevoProceso = $this->procesos->create([
@@ -84,6 +92,7 @@ class PasarACosturaUseCase
                     'proceso' => 'Costura',
                     'fecha_inicio' => now(),
                     'encargado' => $cmd->encargado,
+                    'fecha_de_asignacion_encargado' => now(),
                     'estado_proceso' => 'En Progreso',
                     'codigo_referencia' => 'COS-' . $recibo->consecutivo_actual . '-' . date('YmdHis'),
                 ]);

@@ -45,9 +45,16 @@ final class GuardarProcesoSeguimientoUseCase
         );
 
         if ($procesoExistente) {
+            $encargadoAnterior = (string) ($procesoExistente->encargado ?? '');
+            $encargadoNuevo    = (string) ($dto->encargado ?? '');
+
             $procesoExistente->estado_proceso = $dto->estado;
             $procesoExistente->encargado      = $dto->encargado;
             $procesoExistente->observaciones  = $dto->observaciones ?? $procesoExistente->observaciones;
+
+            if ($encargadoNuevo !== '' && $encargadoNuevo !== $encargadoAnterior) {
+                $procesoExistente->fecha_de_asignacion_encargado = now();
+            }
             $this->procesosRepo->guardar($procesoExistente);
             $proceso = $procesoExistente;
             $accion  = 'actualizado';
@@ -59,6 +66,7 @@ final class GuardarProcesoSeguimientoUseCase
                 'fecha_inicio'      => now(),
                 'estado_proceso'    => $dto->estado,
                 'encargado'         => $dto->encargado,
+                'fecha_de_asignacion_encargado' => ((string) ($dto->encargado ?? '')) !== '' ? now() : null,
                 'observaciones'     => $dto->observaciones,
                 'codigo_referencia' => $this->generarCodigoReferencia($dto->area, $dto->prendaId),
             ]);

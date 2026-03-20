@@ -6,6 +6,7 @@
 
 @section('content')
 <link rel="stylesheet" href="{{ asset('css/insumos/materiales.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('css/tracking-modal.css') }}?v={{ time() }}">
 {{-- Todos los estilos CSS extraídos a public/css/insumos/materiales.css --}}
 
 @if(app()->isLocal())

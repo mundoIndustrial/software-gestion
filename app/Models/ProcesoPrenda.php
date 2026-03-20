@@ -22,6 +22,7 @@ class ProcesoPrenda extends Model
         'fecha_fin',
         'dias_duracion',
         'encargado',
+        'fecha_de_asignacion_encargado',
         'estado_proceso',
         'observaciones',
         'novedades',
@@ -31,6 +32,7 @@ class ProcesoPrenda extends Model
     protected $casts = [
         'fecha_inicio' => 'datetime',
         'fecha_fin' => 'datetime',
+        'fecha_de_asignacion_encargado' => 'datetime',
     ];
 
     /**

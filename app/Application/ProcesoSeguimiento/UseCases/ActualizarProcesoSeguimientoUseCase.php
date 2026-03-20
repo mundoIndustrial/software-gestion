@@ -29,11 +29,18 @@ final class ActualizarProcesoSeguimientoUseCase
     {
         $proceso = ProcesoPrenda::findOrFail($dto->procesoId);
 
+        $encargadoAnterior = (string) ($proceso->encargado ?? '');
+        $encargadoNuevo    = (string) ($dto->encargado ?? '');
+
         // ── 1. Actualizar campos ───────────────────────────────────────────
         $proceso->proceso         = $dto->area;
         $proceso->estado_proceso  = $dto->estado;
         $proceso->encargado       = $dto->encargado;
         $proceso->observaciones   = $dto->observaciones;
+
+        if ($encargadoNuevo !== '' && $encargadoNuevo !== $encargadoAnterior) {
+            $proceso->fecha_de_asignacion_encargado = now();
+        }
 
         if ($dto->fechaInicio) {
             $proceso->fecha_inicio = $dto->fechaInicio;

@@ -1876,6 +1876,7 @@ class RegistroOrdenQueryController extends Controller
                         'fecha_fin' => $proceso->fecha_fin,
                         'fecha_completado' => $fechaCompletadoArea,
                         'encargado' => $proceso->encargado,
+                        'fecha_de_asignacion_encargado' => $proceso->fecha_de_asignacion_encargado,
                         'observaciones' => $proceso->observaciones,
                         'codigo_referencia' => $proceso->codigo_referencia,
                         'dias_duracion' => $proceso->dias_duracion,

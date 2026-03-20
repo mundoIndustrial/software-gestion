@@ -324,3 +324,55 @@
         </div>
     </div>
 </div>
+
+<script>
+// Función para mostrar/ocultar el campo de encargado según el área seleccionada
+function toggleEncargadoField() {
+    const selectArea = document.getElementById('procesoArea');
+    const encargadoGroup = document.querySelector('.add-proceso-form-group:has(#procesoEncargado)');
+    
+    if (!selectArea || !encargadoGroup) return;
+    
+    const selectedArea = (selectArea.value || '').toLowerCase();
+    
+    // Áreas que requieren encargado
+    const needsEncargado = ['corte', 'costura', 'control de calidad'];
+    
+    if (needsEncargado.some(area => selectedArea.includes(area))) {
+        encargadoGroup.style.display = 'block';
+        // Hacer el campo obligatorio si el área lo requiere
+        document.getElementById('procesoEncargado').required = true;
+    } else {
+        encargadoGroup.style.display = 'none';
+        // Hacer el campo opcional si el área no lo requiere
+        document.getElementById('procesoEncargado').required = false;
+        document.getElementById('procesoEncargado').value = '';
+    }
+}
+
+// Inicializar el evento change cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    const selectArea = document.getElementById('procesoArea');
+    if (selectArea) {
+        selectArea.addEventListener('change', toggleEncargadoField);
+        // Ejecutar la función al cargar para establecer el estado inicial
+        toggleEncargadoField();
+    }
+});
+
+// También ejecutar cuando se abre el modal desde un área específica
+if (typeof window.abrirModalAgregarProcesoDesdeArea !== 'undefined') {
+    const originalFunction = window.abrirModalAgregarProcesoDesdeArea;
+    window.abrirModalAgregarProcesoDesdeArea = function(areaSeleccionada, pedidoId, prendaId) {
+        // Llamar a la función original
+        if (originalFunction) {
+            originalFunction(areaSeleccionada, pedidoId, prendaId);
+        }
+        
+        // Esperar un poco a que el modal se abra y luego ejecutar la función
+        setTimeout(function() {
+            toggleEncargadoField();
+        }, 100);
+    };
+}
+</script>

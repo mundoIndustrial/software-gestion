@@ -36,6 +36,7 @@
 @push('styles')
 <!-- Styles Component -->
 <x-recibos.recibos-costura-styles />
+<link rel="stylesheet" href="{{ asset('css/tracking-modal.css') }}?v={{ time() }}">
 
 <!-- Estilos adicionales para el modal de agregar proceso -->
 <style>
@@ -1065,7 +1066,12 @@ async function handleAgregarProcesoDesdeBadge() {
             return;
         }
 
-        if (!encargado.trim()) {
+        // Validar encargado solo para áreas que lo requieren
+        const areaLower = area.toLowerCase();
+        const needsEncargado = ['corte', 'costura', 'control de calidad'];
+        const areaRequiresEncargado = needsEncargado.some(reqArea => areaLower.includes(reqArea));
+        
+        if (areaRequiresEncargado && !encargado.trim()) {
             showError('Por favor ingresa el nombre del encargado');
             // Ocultar indicador de carga
             if (btnContent && btnLoading && btnConfirm) {

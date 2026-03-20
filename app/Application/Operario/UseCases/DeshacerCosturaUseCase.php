@@ -70,6 +70,7 @@ class DeshacerCosturaUseCase
 
             $this->procesos->update($procesoCostura, [
                 'encargado' => null,
+                'fecha_de_asignacion_encargado' => null,
                 'estado_proceso' => 'Pendiente',
             ]);
 
@@ -80,6 +81,8 @@ class DeshacerCosturaUseCase
                 'prenda_id' => $cmd->prendaId,
                 'proceso_id' => $procesoCostura->id,
                 'area_mantenida' => 'Costura',
+                'encargado_eliminado' => true,
+                'fecha_asignacion_eliminada' => true,
                 'usuario_id' => auth()->id(),
             ]);
 
