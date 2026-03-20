@@ -225,10 +225,8 @@ class PedidosRealtimeRefresh {
                 // Asesores: usar canal privado
                 const userId = document.querySelector('meta[name="user-id"]')?.getAttribute('content');
                 if (!userId) {
-                    console.warn('[PedidosRealtime] User ID no encontrado, WebSocket desactivado');
-                    this.usingWebSockets = false;
-                    this.startPollingFallback();
-                    return;
+                    console.error('[PedidosRealtime] User ID no encontrado, WebSocket desactivado');
+                    throw new Error('User ID no encontrado para suscripción privada');
                 }
 
                 if (this.debug) console.log('🔌 [PedidosRealtime] Configurando asesores - canal privado');
@@ -248,17 +246,16 @@ class PedidosRealtimeRefresh {
                     if (this.debug) console.log('✅ WebSocket activo para asesores');
                 } catch (error) {
                     console.error('[PedidosRealtime] Error en suscripción privada:', error);
-                    this.usingWebSockets = false;
-                    this.startPollingFallback();
+                    throw error;
                 }
 
             } catch (error) {
-                console.error('[PedidosRealtime] WebSocket setup failed:', error.message);
+                console.error('[PedidosRealtime] WebSocket setup failed - CRITICO:', error.message);
                 this.usingWebSockets = false;
                 if (this.uiUpdate) {
-                    this.uiUpdate.showConnectionIndicator('WebSocket Error', 'error');
+                    this.uiUpdate.showConnectionIndicator('WebSocket Error - Realtime no disponible', 'error');
                 }
-                this.startPollingFallback();
+                throw error; // Propagar el error, no permitir fallback
             }
         });
     }
@@ -305,96 +302,10 @@ class PedidosRealtimeRefresh {
         if (this.debug) console.log(` [PedidosRealtime]  Iniciando monitoreo`);
         this.isRunning = true;
         
-        // Solo iniciar polling si WebSockets no está disponible
-        if (!this.usingWebSockets) {
-            if (this.debug) console.log(' [PedidosRealtime] WebSockets no disponible, usando polling fallback');
-            this.startPollingFallback();
-        } else {
-            if (this.debug) console.log(' [PedidosRealtime] Usando WebSockets, sin polling necesario');
-        }
+        if (this.debug) console.log(' [PedidosRealtime] Usando WebSockets exclusivamente (sin polling)');
     }
     
-    /**
-     * Sistema de polling fallback SOLO cuando WebSockets fallan
-     * @version 2.0 (Phase 5: Uses window.shared.cache.getOrFetch for centralized caching)
-     */
-    startPollingFallback() {
-        if (!this.isRunning || this.usingWebSockets) {
-            return; // No usar polling si WebSockets funciona
-        }
-        
-        if (this.debug) {
-            console.log('⚠️ [PedidosRealtime] Iniciando polling fallback cada', this.checkInterval, 'ms');
-            console.log('⚠️ [PedidosRealtime] API URL:', this.getApiUrl());
-        }
-        
-        const checkForUpdates = async () => {
-            // Solo ejecutar si está activo y WebSockets no funciona
-            if (!this.isRunning || !PedidosRealtimeRefresh.instance || this.usingWebSockets) {
-                return;
-            }
-            
-            if (this.debug) console.log('⚠️ [PedidosRealtime] Verificando cambios vía polling...');
-            
-            try {
-                const cache = window.shared?.cache;
-                if (!cache) {
-                    console.warn('[PedidosRealtime] Cache no disponible, usando fetch directo');
-                    // Fallback a fetch si cache no está disponible
-                    const response = await fetch(this.getApiUrl(), {
-                        method: 'GET',
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                    });
-                    
-                    if (!response.ok) {
-                        console.error('[PedidosRealtime] API error:', response.status);
-                        return;
-                    }
-                    
-                    const data = await response.json();
-                    if (data && data.data) {
-                        await this.checkForChanges(data.data);
-                    }
-                    return;
-                }
 
-                // Usar centralized cache con TTL = checkInterval
-                const cacheKey = `pedidos-polling-${this.isCarteraPage ? 'cartera' : 'asesores'}`;
-                const cachedData = await cache.getOrFetch(
-                    cacheKey,
-                    async () => {
-                        const response = await fetch(this.getApiUrl(), {
-                            method: 'GET',
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        });
-                        
-                        if (!response.ok) {
-                            throw new Error(`API error ${response.status}`);
-                        }
-                        
-                        const data = await response.json();
-                        return data && data.data ? data.data : [];
-                    },
-                    this.checkInterval // TTL en ms
-                );
-
-                if (cachedData && Array.isArray(cachedData)) {
-                    await this.checkForChanges(cachedData);
-                }
-
-            } catch (error) {
-                if (this.debug) console.error('⚠️ [PedidosRealtime] Polling error:', error.message);
-            }
-            
-            // Programar siguiente verificación solo si WebSockets sigue sin funcionar
-            if (this.isRunning && !this.usingWebSockets) {
-                setTimeout(checkForUpdates, this.checkInterval);
-            }
-        };
-        
-        // Iniciar primera verificación después de 2 segundos
-        setTimeout(checkForUpdates, 2000);
-    }
 
     pause() {
         if (!this.isRunning) return;
