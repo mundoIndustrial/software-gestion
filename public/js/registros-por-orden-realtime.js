@@ -1,42 +1,45 @@
 /**
  * Real-time updates script for registros_por_orden
- * Handles Echo/WebSocket listeners for live updates when orders are edited
+ * Phase 5: DDD WebSocket Abstraction - Handles real-time listeners for live updates when orders are edited
  */
+
+console.log('[REGISTROS-REALTIME] Archivo cargado');
 
 /**
  * Initialize real-time listeners for registros por orden
  */
 function initializeRegistrosPorOrdenRealtimeListeners() {
+    console.log('[REGISTROS-REALTIME] Iniciando escuchadores de registros por orden');
 
-
-
-    if (!window.Echo) {
-
+    // Usar window.waitForEcho para esperar WebSocket
+    if (typeof window.waitForEcho !== 'function') {
+        console.log('[REGISTROS-REALTIME] waitForEcho no disponible, reintentando...');
         setTimeout(initializeRegistrosPorOrdenRealtimeListeners, 500);
         return;
     }
 
+    window.waitForEcho(() => {
+        const ws = window.shared?.websocket;
+        if (!ws) {
+            console.error('[REGISTROS-REALTIME] WebSocket abstraction no disponible');
+            return;
+        }
 
-
-    // Canal de Registros Por Orden
-    const registrosChannel = window.Echo.channel('registros-por-orden');
-
-    registrosChannel.subscribed(() => {
-
-    });
-
-    registrosChannel.error((error) => {
-
-    });
-
-    registrosChannel.listen('RegistrosPorOrdenUpdated', (e) => {
-
+        console.log('[REGISTROS-REALTIME] WebSocket disponible, suscribiendo a canal...');
         
-        // Manejar la actualización de registros
-        handleRegistrosUpdate(e.pedido, e.registros, e.action);
+        try {
+            // Suscribirse a actualizaciones de registros por orden
+            ws.subscribe('registros-por-orden', 'RegistrosPorOrdenUpdated', (event) => {
+                console.log('[REGISTROS-REALTIME] Evento recibido:', event);
+                // Manejar la actualización de registros
+                handleRegistrosUpdate(event.pedido, event.registros, event.action);
+            });
+            
+            console.log('[REGISTROS-REALTIME] ✅ Suscripción exitosa');
+        } catch (error) {
+            console.error('[REGISTROS-REALTIME] Error en suscripción:', error);
+        }
     });
-
-
 }
 
 /**
@@ -160,16 +163,21 @@ function insertRegistroInTable(registro) {
  * Show notification for registros updates
  */
 function showRegistrosNotification(message, type = 'success') {
-    // Remover notificaciones existentes
+    // Intentar usar UIUpdateService si está disponible
+    const uiUpdate = window.shared?.uiUpdate;
+    if (uiUpdate && typeof uiUpdate.showRealtimeToast === 'function') {
+        uiUpdate.showRealtimeToast(message, type);
+        return;
+    }
+
+    // Fallback a implementación local
     const existingNotifications = document.querySelectorAll('.registros-notification');
     existingNotifications.forEach(notification => notification.remove());
 
-    // Crear nueva notificación
     const notification = document.createElement('div');
     notification.className = `registros-notification registros-notification-${type}`;
     notification.textContent = message;
 
-    // Estilos inline
     notification.style.cssText = `
         position: fixed;
         top: 20px;
@@ -186,10 +194,8 @@ function showRegistrosNotification(message, type = 'success') {
         color: white;
     `;
 
-    // Agregar al DOM
     document.body.appendChild(notification);
 
-    // Auto-remover después de 5 segundos
     setTimeout(() => {
         if (notification.parentNode) {
             notification.style.animation = 'slideOutRight 0.3s ease-out';
@@ -226,15 +232,18 @@ style.textContent = `
             transform: translateX(100px);
         }
     }
-`;
+
 document.head.appendChild(style);
 
-// Initialize when DOM is ready
+// Initialize when DOM and WebSocket are ready
+console.log('[REGISTROS-REALTIME] Configurando inicialización...');
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
+        console.log('[REGISTROS-REALTIME] DOM listo, iniciando...');
         setTimeout(initializeRegistrosPorOrdenRealtimeListeners, 100);
     });
 } else {
+    console.log('[REGISTROS-REALTIME] DOM ya listo, iniciando...');
     setTimeout(initializeRegistrosPorOrdenRealtimeListeners, 100);
 }
 

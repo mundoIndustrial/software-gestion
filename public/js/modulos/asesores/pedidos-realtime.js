@@ -43,7 +43,8 @@ class PedidosRealtimeRefresh {
         }
         
         // Service injection from window.shared (DDD pattern)
-        this.uiUpdate = window.shared?.uiUpdate || null;
+        // NOTA: No acceder a window.shared aquí, esperar a initializeServices()
+        this.uiUpdate = null;
         this.activityDetector = null;
         this.channelConfigurator = null;
         
@@ -51,6 +52,13 @@ class PedidosRealtimeRefresh {
     }
 
     init() {
+        // CRÍTICO: Esperar a que window.shared esté disponible (race condition fix)
+        if (!window.shared?.isReady) {
+            if (this.debug) console.log('⏳ [PedidosRealtime] Esperando window.shared.isReady en init...');
+            setTimeout(() => this.init(), 50);
+            return;
+        }
+        
         if (this.debug) console.log('✅ [PedidosRealtime] Sistema inicializado');
         
         // Inyectar y configurar servicios (DDD pattern)
@@ -75,6 +83,13 @@ class PedidosRealtimeRefresh {
      * Inicializar servicios inyectados
      */
     initializeServices() {
+        // Esperar a que window.shared esté disponible (CRÍTICO para evitar race condition)
+        if (!window.shared?.isReady) {
+            if (this.debug) console.log('⏳ [PedidosRealtime] Esperando window.shared.isReady...');
+            setTimeout(() => this.initializeServices(), 50);
+            return;
+        }
+        
         // UIUpdateService para UI updates
         if (!this.uiUpdate && window.shared?.uiUpdate) {
             this.uiUpdate = window.shared.uiUpdate;
@@ -102,6 +117,13 @@ class PedidosRealtimeRefresh {
      * Configurar WebSocket usando abstracción centralizada
      */
     setupWebSocket() {
+        // CRÍTICO: Esperar a que window.shared esté disponible (race condition fix)
+        if (!window.shared?.isReady) {
+            if (this.debug) console.log('⏳ [PedidosRealtime] Esperando window.shared.isReady en setupWebSocket...');
+            setTimeout(() => this.setupWebSocket(), 50);
+            return;
+        }
+        
         if (typeof window.waitForEcho !== 'function') {
             console.warn('[PedidosRealtime] Echo initializer not available, retrying');
             setTimeout(() => this.setupWebSocket(), 100);
@@ -659,17 +681,29 @@ document.addEventListener('DOMContentLoaded', () => {
 if (document.readyState === 'loading') {
     // DOM todavía cargando, esperar evento
 } else {
-    // DOM ya cargado, inicializar inmediatamente
-    if (!window.pedidosRealtimeRefresh) {
-        const realtimeDebug = (
-            window.location.search.includes('realtimeDebug=1') ||
-            window.localStorage?.getItem('realtimeDebug') === '1'
-        );
+    // DOM ya cargado, pero esperar a que window.shared esté disponible
+    function initializePedidosRealtimeIfReady() {
+        if (!window.shared?.isReady) {
+            // window.shared aún no disponible, reintentar
+            setTimeout(initializePedidosRealtimeIfReady, 50);
+            return;
+        }
+        
+        // Ahora sí, crear la instancia
+        if (!window.pedidosRealtimeRefresh) {
+            const realtimeDebug = (
+                window.location.search.includes('realtimeDebug=1') ||
+                window.localStorage?.getItem('realtimeDebug') === '1'
+            );
 
-        window.pedidosRealtimeRefresh = new PedidosRealtimeRefresh({
-            checkInterval: 30000,
-            autoStart: true,
-            debug: realtimeDebug // Activable por querystring/localStorage
-        });
+            window.pedidosRealtimeRefresh = new PedidosRealtimeRefresh({
+                checkInterval: 30000,
+                autoStart: true,
+                debug: realtimeDebug // Activable por querystring/localStorage
+            });
+        }
     }
+    
+    // Ejecutar solo cuando window.shared esté listo
+    initializePedidosRealtimeIfReady();
 }

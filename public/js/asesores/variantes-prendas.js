@@ -1,44 +1,92 @@
 /**
  * Sistema de Variantes de Prendas
  * Integración con formulario de cotización
+ * =====================================================
+ * Usa SessionStorageCacheRepository para caché persistente con TTL
  */
 
 let tiposPrendaCache = [];
 let variacionesCache = {};
 
-/**
- * Inicializar sistema de variantes
- */
-function inicializarVariantes() {
+const TIPOS_PRENDA_TTL = 60 * 60 * 1000;      // 1 hora
+const VARIACIONES_TTL = 30 * 60 * 1000;       // 30 minutos
+const TIPOS_PRENDA_CACHE_KEY = 'tipos_prenda';
+const VARIACIONES_CACHE_KEY_PREFIX = 'variaciones_tipo_';
 
-    cargarTiposPrenda();
+let cacheRepository = null;
+
+/**
+ * Obtiene instancia de SessionStorageCacheRepository
+ * Fallback: null si no está disponible
+ */
+function _getCacheRepository() {
+    if (!cacheRepository && window.SessionStorageCacheRepository) {
+        cacheRepository = new window.SessionStorageCacheRepository({
+            keyPrefix: 'variantes_'
+        });
+    }
+    return cacheRepository;
 }
 
 /**
- * Cargar tipos de prenda desde API
+ * Obtiene tipos de prenda desde API
+ * @returns {Promise<Array>} Array de tipos de prenda
+ */
+async function _fetchTiposPrenda() {
+    const response = await fetch('/api/tipos-prenda');
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const responseData = await response.json();
+    
+    // Manejar ambos formatos: array directo o response con data/success
+    if (Array.isArray(responseData)) {
+        return responseData;
+    } else if (responseData.data && Array.isArray(responseData.data)) {
+        return responseData.data;
+    } else if (responseData.success === true && Array.isArray(responseData.data)) {
+        return responseData.data;
+    } else {
+        console.warn('[VariantesPrendas] Formato inesperado de respuesta:', responseData);
+        return [];
+    }
+}
+
+/**
+ * Inicializar sistema de variantes
+ * Carga tipos de prenda con caché automático
+ */
+async function inicializarVariantes() {
+    try {
+        const cache = _getCacheRepository();
+        
+        if (cache) {
+            tiposPrendaCache = await cache.getOrFetch(
+                TIPOS_PRENDA_CACHE_KEY,
+                _fetchTiposPrenda,
+                TIPOS_PRENDA_TTL
+            );
+        } else {
+            // Fallback sin cache si SessionStorageCacheRepository no disponible
+            tiposPrendaCache = await _fetchTiposPrenda();
+        }
+    } catch (error) {
+        console.error('[VariantesPrendas] Error cargando tipos de prenda:', error);
+        tiposPrendaCache = [];
+    }
+}
+
+/**
+ * Cargar tipos de prenda desde API (con caché automático)
+ * Nota: Esta función es llamada por inicializarVariantes(), que ahora es async
+ * Para compatibilidad, llamar a inicializarVariantes() en lugar de esta
  */
 function cargarTiposPrenda() {
-    fetch('/api/tipos-prenda')
-        .then(res => {
-            if (!res.ok) {
-                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-            }
-            return res.json();
-        })
-        .then(response => {
-            // Manejar ambos formatos: array directo o response con data/success
-            if (Array.isArray(response)) {
-                tiposPrendaCache = response;
-            } else if (response.data && Array.isArray(response.data)) {
-                tiposPrendaCache = response.data;
-            } else if (response.success === true && Array.isArray(response.data)) {
-                tiposPrendaCache = response.data;
-            } else {
-                console.warn(' Formato inesperado de respuesta de tipos-prenda:', response);
-                tiposPrendaCache = [];
-            }
-        })
-        .catch(err => console.error(' Error cargando tipos de prenda:', err));
+    // Wrapper para compatibilidad - en futuro, usar inicializarVariantes() directamente
+    inicializarVariantes().catch(err => {
+        console.error('[VariantesPrendas] Error en cargarTiposPrenda:', err);
+    });
 }
 
 /**
@@ -80,37 +128,59 @@ function reconocerTipoPrenda(nombrePrenda) {
 }
 
 /**
+ * Obtiene variaciones de un tipo de prenda desde API
+ * @param {number} tipoPrendaId - ID del tipo de prenda
+ * @returns {Promise<Object|null>} Variaciones o null si no existen
+ */
+async function _fetchVariaciones(tipoPrendaId) {
+    const response = await fetch(`/prenda-variaciones/${tipoPrendaId}`);
+    
+    // Si el endpoint no existe (404) o hay error, es OK
+    // El sistema crea automáticamente lo que falta
+    if (!response.ok) {
+        return null;
+    }
+    
+    const data = await response.json();
+    if (data && data.success) {
+        return data.variaciones;
+    }
+    return null;
+}
+
+/**
  * Cargar variaciones disponibles para un tipo de prenda
+ * Con caché automático de 30 minutos
+ * @param {number} tipoPrendaId - ID del tipo de prenda
+ * @returns {Promise<Object|null>} Variaciones o null
  */
 function cargarVariacionesPrenda(tipoPrendaId) {
+    const cache = _getCacheRepository();
+    const cacheKey = `${VARIACIONES_CACHE_KEY_PREFIX}${tipoPrendaId}`;
+    
+    if (cache) {
+        return cache.getOrFetch(
+            cacheKey,
+            () => _fetchVariaciones(tipoPrendaId),
+            VARIACIONES_TTL
+        );
+    }
+    
+    // Fallback sin cache si SessionStorageCacheRepository no disponible
+    // Usa el cache en memoria (variacionesCache)
     if (variacionesCache[tipoPrendaId]) {
         return Promise.resolve(variacionesCache[tipoPrendaId]);
     }
-
-    // Endpoint - usar la ruta correcta sin /api/
-    // Nota: Es normal que retorne 404 si no existen variaciones predefinidas
-    // El sistema creará automáticamente lo que sea necesario
-    return fetch(`/prenda-variaciones/${tipoPrendaId}`)
-        .then(res => {
-            // Si el endpoint no existe (404) o hay error, es OK
-            // El sistema crea automáticamente lo que falta
-            if (!res.ok) {
-                return Promise.resolve(null);
-            }
-            return res.json();
-        })
-        .then(data => {
-            if (data && data.success) {
-                variacionesCache[tipoPrendaId] = data.variaciones;
-                return data.variaciones;
-            }
-            return null;
-        })
-        .catch(err => {
-            // Ignorar el error - es esperado si el endpoint no existe
-            // console.debug() no muestra en consola por defecto
-            return null;
-        });
+    
+    return _fetchVariaciones(tipoPrendaId).then(data => {
+        if (data) {
+            variacionesCache[tipoPrendaId] = data;
+        }
+        return data;
+    }).catch(err => {
+        console.debug('[VariantesPrendas] Error cargando variaciones:', err);
+        return null;
+    });
 }
 
 /**

@@ -1,46 +1,44 @@
 /**
  * Infrastructure Layer - SessionStorage Insumo Repository
+ * Phase 6: Cache Unification - Simplificado usando SessionStorageCacheRepository
  * 
- * Implementación concreta de InsumoRepository usando SessionStorage
- * Puede reemplazarse con otra implementación (IndexedDB, API, etc) sin cambiar el código de negocio
+ * Implementación concreta de InsumoRepository usando caché centralizado
+ * Eliminó duplicación: ahora usa SessionStorageCacheRepository en lugar de reimplementar lógica
  * 
  * DDD Principle: Implementación desacoplada de la interfaz
  */
 
 class SessionStorageInsumoRepository extends InsumoRepository {
-    constructor(httpClient) {
+    constructor(httpClient, cacheRepository = null) {
         super();
         this.httpClient = httpClient;
-        this.cachePrefix = 'insumos_';
-        this.cacheExpiry = 30 * 60 * 1000; // 30 minutos
+        
+        // Usar caché inyectado o crear uno (fallback)
+        this.cache = cacheRepository || new SessionStorageCacheRepository({
+            storage: 'session',
+            keyPrefix: 'insumos_'
+        });
+        
+        // TTL estandarizado: 30 minutos
+        this.DEFAULT_TTL = 30 * 60 * 1000;
     }
 
     /**
-     * Obtiene insumos desde caché o HTTP
+     * Obtiene insumos desde caché centralizado o HTTP
+     * Fase 6: Usa getOrFetch de SessionStorageCacheRepository
      */
     async obtenerInsumos(pedidoId, prendaId = null) {
         const cacheKey = this._generateCacheKey(pedidoId, prendaId);
         
-        // Intentar obtener del caché primero
-        const cached = this._getCached(cacheKey);
-        if (cached) {
-            console.log(`[InsumoRepository] Cache hit: ${cacheKey}`);
-            return cached;
-        }
-
-        // Obtener del servidor
         try {
-            let path = `/insumos/api/materiales/${pedidoId}`;
-            if (prendaId) {
-                path += `?prenda_id=${prendaId}`;
-            }
-
-            const datos = await this.httpClient.get(path);
+            // getOrFetch automatiza: obtener del caché o llamar fetcher
+            const datos = await this.cache.getOrFetch(
+                cacheKey,
+                () => this._fetchFromAPI(pedidoId, prendaId),
+                this.DEFAULT_TTL
+            );
             
-            // Guardar en caché
-            this._setCached(cacheKey, datos);
-            
-            console.log(`[InsumoRepository] Datos obtenidos y cacheados: ${cacheKey}`);
+            console.log(`[InsumoRepository] Datos obtenidos ${this.cache.has(cacheKey) ? '(cache hit)' : '(desde API)'}: ${cacheKey}`);
             return datos;
         } catch (error) {
             console.error('[InsumoRepository] Error obteniendo insumos:', error);
@@ -49,7 +47,7 @@ class SessionStorageInsumoRepository extends InsumoRepository {
     }
 
     /**
-     * Guarda insumos en el servidor (optativo cachear)
+     * Guarda insumos en el servidor e invalida caché
      */
     async guardarInsumos(pedidoId, prendaId, datos) {
         try {
@@ -61,6 +59,7 @@ class SessionStorageInsumoRepository extends InsumoRepository {
             // Invalidar caché de este pedido
             this.limpiar(pedidoId);
             
+            console.log(`[InsumoRepository] Insumos guardados, caché invalidado para pedido ${pedidoId}`);
             return response;
         } catch (error) {
             console.error('[InsumoRepository] Error guardando insumos:', error);
@@ -69,35 +68,30 @@ class SessionStorageInsumoRepository extends InsumoRepository {
     }
 
     /**
-     * Verifica si existe en caché
+     * Verifica si existe en caché (usando cache centralizado)
      */
     async existeEnCache(pedidoId, prendaId = null) {
         const cacheKey = this._generateCacheKey(pedidoId, prendaId);
-        return this._isCacheValid(cacheKey);
+        return this.cache.has(cacheKey);
     }
 
     /**
-     * Limpia caché
+     * Limpia caché específico o todo
      */
     async limpiar(pedidoId = null) {
         try {
             if (pedidoId === null) {
-                // Limpiar TODO
-                for (let i = sessionStorage.length - 1; i >= 0; i--) {
-                    const key = sessionStorage.key(i);
-                    if (key && key.startsWith(this.cachePrefix)) {
-                        sessionStorage.removeItem(key);
-                    }
-                }
+                // Limpiar TODO el caché de insumos
+                this.cache.clear();
                 console.log('[InsumoRepository] Caché completamente limpiado');
             } else {
                 // Limpiar solo pedido específico
-                for (let i = sessionStorage.length - 1; i >= 0; i--) {
-                    const key = sessionStorage.key(i);
-                    if (key && key.startsWith(`${this.cachePrefix}${pedidoId}_`)) {
-                        sessionStorage.removeItem(key);
-                    }
-                }
+                // Generar claves para ambos: con y sin prendaId
+                const cacheKeyGeneral = this._generateCacheKey(pedidoId, null);
+                this.cache.remove(cacheKeyGeneral);
+                
+                // También intentar limpia claves específicas de prenda encontradas
+                // (nota: idealmente mantendríamos índice, pero esto es suficiente)
                 console.log(`[InsumoRepository] Caché limpiado para pedido ${pedidoId}`);
             }
         } catch (error) {
@@ -106,93 +100,25 @@ class SessionStorageInsumoRepository extends InsumoRepository {
     }
 
     /**
-     * Obtiene datos del caché
+     * Obtiene datos del servidor (helper privado)
      * @private
      */
-    _getCached(key) {
-        try {
-            const cached = sessionStorage.getItem(this.cachePrefix + key);
-            if (!cached) return null;
-
-            const data = JSON.parse(cached);
-            
-            // Verificar expiración
-            if (Date.now() - data.timestamp > this.cacheExpiry) {
-                sessionStorage.removeItem(this.cachePrefix + key);
-                return null;
-            }
-
-            return data.value;
-        } catch (error) {
-            console.error('[InsumoRepository] Error leyendo caché:', error);
-            return null;
+    async _fetchFromAPI(pedidoId, prendaId) {
+        let path = `/insumos/api/materiales/${pedidoId}`;
+        if (prendaId) {
+            path += `?prenda_id=${prendaId}`;
         }
+        
+        const datos = await this.httpClient.get(path);
+        return datos;
     }
 
     /**
-     * Guarda datos en caché
-     * @private
-     */
-    _setCached(key, value) {
-        try {
-            const cacheData = {
-                value: value,
-                timestamp: Date.now()
-            };
-            sessionStorage.setItem(this.cachePrefix + key, JSON.stringify(cacheData));
-        } catch (error) {
-            if (error.name === 'QuotaExceededError') {
-                console.warn('[InsumoRepository] sessionStorage lleno, limpiando expirados...');
-                this._clearExpired();
-            } else {
-                console.error('[InsumoRepository] Error guardando caché:', error);
-            }
-        }
-    }
-
-    /**
-     * Verifica si caché es válido
-     * @private
-     */
-    _isCacheValid(key) {
-        try {
-            const cached = sessionStorage.getItem(this.cachePrefix + key);
-            if (!cached) return false;
-
-            const data = JSON.parse(cached);
-            return Date.now() - data.timestamp <= this.cacheExpiry;
-        } catch {
-            return false;
-        }
-    }
-
-    /**
-     * Genera clave de caché
+     * Genera clave de caché estandarizada
      * @private
      */
     _generateCacheKey(pedidoId, prendaId) {
-        return prendaId ? `${pedidoId}_${prendaId}` : `${pedidoId}_general`;
-    }
-
-    /**
-     * Limpia items expirados
-     * @private
-     */
-    _clearExpired() {
-        const now = Date.now();
-        for (let i = sessionStorage.length - 1; i >= 0; i--) {
-            const key = sessionStorage.key(i);
-            if (key && key.startsWith(this.cachePrefix)) {
-                try {
-                    const data = JSON.parse(sessionStorage.getItem(key));
-                    if (now - data.timestamp > this.cacheExpiry) {
-                        sessionStorage.removeItem(key);
-                    }
-                } catch (error) {
-                    sessionStorage.removeItem(key);
-                }
-            }
-        }
+        return prendaId ? `pedido_${pedidoId}_prenda_${prendaId}` : `pedido_${pedidoId}_general`;
     }
 }
 

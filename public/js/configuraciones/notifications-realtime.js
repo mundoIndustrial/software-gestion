@@ -1,5 +1,6 @@
 // ========================================
 // REAL-TIME NOTIFICATIONS SYSTEM
+// Phase 5: DDD WebSocket Abstraction
 // ========================================
 
 let notificationChannel = null;
@@ -7,12 +8,17 @@ let currentUserId = null;
 let modalOpenTime = null;
 let autoMarkOnCloseEnabled = true;
 
+console.log('[NOTIFICATIONS-REALTIME] Archivo cargado');
+
 // Inicializar sistema de notificaciones en tiempo real
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('[NOTIFICATIONS-REALTIME] Inicializando desde DOMContentLoaded');
     initializeRealtimeNotifications();
 });
 
 function initializeRealtimeNotifications() {
+    console.log('[NOTIFICATIONS-REALTIME] Iniciando sistema de notificaciones');
+    
     // Obtener user ID del meta tag
     const userIdMeta = document.querySelector('meta[name="user-id"]');
     if (userIdMeta) {
@@ -22,7 +28,7 @@ function initializeRealtimeNotifications() {
     // Cargar notificaciones iniciales
     loadNotifications();
     
-    // Configurar Laravel Echo para notificaciones en tiempo real
+    // Configurar escuchadores de WebSocket/Echo
     setupEchoListener();
     
     // Configurar listeners del UI
@@ -34,52 +40,71 @@ function initializeRealtimeNotifications() {
     }, 60000);
 }
 
-// Configurar Laravel Echo para escuchar eventos en tiempo real
+// Configurar escucha de eventos en tiempo real usando WebSocket abstraction
 function setupEchoListener() {
-    if (typeof Echo === 'undefined') {
-
+    console.log('[NOTIFICATIONS-REALTIME] Configurando escuchador de Echo');
+    
+    // CRÍTICO: Esperar a que window.shared esté disponible (race condition fix)
+    if (!window.shared?.isReady) {
+        console.log('[NOTIFICATIONS-REALTIME] Esperando window.shared.isReady...');
+        setTimeout(setupEchoListener, 50);
+        return;
+    }
+    
+    // Usar window.waitForEcho para esperar WebSocket disponible
+    if (typeof window.waitForEcho !== 'function') {
+        console.warn('[NOTIFICATIONS-REALTIME] waitForEcho no disponible, reintentando...');
+        setTimeout(setupEchoListener, 500);
         return;
     }
 
-    try {
-        // Escuchar canal público de notificaciones
-        notificationChannel = Echo.channel('notifications');
-        
-        // Evento: Nueva notificación
-        notificationChannel.listen('.new-notification', (data) => {
+    window.waitForEcho(() => {
+        const ws = window.shared?.websocket;
+        if (!ws) {
+            console.error('[NOTIFICATIONS-REALTIME] WebSocket abstraction no disponible');
+            return;
+        }
 
+        try {
+            console.log('[NOTIFICATIONS-REALTIME] Suscribiendo a canal notifications');
             
-            // No mostrar notificaciones del usuario actual
-            if (data.exclude_user_id && currentUserId && data.exclude_user_id === currentUserId) {
-
-                return;
-            }
-            
-            // Agregar notificación al UI
-            addNotificationToUI(data);
-            
-            // Actualizar contador
-            updateUnreadCount();
-            
-            // Mostrar notificación toast (opcional)
-            showNotificationToast(data);
-        });
-        
-        // Evento: Notificaciones marcadas como leídas
-        notificationChannel.listen('.notifications-marked-read', (data) => {
-
-            
-            // Si es del usuario actual, actualizar UI
-            if (data.user_id === currentUserId) {
+            // Evento: Nueva notificación
+            ws.subscribe('notifications', '.new-notification', (data) => {
+                console.log('[NOTIFICATIONS-REALTIME] Nueva notificación recibida');
+                
+                // No mostrar notificaciones del usuario actual
+                if (data.exclude_user_id && currentUserId && data.exclude_user_id === currentUserId) {
+                    console.log('[NOTIFICATIONS-REALTIME] Notificación excluida (usuario actual)');
+                    return;
+                }
+                
+                // Agregar notificación al UI
+                addNotificationToUI(data);
+                
+                // Actualizar contador
                 updateUnreadCount();
-            }
-        });
-        
-
-    } catch (error) {
-
-    }
+                
+                // Mostrar notificación toast (opcional)
+                showNotificationToast(data);
+            });
+            
+            // Evento: Notificaciones marcadas como leídas
+            ws.subscribe('notifications', '.notifications-marked-read', (data) => {
+                console.log('[NOTIFICATIONS-REALTIME] Notificaciones marcadas como leídas');
+                
+                // Si es del usuario actual, actualizar UI
+                if (data.user_id === currentUserId) {
+                    updateUnreadCount();
+                }
+            });
+            
+            console.log('[NOTIFICATIONS-REALTIME] ✅ Suscripciones configuradas');
+        } catch (error) {
+            console.error('[NOTIFICATIONS-REALTIME] Error al configurar escuchador:', error);
+        }
+    });
 }
+
 
 // Configurar listeners del UI
 function setupUIListeners() {
@@ -449,6 +474,14 @@ async function markAsReadOnClose() {
 
 // Mostrar notificación toast
 function showNotificationToast(data) {
+    // Intentar usar UIUpdateService si está disponible
+    const uiUpdate = window.shared?.uiUpdate;
+    if (uiUpdate && typeof uiUpdate.showRealtimeToast === 'function') {
+        uiUpdate.showRealtimeToast(data.description, 'info');
+        return;
+    }
+    
+    // Fallback a implementación local
     // Verificar si el usuario quiere ver toasts
     const showToasts = localStorage.getItem('show-notification-toasts') !== 'false';
     if (!showToasts) return;
@@ -458,7 +491,6 @@ function showNotificationToast(data) {
     const user = (data.user || '').toLowerCase();
     
     if (description.includes('token') || user.includes('token')) {
-
         return;
     }
     

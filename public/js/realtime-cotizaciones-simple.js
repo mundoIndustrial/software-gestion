@@ -1,8 +1,9 @@
 /**
- * Real-time updates for quotations - Versión simplificada para debugging
+ * Real-time updates for quotations - Phase 5: Versión simplificada con WebSocket abstraction
+ * Debug/testing module using centralized WebSocket subscription
  */
 
-console.log('[REALTIME-COT-SIMPLE] === ARCHIVO CARGADO ===');
+console.log('[REALTIME-COT-SIMPLE] === ARCHIVO CARGADO (Phase 5) ===');
 
 // Protección contra cargas múltiples
 if (window.realtimeCotizacionesLoaded) {
@@ -13,40 +14,29 @@ if (window.realtimeCotizacionesLoaded) {
     console.log('[REALTIME-COT-SIMPLE] Iniciando sistema simplificado...');
     
     function checkAndInitialize() {
-        console.log('[REALTIME-COT-SIMPLE] Verificando Echo...');
-        console.log('[REALTIME-COT-SIMPLE] typeof window.Echo:', typeof window.Echo);
-        console.log('[REALTIME-COT-SIMPLE] window.Echo:', window.Echo);
+        console.log('[REALTIME-COT-SIMPLE] Verificando WebSocket abstraction...');
         
-        if (typeof window.Echo !== 'undefined' && window.Echo) {
-            console.log('[REALTIME-COT-SIMPLE] ✅ Echo encontrado');
-            console.log('[REALTIME-COT-SIMPLE] typeof window.Echo.channel:', typeof window.Echo?.channel);
-            
-            if (typeof window.Echo.channel === 'function') {
-                console.log('[REALTIME-COT-SIMPLE] ✅ Echo.channel es función, intentando suscribir...');
-                try {
-                    window.Echo.channel('cotizaciones')
-                        .listen('.cotizacion.creada', (event) => {
+        // Usar window.waitForEcho para esperar a que WebSocket esté disponible
+        if (typeof window.waitForEcho === 'function') {
+            console.log('[REALTIME-COT-SIMPLE] ✅ waitForEcho disponible');
+            window.waitForEcho(() => {
+                const ws = window.shared?.websocket;
+                if (ws) {
+                    console.log('[REALTIME-COT-SIMPLE] ✅ WebSocket abstraction encontrada');
+                    try {
+                        ws.subscribe('cotizaciones', '.cotizacion.creada', (event) => {
                             console.log('[REALTIME-COT-SIMPLE] Evento recibido:', event);
                         });
-                    console.log('[REALTIME-COT-SIMPLE] 🎉 Suscripción exitosa');
-                } catch (e) {
-                    console.error('[REALTIME-COT-SIMPLE] Error en suscripción:', e);
+                        console.log('[REALTIME-COT-SIMPLE] 🎉 Suscripción exitosa');
+                    } catch (e) {
+                        console.error('[REALTIME-COT-SIMPLE] Error en suscripción:', e);
+                    }
+                } else {
+                    console.error('[REALTIME-COT-SIMPLE] ❌ WebSocket abstraction no disponible');
                 }
-            } else {
-                console.error('[REALTIME-COT-SIMPLE] ❌ Echo.channel no es función');
-                
-                // Buscar alternativas
-                console.log('[REALTIME-COT-SIMPLE] Buscando alternativas...');
-                console.log('[REALTIME-COT-SIMPLE] window.EchoInstance:', typeof window.EchoInstance);
-                console.log('[REALTIME-COT-SIMPLE] window.EchoInstance:', window.EchoInstance);
-                
-                if (window.EchoInstance && typeof window.EchoInstance.channel === 'function') {
-                    console.log('[REALTIME-COT-SIMPLE] ✅ Usando EchoInstance');
-                    window.Echo = window.EchoInstance;
-                }
-            }
+            });
         } else {
-            console.log('[REALTIME-COT-SIMPLE] Echo no disponible, reintentando...');
+            console.log('[REALTIME-COT-SIMPLE] waitForEcho no disponible, reintentando...');
             setTimeout(checkAndInitialize, 1000);
         }
     }

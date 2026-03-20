@@ -1,9 +1,10 @@
 /**
- * Real-time updates for quotations using Laravel Echo
- * Handles status changes and new quotations in real-time
+ * Real-time updates for quotations - Phase 5: DDD WebSocket Abstraction
+ * Uses window.shared.websocket abstraction instead of direct Echo access
+ * Handles status changes and new quotations using centralized WebSocket subscription
  */
 
-console.log('[REALTIME-COT] === SISTEMA DE TIEMPO REAL INICIADO ===');
+console.log('[REALTIME-COT] === SISTEMA DE TIEMPO REAL INICIADO (Phase 5) ===');
 
 // Cache temporal para evitar procesar el mismo evento dos veces
 // (suele pasar por estar suscritos a cotizaciones + cotizaciones.contador)
@@ -76,6 +77,14 @@ if (window.realtimeCotizacionesLoaded) {
 
     function initializeRealtimeCotizaciones() {
         console.log('[REALTIME-COT] === INICIALIZANDO SISTEMA REALTIME ===');
+        
+        // CRÍTICO: Esperar a que window.shared esté disponible (race condition fix)
+        if (!window.shared?.isReady) {
+            console.log('[REALTIME-COT] Esperando window.shared.isReady...');
+            setTimeout(initializeRealtimeCotizaciones, 50);
+            return;
+        }
+        
         console.log('[REALTIME-COT] Echo está disponible:', typeof window.Echo);
 
         try {
@@ -98,74 +107,68 @@ if (window.realtimeCotizacionesLoaded) {
         console.log('[REALTIME-COT] Path actual:', window.location.pathname);
         console.log('[REALTIME-COT] isOnContadorPage:', isOnContadorPage());
 
-        // Verificar que Echo tenga el método channel
-        console.log('[REALTIME-COT] Verificando Echo.channel...');
-        console.log('[REALTIME-COT] typeof window.Echo.channel:', typeof window.Echo?.channel);
-        
-        if (typeof window.Echo.channel !== 'function') {
-            console.log('[REALTIME-COT] ❌ Echo.channel no es función, buscando EchoInstance...');
+        // Obtener WebSocket abstraction
+        if (typeof window.waitForEcho !== 'function') {
+            console.warn('[REALTIME-COT] waitForEcho not available, usando WebSocket directo');
+        }
+
+        // Verificar que WebSocket abstraction esté disponible
+        window.waitForEcho(() => {
+            try {
+                const ws = window.shared?.websocket;
+                if (!ws) {
+                    console.error('[REALTIME-COT] ❌ WebSocket abstraction no disponible');
+                    return;
+                }
             
-            // Intentar usar EchoInstance directamente
-            if (window.EchoInstance && typeof window.EchoInstance.channel === 'function') {
-                console.log('[REALTIME-COT] ✅ Usando EchoInstance directamente');
-                window.Echo = window.EchoInstance;
-            } else {
-                console.error('[REALTIME-COT] ❌ No se encontró EchoInstance válido');
-                console.log('[REALTIME-COT] window.EchoInstance:', window.EchoInstance);
-                console.log('[REALTIME-COT] typeof window.EchoInstance.channel:', typeof window.EchoInstance?.channel);
-                return;
-            }
-        }
-        
-        console.log('[REALTIME-COT] ✅ Echo.channel verificado, suscribiéndose a canales...');
-        
-        window.Echo.channel('cotizaciones')
-            .listen('.cotizacion.creada', (event) => {
-                console.log('[REALTIME-COT] Evento cotizacion.creada recibido en canal cotizaciones:', event);
-                handleNuevaCotizacion(event);
-            })
-            .listen('.cotizacion.estado.cambiado', (event) => {
-                console.log('[REALTIME-COT] Evento cotizacion.estado.cambiado recibido:', event);
-                handleEstadoCambiado(event);
-            })
-            .subscribed(() => console.log('[REALTIME-COT] ✅ Subscrito a canal: cotizaciones'))
-            .error((err) => console.error('[REALTIME-COT] ❌ Error canal cotizaciones:', err));
+                console.log('[REALTIME-COT] ✅ WebSocket abstraction verificada, suscribiéndose a canales...');
 
-        // Listen to user-specific channel if user is logged in
-        if (userId) {
-            console.log(`[REALTIME-COT] Suscribiéndose a canal: cotizaciones.asesor.${userId}`);
-            window.Echo.channel(`cotizaciones.asesor.${userId}`)
-                .listen('.cotizacion.creada', (event) => {
-                    console.log('[REALTIME-COT] Evento cotizacion.creada recibido en canal asesor:', event);
+                // Suscribirse a canal público: cotizaciones
+                ws.subscribe('cotizaciones', '.cotizacion.creada', (event) => {
+                    console.log('[REALTIME-COT] Evento cotizacion.creada recibido:', event);
                     handleNuevaCotizacion(event);
-                })
-                .listen('.cotizacion.estado.cambiado', (event) => {
-                    console.log('[REALTIME-COT] Evento estado cambiado recibido en canal asesor:', event);
+                });
+
+                ws.subscribe('cotizaciones', '.cotizacion.estado.cambiado', (event) => {
+                    console.log('[REALTIME-COT] Evento cotizacion.estado.cambiado recibido:', event);
                     handleEstadoCambiado(event);
-                })
-                .subscribed(() => console.log(`[REALTIME-COT] ✅ Subscrito a canal: cotizaciones.asesor.${userId}`))
-                .error((err) => console.error(`[REALTIME-COT] ❌ Error canal asesor.${userId}:`, err));
-        } else {
-            console.log('[REALTIME-COT] No hay userId, omitiendo canal personal');
-        }
+                });
 
-        // Listen to contador channel
-        console.log('[REALTIME-COT] Suscribiéndose a canal: cotizaciones.contador');
-        window.Echo.channel('cotizaciones.contador')
-            .listen('.cotizacion.creada', (event) => {
-                console.log('[REALTIME-COT] ****************************');
-                console.log('[REALTIME-COT] Evento recibido en canal contador:', event);
-                console.log('[REALTIME-COT] ****************************');
-                handleNuevaCotizacion(event);
-            })
-            .listen('.cotizacion.estado.cambiado', (event) => {
-                console.log('[REALTIME-COT] Evento estado cambiado en canal contador:', event);
-                handleEstadoCambiado(event);
-            })
-            .subscribed(() => console.log('[REALTIME-COT] ✅ Subscrito a canal: cotizaciones.contador'))
-            .error((err) => console.error('[REALTIME-COT] ❌ Error canal cotizaciones.contador:', err));
+                // Suscribirse a canal privado del asesor si está autenticado
+                if (userId) {
+                    console.log(`[REALTIME-COT] Suscribiéndose a canal: cotizaciones.asesor.${userId}`);
+                    
+                    ws.subscribe(`cotizaciones.asesor.${userId}`, '.cotizacion.creada', (event) => {
+                        console.log('[REALTIME-COT] Evento cotizacion.creada recibido en canal asesor:', event);
+                        handleNuevaCotizacion(event);
+                    });
 
-        console.log('[REALTIME-COT] 🎉 Sistema de tiempo real inicializado correctamente');
+                    ws.subscribe(`cotizaciones.asesor.${userId}`, '.cotizacion.estado.cambiado', (event) => {
+                        console.log('[REALTIME-COT] Evento estado cambiado recibido en canal asesor:', event);
+                        handleEstadoCambiado(event);
+                    });
+                } else {
+                    console.log('[REALTIME-COT] No hay userId, omitiendo canal personal');
+                }
+
+                // Suscribirse a canal contador
+                console.log('[REALTIME-COT] Suscribiéndose a canal: cotizaciones.contador');
+                
+                ws.subscribe('cotizaciones.contador', '.cotizacion.creada', (event) => {
+                    console.log('[REALTIME-COT] Evento recibido en canal contador:', event);
+                    handleNuevaCotizacion(event);
+                });
+
+                ws.subscribe('cotizaciones.contador', '.cotizacion.estado.cambiado', (event) => {
+                    console.log('[REALTIME-COT] Evento estado cambiado en canal contador:', event);
+                    handleEstadoCambiado(event);
+                });
+
+                console.log('[REALTIME-COT] 🎉 Sistema de tiempo real inicializado correctamente');
+            } catch (error) {
+                console.error('[REALTIME-COT] Error durante inicialización:', error.message);
+            }
+        });
     } // Cierra la función initializeRealtimeCotizaciones
 
     /**
@@ -201,9 +204,16 @@ if (window.realtimeCotizacionesLoaded) {
     }
 
     /**
-     * Show toast notification in app
+     * mostrarNotificacionToast - Wrapper que delega a UIUpdateService si está disponible
      */
     function mostrarNotificacionToast(titulo, mensaje, tipo = 'success') {
+        // Delegar a UIUpdateService (Phase 5)
+        if (window.shared?.uiUpdate && typeof window.shared.uiUpdate.showRealtimeToast === 'function') {
+            window.shared.uiUpdate.showRealtimeToast(`${titulo} - ${mensaje}`, tipo);
+            return;
+        }
+
+        // Fallback a implementación local si UIUpdateService no está disponible
         const notifId = 'notificacionCotizaciones' + Date.now();
         const notif = document.createElement('div');
         notif.id = notifId;
