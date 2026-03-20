@@ -158,6 +158,11 @@
     <script src="{{ asset('js/supervisor-pedidos/limpiar-asignaciones.js') }}"></script>
     <script src="{{ asset('js/supervisor-pedidos/seleccion-pedidos.js') }}"></script>
 
+    <!-- Realtime: suscripción WebSocket para actualizaciones en vivo -->
+    @auth
+    <script defer src="{{ asset('js/supervisor-pedidos/realtime-supervisor.js') }}"></script>
+    @endauth
+
 @endpush
 
 @endsection

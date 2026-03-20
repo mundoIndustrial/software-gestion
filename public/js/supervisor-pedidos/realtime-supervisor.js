@@ -4,7 +4,16 @@
  * =====================================================
  * Se suscribe a canales WebSocket (Laravel Echo / Pusher)
  * y actualiza la tabla de pedidos en tiempo real.
+ *
+ * Requiere: supervisor-pedidos/core/bootstrap.js → window.supervisorPedidos
  */
+
+if (!window.supervisorPedidos?.isReady) {
+    throw new Error('[realtime-supervisor] window.supervisorPedidos no está disponible. Carga core/bootstrap.js ANTES.');
+}
+
+const _rtRepo = window.supervisorPedidos.repository;
+const _rtNotify = window.shared.notify;
 
 function actualizarFilaEnTabla(fila, orden) {
     console.log(`[Realtime] Actualizando fila para pedido #${orden.numero_pedido}`);
@@ -92,34 +101,7 @@ function supervisorPedidosMostrarNotificacionNuevoPedido(orden) {
             }, 1200);
         } catch (e) { /* noop */ }
 
-        if (window.PedidosRealtimeRefresh?.instance?.showRealtimeToast) {
-            window.PedidosRealtimeRefresh.instance.showRealtimeToast(mensaje, 'success');
-            return;
-        }
-
-        const container = document.getElementById('toastContainer') || (() => {
-            let div = document.createElement('div');
-            div.id = 'toastContainer';
-            div.className = 'toast-container';
-            div.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px;';
-            document.body.appendChild(div);
-            return div;
-        })();
-
-        const toast = document.createElement('div');
-        toast.style.cssText = `
-            background: #16a34a; color: white; padding: 12px 14px;
-            border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.18);
-            font-size: 13px; font-weight: 600; max-width: 360px;
-            transform: translateX(120%); transition: transform 0.25s ease;
-        `;
-        toast.textContent = mensaje;
-        container.appendChild(toast);
-        requestAnimationFrame(() => { toast.style.transform = 'translateX(0)'; });
-        setTimeout(() => {
-            toast.style.transform = 'translateX(120%)';
-            setTimeout(() => toast.remove(), 250);
-        }, 3500);
+        _rtNotify.success(mensaje);
     } catch (e) { /* silencioso */ }
 }
 
@@ -277,15 +259,7 @@ function initializeRealtimeListener() {
 
                 window.__realtimeSupervisorRefreshTimeout = setTimeout(async () => {
                     try {
-                        const response = await fetch(window.location.href, {
-                            method: 'GET',
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        });
-                        if (!response.ok) {
-                            console.error('[Realtime Supervisor] ❌ No se pudo refrescar la tabla:', response.status);
-                            return;
-                        }
-                        const html = await response.text();
+                        const html = await _rtRepo.fetchPageContent(window.location.href);
                         const doc  = new DOMParser().parseFromString(html, 'text/html');
                         const nuevaTabla  = doc.querySelector('.table-scroll-container');
                         const tablaActual = document.querySelector('.table-scroll-container');

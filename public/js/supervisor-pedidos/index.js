@@ -2,7 +2,16 @@
  * =====================================================
  * SUPERVISOR PEDIDOS INDEX - FUNCIONALIDAD PRINCIPAL
  * =====================================================
+ *
+ * Requiere: supervisor-pedidos/core/bootstrap.js → window.supervisorPedidos
  */
+
+if (!window.supervisorPedidos?.isReady) {
+    throw new Error('[index] window.supervisorPedidos no está disponible. Carga core/bootstrap.js ANTES.');
+}
+
+const _spFilter = window.supervisorPedidos.filterService;
+const _spNotify = window.shared.notify;
 
 // ===== VARIABLES GLOBALES =====
 let filtroActual = null;
@@ -35,33 +44,7 @@ document.addEventListener('click', function(e) {
 
 // ===== FILTROS HELPERS =====
 function getValoresFiltroDesdeURL(columna) {
-    const url = new URL(window.location.href);
-    if (columna === 'numero' || columna === 'id-orden') {
-        const raw = url.searchParams.get('numero') || '';
-        return raw.split(',').map(v => v.trim()).filter(Boolean);
-    }
-    if (columna === 'cliente') {
-        const raw = url.searchParams.get('cliente') || '';
-        return raw.split(',').map(v => v.trim()).filter(Boolean);
-    }
-    if (columna === 'estado') {
-        const raw = url.searchParams.get('estado') || '';
-        return raw.split(',').map(v => v.trim()).filter(Boolean);
-    }
-    if (columna === 'asesora') {
-        const raw = url.searchParams.get('asesora') || '';
-        return raw.split(',').map(v => v.trim()).filter(Boolean);
-    }
-    if (columna === 'forma_pago' || columna === 'forma-pago') {
-        const raw = url.searchParams.get('forma_pago') || '';
-        return raw.split(',').map(v => v.trim()).filter(Boolean);
-    }
-    if (columna === 'fecha') {
-        const desde = url.searchParams.get('fecha_desde') || '';
-        const hasta = url.searchParams.get('fecha_hasta') || '';
-        return [desde, hasta].filter(Boolean);
-    }
-    return [];
+    return _spFilter.getActiveFilterValues(columna);
 }
 
 function asegurarBadgeEnBoton(btn) {
@@ -221,10 +204,7 @@ function abrirModalFiltro(columna) {
 }
 
 function cargarOpcionesFiltro(campo, titulo, modal, filtroContenido) {
-    const endpoint = `/supervisor-pedidos/filtro-opciones/${campo}`;
-
-    fetch(endpoint)
-        .then(response => response.json())
+    _spFilter.loadFilterOptions(campo)
         .then(data => {
             const modalTitulo = document.getElementById('modalFiltroTitulo');
             modalTitulo.textContent = titulo;
@@ -297,71 +277,27 @@ function cerrarModalFiltro() {
 function aplicarFiltroColumna(event) {
     event.preventDefault();
 
-    const url = new URL(window.location.href);
     const valoresSeleccionados = Array.from(
         document.querySelectorAll('.filtro-checkbox:checked')
     ).map(cb => cb.value);
 
-    const setParam = (key) => {
-        url.searchParams.delete(key);
-        if (valoresSeleccionados.length > 0) url.searchParams.set(key, valoresSeleccionados.join(','));
-    };
-
-    if (filtroActual === 'id-orden' || filtroActual === 'numero') {
-        setParam('numero');
-    } else if (filtroActual === 'cliente') {
-        setParam('cliente');
-    } else if (filtroActual === 'fecha') {
-        url.searchParams.delete('fecha_desde');
-        url.searchParams.delete('fecha_hasta');
+    let filteredUrl;
+    if (filtroActual === 'fecha') {
         const desde = document.getElementById('filtroDesde')?.value;
         const hasta = document.getElementById('filtroHasta')?.value;
-        if (desde) url.searchParams.set('fecha_desde', desde);
-        if (hasta) url.searchParams.set('fecha_hasta', hasta);
-    } else if (filtroActual === 'estado') {
-        setParam('estado');
-    } else if (filtroActual === 'asesora') {
-        setParam('asesora');
-    } else if (filtroActual === 'forma-pago' || filtroActual === 'forma_pago') {
-        setParam('forma_pago');
+        filteredUrl = _spFilter.buildFilteredUrl(filtroActual, [], { desde, hasta });
+    } else {
+        filteredUrl = _spFilter.buildFilteredUrl(filtroActual, valoresSeleccionados);
     }
 
     cerrarModalFiltro();
-    navegarSupervisorPedidos(url.toString());
+    navegarSupervisorPedidos(filteredUrl);
 }
 
 async function navegarSupervisorPedidos(urlString, options = {}) {
-    const { pushState = true } = options;
-    const container = document.getElementById('supervisorPedidosIndexContent');
-    if (!container) {
-        window.location.href = urlString;
-        return;
-    }
-    try {
-        container.style.opacity = '0.6';
-        container.style.pointerEvents = 'none';
+    const success = await _spFilter.navigateAjax(urlString, options);
 
-        const res = await fetch(urlString, {
-            method: 'GET',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            cache: 'no-store'
-        });
-
-        const html = await res.text();
-        const doc  = new DOMParser().parseFromString(html, 'text/html');
-        const next = doc.getElementById('supervisorPedidosIndexContent');
-
-        if (!res.ok || !next) {
-            window.location.href = urlString;
-            return;
-        }
-
-        container.innerHTML = next.innerHTML;
-
-        if (pushState) {
-            window.history.pushState({ url: urlString }, '', urlString);
-        }
-
+    if (success) {
         actualizarIndicadoresFiltros();
         window.dispatchEvent(new Event('supervisorPedidos:filtersUpdated'));
 
@@ -370,11 +306,6 @@ async function navegarSupervisorPedidos(urlString, options = {}) {
                 window.cargarSeleccionesGuardadas();
             }
         }, 300);
-    } catch (e) {
-        window.location.href = urlString;
-    } finally {
-        container.style.opacity = '';
-        container.style.pointerEvents = '';
     }
 }
 
@@ -479,76 +410,42 @@ document.addEventListener('click', function(e) {
 });
 
 // Función para aprobar orden
-function aprobarOrden(ordenId, numeroOrden) {
-    Swal.fire({
-        title: '¿Aprobar Pedido?',
-        html: `<p>¿Deseas aprobar el pedido <strong>#${numeroOrden}</strong>?</p>`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#10b981',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: '<i class="fas fa-check"></i> Sí, aprobar',
-        cancelButtonText: 'Cancelar',
-        allowOutsideClick: false,
-        allowEscapeKey: false
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Mostrar modal de cargando
-            Swal.fire({
-                title: 'Procesando...',
-                html: '<p>Por favor espera mientras se aprueba el pedido</p><div style="margin-top: 20px;"><div class="spinner-border" role="status"><span class="sr-only">Cargando...</span></div></div>',
-                icon: 'info',
-                allowOutsideClick: false,
-                allowEscapeKey: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
+async function aprobarOrden(ordenId, numeroOrden) {
+    const result = await _spNotify.confirm(`¿Deseas aprobar el pedido <strong>#${numeroOrden}</strong>?`, '¿Aprobar Pedido?');
 
-            fetch(`/supervisor-pedidos/${ordenId}/aprobar`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                },
-                body: JSON.stringify({}),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        title: '¡Aprobado!',
-                        html: `<p>${data.message || 'Pedido aprobado correctamente'}</p><p style="margin-top: 10px; font-weight: 600; color: #10b981;">Estado: ${data.estado}</p>`,
-                        icon: 'success',
-                        confirmButtonColor: '#10b981'
-                    }).then(() => {
-                        // Recargar notificaciones si la función existe
-                        if (typeof cargarNotificacionesPendientes === 'function') {
-                            cargarNotificacionesPendientes();
-                        }
-                        // Recargar la página después de 1 segundo
-                        setTimeout(() => location.reload(), 1000);
-                    });
-                } else {
-                    Swal.fire({
-                        title: 'Error',
-                        text: data.message || 'No se pudo aprobar el pedido',
-                        icon: 'error',
-                        confirmButtonColor: '#ef4444'
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error al aprobar la orden:', error);
-                Swal.fire({
-                    title: 'Error',
-                    text: 'Error al procesar la solicitud',
-                    icon: 'error',
-                    confirmButtonColor: '#ef4444'
-                });
-            });
-        }
+    if (!result.isConfirmed) return;
+
+    Swal.fire({
+        title: 'Procesando...',
+        html: '<p>Por favor espera mientras se aprueba el pedido</p>',
+        icon: 'info',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => { Swal.showLoading(); }
     });
+
+    try {
+        const data = await window.shared.http.post(`/supervisor-pedidos/${ordenId}/aprobar`, {});
+
+        if (data.success) {
+            Swal.fire({
+                title: '¡Aprobado!',
+                html: `<p>${data.message || 'Pedido aprobado correctamente'}</p><p style="margin-top: 10px; font-weight: 600; color: #10b981;">Estado: ${data.estado}</p>`,
+                icon: 'success',
+                confirmButtonColor: '#10b981'
+            }).then(() => {
+                if (typeof cargarNotificacionesPendientes === 'function') {
+                    cargarNotificacionesPendientes();
+                }
+                setTimeout(() => location.reload(), 1000);
+            });
+        } else {
+            _spNotify.error(data.message || 'No se pudo aprobar el pedido');
+        }
+    } catch (error) {
+        console.error('[aprobarOrden] Error:', error);
+        _spNotify.error('Error al procesar la solicitud');
+    }
 }
 
 function verOrdenDetalles(ordenId) {
@@ -566,11 +463,11 @@ function abrirSeguimiento(ordenId) {
             openOrderTrackingModal(ordenId);
         } catch (error) {
             console.error('[abrirSeguimiento] Error:', error);
-            alert('Error en openOrderTrackingModal: ' + error.message);
+            _spNotify.error('Error en modal de seguimiento: ' + error.message);
         }
     } else {
         console.error('[abrirSeguimiento] openOrderTrackingModal no está disponible');
-        alert('Error: El modal de seguimiento no está disponible. Intenta nuevamente.');
+        _spNotify.error('El modal de seguimiento no está disponible. Intenta nuevamente.');
     }
 }
 
@@ -602,15 +499,7 @@ async function editarPedido(pedidoId) {
             await window.PrendaEditorPreloader.loadWithLoader({ title: 'Cargando datos', message: 'Por favor espera...' });
         }
 
-        const response = await fetch(`/api/pedidos/${pedidoId}`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
-        });
-
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-        const respuesta = await response.json();
+        const respuesta = await window.shared.http.get(`/api/pedidos/${pedidoId}`);
         if (!respuesta.success) throw new Error(respuesta.message || 'Error desconocido');
 
         const datos = respuesta.data || respuesta.datos;
@@ -633,7 +522,7 @@ async function editarPedido(pedidoId) {
     } catch (err) {
         Swal.close();
         console.error('[editarPedido] Error:', err);
-        alert('Error: No se pudo cargar el pedido: ' + err.message);
+        _spNotify.error('No se pudo cargar el pedido: ' + err.message);
     } finally {
         window.edicionEnProgreso = false;
     }

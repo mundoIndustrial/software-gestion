@@ -4,7 +4,15 @@
  * =====================================================
  * Maneja la selección múltiple de pedidos via checkboxes,
  * persistiendo el estado en el servidor.
+ *
+ * Requiere: supervisor-pedidos/core/bootstrap.js → window.supervisorPedidos
  */
+
+if (!window.supervisorPedidos?.isReady) {
+    throw new Error('[seleccion-pedidos] window.supervisorPedidos no está disponible. Carga core/bootstrap.js ANTES.');
+}
+
+const _selService = window.supervisorPedidos.selectionService;
 
 document.addEventListener('DOMContentLoaded', function() {
     // Cargar selecciones guardadas al iniciar
@@ -51,9 +59,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 fila.style.background = '#d1d5db';
                 fila.style.transition = 'background 0.2s';
                 fila.dataset.seleccionado = 'true';
-                console.log(`✅ Fila marcada como seleccionada para pedido ${pedidoId}`);
-            } else {
-                console.log(`⚠️ No se encontró la fila para pedido ${pedidoId}`);
             }
         } else {
             deseleccionarPedido(pedidoId);
@@ -61,109 +66,64 @@ document.addEventListener('DOMContentLoaded', function() {
                 fila.style.background = 'white';
                 fila.style.transition = 'background 0.2s';
                 fila.dataset.seleccionado = 'false';
-                console.log(`✅ Fila restaurada a color normal para pedido ${pedidoId}`);
-            } else {
-                console.log(`⚠️ No se encontró la fila para pedido ${pedidoId}`);
             }
         }
     });
 
-    function getCsrfToken() {
-        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    async function seleccionarPedido(pedidoId) {
+        try {
+            const ok = await _selService.select(pedidoId);
+            if (!ok) {
+                console.error(`[Selección] Error al seleccionar pedido ${pedidoId}`);
+                _revertCheckbox(pedidoId, false);
+            }
+        } catch (error) {
+            console.error(`[Selección] Error de red al seleccionar pedido ${pedidoId}:`, error);
+            _revertCheckbox(pedidoId, false);
+        }
     }
 
-    function seleccionarPedido(pedidoId) {
-        fetch(`/supervisor-pedidos/seleccionar/${pedidoId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': getCsrfToken()
+    async function deseleccionarPedido(pedidoId) {
+        try {
+            const ok = await _selService.deselect(pedidoId);
+            if (!ok) {
+                console.error(`[Selección] Error al deseleccionar pedido ${pedidoId}`);
+                _revertCheckbox(pedidoId, true);
             }
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log(`✅ Respuesta del servidor para pedido ${pedidoId}:`, data);
-            if (!data.success) {
-                console.error(`❌ Error al seleccionar pedido ${pedidoId}:`, data.message);
+        } catch (error) {
+            console.error(`[Selección] Error de red al deseleccionar pedido ${pedidoId}:`, error);
+            _revertCheckbox(pedidoId, true);
+        }
+    }
+
+    async function cargarSeleccionesGuardadas() {
+        try {
+            const selecciones = await _selService.loadSavedSelections();
+
+            selecciones.forEach(pedidoId => {
                 const checkbox = document.querySelector(`.pedido-checkbox[data-pedido-id="${pedidoId}"]`);
-                if (checkbox) checkbox.checked = false;
-            }
-        })
-        .catch(error => {
-            console.error(`❌ Error de red al seleccionar pedido ${pedidoId}:`, error);
-            const checkbox = document.querySelector(`.pedido-checkbox[data-pedido-id="${pedidoId}"]`);
-            if (checkbox) checkbox.checked = false;
-        });
-    }
-
-    function deseleccionarPedido(pedidoId) {
-        fetch(`/supervisor-pedidos/seleccionar/${pedidoId}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': getCsrfToken()
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                console.log(`✅ Pedido ${pedidoId} deseleccionado correctamente`);
-            } else {
-                console.error(`❌ Error al deseleccionar pedido ${pedidoId}:`, data.message);
-                const checkbox = document.querySelector(`.pedido-checkbox[data-pedido-id="${pedidoId}"]`);
-                if (checkbox) checkbox.checked = true;
-            }
-        })
-        .catch(error => {
-            console.error(`❌ Error de red al deseleccionar pedido ${pedidoId}:`, error);
-            const checkbox = document.querySelector(`.pedido-checkbox[data-pedido-id="${pedidoId}"]`);
-            if (checkbox) checkbox.checked = true;
-        });
-    }
-
-    function cargarSeleccionesGuardadas() {
-        console.log('🔄 Cargando selecciones guardadas...');
-        fetch('/supervisor-pedidos/selecciones', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': getCsrfToken()
-            }
-        })
-        .then(response => {
-            if (response.status === 404) return null;
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            return response.json();
-        })
-        .then(data => {
-            if (!data) return;
-            console.log('📥 Respuesta de selecciones:', data);
-            if (data.success && data.selecciones) {
-                console.log(`📋 Se encontraron ${data.selecciones.length} selecciones guardadas:`, data.selecciones);
-                data.selecciones.forEach(pedidoId => {
-                    const checkbox = document.querySelector(`.pedido-checkbox[data-pedido-id="${pedidoId}"]`);
-                    if (checkbox) {
-                        checkbox.checked = true;
-                        const fila = checkbox.closest('div[style*="grid-template-columns"]');
-                        if (fila) {
-                            fila.style.background = '#d1d5db';
-                            fila.style.transition = 'background 0.2s';
-                            fila.dataset.seleccionado = 'true';
-                        } else {
-                            console.log(`⚠️ No se encontró la fila para pedido ${pedidoId}`);
-                        }
-                    } else {
-                        console.log(`⚠️ No se encontró checkbox para pedido ${pedidoId}`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                    const fila = checkbox.closest('div[style*="grid-template-columns"]');
+                    if (fila) {
+                        fila.style.background = '#d1d5db';
+                        fila.style.transition = 'background 0.2s';
+                        fila.dataset.seleccionado = 'true';
                     }
-                });
-                console.log(`📋 Se cargaron ${data.selecciones.length} selecciones guardadas`);
-            } else {
-                console.log('📭 No hay selecciones guardadas o error en respuesta');
+                }
+            });
+
+            if (selecciones.length > 0) {
+                console.log(`[Selección] ${selecciones.length} selecciones cargadas`);
             }
-        })
-        .catch(error => {
-            console.error('❌ Error al cargar selecciones guardadas:', error);
-        });
+        } catch (error) {
+            console.error('[Selección] Error al cargar selecciones guardadas:', error);
+        }
+    }
+
+    function _revertCheckbox(pedidoId, checked) {
+        const checkbox = document.querySelector(`.pedido-checkbox[data-pedido-id="${pedidoId}"]`);
+        if (checkbox) checkbox.checked = checked;
     }
 
     // Exponer globalmente para uso externo (ej. navegarSupervisorPedidos)

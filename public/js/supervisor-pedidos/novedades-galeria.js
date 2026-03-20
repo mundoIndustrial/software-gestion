@@ -5,7 +5,15 @@
  * - toggleFactura
  * - abrirModalImagenProcesoGrande (lazy gallery)
  * - abrirNovedades / cerrarModalNovedades
+ *
+ * Requiere: shared/bootstrap.js → window.shared (modal, notify)
  */
+
+if (!window.shared?.isReady) {
+    throw new Error('[novedades-galeria] window.shared no está disponible. Asegúrate de cargar shared/bootstrap.js ANTES de este archivo.');
+}
+
+const { modal: _ngModal, notify: _ngNotify } = window.shared;
 
 window.toggleFactura = function() {
     if (typeof Galeria !== 'undefined' && Galeria.toggleFactura) {
@@ -161,19 +169,14 @@ window.abrirNovedades = function(ordenId, novedades) {
         });
 
         contenido.innerHTML = html;
-        modal.style.display = 'flex';
-        modal.style.alignItems = 'center';
-        modal.style.justifyContent = 'center';
+        _ngModal.open(modal);
         console.log('[Novedades] Modal abierto');
     }
 };
 
 window.cerrarModalNovedades = function() {
     console.log('[Novedades] Cerrando modal');
-    const modal = document.getElementById('modalNovedades');
-    if (modal) {
-        modal.style.display = 'none';
-    }
+    _ngModal.close('modalNovedades');
 };
 
 document.getElementById('modalNovedades')?.addEventListener('click', function(e) {

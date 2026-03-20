@@ -344,6 +344,20 @@
 
     @vite(['resources/js/app.js'])
 
+    <!-- Infraestructura compartida (DDD Híbrido - Fase 1) -->
+    <script src="{{ asset('js/shared/infrastructure/HttpClient.js') }}"></script>
+    <script src="{{ asset('js/shared/infrastructure/NotificationService.js') }}"></script>
+    <script src="{{ asset('js/shared/infrastructure/ModalManager.js') }}"></script>
+    <script src="{{ asset('js/shared/bootstrap.js') }}"></script>
+
+    <!-- Arquitectura DDD supervisor-pedidos (Fase 2) -->
+    <script src="{{ asset('js/supervisor-pedidos/core/domain/PedidoRepository.js') }}"></script>
+    <script src="{{ asset('js/supervisor-pedidos/core/infrastructure/PedidoApiRepository.js') }}"></script>
+    <script src="{{ asset('js/supervisor-pedidos/core/application/FilterService.js') }}"></script>
+    <script src="{{ asset('js/supervisor-pedidos/core/application/SelectionService.js') }}"></script>
+    <script src="{{ asset('js/supervisor-pedidos/core/application/OrderEditService.js') }}"></script>
+    <script src="{{ asset('js/supervisor-pedidos/core/bootstrap.js') }}"></script>
+
     <!-- Laravel Echo & WebSockets para supervisor-pedidos -->
     @auth
     <script defer src="{{ asset('js/modulos/asesores/pedidos-realtime.js') }}"></script>

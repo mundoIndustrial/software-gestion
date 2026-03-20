@@ -3,7 +3,15 @@
  * ==========================================
  * Funciones para abrir modales de aprobación, anulación y ocultación de pedidos
  * Se carga TEMPRANO para evitar errores de "función no definida"
+ *
+ * Requiere: shared/bootstrap.js → window.shared (http, notify, modal)
  */
+
+if (!window.shared?.isReady) {
+    throw new Error('[modales-acciones] window.shared no está disponible. Asegúrate de cargar shared/bootstrap.js ANTES de este archivo.');
+}
+
+const { http: _http, notify: _notify, modal: _modal } = window.shared;
 
 // ===== FUNCIÓN PARA ABRIR MODAL DE ANULACIÓN =====
 function abrirModalAnulacion(ordenId, numeroOrden) {
@@ -11,52 +19,37 @@ function abrirModalAnulacion(ordenId, numeroOrden) {
     document.getElementById('formAnulacion').dataset.ordenId = ordenId;
     document.getElementById('motivoAnulacion').value = '';
     document.getElementById('contadorActual').textContent = '0';
-    document.getElementById('modalAnulacion').style.display = 'flex';
+    _modal.open('modalAnulacion');
 }
 
 function cerrarModalAnulacion() {
-    document.getElementById('modalAnulacion').style.display = 'none';
+    _modal.close('modalAnulacion');
 }
 
-function confirmarAnulacion(event) {
+async function confirmarAnulacion(event) {
     event.preventDefault();
-    
+
     const ordenId = document.getElementById('formAnulacion').dataset.ordenId;
     const motivo = document.getElementById('motivoAnulacion').value;
 
-    fetch(`/supervisor-pedidos/${ordenId}/anular`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-        },
-        body: JSON.stringify({
-            motivo_anulacion: motivo,
-        }),
-    })
-    .then(response => response.json())
-    .then(data => {
+    try {
+        const data = await _http.post(`/supervisor-pedidos/${ordenId}/anular`, { motivo_anulacion: motivo });
+
         if (data.success) {
-            // Cerrar modal de revisión
             cerrarModalAnulacion();
-            // Mostrar modal de éxito
-            document.getElementById('modalExitoRevision').style.display = 'flex';
-            // Recargar notificaciones si la función existe
-            if (typeof cargarNotificacionesPendientes === 'function') {
-                cargarNotificacionesPendientes();
-            }
+            _modal.open('modalExitoRevision');
+            if (typeof cargarNotificacionesPendientes === 'function') { cargarNotificacionesPendientes(); }
         } else {
-            alert('Error: ' + data.message);
+            _notify.error(data.message || 'Error al anular');
         }
-    })
-    .catch(error => {
-        alert('Error al enviar la orden a revisión');
-    });
+    } catch (error) {
+        console.error('[Anulación] Error:', error);
+        _notify.error('Error al enviar la orden a revisión');
+    }
 }
 
 function cerrarModalExitoRevision() {
-    document.getElementById('modalExitoRevision').style.display = 'none';
-    // Recargar la página después de cerrar
+    _modal.close('modalExitoRevision');
     setTimeout(() => location.reload(), 300);
 }
 
@@ -66,57 +59,43 @@ let ordenIdOcultar = null;
 function abrirModalOcultar(ordenId, numeroOrden) {
     ordenIdOcultar = ordenId;
     document.getElementById('ordenOcultarNumero').textContent = '#' + numeroOrden;
-    document.getElementById('modalOcultar').style.display = 'flex';
+    _modal.open('modalOcultar');
 }
 
 function cerrarModalOcultar() {
-    document.getElementById('modalOcultar').style.display = 'none';
+    _modal.close('modalOcultar');
     ordenIdOcultar = null;
 }
 
-function confirmarOcultar() {
+async function confirmarOcultar() {
     if (!ordenIdOcultar) return;
 
     const btnConfirmar = document.getElementById('btnConfirmarOcultar');
     btnConfirmar.disabled = true;
     btnConfirmar.textContent = 'Ocultando...';
 
-    fetch(`/supervisor-pedidos/${ordenIdOcultar}/ocultar`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-        },
-        body: JSON.stringify({}),
-    })
-    .then(response => response.json())
-    .then(data => {
+    try {
+        const data = await _http.post(`/supervisor-pedidos/${ordenIdOcultar}/ocultar`, {});
+
         if (data.success) {
-            // Cerrar modal de confirmación
             cerrarModalOcultar();
-            // Mostrar modal de éxito
-            document.getElementById('modalExitoOcultar').style.display = 'flex';
-            // Recargar notificaciones si la función existe
-            if (typeof cargarNotificacionesPendientes === 'function') {
-                cargarNotificacionesPendientes();
-            }
+            _modal.open('modalExitoOcultar');
+            if (typeof cargarNotificacionesPendientes === 'function') { cargarNotificacionesPendientes(); }
         } else {
-            alert('Error: ' + data.message);
+            _notify.error(data.message || 'Error al ocultar');
             btnConfirmar.disabled = false;
             btnConfirmar.innerHTML = '<span class="material-symbols-rounded">visibility_off</span> Ocultar Pedido';
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error al ocultar el pedido');
+    } catch (error) {
+        console.error('[Ocultar] Error:', error);
+        _notify.error('Error al ocultar el pedido');
         btnConfirmar.disabled = false;
         btnConfirmar.innerHTML = '<span class="material-symbols-rounded">visibility_off</span> Ocultar Pedido';
-    });
+    }
 }
 
 function cerrarModalExitoOcultar() {
-    document.getElementById('modalExitoOcultar').style.display = 'none';
-    // Recargar la página después de cerrar
+    _modal.close('modalExitoOcultar');
     setTimeout(() => location.reload(), 300);
 }
 
@@ -150,15 +129,7 @@ window.abrirModalAprobacion = function(ordenId, numeroPedido) {
             });
 
             // Enviar solicitud de aprobación
-            fetch(`/supervisor-pedidos/${ordenId}/aprobar`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({})
-            })
-            .then(response => response.json())
+            _http.post(`/supervisor-pedidos/${ordenId}/aprobar`, {})
             .then(data => {
                 if (data.success) {
                     Swal.fire({
