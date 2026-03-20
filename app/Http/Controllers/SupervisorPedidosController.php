@@ -2059,7 +2059,7 @@ class SupervisorPedidosController extends Controller
                     'crp.id as recibo_id',
                     'pp.id as prenda_id',
                     'ppd.fecha_aprobacion',
-                    'rfl.fecha_llegada'
+                    \DB::raw('COALESCE(rfl.fecha_llegada, rfl.created_at) as fecha_llegada')
                 ])
                 ->whereIn('crp.tipo_recibo', ['BORDADO', 'ESTAMPADO', 'SUBLIMADO', 'DTF'])
                 ->where('crp.activo', 1)
