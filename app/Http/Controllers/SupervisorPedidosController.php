@@ -414,13 +414,6 @@ class SupervisorPedidosController extends Controller
               });
         });
 
-        // Log para depuración del filtro EPP
-        \Log::info('[SupervisorPedidos] Aplicando filtro para excluir pedidos con solo EPP', [
-            'request_params' => $request->all(),
-            'sql_before' => $query->toSql(),
-            'bindings' => $query->getBindings()
-        ]);
-
         // FILTRO DE APROBACIÓN: Mostrar solo órdenes según su estado de aprobación
         // Si no hay parámetro aprobacion, mostrar todos los pedidos
         if ($request->filled('aprobacion')) {
@@ -499,13 +492,14 @@ class SupervisorPedidosController extends Controller
             $query->whereDate('fecha_de_creacion_de_orden', '<=', $request->fecha_hasta);
         }
 
-        // Ordenar: primero pedidos con anexos recientes, luego por número de pedido desc
+        // Ordenar: primero pedidos con anexos recientes, luego por updated_at desc (para que los modificados suban), luego por número de pedido desc
         $ordenes = $query->orderByRaw('
                 (SELECT MAX(created_at) FROM pedido_anexos_historial WHERE pedido_produccion_id = pedidos_produccion.id) IS NULL ASC
             ')
                         ->orderByRaw('
                 (SELECT MAX(created_at) FROM pedido_anexos_historial WHERE pedido_produccion_id = pedidos_produccion.id) DESC
             ')
+                        ->orderBy('updated_at', 'desc')
                         ->orderBy('numero_pedido', 'desc')
                         ->paginate(15)
                         ->appends($request->query());
@@ -516,7 +510,16 @@ class SupervisorPedidosController extends Controller
                                    ->filter()
                                    ->values();
 
-        return view('supervisor-pedidos.index', compact('ordenes', 'estados'));
+        // Cargar IDs de pedidos seleccionados por el usuario actual
+        $pedidosSeleccionados = [];
+        if (Auth::check()) {
+            $pedidosSeleccionados = \App\Models\SeleccionPedido::where('user_id', Auth::id())
+                ->where('seleccionado', true)
+                ->pluck('pedido_id')
+                ->toArray();
+        }
+
+        return view('supervisor-pedidos.index', compact('ordenes', 'estados', 'pedidosSeleccionados'));
     }
 
     /**
@@ -2585,8 +2588,8 @@ class SupervisorPedidosController extends Controller
 
             $pedido = PedidoProduccion::findOrFail($pedidoId);
             
-            // Usar firstOrCreate para evitar duplicados
-            $seleccion = \App\Models\SeleccionPedido::firstOrCreate([
+            // Usar updateOrCreate para garantizar que seleccionado=true aunque el registro ya exista
+            $seleccion = \App\Models\SeleccionPedido::updateOrCreate([
                 'pedido_id' => $pedidoId,
                 'user_id' => $user->id,
             ], [

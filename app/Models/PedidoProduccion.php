@@ -342,6 +342,38 @@ class PedidoProduccion extends Model
     */
 
     /**
+     * Determina si el pedido tiene solo EPP (sin prendas regulares).
+     */
+    public function esSoloEpp(): bool
+    {
+        $tienePrendas = $this->relationLoaded('prendas')
+            ? $this->prendas->isNotEmpty()
+            : $this->prendas()->exists();
+
+        if ($tienePrendas) {
+            return false;
+        }
+
+        $tieneEpps = $this->relationLoaded('epps')
+            ? $this->epps->isNotEmpty()
+            : $this->epps()->exists();
+
+        return $tieneEpps;
+    }
+
+    /**
+     * Retorna la cantidad de novedades registradas en el pedido.
+     */
+    public function getNovedadesCountAttribute(): int
+    {
+        if (empty($this->novedades)) {
+            return 0;
+        }
+
+        return count(array_filter(explode("\n\n", $this->novedades)));
+    }
+
+    /**
      * Calcular fecha estimada de entrega basada en día_de_entrega
      * Suma días hábiles a partir de fecha_de_creacion_de_orden
      */
