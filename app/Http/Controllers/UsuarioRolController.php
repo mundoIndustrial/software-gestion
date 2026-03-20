@@ -78,4 +78,69 @@ class UsuarioRolController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Obtener usuarios por área/proceso
+     */
+    public function getUsuariosPorArea(Request $request)
+    {
+        try {
+            $area = strtolower(trim((string) $request->query('area', '')));
+
+            // Mapeo de áreas a roles
+            $rolesMap = [
+                'corte' => ['cortador', 'confeccion-sobremedida'],
+                'costura' => ['costurero', 'confeccion-sobremedida', 'costura-reflectivo'],
+                'bordado' => ['bordador'],
+                'estampado' => ['estampador'],
+                'lavandería' => ['lavanderia'],
+                'control de calidad' => ['control-calidad'],
+                'despacho' => ['despacho'],
+                'insumos' => ['gestor-insumos'],
+                'taller' => ['tallista'],
+                'entrega' => ['repartidor']
+            ];
+
+            if (!isset($rolesMap[$area])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Área no válida: ' . $area
+                ], 400);
+            }
+
+            $rolesNecesarios = $rolesMap[$area];
+            
+            // Buscar los roles
+            $roles = Role::whereIn('name', $rolesNecesarios)->get();
+            
+            if ($roles->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'usuarios' => []
+                ]);
+            }
+
+            // Obtener usuarios con cualquiera de los roles
+            $query = User::select('id', 'name', 'email')
+                ->orderBy('name');
+
+            foreach ($roles as $role) {
+                $query->orWhereJsonContains('roles_ids', $role->id);
+            }
+
+            // Evitar duplicados
+            $usuarios = $query->distinct()->get();
+
+            return response()->json([
+                'success' => true,
+                'usuarios' => $usuarios
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener usuarios por área: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

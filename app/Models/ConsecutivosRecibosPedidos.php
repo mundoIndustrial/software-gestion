@@ -20,6 +20,8 @@ class ConsecutivosRecibosPedidos extends Model
         'area',
         'notas',
         'marcar_plooter',
+        'dia_de_entrega',
+        'fecha_estimada_de_entrega',
     ];
 
     protected $casts = [

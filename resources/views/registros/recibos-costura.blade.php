@@ -1053,7 +1053,20 @@ async function handleAgregarProcesoDesdeBadge() {
         }
 
         const area = document.getElementById('procesoArea').value;
-        const encargado = document.getElementById('procesoEncargado').value.toUpperCase();
+        
+        // Obtener encargado - puede ser de un select (ID) o de un input (texto)
+        let encargado = '';
+        const selectEncargado = document.getElementById('procesoEncargadoSelect');
+        const inputEncargado = document.getElementById('procesoEncargado');
+        
+        if (selectEncargado && selectEncargado.offsetParent !== null) {
+            // Es un select - obtener el texto del option seleccionado
+            const selectedOption = selectEncargado.options[selectEncargado.selectedIndex];
+            encargado = selectedOption ? selectedOption.text : '';
+        } else if (inputEncargado) {
+            // Es un input - obtener el valor y convertir a mayúsculas
+            encargado = inputEncargado.value.toUpperCase();
+        }
 
         if (!area) {
             showError('Por favor selecciona un área/proceso');
@@ -1072,7 +1085,7 @@ async function handleAgregarProcesoDesdeBadge() {
         const areaRequiresEncargado = needsEncargado.some(reqArea => areaLower.includes(reqArea));
         
         if (areaRequiresEncargado && !encargado.trim()) {
-            showError('Por favor ingresa el nombre del encargado');
+            showError('Por favor selecciona o ingresa el encargado');
             // Ocultar indicador de carga
             if (btnContent && btnLoading && btnConfirm) {
                 btnContent.style.display = 'flex';
@@ -1167,9 +1180,11 @@ async function handleAgregarProcesoDesdeBadge() {
 function limpiarFormularioProceso() {
     const selectArea = document.getElementById('procesoArea');
     const inputEncargado = document.getElementById('procesoEncargado');
+    const selectEncargado = document.getElementById('procesoEncargadoSelect');
     
     if (selectArea) selectArea.value = '';
     if (inputEncargado) inputEncargado.value = '';
+    if (selectEncargado) selectEncargado.value = '';
 }
 
 // Funciones para mostrar mensajes (Toast Notifications)

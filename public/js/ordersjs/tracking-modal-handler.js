@@ -40,8 +40,93 @@ function initTrackingModalListeners() {
     // Configurar botón volver
     setupBackButton();
 
+    setupDaysSelector();
+
     // Precargar festivos para mejorar rendimiento
     precargarFestivos();
+  }
+
+  function setupDaysSelector() {
+    const selector = document.getElementById('trackingDaysSelector');
+    const trigger = document.getElementById('trackingDaysSelectorTrigger');
+    const menu = document.getElementById('trackingDaysSelectorMenu');
+    const valueEl = document.getElementById('trackingDaysSelectorValue');
+    if (!selector || !trigger || !menu || !valueEl) return;
+
+    if (!menu.dataset.bound) {
+      // Agregar opción "Sin seleccionar" al inicio
+      let menuItems = '<button type="button" class="tracking-days-selector-item" data-value="0">Sin seleccionar</button>';
+      menuItems += Array.from({ length: 35 }, (_, i) => {
+        const n = i + 1;
+        const label = `${n} ${n === 1 ? 'día' : 'días'}`;
+        return `<button type="button" class="tracking-days-selector-item" data-value="${n}">${label}</button>`;
+      }).join('');
+      menu.innerHTML = menuItems;
+      menu.dataset.bound = '1';
+    }
+
+    const closeMenu = () => {
+      menu.style.display = 'none';
+      selector.classList.remove('open');
+    };
+
+    const openMenu = () => {
+      menu.style.display = 'block';
+      selector.classList.add('open');
+    };
+
+    const toggleMenu = () => {
+      const isOpen = menu.style.display !== 'none' && menu.style.display !== '';
+      if (isOpen) closeMenu();
+      else openMenu();
+    };
+
+    if (!trigger.dataset.bound) {
+      trigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleMenu();
+      });
+      trigger.dataset.bound = '1';
+    }
+
+    if (!menu.dataset.clickBound) {
+      menu.addEventListener('click', (e) => {
+        const btn = e.target.closest('.tracking-days-selector-item');
+        if (!btn) return;
+        const n = parseInt(btn.dataset.value, 10);
+        if (!Number.isFinite(n)) return;
+
+        // Manejar "Sin seleccionar" (valor 0)
+        if (n === 0) {
+          valueEl.textContent = 'Sin seleccionar';
+          window.__trackingDiasSeleccionados = null;
+        } else {
+          valueEl.textContent = `${n} ${n === 1 ? 'día' : 'días'}`;
+          window.__trackingDiasSeleccionados = n;
+        }
+        
+        // Guardar los datos al cambiar la selección
+        saveDiaEntregaSelection();
+        closeMenu();
+      });
+      menu.dataset.clickBound = '1';
+    }
+
+    if (!document.body.dataset.trackingDaysSelectorGlobalBound) {
+      document.addEventListener('click', (e) => {
+        if (!selector.contains(e.target)) {
+          closeMenu();
+        }
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeMenu();
+        }
+      });
+      document.body.dataset.trackingDaysSelectorGlobalBound = '1';
+    }
   }
 
   // Timer para actualizar contadores dinámicos
@@ -130,6 +215,94 @@ function initTrackingModalListeners() {
     }
   }
 
+  /**
+   * Guardar selección de día de entrega desde el modal de seguimiento
+   * Calcula la fecha estimada considerando días hábiles y festivos
+   */
+  async function saveDiaEntregaSelection() {
+    try {
+      const diasSeleccionados = window.__trackingDiasSeleccionados;
+      
+      // Obtener el ID del recibo/orden del header del modal
+      let reciboId = null;
+      let ordenId = null;
+      
+      // Intentar obtener orden ID desde los datos globales
+      if (window.currentOrderData) {
+        ordenId = window.currentOrderData.id;
+      }
+      
+      // Si no tenemos orden ID, intentar obtenerlo dari el DOM
+      if (!ordenId) {
+        const ordenNumberEl = document.getElementById('trackingOrderNumber');
+        if (ordenNumberEl) {
+          const text = ordenNumberEl.textContent;
+          // Si el texto es un número, usarlo como orden ID
+          if (/^\d+$/.test(text)) {
+            ordenId = parseInt(text);
+          }
+        }
+      }
+      
+      if (!ordenId) {
+        console.warn('[saveDiaEntregaSelection] No se encontró el ID de la orden');
+        return;
+      }
+      
+      console.log('[saveDiaEntregaSelection] Guardando:', {
+        dias_seleccionados: diasSeleccionados,
+        orden_id: ordenId
+      });
+      
+      // Enviar al servidor
+      const response = await fetch(`/registros/${ordenId}/dia-entrega`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        },
+        body: JSON.stringify({
+          dia_de_entrega: diasSeleccionados,
+          calcular_fecha_estimada: true
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error al guardar día de entrega');
+      }
+      
+      const result = await response.json();
+      console.log('[saveDiaEntregaSelection] Respuesta del servidor:', result);
+      
+      // Actualizar la UI con la fecha estimada calculada
+      if (result.data && result.data.fecha_estimada_de_entrega) {
+        const fechaEstimadaEl = document.getElementById('trackingEstimatedDate');
+        if (fechaEstimadaEl) {
+          const fechaFormato = formatDate(result.data.fecha_estimada_de_entrega) || '-';
+          fechaEstimadaEl.textContent = fechaFormato;
+        }
+        
+        const selectorEstimatedDateEl = document.getElementById('selectorOrderEstimatedDate');
+        if (selectorEstimatedDateEl) {
+          const fechaFormato = formatDate(result.data.fecha_estimada_de_entrega) || '-';
+          selectorEstimatedDateEl.textContent = fechaFormato;
+        }
+      }
+      
+      // Mostrar notificación de éxito
+      if (typeof showSuccess === 'function') {
+        const diasText = diasSeleccionados === null ? 'Sin seleccionar' : `${diasSeleccionados} día${diasSeleccionados !== 1 ? 's' : ''}`;
+        showSuccess(`Día de entrega actualizado: ${diasText}`);
+      }
+      
+    } catch (error) {
+      console.error('[saveDiaEntregaSelection] Error:', error);
+      if (typeof showError === 'function') {
+        showError('Error al guardar el día de entrega');
+      }
+    }
+  }
+
   // Función para abrir el modal de agregar proceso
   const closeAddProcesoBtn = document.getElementById('closeAddProcesoModal');
   if (closeAddProcesoBtn) {
@@ -188,6 +361,16 @@ function initTrackingModalListeners() {
 
   // Configurar listeners del modal agregar proceso
   function setupAddProcesoModalListeners() {
+    // Abrir modal
+    const openBtn = document.getElementById('btnOpenAddProcesoModal');
+    if (openBtn) {
+      openBtn.onclick = openAddProcesoModal;
+      console.log('[setupAddProcesoModalListeners] Botón ABRIR modal configurado');
+    } else {
+      console.warn('[setupAddProcesoModalListeners] Botón ABRIR modal no encontrado');
+    }
+
+    // Cerrar modal
     const closeBtn = document.getElementById('closeAddProcesoModal');
     if (closeBtn) {
       closeBtn.onclick = closeAddProcesoModal;
@@ -202,6 +385,125 @@ function initTrackingModalListeners() {
     if (overlay) {
       overlay.onclick = closeAddProcesoModal;
     }
+
+    // Configurar selector dinámico para encargado
+    setupEncargadoDynamicSelector();
+  }
+
+  // Función para configurar el selector dinámico de encargado
+  function setupEncargadoDynamicSelector() {
+    const procesoArea = document.getElementById('procesoArea');
+    if (!procesoArea) return;
+
+    procesoArea.addEventListener('change', async function(e) {
+      const area = e.target.value.toLowerCase().trim();
+      
+      // Buscar el contenedor de encargado de forma más robusta
+      const formGroups = document.querySelectorAll('.add-proceso-form-group');
+      let procesoEncargadoContainer = null;
+      
+      formGroups.forEach(group => {
+        const label = group.querySelector('label');
+        if (label && label.textContent.includes('Encargado')) {
+          procesoEncargadoContainer = group;
+        }
+      });
+      
+      if (!procesoEncargadoContainer) {
+        console.warn('[setupEncargadoDynamicSelector] No se encontró el contenedor de encargado');
+        return;
+      }
+      
+      console.log('[setupEncargadoDynamicSelector] Área seleccionada:', area);
+
+      // Áreas que requieren selector dinámico
+      if (area === 'corte' || area === 'costura') {
+        console.log('[setupEncargadoDynamicSelector] Convertir a selector para:', area);
+        convertEncargadoToSelect(area, procesoEncargadoContainer);
+      } else {
+        console.log('[setupEncargadoDynamicSelector] Convertir a input para:', area);
+        convertEncargadoToInput(procesoEncargadoContainer);
+      }
+    });
+  }
+
+  // Convertir campo de encargado a SELECT
+  async function convertEncargadoToSelect(area, container) {
+    // Primero, remover cualquier input o select anterior
+    const existingInput = document.getElementById('procesoEncargado');
+    const existingSelect = document.getElementById('procesoEncargadoSelect');
+    
+    if (existingInput) {
+      existingInput.remove();
+    }
+    if (existingSelect) {
+      existingSelect.remove();
+    }
+
+    // Crear nuevo select
+    const select = document.createElement('select');
+    select.id = 'procesoEncargadoSelect';
+    select.className = 'add-proceso-select';
+    select.innerHTML = '<option value="">Seleccionar encargado...</option>';
+
+    container.appendChild(select);
+
+    try {
+      console.log('[convertEncargadoToSelect] Cargando usuarios para:', area);
+      
+      // Cargar usuarios desde API
+      const response = await fetch(`/api/usuarios/por-area?area=${encodeURIComponent(area)}`);
+      const data = await response.json();
+
+      if (data.success && data.usuarios && data.usuarios.length > 0) {
+        data.usuarios.forEach(usuario => {
+          const option = document.createElement('option');
+          option.value = usuario.id;
+          option.textContent = usuario.name;
+          select.appendChild(option);
+        });
+        console.log('[convertEncargadoToSelect] ✓ Usuarios cargados:', data.usuarios.length);
+      } else {
+        console.warn('[convertEncargadoToSelect] No hay usuarios disponibles para:', area);
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'No hay usuarios disponibles';
+        option.disabled = true;
+        select.appendChild(option);
+      }
+    } catch (error) {
+      console.error('[convertEncargadoToSelect] Error al cargar usuarios:', error);
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = 'Error al cargar usuarios';
+      option.disabled = true;
+      select.appendChild(option);
+    }
+  }
+
+  // Convertir campo de encargado a INPUT
+  function convertEncargadoToInput(container) {
+    // Primero, remover cualquier input o select anterior
+    const existingInput = document.getElementById('procesoEncargado');
+    const existingSelect = document.getElementById('procesoEncargadoSelect');
+    
+    if (existingInput) {
+      existingInput.remove();
+    }
+    if (existingSelect) {
+      existingSelect.remove();
+    }
+
+    // Crear nuevo input
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'procesoEncargado';
+    input.className = 'add-proceso-input';
+    input.placeholder = 'Nombre del encargado';
+    input.style.textTransform = 'uppercase';
+    container.appendChild(input);
+    
+    console.log('[convertEncargadoToInput] Input de texto creado');
   }
 
   // Función para cerrar el modal de agregar proceso
@@ -307,7 +609,10 @@ function initTrackingModalListeners() {
     document.getElementById('trackingOrderClient').textContent = orderData.cliente || '-';
     document.getElementById('trackingOrderStatus').textContent = (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
     document.getElementById('trackingEstimatedDate').textContent = formatDate(orderData.fecha_estimada_entrega) || '-';
-    document.getElementById('trackingTotalDays').textContent = orderData.total_dias || '0';
+    const trackingTotalDaysEl = document.getElementById('trackingTotalDays');
+    if (trackingTotalDaysEl) {
+      trackingTotalDaysEl.textContent = orderData.total_dias || '0';
+    }
 
     // Actualizar selector de prendas
     const selectorOrderNumber = document.getElementById('selectorOrderNumber');
@@ -448,20 +753,20 @@ function initTrackingModalListeners() {
       trackingOrderStatus.textContent = (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
     }
     if (trackingOrderRecibo) {
-      // Buscar específicamente recibos de COSTURA (excluir COSTURA-BODEGA)
-      let ultimoReciboCostura = '-';
+      // Buscar el recibo principal según el tipo de recibo que se está visualizando
+      let ultimoRecibo = '-';
       
-      console.log('[updateOrderInfo] Buscando recibo COSTURA en orderData:', {
+      console.log('[updateOrderInfo] Buscando recibo principal en orderData:', {
         prendas_count: orderData.prendas ? orderData.prendas.length : 0,
         prendas: orderData.prendas
       });
       
-      // Si tenemos datos de prendas con consecutivos, buscar COSTURA
+      // Si tenemos datos de prendas con consecutivos, buscar el recibo principal
       if (orderData.prendas && orderData.prendas.length > 0) {
-        let reciboCosturaEncontrado = null;
+        let reciboPrincipalEncontrado = null;
         let totalRecibosEncontrados = 0;
         
-        // Buscar entre todas las prendas el recibo de COSTURA
+        // Buscar entre todas las prendas el recibo principal
         for (const prenda of orderData.prendas) {
           console.log('[updateOrderInfo] Analizando prenda:', {
             prenda_id: prenda.id,
@@ -486,37 +791,47 @@ function initTrackingModalListeners() {
             
             console.log('[updateOrderInfo] Recibos convertidos a array:', recibosArray);
             
-            for (const recibo of recibosArray) {
-              console.log('[updateOrderInfo] Analizando recibo:', recibo);
-              totalRecibosEncontrados++;
+            // Orden de prioridad: COSTURA > REFLECTIVO > ESTAMPADO > BORDADO > otros
+            const prioridadRecibos = ['COSTURA', 'REFLECTIVO', 'ESTAMPADO', 'BORDADO', 'DTF', 'SUBLIMADO'];
+            
+            for (const prioridad of prioridadRecibos) {
+              for (const recibo of recibosArray) {
+                console.log('[updateOrderInfo] Analizando recibo:', recibo);
+                totalRecibosEncontrados++;
+                
+                // Buscar recibo activo del tipo actual según prioridad
+                if (recibo.activo === 1 && recibo.tipo_recibo === prioridad) {
+                  reciboPrincipalEncontrado = recibo;
+                  console.log('[updateOrderInfo] Recibo principal encontrado:', reciboPrincipalEncontrado);
+                  break; // Encontramos el de esta prioridad
+                }
+              }
               
-              // Solo buscar recibos de tipo COSTURA (excluir COSTURA-BODEGA)
-              if (recibo.activo === 1 && recibo.tipo_recibo === 'COSTURA') {
-                reciboCosturaEncontrado = recibo;
-                console.log('[updateOrderInfo] Recibo COSTURA encontrado:', reciboCosturaEncontrado);
-                break; // Encontramos el primero, no necesitamos seguir buscando
+              // Si ya encontramos un recibo de esta prioridad, salir del bucle de prioridad
+              if (reciboPrincipalEncontrado) {
+                break;
               }
             }
           }
           
-          // Si ya encontramos un recibo COSTURA, salir del bucle de prendas
-          if (reciboCosturaEncontrado) {
+          // Si ya encontramos un recibo principal, salir del bucle de prendas
+          if (reciboPrincipalEncontrado) {
             break;
           }
         }
         
         console.log('[updateOrderInfo] Resumen de búsqueda:', {
           total_recibos_encontrados: totalRecibosEncontrados,
-          recibo_costura_encontrado: reciboCosturaEncontrado
+          recibo_principal_encontrado: reciboPrincipalEncontrado
         });
         
-        if (reciboCosturaEncontrado) {
-          ultimoReciboCostura = `COSTURA #${reciboCosturaEncontrado.consecutivo_actual}`;
+        if (reciboPrincipalEncontrado) {
+          ultimoRecibo = `${reciboPrincipalEncontrado.tipo_recibo} #${reciboPrincipalEncontrado.consecutivo_actual}`;
         }
       }
       
-      console.log('[updateOrderInfo] Resultado final para trackingOrderRecibo:', ultimoReciboCostura);
-      trackingOrderRecibo.textContent = ultimoReciboCostura;
+      console.log('[updateOrderInfo] Resultado final para trackingOrderRecibo:', ultimoRecibo);
+      trackingOrderRecibo.textContent = ultimoRecibo;
     }
     if (selectorOrderEstimatedDate) {
       selectorOrderEstimatedDate.style.color = '#1f2937';
@@ -1696,24 +2011,33 @@ function initTrackingModalListeners() {
     
     console.log('[handleEditarProceso] Editando proceso:', { procesoId, areaName, processData });
     
+    // Abrir el modal primero
+    openAddProcesoModal();
+    
     // Verificar si los elementos del formulario existen
     const procesoArea = document.getElementById('procesoArea');
     const procesoEstado = document.getElementById('procesoEstado');
     const procesoFechaInicio = document.getElementById('procesoFechaInicio');
-    const procesoEncargado = document.getElementById('procesoEncargado');
     const procesoObservaciones = document.getElementById('procesoObservaciones');
     
     console.log('[handleEditarProceso] Elementos del formulario:', {
       procesoArea: !!procesoArea,
       procesoEstado: !!procesoEstado,
       procesoFechaInicio: !!procesoFechaInicio,
-      procesoEncargado: !!procesoEncargado,
       procesoObservaciones: !!procesoObservaciones
     });
     
-    // Llenar el formulario con los datos actuales
-    if (procesoArea) procesoArea.value = processData.area || areaName;
+    // Llenar el área
+    if (procesoArea) {
+      procesoArea.value = processData.area || areaName;
+      
+      // Disparar evento change para que se cree el selector dinámico si es necesario
+      const changeEvent = new Event('change', { bubbles: true });
+      procesoArea.dispatchEvent(changeEvent);
+    }
+    
     if (procesoEstado) procesoEstado.value = processData.estado || 'Pendiente';
+    
     if (procesoFechaInicio) {
       // Formatear la fecha para el input date (YYYY-MM-DD)
       const fechaInicio = processData.fecha_inicio;
@@ -1725,8 +2049,32 @@ function initTrackingModalListeners() {
         procesoFechaInicio.value = `${year}-${month}-${day}`;
       }
     }
-    if (procesoEncargado) procesoEncargado.value = processData.encargado || '';
+    
     if (procesoObservaciones) procesoObservaciones.value = processData.observaciones || '';
+    
+    // Esperar a que el selector se haya creado (si es necesario) antes de establecer el encargado
+    setTimeout(() => {
+      const inputEncargado = document.getElementById('procesoEncargado');
+      const selectEncargado = document.getElementById('procesoEncargadoSelect');
+      
+      if (selectEncargado && selectEncargado.offsetParent !== null) {
+        // Es un select - establecer el valor si existe una opción con ese nombre
+        const options = selectEncargado.options;
+        const encargadoValue = processData.encargado || '';
+        
+        for (let i = 0; i < options.length; i++) {
+          if (options[i].text.toLowerCase() === encargadoValue.toLowerCase()) {
+            selectEncargado.value = options[i].value;
+            break;
+          }
+        }
+        console.log('[handleEditarProceso] Encargado seleccionado en select:', encargadoValue);
+      } else if (inputEncargado) {
+        // Es un input - establecer el valor directamente
+        inputEncargado.value = processData.encargado || '';
+        console.log('[handleEditarProceso] Encargado establecido en input:', processData.encargado);
+      }
+    }, 150);
     
     // Guardar el ID del proceso que se está editando
     window.editingProcessId = procesoId;
@@ -1738,9 +2086,6 @@ function initTrackingModalListeners() {
       btnConfirmar.onclick = function() { handleActualizarProceso(procesoId); };
     }
     
-    // Abrir el modal de agregar/editar proceso
-    openAddProcesoModal();
-    
     console.log('[handleEditarProceso] Modal de agregar/editar proceso abierto');
   };
 
@@ -1750,17 +2095,29 @@ function initTrackingModalListeners() {
       const procesoAreaEl = document.getElementById('procesoArea');
       const procesoEstadoEl = document.getElementById('procesoEstado');
       const procesoFechaInicioEl = document.getElementById('procesoFechaInicio');
-      const procesoEncargadoEl = document.getElementById('procesoEncargado');
       const procesoObservacionesEl = document.getElementById('procesoObservaciones');
 
-      if (!procesoAreaEl || !procesoEncargadoEl) {
-        throw new Error('No se encontraron los campos del formulario para actualizar el proceso. Por favor recarga la página.');
+      // Buscar encargado - puede ser un input o un select
+      const inputEncargado = document.getElementById('procesoEncargado');
+      const selectEncargado = document.getElementById('procesoEncargadoSelect');
+      
+      let encargado = '';
+      if (selectEncargado && selectEncargado.offsetParent !== null) {
+        // Es un select - obtener el texto del option seleccionado
+        const selectedOption = selectEncargado.options[selectEncargado.selectedIndex];
+        encargado = selectedOption ? selectedOption.text : '';
+      } else if (inputEncargado) {
+        // Es un input - obtener el valor
+        encargado = inputEncargado.value;
+      }
+
+      if (!procesoAreaEl) {
+        throw new Error('No se encontró el campo de área. Por favor recarga la página.');
       }
 
       const area = procesoAreaEl.value;
       const estado = procesoEstadoEl ? procesoEstadoEl.value : 'Pendiente';
       const fechaInicio = procesoFechaInicioEl ? procesoFechaInicioEl.value : '';
-      const encargado = procesoEncargadoEl.value;
       const observaciones = procesoObservacionesEl ? procesoObservacionesEl.value : '';
 
       console.log('[handleActualizarProceso] Actualizando proceso:', {
@@ -1840,6 +2197,9 @@ function initTrackingModalListeners() {
     const procesoEncargado = document.getElementById('procesoEncargado');
     if (procesoEncargado) procesoEncargado.value = '';
 
+    const procesoEncargadoSelect = document.getElementById('procesoEncargadoSelect');
+    if (procesoEncargadoSelect) procesoEncargadoSelect.value = '';
+
     const procesoEstado = document.getElementById('procesoEstado');
     if (procesoEstado) procesoEstado.value = 'Pendiente';
 
@@ -1869,7 +2229,7 @@ function initTrackingModalListeners() {
       card.classList.add('tracking-readonly-mode');
     }
     
-    const iconSvg = getIconSvg(data.icono || 'description');
+    const iconSvg = getIconSvg(area) || getIconSvg('description');
     
     const fechaCompletadoDisplay = data.fecha_completado || null;
     const fechaFinParaDuracion = fechaCompletadoDisplay || data.fecha_fin || null;
@@ -1957,10 +2317,19 @@ function initTrackingModalListeners() {
 
     const duracionEnArea = (function() {
       if (needsEncargado) {
-        // Para procesos con encargado: calcular desde asignación hasta completado
+        // Para procesos con encargado: calcular desde asignación
         const asg = toDateObject(data.fecha_de_asignacion_encargado);
-        const fin = toDateObject(fechaFinRaw);
-        if (!asg || !fin) return '---';
+        if (!asg) return '---';
+        
+        let fin;
+        // Si no hay fecha fin (fecha_completado), calcular hasta hoy (dinámico)
+        if (!fechaFinRaw) {
+          fin = new Date();
+        } else {
+          fin = toDateObject(fechaFinRaw);
+          if (!fin) return '---';
+        }
+        
         const diffMs = fin.getTime() - asg.getTime();
         return formatBadgeDuration(diffMs);
       } else {
@@ -2679,8 +3048,14 @@ function initTrackingModalListeners() {
 
   // Limpiar formulario de proceso
   function limpiarFormularioProceso() {
-    document.getElementById('procesoArea').value = '';
-    document.getElementById('procesoEncargado').value = '';
+    const procesoArea = document.getElementById('procesoArea');
+    if (procesoArea) procesoArea.value = '';
+    
+    const procesoEncargado = document.getElementById('procesoEncargado');
+    if (procesoEncargado) procesoEncargado.value = '';
+    
+    const procesoEncargadoSelect = document.getElementById('procesoEncargadoSelect');
+    if (procesoEncargadoSelect) procesoEncargadoSelect.value = '';
   }
 
   // Mostrar mensaje de éxito

@@ -159,8 +159,7 @@
                         </div>
                     </div>
 
-                    <!-- Total de Días -->
-                    <div class="tracking-info-card tracking-total-days-card">
+                    <div class="tracking-info-card tracking-days-selector-card">
                         <div class="tracking-info-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"></circle>
@@ -168,8 +167,16 @@
                             </svg>
                         </div>
                         <div class="tracking-info-content">
-                            <span class="tracking-info-label">Total de Días</span>
-                            <span class="tracking-info-value" id="trackingTotalDays">0</span>
+                            <span class="tracking-info-label">Días</span>
+                            <div class="tracking-days-selector" id="trackingDaysSelector">
+                                <button type="button" class="tracking-days-selector-trigger" id="trackingDaysSelectorTrigger">
+                                    <span class="tracking-days-selector-value" id="trackingDaysSelectorValue">Sin seleccionar</span>
+                                    <svg class="tracking-days-selector-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </button>
+                                <div class="tracking-days-selector-menu" id="trackingDaysSelectorMenu" style="display: none;"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -178,9 +185,6 @@
             <!-- Botón para abrir modal de agregar proceso -->
             <div class="tracking-add-proceso-trigger">
                 <button type="button" id="btnOpenAddProcesoModal" class="tracking-btn-primary">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 5v14M5 12h14"></path>
-                    </svg>
                     Agregar Área
                 </button>
             </div>

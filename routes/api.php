@@ -854,6 +854,10 @@ Route::withoutMiddleware(['api'])
     // Obtener usuarios con rol 'costura'
     Route::get('costura', [App\Http\Controllers\UsuarioRolController::class, 'getUsuariosCostura'])
         ->name('costura');
+    
+    // Obtener usuarios por área
+    Route::get('por-area', [App\Http\Controllers\UsuarioRolController::class, 'getUsuariosPorArea'])
+        ->name('por-area');
 });
 
 /**
