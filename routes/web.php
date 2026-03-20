@@ -1370,7 +1370,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/asesores/notifications', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'getNotifications'])->name('asesores.notifications');
     
     // Supervisor Pedidos (mantener compatibilidad)
-    Route::post('/supervisor-pedidos/notifications/mark-all-read', [App\Http\Controllers\SupervisorPedidosController::class, 'markAllNotificationsAsRead'])->name('supervisor-pedidos.notifications.mark-all-read');
+    Route::post('/supervisor-pedidos/notifications/mark-all-read', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'markAllNotificationsAsRead'])->name('supervisor-pedidos.notifications.mark-all-read');
     
     // Insumos / Supervisor Planta (mantener compatibilidad)
     Route::post('/insumos/notifications/marcar-leidas', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'markAllNotificationsAsRead'])->name('insumos.notifications.mark-all-read');
@@ -2315,13 +2315,13 @@ Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.
 // ========================================
 Route::middleware(['auth', 'role:asesor,supervisor_pedidos,admin'])->prefix('supervisor-pedidos')->name('supervisor-pedidos.')->group(function () {
     // Obtener datos en JSON (accesible para asesores, supervisores y admins)
-    Route::get('/{id}/datos', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDatos'])->name('datos');
+    Route::get('/{id}/datos', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'obtenerDatos'])->name('datos');
     
     // Obtener datos de factura para mostrar en modal (accesible para asesores, supervisores y admins)
-    Route::get('/{id}/factura-datos', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDatosFactura'])->name('factura-datos');
+    Route::get('/{id}/factura-datos', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'obtenerDatosFactura'])->name('factura-datos');
     
     // Obtener datos para comparación (pedido vs cotización) (accesible para asesores, supervisores y admins)
-    Route::get('/{id}/comparar', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDatosComparacion'])->name('comparar');
+    Route::get('/{id}/comparar', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'obtenerDatosComparacion'])->name('comparar');
 });
 
 // ========================================
@@ -2329,78 +2329,81 @@ Route::middleware(['auth', 'role:asesor,supervisor_pedidos,admin'])->prefix('sup
 // ========================================
 Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor-pedidos')->name('supervisor-pedidos.')->group(function () {
     // Listar órdenes
-    Route::get('/', [App\Http\Controllers\SupervisorPedidosController::class, 'index'])->name('index');
+    Route::get('/', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'index'])->name('index');
     
     // Perfil del supervisor
-    Route::get('/perfil/editar', [App\Http\Controllers\SupervisorPedidosController::class, 'profile'])->name('profile');
-    Route::post('/perfil/actualizar', [App\Http\Controllers\SupervisorPedidosController::class, 'updateProfile'])->name('update-profile');
+    Route::get('/perfil/editar', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'profile'])->name('profile');
+    Route::post('/perfil/actualizar', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'updateProfile'])->name('update-profile');
     
     // Pendientes Bordados-Estampado
-    Route::get('/pendientes-bordado-estampado', [App\Http\Controllers\SupervisorPedidosController::class, 'pendientesBordadoEstampado'])->name('pendientes-bordado-estampado');
+    Route::get('/pendientes-bordado-estampado', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'pendientesBordadoEstampado'])->name('pendientes-bordado-estampado');
     
     // Pendientes Costura
-    Route::get('/pendientes-costura', [App\Http\Controllers\SupervisorPedidosController::class, 'pendientesCostura'])->name('pendientes-costura');
-    Route::get('/pendientes-costura/filtro-opciones/{campo}', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerOpcionesFiltroPendientesCostura'])->name('pendientes-costura.filtro-opciones');
-    Route::post('/guardar-color-costura', [App\Http\Controllers\SupervisorPedidosController::class, 'guardarColorCostura'])->name('guardar-color-costura');
+    Route::get('/pendientes-costura', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'pendientesCostura'])->name('pendientes-costura');
+    Route::get('/pendientes-costura/filtro-opciones/{campo}', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'obtenerOpcionesFiltroPendientesCostura'])->name('pendientes-costura.filtro-opciones');
+    Route::post('/guardar-color-costura', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'guardarColorCostura'])->name('guardar-color-costura');
 
-    Route::post('/{pedidoId}/costura/{prendaId}/activar-recibo', [App\Http\Controllers\SupervisorPedidosController::class, 'activarReciboCostura'])
+    Route::post('/{pedidoId}/costura/{prendaId}/activar-recibo', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'activarReciboCostura'])
         ->where(['pedidoId' => '[0-9]+', 'prendaId' => '[0-9]+'])
         ->name('costura.activar-recibo');
     
-    Route::post('/{pedidoId}/costura/{prendaId}/anular-recibo', [App\Http\Controllers\SupervisorPedidosController::class, 'anularReciboCostura'])
+    Route::post('/{pedidoId}/costura/{prendaId}/anular-recibo', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'anularReciboCostura'])
         ->where(['pedidoId' => '[0-9]+', 'prendaId' => '[0-9]+'])
         ->name('costura.anular-recibo');
     
     // Detalles y aprobación de procesos
-    Route::get('/procesos/{id}/detalles', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDetallesProceso'])->name('procesos.detalles');
-    Route::post('/procesos/{id}/aprobar', [App\Http\Controllers\SupervisorPedidosController::class, 'aprobarProceso'])->name('procesos.aprobar');
+    Route::get('/procesos/{id}/detalles', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'obtenerDetallesProceso'])->name('procesos.detalles');
+    Route::post('/procesos/{id}/aprobar', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'aprobarProceso'])->name('procesos.aprobar');
 
     // Fecha de llegada de recibo (autosave)
-    Route::post('/recibos/{id}/fecha-llegada', [App\Http\Controllers\SupervisorPedidosController::class, 'guardarFechaLlegadaRecibo'])->name('recibos.fecha-llegada');
+    Route::post('/recibos/{id}/fecha-llegada', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'guardarFechaLlegadaRecibo'])->name('recibos.fecha-llegada');
     
     // Notificaciones
-    Route::get('/notificaciones', [App\Http\Controllers\SupervisorPedidosController::class, 'getNotifications'])->name('notifications');
-    Route::post('/notificaciones/marcar-todas-leidas', [App\Http\Controllers\SupervisorPedidosController::class, 'markAllNotificationsAsRead'])->name('mark-all-read');
-    Route::post('/notificaciones/{notificationId}/marcar-leida', [App\Http\Controllers\SupervisorPedidosController::class, 'markNotificationAsRead'])->name('mark-read');
-    Route::post('/notificaciones/news/{newsId}/toggle-visto', [App\Http\Controllers\SupervisorPedidosController::class, 'toggleNewsVisto'])->name('news.toggle-visto');
-    Route::post('/notificaciones/pedido/{pedidoId}/toggle-visto', [App\Http\Controllers\SupervisorPedidosController::class, 'togglePedidoVisto'])->name('pedido.toggle-visto');
+    Route::get('/notificaciones', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'getNotifications'])->name('notifications');
+    Route::post('/notificaciones/marcar-todas-leidas', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'markAllNotificationsAsRead'])->name('mark-all-read');
+    Route::post('/notificaciones/{notificationId}/marcar-leida', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'markNotificationAsRead'])->name('mark-read');
+    Route::post('/notificaciones/news/{newsId}/toggle-visto', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'toggleNewsVisto'])->name('news.toggle-visto');
+    Route::post('/notificaciones/pedido/{pedidoId}/toggle-visto', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'togglePedidoVisto'])->name('pedido.toggle-visto');
     
     // Obtener opciones de filtro (debe ir antes de /{id})
-    Route::get('/filtro-opciones/{campo}', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerOpcionesFiltro'])->name('filtro-opciones');
+    Route::get('/filtro-opciones/{campo}', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'obtenerOpcionesFiltro'])->name('filtro-opciones');
+    
+    // Mostrar detalles de pedido (AJAX - Refactorizado con DDD)
+    Route::get('/{id}/detalle', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'showPedidoDetalle'])->name('detalle');
     
     // Ruta para obtener contador de órdenes pendientes de aprobación (DEBE IR ANTES DE /{id})
-    Route::get('/ordenes-pendientes-count', [App\Http\Controllers\SupervisorPedidosController::class, 'ordenesPendientesCount'])->name('ordenes-pendientes-count');
+    Route::get('/ordenes-pendientes-count', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'ordenesPendientesCount'])->name('ordenes-pendientes-count');
     
     // Gestión de selecciones de pedidos (DEBE IR ANTES DE /{id})
-    Route::post('/seleccionar/{pedidoId}', [App\Http\Controllers\SupervisorPedidosController::class, 'seleccionarPedido'])->name('seleccionar');
-    Route::delete('/seleccionar/{pedidoId}', [App\Http\Controllers\SupervisorPedidosController::class, 'deseleccionarPedido'])->name('deseleccionar');
-    Route::get('/selecciones', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerSelecciones'])->name('selecciones');
+    Route::post('/seleccionar/{pedidoId}', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'seleccionarPedido'])->name('seleccionar');
+    Route::delete('/seleccionar/{pedidoId}', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'deseleccionarPedido'])->name('deseleccionar');
+    Route::get('/selecciones', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'obtenerSelecciones'])->name('selecciones');
     
     // Ver detalle de orden
-    Route::get('/{id}', [App\Http\Controllers\SupervisorPedidosController::class, 'show'])->name('show');
+    Route::get('/{id}', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'show'])->name('show');
     
     // Descargar PDF
-    Route::get('/{id}/pdf', [App\Http\Controllers\SupervisorPedidosController::class, 'descargarPDF'])->name('pdf');
+    Route::get('/{id}/pdf', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'descargarPDF'])->name('pdf');
     
     // Anular orden
-    Route::post('/{id}/anular', [App\Http\Controllers\SupervisorPedidosController::class, 'anular'])->name('anular');
+    Route::post('/{id}/anular', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'anular'])->name('anular');
     
     // Ocultar/Mostrar orden en supervisor-pedidos
-    Route::post('/{id}/ocultar', [App\Http\Controllers\SupervisorPedidosController::class, 'ocultarPedido'])->name('ocultar');
-    Route::post('/{id}/mostrar', [App\Http\Controllers\SupervisorPedidosController::class, 'mostrarPedido'])->name('mostrar');
+    Route::post('/{id}/ocultar', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'ocultarPedido'])->name('ocultar');
+    Route::post('/{id}/mostrar', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'mostrarPedido'])->name('mostrar');
     
     // Aprobar orden (cambiar estado de PENDIENTE_SUPERVISOR a Pendiente)
-    Route::post('/{id}/aprobar', [App\Http\Controllers\SupervisorPedidosController::class, 'aprobar'])->name('aprobar');
+    Route::post('/{id}/aprobar', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'aprobar'])->name('aprobar');
     
     // Cambiar estado
-    Route::patch('/{id}/estado', [App\Http\Controllers\SupervisorPedidosController::class, 'cambiarEstado'])->name('cambiar-estado');
+    Route::patch('/{id}/estado', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'cambiarEstado'])->name('cambiar-estado');
     
     // Editar pedido
-    Route::get('/{id}/editar', [App\Http\Controllers\SupervisorPedidosController::class, 'edit'])->name('editar');
+    Route::get('/{id}/editar', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'edit'])->name('editar');
     
     // Actualizar pedido
-    Route::put('/{id}/actualizar', [App\Http\Controllers\SupervisorPedidosController::class, 'update'])->name('actualizar');
-    Route::post('/{id}/actualizar', [App\Http\Controllers\SupervisorPedidosController::class, 'update'])->name('actualizar.post');
+    Route::put('/{id}/actualizar', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'update'])->name('actualizar');
+    Route::post('/{id}/actualizar', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'update'])->name('actualizar.post');
     
     // Obtener datos de una prenda específica para edición modal (supervisor)
     Route::get('/{pedidoId}/prenda/{prendaId}/datos', [App\Infrastructure\Http\Controllers\Asesores\PrendasPedidoController::class, 'obtenerDatosPrendaEdicion'])->where('pedidoId', '[0-9]+')->where('prendaId', '[0-9]+')->name('prenda-datos');
@@ -2415,7 +2418,7 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
     Route::match(['patch', 'post'], '/{prendaId}/procesos/{procesoId}', [App\Infrastructure\Http\Controllers\Asesores\PrendaPedidoEditController::class, 'actualizarProcesoEspecifico'])->where(['prendaId' => '[0-9]+', 'procesoId' => '[0-9]+'])->name('procesos-actualizar');
     
     // Eliminar imagen de prenda
-    Route::delete('/imagen/{tipo}/{id}', [App\Http\Controllers\SupervisorPedidosController::class, 'deleteImage'])->name('imagen.eliminar');
+    Route::delete('/imagen/{tipo}/{id}', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'deleteImage'])->name('imagen.eliminar');
 });
 
 // ========================================

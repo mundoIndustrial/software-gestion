@@ -32,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Domain providers
         \App\Infrastructure\Pedidos\Providers\PedidoServiceProvider::class,
         \App\Infrastructure\Procesos\Providers\ProcesosServiceProvider::class,
+        \App\Providers\SupervisorPedidosServiceProvider::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
