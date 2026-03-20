@@ -29,20 +29,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
             window.waitForEcho(() => {
                 const ws = window.shared.websocket;
-                
+
                 if (!ws) {
                     console.warn('[Realtime Insumos] WebSocket no disponible');
                     return;
                 }
 
-                console.log('[Realtime Insumos] Inicializando listeners de tiempo real con ws.subscribe()...');
+                ...');
                 window.notificacionesInsumos = window.notificacionesInsumos || [];
 
                 /**
                  * Añade notificación a la campana
                  */
                 const addNotification = (orden) => {
-                    console.log('[🔔 Campana] Nuevo recibo aprobado:', orden.numero_pedido || orden.pedido);
                     const notificacion = {
                         id: Math.random().toString(36).substr(2, 9),
                         pedido_numero: orden.numero_pedido || orden.pedido,
@@ -99,7 +98,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
 
                 const refreshMateriales = debounce(() => {
-                    console.log('[Realtime Insumos] 🔄 Recargando tabla de materiales...');
                     location.reload();
                 }, 2000);
 
@@ -108,14 +106,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 // ==========================================
                 try {
                     ws.subscribe('supervisor-pedidos', '.orden.updated', (data) => {
-                        console.log('[Realtime Insumos] 📢 Evento .orden.updated en supervisor-pedidos:', data);
                         if (data.orden && data.orden.estado === 'PENDIENTE_INSUMOS') {
-                            console.log('[Realtime Insumos] ✅ Recibo aprobado a PENDIENTE_INSUMOS');
                             addNotification(data.orden);
                             refreshMateriales();
                         }
                     });
-                    console.log('[Realtime Insumos] ✅ Suscrito a supervisor-pedidos/.orden.updated');
                 } catch (error) {
                     console.error('[Realtime Insumos] ❌ Error subscribiendo a supervisor-pedidos:', error);
                 }
@@ -126,13 +121,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 try {
                     // Evento .orden.updated (con punto)
                     ws.subscribe('ordenes', '.orden.updated', (data) => {
-                        console.log('[Realtime Insumos] 📢 Evento .orden.updated en ordenes:', data);
                         if (data.orden && data.orden.estado === 'PENDIENTE_INSUMOS') {
                             addNotification(data.orden);
                             refreshMateriales();
                         }
                     });
-                    console.log('[Realtime Insumos] ✅ Suscrito a ordenes/.orden.updated');
                 } catch (error) {
                     console.error('[Realtime Insumos] ❌ Error subscribiendo a ordenes/.orden.updated:', error);
                 }
@@ -140,13 +133,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 try {
                     // Evento orden.updated (sin punto)
                     ws.subscribe('ordenes', 'orden.updated', (data) => {
-                        console.log('[Realtime Insumos] 📢 Evento orden.updated en ordenes:', data);
                         if (data.orden && data.orden.estado === 'PENDIENTE_INSUMOS') {
                             addNotification(data.orden);
                             refreshMateriales();
                         }
                     });
-                    console.log('[Realtime Insumos] ✅ Suscrito a ordenes/orden.updated');
                 } catch (error) {
                     console.error('[Realtime Insumos] ❌ Error subscribiendo a ordenes/orden.updated:', error);
                 }
@@ -154,20 +145,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 try {
                     // Evento OrdenUpdated (PascalCase)
                     ws.subscribe('ordenes', 'OrdenUpdated', (data) => {
-                        console.log('[Realtime Insumos] 📢 Evento OrdenUpdated en ordenes:', data);
                         if (data.orden && data.orden.estado === 'PENDIENTE_INSUMOS') {
                             addNotification(data.orden);
                             refreshMateriales();
                         }
                     });
-                    console.log('[Realtime Insumos] ✅ Suscrito a ordenes/OrdenUpdated');
                 } catch (error) {
                     console.error('[Realtime Insumos] ❌ Error subscribiendo a ordenes/OrdenUpdated:', error);
                 }
 
-                console.log('[Realtime Insumos] ✅ Sistema de tiempo real inicializado correctamente');
-                console.log('[Realtime Insumos] 🔌 Estado de WebSocket:', ws.getStatus ? ws.getStatus() : 'N/A');
-            });
         } catch (error) {
             console.error('[Realtime Insumos] ❌ Error inicializando listener:', error);
         }
@@ -221,20 +207,19 @@ document.addEventListener('DOMContentLoaded', function() {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
-            
+
             oscillator.connect(gainNode);
             gainNode.connect(audioContext.destination);
-            
+
             oscillator.frequency.value = 800;
             oscillator.type = 'sine';
-            
+
             gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-            
+
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 0.5);
         } catch (e) {
-            console.log('[Notificación] No se pudo reproducir sonido:', e.message);
         }
     };
 
@@ -255,7 +240,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         document.body.appendChild(toast);
-        
+
         setTimeout(() => {
             toast.style.animation = 'slideOutDown 0.5s ease-out';
             setTimeout(() => toast.remove(), 500);
@@ -266,7 +251,6 @@ document.addEventListener('DOMContentLoaded', function() {
      * Ve un recibo desde la notificación de campana
      */
     window.verReciboDesdeCampana = function(ordenId) {
-        console.log('[Notificación] Visualizando recibo:', ordenId);
         const row = document.querySelector(`tr[data-pedido-produccion-id="${ordenId}"]`);
         if (row) {
             row.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -296,8 +280,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (response.ok) {
-                console.log('[🔔 CAMPANA] Recibo', reciboId, 'marcado como visto');
-
                 itemElement.style.transition = 'all 0.3s ease';
                 itemElement.style.opacity = '0';
                 itemElement.style.maxHeight = '0';
@@ -344,15 +326,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
                 const total = data.total || 0;
                 const recibos = data.recibos || [];
-                
-                console.log('[🔔 CAMPANA] Total:', total, '| Recibos cargados:', recibos.length);
-                
                 const badge = document.getElementById('insumosBadge');
                 if (badge) {
                     badge.textContent = total;
                     badge.style.display = total > 0 ? 'inline-flex' : 'none';
                 }
-                
+
                 const list = document.getElementById('insumosNotifList');
                 if (list && recibos.length > 0) {
                     list.innerHTML = '';
@@ -373,21 +352,21 @@ document.addEventListener('DOMContentLoaded', function() {
                                     '</svg>' +
                                 '</button>' +
                             '</div>';
-                        
+
                         item.querySelector('[data-action="ver"]').addEventListener('click', function() {
                             if (typeof window.verReciboDesdeCampana === 'function') {
                                 window.verReciboDesdeCampana(recibo.pedido_id);
                             }
                         });
-                        
+
                         item.querySelector('.btn-marcar-visto').addEventListener('click', function(e) {
                             e.stopPropagation();
                             window.marcarReciboVisto(recibo.id, item);
                         });
-                        
+
                         list.appendChild(item);
                     });
-                    
+
                     if (total > recibos.length) {
                         const moreItem = document.createElement('div');
                         moreItem.className = 'p-3 text-center text-gray-500 text-sm';
@@ -479,6 +458,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     `;
     document.head.appendChild(style);
-
-    console.log('[🔔 CAMPANA INSUMOS] Sistema inicializado');
 });

@@ -16,8 +16,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (btnLimpiarAsignaciones) {
                 btnLimpiarAsignaciones.addEventListener('click', function(e) {
                     e.preventDefault();
-                    console.log('[Supervisor-Pedidos] Botón limpiar asignaciones clickeado');
-
                     const supervisorWrapper = document.querySelector('.supervisor-pedidos-container') ||
                                              document.querySelector('#mainContent') ||
                                              document.querySelector('main');
@@ -32,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     try {
                         jQuery('#modal-confirmar-limpiar').modal('show');
-                        console.log('[Supervisor-Pedidos] Modal de confirmación abierto (Bootstrap 4)');
+
                     } catch (error) {
                         console.error('[Supervisor-Pedidos] Error al abrir modal:', error);
                         if (confirm('¿Eliminar todas las asignaciones de colores? Esta acción no se puede deshacer.')) {
@@ -46,8 +44,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const btnConfirmarLimpiar = document.getElementById('btn-confirmar-limpiar-todo');
                 if (btnConfirmarLimpiar) {
                     btnConfirmarLimpiar.addEventListener('click', function() {
-                        console.log('[Supervisor-Pedidos] Confirmado: Limpiar todo');
-
                         if (window.ColoresPorTalla && typeof window.ColoresPorTalla.limpiarTodo === 'function') {
                             window.ColoresPorTalla.limpiarTodo();
                         }
@@ -63,8 +59,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         const ov = document.getElementById('overlay-confirmar-limpiar');
                         if (ov) ov.remove();
-
-                        console.log('[Supervisor-Pedidos] Limpieza completada');
                     });
                 }
 
@@ -76,8 +70,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         supervisorWrapper.setAttribute('aria-hidden', 'true');
                     }
                 });
-
-                console.log('[Supervisor-Pedidos] ✅ Botón limpiar asignaciones configurado');
             }
             // Si el botón no se encuentra, no mostrar advertencia - es una funcionalidad opcional
         }

@@ -21,7 +21,7 @@ class InvoiceExportService {
      */
     guardarComoHTML(nombreArchivo) {
         const contenido = document.getElementById('preview-content')?.innerHTML;
-        
+
         if (!contenido) {
             console.error('[InvoiceExportService] No se encontró el contenido para exportar');
             return false;
@@ -46,12 +46,10 @@ class InvoiceExportService {
         elemento.setAttribute('href', 'data:text/html;charset=utf-8,' + encodeURIComponent(htmlCompleto));
         elemento.setAttribute('download', nombreArchivo);
         elemento.style.display = 'none';
-        
+
         document.body.appendChild(elemento);
         elemento.click();
         document.body.removeChild(elemento);
-
-        console.log('[InvoiceExportService] Factura guardada como:', nombreArchivo);
         return true;
     }
 
@@ -74,7 +72,7 @@ class InvoiceExportService {
             padding: 20px;
             background: white;
         }
-        
+
         .invoice-container {
             max-width: 800px;
             margin: 0 auto;
@@ -83,31 +81,31 @@ class InvoiceExportService {
             border: 1px solid #ddd;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        
+
         table {
             width: 100%;
             border-collapse: collapse;
             font-size: 11px;
         }
-        
+
         th, td {
             padding: 8px;
             text-align: left;
             border-bottom: 1px solid #eee;
         }
-        
+
         th {
             background: #f5f5f5;
             font-weight: 600;
         }
-        
+
         .header {
             text-align: center;
             margin-bottom: 30px;
             border-bottom: 2px solid #333;
             padding-bottom: 20px;
         }
-        
+
         .footer {
             margin-top: 30px;
             padding-top: 20px;
@@ -115,7 +113,7 @@ class InvoiceExportService {
             text-align: center;
             color: #666;
         }
-        
+
         @media print {
             body { margin: 0; padding: 10px; }
             .invoice-container { box-shadow: none; border: none; }
@@ -149,14 +147,12 @@ class InvoiceExportService {
 
         // Abrir diálogo de impresión del navegador
         const contentWindow = document.getElementById('preview-content')?.contentWindow;
-        
+
         if (contentWindow) {
             contentWindow.print();
         } else {
             window.print();
         }
-
-        console.log('[InvoiceExportService] Diálogo de impresión PDF abierto para:', nombreArchivo);
         return true;
     }
 
@@ -165,7 +161,7 @@ class InvoiceExportService {
      */
     imprimirFactura() {
         const contentWindow = document.getElementById('preview-content')?.contentWindow;
-        
+
         if (contentWindow) {
             contentWindow.print();
         } else {
@@ -184,8 +180,6 @@ class InvoiceExportService {
                 return false;
             }
         }
-
-        console.log('[InvoiceExportService] Factura enviada a impresión');
         return true;
     }
 
@@ -194,7 +188,7 @@ class InvoiceExportService {
      */
     compartirFactura() {
         const contenido = document.getElementById('preview-content')?.innerHTML;
-        
+
         if (!contenido) {
             console.error('[InvoiceExportService] No se encontró contenido para compartir');
             return false;
@@ -203,9 +197,8 @@ class InvoiceExportService {
         // Opción 1: Copiar HTML al portapapeles
         if (navigator.clipboard && window.isSecureContext) {
             const htmlCompleto = this.generarHTMLCompleto(contenido);
-            
+
             navigator.clipboard.writeText(htmlCompleto).then(() => {
-                console.log('[InvoiceExportService] HTML copiado al portapapeles');
                 this.mostrarNotificacion('HTML copiado al portapapeles', 'success');
                 return true;
             }).catch(err => {
@@ -232,13 +225,12 @@ class InvoiceExportService {
         textArea.value = textoPlano;
         textArea.style.position = 'fixed';
         textArea.style.opacity = '0';
-        
+
         document.body.appendChild(textArea);
         textArea.select();
-        
+
         try {
             document.execCommand('copy');
-            console.log('[InvoiceExportService] Texto copiado al portapapeles');
             this.mostrarNotificación('Texto copiado al portapapeles', 'success');
             return true;
         } catch (err) {
@@ -321,12 +313,10 @@ class InvoiceExportService {
         elemento.setAttribute('href', 'data:application/json;charset=utf-8,' + encodeURIComponent(jsonString));
         elemento.setAttribute('download', nombreArchivo);
         elemento.style.display = 'none';
-        
+
         document.body.appendChild(elemento);
         elemento.click();
         document.body.removeChild(elemento);
-
-        console.log('[InvoiceExportService] Datos exportados como JSON:', nombreArchivo);
         return true;
     }
 
@@ -344,7 +334,7 @@ class InvoiceExportService {
      */
     validarContenidoExportable() {
         const contenido = document.getElementById('preview-content')?.innerHTML;
-        
+
         if (!contenido || contenido.trim().length === 0) {
             console.error('[InvoiceExportService] El contenido está vacío');
             return false;

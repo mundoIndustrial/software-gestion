@@ -138,7 +138,6 @@ class WizardBootstrap {
         // En flujo unificado, la tela se ingresa en el paso 0 del wizard,
         // por lo que no es necesario validar que exista previamente.
         // La validación se hace al avanzar del paso 0 al paso 1.
-        console.log('[WizardBootstrap] Pre-initialize: flujo unificado, sin validación de telas previa');
     }
 
     /**

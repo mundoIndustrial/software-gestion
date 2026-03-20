@@ -5,6 +5,7 @@ namespace App\Application\SupervisorPedidos\UseCases;
 use App\Application\SupervisorPedidos\DTOs\ChangeOrderStatusRequest;
 use App\Application\SupervisorPedidos\DTOs\ChangeOrderStatusResponse;
 use App\Domain\SupervisorPedidos\Repositories\OrderRepository;
+use App\Domain\SupervisorPedidos\ValueObjects\OrderId;
 
 class ChangeOrderStatusUseCase
 {
@@ -19,7 +20,7 @@ class ChangeOrderStatusUseCase
     {
         try {
             // Validar que la orden exista
-            $order = $this->orderRepository->findById($request->getOrderId());
+            $order = $this->orderRepository->findById(new OrderId($request->getOrderId()));
             
             if (!$order) {
                 throw new \DomainException('Orden no encontrada');
@@ -31,7 +32,7 @@ class ChangeOrderStatusUseCase
                 throw new \DomainException('Estado no permitido: ' . $request->getStatus());
             }
 
-            $oldStatus = $order['estado'] ?? null;
+            $oldStatus = $order->getStatus()->value();
 
             // Actualizar estado
             $resultado = $this->orderRepository->updateStatus(

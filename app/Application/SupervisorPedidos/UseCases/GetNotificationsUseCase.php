@@ -54,7 +54,7 @@ class GetNotificationsUseCase
      */
     private function getOrdersPendingApproval($user): \Illuminate\Support\Collection
     {
-        $pedidosVistosIds = \DB::table('pedidos_visto_supervisor')
+        $pedidosVistosIds = \DB::table('pedidos_vistos_supervisor')
             ->where('user_id', $user->id)
             ->pluck('pedido_id')
             ->toArray();
@@ -95,7 +95,7 @@ class GetNotificationsUseCase
      */
     private function getNews($user): \Illuminate\Support\Collection
     {
-        $newsVistosIds = \DB::table('news_visto')
+        $newsVistosIds = \DB::table('news_vistos')
             ->where('user_id', $user->id)
             ->pluck('news_id')
             ->toArray();
@@ -151,7 +151,7 @@ class GetNotificationsUseCase
      */
     private function getCancelledOrders($user): \Illuminate\Support\Collection
     {
-        $pedidosVistosIds = \DB::table('pedidos_visto_supervisor')
+        $pedidosVistosIds = \DB::table('pedidos_vistos_supervisor')
             ->where('user_id', $user->id)
             ->pluck('pedido_id')
             ->toArray();
@@ -160,7 +160,7 @@ class GetNotificationsUseCase
             ->where('estado', 'Anulada')
             ->whereNotNull('numero_pedido')
             ->where('numero_pedido', '>', 0)
-            ->where('updated_at', '>=', now()->subDays(7))
+            ->where('pedidos_produccion.updated_at', '>=', now()->subDays(7))
             ->join('users as u', 'pedidos_produccion.asesor_id', '=', 'u.id')
             ->select(['pedidos_produccion.id', 'numero_pedido', 'cliente', 'asesor_id', 'pedidos_produccion.updated_at', 'u.name as asesor'])
             ->orderBy('pedidos_produccion.updated_at', 'desc')

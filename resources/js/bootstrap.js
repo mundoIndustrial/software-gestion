@@ -32,9 +32,7 @@ window.Pusher = Pusher;
 // Importar Echo SINCRÓNICAMENTE
 import Echo from 'laravel-echo';
 
-// Debug: Verificar qué es Echo
-console.log('[DEBUG] Echo importado:', Echo);
-console.log('[DEBUG] typeof Echo:', typeof Echo);
+
 
 // Guardar el constructor Echo en una variable separada
 window.EchoConstructor = Echo;
@@ -42,9 +40,7 @@ window.EchoConstructor = Echo;
 // Exportar Echo al scope global para que esté disponible en todas partes
 window.Echo = Echo;
 
-// Debug: Verificar qué es window.Echo
-console.log('[DEBUG] window.Echo después de export:', window.Echo);
-console.log('[DEBUG] typeof window.Echo:', typeof window.Echo);
+
 
 //  Sistema para esperar a que Echo esté listo
 window.echoReady = false;
@@ -72,13 +68,6 @@ window.echoReady = window.echoReady || false;
  * Notificar que Echo está listo (llamado al final de inicializeEcho)
  */
 window.notifyEchoReady = function() {
-    // Debug: Verificar estado de Echo antes de notificar
-    console.log('[DEBUG] notifyEchoReady llamado');
-    console.log('[DEBUG] window.Echo (constructor):', window.Echo);
-    console.log('[DEBUG] typeof window.Echo:', typeof window.Echo);
-    console.log('[DEBUG] window.Echo es constructor:', typeof window.Echo === 'function');
-    console.log('[DEBUG] window.EchoInstance (instancia):', window.EchoInstance);
-    console.log('[DEBUG] typeof window.EchoInstance:', typeof window.EchoInstance);
     
     window.echoReady = true;
 
@@ -120,20 +109,6 @@ function initializeEcho() {
     let forceTLSFinal = useProxy ? (window.location.protocol === 'https:') : false;
 
     try {
-        // Debug: Verificar estado antes de crear instancia
-        console.log('[DEBUG] Antes de crear instancia Echo');
-        console.log('[DEBUG] window.EchoConstructor es:', window.EchoConstructor);
-        console.log('[DEBUG] typeof window.EchoConstructor:', typeof window.EchoConstructor);
-        
-        // Debug: Verificar configuración final
-        console.log('[DEBUG] Configuración WebSocket:', {
-            'isProduction': isProduction,
-            'useProxy': useProxy,
-            'wsHostFinal': wsHostFinal,
-            'wsPortFinal': wsPortFinal,
-            'forceTLSFinal': forceTLSFinal,
-            'location.protocol': window.location.protocol
-        });
         
         // WebSockets habilitados para Reverb (Supervisor Pedidos en tiempo real)
         const echoInstance = new window.EchoConstructor({
@@ -154,21 +129,14 @@ function initializeEcho() {
             wsErrorMessage: 'WebSocket connection failed',
         });
         
-        // Debug: Verificar la instancia creada
-        console.log('[DEBUG] Instancia Echo creada:', echoInstance);
-        console.log('[DEBUG] typeof echoInstance:', typeof echoInstance);
+
         
         // Guardar la instancia en una variable separada, NO reemplazar el constructor
         window.EchoInstance = echoInstance;
         
-        // Debug: Verificar después de guardar instancia
-        console.log('[DEBUG] window.Echo sigue siendo constructor:', window.Echo);
-        console.log('[DEBUG] typeof window.Echo:', typeof window.Echo);
-        console.log('[DEBUG] window.EchoInstance es la instancia:', window.EchoInstance);
-        console.log('[DEBUG] typeof window.EchoInstance:', typeof window.EchoInstance);
+
         
         // Notificar que Echo está listo inmediatamente
-        console.log('[DEBUG] Llamando a notifyEchoReady...');
         window.notifyEchoReady();
         
     } catch (error) {

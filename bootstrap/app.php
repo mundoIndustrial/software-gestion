@@ -29,10 +29,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withProviders([
-        // Domain providers
+        // Domain providers - SupervisorPedidos primero
+        \App\Providers\SupervisorPedidosServiceProvider::class,
         \App\Infrastructure\Pedidos\Providers\PedidoServiceProvider::class,
         \App\Infrastructure\Procesos\Providers\ProcesosServiceProvider::class,
-        \App\Providers\SupervisorPedidosServiceProvider::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([

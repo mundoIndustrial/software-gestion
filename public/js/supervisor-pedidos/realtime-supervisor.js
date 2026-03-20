@@ -27,7 +27,6 @@ const _rtRepo = window.supervisorPedidos.repository;
 const _rtNotify = window.shared.notify;
 
 function actualizarFilaEnTabla(fila, orden) {
-    console.log(`[Realtime] Actualizando fila para pedido #${orden.numero_pedido}`);
     const celdas = fila.querySelectorAll('[data-field]');
     celdas.forEach(celda => {
         const field = celda.getAttribute('data-field');
@@ -45,10 +44,8 @@ function actualizarFilaEnTabla(fila, orden) {
 }
 
 function agregarNuevaFilaATabla(orden) {
-    console.log(`[Realtime] Agregando nueva fila para pedido #${orden.numero_pedido}`);
     const tableContainer = document.querySelector('.table-scroll-container');
     if (!tableContainer) {
-        console.warn('[Realtime] No se encontró el contenedor de tabla');
         return;
     }
     const numeroPedido = orden.numero_pedido || orden.numero;
@@ -229,23 +226,18 @@ if (!document.querySelector('style[data-realtime]')) {
     document.head.appendChild(style);
 }
 
-console.log('[Realtime Supervisor] Inicializando sistema de tiempo real...');
-
 /**
  * Inicializa todas las suscripciones a canales WebSocket
  */
 function initializeRealtimeListener() {
     // Esperar a que Echo esté listo (resources/js/bootstrap.js lo proporciona)
     if (typeof window.waitForEcho !== 'function') {
-        console.log('[Realtime Supervisor] ⏳ Esperando a que window.waitForEcho esté disponible...');
         setTimeout(initializeRealtimeListener, 100);
         return;
     }
 
     window.waitForEcho(() => {
         try {
-            console.log('[Realtime Supervisor] ✅ Echo está listo, inicializando suscripciones...');
-            
             // Obtener instancia de WebSocket (lazy initialized)
             const ws = window.shared.websocket;
             
@@ -259,11 +251,7 @@ function initializeRealtimeListener() {
 
             _setupCustomEventHandlers();
             _subscribeToChannels(ws);
-
-            console.log('[Realtime Supervisor] ✅ Sistema de tiempo real inicializado correctamente');
-            console.log('[Realtime Supervisor] 🔌 Estado:', ws.getStatus());
         } catch (error) {
-            console.error('[Realtime Supervisor] ❌ Error inicializando:', error.message);
         }
     });
 }
@@ -300,9 +288,7 @@ function _subscribeToChannels(ws) {
         ws.subscribe('despacho.pedidos', '.pedido.actualizado', (data) => {
             _refreshTablaConDelay(data, 'despacho.pedidos:.pedido.actualizado');
         });
-        console.log('[Realtime Supervisor] ✅ Suscrito a "despacho.pedidos"');
     } catch (error) {
-        console.error('[Realtime Supervisor] ❌ Error en despacho.pedidos:', error.message);
     }
 
     // Canal: supervisor-pedidos - Cambios de estado
@@ -310,9 +296,7 @@ function _subscribeToChannels(ws) {
         ws.subscribe('supervisor-pedidos', 'OrdenUpdated', (data) => {
             _refreshTablaConDelay(data, 'supervisor-pedidos:OrdenUpdated');
         });
-        console.log('[Realtime Supervisor] ✅ Suscrito a "supervisor-pedidos"');
     } catch (error) {
-        console.error('[Realtime Supervisor] ❌ Error en supervisor-pedidos:', error.message);
     }
 
     // Canal: pedidos.creados - Nuevos pedidos
@@ -322,9 +306,7 @@ function _subscribeToChannels(ws) {
             supervisorPedidosInsertarFilaNuevaAlInicio(pedido);
             supervisorPedidosMostrarNotificacionNuevoPedido(pedido);
         });
-        console.log('[Realtime Supervisor] ✅ Suscrito a "pedidos.creados"');
     } catch (error) {
-        console.error('[Realtime Supervisor] ❌ Error en pedidos.creados:', error.message);
     }
 }
 
@@ -332,8 +314,6 @@ function _subscribeToChannels(ws) {
  * Refrescador de tabla con debounce para evitar múltiples requests
  */
 function _refreshTablaConDelay(payload, eventName) {
-    console.log(`[Realtime Supervisor] 🔄 Actualización recibida de ${eventName}`);
-
     // Detectar si es actualización de estado para notificar
     if (String(eventName).includes('despacho.pedidos:.pedido.actualizado')) {
         supervisorPedidosMaybeNotifyFromActualizado(payload);
@@ -352,14 +332,11 @@ function _refreshTablaConDelay(payload, eventName) {
             const tablaActual = document.querySelector('.table-scroll-container');
 
             if (!nuevaTabla || !tablaActual) {
-                console.warn('[Realtime Supervisor] ⚠️ Contenedor de tabla no encontrado');
                 return;
             }
 
             tablaActual.innerHTML = nuevaTabla.innerHTML;
-            console.log('[Realtime Supervisor] ✅ Tabla refrescada');
         } catch (error) {
-            console.error('[Realtime Supervisor] ❌ Error refrescando tabla:', error.message);
         }
     }, 450);  // 450ms debounce
 }

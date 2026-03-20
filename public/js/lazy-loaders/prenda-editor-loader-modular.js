@@ -62,13 +62,11 @@ window.PrendaEditorLoader = (function() {
 
         return Promise.all(promises)
             .then(() => {
-                console.log(' [PrendaEditor] Todos los módulos cargados');
                 isLoaded = true;
                 isLoading = false;
                 window.dispatchEvent(new CustomEvent('prendaEditorRefactoredReady'));
             })
             .catch(error => {
-                console.error(' [PrendaEditor] Error cargando módulos:', error);
                 loadError = error;
                 isLoading = false;
                 throw error;
@@ -86,7 +84,6 @@ window.PrendaEditorLoader = (function() {
             // Verificar si el script ya está en el DOM (cargado por <script defer> del blade)
             const existente = document.querySelector(`script[src*="${urlPath}"]`);
             if (existente) {
-                console.log(`[PrendaEditor] Script ya existe en DOM, skip: ${urlPath}`);
                 return resolve();
             }
             
@@ -109,8 +106,6 @@ window.PrendaEditorLoader = (function() {
         }
 
         if (typeof PrendaEditor === 'undefined') {
-            console.error('[PrendaEditor] Clase PrendaEditor no disponible');
-            return null;
         }
 
         return new PrendaEditor(options);
@@ -138,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log(' [PrendaEditor] Sistema listo para editar prendas');
             })
             .catch(error => {
-                console.error(' [PrendaEditor] Error inicializando:', error);
+                console.error('[PrendaEditor] Error al cargar:', error);
             });
     }
 });

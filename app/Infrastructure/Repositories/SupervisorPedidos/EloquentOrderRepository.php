@@ -47,7 +47,9 @@ class EloquentOrderRepository implements OrderRepository
             ->with(['asesora', 'prendas', 'epps'])
             ->get();
 
-        return $pedidos->map(fn($p) => $this->toDomain($p))->toArray();
+        return $pedidos->map(function(PedidoProduccion $p) {
+            return $this->toDomain($p);
+        })->values()->toArray();
     }
 
     public function findByOrderNumber(string $orderNumber): ?Order
@@ -59,6 +61,53 @@ class EloquentOrderRepository implements OrderRepository
         }
 
         return $this->toDomain($pedido);
+    }
+
+    public function findByIdWithRelations(int $id): ?array
+    {
+        $pedido = PedidoProduccion::with([
+            'asesora',
+            'prendas',
+            'prendas.color',
+            'prendas.tela',
+            'prendas.tipoManga',
+            'prendas.tipoBrocheBoton',
+            'cotizacion',
+            'cotizacion.tipoCotizacion',
+            'epps'
+        ])->find($id);
+
+        if (!$pedido) {
+            return null;
+        }
+
+        return $pedido->toArray();
+    }
+
+    public function updateMultiple(int $id, array $data): ?array
+    {
+        $pedido = PedidoProduccion::find($id);
+
+        if (!$pedido) {
+            return null;
+        }
+
+        $pedido->update($data);
+
+        return $pedido->fresh()->toArray();
+    }
+
+    public function updateStatus(int $id, string $status): ?array
+    {
+        $pedido = PedidoProduccion::find($id);
+
+        if (!$pedido) {
+            return null;
+        }
+
+        $pedido->update(['estado' => $status]);
+
+        return $pedido->fresh()->toArray();
     }
 
     private function toDomain(PedidoProduccion $model): Order

@@ -14,4 +14,10 @@ interface OrderRepository
     public function findAllPending(): array;
 
     public function findByOrderNumber(string $orderNumber): ?Order;
+
+    public function findByIdWithRelations(int $id): ?array;
+
+    public function updateMultiple(int $id, array $data): ?array;
+
+    public function updateStatus(int $id, string $status): ?array;
 }

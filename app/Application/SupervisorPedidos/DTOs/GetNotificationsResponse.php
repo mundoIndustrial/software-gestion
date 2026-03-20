@@ -20,7 +20,7 @@ class GetNotificationsResponse
         return [
             'success' => $this->success,
             'notificaciones' => $this->notifications->values(),
-            'novedades' => $this->news,
+            'novedades' => $this->news->values(),
             'totalPendientes' => $this->totalPending,
             'totalOrdenesNoVistas' => $this->totalOrdersNotViewed,
             'totalNovedades' => $this->totalNews,

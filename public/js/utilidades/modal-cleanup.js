@@ -54,12 +54,7 @@ class ModalCleanup {
                     //  IMPORTANTE: NO resetear origen-select en modo edición
                     // Se cargará correctamente en llenarCamposBasicos()
                     if (id === 'nueva-prenda-origen-select' && window.prendaEditIndex !== null && window.prendaEditIndex !== undefined) {
-                        console.log(' [limpiarFormulario]  SALTANDO LIMPIAR SELECT ORIGEN (MODO EDICIÓN) ', {
-                            prendaEditIndex: window.prendaEditIndex,
-                            selectId: id,
-                            valorActual: element.value,
-                            razon: 'El valor será establecido en llenarCamposBasicos()'
-                        });
+
                         return; // No limpiar en modo edición
                     }
                     element.value = element.querySelector('option')?.value || '';
@@ -68,18 +63,13 @@ class ModalCleanup {
                     // Se necesitan para permitir agregar nuevas telas durante la edición
                     if ((id === 'nueva-prenda-tela' || id === 'nueva-prenda-color' || id === 'nueva-prenda-referencia') 
                         && window.prendaEditIndex !== null && window.prendaEditIndex !== undefined) {
-                        console.log('[limpiarFormulario]  SALTANDO LIMPIAR INPUT TELA (MODO EDICIÓN)', {
-                            prendaEditIndex: window.prendaEditIndex,
-                            inputId: id,
-                            razon: 'Se permite agregar nuevas telas en edición'
-                        });
+
                         return; // No limpiar inputs de telas en modo edición
                     }
                     element.value = '';
                 }
             }
         });
-
 
     }
 
@@ -114,7 +104,7 @@ class ModalCleanup {
         if (window.telasAgregadas) {
             window.telasAgregadas.length = 0;
         }
-        
+
         // Limpiar telas agregadas (AMBOS FLUJOS: CREACIÓN y EDICIÓN - SEPARADOS)
         if (window.telasCreacion) {
             window.telasCreacion.length = 0;
@@ -179,9 +169,7 @@ class ModalCleanup {
                 DOMUtils.setChecked(id, false);
             });
 
-
         }
-
 
     }
 
@@ -196,7 +184,7 @@ class ModalCleanup {
             });
 
         }
-        
+
         // 🔥 CRÍTICO: Limpiar tallas de procesos (que se muestran en el contador)
         if (!preservar) {
             if (window.tallasSeleccionadasProceso) {
@@ -217,7 +205,7 @@ class ModalCleanup {
         if (tbodyTelas) {
             const filas = tbodyTelas.querySelectorAll('tr');
             let filasEliminadas = 0;
-            
+
             // Eliminar SOLO las filas agregadas (aquellas que no contienen los inputs principales)
             filas.forEach(fila => {
                 const telaInput = fila.querySelector('#nueva-prenda-tela');
@@ -227,7 +215,6 @@ class ModalCleanup {
                     filasEliminadas++;
                 }
             });
-            
 
         }
 
@@ -243,7 +230,7 @@ class ModalCleanup {
         if (window.imagenesPrendaStorage) {
             window.imagenesPrendaStorage.limpiar?.();
         }
-        
+
         // Luego limpiar el DOM del preview
         const fotosPreview = document.getElementById('nueva-prenda-foto-preview');
         if (fotosPreview) {
@@ -251,19 +238,19 @@ class ModalCleanup {
             fotosPreview.style.cursor = 'pointer';
             // DragDrop se reconfigura en shown.bs.modal, NO aquí
         }
-        
+
         // Limpiar contador de fotos
         const fotosContador = document.getElementById('nueva-prenda-foto-contador');
         if (fotosContador) {
             fotosContador.textContent = '';
         }
-        
+
         // Limpiar botón de agregar fotos
         const fotosBtn = document.getElementById('nueva-prenda-foto-btn');
         if (fotosBtn) {
             fotosBtn.style.display = 'block';
         }
-        
+
         // DragDrop tela se reconfigura en shown.bs.modal, NO aquí
 
         // 🔥 CRÍTICO: Limpiar TODAS las tarjetas de géneros (DAMA, CABALLERO, UNISEX)
@@ -271,18 +258,18 @@ class ModalCleanup {
         if (tarjetasGenerosContainer) {
             tarjetasGenerosContainer.innerHTML = '';
         }
-        
+
         // Resetear botones de género a estado NO seleccionado
         ['dama', 'caballero', 'unisex'].forEach(genero => {
             const btnGenero = document.getElementById(`btn-genero-${genero}`);
             const checkMark = document.getElementById(`check-${genero}`);
-            
+
             if (btnGenero) {
                 btnGenero.dataset.selected = 'false';
                 btnGenero.style.borderColor = '';
                 btnGenero.style.background = '';
             }
-            
+
             if (checkMark) {
                 checkMark.style.display = 'none';
             }
@@ -294,16 +281,16 @@ class ModalCleanup {
         if (contenedorTarjetas) {
             // CRÍTICO: Solo limpiar si es realmente necesario (cuando se crea NUEVA prenda)
             // No limpiar aquí porque causaria que los procesos cargados en edición se borren
-            console.log('[ModalCleanup] Contenedor de tarjetas procesos encontrado - NO se limpia aquí (se cargará en PrendaEditor)');
+
             // contenedorTarjetas.innerHTML = ''; // COMENTADO: Esto borraba los procesos al abrir en edición
         }
-        
+
         // 🔥 CRÍTICO: Limpiar resumen de tallas de procesos (el contador que muestra "Total: X unidades")
         const resumenTallas = document.getElementById('proceso-tallas-resumen');
         if (resumenTallas) {
             resumenTallas.innerHTML = '<p style="color: #9ca3af;">Selecciona tallas donde aplicar el proceso</p>';
         }
-        
+
         // Limpiar tabla de resumen de asignaciones de colores por talla (flujo 2)
         const tablaResumenAsignaciones = document.getElementById('tabla-resumen-asignaciones-cuerpo');
         if (tablaResumenAsignaciones) {
@@ -329,7 +316,6 @@ class ModalCleanup {
             totalPrendas.textContent = '0';
         }
 
-
     }
 
     /**
@@ -343,12 +329,11 @@ class ModalCleanup {
         ];
 
         DOMUtils.clearValues(idsTelaInputs);
-        
+
         const telaPreview = DOMUtils.getElement('nueva-prenda-tela-preview');
         if (telaPreview) {
             telaPreview.innerHTML = '';
         }
-
 
     }
 
@@ -367,7 +352,6 @@ class ModalCleanup {
 
         DOMUtils.clearValue('nueva-prenda-foto-input');
         DOMUtils.clearValue('nueva-prenda-foto-contador');
-
 
     }
 
@@ -403,7 +387,6 @@ class ModalCleanup {
             totalPrendas.textContent = '0';
         }
 
-
     }
 
     /**
@@ -429,7 +412,6 @@ class ModalCleanup {
 
         DOMUtils.setCheckedAll(checkboxesVariaciones, false);
 
-
     }
 
     /**
@@ -440,10 +422,10 @@ class ModalCleanup {
         // Buscar el título en el modal
         const modal = document.getElementById('modal-agregar-prenda-nueva');
         if (!modal) return;
-        
+
         const modalTitle = modal.querySelector('.modal-title');
         if (!modalTitle) return;
-        
+
         if (modo === 'editar') {
             modalTitle.innerHTML = '<span class="material-symbols-rounded">edit</span>Edición de Prenda';
         } else {
@@ -456,11 +438,10 @@ class ModalCleanup {
      */
     static prepararParaNueva() {
 
-        
         // 🔥 CRÍTICO: Resetear prendaEditIndex PRIMERO, antes de limpiar
         // Esto asegura que limpiarFormulario() vea que estamos en modo CREACIÓN (no edición)
         window.prendaEditIndex = null;
-        
+
         // 🔥 CRÍTICO: Resetear COMPLETAMENTE tallasRelacionales ANTES de cualquier otra limpieza
         // Esto previene que datos viejos de prenda anterior aparezcan en las tarjetas
         if (!window.tallasRelacionales) {
@@ -470,10 +451,10 @@ class ModalCleanup {
         window.tallasRelacionales.CABALLERO = {};
         window.tallasRelacionales.UNISEX = {};
         window.tallasRelacionales.SOBREMEDIDA = {};
-        
+
         // 🔥 CRÍTICO: Limpiar imágenes de procesos
         window.imagenesProcesoActual = [null, null, null];
-        
+
         // 🔥 CRÍTICO: Limpiar TELAS - arrays en memoria
         if (window.telasAgregadas) {
             window.telasAgregadas.length = 0;
@@ -481,14 +462,14 @@ class ModalCleanup {
         if (window.telasCreacion) {
             window.telasCreacion.length = 0;
         }
-        
+
         // 🔥 CRÍTICO: Limpiar tabla de telas completamente y recrear la fila de entrada
         // Esto asegura que los inputs SIEMPRE estén presentes
         const tbody = document.getElementById('tbody-telas');
         if (tbody) {
             // Limpiar todas las filas
             tbody.innerHTML = '';
-            
+
             // Recrear SOLO la fila de entrada con todos los inputs
             // Esto garantiza que los inputs siempre existan sin importar cuántas veces se limpie
             tbody.innerHTML = `
@@ -511,7 +492,7 @@ class ModalCleanup {
                                 <span style="font-size: 0.7rem;">Agregar imagen</span>
                             </button>
                             <input type="file" id="nueva-prenda-tela-img-input" accept="image/*" style="display: none;" onchange="manejarImagenTela(this)">
-                            
+
                             <!-- Texto de ayuda -->
                             <div style="text-align: center; color: #6b7280; font-size: 0.7rem; margin-top: 4px;">
                                 <div class="material-symbols-rounded" style="font-size: 1.2rem; opacity: 0.5;">cloud_upload</div>
@@ -528,13 +509,13 @@ class ModalCleanup {
                 </tr>
             `;
         }
-        
+
         this.limpiarFormulario();
         this.limpiarStorages();
         this.limpiarCheckboxes(false); // Limpiar TODO
         this.limpiarProcesos(false); // Limpiar TODO
         this.limpiarContenedores();
-        
+
         // 🔥 CRÍTICO: Cargar opciones de telas y colores para las datalist
         // Esto restaura las sugerencias de autocomplete
         if (typeof window.cargarTelasDisponibles === 'function') {
@@ -543,7 +524,7 @@ class ModalCleanup {
         if (typeof window.cargarColoresDisponibles === 'function') {
             window.cargarColoresDisponibles();
         }
-        
+
         // Cambiar título del modal a "Agregar Prenda Nueva"
         this.actualizarTituloModal('agregar');
 
@@ -555,14 +536,13 @@ class ModalCleanup {
      */
     static prepararParaEditar(prendaIndex) {
 
-        
         // 🔥 IMPORTANTE: Establecer índice de edición PRIMERO, antes de limpiar
         // Esto permite que limpiarFormulario() sepa que estamos en modo edición
         window.prendaEditIndex = prendaIndex;
-        
+
         // 🔥 CRÍTICO: Limpiar imágenes de procesos cuando abrimos para editar
         window.imagenesProcesoActual = [null, null, null];
-        
+
         // NO limpiar storages en modo edición - se cargarán los datos de la prenda
         // Solo limpiar formulario e inputs
         this.limpiarFormulario();
@@ -570,20 +550,18 @@ class ModalCleanup {
         this.limpiarCheckboxes(true); // Preservar procesos
         // NO limpiar contenedores en modo edición - se cargarán los datos de la prenda
         // this.limpiarContenedores();
-        
+
         // 🔥 CRÍTICO: Limpiar telasCreacion para que no interfiera con telasAgregadas
         // Cuando editamos una prenda que fue agregada desde creación, telasCreacion podría tener datos viejos
         if (window.telasCreacion) {
             window.telasCreacion.length = 0;
-            console.log(' [prepararParaEditar] telasCreacion limpiado para modo edición');
         }
-        
+
         // 🔥 CRÍTICO: Inicializar telasAgregadas si no existe (será llenado por cargarTelas)
         if (!window.telasAgregadas) {
             window.telasAgregadas = [];
-            console.log(' [prepararParaEditar] telasAgregadas inicializado como array vacío');
         }
-        
+
         // 🔥 Cargar opciones de telas y colores para las datalist
         if (typeof window.cargarTelasDisponibles === 'function') {
             window.cargarTelasDisponibles();
@@ -591,7 +569,7 @@ class ModalCleanup {
         if (typeof window.cargarColoresDisponibles === 'function') {
             window.cargarColoresDisponibles();
         }
-        
+
         // Cambiar título del modal a "Edición de Prenda"
         this.actualizarTituloModal('editar');
 
@@ -610,23 +588,18 @@ class ModalCleanup {
      */
     static limpiarDespuésDeGuardar() {
         const inicioTiempo = performance.now();
-        console.log('🔧 [ModalCleanup.limpiarDespuésDeGuardar] INICIANDO limpieza...');
-        
         try {
             // PASO 1: Limpiar formulario
-            console.log('  → PASO 1: limpiarFormulario()...');
+
             const paso1 = performance.now();
             this.limpiarFormulario();
-            console.log(`  ✓ PASO 1 completado en ${(performance.now() - paso1).toFixed(2)}ms`);
-            
+
             // PASO 2: Resetear edición
-            console.log('  → PASO 2: resetearEdicion()...');
+
             const paso2 = performance.now();
             this.resetearEdicion();
-            console.log(`  ✓ PASO 2 completado en ${(performance.now() - paso2).toFixed(2)}ms`);
-            
+
             // PASO 3: Resetear prendaEditIndex en gestionItemsUI
-            console.log('  → PASO 3: Reseteando window.gestionItemsUI.prendaEditIndex...');
             const paso3 = performance.now();
             if (window.gestionItemsUI) {
                 window.gestionItemsUI.prendaEditIndex = null;
@@ -634,45 +607,32 @@ class ModalCleanup {
             if (window.gestionItemsUI?.prendaEditor) {
                 window.gestionItemsUI.prendaEditor.prendaEditIndex = null;
             }
-            console.log(`  ✓ PASO 3 completado en ${(performance.now() - paso3).toFixed(2)}ms`);
-            
+
             // PASO 4: Ocultar modal
-            console.log('  → PASO 4: Ocultando modal...');
             const paso4 = performance.now();
             const modal = DOMUtils.getElement('modal-agregar-prenda-nueva');
             if (modal) {
                 modal.style.display = 'none';
             }
-            console.log(`  ✓ PASO 4 completado en ${(performance.now() - paso4).toFixed(2)}ms`);
-            
+
             const tiempoTotal = performance.now() - inicioTiempo;
-            console.log(` [ModalCleanup.limpiarDespuésDeGuardar] COMPLETADO EN ${tiempoTotal.toFixed(2)}ms`);
-            
+
             // PASO 5: Limpiar el resto de forma ASÍNCRONA (no bloqueante)
-            console.log('  → PASO 5 (ASÍNCRONO): Programando limpiezas adicionales...');
+
             setTimeout(() => {
                 try {
-                    console.log('    → Limpiando storages...');
                     const pasoS1 = performance.now();
                     this.limpiarStorages();
-                    console.log(`    ✓ Storages en ${(performance.now() - pasoS1).toFixed(2)}ms`);
-                    
-                    console.log('    → Limpiando checkboxes...');
+
                     const pasoS2 = performance.now();
                     this.limpiarCheckboxes();
-                    console.log(`    ✓ Checkboxes en ${(performance.now() - pasoS2).toFixed(2)}ms`);
-                    
-                    console.log('    → Limpiando procesos...');
+
                     const pasoS3 = performance.now();
                     this.limpiarProcesos();
-                    console.log(`    ✓ Procesos en ${(performance.now() - pasoS3).toFixed(2)}ms`);
-                    
-                    console.log('    → Limpiando contenedores...');
+
                     const pasoS4 = performance.now();
                     this.limpiarContenedores();
-                    console.log(`    ✓ Contenedores en ${(performance.now() - pasoS4).toFixed(2)}ms`);
-                    
-                    console.log('  ✓ PASO 5 (ASÍNCRONO) completado');
+
                 } catch (error) {
                     console.error('   Error en limpieza asíncrona:', error);
                 }

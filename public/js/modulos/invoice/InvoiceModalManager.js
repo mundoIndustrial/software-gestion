@@ -19,37 +19,28 @@ class InvoiceModalManager {
      * Crea y muestra el modal con la factura
      */
     crearModalFactura(datos) {
-        console.log('[InvoiceModalManager] INICIO crearModalFactura', {pedido_id: datos.id});
-        
         // IMPORTANTE: Remover TODOS los modales anteriores completamente
         // Usar querySelectorAll para eliminar posibles duplicados
         const modalesAnteriores = document.querySelectorAll('#modal-factura-overlay');
-        console.log('[InvoiceModalManager] Modales encontrados para eliminar:', modalesAnteriores.length);
-        
         modalesAnteriores.forEach((modal, index) => {
-            console.log('[InvoiceModalManager] Eliminando modal anterior', {index, id: modal.id});
             modal.remove();
         });
-        
-        console.log('[InvoiceModalManager] Verificando si quedaron modales:', document.querySelectorAll('#modal-factura-overlay').length);
-        
+
+        .length);
+
         // Agregar estilos si no existen
         this.agregarEstilos();
-        
+
         // Generar HTML de la factura
         const htmlFactura = this.generarHTMLFactura(datos);
-        
+
         // Crear estructura del modal
         const modal = this.crearEstructuraModal(htmlFactura);
-        
+
         // Agregar al DOM
         document.body.appendChild(modal);
-        console.log('[InvoiceModalManager] Modal añadido al DOM');
-        
         // Configurar eventos
         this.configurarEventos();
-        
-        console.log('[InvoiceModalManager] Modal de factura creado exitosamente');
     }
 
     /**
@@ -83,13 +74,13 @@ class InvoiceModalManager {
                     body > * {
                         display: none !important;
                     }
-                    
+
                     /* Mostrar SOLO el modal de factura */
                     body > #modal-factura-overlay {
                         display: flex !important;
                         position: static !important;
                     }
-                    
+
                     body {
                         margin: 0 !important;
                         padding: 0 !important;
@@ -100,7 +91,7 @@ class InvoiceModalManager {
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
                     }
-                    
+
                     html {
                         margin: 0 !important;
                         padding: 0 !important;
@@ -109,7 +100,7 @@ class InvoiceModalManager {
                         height: 100vh !important;
                         overflow: visible !important;
                     }
-                    
+
                     /* Estilos del overlay */
                     #modal-factura-overlay {
                         position: static !important;
@@ -128,7 +119,7 @@ class InvoiceModalManager {
                         animation: none !important;
                         overflow: visible !important;
                     }
-                    
+
                     /* Estilos del modal */
                     #modal-factura {
                         position: relative !important;
@@ -147,23 +138,23 @@ class InvoiceModalManager {
                         page-break-after: always;
                         box-sizing: border-box !important;
                     }
-                    
+
                     /* Ocultar header con botones */
                     #modal-factura > div:first-child {
                         display: none !important;
                     }
-                    
+
                     /* Mostrar contenido de la factura */
                     #modal-factura > div {
                         display: block !important;
                         overflow: visible !important;
                     }
-                    
+
                     /* Forzar overflow visible en TODO excepto imágenes */
                     *:not(img):not(video):not(canvas) {
                         overflow: visible !important;
                     }
-                    
+
                     /* Asegurar que las imágenes no se desborden al imprimir */
                     #modal-factura-contenido img {
                         max-width: 80px !important;
@@ -174,19 +165,19 @@ class InvoiceModalManager {
                         overflow: hidden !important;
                         page-break-inside: avoid !important;
                     }
-                    
+
                     /* Imágenes pequeñas (telas) */
                     #modal-factura-contenido img[style*="40px"] {
                         max-width: 40px !important;
                         max-height: 40px !important;
                     }
-                    
+
                     /* Imágenes de procesos */
                     #modal-factura-contenido img[style*="50px"] {
                         max-width: 50px !important;
                         max-height: 50px !important;
                     }
-                    
+
                     /* Evitar cortes en elementos importantes */
                     #modal-factura-contenido,
                     #modal-factura-contenido table,
@@ -195,14 +186,14 @@ class InvoiceModalManager {
                         page-break-inside: avoid !important;
                         overflow: visible !important;
                     }
-                    
+
                     /* Páginas */
                     @page {
                         size: A4 portrait;
                         margin: 0.2cm;
                     }
                 }
-                
+
                 /* Override de font-sizes para modal de factura */
                 #modal-factura-contenido table,
                 #modal-factura-contenido table td,
@@ -220,38 +211,16 @@ class InvoiceModalManager {
      * Genera el HTML de la factura usando el renderer disponible
      */
     generarHTMLFactura(datos) {
-        console.log('[InvoiceModalManager] INICIO generarHTMLFactura', {
-            datos_recibidos: !!datos,
-            datos_keys: datos ? Object.keys(datos) : [],
-            epps_existe: !!(datos && datos.epps),
-            epps_count: datos && datos.epps ? datos.epps.length : 0,
-            timestamp: new Date().toISOString()
-        });
-        
+
         if (typeof window.generarHTMLFactura === 'function') {
             try {
                 const datosPedido = datos.data || datos;
-                console.log('[InvoiceModalManager] Generando HTML con datos:', {
-                    prendas_existe: !!datosPedido.prendas,
-                    prendas_count: datosPedido.prendas?.length || 0,
-                    epps_existe: !!datosPedido.epps,
-                    epps_count: datosPedido.epps?.length || 0,
-                    epps_data: datosPedido.epps
-                });
-                
                 const htmlFactura = window.generarHTMLFactura(datosPedido);
-                
-                console.log('[InvoiceModalManager] HTML generado:', {
-                    length: htmlFactura.length,
-                    contiene_actualizado: htmlFactura.includes('ACTUALIZADO'),
-                    contiene_imagenes: htmlFactura.includes('img src'),
-                    preview: htmlFactura.substring(0, 300)
-                });
-                
+
                 if (!htmlFactura || htmlFactura.trim().length === 0) {
                     throw new Error('HTML vacío generado');
                 }
-                
+
                 return htmlFactura;
             } catch (error) {
                 console.error('[InvoiceModalManager] Error generando HTML:', error);
@@ -323,7 +292,7 @@ class InvoiceModalManager {
             padding: 20px;
             animation: fadeIn 0.3s ease;
         `;
-        
+
         // Crear modal
         const modal = document.createElement('div');
         modal.id = 'modal-factura';
@@ -338,11 +307,11 @@ class InvoiceModalManager {
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
             animation: slideUp 0.3s ease;
         `;
-        
+
         // Header con botones
         const header = this.crearHeader();
         modal.appendChild(header);
-        
+
         // Contenido de la factura
         const contenido = document.createElement('div');
         contenido.id = 'modal-factura-contenido';
@@ -353,7 +322,7 @@ class InvoiceModalManager {
         `;
         contenido.innerHTML = htmlFactura;
         modal.appendChild(contenido);
-        
+
         overlay.appendChild(modal);
         return overlay;
     }
@@ -376,17 +345,17 @@ class InvoiceModalManager {
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             z-index: 10000;
         `;
-        
+
         // Título
         const titulo = document.createElement('h2');
         titulo.textContent = ' Recibo del Pedido';
         titulo.style.cssText = 'margin: 0; font-size: 1.1rem; font-weight: 600;';
         header.appendChild(titulo);
-        
+
         // Botones de acción
         const botonesAccion = this.crearBotonesAccion();
         header.appendChild(botonesAccion);
-        
+
         return header;
     }
 
@@ -396,15 +365,15 @@ class InvoiceModalManager {
     crearBotonesAccion() {
         const botonesAccion = document.createElement('div');
         botonesAccion.style.cssText = 'display: flex; gap: 8px; align-items: center;';
-        
+
         // Botón Imprimir
         const btnImprimir = this.crearBotonImprimir();
         botonesAccion.appendChild(btnImprimir);
-        
+
         // Botón Cerrar
         const btnCerrar = this.crearBotonCerrar();
         botonesAccion.appendChild(btnCerrar);
-        
+
         return botonesAccion;
     }
 
@@ -430,19 +399,19 @@ class InvoiceModalManager {
             width: 40px;
             height: 40px;
         `;
-        
+
         btnImprimir.onmouseover = () => {
             btnImprimir.style.background = '#2563eb';
             btnImprimir.style.transform = 'scale(1.1)';
         };
-        
+
         btnImprimir.onmouseout = () => {
             btnImprimir.style.background = '#3b82f6';
             btnImprimir.style.transform = 'scale(1)';
         };
-        
+
         btnImprimir.onclick = () => this.imprimirFacturaModal();
-        
+
         return btnImprimir;
     }
 
@@ -468,19 +437,19 @@ class InvoiceModalManager {
             width: 40px;
             height: 40px;
         `;
-        
+
         btnCerrar.onmouseover = () => {
             btnCerrar.style.background = '#dc2626';
             btnCerrar.style.transform = 'scale(1.1)';
         };
-        
+
         btnCerrar.onmouseout = () => {
             btnCerrar.style.background = '#ef4444';
             btnCerrar.style.transform = 'scale(1)';
         };
-        
+
         btnCerrar.onclick = () => this.cerrarModalFactura();
-        
+
         return btnCerrar;
     }
 
@@ -496,7 +465,7 @@ class InvoiceModalManager {
             }
         };
         document.addEventListener('keydown', manejadorEscape);
-        
+
         // Cerrar al hacer clic fuera
         const overlay = document.getElementById('modal-factura-overlay');
         if (overlay) {
@@ -512,36 +481,26 @@ class InvoiceModalManager {
      * Cierra el modal de factura
      */
     cerrarModalFactura() {
-        console.log('[InvoiceModalManager] INICIO cerrarModalFactura');
-        
         const overlay = document.getElementById('modal-factura-overlay');
-        console.log('[InvoiceModalManager] Modal encontrado para cerrar:', !!overlay);
-        
         if (overlay) {
             // Removing directly without animation to prevent stacking issues
-            console.log('[InvoiceModalManager] Eliminando modal del DOM');
             overlay.remove();
-            console.log('[InvoiceModalManager] Modal eliminado - verificando:', document.getElementById('modal-factura-overlay') === null);
+            === null);
         }
-        
+
         // Ocultar loading si está activo
         if (window.loadingManager) {
-            console.log('[InvoiceModalManager] Ocultando loading');
             window.loadingManager.ocultarCargando();
         }
-        
-        console.log('[InvoiceModalManager] Cierre completado');
     }
 
     /**
      * Imprime la factura del modal
      */
     imprimirFacturaModal() {
-        console.log('[InvoiceModalManager] Iniciando impresión de factura');
-        
         // Diagnosticar CSS antes de imprimir
         this.diagnosticarCSSImpresion();
-        
+
         // Usar window.print() para imprimir el modal
         window.print();
     }
@@ -550,8 +509,6 @@ class InvoiceModalManager {
      * Diagnostica qué CSS se está aplicando para impresión
      */
     diagnosticarCSSImpresion() {
-        console.log('[CSS-DIAGNOSTIC] 🔍 Iniciando diagnóstico de CSS para impresión...');
-        
         // Verificar estilos de elementos clave
         const elementos = [
             'body',
@@ -562,26 +519,17 @@ class InvoiceModalManager {
             '#modal-factura-contenido div',
             '#modal-factura-contenido table'
         ];
-        
+
         elementos.forEach(selector => {
             const elemento = selector === 'body' ? document.body : document.querySelector(selector);
             if (elemento) {
                 const estilos = window.getComputedStyle(elemento);
-                console.log(`[CSS-DIAGNOSTIC] 📋 ${selector}:`, {
-                    overflow: estilos.overflow,
-                    display: estilos.display,
-                    position: estilos.position,
-                    width: estilos.width,
-                    height: estilos.height,
-                    visibility: estilos.visibility
-                });
             } else {
                 console.warn(`[CSS-DIAGNOSTIC] ⚠️ Elemento no encontrado: ${selector}`);
             }
         });
-        
+
         // Verificar reglas @media print
-        console.log('[CSS-DIAGNOSTIC] 📄 Buscando reglas @media print...');
         const reglas = Array.from(document.styleSheets).flatMap(sheet => {
             try {
                 return Array.from(sheet.cssRules || []);
@@ -590,34 +538,26 @@ class InvoiceModalManager {
                 return [];
             }
         });
-        
+
         const reglasPrint = reglas.filter(regla => {
             return regla.type === CSSRule.MEDIA_RULE && 
                    regla.media && 
                    regla.media.mediaText.includes('print');
         });
-        
-        console.log(`[CSS-DIAGNOSTIC] 📐 Reglas @media print encontradas: ${reglasPrint.length}`);
         reglasPrint.forEach((regla, index) => {
-            console.log(`[CSS-DIAGNOSTIC] 📐 Regla ${index + 1}:`, regla.media.mediaText);
-            console.log(`[CSS-DIAGNOSTIC] 📐 Contenido:`, regla.cssText);
         });
-        
+
         // Verificar imágenes específicas
         const imagenes = document.querySelectorAll('#modal-factura-contenido img');
-        console.log(`[CSS-DIAGNOSTIC] 🖼️ Imágenes encontradas: ${imagenes.length}`);
         imagenes.forEach((img, index) => {
             const estilos = window.getComputedStyle(img);
-            console.log(`[CSS-DIAGNOSTIC] 🖼️ Imagen ${index + 1}:`, {
-                src: img.src.substring(0, 50) + '...',
+            + '...',
                 overflow: estilos.overflow,
                 'object-fit': estilos.objectFit,
                 width: estilos.width,
                 height: estilos.height
             });
         });
-        
-        console.log('[CSS-DIAGNOSTIC] ✅ Diagnóstico completado');
     }
 
     /**
@@ -635,7 +575,7 @@ class InvoiceModalManager {
         if (contenido) {
             const htmlFactura = this.generarHTMLFactura(datos);
             contenido.innerHTML = htmlFactura;
-            
+
             // Actualizar título
             const titulo = document.querySelector('#modal-factura h2');
             if (titulo) {

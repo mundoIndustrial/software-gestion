@@ -31,16 +31,49 @@ use App\Application\SupervisorPedidos\UseCases\GetOrderDisplayUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetNotificationsUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetReceiptDetailsUseCase;
 use App\Application\SupervisorPedidos\UseCases\ApproveReceiptUseCase;
+use App\Application\SupervisorPedidos\UseCases\SaveSewingReceiptColorUseCase;
+use App\Application\SupervisorPedidos\UseCases\SelectOrderUseCase;
+use App\Application\SupervisorPedidos\UseCases\DeselectOrderUseCase;
+use App\Application\SupervisorPedidos\UseCases\GetOrderSelectionsUseCase;
+use App\Application\SupervisorPedidos\UseCases\MarkAllNotificationsAsReadUseCase;
+use App\Application\SupervisorPedidos\UseCases\DeleteImageUseCase;
+use App\Application\SupervisorPedidos\UseCases\ToggleNewsVistoUseCase;
+use App\Application\SupervisorPedidos\UseCases\TogglePedidoVistoUseCase;
+use App\Application\SupervisorPedidos\UseCases\MarkNotificationAsReadUseCase;
+use App\Application\SupervisorPedidos\DTOs\ActivateReceiptRequest;
+use App\Application\SupervisorPedidos\DTOs\CancelReceiptRequest;
+use App\Application\SupervisorPedidos\DTOs\SaveReceiptArrivalDateRequest;
+use App\Application\SupervisorPedidos\DTOs\UpdateProfileRequest;
+use App\Application\SupervisorPedidos\DTOs\ListOrdersRequest;
+use App\Application\SupervisorPedidos\DTOs\DownloadOrderPdfRequest;
+use App\Application\SupervisorPedidos\DTOs\ApproveOrderRequest;
+use App\Application\SupervisorPedidos\DTOs\ReturnOrderRequest;
+use App\Application\SupervisorPedidos\DTOs\ToggleOrderVisibilityRequest;
+use App\Application\SupervisorPedidos\DTOs\ApproveOrderDetailedRequest;
+use App\Application\SupervisorPedidos\DTOs\ChangeOrderStatusRequest;
+use App\Application\SupervisorPedidos\DTOs\GetOrderDetailsRequest;
+use App\Application\SupervisorPedidos\DTOs\GetFilterOptionsRequest;
+use App\Application\SupervisorPedidos\DTOs\GetSewingReceiptFilterOptionsRequest;
+use App\Application\SupervisorPedidos\DTOs\UpdateOrderRequest;
+use App\Application\SupervisorPedidos\DTOs\DeleteImageRequest;
+use App\Application\SupervisorPedidos\DTOs\ToggleNewsVistoRequest;
+use App\Application\SupervisorPedidos\DTOs\TogglePedidoVistoRequest;
+use App\Application\SupervisorPedidos\DTOs\MarkNotificationAsReadRequest;
+use App\Application\SupervisorPedidos\DTOs\GetPendingEmbroideryStampingReceiptsRequest;
+use App\Application\SupervisorPedidos\DTOs\GetPendingSewingReceiptsRequest;
+use App\Application\SupervisorPedidos\DTOs\SaveSewingReceiptColorRequest;
+use App\Application\SupervisorPedidos\DTOs\SelectOrderRequest;
+use App\Application\SupervisorPedidos\DTOs\MarkNotificationsAsReadRequest;
+use App\Application\SupervisorPedidos\DTOs\GetPendingOrdersCountRequest;
+use App\Application\SupervisorPedidos\DTOs\GetComparisonDataRequest;
+use App\Application\SupervisorPedidos\DTOs\GetOrderDetailsViewRequest;
+use App\Application\SupervisorPedidos\DTOs\ApproveReceiptRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
-use Barryvdh\DomPDF\Facade\Pdf;
-use App\Models\NewsVisto;
-use App\Models\PedidoVistoSupervisor;
 use Illuminate\Http\JsonResponse;
-
+use App\Http\Controllers\Controller;
 class SupervisorPedidosController extends Controller
 {
     private ApproveOrderUseCase $approveOrderUseCase;
@@ -68,6 +101,15 @@ class SupervisorPedidosController extends Controller
     private GetNotificationsUseCase $getNotificationsUseCase;
     private GetReceiptDetailsUseCase $getReceiptDetailsUseCase;
     private ApproveReceiptUseCase $approveReceiptUseCase;
+    private SaveSewingReceiptColorUseCase $saveSewingReceiptColorUseCase;
+    private SelectOrderUseCase $selectOrderUseCase;
+    private DeselectOrderUseCase $deselectOrderUseCase;
+    private GetOrderSelectionsUseCase $getOrderSelectionsUseCase;
+    private MarkAllNotificationsAsReadUseCase $markAllNotificationsAsReadUseCase;
+    private DeleteImageUseCase $deleteImageUseCase;
+    private ToggleNewsVistoUseCase $toggleNewsVistoUseCase;
+    private TogglePedidoVistoUseCase $togglePedidoVistoUseCase;
+    private MarkNotificationAsReadUseCase $markNotificationAsReadUseCase;
 
     public function __construct(
         ApproveOrderUseCase $approveOrderUseCase,
@@ -94,7 +136,16 @@ class SupervisorPedidosController extends Controller
         GetOrderDisplayUseCase $getOrderDisplayUseCase,
         GetNotificationsUseCase $getNotificationsUseCase,
         GetReceiptDetailsUseCase $getReceiptDetailsUseCase,
-        ApproveReceiptUseCase $approveReceiptUseCase
+        ApproveReceiptUseCase $approveReceiptUseCase,
+        SaveSewingReceiptColorUseCase $saveSewingReceiptColorUseCase,
+        SelectOrderUseCase $selectOrderUseCase,
+        DeselectOrderUseCase $deselectOrderUseCase,
+        GetOrderSelectionsUseCase $getOrderSelectionsUseCase,
+        MarkAllNotificationsAsReadUseCase $markAllNotificationsAsReadUseCase,
+        DeleteImageUseCase $deleteImageUseCase,
+        ToggleNewsVistoUseCase $toggleNewsVistoUseCase,
+        TogglePedidoVistoUseCase $togglePedidoVistoUseCase,
+        MarkNotificationAsReadUseCase $markNotificationAsReadUseCase
     ) {
         $this->approveOrderUseCase = $approveOrderUseCase;
         $this->returnOrderUseCase = $returnOrderUseCase;
@@ -121,6 +172,15 @@ class SupervisorPedidosController extends Controller
         $this->getNotificationsUseCase = $getNotificationsUseCase;
         $this->getReceiptDetailsUseCase = $getReceiptDetailsUseCase;
         $this->approveReceiptUseCase = $approveReceiptUseCase;
+        $this->saveSewingReceiptColorUseCase = $saveSewingReceiptColorUseCase;
+        $this->selectOrderUseCase = $selectOrderUseCase;
+        $this->deselectOrderUseCase = $deselectOrderUseCase;
+        $this->getOrderSelectionsUseCase = $getOrderSelectionsUseCase;
+        $this->markAllNotificationsAsReadUseCase = $markAllNotificationsAsReadUseCase;
+        $this->deleteImageUseCase = $deleteImageUseCase;
+        $this->toggleNewsVistoUseCase = $toggleNewsVistoUseCase;
+        $this->togglePedidoVistoUseCase = $togglePedidoVistoUseCase;
+        $this->markNotificationAsReadUseCase = $markNotificationAsReadUseCase;
     }
 
     /**
@@ -162,7 +222,7 @@ class SupervisorPedidosController extends Controller
             }
 
             // Crear DTO de request
-            $activateRequest = new \App\Application\SupervisorPedidos\DTOs\ActivateReceiptRequest(
+            $activateRequest = new ActivateReceiptRequest(
                 $pedidoId,
                 $prendaId
             );
@@ -198,7 +258,7 @@ class SupervisorPedidosController extends Controller
     {
         try {
             // Crear DTO de request
-            $cancelRequest = new \App\Application\SupervisorPedidos\DTOs\CancelReceiptRequest(
+            $cancelRequest = new CancelReceiptRequest(
                 $pedidoId,
                 $prendaId,
                 "ANULADO desde supervisor"
@@ -240,7 +300,7 @@ class SupervisorPedidosController extends Controller
     {
         try {
             // Crear DTO de request
-            $saveRequest = new \App\Application\SupervisorPedidos\DTOs\SaveReceiptArrivalDateRequest(
+            $saveRequest = new SaveReceiptArrivalDateRequest(
                 (int) $id,
                 request()->input('fecha_llegada')
             );
@@ -296,7 +356,7 @@ class SupervisorPedidosController extends Controller
             ]);
 
             // Crear DTO de request
-            $updateRequest = new \App\Application\SupervisorPedidos\DTOs\UpdateProfileRequest(
+            $updateRequest = new UpdateProfileRequest(
                 userId: (string) $user->id,
                 name: $validated['name'],
                 email: $validated['email'],
@@ -334,7 +394,7 @@ class SupervisorPedidosController extends Controller
     public function index(Request $request)
     {
         try {
-            $requestDTO = new \App\Application\SupervisorPedidos\DTOs\ListOrdersRequest($request->query());
+            $requestDTO = new ListOrdersRequest($request->query());
             $response = $this->listOrdersUseCase->execute($requestDTO);
 
             extract($response->toArray());
@@ -369,7 +429,7 @@ class SupervisorPedidosController extends Controller
     public function showPedidoDetalle($pedidoId)
     {
         try {
-            $viewData = $this->getOrderDetailsViewUseCase->execute((int) $pedidoId);
+            $viewData = $this->getOrderDetailsViewUseCase->execute(new GetOrderDetailsViewRequest((int) $pedidoId));
             
             return response()->json($viewData, 200);
         } catch (\Exception $e) {
@@ -385,7 +445,7 @@ class SupervisorPedidosController extends Controller
     public function descargarPDF($id)
     {
         try {
-            $request = new \App\Application\SupervisorPedidos\DTOs\DownloadOrderPdfRequest((int) $id);
+            $request = new DownloadOrderPdfRequest((int) $id);
             $response = $this->downloadOrderPdfUseCase->execute($request);
             return $response->download();
         } catch (\Exception $e) {
@@ -402,7 +462,7 @@ class SupervisorPedidosController extends Controller
     {
         try {
             // Crear DTO de request
-            $approveRequest = new \App\Application\SupervisorPedidos\DTOs\ApproveOrderRequest((int) $id);
+            $approveRequest = new ApproveOrderRequest((int) $id);
             
             // Ejecutar Use Case
             $response = $this->approveOrderUseCase->execute($approveRequest);
@@ -457,7 +517,7 @@ class SupervisorPedidosController extends Controller
 
         try {
             // Crear DTO de request
-            $returnRequest = new \App\Application\SupervisorPedidos\DTOs\ReturnOrderRequest(
+            $returnRequest = new ReturnOrderRequest(
                 (int) $id,
                 $request->motivo_anulacion
             );
@@ -506,7 +566,7 @@ class SupervisorPedidosController extends Controller
     public function ocultarPedido(Request $request, $id)
     {
         try {
-            $visibilityRequest = new \App\Application\SupervisorPedidos\DTOs\ToggleOrderVisibilityRequest(
+            $visibilityRequest = new ToggleOrderVisibilityRequest(
                 orderId: (int) $id,
                 isHidden: true
             );
@@ -530,7 +590,7 @@ class SupervisorPedidosController extends Controller
     public function mostrarPedido(Request $request, $id)
     {
         try {
-            $visibilityRequest = new \App\Application\SupervisorPedidos\DTOs\ToggleOrderVisibilityRequest(
+            $visibilityRequest = new ToggleOrderVisibilityRequest(
                 orderId: (int) $id,
                 isHidden: false
             );
@@ -555,7 +615,7 @@ class SupervisorPedidosController extends Controller
     {
         try {
             // Crear DTO de request
-            $approveRequest = new \App\Application\SupervisorPedidos\DTOs\ApproveOrderDetailedRequest((int) $id);
+            $approveRequest = new ApproveOrderDetailedRequest((int) $id);
             
             // Ejecutar Use Case
             $response = $this->approveOrderDetailedUseCase->execute($approveRequest);
@@ -608,7 +668,7 @@ class SupervisorPedidosController extends Controller
             ]);
 
             // Crear DTO de request
-            $changeStatusRequest = new \App\Application\SupervisorPedidos\DTOs\ChangeOrderStatusRequest(
+            $changeStatusRequest = new ChangeOrderStatusRequest(
                 (int) $id,
                 $request->estado
             );
@@ -643,10 +703,10 @@ class SupervisorPedidosController extends Controller
     public function obtenerDatos($id)
     {
         try {
-            $request = new \App\Application\SupervisorPedidos\DTOs\GetOrderDetailsRequest((int)$id);
+            $request = new GetOrderDetailsRequest((int)$id);
             $response = $this->getOrderDetailsUseCase->execute($request);
             
-            return response()->json($response->getData());
+            return response()->json($response->toArray());
         } catch (\RuntimeException $e) {
             Log::warning('Orden no encontrada', ['order_id' => $id, 'error' => $e->getMessage()]);
             return response()->json(['error' => $e->getMessage()], 404);
@@ -764,7 +824,7 @@ class SupervisorPedidosController extends Controller
     public function obtenerOpcionesFiltro($campo)
     {
         try {
-            $request = new \App\Application\SupervisorPedidos\DTOs\GetFilterOptionsRequest($campo);
+            $request = new GetFilterOptionsRequest($campo);
             $response = $this->getFilterOptionsUseCase->execute($request);
 
             return response()->json($response->toArray());
@@ -783,7 +843,7 @@ class SupervisorPedidosController extends Controller
     public function obtenerOpcionesFiltroPendientesCostura($campo)
     {
         try {
-            $request = new \App\Application\SupervisorPedidos\DTOs\GetSewingReceiptFilterOptionsRequest($campo);
+            $request = new GetSewingReceiptFilterOptionsRequest($campo);
             $response = $this->getSewingReceiptFilterOptionsUseCase->execute($request);
             return response()->json($response->toArray());
         } catch (\Exception $e) {
@@ -811,12 +871,15 @@ class SupervisorPedidosController extends Controller
             }
 
             // Use GetNotificationsUseCase to handle all notification logic
-            $response = $this->getNotificationsUseCase->execute($user);
+            $response = $this->getNotificationsUseCase->execute();
 
             return response()->json($response->toArray());
 
         } catch (\Exception $e) {
-            \Log::error('Error al obtener notificaciones: ' . $e->getMessage());
+            \Log::error('Error al obtener notificaciones - Línea: ' . $e->getLine() . ' - ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener notificaciones: ' . $e->getMessage()
@@ -826,6 +889,10 @@ class SupervisorPedidosController extends Controller
 
     /**
      * Marcar todas las notificaciones como leídas
+     */
+    /**
+     * Marcar todas las notificaciones como leídas
+     * REFACTORIZADO CON DDD - Usa MarkAllNotificationsAsReadUseCase
      */
     public function markAllNotificationsAsRead()
     {
@@ -839,55 +906,18 @@ class SupervisorPedidosController extends Controller
                 ], 401);
             }
 
-            // Marcar notificaciones del modelo de Laravel como leídas
-            $user->unreadNotifications()->update(['read_at' => now()]);
+            // Crear DTO de request
+            $markRequest = new MarkNotificationsAsReadRequest(
+                (int)$user->id
+            );
 
-            // Marcar todas las novedades como vistas por este usuario
-            $novedadesTipos = ['pedido_creado', 'order_created', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado', 'order_status_changed'];
-            $newsIds = \App\Models\News::whereIn('event_type', $novedadesTipos)
-                ->where('created_at', '>=', now()->subDays(7))
-                ->pluck('id');
+            // Ejecutar Use Case
+            $response = $this->markAllNotificationsAsReadUseCase->execute($markRequest);
 
-            foreach ($newsIds as $newsId) {
-                NewsVisto::firstOrCreate([
-                    'news_id' => $newsId,
-                    'user_id' => $user->id,
-                ]);
-            }
+            return response()->json($response->toArray());
 
-            // Marcar todas las órdenes pendientes como vistas
-            $pedidoIds = PedidoProduccion::whereNull('aprobado_por_supervisor_en')
-                ->where('estado', '!=', 'pendiente_cartera')
-                ->whereNotNull('numero_pedido')
-                ->where('numero_pedido', '>', 0)
-                ->pluck('id');
-
-            foreach ($pedidoIds as $pedidoId) {
-                PedidoVistoSupervisor::firstOrCreate([
-                    'pedido_id' => $pedidoId,
-                    'user_id' => $user->id,
-                ]);
-            }
-
-            // También marcar anuladas como vistas
-            $anuladasIds = PedidoProduccion::where('estado', 'Anulada')
-                ->whereNotNull('numero_pedido')
-                ->where('numero_pedido', '>', 0)
-                ->where('updated_at', '>=', now()->subDays(7))
-                ->pluck('id');
-
-            foreach ($anuladasIds as $anuladaId) {
-                PedidoVistoSupervisor::firstOrCreate([
-                    'pedido_id' => $anuladaId,
-                    'user_id' => $user->id,
-                ]);
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Todas las notificaciones han sido marcadas como leídas'
-            ]);
         } catch (\Exception $e) {
+            \Log::error('Error al marcar notificaciones: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al marcar notificaciones: ' . $e->getMessage()
@@ -897,6 +927,7 @@ class SupervisorPedidosController extends Controller
 
     /**
      * Marcar una notificación como leída
+     * REFACTORIZADO CON DDD - Usa MarkNotificationAsReadUseCase
      */
     public function markNotificationAsRead($notificationId)
     {
@@ -910,22 +941,24 @@ class SupervisorPedidosController extends Controller
                 ], 401);
             }
 
-            $notification = $user->notifications()->find($notificationId);
+            // Crear DTO de request
+            $markRequest = new MarkNotificationAsReadRequest(
+                (int)$notificationId
+            );
 
-            if (!$notification) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Notificación no encontrada'
-                ], 404);
-            }
+            // Ejecutar Use Case
+            $response = $this->markNotificationAsReadUseCase->execute($markRequest);
 
-            $notification->markAsRead();
+            return response()->json($response->toArray());
 
+        } catch (\DomainException $e) {
+            \Log::error('Error al marcar notificación: ' . $e->getMessage());
             return response()->json([
-                'success' => true,
-                'message' => 'Notificación marcada como leída'
-            ]);
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 404);
         } catch (\Exception $e) {
+            \Log::error('Error al marcar notificación: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al marcar notificación: ' . $e->getMessage()
@@ -935,6 +968,7 @@ class SupervisorPedidosController extends Controller
 
     /**
      * Toggle visto de una novedad (News) para el usuario actual
+     * REFACTORIZADO CON DDD - Usa ToggleNewsVistoUseCase
      */
     public function toggleNewsVisto(Request $request, $newsId)
     {
@@ -944,24 +978,26 @@ class SupervisorPedidosController extends Controller
                 return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
             }
 
-            $existing = NewsVisto::where('news_id', $newsId)->where('user_id', $user->id)->first();
+            // Crear DTO de request
+            $toggleRequest = new ToggleNewsVistoRequest(
+                (int)$newsId,
+                (int)$user->id
+            );
 
-            if ($existing) {
-                $existing->delete();
-                $visto = false;
-            } else {
-                NewsVisto::create(['news_id' => $newsId, 'user_id' => $user->id]);
-                $visto = true;
-            }
+            // Ejecutar Use Case
+            $response = $this->toggleNewsVistoUseCase->execute($toggleRequest);
 
-            return response()->json(['success' => true, 'visto' => $visto]);
+            return response()->json($response->toArray());
+
         } catch (\Exception $e) {
+            \Log::error('Error al cambiar estado de noticia: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     /**
      * Toggle visto de un pedido para el usuario actual
+     * REFACTORIZADO CON DDD - Usa TogglePedidoVistoUseCase
      */
     public function togglePedidoVisto(Request $request, $pedidoId)
     {
@@ -971,18 +1007,19 @@ class SupervisorPedidosController extends Controller
                 return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
             }
 
-            $existing = PedidoVistoSupervisor::where('pedido_id', $pedidoId)->where('user_id', $user->id)->first();
+            // Crear DTO de request
+            $toggleRequest = new TogglePedidoVistoRequest(
+                (int)$pedidoId,
+                (int)$user->id
+            );
 
-            if ($existing) {
-                $existing->delete();
-                $visto = false;
-            } else {
-                PedidoVistoSupervisor::create(['pedido_id' => $pedidoId, 'user_id' => $user->id]);
-                $visto = true;
-            }
+            // Ejecutar Use Case
+            $response = $this->togglePedidoVistoUseCase->execute($toggleRequest);
 
-            return response()->json(['success' => true, 'visto' => $visto]);
+            return response()->json($response->toArray());
+
         } catch (\Exception $e) {
+            \Log::error('Error al cambiar estado de visualización del pedido: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
@@ -994,7 +1031,7 @@ class SupervisorPedidosController extends Controller
     public function ordenesPendientesCount()
     {
         try {
-            $request = new \App\Application\SupervisorPedidos\DTOs\GetPendingOrdersCountRequest();
+            $request = new GetPendingOrdersCountRequest();
             $response = $this->getPendingOrdersCountUseCase->execute($request);
             return response()->json($response->toArray());
         } catch (\Exception $e) {
@@ -1017,7 +1054,7 @@ class SupervisorPedidosController extends Controller
     public function obtenerDatosComparacion($id)
     {
         try {
-            $request = new \App\Application\SupervisorPedidos\DTOs\GetComparisonDataRequest((int)$id);
+            $request = new GetComparisonDataRequest((int)$id);
             $response = $this->getComparisonDataUseCase->execute($request);
 
             return response()->json($response->toArray());
@@ -1075,7 +1112,7 @@ class SupervisorPedidosController extends Controller
             ]);
 
             // Crear DTO de request
-            $updateRequest = new \App\Application\SupervisorPedidos\DTOs\UpdateOrderRequest(
+            $updateRequest = new UpdateOrderRequest(
                 orderId: (int) $id,
                 cliente: $validated['cliente'],
                 formaDePago: $validated['forma_de_pago'] ?? null,
@@ -1107,58 +1144,30 @@ class SupervisorPedidosController extends Controller
      * Eliminar imagen de prenda
      * DELETE /supervisor-pedidos/imagen/{tipo}/{id}
      */
+    /**
+     * Eliminar imagen de la galería de un pedido
+     * REFACTORIZADO CON DDD - Usa DeleteImageUseCase
+     */
     public function deleteImage($tipo, $id)
     {
         try {
-            $modelClass = match($tipo) {
-                'prenda' => \App\Models\PrendaFotoPedido::class,
-                'logo' => \App\Models\PrendaFotoLogoPedido::class,
-                'tela' => \App\Models\PrendaFotoTelaPedido::class,
-                default => null
-            };
+            // Crear DTO de request
+            $deleteRequest = new DeleteImageRequest(
+                $tipo,
+                (int)$id
+            );
 
-            if (!$modelClass) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Tipo de imagen no válido'
-                ], 400);
-            }
+            // Ejecutar Use Case
+            $response = $this->deleteImageUseCase->execute($deleteRequest);
 
-            $foto = $modelClass::findOrFail($id);
-            
-            \Log::info("🗑️ Iniciando eliminación de imagen {$tipo}", [
-                'id' => $id,
-                'ruta_original' => $foto->ruta_original ?? 'N/A',
-                'ruta_webp' => $foto->ruta_webp ?? 'N/A'
-            ]);
-            
-            // Eliminar archivos físicos (tanto original como webp si existen)
-            $archivosEliminados = [];
-            
-            if (isset($foto->ruta_original) && Storage::disk('public')->exists($foto->ruta_original)) {
-                Storage::disk('public')->delete($foto->ruta_original);
-                $archivosEliminados[] = $foto->ruta_original;
-                \Log::info(" Archivo original eliminado: {$foto->ruta_original}");
-            }
-            
-            if (isset($foto->ruta_webp) && $foto->ruta_webp !== $foto->ruta_original && Storage::disk('public')->exists($foto->ruta_webp)) {
-                Storage::disk('public')->delete($foto->ruta_webp);
-                $archivosEliminados[] = $foto->ruta_webp;
-                \Log::info(" Archivo webp eliminado: {$foto->ruta_webp}");
-            }
+            return response()->json($response->toArray());
 
-            // Eliminar registro de la base de datos permanentemente (forceDelete porque usa SoftDeletes)
-            $foto->forceDelete();
-            \Log::info(" Registro de BD eliminado permanentemente para imagen {$tipo}", [
-                'id' => $id,
-                'archivos_eliminados' => $archivosEliminados
-            ]);
-
+        } catch (\DomainException $e) {
+            \Log::error('Error de dominio al eliminar imagen: ' . $e->getMessage());
             return response()->json([
-                'success' => true,
-                'message' => 'Imagen eliminada correctamente'
-            ]);
-
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
         } catch (\Exception $e) {
             \Log::error('Error al eliminar imagen', [
                 'error' => $e->getMessage(),
@@ -1179,7 +1188,7 @@ class SupervisorPedidosController extends Controller
     public function pendientesBordadoEstampado()
     {
         try {
-            $request = new \App\Application\SupervisorPedidos\DTOs\GetPendingEmbroideryStampingReceiptsRequest();
+            $request = new GetPendingEmbroideryStampingReceiptsRequest();
             $response = $this->getPendingEmbroideryStampingReceiptsUseCase->execute($request);
             $procesosConCantidad = $response->getProcesses();
 
@@ -1197,7 +1206,7 @@ class SupervisorPedidosController extends Controller
     public function pendientesCostura(Request $request)
     {
         try {
-            $requestDTO = new \App\Application\SupervisorPedidos\DTOs\GetPendingSewingReceiptsRequest(
+            $requestDTO = new GetPendingSewingReceiptsRequest(
                 numeroRecibo: $request->filled('numero_recibo') ? $request->numero_recibo : null,
                 cliente: $request->filled('cliente') ? $request->cliente : null,
                 asesor: $request->filled('asesor') ? $request->asesor : null,
@@ -1229,7 +1238,7 @@ class SupervisorPedidosController extends Controller
             if (!$response->isSuccess()) {
                 return response()->json([
                     'success' => false,
-                    'message' => $response->getMessage()
+                    'message' => 'Error al obtener detalles del recibo'
                 ], 404);
             }
 
@@ -1255,7 +1264,7 @@ class SupervisorPedidosController extends Controller
     {
         try {
             // Use ApproveReceiptUseCase to handle all approval logic
-            $response = $this->approveReceiptUseCase->execute((int)$id);
+            $response = $this->approveReceiptUseCase->execute(new ApproveReceiptRequest((int)$id));
 
             if (!$response->isSuccess()) {
                 return response()->json([
@@ -1437,27 +1446,36 @@ class SupervisorPedidosController extends Controller
     /**
      * Guardar el color de costura para un recibo
      */
+    /**
+     * Guardar color de costura en recibo
+     * REFACTORIZADO CON DDD - Usa SaveSewingReceiptColorUseCase
+     */
     public function guardarColorCostura(Request $request)
     {
         try {
-            $numeroRecibo = $request->input('numero_recibo');
-            $color = $request->input('color');
+            // Validar datos
+            $validated = $request->validate([
+                'numero_recibo' => 'required|string',
+                'color' => 'required|string|max:100',
+            ]);
 
-            $actualizado = \DB::table('consecutivos_recibos_pedidos')
-                ->where('consecutivo_actual', $numeroRecibo)
-                ->update(['color_costura' => $color]);
+            // Crear DTO de request
+            $colorRequest = new SaveSewingReceiptColorRequest(
+                $validated['numero_recibo'],
+                $validated['color']
+            );
 
-            if ($actualizado) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Color guardado correctamente'
-                ]);
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No se encontró el recibo'
-                ], 404);
-            }
+            // Ejecutar Use Case
+            $response = $this->saveSewingReceiptColorUseCase->execute($colorRequest);
+
+            return response()->json($response->toArray());
+
+        } catch (\DomainException $e) {
+            \Log::error('Error de dominio al guardar color de costura: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
         } catch (\Exception $e) {
             \Log::error('Error al guardar color de costura: ' . $e->getMessage());
             return response()->json([
@@ -1469,31 +1487,36 @@ class SupervisorPedidosController extends Controller
 
     /**
      * Seleccionar un pedido
+     * REFACTORIZADO CON DDD - Usa SelectOrderUseCase
      */
     public function seleccionarPedido($pedidoId)
     {
         try {
             $user = Auth::user();
             if (!$user) {
-                return response()->json(['success' => false, 'message' => 'Usuario no autenticado'], 401);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario no autenticado'
+                ], 401);
             }
 
-            $pedido = PedidoProduccion::findOrFail($pedidoId);
-            
-            // Usar updateOrCreate para garantizar que seleccionado=true aunque el registro ya exista
-            $seleccion = \App\Models\SeleccionPedido::updateOrCreate([
-                'pedido_id' => $pedidoId,
-                'user_id' => $user->id,
-            ], [
-                'seleccionado' => true,
-            ]);
+            // Crear DTO de request
+            $selectRequest = new SelectOrderRequest(
+                (int)$pedidoId,
+                (int)$user->id
+            );
 
+            // Ejecutar Use Case
+            $response = $this->selectOrderUseCase->execute($selectRequest);
+
+            return response()->json($response->toArray());
+
+        } catch (\DomainException $e) {
+            \Log::error('Error al seleccionar pedido: ' . $e->getMessage());
             return response()->json([
-                'success' => true,
-                'message' => 'Pedido seleccionado correctamente',
-                'seleccion' => $seleccion
-            ]);
-
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 404);
         } catch (\Exception $e) {
             \Log::error('Error al seleccionar pedido: ' . $e->getMessage());
             return response()->json([
@@ -1505,27 +1528,29 @@ class SupervisorPedidosController extends Controller
 
     /**
      * Deseleccionar un pedido
+     * REFACTORIZADO CON DDD - Usa DeselectOrderUseCase
      */
     public function deseleccionarPedido($pedidoId)
     {
         try {
             $user = Auth::user();
             if (!$user) {
-                return response()->json(['success' => false, 'message' => 'Usuario no autenticado'], 401);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario no autenticado'
+                ], 401);
             }
 
-            $seleccion = \App\Models\SeleccionPedido::where('pedido_id', $pedidoId)
-                ->where('user_id', $user->id)
-                ->first();
+            // Crear DTO de request
+            $deselectRequest = new SelectOrderRequest(
+                (int)$pedidoId,
+                (int)$user->id
+            );
 
-            if ($seleccion) {
-                $seleccion->delete();
-            }
+            // Ejecutar Use Case
+            $response = $this->deselectOrderUseCase->execute($deselectRequest);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Pedido deseleccionado correctamente'
-            ]);
+            return response()->json($response->toArray());
 
         } catch (\Exception $e) {
             \Log::error('Error al deseleccionar pedido: ' . $e->getMessage());
@@ -1538,26 +1563,23 @@ class SupervisorPedidosController extends Controller
 
     /**
      * Obtener selecciones del usuario actual
+     * REFACTORIZADO CON DDD - Usa GetOrderSelectionsUseCase
      */
     public function obtenerSelecciones()
     {
         try {
             $user = Auth::user();
             if (!$user) {
-                return response()->json(['success' => false, 'message' => 'Usuario no autenticado'], 401);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario no autenticado'
+                ], 401);
             }
 
-            $selecciones = \App\Models\SeleccionPedido::paraUsuario($user->id)
-                ->seleccionadas()
-                ->with('pedido:id,numero_pedido,cliente,estado')
-                ->get()
-                ->pluck('pedido_id')
-                ->toArray();
+            // Ejecutar Use Case
+            $response = $this->getOrderSelectionsUseCase->execute((int)$user->id);
 
-            return response()->json([
-                'success' => true,
-                'selecciones' => $selecciones
-            ]);
+            return response()->json($response->toArray());
 
         } catch (\Exception $e) {
             \Log::error('Error al obtener selecciones: ' . $e->getMessage());

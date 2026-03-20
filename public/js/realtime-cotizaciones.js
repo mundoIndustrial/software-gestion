@@ -3,9 +3,6 @@
  * Uses window.shared.websocket abstraction instead of direct Echo access
  * Handles status changes and new quotations using centralized WebSocket subscription
  */
-
-console.log('[REALTIME-COT] === SISTEMA DE TIEMPO REAL INICIADO (Phase 5) ===');
-
 // Cache temporal para evitar procesar el mismo evento dos veces
 // (suele pasar por estar suscritos a cotizaciones + cotizaciones.contador)
 const processedEstadoEventKeys = new Map();
@@ -24,7 +21,6 @@ function shouldProcessEstadoEvent(event) {
     cleanupProcessedEstadoEvents();
     const key = `${event?.cotizacion_id ?? ''}|${event?.nuevo_estado ?? ''}|${event?.estado_anterior ?? ''}|${event?.timestamp ?? ''}`;
     if (processedEstadoEventKeys.has(key)) {
-        console.log('[REALTIME-COT] Evento estado.cambiado duplicado, ignorado:', key);
         return false;
     }
     processedEstadoEventKeys.set(key, Date.now());
@@ -33,7 +29,6 @@ function shouldProcessEstadoEvent(event) {
 
 // Protección contra cargas múltiples
 if (window.realtimeCotizacionesLoaded) {
-    console.log('[REALTIME-COT] ⚠️  El archivo ya fue cargado, evitando duplicación');
 } else {
     window.realtimeCotizacionesLoaded = true;
 
@@ -43,25 +38,20 @@ if (window.realtimeCotizacionesLoaded) {
 
     function checkAndInitialize() {
         echoCheckAttempts++;
-        console.log(`[REALTIME-COT] Intento ${echoCheckAttempts}/${MAX_ATTEMPTS} - Verificando Echo...`);
-        
         // Si Echo está disponible, inicializar
         if (typeof window.Echo !== 'undefined' && window.Echo) {
-            console.log('[REALTIME-COT] ✅ Echo encontrado, inicializando...');
             initializeRealtimeCotizaciones();
             return;
         }
 
         // Si tenemos waitForEcho, usarlo
         if (typeof window.waitForEcho === 'function') {
-            console.log('[REALTIME-COT] Usando window.waitForEcho...');
             window.waitForEcho(initializeRealtimeCotizaciones);
             return;
         }
 
         // Si no está disponible y no hemos llegado al máximo, reintentar
         if (echoCheckAttempts < MAX_ATTEMPTS) {
-            console.log('[REALTIME-COT] Echo no disponible, reintentando en 100ms...');
             setTimeout(checkAndInitialize, 100);
         } else {
             console.error('[REALTIME-COT] ❌ Echo no disponible después de varios intentos');
@@ -76,25 +66,18 @@ if (window.realtimeCotizacionesLoaded) {
     }
 
     function initializeRealtimeCotizaciones() {
-        console.log('[REALTIME-COT] === INICIALIZANDO SISTEMA REALTIME ===');
-        
         // CRÍTICO: Esperar a que window.shared esté disponible (race condition fix)
         if (!window.shared?.isReady) {
-            console.log('[REALTIME-COT] Esperando window.shared.isReady...');
             setTimeout(initializeRealtimeCotizaciones, 50);
             return;
         }
-        
-        console.log('[REALTIME-COT] Echo está disponible:', typeof window.Echo);
-
         try {
             const connection = window.Echo?.connector?.pusher?.connection;
             if (connection?.state) {
-                console.log('[REALTIME-COT] Estado conexión WS:', connection.state);
             }
             if (typeof connection?.bind === 'function') {
-                connection.bind('connected', () => console.log('[REALTIME-COT] WS connected'));
-                connection.bind('disconnected', () => console.log('[REALTIME-COT] WS disconnected'));
+                connection.bind('connected', () => );
+                connection.bind('disconnected', () => );
                 connection.bind('error', (err) => console.error('[REALTIME-COT] WS error', err));
             }
         } catch (e) {
@@ -103,10 +86,6 @@ if (window.realtimeCotizacionesLoaded) {
 
         // Get current user ID from meta tag or global variable
         const userId = document.querySelector('meta[name="user-id"]')?.content || window.userId;
-        console.log('[REALTIME-COT] User ID:', userId);
-        console.log('[REALTIME-COT] Path actual:', window.location.pathname);
-        console.log('[REALTIME-COT] isOnContadorPage:', isOnContadorPage());
-
         // Obtener WebSocket abstraction
         if (typeof window.waitForEcho !== 'function') {
             console.warn('[REALTIME-COT] waitForEcho not available, usando WebSocket directo');
@@ -120,51 +99,35 @@ if (window.realtimeCotizacionesLoaded) {
                     console.error('[REALTIME-COT] ❌ WebSocket abstraction no disponible');
                     return;
                 }
-            
-                console.log('[REALTIME-COT] ✅ WebSocket abstraction verificada, suscribiéndose a canales...');
-
                 // Suscribirse a canal público: cotizaciones
                 ws.subscribe('cotizaciones', '.cotizacion.creada', (event) => {
-                    console.log('[REALTIME-COT] Evento cotizacion.creada recibido:', event);
                     handleNuevaCotizacion(event);
                 });
 
                 ws.subscribe('cotizaciones', '.cotizacion.estado.cambiado', (event) => {
-                    console.log('[REALTIME-COT] Evento cotizacion.estado.cambiado recibido:', event);
                     handleEstadoCambiado(event);
                 });
 
                 // Suscribirse a canal privado del asesor si está autenticado
                 if (userId) {
-                    console.log(`[REALTIME-COT] Suscribiéndose a canal: cotizaciones.asesor.${userId}`);
-                    
                     ws.subscribe(`cotizaciones.asesor.${userId}`, '.cotizacion.creada', (event) => {
-                        console.log('[REALTIME-COT] Evento cotizacion.creada recibido en canal asesor:', event);
                         handleNuevaCotizacion(event);
                     });
 
                     ws.subscribe(`cotizaciones.asesor.${userId}`, '.cotizacion.estado.cambiado', (event) => {
-                        console.log('[REALTIME-COT] Evento estado cambiado recibido en canal asesor:', event);
                         handleEstadoCambiado(event);
                     });
                 } else {
-                    console.log('[REALTIME-COT] No hay userId, omitiendo canal personal');
                 }
 
                 // Suscribirse a canal contador
-                console.log('[REALTIME-COT] Suscribiéndose a canal: cotizaciones.contador');
-                
                 ws.subscribe('cotizaciones.contador', '.cotizacion.creada', (event) => {
-                    console.log('[REALTIME-COT] Evento recibido en canal contador:', event);
                     handleNuevaCotizacion(event);
                 });
 
                 ws.subscribe('cotizaciones.contador', '.cotizacion.estado.cambiado', (event) => {
-                    console.log('[REALTIME-COT] Evento estado cambiado en canal contador:', event);
                     handleEstadoCambiado(event);
                 });
-
-                console.log('[REALTIME-COT] 🎉 Sistema de tiempo real inicializado correctamente');
             } catch (error) {
                 console.error('[REALTIME-COT] Error durante inicialización:', error.message);
             }
@@ -180,12 +143,8 @@ if (window.realtimeCotizacionesLoaded) {
 
         const effectiveId = cotizacion?.id || cotizacion_id;
         if (effectiveId && cotizacionYaExisteEnTabla(effectiveId)) {
-            console.log('[REALTIME-COT] Cotización ya existe en tabla, evitando duplicado:', effectiveId);
             return;
         }
-
-        console.log('[REALTIME-COT] Estado:', estado, 'ID:', cotizacion_id, 'OnContadorPage:', isOnContadorPage());
-
         // Si llega una cotización ENVIADA_CONTADOR, actualizar badge de pendientes en cualquier vista del módulo contador
         if (isOnContadorPage() && estado === 'ENVIADA_CONTADOR') {
             incrementarPendientesBadge();
@@ -193,13 +152,11 @@ if (window.realtimeCotizacionesLoaded) {
 
         // If we're on the contador PENDIENTES page and status is ENVIADA_CONTADOR, add the new quotation
         if (isOnContadorPendientesPage() && estado === 'ENVIADA_CONTADOR') {
-            console.log('[REALTIME-COT] Agregando cotización a tabla...');
             agregarCotizacionAContador(cotizacion);
 
             // Mostrar notificación toast
             mostrarNotificacionToast('Nueva Cotización', `Cotización #${cotizacion.numero_cotizacion || cotizacion.id} recibida`, 'info');
         } else {
-            console.log('[REALTIME-COT] No se agregó: isOnContadorPage=' + isOnContadorPage() + ', estado=' + estado);
         }
     }
 
@@ -285,21 +242,11 @@ if (window.realtimeCotizacionesLoaded) {
      * Handle quotation status change
      */
     function handleEstadoCambiado(event) {
-        console.log('[REALTIME-COT] 🔄 Evento estado.cambiado recibido:', event);
-        
         if (!shouldProcessEstadoEvent(event)) {
-            console.log('[REALTIME-COT] ❌ Evento duplicado, ignorando');
             return;
         }
-        
-        const { cotizacion_id, nuevo_estado, estado_anterior, cotizacion } = event;
-        console.log('[REALTIME-COT] 📊 Detalles del cambio:', {
-            cotizacion_id,
-            estado_anterior,
-            nuevo_estado,
-            pagina_actual: window.location.pathname
-        });
 
+        const { cotizacion_id, nuevo_estado, estado_anterior, cotizacion } = event;
         // Badge Pendientes global: si entra/sale de ENVIADA_CONTADOR
         if (isOnContadorPage()) {
             if (nuevo_estado === 'ENVIADA_CONTADOR' && estado_anterior !== 'ENVIADA_CONTADOR') {
@@ -368,48 +315,30 @@ if (window.realtimeCotizacionesLoaded) {
      * Update quotation row in the table
      */
     function actualizarFilaCotizacion(cotizacionId, nuevoEstado, cotizacion) {
-        console.log('[REALTIME-COT] 🔄 Actualizando fila cotización:', cotizacionId, 'nuevo estado:', nuevoEstado);
-        
         // Debug: mostrar todas las filas disponibles
         const todasLasFilas = document.querySelectorAll('[data-cotizacion-id]');
-        console.log('[REALTIME-COT] 🔍 Filas encontradas en la página:', todasLasFilas.length);
         todasLasFilas.forEach((fila, index) => {
-            console.log(`[REALTIME-COT] Fila ${index}: data-cotizacion-id="${fila.getAttribute('data-cotizacion-id')}"`);
         });
-        
+
         const row = document.querySelector(`[data-cotizacion-id="${cotizacionId}"]`);
-        
+
         if (!row) {
-            console.log('[REALTIME-COT] ❌ No se encontró la fila para cotización:', cotizacionId);
             return;
         }
-
-        console.log('[REALTIME-COT] ✅ Fila encontrada, actualizando estado...');
-
         // Update status badge - buscar en la columna de estado (data-filter-column="estado")
         const estadoCell = row.querySelector('[data-filter-column="estado"]');
         if (estadoCell) {
-            console.log('[REALTIME-COT] ✅ Celda de estado encontrada');
             const badge = estadoCell.querySelector('span');
             if (badge) {
-                console.log('[REALTIME-COT] ✅ Badge encontrado, actualizando texto y colores');
-                console.log('[REALTIME-COT] 📝 Texto anterior:', badge.textContent);
                 badge.textContent = nuevoEstado.replace(/_/g, ' ');
                 badge.style.background = getEstadoColor(nuevoEstado).bg;
                 badge.style.color = getEstadoColor(nuevoEstado).color;
-                console.log('[REALTIME-COT] ✅ Badge actualizado a:', nuevoEstado);
-                console.log('[REALTIME-COT] 📝 Texto nuevo:', badge.textContent);
             } else {
-                console.log('[REALTIME-COT] ❌ No se encontró el badge dentro de la celda de estado');
-                console.log('[REALTIME-COT] 📄 Contenido de la celda:', estadoCell.innerHTML);
             }
         } else {
-            console.log('[REALTIME-COT] ❌ No se encontró la celda de estado');
             // Debug: mostrar todas las celdas de la fila
             const todasLasCeldas = row.querySelectorAll('td');
-            console.log('[REALTIME-COT] 🔍 Celdas en la fila:', todasLasCeldas.length);
             todasLasCeldas.forEach((celda, index) => {
-                console.log(`[REALTIME-COT] Celda ${index}: data-filter-column="${celda.getAttribute('data-filter-column')}"`);
             });
         }
 
@@ -418,8 +347,6 @@ if (window.realtimeCotizacionesLoaded) {
         setTimeout(() => {
             row.classList.remove('row-updated');
         }, 2000);
-        
-        console.log('[REALTIME-COT] ✅ Actualización completada para cotización:', cotizacionId);
     }
 
     /**
@@ -427,21 +354,19 @@ if (window.realtimeCotizacionesLoaded) {
      */
     function agregarNuevaCotizacionALista(cotizacion) {
         const tableBody = document.querySelector('#tablaCotizacionesBody, .table-body');
-        
+
         if (!tableBody) {
 
             return;
         }
 
-
-
         // Create new row (you'll need to adapt this to your table structure)
         const newRow = crearFilaCotizacion(cotizacion);
-        
+
         // Add to top of table with animation
         newRow.classList.add('row-new');
         tableBody.insertBefore(newRow, tableBody.firstChild);
-        
+
         setTimeout(() => {
             newRow.classList.remove('row-new');
         }, 2000);
@@ -452,18 +377,16 @@ if (window.realtimeCotizacionesLoaded) {
      */
     function agregarCotizacionAContador(cotizacion) {
         const tableBody = document.querySelector('#tablaCotizacionesBody');
-        
+
         if (!tableBody) {
 
             return;
         }
 
-
-
         const newRow = crearFilaCotizacion(cotizacion);
         newRow.classList.add('row-new');
         tableBody.insertBefore(newRow, tableBody.firstChild);
-        
+
         setTimeout(() => {
             newRow.classList.remove('row-new');
         }, 2000);
@@ -474,12 +397,10 @@ if (window.realtimeCotizacionesLoaded) {
      */
     function removerCotizacionDeContador(cotizacionId) {
         const row = document.querySelector(`[data-cotizacion-id="${cotizacionId}"]`);
-        
+
         if (!row) {
             return;
         }
-
-
 
         row.classList.add('row-removed');
         setTimeout(() => {

@@ -32,21 +32,28 @@ use App\Application\SupervisorPedidos\UseCases\GetOrderDisplayUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetNotificationsUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetReceiptDetailsUseCase;
 use App\Application\SupervisorPedidos\UseCases\ApproveReceiptUseCase;
+use App\Application\SupervisorPedidos\UseCases\SaveSewingReceiptColorUseCase;
+use App\Application\SupervisorPedidos\UseCases\SelectOrderUseCase;
+use App\Application\SupervisorPedidos\UseCases\DeselectOrderUseCase;
+use App\Application\SupervisorPedidos\UseCases\GetOrderSelectionsUseCase;
+use App\Application\SupervisorPedidos\UseCases\MarkAllNotificationsAsReadUseCase;
+use App\Application\SupervisorPedidos\UseCases\DeleteImageUseCase;
+use App\Application\SupervisorPedidos\UseCases\ToggleNewsVistoUseCase;
+use App\Application\SupervisorPedidos\UseCases\TogglePedidoVistoUseCase;
+use App\Application\SupervisorPedidos\UseCases\MarkNotificationAsReadUseCase;
 
 class SupervisorPedidosServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        // Repositories
-        $this->app->bind(
-            OrderRepository::class,
-            EloquentOrderRepository::class
-        );
+        // Repositories - Bindings explícitos para evitar problemas de resolución
+        $this->app->singleton(OrderRepository::class, function ($app) {
+            return new EloquentOrderRepository();
+        });
 
-        $this->app->bind(
-            ReceiptRepository::class,
-            EloquentReceiptRepository::class
-        );
+        $this->app->singleton(ReceiptRepository::class, function ($app) {
+            return new EloquentReceiptRepository();
+        });
 
         // Use Cases
         $this->app->bind(
@@ -228,7 +235,7 @@ class SupervisorPedidosServiceProvider extends ServiceProvider
             GetNotificationsUseCase::class,
             function ($app) {
                 return new GetNotificationsUseCase(
-                    $app->make(OrderRepository::class)
+                    $app->make(\Illuminate\Auth\AuthManager::class)
                 );
             }
         );
@@ -248,6 +255,71 @@ class SupervisorPedidosServiceProvider extends ServiceProvider
                 return new ApproveReceiptUseCase(
                     $app->make(ReceiptRepository::class)
                 );
+            }
+        );
+
+        $this->app->bind(
+            SaveSewingReceiptColorUseCase::class,
+            function ($app) {
+                return new SaveSewingReceiptColorUseCase(
+                    $app->make(ReceiptRepository::class)
+                );
+            }
+        );
+
+        $this->app->bind(
+            SelectOrderUseCase::class,
+            function ($app) {
+                return new SelectOrderUseCase();
+            }
+        );
+
+        $this->app->bind(
+            DeselectOrderUseCase::class,
+            function ($app) {
+                return new DeselectOrderUseCase();
+            }
+        );
+
+        $this->app->bind(
+            GetOrderSelectionsUseCase::class,
+            function ($app) {
+                return new GetOrderSelectionsUseCase();
+            }
+        );
+
+        $this->app->bind(
+            MarkAllNotificationsAsReadUseCase::class,
+            function ($app) {
+                return new MarkAllNotificationsAsReadUseCase();
+            }
+        );
+
+        $this->app->bind(
+            DeleteImageUseCase::class,
+            function ($app) {
+                return new DeleteImageUseCase();
+            }
+        );
+
+        $this->app->bind(
+            ToggleNewsVistoUseCase::class,
+            function ($app) {
+                return new ToggleNewsVistoUseCase();
+            }
+        );
+
+        $this->app->bind(
+            TogglePedidoVistoUseCase::class,
+            function ($app) {
+                return new TogglePedidoVistoUseCase();
+            }
+        );
+
+        $this->app->bind(
+            MarkNotificationAsReadUseCase::class,
+            function ($app) {
+                return new MarkNotificationAsReadUseCase();
             }
         );
     }

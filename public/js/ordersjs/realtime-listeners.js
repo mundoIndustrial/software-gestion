@@ -16,12 +16,12 @@ const RealtimeOrderHandler = {
     updateOrderRow(ordenData, changedFields) {
         // Buscar la fila por data-orden-id (puede ser ID o numero_pedido según la vista)
         let row = document.querySelector(`[data-orden-id="${ordenData.numero_pedido}"]`);
-        
+
         // Si no encuentra por numero_pedido, buscar por ID
         if (!row) {
             row = document.querySelector(`[data-orden-id="${ordenData.id}"]`);
         }
-        
+
         if (!row) {
             const esRegistros = window.location && window.location.pathname && window.location.pathname.includes('/registros');
             const cambioEstado = changedFields && Array.isArray(changedFields) && changedFields.includes('estado');
@@ -44,7 +44,6 @@ const RealtimeOrderHandler = {
             applyRowConditionalColors(row);
         }
 
-
     },
 
     /**
@@ -52,16 +51,14 @@ const RealtimeOrderHandler = {
      */
     _updateField(row, field, ordenData) {
 
-
         if (field === 'estado') {
             const dropdown = row.querySelector('.estado-dropdown');
             if (dropdown && ordenData.estado) {
                 dropdown.value = ordenData.estado;
                 dropdown.setAttribute('data-value', ordenData.estado);
-                
+
                 // 🆕 Actualizar clase de color del dropdown
                 this._updateDropdownColorClass(dropdown, ordenData.estado);
-                
 
             }
         } else if (field === 'area') {
@@ -69,10 +66,9 @@ const RealtimeOrderHandler = {
             if (dropdown && ordenData.area) {
                 dropdown.value = ordenData.area;
                 dropdown.setAttribute('data-value', ordenData.area);
-                
+
                 // 🆕 Actualizar clase de color del dropdown
                 this._updateDropdownColorClass(dropdown, ordenData.area);
-                
 
             }
         } else if (field === 'dia_de_entrega') {
@@ -85,23 +81,23 @@ const RealtimeOrderHandler = {
             // 🆕 Actualizar fecha estimada en tiempo real
             // Buscar en supervisor-pedidos (clase: fecha-estimada)
             let fechaCell = row.querySelector('.fecha-estimada');
-            
+
             // Si no está en supervisor-pedidos, buscar en orders/index (clase: fecha-estimada-cell)
             if (!fechaCell) {
                 fechaCell = row.querySelector('.fecha-estimada-cell');
             }
-            
+
             if (fechaCell && ordenData.fecha_estimada_de_entrega !== undefined) {
                 const fechaFormato = ordenData.fecha_estimada_de_entrega 
                     ? this._formatFecha(ordenData.fecha_estimada_de_entrega)
                     : '-';
-                
+
                 // Para supervisor-pedidos (actualizar directamente la celda)
                 if (fechaCell.classList.contains('fecha-estimada')) {
                     fechaCell.textContent = fechaFormato;
                     fechaCell.setAttribute('data-fecha-estimada', fechaFormato);
                 }
-                
+
                 // Para orders/index (actualizar el span dentro)
                 if (fechaCell.classList.contains('fecha-estimada-cell')) {
                     const span = fechaCell.querySelector('.fecha-estimada-span');
@@ -110,7 +106,6 @@ const RealtimeOrderHandler = {
                     }
                     fechaCell.setAttribute('data-fecha-estimada', fechaFormato);
                 }
-                
 
             }
         } else if (field === 'novedades') {
@@ -119,7 +114,7 @@ const RealtimeOrderHandler = {
             if (btnEdit && ordenData.novedades !== undefined) {
                 // 🆕 Guardar el valor completo en data-full-novedades
                 btnEdit.setAttribute('data-full-novedades', ordenData.novedades || '');
-                
+
                 const textSpan = btnEdit.querySelector('.novedades-text');
                 if (textSpan) {
                     if (ordenData.novedades) {
@@ -142,7 +137,7 @@ const RealtimeOrderHandler = {
      */
     _formatFecha(fecha) {
         if (!fecha) return 'N/A';
-        
+
         try {
             // Si es string ISO, parsear
             const date = typeof fecha === 'string' ? new Date(fecha) : fecha;
@@ -161,7 +156,7 @@ const RealtimeOrderHandler = {
      */
     _updateDropdownColorClass(dropdown, value) {
         if (!dropdown) return;
-        
+
         // Para estado-dropdown
         if (dropdown.classList.contains('estado-dropdown')) {
             dropdown.classList.remove(
@@ -188,7 +183,6 @@ const RealtimeOrderHandler = {
 function initializeOrdenesRealtimeListeners() {
     try {
         if (typeof window.waitForEcho !== 'function') {
-            console.log('[Realtime Orders] ⏳ Esperando a que window.waitForEcho esté disponible...');
             setTimeout(initializeOrdenesRealtimeListeners, 200);
             return;
         }
@@ -201,15 +195,11 @@ function initializeOrdenesRealtimeListeners() {
                 return;
             }
 
-            console.log('[Realtime Orders] Inicializando listeners de órdenes con ws.subscribe()...');
-
             // ==========================================
             // CANAL: ordenes
             // ==========================================
             try {
                 ws.subscribe('ordenes', 'OrdenUpdated', (e) => {
-                    console.log('[Realtime Orders] 📢 Evento OrdenUpdated recibido:', e);
-                    
                     // Usar el nuevo manejador RealtimeOrderHandler
                     if (typeof RealtimeOrderHandler !== 'undefined' && RealtimeOrderHandler.updateOrderRow) {
                         RealtimeOrderHandler.updateOrderRow(e.orden, e.changedFields);
@@ -217,13 +207,10 @@ function initializeOrdenesRealtimeListeners() {
                         console.warn('[Realtime Orders] ⚠️ RealtimeOrderHandler no disponible');
                     }
                 });
-                console.log('[Realtime Orders] ✅ Suscrito a ordenes/OrdenUpdated');
             } catch (error) {
                 console.error('[Realtime Orders] ❌ Error subscribiendo a ordenes/OrdenUpdated:', error);
             }
 
-            console.log('[Realtime Orders] ✅ Sistema de escuchas en tiempo real inicializado correctamente');
-            console.log('[Realtime Orders] 🔌 Estado de WebSocket:', ws.getStatus ? ws.getStatus() : 'N/A');
         });
     } catch (error) {
         console.error('[Realtime Orders] ❌ Error inicializando listeners:', error);
@@ -233,12 +220,10 @@ function initializeOrdenesRealtimeListeners() {
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        console.log('[Realtime Orders] Inicializando desde DOMContentLoaded...');
         initializeOrdenesRealtimeListeners();
     });
 } else {
-    console.log('[Realtime Orders] Inicializando directamente (DOM ya listo)...');
+
     initializeOrdenesRealtimeListeners();
 }
-
 

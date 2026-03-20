@@ -35,7 +35,6 @@
     'use strict';
 
     if (window.shared?.isReady) {
-        console.warn('[Shared Bootstrap] Ya inicializado, saltando...');
         return;
     }
 
@@ -91,6 +90,4 @@
 
     // Registrar en namespace global (congelado para evitar mutaciones)
     window.shared = Object.freeze(sharedObj);
-
-    console.log('[Shared Bootstrap] Infraestructura compartida inicializada v1.1.0');
 })();
