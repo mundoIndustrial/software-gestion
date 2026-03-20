@@ -110,6 +110,10 @@
                 roles: []
             @endif
         };
+        
+        // Compatibilidad: Alias USUARIO_ACTUAL para scripts que lo buscan
+        window.USUARIO_ACTUAL = window.usuarioAutenticado;
+        
         console.log('[Supervisor-Pedidos Layout] 👤 Usuario autenticado:', window.usuarioAutenticado);
     </script>
 

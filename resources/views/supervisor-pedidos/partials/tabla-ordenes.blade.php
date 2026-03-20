@@ -87,6 +87,8 @@
                 onmouseover="if (!this.dataset.seleccionado || this.dataset.seleccionado === 'false') this.style.background='#f9fafb'"
                 onmouseout="this.style.background = (this.dataset.seleccionado === 'true') ? '#d1d5db' : 'white'"
                 data-seleccionado="{{ $estaSeleccionado ? 'true' : 'false' }}"
+                data-pedido-row="true"
+                data-pedido-id="{{ $orden->id }}"
                 >
 
                     <!-- Checkbox de selección -->

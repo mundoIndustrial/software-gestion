@@ -219,9 +219,8 @@ function initTrackingModalListeners() {
     if (backBtn) {
       backBtn.onclick = showPrendasView;
       console.log('[setupBackButton] Botón volver configurado');
-    } else {
-      console.warn('[setupBackButton] Botón volver no encontrado');
     }
+    // No mostrar warning si el botón no existe - es una funcionalidad opcional
   }
 
   // Abrir selector de prendas (overlay)

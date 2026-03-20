@@ -78,9 +78,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 console.log('[Supervisor-Pedidos] ✅ Botón limpiar asignaciones configurado');
-            } else {
-                console.log('[Supervisor-Pedidos] ⚠️ Botón limpiar asignaciones no encontrado');
             }
+            // Si el botón no se encuentra, no mostrar advertencia - es una funcionalidad opcional
         }
     }, 100);
 });
