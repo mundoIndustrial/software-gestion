@@ -3,7 +3,9 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
+        "build": "vite build && npm run build:core",
+        "build:core": "node scripts/build-core.mjs",
+        "build:core:watch": "node scripts/build-core.mjs --watch",
         "dev": "vite",
         "start": "concurrently \"npm run dev\" \"php artisan reverb:start --host=0.0.0.0\" \"php artisan serve --host=0.0.0.0\" --names \"VITE,REVERB,SERVER\" --prefix-colors \"cyan,magenta,green\""
     },

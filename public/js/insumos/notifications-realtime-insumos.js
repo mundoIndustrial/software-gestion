@@ -1,6 +1,9 @@
 /**
- * Notifications & Realtime System - FASE 4c
- * Maneja el sistema de notificaciones y eventos en tiempo real via Reverb
+ * Notifications & Realtime System - FASE 5 v1.0
+ * Maneja el sistema de notificaciones y eventos en tiempo real via WebSocket
+ * 
+ * Migración de Echo/Reverb (FASE 4) → window.shared.websocket (FASE 5)
+ * Las suscripciones ahora usan ws.subscribe() en lugar de echo.channel()
  * 
  * Funciones extraídas:
  * - initializeRealtimeListener()
@@ -18,15 +21,21 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     window.initializeRealtimeListener = function() {
         try {
+            if (typeof window.waitForEcho !== 'function') {
+                console.warn('[Realtime Insumos] ⏳ Esperando a que window.waitForEcho esté disponible...');
+                setTimeout(() => window.initializeRealtimeListener(), 200);
+                return;
+            }
+
             window.waitForEcho(() => {
-                const echo = window.EchoInstance;
+                const ws = window.shared.websocket;
                 
-                if (!echo) {
-                    console.warn('[Realtime Insumos] Echo no disponible');
+                if (!ws) {
+                    console.warn('[Realtime Insumos] WebSocket no disponible');
                     return;
                 }
 
-                console.log('[Realtime Insumos] Inicializando listeners...');
+                console.log('[Realtime Insumos] Inicializando listeners de tiempo real con ws.subscribe()...');
                 window.notificacionesInsumos = window.notificacionesInsumos || [];
 
                 /**
@@ -90,72 +99,74 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
 
                 const refreshMateriales = debounce(() => {
-                    console.log('[Realtime Insumos] Refrescando tabla de materiales...');
+                    console.log('[Realtime Insumos] 🔄 Recargando tabla de materiales...');
                     location.reload();
                 }, 2000);
 
                 // ==========================================
-                // CANAL: supervisor-pedidos
+                // CANAL: supervisor-pedidos (via ws.subscribe)
                 // ==========================================
-                const channelSupervisor = echo.channel('supervisor-pedidos');
-                
-                channelSupervisor.subscribed(() => {
-                    console.log('[Realtime Insumos] ✅ Suscripción exitosa al canal supervisor-pedidos');
-                });
-                
-                channelSupervisor.error((error) => {
-                    console.error('[Realtime Insumos] ❌ Error en suscripción:', error);
-                });
-                
-                channelSupervisor.listen('.orden.updated', (data) => {
-                    console.log('[Realtime Insumos] 📢 Evento .orden.updated recibido:', data);
-                    if (data.orden && data.orden.estado === 'PENDIENTE_INSUMOS') {
-                        console.log('[Realtime Insumos] ✅ Recibo aprobado a PENDIENTE_INSUMOS');
-                        addNotification(data.orden);
-                        refreshMateriales();
-                    }
-                });
-
-                channelSupervisor.listen('orden.updated', (data) => {
-                    console.log('[Realtime Insumos] 📢 Evento orden.updated recibido:', data);
-                    if (data.orden && data.orden.estado === 'PENDIENTE_INSUMOS') {
-                        addNotification(data.orden);
-                        refreshMateriales();
-                    }
-                });
-                
-                channelSupervisor.listen('OrdenUpdated', (data) => {
-                    console.log('[Realtime Insumos] 📢 Evento OrdenUpdated recibido:', data);
-                    if (data.orden && data.orden.estado === 'PENDIENTE_INSUMOS') {
-                        addNotification(data.orden);
-                        refreshMateriales();
-                    }
-                });
+                try {
+                    ws.subscribe('supervisor-pedidos', '.orden.updated', (data) => {
+                        console.log('[Realtime Insumos] 📢 Evento .orden.updated en supervisor-pedidos:', data);
+                        if (data.orden && data.orden.estado === 'PENDIENTE_INSUMOS') {
+                            console.log('[Realtime Insumos] ✅ Recibo aprobado a PENDIENTE_INSUMOS');
+                            addNotification(data.orden);
+                            refreshMateriales();
+                        }
+                    });
+                    console.log('[Realtime Insumos] ✅ Suscrito a supervisor-pedidos/.orden.updated');
+                } catch (error) {
+                    console.error('[Realtime Insumos] ❌ Error subscribiendo a supervisor-pedidos:', error);
+                }
 
                 // ==========================================
-                // CANAL: ordenes
+                // CANAL: ordenes (via ws.subscribe)
                 // ==========================================
-                const channelOrdenes = echo.channel('ordenes');
-                
-                channelOrdenes.subscribed(() => {
-                    console.log('[Realtime Insumos] ✅ Suscripción exitosa al canal ordenes');
-                });
-                
-                channelOrdenes.error((error) => {
-                    console.error('[Realtime Insumos] ❌ Error en suscripción:', error);
-                });
-
-                ['orden.updated', '.orden.updated', 'OrdenUpdated'].forEach(eventName => {
-                    channelOrdenes.listen(eventName, (data) => {
-                        console.log(`[Realtime Insumos] 📢 Evento '${eventName}' recibido:`, data);
+                try {
+                    // Evento .orden.updated (con punto)
+                    ws.subscribe('ordenes', '.orden.updated', (data) => {
+                        console.log('[Realtime Insumos] 📢 Evento .orden.updated en ordenes:', data);
                         if (data.orden && data.orden.estado === 'PENDIENTE_INSUMOS') {
                             addNotification(data.orden);
+                            refreshMateriales();
                         }
-                        refreshMateriales();
                     });
-                });
+                    console.log('[Realtime Insumos] ✅ Suscrito a ordenes/.orden.updated');
+                } catch (error) {
+                    console.error('[Realtime Insumos] ❌ Error subscribiendo a ordenes/.orden.updated:', error);
+                }
 
-                console.log('[Realtime Insumos] ✅ Sistema de tiempo real inicializado');
+                try {
+                    // Evento orden.updated (sin punto)
+                    ws.subscribe('ordenes', 'orden.updated', (data) => {
+                        console.log('[Realtime Insumos] 📢 Evento orden.updated en ordenes:', data);
+                        if (data.orden && data.orden.estado === 'PENDIENTE_INSUMOS') {
+                            addNotification(data.orden);
+                            refreshMateriales();
+                        }
+                    });
+                    console.log('[Realtime Insumos] ✅ Suscrito a ordenes/orden.updated');
+                } catch (error) {
+                    console.error('[Realtime Insumos] ❌ Error subscribiendo a ordenes/orden.updated:', error);
+                }
+
+                try {
+                    // Evento OrdenUpdated (PascalCase)
+                    ws.subscribe('ordenes', 'OrdenUpdated', (data) => {
+                        console.log('[Realtime Insumos] 📢 Evento OrdenUpdated en ordenes:', data);
+                        if (data.orden && data.orden.estado === 'PENDIENTE_INSUMOS') {
+                            addNotification(data.orden);
+                            refreshMateriales();
+                        }
+                    });
+                    console.log('[Realtime Insumos] ✅ Suscrito a ordenes/OrdenUpdated');
+                } catch (error) {
+                    console.error('[Realtime Insumos] ❌ Error subscribiendo a ordenes/OrdenUpdated:', error);
+                }
+
+                console.log('[Realtime Insumos] ✅ Sistema de tiempo real inicializado correctamente');
+                console.log('[Realtime Insumos] 🔌 Estado de WebSocket:', ws.getStatus ? ws.getStatus() : 'N/A');
             });
         } catch (error) {
             console.error('[Realtime Insumos] ❌ Error inicializando listener:', error);

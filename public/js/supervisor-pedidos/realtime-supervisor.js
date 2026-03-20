@@ -5,11 +5,22 @@
  * Se suscribe a canales WebSocket (Laravel Echo / Pusher)
  * y actualiza la tabla de pedidos en tiempo real.
  *
- * Requiere: supervisor-pedidos/core/bootstrap.js → window.supervisorPedidos
+ * Dependencias (Fase 3-4 DDD Híbrido):
+ *   - window.shared.websocket  (EchoReverbWebSocketClient)
+ *   - window.supervisorPedidos.repository (PedidoApiRepository)
+ *
+ * Nota: WebSocket se inicializa lazy, así que usamos window.waitForEcho()
+ * que es proporcionado por resources/js/bootstrap.js
  */
 
+// VALIDACIONES ESTRICTAS (sin fallbacks)
+
 if (!window.supervisorPedidos?.isReady) {
-    throw new Error('[realtime-supervisor] window.supervisorPedidos no está disponible. Carga core/bootstrap.js ANTES.');
+    throw new Error('[realtime-supervisor] window.supervisorPedidos no está disponible. Carga DDD bootstrap ANTES.');
+}
+
+if (!window.shared?.notify) {
+    throw new Error('[realtime-supervisor] window.shared.notify no disponible. Carga shared/bootstrap.js ANTES.');
 }
 
 const _rtRepo = window.supervisorPedidos.repository;
@@ -218,109 +229,146 @@ if (!document.querySelector('style[data-realtime]')) {
     document.head.appendChild(style);
 }
 
-console.log('[Realtime Supervisor] ⏳ Esperando a que window.waitForEcho esté disponible...');
+console.log('[Realtime Supervisor] Inicializando sistema de tiempo real...');
 
+/**
+ * Inicializa todas las suscripciones a canales WebSocket
+ */
 function initializeRealtimeListener() {
+    // Esperar a que Echo esté listo (resources/js/bootstrap.js lo proporciona)
     if (typeof window.waitForEcho !== 'function') {
-        console.log('[Realtime Supervisor] ⏳ window.waitForEcho aún no disponible, reintentando en 100ms...');
+        console.log('[Realtime Supervisor] ⏳ Esperando a que window.waitForEcho esté disponible...');
         setTimeout(initializeRealtimeListener, 100);
         return;
     }
 
-    console.log('[Realtime Supervisor] window.waitForEcho está disponible, inicializando listener...');
-
     window.waitForEcho(() => {
-        console.log('[Realtime Supervisor] ✅ Echo está listo, inicializando suscripción...');
-
         try {
-            const echo = window.EchoInstance || window.Echo;
-            if (!echo || typeof echo.channel !== 'function') {
-                console.error('[Realtime Supervisor] ❌ EchoInstance no disponible o inválido');
-                return;
+            console.log('[Realtime Supervisor] ✅ Echo está listo, inicializando suscripciones...');
+            
+            // Obtener instancia de WebSocket (lazy initialized)
+            const ws = window.shared.websocket;
+            
+            if (!ws) {
+                throw new Error('WebSocketClient no disponible');
             }
 
-            const refreshTabla = async (payload, eventName) => {
-                console.log(`[Realtime Supervisor] 🔄 Refresh solicitado por ${eventName}:`, payload);
+            // Note: No validamos isConnected() aquí porque Echo/Reverb maneja automáticamente
+            // la reconexión. Las suscripciones se establecerán cuando la conexión esté lista.
+            // Intentar en cada carga es suficiente para el cliente inicializado.
 
-                if (eventName && String(eventName).includes('pedidos.creados:.pedido.creado')) {
-                    const pedido = payload?.pedido || payload?.orden || payload || {};
-                    supervisorPedidosInsertarFilaNuevaAlInicio(pedido);
-                    supervisorPedidosMostrarNotificacionNuevoPedido(pedido);
-                    return;
-                }
-
-                if (eventName && String(eventName).includes('despacho.pedidos:.pedido.actualizado')) {
-                    supervisorPedidosMaybeNotifyFromActualizado(payload);
-                }
-
-                if (window.__realtimeSupervisorRefreshTimeout) {
-                    clearTimeout(window.__realtimeSupervisorRefreshTimeout);
-                }
-
-                window.__realtimeSupervisorRefreshTimeout = setTimeout(async () => {
-                    try {
-                        const html = await _rtRepo.fetchPageContent(window.location.href);
-                        const doc  = new DOMParser().parseFromString(html, 'text/html');
-                        const nuevaTabla  = doc.querySelector('.table-scroll-container');
-                        const tablaActual = document.querySelector('.table-scroll-container');
-                        if (!nuevaTabla || !tablaActual) {
-                            console.warn('[Realtime Supervisor] ⚠️ No se encontró .table-scroll-container');
-                            return;
-                        }
-                        tablaActual.innerHTML = nuevaTabla.innerHTML;
-                    } catch (error) {
-                        console.error('[Realtime Supervisor] ❌ Error refrescando tabla:', error);
-                    }
-                }, 450);
-            };
-
-            if (!window.__supervisorPedidosRealtimeCustomBound) {
-                window.__supervisorPedidosRealtimeCustomBound = true;
-
-                window.addEventListener('supervisorPedidos:realtimePedidoCreado', (e) => {
-                    const pedido = e?.detail?.pedido || e?.detail?.raw?.pedido || {};
-                    supervisorPedidosInsertarFilaNuevaAlInicio(pedido);
-                    supervisorPedidosMostrarNotificacionNuevoPedido(pedido);
-                });
-
-                window.addEventListener('supervisorPedidos:realtimePedidoActualizado', (e) => {
-                    refreshTabla(
-                        e?.detail?.raw || e?.detail?.pedido || {},
-                        e?.detail?.source || 'custom:.pedido.actualizado'
-                    );
-                });
-            }
-
-            echo.channel('despacho.pedidos')
-                .listen('.pedido.actualizado', (data) => refreshTabla(data, 'despacho.pedidos:.pedido.actualizado'))
-                .on('pusher:subscription_succeeded', () => {
-                    console.log('[Realtime Supervisor] ✅ Subscripción exitosa al canal despacho.pedidos');
-                })
-                .on('pusher:subscription_error', (error) => {
-                    console.error('[Realtime Supervisor] ❌ Error en subscripción despacho.pedidos:', error);
-                });
-
-            const channelSupervisor = echo.channel('supervisor-pedidos');
-            channelSupervisor.subscribed(() => {
-                console.log('[Realtime Supervisor] ✅ Suscripción exitosa al canal supervisor-pedidos');
-            });
-            channelSupervisor.error((error) => {
-                console.error('[Realtime Supervisor] ❌ Error en suscripción al canal supervisor-pedidos:', error);
-            });
-            channelSupervisor.listen('OrdenUpdated', (data) => refreshTabla(data, 'supervisor-pedidos:OrdenUpdated'));
-
-            echo.channel('pedidos.creados')
-                .listen('.pedido.creado', (data) => refreshTabla(data, 'pedidos.creados:.pedido.creado'));
+            _setupCustomEventHandlers();
+            _subscribeToChannels(ws);
 
             console.log('[Realtime Supervisor] ✅ Sistema de tiempo real inicializado correctamente');
+            console.log('[Realtime Supervisor] 🔌 Estado:', ws.getStatus());
         } catch (error) {
-            console.error('[Realtime Supervisor] ❌ Error inicializando listener:', error);
+            console.error('[Realtime Supervisor] ❌ Error inicializando:', error.message);
         }
     });
 }
 
+/**
+ * Configura listeners para eventos custom dispuestos por otras partes de la app
+ */
+function _setupCustomEventHandlers() {
+    if (window.__supervisorPedidosRealtimeCustomBound) {
+        return;  // Ya configurado
+    }
+    window.__supervisorPedidosRealtimeCustomBound = true;
+
+    window.addEventListener('supervisorPedidos:realtimePedidoCreado', (e) => {
+        const pedido = e?.detail?.pedido || e?.detail?.raw?.pedido || {};
+        supervisorPedidosInsertarFilaNuevaAlInicio(pedido);
+        supervisorPedidosMostrarNotificacionNuevoPedido(pedido);
+    });
+
+    window.addEventListener('supervisorPedidos:realtimePedidoActualizado', (e) => {
+        _refreshTablaConDelay(
+            e?.detail?.raw || e?.detail?.pedido || {},
+            'custom:.pedido.actualizado'
+        );
+    });
+}
+
+/**
+ * Suscribe a todos los canales WebSocket necesarios
+ */
+function _subscribeToChannels(ws) {
+    // Canal: despacho.pedidos - Actualizaciones de pedidos
+    try {
+        ws.subscribe('despacho.pedidos', '.pedido.actualizado', (data) => {
+            _refreshTablaConDelay(data, 'despacho.pedidos:.pedido.actualizado');
+        });
+        console.log('[Realtime Supervisor] ✅ Suscrito a "despacho.pedidos"');
+    } catch (error) {
+        console.error('[Realtime Supervisor] ❌ Error en despacho.pedidos:', error.message);
+    }
+
+    // Canal: supervisor-pedidos - Cambios de estado
+    try {
+        ws.subscribe('supervisor-pedidos', 'OrdenUpdated', (data) => {
+            _refreshTablaConDelay(data, 'supervisor-pedidos:OrdenUpdated');
+        });
+        console.log('[Realtime Supervisor] ✅ Suscrito a "supervisor-pedidos"');
+    } catch (error) {
+        console.error('[Realtime Supervisor] ❌ Error en supervisor-pedidos:', error.message);
+    }
+
+    // Canal: pedidos.creados - Nuevos pedidos
+    try {
+        ws.subscribe('pedidos.creados', '.pedido.creado', (data) => {
+            const pedido = data?.pedido || data?.orden || data || {};
+            supervisorPedidosInsertarFilaNuevaAlInicio(pedido);
+            supervisorPedidosMostrarNotificacionNuevoPedido(pedido);
+        });
+        console.log('[Realtime Supervisor] ✅ Suscrito a "pedidos.creados"');
+    } catch (error) {
+        console.error('[Realtime Supervisor] ❌ Error en pedidos.creados:', error.message);
+    }
+}
+
+/**
+ * Refrescador de tabla con debounce para evitar múltiples requests
+ */
+function _refreshTablaConDelay(payload, eventName) {
+    console.log(`[Realtime Supervisor] 🔄 Actualización recibida de ${eventName}`);
+
+    // Detectar si es actualización de estado para notificar
+    if (String(eventName).includes('despacho.pedidos:.pedido.actualizado')) {
+        supervisorPedidosMaybeNotifyFromActualizado(payload);
+    }
+
+    // Debouncer: evitar múltiples requests al servidor
+    if (window.__realtimeSupervisorRefreshTimeout) {
+        clearTimeout(window.__realtimeSupervisorRefreshTimeout);
+    }
+
+    window.__realtimeSupervisorRefreshTimeout = setTimeout(async () => {
+        try {
+            const html = await _rtRepo.fetchPageContent(window.location.href);
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const nuevaTabla = doc.querySelector('.table-scroll-container');
+            const tablaActual = document.querySelector('.table-scroll-container');
+
+            if (!nuevaTabla || !tablaActual) {
+                console.warn('[Realtime Supervisor] ⚠️ Contenedor de tabla no encontrado');
+                return;
+            }
+
+            tablaActual.innerHTML = nuevaTabla.innerHTML;
+            console.log('[Realtime Supervisor] ✅ Tabla refrescada');
+        } catch (error) {
+            console.error('[Realtime Supervisor] ❌ Error refrescando tabla:', error.message);
+        }
+    }, 450);  // 450ms debounce
+}
+
+// ===== INICIAR CUANDO EL DOM ESTÉ LISTO =====
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeRealtimeListener);
 } else {
+    // Si el script se carga después de DOMContentLoaded, iniciar inmediatamente
     initializeRealtimeListener();
 }

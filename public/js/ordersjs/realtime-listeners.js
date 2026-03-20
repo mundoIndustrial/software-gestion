@@ -1,6 +1,8 @@
 /**
- * Real-time updates script for orders
- * Handles Echo/WebSocket listeners for live order updates
+ * Real-time updates script for orders - FASE 5 v1.0
+ * Maneja listeners de WebSocket para actualizaciones en tiempo real
+ * Migración de Echo/Reverb (FASE 4) → window.shared.websocket (FASE 5)
+ * 
  * Integración con estructura flexbox y colores condicionales
  */
 
@@ -181,53 +183,62 @@ const RealtimeOrderHandler = {
 };
 
 /**
- * Initialize real-time listeners for orders
+ * Initialize real-time listeners for orders via WebSocket
  */
 function initializeOrdenesRealtimeListeners() {
-
-
-
-    if (!window.EchoInstance) {
-
-        setTimeout(initializeOrdenesRealtimeListeners, 500);
-        return;
-    }
-
-
-
-    // Canal de Órdenes
-    const ordenesChannel = window.EchoInstance.channel('ordenes');
-
-    ordenesChannel.subscribed(() => {
-
-    });
-
-    ordenesChannel.error((error) => {
-
-    });
-
-    ordenesChannel.listen('OrdenUpdated', (e) => {
-
-        
-        // Usar el nuevo manejador RealtimeOrderHandler
-        if (typeof RealtimeOrderHandler !== 'undefined' && RealtimeOrderHandler.updateOrderRow) {
-
-            RealtimeOrderHandler.updateOrderRow(e.orden, e.changedFields);
-        } else {
-
+    try {
+        if (typeof window.waitForEcho !== 'function') {
+            console.log('[Realtime Orders] ⏳ Esperando a que window.waitForEcho esté disponible...');
+            setTimeout(initializeOrdenesRealtimeListeners, 200);
+            return;
         }
-    });
 
+        window.waitForEcho(() => {
+            const ws = window.shared.websocket;
 
+            if (!ws) {
+                console.warn('[Realtime Orders] WebSocket no disponible');
+                return;
+            }
+
+            console.log('[Realtime Orders] Inicializando listeners de órdenes con ws.subscribe()...');
+
+            // ==========================================
+            // CANAL: ordenes
+            // ==========================================
+            try {
+                ws.subscribe('ordenes', 'OrdenUpdated', (e) => {
+                    console.log('[Realtime Orders] 📢 Evento OrdenUpdated recibido:', e);
+                    
+                    // Usar el nuevo manejador RealtimeOrderHandler
+                    if (typeof RealtimeOrderHandler !== 'undefined' && RealtimeOrderHandler.updateOrderRow) {
+                        RealtimeOrderHandler.updateOrderRow(e.orden, e.changedFields);
+                    } else {
+                        console.warn('[Realtime Orders] ⚠️ RealtimeOrderHandler no disponible');
+                    }
+                });
+                console.log('[Realtime Orders] ✅ Suscrito a ordenes/OrdenUpdated');
+            } catch (error) {
+                console.error('[Realtime Orders] ❌ Error subscribiendo a ordenes/OrdenUpdated:', error);
+            }
+
+            console.log('[Realtime Orders] ✅ Sistema de escuchas en tiempo real inicializado correctamente');
+            console.log('[Realtime Orders] 🔌 Estado de WebSocket:', ws.getStatus ? ws.getStatus() : 'N/A');
+        });
+    } catch (error) {
+        console.error('[Realtime Orders] ❌ Error inicializando listeners:', error);
+    }
 }
 
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(initializeOrdenesRealtimeListeners, 100);
+        console.log('[Realtime Orders] Inicializando desde DOMContentLoaded...');
+        initializeOrdenesRealtimeListeners();
     });
 } else {
-    setTimeout(initializeOrdenesRealtimeListeners, 100);
+    console.log('[Realtime Orders] Inicializando directamente (DOM ya listo)...');
+    initializeOrdenesRealtimeListeners();
 }
 
 

@@ -342,25 +342,47 @@
 
     @stack('styles')
 
+    <!-- CRÍTICO: Definir window.waitForEcho ANTES del resto de scripts -->
+    <!-- resources/js/bootstrap.js lo llamará vía notifyEchoReady() cuando esté listo -->
+    <script>
+        window.echoReady = false;
+        window.echoReadyCallbacks = [];
+        
+        window.waitForEcho = function(callback) {
+            if (window.echoReady && window.EchoInstance) {
+                callback();
+            } else {
+                window.echoReadyCallbacks.push(callback);
+            }
+        };
+        
+        window.notifyEchoReady = function() {
+            window.echoReady = true;
+            while (window.echoReadyCallbacks.length > 0) {
+                const callback = window.echoReadyCallbacks.shift();
+                try {
+                    callback();
+                } catch (error) {
+                    console.error('[Echo] Error ejecutando callback:', error);
+                }
+            }
+        };
+    </script>
+
     @vite(['resources/js/app.js'])
 
-    <!-- Infraestructura compartida (DDD Híbrido - Fase 1) -->
-    <script src="{{ asset('js/shared/infrastructure/HttpClient.js') }}"></script>
-    <script src="{{ asset('js/shared/infrastructure/NotificationService.js') }}"></script>
-    <script src="{{ asset('js/shared/infrastructure/ModalManager.js') }}"></script>
-    <script src="{{ asset('js/shared/bootstrap.js') }}"></script>
-
-    <!-- Arquitectura DDD supervisor-pedidos (Fase 2) -->
-    <script src="{{ asset('js/supervisor-pedidos/core/domain/PedidoRepository.js') }}"></script>
-    <script src="{{ asset('js/supervisor-pedidos/core/infrastructure/PedidoApiRepository.js') }}"></script>
-    <script src="{{ asset('js/supervisor-pedidos/core/application/FilterService.js') }}"></script>
-    <script src="{{ asset('js/supervisor-pedidos/core/application/SelectionService.js') }}"></script>
-    <script src="{{ asset('js/supervisor-pedidos/core/application/OrderEditService.js') }}"></script>
-    <script src="{{ asset('js/supervisor-pedidos/core/bootstrap.js') }}"></script>
+    <!-- DDD Core Bundles (Fase 3: 10 scripts → 2 bundles minificados) -->
+    @if(app()->environment('production'))
+        <script src="{{ asset('js/bundles/shared-core.min.js') }}"></script>
+        <script src="{{ asset('js/bundles/sp-core.min.js') }}"></script>
+    @else
+        <script src="{{ asset('js/bundles/shared-core.js') }}"></script>
+        <script src="{{ asset('js/bundles/sp-core.js') }}"></script>
+    @endif
 
     <!-- Laravel Echo & WebSockets para supervisor-pedidos -->
     @auth
-    <script defer src="{{ asset('js/modulos/asesores/pedidos-realtime.js') }}"></script>
+    <script src="{{ asset('js/modulos/asesores/pedidos-realtime.js') }}"></script>
     @endauth
 
 </head>
