@@ -3,7 +3,10 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
-use App\Infrastructure\Http\Controllers\RegistroOrdenController;
+use App\Infrastructure\Http\Controllers\Pedidos\PedidosController;
+use App\Infrastructure\Http\Controllers\Pedidos\RecibosCozturaController;
+use App\Infrastructure\Http\Controllers\Pedidos\RecibosReflectivoController;
+use App\Infrastructure\Http\Controllers\Pedidos\PedidosEntregasController;
 use App\Infrastructure\Http\Controllers\RegistroOrdenQueryController;
 use App\Http\Controllers\RegistroBodegaController;
 use App\Http\Controllers\ConfiguracionController;
@@ -1436,22 +1439,22 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     // Query/Search routes (RegistroOrdenQueryController)
     Route::get('/registros', [RegistroOrdenQueryController::class, 'index'])->name('registros.index');
     
-    // CRUD routes (RegistroOrdenController) - Rutas sin parámetros primero
-    Route::get('/registros/next-pedido', [RegistroOrdenController::class, 'getNextPedido'])->name('registros.next-pedido');
-    Route::get('/registros/filter-options', [RegistroOrdenController::class, 'getFilterOptions'])->name('registros.filter-options');
-    Route::get('/registros/filter-column-options/{column}', [RegistroOrdenController::class, 'getColumnFilterOptions'])->name('registros.filter-column-options');
-    Route::post('/registros/filter-orders', [RegistroOrdenController::class, 'filterOrders'])->name('registros.filter-orders');
-    Route::post('/registros/search', [RegistroOrdenController::class, 'searchOrders'])->name('registros.search');
+    // CRUD routes (PedidosController) - Rutas sin parámetros primero
+    Route::get('/registros/next-pedido', [PedidosController::class, 'getNextPedido'])->name('registros.next-pedido');
+    Route::get('/registros/filter-options', [PedidosController::class, 'getFilterOptions'])->name('registros.filter-options');
+    Route::get('/registros/filter-column-options/{column}', [PedidosController::class, 'getColumnFilterOptions'])->name('registros.filter-column-options');
+    Route::post('/registros/filter-orders', [PedidosController::class, 'filterOrders'])->name('registros.filter-orders');
+    Route::post('/registros/search', [PedidosController::class, 'searchOrders'])->name('registros.search');
     
     // Rutas para recibos de costura
-    Route::get('/recibos-costura', [RegistroOrdenController::class, 'recibosCostura'])->name('registros.recibos-costura');
-    Route::get('/recibos-costura/recibo/{reciboId}', [RegistroOrdenController::class, 'getReciboJson'])->name('registros.recibo-json');
-    Route::get('/api/recibos-costura/ejecutando-corte', [RegistroOrdenController::class, 'contarRecibosEjecutandoCostura'])->name('api.recibos-costura.ejecutando-corte');
-    Route::post('/api/recibos-costura/{id}/marcar-visto-corte', [RegistroOrdenController::class, 'marcarReciboVistoCostura'])->name('api.recibos-costura.marcar-visto-corte');
+    Route::get('/recibos-costura', [RecibosCozturaController::class, 'recibosCostura'])->name('registros.recibos-costura');
+    Route::get('/recibos-costura/recibo/{reciboId}', [RecibosCozturaController::class, 'getReciboJson'])->name('registros.recibo-json');
+    Route::get('/api/recibos-costura/ejecutando-corte', [RecibosCozturaController::class, 'contarRecibosEjecutandoCostura'])->name('api.recibos-costura.ejecutando-corte');
+    Route::post('/api/recibos-costura/{id}/marcar-visto-corte', [RecibosCozturaController::class, 'marcarReciboVistoCostura'])->name('api.recibos-costura.marcar-visto-corte');
     
     // Rutas para recibos de reflectivo
-    Route::get('/recibos-reflectivo', [RegistroOrdenController::class, 'recibosReflectivo'])->name('registros.recibos-reflectivo');
-    Route::get('/recibos-reflectivo/recibo/{reciboId}', [RegistroOrdenController::class, 'getReciboReflectivoJson'])->name('registros.recibo-reflectivo-json');
+    Route::get('/recibos-reflectivo', [RecibosReflectivoController::class, 'recibosReflectivo'])->name('registros.recibos-reflectivo');
+    Route::get('/recibos-reflectivo/recibo/{reciboId}', [RecibosReflectivoController::class, 'getReciboReflectivoJson'])->name('registros.recibo-reflectivo-json');
     
     // Rutas con parámetros {pedido} - IMPORTANTE: rutas más específicas PRIMERO
     Route::get('/registros/{id}/recibos-datos', [RegistroOrdenQueryController::class, 'getRecibosDatos'])->name('registros.recibos-datos');
@@ -1464,26 +1467,26 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/api/registros/{numero_pedido}/dias', [RegistroOrdenQueryController::class, 'calcularDiasAPI'])->name('api.registros.dias');
     
     // Ruta API para obtener el área más reciente de un pedido
-    Route::get('/api/pedido/{id}/area-reciente', [RegistroOrdenController::class, 'getAreaReciente'])->name('api.pedido.area-reciente');
+    Route::get('/api/pedido/{id}/area-reciente', [RecibosCozturaController::class, 'getAreaReciente'])->name('api.pedido.area-reciente');
     Route::post('/api/registros/dias-batch', [RegistroOrdenQueryController::class, 'calcularDiasBatchAPI'])->name('api.registros.dias-batch');
     Route::post('/api/registros/{id}/calcular-fecha-estimada', [RegistroOrdenQueryController::class, 'calcularFechaEstimada'])->name('api.registros.calcular-fecha-estimada');
     
     //  Ruta para traer LogoPedido por ID
     Route::get('/api/logo-pedidos/{id}', [RegistroOrdenQueryController::class, 'showLogoPedidoById'])->name('api.logo-pedidos.show');
     
-    Route::post('/registros', [RegistroOrdenController::class, 'store'])->name('registros.store');
-    Route::post('/registros/validate-pedido', [RegistroOrdenController::class, 'validatePedido'])->name('registros.validatePedido');
-    Route::post('/registros/update-pedido', [RegistroOrdenController::class, 'updatePedido'])->name('registros.updatePedido');
-    Route::post('/registros/update-descripcion-prendas', [RegistroOrdenController::class, 'updateDescripcionPrendas'])->name('registros.updateDescripcionPrendas');
-    Route::patch('/registros/{pedido}', [RegistroOrdenController::class, 'update'])->name('registros.update');
-    Route::delete('/registros/{pedido}', [RegistroOrdenController::class, 'destroy'])->name('registros.destroy');
-    Route::post('/registros/update-status', [RegistroOrdenController::class, 'updateStatus'])->name('registros.updateStatus');
-    Route::get('/registros/{pedido}/entregas', [RegistroOrdenController::class, 'getEntregas'])->name('registros.entregas');
-    Route::post('/registros/{pedido}/dia-entrega', [RegistroOrdenController::class, 'saveDiaEntrega'])->name('registros.saveDiaEntrega');
-    Route::get('/api/registros-por-orden/{pedido}', [RegistroOrdenController::class, 'getRegistrosPorOrden'])->name('api.registros-por-orden');
-    Route::get('/api/tabla-original/{numeroPedido}/procesos', [RegistroOrdenController::class, 'getProcesosTablaOriginal'])->name('api.tabla-original.procesos');
-    Route::post('/registros/{pedido}/edit-full', [RegistroOrdenController::class, 'editFullOrder'])->name('registros.editFull');
-    Route::get('/orders/{numero_pedido}', [RegistroOrdenController::class, 'show'])->name('orders.show');
+    Route::post('/registros', [PedidosController::class, 'store'])->name('registros.store');
+    Route::post('/registros/validate-pedido', [PedidosController::class, 'validatePedido'])->name('registros.validatePedido');
+    Route::post('/registros/update-pedido', [PedidosController::class, 'updatePedido'])->name('registros.updatePedido');
+    Route::post('/registros/update-descripcion-prendas', [PedidosController::class, 'updateDescripcionPrendas'])->name('registros.updateDescripcionPrendas');
+    Route::patch('/registros/{pedido}', [PedidosController::class, 'update'])->name('registros.update');
+    Route::delete('/registros/{pedido}', [PedidosController::class, 'destroy'])->name('registros.destroy');
+    Route::post('/registros/update-status', [PedidosController::class, 'updateStatus'])->name('registros.updateStatus');
+    Route::get('/registros/{pedido}/entregas', [PedidosEntregasController::class, 'getEntregas'])->name('registros.entregas');
+    Route::post('/registros/{pedido}/dia-entrega', [PedidosEntregasController::class, 'saveDiaEntrega'])->name('registros.saveDiaEntrega');
+    Route::get('/api/registros-por-orden/{pedido}', [PedidosController::class, 'getRegistrosPorOrden'])->name('api.registros-por-orden');
+    Route::get('/api/tabla-original/{numeroPedido}/procesos', [PedidosController::class, 'getProcesosTablaOriginal'])->name('api.tabla-original.procesos');
+    Route::post('/registros/{pedido}/edit-full', [PedidosController::class, 'editFullOrder'])->name('registros.editFull');
+    Route::get('/orders/{numero_pedido}', [PedidosController::class, 'show'])->name('orders.show');
 
     // ========================================
     // RUTAS DE FACTURAS - Invoice Management
@@ -1494,8 +1497,8 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
 
     Route::get('/api/bodega/{numero_pedido}/dias', [RegistroBodegaController::class, 'calcularDiasAPI'])->name('api.bodega.dias');
     Route::get('/api/ordenes/{id}/procesos', [App\Infrastructure\Http\Controllers\Asesores\ProcesosPedidoController::class, 'getProcesos'])->name('api.ordenes.procesos');
-    Route::post('/api/ordenes/{numero_pedido}/novedades', [RegistroOrdenController::class, 'updateNovedades'])->name('api.ordenes.novedades');
-    Route::post('/api/ordenes/{numero_pedido}/novedades/add', [RegistroOrdenController::class, 'addNovedad'])->name('api.ordenes.novedades.add');
+    Route::post('/api/ordenes/{numero_pedido}/novedades', [PedidosController::class, 'updateNovedades'])->name('api.ordenes.novedades');
+    Route::post('/api/ordenes/{numero_pedido}/novedades/add', [PedidosController::class, 'addNovedad'])->name('api.ordenes.novedades.add');
     Route::post('/api/bodega/{pedido}/novedades', [RegistroBodegaController::class, 'updateNovedadesBodega'])->name('api.bodega.novedades');
     Route::post('/api/bodega/{pedido}/novedades/add', [RegistroBodegaController::class, 'addNovedadBodega'])->name('api.bodega.novedades.add');
     Route::put('/api/procesos/{id}/editar', [App\Infrastructure\Http\Controllers\Asesores\ProcesosPedidoController::class, 'editarProceso'])->name('api.procesos.editar');
@@ -2288,7 +2291,7 @@ Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.
     Route::post('/materiales/recibo/{reciboId}/cambiar-estado', [\App\Infrastructure\Http\Controllers\Insumos\InsumosController::class, 'cambiarEstadoRecibo'])->name('materiales.recibo.cambiar-estado');
     Route::post('/materiales/{materialId}/toggle-marcado', [\App\Infrastructure\Http\Controllers\Insumos\RecibosController::class, 'toggleMarcado'])->name('materiales.toggle-marcado');
     Route::post('/materiales/{reciboId}/pasar-revisar', [\App\Infrastructure\Http\Controllers\Insumos\RecibosController::class, 'pasarRevisar'])->name('materiales.pasar-revisar');
-    Route::get('/materiales/recibos-costura', [\App\Infrastructure\Http\Controllers\RegistroOrdenController::class, 'recibosCostura'])->name('materiales.recibos-costura');
+    Route::get('/materiales/recibos-costura', [\App\Infrastructure\Http\Controllers\Pedidos\RecibosCozturaController::class, 'recibosCostura'])->name('materiales.recibos-costura');
     Route::get('/test', function () {
         return view('insumos.test');
     })->name('test');

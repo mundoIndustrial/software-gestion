@@ -11,6 +11,19 @@ use App\Exceptions\RegistroOrdenCreationException;
 use App\Exceptions\RegistroOrdenUpdateException;
 use App\Exceptions\RegistroOrdenDeletionException;
 use App\Exceptions\RegistroOrdenPrendaException;
+use App\Exceptions\SearchOrdersException;
+use App\Exceptions\FilterOrdersException;
+use App\Exceptions\ObtenerOpcionesColumnaInvalidaException;
+use App\Exceptions\ObtenerOpcionesColumnaException;
+use App\Exceptions\ObtenerOpcionesGeneralesException;
+use App\Constants\SearchOrdersConstants;
+use App\Constants\FilterOrdersConstants;
+use App\Constants\ObtenerOpcionesColumnaConstants;
+use App\Constants\ObtenerOpcionesGeneralesConstants;
+use App\Exceptions\ObtenerDetallesOrdenException;
+use App\Constants\ObtenerDetallesOrdenConstants;
+use App\Exceptions\ValidarPedidoException;
+use App\Constants\ValidarPedidoConstants;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Http\JsonResponse;
@@ -216,6 +229,103 @@ trait RegistroOrdenExceptionHandler
     }
 
     /**
+     * Maneja SearchOrdersException (búsqueda de órdenes)
+     */
+    protected function handleSearchOrdersException(SearchOrdersException $e): JsonResponse
+    {
+        \Log::error(SearchOrdersConstants::LOG_PREFIX . " " . SearchOrdersConstants::LOG_ERROR_BUSQUEDA, $e->getLogContext());
+
+        return response()->json([
+            'success' => false,
+            'message' => SearchOrdersConstants::ERROR_BUSQUEDA_MESSAGE,
+            'timestamp' => now()->toIso8601String()
+        ], SearchOrdersConstants::HTTP_ERROR_CODE);
+    }
+
+    /**
+     * Maneja FilterOrdersException (filtrado de órdenes)
+     */
+    protected function handleFilterOrdersException(FilterOrdersException $e): JsonResponse
+    {
+        \Log::error(FilterOrdersConstants::LOG_PREFIX . " " . FilterOrdersConstants::LOG_ERROR_FILTRADO, $e->getLogContext());
+
+        return response()->json([
+            'success' => false,
+            'message' => FilterOrdersConstants::ERROR_FILTRADO_MESSAGE,
+            'timestamp' => now()->toIso8601String()
+        ], FilterOrdersConstants::HTTP_ERROR_CODE);
+    }
+
+    /**
+     * Maneja ObtenerOpcionesColumnaInvalidaException (columna inválida)
+     */
+    protected function handleObtenerOpcionesColumnaInvalidaException(ObtenerOpcionesColumnaInvalidaException $e): JsonResponse
+    {
+        \Log::warning(ObtenerOpcionesColumnaConstants::LOG_ERROR_COLUMNA_INVALIDA, $e->getLogContext());
+
+        return response()->json([
+            'success' => false,
+            'message' => ObtenerOpcionesColumnaConstants::ERROR_COLUMNA_INVALIDA_MESSAGE,
+            'timestamp' => now()->toIso8601String()
+        ], ObtenerOpcionesColumnaConstants::HTTP_ERROR_CODE_INVALIDA);
+    }
+
+    /**
+     * Maneja ObtenerOpcionesColumnaException (error al obtener opciones)
+     */
+    protected function handleObtenerOpcionesColumnaException(ObtenerOpcionesColumnaException $e): JsonResponse
+    {
+        \Log::error(ObtenerOpcionesColumnaConstants::LOG_ERROR_OBTENER_OPCIONES, $e->getLogContext());
+
+        return response()->json([
+            'success' => false,
+            'message' => ObtenerOpcionesColumnaConstants::ERROR_OBTENER_OPCIONES_MESSAGE,
+            'timestamp' => now()->toIso8601String()
+        ], ObtenerOpcionesColumnaConstants::HTTP_ERROR_CODE);
+    }
+
+    /**
+     * Maneja ObtenerOpcionesGeneralesException (error al obtener opciones generales)
+     */
+    protected function handleObtenerOpcionesGeneralesException(ObtenerOpcionesGeneralesException $e): JsonResponse
+    {
+        \Log::error(ObtenerOpcionesGeneralesConstants::LOG_ERROR_OBTENER_OPCIONES, $e->getLogContext());
+
+        return response()->json([
+            'success' => false,
+            'message' => ObtenerOpcionesGeneralesConstants::ERROR_OBTENER_OPCIONES_MESSAGE,
+            'timestamp' => now()->toIso8601String()
+        ], ObtenerOpcionesGeneralesConstants::HTTP_ERROR_CODE);
+    }
+
+    /**
+     * Maneja ObtenerDetallesOrdenException (error al obtener detalles de orden)
+     */
+    protected function handleObtenerDetallesOrdenException(ObtenerDetallesOrdenException $e): JsonResponse
+    {
+        \Log::error(ObtenerDetallesOrdenConstants::LOG_ERROR_OBTENER_DETALLES, $e->getLogContext());
+
+        return response()->json([
+            'error' => ObtenerDetallesOrdenConstants::ERROR_OBTENER_DETALLES_MESSAGE,
+            'timestamp' => now()->toIso8601String()
+        ], $e->getStatusCode());
+    }
+
+    /**
+     * Maneja ValidarPedidoException (error al validar pedido)
+     */
+    protected function handleValidarPedidoException(ValidarPedidoException $e): JsonResponse
+    {
+        \Log::error(ValidarPedidoConstants::LOG_ERROR_VALIDACION, $e->getLogContext());
+
+        return response()->json([
+            'success' => false,
+            'message' => ValidarPedidoConstants::ERROR_VALIDACION_MESSAGE,
+            'timestamp' => now()->toIso8601String()
+        ], ValidarPedidoConstants::HTTP_ERROR_CODE);
+    }
+
+    /**
      * Maneja excepciones genéricas (fallback)
      */
     protected function handleGenericException(\Exception $e): JsonResponse
@@ -258,6 +368,20 @@ trait RegistroOrdenExceptionHandler
             return $returnJson ? $this->handleDeletionException($e) : throw $e;
         } catch (RegistroOrdenPrendaException $e) {
             return $returnJson ? $this->handlePrendaException($e) : throw $e;
+        } catch (SearchOrdersException $e) {
+            return $returnJson ? $this->handleSearchOrdersException($e) : throw $e;
+        } catch (FilterOrdersException $e) {
+            return $returnJson ? $this->handleFilterOrdersException($e) : throw $e;
+        } catch (ObtenerOpcionesColumnaInvalidaException $e) {
+            return $returnJson ? $this->handleObtenerOpcionesColumnaInvalidaException($e) : throw $e;
+        } catch (ObtenerOpcionesColumnaException $e) {
+            return $returnJson ? $this->handleObtenerOpcionesColumnaException($e) : throw $e;
+        } catch (ObtenerOpcionesGeneralesException $e) {
+            return $returnJson ? $this->handleObtenerOpcionesGeneralesException($e) : throw $e;
+        } catch (ObtenerDetallesOrdenException $e) {
+            return $returnJson ? $this->handleObtenerDetallesOrdenException($e) : throw $e;
+        } catch (ValidarPedidoException $e) {
+            return $returnJson ? $this->handleValidarPedidoException($e) : throw $e;
         } catch (RegistroOrdenException $e) {
             return $returnJson ? $this->handleRegistroOrdenException($e) : throw $e;
         } catch (ValidationException $e) {

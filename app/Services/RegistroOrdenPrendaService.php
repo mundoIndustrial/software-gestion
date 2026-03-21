@@ -185,6 +185,23 @@ class RegistroOrdenPrendaService
     }
 
     /**
+     * Obtener tallas por color para una prenda
+     * Retorna datos de prenda_pedido_talla_colores si existen
+     */
+    public function getTallasPorColor(int $prendaId): \Illuminate\Support\Collection
+    {
+        return DB::table('prenda_pedido_talla_colores')
+            ->join('prenda_pedido_tallas', 'prenda_pedido_talla_colores.prenda_pedido_talla_id', '=', 'prenda_pedido_tallas.id')
+            ->where('prenda_pedido_tallas.prenda_pedido_id', $prendaId)
+            ->select([
+                'prenda_pedido_tallas.talla',
+                'prenda_pedido_talla_colores.color_nombre',
+                'prenda_pedido_talla_colores.cantidad'
+            ])
+            ->get();
+    }
+
+    /**
      * Convertir prendas a array de tallas
      */
     public function getPrendasArray(int $numeroPedido): array

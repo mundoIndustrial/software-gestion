@@ -298,7 +298,7 @@
 
 @push('scripts')
 <!-- Scripts Component -->
-<x-recibos.recibos-costura-scripts />
+<x-recibos.recibos-costura-init />
 
 <!-- Script con funciones globales adicionales para recibos-reflectivo -->
 <script>

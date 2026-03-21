@@ -1004,7 +1004,7 @@ export class GalleryManager {
                     object-fit: cover;
                     display: block;
                     transition: all 0.3s ease;
-                " onerror="this.style.display='none'; this.parentElement.style.background='#fee2e2'; this.parentElement.innerHTML='<div style=\'display: flex; align-items: center; justify-content: center; height: 100%; color: #dc2626; font-size: 0.8rem; text-align: center; padding: 4px;\'> Error al cargar imagen</div>';">
+                " onerror="this.style.display='none'; this.parentElement.style.background='#fee2e2'; this.parentElement.innerHTML=\"<div style='display: flex; align-items: center; justify-content: center; height: 100%; color: #dc2626; font-size: 0.8rem; text-align: center; padding: 4px;'>Error al cargar imagen</div>\";">
                 <div style="padding: 0.75rem; background: #f9fafb;">
                     <div style="font-size: 0.875rem; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem;">${titulo}</div>
                     <div style="font-size: 0.75rem; color: #6b7280;">${subtitulo}</div>
@@ -1035,7 +1035,7 @@ export class GalleryManager {
                     data-indice="${idx}"
                     data-fotos='${fotosJSON}'>
                     <img src="${img}" alt="Imagen ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover;" 
-                         onerror="this.style.display='none'; this.parentElement.style.background='#fee2e2'; this.parentElement.innerHTML='<div style=\\'display: flex; align-items: center; justify-content: center; height: 100%; color: #dc2626; font-size: 0.8rem; text-align: center; padding: 4px;\\'> Error al cargar imagen</div>';">
+                         onerror="this.style.display='none'; this.parentElement.style.background='#fee2e2'; this.parentElement.innerHTML=\"<div style='display: flex; align-items: center; justify-content: center; height: 100%; color: #dc2626; font-size: 0.8rem; text-align: center; padding: 4px;'>Error al cargar imagen</div>\";">
                 </div>
             `;
         });

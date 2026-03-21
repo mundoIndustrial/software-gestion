@@ -172,7 +172,7 @@ class GenerarPDFRecibosService
      */
     public function enviarPorEmail(array $datosRecibo, int $pedidoId, string $emailDestino): bool
     {
-        Log::info('📧 [EMAIL] Preparando envío de recibo', [
+        Log::info(' [EMAIL] Preparando envío de recibo', [
             'pedido_id' => $pedidoId,
             'email' => $emailDestino
         ]);

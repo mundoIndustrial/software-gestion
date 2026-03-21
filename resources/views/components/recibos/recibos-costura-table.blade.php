@@ -232,7 +232,7 @@
             </tr>
         </thead>
         <tbody id="tablaRecibosBody">
-            @if($recibos->count() > 0)
+            @if(is_array($recibos) && count($recibos) > 0)
                 @foreach($recibos as $recibo)
                     <tr class="@if(isset($recibo['dias_calculados']) && $recibo['dias_calculados'] > 0)
                         @if($recibo['dias_calculados'] >= 14) dias-mayor-15

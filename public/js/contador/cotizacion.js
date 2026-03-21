@@ -1096,7 +1096,7 @@ function aprobarCotizacionEnLinea(cotizacionId, estadoActual = null) {
                                 </p>
                                 <div style="background: #d1fae5; border-left: 4px solid #10b981; padding: 0.75rem; border-radius: 4px; margin: 0.75rem 0;">
                                     <p style="margin: 0; font-size: 0.85rem; color: #065f46; font-weight: 600;">
-                                        📧 Se ha enviado notificación al área de Aprobación de Cotizaciones
+                                         Se ha enviado notificación al área de Aprobación de Cotizaciones
                                     </p>
                                 </div>
                                 <p style="margin: 0.75rem 0 0 0; font-size: 0.85rem; color: #666;">
@@ -1343,7 +1343,7 @@ function aprobarAlAprobador(cotizacionId) {
                                 </p>
                                 <div style="background: #d1fae5; border-left: 4px solid #10b981; padding: 0.75rem; border-radius: 4px; margin: 0.75rem 0;">
                                     <p style="margin: 0; font-size: 0.85rem; color: #065f46; font-weight: 600;">
-                                        📧 Se ha notificado al asesor
+                                         Se ha notificado al asesor
                                     </p>
                                 </div>
                                 <p style="margin: 0.75rem 0 0 0; font-size: 0.85rem; color: #666;">
