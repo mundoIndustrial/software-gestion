@@ -46,4 +46,25 @@ class ConsecutivoReciboPedidoRepositoryImpl implements ConsecutivoReciboPedidoRe
     {
         $recibo->save();
     }
+
+    public function search(string $termino, int $limit = 10): array
+    {
+        return ConsecutivoReciboPedido::with(['pedido.cliente', 'pedido.usuario', 'prenda'])
+            ->where('activo', true)
+            ->where(function($query) use ($termino) {
+                $query->where('consecutivo_actual', 'like', "%{$termino}%")
+                    ->orWhereHas('pedido', function($q) use ($termino) {
+                        $q->where('numero_pedido', 'like', "%{$termino}%")
+                          ->orWhereHas('cliente', function($sq) use ($termino) {
+                              $sq->where('nombre', 'like', "%{$termino}%");
+                          });
+                    })
+                    ->orWhereHas('prenda', function($q) use ($termino) {
+                        $q->where('nombre', 'like', "%{$termino}%");
+                    });
+            })
+            ->limit($limit)
+            ->get()
+            ->all();
+    }
 }

@@ -13,10 +13,10 @@
 </div>
 
 <!-- Contenedor de dropdowns dinámicos (igual que en insumos) -->
-<div id="dropdowns-container" style="position: fixed; top: 0; left: 0; z-index: 999999; pointer-events: none;"></div>
+<div id="dropdowns-container" style="position: fixed; top: 0; left: 0; z-index: 999999; pointer-events: none;" role="none"></div>
 
 <!-- Modal para ver detalles del recibo -->
-<div id="modal-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9997; display: none; pointer-events: auto;" onclick="closeModalOverlay()"></div>
+<button id="modal-overlay" type="button" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9997; display: none; pointer-events: none; border: none; padding: 0; margin: 0; cursor: pointer; appearance: none; -webkit-appearance: none;" onclick="closeModalOverlay()" onkeydown="if(event.key==='Escape') closeModalOverlay()" aria-label="Cerrar modal"></button>
 
 <div id="order-detail-modal-wrapper" style="width: 90%; max-width: 672px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
     <x-orders-components.order-detail-modal />
@@ -40,6 +40,21 @@
 
 <!-- Estilos adicionales para el modal de agregar proceso -->
 <style>
+/* Modal overlay - permitir clicks cuando está visible */
+#modal-overlay {
+    pointer-events: none;
+}
+
+#modal-overlay[style*="display: flex"],
+#modal-overlay[style*="display:flex"] {
+    pointer-events: auto;
+}
+
+/* Alternativa: usar una clase show */
+#modal-overlay.show {
+    pointer-events: auto;
+}
+
 .add-proceso-modal.show {
     display: flex !important;
     align-items: center !important;
