@@ -79,6 +79,12 @@ async function actualizarListaSinRecargar() {
 }
 
 export function initRealtimeListeners() {
+    // Verificar si es la página del operario-dashboard
+    // De lo contrario, retornar sin hacer nada (ej: /asesores/dashboard)
+    if (!document.querySelector('.operario-dashboard')) {
+        return;
+    }
+
     if (window.__operarioDashboardRealtimeInitStarted) {
         return;
     }
