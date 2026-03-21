@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Sistema de Tracking Modular</title>
+    <meta name="csrf-token" content="test-token">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .module-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .module-item {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+        .module-item h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .module-item.loaded {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+        .module-item.not-loaded {
+            border-color: #dc3545;
+            background: #fff8f8;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #495057;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .function-test {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .function-test button {
+            margin-right: 10px;
+        }
+        #console-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Sistema de Tracking Modular</h1>
+        
+        <div id="status" class="status info">
+            Cargando módulos...
+        </div>
+
+        <div class="test-section">
+            <h2>📦 Estado de Módulos</h2>
+            <div id="modules-status" class="module-list">
+                <!-- Los módulos se cargarán aquí -->
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Pruebas de Funciones</h2>
+            <div id="function-tests">
+                <!-- Las pruebas se cargarán aquí -->
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📝 Salida de Consola</h2>
+            <div id="console-output">
+                Esperando salida de consola...
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 Pruebas Rápidas</h2>
+            <button onclick="testBasicFunctions()">Probar Funciones Básicas</button>
+            <button onclick="testDateUtils()">Probar Utilidades de Fecha</button>
+            <button onclick="testModalManager()">Probar Gestor de Modales</button>
+            <button onclick="checkAllModules()">Verificar Todos los Módulos</button>
+            <button onclick="verifyTrackingSystem()">Ejecutar Verificación Completa</button>
+            <button onclick="quickTrackingTest()">Prueba Rápida</button>
+            <button onclick="clearConsole()">Limpiar Consola</button>
+        </div>
+    </div>
+
+    <!-- Cargar los módulos en el orden correcto -->
+    <script src="date-utils.js"></script>
+    <script src="modal-manager.js"></script>
+    <script src="days-selector.js"></script>
+    <script src="data-loader.js"></script>
+    <script src="ui-components.js"></script>
+    <script src="process-manager.js"></script>
+    <script src="area-cards.js"></script>
+    <script src="prendas-renderer.js"></script>
+    <script src="tracking-main.js"></script>
+    <script src="verification-script.js"></script>
+    <script src="debug-dateutils.js"></script>
+
+    <script>
+        // Capturar salida de consola
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+        
+        function addToConsole(type, ...args) {
+            const output = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            
+            output.innerHTML += `<div style="color: ${type === 'error' ? '#ff6b6b' : type === 'warn' ? '#ffa726' : '#81c784'}">[${timestamp}] ${type.toUpperCase()}: ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole('log', ...args);
+        };
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToConsole('warn', ...args);
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole('error', ...args);
+        };
+
+        // Funciones de prueba
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        function checkModulesStatus() {
+            const modules = {
+                'DateUtils': typeof window.DateUtils !== 'undefined',
+                'TrackingModalManager': typeof window.TrackingModalManager !== 'undefined',
+                'TrackingDaysSelector': typeof window.TrackingDaysSelector !== 'undefined',
+                'TrackingDataLoader': typeof window.TrackingDataLoader !== 'undefined',
+                'TrackingUIComponents': typeof window.TrackingUIComponents !== 'undefined',
+                'ProcessManager': typeof window.ProcessManager !== 'undefined',
+                'PrendasRenderer': typeof window.PrendasRenderer !== 'undefined',
+                'AreaCards': typeof window.AreaCards !== 'undefined',
+                'TrackingMain': typeof window.TrackingMain !== 'undefined'
+            };
+
+            const container = document.getElementById('modules-status');
+            container.innerHTML = '';
+
+            Object.entries(modules).forEach(([name, loaded]) => {
+                const div = document.createElement('div');
+                div.className = `module-item ${loaded ? 'loaded' : 'not-loaded'}`;
+                div.innerHTML = `
+                    <h3>${name}</h3>
+                    <p>Estado: <strong>${loaded ? '✅ Cargado' : '❌ No cargado'}</strong></p>
+                    <p>Instancia: <strong>${loaded ? (window[name.toLowerCase()] ? 'Disponible' : 'No disponible') : 'N/A'}</strong></p>
+                `;
+                container.appendChild(div);
+            });
+
+            const allLoaded = Object.values(modules).every(status => status);
+            updateStatus(
+                allLoaded ? '✅ Todos los módulos cargados correctamente' : '⚠️ Algunos módulos no se cargaron',
+                allLoaded ? 'success' : 'warning'
+            );
+
+            return allLoaded;
+        }
+
+        function testBasicFunctions() {
+            console.log('🧪 Probando funciones básicas...');
+            
+            const tests = [
+                { name: 'formatDate', func: () => typeof formatDate === 'function' },
+                { name: 'calculateWorkingDays', func: () => typeof calcularDiasHabilesSync === 'function' },
+                { name: 'openOrderTracking', func: () => typeof openOrderTracking === 'function' },
+                { name: 'closeTrackingModal', func: () => typeof closeTrackingModal === 'function' },
+                { name: 'handleAgregarProceso', func: () => typeof handleAgregarProceso === 'function' },
+                { name: 'createAreaCard', func: () => typeof createAreaCard === 'function' },
+                { name: 'renderPrendas', func: () => typeof renderPrendas === 'function' }
+            ];
+
+            tests.forEach(test => {
+                const result = test.func();
+                console.log(`${result ? '✅' : '❌'} ${test.name}: ${result ? 'Disponible' : 'No disponible'}`);
+            });
+        }
+
+        function testDateUtils() {
+            console.log('📅 Probando utilidades de fecha...');
+            
+            try {
+                // Probar formateo de fecha
+                const fecha = new Date();
+                const fechaFormateada = formatDate(fecha);
+                console.log('✅ formatDate:', fechaFormateada);
+
+                // Probar cálculo de días hábiles (versión síncrona)
+                const diasHabiles = calcularDiasHabilesSync(
+                    new Date(2024, 0, 1),
+                    new Date(2024, 0, 10)
+                );
+                console.log('✅ calcularDiasHabilesSync:', diasHabiles, 'días');
+
+                // Probar duración humana
+                const duracion = formatDurationHuman(86400000 * 2 + 3600000 * 3 + 60000 * 45);
+                console.log('✅ formatDurationHuman:', duracion);
+
+                // Probar toDateObject
+                const dateObj = toDateObject('2024-01-01');
+                console.log('✅ toDateObject:', dateObj);
+
+                console.log('✅ Todas las pruebas de DateUtils pasaron');
+            } catch (error) {
+                console.error('❌ Error en DateUtils:', error);
+                console.error('Stack trace:', error.stack);
+            }
+        }
+
+        function testModalManager() {
+            console.log('🪟 Probando gestor de modales...');
+            
+            try {
+                if (window.trackingModalManager) {
+                    console.log('✅ TrackingModalManager instancia disponible');
+                    
+                    // Probar que los métodos existan
+                    const methods = ['openAddProcesoModal', 'closeAddProcesoModal', 'closeTrackingModal'];
+                    methods.forEach(method => {
+                        const exists = typeof window.trackingModalManager[method] === 'function';
+                        console.log(`${exists ? '✅' : '❌'} ${method}: ${exists ? 'Disponible' : 'No disponible'}`);
+                    });
+                } else {
+                    console.error('❌ TrackingModalManager no está disponible');
+                }
+            } catch (error) {
+                console.error('❌ Error en ModalManager:', error);
+            }
+        }
+
+        function checkAllModules() {
+            console.log('🔍 Verificando todos los módulos...');
+            const result = window.trackingMain ? window.trackingMain.checkModulesStatus() : false;
+            console.log(result ? '✅ Verificación completada' : '❌ Error en verificación');
+        }
+
+        function clearConsole() {
+            document.getElementById('console-output').innerHTML = 'Consola limpiada...<br>';
+        }
+
+        // Iniciar pruebas cuando se cargue la página
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Iniciando pruebas del sistema de tracking modular...');
+            
+            setTimeout(() => {
+                checkModulesStatus();
+                testBasicFunctions();
+                
+                console.log('📊 Pruebas automáticas completadas. Puedes realizar pruebas manuales con los botones.');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
