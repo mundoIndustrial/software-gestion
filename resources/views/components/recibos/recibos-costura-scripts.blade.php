@@ -4,7 +4,16 @@
 
 <!-- Script para el modal de seguimiento -->
 <script src="{{ asset('js/ordersjs/tracking-modal-utils.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}?v={{ time() }}"></script>
+<!-- Sistema de Tracking Modular -->
+<script src="{{ asset('js/ordersjs/tracking/date-utils.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/tracking/modal-manager.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/tracking/days-selector.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/tracking/data-loader.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/tracking/ui-components.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/tracking/process-manager.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/tracking/area-cards.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/tracking/prendas-renderer.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/ordersjs/tracking/tracking-main.js') }}?v={{ time() }}"></script>
 
 <!-- Scripts para la funcionalidad de Día de Entrega -->
 <script src="{{ asset('js/ordersjs/modules/diaEntregaModule.js') }}?v={{ time() }}"></script>

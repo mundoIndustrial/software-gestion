@@ -409,7 +409,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- Scripts no-críticos (defer) -->
 <script defer src="{{ asset('js/ordersjs/tracking-modal-utils.js') }}?v={{ time() }}"></script>
-<script defer src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}?v={{ time() }}"></script>
+<!-- Sistema de Tracking Modular -->
+<script defer src="{{ asset('js/ordersjs/tracking/date-utils.js') }}?v={{ time() }}"></script>
+<script defer src="{{ asset('js/ordersjs/tracking/modal-manager.js') }}?v={{ time() }}"></script>
+<script defer src="{{ asset('js/ordersjs/tracking/days-selector.js') }}?v={{ time() }}"></script>
+<script defer src="{{ asset('js/ordersjs/tracking/data-loader.js') }}?v={{ time() }}"></script>
+<script defer src="{{ asset('js/ordersjs/tracking/ui-components.js') }}?v={{ time() }}"></script>
+<script defer src="{{ asset('js/ordersjs/tracking/process-manager.js') }}?v={{ time() }}"></script>
+<script defer src="{{ asset('js/ordersjs/tracking/area-cards.js') }}?v={{ time() }}"></script>
+<script defer src="{{ asset('js/ordersjs/tracking/prendas-renderer.js') }}?v={{ time() }}"></script>
+<script defer src="{{ asset('js/ordersjs/tracking/tracking-main.js') }}?v={{ time() }}"></script>
 <script defer src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
 <script defer src="{{ asset('js/modulos/invoice/InvoiceLazyLoader.js') }}?v={{ time() }}"></script>
 <script defer src="{{ asset('js/asesores/invoice-from-list.js') }}"></script>

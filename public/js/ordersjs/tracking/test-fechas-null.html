@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Fechas Null</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Fechas Null → ---</h1>
+    <div id="results"></div>
+
+    <!-- Cargar DateUtils -->
+    <script src="date-utils.js"></script>
+
+    <script>
+        const results = document.getElementById('results');
+
+        function addResult(test, passed, expected, actual) {
+            const div = document.createElement('div');
+            div.className = `test-result ${passed ? 'success' : 'error'}`;
+            div.innerHTML = `
+                <strong>${test}</strong><br>
+                Esperado: <code>${expected}</code><br>
+                Actual: <code>${actual}</code><br>
+                ${passed ? '✅ PASÓ' : '❌ FALLÓ'}
+            `;
+            results.appendChild(div);
+        }
+
+        // Probar formatDate con null
+        const test1 = formatDate(null);
+        addResult('formatDate(null)', test1 === '---', '---', test1);
+
+        // Probar formatDate con undefined
+        const test2 = formatDate(undefined);
+        addResult('formatDate(undefined)', test2 === '---', '---', test2);
+
+        // Probar formatDate con string vacío
+        const test3 = formatDate('');
+        addResult('formatDate("")', test3 === '---', '---', test3);
+
+        // Probar formatDateTime con null
+        const test4 = formatDateTime(null);
+        addResult('formatDateTime(null)', test4 === '---', '---', test4);
+
+        // Probar formatDateTime con undefined
+        const test5 = formatDateTime(undefined);
+        addResult('formatDateTime(undefined)', test5 === '---', '---', test5);
+
+        // Probar formatDateTime con string vacío
+        const test6 = formatDateTime('');
+        addResult('formatDateTime("")', test6 === '---', '---', test6);
+
+        // Probar formatDate con fecha válida
+        const test7 = formatDate('2024-01-01');
+        addResult('formatDate("2024-01-01")', typeof test7 === 'string' && test7 !== '---', '01/01/2024', test7);
+
+        // Probar formatDateTime con fecha válida
+        const test8 = formatDateTime('2024-01-01T10:30:00');
+        addResult('formatDateTime("2024-01-01T10:30:00")', typeof test8 === 'string' && test8 !== '---', '01/01/2024, 10:30:00', test8);
+
+        console.log('✅ Test de fechas completado');
+    </script>
+</body>
+</html>
