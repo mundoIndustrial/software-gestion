@@ -92,7 +92,7 @@ class CrearPedidoHandler implements CommandHandler
                 $this->eventDispatcher->dispatch($event);
             }
 
-            // Invalidar cachÃ©s
+            // Invalidar caches
             cache()->forget('pedidos_lista');
             cache()->forget('pedidos_recientes');
 

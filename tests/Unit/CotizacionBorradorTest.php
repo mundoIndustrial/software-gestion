@@ -8,7 +8,7 @@ use Tests\TestCase;
 class CotizacionBorradorTest extends TestCase
 {
     /**
-     * Test: Verificar que Cotizacion permite guardar sin nÃºmero
+     * Test: Verificar que Cotizacion permite guardar sin numero
      */
     public function test_cotizacion_modelo_permite_numero_nulo()
     {
@@ -21,7 +21,7 @@ class CotizacionBorradorTest extends TestCase
     }
 
     /**
-     * Test: Verificar que PrendaCot permite guardar sin relación a nÃºmero
+     * Test: Verificar que PrendaCot permite guardar sin relación a numero
      */
     public function test_prenda_cot_modelo_permite_cualquier_cotizacion()
     {
@@ -82,7 +82,7 @@ class CotizacionBorradorTest extends TestCase
         echo "â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—\n";
         echo "â•‘  SINCRONIZACIÃ“N - COTIZACIONES EN BORRADOR                 â•‘\n";
         echo "â• â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•£\n";
-        echo "â•‘   Cotizacion sin nÃºmero (borrador)                       â•‘\n";
+        echo "â•‘   Cotizacion sin numero (borrador)                       â•‘\n";
         echo "â•‘     - numero_cotizacion: NULL                              â•‘\n";
         echo "â•‘     - es_borrador: true                                    â•‘\n";
         echo "â•‘     - estado: BORRADOR                                     â•‘\n";

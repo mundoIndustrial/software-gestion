@@ -11,7 +11,7 @@ use App\Domain\Shared\CQRS\Query;
  * Estados vÃ¡lidos: activo, pendiente, cancelado, completado
  * 
  * @param string $estado Estado a filtrar
- * @param int $page NÃºmero de pÃ¡gina (default 1)
+ * @param int $page numero de pÃ¡gina (default 1)
  * @param int $perPage Registros por pÃ¡gina (default 15)
  */
 class FiltrarPedidosPorEstadoQuery implements Query

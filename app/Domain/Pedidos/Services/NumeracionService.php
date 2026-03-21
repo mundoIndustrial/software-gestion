@@ -5,14 +5,14 @@ namespace App\Domain\Pedidos\Services;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Servicio de dominio para generación de nÃºmeros de pedido
- * Responsabilidad Ãºnica: Generar nÃºmeros secuenciales Ãºnicos
+ * Servicio de dominio para generación de numeros de pedido
+ * Responsabilidad unica: Generar numeros secuenciales unicos
  */
 class NumeracionService
 {
     /**
-     * Generar nÃºmero Ãºnico para pedido de producción
-     * Retorna solo el nÃºmero entero (sin prefijo PEP-)
+     * Generar numero unico para pedido de producción
+     * Retorna solo el numero entero (sin prefijo PEP-)
      * Usa DB lock para prevenir race conditions
      */
     public function generarNumeroPedido(): int
@@ -44,15 +44,15 @@ class NumeracionService
 
             return $nuevoNumero;
         } catch (\Exception $e) {
-            \Log::error('Error generando nÃºmero de pedido', [
+            \Log::error('Error generando numero de pedido', [
                 'error' => $e->getMessage()
             ]);
-            throw new \RuntimeException('No se pudo generar el nÃºmero de pedido');
+            throw new \RuntimeException('No se pudo generar el numero de pedido');
         }
     }
 
     /**
-     * Generar nÃºmero Ãºnico para LOGO PEDIDO con formato 00001
+     * Generar numero unico para LOGO PEDIDO con formato 00001
      */
     public function generarNumeroLogoPedido(): string
     {
@@ -84,10 +84,10 @@ class NumeracionService
 
             return str_pad($nuevoNumero, 5, '0', STR_PAD_LEFT);
         } catch (\Exception $e) {
-            \Log::error('Error generando nÃºmero de logo pedido', [
+            \Log::error('Error generando numero de logo pedido', [
                 'error' => $e->getMessage()
             ]);
-            throw new \RuntimeException('No se pudo generar el nÃºmero de logo pedido');
+            throw new \RuntimeException('No se pudo generar el numero de logo pedido');
         }
     }
 }

@@ -13,7 +13,7 @@ use App\Models\PrendaPedidoColorTela;
  * 
  * Maneja la creación de registro en prenda_fotos_tela_pedido
  * 
- * Antes: 28 lÃ­neas | DespuÃ©s: ~20 lÃ­neas | Reducción: ~28%
+ * Antes: 28 lÃ­neas | despues: ~20 lÃ­neas | Reducción: ~28%
  */
 final class AgregarImagenTelaUseCase
 {

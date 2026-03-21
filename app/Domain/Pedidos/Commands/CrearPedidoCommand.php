@@ -10,7 +10,7 @@ use App\Domain\Shared\CQRS\Command;
  * Command para crear un nuevo pedido de producción
  * 
  * ParÃ¡metros:
- * - numero_pedido: NÃºmero Ãºnico del pedido
+ * - numero_pedido: numero unico del pedido
  * - cliente: Nombre o ID del cliente
  * - forma_pago: Forma de pago (contado, crÃ©dito, etc)
  * - asesor_id: ID del asesor asignado

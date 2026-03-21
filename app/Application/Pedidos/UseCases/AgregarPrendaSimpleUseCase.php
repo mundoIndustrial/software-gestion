@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
  * 
  * REFACTORIZADO: FASE 3 - Validaciones centralizadas
  * 
- * Antes: 44 lÃ­neas | DespuÃ©s: ~28 lÃ­neas | Reducción: ~36%
+ * Antes: 44 lÃ­neas | despues: ~28 lÃ­neas | Reducción: ~36%
  */
 class AgregarPrendaSimpleUseCase
 {

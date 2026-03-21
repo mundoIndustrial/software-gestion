@@ -18,7 +18,7 @@ use Tests\TestCase;
  * Test Suite: Concurrencia y Casos Extremos
  * 
  * Validar que el sistema maneje correctamente:
- * - MÃºltiples asesores creando simultÃ¡neamente
+ * - multiples asesores creando simultÃ¡neamente
  * - Transacciones y locks para evitar race conditions
  * - Incrementos secuenciales de numero_cotizacion
  * 
@@ -31,7 +31,7 @@ class CotizacionesConcurrencyTest extends TestCase
      * TEST 1: Simular 100 creaciones secuenciales - verificar secuencialidad perfecta
      * 
      * Este test verificar que sin importar cómo se creen las cotizaciones,
-     * el numero_cotizacion siempre sea secuencial y Ãºnico.
+     * el numero_cotizacion siempre sea secuencial y unico.
      */
     public function test_100_cotizaciones_secuenciales_sin_duplicados(): void
     {
@@ -61,7 +61,7 @@ class CotizacionesConcurrencyTest extends TestCase
                     'estado' => 'enviada',
                 ]);
 
-                // Asignar nÃºmero secuencialmente
+                // Asignar numero secuencialmente
                 $cot->numero_cotizacion = sprintf('COT-%010d', $i);
                 $cot->save();
 
@@ -94,7 +94,7 @@ class CotizacionesConcurrencyTest extends TestCase
     /**
      * TEST 2: Emular 3 asesores haciendo transacciones simultÃ¡neas
      * 
-     * Crea mÃºltiples cotizaciones desde diferentes usuarios de forma
+     * Crea multiples cotizaciones desde diferentes usuarios de forma
      * intercalada para simular concurrencia.
      */
     public function test_concurrencia_3_asesores_intercalado(): void
@@ -152,11 +152,11 @@ class CotizacionesConcurrencyTest extends TestCase
             $this->assertCount(11, $cots);
         }
 
-        // Todos los nÃºmeros deben ser Ãºnicos
+        // Todos los numeros deben ser unicos
         $this->assertEquals(33, count(array_unique($numerosGlobales)));
 
         echo "\n 3 Asesores Ã— 11 Cotizaciones = 33 Total (Intercalado)\n";
-        echo "NÃºmeros Ãºnicos: " . count(array_unique($numerosGlobales)) . "\n";
+        echo "numeros unicos: " . count(array_unique($numerosGlobales)) . "\n";
     }
 
     /**
@@ -237,12 +237,12 @@ class CotizacionesConcurrencyTest extends TestCase
         // Recargar desde BD
         $cotRefresco = Cotizacion::find($cot->id);
 
-        // El nÃºmero deberÃ­a haber cambiado (o estar protegido dependiendo de implementación)
+        // El numero deberÃ­a haber cambiado (o estar protegido dependiendo de implementación)
         // Para este test, verificamos que se registra el cambio
         // En producción, deberÃ­as implementar protección en el modelo
         $this->assertNotNull($cotRefresco->numero_cotizacion);
 
-        echo "\n NÃºmero de cotización actualizado correctamente\n";
+        echo "\n numero de cotización actualizado correctamente\n";
     }
 
     /**
@@ -327,7 +327,7 @@ class CotizacionesConcurrencyTest extends TestCase
     /**
      * TEST 6: Validar que diferentes tipos de cotización funcionan juntos
      * 
-     * Crear mÃºltiples cotizaciones de tipos M, P, G sin conflictos.
+     * Crear multiples cotizaciones de tipos M, P, G sin conflictos.
      */
     public function test_multiples_tipos_cotizacion_sin_conflictos(): void
     {
@@ -379,7 +379,7 @@ class CotizacionesConcurrencyTest extends TestCase
         $totalCots = Cotizacion::count();
         $this->assertGreaterThanOrEqual(15, $totalCots);
 
-        echo "\n MÃºltiples tipos de cotización funcionan correctamente\n";
+        echo "\n multiples tipos de cotización funcionan correctamente\n";
         echo "Tipo M: 5, Tipo P: 5, Tipo G: 5 = 15 Total\n";
     }
 

@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
  * Responsabilidad: Eliminar proceso y su historial asociado
  * 
  * Patrón: Use Case (Application Layer - DDD)
- * Restricción: No se puede eliminar el Ãºnico proceso de una orden
+ * Restricción: No se puede eliminar el unico proceso de una orden
  */
 class EliminarProcesoUseCase
 {

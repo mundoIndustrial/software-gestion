@@ -19,7 +19,7 @@ use Tests\TestCase;
  *  NOTA: No usa RefreshDatabase para preservar datos existentes
  * 
  * Este archivo complementa CotizacionesCompleteTest.php con validaciones
- * especÃ­ficas de campos, constraints y validaciones de negocio.
+ * especificas de campos, constraints y validaciones de negocio.
  */
 class CotizacionesIntegrityTest extends TestCase
 {
@@ -43,7 +43,7 @@ class CotizacionesIntegrityTest extends TestCase
     /**
      * TEST 1: Validar que numero_cotizacion es UNIQUE
      * 
-     * Crea dos cotizaciones e intenta asignar el mismo nÃºmero.
+     * Crea dos cotizaciones e intenta asignar el mismo numero.
      * Debe fallar o generar excepción.
      */
     public function test_numero_cotizacion_debe_ser_unico(): void
@@ -64,13 +64,13 @@ class CotizacionesIntegrityTest extends TestCase
 
         $this->assertNotNull($cot1->id);
 
-        // Intentar crear segunda cotización con el mismo nÃºmero
+        // Intentar crear segunda cotización con el mismo numero
         $this->expectException(\Illuminate\Database\QueryException::class);
 
         $cot2 = Cotizacion::create([
             'asesor_id' => $this->asesor->id,
             'cliente_id' => $this->cliente->id,
-            'numero_cotizacion' => 'COT-UNIQUE-001', // Mismo nÃºmero
+            'numero_cotizacion' => 'COT-UNIQUE-001', // Mismo numero
             'tipo_cotizacion_id' => $this->tipo->id,
             'fecha_inicio' => now(),
             'fecha_envio' => now(),
@@ -373,7 +373,7 @@ class CotizacionesIntegrityTest extends TestCase
         $cotBorrador = Cotizacion::create([
             'asesor_id' => $this->asesor->id,
             'cliente_id' => $this->cliente->id,
-            'numero_cotizacion' => null, // Los borradores no tienen nÃºmero
+            'numero_cotizacion' => null, // Los borradores no tienen numero
             'tipo_cotizacion_id' => $this->tipo->id,
             'fecha_inicio' => now(),
             'es_borrador' => true,
@@ -453,7 +453,7 @@ class CotizacionesIntegrityTest extends TestCase
         $this->assertNull($cot->numero_cotizacion);
         $this->assertTrue($cot->es_borrador);
 
-        // Actualizar a enviada - debe asignar nÃºmero
+        // Actualizar a enviada - debe asignar numero
         $cot->numero_cotizacion = 'COT-ASIGNADO-001';
         $cot->es_borrador = false;
         $cot->save();

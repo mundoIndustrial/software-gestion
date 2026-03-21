@@ -52,13 +52,13 @@ class UtilitariosService
 
         $mapeoDisponibilidad = [
             'tabla_orden[bodega]' => 'Bodega',
-            'tabla_orden[cucuta]' => 'CÃºcuta',
+            'tabla_orden[cucuta]' => 'Cúcuta',
             'tabla_orden[lafayette]' => 'Lafayette',
             'tabla_orden[fabrica]' => 'FÃ¡brica',
         ];
 
         $mapeoRegimen = [
-            'tabla_orden[comun]' => 'ComÃºn',
+            'tabla_orden[comun]' => 'común',
             'tabla_orden[simplificado]' => 'Simplificado',
         ];
 
@@ -94,7 +94,7 @@ class UtilitariosService
     }
 
     /**
-     * Procesar mÃºltiples gÃ©neros desde el input
+     * Procesar multiples generos desde el input
      * Convierte string, array o JSON a un array limpio
      */
     public function procesarGeneros($generoInput): array

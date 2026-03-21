@@ -31,13 +31,13 @@ class PedidoProduccionService
             throw new \RuntimeException('Cotización no encontrada');
         }
 
-        // Verificar que la cotización estÃ© aprobada
+        // Verificar que la cotización está aprobada
         if (!in_array($cotizacion->estado, ['APROBADA_COTIZACIONES', 'APROBADO_PARA_PEDIDO'])) {
             throw new \RuntimeException('La cotización debe estar aprobada para crear un pedido');
         }
 
         return DB::transaction(function () use ($cotizacion) {
-            // Generar nÃºmero de pedido
+            // Generar numero de pedido
             $numeroPedido = $this->numeracionService->generarNumeroPedido();
 
             // Crear pedido

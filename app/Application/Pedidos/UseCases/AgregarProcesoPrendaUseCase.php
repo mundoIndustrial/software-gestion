@@ -16,11 +16,11 @@ use App\Models\PrendaPedido;
  * - tallas_dama: JSON con ['S', 'M', 'L'] para genero DAMA
  * - tallas_caballero: JSON con ['XL', 'XXL'] para genero CABALLERO
  * 
- * TambiÃ©n crea registros en pedidos_procesos_prenda_tallas (uno por cada talla)
+ * también crea registros en pedidos_procesos_prenda_tallas (uno por cada talla)
  * 
  * Tabla: pedidos_procesos_prenda_detalles
  * 
- * Antes: 69 lÃ­neas | DespuÃ©s: ~59 lÃ­neas | Reducción: ~14%
+ * Antes: 69 lÃ­neas | despues: ~59 lÃ­neas | Reducción: ~14%
  */
 final class AgregarProcesoPrendaUseCase
 {

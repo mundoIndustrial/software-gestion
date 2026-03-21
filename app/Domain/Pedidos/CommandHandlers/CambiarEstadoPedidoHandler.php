@@ -68,7 +68,7 @@ class CambiarEstadoPedidoHandler implements CommandHandler
                 'estado_nuevo' => $nuevoEstado,
             ]);
 
-            // Invalidar cachÃ©s
+            // Invalidar caches
             cache()->forget("pedido_{$command->getPedidoId()}_completo");
             cache()->forget("pedido_numero_{$pedido->numero_pedido}");
             cache()->forget('pedidos_lista');

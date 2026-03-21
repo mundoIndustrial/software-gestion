@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\Log;
  * 
  * Listener que se dispara cuando se crea un nuevo pedido
  * Responsabilidades:
- * - Invalidar cachÃ©s relacionados
- * - Actualizar estadÃ­sticas en cachÃ©
+ * - Invalidar caches relacionados
+ * - Actualizar estadÃ­sticas en cache
  * - Mantener datos frescos en Redis
  * 
  * Este es otro ejemplo de un side effect que no pertenece al agregado.
@@ -25,12 +25,12 @@ class ActualizarCachePedidos
     public function __invoke(PedidoProduccionCreado $event): void
     {
         try {
-            Log::info('ðŸ”„ Actualizando cachÃ© de pedidos', [
+            Log::info('ðŸ”„ Actualizando cache de pedidos', [
                 'pedido_id' => $event->getPedidoId(),
                 'numero_pedido' => $event->getNumeroPedido(),
             ]);
 
-            // Invalidar cachÃ©s relacionados
+            // Invalidar caches relacionados
             $cacheKeys = [
                 'pedidos_list',
                 'pedidos_pending_count',
@@ -40,7 +40,7 @@ class ActualizarCachePedidos
 
             foreach ($cacheKeys as $key) {
                 Cache::forget($key);
-                Log::debug("CachÃ© invalidado: $key");
+                Log::debug("cache invalidado: $key");
             }
 
             // Actualizar estadÃ­sticas
@@ -57,13 +57,13 @@ class ActualizarCachePedidos
 
             Cache::put($statsKey, $stats, now()->addHours(24));
 
-            Log::info(' CachÃ© de pedidos actualizado', [
+            Log::info(' cache de pedidos actualizado', [
                 'pedido_id' => $event->getPedidoId(),
                 'estadisticas' => $stats,
             ]);
 
         } catch (\Exception $e) {
-            Log::error(' Error actualizando cachÃ©', [
+            Log::error(' Error actualizando cache', [
                 'error' => $e->getMessage(),
                 'pedido_id' => $event->getPedidoId(),
             ]);

@@ -10,7 +10,7 @@ class ItemValidationService
     /**
      * Validar un item del pedido
      * @param array $item
-     * @param int $itemNum - NÃºmero del item (para mensajes de error)
+     * @param int $itemNum - numero del item (para mensajes de error)
      * @return array - Array de errores (vacÃ­o si es vÃ¡lido)
      */
     public function validarItem(array $item, int $itemNum): array

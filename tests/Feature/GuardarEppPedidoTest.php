@@ -217,11 +217,11 @@ class GuardarEppPedidoTest extends TestCase
     }
 
     /**
-     * Test: Guardar mÃºltiples EPP en un pedido
+     * Test: Guardar multiples EPP en un pedido
      */
     public function test_guardar_multiples_epps_en_pedido()
     {
-        $this->info("\n Test: Guardar mÃºltiples EPP en un pedido\n");
+        $this->info("\n Test: Guardar multiples EPP en un pedido\n");
 
         $epps = Epp::limit(2)->get();
         
@@ -229,7 +229,7 @@ class GuardarEppPedidoTest extends TestCase
             $this->markTestSkipped('No hay 2 EPPs disponibles');
         }
 
-        // Preparar datos de mÃºltiples EPP
+        // Preparar datos de multiples EPP
         $eppsData = [
             [
                 'epp_id' => $epps[0]->id,
@@ -261,7 +261,7 @@ class GuardarEppPedidoTest extends TestCase
             'cantidad' => 50
         ]);
 
-        echo "\n MÃºltiples EPP guardados correctamente\n";
+        echo "\n multiples EPP guardados correctamente\n";
         echo "   - Total guardados: " . count($pedidosEpp) . "\n";
         foreach ($pedidosEpp as $index => $pe) {
             echo "   - EPP " . ($index + 1) . ": {$pe->cantidad} unidades\n";

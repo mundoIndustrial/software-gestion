@@ -11,7 +11,7 @@ use Illuminate\Support\Collection;
  * Service: ObtenerPedidosOperarioService
  * 
  * Obtiene los pedidos asignados a un operario (cortador/costurero)
- * Filtra por Ã¡rea segÃºn el tipo de operario
+ * Filtra por area según el tipo de operario
  */
 class ObtenerPedidosOperarioService
 {
@@ -180,7 +180,7 @@ class ObtenerPedidosOperarioService
     }
 
     /**
-     * Obtener Ã¡rea segÃºn tipo de operario
+     * Obtener area según tipo de operario
      */
     private function obtenerAreaOperario(string $tipoOperario): string
     {
@@ -194,7 +194,7 @@ class ObtenerPedidosOperarioService
     }
 
     /**
-     * Obtener pedidos por Ã¡rea
+     * Obtener pedidos por area
      * Filtra pedidos donde el usuario sea el encargado de algún proceso
      */
     private function obtenerPedidosPorArea(string $area, User $usuario): Collection

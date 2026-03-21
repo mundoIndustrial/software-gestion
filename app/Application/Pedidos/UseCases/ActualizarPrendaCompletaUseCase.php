@@ -25,7 +25,7 @@ use App\Models\TipoProceso;
  * - Actualizar tallas â†’ ActualizarTallaPrendaUseCase
  * - Actualizar procesos â†’ ActualizarProcesoPrendaUseCase
  * 
- * Antes: 70 lÃ­neas | DespuÃ©s: ~60 lÃ­neas | Reducción: ~14%
+ * Antes: 70 lÃ­neas | despues: ~60 lÃ­neas | Reducción: ~14%
  */
 final class ActualizarPrendaCompletaUseCase
 {

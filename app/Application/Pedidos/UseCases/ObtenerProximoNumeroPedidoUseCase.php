@@ -13,7 +13,7 @@ class ObtenerProximoNumeroPedidoUseCase
 
     public function ejecutar(ObtenerProximoNumeroPedidoDTO $dto): int
     {
-        // Obtener el Ãºltimo nÃºmero de pedido
+        // Obtener el último numero de pedido
         $ultimoPedido = $this->pedidoRepository->obtenerUltimoPedido();
 
         if (!$ultimoPedido) {

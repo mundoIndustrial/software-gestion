@@ -14,12 +14,12 @@ use Illuminate\Support\Facades\Log;
  * REFACTORIZADO: Utiliza ManejaPedidosUseCase trait + EstadoPedidoCatalog
  * 
  * Antes: 58 lÃ­neas (15 lÃ­neas de lógica + 43 de validación y transiciones hardcodeadas)
- * DespuÃ©s: 28 lÃ­neas (solo lógica de negocio)
+ * despues: 28 lÃ­neas (solo lógica de negocio)
  * Reducción: 52%
  * 
  * Beneficios:
  * - Validaciones centralizadas
- * - Transiciones en Ãºnico lugar (EstadoPedidoCatalog)
+ * - Transiciones en unico lugar (EstadoPedidoCatalog)
  * - Mensajes de error consistentes
  * - Menos código repetido
  */

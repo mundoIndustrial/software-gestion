@@ -31,7 +31,7 @@ class CotizacionServiceTest extends TestCase
             'observaciones_generales' => []
         ];
 
-        // Usar reflexión para acceder al mÃ©todo privado
+        // Usar reflexión para acceder al Metodo privado
         $reflection = new \ReflectionClass($this->cotizacionService);
         $method = $reflection->getMethod('determinarTipoCotizacion');
         $method->setAccessible(true);

@@ -44,7 +44,7 @@ class AgregarPrendaAlPedidoHandler implements CommandHandler
                 throw new \Exception("Pedido no encontrado: {$command->getPedidoId()}");
             }
 
-            // Validar que el pedido estÃ© activo o en edición (permite agregar prendas a Pendiente, Activo, etc)
+            // Validar que el pedido está activo o en edición (permite agregar prendas a Pendiente, Activo, etc)
             $estadosPermitidos = ['activo', 'pendiente', 'no iniciado'];
             if (!in_array(strtolower($pedido->estado), $estadosPermitidos)) {
                 throw new \Exception("No se pueden agregar prendas a un pedido {$pedido->estado}");
@@ -84,7 +84,7 @@ class AgregarPrendaAlPedidoHandler implements CommandHandler
                 'tipo' => $command->getTipo(),
             ]);
 
-            // Invalidar cachÃ©s
+            // Invalidar caches
             cache()->forget("pedido_{$command->getPedidoId()}_completo");
             cache()->forget("pedido_{$command->getPedidoId()}_prendas");
 

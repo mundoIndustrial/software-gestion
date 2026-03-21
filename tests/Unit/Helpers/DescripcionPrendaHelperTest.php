@@ -97,7 +97,7 @@ class DescripcionPrendaHelperTest extends TestCase
     }
 
     /**
-     * Test que verifica que los subtÃ­tulos sean dinÃ¡micos segÃºn el broche
+     * Test que verifica que los subtÃ­tulos sean dinÃ¡micos según el broche
      */
     public function test_subtitulos_dinamicos()
     {
@@ -128,7 +128,7 @@ class DescripcionPrendaHelperTest extends TestCase
     }
 
     /**
-     * Test que verifica el formato correcto con mÃºltiples prendas
+     * Test que verifica el formato correcto con multiples prendas
      */
     public function test_formato_multiples_prendas()
     {
@@ -172,7 +172,7 @@ class DescripcionPrendaHelperTest extends TestCase
         $this->assertStringContainsString('BOTÃ“N:', $desc1);
         $this->assertStringContainsString('CREMALLERA:', $desc2);
 
-        echo "\n MÃºltiples prendas con formato correcto:\n";
+        echo "\n multiples prendas con formato correcto:\n";
         echo $desc1;
         echo "\n\n";
         echo $desc2;

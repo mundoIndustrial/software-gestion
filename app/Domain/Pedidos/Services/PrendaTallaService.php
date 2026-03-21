@@ -56,14 +56,14 @@ class PrendaTallaService
                 foreach ($tallasCantidades as $genero => $tallas) {
                     // Validar que genero es vÃ¡lido
                     if (!in_array($genero, ['DAMA', 'CABALLERO', 'UNISEX'])) {
-                        Log::warning(' [PrendaTallaService] GÃ©nero invÃ¡lido ignorado', [
+                        Log::warning(' [PrendaTallaService] genero invÃ¡lido ignorado', [
                             'genero' => $genero,
                             'prenda_id' => $prendaId,
                         ]);
                         continue;
                     }
                     
-                    // Procesar tallas de este gÃ©nero
+                    // Procesar tallas de este genero
                     if (is_array($tallas)) {
                         foreach ($tallas as $talla => $cantidad) {
                             if ($cantidad > 0) {
@@ -81,13 +81,13 @@ class PrendaTallaService
                 }
             } else {
                 // PROCESAMIENTO LEGACY: {talla: cantidad} - Asumir GENERO mixto o UNISEX
-                Log::warning(' [PrendaTallaService] Usando formato legacy - sin gÃ©nero especificado', [
+                Log::warning(' [PrendaTallaService] Usando formato legacy - sin genero especificado', [
                     'prenda_id' => $prendaId,
                 ]);
                 
                 foreach ($tallasCantidades as $talla => $cantidad) {
                     if ($talla && $cantidad > 0) {
-                        // Fallback: Guardar como UNISEX si no hay gÃ©nero
+                        // Fallback: Guardar como UNISEX si no hay genero
                         $registros[] = [
                             'prenda_pedido_id' => $prendaId,
                             'genero' => 'UNISEX',  // Fallback conservador

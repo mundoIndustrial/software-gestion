@@ -22,7 +22,7 @@ class PedidoCreadoListener
 
         // TODO: AquÃ­ puedes:
         // - Enviar email al cliente
-        // - Actualizar cachÃ©
+        // - Actualizar cache
         // - Sincronizar con otros sistemas
         // - Crear notificaciones
     }

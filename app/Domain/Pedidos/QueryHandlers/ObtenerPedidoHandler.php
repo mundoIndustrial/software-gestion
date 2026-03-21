@@ -53,7 +53,7 @@ class ObtenerPedidoHandler implements QueryHandler
                 ->with([
                     'prendas',                          //  Prendas del pedido
                     'prendas.variantes',                //  Variantes (manga, broche)
-                    'prendas.tallas',                   //  Tallas por gÃ©nero
+                    'prendas.tallas',                   //  Tallas por genero
                     'prendas.coloresTelas',             //  Combinaciones color-tela
                     'prendas.coloresTelas.color',       //  Detalles del color
                     'prendas.coloresTelas.tela',        //  Detalles de la tela

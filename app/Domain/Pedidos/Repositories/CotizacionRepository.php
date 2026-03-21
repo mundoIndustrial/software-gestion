@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 
 /**
  * Repositorio para acceso a datos de Cotizaciones
- * Responsabilidad Ãºnica: Encapsular consultas a la base de datos
+ * Responsabilidad unica: Encapsular consultas a la base de datos
  */
 class CotizacionRepository
 {

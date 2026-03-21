@@ -38,7 +38,7 @@ class FormularioPedidoService
     }
 
     /**
-     * Obtener datos para router de creación (soporta mÃºltiples flujos)
+     * Obtener datos para router de creación (soporta multiples flujos)
      */
     public function obtenerDatosRouter(string $tipo = 'cotizacion'): array
     {

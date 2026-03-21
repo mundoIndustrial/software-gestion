@@ -8,7 +8,7 @@ use Illuminate\Pagination\Paginator;
 
 /**
  * Servicio para obtener listados de pedidos
- * Responsabilidad: Construir queries segÃºn filtros y tipo de pedido
+ * Responsabilidad: Construir queries según filtros y tipo de pedido
  */
 class ListaPedidosService
 {
@@ -34,7 +34,7 @@ class ListaPedidosService
         if (!empty($filtros['estado'])) {
             $estado = $filtros['estado'];
             
-            // Para "En Producción", filtrar por mÃºltiples estados
+            // Para "En Producción", filtrar por multiples estados
             if ($estado === 'En Producción') {
                 $query->whereIn('estado', ['No iniciado', 'En Ejecución']);
             } else {

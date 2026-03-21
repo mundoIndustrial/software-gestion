@@ -36,7 +36,7 @@ class ItemTransformerService
         $resultado = [];
         $esFormatoNuevo = false;
 
-        // Detectar formato: si la primera clave es un gÃ©nero (sin guiones) y su valor es array, es formato nuevo
+        // Detectar formato: si la primera clave es un genero (sin guiones) y su valor es array, es formato nuevo
         foreach ($cantidadTalla as $clave => $valor) {
             if (is_array($valor) && !strpos($clave, '-')) {
                 // Formato nuevo: {genero: {talla: cantidad}}
@@ -211,7 +211,7 @@ class ItemTransformerService
             'telas' => $telasConImagenes,
         ];
 
-        // Procesar tallas segÃºn el tipo de item
+        // Procesar tallas según el tipo de item
         $tipo = $item['tipo'] ?? 'cotizacion';
         if ($tipo === 'nuevo' || $tipo === 'prenda_nueva') {
             $prendaData['cantidad_talla'] = $this->procesarCantidadTalla($item['cantidad_talla'] ?? []);
@@ -242,7 +242,7 @@ class ItemTransformerService
         $tallas_dama = [];
         $tallas_caballero = [];
 
-        // Detectar formato: si la primera clave es un gÃ©nero (sin guiones) y su valor es array, es formato nuevo
+        // Detectar formato: si la primera clave es un genero (sin guiones) y su valor es array, es formato nuevo
         $esFormatoNuevo = false;
         foreach ($cantidadTalla as $clave => $valor) {
             if (is_array($valor) && !strpos($clave, '-')) {

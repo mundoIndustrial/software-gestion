@@ -58,7 +58,7 @@ class ImagenTransformadorService
             $contenidoWebP = $webp->toString();
             $tamaÃ±o = strlen($contenidoWebP);
             
-            // Generar nombre Ãºnico
+            // Generar nombre unico
             $timestamp = now()->format('YmdHis');
             $random = substr(uniqid(), -6);
             $nombreArchivo = "img_{$tipo}_{$index}_{$timestamp}_{$random}.webp";

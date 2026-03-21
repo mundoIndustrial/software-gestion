@@ -9,10 +9,10 @@ use Illuminate\Support\Facades\Log;
  * 
  * Responsabilidad: Normalizar y transformar datos de entrada de prendas
  * - Convertir DTOs a arrays
- * - Procesar gÃ©neros (string/array/JSON)
+ * - Procesar generos (string/array/JSON)
  * - Procesar cantidades de tallas
  * 
- * MÃ©todos puros: sin DB, sin IO, sin efectos secundarios
+ * metodos puros: sin DB, sin IO, sin efectos secundarios
  */
 class PrendaDataNormalizerService
 {
@@ -39,7 +39,7 @@ class PrendaDataNormalizerService
     }
 
     /**
-     * Procesar gÃ©nero (puede ser string, array o JSON)
+     * Procesar genero (puede ser string, array o JSON)
      * 
      * Retorna siempre un array normalizado
      */

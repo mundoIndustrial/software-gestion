@@ -34,7 +34,7 @@ abstract class AbstractEstadoTransicionUseCase
     }
 
     /**
-     * Template Method - Define el flujo comÃºn para todas las transiciones
+     * Template Method - Define el flujo común para todas las transiciones
      * 
      * Flujo:
      * 1. Obtener pedido
@@ -72,7 +72,7 @@ abstract class AbstractEstadoTransicionUseCase
     }
 
     /**
-     * MÃ©todo abstracto - Cada subclase implementa su transición de estado
+     * Metodo abstracto - Cada subclase implementa su transición de estado
      * 
      * Ejemplos:
      * - $pedido->confirmar()
@@ -84,7 +84,7 @@ abstract class AbstractEstadoTransicionUseCase
     abstract protected function aplicarTransicion($pedido): void;
 
     /**
-     * MÃ©todo abstracto - Cada subclase proporciona su mensaje personalizado
+     * Metodo abstracto - Cada subclase proporciona su mensaje personalizado
      * 
      * Ejemplos:
      * - 'Pedido confirmado exitosamente'
@@ -93,7 +93,7 @@ abstract class AbstractEstadoTransicionUseCase
     abstract protected function obtenerMensaje(): string;
 
     /**
-     * MÃ©todo reutilizable - Construye respuesta estÃ¡ndar
+     * Metodo reutilizable - Construye respuesta estÃ¡ndar
      * 
      * Encapsula la construcción del DTO de respuesta
      * Consistente en todas las transiciones

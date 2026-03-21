@@ -12,13 +12,13 @@ use App\Models\Cliente;
 use App\Models\User;
 
 /**
- * TEST: Validar que la generación sincrónica de nÃºmeros funciona con pessimistic lock
+ * TEST: Validar que la generación sincrónica de numeros funciona con pessimistic lock
  * 
  * Escenarios:
- * 1. Generación secuencial de nÃºmeros (no hay conflicto)
- * 2. MÃºltiples transacciones simultÃ¡neas NO generan nÃºmeros duplicados
+ * 1. Generación secuencial de numeros (no hay conflicto)
+ * 2. multiples transacciones simultÃ¡neas NO generan numeros duplicados
  * 3. El lock pessimista previene race conditions
- * 4. Los nÃºmeros estÃ¡n en formato correcto (COT-YYYYMMDD-NNN)
+ * 4. Los numeros estÃ¡n en formato correcto (COT-YYYYMMDD-NNN)
  */
 class CotizacionNumeroConcurrenciaTest extends TestCase
 {
@@ -38,10 +38,10 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
     }
 
     /**
-     *  TEST 1: Generación simple de nÃºmero
+     *  TEST 1: Generación simple de numero
      * 
      * Valida:
-     * - El nÃºmero se genera en formato COT-YYYYMMDD-NNN
+     * - El numero se genera en formato COT-YYYYMMDD-NNN
      * - El contador se incrementa correctamente
      * - No hay NULL
      */
@@ -52,15 +52,15 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
         $this->assertNotNull($numero);
         $this->assertMatchesRegularExpression('/^COT-\d{8}-\d{3}$/', $numero);
         
-        Log::info(' TEST 1: NÃºmero generado correctamente', ['numero' => $numero]);
+        Log::info(' TEST 1: numero generado correctamente', ['numero' => $numero]);
     }
 
     /**
-     *  TEST 2: NÃºmeros secuenciales incrementan
+     *  TEST 2: numeros secuenciales incrementan
      * 
      * Valida:
-     * - El primer nÃºmero termina en -001
-     * - El segundo nÃºmero termina en -002
+     * - El primer numero termina en -001
+     * - El segundo numero termina en -002
      * - Sin saltos en la secuencia
      */
     public function test_numeros_incrementan_secuencialmente()
@@ -107,7 +107,7 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
         // Verificar que no hay duplicados
         $numerosUnicos = array_unique($numeros);
         $this->assertCount(5, $numeros);
-        $this->assertCount(5, $numerosUnicos, 'Hay nÃºmeros duplicados');
+        $this->assertCount(5, $numerosUnicos, 'Hay numeros duplicados');
 
         // Verificar que terminan en 001, 002, 003, 004, 005
         $this->assertStringEndsWith('-001', $numeros[0]);
@@ -152,7 +152,7 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
     }
 
     /**
-     *  TEST 5: Estados de secuencia correctos despuÃ©s de generaciones
+     *  TEST 5: Estados de secuencia correctos despues de generaciones
      */
     public function test_estado_secuencia_despues_generaciones()
     {
@@ -169,7 +169,7 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
     }
 
     /**
-     *  TEST 6: Formato de fecha en nÃºmero es dinÃ¡mico (hoy)
+     *  TEST 6: Formato de fecha en numero es dinÃ¡mico (hoy)
      */
     public function test_numero_incluye_fecha_actual()
     {
@@ -179,11 +179,11 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
         $this->assertStringContainsString($hoy, $numero);
         $this->assertMatchesRegularExpression("/COT-$hoy-\d{3}/", $numero);
 
-        Log::info(' TEST 6: Fecha en nÃºmero', ['numero' => $numero, 'fecha' => $hoy]);
+        Log::info(' TEST 6: Fecha en numero', ['numero' => $numero, 'fecha' => $hoy]);
     }
 
     /**
-     * HELPER: Generar nÃºmero sincronicamente (simula el controlador)
+     * HELPER: Generar numero sincronicamente (simula el controlador)
      */
     private function generarNumero($tipo = 'cotizaciones_prenda')
     {

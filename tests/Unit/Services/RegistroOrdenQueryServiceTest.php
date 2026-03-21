@@ -20,7 +20,7 @@ class RegistroOrdenQueryServiceTest extends TestCase
     }
 
     /**
-     * Prueba que el service puede obtener valores Ãºnicos de columna 'estado'
+     * Prueba que el service puede obtener valores unicos de columna 'estado'
      */
     public function test_get_unique_values_returns_array_for_valid_column()
     {
@@ -47,7 +47,7 @@ class RegistroOrdenQueryServiceTest extends TestCase
     }
 
     /**
-     * Prueba que puede obtener valores Ãºnicos de 'cliente'
+     * Prueba que puede obtener valores unicos de 'cliente'
      */
     public function test_get_unique_values_works_for_cliente_column()
     {
@@ -80,7 +80,7 @@ class RegistroOrdenQueryServiceTest extends TestCase
     }
 
     /**
-     * Prueba que los valores estÃ¡n ordenados alfabÃ©ticamente
+     * Prueba que los valores estÃ¡n ordenados alfabeticamente
      */
     public function test_get_unique_values_returns_sorted_array()
     {

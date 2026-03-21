@@ -58,7 +58,7 @@ class ObtenerPrendasPorPedidoHandler implements QueryHandler
             $prendas = $queryBuilder
                 ->with([
                     'variantes',           // manga, broche, bolsillos
-                    'tallas',              // tallas por gÃ©nero
+                    'tallas',              // tallas por genero
                     'coloresTelas',        // combinaciones color-tela
                     'coloresTelas.color',  // detalles del color
                     'coloresTelas.tela',   // detalles de la tela

@@ -76,7 +76,7 @@ class ActualizarPedidoHandler implements CommandHandler
                 'campos_actualizados' => count($datos),
             ]);
 
-            // Invalidar cachÃ©s
+            // Invalidar caches
             cache()->forget("pedido_{$command->getPedidoId()}_completo");
             cache()->forget("pedido_numero_{$pedido->numero_pedido}");
             cache()->forget('pedidos_lista');

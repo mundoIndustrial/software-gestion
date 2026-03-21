@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
  * Repository para operaciones con Logo Pedidos
  * 
  * Abstrae la capa de persistencia para que servicios no usen DB::table() directamente
- * Implementa operaciones CRUD especÃ­ficas para LogoPedido
+ * Implementa operaciones CRUD especificas para LogoPedido
  */
 class LogoPedidoRepository
 {
@@ -40,7 +40,7 @@ class LogoPedidoRepository
     }
 
     /**
-     * Buscar o obtener logo_pedido por mÃºltiples criterios
+     * Buscar o obtener logo_pedido por multiples criterios
      * Intenta primero por ID primaria, luego por pedido_id
      * 
      * @param int $pedidoId ID a buscar

@@ -10,7 +10,7 @@ use InvalidArgumentException;
  * PedidoValidator - Valida datos de pedidos
  * 
  * Responsabilidad:
- * - Validar nÃºmero de pedido Ãºnico
+ * - Validar numero de pedido unico
  * - Validar campos requeridos
  * - Validar cantidades y formatos
  * - Integración con BD para verificaciones
@@ -57,10 +57,10 @@ class PedidoValidator implements Validator
     }
 
     /**
-     * Validar nÃºmero de pedido
+     * Validar numero de pedido
      * 
      * - No vacÃ­o
-     * - Debe ser Ãºnico en BD
+     * - Debe ser unico en BD
      * - MÃ¡ximo 50 caracteres
      * 
      * @throws InvalidArgumentException
@@ -68,15 +68,15 @@ class PedidoValidator implements Validator
     private function validateNumeroPedido(?string $numero): void
     {
         if (empty($numero)) {
-            throw new InvalidArgumentException('El nÃºmero de pedido es requerido');
+            throw new InvalidArgumentException('El numero de pedido es requerido');
         }
 
         if (strlen($numero) > 50) {
-            throw new InvalidArgumentException('El nÃºmero de pedido no puede exceder 50 caracteres');
+            throw new InvalidArgumentException('El numero de pedido no puede exceder 50 caracteres');
         }
 
         if (PedidoProduccion::where('numero_pedido', $numero)->exists()) {
-            throw new InvalidArgumentException("El nÃºmero de pedido '{$numero}' ya existe");
+            throw new InvalidArgumentException("El numero de pedido '{$numero}' ya existe");
         }
     }
 
@@ -126,7 +126,7 @@ class PedidoValidator implements Validator
     /**
      * Validar ID del asesor
      * 
-     * - Debe ser numÃ©rico
+     * - Debe ser numerico
      * - Debe ser positivo
      * - Asesor debe existir
      * 
@@ -151,7 +151,7 @@ class PedidoValidator implements Validator
     /**
      * Validar cantidad inicial
      * 
-     * - Debe ser numÃ©rico
+     * - Debe ser numerico
      * - Debe ser >= 0
      * 
      * @throws InvalidArgumentException

@@ -12,13 +12,13 @@ use Illuminate\Http\Request;
  * Permite diferentes algoritmos sin cambiar el código cliente
  * 
  * Implementaciones:
- * - CreacionPrendaSinCtaStrategy: Para prendas sin cotización (con tallas/gÃ©neros)
+ * - CreacionPrendaSinCtaStrategy: Para prendas sin cotización (con tallas/generos)
  * NOTA: Reflectivo NO es un tipo de prenda, es un PROCESO. Usar CreacionPrendaSinCtaStrategy
  */
 interface CreacionPrendaStrategy
 {
     /**
-     * Procesar y crear prenda segÃºn la estrategia especÃ­fica
+     * Procesar y crear prenda según la estrategia especÃ­fica
      * 
      * @param array $prendaData Datos de la prenda del request
      * @param int $pedidoProduccionId ID del pedido a vincular

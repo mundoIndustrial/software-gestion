@@ -38,7 +38,7 @@ class ObtenerDatosRecibosService
     }
 
     /**
-     * Obtener datos de un recibo especÃ­fico por nÃºmero de prenda
+     * Obtener datos de un recibo especÃ­fico por numero de prenda
      */
     public function obtenerPorPrenda(int $pedidoId, int $prendaId): array
     {

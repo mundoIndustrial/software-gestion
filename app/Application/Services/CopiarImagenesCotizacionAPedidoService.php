@@ -287,7 +287,7 @@ class CopiarImagenesCotizacionAPedidoService
                 return 0;
             }
 
-            // Copiar las fotos de tela a travÃ©s de prenda_pedido_colores_telas
+            // Copiar las fotos de tela a atraves de prenda_pedido_colores_telas
             foreach ($fotosTela as $foto) {
                 // Crear o obtener la combinación color-tela
                 $colorTela = $prendaPedido->coloresTelas()->firstOrCreate([

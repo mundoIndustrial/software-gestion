@@ -53,7 +53,7 @@ class PedidoProduccionRepository
     }
 
     /**
-     * Obtener el Ãºltimo pedido creado (para secuencial de nÃºmeros)
+     * Obtener el último pedido creado (para secuencial de numeros)
      */
     public function obtenerUltimoPedido(): ?PedidoProduccion
     {

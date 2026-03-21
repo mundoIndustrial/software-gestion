@@ -16,12 +16,12 @@ use App\Domain\Pedidos\Events\PrendaPedidoAgregada;
  * - Invariantes de negocio
  * 
  * Una prenda es una entidad dentro del agregado del pedido.
- * Aunque tiene su propio agregado, siempre se accede a travÃ©s del pedido.
+ * Aunque tiene su propio agregado, siempre se accede a atraves del pedido.
  */
 class PrendaPedidoAggregate
 {
     /**
-     * Identificador Ãºnico de la prenda
+     * Identificador unico de la prenda
      */
     private int|string $id;
 
@@ -41,7 +41,7 @@ class PrendaPedidoAggregate
     private int $cantidad;
 
     /**
-     * GÃ©nero de la prenda
+     * genero de la prenda
      */
     private string $genero;
 

@@ -70,7 +70,7 @@ class PedidoServiceTest extends TestCase
     }
 
     /**
-     * Test: NÃºmero de pedido es Ãºnico y secuencial
+     * Test: numero de pedido es unico y secuencial
      */
     public function test_numero_pedido_es_unico_y_secuencial(): void
     {
@@ -229,7 +229,7 @@ class PedidoServiceTest extends TestCase
     {
         $this->cotizacion->update([
             'especificaciones' => [
-                'forma_pago' => 'CrÃ©dito 30 dÃ­as'
+                'forma_pago' => 'CrÃ©dito 30 Dias'
             ]
         ]);
 
@@ -237,7 +237,7 @@ class PedidoServiceTest extends TestCase
         $pedido = $this->service->aceptarCotizacion($this->cotizacion);
 
         // Afirmar
-        $this->assertEquals('CrÃ©dito 30 dÃ­as', $pedido->forma_de_pago);
+        $this->assertEquals('CrÃ©dito 30 Dias', $pedido->forma_de_pago);
     }
 
     /**
@@ -266,11 +266,11 @@ class PedidoServiceTest extends TestCase
     }
 
     /**
-     * Test: MÃºltiples prendas se crean correctamente
+     * Test: multiples prendas se crean correctamente
      */
     public function test_multiples_prendas_se_crean_correctamente(): void
     {
-        // Crear mÃºltiples prendas en cotización
+        // Crear multiples prendas en cotización
         for ($i = 0; $i < 3; $i++) {
             PrendaCotizacionFriendly::create([
                 'cotizacion_id' => $this->cotizacion->id,

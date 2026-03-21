@@ -100,7 +100,7 @@ class CotizacionesMySQLiTest extends BaseTestCase
     }
 
     /**
-     * Test: Validar numero_cotizacion Ãºnico
+     * Test: Validar numero_cotizacion unico
      */
     public function test_numero_cotizacion_unique(): void
     {

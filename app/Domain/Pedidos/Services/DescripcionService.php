@@ -4,19 +4,19 @@ namespace App\Domain\Pedidos\Services;
 
 /**
  * Servicio de dominio para construcción de descripciones de prendas
- * Responsabilidad Ãºnica: Generar descripciones formateadas
+ * Responsabilidad unica: Generar descripciones formateadas
  */
 class DescripcionService
 {
     /**
      * Construir descripción para prenda de pedido
-     * Formato: Un pÃ¡rrafo Ãºnico con descripción + todas las variaciones + observaciones
+     * Formato: Un pÃ¡rrafo unico con descripción + todas las variaciones + observaciones
      */
     public function construirDescripcionPrenda(int $numeroPrenda, array $producto, array $cantidadesPorTalla): string
     {
         $lineas = [];
         
-        // NÃºmero de prenda
+        // numero de prenda
         $lineas[] = "PRENDA {$numeroPrenda}";
         
         // Descripción del producto
@@ -99,7 +99,7 @@ class DescripcionService
             $lineas[] = 'UBICACIONES: ' . $ubicacionesTexto;
         }
 
-        // GÃ©nero
+        // genero
         if (!empty($prenda['genero'])) {
             $generoTexto = $prenda['genero'] === 'dama' ? 'DAMA' : 'CABALLERO';
             $lineas[] = 'GÃ‰NERO: ' . $generoTexto;

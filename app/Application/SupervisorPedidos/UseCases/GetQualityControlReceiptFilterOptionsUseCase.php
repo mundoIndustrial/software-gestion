@@ -39,10 +39,17 @@ class GetQualityControlReceiptFilterOptionsUseCase
 
     private function buildBaseQuery()
     {
-        return DB::table('consecutivos_recibos_pedidos as crp')
-            ->join('pedidos_produccion as p', 'crp.pedido_produccion_id', '=', 'p.id')
+        return DB::table('procesos_prenda as pp')
+            ->join('prendas_pedido as prenda', 'pp.prenda_pedido_id', '=', 'prenda.id')
+            ->join('pedidos_produccion as p', 'pp.numero_pedido', '=', 'p.numero_pedido')
             ->leftJoin('users as u', 'p.asesor_id', '=', 'u.id')
-            ->where('crp.area', 'Control-Calidad')
+            ->join('consecutivos_recibos_pedidos as crp', function($join) {
+                $join->on('crp.pedido_produccion_id', '=', 'p.id')
+                    ->on('crp.consecutivo_actual', '=', 'pp.numero_recibo');
+            })
+            ->where('pp.proceso', 'Control de Calidad')
+            ->where('pp.estado_proceso', 'Pendiente')
+            ->where('crp.tipo_recibo', 'COSTURA')
             ->where('crp.activo', 1);
     }
 
@@ -50,7 +57,7 @@ class GetQualityControlReceiptFilterOptionsUseCase
     {
         return $this->buildBaseQuery()
             ->distinct()
-            ->pluck('crp.consecutivo_actual')
+            ->pluck('pp.numero_recibo')
             ->filter()
             ->sort()
             ->values()
@@ -70,13 +77,7 @@ class GetQualityControlReceiptFilterOptionsUseCase
 
     private function getAreas(): array
     {
-        return $this->buildBaseQuery()
-            ->distinct()
-            ->pluck('crp.area')
-            ->filter()
-            ->sort()
-            ->values()
-            ->toArray();
+        return ['Control de Calidad'];
     }
 
     private function getAdvisors(): array
@@ -94,9 +95,8 @@ class GetQualityControlReceiptFilterOptionsUseCase
     private function getGarments(): array
     {
         return $this->buildBaseQuery()
-            ->leftJoin('prendas_pedido as pp', 'crp.prenda_id', '=', 'pp.id')
             ->distinct()
-            ->pluck('pp.nombre_prenda')
+            ->pluck('prenda.nombre_prenda')
             ->filter()
             ->sort()
             ->values()

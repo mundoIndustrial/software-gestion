@@ -435,12 +435,12 @@ class PrendaPedidoEditController extends Controller
 
             $resultado = $this->varianteEditService->updateColores($variante, $request->input('colores'));
 
-            // Capturar colores despuÃ©s del cambio (desde request)
+            // Capturar colores despues del cambio (desde request)
             $colorIdsNuevos = collect($request->input('colores', []))
                 ->pluck('color_id')->filter()->unique()->values()->toArray();
             $coloresDespues = \App\Models\ColorPrenda::whereIn('id', $colorIdsNuevos)->pluck('nombre')->toArray();
             $detalleColores = 'Antes: ' . (implode(', ', $coloresAntes) ?: 'ninguno')
-                . ' â†’ DespuÃ©s: ' . (implode(', ', $coloresDespues) ?: 'ninguno');
+                . ' â†’ despues: ' . (implode(', ', $coloresDespues) ?: 'ninguno');
 
             // Registrar en historial: colores de variante editados en pedido existente
             PedidoAnexoHistorial::registrarPrendaEditada(
@@ -493,12 +493,12 @@ class PrendaPedidoEditController extends Controller
 
             $resultado = $this->varianteEditService->updateTelas($variante, $request->input('telas'));
 
-            // Capturar telas despuÃ©s del cambio (desde request)
+            // Capturar telas despues del cambio (desde request)
             $telaIdsNuevos = collect($request->input('telas', []))
                 ->pluck('tela_id')->filter()->unique()->values()->toArray();
             $telasDespues = \App\Models\TelaPrenda::whereIn('id', $telaIdsNuevos)->pluck('nombre')->toArray();
             $detalleTelas = 'Antes: ' . (implode(', ', $telasAntes) ?: 'ninguna')
-                . ' â†’ DespuÃ©s: ' . (implode(', ', $telasDespues) ?: 'ninguna');
+                . ' â†’ despues: ' . (implode(', ', $telasDespues) ?: 'ninguna');
 
             // Registrar en historial: telas de variante editadas en pedido existente
             PedidoAnexoHistorial::registrarPrendaEditada(

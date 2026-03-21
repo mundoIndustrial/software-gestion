@@ -78,12 +78,12 @@ try {
     $servicioP = app(PedidoEstadoService::class);
     echo "  âœ“ PedidoEstadoService inyectado\n";
     
-    // Obtener siguiente nÃºmero
+    // Obtener siguiente numero
     $siguienteCot = $servicioC->obtenerSiguienteNumeroCotizacion();
-    echo "  âœ“ Siguiente nÃºmero cotización: " . $siguienteCot . "\n";
+    echo "  âœ“ Siguiente numero cotización: " . $siguienteCot . "\n";
     
     $siguientePed = $servicioP->obtenerSiguienteNumeroPedido();
-    echo "  âœ“ Siguiente nÃºmero pedido: " . $siguientePed . "\n";
+    echo "  âœ“ Siguiente numero pedido: " . $siguientePed . "\n";
 } catch (\Exception $e) {
     echo "  âœ— Error con Servicios: " . $e->getMessage() . "\n";
 }
@@ -96,7 +96,7 @@ try {
         echo "  âœ“ Modelo Cotizacion carga\n";
         echo "    - ID: " . $cot->id . "\n";
         echo "    - Estado: " . ($cot->estado ?? 'NULL') . "\n";
-        echo "    - NÃºmero: " . ($cot->numero_cotizacion ?? 'NULL') . "\n";
+        echo "    - numero: " . ($cot->numero_cotizacion ?? 'NULL') . "\n";
         
         // Prueba relación historialCambios
         $historial = $cot->historialCambios()->count();
@@ -110,7 +110,7 @@ try {
         echo "  âœ“ Modelo PedidoProduccion carga\n";
         echo "    - ID: " . $ped->id . "\n";
         echo "    - Estado: " . ($ped->estado ?? 'NULL') . "\n";
-        echo "    - NÃºmero: " . ($ped->numero_pedido ?? 'NULL') . "\n";
+        echo "    - numero: " . ($ped->numero_pedido ?? 'NULL') . "\n";
         
         // Prueba relación historialCambios
         $historial = $ped->historialCambios()->count();

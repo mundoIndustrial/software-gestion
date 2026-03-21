@@ -12,7 +12,7 @@ class ActualizarPedidoService
     /**
      * Actualizar datos de un pedido existente
      * 
-     * @param int|string $pedidoIdentifier NÃºmero de pedido o ID
+     * @param int|string $pedidoIdentifier numero de pedido o ID
      * @param array $datos Datos a actualizar
      * @return PedidoProduccion
      * @throws \Exception
@@ -154,11 +154,11 @@ class ActualizarPedidoService
     }
 
     /**
-     * Obtener el pedido (por nÃºmero o ID)
+     * Obtener el pedido (por numero o ID)
      */
     private function obtenerPedido($pedidoIdentifier): PedidoProduccion
     {
-        // Si es nÃºmero (numÃ©rico > 1000 usualmente)
+        // Si es numero (numerico > 1000 usualmente)
         if (is_numeric($pedidoIdentifier) && $pedidoIdentifier > 100) {
             $pedido = PedidoProduccion::where('numero_pedido', $pedidoIdentifier)->first();
             if ($pedido) {

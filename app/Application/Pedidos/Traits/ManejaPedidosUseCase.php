@@ -13,7 +13,7 @@ use App\Application\Pedidos\Catalogs\EstadoPedidoCatalog;
  * ELIMINA:
  * - 50-60 lÃ­neas de validación duplicada
  * - Mensajes de error inconsistentes (throw new Exception vs InvalidArgumentException vs DomainException)
- * - Lógica de bÃºsqueda/validación esparcida
+ * - Lógica de busqueda/validación esparcida
  * - if (!$pedido) throw new... (repetida 20+ veces)
  * 
  * ANTES: Cada Use Case tenÃ­a:
@@ -38,7 +38,7 @@ trait ManejaPedidosUseCase
     /**
      * Validar que el pedido existe, sino lanza excepción
      * 
-     * @param int|string $pedidoIdentificador ID o nÃºmero del pedido
+     * @param int|string $pedidoIdentificador ID o numero del pedido
      * @param mixed $repository Repository a usar (inyectado como propiedad)
      * @return mixed Pedido validado
      * @throws \DomainException Si pedido no existe
@@ -52,7 +52,7 @@ trait ManejaPedidosUseCase
             throw new \InvalidArgumentException('No hay repository disponible para validar pedido');
         }
 
-        // Intentar obtener por ID o bÃºsqueda personalizada
+        // Intentar obtener por ID o busqueda personalizada
         $pedido = method_exists($repo, 'obtenerPorId')
             ? $repo->obtenerPorId($pedidoIdentificador)
             : (method_exists($repo, 'porId')
@@ -208,7 +208,7 @@ trait ManejaPedidosUseCase
     }
 
     /**
-     * Validar que un valor numÃ©rico es positivo
+     * Validar que un valor numerico es positivo
      * 
      * @param int|float $valor Valor a validar
      * @param string $nombreCampo Nombre del campo
@@ -219,7 +219,7 @@ trait ManejaPedidosUseCase
         if (!is_numeric($valor) || $valor <= 0) {
             throw new \InvalidArgumentException(
                 EstadoPedidoCatalog::obtenerMensajeError('validacion_fallida', [
-                    'razon' => "$nombreCampo debe ser un nÃºmero positivo"
+                    'razon' => "$nombreCampo debe ser un numero positivo"
                 ]),
                 400
             );

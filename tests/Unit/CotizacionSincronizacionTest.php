@@ -103,11 +103,11 @@ class CotizacionSincronizacionTest extends TestCase
     {
         $tela = new PrendaTelaCot();
         
-        // Verificar que los mÃ©todos de relación existen
-        $this->assertTrue(method_exists($tela, 'prenda'), 'Debe tener mÃ©todo prenda()');
-        $this->assertTrue(method_exists($tela, 'variante'), 'Debe tener mÃ©todo variante()');
-        $this->assertTrue(method_exists($tela, 'color'), 'Debe tener mÃ©todo color()');
-        $this->assertTrue(method_exists($tela, 'tela'), 'Debe tener mÃ©todo tela()');
+        // Verificar que los metodos de relación existen
+        $this->assertTrue(method_exists($tela, 'prenda'), 'Debe tener Metodo prenda()');
+        $this->assertTrue(method_exists($tela, 'variante'), 'Debe tener Metodo variante()');
+        $this->assertTrue(method_exists($tela, 'color'), 'Debe tener Metodo color()');
+        $this->assertTrue(method_exists($tela, 'tela'), 'Debe tener Metodo tela()');
         
         echo "\n PrendaTelaCot: Todas las relaciones existen\n";
     }
@@ -166,8 +166,8 @@ class CotizacionSincronizacionTest extends TestCase
     {
         $historial = new HistorialCambiosCotizacion();
         
-        $this->assertTrue(method_exists($historial, 'cotizacion'), 'Debe tener mÃ©todo cotizacion()');
-        $this->assertTrue(method_exists($historial, 'usuario'), 'Debe tener mÃ©todo usuario()');
+        $this->assertTrue(method_exists($historial, 'cotizacion'), 'Debe tener Metodo cotizacion()');
+        $this->assertTrue(method_exists($historial, 'usuario'), 'Debe tener Metodo usuario()');
         
         echo "\n HistorialCambiosCotizacion: Todas las relaciones existen\n";
     }
@@ -179,12 +179,12 @@ class CotizacionSincronizacionTest extends TestCase
     {
         $prenda = new PrendaCot();
         
-        $this->assertTrue(method_exists($prenda, 'cotizacion'), 'Debe tener mÃ©todo cotizacion()');
-        $this->assertTrue(method_exists($prenda, 'fotos'), 'Debe tener mÃ©todo fotos()');
-        $this->assertTrue(method_exists($prenda, 'telas'), 'Debe tener mÃ©todo telas()');
-        $this->assertTrue(method_exists($prenda, 'telaFotos'), 'Debe tener mÃ©todo telaFotos()');
-        $this->assertTrue(method_exists($prenda, 'tallas'), 'Debe tener mÃ©todo tallas()');
-        $this->assertTrue(method_exists($prenda, 'variantes'), 'Debe tener mÃ©todo variantes()');
+        $this->assertTrue(method_exists($prenda, 'cotizacion'), 'Debe tener Metodo cotizacion()');
+        $this->assertTrue(method_exists($prenda, 'fotos'), 'Debe tener Metodo fotos()');
+        $this->assertTrue(method_exists($prenda, 'telas'), 'Debe tener Metodo telas()');
+        $this->assertTrue(method_exists($prenda, 'telaFotos'), 'Debe tener Metodo telaFotos()');
+        $this->assertTrue(method_exists($prenda, 'tallas'), 'Debe tener Metodo tallas()');
+        $this->assertTrue(method_exists($prenda, 'variantes'), 'Debe tener Metodo variantes()');
         
         echo "\n PrendaCot: Todas las relaciones existen\n";
     }

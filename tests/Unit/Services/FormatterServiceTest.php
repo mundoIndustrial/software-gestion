@@ -157,7 +157,7 @@ class FormatterServiceTest extends TestCase
     {
         $especificaciones = [
             'forma_pago' => 'Contado',
-            'plazo_entrega' => '15 dÃ­as'
+            'plazo_entrega' => '15 Dias'
         ];
 
         // Actuar

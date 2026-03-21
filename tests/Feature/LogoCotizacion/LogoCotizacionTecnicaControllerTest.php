@@ -311,7 +311,7 @@ class LogoCotizacionTecnicaControllerTest extends TestCase
         $payload = [
             'logoCotizacionId' => $this->logoCotizacion->id,
             'tipoTecnicaId' => $tipoTecnica->id,
-            'observaciones' => 'Bordado en mÃºltiples ubicaciones',
+            'observaciones' => 'Bordado en multiples ubicaciones',
             'prendas' => [
                 [
                     'nombre_prenda' => 'SUDADERA',

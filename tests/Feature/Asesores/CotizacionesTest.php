@@ -59,7 +59,7 @@ class CotizacionesTest extends TestCase
                     'tallas' => ['S', 'M', 'L'],
                     'disponibilidad' => 'Inmediata',
                     'forma_pago' => 'Contado',
-                    'regimen' => 'ComÃºn',
+                    'regimen' => 'común',
                     'se_ha_vendido' => 'SÃ­',
                     'ultima_venta' => '2025-11-20',
                     'observacion' => 'Observación de prueba'
@@ -145,7 +145,7 @@ class CotizacionesTest extends TestCase
                     'descripcion' => 'Pantalón de denim',
                     'cantidad' => 50,
                     'tallas' => ['28', '30', '32'],
-                    'disponibilidad' => '15 dÃ­as',
+                    'disponibilidad' => '15 Dias',
                     'forma_pago' => 'CrÃ©dito',
                     'regimen' => 'Especial',
                     'se_ha_vendido' => 'No',
@@ -255,7 +255,7 @@ class CotizacionesTest extends TestCase
                     'tallas' => ['S', 'M', 'L'],
                     'disponibilidad' => 'Inmediata',
                     'forma_pago' => 'Contado',
-                    'regimen' => 'ComÃºn',
+                    'regimen' => 'común',
                     'se_ha_vendido' => 'SÃ­',
                     'ultima_venta' => '2025-11-20',
                     'observacion' => 'Observación inicial'

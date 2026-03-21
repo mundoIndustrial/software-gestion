@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
  * BuscarPedidoPorNumeroHandler
  * 
  * Maneja BuscarPedidoPorNumeroQuery
- * Busca un pedido por nÃºmero Ãºnico
+ * Busca un pedido por numero unico
  */
 class BuscarPedidoPorNumeroHandler implements QueryHandler
 {

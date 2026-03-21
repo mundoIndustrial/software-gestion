@@ -135,7 +135,7 @@ trait GestionaTallasRelacional
     }
 
     /**
-     * Obtener tallas de un gÃ©nero especÃ­fico
+     * Obtener tallas de un genero especÃ­fico
      * 
      * @param int $prendaPedidoId
      * @param string $genero

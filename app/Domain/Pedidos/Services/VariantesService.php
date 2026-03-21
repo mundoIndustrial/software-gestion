@@ -94,7 +94,7 @@ class VariantesService
     }
 
     /**
-     * Obtener tela desde JSON de telas mÃºltiples
+     * Obtener tela desde JSON de telas multiples
      * Extrae la primera tela del JSON y obtiene/crea la combinación
      */
     private function obtenerTelaDeVariante(?string $telasJson): ?int

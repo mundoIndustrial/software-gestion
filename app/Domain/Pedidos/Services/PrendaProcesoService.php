@@ -182,7 +182,7 @@ class PrendaProcesoService
                 return;
             }
             
-            // Mapeo de gÃ©nero: dama â†’ DAMA, caballero â†’ CABALLERO, unisex â†’ UNISEX
+            // Mapeo de genero: dama â†’ DAMA, caballero â†’ CABALLERO, unisex â†’ UNISEX
             $generoMap = [
                 'dama' => 'DAMA',
                 'caballero' => 'CABALLERO',

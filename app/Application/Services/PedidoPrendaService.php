@@ -176,7 +176,7 @@ class PedidoPrendaService
         // Normalizar datos de prenda (DTO â†’ array)
         $prendaData = $this->dataNormalizer->normalizarPrendaData($prendaData);
 
-        //  LOG: Ver quÃ© datos llegan
+        //  LOG: Ver que datos llegan
         \Log::info(' [PedidoPrendaService] Datos recibidos para guardar prenda', [
             'nombre_producto' => $prendaData['nombre_producto'] ?? null,
             'tela_id' => $prendaData['tela_id'] ?? null,
@@ -206,7 +206,7 @@ class PedidoPrendaService
         // NO formatear ni armar descripciones automÃ¡ticas
         $descripcionFinal = $prendaData['descripcion'] ?? '';
         
-        // Obtener la PRIMERA tela de mÃºltiples telas para los campos principales
+        // Obtener la PRIMERA tela de multiples telas para los campos principales
         // (tela_id, color_id se guardan en la prenda para referencia rÃ¡pida)
         $primeraTela = $this->obtenerPrimeraTela($prendaData);
         
@@ -227,10 +227,10 @@ class PedidoPrendaService
             'tipo_broche_boton_id' => $prendaData['tipo_broche_boton_id'] ?? null,
         ]);
         
-        //  PROCESAR GÃ‰NEROS (puede ser single string o array de mÃºltiples gÃ©neros)
+        //  PROCESAR GÃ‰NEROS (puede ser single string o array de multiples generos)
         $generoProcesado = $this->dataNormalizer->procesarGenero($prendaData['genero'] ?? '');
         
-        //  PROCESAR CANTIDADES: Soportar mÃºltiples gÃ©neros
+        //  PROCESAR CANTIDADES: Soportar multiples generos
         // IMPORTANTE: cantidad_talla ya viene procesada desde el controlador/transformador
         $cantidadesInput = $prendaData['cantidad_talla'] ?? $prendaData['cantidades'] ?? null;
         
@@ -421,7 +421,7 @@ class PedidoPrendaService
             }
         }
         
-        // Si no hay telas mÃºltiples, usar los campos de variantes individuales
+        // Si no hay telas multiples, usar los campos de variantes individuales
         return [
             'tela_id' => $prendaData['tela_id'] ?? null,
             'color_id' => $prendaData['color_id'] ?? null,

@@ -14,7 +14,7 @@ use InvalidArgumentException;
  * - Validar reglas de negocio por estado
  * 
  * Estados permitidos:
- * - activo: Pedido reciÃ©n creado, se pueden agregar prendas
+ * - activo: Pedido recien creado, se pueden agregar prendas
  * - pendiente: Esperando aprobación o pago
  * - completado: Pedido finalizado (no se puede cambiar)
  * - cancelado: Pedido cancelado (no se puede cambiar)

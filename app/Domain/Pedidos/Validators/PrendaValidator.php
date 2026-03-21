@@ -85,7 +85,7 @@ class PrendaValidator implements Validator
     /**
      * Validar cantidad
      * 
-     * - Debe ser numÃ©rico
+     * - Debe ser numerico
      * - Debe ser > 0
      * 
      * @throws InvalidArgumentException

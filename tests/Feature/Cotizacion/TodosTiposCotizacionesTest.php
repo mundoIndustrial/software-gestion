@@ -47,9 +47,9 @@ class TodosTiposCotizacionesTest extends TestCase
         $unicos = count(array_unique($numeros_generados));
         
         echo "Total generados: {$total}\n";
-        echo "NÃºmeros Ãºnicos: {$unicos}\n";
+        echo "numeros unicos: {$unicos}\n";
         
-        $this->assertEquals($total, $unicos, 'No debe haber nÃºmeros duplicados');
+        $this->assertEquals($total, $unicos, 'No debe haber numeros duplicados');
         echo " Sin duplicados\n\n";
         
         // Verificar: secuencia consecutiva

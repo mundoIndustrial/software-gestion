@@ -18,7 +18,7 @@ use App\Application\Pedidos\DTOs\PedidoResponseDTO;
  * Reduce ~70 lÃ­neas de código duplicado en cada Use Case
  * 
  * Antes: 4 Use Cases Ã— 80 lÃ­neas = 320 lÃ­neas
- * DespuÃ©s: 1 base + 4 concretas Ã— 15 lÃ­neas = 80 lÃ­neas
+ * despues: 1 base + 4 concretas Ã— 15 lÃ­neas = 80 lÃ­neas
  * Reducción: 75% menos código
  */
 abstract class AbstractObtenerUseCase
@@ -34,8 +34,8 @@ abstract class AbstractObtenerUseCase
      * Template Method - Define el flujo de obtención
      * 
      * Cada subclase solo necesita sobrescribir:
-     * - obtenerOpciones() - QuÃ© datos incluir (prendas, epps, etc)
-     * - construirRespuesta() - QuÃ© estructura retornar
+     * - obtenerOpciones() - que datos incluir (prendas, epps, etc)
+     * - construirRespuesta() - que estructura retornar
      */
     protected function obtenerYEnriquecer(int $pedidoId): mixed
     {
@@ -67,7 +67,7 @@ abstract class AbstractObtenerUseCase
     }
 
     /**
-     * PASO 2 (PERSONALIZABLE): QuÃ© opciones de enriquecimiento usar
+     * PASO 2 (PERSONALIZABLE): que opciones de enriquecimiento usar
      * 
      * Subclases pueden sobrescribir para incluir/excluir datos especÃ­ficos
      */

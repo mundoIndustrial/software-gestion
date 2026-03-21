@@ -20,7 +20,7 @@ use App\Domain\Pedidos\Events\LogoPedidoCreado;
 class LogoPedidoAggregate
 {
     /**
-     * Identificador Ãºnico del logo
+     * Identificador unico del logo
      */
     private int|string $id;
 

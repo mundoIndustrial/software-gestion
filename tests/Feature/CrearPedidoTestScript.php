@@ -83,7 +83,7 @@ class CrearPedidoTestScript extends TestCase
     {
         $datos = [
             'ID' => $pedido->id,
-            'NÃºmero de Pedido' => $pedido->numero_pedido,
+            'numero de Pedido' => $pedido->numero_pedido,
             'Cliente' => $pedido->cliente,
             'Cliente ID' => $pedido->cliente_id,
             'Asesor ID' => $pedido->asesor_id,
@@ -125,12 +125,12 @@ class CrearPedidoTestScript extends TestCase
             echo "    Pedido NO existe en base de datos\n";
         }
 
-        // Verificar bÃºsqueda por nÃºmero de pedido
+        // Verificar busqueda por numero de pedido
         $pedidoPorNumero = PedidoProduccion::where('numero_pedido', $pedido->numero_pedido)->first();
         if ($pedidoPorNumero) {
-            echo "  BÃºsqueda por nÃºmero de pedido funciona\n";
+            echo "  busqueda por numero de pedido funciona\n";
         } else {
-            echo "    BÃºsqueda por nÃºmero de pedido NO funciona\n";
+            echo "    busqueda por numero de pedido NO funciona\n";
         }
     }
 }

@@ -39,7 +39,7 @@ class EliminarPedidoHandler implements CommandHandler
                 throw new \Exception("Pedido no encontrado: {$command->getPedidoId()}");
             }
 
-            // Validar que no estÃ© ya eliminado
+            // Validar que no está ya eliminado
             if ($pedido->trashed()) {
                 throw new \Exception("El pedido ya ha sido eliminado");
             }
@@ -53,7 +53,7 @@ class EliminarPedidoHandler implements CommandHandler
                 'razon' => $command->getRazon(),
             ]);
 
-            // Invalidar cachÃ©s
+            // Invalidar caches
             cache()->forget("pedido_{$command->getPedidoId()}_completo");
             cache()->forget("pedido_numero_{$pedido->numero_pedido}");
             cache()->forget('pedidos_lista');

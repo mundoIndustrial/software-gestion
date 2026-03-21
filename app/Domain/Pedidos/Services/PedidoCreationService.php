@@ -23,7 +23,7 @@ class PedidoCreationService
         // Obtener o crear cliente
         $cliente = $this->clienteService->obtenerOCrearCliente($nombreCliente);
 
-        // Generar nÃºmero de pedido
+        // Generar numero de pedido
         $numeroPedido = $this->sequenceService->generarNumeroPedido();
 
         // Crear el pedido

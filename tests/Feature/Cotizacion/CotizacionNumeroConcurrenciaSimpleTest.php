@@ -6,7 +6,7 @@ use Tests\TestCase;
 use Illuminate\Support\Facades\DB;
 
 /**
- * TEST: Validar que la generación sincrónica de nÃºmeros funciona con pessimistic lock
+ * TEST: Validar que la generación sincrónica de numeros funciona con pessimistic lock
  * 
  * Este test NO usa RefreshDatabase porque MySQL estÃ¡ causando timeout
  * En su lugar, usa directamente MySQLi para testing de BD
@@ -14,14 +14,14 @@ use Illuminate\Support\Facades\DB;
 class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
 {
     /**
-     *  TEST: Generar nÃºmero con pessimistic lock
+     *  TEST: Generar numero con pessimistic lock
      * 
      * Valida que el lock funciona sin timeout
      */
     public function test_genera_numero_con_lock()
     {
         try {
-            // Generar un nÃºmero
+            // Generar un numero
             $numero = DB::transaction(function () {
                 $secuencia = DB::table('numero_secuencias')
                     ->lockForUpdate()
@@ -46,7 +46,7 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
             echo "\n NÃšMERO GENERADO: $numero\n";
             
         } catch (\Throwable $e) {
-            $this->fail("Error al generar nÃºmero: " . $e->getMessage());
+            $this->fail("Error al generar numero: " . $e->getMessage());
         }
     }
 
@@ -66,7 +66,7 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
     }
 
     /**
-     *  TEST: Generar 3 nÃºmeros secuenciales
+     *  TEST: Generar 3 numeros secuenciales
      */
     public function test_genera_tres_numeros_secuenciales()
     {
@@ -91,7 +91,7 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
         }
         
         $this->assertCount(3, $numeros);
-        $this->assertEquals(3, count(array_unique($numeros)), 'Los nÃºmeros no son Ãºnicos');
+        $this->assertEquals(3, count(array_unique($numeros)), 'Los numeros no son unicos');
         
         echo "\n NÃšMEROS GENERADOS:\n";
         foreach ($numeros as $i => $n) {

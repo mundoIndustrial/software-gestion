@@ -13,7 +13,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * Test: MÃºltiples Telas, Referencias, Colores e ImÃ¡genes
+ * Test: multiples Telas, Referencias, Colores e ImÃ¡genes
  * 
  *  IMPORTANTE: Este test usa DatabaseTransactions para AISLAR los cambios
  * No afecta la base de datos real - todos los cambios se revierten al finalizar
@@ -36,13 +36,13 @@ class CotizacionMultiplesTelasTest extends TestCase
     }
 
     /**
-     * Test: Guardar prenda con mÃºltiples telas, referencias, colores e imÃ¡genes
+     * Test: Guardar prenda con multiples telas, referencias, colores e imÃ¡genes
      */
     public function test_guardar_prenda_multiples_telas_con_imagenes()
     {
         echo "\n\n";
         echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
-        echo "ðŸ§ª TEST: MÃºltiples Telas con ImÃ¡genes\n";
+        echo "ðŸ§ª TEST: multiples Telas con ImÃ¡genes\n";
         echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
 
         // Crear cotización de prueba
@@ -53,10 +53,10 @@ class CotizacionMultiplesTelasTest extends TestCase
         ]);
         echo " Cotización creada: {$cotizacion->numero_cotizacion}\n";
 
-        // Datos de prenda con mÃºltiples telas
+        // Datos de prenda con multiples telas
         $prendaData = [
             'nombre_producto' => 'Camiseta Test',
-            'descripcion' => 'Camiseta para prueba de mÃºltiples telas',
+            'descripcion' => 'Camiseta para prueba de multiples telas',
             'cantidad' => 1,
             'variantes' => [
                 'color' => 'Variado',
@@ -171,7 +171,7 @@ class CotizacionMultiplesTelasTest extends TestCase
             echo "      - TamaÃ±o: {$foto->tamaÃ±o} bytes\n";
         }
 
-        // 4. Verificación de referencias Ãºnicas
+        // 4. Verificación de referencias unicas
         $referencias = ['ALG-001', 'POL-002', 'LIN-003'];
         echo "\n REFERENCIAS POR TELA\n";
         

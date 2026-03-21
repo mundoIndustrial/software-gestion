@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 class PedidoSequenceService
 {
     /**
-     * Generar el siguiente nÃºmero de pedido
+     * Generar el siguiente numero de pedido
      * @return int
      */
     public function generarNumeroPedido(): int

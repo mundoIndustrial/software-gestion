@@ -28,7 +28,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Obtener siguiente nÃºmero de pedido
+     * Test: Obtener siguiente numero de pedido
      */
     public function test_obtener_siguiente_numero_pedido()
     {
@@ -40,7 +40,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Obtener siguiente nÃºmero cuando no hay pedidos
+     * Test: Obtener siguiente numero cuando no hay pedidos
      */
     public function test_obtener_siguiente_numero_pedido_sin_registros()
     {
@@ -118,7 +118,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Asignar nÃºmero de pedido
+     * Test: Asignar numero de pedido
      */
     public function test_asignar_numero_pedido()
     {
@@ -135,7 +135,7 @@ class PedidoEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: NÃºmeros Ãºnicos no duplicados
+     * Test: numeros unicos no duplicados
      */
     public function test_numeros_pedido_son_unicos()
     {

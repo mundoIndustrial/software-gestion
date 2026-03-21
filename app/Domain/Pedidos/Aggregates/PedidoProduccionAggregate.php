@@ -138,7 +138,7 @@ class PedidoProduccionAggregate
 
     /**
      * Cambiar estado del pedido
-     * Invariante: estados vÃ¡lidos segÃºn negocio
+     * Invariante: estados vÃ¡lidos según negocio
      */
     public function cambiarEstado(string $nuevoEstado): void
     {
@@ -156,7 +156,7 @@ class PedidoProduccionAggregate
     }
 
     /**
-     * Registrar un evento en el agregado (pero no publicarlo aÃºn)
+     * Registrar un evento en el agregado (pero no publicarlo año)
      * Los eventos se publican cuando el agregado es persistido
      */
     public function recordEvent(DomainEvent $event): void

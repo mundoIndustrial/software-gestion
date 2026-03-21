@@ -20,12 +20,12 @@ class ObtenerHistorialProcesosUseCase
     /**
      * Ejecutar caso de uso
      * 
-     * @param int $numeroPedido - NÃºmero de pedido
+     * @param int $numeroPedido - numero de pedido
      * @return array - Procesos actuales e historial
      */
     public function ejecutar(int $numeroPedido): array
     {
-        $this->validarPositivo($numeroPedido, 'NÃºmero de pedido');
+        $this->validarPositivo($numeroPedido, 'numero de pedido');
 
         $procesosActuales = DB::table('procesos_prenda')
             ->where('numero_pedido', $numeroPedido)

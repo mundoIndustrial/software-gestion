@@ -30,7 +30,7 @@ class EppProcessorService
             'pedido_id' => $pedidoId,
         ];
 
-        // Extraer imÃ¡genes de EPP desde FormData (sin guardarlas aÃºn)
+        // Extraer imÃ¡genes de EPP desde FormData (sin guardarlas año)
         $imagenesEpp = $this->formDataProcessor->extraerImagenesEpp($request, $itemIndex);
         
         foreach ($imagenesEpp as $imagenIdx => $archivo) {

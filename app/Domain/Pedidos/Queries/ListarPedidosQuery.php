@@ -9,7 +9,7 @@ use App\Domain\Shared\CQRS\Query;
  * 
  * Query para listar todos los pedidos con paginación
  * 
- * @param int $page NÃºmero de pÃ¡gina (default 1)
+ * @param int $page numero de pÃ¡gina (default 1)
  * @param int $perPage Registros por pÃ¡gina (default 15)
  * @param string $ordenar Campo para ordenar (default 'created_at')
  * @param string $direccion Dirección (asc/desc, default desc)

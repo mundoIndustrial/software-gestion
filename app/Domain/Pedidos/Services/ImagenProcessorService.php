@@ -20,7 +20,7 @@ class ImagenProcessorService
             // Leer imagen
             $image = \Intervention\Image\ImageManager::gd()->read($archivoSubido->getRealPath());
 
-            // Crear nombre Ãºnico
+            // Crear nombre unico
             $timestamp = now()->format('YmdHis');
             $random = substr(uniqid(), -6);
             $baseFilename = "pedido_{$numeroPedido}_img_{$index}_{$timestamp}_{$random}";

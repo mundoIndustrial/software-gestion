@@ -58,7 +58,7 @@ class CotizacionesRapidoTest extends TestCase
     }
 
     /**
-     * TEST 2: Numero cotizacion es Ãºnico
+     * TEST 2: Numero cotizacion es unico
      */
     public function test_numero_cotizacion_unico(): void
     {
@@ -75,7 +75,7 @@ class CotizacionesRapidoTest extends TestCase
             'estado' => 'enviada',
         ]);
 
-        // Intentar segunda con el mismo nÃºmero - debe fallar
+        // Intentar segunda con el mismo numero - debe fallar
         $this->expectException(\Illuminate\Database\QueryException::class);
 
         Cotizacion::create([
@@ -117,7 +117,7 @@ class CotizacionesRapidoTest extends TestCase
         $this->assertEquals(5, count(array_unique($numeros)));
 
         echo "\n 5 Cotizaciones secuenciales creadas\n";
-        echo "NÃºmeros: " . implode(', ', $numeros) . "\n";
+        echo "numeros: " . implode(', ', $numeros) . "\n";
     }
 
     /**

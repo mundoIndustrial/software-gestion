@@ -222,7 +222,7 @@ class Test13Asesoras13TiposMezclados extends TestCase
     }
 
     /**
-     * Generar nÃºmero de cotización sin lock para evitar bloqueos en test
+     * Generar numero de cotización sin lock para evitar bloqueos en test
      */
     private function generarNumeroCotizacionComoDBC(): string
     {
@@ -276,22 +276,22 @@ class Test13Asesoras13TiposMezclados extends TestCase
             ->first();
         $num_inicial = $secuencia_inicial->siguiente;
 
-        // Crear un nÃºmero
+        // Crear un numero
         $numero1 = $this->generarNumeroCotizacionComoDBC();
-        echo "  NÃºmero generado: $numero1\n";
+        echo "  numero generado: $numero1\n";
         $num1_int = (int)substr($numero1, 5);
 
-        // Crear otro nÃºmero
+        // Crear otro numero
         $numero2 = $this->generarNumeroCotizacionComoDBC();
-        echo "  NÃºmero generado: $numero2\n";
+        echo "  numero generado: $numero2\n";
         $num2_int = (int)substr($numero2, 5);
 
-        // Crear otro nÃºmero
+        // Crear otro numero
         $numero3 = $this->generarNumeroCotizacionComoDBC();
-        echo "  NÃºmero generado: $numero3\n";
+        echo "  numero generado: $numero3\n";
         $num3_int = (int)substr($numero3, 5);
 
-        // Verificar que los nÃºmeros son consecutivos
+        // Verificar que los numeros son consecutivos
         echo "\n   Diferencia 1â†’2: " . ($num2_int - $num1_int) . " (debe ser 1)\n";
         echo "   Diferencia 2â†’3: " . ($num3_int - $num2_int) . " (debe ser 1)\n";
 

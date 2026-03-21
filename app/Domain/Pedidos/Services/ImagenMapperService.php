@@ -65,7 +65,7 @@ class ImagenMapperService
     
     /**
      * Mapear imÃ¡genes de telas desde JSON a formato esperado
-     * TambiÃ©n obtiene/crea IDs de colores y telas
+     * también obtiene/crea IDs de colores y telas
      */
     public function mapearImagenesTelas(array $telas): array
     {

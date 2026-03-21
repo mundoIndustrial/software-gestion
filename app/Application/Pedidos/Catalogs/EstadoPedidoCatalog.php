@@ -17,7 +17,7 @@ use App\Enums\EstadoPedido;
  * - FÃ¡cil testing
  * 
  * ELIMINA:
- * - Duplicación de constantes en mÃºltiples clases
+ * - Duplicación de constantes en multiples clases
  * - Validaciones de estados esparcidas en el código
  * - Mensajes de error inconsistentes
  * 

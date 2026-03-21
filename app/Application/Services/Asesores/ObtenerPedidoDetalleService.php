@@ -12,7 +12,7 @@ class ObtenerPedidoDetalleService
     /**
      * Obtener un pedido con todos sus detalles y relaciones
      * 
-     * @param int|string $pedidoIdentifier NÃºmero de pedido o ID
+     * @param int|string $pedidoIdentifier numero de pedido o ID
      * @return PedidoProduccion
      * @throws \Exception
      */
@@ -199,7 +199,7 @@ class ObtenerPedidoDetalleService
     }
 
     /**
-     * Obtener tallas Ãºnicas del prenda
+     * Obtener tallas unicas del prenda
      */
     private function obtenerTallasDelPrenda($prenda)
     {
@@ -256,7 +256,7 @@ class ObtenerPedidoDetalleService
                 if ($telaId || $colorId) {
                     $key = "$telaId-$colorId";
                     if (!isset($telasUnicas[$key])) {
-                        // Acceder a travÃ©s de relaciones cargadas
+                        // Acceder a atraves de relaciones cargadas
                         $telaNombre = $variante->tela?->nombre ?? 'N/A';
                         $colorNombre = $variante->color?->nombre ?? 'N/A';
                         $colorCodigo = $variante->color?->codigo ?? '';
@@ -325,7 +325,7 @@ class ObtenerPedidoDetalleService
                 
                 $fotoArray = $foto->toArray();
                 
-                Log::info('[OBTENER-FOTOS-PRENDA] DespuÃ©s de toArray():', [
+                Log::info('[OBTENER-FOTOS-PRENDA] despues de toArray():', [
                     'foto_id' => $foto->id,
                     'url_en_array' => $fotoArray['url'] ?? 'NO EXISTE',
                     'ruta_en_array' => $fotoArray['ruta'] ?? 'NO EXISTE',
@@ -396,11 +396,11 @@ class ObtenerPedidoDetalleService
     }
 
     /**
-     * Obtener el pedido (por nÃºmero o ID)
+     * Obtener el pedido (por numero o ID)
      */
     private function obtenerPedido($pedidoIdentifier): PedidoProduccion
     {
-        // Si es nÃºmero (numÃ©rico > 100)
+        // Si es numero (numerico > 100)
         if (is_numeric($pedidoIdentifier) && $pedidoIdentifier > 100) {
             $pedido = PedidoProduccion::where('numero_pedido', $pedidoIdentifier)->first();
             if ($pedido) {
@@ -443,7 +443,7 @@ class ObtenerPedidoDetalleService
      * Construir tallas de proceso DESDE LA TABLA RELACIONAL
      * 
      * Lee de pedidos_procesos_prenda_tallas (estructura: {genero: {talla: cantidad}})
-     * Soporta DAMA, CABALLERO, UNISEX como gÃ©neros.
+     * Soporta DAMA, CABALLERO, UNISEX como generos.
      */
     private function construirTallasProcesoRelacional($procesoPrendaDetalleId)
     {

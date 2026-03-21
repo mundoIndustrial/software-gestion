@@ -20,9 +20,9 @@ class EspecificacionesCapturadoTest extends TestCase
                     <td><input type="text" value="En stock disponible"></td>
                 </tr>
                 <tr>
-                    <td><label>CÃºcuta</label></td>
+                    <td><label>Cúcuta</label></td>
                     <td><input type="checkbox" checked></td>
-                    <td><input type="text" value="Disponible en 2 dÃ­as"></td>
+                    <td><input type="text" value="Disponible en 2 Dias"></td>
                 </tr>
             </tbody>
             <tbody id="tbody_pago">
@@ -38,7 +38,7 @@ class EspecificacionesCapturadoTest extends TestCase
         $especificaciones = [
             'disponibilidad' => [
                 ['valor' => 'Bodega', 'observacion' => 'En stock disponible'],
-                ['valor' => 'CÃºcuta', 'observacion' => 'Disponible en 2 dÃ­as']
+                ['valor' => 'Cúcuta', 'observacion' => 'Disponible en 2 Dias']
             ],
             'forma_pago' => [
                 ['valor' => 'Contado', 'observacion' => 'Descuento 5%']
@@ -58,8 +58,8 @@ class EspecificacionesCapturadoTest extends TestCase
         $this->assertEquals('En stock disponible', $bodega['observacion']);
 
         $cucuta = $especificaciones['disponibilidad'][1];
-        $this->assertEquals('CÃºcuta', $cucuta['valor']);
-        $this->assertEquals('Disponible en 2 dÃ­as', $cucuta['observacion']);
+        $this->assertEquals('Cúcuta', $cucuta['valor']);
+        $this->assertEquals('Disponible en 2 Dias', $cucuta['observacion']);
 
         // Verificar forma de pago
         $this->assertArrayHasKey('forma_pago', $especificaciones);
@@ -89,7 +89,7 @@ class EspecificacionesCapturadoTest extends TestCase
     {
         $especificaciones = [
             'regimen' => [
-                ['valor' => 'ComÃºn', 'observacion' => ''],
+                ['valor' => 'común', 'observacion' => ''],
                 ['valor' => 'Simplificado', 'observacion' => 'Solo para pequeÃ±os negocios']
             ]
         ];
@@ -147,7 +147,7 @@ class EspecificacionesCapturadoTest extends TestCase
                 ['valor' => 'Contado', 'observacion' => 'Descuento 5%']
             ],
             'regimen' => [
-                ['valor' => 'ComÃºn', 'observacion' => 'IVA incluido']
+                ['valor' => 'común', 'observacion' => 'IVA incluido']
             ],
             'se_ha_vendido' => [
                 ['valor' => 'SÃ­', 'observacion' => 'Venta exitosa']

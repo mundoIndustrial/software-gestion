@@ -59,9 +59,16 @@ final class GuardarProcesoSeguimientoUseCase
             $proceso = $procesoExistente;
             $accion  = 'actualizado';
         } else {
+            // Obtener numero_recibo del consecutivo para procesos de Control de Calidad
+            $numeroRecibo = null;
+            if ($dto->area === 'Control de Calidad') {
+                $numeroRecibo = $this->obtenerNumeroReciboCostura($dto->pedidoProduccionId, $dto->prendaId);
+            }
+
             $nuevo = new ProcesoPrenda([
                 'numero_pedido'     => $dto->pedidoProduccionId,
                 'prenda_pedido_id'  => $dto->prendaId,
+                'numero_recibo'     => $numeroRecibo,
                 'proceso'           => $dto->area,
                 'fecha_inicio'      => now(),
                 'estado_proceso'    => $dto->estado,
@@ -97,6 +104,24 @@ final class GuardarProcesoSeguimientoUseCase
     }
 
     // ── Helpers privados ────────────────────────────────────────────────────
+
+    private function obtenerNumeroReciboCostura(int $pedidoProduccionId, int $prendaId): ?int
+    {
+        try {
+            $consecutivo = $this->consecutivosRepo->encontrarPorPedidoYPrenda(
+                $pedidoProduccionId, $prendaId
+            );
+
+            if ($consecutivo && $consecutivo->tipo_recibo === 'COSTURA') {
+                return $consecutivo->consecutivo_actual;
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            Log::warning('[GuardarProcesoSeguimientoUseCase] Error obteniendo numero_recibo: ' . $e->getMessage());
+            return null;
+        }
+    }
 
     private function generarCodigoReferencia(string $area, int $prendaId): string
     {

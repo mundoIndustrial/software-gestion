@@ -8,7 +8,7 @@ use Intervention\Image\Facades\Image;
 
 /**
  * Servicio de dominio para manejo de imÃ¡genes
- * Responsabilidad Ãºnica: Procesar y guardar imÃ¡genes en formato WebP
+ * Responsabilidad unica: Procesar y guardar imÃ¡genes en formato WebP
  */
 class ImagenService
 {
@@ -31,12 +31,12 @@ class ImagenService
         ]);
 
         try {
-            // Generar nombre Ãºnico
+            // Generar nombre unico
             $timestamp = now()->format('YmdHis');
             $random = substr(md5(uniqid()), 0, 8);
             $nombreArchivo = "{$numeroPedido}_{$tipo}_{$timestamp}_{$random}.webp";
 
-            // Definir ruta segÃºn tipo
+            // Definir ruta según tipo
             $carpeta = match($tipo) {
                 'prendas' => 'pedidos/prendas',
                 'logos' => 'pedidos/logos',

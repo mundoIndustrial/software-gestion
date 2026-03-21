@@ -99,7 +99,7 @@ class ColorTelaService
      */
     private function generarCodigo(string $nombre): string
     {
-        // Convertir a mayÃºsculas y reemplazar espacios con guiones
+        // Convertir a mayuscula y reemplazar espacios con guiones
         $codigo = strtoupper(str_replace(' ', '-', trim($nombre)));
         // Limitar a 50 caracteres
         return substr($codigo, 0, 50);
@@ -134,7 +134,7 @@ class ColorTelaService
     }
 
     /**
-     * Procesar mÃºltiples telas
+     * Procesar multiples telas
      */
     public function procesarTelas(array $telas): array
     {

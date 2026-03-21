@@ -23,7 +23,7 @@ class CreacionPedidoService
     ) {}
 
     /**
-     * Crear pedido desde cotización (mÃ©todo principal)
+     * Crear pedido desde cotización (Metodo principal)
      */
     public function crearDesdeCotizacion(int $cotizacionId): array
     {
@@ -65,7 +65,7 @@ class CreacionPedidoService
     private function crearPedidoNormal(Cotizacion $cotizacion, bool $esReflectivo): array
     {
         return DB::transaction(function () use ($cotizacion, $esReflectivo) {
-            // Generar nÃºmero de pedido
+            // Generar numero de pedido
             $numeroPedido = $this->numeracionService->generarNumeroPedido();
 
             // Extraer forma de pago

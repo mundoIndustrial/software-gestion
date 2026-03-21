@@ -8,7 +8,7 @@ namespace App\Application\Pedidos\DTOs;
  * Maneja campos de pedidos_procesos_prenda_tallas:
  * - genero: 'DAMA', 'CABALLERO', 'UNISEX'
  * - talla: 'S', 'M', 'L', 'XL', etc
- * - cantidad: nÃºmero de prendas en esta talla
+ * - cantidad: numero de prendas en esta talla
  */
 final class AgregarTallaProcesoPrendaDTO
 {
