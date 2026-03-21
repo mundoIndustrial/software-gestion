@@ -15,11 +15,13 @@ use App\Application\SupervisorPedidos\UseCases\ListOrdersUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetOrderDetailsUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetPendingSewingReceiptsUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetPendingEmbroideryStampingReceiptsUseCase;
+use App\Application\SupervisorPedidos\UseCases\GetPendingQualityControlReceiptsUseCase;
 use App\Application\SupervisorPedidos\UseCases\UpdateProfileUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetComparisonDataUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetFilterOptionsUseCase;
 use App\Application\SupervisorPedidos\UseCases\UpdateOrderUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetSewingReceiptFilterOptionsUseCase;
+use App\Application\SupervisorPedidos\UseCases\GetQualityControlReceiptFilterOptionsUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetPendingOrdersCountUseCase;
 use App\Application\SupervisorPedidos\UseCases\ToggleOrderVisibilityUseCase;
 use App\Application\SupervisorPedidos\UseCases\DownloadOrderPdfUseCase;
@@ -320,6 +322,20 @@ class SupervisorPedidosServiceProvider extends ServiceProvider
             MarkNotificationAsReadUseCase::class,
             function ($app) {
                 return new MarkNotificationAsReadUseCase();
+            }
+        );
+
+        $this->app->bind(
+            GetQualityControlReceiptFilterOptionsUseCase::class,
+            function ($app) {
+                return new GetQualityControlReceiptFilterOptionsUseCase();
+            }
+        );
+
+        $this->app->bind(
+            GetPendingQualityControlReceiptsUseCase::class,
+            function ($app) {
+                return new GetPendingQualityControlReceiptsUseCase();
             }
         );
     }

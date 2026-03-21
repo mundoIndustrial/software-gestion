@@ -87,7 +87,7 @@
 
                             <div id="pendientesRows">
                                 <!-- Filas -->
-                                @if($procesosConCantidad->isEmpty())
+                                @if(empty($procesosConCantidad))
                                     <div style="padding: 3rem 2rem; text-align: center; color: #6b7280;">
                                         <i class="fas fa-inbox" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem; display: block;"></i>
                                         <p style="font-size: 1rem; margin: 0;">No hay pendientes</p>

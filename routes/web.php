@@ -2343,6 +2343,10 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
     Route::get('/pendientes-costura/filtro-opciones/{campo}', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'obtenerOpcionesFiltroPendientesCostura'])->name('pendientes-costura.filtro-opciones');
     Route::post('/guardar-color-costura', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'guardarColorCostura'])->name('guardar-color-costura');
 
+    // Pendientes Control Calidad
+    Route::get('/pendientes-control-calidad', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'pendientesControlCalidad'])->name('pendientes-control-calidad');
+    Route::get('/pendientes-control-calidad/filtro-opciones/{campo}', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'obtenerOpcionesFiltroPendientesControlCalidad'])->name('pendientes-control-calidad.filtro-opciones');
+
     Route::post('/{pedidoId}/costura/{prendaId}/activar-recibo', [App\Infrastructure\Http\Controllers\SupervisorPedidos\SupervisorPedidosController::class, 'activarReciboCostura'])
         ->where(['pedidoId' => '[0-9]+', 'prendaId' => '[0-9]+'])
         ->name('costura.activar-recibo');

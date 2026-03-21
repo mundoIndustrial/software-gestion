@@ -14,11 +14,13 @@ use App\Application\SupervisorPedidos\UseCases\ListOrdersUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetOrderDetailsUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetPendingSewingReceiptsUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetPendingEmbroideryStampingReceiptsUseCase;
+use App\Application\SupervisorPedidos\UseCases\GetPendingQualityControlReceiptsUseCase;
 use App\Application\SupervisorPedidos\UseCases\UpdateProfileUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetComparisonDataUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetFilterOptionsUseCase;
 use App\Application\SupervisorPedidos\UseCases\UpdateOrderUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetSewingReceiptFilterOptionsUseCase;
+use App\Application\SupervisorPedidos\UseCases\GetQualityControlReceiptFilterOptionsUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetPendingOrdersCountUseCase;
 use App\Application\SupervisorPedidos\UseCases\ToggleOrderVisibilityUseCase;
 use App\Application\SupervisorPedidos\UseCases\DownloadOrderPdfUseCase;
@@ -84,11 +86,13 @@ class SupervisorPedidosController extends Controller
     private GetOrderDetailsUseCase $getOrderDetailsUseCase;
     private GetPendingSewingReceiptsUseCase $getPendingSewingReceiptsUseCase;
     private GetPendingEmbroideryStampingReceiptsUseCase $getPendingEmbroideryStampingReceiptsUseCase;
+    private GetPendingQualityControlReceiptsUseCase $getPendingQualityControlReceiptsUseCase;
     private UpdateProfileUseCase $updateProfileUseCase;
     private GetComparisonDataUseCase $getComparisonDataUseCase;
     private GetFilterOptionsUseCase $getFilterOptionsUseCase;
     private UpdateOrderUseCase $updateOrderUseCase;
     private GetSewingReceiptFilterOptionsUseCase $getSewingReceiptFilterOptionsUseCase;
+    private GetQualityControlReceiptFilterOptionsUseCase $getQualityControlReceiptFilterOptionsUseCase;
     private GetPendingOrdersCountUseCase $getPendingOrdersCountUseCase;
     private ToggleOrderVisibilityUseCase $toggleOrderVisibilityUseCase;
     private DownloadOrderPdfUseCase $downloadOrderPdfUseCase;
@@ -120,11 +124,13 @@ class SupervisorPedidosController extends Controller
         GetOrderDetailsUseCase $getOrderDetailsUseCase,
         GetPendingSewingReceiptsUseCase $getPendingSewingReceiptsUseCase,
         GetPendingEmbroideryStampingReceiptsUseCase $getPendingEmbroideryStampingReceiptsUseCase,
+        GetPendingQualityControlReceiptsUseCase $getPendingQualityControlReceiptsUseCase,
         UpdateProfileUseCase $updateProfileUseCase,
         GetComparisonDataUseCase $getComparisonDataUseCase,
         GetFilterOptionsUseCase $getFilterOptionsUseCase,
         UpdateOrderUseCase $updateOrderUseCase,
         GetSewingReceiptFilterOptionsUseCase $getSewingReceiptFilterOptionsUseCase,
+        GetQualityControlReceiptFilterOptionsUseCase $getQualityControlReceiptFilterOptionsUseCase,
         GetPendingOrdersCountUseCase $getPendingOrdersCountUseCase,
         ToggleOrderVisibilityUseCase $toggleOrderVisibilityUseCase,
         DownloadOrderPdfUseCase $downloadOrderPdfUseCase,
@@ -155,11 +161,13 @@ class SupervisorPedidosController extends Controller
         $this->getOrderDetailsUseCase = $getOrderDetailsUseCase;
         $this->getPendingSewingReceiptsUseCase = $getPendingSewingReceiptsUseCase;
         $this->getPendingEmbroideryStampingReceiptsUseCase = $getPendingEmbroideryStampingReceiptsUseCase;
+        $this->getPendingQualityControlReceiptsUseCase = $getPendingQualityControlReceiptsUseCase;
         $this->updateProfileUseCase = $updateProfileUseCase;
         $this->getComparisonDataUseCase = $getComparisonDataUseCase;
         $this->getFilterOptionsUseCase = $getFilterOptionsUseCase;
         $this->updateOrderUseCase = $updateOrderUseCase;
         $this->getSewingReceiptFilterOptionsUseCase = $getSewingReceiptFilterOptionsUseCase;
+        $this->getQualityControlReceiptFilterOptionsUseCase = $getQualityControlReceiptFilterOptionsUseCase;
         $this->getPendingOrdersCountUseCase = $getPendingOrdersCountUseCase;
         $this->toggleOrderVisibilityUseCase = $toggleOrderVisibilityUseCase;
         $this->downloadOrderPdfUseCase = $downloadOrderPdfUseCase;
@@ -852,6 +860,18 @@ class SupervisorPedidosController extends Controller
         }
     }
 
+    public function obtenerOpcionesFiltroPendientesControlCalidad($campo)
+    {
+        try {
+            $request = new GetSewingReceiptFilterOptionsRequest($campo);
+            $response = $this->getQualityControlReceiptFilterOptionsUseCase->execute($request);
+            return response()->json($response->toArray());
+        } catch (\Exception $e) {
+            Log::error('Error al obtener opciones filtro control calidad: ' . $e->getMessage());
+            return response()->json(['opciones' => []]);
+        }
+    }
+
     /**
      * Obtener notificaciones del supervisor
      */
@@ -1225,6 +1245,31 @@ class SupervisorPedidosController extends Controller
         }
     }
     
+
+    /**
+     * Pendientes de Control Calidad
+     */
+    public function pendientesControlCalidad(Request $request)
+    {
+        try {
+            $requestDTO = new GetPendingSewingReceiptsRequest(
+                numeroRecibo: $request->filled('numero_recibo') ? $request->numero_recibo : null,
+                cliente: $request->filled('cliente') ? $request->cliente : null,
+                asesor: $request->filled('asesor') ? $request->asesor : null,
+                prendas: $request->filled('prendas') ? $request->prendas : null,
+                fechaCreacion: $request->filled('fecha_creacion') ? $request->fecha_creacion : null
+            );
+
+            $response = $this->getPendingQualityControlReceiptsUseCase->execute($requestDTO);
+            $procesosConCantidad = $response->getReceipts();
+
+            return view('supervisor-pedidos.pendientes-control-calidad', compact('procesosConCantidad'));
+
+        } catch (\Exception $e) {
+            Log::error('Error al cargar pendientes control calidad: ' . $e->getMessage());
+            return back()->with('error', 'Error al cargar los datos: ' . $e->getMessage());
+        }
+    }
 
     /**
      * Obtener detalles de un recibo específico

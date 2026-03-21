@@ -1,7 +1,7 @@
 @extends('supervisor-pedidos.layout')
 
-@section('title', 'Pendiente Costura')
-@section('page-title', 'Pendiente Costura')
+@section('title', 'Pendiente Control Calidad')
+@section('page-title', 'Pendiente Control Calidad')
 
 @push('styles')
 <style>
@@ -140,7 +140,7 @@
     <div class="row">
         <div class="col-12">
             <div class="supervisor-pedidos-container">
-                <div id="supervisorPendientesCosturaContent">
+                <div id="supervisorPendientesControlCalidadContent">
                 <!-- Tabla de Órdenes -->
                 <div style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
                     <!-- Contenedor con Scroll -->
@@ -204,7 +204,7 @@
                             </div>
                         </div>
 
-                        <div id="costurasRows">
+                        <div id="controlCalidadRows">
                             <!-- Filas -->
                             @if(empty($procesosConCantidad))
                                 <div style="padding: 3rem 2rem; text-align: center; color: #6b7280;">
@@ -523,7 +523,7 @@ function abrirModalFiltro(columna) {
         return;
     }
 
-    const endpoint = `/supervisor-pedidos/pendientes-costura/filtro-opciones/${columna}`;
+    const endpoint = `/supervisor-pedidos/pendientes-control-calidad/filtro-opciones/${columna}`;
     filtroContenido.innerHTML = `<p style="color:#6b7280;">Cargando...</p>`;
 
     fetch(endpoint)
@@ -602,7 +602,7 @@ function aplicarFiltroColumna(event) {
     }
 
     cerrarModalFiltro();
-    navegarPendientesCostura(url.toString());
+    navegarPendientesControlCalidad(url.toString());
 }
 
 function escapeHtml(str) {
@@ -615,7 +615,7 @@ function escapeHtml(str) {
 }
 
 document.addEventListener('click', function(e) {
-    const btn = e.target.closest('#supervisorPendientesCosturaContent .btn-filter-column');
+    const btn = e.target.closest('#supervisorPendientesControlCalidadContent .btn-filter-column');
     if (!btn) return;
     const col = btn.getAttribute('data-col');
     if (!col) return;
@@ -634,9 +634,9 @@ if (overlay) {
 
 actualizarIndicadoresFiltros();
 
-window.navegarPendientesCostura = async function navegarPendientesCostura(urlString, options = {}) {
+window.navegarPendientesControlCalidad = async function navegarPendientesControlCalidad(urlString, options = {}) {
     const { pushState = true } = options;
-    const container = document.getElementById('supervisorPendientesCosturaContent');
+    const container = document.getElementById('supervisorPendientesControlCalidadContent');
     if (!container) {
         window.location.href = urlString;
         return;
@@ -657,7 +657,7 @@ window.navegarPendientesCostura = async function navegarPendientesCostura(urlStr
         const html = await res.text();
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
-        const next = doc.getElementById('supervisorPendientesCosturaContent');
+        const next = doc.getElementById('supervisorPendientesControlCalidadContent');
 
         if (!res.ok || !next) {
             window.location.href = urlString;
@@ -687,15 +687,15 @@ function limpiarFiltroActual() {
     const url = new URL(window.location.href);
     url.searchParams.delete(filtroActual);
     cerrarModalFiltro();
-    navegarPendientesCostura(url.toString());
+    navegarPendientesControlCalidad(url.toString());
 }
 
 window.addEventListener('popstate', function() {
-    navegarPendientesCostura(window.location.href, { pushState: false });
+    navegarPendientesControlCalidad(window.location.href, { pushState: false });
 });
 
 document.addEventListener('click', function(e) {
-    const a = e.target.closest('#supervisorPendientesCosturaContent a');
+    const a = e.target.closest('#supervisorPendientesControlCalidadContent a');
     if (!a) return;
     const href = a.getAttribute('href');
     if (!href) return;
@@ -712,9 +712,9 @@ document.addEventListener('click', function(e) {
         return;
     }
 
-    if (!path.startsWith('/supervisor-pedidos/pendientes-costura')) return;
+    if (!path.startsWith('/supervisor-pedidos/pendientes-control-calidad')) return;
     e.preventDefault();
-    navegarPendientesCostura(urlAbs);
+    navegarPendientesControlCalidad(urlAbs);
 });
 
 // Funcionalidad de selector de colores con persistencia en BD
