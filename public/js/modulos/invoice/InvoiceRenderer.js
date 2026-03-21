@@ -167,7 +167,7 @@ class InvoiceRenderer {
             return prenda.telas_array.map(tela => {
                 // Debug logging para cada tela
                 if (tela.fotos && tela.fotos.length > 0) {
-                    });
+                    // Debug: Imágenes disponibles
                 }
 
                 return `
@@ -182,7 +182,7 @@ class InvoiceRenderer {
         } else {
             // Debug logging para fallback
             if (prenda.imagenes_tela && prenda.imagenes_tela.length > 0) {
-                });
+                // Debug: Imágenes de tela disponibles
             }
 
             return `
@@ -817,11 +817,6 @@ class InvoiceRenderer {
                         ⚡ EQUIPO DE PROTECCIÓN PERSONAL (${epps.length})
                     </div>
                     ${epps.map((epp, idx) => {
-                        ,
-                            imagenes_length: epp.imagenes ? epp.imagenes.length : 0,
-                            imagenes: epp.imagenes
-                        });
-
                         // Estandarizar: crear propiedad 'imagen' si no existe pero hay 'imagenes'
                         if (!epp.imagen && epp.imagenes && Array.isArray(epp.imagenes) && epp.imagenes.length > 0) {
                             epp.imagen = epp.imagenes[0];
@@ -829,7 +824,6 @@ class InvoiceRenderer {
 
                         // Generar HTML para las imágenes del EPP
                         const imagenesHTML = this.renderizarImagenesEPP(epp.imagenes || []);
-                        });
 
                         return `
                         <div style="background: white; border: 1px solid #d1d5db; border-left: 4px solid #6b7280; padding: 8px; border-radius: 4px; margin-bottom: 8px; page-break-inside: avoid;">
