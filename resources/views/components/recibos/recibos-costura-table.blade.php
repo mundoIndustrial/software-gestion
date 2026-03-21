@@ -273,7 +273,7 @@
                                     $estadoTexto = 'Pendiente';
                                 }
                             @endphp
-                            <span class="badge {{ $badgeClass }}" style="white-space: nowrap; display: inline-block;">
+                            <span class="badge {{ $badgeClass }}" style="white-space: nowrap;">
                                 {{ $estadoTexto }}
                             </span>
                         </td>
@@ -296,14 +296,14 @@
                                     $areaBadge = 'bg-purple'; // Púrpura - elegante para bordado (cambio de bg-danger)
                                 }
                             @endphp
-                            <span class="badge {{ $areaBadge }} area-badge-clickable" 
-                                  style="cursor: pointer; transition: all 0.2s ease;"
+                            <button type="button" class="badge {{ $areaBadge }} area-badge-clickable" 
+                                  style="cursor: pointer; transition: all 0.2s ease; border: none; padding: 0.375rem 0.75rem; font-size: 0.875rem; white-space: nowrap;"
                                   title="Click para agregar proceso"
                                   onclick="abrirModalAgregarProcesoDesdeArea('{{ $areaRecibo }}', {{ $recibo['pedido_produccion_id'] ?? 'null' }}, {{ $recibo['prenda_id'] ?? 'null' }})"
                                   onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.2)';"
                                   onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
                                 {{ $areaRecibo }}
-                            </span>
+                            </button>
                         </td>
                         
                         <!-- Total de días -->
