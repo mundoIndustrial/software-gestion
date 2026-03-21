@@ -208,7 +208,7 @@ class ObtenerPedidosOperarioService
     }
 
     /**
-     * Verificar si el pedido estÃ¡ asignado al operario actual
+     * Verificar si el pedido está asignado al operario actual
      * 
      * Lógica:
      * 1. Busca procesos del área del operario (Corte/Costura) donde el usuario sea el encargado

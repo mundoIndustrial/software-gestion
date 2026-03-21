@@ -11,7 +11,7 @@ class ItemValidationService
      * Validar un item del pedido
      * @param array $item
      * @param int $itemNum - numero del item (para mensajes de error)
-     * @return array - Array de errores (vacÃ­o si es vÃ¡lido)
+     * @return array - Array de errores (vacio si es valido)
      */
     public function validarItem(array $item, int $itemNum): array
     {
@@ -35,11 +35,11 @@ class ItemValidationService
         $errores = [];
 
         if (empty($item['epp_id'])) {
-            $errores[] = "Ãtem {$itemNum} (EPP): ID del EPP no especificado";
+            $errores[] = "item {$itemNum} (EPP): ID del EPP no especificado";
         }
 
         if (empty($item['cantidad']) || $item['cantidad'] <= 0) {
-            $errores[] = "Ãtem {$itemNum} (EPP): Cantidad debe ser mayor a 0";
+            $errores[] = "item {$itemNum} (EPP): Cantidad debe ser mayor a 0";
         }
 
         return $errores;
@@ -53,7 +53,7 @@ class ItemValidationService
         $errores = [];
 
         if (empty($item['nombre_producto'])) {
-            $errores[] = "Ãtem {$itemNum}: Prenda no especificada";
+            $errores[] = "item {$itemNum}: Prenda no especificada";
         }
 
         // Validar cantidad_talla
@@ -65,7 +65,7 @@ class ItemValidationService
         }
 
         if (empty($cantidadTalla) || !is_array($cantidadTalla) || count($cantidadTalla) === 0) {
-            $errores[] = "Ãtem {$itemNum}: Debe especificar cantidades por talla";
+            $errores[] = "item {$itemNum}: Debe especificar cantidades por talla";
         }
 
         return $errores;
@@ -77,7 +77,7 @@ class ItemValidationService
     public function validarHayItems(array $items): array
     {
         if (empty($items)) {
-            return ['Debe agregar al menos un Ã­tem al pedido'];
+            return ['Debe agregar al menos un item al pedido'];
         }
         return [];
     }

@@ -14,7 +14,7 @@ class ItemTransformerService
      * Procesar cantidad_talla desde el frontend
      * Maneja dos formatos:
      * - Antiguo: {genero-talla: cantidad} -> Convierte a {genero: {talla: cantidad}}
-     * - Nuevo: {genero: {talla: cantidad}} -> Retorna como estÃ¡
+     * - Nuevo: {genero: {talla: cantidad}} -> Retorna como está
      */
     public function procesarCantidadTalla($cantidadTalla): array
     {
@@ -23,12 +23,12 @@ class ItemTransformerService
             $cantidadTalla = json_decode($cantidadTalla, true) ?? [];
         }
 
-        // Si no es array, retornar vacÃ­o
+        // Si no es array, retornar vacio
         if (!is_array($cantidadTalla)) {
             return [];
         }
 
-        // Si estÃ¡ vacÃ­o, retornar vacÃ­o
+        // Si está vacio, retornar vacio
         if (empty($cantidadTalla)) {
             return [];
         }
@@ -46,7 +46,7 @@ class ItemTransformerService
         }
 
         if ($esFormatoNuevo) {
-            // Ya estÃ¡ en formato correcto, solo validar y retornar
+            // Ya está en formato correcto, solo validar y retornar
             foreach ($cantidadTalla as $genero => $tallas) {
                 if (is_array($tallas)) {
                     $resultado[$genero] = [];

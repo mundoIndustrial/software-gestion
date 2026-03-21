@@ -37,7 +37,7 @@ class PedidoValidator implements Validator
     }
 
     /**
-     * Validar un campo especÃ­fico
+     * Validar un campo especifico
      * 
      * @param string $field
      * @param mixed $value
@@ -59,9 +59,9 @@ class PedidoValidator implements Validator
     /**
      * Validar numero de pedido
      * 
-     * - No vacÃ­o
+     * - No vacio
      * - Debe ser unico en BD
-     * - MÃ¡ximo 50 caracteres
+     * - Maximo 50 caracteres
      * 
      * @throws InvalidArgumentException
      */
@@ -118,7 +118,7 @@ class PedidoValidator implements Validator
         
         if (!in_array($formaPagoNormalizada, $formasPagoPermitidas)) {
             throw new InvalidArgumentException(
-                "Forma de pago invÃ¡lida: {$formaPago}. Permitidas: " . implode(', ', $formasPagoPermitidas)
+                "Forma de pago invalida: {$formaPago}. Permitidas: " . implode(', ', $formasPagoPermitidas)
             );
         }
     }
@@ -142,7 +142,7 @@ class PedidoValidator implements Validator
             throw new InvalidArgumentException('El ID del asesor debe ser positivo');
         }
 
-        // AquÃ­ se podrÃ­a verificar si el asesor existe
+        // aqui­ se podria verificar si el asesor existe
         // if (!Asesor::find($asesorId)) {
         //     throw new InvalidArgumentException("El asesor con ID {$asesorId} no existe");
         // }

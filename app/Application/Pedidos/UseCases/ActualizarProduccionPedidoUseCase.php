@@ -39,7 +39,7 @@ class ActualizarProduccionPedidoUseCase
                 throw new Exception("Pedido con ID {$dto->id} no encontrado");
             }
 
-            // 2. Validar que estÃ¡ en estado pendiente
+            // 2. Validar que está en estado pendiente
             if (!$pedido->estaPendiente()) {
                 throw new Exception(
                     "No se puede actualizar un pedido en estado '{$pedido->getEstado()}'. " .

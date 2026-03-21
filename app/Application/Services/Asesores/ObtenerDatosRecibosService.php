@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 class ObtenerDatosRecibosService
 {
     /**
-     * Obtener datos dinÃ¡micos de recibos para un pedido
+     * Obtener datos dinamicos de recibos para un pedido
      * Incluye información de procesos de prendas
      * 
      * @param int $pedidoId
@@ -38,7 +38,7 @@ class ObtenerDatosRecibosService
     }
 
     /**
-     * Obtener datos de un recibo especÃ­fico por numero de prenda
+     * Obtener datos de un recibo especifico por numero de prenda
      */
     public function obtenerPorPrenda(int $pedidoId, int $prendaId): array
     {

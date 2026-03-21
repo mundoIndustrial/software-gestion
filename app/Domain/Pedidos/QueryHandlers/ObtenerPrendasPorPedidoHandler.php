@@ -66,7 +66,7 @@ class ObtenerPrendasPorPedidoHandler implements QueryHandler
                     'fotos',               //  AGREGADO: fotos de referencia de la prenda
                     'procesos',            // procesos de producción
                     'procesos.tipoProceso', // tipo de proceso
-                    'procesos.imagenes',   // imÃ¡genes de los procesos
+                    'procesos.imagenes',   // imagenes de los procesos
                 ])
                 ->get();
 

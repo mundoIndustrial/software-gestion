@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * Servicio de Dominio para procesar y guardar imÃ¡genes
+ * Servicio de Dominio para procesar y guardar imagenes
  */
 class ImagenProcessorService
 {

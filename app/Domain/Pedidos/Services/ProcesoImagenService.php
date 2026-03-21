@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 /**
  * ProcesoImagenService
  * 
- * Responsabilidad: Guardar imÃ¡genes de procesos en la BD
+ * Responsabilidad: Guardar imagenes de procesos en la BD
  * Ahora recibe File objects o arrays con información de archivo, NO base64
  */
 class ProcesoImagenService
@@ -22,11 +22,11 @@ class ProcesoImagenService
     }
 
     /**
-     * Guardar imÃ¡genes de procesos como WebP
+     * Guardar imagenes de procesos como WebP
      */
     public function guardarImagenesProcesos(int $procesoDetalleId, int $pedidoId, array $imagenes): void
     {
-        Log::info(' [ProcesoImagenService::guardarImagenesProcesos] Guardando imÃ¡genes de procesos', [
+        Log::info(' [ProcesoImagenService::guardarImagenesProcesos] Guardando imagenes de procesos', [
             'proceso_detalle_id' => $procesoDetalleId,
             'pedido_id' => $pedidoId,
             'cantidad_imagenes' => count($imagenes),

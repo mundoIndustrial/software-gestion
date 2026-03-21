@@ -38,7 +38,7 @@ class RegistroOrdenQueryServiceTest extends TestCase
     }
 
     /**
-     * Prueba que lanza excepción para columna invÃ¡lida
+     * Prueba que lanza excepción para columna invalida
      */
     public function test_get_unique_values_throws_exception_for_invalid_column()
     {
@@ -63,7 +63,7 @@ class RegistroOrdenQueryServiceTest extends TestCase
     }
 
     /**
-     * Prueba que filtra valores null y vacÃ­os
+     * Prueba que filtra valores null y vacios
      */
     public function test_get_unique_values_filters_null_and_empty()
     {
@@ -80,7 +80,7 @@ class RegistroOrdenQueryServiceTest extends TestCase
     }
 
     /**
-     * Prueba que los valores estÃ¡n ordenados alfabeticamente
+     * Prueba que los valores están ordenados alfabeticamente
      */
     public function test_get_unique_values_returns_sorted_array()
     {

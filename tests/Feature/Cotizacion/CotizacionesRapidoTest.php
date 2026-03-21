@@ -9,7 +9,7 @@ use App\Models\Cliente;
 use Tests\TestCase;
 
 /**
- * Test RÃ¡pido: Cotizaciones (Sin crear 260+ cotizaciones)
+ * Test Rapido: Cotizaciones (Sin crear 260+ cotizaciones)
  * 
  * Tests simples que se ejecutan en segundos para demostrar
  * que el sistema funciona correctamente.
@@ -146,7 +146,7 @@ class CotizacionesRapidoTest extends TestCase
         $this->assertFalse($cot->es_borrador);
         $this->assertEquals('enviada', $cot->estado);
 
-        echo "\n Todos los campos requeridos vÃ¡lidos\n";
+        echo "\n Todos los campos requeridos validos\n";
     }
 
     /**
@@ -171,7 +171,7 @@ class CotizacionesRapidoTest extends TestCase
     }
 
     /**
-     * TEST 6: Estados vÃ¡lidos
+     * TEST 6: Estados validos
      */
     public function test_estados_validos(): void
     {
@@ -193,7 +193,7 @@ class CotizacionesRapidoTest extends TestCase
             $this->assertEquals($estado, $cot->estado);
         }
 
-        echo "\n Estados vÃ¡lidos: enviada, aceptada, rechazada\n";
+        echo "\n Estados validos: enviada, aceptada, rechazada\n";
     }
 }
 

@@ -61,10 +61,10 @@ try {
     echo "  âœ“ Desde BORRADOR puede ir a: " . implode(", ", $transiciones) . "\n";
     
     $puedePasar = $estado->puedePasar(EstadoCotizacion::ENVIADA_CONTADOR);
-    echo "  âœ“ BORRADOR â†’ ENVIADA_CONTADOR: " . ($puedePasar ? "SÃ" : "NO") . "\n";
+    echo "  âœ“ BORRADOR â†’ ENVIADA_CONTADOR: " . ($puedePasar ? "si" : "NO") . "\n";
     
     $noPuedePasar = $estado->puedePasar(EstadoCotizacion::APROBADA_COTIZACIONES);
-    echo "  âœ“ BORRADOR â†’ APROBADA_COTIZACIONES: " . ($noPuedePasar ? "SÃ" : "NO") . "\n";
+    echo "  âœ“ BORRADOR â†’ APROBADA_COTIZACIONES: " . ($noPuedePasar ? "si" : "NO") . "\n";
 } catch (\Exception $e) {
     echo "  âœ— Error verificando transiciones: " . $e->getMessage() . "\n";
 }
@@ -187,7 +187,7 @@ try {
 
 // RESUMEN FINAL
 echo "\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—\n";
-echo "â•‘  âœ“ TODOS LOS TESTS COMPLETADOS EXITOSAMENTE â•‘\n";
+echo "  âœ“ TODOS LOS TESTS COMPLETADOS EXITOSAMENTE \n";
 echo "â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
 echo "\nPróximos pasos:\n";
 echo "  1. Ejecutar: php artisan queue:work\n";

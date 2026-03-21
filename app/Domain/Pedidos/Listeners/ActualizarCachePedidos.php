@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
  * Listener que se dispara cuando se crea un nuevo pedido
  * Responsabilidades:
  * - Invalidar caches relacionados
- * - Actualizar estadÃ­sticas en cache
+ * - Actualizar estadisticas en cache
  * - Mantener datos frescos en Redis
  * 
  * Este es otro ejemplo de un side effect que no pertenece al agregado.
@@ -43,7 +43,7 @@ class ActualizarCachePedidos
                 Log::debug("cache invalidado: $key");
             }
 
-            // Actualizar estadÃ­sticas
+            // Actualizar estadisticas
             $statsKey = 'pedidos_stats';
             $stats = Cache::get($statsKey, [
                 'total' => 0,

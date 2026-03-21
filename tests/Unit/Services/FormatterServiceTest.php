@@ -125,7 +125,7 @@ class FormatterServiceTest extends TestCase
     }
 
     /**
-     * Test: Procesar ubicaciones vacÃ­as
+     * Test: Procesar ubicaciones vacias
      */
     public function test_procesar_ubicaciones_vacias(): void
     {
@@ -228,7 +228,7 @@ class FormatterServiceTest extends TestCase
     }
 
     /**
-     * Test: Procesar observaciones vacÃ­as
+     * Test: Procesar observaciones vacias
      */
     public function test_procesar_observaciones_vacias(): void
     {
@@ -250,7 +250,7 @@ class FormatterServiceTest extends TestCase
     }
 
     /**
-     * Test: Procesar observaciones ignorando vacÃ­as
+     * Test: Procesar observaciones ignorando vacias
      */
     public function test_procesar_observaciones_ignora_vacias(): void
     {
@@ -266,7 +266,7 @@ class FormatterServiceTest extends TestCase
         // Actuar
         $resultado = $this->service->procesarObservaciones($request);
 
-        // Afirmar - solo 2 observaciones, ignora la vacÃ­a
+        // Afirmar - solo 2 observaciones, ignora la vacia
         $this->assertCount(2, $resultado);
         $this->assertEquals('Obs 1', $resultado[0]['texto']);
         $this->assertEquals('Obs 2', $resultado[1]['texto']);

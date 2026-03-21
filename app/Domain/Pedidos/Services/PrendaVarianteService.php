@@ -10,15 +10,15 @@ use Illuminate\Support\Facades\Log;
  * PrendaVarianteService
  * 
  * Responsabilidad: Crear variantes de prendas en la BD
- * Guarda caracterÃ­sticas (manga, broche, bolsillos) en prenda_pedido_variantes
+ * Guarda caracteristicas (manga, broche, bolsillos) en prenda_pedido_variantes
  */
 class PrendaVarianteService
 {
     /**
      * Crear variantes desde cantidad_talla
      * 
-     * Crea UNA SOLA variante por prenda con sus caracterÃ­sticas
-     * Las tallas/cantidades ya estÃ¡n en prendas_pedido.cantidad_talla (JSON)
+     * Crea UNA SOLA variante por prenda con sus caracteristicas
+     * Las tallas/cantidades ya están en prendas_pedido.cantidad_talla (JSON)
      */
     public function crearVariantesDesdeCantidadTalla(
         int $prendaId,
@@ -32,7 +32,7 @@ class PrendaVarianteService
         string $bolsillosObs = ''
     ): void {
         try {
-            // Verificar que hay tallas (para no crear variante vacÃ­a)
+            // Verificar que hay tallas (para no crear variante vacia)
             $tieneTallas = false;
             if (is_array($cantidadTalla)) {
                 $tieneTallas = !empty($cantidadTalla);
@@ -42,7 +42,7 @@ class PrendaVarianteService
             }
 
             if (!$tieneTallas) {
-                Log::warning(' [PrendaVarianteService] cantidad_talla vacÃ­o, no se crea variante', [
+                Log::warning(' [PrendaVarianteService] cantidad_talla vacio, no se crea variante', [
                     'prenda_id' => $prendaId,
                 ]);
                 return;
@@ -60,7 +60,7 @@ class PrendaVarianteService
                 throw new \Exception("Prenda {$prendaId} no encontrada");
             }
 
-            // Crear UNA SOLA variante con todas las caracterÃ­sticas
+            // Crear UNA SOLA variante con todas las caracteristicas
             $variante = $prenda->variantes()->create([
                 'tipo_manga_id' => $tipoMangaId,
                 'tipo_broche_boton_id' => $tipoBrocheBotonId,

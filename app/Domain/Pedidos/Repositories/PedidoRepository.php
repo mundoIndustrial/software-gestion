@@ -9,7 +9,7 @@ use App\Domain\Pedidos\ValueObjects\NumeroPedido;
  * Repository Interface para Pedidos
  * 
  * Define el contrato para persistencia de PedidoAggregate
- * La implementación estÃ¡ en Infrastructure
+ * La implementación está en Infrastructure
  */
 interface PedidoRepository
 {

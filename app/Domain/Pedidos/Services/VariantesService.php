@@ -36,7 +36,7 @@ class VariantesService
                 ->get();
             
             if (!isset($prendasCot[$index])) {
-                \Log::warning(' No se encontró prenda de cotización en Ã­ndice', [
+                \Log::warning(' No se encontró prenda de cotización en indice', [
                     'index' => $index,
                     'total_prendas_cot' => $prendasCot->count()
                 ]);

@@ -18,7 +18,7 @@ use Tests\TestCase;
  * Test Suite: Concurrencia y Casos Extremos
  * 
  * Validar que el sistema maneje correctamente:
- * - multiples asesores creando simultÃ¡neamente
+ * - multiples asesores creando simultaneamente
  * - Transacciones y locks para evitar race conditions
  * - Incrementos secuenciales de numero_cotizacion
  * 
@@ -82,17 +82,17 @@ class CotizacionesConcurrencyTest extends TestCase
         // Verificar que no hay duplicados
         $this->assertEquals(100, count(array_unique($numeros)));
 
-        // Verificar que estÃ¡n en orden
+        // Verificar que están en orden
         $numerosOrdenados = $numeros;
         sort($numerosOrdenados);
         $this->assertEquals($numeros, $numerosOrdenados);
 
         echo "\n 100 Cotizaciones creadas sin duplicados\n";
-        echo "Primero: " . $numeros[0] . ", Ãšltimo: " . $numeros[99] . "\n";
+        echo "Primero: " . $numeros[0] . ",ultimo: " . $numeros[99] . "\n";
     }
 
     /**
-     * TEST 2: Emular 3 asesores haciendo transacciones simultÃ¡neas
+     * TEST 2: Emular 3 asesores haciendo transacciones simultaneas
      * 
      * Crea multiples cotizaciones desde diferentes usuarios de forma
      * intercalada para simular concurrencia.
@@ -124,7 +124,7 @@ class CotizacionesConcurrencyTest extends TestCase
                     'cliente_id' => $cliente->id,
                     'numero_cotizacion' => sprintf(
                         'COT-ASYNC-%s-%02d',
-                        $asesor->name[7], // Ãšltima letra del nombre
+                        $asesor->name[7], // ultima letra del nombre
                         $i
                     ),
                     'tipo_cotizacion_id' => $tipo->id,
@@ -230,23 +230,23 @@ class CotizacionesConcurrencyTest extends TestCase
 
         $numeroOriginal = $cot->numero_cotizacion;
 
-        // Intentar cambiar (deberÃ­a estar protegido)
+        // Intentar cambiar (deberia estar protegido)
         $cot->numero_cotizacion = 'COT-CHANGED-999';
         $cot->save();
 
         // Recargar desde BD
         $cotRefresco = Cotizacion::find($cot->id);
 
-        // El numero deberÃ­a haber cambiado (o estar protegido dependiendo de implementación)
+        // El numero deberia haber cambiado (o estar protegido dependiendo de implementación)
         // Para este test, verificamos que se registra el cambio
-        // En producción, deberÃ­as implementar protección en el modelo
+        // En producción, deberias implementar protección en el modelo
         $this->assertNotNull($cotRefresco->numero_cotizacion);
 
         echo "\n numero de cotización actualizado correctamente\n";
     }
 
     /**
-     * TEST 5: Crear cotizaciones con mÃ¡ximo de prendas/fotos
+     * TEST 5: Crear cotizaciones con Maximo de prendas/fotos
      * 
      * Verificar que el sistema puede manejar cotizaciones con muchas prendas
      * y muchas fotos sin problemas.
@@ -296,7 +296,7 @@ class CotizacionesConcurrencyTest extends TestCase
                     'orden' => $f,
                     'ancho' => 1920,
                     'alto' => 1080,
-                    'tamaÃ±o' => 524288,
+                    'tamano' => 524288,
                 ]);
 
                 $fotosCount++;
@@ -320,7 +320,7 @@ class CotizacionesConcurrencyTest extends TestCase
         $cotRefresco = Cotizacion::with('prendas.fotos.tallas')->find($cot->id);
         $this->assertCount(10, $cotRefresco->prendas);
 
-        echo "\n Cotización con mÃ¡ximas prendas/fotos creada correctamente\n";
+        echo "\n Cotización con maximas prendas/fotos creada correctamente\n";
         echo "Prendas: $prendasCount, Fotos: $fotosCount\n";
     }
 

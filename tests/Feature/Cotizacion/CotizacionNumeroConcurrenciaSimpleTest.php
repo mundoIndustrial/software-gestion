@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * TEST: Validar que la generación sincrónica de numeros funciona con pessimistic lock
  * 
- * Este test NO usa RefreshDatabase porque MySQL estÃ¡ causando timeout
+ * Este test NO usa RefreshDatabase porque MySQL está causando timeout
  * En su lugar, usa directamente MySQLi para testing de BD
  */
 class CotizacionNumeroConcurrenciaSimpleTest extends TestCase

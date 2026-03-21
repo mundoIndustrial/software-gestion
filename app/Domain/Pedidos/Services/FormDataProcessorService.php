@@ -7,12 +7,12 @@ use Illuminate\Http\UploadedFile;
 
 /**
  * Servicio de Dominio para procesar FormData
- * Extrae imÃ¡genes, procesos y telas desde FormData
+ * Extrae imagenes, procesos y telas desde FormData
  */
 class FormDataProcessorService
 {
     /**
-     * Procesar imÃ¡genes de prenda desde FormData
+     * Procesar imagenes de prenda desde FormData
      * @param Request $request
      * @param int $itemIndex
      * @return UploadedFile[]
@@ -32,17 +32,17 @@ class FormDataProcessorService
     }
 
     /**
-     * Procesar imÃ¡genes de telas desde FormData
+     * Procesar imagenes de telas desde FormData
      * @param Request $request
      * @param int $itemIndex
-     * @param array $telas - Array de telas con estructura bÃ¡sica
-     * @return array - Telas con imÃ¡genes adjuntas
+     * @param array $telas - Array de telas con estructura basica
+     * @return array - Telas con imagenes adjuntas
      */
     public function extraerImagenesTelas(Request $request, int $itemIndex, array $telas): array
     {
         $telasConImagenes = [];
 
-        \Log::info('[FormDataProcessorService] Extrayendo imÃ¡genes de telas', [
+        \Log::info('[FormDataProcessorService] Extrayendo imagenes de telas', [
             'itemIndex' => $itemIndex,
             'cantidad_telas' => count($telas),
         ]);
@@ -55,7 +55,7 @@ class FormDataProcessorService
             }
         }
 
-        // Buscar imÃ¡genes en FormData con patrón items_index_telas_telaIdx_imagenes_files
+        // Buscar imagenes en FormData con patrón items_index_telas_telaIdx_imagenes_files
         foreach ($telas as $telaIdx => $telaDatos) {
             $patronTela = "items_" . $itemIndex . "_telas_" . $telaIdx . "_imagenes_files";
             $fotosUploadedFiles = $request->file($patronTela) ?? [];
@@ -69,7 +69,7 @@ class FormDataProcessorService
             });
 
             if (!empty($imagenesFiltered)) {
-                \Log::info('[FormDataProcessorService]  Encontrada clave de imÃ¡genes de tela', [
+                \Log::info('[FormDataProcessorService]  Encontrada clave de imagenes de tela', [
                     'patron' => $patronTela,
                     'telaIdx' => $telaIdx,
                     'cantidad_archivos' => count($imagenesFiltered),
@@ -78,7 +78,7 @@ class FormDataProcessorService
             }
         }
 
-        \Log::info('[FormDataProcessorService] ImÃ¡genes de telas extraÃ­das', [
+        \Log::info('[FormDataProcessorService] imagenes de telas extraidas', [
             'itemIndex' => $itemIndex,
             'telas_con_imagenes' => count(array_filter($telasConImagenes, fn($t) => !empty($t['fotos']))),
         ]);
@@ -87,11 +87,11 @@ class FormDataProcessorService
     }
 
     /**
-     * Procesar imÃ¡genes de procesos desde FormData
+     * Procesar imagenes de procesos desde FormData
      * @param Request $request
      * @param int $itemIndex
      * @param array $procesos - Array de procesos
-     * @return array - Procesos con imÃ¡genes adjuntas
+     * @return array - Procesos con imagenes adjuntas
      */
     public function extraerImagenesProcesos(Request $request, int $itemIndex, array $procesos): array
     {
@@ -101,7 +101,7 @@ class FormDataProcessorService
             $procesosConImagenes[$tipoProceso] = $procesoData;
             $procesosConImagenes[$tipoProceso]['imagenes'] = [];
 
-            // Buscar imÃ¡genes en FormData con patrón items_index_procesos_tipoProceso_imagenes_files
+            // Buscar imagenes en FormData con patrón items_index_procesos_tipoProceso_imagenes_files
             $patronProceso = "items_" . $itemIndex . "_procesos_" . $tipoProceso . "_imagenes_files";
             $fotosUploadedFiles = $request->file($patronProceso) ?? [];
             
@@ -114,7 +114,7 @@ class FormDataProcessorService
             });
 
             if (!empty($imagenesFiltered)) {
-                \Log::info('[FormDataProcessorService]  Encontrada clave de imÃ¡genes de proceso', [
+                \Log::info('[FormDataProcessorService]  Encontrada clave de imagenes de proceso', [
                     'patron' => $patronProceso,
                     'tipoProceso' => $tipoProceso,
                     'cantidad_archivos' => count($imagenesFiltered),
@@ -127,7 +127,7 @@ class FormDataProcessorService
     }
 
     /**
-     * Procesar imÃ¡genes de EPP desde FormData
+     * Procesar imagenes de EPP desde FormData
      * @param Request $request
      * @param int $itemIndex
      * @return UploadedFile[]
@@ -184,7 +184,7 @@ class FormDataProcessorService
         foreach ($procesosDatos as $tipoProceso => $procesoData) {
             $datosProceso = [];
 
-            // Copiar campos bÃ¡sicos
+            // Copiar campos basicos
             if (isset($procesoData['tipo'])) {
                 $datosProceso['tipo'] = $procesoData['tipo'];
             }

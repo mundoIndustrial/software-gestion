@@ -99,11 +99,11 @@ class GuardarEppPedidoTest extends TestCase
     }
 
     /**
-     * Test: Verificar que las imÃ¡genes se guardaron correctamente
+     * Test: Verificar que las imagenes se guardaron correctamente
      */
     public function test_imagenes_del_epp_se_guardaron()
     {
-        $this->info("\nTest: Verificar imÃ¡genes del EPP\n");
+        $this->info("\nTest: Verificar imagenes del EPP\n");
 
         // Primero guardar el EPP
         $epp = Epp::first();
@@ -138,7 +138,7 @@ class GuardarEppPedidoTest extends TestCase
         $pedidosEpp = $this->eppService->guardarEppsDelPedido($this->pedido, $eppsData);
         $pedidoEpp = $pedidosEpp[0];
 
-        // Verificar que las imÃ¡genes se guardaron
+        // Verificar que las imagenes se guardaron
         $imagenes = PedidoEppImagen::where('pedido_epp_id', $pedidoEpp->id)->get();
         
         $this->assertCount(3, $imagenes);
@@ -155,8 +155,8 @@ class GuardarEppPedidoTest extends TestCase
         $this->assertNotNull($imagenPrincipal);
         $this->assertTrue($imagenPrincipal->principal);
 
-        echo "\n ImÃ¡genes guardadas correctamente\n";
-        echo "   - Total imÃ¡genes: " . count($imagenes) . "\n";
+        echo "\n imagenes guardadas correctamente\n";
+        echo "   - Total imagenes: " . count($imagenes) . "\n";
         echo "   - Imagen principal: {$imagenPrincipal->archivo}\n";
         foreach ($imagenes as $img) {
             $tipo = $img->principal ? '(PRINCIPAL)' : '';
@@ -213,7 +213,7 @@ class GuardarEppPedidoTest extends TestCase
         echo "   - EPP nombre: {$ultimoEpp['epp_nombre']}\n";
         echo "   - Cantidad: {$ultimoEpp['cantidad']}\n";
         echo "   - Observaciones: {$ultimoEpp['observaciones']}\n";
-        echo "   - Total imÃ¡genes: " . count($ultimoEpp['imagenes']) . "\n";
+        echo "   - Total imagenes: " . count($ultimoEpp['imagenes']) . "\n";
     }
 
     /**
@@ -240,7 +240,7 @@ class GuardarEppPedidoTest extends TestCase
             [
                 'epp_id' => $epps[1]->id,
                 'cantidad' => 50,
-                'tallas_medidas' => ['tamaÃ±o' => 'M'],
+                'tallas_medidas' => ['tamano' => 'M'],
                 'observaciones' => 'Segundo EPP'
             ]
         ];
@@ -371,9 +371,9 @@ class GuardarEppPedidoTest extends TestCase
     }
 
     /**
-     * Test: Guardar EPP con imÃ¡genes sin hacer refresh
+     * Test: Guardar EPP con imagenes sin hacer refresh
      *  Registra el EPP en la BD
-     *  Guarda las imÃ¡genes asociadas
+     *  Guarda las imagenes asociadas
      *  No borra la BD
      *  Verifica que todo se guardó correctamente
      */
@@ -424,7 +424,7 @@ class GuardarEppPedidoTest extends TestCase
         $this->assertCount(1, $pedidosEpp, 'Se debe guardar exactamente 1 EPP');
         $pedidoEpp = $pedidosEpp[0];
 
-        //  Verificar que estÃ¡ en la BD
+        //  Verificar que está en la BD
         $this->assertDatabaseHas('pedido_epp', [
             'id' => $pedidoEpp->id,
             'pedido_produccion_id' => $this->pedido->id,
@@ -444,9 +444,9 @@ class GuardarEppPedidoTest extends TestCase
         $this->assertEquals('64cm', $pedidoEpp->tallas_medidas['medida']);
         $this->assertEquals('Negro', $pedidoEpp->tallas_medidas['color']);
 
-        //  Verificar que las imÃ¡genes se guardaron
+        //  Verificar que las imagenes se guardaron
         $imagenes = PedidoEppImagen::where('pedido_epp_id', $pedidoEpp->id)->get();
-        $this->assertCount(2, $imagenes, 'Se deben guardar 2 imÃ¡genes');
+        $this->assertCount(2, $imagenes, 'Se deben guardar 2 imagenes');
 
         //  Verificar imagen principal
         $this->assertDatabaseHas('pedido_epp_imagenes', [
@@ -475,7 +475,7 @@ class GuardarEppPedidoTest extends TestCase
         echo "   - Cantidad: {$pedidoEpp->cantidad}\n";
         echo "   - Talla: {$pedidoEpp->tallas_medidas['talla']}\n";
         echo "   - Color: {$pedidoEpp->tallas_medidas['color']}\n";
-        echo "   - ImÃ¡genes guardadas: " . count($imagenes) . "\n";
+        echo "   - imagenes guardadas: " . count($imagenes) . "\n";
         echo "   - BD NO fue borrada \n\n";
     }
 

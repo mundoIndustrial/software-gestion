@@ -35,7 +35,7 @@ class ClienteTest extends TestCase
     public function lanza_excepcion_si_esta_vacio(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('El nombre del cliente no puede estar vacÃ­o');
+        $this->expectExceptionMessage('El nombre del cliente no puede estar vacio');
 
         Cliente::crear('');
     }
@@ -46,7 +46,7 @@ class ClienteTest extends TestCase
     public function lanza_excepcion_si_solo_espacios(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('El nombre del cliente no puede estar vacÃ­o');
+        $this->expectExceptionMessage('El nombre del cliente no puede estar vacio');
 
         Cliente::crear('   ');
     }
@@ -113,7 +113,7 @@ class ClienteTest extends TestCase
     {
         $cliente = Cliente::crear('Acme Corporation');
 
-        // Intentar cambiar la propiedad (deberÃ­a fallar en PHP 8.2+)
+        // Intentar cambiar la propiedad (deberia fallar en PHP 8.2+)
         $this->expectException(\Error::class);
         $cliente->valor = 'Nueva Empresa';
     }

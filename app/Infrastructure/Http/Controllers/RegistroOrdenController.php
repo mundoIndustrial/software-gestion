@@ -128,7 +128,7 @@ class RegistroOrdenController extends Controller
             // Validar datos
             $validatedData = $this->validationService->validateUpdateRequest($request);
 
-            // Ejecutar actualizaciÃ³n delegada al servicio
+            // Ejecutar actualizacion delegada al servicio
             $response = $this->updateService->updateOrder($orden, $validatedData);
 
             // ðŸ†• Obtener la orden actualizada con todos los campos calculados
@@ -137,7 +137,7 @@ class RegistroOrdenController extends Controller
             // ðŸ†• Preparar campos que fueron realmente actualizados (incluyendo los calculados)
             $changedFields = array_keys($validatedData);
             
-            // ðŸ†• Si se actualizÃ³ dia_de_entrega, aÃ±adir fecha_estimada_de_entrega a los campos cambiados
+            // ðŸ†• Si se actualizÃ³ dia_de_entrega, anadir fecha_estimada_de_entrega a los campos cambiados
             if (in_array('dia_de_entrega', $changedFields) && !in_array('fecha_estimada_de_entrega', $changedFields)) {
                 $changedFields[] = 'fecha_estimada_de_entrega';
             }
@@ -147,11 +147,11 @@ class RegistroOrdenController extends Controller
                 broadcast(new \App\Events\OrdenUpdated($ordenActualizada, 'updated', $changedFields));
                 \Log::info(" Broadcast enviado exitosamente para pedido {$ordenActualizada->numero_pedido}", ['campos' => $changedFields]);
             } catch (\Exception $e) {
-                \Log::warning(" Fallo en broadcast para pedido {$ordenActualizada->numero_pedido}, pero la actualizaciÃ³n fue exitosa", [
+                \Log::warning(" Fallo en broadcast para pedido {$ordenActualizada->numero_pedido}, pero la actualizacion fue exitosa", [
                     'error' => $e->getMessage(),
                     'codigo' => $e->getCode()
                 ]);
-                // No re-lanzamos la excepciÃ³n para que la actualizaciÃ³n sea exitosa incluso sin broadcast
+                // No re-lanzamos la excepciÃ³n para que la actualizacion sea exitosa incluso sin broadcast
             }
 
             return response()->json($response);
@@ -183,7 +183,7 @@ class RegistroOrdenController extends Controller
     }
 
     /**
-     * Invalidar cache de Dias calculados para una orden especÃ­fica
+     * Invalidar cache de Dias calculados para una orden especifica
      * Se ejecuta cuando se actualiza o elimina una orden
      * 
      * Delegado a: RegistroOrdenCacheService::invalidateDaysCache()
@@ -308,7 +308,7 @@ class RegistroOrdenController extends Controller
             $prendas = $this->prendaService->parseDescripcionToPrendas($nuevaDescripcion);
             $procesarRegistros = $this->prendaService->isValidParsedPrendas($prendas);
 
-            // Si hay prendas vÃ¡lidas, reemplazarlas
+            // Si hay prendas validas, reemplazarlas
             if ($procesarRegistros) {
                 $this->prendaService->replacePrendas($pedido, $prendas);
             }
@@ -355,7 +355,7 @@ class RegistroOrdenController extends Controller
     // parseDescripcionToPrendas() - Ver RegistroOrdenPrendaService
 
     /**
-     * Obtener detalles de una orden especÃ­fica para el modal
+     * Obtener detalles de una orden especifica para el modal
      * GET /orders/{numero_pedido}
      */
     public function show($numeroPedido)
@@ -374,7 +374,7 @@ class RegistroOrdenController extends Controller
                 $asesoraName = $order->asesora->name ?? '';
             }
 
-            // Obtener datos bÃ¡sicos
+            // Obtener datos basicos
             $orderData = [
                 'id' => $order->id,
                 'numero_pedido' => $order->numero_pedido,
@@ -413,9 +413,9 @@ class RegistroOrdenController extends Controller
                 \Log::warning('Error calculando entregas: ' . $e->getMessage());
             }
 
-            // Obtener prendas - usar plantilla si estÃ¡ relacionado a cotizaciÃ³n
+            // Obtener prendas - usar plantilla si está relacionado a cotizaciÃ³n
             try {
-                // Verificar si el pedido estÃ¡ relacionado a una cotizaciÃ³n
+                // Verificar si el pedido está relacionado a una cotizaciÃ³n
                 $esCotizacion = DB::table('pedidos_produccion')
                     ->where('numero_pedido', $numeroPedido)
                     ->whereNotNull('cotizacion_id')
@@ -501,7 +501,7 @@ class RegistroOrdenController extends Controller
     }
 
     /**
-     * Obtener opciones de una columna especÃ­fica con paginaciÃ³n y busqueda
+     * Obtener opciones de una columna especifica con paginaciÃ³n y busqueda
      * GET /registros/filter-column-options/{column}
      */
     public function getColumnFilterOptions($column, Request $request)
@@ -667,7 +667,7 @@ class RegistroOrdenController extends Controller
                         $ordenesArray[] = $orden->toArray();
                     }
                     
-                    \Log::info("Total Ã³rdenes para filtro: " . count($ordenesArray));
+                    \Log::info("Total ordenes para filtro: " . count($ordenesArray));
                     
                     // Usar batch calculation para obtener Dias de forma eficiente
                     $diasCalculados = CacheCalculosService::getTotalDiasBatch($ordenesArray, $festivos);
@@ -677,7 +677,7 @@ class RegistroOrdenController extends Controller
                     // Obtener valores unicos
                     $diasUnicos = [];
                     foreach ($diasCalculados as $dias) {
-                        if ($dias >= 0) {  // Solo incluir valores vÃ¡lidos
+                        if ($dias >= 0) {  // Solo incluir valores validos
                             $diasUnicos[$dias] = $dias;
                         }
                     }
@@ -691,7 +691,7 @@ class RegistroOrdenController extends Controller
                 default:
                     return response()->json([
                         'success' => false,
-                        'message' => 'Columna no vÃ¡lida'
+                        'message' => 'Columna no valida'
                     ], 400);
             }
 
@@ -728,7 +728,7 @@ class RegistroOrdenController extends Controller
     }
 
     /**
-     * Filtrar Ã³rdenes por criterios especÃ­ficos
+     * Filtrar ordenes por criterios especificos
      * POST /registros/filter-orders
      */
     public function filterOrders(Request $request)
@@ -763,8 +763,8 @@ class RegistroOrdenController extends Controller
                             $query->whereIn('numero_pedido', $values);
                             break;
                         case 'total_dias':
-                            // Filtro especial para total_dias - requiere cÃ¡lculo
-                            // Se procesarÃ¡ despues de obtener todas las Ã³rdenes
+                            // Filtro especial para total_dias - requiere calculo
+                            // Se procesaria despues de obtener todas las ordenes
                             break;
                         case 'descripcion':
                             // Filtrar por descripciones (que pueden contener multiples pedidos)
@@ -837,7 +837,7 @@ class RegistroOrdenController extends Controller
                     }
                 }
             } else {
-                // Si no hay filtros, mostrar todos los pedidos con numero_pedido vÃ¡lido
+                // Si no hay filtros, mostrar todos los pedidos con numero_pedido valido
                 // Excluir solo estados completamente finalizados y pedidos sin numero
                 $query->whereNotNull('numero_pedido')
                       ->where('numero_pedido', '>', 0)
@@ -857,7 +857,7 @@ class RegistroOrdenController extends Controller
                 ->orderBy('created_at', 'asc')
                 ->get();
 
-            // Filtrar por total_dias si estÃ¡ especificado
+            // Filtrar por total_dias si está especificado
             if (!empty($filters['total_dias'])) {
                 $currentYear = now()->year;
                 $nextYear = now()->addYear()->year;
@@ -875,7 +875,7 @@ class RegistroOrdenController extends Controller
                 
                 $totalDiasCalculados = CacheCalculosService::getTotalDiasBatch($ordenesArray, $festivos);
                 
-                // Filtrar Ã³rdenes que coincidan con los Dias seleccionados
+                // Filtrar ordenes que coincidan con los Dias seleccionados
                 $ordenes = $ordenes->filter(function($orden) use ($totalDiasCalculados, $diasFiltro) {
                     $totalDias = $totalDiasCalculados[$orden->numero_pedido] ?? 0;
                     return in_array((int)$totalDias, $diasFiltro, true);
@@ -924,10 +924,10 @@ class RegistroOrdenController extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error al filtrar Ã³rdenes: ' . $e->getMessage());
+            \Log::error('Error al filtrar ordenes: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Error al filtrar Ã³rdenes: ' . $e->getMessage()
+                'message' => 'Error al filtrar ordenes: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -1037,7 +1037,7 @@ class RegistroOrdenController extends Controller
                 'data' => $ordenes
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error en busqueda de Ã³rdenes: ' . $e->getMessage());
+            \Log::error('Error en busqueda de ordenes: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error en busqueda: ' . $e->getMessage()
@@ -1046,7 +1046,7 @@ class RegistroOrdenController extends Controller
     }
 
     /**
-     * Obtener imÃ¡genes de una orden (DEPRECATED - Usar RegistroOrdenQueryController)
+     * Obtener imagenes de una orden (DEPRECATED - Usar RegistroOrdenQueryController)
      */
 
     /**
@@ -1077,7 +1077,7 @@ class RegistroOrdenController extends Controller
             
             \Log::info(' Novedades actualizadas', ['novedades' => $request->input('novedades', '')]);
 
-            // Registrar en auditorÃ­a si existe
+            // Registrar en auditoria si existe
             if (class_exists('App\Models\AuditLog')) {
                 \App\Models\AuditLog::create([
                     'user_id' => auth()->id(),
@@ -1090,7 +1090,7 @@ class RegistroOrdenController extends Controller
                 ]);
             }
 
-            // Broadcast actualizaciÃ³n en tiempo real
+            // Broadcast actualizacion en tiempo real
             broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['novedades']));
             \Log::info('ðŸ“¡ Evento de broadcast enviado para novedades');
 
@@ -1146,7 +1146,7 @@ class RegistroOrdenController extends Controller
             // Obtener novedades actuales
             $novedadesActuales = $orden->novedades ?? '';
             
-            // Concatenar con salto de lÃ­nea si hay novedades anteriores
+            // Concatenar con salto de linea si hay novedades anteriores
             if (!empty($novedadesActuales)) {
                 $novedadesNuevas = $novedadesActuales . "\n\n" . $novedadFormato;
             } else {
@@ -1164,7 +1164,7 @@ class RegistroOrdenController extends Controller
                 'novedad' => $request->input('novedad')
             ]);
 
-            // Registrar en auditorÃ­a si existe
+            // Registrar en auditoria si existe
             if (class_exists('App\Models\AuditLog')) {
                 \App\Models\AuditLog::create([
                     'user_id' => auth()->id(),
@@ -1177,16 +1177,16 @@ class RegistroOrdenController extends Controller
                 ]);
             }
 
-            // Broadcast actualizaciÃ³n en tiempo real (sin bloquear si falla)
+            // Broadcast actualizacion en tiempo real (sin bloquear si falla)
             try {
                 broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['novedades']));
                 \Log::info('ðŸ“¡ Evento de broadcast enviado para nueva novedad');
             } catch (\Exception $e) {
-                \Log::warning(' Error de broadcast (no crÃ­tico)', [
+                \Log::warning(' Error de broadcast (no critico)', [
                     'error' => $e->getMessage(),
                     'pedido' => $numeroPedido
                 ]);
-                // Continuar de todas formas, no es un error crÃ­tico
+                // Continuar de todas formas, no es un error critico
             }
 
             return response()->json([
@@ -1257,7 +1257,7 @@ class RegistroOrdenController extends Controller
                 }
             }
             
-            // Broche/botÃ³n
+            // Broche/Boton
             if ($prenda->variantes && $prenda->variantes->count() > 0) {
                 $primerVariante = $prenda->variantes->first();
                 if ($primerVariante && $primerVariante->broche) {
@@ -1364,7 +1364,7 @@ class RegistroOrdenController extends Controller
             
             $recibosCostura = $query->orderBy('consecutivo_actual', 'desc')->get();
 
-            // Obtener festivos para cÃ¡lculo de Dias
+            // Obtener festivos para calculo de Dias
             $currentYear = now()->year;
             $nextYear = now()->addYear()->year;
             $festivos = array_merge(
@@ -1437,8 +1437,8 @@ class RegistroOrdenController extends Controller
                             } catch (\Exception $e) {}
                         }
                         
-                        // Calcular Dias hÃ¡biles manualmente (misma lÃ³gica que CacheCalculosService)
-                        $current = $fechaInicio->copy()->addDay();  // Saltar al prÃ³ximo dÃ­a
+                        // Calcular Dias habiles manualmente (misma lÃ³gica que CacheCalculosService)
+                        $current = $fechaInicio->copy()->addDay();  // Saltar al prÃ³ximo día
                         $totalDays = 0;
                         $maxIterations = 365;
                         $iterations = 0;
@@ -1448,7 +1448,7 @@ class RegistroOrdenController extends Controller
                             $isWeekend = $current->dayOfWeek === 0 || $current->dayOfWeek === 6;
                             $isFestivo = isset($festivosSet[$dateString]);
                             
-                            // Solo contar si es dÃ­a hÃ¡bil (no es fin de semana ni festivo)
+                            // Solo contar si es día habil (no es fin de semana ni festivo)
                             if (!$isWeekend && !$isFestivo) {
                                 $totalDays++;
                             }
@@ -1482,10 +1482,10 @@ class RegistroOrdenController extends Controller
                 // Obtener el area directamente del recibo (que es actualizado por el Observer)
                 $area = $recibo->area ?? 'Insumos';
                 
-                // Obtener informaciÃ³n detallada de la prenda especÃ­fica del recibo
+                // Obtener informaciÃ³n detallada de la prenda especifica del recibo
                 $descripcionDetallada = '';
                 if ($pedido && $recibo->prenda_id) {
-                    // Buscar la prenda especÃ­fica del recibo
+                    // Buscar la prenda especifica del recibo
                     $prendaRecibo = $pedido->prendas->where('id', $recibo->prenda_id)->first();
                     if ($prendaRecibo) {
                         $prendaInfo = "PRENDA: " . ($prendaRecibo->nombre_prenda ?? 'Sin nombre');
@@ -1554,7 +1554,7 @@ class RegistroOrdenController extends Controller
             $recibosConCantidad = $recibosConInfo->map(function ($recibo) use (&$totalCantidadGlobal) {
                 $cantidadTotal = 0;
                 
-                // Obtener la prenda especÃ­fica del recibo
+                // Obtener la prenda especifica del recibo
                 if ($recibo['pedido_produccion_id'] && $recibo['prenda_id']) {
                     try {
                         $pedido = PedidoProduccion::find($recibo['pedido_produccion_id']);
@@ -1644,10 +1644,10 @@ class RegistroOrdenController extends Controller
             });
         }
         
-        // Filtro por total de Dias (rango) - se aplicarÃ¡ despues del cÃ¡lculo
+        // Filtro por total de Dias (rango) - se aplicaria despues del calculo
         // Guardamos para procesamiento posterior
         if (isset($filtros['total_dias']) && count($filtros['total_dias']) >= 2) {
-            \Log::info('[recibosCostura] Filtro por total_Dias se aplicarÃ¡ en procesamiento posterior');
+            \Log::info('[recibosCostura] Filtro por total_Dias se aplicaria en procesamiento posterior');
         }
         
         // Filtros que requieren JOIN con pedidos - usamos subconsultas
@@ -1759,7 +1759,7 @@ class RegistroOrdenController extends Controller
                 ->where('activo', 1)
                 ->whereIn('prenda_id', $prendasAprobadas);
             
-            // Aplicar solo filtros explÃ­citos del usuario (NO el filtro por defecto de estado)
+            // Aplicar solo filtros explicitos del usuario (NO el filtro por defecto de estado)
             if (isset($filtros['estado']) && !empty($filtros['estado'])) {
                 $query->whereIn('estado', $filtros['estado']);
             }
@@ -1795,7 +1795,7 @@ class RegistroOrdenController extends Controller
                 'total' => $recibosReflectivo->count()
             ]);
 
-            // Obtener festivos para cÃ¡lculo de Dias
+            // Obtener festivos para calculo de Dias
             $currentYear = now()->year;
             $nextYear = now()->addYear()->year;
             $festivos = array_merge(
@@ -1858,7 +1858,7 @@ class RegistroOrdenController extends Controller
                 
                 $area = $recibo->area ?? 'Insumos';
                 
-                // Obtener informaciÃ³n detallada de la prenda especÃ­fica del recibo
+                // Obtener informaciÃ³n detallada de la prenda especifica del recibo
                 $descripcionDetallada = '';
                 if ($pedido && $recibo->prenda_id) {
                     $prendaRecibo = $pedido->prendas->where('id', $recibo->prenda_id)->first();
@@ -1925,7 +1925,7 @@ class RegistroOrdenController extends Controller
             $recibosConCantidad = $recibosConInfo->map(function ($recibo) use (&$totalCantidadGlobal) {
                 $cantidadTotal = 0;
                 
-                // Obtener la prenda especÃ­fica del recibo
+                // Obtener la prenda especifica del recibo
                 if ($recibo['pedido_produccion_id'] && $recibo['prenda_id']) {
                     try {
                         $pedido = PedidoProduccion::find($recibo['pedido_produccion_id']);
@@ -1985,7 +1985,7 @@ class RegistroOrdenController extends Controller
     }
 
     /**
-     * Obtener datos de un recibo de reflectivo especÃ­fico como JSON
+     * Obtener datos de un recibo de reflectivo especifico como JSON
      */
     public function getReciboReflectivoJson($reciboId)
     {
@@ -2061,7 +2061,7 @@ class RegistroOrdenController extends Controller
     }
     
     /**
-     * Obtener datos de un recibo especÃ­fico como JSON (para tiempo real)
+     * Obtener datos de un recibo especifico como JSON (para tiempo real)
      */
     public function getReciboJson($reciboId)
     {
@@ -2139,12 +2139,12 @@ class RegistroOrdenController extends Controller
     }
     
     /**
-     * Obtener el area del proceso mÃ¡s reciente de una prenda
+     * Obtener el area del proceso mas reciente de una prenda
      */
     private function obtenerAreaProcesoMasReciente($pedidoProduccionId, $prendaId = null)
     {
         try {
-            \Log::info('[obtenerAreaProcesoMasReciente] Buscando proceso mÃ¡s reciente', [
+            \Log::info('[obtenerAreaProcesoMasReciente] Buscando proceso mas reciente', [
                 'pedido_produccion_id' => $pedidoProduccionId,
                 'prenda_id' => $prendaId
             ]);
@@ -2186,13 +2186,13 @@ class RegistroOrdenController extends Controller
                 'procesos' => $todosLosProcesos->toArray()
             ]);
             
-            // Obtener el proceso mÃ¡s reciente por created_at
+            // Obtener el proceso mas reciente por created_at
             $procesoReciente = $query->orderBy('created_at', 'desc')
                 ->first();
             
             if ($procesoReciente) {
                 $area = $procesoReciente->proceso;
-                \Log::info('[obtenerAreaProcesoMasReciente] Proceso mÃ¡s reciente encontrado', [
+                \Log::info('[obtenerAreaProcesoMasReciente] Proceso mas reciente encontrado', [
                     'pedido_produccion_id' => $pedidoProduccionId,
                     'numero_pedido' => $numeroPedido,
                     'prenda_id' => $prendaId,
@@ -2221,12 +2221,12 @@ class RegistroOrdenController extends Controller
     }
     
     /**
-     * Obtener el area mÃ¡s reciente de un pedido (API)
+     * Obtener el area mas reciente de un pedido (API)
      */
     public function getAreaReciente($id)
     {
         try {
-            \Log::info('[getAreaReciente] Obteniendo area mÃ¡s reciente para pedido', ['pedido_id' => $id]);
+            \Log::info('[getAreaReciente] Obteniendo area mas reciente para pedido', ['pedido_id' => $id]);
             
             $pedido = PedidoProduccion::find($id);
             
@@ -2378,7 +2378,7 @@ class RegistroOrdenController extends Controller
             if (!is_numeric($id)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'ID de orden invÃ¡lido'
+                    'message' => 'ID de orden invalido'
                 ], 400);
             }
 
@@ -2406,7 +2406,7 @@ class RegistroOrdenController extends Controller
                 if ($diaDeEntrega < 1 || $diaDeEntrega > 35) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'DÃ­a de entrega invÃ¡lido. Debe ser entre 1 y 35'
+                        'message' => 'día de entrega invalido. Debe ser entre 1 y 35'
                     ], 400);
                 }
                 $updateData['dia_de_entrega'] = $diaDeEntrega;
@@ -2415,7 +2415,7 @@ class RegistroOrdenController extends Controller
                 $updateData['dia_de_entrega'] = null;
             }
 
-            // Calcular fecha estimada si se solicita y hay un dÃ­a vÃ¡lido
+            // Calcular fecha estimada si se solicita y hay un día valido
             if ($calcularFechaEstimada && $diaDeEntrega && $diaDeEntrega > 0) {
                 // Obtener la fecha de creaciÃ³n del recibo
                 $fechaInicio = $orden->fecha_de_creacion_de_orden;
@@ -2425,7 +2425,7 @@ class RegistroOrdenController extends Controller
                 }
 
                 if ($fechaInicio) {
-                    // Calcular fecha estimada sumando Dias hÃ¡biles
+                    // Calcular fecha estimada sumando Dias habiles
                     $fechaEstimada = $this->calcularFechaEstimadaConDiasHabiles(
                         $fechaInicio,
                         $diaDeEntrega
@@ -2442,7 +2442,7 @@ class RegistroOrdenController extends Controller
             $orden->refresh();
 
             // Log de la actividad
-            \Log::info('DÃ­a de entrega actualizado', [
+            \Log::info('día de entrega actualizado', [
                 'numero_pedido' => $orden->numero_pedido,
                 'dia_de_entrega' => $diaDeEntrega,
                 'fecha_estimada_de_entrega' => $orden->fecha_estimada_de_entrega,
@@ -2462,7 +2462,7 @@ class RegistroOrdenController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'DÃ­a de entrega actualizado correctamente',
+                'message' => 'día de entrega actualizado correctamente',
                 'data' => [
                     'numero_pedido' => $orden->numero_pedido,
                     'dia_de_entrega' => $orden->dia_de_entrega,
@@ -2471,20 +2471,20 @@ class RegistroOrdenController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Error al actualizar dÃ­a de entrega: ' . $e->getMessage(), [
+            \Log::error('Error al actualizar día de entrega: ' . $e->getMessage(), [
                 'orden_id' => $id,
                 'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al guardar el dÃ­a de entrega: ' . $e->getMessage()
+                'message' => 'Error al guardar el día de entrega: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Calcular fecha estimada sumando Dias hÃ¡biles (excluyendo fines de semana y festivos)
+     * Calcular fecha estimada sumando Dias habiles (excluyendo fines de semana y festivos)
      */
     private function calcularFechaEstimadaConDiasHabiles($fechaInicio, $diasHabiles)
     {
@@ -2492,7 +2492,7 @@ class RegistroOrdenController extends Controller
             $fecha = Carbon::parse($fechaInicio);
             $diasAgregados = 0;
 
-            // Obtener festivos del aÃ±o actual y siguiente
+            // Obtener festivos del aano actual y siguiente
             $currentYear = $fecha->year;
             $nextYear = $currentYear + 1;
             $festivos = array_merge(
@@ -2500,23 +2500,23 @@ class RegistroOrdenController extends Controller
                 FestivosColombiaService::obtenerFestivos($nextYear)
             );
 
-            // Convertir festivos a formato YYYY-MM-DD para comparaciÃ³n fÃ¡cil
+            // Convertir festivos a formato YYYY-MM-DD para comparaciÃ³n facil
             $festivosFormatted = array_map(function ($fechaFestivo) {
                 return Carbon::parse($fechaFestivo)->format('Y-m-d');
             }, $festivos);
 
-            // Sumar Dias hÃ¡biles
+            // Sumar Dias habiles
             while ($diasAgregados < $diasHabiles) {
                 $fecha->addDay();
 
-                // Verificar si es fin de semana (sÃ¡bado=6, domingo=0)
+                // Verificar si es fin de semana (sabado=6, domingo=0)
                 $diaSemana = $fecha->dayOfWeek;
                 $esFinde = ($diaSemana === 0 || $diaSemana === 6);
 
                 // Verificar si es festivo
                 $esFestivo = in_array($fecha->format('Y-m-d'), $festivosFormatted);
 
-                // Si no es fin de semana ni festivo, contar como dÃ­a hÃ¡bil
+                // Si no es fin de semana ni festivo, contar como día habil
                 if (!$esFinde && !$esFestivo) {
                     $diasAgregados++;
                 }

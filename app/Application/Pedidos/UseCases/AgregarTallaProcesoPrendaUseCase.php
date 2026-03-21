@@ -14,7 +14,7 @@ use App\Models\ProcesosPrendaDetalle;
  * Maneja la creación de registro en pedidos_procesos_prenda_tallas
  * que contiene el desglose de cantidades por talla para cada proceso
  * 
- * Antes: 20 lÃ­neas | despues: ~15 lÃ­neas | Reducción: ~25%
+ * Antes: 20 lineas | despues: ~15 lineas | Reducción: ~25%
  */
 final class AgregarTallaProcesoPrendaUseCase
 {

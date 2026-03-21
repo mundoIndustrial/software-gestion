@@ -55,17 +55,17 @@ class GestionItemsPedidoService
         $errores = [];
 
         if (!$this->tieneItems()) {
-            $errores[] = 'Debe agregar al menos un Ã­tem al pedido';
+            $errores[] = 'Debe agregar al menos un item al pedido';
         }
 
         foreach ($this->items as $index => $item) {
             $itemNum = $index + 1;
             if (empty($item->prenda)) {
-                $errores[] = "Ãtem {$itemNum}: Prenda no especificada";
+                $errores[] = "item {$itemNum}: Prenda no especificada";
             }
 
             if (empty($item->tallas)) {
-                $errores[] = "Ãtem {$itemNum}: Debe seleccionar al menos una talla";
+                $errores[] = "item {$itemNum}: Debe seleccionar al menos una talla";
             }
         }
 

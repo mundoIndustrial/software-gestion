@@ -61,7 +61,7 @@ class ObtenerPedidoHandler implements QueryHandler
                     'prendas.fotos',                    //  Fotos de referencia de cada prenda
                     'prendas.procesos',                 //  Procesos de producción
                     'prendas.procesos.tipoProceso',     //  Tipo de proceso
-                    'prendas.procesos.imagenes',        //  ImÃ¡genes de los procesos
+                    'prendas.procesos.imagenes',        //  imagenes de los procesos
                     'asesor',                           //  Información del asesor
                     'cliente',                          //  Información del cliente
                 ])

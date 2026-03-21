@@ -7,7 +7,7 @@ use App\Models\PrendaPedido;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Servicio para copiar imÃ¡genes de cotización a pedido
+ * Servicio para copiar imagenes de cotización a pedido
  * 
  * Responsabilidades:
  * - Copiar fotos de prendas de cotización a pedido
@@ -17,11 +17,11 @@ use Illuminate\Support\Facades\Log;
 class CopiarImagenesCotizacionAPedidoService
 {
     /**
-     * Copiar imÃ¡genes del reflectivo seleccionadas por el usuario
+     * Copiar imagenes del reflectivo seleccionadas por el usuario
      */
     public function copiarImagenesReflectivo(int $cotizacionId, int $pedidoId, array $fotosIdsSeleccionadas): void
     {
-        \Log::info(' [CopiarImagenes] Copiando imÃ¡genes de reflectivo', [
+        \Log::info(' [CopiarImagenes] Copiando imagenes de reflectivo', [
             'cotizacion_id' => $cotizacionId,
             'pedido_id' => $pedidoId,
             'fotos_seleccionadas' => $fotosIdsSeleccionadas
@@ -66,7 +66,7 @@ class CopiarImagenesCotizacionAPedidoService
                 ->first();
 
             if (!$primeraPrenda) {
-                \Log::warning('No hay prendas en el pedido para copiar imÃ¡genes de reflectivo');
+                \Log::warning('No hay prendas en el pedido para copiar imagenes de reflectivo');
                 return;
             }
 
@@ -88,7 +88,7 @@ class CopiarImagenesCotizacionAPedidoService
                     'orden' => $foto->orden ?? 0,
                     'ancho' => null,
                     'alto' => null,
-                    'tamaÃ±o' => null,
+                    'tamano' => null,
                 ]);
 
                 \Log::info(' Foto copiada', [
@@ -98,13 +98,13 @@ class CopiarImagenesCotizacionAPedidoService
                 $fotosCopiadas++;
             }
 
-            \Log::info(' ImÃ¡genes de reflectivo copiadas exitosamente', [
+            \Log::info(' imagenes de reflectivo copiadas exitosamente', [
                 'cantidad_fotos' => $fotosCopiadas,
                 'prenda_pedido_id' => $primeraPrenda->id
             ]);
 
         } catch (\Exception $e) {
-            \Log::error(' Error al copiar imÃ¡genes de reflectivo', [
+            \Log::error(' Error al copiar imagenes de reflectivo', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -112,14 +112,14 @@ class CopiarImagenesCotizacionAPedidoService
     }
 
     /**
-     * Copiar todas las imÃ¡genes de una cotización a sus prendas de pedido
+     * Copiar todas las imagenes de una cotización a sus prendas de pedido
      * 
-     * Estrategia: Copiar imÃ¡genes de TODAS las prendas de cotización a TODAS las prendas de pedido
+     * Estrategia: Copiar imagenes de TODAS las prendas de cotización a TODAS las prendas de pedido
      * Sin depender del orden, ya que ambas se crean en el mismo orden
      */
     public function copiarImagenesCotizacionAPedido(int $cotizacionId, int $pedidoId): void
     {
-        \Log::info(' [CopiarImagenes] Iniciando copia de imÃ¡genes', [
+        \Log::info(' [CopiarImagenes] Iniciando copia de imagenes', [
             'cotizacion_id' => $cotizacionId,
             'pedido_id' => $pedidoId
         ]);
@@ -141,7 +141,7 @@ class CopiarImagenesCotizacionAPedidoService
                 ->first();
 
             if ($prendasCotizacion->isEmpty()) {
-                Log::info('No hay prendas en la cotización para copiar imÃ¡genes', [
+                Log::info('No hay prendas en la cotización para copiar imagenes', [
                     'cotizacion_id' => $cotizacionId,
                     'pedido_id' => $pedidoId
                 ]);
@@ -156,7 +156,7 @@ class CopiarImagenesCotizacionAPedidoService
                 ->get();
 
             if ($prendasPedido->isEmpty()) {
-                Log::warning('No hay prendas en el pedido para copiar imÃ¡genes', [
+                Log::warning('No hay prendas en el pedido para copiar imagenes', [
                     'cotizacion_id' => $cotizacionId,
                     'pedido_id' => $pedidoId
                 ]);
@@ -173,13 +173,13 @@ class CopiarImagenesCotizacionAPedidoService
                 ]);
             }
 
-            // Copiar imÃ¡genes para cada prenda (por Ã­ndice)
+            // Copiar imagenes para cada prenda (por indice)
             $totalImagenesCopiadas = 0;
             foreach ($prendasCotizacion as $index => $prendaCot) {
                 $prendaPed = $prendasPedido->get($index);
                 
                 if (!$prendaPed) {
-                    Log::warning('Prenda de pedido no encontrada en Ã­ndice', [
+                    Log::warning('Prenda de pedido no encontrada en indice', [
                         'cotizacion_id' => $cotizacionId,
                         'prenda_cot_id' => $prendaCot->id,
                         'index' => $index
@@ -202,7 +202,7 @@ class CopiarImagenesCotizacionAPedidoService
                 }
             }
 
-            Log::info(' ImÃ¡genes copiadas exitosamente de cotización a pedido', [
+            Log::info(' imagenes copiadas exitosamente de cotización a pedido', [
                 'cotizacion_id' => $cotizacionId,
                 'pedido_id' => $pedidoId,
                 'prendas_procesadas' => $prendasCotizacion->count(),
@@ -210,7 +210,7 @@ class CopiarImagenesCotizacionAPedidoService
             ]);
 
         } catch (\Exception $e) {
-            Log::error(' Error al copiar imÃ¡genes de cotización a pedido', [
+            Log::error(' Error al copiar imagenes de cotización a pedido', [
                 'cotizacion_id' => $cotizacionId,
                 'pedido_id' => $pedidoId,
                 'error' => $e->getMessage(),
@@ -247,7 +247,7 @@ class CopiarImagenesCotizacionAPedidoService
                     'orden' => $foto->orden,
                     'ancho' => $foto->ancho,
                     'alto' => $foto->alto,
-                    'tamaÃ±o' => $foto->tamaÃ±o,
+                    'tamano' => $foto->tamano,
                 ]);
             }
 
@@ -352,7 +352,7 @@ class CopiarImagenesCotizacionAPedidoService
                     'orden' => $foto->orden,
                     'ancho' => $foto->ancho,
                     'alto' => $foto->alto,
-                    'tamaÃ±o' => $foto->tamaÃ±o,
+                    'tamano' => $foto->tamano,
                 ]);
             }
 

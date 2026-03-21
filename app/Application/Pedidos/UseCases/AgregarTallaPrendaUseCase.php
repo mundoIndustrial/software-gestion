@@ -13,7 +13,7 @@ use App\Models\PrendaPedido;
  * 
  * Maneja la creación de registro en prenda_pedido_tallas
  * 
- * Antes: 26 lÃ­neas | despues: ~17 lÃ­neas | Reducción: ~35%
+ * Antes: 26 lineas | despues: ~17 lineas | Reducción: ~35%
  */
 final class AgregarTallaPrendaUseCase
 {

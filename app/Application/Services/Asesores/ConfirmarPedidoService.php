@@ -35,7 +35,7 @@ class ConfirmarPedidoService
 
             // Verificar que el numero no está en uso
             if ($this->existeNumeroPedido($numeroPedido)) {
-                throw new \Exception('El numero de pedido ' . $numeroPedido . ' ya estÃ¡ en uso', 422);
+                throw new \Exception('El numero de pedido ' . $numeroPedido . ' ya está en uso', 422);
             }
 
             // Actualizar con el numero de pedido real

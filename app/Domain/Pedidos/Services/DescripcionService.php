@@ -10,7 +10,7 @@ class DescripcionService
 {
     /**
      * Construir descripción para prenda de pedido
-     * Formato: Un pÃ¡rrafo unico con descripción + todas las variaciones + observaciones
+     * Formato: Un parrafo unico con descripción + todas las variaciones + observaciones
      */
     public function construirDescripcionPrenda(int $numeroPrenda, array $producto, array $cantidadesPorTalla): string
     {
@@ -102,7 +102,7 @@ class DescripcionService
         // genero
         if (!empty($prenda['genero'])) {
             $generoTexto = $prenda['genero'] === 'dama' ? 'DAMA' : 'CABALLERO';
-            $lineas[] = 'GÃ‰NERO: ' . $generoTexto;
+            $lineas[] = 'GENERO: ' . $generoTexto;
         }
 
         // Cantidades por talla
@@ -148,7 +148,7 @@ class DescripcionService
                 $partes[] = strtoupper($variante['tipo_broche']);
             }
 
-            // PuÃ±o
+            // Puano
             if (!empty($variante['puno'])) {
                 $partes[] = strtoupper($variante['puno']);
             }
@@ -193,9 +193,9 @@ class DescripcionService
             $partes[] = 'BROCHE: ' . strtoupper($variantes['broche']);
         }
 
-        // PuÃ±o
+        // Puano
         if (!empty($variantes['puno'])) {
-            $partes[] = 'PUÃ‘O: ' . strtoupper($variantes['puno']);
+            $partes[] = 'PUNO: ' . strtoupper($variantes['puno']);
         }
 
         return !empty($partes) ? implode(' | ', $partes) : null;

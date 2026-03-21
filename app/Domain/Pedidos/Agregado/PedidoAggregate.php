@@ -9,10 +9,10 @@ use App\Domain\Pedidos\Entities\PrendaPedido;
 use Illuminate\Support\Collection;
 
 /**
- * Agregado RaÃ­z: PedidoAggregate
+ * Agregado raiz: PedidoAggregate
  * 
  * Encapsula toda la lógica del pedido
- * - Crea pedidos vÃ¡lidos
+ * - Crea pedidos validos
  * - Gestiona estado
  * - Valida cambios
  * - Dispara eventos
@@ -57,7 +57,7 @@ class PedidoAggregate extends AggregateRoot
         ?string $observaciones = null
     ): self {
         if ($clienteId <= 0) {
-            throw new \InvalidArgumentException('Cliente ID invÃ¡lido');
+            throw new \InvalidArgumentException('Cliente ID invalido');
         }
 
         if (empty($descripcion)) {

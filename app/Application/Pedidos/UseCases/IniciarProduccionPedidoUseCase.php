@@ -9,8 +9,8 @@ use App\Application\Pedidos\UseCases\Base\AbstractEstadoTransicionUseCase;
  * 
  * REFACTORIZADO: Utiliza AbstractEstadoTransicionUseCase para eliminar duplicación
  * 
- * Antes: 28 lÃ­neas
- * despues: 8 lÃ­neas
+ * Antes: 28 lineas
+ * despues: 8 lineas
  * Reducción: 71%
  */
 class IniciarProduccionPedidoUseCase extends AbstractEstadoTransicionUseCase

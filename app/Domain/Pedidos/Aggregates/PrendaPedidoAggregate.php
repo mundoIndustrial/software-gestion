@@ -8,7 +8,7 @@ use App\Domain\Pedidos\Events\PrendaPedidoAgregada;
 /**
  * PrendaPedidoAggregate
  * 
- * RaÃ­z de agregado para Prenda de Pedido
+ * raizde agregado para Prenda de Pedido
  * Encapsula:
  * - Todos los datos de una prenda dentro de un pedido
  * - Variantes (color, tela, manga, broche)

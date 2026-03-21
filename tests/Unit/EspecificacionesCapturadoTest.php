@@ -83,29 +83,29 @@ class EspecificacionesCapturadoTest extends TestCase
     }
 
     /**
-     * Test: Verificar que las observaciones vacÃ­as se manejan correctamente
+     * Test: Verificar que las observaciones vacias se manejan correctamente
      */
     public function test_observaciones_vacias_se_manejan()
     {
         $especificaciones = [
             'regimen' => [
                 ['valor' => 'común', 'observacion' => ''],
-                ['valor' => 'Simplificado', 'observacion' => 'Solo para pequeÃ±os negocios']
+                ['valor' => 'Simplificado', 'observacion' => 'Solo para pequeanos negocios']
             ]
         ];
 
-        // Verificar que las observaciones vacÃ­as se preservan
+        // Verificar que las observaciones vacias se preservan
         $this->assertEquals('', $especificaciones['regimen'][0]['observacion']);
-        $this->assertEquals('Solo para pequeÃ±os negocios', $especificaciones['regimen'][1]['observacion']);
+        $this->assertEquals('Solo para pequeanos negocios', $especificaciones['regimen'][1]['observacion']);
 
         // Simular JSON encoding/decoding
         $json = json_encode($especificaciones);
         $decodificado = json_decode($json, true);
 
         $this->assertEquals('', $decodificado['regimen'][0]['observacion']);
-        $this->assertEquals('Solo para pequeÃ±os negocios', $decodificado['regimen'][1]['observacion']);
+        $this->assertEquals('Solo para pequeanos negocios', $decodificado['regimen'][1]['observacion']);
 
-        echo "\n TEST PASADO: Observaciones vacÃ­as se manejan correctamente\n";
+        echo "\n TEST PASADO: Observaciones vacias se manejan correctamente\n";
         $this->assertTrue(true);
     }
 
@@ -116,7 +116,7 @@ class EspecificacionesCapturadoTest extends TestCase
     {
         $especificaciones = [
             'disponibilidad' => [
-                ['valor' => 'Bodega', 'observacion' => 'Stock: "Inmediato" (24hrs) & envÃ­o gratis']
+                ['valor' => 'Bodega', 'observacion' => 'Stock: "Inmediato" (24hrs) & Envio gratis']
             ]
         ];
 
@@ -126,7 +126,7 @@ class EspecificacionesCapturadoTest extends TestCase
 
         // Verificar que los caracteres especiales se preservan
         $this->assertEquals(
-            'Stock: "Inmediato" (24hrs) & envÃ­o gratis',
+            'Stock: "Inmediato" (24hrs) & Envio gratis',
             $decodificado['disponibilidad'][0]['observacion']
         );
 
@@ -150,17 +150,17 @@ class EspecificacionesCapturadoTest extends TestCase
                 ['valor' => 'común', 'observacion' => 'IVA incluido']
             ],
             'se_ha_vendido' => [
-                ['valor' => 'SÃ­', 'observacion' => 'Venta exitosa']
+                ['valor' => 'si­', 'observacion' => 'Venta exitosa']
             ],
             'ultima_venta' => [
                 ['valor' => 'Hace 3 meses', 'observacion' => '500 unidades']
             ],
             'flete' => [
-                ['valor' => 'Incluido', 'observacion' => 'EnvÃ­o gratis']
+                ['valor' => 'Incluido', 'observacion' => 'Envio gratis']
             ]
         ];
 
-        // Verificar que todas las categorÃ­as estÃ¡n presentes
+        // Verificar que todas las categorÃ­as están presentes
         $this->assertCount(6, $especificaciones);
         $this->assertArrayHasKey('disponibilidad', $especificaciones);
         $this->assertArrayHasKey('forma_pago', $especificaciones);

@@ -60,7 +60,7 @@ class EspecificacionesTest extends TestCase
     {
         $especificaciones = [
             'disponibilidad' => [
-                ['valor' => 'Bodega', 'observacion' => 'En stock: "Inmediato" (24hrs) & envÃ­o gratis']
+                ['valor' => 'Bodega', 'observacion' => 'En stock: "Inmediato" (24hrs) & Envio gratis']
             ]
         ];
 
@@ -75,7 +75,7 @@ class EspecificacionesTest extends TestCase
 
         // Verificar que los caracteres especiales se preservan
         $this->assertEquals(
-            'En stock: "Inmediato" (24hrs) & envÃ­o gratis',
+            'En stock: "Inmediato" (24hrs) & Envio gratis',
             $decodificado['disponibilidad'][0]['observacion']
         );
 
@@ -84,7 +84,7 @@ class EspecificacionesTest extends TestCase
     }
 
     /**
-     * Test: Verificar que especificaciones vacÃ­as se manejan correctamente
+     * Test: Verificar que especificaciones vacias se manejan correctamente
      */
     public function test_especificaciones_vacias()
     {
@@ -98,7 +98,7 @@ class EspecificacionesTest extends TestCase
         $this->assertEmpty($decodificado);
         $this->assertEquals('[]', $json);
 
-        echo "\n TEST PASADO: Especificaciones vacÃ­as se manejan correctamente\n";
+        echo "\n TEST PASADO: Especificaciones vacias se manejan correctamente\n";
         $this->assertTrue(true);
     }
 
@@ -112,24 +112,24 @@ class EspecificacionesTest extends TestCase
                 ['valor' => 'Bodega', 'observacion' => 'Stock: 100 unidades'],
                 ['valor' => 'Cúcuta', 'observacion' => 'Stock: 50 unidades'],
                 ['valor' => 'Lafayette', 'observacion' => 'Stock: 25 unidades'],
-                ['valor' => 'FÃ¡brica', 'observacion' => 'Producción: 2 semanas']
+                ['valor' => 'Fabrica', 'observacion' => 'Producción: 2 semanas']
             ],
             'forma_pago' => [
                 ['valor' => 'Contado', 'observacion' => 'Descuento 5%'],
-                ['valor' => 'CrÃ©dito', 'observacion' => 'Plazo: 30 Dias']
+                ['valor' => 'credito', 'observacion' => 'Plazo: 30 Dias']
             ],
             'regimen' => [
                 ['valor' => 'común', 'observacion' => 'IVA incluido'],
                 ['valor' => 'Simplificado', 'observacion' => 'Sin IVA']
             ],
             'se_ha_vendido' => [
-                ['valor' => 'SÃ­', 'observacion' => 'Venta exitosa hace 3 meses']
+                ['valor' => 'si­', 'observacion' => 'Venta exitosa hace 3 meses']
             ],
             'ultima_venta' => [
                 ['valor' => 'Hace 3 meses', 'observacion' => 'Cantidad: 500 unidades']
             ],
             'flete' => [
-                ['valor' => 'Incluido', 'observacion' => 'EnvÃ­o gratis a nivel nacional']
+                ['valor' => 'Incluido', 'observacion' => 'Envio gratis a nivel nacional']
             ]
         ];
 

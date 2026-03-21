@@ -26,12 +26,12 @@ use Intervention\Image\ImageManagerStatic as Image;
  * - Recibir JSON del frontend (estado temporal)
  * - Descomponer JSON en tablas relacionales normalizadas
  * - Guardar todo dentro de transacción DB
- * - Procesamiento de imÃ¡genes (conversión a WebP)
+ * - Procesamiento de imagenes (conversión a WebP)
  * 
  * Arquitectura:
  * - SRP: Solo responsable de persistencia de pedidos
  * - Transaccional: Todo o nada
- * - Resiliente: Rollback automÃ¡tico en errores
+ * - Resiliente: Rollback automatico en errores
  * 
  * @author Senior Developer
  */
@@ -236,7 +236,7 @@ class GuardarPedidoDesdeJSONService
 
         foreach ($variantes as $varianteData) {
             //  [19/01/2026] Talla y cantidad YA se guardan en prendas_pedido.cantidad_talla (JSON)
-            // Las variantes son ahora SOLO combinaciones de caracterÃ­sticas (color, tela, manga, broche, bolsillos)
+            // Las variantes son ahora SOLO combinaciones de caracteristicas (color, tela, manga, broche, bolsillos)
 
             $prendaPedido->variantes()->create([
                 'color_id' => $varianteData['color_id'] ?? null,
@@ -305,7 +305,7 @@ class GuardarPedidoDesdeJSONService
                 'has_imagenes_key' => isset($procesoData['imagenes']),
             ]);
 
-            // Guardar imÃ¡genes del proceso
+            // Guardar imagenes del proceso
             $this->guardarImagenesProceso($proceso, $procesoData['imagenes'] ?? []);
 
             $contador++;
@@ -315,7 +315,7 @@ class GuardarPedidoDesdeJSONService
     }
 
     /**
-     * Guardar imÃ¡genes de un proceso
+     * Guardar imagenes de un proceso
      */
     private function guardarImagenesProceso(PedidosProcesosPrendaDetalle $proceso, array $archivos): void
     {

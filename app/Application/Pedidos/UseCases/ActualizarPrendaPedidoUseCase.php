@@ -25,7 +25,7 @@ final class ActualizarPrendaPedidoUseCase
             $dto->prendaId
         );
 
-        // 1. Actualizar campos bÃ¡sicos
+        // 1. Actualizar campos basicos
         $this->actualizarCamposBasicos($prenda, $dto);
 
         // 2. Actualizar relaciones

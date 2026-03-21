@@ -45,7 +45,7 @@ class PedidoServiceTest extends TestCase
                 [
                     'nombre_producto' => 'POLO HOMBRE',
                     'cantidad' => 10,
-                    'descripcion' => 'Polo bÃ¡sico'
+                    'descripcion' => 'Polo basico'
                 ]
             ],
             'especificaciones' => [
@@ -86,7 +86,7 @@ class PedidoServiceTest extends TestCase
             'estado' => 'borrador',
             'es_borrador' => true,
             'productos' => [['nombre_producto' => 'JEAN', 'cantidad' => 5]],
-            'especificaciones' => ['forma_pago' => 'CrÃ©dito']
+            'especificaciones' => ['forma_pago' => 'credito']
         ]);
         
         // Crear segundo pedido
@@ -126,7 +126,7 @@ class PedidoServiceTest extends TestCase
             'nombre_producto' => 'POLO HOMBRE',
             'genero' => 'Hombre',
             'es_jean_pantalon' => false,
-            'descripcion' => 'Polo bÃ¡sico',
+            'descripcion' => 'Polo basico',
             'tallas' => ['S', 'M', 'L'],
             'estado' => 'Pendiente'
         ]);
@@ -215,7 +215,7 @@ class PedidoServiceTest extends TestCase
         // Contar pedidos antes
         $pedidosAntes = PedidoProduccion::count();
 
-        // Actuar - todo deberÃ­a completarse sin error
+        // Actuar - todo deberia completarse sin error
         $pedido = $this->service->aceptarCotizacion($cotizacionOriginal);
 
         // Afirmar - no debe haber rollback
@@ -229,7 +229,7 @@ class PedidoServiceTest extends TestCase
     {
         $this->cotizacion->update([
             'especificaciones' => [
-                'forma_pago' => 'CrÃ©dito 30 Dias'
+                'forma_pago' => 'credito 30 Dias'
             ]
         ]);
 
@@ -237,7 +237,7 @@ class PedidoServiceTest extends TestCase
         $pedido = $this->service->aceptarCotizacion($this->cotizacion);
 
         // Afirmar
-        $this->assertEquals('CrÃ©dito 30 Dias', $pedido->forma_de_pago);
+        $this->assertEquals('credito 30 Dias', $pedido->forma_de_pago);
     }
 
     /**

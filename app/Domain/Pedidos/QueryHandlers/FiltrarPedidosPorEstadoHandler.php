@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
  * FiltrarPedidosPorEstadoHandler
  * 
  * Maneja FiltrarPedidosPorEstadoQuery
- * Filtra pedidos por estado especÃ­fico
+ * Filtra pedidos por estado especifico
  */
 class FiltrarPedidosPorEstadoHandler implements QueryHandler
 {

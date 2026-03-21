@@ -88,7 +88,7 @@ class CotizacionEstadoServiceTest extends TestCase
     }
 
     /**
-     * Test: Rechazar transición invÃ¡lida
+     * Test: Rechazar transición invalida
      */
     public function test_rechazar_transicion_invalida()
     {

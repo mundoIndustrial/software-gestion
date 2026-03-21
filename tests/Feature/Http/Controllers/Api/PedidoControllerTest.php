@@ -37,7 +37,7 @@ class PedidoControllerTest extends TestCase
             'prendas' => [
                 [
                     'prenda_id' => 1,
-                    'descripcion' => 'Camiseta BÃ¡sica',
+                    'descripcion' => 'Camiseta basica',
                     'cantidad' => 100,
                     'tallas' => [
                         'DAMA' => [

@@ -17,7 +17,7 @@ class UtilitariosService
             return [];
         }
 
-        // Si ya estÃ¡ en formato nuevo
+        // Si ya está en formato nuevo
         if (is_array($especificaciones) && isset($especificaciones['forma_pago'])) {
             return $especificaciones;
         }
@@ -29,7 +29,7 @@ class UtilitariosService
             $datos = $especificaciones;
         }
 
-        // Si ya estÃ¡ en formato nuevo, devolver
+        // Si ya está en formato nuevo, devolver
         if (isset($datos['forma_pago'])) {
             return $datos;
         }
@@ -47,14 +47,14 @@ class UtilitariosService
         // Mapeos de nombres para conversión
         $mapeoFormaPago = [
             'tabla_orden[contado]' => 'Contado',
-            'tabla_orden[credito]' => 'CrÃ©dito',
+            'tabla_orden[credito]' => 'credito',
         ];
 
         $mapeoDisponibilidad = [
             'tabla_orden[bodega]' => 'Bodega',
             'tabla_orden[cucuta]' => 'Cúcuta',
             'tabla_orden[lafayette]' => 'Lafayette',
-            'tabla_orden[fabrica]' => 'FÃ¡brica',
+            'tabla_orden[fabrica]' => 'Fabrica',
         ];
 
         $mapeoRegimen = [
@@ -76,14 +76,14 @@ class UtilitariosService
             }
         }
 
-        // Procesar RÃ‰GIMEN
+        // Procesar REGIMEN
         foreach ($mapeoRegimen as $clave => $etiqueta) {
             if (isset($datos[$clave]) && ($datos[$clave] === '1' || $datos[$clave] === true)) {
                 $convertidas['regimen'][] = $etiqueta;
             }
         }
 
-        // Remover campos vacÃ­os
+        // Remover campos vacios
         foreach ($convertidas as $key => $value) {
             if (empty($value)) {
                 unset($convertidas[$key]);
@@ -117,7 +117,7 @@ class UtilitariosService
             }
         }
 
-        // Eliminar duplicados y resetear Ã­ndices
+        // Eliminar duplicados y resetear indices
         return array_values(array_unique(array_filter($generos)));
     }
 }

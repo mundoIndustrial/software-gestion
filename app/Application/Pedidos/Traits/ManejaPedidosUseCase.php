@@ -11,12 +11,12 @@ use App\Application\Pedidos\Catalogs\EstadoPedidoCatalog;
  * en Use Cases que trabajan con pedidos.
  * 
  * ELIMINA:
- * - 50-60 lÃ­neas de validación duplicada
+ * - 50-60 lineas de validación duplicada
  * - Mensajes de error inconsistentes (throw new Exception vs InvalidArgumentException vs DomainException)
  * - Lógica de busqueda/validación esparcida
  * - if (!$pedido) throw new... (repetida 20+ veces)
  * 
- * ANTES: Cada Use Case tenÃ­a:
+ * ANTES: Cada Use Case tenia:
  *   $pedido = $this->repo->buscar($id);
  *   if (!$pedido) throw new InvalidArgumentException("Pedido... no encontrado");
  * 
@@ -72,11 +72,11 @@ trait ManejaPedidosUseCase
     }
 
     /**
-     * Validar que el pedido estÃ¡ en un estado permitido
+     * Validar que el pedido está en un estado permitido
      * 
      * @param mixed $pedido Modelo del pedido (puede ser agregado o Eloquent)
      * @param string|array $estadoPermitido Estado(s) permitido(s)
-     * @throws \DomainException Si pedido no estÃ¡ en estado permitido
+     * @throws \DomainException Si pedido no está en estado permitido
      */
     protected function validarEstadoPermitido($pedido, $estadoPermitido): void
     {
@@ -119,10 +119,10 @@ trait ManejaPedidosUseCase
     }
 
     /**
-     * Validar que el estado es vÃ¡lido
+     * Validar que el estado es valido
      * 
      * @param string $estado Estado a validar
-     * @throws \InvalidArgumentException Si estado no es vÃ¡lido
+     * @throws \InvalidArgumentException Si estado no es valido
      */
     protected function validarEstadoValido(string $estado): void
     {
@@ -189,18 +189,18 @@ trait ManejaPedidosUseCase
     }
 
     /**
-     * Validar que un valor no estÃ¡ vacÃ­o
+     * Validar que un valor no está vacio
      * 
      * @param mixed $valor Valor a validar
      * @param string $nombreCampo Nombre del campo (para mensaje de error)
-     * @throws \InvalidArgumentException Si valor estÃ¡ vacÃ­o
+     * @throws \InvalidArgumentException Si valor está vacio
      */
     protected function validarNoVacio($valor, string $nombreCampo): void
     {
         if (empty($valor)) {
             throw new \InvalidArgumentException(
                 EstadoPedidoCatalog::obtenerMensajeError('validacion_fallida', [
-                    'razon' => "$nombreCampo no puede estar vacÃ­o"
+                    'razon' => "$nombreCampo no puede estar vacio"
                 ]),
                 400
             );

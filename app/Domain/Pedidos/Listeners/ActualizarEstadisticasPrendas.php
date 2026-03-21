@@ -6,12 +6,12 @@ use App\Domain\Pedidos\Events\PrendaPedidoAgregada;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Listener: Actualizar EstadÃ­sticas de Prendas
+ * Listener: Actualizar estadisticas de Prendas
  * 
  * Se dispara cuando: Una prenda es agregada a un pedido (PrendaPedidoAgregada)
  * 
  * Responsabilidades:
- * - Actualizar estadÃ­sticas de prendas por tipo
+ * - Actualizar estadisticas de prendas por tipo
  * - Invalidar cache de reportes
  * - Mantener contadores en Redis
  * 
@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Log;
  * 
  * Ejemplo de uso:
  * $eventDispatcher->dispatch(new PrendaPedidoAgregada(...));
- * // AutomÃ¡ticamente este listener se ejecuta
+ * // Automaticamente este listener se ejecuta
  */
 class ActualizarEstadisticasPrendas
 {
@@ -52,22 +52,22 @@ class ActualizarEstadisticasPrendas
             $currentCount = (int) cache()->get($dateKey, 0);
             cache()->put($dateKey, $currentCount + 1, now()->addDay());
 
-            // Actualizar estadÃ­sticas por tipo
+            // Actualizar estadisticas por tipo
             $tipoKey = "prendas_tipo_" . $event->getNombrePrenda();
             $currentQty = (int) cache()->get($tipoKey, 0);
             cache()->put($tipoKey, $currentQty + $event->getCantidad(), now()->addDay());
 
-            Log::info(' EstadÃ­sticas actualizadas', [
+            Log::info(' estadisticas actualizadas', [
                 'prenda_id' => $event->getPrendaId(),
                 'contador_hoy' => cache()->get($dateKey),
             ]);
 
         } catch (\Exception $e) {
-            Log::error(' Error al actualizar estadÃ­sticas', [
+            Log::error(' Error al actualizar estadisticas', [
                 'error' => $e->getMessage(),
                 'prenda_id' => $event->getPrendaId(),
             ]);
-            // No relanzar: esto es una operación no crÃ­tica
+            // No relanzar: esto es una operación no critica
         }
     }
 }

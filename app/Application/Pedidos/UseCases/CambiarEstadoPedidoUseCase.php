@@ -13,8 +13,8 @@ use Illuminate\Support\Facades\Log;
  * 
  * REFACTORIZADO: Utiliza ManejaPedidosUseCase trait + EstadoPedidoCatalog
  * 
- * Antes: 58 lÃ­neas (15 lÃ­neas de lógica + 43 de validación y transiciones hardcodeadas)
- * despues: 28 lÃ­neas (solo lógica de negocio)
+ * Antes: 58 lineas (15 lineas de lógica + 43 de validación y transiciones hardcodeadas)
+ * despues: 28 lineas (solo lógica de negocio)
  * Reducción: 52%
  * 
  * Beneficios:
@@ -41,7 +41,7 @@ final class CambiarEstadoPedidoUseCase
         // Obtener modelo Eloquent directamente (no Aggregate) porque se actualiza la BD
         $pedido = \App\Models\PedidoProduccion::findOrFail($dto->pedidoId);
 
-        // CENTRALIZADO: Validar estado es vÃ¡lido (trait + catalog)
+        // CENTRALIZADO: Validar estado es valido (trait + catalog)
         $this->validarEstadoValido($dto->nuevoEstado);
 
         // CENTRALIZADO: Validar transición es permitida (trait + catalog)

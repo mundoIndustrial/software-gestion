@@ -28,7 +28,7 @@ class CotizacionesTest extends TestCase
         
         // Crear usuario asesor
         $this->user = User::factory()->create([
-            'name' => 'MarÃ­a López',
+            'name' => 'maria López',
             'email' => 'maria@example.com'
         ]);
         
@@ -60,7 +60,7 @@ class CotizacionesTest extends TestCase
                     'disponibilidad' => 'Inmediata',
                     'forma_pago' => 'Contado',
                     'regimen' => 'común',
-                    'se_ha_vendido' => 'SÃ­',
+                    'se_ha_vendido' => 'si­',
                     'ultima_venta' => '2025-11-20',
                     'observacion' => 'Observación de prueba'
                 ]
@@ -104,7 +104,7 @@ class CotizacionesTest extends TestCase
         $historial = HistorialCotizacion::where('cotizacion_id', $cotizacion->id)->first();
         $this->assertNotNull($historial);
         $this->assertEquals('creacion', $historial->tipo_cambio);
-        $this->assertEquals('MarÃ­a López', $historial->usuario_nombre);
+        $this->assertEquals('maria López', $historial->usuario_nombre);
     }
 
     /**
@@ -120,7 +120,7 @@ class CotizacionesTest extends TestCase
             'numero_cotizacion' => 'COT-002',
             'tipo_cotizacion_id' => TipoCotizacion::where('codigo', 'M')->first()->id,
             'cliente' => 'Juan PÃ©rez',
-            'asesora' => 'MarÃ­a López',
+            'asesora' => 'maria López',
             'es_borrador' => true,
             'estado' => 'enviada',
             'fecha_inicio' => now(),
@@ -146,7 +146,7 @@ class CotizacionesTest extends TestCase
                     'cantidad' => 50,
                     'tallas' => ['28', '30', '32'],
                     'disponibilidad' => '15 Dias',
-                    'forma_pago' => 'CrÃ©dito',
+                    'forma_pago' => 'credito',
                     'regimen' => 'Especial',
                     'se_ha_vendido' => 'No',
                     'ultima_venta' => null,
@@ -187,7 +187,7 @@ class CotizacionesTest extends TestCase
             ->where('tipo_cambio', 'actualizacion')
             ->first();
         $this->assertNotNull($historialActualizacion);
-        $this->assertEquals('MarÃ­a López', $historialActualizacion->usuario_nombre);
+        $this->assertEquals('maria López', $historialActualizacion->usuario_nombre);
     }
 
     /**
@@ -203,7 +203,7 @@ class CotizacionesTest extends TestCase
             'numero_cotizacion' => 'COT-003',
             'tipo_cotizacion_id' => TipoCotizacion::where('codigo', 'M')->first()->id,
             'cliente' => 'Juan PÃ©rez',
-            'asesora' => 'MarÃ­a López',
+            'asesora' => 'maria López',
             'es_borrador' => true,
             'estado' => 'enviada',
             'fecha_inicio' => now(),
@@ -226,7 +226,7 @@ class CotizacionesTest extends TestCase
         $this->assertNotNull($cotizacion->fecha_envio);
         $this->assertFalse($cotizacion->es_borrador);
 
-        // Verificar que se registró el envÃ­o en el historial
+        // Verificar que se registró el Envio en el historial
         $historialEnvio = HistorialCotizacion::where('cotizacion_id', $cotizacion->id)
             ->where('tipo_cambio', 'envio')
             ->first();
@@ -256,7 +256,7 @@ class CotizacionesTest extends TestCase
                     'disponibilidad' => 'Inmediata',
                     'forma_pago' => 'Contado',
                     'regimen' => 'común',
-                    'se_ha_vendido' => 'SÃ­',
+                    'se_ha_vendido' => 'si­',
                     'ultima_venta' => '2025-11-20',
                     'observacion' => 'Observación inicial'
                 ]
@@ -323,7 +323,7 @@ class CotizacionesTest extends TestCase
             'numero_cotizacion' => 'COT-FECHA',
             'tipo_cotizacion_id' => TipoCotizacion::where('codigo', 'M')->first()->id,
             'cliente' => 'Test',
-            'asesora' => 'MarÃ­a López',
+            'asesora' => 'maria López',
             'es_borrador' => true,
             'estado' => 'enviada',
             'fecha_inicio' => now()->subHours(2),

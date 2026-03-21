@@ -45,7 +45,7 @@ class BuscarPedidoPorNumeroHandler implements QueryHandler
                     'prendas.fotos',                    //  Fotos de prenda
                     'prendas.procesos',                 //  Procesos
                     'prendas.procesos.tipoProceso',     //  Tipo de proceso
-                    'prendas.procesos.imagenes',        //  ImÃ¡genes de procesos
+                    'prendas.procesos.imagenes',        //  imagenes de procesos
                     'asesor',                           //  Asesor
                     'cliente',                          //  Cliente
                 ])

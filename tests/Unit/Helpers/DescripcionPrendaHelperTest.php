@@ -19,12 +19,12 @@ class DescripcionPrendaHelperTest extends TestCase
             'tela' => 'DRILL BORNEO',
             'ref' => 'REF:REF-DB-001',
             'manga' => 'LARGA',
-            'obs_manga' => 'Con puÃ±os ajustables',
+            'obs_manga' => 'Con puanos ajustables',
             'logo' => 'Logo bordado en espalda',
             'bolsillos' => [
                 'BOLSILLOS CON TAPA BOTON Y OJAL CON LOGOS BORDADOS DENTRO DEL BOLSILLO DERECHO "TRANSPORTE" BOLSILLO IZQUIERDO "ANI"'
             ],
-            'broche' => 'BOTÃ“N',
+            'broche' => 'BOTON',
             'reflectivos' => [
                 'REFLECTIVO GRIS 2" DE 25 CICLOS EN H EN LA PARTE DELANTERA Y TRASERA 2 VUELTAS EN CADA BRAZO Y UNA LINEA A LA ALTURA DEL OMBLIGO'
             ],
@@ -49,14 +49,14 @@ class DescripcionPrendaHelperTest extends TestCase
         $this->assertStringContainsString('REF-DB-001', $descripcion);
         $this->assertStringContainsString('Manga:', $descripcion);
         $this->assertStringContainsString('LARGA', $descripcion);
-        $this->assertStringContainsString('Con puÃ±os ajustables', $descripcion);
+        $this->assertStringContainsString('Con puanos ajustables', $descripcion);
         $this->assertStringContainsString('Bolsillos:', $descripcion);
         $this->assertStringContainsString('Reflectivo:', $descripcion);
-        $this->assertStringContainsString('BOTÃ“N:', $descripcion);
+        $this->assertStringContainsString('BOTA:', $descripcion);
         $this->assertStringContainsString('TALLAS:', $descripcion);
 
         // Verificar que NO contiene "SI" como item
-        $this->assertStringNotContainsString('â€¢ SI', $descripcion);
+        $this->assertStringNotContainsString(' SI', $descripcion);
 
         echo "\n Descripción generada correctamente:\n";
         echo $descripcion;
@@ -85,19 +85,19 @@ class DescripcionPrendaHelperTest extends TestCase
 
         $descripcion = DescripcionPrendaHelper::generarDescripcion($datos);
 
-        // No deberÃ­a contener "â€¢ SI" como item separado
-        $this->assertStringNotContainsString('â€¢ SI', $descripcion);
+        // No deberia contener " SI" como item separado
+        $this->assertStringNotContainsString(' SI', $descripcion);
         
-        // DeberÃ­a contener los items sin "SI"
-        $this->assertStringContainsString('â€¢ Bolsillo delantero izquierdo', $descripcion);
-        $this->assertStringContainsString('â€¢ Reflectivo gris 2"', $descripcion);
+        // deberia contener los items sin "SI"
+        $this->assertStringContainsString(' Bolsillo delantero izquierdo', $descripcion);
+        $this->assertStringContainsString(' Reflectivo gris 2"', $descripcion);
 
         echo "\n Limpieza de 'SI' funcionando correctamente:\n";
         echo $descripcion;
     }
 
     /**
-     * Test que verifica que los subtÃ­tulos sean dinÃ¡micos según el broche
+     * Test que verifica que los subtÃ­tulos sean dinamicos según el broche
      */
     public function test_subtitulos_dinamicos()
     {
@@ -123,7 +123,7 @@ class DescripcionPrendaHelperTest extends TestCase
         $this->assertStringContainsString('VELCRO:', $descripcion);
         $this->assertStringNotContainsString('BROCHE:', $descripcion);
 
-        echo "\n SubtÃ­tulos dinÃ¡micos funcionando:\n";
+        echo "\n SubtÃ­tulos dinamicos funcionando:\n";
         echo $descripcion;
     }
 
@@ -142,7 +142,7 @@ class DescripcionPrendaHelperTest extends TestCase
             'obs_manga' => '',
             'logo' => '',
             'bolsillos' => ['Bolsillo pecho'],
-            'broche' => 'BOTÃ“N',
+            'broche' => 'BOTA',
             'reflectivos' => [],
             'otros' => [],
             'tallas' => ['M' => 100, 'L' => 100],
@@ -169,7 +169,7 @@ class DescripcionPrendaHelperTest extends TestCase
 
         $this->assertStringContainsString('PRENDA 1:', $desc1);
         $this->assertStringContainsString('PRENDA 2:', $desc2);
-        $this->assertStringContainsString('BOTÃ“N:', $desc1);
+        $this->assertStringContainsString('BOTA:', $desc1);
         $this->assertStringContainsString('CREMALLERA:', $desc2);
 
         echo "\n multiples prendas con formato correcto:\n";

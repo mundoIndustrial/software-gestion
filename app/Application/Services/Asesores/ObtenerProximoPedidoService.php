@@ -14,12 +14,12 @@ class ObtenerProximoPedidoService
      */
     public function obtenerProximo(): int
     {
-        Log::info('ðŸ”¢ [PRÃ“XIMO PEDIDO] Buscando siguiente numero disponible');
+        Log::info(' [Proximo PEDIDO] Buscando siguiente numero disponible');
 
         $ultimoPedido = PedidoProduccion::max('numero_pedido');
         $siguientePedido = $ultimoPedido ? $ultimoPedido + 1 : 1;
 
-        Log::info('ðŸ”¢ [PRÃ“XIMO PEDIDO] Encontrado', [
+        Log::info(' [Proximo PEDIDO] Encontrado', [
             'ultimo_pedido' => $ultimoPedido,
             'siguiente_pedido' => $siguientePedido
         ]);
@@ -37,14 +37,14 @@ class ObtenerProximoPedidoService
     {
         $existe = PedidoProduccion::where('numero_pedido', $numeroPedido)->exists();
         
-        Log::info('ðŸ”¢ [VALIDAR PEDIDO] numero ' . $numeroPedido . ' existe: ' . ($existe ? 'SÃ' : 'NO'));
+        Log::info(' [VALIDAR PEDIDO] numero ' . $numeroPedido . ' existe: ' . ($existe ? 'si' : 'NO'));
 
         return $existe;
     }
 
     /**
      * Obtener rango de numeros disponibles (últimos 10 numeros usados + próximo)
-     * Ãštil para generar opciones de selección en formularios
+     * util para generar opciones de selección en formularios
      * 
      * @param int $cantidad Cantidad de numeros anteriores a mostrar
      * @return array
@@ -61,7 +61,7 @@ class ObtenerProximoPedidoService
             ->pluck('numero_pedido')
             ->toArray();
 
-        Log::info('ðŸ”¢ [RANGO DISPONIBLE] Generado', [
+        Log::info(' [RANGO DISPONIBLE] Generado', [
             'ultimo_numero' => $ultimoPedido,
             'proximo_numero' => $proximoPedido,
             'ultimos_usados_count' => count($ultimosUsados)

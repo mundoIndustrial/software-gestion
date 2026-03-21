@@ -36,7 +36,7 @@ class PrendaTallaService
             }
 
             if (empty($tallasCantidades)) {
-                Log::warning(' [PrendaTallaService] Cantidades vacÃ­as', ['prenda_id' => $prendaId]);
+                Log::warning(' [PrendaTallaService] Cantidades vacias', ['prenda_id' => $prendaId]);
                 return;
             }
 
@@ -54,9 +54,9 @@ class PrendaTallaService
             if ($esRelacional) {
                 // PROCESAMIENTO RELACIONAL: {GENERO: {TALLA: CANTIDAD}}
                 foreach ($tallasCantidades as $genero => $tallas) {
-                    // Validar que genero es vÃ¡lido
+                    // Validar que genero es valido
                     if (!in_array($genero, ['DAMA', 'CABALLERO', 'UNISEX'])) {
-                        Log::warning(' [PrendaTallaService] genero invÃ¡lido ignorado', [
+                        Log::warning(' [PrendaTallaService] genero invalido ignorado', [
                             'genero' => $genero,
                             'prenda_id' => $prendaId,
                         ]);
@@ -124,7 +124,7 @@ class PrendaTallaService
      * Detectar si estructura es relacional {GENERO: {TALLA: CANTIDAD}} 
      * o legacy {TALLA: CANTIDAD}
      * 
-     * HeurÃ­stica:
+     * Heuristica:
      * - Si tiene claves que son DAMA/CABALLERO/UNISEX â†’ relacional
      * - Si primer valor es array â†’ relacional
      * - Sino â†’ legacy

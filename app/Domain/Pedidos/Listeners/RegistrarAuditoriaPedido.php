@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
  * 
  * Listener que se dispara cuando se crea un nuevo pedido
  * Responsabilidades:
- * - Registrar en tabla de auditorÃ­a
+ * - Registrar en tabla de auditoria
  * - Registrar cambios de estado
  * - Mantener histórico para compliance
  * 
@@ -26,12 +26,12 @@ class RegistrarAuditoriaPedido
     public function __invoke(PedidoProduccionCreado $event): void
     {
         try {
-            Log::info(' Registrando auditorÃ­a de pedido', [
+            Log::info(' Registrando auditoria de pedido', [
                 'pedido_id' => $event->getPedidoId(),
                 'numero_pedido' => $event->getNumeroPedido(),
             ]);
 
-            // Registrar en tabla de auditorÃ­a
+            // Registrar en tabla de auditoria
             DB::table('auditoria_pedidos')->insert([
                 'pedido_id' => $event->getPedidoId(),
                 'numero_pedido' => $event->getNumeroPedido(),
@@ -46,13 +46,13 @@ class RegistrarAuditoriaPedido
                 'updated_at' => now(),
             ]);
 
-            Log::info(' AuditorÃ­a de pedido registrada', [
+            Log::info(' auditoria de pedido registrada', [
                 'pedido_id' => $event->getPedidoId(),
                 'evento' => $event->getEventName(),
             ]);
 
         } catch (\Exception $e) {
-            Log::error(' Error registrando auditorÃ­a', [
+            Log::error(' Error registrando auditoria', [
                 'error' => $e->getMessage(),
                 'pedido_id' => $event->getPedidoId(),
             ]);

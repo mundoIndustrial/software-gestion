@@ -139,14 +139,14 @@ class ActualizarYTransicionarPedidoUseCasesTest extends TestCase
     }
 
     /**
-     * Test: Error al actualizar con descripción vacÃ­a
+     * Test: Error al actualizar con descripción vacia
      */
     public function test_error_descripcion_vacia()
     {
         $useCase = new ActualizarDescripcionPedidoUseCase($this->repositoryMock);
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Descripción no puede estar vacÃ­a');
+        $this->expectExceptionMessage('Descripción no puede estar vacia');
 
         $useCase->ejecutar(1, '');
     }

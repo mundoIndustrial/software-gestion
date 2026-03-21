@@ -107,7 +107,7 @@ class ObtenerProcesosPorPedidoUseCase
         $actual = $inicio->copy();
 
         while ($actual <= $fin) {
-            // No es sÃ¡bado (6) ni domingo (0)
+            // No es sabado (6) ni domingo (0)
             if ($actual->dayOfWeek !== 0 && $actual->dayOfWeek !== 6) {
                 // No es festivo
                 $dateString = $actual->format('Y-m-d');

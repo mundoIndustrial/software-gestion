@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\Log;
  * 
  * REFACTORIZADO: Utiliza AbstractObtenerUseCase para eliminar duplicación
  * 
- * Antes: 22 lÃ­neas (7 lÃ­neas de lógica actual + 15 lÃ­neas duplicadas)
- * despues: 12 lÃ­neas (solo implementa personalización)
+ * Antes: 22 lineas (7 lineas de lógica actual + 15 lineas duplicadas)
+ * despues: 12 lineas (solo implementa personalización)
  * Reducción: 45%
  */
 class ObtenerProduccionPedidoUseCase extends AbstractObtenerUseCase

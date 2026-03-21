@@ -7,8 +7,8 @@ use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Facades\Image;
 
 /**
- * Servicio de dominio para manejo de imÃ¡genes
- * Responsabilidad unica: Procesar y guardar imÃ¡genes en formato WebP
+ * Servicio de dominio para manejo de imagenes
+ * Responsabilidad unica: Procesar y guardar imagenes en formato WebP
  */
 class ImagenService
 {
@@ -148,7 +148,7 @@ class ImagenService
     }
 
     /**
-     * Validar que el archivo sea una imagen vÃ¡lida
+     * Validar que el archivo sea una imagen valida
      * 
      * @param UploadedFile $file
      * @return bool

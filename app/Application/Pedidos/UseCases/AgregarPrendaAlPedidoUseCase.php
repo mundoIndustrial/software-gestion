@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\Log;
  * 
  * REFACTORIZADO: Utiliza ManejaPedidosUseCase trait para validación
  * 
- * Antes: 45 lÃ­neas (7 lÃ­neas de lógica + 38 de validación)
- * despues: 32 lÃ­neas (solo lógica de negocio)
+ * Antes: 45 lineas (7 lineas de lógica + 38 de validación)
+ * despues: 32 lineas (solo lógica de negocio)
  * Reducción: 29%
  */
 final class AgregarPrendaAlPedidoUseCase

@@ -8,13 +8,13 @@ use App\Enums\EstadoPedido;
  * EstadoPedidoCatalog
  * 
  * Centraliza todas las constantes y definiciones de estados de pedidos.
- * Ãšnica fuente de verdad para estados vÃ¡lidos, transiciones, mensajes de error, etc.
+ * Unica fuente de verdad para estados validos, transiciones, mensajes de error, etc.
  * 
  * BENEFICIOS:
  * - 1 lugar para actualizar si cambian los estados
  * - Reutilizable en todas las capas (Application, Domain, Infrastructure)
  * - Consistencia garantizada
- * - FÃ¡cil testing
+ * - facil testing
  * 
  * ELIMINA:
  * - Duplicación de constantes en multiples clases
@@ -29,7 +29,7 @@ use App\Enums\EstadoPedido;
 final class EstadoPedidoCatalog
 {
     /**
-     * Estados vÃ¡lidos del sistema
+     * Estados validos del sistema
      */
     public const ESTADOS_VALIDOS = [
         'PENDIENTE_SUPERVISOR',
@@ -49,11 +49,11 @@ final class EstadoPedidoCatalog
     ];
 
     /**
-     * Mensajes de error estÃ¡ndar - ÃšNICA FUENTE DE VERDAD
+     * Mensajes de error estándar - Unica FUENTE DE VERDAD
      */
     private const MENSAJES_ERROR = [
         'pedido_no_encontrado' => 'Pedido {identificador} no encontrado',
-        'estado_invalido' => "Estado '{estado}' no es vÃ¡lido. Estados permitidos: {estados_validos}",
+        'estado_invalido' => "Estado '{estado}' no es valido. Estados permitidos: {estados_validos}",
         'transicion_no_permitida' => "No se puede cambiar de estado {estado_actual} a {estado_nuevo}",
         'pedido_no_tiene_prendas' => 'Pedido {identificador} no tiene prendas agregadas',
         'prenda_no_encontrada' => 'Prenda {identificador} no encontrada en el pedido',
@@ -81,7 +81,7 @@ final class EstadoPedidoCatalog
     ];
 
     /**
-     * Validar si un estado es vÃ¡lido
+     * Validar si un estado es valido
      */
     public static function esValido(?string $estado): bool
     {
@@ -140,7 +140,7 @@ final class EstadoPedidoCatalog
     }
 
     /**
-     * Obtener todos los estados vÃ¡lidos
+     * Obtener todos los estados validos
      */
     public static function obtenerTodos(): array
     {

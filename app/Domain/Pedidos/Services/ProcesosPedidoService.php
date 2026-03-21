@@ -41,7 +41,7 @@ class ProcesosPedidoService
                         'encargado' => $asesoraLogueada,
                         'estado_proceso' => 'En Progreso',
                         'fecha_inicio' => now(),
-                        'observaciones' => 'Proceso de creación asignado automÃ¡ticamente a la asesora para cotización reflectivo',
+                        'observaciones' => 'Proceso de creación asignado Automaticamente a la asesora para cotización reflectivo',
                     ]);
 
                     \Log::info(' Proceso Creación de Orden creado', [
@@ -59,7 +59,7 @@ class ProcesosPedidoService
                         'encargado' => 'Ramiro',
                         'estado_proceso' => 'En Progreso',
                         'fecha_inicio' => now(),
-                        'observaciones' => 'Asignado automÃ¡ticamente a Ramiro para cotización reflectivo',
+                        'observaciones' => 'Asignado Automaticamente a Ramiro para cotización reflectivo',
                     ]);
 
                     \Log::info(' Proceso Costura creado', [

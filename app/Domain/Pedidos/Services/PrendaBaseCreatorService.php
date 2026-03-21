@@ -38,7 +38,7 @@ class PrendaBaseCreatorService
             'cantidad_prendas_actuales' => PrendaPedido::where('pedido_produccion_id', $pedidoId)->count(),
         ]);
 
-        // Crear prenda SIN cantidad_talla y genero (se guardarÃ¡n en tabla relacional)
+        // Crear prenda SIN cantidad_talla y genero (se guardaron en tabla relacional)
         $prenda = PrendaPedido::create([
             'pedido_produccion_id' => $pedidoId,
             'nombre_prenda' => $prendaData['nombre_producto'] ?? 'Sin nombre',
@@ -66,7 +66,7 @@ class PrendaBaseCreatorService
             }
         }
 
-        \Log::info(" [PRENDA #{$index}] DESPUÃ‰S DE CREATE - Prenda creada", [
+        \Log::info(" [PRENDA #{$index}] DespuesDE CREATE - Prenda creada", [
             'prenda_id_nueva' => $prenda->id,
             'nombre_prenda' => $prenda->nombre_prenda,
             'pedido_id' => $prenda->pedido_produccion_id,
@@ -74,7 +74,7 @@ class PrendaBaseCreatorService
         ]);
 
         $prendaVerificacion = PrendaPedido::with('tallas')->find($prenda->id);
-        \Log::info(' VERIFICACIÃ“N POST-GUARDADO DE PRENDA (prenda #' . $index . '):', [
+        \Log::info(' VERIFICACIÓN POST-GUARDADO DE PRENDA (prenda #' . $index . '):', [
             'prenda_id_creada' => $prenda->id,
             'prenda_existe_en_bd' => $prendaVerificacion ? true : false,
             'prenda_id_verificado' => $prendaVerificacion->id ?? 'NO ENCONTRADA',

@@ -43,7 +43,7 @@ class NotificarClientePedidoCreado
                 return;
             }
 
-            // AquÃ­ irÃ­an las notificaciones via email/SMS
+            // aqui­ iran las notificaciones via email/SMS
             // Por ahora, solo logging
             Log::info(' Notificación de pedido enviada', [
                 'pedido_id' => $event->getPedidoId(),

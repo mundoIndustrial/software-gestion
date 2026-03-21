@@ -16,32 +16,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
 
 /**
- * PrendaPedidoEditController - Controlador de ediciÃ³n segura de prendas
- * 
- * RESPONSABILIDAD:
- * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- * Manejar endpoints PATCH para ediciÃ³n segura de prendas persistidas.
- * 
- * SEPARACIÃ“N CLARA:
- * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- * POST /api/prendas-pedido               â†’ Crear (construcciÃ³n desde DOM)
- * PATCH /api/prendas-pedido/{id}/editar â†’ Editar (parcial seguro)
- * 
- * MÃ‰TODOS:
- * â”€â”€â”€â”€â”€â”€â”€â”€
- * editPrenda()        - Editar prenda completa (PATCH)
- * editPrendaFields()  - Editar solo campos simples
- * editTallas()        - Editar solo tallas (MERGE)
- * editVariante()      - Editar variante
- * editVarianteFields()- Editar solo variante campos simples
- * 
- * GARANTÃAS:
- * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- * âœ“ No reconstruye desde DOM
- * âœ“ Solo actualiza lo enviado
- * âœ“ Valida restricciones de negocio
- * âœ“ MERGE en relaciones (no borrado)
- * âœ“ Separado de lÃ³gica de creaciÃ³n
+ * PrendaPedidoEditController - Controlador para editar prendas de pedido
  */
 class PrendaPedidoEditController extends Controller
 {
@@ -94,7 +69,7 @@ class PrendaPedidoEditController extends Controller
             // Ejecutar ediciÃ³n
             $resultado = $this->prendaEditService->edit($prenda, $dto);
 
-            // Construir diff de campos bÃ¡sicos enviados
+            // Construir diff de campos basicos enviados
             $cambiosDetalle = [];
             foreach (['nombre_prenda', 'cantidad', 'descripcion', 'de_bodega'] as $campo) {
                 if (array_key_exists($campo, $dto->toArray() ?? [])) {
@@ -178,7 +153,7 @@ class PrendaPedidoEditController extends Controller
                 $prenda->pedido_produccion_id,
                 $id,
                 $prenda->nombre_prenda ?? 'PRENDA',
-                'campos bÃ¡sicos',
+                'campos basicos',
                 $cambiosDetalle ? implode(' | ', $cambiosDetalle) : null
             );
 
@@ -519,7 +494,7 @@ class PrendaPedidoEditController extends Controller
     }
 
     /**
-     * Obtener estado actual de una prenda (para auditorÃ­a)
+     * Obtener estado actual de una prenda (para auditoria)
      * 
      * GET: /api/prendas-pedido/{id}/estado
      * 
@@ -545,7 +520,7 @@ class PrendaPedidoEditController extends Controller
     }
 
     /**
-     * Obtener estado actual de una variante (para auditorÃ­a)
+     * Obtener estado actual de una variante (para auditoria)
      * 
      * GET: /api/prendas-pedido/{prendaId}/variantes/{varianteId}/estado
      * 
@@ -584,7 +559,7 @@ class PrendaPedidoEditController extends Controller
                 $inputData = $_POST;
             }
 
-            // Recolectar archivos de imÃ¡genes nuevas
+            // Recolectar archivos de imagenes nuevas
             $archivos = [];
             if ($request->hasFile('imagenes_nuevas')) {
                 $files    = $request->file('imagenes_nuevas');

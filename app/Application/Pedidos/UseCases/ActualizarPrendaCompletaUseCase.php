@@ -25,7 +25,7 @@ use App\Models\TipoProceso;
  * - Actualizar tallas â†’ ActualizarTallaPrendaUseCase
  * - Actualizar procesos â†’ ActualizarProcesoPrendaUseCase
  * 
- * Antes: 70 lÃ­neas | despues: ~60 lÃ­neas | Reducción: ~14%
+ * Antes: 70 lineas | despues: ~60 lineas | Reducción: ~14%
  */
 final class ActualizarPrendaCompletaUseCase
 {
@@ -53,7 +53,7 @@ final class ActualizarPrendaCompletaUseCase
             'cantidad_imagenes_a_eliminar' => is_array($dto->imagenesAEliminar) ? count($dto->imagenesAEliminar) : 0,
         ]);
 
-        // 1. Actualizar campos bÃ¡sicos
+        // 1. Actualizar campos basicos
         $this->actualizarCamposBasicos($prenda, $dto);
 
         // 2. Actualizar fotos de referencia
@@ -77,7 +77,7 @@ final class ActualizarPrendaCompletaUseCase
         // 6. Actualizar fotos de telas
         $this->actualizarFotosTelas($prenda, $dto);
 
-        // 7. Actualizar procesos y sus imÃ¡genes
+        // 7. Actualizar procesos y sus imagenes
         $this->actualizarProcesos($prenda, $dto);
         // 8. Guardar novedad en pedido_produccion
         $this->guardarNovedad($prenda, $dto);
@@ -163,7 +163,7 @@ final class ActualizarPrendaCompletaUseCase
             return;
         }
 
-        //  ACTUALIZACIÃ“N SELECTIVA: Comparar con existentes
+        //  ActualizaciónSELECTIVA: Comparar con existentes
         $fotosExistentes = $prenda->fotos()->get()->keyBy(function($f) {
             return $f->ruta_original;
         });
@@ -633,7 +633,7 @@ final class ActualizarPrendaCompletaUseCase
         }
 
         if (empty($dto->coloresTelas)) {
-            // Si viene array vacÃ­o, es intención explÃ­cita de eliminar TODO
+            // Si viene array vacio, es intención explicita de eliminar TODO
             $prenda->coloresTelas()->delete();
             return;
         }

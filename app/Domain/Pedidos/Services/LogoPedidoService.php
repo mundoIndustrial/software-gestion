@@ -25,7 +25,7 @@ class LogoPedidoService
         throw new \RuntimeException(
             'La funcionalidad de LogoPedido ha sido removida. '
             . 'La tabla logo_pedidos ya no existe en la base de datos. '
-            . 'Por favor, contÃ¡ctese con el administrador del sistema.'
+            . 'Por favor, contactese con el administrador del sistema.'
         );
     }
 
@@ -37,7 +37,7 @@ class LogoPedidoService
         throw new \RuntimeException(
             'La funcionalidad de LogoPedido ha sido removida. '
             . 'La tabla logo_pedidos ya no existe en la base de datos. '
-            . 'Por favor, contÃ¡ctese con el administrador del sistema.'
+            . 'Por favor, contactese con el administrador del sistema.'
         );
     }
 
@@ -54,7 +54,7 @@ class LogoPedidoService
         throw new \RuntimeException(
             'La funcionalidad de LogoPedido ha sido removida. '
             . 'La tabla logo_pedidos ya no existe en la base de datos. '
-            . 'Por favor, contÃ¡ctese con el administrador del sistema.'
+            . 'Por favor, contactese con el administrador del sistema.'
         );
     }
 }

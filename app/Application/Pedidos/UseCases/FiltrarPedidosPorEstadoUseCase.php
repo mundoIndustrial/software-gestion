@@ -24,7 +24,7 @@ final class FiltrarPedidosPorEstadoUseCase
         ]);
 
         $this->validarEstadoValido($dto->estado);
-        $this->validarPositivo($dto->page, 'PÃ¡gina');
+        $this->validarPositivo($dto->page, 'pagina');
 
         $pedidos = $this->pedidoRepository->obtenerPorEstado(
             $dto->estado,

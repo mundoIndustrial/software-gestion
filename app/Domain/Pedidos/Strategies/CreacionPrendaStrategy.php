@@ -18,7 +18,7 @@ use Illuminate\Http\Request;
 interface CreacionPrendaStrategy
 {
     /**
-     * Procesar y crear prenda según la estrategia especÃ­fica
+     * Procesar y crear prenda según la estrategia especifica
      * 
      * @param array $prendaData Datos de la prenda del request
      * @param int $pedidoProduccionId ID del pedido a vincular
@@ -47,7 +47,7 @@ interface CreacionPrendaStrategy
 
     /**
      * Obtener nombre descriptivo de la estrategia
-     * Ãštil para logging y debugging
+     * util para logging y debugging
      * 
      * @return string
      */

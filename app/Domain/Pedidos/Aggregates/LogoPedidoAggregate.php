@@ -8,7 +8,7 @@ use App\Domain\Pedidos\Events\LogoPedidoCreado;
 /**
  * LogoPedidoAggregate
  * 
- * RaÃ­z de agregado para Logo del Pedido
+ * raizde agregado para Logo del Pedido
  * Encapsula:
  * - Todos los datos del logo
  * - Cantidades de logos

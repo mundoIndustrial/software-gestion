@@ -72,11 +72,11 @@ class ActualizarPedidoService
     }
 
     /**
-     * Actualizar solo campos especÃ­ficos
+     * Actualizar solo campos especificos
      */
     public function actualizarCampos($pedidoIdentifier, array $campos): PedidoProduccion
     {
-        Log::info(' [ACTUALIZAR-CAMPOS] Actualizando campos especÃ­ficos', [
+        Log::info(' [ACTUALIZAR-CAMPOS] Actualizando campos especificos', [
             'campos' => array_keys($campos)
         ]);
 

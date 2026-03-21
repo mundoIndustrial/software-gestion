@@ -22,7 +22,7 @@ class CrearPedidoTestScript extends TestCase
     public function ejecutarPrueba()
     {
         echo "\n========================================\n";
-        echo "ðŸ§ª INICIANDO PRUEBA DE CREACIÃ“N DE PEDIDO\n";
+        echo "ðŸ§ª INICIANDO PRUEBA DE CREACION DE PEDIDO\n";
         echo "========================================\n\n";
 
         try {
@@ -69,13 +69,13 @@ class CrearPedidoTestScript extends TestCase
             echo " PRUEBA COMPLETADA EXITOSAMENTE\n";
             echo "========================================\n";
             echo "Pedido guardado correctamente en la base de datos\n";
-            echo "Todas las relaciones estÃ¡n configuradas correctamente\n\n";
+            echo "Todas las relaciones están configuradas correctamente\n\n";
 
         } catch (\Exception $e) {
             echo "\n ERROR EN LA PRUEBA:\n";
             echo "   {$e->getMessage()}\n";
             echo "   Archivo: {$e->getFile()}\n";
-            echo "   LÃ­nea: {$e->getLine()}\n\n";
+            echo "   linea: {$e->getLine()}\n\n";
         }
     }
 

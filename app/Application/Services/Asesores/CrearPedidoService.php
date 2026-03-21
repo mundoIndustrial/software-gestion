@@ -171,7 +171,7 @@ class CrearPedidoService
             'updated_at' => now()
         ]);
 
-        // Guardar imÃ¡genes
+        // Guardar imagenes
         foreach ($imagenesProcesadas as $index => $imagen) {
             DB::table('logo_pedido_imagenes')->insert([
                 'logo_pedido_id' => $logoPedidoId,
@@ -180,7 +180,7 @@ class CrearPedidoService
                 'ruta_original' => $imagen['ruta_original'],
                 'ruta_webp' => $imagen['ruta_webp'],
                 'tipo_archivo' => $imagen['tipo_archivo'],
-                'tamaÃ±o_archivo' => $imagen['tamaÃ±o_archivo'],
+                'tamano_archivo' => $imagen['tamano_archivo'],
                 'orden' => $index,
                 'created_at' => now(),
                 'updated_at' => now()
@@ -242,7 +242,7 @@ class CrearPedidoService
                                     'ruta_original' => Storage::url($rutaGuardada),
                                     'ruta_webp' => Storage::url(str_replace('.png', '.webp', $rutaGuardada)),
                                     'tipo_archivo' => $archivoFoto->getMimeType(),
-                                    'tamaÃ±o_archivo' => $archivoFoto->getSize(),
+                                    'tamano_archivo' => $archivoFoto->getSize(),
                                 ];
                             }
                         }
@@ -284,7 +284,7 @@ class CrearPedidoService
                     'ruta_webp' => Storage::url($rutaWebp),
                     'url' => Storage::url($rutaWebp),
                     'tipo_archivo' => $imagen->getMimeType(),
-                    'tamaÃ±o_archivo' => $imagen->getSize(),
+                    'tamano_archivo' => $imagen->getSize(),
                 ];
             }
         }

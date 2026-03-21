@@ -8,7 +8,7 @@ namespace App\Domain\Pedidos\ValueObjects;
  * Representa el numero unico de un pedido
  * - Immutable
  * - Validado
- * - Ãšnico en el dominio
+ * - unico en el dominio
  */
 class NumeroPedido
 {

@@ -55,7 +55,7 @@ class CotizacionesCompleteTest extends TestCase
 
         // Crear datos base
         $this->crearDatosBase();
-        $this->crearCatÃ¡logos();
+        $this->crearCatalogoss();
     }
 
     /**
@@ -89,9 +89,9 @@ class CotizacionesCompleteTest extends TestCase
     }
 
     /**
-     * Crear catÃ¡logos necesarios (generos, mangas, broches, etc.)
+     * Crear Catalogoss necesarios (generos, mangas, broches, etc.)
      */
-    private function crearCatÃ¡logos(): void
+    private function crearCatalogoss(): void
     {
         // generos
         $this->generos['masculino'] = Genero::firstOrCreate(
@@ -209,7 +209,7 @@ class CotizacionesCompleteTest extends TestCase
     }
 
     /**
-     * TEST 3: Crear 11 Cotizaciones TIPO GRANDE (G) con mÃ¡ximos campos
+     * TEST 3: Crear 11 Cotizaciones TIPO GRANDE (G) con Maximos campos
      */
     public function test_crear_11_cotizaciones_tipo_grande(): void
     {
@@ -224,7 +224,7 @@ class CotizacionesCompleteTest extends TestCase
             $this->assertNotNull($cotizacion->id);
             $this->assertEquals($this->tipoG->id, $cotizacion->tipo_cotizacion_id);
             
-            // Verificar mÃ¡ximo de prendas
+            // Verificar Maximo de prendas
             $this->assertGreaterThanOrEqual(3, $cotizacion->prendas->count());
 
             $cotizacionesCreadas[] = $cotizacion;
@@ -317,9 +317,9 @@ class CotizacionesCompleteTest extends TestCase
     }
 
     /**
-     * TEST 6: CONCURRENCIA - 3 Asesores creando 11 cotizaciones cada uno simultÃ¡neamente
+     * TEST 6: CONCURRENCIA - 3 Asesores creando 11 cotizaciones cada uno simultaneamente
      * 
-     *  NOTA: Este test simula concurrencia. En producción, se deberÃ­a usar
+     *  NOTA: Este test simula concurrencia. En producción, se deberia usar
      * herramientas como Guzzle HTTP con promesas para verdadera concurrencia.
      */
     public function test_concurrencia_multiples_asesores(): void
@@ -328,7 +328,7 @@ class CotizacionesCompleteTest extends TestCase
         $cotizacionesPorAsesor = [];
         $numerosGlobales = [];
 
-        // Simular creación simultÃ¡nea (secuencial, pero validar integridad)
+        // Simular creación simultanea (secuencial, pero validar integridad)
         foreach ($asesores as $indiceAsesor => $asesor) {
             $this->actingAs($asesor);
             $cotizacionesPorAsesor[$asesor->id] = [];
@@ -352,11 +352,11 @@ class CotizacionesCompleteTest extends TestCase
             $this->assertCount(11, $cotizaciones);
         }
 
-        // 4. numeros estÃ¡n distribuidos
+        // 4. numeros están distribuidos
         sort($numerosGlobales);
         echo "\n TEST CONCURRENCIA: 3 Asesores Ã— 11 Cotizaciones = 33 Total\n";
         echo "Primeros numeros: " . implode(', ', array_slice($numerosGlobales, 0, 5)) . "\n";
-        echo "Ãšltimos numeros: " . implode(', ', array_slice($numerosGlobales, -5)) . "\n";
+        echo "ultimos numeros: " . implode(', ', array_slice($numerosGlobales, -5)) . "\n";
     }
 
     /**
@@ -541,7 +541,7 @@ class CotizacionesCompleteTest extends TestCase
         // Crear logo
         $logo = LogoCotizacion::create([
             'cotizacion_id' => $cotizacion->id,
-            'observaciones_generales' => json_encode(['Validar colores', 'Bordar a mÃ¡quina']),
+            'observaciones_generales' => json_encode(['Validar colores', 'Bordar a maquina']),
             'tipo_venta' => 'bordado',
         ]);
 
@@ -555,7 +555,7 @@ class CotizacionesCompleteTest extends TestCase
                 'orden' => $i,
                 'ancho' => 500,
                 'alto' => 500,
-                'tamaÃ±o' => 102400,
+                'tamano' => 102400,
             ]);
         }
 
@@ -610,7 +610,7 @@ class CotizacionesCompleteTest extends TestCase
                 'orden' => $i,
                 'ancho' => 1920,
                 'alto' => 1080,
-                'tamaÃ±o' => 524288,
+                'tamano' => 524288,
             ]);
         }
 
@@ -687,7 +687,7 @@ class CotizacionesCompleteTest extends TestCase
         // Validar estado
         $this->assertIn($cotizacion->estado, ['enviada', 'aceptada', 'rechazada']);
 
-        // Si no es borrador, debe tener numero y fecha de envÃ­o
+        // Si no es borrador, debe tener numero y fecha de Envio
         if (!$cotizacion->es_borrador) {
             $this->assertNotNull($cotizacion->numero_cotizacion);
             $this->assertNotNull($cotizacion->fecha_envio);

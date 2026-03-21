@@ -87,7 +87,7 @@ class CreacionPedidoService
             // Procesar prendas
             $this->procesarPrendasDeCotizacion($pedido, $cotizacion);
 
-            // Si es reflectivo, crear procesos especÃ­ficos
+            // Si es reflectivo, crear procesos especificos
             if ($esReflectivo) {
                 $this->crearProcesosReflectivo($pedido, $cotizacion);
             }

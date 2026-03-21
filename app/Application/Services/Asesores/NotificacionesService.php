@@ -101,13 +101,13 @@ class NotificacionesService
     }
 
     /**
-     * Marcar todas las notificaciones como leÃ­das
+     * Marcar todas las notificaciones como leidas
      */
     public function marcarTodosLeidosPedidos(): void
     {
         $userId = Auth::id();
         
-        // Marcar todas las notificaciones de fecha estimada como leÃ­das
+        // Marcar todas las notificaciones de fecha estimada como leidas
         DB::table('notifications')
             ->where('notifiable_id', $userId)
             ->where('notifiable_type', 'App\\Models\\User')
@@ -135,7 +135,7 @@ class NotificacionesService
     }
 
     /**
-     * Marcar una notificación especÃ­fica como leÃ­da
+     * Marcar una notificación especifica como leida
      */
     public function marcarNotificacionLeida(string $notificationId): void
     {
@@ -152,7 +152,7 @@ class NotificacionesService
             throw new \Exception('Notificación no encontrada', 404);
         }
         
-        // Marcar como leÃ­da
+        // Marcar como leida
         DB::table('notifications')
             ->where('id', $notificationId)
             ->update(['read_at' => now()]);

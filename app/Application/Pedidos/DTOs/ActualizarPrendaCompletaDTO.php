@@ -6,7 +6,7 @@ namespace App\Application\Pedidos\DTOs;
  * DTO para actualizar prenda COMPLETA con todas sus relaciones
  * 
  * Maneja:
- * - prendas_pedido (campos bÃ¡sicos)
+ * - prendas_pedido (campos basicos)
  * - prenda_pedido_tallas
  * - prenda_pedido_variantes
  * - prenda_pedido_colores_telas

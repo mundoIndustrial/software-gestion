@@ -7,7 +7,7 @@ use App\Models\TipoBrocheBoton;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Servicio para obtener o crear caracterÃ­sticas de prendas (manga, broche, bolsillos)
+ * Servicio para obtener o crear caracteristicas de prendas (manga, broche, bolsillos)
  * desde nombres
  */
 class CaracteristicasPrendaService

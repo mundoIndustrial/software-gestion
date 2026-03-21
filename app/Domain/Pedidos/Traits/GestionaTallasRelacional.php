@@ -92,7 +92,7 @@ trait GestionaTallasRelacional
     }
 
     /**
-     * Actualizar cantidad de una talla especÃ­fica
+     * Actualizar cantidad de una talla especifica
      * 
      * @param int $prendaPedidoId
      * @param string $genero
@@ -135,7 +135,7 @@ trait GestionaTallasRelacional
     }
 
     /**
-     * Obtener tallas de un genero especÃ­fico
+     * Obtener tallas de un genero especifico
      * 
      * @param int $prendaPedidoId
      * @param string $genero

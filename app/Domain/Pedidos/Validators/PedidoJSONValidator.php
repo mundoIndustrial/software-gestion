@@ -56,7 +56,7 @@ class PedidoJSONValidator
             'prendas.*.fotos_tela.*.archivo' => 'nullable|file|mimes:jpeg,png,webp|max:10240',
             'prendas.*.fotos_tela.*.ancho' => 'nullable|numeric',
             'prendas.*.fotos_tela.*.alto' => 'nullable|numeric',
-            'prendas.*.fotos_tela.*.tamaÃ±o' => 'nullable|integer',
+            'prendas.*.fotos_tela.*.tamano' => 'nullable|integer',
             'prendas.*.fotos_tela.*.observaciones' => 'nullable|string',
 
             // Variantes (tallas)

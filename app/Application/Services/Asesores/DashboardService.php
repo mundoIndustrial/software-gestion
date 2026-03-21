@@ -10,12 +10,12 @@ use Illuminate\Support\Facades\DB;
  * DashboardService
  * 
  * Servicio para obtener datos del dashboard del asesor.
- * Encapsula la lógica de estadÃ­sticas y grÃ¡ficas.
+ * Encapsula la lógica de estadisticas y graficas.
  */
 class DashboardService
 {
     /**
-     * Obtener estadÃ­sticas generales del dashboard
+     * Obtener estadisticas generales del dashboard
      */
     public function obtenerEstadisticas(): array
     {
@@ -36,13 +36,13 @@ class DashboardService
     }
 
     /**
-     * Obtener datos para grÃ¡ficas del dashboard
+     * Obtener datos para graficas del dashboard
      */
     public function obtenerDatosGraficas(int $dias = 30): array
     {
         $userId = Auth::id();
 
-        // Datos para grÃ¡fica de pedidos por dÃ­a
+        // Datos para grafica de pedidos por día
         $pedidosUltimos30Dias = PedidoProduccion::where('asesor_id', $userId)
             ->select(DB::raw('DATE(created_at) as fecha'), DB::raw('COUNT(*) as total'))
             ->where('created_at', '>=', now()->subDays($dias))
@@ -50,7 +50,7 @@ class DashboardService
             ->orderBy('fecha')
             ->get();
 
-        // Datos para grÃ¡fica de pedidos por asesor (comparativa - todos los asesores)
+        // Datos para grafica de pedidos por asesor (comparativa - todos los asesores)
         $pedidosPorAsesor = PedidoProduccion::select('asesor_id', DB::raw('COUNT(*) as total'))
             ->whereNotNull('asesor_id')
             ->where('created_at', '>=', now()->subDays(30))
@@ -66,7 +66,7 @@ class DashboardService
                 ];
             });
 
-        // Datos para grÃ¡fica de estados
+        // Datos para grafica de estados
         $pedidosPorEstado = PedidoProduccion::where('asesor_id', $userId)
             ->select('estado', DB::raw('COUNT(*) as total'))
             ->whereNotNull('estado')

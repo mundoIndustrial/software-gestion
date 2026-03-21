@@ -34,7 +34,7 @@ class AgregarItemPedidoUseCase
 
         return [
             'success' => true,
-            'message' => 'Ãtem agregado correctamente',
+            'message' => 'item agregado correctamente',
             'items' => $this->gestionItems->obtenerItemsArray(),
             'count' => $this->gestionItems->contar(),
         ];

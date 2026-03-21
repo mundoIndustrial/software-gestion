@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 /**
  * Servicio para obtener o crear colores y telas desde nombres
  * 
- * El frontend envÃ­a:
+ * El frontend envia:
  * - color: "Rojo"
  * - tela: "Algodón 100%"
  * - referencia: "ALG-ROJO-001"

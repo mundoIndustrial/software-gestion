@@ -28,7 +28,7 @@ use Illuminate\Support\Facades\Log;
  * Cumple:
  * - SRP: Solo guarda prendas
  * - DIP: Inyecta dependencias
- * - OCP: FÃ¡cil de extender
+ * - OCP: facil de extender
  */
 class PedidoPrendaService
 {
@@ -95,7 +95,7 @@ class PedidoPrendaService
      */
     public function guardarPrendasEnPedido(PedidoProduccion $pedido, array $prendas): void
     {
-        Log::info(' [PedidoPrendaService::guardarPrendasEnPedido] INICIO - AnÃ¡lisis completo', [
+        Log::info(' [PedidoPrendaService::guardarPrendasEnPedido] INICIO - analisis completo', [
             'pedido_id' => $pedido->id,
             'numero_pedido' => $pedido->numero_pedido,
             'cantidad_prendas' => count($prendas),
@@ -122,19 +122,19 @@ class PedidoPrendaService
                     'nombre' => $prendaData['nombre_producto'] ?? 'SIN NOMBRE',
                 ]);
                 
-                // CRÃTICO: Convertir DTO a array si es necesario
+                // critico: Convertir DTO a array si es necesario
                 if (is_object($prendaData) && method_exists($prendaData, 'toArray')) {
                     $prendaData = $prendaData->toArray();
                 }
                 
                 $this->guardarPrenda($pedido, $prendaData, $index);
                 
-                //  VERIFICAR QUE LA PRENDA SE CREÃ“ CON UN ID ÃšNICO
+                //  VERIFICAR QUE LA PRENDA SE Crea CON UN ID unico
                 $ultimaPrenda = PrendaPedido::where('pedido_produccion_id', $pedido->id)
                     ->orderBy('id', 'desc')
                     ->first();
                 
-                \Log::info(" [PRENDA #{$index}] DESPUÃ‰S - Prenda creada con ID", [
+                \Log::info(" [PRENDA #{$index}] Despues- Prenda creada con ID", [
                     'prenda_id_nueva' => $ultimaPrenda->id ?? 'NO ENCONTRADA',
                     'nombre_prenda' => $ultimaPrenda->nombre_prenda ?? 'NO ENCONTRADA',
                     'prendas_en_pedido' => PrendaPedido::where('pedido_produccion_id', $pedido->id)->count(),
@@ -202,12 +202,12 @@ class PedidoPrendaService
         
         $this->variacionesProcessor->procesarVariaciones($prendaData);
 
-        //  SOLO GUARDAR LA DESCRIPCIÃ“N QUE ESCRIBIÃ“ EL USUARIO
-        // NO formatear ni armar descripciones automÃ¡ticas
+        //  SOLO GUARDAR LA Descripcion QUE escribrian EL USUARIO
+        // NO formatear ni armar descripciones automaticas
         $descripcionFinal = $prendaData['descripcion'] ?? '';
         
         // Obtener la PRIMERA tela de multiples telas para los campos principales
-        // (tela_id, color_id se guardan en la prenda para referencia rÃ¡pida)
+        // (tela_id, color_id se guardan en la prenda para referencia rapida)
         $primeraTela = $this->obtenerPrimeraTela($prendaData);
         
         //  LOG: Antes de guardar
@@ -227,7 +227,7 @@ class PedidoPrendaService
             'tipo_broche_boton_id' => $prendaData['tipo_broche_boton_id'] ?? null,
         ]);
         
-        //  PROCESAR GÃ‰NEROS (puede ser single string o array de multiples generos)
+        //  PROCESAR generos (puede ser single string o array de multiples generos)
         $generoProcesado = $this->dataNormalizer->procesarGenero($prendaData['genero'] ?? '');
         
         //  PROCESAR CANTIDADES: Soportar multiples generos
@@ -250,7 +250,7 @@ class PedidoPrendaService
         ]);
         
         // Crear prenda principal usando PrendaPedido (tabla correcta)
-        // ACTUALIZACIÃ“N [16/01/2026]: Usar pedido_produccion_id en lugar de numero_pedido
+        // Actualización[16/01/2026]: Usar pedido_produccion_id en lugar de numero_pedido
         $prenda = $this->prendaBaseCreator->crearPrendaBase(
             $pedido->id,
             $prendaData,
@@ -260,8 +260,8 @@ class PedidoPrendaService
         );
 
         // 2.  CREAR VARIANTES en prenda_pedido_variantes desde cantidad_talla
-        // IMPORTANTE: Crear variante incluso si cantidad_talla estÃ¡ vacÃ­o
-        // La variante es el registro de caracterÃ­sticas de la prenda
+        // IMPORTANTE: Crear variante incluso si cantidad_talla está vacio
+        // La variante es el registro de caracteristicas de la prenda
         {
             // Parsear variaciones si viene como JSON string
             $variacionesParsed = $prendaData['variaciones'] ?? [];
@@ -572,7 +572,7 @@ class PedidoPrendaService
                 'ubicacion' => $logo['ubicacion'] ?? null,
                 'ancho' => $logo['ancho'] ?? null,
                 'alto' => $logo['alto'] ?? null,
-                'tamaÃ±o' => $logo['tamaÃ±o'] ?? null,
+                'tamano' => $logo['tamano'] ?? null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

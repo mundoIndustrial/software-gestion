@@ -80,13 +80,13 @@ class CotizacionesIntegrityTest extends TestCase
     }
 
     /**
-     * TEST 2: Validar que tipo_cotizacion_id es FK vÃ¡lida
+     * TEST 2: Validar que tipo_cotizacion_id es FK valida
      */
     public function test_tipo_cotizacion_id_debe_ser_valido(): void
     {
         $this->actingAs($this->asesor);
 
-        // FK invÃ¡lido
+        // FK invalido
         $this->expectException(\Illuminate\Database\QueryException::class);
 
         Cotizacion::create([
@@ -102,7 +102,7 @@ class CotizacionesIntegrityTest extends TestCase
     }
 
     /**
-     * TEST 3: Validar que asesor_id es FK vÃ¡lida
+     * TEST 3: Validar que asesor_id es FK valida
      */
     public function test_asesor_id_debe_ser_valido(): void
     {
@@ -195,7 +195,7 @@ class CotizacionesIntegrityTest extends TestCase
     }
 
     /**
-     * TEST 6: Validar tallas vÃ¡lidas en PrendaTallaCot
+     * TEST 6: Validar tallas validas en PrendaTallaCot
      */
     public function test_tallas_validas(): void
     {
@@ -218,7 +218,7 @@ class CotizacionesIntegrityTest extends TestCase
             'cantidad' => 100,
         ]);
 
-        // Tallas vÃ¡lidas
+        // Tallas validas
         $tallasValidas = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
 
         foreach ($tallasValidas as $talla) {
@@ -268,7 +268,7 @@ class CotizacionesIntegrityTest extends TestCase
                 'orden' => $i,
                 'ancho' => 1920,
                 'alto' => 1080,
-                'tamaÃ±o' => 524288,
+                'tamano' => 524288,
             ]);
 
             $this->assertNotNull($foto->id);

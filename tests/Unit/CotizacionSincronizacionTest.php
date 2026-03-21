@@ -43,7 +43,7 @@ class CotizacionSincronizacionTest extends TestCase
             $this->assertContains($campo, $fillable, "Campo '$campo' debe estar en fillable");
         }
         
-        echo "\n Cotizacion: Todos los campos estÃ¡n en fillable\n";
+        echo "\n Cotizacion: Todos los campos están en fillable\n";
     }
 
     /**
@@ -71,7 +71,7 @@ class CotizacionSincronizacionTest extends TestCase
         $this->assertArrayHasKey('observaciones_generales', $casts, 'observaciones_generales debe tener cast');
         $this->assertEquals('array', $casts['observaciones_generales']);
         
-        echo "\n Cotizacion: Todos los casts estÃ¡n configurados correctamente\n";
+        echo "\n Cotizacion: Todos los casts están configurados correctamente\n";
     }
 
     /**
@@ -93,7 +93,7 @@ class CotizacionSincronizacionTest extends TestCase
             $this->assertContains($campo, $fillable, "Campo '$campo' debe estar en fillable de PrendaTelaCot");
         }
         
-        echo "\n PrendaTelaCot: Todos los campos estÃ¡n en fillable\n";
+        echo "\n PrendaTelaCot: Todos los campos están en fillable\n";
     }
 
     /**
@@ -126,7 +126,7 @@ class CotizacionSincronizacionTest extends TestCase
         $this->assertArrayHasKey('telas_multiples', $casts, 'telas_multiples debe tener cast');
         $this->assertEquals('json', $casts['telas_multiples']);
         
-        echo "\n PrendaVarianteCot: Campo telas_multiples estÃ¡ sincronizado\n";
+        echo "\n PrendaVarianteCot: Campo telas_multiples está sincronizado\n";
     }
 
     /**
@@ -156,7 +156,7 @@ class CotizacionSincronizacionTest extends TestCase
             $this->assertContains($campo, $fillable, "Campo '$campo' debe estar en fillable de HistorialCambiosCotizacion");
         }
         
-        echo "\n HistorialCambiosCotizacion: Todos los campos estÃ¡n en fillable\n";
+        echo "\n HistorialCambiosCotizacion: Todos los campos están en fillable\n";
     }
 
     /**
@@ -196,19 +196,19 @@ class CotizacionSincronizacionTest extends TestCase
     {
         echo "\n";
         echo "â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—\n";
-        echo "â•‘  RESUMEN DE SINCRONIZACIÃ“N - COTIZACIONES DDD              â•‘\n";
+        echo "  RESUMEN DE SINCRONIZACION - COTIZACIONES DDD              \n";
         echo "â• â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•£\n";
-        echo "â•‘   Tabla cotizaciones                                      â•‘\n";
-        echo "â•‘     - Campos: imagenes, tecnicas, observaciones_tecnicas   â•‘\n";
-        echo "â•‘     - Campos: ubicaciones, observaciones_generales         â•‘\n";
-        echo "â•‘   Tabla prenda_variantes_cot                              â•‘\n";
-        echo "â•‘     - Campo: telas_multiples (JSON)                        â•‘\n";
-        echo "â•‘   Tabla prenda_telas_cot                                  â•‘\n";
-        echo "â•‘     - Campos: color_id, tela_id, variante_prenda_cot_id    â•‘\n";
-        echo "â•‘     - Relaciones: color(), tela(), variante()              â•‘\n";
-        echo "â•‘   Tabla historial_cambios_cotizaciones                    â•‘\n";
-        echo "â•‘     - Tabla creada con estructura completa                 â•‘\n";
-        echo "â•‘     - Relaciones: cotizacion(), usuario()                  â•‘\n";
+        echo "   Tabla cotizaciones                                      \n";
+        echo "     - Campos: imagenes, tecnicas, observaciones_tecnicas   \n";
+        echo "     - Campos: ubicaciones, observaciones_generales         \n";
+        echo "   Tabla prenda_variantes_cot                              \n";
+        echo "     - Campo: telas_multiples (JSON)                        \n";
+        echo "   Tabla prenda_telas_cot                                  \n";
+        echo "     - Campos: color_id, tela_id, variante_prenda_cot_id    \n";
+        echo "     - Relaciones: color(), tela(), variante()              \n";
+        echo "   Tabla historial_cambios_cotizaciones                    \n";
+        echo "     - Tabla creada con estructura completa                 \n";
+        echo "     - Relaciones: cotizacion(), usuario()                  \n";
         echo "â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
         echo "\n";
         

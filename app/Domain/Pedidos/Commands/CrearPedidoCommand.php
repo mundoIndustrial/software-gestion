@@ -9,10 +9,10 @@ use App\Domain\Shared\CQRS\Command;
  * 
  * Command para crear un nuevo pedido de producción
  * 
- * ParÃ¡metros:
+ * Parametros:
  * - numero_pedido: numero unico del pedido
  * - cliente: Nombre o ID del cliente
- * - forma_pago: Forma de pago (contado, crÃ©dito, etc)
+ * - forma_pago: Forma de pago (contado, credito, etc)
  * - asesor_id: ID del asesor asignado
  */
 class CrearPedidoCommand implements Command

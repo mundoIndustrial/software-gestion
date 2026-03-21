@@ -8,17 +8,17 @@ use App\Application\Pedidos\DTOs\PedidoResponseDTO;
 /**
  * AbstractObtenerUseCase
  * 
- * Clase base reutilizable para todos los Use Cases de OBTENCIÃ“N (queries)
+ * Clase base reutilizable para todos los Use Cases de Obtencion (queries)
  * 
  * Patrón: Template Method para estandarizar:
  * - Obtención y validación del pedido
  * - Enriquecimiento condicional de datos
  * - Respuesta estandarizada
  * 
- * Reduce ~70 lÃ­neas de código duplicado en cada Use Case
+ * Reduce ~70 lineas de código duplicado en cada Use Case
  * 
- * Antes: 4 Use Cases Ã— 80 lÃ­neas = 320 lÃ­neas
- * despues: 1 base + 4 concretas Ã— 15 lÃ­neas = 80 lÃ­neas
+ * Antes: 4 Use Cases  80 lineas = 320 lineas
+ * despues: 1 base + 4 concretas  15 lineas = 80 lineas
  * Reducción: 75% menos código
  */
 abstract class AbstractObtenerUseCase
@@ -39,10 +39,10 @@ abstract class AbstractObtenerUseCase
      */
     protected function obtenerYEnriquecer(int $pedidoId): mixed
     {
-        // 1. PASO COMÃšN: Obtener y validar pedido (retorna agregado)
+        // 1. PASO comun: Obtener y validar pedido (retorna agregado)
         $pedido = $this->obtenerPedidoValidado($pedidoId);
 
-        // 2. PASO COMÃšN: Obtener opciones de enriquecimiento
+        // 2. PASO comun: Obtener opciones de enriquecimiento
         $opciones = $this->obtenerOpciones();
 
         // 3. PASO PERSONALIZABLE: Enriquecer pedido
@@ -53,7 +53,7 @@ abstract class AbstractObtenerUseCase
     }
 
     /**
-     * PASO 1 (COMÃšN): Obtener y validar que el pedido existe
+     * PASO 1 (comun): Obtener y validar que el pedido existe
      */
     private function obtenerPedidoValidado(int $pedidoId)
     {
@@ -69,7 +69,7 @@ abstract class AbstractObtenerUseCase
     /**
      * PASO 2 (PERSONALIZABLE): que opciones de enriquecimiento usar
      * 
-     * Subclases pueden sobrescribir para incluir/excluir datos especÃ­ficos
+     * Subclases pueden sobrescribir para incluir/excluir datos especificos
      */
     protected function obtenerOpciones(): array
     {
@@ -82,7 +82,7 @@ abstract class AbstractObtenerUseCase
     }
 
     /**
-     * PASO 3 (COMÃšN): Enriquecer el pedido con datos opcionales
+     * PASO 3 (comun): Enriquecer el pedido con datos opcionales
      */
     protected function enriquecerPedido($pedido, array $opciones): array
     {
@@ -373,7 +373,7 @@ abstract class AbstractObtenerUseCase
     }
 
     /**
-     * Obtener imÃ¡genes del pedido
+     * Obtener imagenes del pedido
      */
     protected function obtenerImagenes(int $pedidoId): array
     {

@@ -44,7 +44,7 @@ class PedidoProduccionAggregateTest extends TestCase
 
     /**
      * @test
-     * Validar que no se puede cambiar a confirmado si ya estÃ¡
+     * Validar que no se puede cambiar a confirmado si ya está
      */
     public function no_puede_confirmar_ya_confirmado()
     {

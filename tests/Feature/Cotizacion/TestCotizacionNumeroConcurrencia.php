@@ -9,7 +9,7 @@ use Tests\TestCase;
 /**
  * TestCotizacionNumeroConcurrencia
  *
- * Verifica que dos o mÃ¡s asesores creando cotizaciones simultÃ¡neamente
+ * Verifica que dos o mas asesores creando cotizaciones simultaneamente
  * reciban numeros unicos y consecutivos
  */
 class TestCotizacionNumeroConcurrencia extends TestCase
@@ -81,7 +81,7 @@ class TestCotizacionNumeroConcurrencia extends TestCase
     }
 
     /**
-     * Test: Simular 20 asesores solicitando numeros simultÃ¡neamente
+     * Test: Simular 20 asesores solicitando numeros simultaneamente
      * Simula una concurrencia moderada sin crear threads reales
      */
     public function test_20_asesores_obtienen_numeros_unicos()

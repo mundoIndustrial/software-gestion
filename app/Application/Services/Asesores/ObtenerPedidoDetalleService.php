@@ -158,7 +158,7 @@ class ObtenerPedidoDetalleService
                 'Polos',
                 'Taller',
                 'Insumos',
-                'LavanderÃ­a',
+                'Lavanderia',
                 'Arreglos',
                 'Despachos'
             ]
@@ -373,11 +373,11 @@ class ObtenerPedidoDetalleService
     }
 
     /**
-     * Obtener solo información bÃ¡sica
+     * Obtener solo información basica
      */
     public function obtenerBasico($pedidoIdentifier): array
     {
-        Log::info(' [BASICO] Obteniendo información bÃ¡sica');
+        Log::info(' [BASICO] Obteniendo información basica');
 
         $pedido = $this->obtenerPedido($pedidoIdentifier);
 

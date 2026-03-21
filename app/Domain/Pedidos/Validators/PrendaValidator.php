@@ -42,7 +42,7 @@ class PrendaValidator implements Validator
     }
 
     /**
-     * Validar un campo especÃ­fico
+     * Validar un campo especifico
      * 
      * @param string $field
      * @param mixed $value
@@ -66,8 +66,8 @@ class PrendaValidator implements Validator
     /**
      * Validar nombre de prenda
      * 
-     * - No vacÃ­o
-     * - MÃ¡ximo 255 caracteres
+     * - No vacio
+     * - Maximo 255 caracteres
      * 
      * @throws InvalidArgumentException
      */
@@ -104,7 +104,7 @@ class PrendaValidator implements Validator
     /**
      * Validar tipo de prenda
      * 
-     * - No vacÃ­o
+     * - No vacio
      * - Debe ser uno de los tipos permitidos
      * 
      * @throws InvalidArgumentException
@@ -117,7 +117,7 @@ class PrendaValidator implements Validator
 
         if (!in_array($tipo, self::TIPOS_PERMITIDOS)) {
             throw new InvalidArgumentException(
-                "Tipo de prenda invÃ¡lido: '{$tipo}'. Permitidos: " . 
+                "Tipo de prenda invalido: '{$tipo}'. Permitidos: " . 
                 implode(', ', self::TIPOS_PERMITIDOS)
             );
         }
@@ -126,8 +126,8 @@ class PrendaValidator implements Validator
     /**
      * Validar tipo de manga
      * 
-     * - No vacÃ­o
-     * - MÃ¡ximo 100 caracteres
+     * - No vacio
+     * - Maximo 100 caracteres
      * 
      * @throws InvalidArgumentException
      */
@@ -147,7 +147,7 @@ class PrendaValidator implements Validator
      * Validar tipo de broche/botón
      * 
      * - Opcional (puede ser null)
-     * - MÃ¡ximo 100 caracteres si se especifica
+     * - Maximo 100 caracteres si se especifica
      * 
      * @throws InvalidArgumentException
      */

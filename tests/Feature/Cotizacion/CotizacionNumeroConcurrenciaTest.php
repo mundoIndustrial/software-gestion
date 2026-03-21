@@ -16,9 +16,9 @@ use App\Models\User;
  * 
  * Escenarios:
  * 1. Generación secuencial de numeros (no hay conflicto)
- * 2. multiples transacciones simultÃ¡neas NO generan numeros duplicados
+ * 2. multiples transacciones simultaneas NO generan numeros duplicados
  * 3. El lock pessimista previene race conditions
- * 4. Los numeros estÃ¡n en formato correcto (COT-YYYYMMDD-NNN)
+ * 4. Los numeros están en formato correcto (COT-YYYYMMDD-NNN)
  */
 class CotizacionNumeroConcurrenciaTest extends TestCase
 {
@@ -86,7 +86,7 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
     /**
      *  TEST 3: El lock pessimista previene duplicados
      * 
-     * Simula dos transacciones que inician casi simultÃ¡neamente.
+     * Simula dos transacciones que inician casi simultaneamente.
      * Con el lock, uno espera al otro â†’ no hay duplicados
      */
     public function test_lock_pessimista_previene_duplicados()
@@ -96,7 +96,7 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
 
         $numeros = [];
 
-        // Simulación de 5 transacciones "simultÃ¡neas"
+        // Simulación de 5 transacciones "simultaneas"
         for ($i = 0; $i < 5; $i++) {
             DB::transaction(function () use (&$numeros) {
                 $numero = $this->generarNumero('cotizaciones_prenda');
@@ -169,7 +169,7 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
     }
 
     /**
-     *  TEST 6: Formato de fecha en numero es dinÃ¡mico (hoy)
+     *  TEST 6: Formato de fecha en numero es dinamico (hoy)
      */
     public function test_numero_incluye_fecha_actual()
     {

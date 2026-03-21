@@ -71,7 +71,7 @@ class ListarPedidosPorClienteUseCaseTest extends TestCase
     }
 
     /**
-     * Test: Listar pedidos vacÃ­o si cliente no tiene pedidos
+     * Test: Listar pedidos vacio si cliente no tiene pedidos
      */
     public function test_listar_pedidos_vacio_si_no_hay()
     {

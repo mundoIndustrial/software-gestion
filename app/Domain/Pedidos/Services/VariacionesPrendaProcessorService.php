@@ -44,7 +44,7 @@ class VariacionesPrendaProcessorService
         // Procesar broche
         $this->procesarBroche($prendaData);
 
-        \Log::info(' [PedidoPrendaService::guardarPrenda] DESPUÃ‰S - Variaciones procesadas', [
+        \Log::info(' [PedidoPrendaService::guardarPrenda] Despues- Variaciones procesadas', [
             'color_id_final' => $prendaData['color_id'] ?? 'NULL',
             'tela_id_final' => $prendaData['tela_id'] ?? 'NULL',
             'tipo_manga_id_final' => $prendaData['tipo_manga_id'] ?? 'NULL',
@@ -65,7 +65,7 @@ class VariacionesPrendaProcessorService
                 }
             }
             
-            Log::info(' [PedidoPrendaService] Datos extraÃ­dos de variaciones anidadas', [
+            Log::info(' [PedidoPrendaService] Datos extraidos de variaciones anidadas', [
                 'claves_extraidas' => array_keys($prendaData['variaciones']),
             ]);
         }

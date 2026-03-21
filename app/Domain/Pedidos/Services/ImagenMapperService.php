@@ -5,11 +5,11 @@ namespace App\Domain\Pedidos\Services;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Servicio para mapear imÃ¡genes del JSON del frontend al formato esperado por el backend
+ * Servicio para mapear imagenes del JSON del frontend al formato esperado por el backend
  * 
- * El frontend envÃ­a imÃ¡genes como:
- * - imagenes: [{file: null, previewUrl: "blob:...", nombre: "...", tamaÃ±o: ...}]
- * - telas[].imagenes: [{file: null, nombre: "...", tamaÃ±o: ...}]
+ * El frontend envia imagenes como:
+ * - imagenes: [{file: null, previewUrl: "blob:...", nombre: "...", tamano: ...}]
+ * - telas[].imagenes: [{file: null, nombre: "...", tamano: ...}]
  * 
  * El backend espera:
  * - fotos: [UploadedFile] o [strings con rutas]
@@ -21,7 +21,7 @@ class ImagenMapperService
         private ColorTelaService $colorTelaService
     ) {}
     /**
-     * Mapear imÃ¡genes de prenda desde JSON a formato esperado
+     * Mapear imagenes de prenda desde JSON a formato esperado
      */
     public function mapearImagenesPrenda(array $item): array
     {
@@ -41,7 +41,7 @@ class ImagenMapperService
                     'orden' => $idx + 1
                 ];
             }
-            // Si es un objeto con file (UploadedFile), ya estÃ¡ procesado
+            // Si es un objeto con file (UploadedFile), ya está procesado
             elseif (isset($imagen['file']) && $imagen['file'] !== null) {
                 $fotosFormateadas[] = $imagen['file'];
             }
@@ -55,7 +55,7 @@ class ImagenMapperService
             }
         }
         
-        Log::info(' [ImagenMapperService] ImÃ¡genes de prenda mapeadas', [
+        Log::info(' [ImagenMapperService] imagenes de prenda mapeadas', [
             'cantidad_original' => count($imagenes),
             'cantidad_mapeada' => count($fotosFormateadas),
         ]);
@@ -64,7 +64,7 @@ class ImagenMapperService
     }
     
     /**
-     * Mapear imÃ¡genes de telas desde JSON a formato esperado
+     * Mapear imagenes de telas desde JSON a formato esperado
      * también obtiene/crea IDs de colores y telas
      */
     public function mapearImagenesTelas(array $telas): array
@@ -100,7 +100,7 @@ class ImagenMapperService
                         'ruta_original' => $imagen['nombre'],
                         'ruta_webp' => $imagen['nombre'],
                         'orden' => $imgIdx + 1,
-                        'tamaÃ±o' => $imagen['tamaÃ±o'] ?? 0
+                        'tamano' => $imagen['tamano'] ?? 0
                     ];
                 }
                 // Si es un string (ruta), usarlo directamente
@@ -116,7 +116,7 @@ class ImagenMapperService
             $telasFormateadas[] = $telaFormateada;
         }
         
-        Log::info(' [ImagenMapperService] ImÃ¡genes de telas mapeadas', [
+        Log::info(' [ImagenMapperService] imagenes de telas mapeadas', [
             'cantidad_telas' => count($telas),
             'telas_con_imagenes' => array_sum(array_map(function($t) {
                 return count($t['fotos'] ?? []);

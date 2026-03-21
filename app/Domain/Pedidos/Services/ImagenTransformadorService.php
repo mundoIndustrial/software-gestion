@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Log;
 /**
  * ImagenTransformadorService
  * 
- * Responsabilidad: Transformar imÃ¡genes a WebP con compresión y redimensionamiento
- * Centraliza la lógica de conversión de imÃ¡genes para toda la aplicación
+ * Responsabilidad: Transformar imagenes a WebP con compresión y redimensionamiento
+ * Centraliza la lógica de conversión de imagenes para toda la aplicación
  */
 class ImagenTransformadorService
 {
@@ -18,9 +18,9 @@ class ImagenTransformadorService
      * 
      * @param UploadedFile $archivo
      * @param string $directorio Ruta completa del directorio donde guardar
-     * @param int $index Ãndice de la imagen
+     * @param int $index indice de la imagen
      * @param string $tipo Tipo de imagen (prenda, tela, proceso, epp)
-     * @return array ['nombreArchivo' => 'img_tipo_0_20260121_abc123.webp', 'tamaÃ±o' => bytes]
+     * @return array ['nombreArchivo' => 'img_tipo_0_20260121_abc123.webp', 'tamano' => bytes]
      */
     public function transformarAWebp(
         UploadedFile $archivo,
@@ -56,7 +56,7 @@ class ImagenTransformadorService
             // Convertir a WebP con calidad 80
             $webp = $imagen->toWebp(quality: 80);
             $contenidoWebP = $webp->toString();
-            $tamaÃ±o = strlen($contenidoWebP);
+            $tamano = strlen($contenidoWebP);
             
             // Generar nombre unico
             $timestamp = now()->format('YmdHis');
@@ -70,14 +70,14 @@ class ImagenTransformadorService
             Log::info(' [ImagenTransformadorService] Imagen transformada a WebP', [
                 'tipo' => $tipo,
                 'archivo_original' => $archivo->getClientOriginalName(),
-                'tamaÃ±o_original' => $archivo->getSize(),
-                'tamaÃ±o_webp' => $tamaÃ±o,
+                'tamano_original' => $archivo->getSize(),
+                'tamano_webp' => $tamano,
                 'nombre_archivo' => $nombreArchivo,
             ]);
             
             return [
                 'nombreArchivo' => $nombreArchivo,
-                'tamaÃ±o' => $tamaÃ±o,
+                'tamano' => $tamano,
             ];
         } catch (\Exception $e) {
             Log::error(' [ImagenTransformadorService] Error transformando imagen', [

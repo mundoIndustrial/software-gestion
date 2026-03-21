@@ -117,7 +117,7 @@ class ObtenerRecibosService
     }
 
     /**
-     * Obtener detalles de procesos de una prenda especÃ­fica
+     * Obtener detalles de procesos de una prenda especifica
      */
     public function obtenerProcesosPrenda(int $pedidoId, int $prendaId): array
     {

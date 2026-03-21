@@ -8,7 +8,7 @@ use App\Domain\Shared\Entity;
  * Entidad: PrendaPedido
  * 
  * Una prenda dentro de un pedido
- * Vive dentro del agregado Pedido (no es agregado raÃ­z)
+ * Vive dentro del agregado Pedido (no es agregado raiz)
  */
 class PrendaPedido extends Entity
 {

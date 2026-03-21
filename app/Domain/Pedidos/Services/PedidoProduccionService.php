@@ -149,7 +149,7 @@ class PedidoProduccionService
     {
         $pedido = PedidoProduccion::findOrFail($pedidoId);
 
-        // Verificar que el asesor sea el dueÃ±o del pedido
+        // Verificar que el asesor sea el dueano del pedido
         if ($pedido->asesor_id !== Auth::id()) {
             throw new \RuntimeException('No tienes permiso para actualizar este pedido');
         }

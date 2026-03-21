@@ -8,7 +8,7 @@ use App\Application\Services\Asesores\DashboardService;
 /**
  * ObtenerEstadisticasDashboardUseCase
  * 
- * Use Case para obtener estadÃ­sticas generales del dashboard
+ * Use Case para obtener estadisticas generales del dashboard
  * Encapsula la lógica de obtener datos del dashboard
  */
 class ObtenerEstadisticasDashboardUseCase
