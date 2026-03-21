@@ -494,6 +494,10 @@
     <script defer src="{{ asset('js/configuraciones/sidebar-notifications.js') }}"></script>
     <script defer src="{{ asset('js/configuraciones/top-nav.js') }}"></script>
     
+    <!-- SHARED CORE - DEPENDENCY INJECTION CONTAINER (con cache compartido) -->
+    <!-- DEBE CARGARSE ANTES de pedidos-realtime.js y notifications-realtime.js -->
+    <script src="{{ asset('js/bundles/shared-core.min.js') }}"></script>
+    
     <!-- Laravel Echo - Para actualizaciones en tiempo real (solo para asesores y supervisores) -->
     @auth
     @if(auth()->user()->hasRole('asesor') || auth()->user()->hasRole('supervisor_pedidos'))
@@ -505,6 +509,7 @@
     <script defer src="{{ asset('js/contador/cotizacion.js') }}"></script>
 
     <!-- Notifications realtime system (loaded once) -->
+    <!-- REQUIERE shared-core.js que ya está cargado arriba -->
     <script defer src="{{ asset('js/configuraciones/notifications-realtime.js') }}"></script>
     
     <!-- Scripts de Facturas (solo para vistas que lo necesiten) -->
