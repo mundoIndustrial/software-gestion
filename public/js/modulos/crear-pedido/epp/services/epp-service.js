@@ -525,7 +525,7 @@ class EppService {
             return;
         }
 
-        // ⚡ VALIDACIÓN: Requiere mínimo 2 caracteres
+        //  VALIDACIÓN: Requiere mínimo 2 caracteres
         if (valorLimpio.length < 2) {
             container.innerHTML = `<div style="padding: 0.75rem 1rem; text-align: center; color: #9ca3af; font-size: 0.85rem;">Escribe al menos 2 caracteres para buscar</div>`;
             container.style.display = 'block';
@@ -558,7 +558,7 @@ class EppService {
         `;
         container.style.display = 'block';
 
-        // ⚡ DEBOUNCE AUMENTADO: esperar 400ms después de inactividad
+        //  DEBOUNCE AUMENTADO: esperar 400ms después de inactividad
         this.debounceTimerBusqueda = setTimeout(async () => {
             const terminoBusqueda = (inputBuscador?.value || '').toLowerCase().trim();
             
@@ -592,7 +592,7 @@ class EppService {
                 container.innerHTML = `<div style="padding: 1rem; text-align: center; color: #dc2626; font-size: 0.9rem;">❌ Error al buscar EPP</div>`;
                 container.style.display = 'block';
             }
-        }, 400); // ⚡ Esperar 400ms (fue 300ms) para reducir peticiones
+        }, 400); //  Esperar 400ms (fue 300ms) para reducir peticiones
     }
 
     /**

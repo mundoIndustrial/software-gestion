@@ -97,7 +97,7 @@ class DescripcionPrendaHelperTest extends TestCase
     }
 
     /**
-     * Test que verifica que los subtÃ­tulos sean dinamicos según el broche
+     * Test que verifica que los Subtitulos sean dinamicos según el broche
      */
     public function test_subtitulos_dinamicos()
     {
@@ -119,11 +119,11 @@ class DescripcionPrendaHelperTest extends TestCase
 
         $descripcion = DescripcionPrendaHelper::generarDescripcion($datos);
 
-        // El subtÃ­tulo debe ser "VELCRO:" no "BROCHE:"
+        // El subtitulo debe ser "VELCRO:" no "BROCHE:"
         $this->assertStringContainsString('VELCRO:', $descripcion);
         $this->assertStringNotContainsString('BROCHE:', $descripcion);
 
-        echo "\n SubtÃ­tulos dinamicos funcionando:\n";
+        echo "\n Subtitulos dinamicos funcionando:\n";
         echo $descripcion;
     }
 

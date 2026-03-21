@@ -258,7 +258,7 @@ await window.ColoresPorTallaV2.cleanupWizard()
 
 ---
 
-## ⚡ Performance Improvements
+##  Performance Improvements
 
 | Métrica | Antes | Ahora |
 |---------|-------|-------|

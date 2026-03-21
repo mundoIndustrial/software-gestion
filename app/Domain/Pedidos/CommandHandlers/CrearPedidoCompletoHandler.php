@@ -53,7 +53,7 @@ class CrearPedidoCompletoHandler implements CommandHandler
         DB::beginTransaction();
         
         try {
-            Log::info('⚡ [CrearPedidoCompletoHandler] Iniciando creación de pedido completo', [
+            Log::info(' [CrearPedidoCompletoHandler] Iniciando creación de pedido completo', [
                 'cliente' => $command->getCliente(),
                 'items_count' => count($command->getItems()),
                 'asesor_id' => $command->getAsesorId(),

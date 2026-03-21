@@ -479,7 +479,7 @@
                 }
             } else {
                 etapas.modulosCargados = performance.now();
-                console.log('[editarPedido] ⚡ Módulos ya precargados en background (cache)');
+                console.log('[editarPedido]  Módulos ya precargados en background (cache)');
             }
 
             //  PASO 3: Fetch de datos mientras el modal ya está visible

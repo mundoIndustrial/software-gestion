@@ -52,7 +52,7 @@ await window.insumoService.obtenerInsumosDelPedido(123)
 // Primera llamada: HTTP request (Network tab)
 await window.insumoService.obtenerInsumosDelPedido(123)
 
-// Segunda llamada (< 30min): Solo cache (sin Network request) ⚡
+// Segunda llamada (< 30min): Solo cache (sin Network request) 
 await window.insumoService.obtenerInsumosDelPedido(123)
 // Time to complete: < 2ms (vs 100-150ms para HTTP)
 
@@ -119,7 +119,7 @@ await window.insumoService.guardarCambiosInsumos(123, 456, materiales)
 
 | Métrica | Sin Cache | Con Cache | Mejora |
 |---------|-----------|-----------|--------|
-| Tiempo de carga | 100-150ms | 1-2ms | **100x más rápido** ⚡ |
+| Tiempo de carga | 100-150ms | 1-2ms | **100x más rápido**  |
 | Requests HTTP | 1 por usuario | 1 cada 30 min | **95% menos requests** 📉 |
 | Network usage | Alto | Bajo | **Banda ahorrada** 💾 |
 

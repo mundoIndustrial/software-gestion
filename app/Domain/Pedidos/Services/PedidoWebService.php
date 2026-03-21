@@ -1013,7 +1013,7 @@ class PedidoWebService
                 $datosProceso['uid'] = $procesoUID;
             }
 
-            // ⚡ NUEVO: Extraer modo_tallas y datos_extendidos
+            //  NUEVO: Extraer modo_tallas y datos_extendidos
             $modoTallas = $datosProceso['modo_tallas'] ?? $procesoData['modo_tallas'] ?? 'generico';
             $datosExtendidos = $datosProceso['datos_extendidos'] ?? $procesoData['datos_extendidos'] ?? null;
             if (is_string($datosExtendidos)) {
@@ -1059,7 +1059,7 @@ class PedidoWebService
                 'tipo_proceso_id' => $tipoProcesoId,
                 'ubicaciones' => !empty($ubicaciones) ? json_encode($ubicaciones) : json_encode([]),
                 'observaciones' => $observaciones,
-                'modo_tallas' => $modoTallas,  // ⚡ Guardar modo_tallas
+                'modo_tallas' => $modoTallas,  //  Guardar modo_tallas
                 'estado' => 'PENDIENTE',
             ]);
 
@@ -1083,7 +1083,7 @@ class PedidoWebService
                 'modo_tallas_guardado' => $modoTallas,
             ]);
 
-            // ⚡ NUEVO: Manejar tallas según modo
+            //  NUEVO: Manejar tallas según modo
             if ($modoTallas === 'por_tallas' && !empty($datosExtendidos)) {
                 // MODO POR_TALLAS: Guardar ubicaciones/observaciones por talla desde datosExtendidos
                 \Log::info('[PedidoWebService]  MODO POR_TALLAS: Guardando ubicaciones/observaciones por talla', [

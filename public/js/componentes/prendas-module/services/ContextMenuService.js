@@ -216,7 +216,7 @@ class ContextMenuService {
             
             if (typeof funcionAEjecutar === 'function') {
                 try {
-                    UIHelperService.log('ContextMenuService', '⚡ Ejecutando callback/accion...');
+                    UIHelperService.log('ContextMenuService', ' Ejecutando callback/accion...');
                     funcionAEjecutar(e, opcion);
                     UIHelperService.log('ContextMenuService', ' Callback/accion ejecutado exitosamente');
                 } catch (error) {

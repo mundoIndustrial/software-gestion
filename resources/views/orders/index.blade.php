@@ -500,7 +500,7 @@
                 htmlContenido = '<div style="text-align: center; color: #9ca3af;">No hay prendas disponibles</div>';
             } else {
                 prendas.forEach((prenda, idx) => {
-                    console.log(`[abrirModalCeldaConFormato] ⚡ Procesando prenda ${idx}:`, prenda);
+                    console.log(`[abrirModalCeldaConFormato]  Procesando prenda ${idx}:`, prenda);
                     
                     // Convertir objeto Eloquent a objeto simple si es necesario
                     let prendaData = prenda.toJSON ? prenda.toJSON() : prenda;

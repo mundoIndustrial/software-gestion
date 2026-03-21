@@ -19,7 +19,7 @@ use Mockery;
 class PedidoControllerTest extends TestCase
 {
     /**
-     * Test: Crear pedido vÃ­a POST /api/pedidos
+     * Test: Crear pedido via POST /api/pedidos
      * 
      * Usando mock del repositorio para no necesitar BD
      */

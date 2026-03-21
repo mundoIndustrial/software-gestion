@@ -103,7 +103,7 @@ class PrendaProcesoService
                     'ubicaciones' => !empty($proceso['ubicaciones']) ? json_encode($proceso['ubicaciones']) : json_encode([]),
                     'observaciones' => $proceso['observaciones'] ?? null,
                     'modo_tallas' => $modoTallas,
-                    // ⚡ ELIMINADO: No guardar tallas_dama, tallas_caballero, datos_adicionales
+                    //  ELIMINADO: No guardar tallas_dama, tallas_caballero, datos_adicionales
                     // Los datos por talla van en pedidos_procesos_prenda_tallas
                     'estado' => 'PENDIENTE',
                     'created_at' => now(),

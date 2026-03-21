@@ -57,7 +57,7 @@ window.PrendaEditorLoader = (function() {
             '/js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js?v=' + Date.now(),
         ];
 
-        // ⚡ Cargar scripts en paralelo
+        //  Cargar scripts en paralelo
         const promises = modulesToLoad.map(url => loadScript(url));
 
         return Promise.all(promises)

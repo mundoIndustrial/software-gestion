@@ -161,7 +161,7 @@ docs/LOGS_QUICK_START.md             ← Guía rápida
 
 ---
 
-## ⚡ Cucellos de Botella Típicos
+##  Cucellos de Botella Típicos
 
 ### Si carga de página tarda > 3 segundos
 Buscar en logs: `[CREAR-DESDE-COTIZACION] ✨ PÁGINA COMPLETADA`

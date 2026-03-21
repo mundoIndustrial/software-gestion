@@ -32,7 +32,7 @@ window.PrendaEditorPreloader = (function() {
      * @returns {void}
      */
     function startAutoPreload() {
-        // ⚡ ESPERAR A QUE PrendaEditorLoader esté disponible
+        //  ESPERAR A QUE PrendaEditorLoader esté disponible
         // El loader se carga dinámicamente, así que necesitamos polling
         if (!window.PrendaEditorLoader) {
             console.log('[PrendaEditorPreloader] ⏳ Esperando PrendaEditorLoader...');

@@ -154,7 +154,7 @@
                 datos_extendidos: datosReales.datosExtendidos || datosReales.datos_extendidos || null  // ← PRESERVAR datos por talla (normalizando key también)
             };
             
-            // ⚡ OPTIMIZADO: Removido console.log masivo - impacta 30-50ms
+            //  OPTIMIZADO: Removido console.log masivo - impacta 30-50ms
         });
         return procesosNorm;
     }
@@ -200,7 +200,7 @@
 
     function validarNoHayFiles(jsonString) {
         if (typeof jsonString !== 'string') return true;
-        // ⚡ OPTIMIZADO: indexOf es más rápido que regex para búsqueda simple
+        //  OPTIMIZADO: indexOf es más rápido que regex para búsqueda simple
         return jsonString.indexOf('[object File]') === -1 && jsonString.indexOf('[object Blob]') === -1;
     }
 
@@ -211,13 +211,13 @@
         const jsonLimpio = limpiarFiles(pedidoNormalizado);
         formData.append('pedido', JSON.stringify(jsonLimpio)); // ← 'pedido', no 'payload'
         
-        // ⚡ OPTIMIZADO: Removida variable archivosDebug (no se usaba)
+        //  OPTIMIZADO: Removida variable archivosDebug (no se usaba)
         let archivosAgregados = 0;
         
         // CRÍTICO: Obtener el mapa de archivos desde filesExtraidos
         const archivosMap = filesExtraidos?.archivosMap || {};
         
-        // ⚡ OPTIMIZADO: Removido console.log masivo - impacta 50-100ms en tiempo de carga
+        //  OPTIMIZADO: Removido console.log masivo - impacta 50-100ms en tiempo de carga
         
         // Agregar archivos desde la estructura extraída
         if (filesExtraidos && typeof filesExtraidos === 'object') {
@@ -236,7 +236,7 @@
                             if (file instanceof File) {
                                 formData.append(formdataKey, file);
                                 archivosAgregados++;
-                                // ⚡ OPTIMIZADO: Removido archivosDebug
+                                //  OPTIMIZADO: Removido archivosDebug
                             }
                         });
                     }
@@ -252,7 +252,7 @@
                                     if (file instanceof File) {
                                         formData.append(formdataKey, file);
                                         archivosAgregados++;
-                                        // ⚡ OPTIMIZADO: Removido archivosDebug
+                                        //  OPTIMIZADO: Removido archivosDebug
                                     }
                                 });
                             }
@@ -385,7 +385,7 @@
                             if (file instanceof File) {
                                 formData.append(formdataKey, file);
                                 archivosAgregados++;
-                                // ⚡ OPTIMIZADO: Removido archivosDebug
+                                //  OPTIMIZADO: Removido archivosDebug
                             }
                         });
                     }
@@ -393,7 +393,7 @@
             }
         }
         
-        // ⚡ OPTIMIZADO: Removido console.log masivo - no es necesario en tiempo de carga
+        //  OPTIMIZADO: Removido console.log masivo - no es necesario en tiempo de carga
         
         return formData;
     }
@@ -419,7 +419,7 @@
             pedidoRaw.prendas.forEach(function(prenda, idx) {
                 const prendaNorm = normalizarItem(prenda);
                 pedidoNorm.prendas.push(prendaNorm);
-                // ⚡ OPTIMIZADO: Removido console.log
+                //  OPTIMIZADO: Removido console.log
             });
         }
 
@@ -428,7 +428,7 @@
             pedidoRaw.epps.forEach(function(epp, idx) {
                 const eppNorm = normalizarEpp(epp);
                 pedidoNorm.epps.push(eppNorm);
-                // ⚡ OPTIMIZADO: Removido console.log
+                //  OPTIMIZADO: Removido console.log
             });
         }
         return pedidoNorm;
@@ -479,6 +479,6 @@
     // ========================================================================
     // PASO 6: VALIDACIÓN FINAL (OPTIMIZADA - REMOVIDO PARA PERFORMANCE)
     // ========================================================================
-    // ⚡ REMOVIDO: setTimeout bloqueaba carga - no es necesario en IIFE
+    //  REMOVIDO: setTimeout bloqueaba carga - no es necesario en IIFE
 
 })(); // FIN DEL IIFE

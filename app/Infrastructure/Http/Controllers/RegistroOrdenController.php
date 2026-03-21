@@ -137,21 +137,21 @@ class RegistroOrdenController extends Controller
             // ðŸ†• Preparar campos que fueron realmente actualizados (incluyendo los calculados)
             $changedFields = array_keys($validatedData);
             
-            // ðŸ†• Si se actualizÃ³ dia_de_entrega, anadir fecha_estimada_de_entrega a los campos cambiados
+            // ðŸ†• Si se actualiza dia_de_entrega, anadir fecha_estimada_de_entrega a los campos cambiados
             if (in_array('dia_de_entrega', $changedFields) && !in_array('fecha_estimada_de_entrega', $changedFields)) {
                 $changedFields[] = 'fecha_estimada_de_entrega';
             }
             
             // ðŸ†• Broadcast eventos con la orden actualizada y los campos reales (con manejo de errores)
             try {
-                broadcast(new \App\Events\OrdenUpdated($ordenActualizada, 'updated', $changedFields));
+                broadcast(new OrdenUpdated($ordenActualizada, 'updated', $changedFields));
                 \Log::info(" Broadcast enviado exitosamente para pedido {$ordenActualizada->numero_pedido}", ['campos' => $changedFields]);
             } catch (\Exception $e) {
                 \Log::warning(" Fallo en broadcast para pedido {$ordenActualizada->numero_pedido}, pero la actualizacion fue exitosa", [
                     'error' => $e->getMessage(),
                     'codigo' => $e->getCode()
                 ]);
-                // No re-lanzamos la excepciÃ³n para que la actualizacion sea exitosa incluso sin broadcast
+                // No re-lanzamos la excepcion para que la actualizacion sea exitosa incluso sin broadcast
             }
 
             return response()->json($response);
@@ -222,7 +222,7 @@ class RegistroOrdenController extends Controller
     }
 
     /**
-     * Obtener registros por orden (API para el modal de ediciÃ³n)
+     * Obtener registros por orden (API para el modal de edicion)
      * Retorna las prendas desde la nueva arquitectura
      */
     public function getRegistrosPorOrden($pedido)
@@ -288,7 +288,7 @@ class RegistroOrdenController extends Controller
     }
 
     /**
-     * Actualizar descripciÃ³n y regenerar registros_por_orden basado en el contenido
+     * Actualizar descripcion y regenerar registros_por_orden basado en el contenido
      */
     public function updateDescripcionPrendas(Request $request)
     {
@@ -304,7 +304,7 @@ class RegistroOrdenController extends Controller
             // Obtener la orden
             $orden = PedidoProduccion::where('numero_pedido', $pedido)->firstOrFail();
 
-            // Parsear descripciÃ³n
+            // Parsear descripcion
             $prendas = $this->prendaService->parseDescripcionToPrendas($nuevaDescripcion);
             $procesarRegistros = $this->prendaService->isValidParsedPrendas($prendas);
 
@@ -319,7 +319,7 @@ class RegistroOrdenController extends Controller
             // Log evento
             News::create([
                 'event_type' => 'description_updated',
-                'description' => "DescripciÃ³n y prendas actualizadas para pedido {$pedido}",
+                'description' => "descripcion y prendas actualizadas para pedido {$pedido}",
                 'user_id' => auth()->id(),
                 'pedido' => $pedido,
                 'metadata' => ['prendas_count' => count($prendas)]
@@ -346,7 +346,7 @@ class RegistroOrdenController extends Controller
     }
 
     /**
-     * Parsear descripciÃ³n para extraer informaciÃ³n de prendas y tallas
+     * Parsear descripcion para extraer informacion de prendas y tallas
      */
     /**
      * DEPRECATED: Metodo movido a RegistroOrdenPrendaService::parseDescripcionToPrendas()
@@ -413,9 +413,9 @@ class RegistroOrdenController extends Controller
                 \Log::warning('Error calculando entregas: ' . $e->getMessage());
             }
 
-            // Obtener prendas - usar plantilla si está relacionado a cotizaciÃ³n
+            // Obtener prendas - usar plantilla si está relacionado a cotizacion
             try {
-                // Verificar si el pedido está relacionado a una cotizaciÃ³n
+                // Verificar si el pedido está relacionado a una cotizacion
                 $esCotizacion = DB::table('pedidos_produccion')
                     ->where('numero_pedido', $numeroPedido)
                     ->whereNotNull('cotizacion_id')
@@ -427,7 +427,7 @@ class RegistroOrdenController extends Controller
                     $orderData['prendas'] = $templateService->generarPlantillaPrendas($numeroPedido);
                     $orderData['es_cotizacion'] = true;
                 } else {
-                    // Usar formato simple para pedidos sin cotizaciÃ³n
+                    // Usar formato simple para pedidos sin cotizacion
                     $prendas = DB::table('prendas_pedido')
                         ->where('numero_pedido', $numeroPedido)
                         ->orderBy('id', 'asc')
@@ -501,7 +501,7 @@ class RegistroOrdenController extends Controller
     }
 
     /**
-     * Obtener opciones de una columna especifica con paginaciÃ³n y busqueda
+     * Obtener opciones de una columna especifica con paginacion y busqueda
      * GET /registros/filter-column-options/{column}
      */
     public function getColumnFilterOptions($column, Request $request)
@@ -542,7 +542,7 @@ class RegistroOrdenController extends Controller
                     $options = $query->pluck('cliente')->filter()->sort()->values()->toArray();
                     break;
                 case 'descripcion':
-                    // Para descripciÃ³n, generar descripciones detalladas de prendas (como en recibos)
+                    // Para descripcion, generar descripciones detalladas de prendas (como en recibos)
                     $ordenes = PedidoProduccion::with([
                         'prendas.variantes',
                         'prendas.coloresTelas.tela',
@@ -550,13 +550,13 @@ class RegistroOrdenController extends Controller
                     ])->get();
                     $descripcionesMap = [];
                     
-                    \Log::info("[FILTRO-DESCRIPCION] Iniciando generaciÃ³n de descripciones", ['total_ordenes' => $ordenes->count()]);
+                    \Log::info("[FILTRO-DESCRIPCION] Iniciando generacion de descripciones", ['total_ordenes' => $ordenes->count()]);
                     
                     foreach ($ordenes as $orden) {
                         // Obtener prendas del pedido
                         if ($orden->prendas && $orden->prendas->count() > 0) {
                             foreach ($orden->prendas as $index => $prenda) {
-                                // Generar descripciÃ³n detallada
+                                // Generar descripcion detallada
                                 $descripcionDetallada = $this->generarDescripcionPrenda($prenda, $index + 1);
                                 
                                 \Log::info("[FILTRO-DESCRIPCION] Prenda procesada", [
@@ -566,7 +566,7 @@ class RegistroOrdenController extends Controller
                                 ]);
                                 
                                 if ($descripcionDetallada) {
-                                    // Si la descripciÃ³n ya existe, agregar el pedido a la lista
+                                    // Si la descripcion ya existe, agregar el pedido a la lista
                                     if (!isset($descripcionesMap[$descripcionDetallada])) {
                                         $descripcionesMap[$descripcionDetallada] = [];
                                     }
@@ -576,7 +576,7 @@ class RegistroOrdenController extends Controller
                                 }
                             }
                         } else {
-                            // Fallback a descripciÃ³n simple
+                            // Fallback a descripcion simple
                             $descripcion = $orden->getNombresPrendas();
                             if ($descripcion !== '-') {
                                 if (!isset($descripcionesMap[$descripcion])) {
@@ -591,10 +591,10 @@ class RegistroOrdenController extends Controller
                     
                     // Convertir a array de opciones
                     $options = array_map(function($desc, $pedidos) {
-                        // Limitar descripciÃ³n a 300 caracteres para el display (aumentado de 200)
+                        // Limitar descripcion a 300 caracteres para el display (aumentado de 200)
                         $displayDesc = strlen($desc) > 300 ? substr(strip_tags($desc), 0, 300) . '...' : strip_tags($desc);
                         return [
-                            'value' => implode(',', $pedidos), // Guardar todos los pedidos con esa descripciÃ³n
+                            'value' => implode(',', $pedidos), // Guardar todos los pedidos con esa descripcion
                             'display' => $displayDesc
                         ];
                     }, array_keys($descripcionesMap), array_values($descripcionesMap));
@@ -706,7 +706,7 @@ class RegistroOrdenController extends Controller
 
             $total = count($options);
             
-            // Aplicar paginaciÃ³n
+            // Aplicar paginacion
             $offset = ($page - 1) * $limit;
             $paginatedOptions = array_slice($options, $offset, $limit);
 
@@ -736,7 +736,7 @@ class RegistroOrdenController extends Controller
         try {
             $filters = $request->input('filters', []);
             $page = $request->input('page', 1);
-            $perPage = 25;  // Sincronizado con la paginaciÃ³n inicial en RegistroOrdenQueryController
+            $perPage = 25;  // Sincronizado con la paginacion inicial en RegistroOrdenQueryController
 
             $query = PedidoProduccion::query();
 
@@ -882,7 +882,7 @@ class RegistroOrdenController extends Controller
                 })->values();
             }
 
-            // Aplicar paginaciÃ³n manual
+            // Aplicar paginacion manual
             $perPage = 25;
             $currentPage = $page;
             $total = $ordenes->count();
@@ -956,9 +956,9 @@ class RegistroOrdenController extends Controller
             $query = PedidoProduccion::where('numero_pedido', 'LIKE', '%' . $search . '%')
                 ->orWhere('cliente', 'LIKE', '%' . $search . '%');
 
-            // Si es busqueda de tabla, retornar todos los campos con paginaciÃ³n
+            // Si es busqueda de tabla, retornar todos los campos con paginacion
             if ($isTableSearch) {
-                // Usar paginaciÃ³n
+                // Usar paginacion
                 $ordenesQuery = $query->select(
                     'id',
                     'numero_pedido',
@@ -1009,7 +1009,7 @@ class RegistroOrdenController extends Controller
                     ];
                 });
 
-                // Reemplazar la colecciÃ³n con los datos mapeados
+                // Reemplazar la coleccion con los datos mapeados
                 $ordenes->setCollection($ordenesMapeadas);
 
                 return response()->json([
@@ -1063,7 +1063,7 @@ class RegistroOrdenController extends Controller
                 'novedades' => 'nullable|string|max:5000'
             ]);
 
-            \Log::info(' ValidaciÃ³n exitosa');
+            \Log::info(' Validacion exitosa');
 
             // Buscar la orden
             $orden = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
@@ -1213,7 +1213,7 @@ class RegistroOrdenController extends Controller
     }
 
     /**
-     * Generar descripciÃ³n detallada de una prenda (formato recibo)
+     * Generar descripcion detallada de una prenda (formato recibo)
      */
     private function generarDescripcionPrenda($prenda, $indexPrenda = 1)
     {
@@ -1222,7 +1222,7 @@ class RegistroOrdenController extends Controller
             $nombrePrenda = $prenda->nombre_prenda ?? $prenda->nombre ?? 'SIN NOMBRE';
             $lineas[] = "PRENDA {$indexPrenda}: {$nombrePrenda}";
             
-            // Obtener color y tela de la primera variante (color/tela combinaciÃ³n)
+            // Obtener color y tela de la primera variante (color/tela combinacion)
             if ($prenda->coloresTelas && $prenda->coloresTelas->count() > 0) {
                 $primerColorTela = $prenda->coloresTelas->first();
                 $tela = $primerColorTela && $primerColorTela->tela ? $primerColorTela->tela->nombre ?? $primerColorTela->tela : '-';
@@ -1310,7 +1310,7 @@ class RegistroOrdenController extends Controller
             
             $descripcionFinal = implode(" | ", $lineas);
             
-            \Log::debug("[GENERAR-DESCRIPCION] DescripciÃ³n generada", [
+            \Log::debug("[GENERAR-DESCRIPCION] descripcion generada", [
                 'prenda_id' => $prenda->id,
                 'prenda_nombre' => $nombrePrenda,
                 'lineas_cantidad' => count($lineas),
@@ -1320,7 +1320,7 @@ class RegistroOrdenController extends Controller
             
             return $descripcionFinal;
         } catch (\Exception $e) {
-            \Log::error("[GENERAR-DESCRIPCION] Error generando descripciÃ³n", [
+            \Log::error("[GENERAR-DESCRIPCION] Error generando descripcion", [
                 'error' => $e->getMessage(),
                 'prenda_id' => $prenda->id ?? 'unknown'
             ]);
@@ -1372,7 +1372,7 @@ class RegistroOrdenController extends Controller
                 \App\Services\FestivosColombiaService::obtenerFestivos($nextYear)
             );
 
-            // Obtener informaciÃ³n adicional de pedidos y prendas
+            // Obtener informacion adicional de pedidos y prendas
             $recibosConInfo = $recibosCostura->map(function ($recibo) use ($festivos) {
                 $pedido = PedidoProduccion::with([
                     'prendas.coloresTelas.tela',
@@ -1408,7 +1408,7 @@ class RegistroOrdenController extends Controller
                     }
                 }
                 
-                // Calcular Dias para este pedido (desde fecha de creaciÃ³n del pedido hasta hoy)
+                // Calcular Dias para este pedido (desde fecha de creacion del pedido hasta hoy)
                 $diasCalculados = 0;
                 $fechaBaseCalculo = null;
                 if ($esParcial && $createdAt) {
@@ -1433,12 +1433,12 @@ class RegistroOrdenController extends Controller
                         $festivosSet = [];
                         foreach ($festivosArray as $f) {
                             try {
-                                $festivosSet[\Carbon\Carbon::parse($f)->format('Y-m-d')] = true;
+                                $festivosSet[Carbon::parse($f)->format('Y-m-d')] = true;
                             } catch (\Exception $e) {}
                         }
                         
-                        // Calcular Dias habiles manualmente (misma lÃ³gica que CacheCalculosService)
-                        $current = $fechaInicio->copy()->addDay();  // Saltar al prÃ³ximo día
+                        // Calcular Dias habiles manualmente (misma logica que CacheCalculosService)
+                        $current = $fechaInicio->copy()->addDay();  // Saltar al proximo día
                         $totalDays = 0;
                         $maxIterations = 365;
                         $iterations = 0;
@@ -1482,7 +1482,7 @@ class RegistroOrdenController extends Controller
                 // Obtener el area directamente del recibo (que es actualizado por el Observer)
                 $area = $recibo->area ?? 'Insumos';
                 
-                // Obtener informaciÃ³n detallada de la prenda especifica del recibo
+                // Obtener informacion detallada de la prenda especifica del recibo
                 $descripcionDetallada = '';
                 if ($pedido && $recibo->prenda_id) {
                     // Buscar la prenda especifica del recibo
@@ -1490,7 +1490,7 @@ class RegistroOrdenController extends Controller
                     if ($prendaRecibo) {
                         $prendaInfo = "PRENDA: " . ($prendaRecibo->nombre_prenda ?? 'Sin nombre');
                         
-                        // Agregar informaciÃ³n de telas y colores
+                        // Agregar informacion de telas y colores
                         if ($prendaRecibo->coloresTelas && $prendaRecibo->coloresTelas->count() > 0) {
                             $telasInfo = [];
                             foreach ($prendaRecibo->coloresTelas as $colorTela) {
@@ -1504,7 +1504,7 @@ class RegistroOrdenController extends Controller
                             }
                         }
                         
-                        // Agregar informaciÃ³n de tallas
+                        // Agregar informacion de tallas
                         if ($prendaRecibo->tallas && $prendaRecibo->tallas->count() > 0) {
                             $tallasInfo = [];
                             foreach ($prendaRecibo->tallas as $talla) {
@@ -1693,9 +1693,9 @@ class RegistroOrdenController extends Controller
             });
         }
         
-        // Filtros por descripciÃ³n y cantidad (requieren procesamiento adicional)
+        // Filtros por descripcion y cantidad (requieren procesamiento adicional)
         if (isset($filtros['descripcion']) && !empty($filtros['descripcion'])) {
-            \Log::info('[recibosCostura] Filtro por descripciÃ³n requiere procesamiento adicional');
+            \Log::info('[recibosCostura] Filtro por descripcion requiere procesamiento adicional');
         }
         
         if (isset($filtros['cantidad']) && count($filtros['cantidad']) >= 2) {
@@ -1803,7 +1803,7 @@ class RegistroOrdenController extends Controller
                 \App\Services\FestivosColombiaService::obtenerFestivos($nextYear)
             );
 
-            // Obtener informaciÃ³n adicional de pedidos y prendas
+            // Obtener informacion adicional de pedidos y prendas
             $recibosConInfo = $recibosReflectivo->map(function ($recibo) use ($festivos) {
                 $pedido = PedidoProduccion::with([
                     'prendas.coloresTelas.tela',
@@ -1858,7 +1858,7 @@ class RegistroOrdenController extends Controller
                 
                 $area = $recibo->area ?? 'Insumos';
                 
-                // Obtener informaciÃ³n detallada de la prenda especifica del recibo
+                // Obtener informacion detallada de la prenda especifica del recibo
                 $descripcionDetallada = '';
                 if ($pedido && $recibo->prenda_id) {
                     $prendaRecibo = $pedido->prendas->where('id', $recibo->prenda_id)->first();
@@ -2171,7 +2171,7 @@ class RegistroOrdenController extends Controller
             
             // Si se especifica prenda_id, filtrar por esa prenda
             if ($prendaId) {
-                // Convertir a entero para asegurar comparaciÃ³n correcta
+                // Convertir a entero para asegurar comparacion correcta
                 $prendaId = (int)$prendaId;
                 $query->where('prenda_pedido_id', $prendaId);
                 \Log::info('[obtenerAreaProcesoMasReciente] Filtrando por prenda_id', ['prenda_id' => $prendaId]);
@@ -2254,7 +2254,7 @@ class RegistroOrdenController extends Controller
     }
 
     /**
-     * Contar recibos de COSTURA en ejecuciÃ³n (area Corte) para la campana
+     * Contar recibos de COSTURA en Ejecucion (area Corte) para la campana
      * GET /api/recibos-costura/ejecutando-corte
      */
     public function contarRecibosEjecutandoCostura()
@@ -2262,11 +2262,11 @@ class RegistroOrdenController extends Controller
         try {
             $userId = auth()->id();
             
-            // Obtener recibos COSTURA en estado "En EjecuciÃ³n" con area "Corte"
-            // EXCLUYENDO los que el usuario actual ya marcÃ³ como visto
+            // Obtener recibos COSTURA en estado "En Ejecucion" con area "Corte"
+            // EXCLUYENDO los que el usuario actual ya marca como visto
             $recibos = DB::table('consecutivos_recibos_pedidos')
                 ->where('tipo_recibo', 'COSTURA')
-                ->where('estado', 'En EjecuciÃ³n')
+                ->where('estado', 'En Ejecucion')
                 ->where('area', 'Corte')
                 ->where('activo', 1)
                 ->whereNotIn('id', function($query) use ($userId) {
@@ -2284,7 +2284,7 @@ class RegistroOrdenController extends Controller
                 ])
                 ->get();
 
-            // Enriquecer datos con informaciÃ³n del pedido
+            // Enriquecer datos con informacion del pedido
             $recibosConInfo = $recibos->map(function ($recibo) {
                 $pedido = PedidoProduccion::find($recibo->pedido_produccion_id);
                 
@@ -2417,7 +2417,7 @@ class RegistroOrdenController extends Controller
 
             // Calcular fecha estimada si se solicita y hay un día valido
             if ($calcularFechaEstimada && $diaDeEntrega && $diaDeEntrega > 0) {
-                // Obtener la fecha de creaciÃ³n del recibo
+                // Obtener la fecha de creacion del recibo
                 $fechaInicio = $orden->fecha_de_creacion_de_orden;
                 
                 if (!$fechaInicio) {
@@ -2500,7 +2500,7 @@ class RegistroOrdenController extends Controller
                 FestivosColombiaService::obtenerFestivos($nextYear)
             );
 
-            // Convertir festivos a formato YYYY-MM-DD para comparaciÃ³n facil
+            // Convertir festivos a formato YYYY-MM-DD para comparacion facil
             $festivosFormatted = array_map(function ($fechaFestivo) {
                 return Carbon::parse($fechaFestivo)->format('Y-m-d');
             }, $festivos);

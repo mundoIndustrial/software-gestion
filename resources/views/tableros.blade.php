@@ -517,7 +517,7 @@ const registrosMap = {
     polos: {}
 };
 
-// ⚡ OPTIMIZACIÓN: Debounce para actualizar seguimiento (evitar múltiples llamadas en rápida sucesión)
+//  OPTIMIZACIÓN: Debounce para actualizar seguimiento (evitar múltiples llamadas en rápida sucesión)
 const seguimientoDebounceTimers = {};
 let isSearchingCell = false; // Flag para evitar actualizar seguimiento durante búsqueda
 
@@ -542,7 +542,7 @@ function actualizarSeguimientoDebounced(section) {
     }, 1500);
 }
 
-// ⚡ OPTIMIZACIÓN: Cachear búsquedas anteriores para evitar llamadas duplicadas
+//  OPTIMIZACIÓN: Cachear búsquedas anteriores para evitar llamadas duplicadas
 const searchCache = {
     operario: {},
     maquina: {},
@@ -567,12 +567,12 @@ function hideLoading() {
     }
 }
 
-// ⚡ Flag para evitar múltiples aperturas del modal
+//  Flag para evitar múltiples aperturas del modal
 let modalOpening = false;
 
 // Función global para manejar doble click en celdas
 function handleCellDoubleClick() {
-    // ⚡ Evitar múltiples aperturas del modal
+    //  Evitar múltiples aperturas del modal
     if (modalOpening) {
         return;
     }
@@ -789,7 +789,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Función para hacer celdas editables con doble click
-    // ⚡ OPTIMIZACIÓN: Usar event delegation en lugar de adjuntar listeners a cada celda
+    //  OPTIMIZACIÓN: Usar event delegation en lugar de adjuntar listeners a cada celda
     function attachEditableCellListeners() {
         // Solo adjuntar listener UNA VEZ al documento, no a cada celda
         if (!window.editableCellListenerAttached) {
@@ -844,15 +844,15 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (currentColumn === 'operario') {
             columnName = 'operario_id';
             newValue = newValue.toUpperCase(); // Solo convertir a mayúsculas para texto
-            displayName = newValue; // ⚡ IMPORTANTE: Actualizar displayName también
+            displayName = newValue; //  IMPORTANTE: Actualizar displayName también
         } else if (currentColumn === 'maquina') {
             columnName = 'maquina_id';
             newValue = newValue.toUpperCase();
-            displayName = newValue; // ⚡ IMPORTANTE: Actualizar displayName también
+            displayName = newValue; //  IMPORTANTE: Actualizar displayName también
         } else if (currentColumn === 'tela') {
             columnName = 'tela_id';
             newValue = newValue.toUpperCase();
-            displayName = newValue; // ⚡ IMPORTANTE: Actualizar displayName también
+            displayName = newValue; //  IMPORTANTE: Actualizar displayName también
         }
         
         // Datos a enviar (permitir agregar campos adicionales cuando se requiera)
@@ -865,7 +865,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return 0; // Default
         }
 
-        // ⚡ OPTIMIZACIÓN: Ejecutar búsquedas en PARALELO usando Promise.all()
+        //  OPTIMIZACIÓN: Ejecutar búsquedas en PARALELO usando Promise.all()
         try {
             if (['hora_id', 'operario_id', 'maquina_id', 'tela_id'].includes(columnName)) {
                 // Determinar la URL y nombre del campo según el tipo
@@ -896,7 +896,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     cacheType = 'tela';
                 }
                 
-                // ⚡ OPTIMIZACIÓN: Revisar caché primero
+                //  OPTIMIZACIÓN: Revisar caché primero
                 const cacheKey = cacheType === 'hora' ? newValue : newValue.toUpperCase();
                 if (searchCache[cacheType] && searchCache[cacheType][cacheKey]) {
                     const cachedData = searchCache[cacheType][cacheKey];
@@ -907,7 +907,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log(` ${columnName} obtenido del caché:`, cachedData, `(${timings.cacheHit.toFixed(2)}ms)`);
                 } else {
                     const searchStart = performance.now();
-                    // ⚡ OPTIMIZACIÓN: Marcar que estamos buscando para evitar actualizaciones de seguimiento
+                    //  OPTIMIZACIÓN: Marcar que estamos buscando para evitar actualizaciones de seguimiento
                     isSearchingCell = true;
                     console.log(`⏳ isSearchingCell = true (búsqueda iniciada)`);
                     
@@ -934,7 +934,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         newValue = data[dataKey];
                         payload[columnName] = newValue;
                         
-                        // ⚡ OPTIMIZACIÓN: Guardar en caché para búsquedas futuras
+                        //  OPTIMIZACIÓN: Guardar en caché para búsquedas futuras
                         if (!searchCache[cacheType]) {
                             searchCache[cacheType] = {};
                         }
@@ -949,7 +949,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         return;
                     }
                     } finally {
-                        // ⚡ OPTIMIZACIÓN: Resetear el flag después de búsqueda
+                        //  OPTIMIZACIÓN: Resetear el flag después de búsqueda
                         isSearchingCell = false;
                         console.log(` isSearchingCell = false (búsqueda completada)`);
                     }
@@ -1097,7 +1097,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
 
-                // ⚡ FAST: Cerrar modal y ocultar loading INMEDIATAMENTE
+                //  FAST: Cerrar modal y ocultar loading INMEDIATAMENTE
                 closeEditModal();
                 hideLoading();
                 
@@ -1147,7 +1147,7 @@ document.addEventListener('DOMContentLoaded', function() {
             modal.style.opacity = '0';
             modal.style.visibility = 'hidden';
         }
-        // ⚡ Resetear flag para permitir nuevas aperturas del modal
+        //  Resetear flag para permitir nuevas aperturas del modal
         modalOpening = false;
         currentCell = null;
         currentRowId = null;
@@ -1550,7 +1550,7 @@ function initializeRealtimeListeners() {
     corteChannel.error((error) => {
     });
     corteChannel.listen('CorteRecordCreated', (e) => {
-        // ⚡ OPTIMIZACIÓN: Solo procesar si la tabla de corte está visible
+        //  OPTIMIZACIÓN: Solo procesar si la tabla de corte está visible
         // El dashboard-tables-corte.blade.php tiene su propio listener
         const corteTable = document.querySelector('table[data-section="corte"]');
         if (!corteTable) {
@@ -1593,7 +1593,7 @@ function agregarRegistroTiempoReal(registro, section) {
     if (existingRow) {
         // Actualizar fila existente
         actualizarFilaExistente(existingRow, registro, section);
-        // ⚡ OPTIMIZACIÓN: Actualizar el seguimiento con debounce (no inmediatamente)
+        //  OPTIMIZACIÓN: Actualizar el seguimiento con debounce (no inmediatamente)
         if (typeof actualizarSeguimientoDebounced === 'function') {
             actualizarSeguimientoDebounced(section);
         }
@@ -1709,7 +1709,7 @@ function agregarRegistroTiempoReal(registro, section) {
 
     // 🗺️ Guardar referencia al registro para poder actualizarlo si se edita
     registrosMap[section][registro.id] = registro;
-    // ⚡ OPTIMIZACIÓN: Actualizar el seguimiento con debounce (no inmediatamente)
+    //  OPTIMIZACIÓN: Actualizar el seguimiento con debounce (no inmediatamente)
     if (typeof actualizarSeguimientoDebounced === 'function') {
         actualizarSeguimientoDebounced(section);
     }

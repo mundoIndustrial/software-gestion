@@ -50,7 +50,7 @@ Este directorio contiene la implementación de **Domain-Driven Design (DDD)** si
 
 ```
 core/
-├── bootstrap.js                          ← ⚡ PUNTO DE ENTRADA
+├── bootstrap.js                          ←  PUNTO DE ENTRADA
 │   └─ Inicializa todas las capas
 │   └─ Inyecta dependencias
 │   └─ Expone window.insumoService

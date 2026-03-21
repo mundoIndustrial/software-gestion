@@ -68,7 +68,7 @@ class EppRepository implements EppRepositoryInterface
     {
         $termino = strtolower(trim($termino));
         
-        // ⚡ QUERY OPTIMIZADA: Más simple y más rápida
+        //  QUERY OPTIMIZADA: Más simple y más rápida
         $epps = EppModel::where('activo', true)
             ->where(function ($query) use ($termino) {
                 $query->where('nombre_completo', 'like', "%{$termino}%")
@@ -78,7 +78,7 @@ class EppRepository implements EppRepositoryInterface
                     ->orWhere('color', 'like', "%{$termino}%");
             })
             ->orderBy('nombre_completo')
-            ->limit(50)  // ⚡ REDUCIDO a 50 resultados (fue 100) - más velocidad
+            ->limit(50)  //  REDUCIDO a 50 resultados (fue 100) - más velocidad
             ->get();
 
         // Log de búsqueda

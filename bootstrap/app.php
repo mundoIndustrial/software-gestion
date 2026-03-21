@@ -50,7 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'block-costura-reflectivo-dashboard' => \App\Http\Middleware\BlockCosturaReflectivoDashboard::class,
         ]);
         
-        // ⚡ TESTING: Deshabilitar CSRF para Postman
+        //  TESTING: Deshabilitar CSRF para Postman
         $middleware->validateCsrfTokens(except: [
             'pedidos-produccion/crear-sin-cotizacion',
             'api/pedidos/*/epp/agregar',

@@ -135,7 +135,7 @@ class EspecificacionesCapturadoTest extends TestCase
     }
 
     /**
-     * Test: Verificar que todas las categorÃ­as se capturan correctamente
+     * Test: Verificar que todas las categorias se capturan correctamente
      */
     public function test_todas_las_categorias_se_capturan()
     {
@@ -160,7 +160,7 @@ class EspecificacionesCapturadoTest extends TestCase
             ]
         ];
 
-        // Verificar que todas las categorÃ­as están presentes
+        // Verificar que todas las categorias están presentes
         $this->assertCount(6, $especificaciones);
         $this->assertArrayHasKey('disponibilidad', $especificaciones);
         $this->assertArrayHasKey('forma_pago', $especificaciones);
@@ -173,11 +173,11 @@ class EspecificacionesCapturadoTest extends TestCase
         $json = json_encode($especificaciones);
         $decodificado = json_decode($json, true);
 
-        // Verificar que todas las categorÃ­as se preservan
+        // Verificar que todas las categorias se preservan
         $this->assertEquals($especificaciones, $decodificado);
 
-        echo "\n TEST PASADO: Todas las categorÃ­as se capturan correctamente\n";
-        echo "   Total categorÃ­as: " . count($decodificado) . "\n";
+        echo "\n TEST PASADO: Todas las categorias se capturan correctamente\n";
+        echo "   Total categorias: " . count($decodificado) . "\n";
         $this->assertTrue(true);
     }
 }

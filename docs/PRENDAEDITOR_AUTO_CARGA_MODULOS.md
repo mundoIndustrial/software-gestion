@@ -25,7 +25,7 @@ ReferenceError: PrendaModalManager is not defined
 </script>
 ```
 
-#### ⚡ NIVEL 2: Auto-Carga (AUTOMÁTICO)
+####  NIVEL 2: Auto-Carga (AUTOMÁTICO)
 Si el loader NO está incluido, `PrendaEditor` lo detecta automáticamente y:
 
 ```javascript
@@ -156,7 +156,7 @@ PrendaEditor._modulosEnCarga
 - Mejor debugging
 - Sin sorpresas
 
-#### ⚡ OPCIÓN 2: Confiar en el Fallback
+####  OPCIÓN 2: Confiar en el Fallback
 Si no incluyes el loader, simplemente:
 
 ```html

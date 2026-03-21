@@ -347,7 +347,7 @@ function initializeCorteChannel() {
         
         channel.listen('CorteRecordCreated', (e) => {
 
-            // ⚡ DEBOUNCE: Evitar múltiples recargas en corto tiempo
+            //  DEBOUNCE: Evitar múltiples recargas en corto tiempo
             // Cancelar el timeout anterior si existe
             if (recargarDashboardTimeout) {
                 clearTimeout(recargarDashboardTimeout);

@@ -223,7 +223,7 @@ console.timeEnd('primera');
 console.time('segunda');
 await window.insumoService.obtenerInsumosDelPedido(456);
 console.timeEnd('segunda');
-// Output: ~1-2ms, SIN Network request ⚡
+// Output: ~1-2ms, SIN Network request 
 ```
 
 ### Paso 6: Probar Error Handling

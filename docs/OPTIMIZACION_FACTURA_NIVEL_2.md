@@ -4,17 +4,17 @@
 
 | # | Optimización | Impacto | Dificultad | Tiempo | Estado |
 |---|--|--|--|--|--|
-| 1 | Eliminar arrays vacíos en JSON | ⚡⚡⚡ | 🟢 Fácil | 20 min |  Pendiente |
-| 2 | Caching con Redis | ⚡⚡⚡ | 🟡 Media | 45 min |  Pendiente |
-| 3 | Lazy loading de imágenes | ⚡⚡ | 🟡 Media | 1h |  Pendiente |
-| 4 | Pagination de prendas | ⚡⚡⚡ | 🟠 Complejo | 2h |  Pendiente |
-| 5 | Usar select() para columnas | ⚡⚡ | 🟢 Fácil | 30 min |  Pendiente |
-| 6 | Endpoint de metadata | ⚡ | 🟢 Fácil | 20 min |  Pendiente |
-| 7 | Comprensión gzip | ⚡⚡ | 🟢 Fácil | 15 min |  Pendiente |
+| 1 | Eliminar arrays vacíos en JSON |  | 🟢 Fácil | 20 min |  Pendiente |
+| 2 | Caching con Redis |  | 🟡 Media | 45 min |  Pendiente |
+| 3 | Lazy loading de imágenes |  | 🟡 Media | 1h |  Pendiente |
+| 4 | Pagination de prendas |  | 🟠 Complejo | 2h |  Pendiente |
+| 5 | Usar select() para columnas |  | 🟢 Fácil | 30 min |  Pendiente |
+| 6 | Endpoint de metadata |  | 🟢 Fácil | 20 min |  Pendiente |
+| 7 | Comprensión gzip |  | 🟢 Fácil | 15 min |  Pendiente |
 
 ---
 
-## 1️⃣ Eliminar Arrays Vacíos en JSON ⚡⚡⚡
+## 1️⃣ Eliminar Arrays Vacíos en JSON 
 
 ### Problema Actual:
 ```json
@@ -64,7 +64,7 @@ if (!empty($fotosColorTela)) {
 
 ---
 
-## 2️⃣ Caching con Redis ⚡⚡⚡
+## 2️⃣ Caching con Redis 
 
 ### Patrón:
 ```php
@@ -99,7 +99,7 @@ Cache::forget("factura:pedido:{$pedido->id}:v1");
 
 ---
 
-## 3️⃣ Lazy Loading de Imágenes ⚡⚡
+## 3️⃣ Lazy Loading de Imágenes 
 
 ### Problema:
 Todas las imágenes se cargan en la respuesta inicial aunque el frontend las carga lentamente.
@@ -146,7 +146,7 @@ const imagenesResponse = await fetch(`/gestion-bodega/pedidos/4/imagenes`);
 
 ---
 
-## 4️⃣ Pagination de Prendas ⚡⚡⚡
+## 4️⃣ Pagination de Prendas 
 
 Si un pedido tiene 30+ prendas, devolver solo 5-10 por página:
 
@@ -178,7 +178,7 @@ public function obtenerDatosFacturaJSON($id, Request $request)
 
 ---
 
-## 5️⃣ Usar select() para Columnas Específicas ⚡⚡
+## 5️⃣ Usar select() para Columnas Específicas 
 
 Remover columnas innecesarias desde la BD:
 
@@ -203,7 +203,7 @@ public function obtenerPorId(int $id): ?PedidoProduccion
 
 ---
 
-## 6️⃣ Endpoint de Metadata ⚡
+## 6️⃣ Endpoint de Metadata 
 
 Para casos donde solo necesitan información básica sin detalles:
 
@@ -233,7 +233,7 @@ public function metadataFactura($id)
 
 ---
 
-## 7️⃣ Comprensión gzip (Automático) ⚡⚡
+## 7️⃣ Comprensión gzip (Automático) 
 
 Laravel ya soporta gzip, pero verificar que está activado:
 

@@ -412,7 +412,7 @@ class CotizacionesConcurrencyTest extends TestCase
                 'estado' => 'enviada',
             ]);
 
-            // Crear prenda mÃ­nima
+            // Crear prenda minima
             $prenda = PrendaCot::create([
                 'cotizacion_id' => $cot->id,
                 'nombre_producto' => "Prenda $i",

@@ -157,7 +157,7 @@ window.cambiarModoModalPorTallas = function(nuevoModo) {
         }
     }
 
-    // ⚡ Registrar cambio de modo en el editor de procesos
+    //  Registrar cambio de modo en el editor de procesos
     if (window.procesosEditor && procesoPorTallasActual) {
         window.procesosEditor.registrarCambioModoTallas(nuevoModo);
         console.log('[por-tallas] 📊 Cambio de modo registrado en editor:', nuevoModo);
@@ -1505,7 +1505,7 @@ window.guardarProcesoPorTallas = function() {
         };
     }
 
-    // ⚡ CRÍTICO: Guardar modoTallas en AMBOS niveles (raíz y datos) con el valor CORRECTO
+    //  CRÍTICO: Guardar modoTallas en AMBOS niveles (raíz y datos) con el valor CORRECTO
     // Esto asegura que se copie correctamente sin importar dónde lo busque el código
     window.procesosSeleccionados[procesoPorTallasActual].modoTallas = modoModalPorTallasActual;  // 'general' o 'especifico'
     window.procesosSeleccionados[procesoPorTallasActual].datos = {

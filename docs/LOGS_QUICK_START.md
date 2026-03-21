@@ -1,6 +1,6 @@
 #  ANÁLISIS RÁPIDO DE LOGS - Creación de Pedidos
 
-## ⚡ Resumen Ejecutivo
+##  Resumen Ejecutivo
 
 Se han agregado **logs detallados con microtiming** en todos los pasos críticos de creación de pedidos para identificar cuellos de botella. Los logs miden el tiempo de cada operación en **milisegundos (ms)**.
 

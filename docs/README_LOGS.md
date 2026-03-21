@@ -157,7 +157,7 @@ Si ves "diferencia > 0" → Problema en FormData del frontend
 
 ---
 
-## ⚡ Próximos Pasos
+##  Próximos Pasos
 
 1. **Ejecutar** `.\scripts\analizar-logs-pedidos.ps1`
 2. **Identificar** qué es > 2000ms

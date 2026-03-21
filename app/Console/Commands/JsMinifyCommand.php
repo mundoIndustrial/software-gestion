@@ -55,7 +55,7 @@ class JsMinifyCommand extends Command
         }
 
         $this->info('');
-        $this->info('  ⚡ JS Minification Pipeline');
+        $this->info('   JS Minification Pipeline');
         $this->info('  ══════════════════════════════════════');
         $this->info('');
 

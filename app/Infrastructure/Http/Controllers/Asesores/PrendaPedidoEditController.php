@@ -35,7 +35,7 @@ class PrendaPedidoEditController extends Controller
     }
 
     /**
-     * Editar prenda completa (operaciÃ³n PATCH)
+     * Editar prenda completa (operacion PATCH)
      * 
      * POST: /api/prendas-pedido/{id}/editar
      * 
@@ -66,7 +66,7 @@ class PrendaPedidoEditController extends Controller
             // Capturar campos antes del cambio para el diff
             $camposAntes = $prenda->only(['nombre_prenda', 'cantidad', 'descripcion', 'de_bodega']);
 
-            // Ejecutar ediciÃ³n
+            // Ejecutar edicion
             $resultado = $this->prendaEditService->edit($prenda, $dto);
 
             // Construir diff de campos basicos enviados
@@ -117,7 +117,7 @@ class PrendaPedidoEditController extends Controller
      * Payload:
      * {
      *   "nombre_prenda": "NUEVO NOMBRE",
-     *   "descripcion": "Nueva descripciÃ³n",
+     *   "descripcion": "Nueva descripcion",
      *   "cantidad": 120,
      *   "de_bodega": true
      * }
@@ -282,7 +282,7 @@ class PrendaPedidoEditController extends Controller
             // Capturar campos de variante antes del cambio
             $varianteAntes = $variante->only(['tipo_manga_id', 'tipo_broche_boton_id', 'tiene_bolsillos', 'manga_obs', 'broche_boton_obs', 'bolsillos_obs']);
 
-            // Ejecutar ediciÃ³n
+            // Ejecutar edicion
             $resultado = $this->varianteEditService->edit($variante, $dto);
 
             // Construir diff de variante

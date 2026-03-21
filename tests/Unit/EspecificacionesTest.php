@@ -103,7 +103,7 @@ class EspecificacionesTest extends TestCase
     }
 
     /**
-     * Test: Verificar que multiples valores por categorÃ­a se guardan
+     * Test: Verificar que multiples valores por categoria se guardan
      */
     public function test_especificaciones_multiples_valores()
     {
@@ -133,10 +133,10 @@ class EspecificacionesTest extends TestCase
             ]
         ];
 
-        // Verificar que todas las categorÃ­as se guardaron
+        // Verificar que todas las categorias se guardaron
         $this->assertCount(6, $especificaciones);
 
-        // Verificar que cada categorÃ­a tiene sus valores
+        // Verificar que cada categoria tiene sus valores
         $this->assertCount(4, $especificaciones['disponibilidad']);
         $this->assertCount(2, $especificaciones['forma_pago']);
         $this->assertCount(2, $especificaciones['regimen']);
@@ -151,7 +151,7 @@ class EspecificacionesTest extends TestCase
         // Verificar que se preservó la estructura
         $this->assertEquals($especificaciones, $decodificado);
 
-        echo "\n TEST PASADO: multiples valores por categorÃ­a se guardan correctamente\n";
+        echo "\n TEST PASADO: multiples valores por categoria se guardan correctamente\n";
         $this->assertTrue(true);
     }
 }

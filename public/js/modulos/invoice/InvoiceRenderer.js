@@ -814,7 +814,7 @@ class InvoiceRenderer {
             const resultado = `
                 <div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #6b7280;">
                     <div style="font-weight: 700; color: #374151; font-size: 11px; margin-bottom: 8px;">
-                        ⚡ EQUIPO DE PROTECCIÓN PERSONAL (${epps.length})
+                         EQUIPO DE PROTECCIÓN PERSONAL (${epps.length})
                     </div>
                     ${epps.map((epp, idx) => {
                         // Estandarizar: crear propiedad 'imagen' si no existe pero hay 'imagenes'

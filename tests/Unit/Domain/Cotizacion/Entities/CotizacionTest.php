@@ -23,7 +23,7 @@ class CotizacionTest extends TestCase
     {
         $this->usuarioId = UserId::crear(1);
         $this->cliente = Cliente::crear('Acme Corp');
-        $this->asesora = Asesora::crear('maria GarcÃ­a');
+        $this->asesora = Asesora::crear('maria Garci­a');
     }
 
     /**

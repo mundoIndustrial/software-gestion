@@ -1,6 +1,6 @@
 #  GUÍA RÁPIDA DE INSTALACIÓN - MÓDULO BODEGA
 
-## ⚡ 5 Pasos para Poner en Funcionamiento
+##  5 Pasos para Poner en Funcionamiento
 
 ### Paso 1: Registrar las Rutas
 

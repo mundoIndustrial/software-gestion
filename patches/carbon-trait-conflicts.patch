@@ -1,0 +1,11 @@
+--- a/vendor/nesbot/carbon/src/Carbon/Traits/Serialization.php
++++ b/vendor/nesbot/carbon/src/Carbon/Traits/Serialization.php
+@@ -33,7 +33,6 @@ namespace Carbon\Traits;
+  * @property int $quarter
+  *
+  * Depends on the following methods:
+  *
+- * @method string|static locale(string $locale = null, string ...$fallbackLocales)
+  * @method string        toJSON()
+  */
+ trait Serialization

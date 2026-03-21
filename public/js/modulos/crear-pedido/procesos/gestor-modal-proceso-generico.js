@@ -201,7 +201,7 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
         
         // Mostrar modal PRIMERO
         modal.style.display = 'flex';
-        // ⚡ CRÍTICO: Forzar z-index MÁXIMO para que esté siempre al frente
+        //  CRÍTICO: Forzar z-index MÁXIMO para que esté siempre al frente
         modal.style.zIndex = '999999999';
         console.log(' [MODAL-PROCESO] Z-index forzado a:', modal.style.zIndex);
         

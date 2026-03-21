@@ -31,7 +31,7 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
 
     // Usar PrendaCardService para generar HTML
     try {
-        console.log('[generarTarjetaPrendaReadOnly] ⚡ Llamando PrendaCardService.generar()');
+        console.log('[generarTarjetaPrendaReadOnly]  Llamando PrendaCardService.generar()');
         const htmlTarjeta = window.PrendaCardService.generar(prenda, indice);
         console.log('[generarTarjetaPrendaReadOnly]  HTML generado exitosamente');
         return htmlTarjeta;
