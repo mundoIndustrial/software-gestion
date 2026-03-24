@@ -1,7 +1,36 @@
 'use strict';
 
-  // Festivos now handled by backend CalculadorDiasService
-  // No need to preload client-side
+/**
+ * TRACKING MODAL HANDLER - Main Orchestrator
+ * 
+ * Architecture: Domain-Driven Design (DDD)
+ * 
+ * Responsabilidad: Coordinación de eventos y flujo de datos
+ * 
+ * Capas utilizadas:
+ * - Domain: OrderState, DateFormatter
+ * - Infrastructure: QueryUtils
+ * - Application: OrderApiService (próxima fase)
+ * - Interface: DOMRenderer (próxima fase)
+ */
+
+// ============================================================
+// IMPORTS: Domain Layer
+// ============================================================
+import { orderState, DateFormatter } from './domain/index.js';
+
+// ============================================================
+// IMPORTS: Infrastructure Layer
+// ============================================================
+import { QueryUtils, SvgIcons, dateUtils, ModalUtils } from './infrastructure/index.js';
+
+// ============================================================
+// IMPORTS: Application Layer
+// ============================================================
+import { OrderApiService } from './application/index.js';
+
+// Festivos now handled by backend CalculadorDiasService
+// No need to preload client-side
 
 // Inicializar listeners del modal
 function initTrackingModalListeners() {
@@ -85,10 +114,10 @@ function initTrackingModalListeners() {
         // Manejar "Sin seleccionar" (valor 0)
         if (n === 0) {
           valueEl.textContent = 'Sin seleccionar';
-          window.__trackingDiasSeleccionados = null;
+          orderState.setSelectedDays(null); // DDD: Usar orderState en lugar de variable global
         } else {
           valueEl.textContent = `${n} ${n === 1 ? 'día' : 'días'}`;
-          window.__trackingDiasSeleccionados = n;
+          orderState.setSelectedDays(n); // DDD: Usar orderState en lugar de variable global
         }
         
         // Guardar los datos al cambiar la selección
@@ -134,7 +163,7 @@ function initTrackingModalListeners() {
         if (!totalDiasElement || !duracionAreaElement) return;
         
         // Obtener datos del proceso (desde data attributes o recalcular)
-        const processData = window.currentPrendaData?.seguimientos_por_area?.[area];
+        const processData = orderState.getCurrentPrenda()?.seguimientos_por_area?.[area];
         if (!processData) return;
         
         // Recalcular días dinámicamente
@@ -202,87 +231,46 @@ function initTrackingModalListeners() {
 
   /**
    * Guardar selección de día de entrega desde el modal de seguimiento
-   * Envía los días estimados al backend que calcula la fecha considerando días hábiles y festivos
+   * Refactorizado FASE 2: Usa OrderApiService para calcular fecha
    */
   async function saveDiaEntregaSelection() {
     try {
-      const diasSeleccionados = window.__trackingDiasSeleccionados;
-      
-      // Obtener el ID del recibo/orden del header del modal
-      let ordenId = null;
-      
-      // Intentar obtener orden ID desde los datos globales
-      if (window.currentOrderData) {
-        ordenId = window.currentOrderData.id;
-      }
-      
-      // Si no tenemos orden ID, intentar obtenerlo desde el DOM
-      if (!ordenId) {
-        const ordenNumberEl = document.getElementById('trackingOrderNumber');
-        if (ordenNumberEl) {
-          const text = ordenNumberEl.textContent;
-          // Si el texto es un número, usarlo como orden ID
-          if (/^\d+$/.test(text)) {
-            ordenId = parseInt(text);
-          }
-        }
-      }
-      
-      if (!ordenId) {
-        console.warn('[saveDiaEntregaSelection] No se encontró el ID de la orden');
+      // Obtener datos del estado (sin globales)
+      const diasSeleccionados = orderState.getSelectedDays();
+      const order = orderState.getOrder();
+
+      // Validar precondiciones
+      if (!order) {
+        console.warn('[saveDiaEntregaSelection] No hay orden cargada');
         return;
       }
-      
+
       if (diasSeleccionados === null || diasSeleccionados === undefined) {
         console.warn('[saveDiaEntregaSelection] No hay días seleccionados');
         return;
       }
-      
+
       console.log('[saveDiaEntregaSelection] Calculando fecha de entrega:', {
-        pedido_id: ordenId,
+        pedido_id: order.id,
         dias_estimados: diasSeleccionados
       });
-      
-      // Enviar al servidor - backend calcula la fecha estimada
-      const response = await fetch(`/api/pedidos/${ordenId}/calcular-fecha-entrega`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-        },
-        body: JSON.stringify({
-          dias_estimados: diasSeleccionados
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Error al calcular fecha de entrega');
-      }
-      
-      const result = await response.json();
-      console.log('[saveDiaEntregaSelection] Respuesta del servidor:', result);
-      
-      // Actualizar la UI con la fecha estimada calculada por el backend
+
+      // Calcular fecha via OrderApiService (con validación y error handling centralizado)
+      const result = await OrderApiService.calculateDeliveryDate(order.id, diasSeleccionados);
+
+      // Actualizar la UI con la fecha estimada
       if (result.fecha_estimada) {
-        const fechaEstimadaEl = document.getElementById('trackingEstimatedDate');
-        if (fechaEstimadaEl) {
-          const fechaFormato = formatDate(result.fecha_estimada) || '-';
-          fechaEstimadaEl.textContent = fechaFormato;
-        }
-        
-        const selectorEstimatedDateEl = document.getElementById('selectorOrderEstimatedDate');
-        if (selectorEstimatedDateEl) {
-          const fechaFormato = formatDate(result.fecha_estimada) || '-';
-          selectorEstimatedDateEl.textContent = fechaFormato;
-        }
+        const fechaFormateada = DateFormatter.format(result.fecha_estimada);
+        QueryUtils.setText('trackingEstimatedDate', fechaFormateada);
+        QueryUtils.setText('selectorOrderEstimatedDate', fechaFormateada);
       }
-      
+
       // Mostrar notificación de éxito
       if (typeof showSuccess === 'function') {
-        const diasText = diasSeleccionados === null ? 'Sin seleccionar' : `${diasSeleccionados} día${diasSeleccionados !== 1 ? 's' : ''}`;
+        const diasText = `${diasSeleccionados} día${diasSeleccionados !== 1 ? 's' : ''}`;
         showSuccess(`Fecha de entrega calculada: ${diasText}`);
       }
-      
+
     } catch (error) {
       console.error('[saveDiaEntregaSelection] Error:', error);
       if (typeof showError === 'function') {
@@ -304,47 +292,26 @@ function initTrackingModalListeners() {
 
   // Cerrar modal
   function closeTrackingModal() {
-    const modal = document.getElementById('orderTrackingModal');
-    if (modal) {
-      modal.classList.remove('show');
-      modal.style.display = 'none';
-      // Resetear vistas (sin llamar a showPrendasView para evitar recursividad)
-      console.log('[closeTrackingModal] Modal de seguimiento cerrado');
-    }
+    ModalUtils.close('orderTrackingModal', () => {
+      // DDD: Limpiar estado cuando se cierra el modal
+      orderState.clear();
+    });
   }
 
   // Función para abrir el modal de agregar proceso
   function openAddProcesoModal() {
-    console.log('[openAddProcesoModal] Abriendo modal de agregar proceso');
-    const modal = document.getElementById('addProcesoModal');
-    console.log('[openAddProcesoModal] Modal encontrado:', !!modal);
-    
-    if (modal) {
-      // Si no estamos editando, abrir limpio para agregar una nueva área
-      if (!window.editingProcessId) {
-        if (typeof resetFormButton === 'function') {
-          resetFormButton();
-        }
-        if (typeof limpiarFormularioProceso === 'function') {
-          limpiarFormularioProceso();
-        }
+    // Si no estamos editando, abrir limpio para agregar una nueva área
+    if (!orderState.isEditing()) {
+      if (typeof resetFormButton === 'function') {
+        resetFormButton();
       }
-
-      modal.classList.add('show');
-      
-      // FORZAR ESTILO DIRECTAMENTE CON JAVASCRIPT
-      modal.style.setProperty('display', 'flex', 'important');
-      modal.style.setProperty('visibility', 'visible', 'important');
-      modal.style.setProperty('opacity', '1', 'important');
-      modal.style.setProperty('z-index', '10000000', 'important');
-      
-      console.log('[openAddProcesoModal] Modal configurado y mostrado');
-      
-      // Asegurar que los botones de cerrar funcionen
-      setupAddProcesoModalListeners();
-    } else {
-      console.error('[openAddProcesoModal] No se encontró el modal addProcesoModal');
+      if (typeof limpiarFormularioProceso === 'function') {
+        limpiarFormularioProceso();
+      }
     }
+
+    // Asegurar que los botones de cerrar funcionen
+    ModalUtils.openWithForce('addProcesoModal', setupAddProcesoModalListeners);
   }
 
   // Configurar listeners del modal agregar proceso
@@ -417,50 +384,33 @@ function initTrackingModalListeners() {
 
   // Convertir campo de encargado a SELECT
   async function convertEncargadoToSelect(area, container) {
-    // Primero, remover cualquier input o select anterior
+    // Remover cualquier input o select anterior
     const existingInput = document.getElementById('procesoEncargado');
     const existingSelect = document.getElementById('procesoEncargadoSelect');
     
-    if (existingInput) {
-      existingInput.remove();
-    }
-    if (existingSelect) {
-      existingSelect.remove();
-    }
+    if (existingInput) existingInput.remove();
+    if (existingSelect) existingSelect.remove();
 
     // Crear nuevo select
     const select = document.createElement('select');
     select.id = 'procesoEncargadoSelect';
     select.className = 'add-proceso-select';
     select.innerHTML = '<option value="">Seleccionar encargado...</option>';
-
     container.appendChild(select);
 
     try {
       console.log('[convertEncargadoToSelect] Cargando encargados para:', area);
+      const encargados = await OrderApiService.loadEncargados(area);
       
-      // Cargar encargados desde API backend (DDD endpoint)
-      const response = await fetch(`/api/areas/${encodeURIComponent(area)}/encargados`);
-      const data = await response.json();
-
-      if (data.success && data.encargados && data.encargados.length > 0) {
-        data.encargados.forEach(encargado => {
-          const option = document.createElement('option');
-          option.value = encargado.id;
-          option.textContent = encargado.nombre;
-          select.appendChild(option);
-        });
-        console.log('[convertEncargadoToSelect] ✓ Encargados cargados:', data.encargados.length);
-      } else {
-        console.warn('[convertEncargadoToSelect] No hay encargados disponibles para:', area);
+      encargados.forEach(encargado => {
         const option = document.createElement('option');
-        option.value = '';
-        option.textContent = 'No hay encargados disponibles';
-        option.disabled = true;
+        option.value = encargado.id;
+        option.textContent = encargado.nombre;
         select.appendChild(option);
-      }
+      });
+      console.log('[convertEncargadoToSelect] ✓ Encargados cargados:', encargados.length);
     } catch (error) {
-      console.error('[convertEncargadoToSelect] Error al cargar encargados:', error);
+      console.error('[convertEncargadoToSelect] Error:', error);
       const option = document.createElement('option');
       option.value = '';
       option.textContent = 'Error al cargar encargados';
@@ -496,11 +446,7 @@ function initTrackingModalListeners() {
 
   // Función para cerrar el modal de agregar proceso
   function closeAddProcesoModal() {
-    const modal = document.getElementById('addProcesoModal');
-    if (modal) {
-      modal.classList.remove('show');
-      modal.style.display = 'none';
-    }
+    ModalUtils.close('addProcesoModal');
   }
 
   // Configurar botón volver
@@ -529,7 +475,7 @@ function initTrackingModalListeners() {
         showPrendasSelector();
       }
       
-      console.log('[openOrderTracking] Datos cargados correctamente. currentOrderData:', window.currentOrderData);
+      console.log('[openOrderTracking] Datos cargados correctamente. orderState:', orderState.getSnapshot());
       
     } catch (error) {
       console.error('[openOrderTracking] Error:', error);
@@ -557,19 +503,13 @@ function initTrackingModalListeners() {
   // Cargar datos básicos del pedido
   async function loadOrderBasicData(orderId) {
     try {
-      const response = await fetch(`/registros/${orderId}/recibos-datos`);
-      if (!response.ok) throw new Error('Error al cargar datos del pedido');
+      // Application Layer: OrderApiService maneja la API
+      const data = await OrderApiService.loadOrderData(orderId);
       
-      const result = await response.json();
-      console.log('[loadOrderBasicData] Respuesta del endpoint:', result);
+      // Domain Layer: Guardar en estado centralizado
+      orderState.setOrder(data);
       
-      // Extraer datos desde la estructura del endpoint
-      const data = result.data || result;
-      console.log('[loadOrderBasicData] Datos extraídos:', data);
-      
-      window.currentOrderData = data;
-      
-      // Actualizar información del pedido en el modal
+      // Presentation: Actualizar UI
       updateOrderInfo(data);
       
     } catch (error) {
@@ -580,270 +520,55 @@ function initTrackingModalListeners() {
 
   // Actualizar información del pedido en el modal y selector
   function updateOrderInfo(orderData) {
-    console.log('[updateOrderInfo] Datos recibidos:', orderData);
-    console.log('[updateOrderInfo] numero_pedido:', orderData.numero_pedido);
-    console.log('[updateOrderInfo] cliente:', orderData.cliente);
-    console.log('[updateOrderInfo] estado:', orderData.estado);
-    
-    // Actualizar modal principal
-    console.log('[updateOrderInfo] Campos de fecha disponibles:', {
-      fecha_creacion: orderData.fecha_creacion,
-      fecha_de_creacion_de_orden: orderData.fecha_de_creacion_de_orden,
-      created_at: orderData.created_at,
-      fecha_estimada_entrega: orderData.fecha_estimada_entrega
-    });
-    
-    document.getElementById('trackingOrderNumber').textContent = orderData.numero_pedido || '-';
-    document.getElementById('trackingOrderClient').textContent = orderData.cliente || '-';
-    document.getElementById('trackingOrderStatus').textContent = (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
-    document.getElementById('trackingEstimatedDate').textContent = formatDate(orderData.fecha_estimada_entrega) || '-';
-    const trackingTotalDaysEl = document.getElementById('trackingTotalDays');
-    if (trackingTotalDaysEl) {
-      trackingTotalDaysEl.textContent = orderData.total_dias || '0';
-    }
+    const numeroPedido = orderData.numero_pedido || '-';
+    const cliente = orderData.cliente || '-';
+    const estadoDisplay = (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
+    const fechaEstimada = DateFormatter.getOrderEstimatedDate(orderData);
+    const fechaInicio = DateFormatter.getOrderStartDate(orderData);
 
-    // Actualizar selector de prendas
-    const selectorOrderNumber = document.getElementById('selectorOrderNumber');
-    const selectorOrderClient = document.getElementById('selectorOrderClient');
-    const selectorOrderStatus = document.getElementById('selectorOrderStatus');
-    const selectorOrderStartDate = document.getElementById('selectorOrderStartDate');
-    const selectorOrderEstimatedDate = document.getElementById('selectorOrderEstimatedDate');
-    
-    console.log('[updateOrderInfo] Elementos encontrados:', {
-      selectorOrderNumber: !!selectorOrderNumber,
-      selectorOrderClient: !!selectorOrderClient,
-      selectorOrderStatus: !!selectorOrderStatus,
-      selectorOrderStartDate: !!selectorOrderStartDate,
-      selectorOrderEstimatedDate: !!selectorOrderEstimatedDate
-    });
-    
-    // Actualizar información del modal principal
-    const trackingOrderNumber = document.getElementById('trackingOrderNumber');
-    const trackingOrderClient = document.getElementById('trackingOrderClient');
-    const trackingOrderStatus = document.getElementById('trackingOrderStatus');
-    const trackingOrderRecibo = document.getElementById('trackingOrderRecibo');
-    
-    console.log('[updateOrderInfo] Elementos encontrados:', {
-      selectorOrderNumber: !!selectorOrderNumber,
-      selectorOrderClient: !!selectorOrderClient,
-      selectorOrderStatus: !!selectorOrderStatus,
-      selectorOrderEstimatedDate: !!selectorOrderEstimatedDate,
-      trackingOrderNumber: !!trackingOrderNumber,
-      trackingOrderClient: !!trackingOrderClient,
-      trackingOrderStatus: !!trackingOrderStatus,
-      trackingOrderRecibo: !!trackingOrderRecibo
-    });
-    
-    // Actualizar selector
-    if (selectorOrderNumber) {
-      selectorOrderNumber.textContent = orderData.numero_pedido || '-';
-    }
-    if (selectorOrderClient) {
-      selectorOrderClient.textContent = orderData.cliente || '-';
-    }
-    if (selectorOrderStatus) {
-      selectorOrderStatus.textContent = (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
-    }
-    if (selectorOrderStartDate) {
-      // Actualizar fecha de inicio
-      let fechaInicio = orderData.fecha_creacion || orderData.fecha_de_creacion_de_orden || orderData.created_at;
-      
-      if (fechaInicio) {
-        // Formatear fecha
-        let fechaFormateada = '';
-        if (typeof fechaInicio === 'string') {
-          try {
-            const date = new Date(fechaInicio);
-            if (!isNaN(date.getTime())) {
-              fechaFormateada = date.toLocaleDateString('es-ES', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-              });
-            } else {
-              fechaFormateada = fechaInicio;
-            }
-          } catch (e) {
-            fechaFormateada = fechaInicio;
-          }
-        } else if (fechaInicio instanceof Date) {
-          fechaFormateada = fechaInicio.toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          });
-        } else if (fechaInicio && fechaInicio.date) {
-          fechaFormateada = new Date(fechaInicio.date).toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          });
-        }
-        
-        selectorOrderStartDate.textContent = fechaFormateada || '-';
-      } else {
-        selectorOrderStartDate.textContent = '-';
-      }
-    }
-    if (selectorOrderEstimatedDate) {
-      // Actualizar fecha estimada de entrega
-      let fechaEstimada = orderData.fecha_estimada_de_entrega;
-      
-      if (fechaEstimada) {
-        // Formatear fecha datetime
-        let fechaFormateada = '';
-        if (typeof fechaEstimada === 'string') {
-          // Si es string, intentar parsear y formatear
-          try {
-            const date = new Date(fechaEstimada);
-            if (!isNaN(date.getTime())) {
-              fechaFormateada = date.toLocaleDateString('es-ES', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-              });
-            } else {
-              fechaFormateada = fechaEstimada;
-            }
-          } catch (e) {
-            fechaFormateada = fechaEstimada;
-          }
-        } else if (fechaEstimada instanceof Date) {
-          // Si es un objeto Date, formatearlo
-          fechaFormateada = fechaEstimada.toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          });
-        } else if (fechaEstimada && fechaEstimada.date) {
-          // Si es un objeto Carbon/Laravel
-          fechaFormateada = new Date(fechaEstimada.date).toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          });
-        }
-        
-        selectorOrderEstimatedDate.textContent = fechaFormateada || '-';
-      } else {
-        selectorOrderEstimatedDate.textContent = '-';
-      }
-    }
-    
-    // Actualizar modal principal
-    if (trackingOrderNumber) {
-      trackingOrderNumber.textContent = orderData.numero_pedido || '-';
-    }
-    if (trackingOrderClient) {
-      trackingOrderClient.textContent = orderData.cliente || '-';
-    }
-    if (trackingOrderStatus) {
-      trackingOrderStatus.textContent = (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
-    }
-    if (trackingOrderRecibo) {
-      // Buscar el recibo principal según el tipo de recibo que se está visualizando
-      let ultimoRecibo = '-';
-      
-      console.log('[updateOrderInfo] Buscando recibo principal en orderData:', {
-        prendas_count: orderData.prendas ? orderData.prendas.length : 0,
-        prendas: orderData.prendas
-      });
-      
-      // Si tenemos datos de prendas con consecutivos, buscar el recibo principal
-      if (orderData.prendas && orderData.prendas.length > 0) {
-        let reciboPrincipalEncontrado = null;
-        let totalRecibosEncontrados = 0;
-        
-        // Buscar entre todas las prendas el recibo principal
-        for (const prenda of orderData.prendas) {
-          console.log('[updateOrderInfo] Analizando prenda:', {
-            prenda_id: prenda.id,
-            prenda_nombre: prenda.nombre_prenda,
-            consecutivos: prenda.consecutivos
-          });
-          
-          // Los consecutivos vienen como objeto, no como array
-          if (prenda.consecutivos && typeof prenda.consecutivos === 'object') {
-            // Convertir el objeto de consecutivos a un array para procesar
-            const recibosArray = [];
-            for (const [tipo, datos] of Object.entries(prenda.consecutivos)) {
-              if (datos !== null && datos !== undefined) {
-                recibosArray.push({
-                  tipo_recibo: tipo,
-                  consecutivo_actual: datos.consecutivo_actual || datos,
-                  activo: datos.activo !== undefined ? datos.activo : 1,
-                  created_at: datos.created_at || new Date().toISOString()
-                });
-              }
-            }
-            
-            console.log('[updateOrderInfo] Recibos convertidos a array:', recibosArray);
-            
-            // Orden de prioridad: COSTURA > REFLECTIVO > ESTAMPADO > BORDADO > otros
-            const prioridadRecibos = ['COSTURA', 'REFLECTIVO', 'ESTAMPADO', 'BORDADO', 'DTF', 'SUBLIMADO'];
-            
-            for (const prioridad of prioridadRecibos) {
-              for (const recibo of recibosArray) {
-                console.log('[updateOrderInfo] Analizando recibo:', recibo);
-                totalRecibosEncontrados++;
-                
-                // Buscar recibo activo del tipo actual según prioridad
-                if (recibo.activo === 1 && recibo.tipo_recibo === prioridad) {
-                  reciboPrincipalEncontrado = recibo;
-                  console.log('[updateOrderInfo] Recibo principal encontrado:', reciboPrincipalEncontrado);
-                  break; // Encontramos el de esta prioridad
-                }
-              }
-              
-              // Si ya encontramos un recibo de esta prioridad, salir del bucle de prioridad
-              if (reciboPrincipalEncontrado) {
-                break;
-              }
-            }
-          }
-          
-          // Si ya encontramos un recibo principal, salir del bucle de prendas
-          if (reciboPrincipalEncontrado) {
-            break;
-          }
-        }
-        
-        console.log('[updateOrderInfo] Resumen de búsqueda:', {
-          total_recibos_encontrados: totalRecibosEncontrados,
-          recibo_principal_encontrado: reciboPrincipalEncontrado
-        });
-        
-        if (reciboPrincipalEncontrado) {
-          ultimoRecibo = `${reciboPrincipalEncontrado.tipo_recibo} #${reciboPrincipalEncontrado.consecutivo_actual}`;
-        }
-      }
-      
-      console.log('[updateOrderInfo] Resultado final para trackingOrderRecibo:', ultimoRecibo);
-      trackingOrderRecibo.textContent = ultimoRecibo;
-    }
-    if (selectorOrderEstimatedDate) {
-      selectorOrderEstimatedDate.style.color = '#1f2937';
-      selectorOrderEstimatedDate.style.fontWeight = '600';
-    } else {
-      selectorOrderEstimatedDate.textContent = 'No definida';
-      selectorOrderEstimatedDate.style.color = '#9ca3af';
-      selectorOrderEstimatedDate.style.fontWeight = '400';
+    // Modal principal
+    const setText = (id, text) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    };
+
+    setText('trackingOrderNumber', numeroPedido);
+    setText('trackingOrderClient', cliente);
+    setText('trackingOrderStatus', estadoDisplay);
+    setText('trackingEstimatedDate', formatDate(orderData.fecha_estimada_entrega) || '-');
+    setText('trackingTotalDays', orderData.total_dias || '0');
+
+    // Recibo principal (lógica de dominio delegada a OrderState)
+    setText('trackingOrderRecibo', orderState.getReciboPrincipal());
+
+    // Selector de prendas
+    setText('selectorOrderNumber', numeroPedido);
+    setText('selectorOrderClient', cliente);
+    setText('selectorOrderStatus', estadoDisplay);
+    setText('selectorOrderStartDate', fechaInicio);
+    setText('selectorOrderEstimatedDate', fechaEstimada);
+
+    // Estilo de fecha estimada
+    const fechaEstimadaEl = document.getElementById('selectorOrderEstimatedDate');
+    if (fechaEstimadaEl) {
+      const tieneFecha = fechaEstimada !== '-';
+      fechaEstimadaEl.style.color = tieneFecha ? '#1f2937' : '#9ca3af';
+      fechaEstimadaEl.style.fontWeight = tieneFecha ? '600' : '400';
+      if (!tieneFecha) fechaEstimadaEl.textContent = 'No definida';
     }
   }
 
   // Cargar prendas con seguimiento
   async function loadPrendasWithTracking(orderId) {
     try {
-      console.log('[loadPrendasWithTracking] Cargando prendas para orden:', orderId);
+      // Application Layer: OrderApiService maneja la API
+      const prendas = await OrderApiService.loadPrendasWithTracking(orderId);
       
-      const response = await fetch(`/registros/${orderId}/seguimiento-prenda`);
-      if (!response.ok) throw new Error('Error al cargar seguimiento de prendas');
+      // Domain Layer: Guardar en estado centralizado
+      orderState.setPrendas(prendas);
       
-      const data = await response.json();
-      console.log('[loadPrendasWithTracking] Datos recibidos:', data);
-      
-      // Renderizar prendas
-      renderPrendas(data.prendas || []);
+      // Presentation: Renderizar prendas
+      renderPrendas(prendas);
       
     } catch (error) {
       console.error('[loadPrendasWithTracking] Error:', error);
@@ -880,47 +605,15 @@ function initTrackingModalListeners() {
   // Actualizar fecha estimada de entrega del pedido
   function updateEstimatedDeliveryDate() {
     const fechaEstimadaElement = document.getElementById('selectorOrderEstimatedDate');
-    if (!fechaEstimadaElement || !window.currentOrderData) return;
+    const order = orderState.getOrder();
     
-    // Obtener fecha estimada del pedido (campo correcto)
-    let fechaEstimada = window.currentOrderData.fecha_estimada_de_entrega;
-    
-    if (fechaEstimada) {
-      // Formatear fecha datetime
-      let fechaFormateada = '';
-      if (typeof fechaEstimada === 'string') {
-        // Si es string, intentar parsear y formatear
-        try {
-          const date = new Date(fechaEstimada);
-          if (!isNaN(date.getTime())) {
-            fechaFormateada = date.toLocaleDateString('es-ES', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric'
-            });
-          } else {
-            fechaFormateada = fechaEstimada;
-          }
-        } catch (e) {
-          fechaFormateada = fechaEstimada;
-        }
-      } else if (fechaEstimada instanceof Date) {
-        // Si es un objeto Date, formatearlo
-        fechaFormateada = fechaEstimada.toLocaleDateString('es-ES', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        });
-      } else if (fechaEstimada && fechaEstimada.date) {
-        // Si es un objeto Carbon/Laravel
-        fechaFormateada = new Date(fechaEstimada.date).toLocaleDateString('es-ES', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        });
-      }
-      
-      fechaEstimadaElement.textContent = fechaFormateada;
+    if (!fechaEstimadaElement || !order) return;
+
+    // DDD: Usar DateFormatter para formateo consistente (sin duplicación)
+    const fechaEstimada = DateFormatter.getOrderEstimatedDate(order);
+
+    if (fechaEstimada !== '-') {
+      fechaEstimadaElement.textContent = fechaEstimada;
       fechaEstimadaElement.style.color = '#1f2937';
       fechaEstimadaElement.style.fontWeight = '600';
     } else {
@@ -948,88 +641,39 @@ function initTrackingModalListeners() {
           <tbody>
     `;
     
-    // Almacenar las prendas globalmente para acceso desde onclick
-    window.prendasData = prendas;
-    
     prendas.forEach((prenda, index) => {
-      // Logging para depuración
-      console.log(`[createPrendasTable] Prenda ${index}:`, {
-        nombre: prenda.nombre_prenda,
-        tipos_recibo_procesos: prenda.tipos_recibo_procesos,
-        procesos_generales: prenda.procesos
-      });
-      
-      // Extraer información de la prenda
-      const nombrePrenda = prenda.nombre_prenda || `Prenda ${index + 1}`;
-      const cantidad = prenda.cantidad || 0;
-      const totalProcesos = prenda.total_procesos || 0;
-      
-      // Extraer tipos de recibo que son procesos (ESTAMPADO, BORDADO, REFLECTIVO, DTF, SUBLIMADO)
-      let procesosInfo = '-';
-      if (prenda.tipos_recibo_procesos && prenda.tipos_recibo_procesos.length > 0) {
-        procesosInfo = prenda.tipos_recibo_procesos.map(p => {
-          const nombre = p.nombre || 'Proceso';
-          const estado = (p.estado || 'PENDIENTE').replace(/_/g, ' '); // Reemplazar guiones bajos por espacios
-          return `${nombre} (${estado})`;
-        }).join(', ');
-      } else if (prenda.procesos && prenda.procesos.length > 0) {
-        // Fallback a procesos generales si no hay tipos de recibo
-        procesosInfo = prenda.procesos.map(p => {
-          const tipoProceso = p.tipo_proceso;
-          const nombre = tipoProceso?.nombre || 'Proceso';
-          const estado = (p.estado || 'PENDIENTE').replace(/_/g, ' '); // Reemplazar guiones bajos por espacios
-          return `${nombre} (${estado})`;
-        }).join(', ');
-      }
-      
-      // Extraer área basada en el proceso más reciente
-      let area = '-';
-      if (prenda.ultimo_proceso_area) {
-        // Si ya viene el área del último proceso, usarla
-        area = prenda.ultimo_proceso_area;
-      } else if (prenda.area && prenda.area.trim() !== '') {
-        // Si tiene área asignada directamente, usarla
-        area = prenda.area;
-      }
-      
-      // Usar el estado del pedido en lugar del estado calculado de procesos
-      const estadoPedido = window.currentOrderData?.estado || 'Sin estado';
-      const estadoFormateado = estadoPedido.replace(/_/g, ' ').toUpperCase();
-      
-      // Determinar si el botón debe estar desactivado (para prendas de bodega)
-      const esDeBodega = prenda.de_bodega || false;
-      const botonDisabled = esDeBodega ? 'disabled' : '';
-      const botonTitle = esDeBodega ? 'Prenda de bodega - no disponible para seguimiento' : 'Ver seguimiento detallado';
-      const botonClass = esDeBodega ? 'btn-ver-seguimiento disabled' : 'btn-ver-seguimiento';
-      
+      // Domain: Preparar datos de la prenda para renderizar
+      const datos = orderState.preparePrendaTableData(prenda);
+
       // Badge de origen de prenda
-      let badgeHtml = '';
-      if (prenda.de_bodega) {
-        badgeHtml = '<span class="bodega-badge">SE SACA DE BODEGA</span>';
-      } else {
-        badgeHtml = '<span class="confeciona-badge">SE CONFECCIONA</span>';
-      }
-      
+      const badgeHtml = datos.esDeBodega 
+        ? '<span class="bodega-badge">SE SACA DE BODEGA</span>'
+        : '<span class="confeciona-badge">SE CONFECCIONA</span>';
+
+      // Botón deshabilitado si es de bodega
+      const botonDisabled = datos.esDeBodega ? 'disabled' : '';
+      const botonTitle = datos.esDeBodega 
+        ? 'Prenda de bodega - no disponible para seguimiento' 
+        : 'Ver seguimiento detallado';
+      const botonClass = datos.esDeBodega ? 'btn-ver-seguimiento disabled' : 'btn-ver-seguimiento';
+
       tableHtml += `
         <tr class="prendas-table-row" data-prenda-index="${index}">
           <td class="prendas-table-cell prendas-name-cell">
-            <div class="prendas-name">${nombrePrenda}</div>
+            <div class="prendas-name">${datos.nombrePrenda}</div>
             ${badgeHtml}
           </td>
-          <td class="prendas-table-cell">${cantidad}</td>
+          <td class="prendas-table-cell">${datos.cantidad}</td>
           <td class="prendas-table-cell procesos-cell">
-            <div class="procesos-info">${procesosInfo}</div>
+            <div class="procesos-info">${datos.procesosInfo}</div>
           </td>
-          <td class="prendas-table-cell">${area}</td>
+          <td class="prendas-table-cell">${datos.area}</td>
           <td class="prendas-table-cell">
-            <span class="estado-badge estado-${estadoPedido.toLowerCase().replace(/_/g, '-')}">${estadoFormateado}</span>
+            <span class="estado-badge estado-${datos.estadoPedido.toLowerCase().replace(/_/g, '-')}">${datos.estadoDisplay}</span>
           </td>
           <td class="prendas-table-cell acciones-cell">
             <button class="${botonClass}" ${botonDisabled} onclick="showPrendaTrackingFromTable(${index})" title="${botonTitle}">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 11l3 3L22 4"></path>
-                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
-              </svg>
+              ${SvgIcons.view()}
               Ver
             </button>
           </td>
@@ -1048,23 +692,12 @@ function initTrackingModalListeners() {
 
   // Mostrar selector de prendas (overlay)
   function showPrendasSelector() {
-    const overlay = document.getElementById('trackingPrendasSelectorOverlay');
-    console.log('[showPrendasSelector] Overlay encontrado:', !!overlay);
-    if (overlay) {
-      overlay.classList.add('show');
-      console.log('[showPrendasSelector] Overlay mostrado');
-    } else {
-      console.error('[showPrendasSelector] No se encontró el overlay');
-    }
+    ModalUtils.open('trackingPrendasSelectorOverlay');
   }
 
   // Cerrar selector de prendas
   window.cerrarSelectorPrendas = function() {
-    const overlay = document.getElementById('trackingPrendasSelectorOverlay');
-    if (overlay) {
-      overlay.classList.remove('show');
-      overlay.style.display = 'none';
-    }
+    ModalUtils.close('trackingPrendasSelectorOverlay');
   };
 
   // Crear tabla simple de prenda (estilo TNS)
@@ -1072,63 +705,55 @@ function initTrackingModalListeners() {
     const card = document.createElement('div');
     card.className = 'tracking-prenda-table';
     
-    // Añadir event listener con debug
     card.addEventListener('click', function(e) {
-      console.log('[createPrendaCard] Click en tabla de prenda:', prenda);
       e.preventDefault();
       e.stopPropagation();
       showPrendaTracking(prenda);
     });
-    
-    const seguimientosHtml = renderSeguimientosBadges(prenda.seguimientos || {});
-    const areasHtml = renderAreasBadges(prenda.seguimientos_por_area || {});
-    
-    // Construir HTML de procesos en formato de fila
+
+    // Domain: Preparar datos de la prenda
+    const datos = orderState.preparePrendaCardData(prenda);
+    const nombrePrenda = prenda.nombre_prenda || `Prenda ${index + 1}`;
+
+    // Procesos HTML
     let procesosHtml = '';
-    if (prenda.procesos && prenda.procesos.length > 0) {
+    if (datos.procesos.length > 0) {
       procesosHtml = '<tr><td colspan="2"><div class="tracking-procesos-lista">';
-      prenda.procesos.forEach(proceso => {
-        // Acceder correctamente a los datos del tipo_proceso
-        const tipoProceso = proceso.tipo_proceso;
-        const procesoNombre = tipoProceso?.nombre || 'Proceso';
-        const procesoEstado = proceso.estado || 'PENDIENTE';
-        
-        console.log('[createPrendaCard] Proceso:', proceso);
-        console.log('[createPrendaCard] TipoProceso:', tipoProceso);
-        
+      datos.procesos.forEach(p => {
         procesosHtml += `
           <div class="tracking-proceso-item">
-            <span class="proceso-nombre">${procesoNombre}</span>
-            <span class="proceso-estado">${procesoEstado}</span>
+            <span class="proceso-nombre">${p.nombre}</span>
+            <span class="proceso-estado">${p.estado}</span>
           </div>
         `;
       });
       procesosHtml += '</div></td></tr>';
     }
 
-    // Badge de bodega si aplica
-    let bodegaBadge = '';
-    if (prenda.de_bodega) {
-      bodegaBadge = '<tr><td colspan="2"><div class="tracking-bodega-indicador">Se saca de bodega</div></td></tr>';
-    }
+    // Badge de bodega
+    const bodegaBadge = datos.bodega
+      ? '<tr><td colspan="2"><div class="tracking-bodega-indicador">Se saca de bodega</div></td></tr>'
+      : '';
+
+    // Badges de seguimientos y áreas
+    const seguimientosHtml = renderSeguimientosBadges(prenda.seguimientos || {});
+    const areasHtml = renderAreasBadges(prenda.seguimientos_por_area || {});
 
     card.innerHTML = `
       <table class="tracking-table">
         <thead>
           <tr>
-            <th colspan="2" class="tracking-table-header">
-              ${prenda.nombre_prenda || `Prenda ${index + 1}`}
-            </th>
+            <th colspan="2" class="tracking-table-header">${nombrePrenda}</th>
           </tr>
         </thead>
         <tbody>
           <tr class="tracking-table-row">
             <td class="tracking-table-label">Cantidad:</td>
-            <td class="tracking-table-value">${prenda.cantidad || 0}</td>
+            <td class="tracking-table-value">${datos.cantidad}</td>
           </tr>
           <tr class="tracking-table-row">
             <td class="tracking-table-label">Procesos:</td>
-            <td class="tracking-table-value">${prenda.total_procesos || 0}</td>
+            <td class="tracking-table-value">${datos.procesos.length}</td>
           </tr>
           ${procesosHtml}
           ${bodegaBadge}
@@ -1144,10 +769,7 @@ function initTrackingModalListeners() {
   // Permite editar el área actual incluso si no existe proceso (creación rápida con prefill)
   window.handleCrearProcesoDesdeArea = function(areaName, event, encargadoPrefill = '') {
     try {
-      if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
+      stopEventPropagation(event, true);
 
       if (typeof openAddProcesoModal !== 'function') {
         console.warn('[handleCrearProcesoDesdeArea] openAddProcesoModal no disponible');
@@ -1158,7 +780,7 @@ function initTrackingModalListeners() {
       if (typeof resetFormButton === 'function') {
         resetFormButton();
       } else {
-        window.editingProcessId = null;
+        orderState.setEditingProcessId(null);
       }
 
       openAddProcesoModal();
@@ -1168,7 +790,7 @@ function initTrackingModalListeners() {
 
       // En modo "editar área actual" (sin id) prellenar encargado si lo tenemos
       const procesoEncargado = document.getElementById('procesoEncargado');
-      const encargadoFallback = window.currentConsecutivoCosturaData?.encargado || '';
+      const encargadoFallback = orderState.getConsecutivoCosturaData()?.encargado || '';
       const encargadoFinal = String(encargadoPrefill || encargadoFallback || '').trim();
       if (procesoEncargado) {
         procesoEncargado.value = encargadoFinal ? encargadoFinal.toUpperCase() : '';
@@ -1178,20 +800,21 @@ function initTrackingModalListeners() {
     }
   };
 
-  // Renderizar badges de seguimientos por tipo de recibo
-  function renderSeguimientosBadges(seguimientos) {
-    if (Object.keys(seguimientos).length === 0) {
+  // Renderizar badges genéricos (seguimientos o áreas)
+  function renderBadges(items, containerClass, statusField, textFormatter) {
+    if (Object.keys(items).length === 0) {
       return '';
     }
     
-    let badgesHtml = '<div class="tracking-prenda-seguimientos">';
+    let badgesHtml = `<div class="${containerClass}">`;
     
-    Object.entries(seguimientos).forEach(([tipo, data]) => {
-      const statusClass = data.tiene_disponibles ? 'pendiente' : 'completado';
+    Object.entries(items).forEach(([key, data]) => {
+      const statusClass = data[statusField] ? 'pendiente' : 'completado';
+      const text = textFormatter(key, data);
       
       badgesHtml += `
         <span class="tracking-seguimiento-badge ${statusClass}">
-          ${tipo}: ${data.consecutivo_actual}/${data.consecutivo_inicial}
+          ${text}
         </span>
       `;
     });
@@ -1200,26 +823,24 @@ function initTrackingModalListeners() {
     return badgesHtml;
   }
 
+  // Renderizar badges de seguimientos por tipo de recibo
+  function renderSeguimientosBadges(seguimientos) {
+    return renderBadges(
+      seguimientos,
+      'tracking-prenda-seguimientos',
+      'tiene_disponibles',
+      (tipo, data) => `${tipo}: ${data.consecutivo_actual}/${data.consecutivo_inicial}`
+    );
+  }
+
   // Renderizar badges de áreas/procesos
   function renderAreasBadges(areas) {
-    if (Object.keys(areas).length === 0) {
-      return '';
-    }
-    
-    let badgesHtml = '<div class="tracking-prenda-areas">';
-    
-    Object.entries(areas).forEach(([area, data]) => {
-      const statusClass = data.esta_activo ? 'pendiente' : 'completado';
-      
-      badgesHtml += `
-        <span class="tracking-seguimiento-badge ${statusClass}">
-          ${area}: ${data.estado}
-        </span>
-      `;
-    });
-    
-    badgesHtml += '</div>';
-    return badgesHtml;
+    return renderBadges(
+      areas,
+      'tracking-prenda-areas',
+      'esta_activo',
+      (area, data) => `${area}: ${data.estado}`
+    );
   }
 
   // Mostrar seguimiento de una prenda específica desde la tabla
@@ -1228,7 +849,7 @@ function initTrackingModalListeners() {
       console.log('[showPrendaTrackingFromTable] INICIO - Índice:', index);
       
       // Obtener la prenda desde el array global
-      const prenda = window.prendasData[index];
+      const prenda = orderState.getPrendas()[index];
       if (!prenda) {
         console.error('[showPrendaTrackingFromTable] Prenda no encontrada en índice:', index);
         return;
@@ -1247,185 +868,79 @@ function initTrackingModalListeners() {
   // Mostrar seguimiento de una prenda específica
   window.showPrendaTracking = async function(prenda) {
     try {
-      console.log('[showPrendaTracking] INICIO - Mostrando seguimiento para prenda:', prenda);
+      // Hidratar prenda si no tiene seguimientos pero existen en prendasData
+      const tieneSeguimiento = prenda && (
+        (prenda.seguimientos_por_area && Object.keys(prenda.seguimientos_por_area).length > 0) ||
+        (prenda.seguimientos && Object.keys(prenda.seguimientos).length > 0) ||
+        (prenda.ultimo_recibo_numero && prenda.ultimo_recibo_numero !== '-')
+      );
 
-      try {
-        const tieneSeguimiento = prenda && (
-          (prenda.seguimientos_por_area && Object.keys(prenda.seguimientos_por_area).length > 0) ||
-          (prenda.seguimientos && Object.keys(prenda.seguimientos).length > 0) ||
-          (prenda.ultimo_recibo_numero && prenda.ultimo_recibo_numero !== '-')
+      if (!tieneSeguimiento && orderState.hasPrendas()) {
+        const prendaId = prenda?.id || prenda?.prenda_pedido_id;
+        const prendaEnriquecida = orderState.getPrendas().find(p =>
+          String(p?.id) === String(prendaId) || String(p?.prenda_pedido_id) === String(prendaId)
         );
-
-        if (!tieneSeguimiento && Array.isArray(window.prendasData) && window.prendasData.length > 0) {
-          const prendaId = prenda?.id || prenda?.prenda_pedido_id;
-          const prendaEnriquecida = window.prendasData.find(p =>
-            String(p?.id) === String(prendaId) || String(p?.prenda_pedido_id) === String(prendaId)
-          );
-
-          if (prendaEnriquecida) {
-            prenda = Object.assign({}, prendaEnriquecida, prenda);
-            console.log('[showPrendaTracking] Usando prenda enriquecida desde prendasData:', prendaEnriquecida);
-          }
+        if (prendaEnriquecida) {
+          prenda = Object.assign({}, prendaEnriquecida, prenda);
         }
-      } catch (e) {
-        console.warn('[showPrendaTracking] Error hidratando prenda desde prendasData:', e);
       }
       
-      window.currentPrendaData = prenda;
+      orderState.setCurrentPrenda(prenda);
       
-      // Cerrar overlay de prendas
-      const overlaySelector = document.getElementById('trackingPrendasSelectorOverlay');
-      if (overlaySelector) {
-        console.log('[showPrendaTracking] Cerrando overlay selector...');
+      // Cerrar overlay de prendas si está abierto
+      if (document.getElementById('trackingPrendasSelectorOverlay')) {
         cerrarSelectorPrendas();
       }
       
       // Mostrar modal de seguimiento
-      console.log('[showPrendaTracking] Buscando modal...');
       const modal = document.getElementById('orderTrackingModal');
-      if (modal) {
-        console.log('[showPrendaTracking] Modal encontrado, agregando clase show...');
-        modal.classList.add('show');
-        
-        // FORZAR ESTILO DIRECTAMENTE CON JAVASCRIPT
-        modal.style.setProperty('display', 'flex', 'important');
-        modal.style.setProperty('visibility', 'visible', 'important');
-        modal.style.setProperty('opacity', '1', 'important');
-        
-        // Iniciar timer para contadores dinámicos
-        iniciarTimerContadores();
-        modal.style.setProperty('z-index', '9999999', 'important');
-        modal.style.setProperty('position', 'fixed', 'important');
-        modal.style.setProperty('top', '0', 'important');
-        modal.style.setProperty('left', '0', 'important');
-        modal.style.setProperty('width', '100vw', 'important');
-        modal.style.setProperty('height', '100vh', 'important');
-        modal.style.setProperty('background', 'rgba(0, 0, 0, 0.5)', 'important');
-        modal.style.setProperty('align-items', 'center', 'important');
-        modal.style.setProperty('justify-content', 'center', 'important');
-        
-        // Asegurar que el botón volver funcione
-        setupBackButton();
-        
-        console.log('[showPrendaTracking] Modal mostrado con estilos forzados');
-        
-        // Debug visual - verificar estado del modal
-        setTimeout(() => {
-          const modalElement = document.getElementById('orderTrackingModal');
-          const computedStyle = window.getComputedStyle(modalElement);
-          console.log('[showPrendaTracking] DEBUG - Estado del modal:', {
-            display: computedStyle.display,
-            visibility: computedStyle.visibility,
-            opacity: computedStyle.opacity,
-            zIndex: computedStyle.zIndex,
-            hasClass: modalElement.classList.contains('show'),
-            inlineDisplay: modalElement.style.display,
-            inlineVisibility: modalElement.style.visibility
-          });
-        }, 100);
-      } else {
-        console.error('[showPrendaTracking] Modal no encontrado');
-        return;
-      }
+      if (!modal) return;
+
+      modal.classList.add('show');
+      modal.style.setProperty('display', 'flex', 'important');
+      modal.style.setProperty('visibility', 'visible', 'important');
+      modal.style.setProperty('opacity', '1', 'important');
+      modal.style.setProperty('z-index', '9999999', 'important');
+      modal.style.setProperty('position', 'fixed', 'important');
+      modal.style.setProperty('top', '0', 'important');
+      modal.style.setProperty('left', '0', 'important');
+      modal.style.setProperty('width', '100vw', 'important');
+      modal.style.setProperty('height', '100vh', 'important');
+      modal.style.setProperty('background', 'rgba(0, 0, 0, 0.5)', 'important');
+      modal.style.setProperty('align-items', 'center', 'important');
+      modal.style.setProperty('justify-content', 'center', 'important');
+
+      iniciarTimerContadores();
+      setupBackButton();
       
       // Ocultar vista de prendas y mostrar timeline
-      console.log('[showPrendaTracking] Actualizando vistas...');
       document.getElementById('trackingPrendasContainer').parentElement.style.display = 'none';
       document.getElementById('trackingTimelineSection').style.display = 'block';
       
-      // CONTROLAR VISIBILIDAD DE BOTÓN AGREGAR BASADO EN READONLY
+      // Controlar visibilidad botón agregar según readonly
       const btnAgregar = document.getElementById('btnOpenAddProcesoModal');
       if (btnAgregar) {
-        if (prenda?.readonly) {
-          console.log('[showPrendaTracking] Modo READONLY: Ocultando botón AGREGAR ÁREA');
-          btnAgregar.style.display = 'none';
-          btnAgregar.disabled = true;
-        } else {
-          console.log('[showPrendaTracking] Modo NORMAL: Mostrando botón AGREGAR ÁREA');
-          btnAgregar.style.display = 'block';
-          btnAgregar.disabled = false;
-        }
+        btnAgregar.style.display = prenda?.readonly ? 'none' : 'block';
+        btnAgregar.disabled = !!prenda?.readonly;
       }
       
-      // Actualizar nombre de la prenda y número de recibo
-      console.log('[showPrendaTracking] Actualizar nombre de la prenda y número de recibo');
-      
+      // Nombre de la prenda
       const nombreElement = document.getElementById('trackingPrendaName');
       if (nombreElement) {
         nombreElement.textContent = prenda.nombre_prenda || `Prenda ${prenda.id}`;
       }
       
-      // Actualizar el header del recibo con el número más reciente
+      // Resolver área y recibo desde dominio
+      const excludeOrderArea = window.location.pathname.includes('/recibos-costura');
+      const areaActual = orderState.resolveAreaActual(prenda, { excludeOrderArea });
+      const numeroRecibo = orderState.resolveReciboForPrenda(prenda);
+      
+      // Actualizar header del recibo
       const reciboHeaderElement = document.getElementById('trackingPrendaReciboHeader');
       if (reciboHeaderElement) {
-        // Resolver área actual (prioridad: último proceso > área en prenda > área del pedido)
-        let areaActual = '-';
-        if (prenda.ultimo_proceso_area) {
-          areaActual = prenda.ultimo_proceso_area;
-        } else if (prenda.area && String(prenda.area).trim() !== '') {
-          areaActual = prenda.area;
-        } else if (!window.location.pathname.includes('/recibos-costura') && window.currentOrderData?.area && String(window.currentOrderData.area).trim() !== '') {
-          areaActual = window.currentOrderData.area;
-        }
-
-        // Resolver encargado real (solo desde proceso)
-        const encargadoActual = prenda.ultimo_proceso_encargado || null;
-
-        // Debug: Ver qué datos tenemos
-        console.log('[DEBUG] Datos de prenda para recibo:', {
-          'ultimo_recibo_numero': prenda.ultimo_recibo_numero,
-          'consecutivos': prenda.consecutivos,
-          'consecutivos_length': prenda.consecutivos ? prenda.consecutivos.length : 'undefined',
-          'area_actual_resuelta': areaActual
-        });
-        
-        // Mostrar el número de recibo más reciente
-        const numeroRecibo = prenda.ultimo_recibo_numero;
-        if (numeroRecibo && numeroRecibo !== '-') {
-          reciboHeaderElement.textContent = areaActual && areaActual !== '-'
-            ? `Recibo #${numeroRecibo} - ${areaActual}`
-            : `Recibo #${numeroRecibo}`;
-          console.log('[DEBUG] Usando ultimo_recibo_numero:', numeroRecibo);
-        } else {
-          reciboHeaderElement.textContent = areaActual && areaActual !== '-'
-            ? `Sin recibo - ${areaActual}`
-            : 'Sin recibo';
-          console.log('[DEBUG] ultimo_recibo_numero vacío o inválido');
-        }
-      }
-      
-      // Determinar número de recibo desde la tabla consecutivos_recibos_pedidos
-      let numeroRecibo = 'Sin recibo';
-      const consecutivosList = normalizeConsecutivos(prenda?.consecutivos);
-      if (consecutivosList.length > 0) {
-        console.log('[DEBUG] Procesando consecutivos:', consecutivosList);
-
-        // Preferir COSTURA activo
-        const reciboCosturaActivo = consecutivosList.find(r => String(r.tipo_recibo || '').toUpperCase() === 'COSTURA' && (r.activo === 1 || r.activo === true));
-        const reciboActivo = reciboCosturaActivo || consecutivosList.find(r => (r.activo === 1 || r.activo === true));
-        if (reciboActivo) {
-          numeroRecibo = `${reciboActivo.tipo_recibo} #${reciboActivo.consecutivo_actual}`;
-          console.log('[DEBUG] Recibo activo encontrado:', reciboActivo);
-        } else if (consecutivosList[0]) {
-          const primerRecibo = consecutivosList[0];
-          numeroRecibo = `${primerRecibo.tipo_recibo} #${primerRecibo.consecutivo_actual}`;
-          console.log('[DEBUG] Usando primer recibo:', primerRecibo);
-        }
-      } else {
-        console.log('[DEBUG] No hay consecutivos en la prenda');
-      }
-      
-      // Actualizar tanto el subtítulo del header como el del timeline
-      if (reciboHeaderElement) {
-        // Mantener el área en el header (si existe)
-        const match = String(numeroRecibo || '');
-        const areaActual = prenda?.ultimo_proceso_area
-          || prenda?.area
-          || (!window.location.pathname.includes('/recibos-costura') ? (window.currentOrderData?.area || '') : '');
-        reciboHeaderElement.textContent = areaActual && String(areaActual).trim() !== ''
-          ? `${match} - ${areaActual}`
-          : match;
-        console.log('[DEBUG] Header actualizado con:', numeroRecibo);
+        reciboHeaderElement.textContent = areaActual !== '-'
+          ? `${numeroRecibo} - ${areaActual}`
+          : numeroRecibo;
       }
       
       const reciboElement = document.getElementById('trackingPrendaRecibo');
@@ -1433,11 +948,8 @@ function initTrackingModalListeners() {
         reciboElement.textContent = numeroRecibo;
       }
       
-      // Renderizar timeline de seguimiento
-      console.log('[showPrendaTracking] Renderizando timeline...');
+      // Renderizar timeline
       renderPrendaTrackingTimeline(prenda);
-      
-      console.log('[showPrendaTracking] FINALIZADO - Seguimiento mostrado exitosamente');
       
     } catch (error) {
       console.error('[showPrendaTracking] Error:', error);
@@ -1475,104 +987,74 @@ function initTrackingModalListeners() {
       return;
     }
 
-    let reciboCreatedAt = null;
+    // ──── Sección: Fechas de activación del recibo ────
 
-    let activationSection = null;
-    let areasSection = null;
+    const reciboActivo = orderState.findActiveRecibo(prenda);
+    const reciboCreatedAt = reciboActivo?.created_at || null;
 
-    // Sección: fechas relevantes (creación de orden / activación del recibo)
-    try {
-      activationSection = document.createElement('div');
-      activationSection.className = 'tracking-section tracking-section-activation';
+    const activationSection = document.createElement('div');
+    activationSection.className = 'tracking-section tracking-section-activation';
 
-      const activationTitle = document.createElement('div');
-      activationTitle.className = 'tracking-section-title';
-      activationTitle.textContent = 'Activación del recibo:';
-      activationSection.appendChild(activationTitle);
+    const activationTitle = document.createElement('div');
+    activationTitle.className = 'tracking-section-title';
+    activationTitle.textContent = 'Activación del recibo:';
+    activationSection.appendChild(activationTitle);
 
-      const fechasWrapper = document.createElement('div');
-      fechasWrapper.className = 'tracking-info-row';
+    const fechasWrapper = document.createElement('div');
+    fechasWrapper.className = 'tracking-info-row';
 
-      const fechaCreacionOrden = window.currentOrderData?.fecha_de_creacion_de_orden || null;
-
-      const consecutivosList = normalizeConsecutivos(prenda?.consecutivos);
-      if (consecutivosList.length > 0) {
-        const reciboCosturaActivo = consecutivosList.find(r => String(r.tipo_recibo || '').toUpperCase() === 'COSTURA' && (r.activo === 1 || r.activo === true));
-        const reciboActivo = reciboCosturaActivo || consecutivosList.find(r => (r.activo === 1 || r.activo === true)) || consecutivosList[0];
-        reciboCreatedAt = reciboActivo?.created_at || null;
-      }
-
-      const cardCreacionOrden = document.createElement('div');
-      cardCreacionOrden.className = 'tracking-info-card';
-      cardCreacionOrden.innerHTML = `
-        <div class="tracking-info-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="16" y1="2" x2="16" y2="6"></line>
-            <line x1="8" y1="2" x2="8" y2="6"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
-          </svg>
-        </div>
+    // Helper: crear card de info
+    const createInfoCard = (label, value, icon) => {
+      const card = document.createElement('div');
+      card.className = 'tracking-info-card';
+      card.innerHTML = `
+        <div class="tracking-info-icon">${icon}</div>
         <div class="tracking-info-content">
-          <span class="tracking-info-label">Fecha creación orden</span>
-          <span class="tracking-info-value">${formatDateTime(fechaCreacionOrden) || '-'}</span>
+          <span class="tracking-info-label">${label}</span>
+          <span class="tracking-info-value">${value}</span>
         </div>
       `;
+      return card;
+    };
 
-      const cardActivacionRecibo = document.createElement('div');
-      cardActivacionRecibo.className = 'tracking-info-card';
-      cardActivacionRecibo.innerHTML = `
-        <div class="tracking-info-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 14l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            <path d="M12 6v4m0 2h2"></path>
-          </svg>
-        </div>
-        <div class="tracking-info-content">
-          <span class="tracking-info-label">Fecha activación recibo</span>
-          <span class="tracking-info-value">${formatDateTime(reciboCreatedAt) || '-'}</span>
-        </div>
-      `;
+    const fechaCreacionOrden = orderState.getOrder()?.fecha_de_creacion_de_orden || null;
+    fechasWrapper.appendChild(createInfoCard(
+      'Fecha creación orden',
+      formatDateTime(fechaCreacionOrden) || '-',
+      SvgIcons.calendar()
+    ));
 
-      // Tiempo transcurrido: mostrar duración real (días/h/m/s). Además, mostrar días hábiles como referencia.
-      let tiempoTranscurridoText = '-';
-      const fechaCreacionDate = toDateObject(fechaCreacionOrden);
-      const reciboActDate = toDateObject(reciboCreatedAt);
-      if (fechaCreacionDate && reciboActDate) {
-        const diffMs = Math.max(0, reciboActDate.getTime() - fechaCreacionDate.getTime());
-        const human = formatDurationHuman(diffMs);
-        const diasHabiles = calcularDiasHabilesSync(fechaCreacionDate, reciboActDate);
-        tiempoTranscurridoText = diasHabiles > 0
-          ? `${human} (${diasHabiles} días hábiles)`
-          : human;
-      }
+    fechasWrapper.appendChild(createInfoCard(
+      'Fecha activación recibo',
+      formatDateTime(reciboCreatedAt) || '-',
+      SvgIcons.checkCircle()
+    ));
 
-      const cardTiempoTrans = document.createElement('div');
-      cardTiempoTrans.className = 'tracking-info-card';
-      cardTiempoTrans.innerHTML = `
-        <div class="tracking-info-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="M12 6v6l4 2"></path>
-          </svg>
-        </div>
-        <div class="tracking-info-content">
-          <span class="tracking-info-label">Tiempo transcurrido</span>
-          <span class="tracking-info-value">${tiempoTranscurridoText}</span>
-        </div>
-      `;
-
-      fechasWrapper.appendChild(cardCreacionOrden);
-      fechasWrapper.appendChild(cardActivacionRecibo);
-      fechasWrapper.appendChild(cardTiempoTrans);
-      activationSection.appendChild(fechasWrapper);
-      container.appendChild(activationSection);
-    } catch (e) {
-      console.warn('[renderSeguimientosPorArea] No se pudo renderizar sección de fechas:', e);
+    // Tiempo transcurrido: duración real + días hábiles como referencia
+    let tiempoTranscurridoText = '-';
+    const fechaCreacionDate = toDateObject(fechaCreacionOrden);
+    const reciboActDate = toDateObject(reciboCreatedAt);
+    if (fechaCreacionDate && reciboActDate) {
+      const diffMs = Math.max(0, reciboActDate.getTime() - fechaCreacionDate.getTime());
+      const human = formatDurationHuman(diffMs);
+      const diasHabiles = calcularDiasHabilesSync(fechaCreacionDate, reciboActDate);
+      tiempoTranscurridoText = diasHabiles > 0
+        ? `${human} (${diasHabiles} días hábiles)`
+        : human;
     }
 
-    // Sección: Seguimiento por áreas + botón Agregar Área
-    areasSection = document.createElement('div');
+    fechasWrapper.appendChild(createInfoCard(
+      'Tiempo transcurrido',
+      tiempoTranscurridoText,
+      SvgIcons.clock()
+    ));
+
+    activationSection.appendChild(fechasWrapper);
+    container.appendChild(activationSection);
+
+    // ──── Sección: Seguimiento por áreas ────
+
+    const areasSection = document.createElement('div');
     areasSection.className = 'tracking-section tracking-section-areas';
 
     const areasHeader = document.createElement('div');
@@ -1591,20 +1073,23 @@ function initTrackingModalListeners() {
     areasSection.appendChild(areasHeader);
     container.appendChild(areasSection);
 
-    // Insertar área virtual "Insumos" (fecha llegada = activación recibo)
+    // ──── Inyectar área virtual Insumos (si es necesario) ────
+
     const mergedAreas = { ...seguimientosPorArea };
     const hasInsumos = Object.keys(mergedAreas).some(k => String(k || '').toLowerCase() === 'insumos');
-    if (!hasInsumos && reciboCreatedAt) {
-      const areaCorteKey = Object.keys(mergedAreas).find(k => String(k || '').toLowerCase().includes('corte')) || null;
-      let areaEnvioProduccionKey = areaCorteKey;
-      let fechaEnvioProduccion = areaCorteKey ? (mergedAreas[areaCorteKey]?.fecha_inicio || null) : null;
 
-      // Fallback: si no hay Corte, usar la primera área con fecha_inicio más temprana (lo más cercano a "envío")
-      if (!fechaEnvioProduccion) {
+    if (!hasInsumos && reciboCreatedAt) {
+      // Encontrar la fecha de envío a producción (primer proceso iniciado)
+      let fechaEnvioProduccion = null;
+      const areaCorteKey = Object.keys(mergedAreas).find(k => String(k || '').toLowerCase().includes('corte'));
+      
+      if (areaCorteKey) {
+        fechaEnvioProduccion = mergedAreas[areaCorteKey]?.fecha_inicio || null;
+      } else {
+        // Fallback: encontrar la fecha_inicio más temprana (lo más cercano a "envío")
         let bestKey = null;
         let bestDate = null;
         Object.entries(mergedAreas).forEach(([k, v]) => {
-          if (String(k || '').toLowerCase() === 'insumos') return;
           const d = toDateObject(v?.fecha_inicio);
           if (!d) return;
           if (!bestDate || d.getTime() < bestDate.getTime()) {
@@ -1612,13 +1097,15 @@ function initTrackingModalListeners() {
             bestKey = k;
           }
         });
-        if (bestKey && bestDate) {
-          areaEnvioProduccionKey = bestKey;
+        if (bestKey) {
           fechaEnvioProduccion = mergedAreas[bestKey]?.fecha_inicio || null;
         }
       }
 
       const yaEnviadoAProduccion = Boolean(fechaEnvioProduccion);
+      const tiempoInsumosMs = fechaEnvioProduccion
+        ? Math.max(0, toDateObject(fechaEnvioProduccion)?.getTime() - toDateObject(reciboCreatedAt)?.getTime() || 0)
+        : null;
 
       mergedAreas['Insumos'] = {
         estado: yaEnviadoAProduccion ? 'Enviado a producción' : 'Llegó a insumos',
@@ -1630,14 +1117,11 @@ function initTrackingModalListeners() {
         esta_activo: !yaEnviadoAProduccion,
         can_edit: false,
         hide_encargado: true,
-        tiempo_transcurrido: (function() {
-          const ini = toDateObject(reciboCreatedAt);
-          const fin = toDateObject(fechaEnvioProduccion);
-          if (!ini || !fin) return null;
-          return formatDurationHuman(Math.max(0, fin.getTime() - ini.getTime()));
-        })()
+        tiempo_transcurrido: tiempoInsumosMs ? formatDurationHuman(tiempoInsumosMs) : null
       };
     }
+
+    // ──── Ordenar y renderizar áreas ────
 
     const orderedEntries = [];
     if (mergedAreas['Insumos']) {
@@ -1665,20 +1149,20 @@ function initTrackingModalListeners() {
 
     // Usar la UI original del tracking para mostrar el área actual y encargado si se puede
     // (sin inventar una vista nueva). La edición/creación se hace con el botón "Agregar Área".
-    const prenda = window.currentPrendaData || {};
+    const prenda = orderState.getCurrentPrenda() || {};
     const esRecibosCostura = window.location.pathname.includes('/recibos-costura');
 
-    const procesoIdFallback = window.currentConsecutivoCosturaData?.proceso_id || null;
+    const procesoIdFallback = orderState.getConsecutivoCosturaData()?.proceso_id || null;
     const tieneProcesoReal = Boolean(prenda?.ultimo_proceso_id || procesoIdFallback);
 
     const areaActual = prenda?.ultimo_proceso_area
       || (prenda?.area && String(prenda.area).trim() !== '' ? prenda.area : null)
-      || (!esRecibosCostura && window.currentOrderData?.area && String(window.currentOrderData.area).trim() !== '' ? window.currentOrderData.area : null)
+      || (!esRecibosCostura && orderState.getOrder()?.area && String(orderState.getOrder().area).trim() !== '' ? orderState.getOrder().area : null)
       || null;
 
     // Encargado real solo desde procesos_prenda; fallback a /consecutivo-costura si está disponible
     const encargadoActual = prenda?.ultimo_proceso_encargado
-      || window.currentConsecutivoCosturaData?.encargado
+      || orderState.getConsecutivoCosturaData()?.encargado
       || null;
 
     // Si hay algo que mostrar, renderizar una tarjeta estándar de área.
@@ -1686,8 +1170,8 @@ function initTrackingModalListeners() {
       const estadoUltimo = prenda?.ultimo_proceso_estado || 'Pendiente';
       const estaActivo = estadoUltimo !== 'Completado';
 
-      const fechaInicioFallback = window.currentConsecutivoCosturaData?.fecha_inicio || null;
-      const fechaFinFallback = window.currentConsecutivoCosturaData?.fecha_fin || null;
+      const fechaInicioFallback = orderState.getConsecutivoCosturaData()?.fecha_inicio || null;
+      const fechaFinFallback = orderState.getConsecutivoCosturaData()?.fecha_fin || null;
 
       const card = createAreaCard(areaActual, {
         id: prenda?.ultimo_proceso_id || procesoIdFallback,
@@ -1709,9 +1193,7 @@ function initTrackingModalListeners() {
   // Manejar eliminación de proceso
   window.handleEliminarProceso = async function(procesoId, areaName, event) {
     // Detener propagación para evitar que se cierre el modal
-    if (event) {
-      event.stopPropagation();
-    }
+    stopEventPropagation(event);
     
     // Mostrar modal de confirmación
     showConfirmDeleteModal(procesoId, areaName);
@@ -1719,32 +1201,20 @@ function initTrackingModalListeners() {
 
   // Mostrar modal de confirmación para eliminar
   function showConfirmDeleteModal(procesoId, areaName) {
-    console.log('[showConfirmDeleteModal] Mostrando confirmación para eliminar:', { procesoId, areaName });
-    
-    const modal = document.getElementById('confirmDeleteModal');
     const processNameSpan = document.getElementById('deleteProcessName');
     
-    if (modal && processNameSpan) {
-      // Establecer el nombre del proceso
+    if (processNameSpan) {
       processNameSpan.textContent = areaName;
-      
-      // Mostrar el modal
-      modal.classList.add('show');
-      modal.style.setProperty('display', 'flex', 'important');
-      modal.style.setProperty('visibility', 'visible', 'important');
-      modal.style.setProperty('opacity', '1', 'important');
-      modal.style.setProperty('z-index', '10000001', 'important');
-      
-      // Guardar el ID del proceso a eliminar
-      window.processToDelete = { id: procesoId, name: areaName };
-      
-      // Configurar listeners
-      setupConfirmDeleteModalListeners();
-      
-      console.log('[showConfirmDeleteModal] Modal de confirmación mostrado');
-    } else {
-      console.error('[showConfirmDeleteModal] No se encontró el modal o el span del nombre');
     }
+    
+    // Guardar el ID del proceso a eliminar
+    orderState.setProcessToDelete({ id: procesoId, name: areaName });
+    
+    // Configurar listeners
+    setupConfirmDeleteModalListeners();
+    
+    // Mostrar modal con estilos forzados
+    ModalUtils.openWithForce('confirmDeleteModal');
   }
 
   // Configurar listeners del modal de confirmación
@@ -1776,86 +1246,52 @@ function initTrackingModalListeners() {
 
   // Cerrar modal de confirmación
   function closeConfirmDeleteModal() {
-    const modal = document.getElementById('confirmDeleteModal');
-    if (modal) {
-      modal.classList.remove('show');
-      modal.style.display = 'none';
-      window.processToDelete = null;
-    }
+    ModalUtils.close('confirmDeleteModal', () => {
+      orderState.clearProcessToDelete();
+    });
   }
 
   // Ejecutar la eliminación del proceso
   async function executeDeleteProcess() {
-    if (!window.processToDelete) return;
+    if (!orderState.getProcessToDelete()) return;
     
     // Mostrar indicador de carga
-    const btnContent = document.getElementById('deleteButtonContent');
-    const btnLoading = document.getElementById('deleteButtonLoading');
-    const btnConfirm = document.getElementById('btnConfirmDelete');
+    setButtonLoading('deleteButtonContent', 'deleteButtonLoading', 'btnConfirmDelete', true);
     
-    if (btnContent && btnLoading && btnConfirm) {
-      btnContent.style.display = 'none';
-      btnLoading.style.display = 'flex';
-      btnConfirm.disabled = true;
-    }
-    
-    const { id: procesoId, name: areaName } = window.processToDelete;
+    const { id: procesoId, name: areaName } = orderState.getProcessToDelete();
     
     try {
-      console.log('[executeDeleteProcess] Eliminando proceso:', { procesoId, areaName });
-
-      const response = await fetch('/seguimiento-proceso/' + procesoId, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al eliminar proceso');
-      }
-
-      const result = await response.json();
-      console.log('[executeDeleteProcess] Proceso eliminado:', result);
+      // Eliminar proceso via OrderApiService
+      const result = await OrderApiService.deleteProceso(procesoId);
 
       // Cerrar modal de confirmación
       closeConfirmDeleteModal();
 
       // Recargar seguimientos de la prenda
-      console.log('[executeDeleteProcess] Recargando seguimientos para orden:', window.currentOrderData.id);
-      await loadPrendasWithTracking(window.currentOrderData.id);
+      await loadPrendasWithTracking(orderState.getOrderId());
 
-      // Refrescar consecutivo/area/encargado/fechas (fallback del modal)
+      // Refrescar consecutivo/area/encargado/fechas
       try {
-        if (window.location.pathname.includes('/recibos-costura') && window.currentOrderData?.id && window.currentPrendaData?.id) {
-          const url = `/registros/${window.currentOrderData.id}/consecutivo-costura?prenda_id=${window.currentPrendaData.id}`;
-          const resp = await fetch(url);
-          if (resp.ok) {
-            window.currentConsecutivoCosturaData = await resp.json();
-          }
+        if (window.location.pathname.includes('/recibos-costura') && orderState.getOrderId() && orderState.getCurrentPrenda()?.id) {
+          const data = await OrderApiService.loadConsecutivoCostura(orderState.getOrderId(), orderState.getCurrentPrenda().id);
+          orderState.setConsecutivoCosturaData(data);
         }
       } catch (e) {
-        console.warn('[executeDeleteProcess] No se pudo refrescar consecutivo-costura:', e);
+        // Silenciosamente ignorar si no se puede refrescar
       }
       
-      console.log('[executeDeleteProcess] Seguimientos recargados');
-      
       // Buscar la prenda actualizada en los datos recargados
-      if (window.prendasData && window.prendasData.length > 0 && window.currentPrendaData) {
-        const prendaActualizada = window.prendasData.find(p => p.id == window.currentPrendaData.id);
+      if (orderState.hasPrendas() && orderState.getCurrentPrenda()) {
+        const prendaActualizada = orderState.getPrendas().find(p => p.id == orderState.getCurrentPrenda().id);
         if (prendaActualizada) {
-          window.currentPrendaData = prendaActualizada;
-          console.log('[executeDeleteProcess] Prenda actualizada encontrada:', window.currentPrendaData);
+          orderState.setCurrentPrenda(prendaActualizada);
         }
       }
       
       // Actualizar vista actual
-      if (window.currentPrendaData && window.currentPrendaData.id) {
-        console.log('[executeDeleteProcess] Actualizando timeline con prenda actualizada:', window.currentPrendaData);
-        renderPrendaTrackingTimeline(window.currentPrendaData);
+      if (orderState.getCurrentPrenda()?.id) {
+        renderPrendaTrackingTimeline(orderState.getCurrentPrenda());
       } else {
-        console.log('[executeDeleteProcess] No hay currentPrendaData válida, intentando obtener del DOM');
         // Si no hay currentPrendaData, intentar obtener la primera prenda del DOM
         const prendaCards = document.querySelectorAll('.prenda-card');
         if (prendaCards.length > 0) {
@@ -1864,13 +1300,12 @@ function initTrackingModalListeners() {
           
           // Buscar en prendasData
           let prendaParaRender = null;
-          if (window.prendasData) {
-            prendaParaRender = window.prendasData.find(p => p.id == prendaId);
+          if (orderState.hasPrendas()) {
+            prendaParaRender = orderState.getPrendas().find(p => p.id == prendaId);
           }
           
           if (prendaParaRender) {
-            console.log('[executeDeleteProcess] Usando prendaData de prendasData:', prendaParaRender);
-            window.currentPrendaData = prendaParaRender;
+            orderState.setCurrentPrenda(prendaParaRender);
             renderPrendaTrackingTimeline(prendaParaRender);
           } else {
             // Fallback: crear objeto con el ID
@@ -1878,7 +1313,6 @@ function initTrackingModalListeners() {
               id: prendaId,
               nombre_prenda: firstCard.querySelector('.prenda-name')?.textContent,
             };
-            console.log('[executeDeleteProcess] Usando prendaData del DOM:', prendaData);
             renderPrendaTrackingTimeline(prendaData);
           }
         }
@@ -1895,16 +1329,8 @@ function initTrackingModalListeners() {
       showError('Error al eliminar proceso: ' + error.message);
       closeConfirmDeleteModal();
     } finally {
-      // Ocultar indicador de carga
-      const btnContent = document.getElementById('deleteButtonContent');
-      const btnLoading = document.getElementById('deleteButtonLoading');
-      const btnConfirm = document.getElementById('btnConfirmDelete');
-      
-      if (btnContent && btnLoading && btnConfirm) {
-        btnContent.style.display = 'flex';
-        btnLoading.style.display = 'none';
-        btnConfirm.disabled = false;
-      }
+      // Restaurar estado del botón
+      setButtonLoading('deleteButtonContent', 'deleteButtonLoading', 'btnConfirmDelete', false);
     }
   }
   
@@ -1919,9 +1345,9 @@ function initTrackingModalListeners() {
         return;
       }
 
-      const pedidoId = window.currentOrderData?.id || null;
-      const prendaId = window.currentPrendaData?.id || null;
-      const numeroRecibo = window.currentConsecutivoCosturaData?.consecutivo || null;
+      const pedidoId = orderState.getOrderId();
+      const prendaId = orderState.getCurrentPrenda()?.id || null;
+      const numeroRecibo = orderState.getConsecutivoCosturaData()?.consecutivo || null;
 
       if (!pedidoId || !prendaId || !numeroRecibo) {
         console.warn('[actualizarAreaEnTablaRecibos] Datos insuficientes para refrescar fila', {
@@ -1942,12 +1368,7 @@ function initTrackingModalListeners() {
         return;
       }
 
-      const url = `/registros/${pedidoId}/consecutivo-costura?prenda_id=${encodeURIComponent(prendaId)}`;
-      const resp = await fetch(url);
-      if (!resp.ok) {
-        throw new Error(`Error HTTP ${resp.status} al refrescar consecutivo-costura`);
-      }
-      const data = await resp.json();
+      const data = await OrderApiService.loadConsecutivoCostura(pedidoId, prendaId);
       console.log('[actualizarAreaEnTablaRecibos] Respuesta consecutivo-costura:', data);
 
       if (!data || !data.success) {
@@ -1993,79 +1414,19 @@ function initTrackingModalListeners() {
   // Manejar edición de proceso
   window.handleEditarProceso = function(procesoId, areaName, processData, event) {
     // Detener propagación para evitar que se cierre el modal
-    if (event) {
-      event.stopPropagation();
-    }
-    
-    console.log('[handleEditarProceso] Editando proceso:', { procesoId, areaName, processData });
+    stopEventPropagation(event);
     
     // Abrir el modal primero
     openAddProcesoModal();
     
-    // Verificar si los elementos del formulario existen
-    const procesoArea = document.getElementById('procesoArea');
-    const procesoEstado = document.getElementById('procesoEstado');
-    const procesoFechaInicio = document.getElementById('procesoFechaInicio');
-    const procesoObservaciones = document.getElementById('procesoObservaciones');
+    // Obtener elementos del formulario
+    const elements = getProcessFormElements();
     
-    console.log('[handleEditarProceso] Elementos del formulario:', {
-      procesoArea: !!procesoArea,
-      procesoEstado: !!procesoEstado,
-      procesoFechaInicio: !!procesoFechaInicio,
-      procesoObservaciones: !!procesoObservaciones
-    });
-    
-    // Llenar el área
-    if (procesoArea) {
-      procesoArea.value = processData.area || areaName;
-      
-      // Disparar evento change para que se cree el selector dinámico si es necesario
-      const changeEvent = new Event('change', { bubbles: true });
-      procesoArea.dispatchEvent(changeEvent);
-    }
-    
-    if (procesoEstado) procesoEstado.value = processData.estado || 'Pendiente';
-    
-    if (procesoFechaInicio) {
-      // Formatear la fecha para el input date (YYYY-MM-DD)
-      const fechaInicio = processData.fecha_inicio;
-      if (fechaInicio) {
-        const date = new Date(fechaInicio);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        procesoFechaInicio.value = `${year}-${month}-${day}`;
-      }
-    }
-    
-    if (procesoObservaciones) procesoObservaciones.value = processData.observaciones || '';
-    
-    // Esperar a que el selector se haya creado (si es necesario) antes de establecer el encargado
-    setTimeout(() => {
-      const inputEncargado = document.getElementById('procesoEncargado');
-      const selectEncargado = document.getElementById('procesoEncargadoSelect');
-      
-      if (selectEncargado && selectEncargado.offsetParent !== null) {
-        // Es un select - establecer el valor si existe una opción con ese nombre
-        const options = selectEncargado.options;
-        const encargadoValue = processData.encargado || '';
-        
-        for (let i = 0; i < options.length; i++) {
-          if (options[i].text.toLowerCase() === encargadoValue.toLowerCase()) {
-            selectEncargado.value = options[i].value;
-            break;
-          }
-        }
-        console.log('[handleEditarProceso] Encargado seleccionado en select:', encargadoValue);
-      } else if (inputEncargado) {
-        // Es un input - establecer el valor directamente
-        inputEncargado.value = processData.encargado || '';
-        console.log('[handleEditarProceso] Encargado establecido en input:', processData.encargado);
-      }
-    }, 150);
+    // Establecer datos del formulario
+    setProcessFormData(elements, processData);
     
     // Guardar el ID del proceso que se está editando
-    window.editingProcessId = procesoId;
+    orderState.setEditingProcessId(procesoId);
     
     // Cambiar el texto del botón a "Actualizar"
     const btnConfirmar = document.getElementById('btnConfirmAddProceso');
@@ -2074,65 +1435,30 @@ function initTrackingModalListeners() {
       btnConfirmar.onclick = function() { handleActualizarProceso(procesoId); };
     }
     
-    console.log('[handleEditarProceso] Modal de agregar/editar proceso abierto');
+    // Esperar a que el selector se cree dinámicamente (si es necesario) antes de establecer el encargado
+    setTimeout(() => {
+      setEncargadoValue(elements.inputEncargado, elements.selectEncargado, processData.encargado);
+    }, 150);
   };
 
   // Manejar actualización de proceso
   window.handleActualizarProceso = async function(procesoId) {
     try {
-      const procesoAreaEl = document.getElementById('procesoArea');
-      const procesoEstadoEl = document.getElementById('procesoEstado');
-      const procesoFechaInicioEl = document.getElementById('procesoFechaInicio');
-      const procesoObservacionesEl = document.getElementById('procesoObservaciones');
-
-      // Buscar encargado - puede ser un input o un select
-      const inputEncargado = document.getElementById('procesoEncargado');
-      const selectEncargado = document.getElementById('procesoEncargadoSelect');
-      
-      let encargado = '';
-      if (selectEncargado && selectEncargado.offsetParent !== null) {
-        // Es un select - obtener el texto del option seleccionado
-        const selectedOption = selectEncargado.options[selectEncargado.selectedIndex];
-        encargado = selectedOption ? selectedOption.text : '';
-      } else if (inputEncargado) {
-        // Es un input - obtener el valor
-        encargado = inputEncargado.value;
-      }
+      const elements = getProcessFormElements();
+      const procesoAreaEl = elements.area;
+      const procesoEstadoEl = elements.estado;
+      const procesoFechaInicioEl = elements.fechaInicio;
+      const procesoObservacionesEl = elements.observaciones;
+      const encargado = getEncargadoValue(elements.inputEncargado, elements.selectEncargado);
 
       if (!procesoAreaEl) {
         throw new Error('No se encontró el campo de área. Por favor recarga la página.');
       }
 
-      const area = procesoAreaEl.value;
-      const estado = procesoEstadoEl ? procesoEstadoEl.value : 'Pendiente';
-      const fechaInicio = procesoFechaInicioEl ? procesoFechaInicioEl.value : '';
-      const observaciones = procesoObservacionesEl ? procesoObservacionesEl.value : '';
+      const procesoData = collectProcessFormData(elements, encargado);
 
-      console.log('[handleActualizarProceso] Actualizando proceso:', {
-        procesoId, area, estado, fechaInicio, encargado, observaciones
-      });
-
-      const response = await fetch('/seguimiento-proceso/' + procesoId, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-        },
-        body: JSON.stringify({
-          area: area,
-          estado: estado,
-          fecha_inicio: fechaInicio || null,
-          encargado: encargado,
-          observaciones: observaciones
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al actualizar proceso');
-      }
-
-      const result = await response.json();
-      console.log('[handleActualizarProceso] Proceso actualizado:', result);
+      // Actualizar proceso via OrderApiService (validación y error handling centralizado)
+      const result = await OrderApiService.updateProceso(procesoId, procesoData);
 
       // Limpiar formulario y resetear botón
       limpiarFormularioProceso();
@@ -2142,11 +1468,11 @@ function initTrackingModalListeners() {
       try {
         closeAddProcesoModal();
       } catch (e) {
-        console.warn('[handleActualizarProceso] No se pudo cerrar addProcesoModal:', e);
+        // Silenciosamente ignorar si no se puede cerrar
       }
 
       // Recargar seguimientos de la prenda
-      const orderId = window.currentOrderData?.id;
+      const orderId = orderState.getOrderId();
       if (orderId) {
         await loadPrendasWithTracking(orderId);
       } else {
@@ -2154,15 +1480,15 @@ function initTrackingModalListeners() {
       }
       
       // Actualizar vista actual
-      if (window.currentPrendaData && window.currentPrendaData.id && Array.isArray(window.prendasData)) {
-        const prendaActualizada = window.prendasData.find(p => String(p.id) === String(window.currentPrendaData.id));
+      if (orderState.getCurrentPrenda()?.id && Array.isArray(orderState.getPrendas())) {
+        const prendaActualizada = orderState.getPrendas().find(p => String(p.id) === String(orderState.getCurrentPrenda().id));
         if (prendaActualizada) {
-          window.currentPrendaData = prendaActualizada;
+          orderState.setCurrentPrenda(prendaActualizada);
         }
       }
 
-      if (window.currentPrendaData) {
-        renderPrendaTrackingTimeline(window.currentPrendaData);
+      if (orderState.getCurrentPrenda()) {
+        renderPrendaTrackingTimeline(orderState.getCurrentPrenda());
       }
 
       // Mostrar mensaje de éxito
@@ -2176,6 +1502,118 @@ function initTrackingModalListeners() {
       showError('Error al actualizar proceso: ' + error.message);
     }
   };
+
+  // Detener propagación de evento (previno bubbling y default)
+  function stopEventPropagation(event, preventDefault = false) {
+    if (event) {
+      if (preventDefault) event.preventDefault();
+      event.stopPropagation();
+    }
+  }
+
+  // Establecer botón en estado de carga
+  function setButtonLoading(contentId, loadingId, buttonId, isLoading = true) {
+    const content = document.getElementById(contentId);
+    const loading = document.getElementById(loadingId);
+    const button = document.getElementById(buttonId);
+    
+    if (content && loading && button) {
+      if (isLoading) {
+        content.style.display = 'none';
+        loading.style.display = 'flex';
+        button.disabled = true;
+      } else {
+        content.style.display = 'flex';
+        loading.style.display = 'none';
+        button.disabled = false;
+      }
+    }
+  }
+
+  // Obtener todos los elementos del formulario de proceso
+  function getProcessFormElements() {
+    return {
+      area: document.getElementById('procesoArea'),
+      estado: document.getElementById('procesoEstado'),
+      fechaInicio: document.getElementById('procesoFechaInicio'),
+      observaciones: document.getElementById('procesoObservaciones'),
+      inputEncargado: document.getElementById('procesoEncargado'),
+      selectEncargado: document.getElementById('procesoEncargadoSelect')
+    };
+  }
+
+  // Obtener valor del encargado (select o input)
+  function getEncargadoValue(inputEncargado, selectEncargado) {
+    if (selectEncargado && selectEncargado.offsetParent !== null) {
+      const selectedOption = selectEncargado.options[selectEncargado.selectedIndex];
+      return selectedOption ? selectedOption.text : '';
+    }
+    return inputEncargado ? inputEncargado.value : '';
+  }
+
+  // Recopilar datos del formulario de proceso
+  function collectProcessFormData(elements, encargado) {
+    const area = elements.area.value;
+    const estado = elements.estado ? elements.estado.value : 'Pendiente';
+    const fechaInicio = elements.fechaInicio ? elements.fechaInicio.value : '';
+    const observaciones = elements.observaciones ? elements.observaciones.value : '';
+
+    return {
+      area: area,
+      estado: estado,
+      fecha_inicio: fechaInicio || null,
+      encargado: encargado,
+      observaciones: observaciones
+    };
+  }
+
+  // Establecer datos del formulario (rellenar para edición)
+  function setProcessFormData(elements, processData) {
+    // Establecer área
+    if (elements.area) {
+      elements.area.value = processData.area || '';
+      const changeEvent = new Event('change', { bubbles: true });
+      elements.area.dispatchEvent(changeEvent);
+    }
+
+    // Establecer estado
+    if (elements.estado) {
+      elements.estado.value = processData.estado || 'Pendiente';
+    }
+
+    // Establecer fecha de inicio (formato YYYY-MM-DD)
+    if (elements.fechaInicio && processData.fecha_inicio) {
+      const date = new Date(processData.fecha_inicio);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      elements.fechaInicio.value = `${year}-${month}-${day}`;
+    }
+
+    // Establecer observaciones
+    if (elements.observaciones) {
+      elements.observaciones.value = processData.observaciones || '';
+    }
+  }
+
+  // Establecer encargado en select o input (después de que se cree dinámicamente)
+  function setEncargadoValue(inputEncargado, selectEncargado, encargado) {
+    if (selectEncargado && selectEncargado.offsetParent !== null) {
+      // Es un select - buscar opción por nombre
+      const options = selectEncargado.options;
+      const encargadoValue = encargado || '';
+      
+      for (let i = 0; i < options.length; i++) {
+        if (options[i].text.toLowerCase() === encargadoValue.toLowerCase()) {
+          selectEncargado.value = options[i].value;
+          break;
+        }
+      }
+    } else if (inputEncargado) {
+      // Es un input - establecer el valor directamente
+      inputEncargado.value = encargado || '';
+    }
+  }
 
   // Limpiar formulario de proceso
   function limpiarFormularioProceso() {
@@ -2205,225 +1643,137 @@ function initTrackingModalListeners() {
       btnConfirmar.textContent = 'Agregar Proceso';
       btnConfirmar.onclick = handleAgregarProceso;
     }
-    window.editingProcessId = null;
+    orderState.setEditingProcessId(null);
   }
 
   // Crear tarjeta de área/proceso
   function createAreaCard(area, data, readonly = false) {
     const card = document.createElement('div');
-    
-    // Si es readonly, agregar clase visual
+    const metadata = orderState.resolveAreaMetadata(area);
+    const { estadoDisplay, estaActivoDisplay } = orderState.resolveAreaStatus(data, metadata);
+
     if (readonly) {
       card.classList.add('tracking-readonly-mode');
     }
+
+    const iconSvg = SvgIcons.get(area);
+
+    // ──── Helpers para cálculo de duraciones ────
     
-    const iconSvg = getIconSvg(area) || getIconSvg('description');
-    
-    const fechaCompletadoDisplay = data.fecha_completado || null;
-    const fechaFinParaDuracion = fechaCompletadoDisplay || data.fecha_fin || null;
-
-    const totalDiasArea = (function() {
-      const ini = toDateObject(data.fecha_inicio);
-      
-      // Si no hay fecha de fin o completado, contar hasta hoy (dinámico)
-      if (!fechaFinParaDuracion) {
-        if (!ini) return null;
-        return calcularDiasHabilesSync(ini, new Date());
-      }
-      
-      // Si hay fecha fin/completado, contar hasta esa fecha (estático)
-      const fin = toDateObject(fechaFinParaDuracion);
-      if (!ini || !fin) return null;
-      
-      // Usar cálculo de días hábiles con festivos (igual que recibos-costura)
-      return calcularDiasHabilesSync(ini, fin);
-    })();
-
-    const isInsumos = String(area || '').toLowerCase() === 'insumos';
-    const isCorte = String(area || '').toLowerCase().includes('corte');
-    const isCostura = String(area || '').toLowerCase().includes('costura');
-    const isControlCalidad = String(area || '').toLowerCase().includes('control') && String(area || '').toLowerCase().includes('calidad');
-    
-    // Procesos que requieren encargado y usan fecha_completado como fecha_fin
-    const needsEncargado = isCorte || isCostura || isControlCalidad;
-    const shouldShowAssignmentDuration = needsEncargado;
-    
-    // Determinar si se debe ocultar el campo de encargado
-    const shouldHideEncargado = isInsumos || !needsEncargado;
-
-    const hasFechaCompletado = !isInsumos && Boolean(toDateObject(data.fecha_completado));
-    const estadoDisplay = isInsumos ? (data.estado || 'Pendiente') : (hasFechaCompletado ? 'Completado' : 'Pendiente');
-    const estaActivoDisplay = isInsumos ? Boolean(data.esta_activo) : !hasFechaCompletado;
-
-    card.className = `tracking-area-card tracking-area-card-v2 ${estaActivoDisplay ? 'pending' : 'completed'}`;
-
-    const formatBadgeDuration = function(diffMs) {
+    const formatBadgeDuration = (diffMs) => {
       const ms = Math.max(0, Number(diffMs) || 0);
       const minutes = Math.floor(ms / 60000);
       const hours = Math.floor(ms / 3600000);
       const days = Math.floor(ms / 86400000);
-      
-      if (days >= 1) {
-        return `${days} ${days === 1 ? 'Día' : 'Días'}`;
-      } else if (hours >= 1) {
-        return `${hours}h`;
-      } else if (minutes >= 1) {
-        return `${minutes}min`;
-      } else {
-        return '< 1min';
-      }
+      return days >= 1 ? `${days} ${days === 1 ? 'Día' : 'Días'}` 
+           : hours >= 1 ? `${hours}h`
+           : minutes >= 1 ? `${minutes}min`
+           : '< 1min';
     };
 
-    const fechaLlegada = formatDate(data.fecha_inicio) || '---';
+    const extractNumericDays = (text) => {
+      if (text === '---' || !text) return 0;
+      const match = String(text).match(/(\d+)/);
+      return match ? parseInt(match[1], 10) : 0;
+    };
+
+    // ──── Cálculos de fechas ────
     
-    // Lógica dinámica para fecha_fin según el tipo de proceso
+    const fechaCompletadoDisplay = data.fecha_completado || null;
+    const fechaFinParaDuracion = fechaCompletadoDisplay || data.fecha_fin || null;
+    
+    const fechaLlegada = formatDate(data.fecha_inicio) || '---';
+    const fechaAsignacion = formatDate(data.fecha_de_asignacion_encargado) || '---';
+    
     let fechaFinRaw = null;
-    if (isInsumos) {
+    if (metadata.isInsumos) {
       fechaFinRaw = data.fecha_fin || null;
-    } else if (needsEncargado) {
-      // Para Corte, Costura, Control Calidad: usar fecha_completado
+    } else if (metadata.needsEncargado) {
       fechaFinRaw = data.fecha_completado || null;
     } else {
-      // Para otros procesos (Entrega, Despacho, etc.): usar fecha_fin o determinar dinámicamente
       fechaFinRaw = data.fecha_fin || null;
-      
-      // Si no hay fecha_fin, podríamos intentar determinarla por el siguiente proceso
-      // Esto requeriría datos adicionales de los otros procesos
     }
     
     const fechaFin = formatDate(fechaFinRaw) || (data.esta_activo ? '---' : '---');
 
-    const fechaAsignacion = formatDate(data.fecha_de_asignacion_encargado) || '---';
-    const duracionAsignacion = (function() {
-      if (!shouldShowAssignmentDuration) return '---';
+    // ──── Cálculos de duraciones ────
+    
+    const calcularDuracionAsignacion = () => {
+      if (!metadata.needsEncargado) return '---';
       const ini = toDateObject(data.fecha_inicio);
       const asg = toDateObject(data.fecha_de_asignacion_encargado);
       if (!ini || !asg) return '---';
-      const diffMs = asg.getTime() - ini.getTime();
-      return formatBadgeDuration(diffMs);
-    })();
+      return formatBadgeDuration(asg.getTime() - ini.getTime());
+    };
 
-    const duracionEnArea = (function() {
-      if (needsEncargado) {
-        // Para procesos con encargado: calcular desde asignación
-        const asg = toDateObject(data.fecha_de_asignacion_encargado);
-        if (!asg) return '---';
-        
-        let fin;
-        // Si no hay fecha fin (fecha_completado), calcular hasta hoy (dinámico)
-        if (!fechaFinRaw) {
-          fin = new Date();
-        } else {
-          fin = toDateObject(fechaFinRaw);
-          if (!fin) return '---';
-        }
-
-        const diasHabiles = calcularDiasHabilesSync(asg, fin);
-        return diasHabiles === 0 ? '0 días' : `${diasHabiles} día${diasHabiles !== 1 ? 's' : ''}`;
-      } else {
-        // Para procesos sin encargado: calcular desde inicio hasta fin
-        const ini = toDateObject(data.fecha_inicio);
-        const fin = toDateObject(fechaFinRaw);
-        if (!ini || !fin) return '---';
-        const diasHabiles = calcularDiasHabilesSync(ini, fin);
-        return diasHabiles === 0 ? '0 días' : `${diasHabiles} día${diasHabiles !== 1 ? 's' : ''}`;
-      }
-    })();
-
-    const totalDiasAreaDisplay = (function() {
-      if (!needsEncargado) {
-        // Para procesos sin encargado: calcular duración total
-        const ini = toDateObject(data.fecha_inicio);
-        
-        // Si no hay fecha fin, contar hasta hoy (dinámico)
-        if (!fechaFinRaw) {
-          if (!ini) return '---';
-          const diasHabiles = calcularDiasHabilesSync(ini, new Date());
-          return diasHabiles === 0 ? '0 días' : `${diasHabiles} día${diasHabiles !== 1 ? 's' : ''}`;
-        }
-        
-        // Si hay fecha fin, contar hasta esa fecha (estático)
-        const fin = toDateObject(fechaFinRaw);
-        if (!ini || !fin) return '---';
-        const diasHabiles = calcularDiasHabilesSync(ini, fin);
-        return diasHabiles === 0 ? '0 días' : `${diasHabiles} día${diasHabiles !== 1 ? 's' : ''}`;
-      }
-
-      // Para procesos con encargado
+    const calcularDuracionEnArea = () => {
+      const ini_asignacion = toDateObject(data.fecha_de_asignacion_encargado);
       const ini = toDateObject(data.fecha_inicio);
-      const asg = toDateObject(data.fecha_de_asignacion_encargado);
+      const fin = fechaFinRaw ? toDateObject(fechaFinRaw) : new Date();
       
-      // Si no hay fecha fin, sumar duración asignación + duración en área (dinámico)
+      if (metadata.needsEncargado) {
+        if (!ini_asignacion || !fin) return '---';
+        const dias = calcularDiasHabilesSync(ini_asignacion, fin);
+        return dias === 0 ? '0 días' : `${dias} día${dias !== 1 ? 's' : ''}`;
+      } else {
+        if (!ini || !fin) return '---';
+        const dias = calcularDiasHabilesSync(ini, fin);
+        return dias === 0 ? '0 días' : `${dias} día${dias !== 1 ? 's' : ''}`;
+      }
+    };
+
+    const calcularTotalDiasDisplay = () => {
+      if (!metadata.needsEncargado) {
+        const ini = toDateObject(data.fecha_inicio);
+        const fin = fechaFinRaw ? toDateObject(fechaFinRaw) : new Date();
+        if (!ini || !fin) return '---';
+        const dias = calcularDiasHabilesSync(ini, fin);
+        return dias === 0 ? '0 días' : `${dias} día${dias !== 1 ? 's' : ''}`;
+      }
+
       if (!fechaFinRaw) {
-        // Extraer valor numérico de duracionAsignacion
-        const asignacionNum = (() => {
-          if (duracionAsignacion === '---') return 0;
-          const match = String(duracionAsignacion).match(/(\d+)/);
-          return match ? parseInt(match[1], 10) : 0;
-        })();
-        // Extraer valor numérico de duracionEnArea
-        const areaNum = (() => {
-          if (duracionEnArea === '---') return 0;
-          const match = String(duracionEnArea).match(/(\d+)/);
-          return match ? parseInt(match[1], 10) : 0;
-        })();
-        const suma = asignacionNum + areaNum;
+        const durAsig = calcularDuracionAsignacion();
+        const durArea = calcularDuracionEnArea();
+        const suma = extractNumericDays(durAsig) + extractNumericDays(durArea);
         return suma === 0 ? '0 días' : `${suma} día${suma !== 1 ? 's' : ''}`;
       }
 
-      // Si hay fecha fin, contar desde inicio o asignación hasta fin (estático)
-      const fin = toDateObject(fechaFinRaw);
-      if (!ini || !fin) {
-        return totalDiasArea === null ? '---' : (totalDiasArea === 0 ? '0 días' : `${totalDiasArea} día${totalDiasArea !== 1 ? 's' : ''}`);
-      }
-
-      const inicioCalculo = asg || ini;
-      const diasTotales = calcularDiasHabilesSync(inicioCalculo, fin);
-      return diasTotales === 0 ? '0 días' : `${diasTotales} día${diasTotales !== 1 ? 's' : ''}`;
-    })();
-
-    const tiempoCompletadoDisplay = (function() {
-      if (data.tiempo_transcurrido) return data.tiempo_transcurrido;
-      
       const ini = toDateObject(data.fecha_inicio);
-      if (!ini) return null;
-      
-      let fin;
-      // Si no hay fecha completado, usar hoy (dinámico)
-      if (!fechaCompletadoDisplay) {
-        fin = new Date();
-      } else {
-        fin = toDateObject(fechaCompletadoDisplay);
-        if (!fin) return null;
-      }
-      
-      const diasHabiles = calcularDiasHabilesSync(ini, fin);
-      return diasHabiles === 0 ? '0 días' : `${diasHabiles} día${diasHabiles !== 1 ? 's' : ''}`;
-    })();
+      const asg = toDateObject(data.fecha_de_asignacion_encargado);
+      const fin = toDateObject(fechaFinRaw);
+      if (!ini || !fin) return '---';
+      const inicioCalculo = asg || ini;
+      const dias = calcularDiasHabilesSync(inicioCalculo, fin);
+      return dias === 0 ? '0 días' : `${dias} día${dias !== 1 ? 's' : ''}`;
+    };
 
-    // SOLO generar botones si NO es readonly
+    const duracionAsignacion = calcularDuracionAsignacion();
+    const duracionEnArea = calcularDuracionEnArea();
+    const totalDiasAreaDisplay = calcularTotalDiasDisplay();
+
+    // ──── HTML de acciones ────
+    
     const accionesHtml = readonly ? '' : `${(data.id || data.can_edit) ? `
             <button class="tracking-edit-btn" onclick="${data.id ? `handleEditarProceso(${data.id}, '${area}', ${JSON.stringify(data).replace(/"/g, '&quot;')}, event)` : `handleCrearProcesoDesdeArea('${area}', event, '${String(data.encargado || '').replace(/'/g, "\\'")}')`}" title="Editar proceso">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-              </svg>
+              ${SvgIcons.edit()}
             </button>
             ${data.id ? `
             <button class="tracking-delete-btn" onclick="handleEliminarProceso(${data.id}, '${area}', event)" title="Eliminar proceso">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"/>
-              </svg>
+              ${SvgIcons.delete()}
             </button>
             ` : ''}
             ` : ''}`;
 
-    if (isInsumos) {
+    // ──── Construir HTML del card ────
+
+    card.className = `tracking-area-card tracking-area-card-v2 ${estaActivoDisplay ? 'pending' : 'completed'}`;
+
+    if (metadata.isInsumos) {
       card.innerHTML = `
         <div class="tracking-area-v2-left">
           <div class="tracking-area-v2-icon">${iconSvg}</div>
           <div class="tracking-area-v2-name">${area}</div>
         </div>
-
         <div class="tracking-area-v2-body">
           <div class="tracking-area-v2-row">
             <div class="tracking-area-v2-field">
@@ -2436,7 +1786,6 @@ function initTrackingModalListeners() {
             </div>
             <div class="tracking-area-v2-field tracking-area-v2-field-right"></div>
           </div>
-
           <div class="tracking-area-v2-footer">
             <div class="tracking-area-v2-status">
               <span class="tracking-days-badge ${estaActivoDisplay ? '' : 'tracking-days-badge-zero'}">${estadoDisplay}</span>
@@ -2455,7 +1804,6 @@ function initTrackingModalListeners() {
           <div class="tracking-area-v2-icon">${iconSvg}</div>
           <div class="tracking-area-v2-name">${area}</div>
         </div>
-
         <div class="tracking-area-v2-body">
           <div class="tracking-area-v2-row">
             <div class="tracking-area-v2-field">
@@ -2478,10 +1826,9 @@ function initTrackingModalListeners() {
             </div>
             `}
           </div>
-
           <div class="tracking-area-v2-row">
             ${!data.encargado || data.encargado.trim() === '' ? '' : `
-            ${shouldHideEncargado || data.hide_encargado ? '' : `
+            ${metadata.shouldHideEncargado || data.hide_encargado ? '' : `
             <div class="tracking-area-v2-field">
               <div class="tracking-area-v2-label">Encargado:</div>
               <div class="tracking-area-v2-pill">${data.encargado || '---'}</div>
@@ -2497,7 +1844,6 @@ function initTrackingModalListeners() {
             </div>
             `}
           </div>
-
           <div class="tracking-area-v2-footer">
             <div class="tracking-area-v2-status">
               <span class="tracking-days-badge ${estaActivoDisplay ? '' : 'tracking-days-badge-zero'}">${estadoDisplay}</span>
@@ -2515,36 +1861,6 @@ function initTrackingModalListeners() {
     return card;
   }
 
-  // Obtener SVG del icono
-  function getIconSvg(iconName) {
-    const icons = {
-      // Iconos genéricos existentes
-      'description': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>',
-      'inventory_2': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"></path></svg>',
-      'content_cut': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"></circle><circle cx="18" cy="18" r="3"></circle><path d="M20.41 3.59l-7.06 7.06a2 2 0 01-2.83 0l-2.12-2.12a2 2 0 010-2.83l7.06-7.06a2 2 0 012.83 0l2.12 2.12a2 2 0 010 2.83z"></path></svg>',
-      'brush': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.71 4.63l-1.34-1.34a1 1 0 00-1.41 0L9 12.59 10.41 14l8.3-8.3a1 1 0 000-1.41z"></path><path d="M18 13l3 3"></path><path d="M3 21l9-9"></path></svg>',
-      'print': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>',
-      'dry_cleaning': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v8"></path><path d="M8 12h8"></path></svg>',
-      'checkroom': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7l-10-5z"></path><path d="M12 22V12"></path></svg>',
-      'construction': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 21l6-6m0 0V9m0 6h6m-6-6l6-6m6 0l6 6m0 0v6m0-6h-6m6 6l-6 6"></path></svg>',
-      'local_laundry_service': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7l-10-5z"></path><circle cx="12" cy="13" r="4"></circle></svg>',
-      
-      // Iconos específicos para áreas
-      'Corte': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 7a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M3 17a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M8.6 8.6l10.4 10.4" /><path d="M8.6 15.4l10.4 -10.4" /></svg>',
-      'Bordado': '<svg viewBox="0 0 24 24" fill="currentColor"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 2c5.498 0 10 4.002 10 9c0 1.351 -.6 2.64 -1.654 3.576c-1.03 .914 -2.412 1.424 -3.846 1.424h-2.516a1 1 0 0 0 -.5 1.875a1 1 0 0 1 .194 .14a2.3 2.3 0 0 1 -1.597 3.99l-.156 -.009l.068 .004l-.273 -.004c-5.3 -.146 -9.57 -4.416 -9.716 -9.716l-.004 -.28c0 -5.523 4.477 -10 10 -10m-3.5 6.5a2 2 0 0 0 -1.995 1.85l-.005 .15a2 2 0 1 0 2 -2m8 0a2 2 0 0 0 -1.995 1.85l-.005 .15a2 2 0 1 0 2 -2m-4 -3a2 2 0 0 0 -1.995 1.85l-.005 .15a2 2 0 1 0 2 -2" /></svg>',
-      'Estampado': '<svg viewBox="0 0 24 24" fill="currentColor"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 2c5.498 0 10 4.002 10 9c0 1.351 -.6 2.64 -1.654 3.576c-1.03 .914 -2.412 1.424 -3.846 1.424h-2.516a1 1 0 0 0 -.5 1.875a1 1 0 0 1 .194 .14a2.3 2.3 0 0 1 -1.597 3.99l-.156 -.009l.068 .004l-.273 -.004c-5.3 -.146 -9.57 -4.416 -9.716 -9.716l-.004 -.28c0 -5.523 4.477 -10 10 -10m-3.5 6.5a2 2 0 0 0 -1.995 1.85l-.005 .15a2 2 0 1 0 2 -2m8 0a2 2 0 0 0 -1.995 1.85l-.005 .15a2 2 0 1 0 2 -2m-4 -3a2 2 0 0 0 -1.995 1.85l-.005 .15a2 2 0 1 0 2 -2" /></svg>',
-      'Costura': '<svg viewBox="0 0 24 24" fill="currentColor"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14.883 3.007l.095 -.007l.112 .004l.113 .017l.113 .03l6 2a1 1 0 0 1 .677 .833l.007 .116v5a1 1 0 0 1 -.883 .993l-.117 .007h-2v7a2 2 0 0 1 -1.85 1.995l-.15 .005h-10a2 2 0 0 1 -1.995 -1.85l-.005 -.15v-7h-2a1 1 0 0 1 -.993 -.883l-.007 -.117v-5a1 1 0 0 1 .576 -.906l.108 -.043l6 -2a1 1 0 0 1 1.316 .949a2 2 0 0 0 3.995 .15l.009 -.24l.017 -.113l.037 -.134l.044 -.103l.05 -.092l.068 -.093l.069 -.08c.056 -.054 .113 -.1 .175 -.14l.096 -.053l.103 -.044l.108 -.032l.112 -.02z" /></svg>',
-      'Taller': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21h18"/><path d="M5.5 21l-1.5 -6l6 -1"/><path d="M18.5 21l1.5 -6l-6 -1"/><path d="M8 12l4 -4l4 4"/><path d="M12 8v13"/></svg>',
-      'Lavandería': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/><path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M12 3v6"/></svg>',
-      'Control de Calidad': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 12l5 5l10 -10"/></svg>',
-      'Despacho': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 2l8 4.5v9l-8 4.5l-8 -4.5v-9z"/><path d="M12 12l8 -4.5"/><path d="M12 12v9"/><path d="M12 12l-8 -4.5"/></svg>',
-      'Entrega': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 21l-8 -4.5v-9l8 -4.5l8 4.5v4.5" /><path d="M12 12l8 -4.5" /><path d="M12 12v9" /><path d="M12 12l-8 -4.5" /><path d="M15 18h7" /><path d="M19 15l3 3l-3 3" /></svg>',
-      'Insumos': '<svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><line x1="20" y1="140" x2="180" y2="140" /><line x1="20" y1="40" x2="20" y2="140" /><line x1="20" y1="40" x2="60" y2="40" /><circle cx="60" cy="170" r="15" /><circle cx="140" cy="170" r="15" /><rect x="40" y="90" width="50" height="40" /><rect x="55" y="90" width="20" height="10" /><rect x="100" y="90" width="50" height="40" /><rect x="115" y="90" width="20" height="10" /><rect x="75" y="50" width="50" height="40" /><rect x="90" y="50" width="20" height="10" /></svg>'
-    };
-    
-    return icons[iconName] || icons['description'];
-  }
-
   // Mostrar vista de prendas (cerrar modal de seguimiento y volver a prendas)
   function showPrendasView() {
     console.log('[showPrendasView] Cerrando modal de seguimiento y volviendo a prendas...');
@@ -2558,198 +1874,17 @@ function initTrackingModalListeners() {
     console.log('[showPrendasView] Modal de seguimiento cerrado y selector de prendas mostrado');
   }
 
-  // Formatear fecha
-  function formatDate(dateString) {
-    if (window.formatDate && window.formatDate !== formatDate) {
-      return window.formatDate(dateString);
-    }
-    if (!dateString) return null;
-    
-    try {
-      // Si el formato es d/m/Y, convertirlo a Y-m-d para el constructor Date
-      if (typeof dateString === 'string' && dateString.includes('/')) {
-        const parts = dateString.split('/');
-        if (parts.length === 3) {
-          const [day, month, year] = parts;
-          // Crear fecha en formato Y-m-d
-          const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-          const date = new Date(isoDate);
-          return date.toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          });
-        }
-      }
-      
-      // Para formatos estándar (ISO, etc.)
-      const date = new Date(dateString);
-      return date.toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      });
-    } catch (error) {
-      console.warn('[formatDate] Error formateando fecha:', dateString, error);
-      return dateString;
-    }
-  }
-
-  // Formatear fecha con hora (mostrar fecha + hora completa)
-  function formatDateTime(dateString) {
-    if (window.formatDateTime && window.formatDateTime !== formatDateTime) {
-      return window.formatDateTime(dateString);
-    }
-    if (!dateString) return null;
-
-    try {
-      const raw = (dateString && typeof dateString === 'object' && dateString.date)
-        ? dateString.date
-        : dateString;
-
-      const date = raw instanceof Date ? raw : new Date(raw);
-      if (isNaN(date.getTime())) return String(dateString);
-
-      return date.toLocaleString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-      });
-    } catch (error) {
-      console.warn('[formatDateTime] Error formateando fecha:', dateString, error);
-      return String(dateString);
-    }
-  }
-
-  // Normalizar consecutivos (puede venir como array o como objeto indexado)
-  function normalizeConsecutivos(consecutivos) {
-    if (window.normalizeConsecutivos && window.normalizeConsecutivos !== normalizeConsecutivos) {
-      return window.normalizeConsecutivos(consecutivos);
-    }
-    if (!consecutivos) return [];
-    if (Array.isArray(consecutivos)) return consecutivos;
-
-    if (typeof consecutivos === 'object') {
-      try {
-        return Object.values(consecutivos).filter(Boolean);
-      } catch (e) {
-        return [];
-      }
-    }
-
-    return [];
-  }
-
-  function toDateObject(value) {
-    if (window.toDateObject && window.toDateObject !== toDateObject) {
-      return window.toDateObject(value);
-    }
-    if (!value) return null;
-    try {
-      const raw = (value && typeof value === 'object' && value.date)
-        ? value.date
-        : value;
-      const date = raw instanceof Date ? raw : new Date(raw);
-      if (isNaN(date.getTime())) return null;
-      return date;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  // Date calculations now handled by backend CalculadorDiasService
-  // These functions kept for backwards compatibility with dynamic counters
-  // TODO: Migrate dynamic counter calculation to backend in future phase
-
-  // Versión síncrona para compatibilidad (usa cache o fallback)
-  function calcularDiasHabilesSync(fechaInicio, fechaFin) {
-    if (!fechaInicio || !fechaFin) return 0;
-
-    const inicio = fechaInicio instanceof Date ? fechaInicio : new Date(fechaInicio);
-    const fin = fechaFin instanceof Date ? fechaFin : new Date(fechaFin);
-
-    // Validar fechas
-    if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return 0;
-    if (fin < inicio) return 0;
-    
-    // Si las fechas son iguales, retornar 0 (no cuenta el mismo día)
-    if (inicio.toDateString() === fin.toDateString()) return 0;
-
-    // Usar festivos del cache si están disponibles, sino usar fallback
-    const anio = inicio.getFullYear();
-    let festivos = festivosCache.get(anio);
-    
-    if (!festivos) {
-      // Fallback: festivos fijos colombianos
-      festivos = [
-        `${anio}-01-01`, // Año Nuevo
-        `${anio}-05-01`, // Día del Trabajo
-        `${anio}-07-01`, // Día de la Independencia
-        `${anio}-07-20`, // Grito de Independencia
-        `${anio}-08-07`, // Batalla de Boyacá
-        `${anio}-12-08`, // Inmaculada Concepción
-        `${anio}-12-25`, // Navidad
-      ];
-    }
-
-    // Agregar festivos del siguiente año si es necesario
-    if (fin.getFullYear() > inicio.getFullYear()) {
-      const festivosSiguiente = festivosCache.get(fin.getFullYear()) || [
-        `${fin.getFullYear()}-01-01`,
-        `${fin.getFullYear()}-05-01`,
-        `${fin.getFullYear()}-07-01`,
-        `${fin.getFullYear()}-07-20`,
-        `${fin.getFullYear()}-08-07`,
-        `${fin.getFullYear()}-12-08`,
-        `${fin.getFullYear()}-12-25`,
-      ];
-      festivos = [...festivos, ...festivosSiguiente];
-    }
-
-    let diasHabiles = 0;
-    const actual = new Date(inicio);
-    
-    // Iterar desde la fecha de inicio hasta la fecha fin (inclusive)
-    while (actual <= fin) {
-      // Verificar si no es sábado (6) ni domingo (0)
-      if (actual.getDay() !== 0 && actual.getDay() !== 6) {
-        // Verificar si no es festivo
-        const fechaStr = actual.toISOString().slice(0, 10);
-        if (!festivos.includes(fechaStr)) {
-          diasHabiles++;
-        }
-      }
-      
-      actual.setDate(actual.getDate() + 1);
-    }
-
-    // Excluir el día de inicio solo si es un día hábil (si cae en fin de semana/festivo ya no fue contado)
-    const inicioStr = inicio.toISOString().slice(0, 10);
-    const inicioEsDiaHabil = inicio.getDay() !== 0 && inicio.getDay() !== 6 && !festivos.includes(inicioStr);
-    return Math.max(0, diasHabiles - (inicioEsDiaHabil ? 1 : 0));
-  }
-
-  function formatDurationHuman(diffMs) {
-    if (window.formatDurationHuman && window.formatDurationHuman !== formatDurationHuman) {
-      return window.formatDurationHuman(diffMs);
-    }
-    const totalSeconds = Math.floor((diffMs || 0) / 1000);
-    const days = Math.floor(totalSeconds / 86400);
-    const hours = Math.floor((totalSeconds % 86400) / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-
-    const parts = [];
-    if (days > 0) parts.push(`${days} ${days === 1 ? 'día' : 'días'}`);
-    if (hours > 0) parts.push(`${hours}h`);
-    if (minutes > 0) parts.push(`${minutes}m`);
-    if (seconds > 0 || parts.length === 0) parts.push(`${seconds}s`);
-    return parts.join(' ');
-  }
+  // ============================================================
+  // ALIASES: Delegación a dateUtils (Infrastructure Layer)
+  // Estas funciones antes estaban duplicadas aquí (~180 líneas).
+  // Ahora son aliases de una línea que delegan al módulo centralizado.
+  // ============================================================
+  const formatDate = (dateString) => dateUtils.formatDate(dateString);
+  const formatDateTime = (dateString) => dateUtils.formatDateTime(dateString);
+  const normalizeConsecutivos = (consecutivos) => dateUtils.normalizeConsecutivos(consecutivos);
+  const toDateObject = (value) => dateUtils.toDateObject(value);
+  const calcularDiasHabilesSync = (fechaInicio, fechaFin) => dateUtils.calcularDiasHabilesSync(fechaInicio, fechaFin);
+  const formatDurationHuman = (diffMs) => dateUtils.formatDurationHuman(diffMs);
 
   // Mostrar error
   function showError(message) {
@@ -2804,7 +1939,7 @@ function initTrackingModalListeners() {
         return;
       }
 
-      if (!window.currentPrendaData || !window.currentOrderData) {
+      if (!orderState.getCurrentPrenda() || !orderState.getOrder()) {
         showError('No hay datos de la prenda o pedido');
         // Ocultar indicador de carga
         if (btnContent && btnLoading && btnConfirm) {
@@ -2815,74 +1950,31 @@ function initTrackingModalListeners() {
         return;
       }
 
+      const currentPrenda = orderState.getCurrentPrenda();
+      const currentOrder = orderState.getOrder();
+
       console.log('[handleAgregarProceso] Agregando proceso:', {
         area,
         encargado,
-        prenda_id: window.currentPrendaData.id,
-        currentOrderData: window.currentOrderData
+        prenda_id: currentPrenda.id,
+        orderId: currentOrder.id
       });
 
-      // Verificar que los datos necesarios existan
-      console.log('[handleAgregarProceso] Verificando estructura de datos:', {
-        currentOrderData: window.currentOrderData,
-        'currentOrderData.numero_pedido': window.currentOrderData?.numero_pedido,
-        'currentOrderData.pedido': window.currentOrderData?.pedido
-      });
-      
-      if (!window.currentOrderData) {
-        throw new Error('No hay datos del pedido');
-      }
-      
-      if (!window.currentOrderData.numero_pedido) {
+      if (!currentOrder.numero_pedido) {
         throw new Error('No hay número de pedido');
       }
 
-      // Enviar datos al backend
-      // Estado y fecha_inicio se establecen automáticamente en el backend
-      const response = await fetch('/seguimiento-proceso/guardar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-        },
-        body: JSON.stringify({
-          pedido_produccion_id: window.currentOrderData.numero_pedido,
-          prenda_id: window.currentPrendaData.id,
-          area: area,
-          encargado: encargado,
-          estado: 'Pendiente'
-        })
-      });
+      // Preparar datos del proceso para enviar
+      const procesoData = {
+        pedido_produccion_id: currentOrder.numero_pedido,
+        prenda_id: currentPrenda.id,
+        area: area,
+        encargado: encargado,
+        estado: 'Pendiente'
+      };
 
-      if (!response.ok) {
-        // Intentar obtener más información del error
-        const errorText = await response.text();
-        console.error('[handleAgregarProceso] Error response:', {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorText.substring(0, 500) // Primeros 500 caracteres
-        });
-        
-        // Si es HTML, probablemente es un error de Laravel
-        if (errorText.includes('<!DOCTYPE html>') || errorText.includes('<html')) {
-          throw new Error('Error del servidor. Posiblemente un error de validación o permisos.');
-        }
-        
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      // Verificar que la respuesta sea JSON antes de parsear
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const responseText = await response.text();
-        console.error('[handleAgregarProceso] Respuesta no es JSON:', {
-          contentType: contentType,
-          body: responseText.substring(0, 500)
-        });
-        throw new Error('El servidor devolvió una respuesta inesperada. Contacte al administrador.');
-      }
-
-      const result = await response.json();
+      // Guardar proceso via OrderApiService (validación y error handling centralizado)
+      const result = await OrderApiService.saveProceso(currentPrenda.id, procesoData);
       console.log('[handleAgregarProceso] Proceso guardado:', result);
 
       // Limpiar formulario
@@ -2897,23 +1989,20 @@ function initTrackingModalListeners() {
 
       // Actualizar datos de la prenda con la respuesta del backend
       if (result.data && result.data.prenda) {
-        currentPrendaData = result.data.prenda;
-        console.log('[handleAgregarProceso] Prenda actualizada desde backend:', currentPrendaData);
+        orderState.setCurrentPrenda(result.data.prenda);
+        console.log('[handleAgregarProceso] Prenda actualizada desde backend:', result.data.prenda);
         
         // Renderizar timeline con los datos actualizados
-        renderPrendaTrackingTimeline(currentPrendaData);
+        renderPrendaTrackingTimeline(orderState.getCurrentPrenda());
       } else {
         // Si no vienen datos de la prenda, recargar desde el endpoint
         console.log('[handleAgregarProceso] Recargando datos desde endpoint...');
-        await loadPrendasWithTracking(currentOrderData.id);
+        await loadPrendasWithTracking(orderState.getOrderId());
         
         // Buscar la prenda actualizada en los datos cargados
-        if (window.prendasData && window.prendasData.length > 0) {
-          const prendaActualizada = window.prendasData.find(p => p.id == currentPrendaData.id);
-          if (prendaActualizada) {
-            currentPrendaData = prendaActualizada;
-            renderPrendaTrackingTimeline(currentPrendaData);
-          }
+        const updated = orderState.refreshCurrentPrenda();
+        if (updated) {
+          renderPrendaTrackingTimeline(updated);
         }
       }
 

@@ -1867,6 +1867,36 @@ class RegistroOrdenQueryController extends Controller
                 foreach ($procesosSeguimiento as $proceso) {
                     $areaKey = strtolower(trim((string) $proceso->proceso));
                     $fechaCompletadoArea = $completadosPorArea[$areaKey] ?? null;
+                    
+                    // Calcular días hábiles transcurridos
+                    $diasHabilesTranscurridos = null;
+                    $proximaActualizacion = null;
+                    
+                    if ($proceso->fecha_inicio) {
+                        // Si el proceso está completado, calcular desde inicio hasta fecha completada
+                        // Si está en progreso, calcular desde inicio hasta hoy
+                        $fechaFin = $fechaCompletadoArea ? $fechaCompletadoArea : now();
+                        
+                        try {
+                            $diasHabilesTranscurridos = \App\Services\CalculadorDiasService::calcularDiasHabiles(
+                                $proceso->fecha_inicio,
+                                $fechaFin
+                            );
+                            
+                            // Próxima actualización será a medianoche (hora del servidor)
+                            // Dado que el cálculo depende del "hoy", refrescar a las 00:00
+                            $proximaActualizacion = \Carbon\Carbon::now()
+                                ->addDay()
+                                ->startOfDay()
+                                ->toIso8601String();
+                        } catch (\Exception $e) {
+                            \Log::warning('[getSeguimientoPorPrenda] Error calculando días hábiles:', [
+                                'error' => $e->getMessage(),
+                                'fecha_inicio' => $proceso->fecha_inicio
+                            ]);
+                        }
+                    }
+                    
                     $seguimientosPorArea[$proceso->proceso] = [
                         'id' => $proceso->id,
                         'proceso_prenda_id' => $proceso->prenda_pedido_id,
@@ -1881,6 +1911,8 @@ class RegistroOrdenQueryController extends Controller
                         'codigo_referencia' => $proceso->codigo_referencia,
                         'dias_duracion' => $proceso->dias_duracion,
                         'esta_activo' => $proceso->estado_proceso === 'Pendiente',
+                        'dias_habiles_transcurridos' => $diasHabilesTranscurridos,
+                        'proximaActualizacion' => $proximaActualizacion,
                     ];
                 }
                 
