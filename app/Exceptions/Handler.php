@@ -13,6 +13,8 @@ use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Session\TokenMismatchException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use DomainException;
 
 class Handler extends ExceptionHandler
 {
@@ -104,7 +106,9 @@ class Handler extends ExceptionHandler
      */
     protected function isDomainException(Throwable $e): bool
     {
-        return $e instanceof CotizacionException ||
+        return $e instanceof DomainException ||
+               $e instanceof ModelNotFoundException ||
+               $e instanceof CotizacionException ||
                $e instanceof PrendaException ||
                $e instanceof ImagenException ||
                $e instanceof PedidoException;
@@ -166,6 +170,12 @@ class Handler extends ExceptionHandler
     protected function getFriendlyMessage(Throwable $e): string
     {
         switch (true) {
+            case $e instanceof DomainException:
+                return $e->getMessage() ?: 'La operación no pudo completarse. Verifica los datos e intenta nuevamente.';
+                
+            case $e instanceof ModelNotFoundException:
+                return 'El recurso que buscas no existe o ha sido eliminado.';
+                
             case $e instanceof CotizacionException:
             case $e instanceof PrendaException:
             case $e instanceof ImagenException:
@@ -272,6 +282,10 @@ class Handler extends ExceptionHandler
         }
         
         switch (true) {
+            case $e instanceof ModelNotFoundException:
+                return 404;
+            case $e instanceof DomainException:
+                return 403;
             case $e instanceof NotFoundHttpException:
                 return 404;
             case $e instanceof MethodNotAllowedHttpException:
