@@ -54,9 +54,9 @@ class PrendaEditorServiceProvider extends ServiceProvider
         // ===== TERCERO: Application Services (que dependen de interfaces) =====
         $this->app->singleton(PrendaEditorService::class, function ($app) {
             return new PrendaEditorService(
+                $app->make(PrendaTransformadorService::class),
                 $app->make(PrendaRepositoryInterface::class),
-                $app->make(CotizacionRepositoryInterface::class),
-                $app->make(PrendaTransformadorService::class)
+                $app->make(CotizacionRepositoryInterface::class)
             );
         });
     }
@@ -73,8 +73,8 @@ class PrendaEditorServiceProvider extends ServiceProvider
             ], 'prenda-editor-config');
         }
         
-        // Cargar rutas específicas del módulo
-        $this->loadRoutesFrom(__DIR__.'/../routes/prenda-editor.php');
+        // Cargar rutas específicas del módulo (ya se cargan desde routes/api.php)
+        // $this->loadRoutesFrom(__DIR__.'/../routes/prendas-editor.php');
         
         // Cargar vistas si es necesario
         $this->loadViewsFrom(__DIR__.'/../resources/views/prenda-editor', 'prenda-editor');

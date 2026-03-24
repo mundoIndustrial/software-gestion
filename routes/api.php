@@ -83,12 +83,6 @@ require base_path('routes/prendas-editor.php');
 require base_path('routes/colores-por-talla.php');
 
 /**
- * Bodega Filter Routes
- * Sistema de filtros dinámicos para bodega
- */
-require base_path('routes/bodega.php');
-
-/**
  * Prenda Entregas Routes
  * Gestión de estado de entrega de prendas
  */

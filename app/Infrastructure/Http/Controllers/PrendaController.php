@@ -8,6 +8,7 @@ use App\Application\Services\PrendaServiceNew;
 use App\Http\Requests\CrearPrendaRequest;
 use App\Infrastructure\Http\Resources\PrendaResource;
 use App\Http\Resources\PrendaColeccionResource;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

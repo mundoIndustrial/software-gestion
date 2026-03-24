@@ -109,13 +109,9 @@ class RegistroOrdenQueryController extends Controller
             FestivosColombiaService::obtenerFestivos($nextYear)
         );
         
-        \Log::info("Antes de verificar filtro - filterTotalDias: " . json_encode($filterTotalDias) . ", es null: " . ($filterTotalDias === null ? 'SI' : 'NO'));
-        
         // Si hay filtro de total_de_dias_, necesitamos obtener todos los registros para calcular y filtrar
         if ($filterTotalDias !== null) {
-            \Log::info("Iniciando filtrado por total_de_dias_ con valores: " . json_encode($filterTotalDias));
             $todasOrdenes = $query->get();
-            \Log::info("Total órdenes obtenidas: " . $todasOrdenes->count());
             
             // Convertir a array para el cálculo
             $ordenesArray = $todasOrdenes->map(function($orden) {
@@ -128,12 +124,6 @@ class RegistroOrdenQueryController extends Controller
             $ordenesFiltradas = $todasOrdenes->filter(function($orden) use ($totalDiasCalculados, $filterTotalDias) {
                 $totalDias = $totalDiasCalculados[$orden->numero_pedido] ?? 0;
                 $match = in_array((int)$totalDias, $filterTotalDias, true);
-                
-                // Log temporal para debug (eliminar después)
-                if ((int)$orden->numero_pedido <= 3) {
-                    \Log::info("Filtro total_dias - Pedido: {$orden->numero_pedido}, Total días: {$totalDias}, Filtros: " . json_encode($filterTotalDias) . ", Match: " . ($match ? 'SI' : 'NO'));
-                }
-                
                 return $match;
             });
             
@@ -153,16 +143,6 @@ class RegistroOrdenQueryController extends Controller
         } else {
             // OPTIMIZACIÓN: Paginación a 25 items
             $ordenes = $query->paginate(25);
-            
-            // DEBUG: Log de paginación
-            \Log::info("=== PAGINACIÓN DEBUG ===");
-            \Log::info("Total: {$ordenes->total()}");
-            \Log::info("Página actual: {$ordenes->currentPage()}");
-            \Log::info("Última página: {$ordenes->lastPage()}");
-            \Log::info("Por página: {$ordenes->perPage()}");
-            \Log::info("Tiene búsqueda: " . ($request->has('search') ? 'SÍ' : 'NO'));
-            \Log::info("Búsqueda: " . ($request->search ?? 'N/A'));
-            \Log::info("HTML paginación: " . substr($ordenes->links()->toHtml(), 0, 200));
 
             // OPTIMIZACIÓN CRÍTICA: SOLO calcular para la página actual (25 items) con caché
             // No calcular para TODAS las 2257 órdenes - usa CacheCalculosService con TTL de 1 hora
@@ -183,13 +163,11 @@ class RegistroOrdenQueryController extends Controller
         
         // FALLBACK: Si totalDiasCalculados está vacío o falta alguna orden, recalcular
         if (empty($totalDiasCalculados)) {
-            \Log::warning("totalDiasCalculados vacío, recalculando...");
             $totalDiasCalculados = CacheCalculosService::getTotalDiasBatch($ordenes->items(), $festivos);
         } else {
             // Verificar que todas las órdenes tengan un valor
             foreach ($ordenes->items() as $orden) {
                 if (!isset($totalDiasCalculados[$orden->numero_pedido])) {
-                    \Log::warning("Falta días para pedido {$orden->numero_pedido}, recalculando...");
                     $totalDiasCalculados[$orden->numero_pedido] = 
                         CacheCalculosService::getTotalDias($orden->numero_pedido, $orden->estado);
                 }
@@ -204,10 +182,6 @@ class RegistroOrdenQueryController extends Controller
             
             // Retornar string vacío para que paginationManager.js genere el HTML con los estilos correctos
             $paginationHtml = '';
-            
-            \Log::info("=== PAGINACIÓN ===");
-            \Log::info("Total: {$ordenes->total()}");
-            \Log::info("Última página: {$ordenes->lastPage()}");
             
             // Determinar contexto y rol para renderizado de botones
             $context = 'registros';
@@ -249,25 +223,17 @@ class RegistroOrdenQueryController extends Controller
         // Verificar si la tabla LogoPedido existe antes de consultarla
         try {
             if (!\Schema::hasTable('logo_pedidos')) {
-                \Log::warning(' [RegistroOrdenQueryController::show] Tabla logo_pedidos no existe, usando solo PedidoProduccion');
                 $logoPedido = null;
             } else {
                 // Primero, intentar buscar en LogoPedido
                 $logoPedido = \App\Models\LogoPedido::where('numero_pedido', $pedido)->first();
             }
         } catch (\Exception $e) {
-            \Log::warning(' [RegistroOrdenQueryController::show] Error verificando tabla logo_pedidos: ' . $e->getMessage());
             $logoPedido = null;
         }
         
         if ($logoPedido) {
             // Es un LogoPedido, devolverlo con toda su información
-            \Log::info(' [RegistroOrdenQueryController::show] Encontrado LogoPedido', [
-                'numero_pedido' => $pedido,
-                'pedido_id' => $logoPedido->pedido_id,
-                'logo_cotizacion_id' => $logoPedido->logo_cotizacion_id,
-            ]);
-            
             $logoPedidoArray = $logoPedido->toArray();
             
             // PASO 1: Intentar completar desde PedidoProduccion

@@ -292,7 +292,6 @@
     border-radius: 6px;
     cursor: pointer;
     font-size: 14px !important;
-    transition: all 0.2s ease;
     position: relative;
     flex-shrink: 0;
     margin: 0 auto;
@@ -301,12 +300,6 @@
 .btn-ver-dropdown:hover {
     background: #1e5ba8;
     color: white;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
-}
-
-.btn-ver-dropdown:active {
-    transform: translateY(0);
 }
 
 .btn-ver-dropdown i {

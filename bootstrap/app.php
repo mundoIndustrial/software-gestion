@@ -33,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
         \App\Providers\SupervisorPedidosServiceProvider::class,
         \App\Infrastructure\Pedidos\Providers\PedidoServiceProvider::class,
         \App\Infrastructure\Procesos\Providers\ProcesosServiceProvider::class,
+        \App\Providers\PrendaEditorServiceProvider::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([

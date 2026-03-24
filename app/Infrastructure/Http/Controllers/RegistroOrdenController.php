@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 use App\Services\PrendaCotizacionTemplateService;
 use App\Services\CacheCalculosService;
 use App\Services\FestivosColombiaService;
+use App\Services\ReciboCosturaQueryService;
 use Carbon\Carbon;
 
 class RegistroOrdenController extends Controller
@@ -35,6 +36,7 @@ class RegistroOrdenController extends Controller
     protected $cacheService;
     protected $entregasService;
     protected $processesService;
+    protected $reciboCosturaQueryService;
 
     public function __construct(
         RegistroOrdenValidationService $validationService,
@@ -45,7 +47,8 @@ class RegistroOrdenController extends Controller
         RegistroOrdenPrendaService $prendaService,
         RegistroOrdenCacheService $cacheService,
         RegistroOrdenEntregasService $entregasService,
-        RegistroOrdenProcessesService $processesService
+        RegistroOrdenProcessesService $processesService,
+        ReciboCosturaQueryService $reciboCosturaQueryService
     )
     {
         $this->validationService = $validationService;
@@ -57,6 +60,7 @@ class RegistroOrdenController extends Controller
         $this->cacheService = $cacheService;
         $this->entregasService = $entregasService;
         $this->processesService = $processesService;
+        $this->reciboCosturaQueryService = $reciboCosturaQueryService;
     }
 
     public function getNextPedido()
@@ -2528,6 +2532,105 @@ class RegistroOrdenController extends Controller
             \Log::error('Error calculando fecha estimada: ' . $e->getMessage());
             // Fallback: sumar Dias simples sin considerar festivos
             return Carbon::parse($fechaInicio)->addDays($diasHabiles);
+        }
+    }
+
+    /**
+     * Obtener recibos de costura en formato JSON con filtros
+     * GET /api/recibos-costura
+     * 
+     * Query params:
+     * - estado: string|array (estado del recibo)
+     * - area: string|array (área del proceso)
+     * - numero_recibo: string|array (número del recibo)
+     * - cliente: string|array (nombre del cliente)
+     * - dia_entrega: string|array (día de entrega)
+     * - fecha_creacion_desde: date (fecha inicial)
+     * - fecha_creacion_hasta: date (fecha final)
+     * - page: int (página, default: 1)
+     * - per_page: int (items por página, default: 25)
+     */
+    public function getRecibosCosutraJSON(Request $request)
+    {
+        try {
+            // Construir query base
+            $query = $this->reciboCosturaQueryService->buildBaseQuery();
+
+            // Extraer y sanitizar filtros
+            $filters = [
+                'estado' => $request->input('estado'),
+                'area' => $request->input('area'),
+                'numero_recibo' => $request->input('numero_recibo'),
+                'cliente' => $request->input('cliente'),
+                'dia_entrega' => $request->input('dia_entrega'),
+                'fecha_creacion_desde' => $request->input('fecha_creacion_desde'),
+                'fecha_creacion_hasta' => $request->input('fecha_creacion_hasta'),
+            ];
+
+            // Remover filtros vacíos
+            $filters = array_filter($filters, function ($value) {
+                return !is_null($value) && $value !== '';
+            });
+
+            // Aplicar filtros
+            $query = $this->reciboCosturaQueryService->applyFilters($query, $filters);
+
+            // Paginar
+            $perPage = min($request->input('per_page', 25), 100);
+            $recibos = $this->reciboCosturaQueryService->getPaginatedRecibos($query, $perPage);
+
+            return response()->json([
+                'success' => true,
+                'data' => $recibos->items(),
+                'pagination' => [
+                    'current_page' => $recibos->currentPage(),
+                    'last_page' => $recibos->lastPage(),
+                    'per_page' => $recibos->perPage(),
+                    'total' => $recibos->total(),
+                    'from' => $recibos->firstItem(),
+                    'to' => $recibos->lastItem(),
+                ],
+                'filters_applied' => $filters,
+                'filters_available' => $this->reciboCosturaQueryService->getFilterOptions(),
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error en getRecibosCosutraJSON: ' . $e->getMessage(), [
+                'filters' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener recibos de costura',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener opciones disponibles para los filtros de recibos
+     * GET /api/recibos-costura/filter-options
+     * 
+     * Retorna los valores válidos para cada filtro disponible
+     */
+    public function getRecibosCosutraFilterOptions(Request $request)
+    {
+        try {
+            $filterOptions = $this->reciboCosturaQueryService->getFilterOptions();
+
+            return response()->json([
+                'success' => true,
+                'filter_options' => $filterOptions
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error en getRecibosCosutraFilterOptions: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener opciones de filtro',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
         }
     }
 
