@@ -1,21 +1,7 @@
 'use strict';
 
-  // Precargar festivos del año actual y siguiente
-  async function precargarFestivos() {
-    const anioActual = new Date().getFullYear();
-    const anioSiguiente = anioActual + 1;
-    
-    try {
-      // Precargar en paralelo
-      await Promise.all([
-        obtenerFestivos(anioActual),
-        obtenerFestivos(anioSiguiente)
-      ]);
-      console.log('[precargarFestivos] Festivos precargados correctamente');
-    } catch (error) {
-      console.warn('[precargarFestivos] Error precargando festivos:', error);
-    }
-  }
+  // Festivos now handled by backend CalculadorDiasService
+  // No need to preload client-side
 
 // Inicializar listeners del modal
 function initTrackingModalListeners() {
@@ -42,8 +28,7 @@ function initTrackingModalListeners() {
 
     setupDaysSelector();
 
-    // Precargar festivos para mejorar rendimiento
-    precargarFestivos();
+    // Festivos now handled by backend CalculadorDiasService
   }
 
   function setupDaysSelector() {
@@ -217,14 +202,13 @@ function initTrackingModalListeners() {
 
   /**
    * Guardar selección de día de entrega desde el modal de seguimiento
-   * Calcula la fecha estimada considerando días hábiles y festivos
+   * Envía los días estimados al backend que calcula la fecha considerando días hábiles y festivos
    */
   async function saveDiaEntregaSelection() {
     try {
       const diasSeleccionados = window.__trackingDiasSeleccionados;
       
       // Obtener el ID del recibo/orden del header del modal
-      let reciboId = null;
       let ordenId = null;
       
       // Intentar obtener orden ID desde los datos globales
@@ -232,7 +216,7 @@ function initTrackingModalListeners() {
         ordenId = window.currentOrderData.id;
       }
       
-      // Si no tenemos orden ID, intentar obtenerlo dari el DOM
+      // Si no tenemos orden ID, intentar obtenerlo desde el DOM
       if (!ordenId) {
         const ordenNumberEl = document.getElementById('trackingOrderNumber');
         if (ordenNumberEl) {
@@ -249,42 +233,46 @@ function initTrackingModalListeners() {
         return;
       }
       
-      console.log('[saveDiaEntregaSelection] Guardando:', {
-        dias_seleccionados: diasSeleccionados,
-        orden_id: ordenId
+      if (diasSeleccionados === null || diasSeleccionados === undefined) {
+        console.warn('[saveDiaEntregaSelection] No hay días seleccionados');
+        return;
+      }
+      
+      console.log('[saveDiaEntregaSelection] Calculando fecha de entrega:', {
+        pedido_id: ordenId,
+        dias_estimados: diasSeleccionados
       });
       
-      // Enviar al servidor
-      const response = await fetch(`/registros/${ordenId}/dia-entrega`, {
+      // Enviar al servidor - backend calcula la fecha estimada
+      const response = await fetch(`/api/pedidos/${ordenId}/calcular-fecha-entrega`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
         },
         body: JSON.stringify({
-          dia_de_entrega: diasSeleccionados,
-          calcular_fecha_estimada: true
+          dias_estimados: diasSeleccionados
         })
       });
       
       if (!response.ok) {
-        throw new Error('Error al guardar día de entrega');
+        throw new Error('Error al calcular fecha de entrega');
       }
       
       const result = await response.json();
       console.log('[saveDiaEntregaSelection] Respuesta del servidor:', result);
       
-      // Actualizar la UI con la fecha estimada calculada
-      if (result.data && result.data.fecha_estimada_de_entrega) {
+      // Actualizar la UI con la fecha estimada calculada por el backend
+      if (result.fecha_estimada) {
         const fechaEstimadaEl = document.getElementById('trackingEstimatedDate');
         if (fechaEstimadaEl) {
-          const fechaFormato = formatDate(result.data.fecha_estimada_de_entrega) || '-';
+          const fechaFormato = formatDate(result.fecha_estimada) || '-';
           fechaEstimadaEl.textContent = fechaFormato;
         }
         
         const selectorEstimatedDateEl = document.getElementById('selectorOrderEstimatedDate');
         if (selectorEstimatedDateEl) {
-          const fechaFormato = formatDate(result.data.fecha_estimada_de_entrega) || '-';
+          const fechaFormato = formatDate(result.fecha_estimada) || '-';
           selectorEstimatedDateEl.textContent = fechaFormato;
         }
       }
@@ -292,7 +280,7 @@ function initTrackingModalListeners() {
       // Mostrar notificación de éxito
       if (typeof showSuccess === 'function') {
         const diasText = diasSeleccionados === null ? 'Sin seleccionar' : `${diasSeleccionados} día${diasSeleccionados !== 1 ? 's' : ''}`;
-        showSuccess(`Día de entrega actualizado: ${diasText}`);
+        showSuccess(`Fecha de entrega calculada: ${diasText}`);
       }
       
     } catch (error) {
@@ -449,33 +437,33 @@ function initTrackingModalListeners() {
     container.appendChild(select);
 
     try {
-      console.log('[convertEncargadoToSelect] Cargando usuarios para:', area);
+      console.log('[convertEncargadoToSelect] Cargando encargados para:', area);
       
-      // Cargar usuarios desde API
-      const response = await fetch(`/api/usuarios/por-area?area=${encodeURIComponent(area)}`);
+      // Cargar encargados desde API backend (DDD endpoint)
+      const response = await fetch(`/api/areas/${encodeURIComponent(area)}/encargados`);
       const data = await response.json();
 
-      if (data.success && data.usuarios && data.usuarios.length > 0) {
-        data.usuarios.forEach(usuario => {
+      if (data.success && data.encargados && data.encargados.length > 0) {
+        data.encargados.forEach(encargado => {
           const option = document.createElement('option');
-          option.value = usuario.id;
-          option.textContent = usuario.name;
+          option.value = encargado.id;
+          option.textContent = encargado.nombre;
           select.appendChild(option);
         });
-        console.log('[convertEncargadoToSelect] ✓ Usuarios cargados:', data.usuarios.length);
+        console.log('[convertEncargadoToSelect] ✓ Encargados cargados:', data.encargados.length);
       } else {
-        console.warn('[convertEncargadoToSelect] No hay usuarios disponibles para:', area);
+        console.warn('[convertEncargadoToSelect] No hay encargados disponibles para:', area);
         const option = document.createElement('option');
         option.value = '';
-        option.textContent = 'No hay usuarios disponibles';
+        option.textContent = 'No hay encargados disponibles';
         option.disabled = true;
         select.appendChild(option);
       }
     } catch (error) {
-      console.error('[convertEncargadoToSelect] Error al cargar usuarios:', error);
+      console.error('[convertEncargadoToSelect] Error al cargar encargados:', error);
       const option = document.createElement('option');
       option.value = '';
-      option.textContent = 'Error al cargar usuarios';
+      option.textContent = 'Error al cargar encargados';
       option.disabled = true;
       select.appendChild(option);
     }
@@ -2673,108 +2661,9 @@ function initTrackingModalListeners() {
     }
   }
 
-  // Cache para festivos por año
-  const festivosCache = new Map();
-
-  // Obtener festivos desde la API (con cache)
-  async function obtenerFestivos(anio) {
-    if (festivosCache.has(anio)) {
-      return festivosCache.get(anio);
-    }
-
-    try {
-      const response = await fetch(`/api/festivos?year=${anio}`);
-      if (!response.ok) throw new Error('Error al obtener festivos');
-      
-      const data = await response.json();
-      if (data.success && data.data) {
-        festivosCache.set(anio, data.data);
-        return data.data;
-      }
-      
-      // Fallback: festivos fijos colombianos si la API falla
-      const festivosFijos = [
-        `${anio}-01-01`, // Año Nuevo
-        `${anio}-05-01`, // Día del Trabajo
-        `${anio}-07-01`, // Día de la Independencia
-        `${anio}-07-20`, // Grito de Independencia
-        `${anio}-08-07`, // Batalla de Boyacá
-        `${anio}-12-08`, // Inmaculada Concepción
-        `${anio}-12-25`, // Navidad
-      ];
-      
-      festivosCache.set(anio, festivosFijos);
-      return festivosFijos;
-    } catch (error) {
-      console.warn('[obtenerFestivos] Error obteniendo festivos, usando fallback:', error);
-      
-      // Fallback: festivos fijos colombianos
-      const festivosFijos = [
-        `${anio}-01-01`, // Año Nuevo
-        `${anio}-05-01`, // Día del Trabajo
-        `${anio}-07-01`, // Día de la Independencia
-        `${anio}-07-20`, // Grito de Independencia
-        `${anio}-08-07`, // Batalla de Boyacá
-        `${anio}-12-08`, // Inmaculada Concepción
-        `${anio}-12-25`, // Navidad
-      ];
-      
-      festivosCache.set(anio, festivosFijos);
-      return festivosFijos;
-    }
-  }
-
-  // Calcular días hábiles entre dos fechas (replicando lógica exacta del backend)
-  async function calcularDiasHabiles(fechaInicio, fechaFin) {
-    if (!fechaInicio || !fechaFin) return 0;
-
-    const inicio = fechaInicio instanceof Date ? fechaInicio : new Date(fechaInicio);
-    const fin = fechaFin instanceof Date ? fechaFin : new Date(fechaFin);
-
-    // Validar fechas
-    if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return 0;
-    if (fin < inicio) return 0;
-    
-    // Si las fechas son iguales, retornar 0 (no cuenta el mismo día)
-    if (inicio.toDateString() === fin.toDateString()) return 0;
-
-    try {
-      // Obtener festivos del año de inicio
-      let festivos = await obtenerFestivos(inicio.getFullYear());
-      
-      // Agregar festivos del siguiente año si es necesario
-      if (fin.getFullYear() > inicio.getFullYear()) {
-        const festivosSiguiente = await obtenerFestivos(fin.getFullYear());
-        festivos = [...festivos, ...festivosSiguiente];
-      }
-
-      let diasHabiles = 0;
-      const actual = new Date(inicio);
-      
-      // Iterar desde la fecha de inicio hasta la fecha fin (inclusive)
-      while (actual <= fin) {
-        // Verificar si no es sábado (6) ni domingo (0)
-        if (actual.getDay() !== 0 && actual.getDay() !== 6) {
-          // Verificar si no es festivo
-          const fechaStr = actual.toISOString().slice(0, 10);
-          if (!festivos.includes(fechaStr)) {
-            diasHabiles++;
-          }
-        }
-        
-        actual.setDate(actual.getDate() + 1);
-      }
-
-      // Excluir el día de inicio solo si es un día hábil (si cae en fin de semana/festivo ya no fue contado)
-      const inicioStr = inicio.toISOString().slice(0, 10);
-      const inicioEsDiaHabil = inicio.getDay() !== 0 && inicio.getDay() !== 6 && !festivos.includes(inicioStr);
-      return Math.max(0, diasHabiles - (inicioEsDiaHabil ? 1 : 0));
-    } catch (error) {
-      console.error('[calcularDiasHabiles] Error:', error);
-      // Fallback a cálculo simple sin festivos
-      return calcularDiasHabilesSimple(fechaInicio, fechaFin);
-    }
-  }
+  // Date calculations now handled by backend CalculadorDiasService
+  // These functions kept for backwards compatibility with dynamic counters
+  // TODO: Migrate dynamic counter calculation to backend in future phase
 
   // Versión síncrona para compatibilidad (usa cache o fallback)
   function calcularDiasHabilesSync(fechaInicio, fechaFin) {
@@ -3059,18 +2948,6 @@ function initTrackingModalListeners() {
         btnConfirm.disabled = false;
       }
     }
-  }
-
-  // Limpiar formulario de proceso
-  function limpiarFormularioProceso() {
-    const procesoArea = document.getElementById('procesoArea');
-    if (procesoArea) procesoArea.value = '';
-    
-    const procesoEncargado = document.getElementById('procesoEncargado');
-    if (procesoEncargado) procesoEncargado.value = '';
-    
-    const procesoEncargadoSelect = document.getElementById('procesoEncargadoSelect');
-    if (procesoEncargadoSelect) procesoEncargadoSelect.value = '';
   }
 
   // Mostrar mensaje de éxito

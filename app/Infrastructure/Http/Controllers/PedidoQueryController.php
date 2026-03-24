@@ -9,6 +9,7 @@ use App\Application\Pedidos\UseCases\ObtenerPedidoTransformadoUseCase;
 use App\Application\Pedidos\UseCases\ObtenerDetalleCompletoUseCase;
 use App\Application\Pedidos\UseCases\ObtenerDatosEdicionUseCase;
 use App\Application\Pedidos\UseCases\ObtenerAnchoMetrajePrendaUseCase;
+use App\Application\Pedidos\UseCases\ObtenerEncargadosPorAreaUseCase;
 use App\Application\Pedidos\UseCases\ListarPedidosPorClienteUseCase;
 
 
@@ -26,6 +27,7 @@ class PedidoQueryController extends Controller
         private ObtenerDetalleCompletoUseCase $obtenerDetalleCompletoUseCase,
         private ObtenerDatosEdicionUseCase $obtenerDatosEdicionUseCase,
         private ObtenerAnchoMetrajePrendaUseCase $obtenerAnchoMetrajePrendaUseCase,
+        private ObtenerEncargadosPorAreaUseCase $obtenerEncargadosPorAreaUseCase,
         private ListarPedidosPorClienteUseCase $listarPedidosPorClienteUseCase,
     ) {}
 
@@ -106,15 +108,15 @@ class PedidoQueryController extends Controller
     }
 
     /**
-     * GET /asesores/prendas-pedido/{prendaPedidoId}/fotos
-     *
-     * @deprecated Pendiente refactorización a DDD
+     * GET /api/areas/{area}/encargados
+     * 
+     * REFACTORIZADO: Utiliza ObtenerEncargadosPorAreaUseCase
+     * Retorna lista de encargados disponibles para un área específica
      */
-    public function obtenerFotosPrendaPedido($prendaPedidoId): JsonResponse
+    public function obtenerEncargadosPorArea(string $area): JsonResponse
     {
-        return response()->json([
-            'success' => false,
-            'message' => 'Esta funcionalidad está siendo refactorizada a DDD'
-        ], 501);
+        $response = $this->obtenerEncargadosPorAreaUseCase->ejecutar($area);
+
+        return response()->json($response, 200);
     }
 }

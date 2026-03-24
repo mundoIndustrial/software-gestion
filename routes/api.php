@@ -297,6 +297,12 @@ Route::middleware('api')->group(function () {
         Route::get('cliente/{clienteId}', [PedidoQueryController::class, 'listarPorCliente'])
             ->name('listar-por-cliente');
     });
+    
+    // Rutas de encargados por área
+    Route::prefix('areas')->name('areas.')->group(function () {
+        Route::get('{area}/encargados', [PedidoQueryController::class, 'obtenerEncargadosPorArea'])
+            ->name('encargados');
+    });
 });
 
 // Rutas PROTECTED - Escritura (POST, PATCH, DELETE)
@@ -321,6 +327,9 @@ Route::withoutMiddleware(['api']) // Remover el middleware api global
         
         Route::delete('{id}/cancelar', [PedidoCommandController::class, 'cancelar'])
             ->name('cancelar');
+        
+        Route::post('{id}/calcular-fecha-entrega', [PedidoCommandController::class, 'calcularFechaEntrega'])
+            ->name('calcular-fecha-entrega');
     });
     
     // Rutas de cotizaciones

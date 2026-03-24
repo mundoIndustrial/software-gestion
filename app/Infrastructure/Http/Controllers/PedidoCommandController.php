@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Application\Pedidos\UseCases\CrearPedidoUseCase;
 use App\Application\Pedidos\UseCases\ConfirmarPedidoUseCase;
 use App\Application\Pedidos\UseCases\CancelarPedidoUseCase;
+use App\Application\Pedidos\UseCases\CalcularFechaEntregaEstimadaUseCase;
 use App\Application\Pedidos\DTOs\CrearPedidoDTO;
 use App\Domain\Pedidos\Repositories\PedidoRepository;
 use App\Domain\Pedidos\Exceptions\PedidoNoEncontrado;
@@ -25,6 +26,7 @@ class PedidoCommandController extends Controller
         private CrearPedidoUseCase $crearPedidoUseCase,
         private ConfirmarPedidoUseCase $confirmarPedidoUseCase,
         private CancelarPedidoUseCase $cancelarPedidoUseCase,
+        private CalcularFechaEntregaEstimadaUseCase $calcularFechaEntregaEstimadaUseCase,
         private PedidoRepository $pedidoRepository
     ) {}
 
@@ -378,5 +380,25 @@ class PedidoCommandController extends Controller
     public function anularPedido(Request $request, $id): JsonResponse
     {
         return $this->cancelar($id);
+    }
+
+    /**
+     * POST /api/pedidos/{id}/calcular-fecha-entrega
+     * 
+     * REFACTORIZADO: Calcula la fecha estimada de entrega usando días hábiles
+     * Las excepciones se manejan centralmente en ExceptionHandler
+     */
+    public function calcularFechaEntrega(Request $request, int $id): JsonResponse
+    {
+        $request->validate([
+            'dias_estimados' => 'required|integer|min:1|max:365'
+        ]);
+
+        $response = $this->calcularFechaEntregaEstimadaUseCase->ejecutar(
+            $id,
+            $request->input('dias_estimados')
+        );
+
+        return response()->json($response, 200);
     }
 }

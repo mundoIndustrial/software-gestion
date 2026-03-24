@@ -312,66 +312,32 @@ class PrendasRenderer {
           areaActual = window.currentOrderData.area;
         }
 
-        // Resolver encargado real (solo desde proceso)
-        const encargadoActual = prenda.ultimo_proceso_encargado || null;
-
-        // Debug: Ver qué datos tenemos
+        // Usar ultimo_recibo_numero directamente (más confiable)
+        const numeroRecibo = prenda.ultimo_recibo_numero || 'Sin recibo';
+        
         console.log('[DEBUG] Datos de prenda para recibo:', {
           'ultimo_recibo_numero': prenda.ultimo_recibo_numero,
-          'consecutivos': prenda.consecutivos,
-          'consecutivos_length': prenda.consecutivos ? prenda.consecutivos.length : 'undefined',
           'area_actual_resuelta': areaActual
         });
         
-        // Mostrar el número de recibo más reciente
-        const numeroRecibo = prenda.ultimo_recibo_numero;
-        if (numeroRecibo && numeroRecibo !== '-') {
+        // Actualizar header con número de recibo y área
+        if (numeroRecibo && numeroRecibo !== '-' && numeroRecibo !== 'Sin recibo') {
           reciboHeaderElement.textContent = areaActual && areaActual !== '-'
             ? `Recibo #${numeroRecibo} - ${areaActual}`
             : `Recibo #${numeroRecibo}`;
-          console.log('[DEBUG] Usando ultimo_recibo_numero:', numeroRecibo);
+          console.log('[DEBUG] Header actualizado con:', numeroRecibo, 'Area:', areaActual);
         } else {
           reciboHeaderElement.textContent = areaActual && areaActual !== '-'
             ? `Sin recibo - ${areaActual}`
             : 'Sin recibo';
-          console.log('[DEBUG] ultimo_recibo_numero vacío o inválido');
+          console.log('[DEBUG] Sin número de recibo disponible');
         }
       }
       
-      // Determinar número de recibo desde la tabla consecutivos_recibos_pedidos
+      // Para el elemento trackingPrendaRecibo (compatible con código existente)
       let numeroRecibo = 'Sin recibo';
-      const consecutivosList = typeof normalizeConsecutivos === 'function' 
-        ? normalizeConsecutivos(prenda?.consecutivos)
-        : [];
-      if (consecutivosList.length > 0) {
-        console.log('[DEBUG] Procesando consecutivos:', consecutivosList);
-
-        // Preferir COSTURA activo
-        const reciboCosturaActivo = consecutivosList.find(r => String(r.tipo_recibo || '').toUpperCase() === 'COSTURA' && (r.activo === 1 || r.activo === true));
-        const reciboActivo = reciboCosturaActivo || consecutivosList.find(r => (r.activo === 1 || r.activo === true));
-        if (reciboActivo) {
-          numeroRecibo = `${reciboActivo.tipo_recibo} #${reciboActivo.consecutivo_actual}`;
-          console.log('[DEBUG] Recibo activo encontrado:', reciboActivo);
-        } else if (consecutivosList[0]) {
-          const primerRecibo = consecutivosList[0];
-          numeroRecibo = `${primerRecibo.tipo_recibo} #${primerRecibo.consecutivo_actual}`;
-          console.log('[DEBUG] Usando primer recibo:', primerRecibo);
-        }
-      } else {
-        console.log('[DEBUG] No hay consecutivos en la prenda');
-      }
-      
-      // Actualizar tanto el subtítulo del header como el del timeline
-      if (reciboHeaderElement) {
-        // Mantener el área en el header (si existe)
-        const match = String(numeroRecibo || '');
-        const areaActual = prenda?.ultimo_proceso_area
-          || prenda?.area
-          || (!window.location.pathname.includes('/recibos-costura') ? (window.currentOrderData?.area || '') : '');
-        reciboHeaderElement.textContent = areaActual && String(areaActual).trim() !== ''
-          ? `${match} - ${areaActual}`
-          : match;
-        console.log('[DEBUG] Header actualizado con:', numeroRecibo);
+      if (prenda.ultimo_recibo_numero && prenda.ultimo_recibo_numero !== '-') {
+        numeroRecibo = `Recibo #${prenda.ultimo_recibo_numero}`;
       }
       
       const reciboElement = document.getElementById('trackingPrendaRecibo');
