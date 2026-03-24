@@ -645,10 +645,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     badgesArea.forEach((badge, index) => {
         const onclick = badge.getAttribute('onclick');
-        console.log(`[DIAGNÓSTICO] Badge ${index}:`, {
-            text: badge.textContent.trim(),
-            onclick: onclick ? onclick.substring(0, 100) + '...' : 'sin onclick'
-        });
+    
     });
 });
 
@@ -1778,8 +1775,7 @@ function showRecibAprobadoNotification(data) {
  * 🔴 Recargar la tabla dinámicamente cuando se aprueba un recibo
  */
 function recargarTablaRecibosEnTiempoReal(data) {
-    console.log('🔴 [ReciboAprobado] Recargando tabla en tiempo real...');
-    
+
     try {
         // Hacer solicitud AJAX para obtener los recibos actualizados
         fetch(window.location.pathname + '?ajax=1', {

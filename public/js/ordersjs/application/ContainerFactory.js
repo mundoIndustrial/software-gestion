@@ -88,6 +88,59 @@ export function createContainer(dependencies) {
     return new FormStateManager();
   });
 
+  // ============================================================
+  // REGISTER: UI Managers (Phase 12 - DIP)
+  // ============================================================
+
+  // 5a. Process Form Manager (singleton para reutilización)
+  container.register('processFormManager', () => {
+    const { ProcessFormManager } = dependencies;
+    return new ProcessFormManager();
+  });
+
+  // 5b. Modal Event Binder Factory (crear nuevas instancias por modal)
+  container.register('modalEventBinderFactory', () => {
+    const { ModalEventBinder } = dependencies;
+    return (modalId) => new ModalEventBinder(modalId);
+  });
+
+  // 5c. Button Loading Manager Factory (crear nuevas instancias por botón)
+  container.register('buttonLoadingManagerFactory', () => {
+    const { ButtonLoadingManager } = dependencies;
+    return (buttonId, config) => new ButtonLoadingManager(buttonId, config);
+  });
+
+  // 5d. Days Selector Manager Factory (crear nuevas instancias por selector)
+  container.register('daysSelectorManagerFactory', () => {
+    const { DaysSelectorManager } = dependencies;
+    return (selectorId, options) => new DaysSelectorManager(selectorId, options);
+  });
+
+  // ============================================================
+  // REGISTER: Domain Services (Phase 12 - DIP)
+  // ============================================================
+
+  // 5d. Areas Config Service (centralizar configuración de áreas)
+  container.register('areasConfigService', (get) => {
+    const { AreasConfigService } = dependencies;
+    return new AreasConfigService(
+      get('orderState'),
+      {} // Heredará configuración de orderState
+    );
+  });
+
+  // 5e. Process Workflow Service (orquestar agregar/editar procesos)
+  container.register('processWorkflowService', (get) => {
+    const { ProcessWorkflowService } = dependencies;
+    return new ProcessWorkflowService({
+      orderApiService: get('orderApiService'),
+      orderState: get('orderState'),
+      formManager: get('processFormManager'),
+      areasConfigService: get('areasConfigService'),
+      uiFeedbackService: get('uiFeedbackService')
+    });
+  });
+
   // 6. Data Reload Service (con dependencias)
   container.register('dataReloadService', (get) => {
     const { DataReloadService } = dependencies;
