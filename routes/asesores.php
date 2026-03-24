@@ -175,4 +175,110 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     Route::get('/api/colores', [CatalogoController::class, 'obtenerColores'])->name('api.colores');
     Route::post('/api/colores', [CatalogoController::class, 'crearObtenerColor'])->name('api.colores.create');
     Route::get('/api/prendas/autocomplete', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'obtenerPrendasAutocomplete'])->name('api.prendas.autocomplete');
+
+    // ========================================
+    // FOTOS
+    // ========================================
+    Route::post('/fotos/eliminar', [CotizacionController::class, 'eliminarFotoInmediatamente'])->name('fotos.eliminar-inmediatamente');
+
+    // ========================================
+    // API REALTIME - PEDIDOS
+    // ========================================
+    Route::get('/realtime/pedidos', function () {
+        // Debug: Ver información del usuario y roles
+        $user = auth()->user();
+        
+        if (!$user) {
+            return response()->json(['error' => 'No authenticated user'], 403);
+        }
+        
+        // Debug: Mostrar todos los roles del usuario
+        $userRoles = $user->roles->pluck('name')->toArray();
+        
+        // Verificar si el usuario tiene permisos (verificación manual)
+        $hasPermission = $user->hasRole('asesor') || 
+                       $user->hasRole('admin') || 
+                       $user->hasRole('supervisor_pedidos') || 
+                       $user->hasRole('despacho') ||
+                       $user->hasRole('insumos');
+        
+        // Log para debug
+        \Log::info('[REALTIME-API] Verificación de permisos', [
+            'user_id' => $user->id,
+            'user_roles' => $userRoles,
+            'has_permission' => $hasPermission
+        ]);
+        
+        if (!$hasPermission) {
+            return response()->json([
+                'error' => 'Unauthorized',
+                'debug' => [
+                    'user_id' => $user->id,
+                    'user_roles' => $userRoles,
+                    'has_permission' => $hasPermission
+                ]
+            ], 403);
+        }
+        
+        // Obtener pedidos según el rol del usuario
+        $query = \App\Models\PedidoProduccion::select('id', 'numero_pedido', 'cliente', 'estado', 'area', 'novedades', 'forma_de_pago', 'created_at', 'fecha_estimada_de_entrega');
+        
+        // Si es asesor, solo mostrar sus pedidos
+        if ($user->hasRole('asesor')) {
+            $query->where('asesor_id', $user->id);
+        }
+        
+        $pedidos = $query->orderBy('created_at', 'desc')->get();
+        
+        return response()->json([
+            'success' => true,
+            'data' => $pedidos->toArray(),
+            'debug' => [
+                'user_id' => $user->id,
+                'user_roles' => $userRoles,
+                'pedidos_count' => $pedidos->count()
+            ]
+        ]);
+    })->name('realtime.pedidos.listar');
+
+    // ========================================
+    // PEDIDOS EDITABLES
+    // ========================================
+    Route::prefix('pedidos-editable')->name('pedidos-editable.')->middleware('role:asesor,admin,supervisor_pedidos')->group(function () {
+        // Ruta fallback que redirige a crear-desde-cotizacion
+        Route::get('crear', function() {
+            return redirect()->route('asesores.pedidos-editable.crear-desde-cotizacion');
+        });
+        
+        // Mostrar formulario para crear desde COTIZACIÓN (pre-carga cotizaciones)
+        Route::get('crear-desde-cotizacion', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'crearDesdeCotizacion'])
+            ->name('crear-desde-cotizacion');
+        
+        // Mostrar formulario para crear PEDIDO NUEVO (vacío)
+        Route::get('crear-nuevo', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'crearNuevo'])
+            ->name('crear-nuevo');
+        
+        // Gestión de ítems (retorna JSON)
+        Route::post('items/agregar', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'agregarItem'])
+            ->name('agregar-item');
+        Route::post('items/eliminar', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'eliminarItem'])
+            ->name('eliminar-item');
+        Route::get('items', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'obtenerItems'])
+            ->name('obtener-items');
+
+        // Cotizaciones: cargar items EPP (para "Crear desde cotización")
+        Route::get('cotizaciones/{cotizacion}/epp-items', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'obtenerItemsEppCotizacion'])
+            ->name('cotizaciones.epp-items');
+        
+        // Validación y creación
+        Route::post('validar', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'validarPedido'])
+            ->name('validar');
+        Route::post('crear', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'crearPedido'])
+            ->name('crear');
+        Route::post('borrador', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'guardarBorrador'])
+            ->name('guardarBorrador');
+        Route::post('{pedidoId}/actualizar', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'actualizarBorrador'])
+            ->name('actualizar')
+            ->where('pedidoId', '[0-9]+');
+    });
 });

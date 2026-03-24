@@ -35,6 +35,9 @@ class OrderState {
 
     // Datos de consecutivo-costura (contexto de recibos)
     this.consecutivoCosturaData = null;
+
+    // Configuración de áreas desde backend
+    this.areasConfig = null;
   }
 
   /**
@@ -213,149 +216,14 @@ class OrderState {
     return this.consecutivoCosturaData;
   }
 
-  // ────── Lógica de dominio: Recibo Principal ──────
+  // ────── Configuración de Áreas (desde backend) ──────
 
-  /**
-   * Orden de prioridad para buscar el recibo principal
-   */
-  static PRIORIDAD_RECIBOS = ['COSTURA', 'REFLECTIVO', 'ESTAMPADO', 'BORDADO', 'DTF', 'SUBLIMADO'];
-
-  /**
-   * Buscar el recibo principal de la orden según prioridad de tipo.
-   * Busca entre todas las prendas el primer recibo activo del tipo con mayor prioridad.
-   * 
-   * @returns {String} Texto del recibo (ej: "COSTURA #3") o '-'
-   */
-  getReciboPrincipal() {
-    const prendas = this.order?.prendas;
-    if (!prendas || prendas.length === 0) return '-';
-
-    for (const prenda of prendas) {
-      if (!prenda.consecutivos || typeof prenda.consecutivos !== 'object') continue;
-
-      const recibos = Object.entries(prenda.consecutivos)
-        .filter(([, datos]) => datos !== null && datos !== undefined)
-        .map(([tipo, datos]) => ({
-          tipo_recibo: tipo,
-          consecutivo_actual: datos.consecutivo_actual || datos,
-          activo: datos.activo !== undefined ? datos.activo : 1
-        }));
-
-      for (const prioridad of OrderState.PRIORIDAD_RECIBOS) {
-        const encontrado = recibos.find(r => r.activo === 1 && r.tipo_recibo === prioridad);
-        if (encontrado) {
-          return `${encontrado.tipo_recibo} #${encontrado.consecutivo_actual}`;
-        }
-      }
-    }
-
-    return '-';
+  setAreasConfig(config) {
+    this.areasConfig = config;
   }
 
-  // ────── Lógica de dominio: Resolución de Área y Recibo ──────
-
-  /**
-   * Resolver el área actual de una prenda.
-   * Cadena de prioridad: último proceso > área de prenda > área del pedido.
-   * @param {Object} prenda
-   * @param {Object} [options] - { excludeOrderArea: boolean }
-   * @returns {String} Área resuelta o '-'
-   */
-  resolveAreaActual(prenda, options = {}) {
-    if (prenda?.ultimo_proceso_area) return prenda.ultimo_proceso_area;
-    if (prenda?.area && String(prenda.area).trim() !== '') return prenda.area;
-    if (!options.excludeOrderArea && this.order?.area && String(this.order.area).trim() !== '') return this.order.area;
-    return '-';
-  }
-
-  /**
-   * Resolver el texto de recibo para una prenda individual.
-   * Busca en consecutivos por prioridad de tipo (COSTURA primero).
-   * @param {Object} prenda
-   * @returns {String} Texto del recibo (ej: "COSTURA #3") o "Sin recibo"
-   */
-  resolveReciboForPrenda(prenda) {
-    const consecutivos = this.#normalizeConsecutivos(prenda?.consecutivos);
-
-    if (consecutivos.length > 0) {
-      const costuraActivo = consecutivos.find(r =>
-        String(r.tipo_recibo || '').toUpperCase() === 'COSTURA' && (r.activo === 1 || r.activo === true)
-      );
-      const activo = costuraActivo || consecutivos.find(r => r.activo === 1 || r.activo === true);
-      if (activo) return `${activo.tipo_recibo} #${activo.consecutivo_actual}`;
-      if (consecutivos[0]) return `${consecutivos[0].tipo_recibo} #${consecutivos[0].consecutivo_actual}`;
-    }
-
-    if (prenda?.ultimo_recibo_numero && prenda.ultimo_recibo_numero !== '-') {
-      return `Recibo #${prenda.ultimo_recibo_numero}`;
-    }
-
-    return 'Sin recibo';
-  }
-
-  /**
-   * Normalizar consecutivos (array u objeto indexado → array)
-   * @private
-   */
-  #normalizeConsecutivos(consecutivos) {
-    if (!consecutivos) return [];
-    if (Array.isArray(consecutivos)) return consecutivos;
-    if (typeof consecutivos === 'object') {
-      try { return Object.values(consecutivos).filter(Boolean); } catch { return []; }
-    }
-    return [];
-  }
-
-  /**
-   * Resolver características y reglas de un área.
-   * @param {String} area - Nombre del área (ej: "CORTE", "INSUMOS")
-   * @returns {Object} Metadata con propiedades booleanas
-   */
-  resolveAreaMetadata(area) {
-    const areaLower = String(area || '').toLowerCase();
-    const isInsumos = areaLower === 'insumos';
-    const isCorte = areaLower.includes('corte');
-    const isCostura = areaLower.includes('costura');
-    const isControlCalidad = areaLower.includes('control') && areaLower.includes('calidad');
-    const needsEncargado = isCorte || isCostura || isControlCalidad;
-    
-    return {
-      isInsumos,
-      isCorte,
-      isCostura,
-      isControlCalidad,
-      needsEncargado,
-      shouldHideEncargado: isInsumos || !needsEncargado
-    };
-  }
-
-  /**
-   * Determinar el estado visible y si está activo para mostrar en card.
-   * @param {Object} data - Datos del proceso
-   * @param {Object} metadata - Resultado de resolveAreaMetadata()
-   * @returns {Object} { estadoDisplay, estaActivoDisplay }
-   */
-  resolveAreaStatus(data, metadata) {
-    const hasFechaCompletado = !metadata.isInsumos && Boolean(data.fecha_completado);
-    return {
-      estadoDisplay: metadata.isInsumos ? (data.estado || 'Pendiente') : (hasFechaCompletado ? 'Completado' : 'Pendiente'),
-      estaActivoDisplay: metadata.isInsumos ? Boolean(data.esta_activo) : !hasFechaCompletado
-    };
-  }
-
-  /**
-   * Buscar el recibo activo de una prenda (preferencia: COSTURA > cualquier activo > primero).
-   * @param {Object} prenda
-   * @returns {Object|null} El recibo activo o null
-   */
-  findActiveRecibo(prenda) {
-    const consecutivos = this.#normalizeConsecutivos(prenda?.consecutivos);
-    if (consecutivos.length === 0) return null;
-
-    const reciboCosturaActivo = consecutivos.find(r =>
-      String(r.tipo_recibo || '').toUpperCase() === 'COSTURA' && (r.activo === 1 || r.activo === true)
-    );
-    return reciboCosturaActivo || consecutivos.find(r => r.activo === 1 || r.activo === true) || consecutivos[0] || null;
+  getAreasConfig() {
+    return this.areasConfig;
   }
 
   /**
@@ -380,8 +248,8 @@ class OrderState {
         .join(', ');
     }
 
-    // Área: resolver con cadena de prioridad
-    const area = this.resolveAreaActual(prenda) || '-';
+    // Área: usar el valor pre-computado por el backend
+    const area = prenda.area_actual || '-';
 
     // Estado: usar del orden (no de procesos)
     const estadoPedido = this.order?.estado || 'Sin estado';
@@ -437,6 +305,7 @@ class OrderState {
     this.editingProcessId = null;
     this.processToDelete = null;
     this.consecutivoCosturaData = null;
+    this.areasConfig = null;
     console.log('[OrderState] Estado limpiado');
   }
 

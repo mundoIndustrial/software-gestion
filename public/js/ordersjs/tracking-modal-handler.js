@@ -23,15 +23,99 @@ import { orderState, DateFormatter } from './domain/index.js';
 // IMPORTS: Infrastructure Layer
 // ============================================================
 import { QueryUtils, SvgIcons, dateUtils, ModalUtils } from './infrastructure/index.js';
+import { TrackingTimelineController } from './presentation/TrackingTimelineController.js';
 
 // ============================================================
 // IMPORTS: Application Layer
 // ============================================================
-import { OrderApiService } from './application/index.js';
+import {
+  OrderApiService,
+  ProcessDeleteService,
+  ProcessFormValidationService,
+  FormStateManager,
+  DataReloadService,
+  ProcessService,
+  PrendaTrackingRenderer,
+  AreaCardRenderer,
+  BadgeRenderer,
+  UpdateRenderer,
+  createContainer
+} from './application/index.js';
 
 // Festivos now handled by backend CalculadorDiasService
 // No need to preload client-side
 
+// ============================================================
+// DEPENDENCY INJECTION SETUP: DIContainer (Phase 11 - DIP)
+// ============================================================
+
+// Configure container with all dependencies
+const container = createContainer({
+  // Domain Layer
+  orderState,
+  dateFormatter: DateFormatter,
+  
+  // Infrastructure Layer
+  svgIcons: SvgIcons,
+  modalUtils: ModalUtils,
+  dateUtils,
+  queryUtils: QueryUtils,
+  
+  // API Service
+  OrderApiService,
+  
+  // Callback services
+  showSuccess,
+  showError,
+  closeConfirmDeleteModal,
+  
+  // Service classes (for lazy instantiation)
+  ProcessDeleteService,
+  ProcessFormValidationService,
+  FormStateManager,
+  DataReloadService,
+  ProcessService,
+  
+  // Renderer classes (for lazy instantiation)
+  PrendaTrackingRenderer,
+  AreaCardRenderer,
+  BadgeRenderer,
+  UpdateRenderer
+});
+
+// Services obtained from DIContainer (lazy loading + singleton)
+const formValidationService = container.get('formValidationService');
+const formStateManager = container.get('formStateManager');
+
+
+const dataReloadService = container.get('dataReloadService');
+
+const processDeleteService = container.get('processDeleteService');
+
+// 5. Servicio principal de procesos (orquestador)
+let processService = container.get('processService');
+
+// ============================================================
+// RENDERER INSTANCES: from DIContainer (lazy loading + singleton)
+// ============================================================
+
+const prendaTrackingRenderer = container.get('prendaTrackingRenderer');
+const areaCardRenderer = container.get('areaCardRenderer');
+const badgeRenderer = container.get('badgeRenderer');
+const updateRenderer = container.get('updateRenderer');
+
+const trackingTimelineController = new TrackingTimelineController({
+  orderState,
+  svgIcons: SvgIcons,
+  updateRenderer,
+  formatDate: (value) => dateUtils.formatDate(value),
+  showError,
+  closePrendasSelector: () => window.cerrarSelectorPrendas?.(),
+  setupBackButton,
+  startCountersTimer: iniciarTimerContadores,
+});
+
+// Nota: dataReloadService y renderers serán actualizados cuando se definan las funciones de renderizado
 // Inicializar listeners del modal
 function initTrackingModalListeners() {
     // Cerrar modal al hacer clic en el overlay
@@ -143,90 +227,21 @@ function initTrackingModalListeners() {
     }
   }
 
-  // Timer para actualizar contadores dinámicos
-  let contadorTimer = null;
-
-  // Actualizar contadores de días dinámicos (procesos sin fecha fin)
+  // Actualizar contadores de días dinámicos (DEPRECADO: backend pre-computa duraciones)
+  // Mantener como stub para compatibilidad, pero no hace nada
   function actualizarContadoresDinamicos() {
-    try {
-      // Buscar todas las tarjetas de áreas que tengan contadores dinámicos
-      const areaCards = document.querySelectorAll('.tracking-area-card');
-      
-      areaCards.forEach(card => {
-        const areaElement = card.querySelector('.tracking-area-name');
-        if (!areaElement) return;
-        
-        const area = areaElement.textContent.trim();
-        const totalDiasElement = card.querySelector('.tracking-total-dias');
-        const duracionAreaElement = card.querySelector('.tracking-duracion-area');
-        
-        if (!totalDiasElement || !duracionAreaElement) return;
-        
-        // Obtener datos del proceso (desde data attributes o recalcular)
-        const processData = orderState.getCurrentPrenda()?.seguimientos_por_area?.[area];
-        if (!processData) return;
-        
-        // Recalcular días dinámicamente
-        const ini = toDateObject(processData.fecha_inicio);
-        if (!ini) return;
-        
-        // Si no hay fecha fin/completado, contar hasta hoy
-        if (!processData.fecha_fin && !processData.fecha_completado) {
-          const diasHabiles = calcularDiasHabilesSync(ini, new Date());
-          const diasText = diasHabiles === 0 ? '0 días' : `${diasHabiles} día${diasHabiles !== 1 ? 's' : ''}`;
-          
-          // Actualizar visualización
-          if (totalDiasElement.textContent.includes('día')) {
-            totalDiasElement.textContent = diasText;
-          }
-          if (duracionAreaElement.textContent.includes('día')) {
-            duracionAreaElement.textContent = diasText;
-          }
-        }
-      });
-      
-      console.log('[actualizarContadoresDinamicos] Contadores actualizados');
-    } catch (error) {
-      console.error('[actualizarContadoresDinamicos] Error:', error);
-    }
+    console.log('[actualizarContadoresDinamicos] DEPRECATED - Backend ya pre-computa duraciones');
   }
 
-  // Iniciar timer para actualización automática de contadores
+  // Iniciar timer para actualización automática de contadores (DEPRECADO)
+  // Backend pre-computa duraciones, no necesita actualización dinámica
   function iniciarTimerContadores() {
-    // Detener timer existente
-    if (contadorTimer) {
-      clearInterval(contadorTimer);
-    }
-    
-    // Actualizar inmediatamente
-    actualizarContadoresDinamicos();
-    
-    // Configurar timer para actualizar cada día a medianoche
-    const ahora = new Date();
-    const manana = new Date(ahora);
-    manana.setDate(manana.getDate() + 1);
-    manana.setHours(0, 0, 0, 0);
-    
-    const msHastaManana = manana.getTime() - ahora.getTime();
-    
-    // Primer actualización a medianoche
-    setTimeout(() => {
-      actualizarContadoresDinamicos();
-      
-      // Luego actualizar cada 24 horas
-      contadorTimer = setInterval(actualizarContadoresDinamicos, 24 * 60 * 60 * 1000);
-    }, msHastaManana);
-    
-    console.log('[iniciarTimerContadores] Timer configurado para actualizar diariamente');
+    console.log('[iniciarTimerContadores] DEPRECATED - Backend pre-computa duraciones');
   }
 
-  // Detener timer de contadores
+  // Detener timer de contadores (DEPRECADO)
   function detenerTimerContadores() {
-    if (contadorTimer) {
-      clearInterval(contadorTimer);
-      contadorTimer = null;
-      console.log('[detenerTimerContadores] Timer detenido');
-    }
+    console.log('[detenerTimerContadores] DEPRECATED - Backend pre-computa duraciones');
   }
 
   /**
@@ -371,8 +386,11 @@ function initTrackingModalListeners() {
       
       console.log('[setupEncargadoDynamicSelector] Área seleccionada:', area);
 
-      // Áreas que requieren selector dinámico
-      if (area === 'corte' || area === 'costura') {
+      // Áreas que requieren selector dinámico (desde configuración del backend)
+      const areasConfig = orderState.getAreasConfig();
+      const areasConSelectorDinamico = areasConfig?.areas_con_selector_dinamico || ['corte', 'costura'];
+      
+      if (areasConSelectorDinamico.some(a => area.includes(a))) {
         console.log('[setupEncargadoDynamicSelector] Convertir a selector para:', area);
         convertEncargadoToSelect(area, procesoEncargadoContainer);
       } else {
@@ -520,52 +538,25 @@ function initTrackingModalListeners() {
 
   // Actualizar información del pedido en el modal y selector
   function updateOrderInfo(orderData) {
-    const numeroPedido = orderData.numero_pedido || '-';
-    const cliente = orderData.cliente || '-';
-    const estadoDisplay = (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
-    const fechaEstimada = DateFormatter.getOrderEstimatedDate(orderData);
-    const fechaInicio = DateFormatter.getOrderStartDate(orderData);
-
-    // Modal principal
-    const setText = (id, text) => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = text;
-    };
-
-    setText('trackingOrderNumber', numeroPedido);
-    setText('trackingOrderClient', cliente);
-    setText('trackingOrderStatus', estadoDisplay);
-    setText('trackingEstimatedDate', formatDate(orderData.fecha_estimada_entrega) || '-');
-    setText('trackingTotalDays', orderData.total_dias || '0');
-
-    // Recibo principal (lógica de dominio delegada a OrderState)
-    setText('trackingOrderRecibo', orderState.getReciboPrincipal());
-
-    // Selector de prendas
-    setText('selectorOrderNumber', numeroPedido);
-    setText('selectorOrderClient', cliente);
-    setText('selectorOrderStatus', estadoDisplay);
-    setText('selectorOrderStartDate', fechaInicio);
-    setText('selectorOrderEstimatedDate', fechaEstimada);
-
-    // Estilo de fecha estimada
-    const fechaEstimadaEl = document.getElementById('selectorOrderEstimatedDate');
-    if (fechaEstimadaEl) {
-      const tieneFecha = fechaEstimada !== '-';
-      fechaEstimadaEl.style.color = tieneFecha ? '#1f2937' : '#9ca3af';
-      fechaEstimadaEl.style.fontWeight = tieneFecha ? '600' : '400';
-      if (!tieneFecha) fechaEstimadaEl.textContent = 'No definida';
-    }
+    // Phase 10: Usar UpdateRenderer para separar lógica de presentación
+    updateRenderer.updateOrderInfo(orderData, orderState, DateFormatter);
   }
 
   // Cargar prendas con seguimiento
   async function loadPrendasWithTracking(orderId) {
     try {
       // Application Layer: OrderApiService maneja la API
-      const prendas = await OrderApiService.loadPrendasWithTracking(orderId);
+      const { prendas, areasConfig, pedido } = await OrderApiService.loadPrendasWithTracking(orderId);
       
       // Domain Layer: Guardar en estado centralizado
       orderState.setPrendas(prendas);
+      orderState.setAreasConfig(areasConfig);
+
+      // Enriquecer orden con recibo_principal del endpoint de seguimiento
+      const order = orderState.getOrder();
+      if (order && pedido.recibo_principal) {
+        order.recibo_principal = pedido.recibo_principal;
+      }
       
       // Presentation: Renderizar prendas
       renderPrendas(prendas);
@@ -581,22 +572,8 @@ function initTrackingModalListeners() {
     const container = document.getElementById('trackingPrendasSelectorContainer');
     if (!container) return;
     
-    console.log('[renderPrendas] Renderizando tabla de prendas:', prendas.length);
-    
-    container.innerHTML = '';
-    
-    if (prendas.length === 0) {
-      container.innerHTML = `
-        <div class="tracking-no-prendas">
-          <p>No hay prendas registradas para este pedido</p>
-        </div>
-      `;
-      return;
-    }
-    
-    // Crear tabla única con todas las prendas
-    const tableHtml = createPrendasTable(prendas);
-    container.innerHTML = tableHtml;
+    // Phase 10: Usar PrendaTrackingRenderer para separar lógica de presentación
+    prendaTrackingRenderer.renderPrendasTable(container, prendas, SvgIcons, orderState);
     
     // Actualizar fecha estimada de entrega del pedido
     updateEstimatedDeliveryDate();
@@ -604,23 +581,8 @@ function initTrackingModalListeners() {
 
   // Actualizar fecha estimada de entrega del pedido
   function updateEstimatedDeliveryDate() {
-    const fechaEstimadaElement = document.getElementById('selectorOrderEstimatedDate');
-    const order = orderState.getOrder();
-    
-    if (!fechaEstimadaElement || !order) return;
-
-    // DDD: Usar DateFormatter para formateo consistente (sin duplicación)
-    const fechaEstimada = DateFormatter.getOrderEstimatedDate(order);
-
-    if (fechaEstimada !== '-') {
-      fechaEstimadaElement.textContent = fechaEstimada;
-      fechaEstimadaElement.style.color = '#1f2937';
-      fechaEstimadaElement.style.fontWeight = '600';
-    } else {
-      fechaEstimadaElement.textContent = 'No definida';
-      fechaEstimadaElement.style.color = '#9ca3af';
-      fechaEstimadaElement.style.fontWeight = '400';
-    }
+    // Phase 10: Usar UpdateRenderer para separar lógica de presentación
+    updateRenderer.updateEstimatedDeliveryDate(orderState, DateFormatter);
   }
 
   // Crear tabla HTML con todas las prendas
@@ -802,45 +764,20 @@ function initTrackingModalListeners() {
 
   // Renderizar badges genéricos (seguimientos o áreas)
   function renderBadges(items, containerClass, statusField, textFormatter) {
-    if (Object.keys(items).length === 0) {
-      return '';
-    }
-    
-    let badgesHtml = `<div class="${containerClass}">`;
-    
-    Object.entries(items).forEach(([key, data]) => {
-      const statusClass = data[statusField] ? 'pendiente' : 'completado';
-      const text = textFormatter(key, data);
-      
-      badgesHtml += `
-        <span class="tracking-seguimiento-badge ${statusClass}">
-          ${text}
-        </span>
-      `;
-    });
-    
-    badgesHtml += '</div>';
-    return badgesHtml;
+    // Phase 10: Usar BadgeRenderer para separar lógica de presentación
+    return badgeRenderer.renderBadges(items, containerClass, statusField, textFormatter);
   }
 
   // Renderizar badges de seguimientos por tipo de recibo
   function renderSeguimientosBadges(seguimientos) {
-    return renderBadges(
-      seguimientos,
-      'tracking-prenda-seguimientos',
-      'tiene_disponibles',
-      (tipo, data) => `${tipo}: ${data.consecutivo_actual}/${data.consecutivo_inicial}`
-    );
+    // Phase 10: Usar BadgeRenderer para separar lógica de presentación
+    return badgeRenderer.renderSeguimientosBadges(seguimientos);
   }
 
   // Renderizar badges de áreas/procesos
   function renderAreasBadges(areas) {
-    return renderBadges(
-      areas,
-      'tracking-prenda-areas',
-      'esta_activo',
-      (area, data) => `${area}: ${data.estado}`
-    );
+    // Phase 10: Usar BadgeRenderer para separar lógica de presentación
+    return badgeRenderer.renderAreasBadges(areas);
   }
 
   // Mostrar seguimiento de una prenda específica desde la tabla
@@ -867,327 +804,22 @@ function initTrackingModalListeners() {
 
   // Mostrar seguimiento de una prenda específica
   window.showPrendaTracking = async function(prenda) {
-    try {
-      // Hidratar prenda si no tiene seguimientos pero existen en prendasData
-      const tieneSeguimiento = prenda && (
-        (prenda.seguimientos_por_area && Object.keys(prenda.seguimientos_por_area).length > 0) ||
-        (prenda.seguimientos && Object.keys(prenda.seguimientos).length > 0) ||
-        (prenda.ultimo_recibo_numero && prenda.ultimo_recibo_numero !== '-')
-      );
-
-      if (!tieneSeguimiento && orderState.hasPrendas()) {
-        const prendaId = prenda?.id || prenda?.prenda_pedido_id;
-        const prendaEnriquecida = orderState.getPrendas().find(p =>
-          String(p?.id) === String(prendaId) || String(p?.prenda_pedido_id) === String(prendaId)
-        );
-        if (prendaEnriquecida) {
-          prenda = Object.assign({}, prendaEnriquecida, prenda);
-        }
-      }
-      
-      orderState.setCurrentPrenda(prenda);
-      
-      // Cerrar overlay de prendas si está abierto
-      if (document.getElementById('trackingPrendasSelectorOverlay')) {
-        cerrarSelectorPrendas();
-      }
-      
-      // Mostrar modal de seguimiento
-      const modal = document.getElementById('orderTrackingModal');
-      if (!modal) return;
-
-      modal.classList.add('show');
-      modal.style.setProperty('display', 'flex', 'important');
-      modal.style.setProperty('visibility', 'visible', 'important');
-      modal.style.setProperty('opacity', '1', 'important');
-      modal.style.setProperty('z-index', '9999999', 'important');
-      modal.style.setProperty('position', 'fixed', 'important');
-      modal.style.setProperty('top', '0', 'important');
-      modal.style.setProperty('left', '0', 'important');
-      modal.style.setProperty('width', '100vw', 'important');
-      modal.style.setProperty('height', '100vh', 'important');
-      modal.style.setProperty('background', 'rgba(0, 0, 0, 0.5)', 'important');
-      modal.style.setProperty('align-items', 'center', 'important');
-      modal.style.setProperty('justify-content', 'center', 'important');
-
-      iniciarTimerContadores();
-      setupBackButton();
-      
-      // Ocultar vista de prendas y mostrar timeline
-      document.getElementById('trackingPrendasContainer').parentElement.style.display = 'none';
-      document.getElementById('trackingTimelineSection').style.display = 'block';
-      
-      // Controlar visibilidad botón agregar según readonly
-      const btnAgregar = document.getElementById('btnOpenAddProcesoModal');
-      if (btnAgregar) {
-        btnAgregar.style.display = prenda?.readonly ? 'none' : 'block';
-        btnAgregar.disabled = !!prenda?.readonly;
-      }
-      
-      // Nombre de la prenda
-      const nombreElement = document.getElementById('trackingPrendaName');
-      if (nombreElement) {
-        nombreElement.textContent = prenda.nombre_prenda || `Prenda ${prenda.id}`;
-      }
-      
-      // Resolver área y recibo desde dominio
-      const excludeOrderArea = window.location.pathname.includes('/recibos-costura');
-      const areaActual = orderState.resolveAreaActual(prenda, { excludeOrderArea });
-      const numeroRecibo = orderState.resolveReciboForPrenda(prenda);
-      
-      // Actualizar header del recibo
-      const reciboHeaderElement = document.getElementById('trackingPrendaReciboHeader');
-      if (reciboHeaderElement) {
-        reciboHeaderElement.textContent = areaActual !== '-'
-          ? `${numeroRecibo} - ${areaActual}`
-          : numeroRecibo;
-      }
-      
-      const reciboElement = document.getElementById('trackingPrendaRecibo');
-      if (reciboElement) {
-        reciboElement.textContent = numeroRecibo;
-      }
-      
-      // Renderizar timeline
-      renderPrendaTrackingTimeline(prenda);
-      
-    } catch (error) {
-      console.error('[showPrendaTracking] Error:', error);
-      showError('Error al cargar seguimiento de la prenda');
-    }
+    await trackingTimelineController.showPrendaTracking(prenda);
   };
 
   // Renderizar timeline de seguimiento de prenda
   function renderPrendaTrackingTimeline(prenda) {
-    const container = document.getElementById('trackingTimelineContainer');
-    if (!container) return;
-
-    console.log('[renderPrendaTrackingTimeline] Renderizando timeline para prenda:', prenda);
-    console.log('[renderPrendaTrackingTimeline] Seguimientos por área en prenda:', prenda.seguimientos_por_area);
-
-    // Botón de volver (eliminado - ya está en el header)
-    container.innerHTML = '';
-
-    // Renderizar seguimientos por área (procesos de producción)
-    renderSeguimientosPorArea(prenda, container);
-
-    // Renderizar seguimientos por tipo de recibo (ELIMINADO - no mostrar recibos en modal de seguimiento)
-    // renderSeguimientosPorTipo(prenda, container);
-
-    // Si no hay seguimientos por área, mostrar mensaje
-    if (!prenda.seguimientos_por_area || Object.keys(prenda.seguimientos_por_area).length === 0) {
-      renderNoSeguimiento(container);
-    }
+    trackingTimelineController.renderPrendaTrackingTimeline(prenda);
   }
 
   // Renderizar seguimientos por área (procesos)
   function renderSeguimientosPorArea(prenda, container) {
-    const seguimientosPorArea = prenda.seguimientos_por_area || {};
-    if (Object.keys(seguimientosPorArea).length === 0) {
-      return;
-    }
-
-    // ──── Sección: Fechas de activación del recibo ────
-
-    const reciboActivo = orderState.findActiveRecibo(prenda);
-    const reciboCreatedAt = reciboActivo?.created_at || null;
-
-    const activationSection = document.createElement('div');
-    activationSection.className = 'tracking-section tracking-section-activation';
-
-    const activationTitle = document.createElement('div');
-    activationTitle.className = 'tracking-section-title';
-    activationTitle.textContent = 'Activación del recibo:';
-    activationSection.appendChild(activationTitle);
-
-    const fechasWrapper = document.createElement('div');
-    fechasWrapper.className = 'tracking-info-row';
-
-    // Helper: crear card de info
-    const createInfoCard = (label, value, icon) => {
-      const card = document.createElement('div');
-      card.className = 'tracking-info-card';
-      card.innerHTML = `
-        <div class="tracking-info-icon">${icon}</div>
-        <div class="tracking-info-content">
-          <span class="tracking-info-label">${label}</span>
-          <span class="tracking-info-value">${value}</span>
-        </div>
-      `;
-      return card;
-    };
-
-    const fechaCreacionOrden = orderState.getOrder()?.fecha_de_creacion_de_orden || null;
-    fechasWrapper.appendChild(createInfoCard(
-      'Fecha creación orden',
-      formatDateTime(fechaCreacionOrden) || '-',
-      SvgIcons.calendar()
-    ));
-
-    fechasWrapper.appendChild(createInfoCard(
-      'Fecha activación recibo',
-      formatDateTime(reciboCreatedAt) || '-',
-      SvgIcons.checkCircle()
-    ));
-
-    // Tiempo transcurrido: duración real + días hábiles como referencia
-    let tiempoTranscurridoText = '-';
-    const fechaCreacionDate = toDateObject(fechaCreacionOrden);
-    const reciboActDate = toDateObject(reciboCreatedAt);
-    if (fechaCreacionDate && reciboActDate) {
-      const diffMs = Math.max(0, reciboActDate.getTime() - fechaCreacionDate.getTime());
-      const human = formatDurationHuman(diffMs);
-      const diasHabiles = calcularDiasHabilesSync(fechaCreacionDate, reciboActDate);
-      tiempoTranscurridoText = diasHabiles > 0
-        ? `${human} (${diasHabiles} días hábiles)`
-        : human;
-    }
-
-    fechasWrapper.appendChild(createInfoCard(
-      'Tiempo transcurrido',
-      tiempoTranscurridoText,
-      SvgIcons.clock()
-    ));
-
-    activationSection.appendChild(fechasWrapper);
-    container.appendChild(activationSection);
-
-    // ──── Sección: Seguimiento por áreas ────
-
-    const areasSection = document.createElement('div');
-    areasSection.className = 'tracking-section tracking-section-areas';
-
-    const areasHeader = document.createElement('div');
-    areasHeader.className = 'tracking-section-header';
-
-    const headerTitle = document.createElement('div');
-    headerTitle.className = 'tracking-section-title';
-    headerTitle.textContent = 'Seguimiento por áreas:';
-    areasHeader.appendChild(headerTitle);
-
-    const btnAgregarArea = document.getElementById('btnAgregarArea');
-    if (btnAgregarArea) {
-      areasHeader.appendChild(btnAgregarArea);
-    }
-
-    areasSection.appendChild(areasHeader);
-    container.appendChild(areasSection);
-
-    // ──── Inyectar área virtual Insumos (si es necesario) ────
-
-    const mergedAreas = { ...seguimientosPorArea };
-    const hasInsumos = Object.keys(mergedAreas).some(k => String(k || '').toLowerCase() === 'insumos');
-
-    if (!hasInsumos && reciboCreatedAt) {
-      // Encontrar la fecha de envío a producción (primer proceso iniciado)
-      let fechaEnvioProduccion = null;
-      const areaCorteKey = Object.keys(mergedAreas).find(k => String(k || '').toLowerCase().includes('corte'));
-      
-      if (areaCorteKey) {
-        fechaEnvioProduccion = mergedAreas[areaCorteKey]?.fecha_inicio || null;
-      } else {
-        // Fallback: encontrar la fecha_inicio más temprana (lo más cercano a "envío")
-        let bestKey = null;
-        let bestDate = null;
-        Object.entries(mergedAreas).forEach(([k, v]) => {
-          const d = toDateObject(v?.fecha_inicio);
-          if (!d) return;
-          if (!bestDate || d.getTime() < bestDate.getTime()) {
-            bestDate = d;
-            bestKey = k;
-          }
-        });
-        if (bestKey) {
-          fechaEnvioProduccion = mergedAreas[bestKey]?.fecha_inicio || null;
-        }
-      }
-
-      const yaEnviadoAProduccion = Boolean(fechaEnvioProduccion);
-      const tiempoInsumosMs = fechaEnvioProduccion
-        ? Math.max(0, toDateObject(fechaEnvioProduccion)?.getTime() - toDateObject(reciboCreatedAt)?.getTime() || 0)
-        : null;
-
-      mergedAreas['Insumos'] = {
-        estado: yaEnviadoAProduccion ? 'Enviado a producción' : 'Llegó a insumos',
-        encargado: '-',
-        fecha_inicio: reciboCreatedAt,
-        fecha_fin: fechaEnvioProduccion,
-        duracion_dias: null,
-        icono: 'inventory_2',
-        esta_activo: !yaEnviadoAProduccion,
-        can_edit: false,
-        hide_encargado: true,
-        tiempo_transcurrido: tiempoInsumosMs ? formatDurationHuman(tiempoInsumosMs) : null
-      };
-    }
-
-    // ──── Ordenar y renderizar áreas ────
-
-    const orderedEntries = [];
-    if (mergedAreas['Insumos']) {
-      orderedEntries.push(['Insumos', mergedAreas['Insumos']]);
-    }
-    Object.entries(mergedAreas).forEach(([area, data]) => {
-      if (String(area || '').toLowerCase() === 'insumos') return;
-      orderedEntries.push([area, data]);
-    });
-
-    orderedEntries.forEach(([area, data]) => {
-      const areaCard = createAreaCard(area, data, prenda?.readonly || false);
-      areasSection.appendChild(areaCard);
-    });
+    trackingTimelineController.renderSeguimientosPorArea(prenda, container);
   }
 
   // Mostrar mensaje si no hay seguimientos
   function renderNoSeguimiento(container) {
-    const noSeguimiento = document.createElement('div');
-    noSeguimiento.className = 'tracking-no-seguimiento';
-
-    // Mantener el mensaje original
-    noSeguimiento.innerHTML = '<p>No hay seguimientos registrados para esta prenda</p>';
-    container.appendChild(noSeguimiento);
-
-    // Usar la UI original del tracking para mostrar el área actual y encargado si se puede
-    // (sin inventar una vista nueva). La edición/creación se hace con el botón "Agregar Área".
-    const prenda = orderState.getCurrentPrenda() || {};
-    const esRecibosCostura = window.location.pathname.includes('/recibos-costura');
-
-    const procesoIdFallback = orderState.getConsecutivoCosturaData()?.proceso_id || null;
-    const tieneProcesoReal = Boolean(prenda?.ultimo_proceso_id || procesoIdFallback);
-
-    const areaActual = prenda?.ultimo_proceso_area
-      || (prenda?.area && String(prenda.area).trim() !== '' ? prenda.area : null)
-      || (!esRecibosCostura && orderState.getOrder()?.area && String(orderState.getOrder().area).trim() !== '' ? orderState.getOrder().area : null)
-      || null;
-
-    // Encargado real solo desde procesos_prenda; fallback a /consecutivo-costura si está disponible
-    const encargadoActual = prenda?.ultimo_proceso_encargado
-      || orderState.getConsecutivoCosturaData()?.encargado
-      || null;
-
-    // Si hay algo que mostrar, renderizar una tarjeta estándar de área.
-    if (tieneProcesoReal && areaActual && typeof createAreaCard === 'function') {
-      const estadoUltimo = prenda?.ultimo_proceso_estado || 'Pendiente';
-      const estaActivo = estadoUltimo !== 'Completado';
-
-      const fechaInicioFallback = orderState.getConsecutivoCosturaData()?.fecha_inicio || null;
-      const fechaFinFallback = orderState.getConsecutivoCosturaData()?.fecha_fin || null;
-
-      const card = createAreaCard(areaActual, {
-        id: prenda?.ultimo_proceso_id || procesoIdFallback,
-        can_edit: true,
-        area: areaActual,
-        estado: estadoUltimo,
-        fecha_inicio: prenda?.ultimo_proceso_fecha_inicio || fechaInicioFallback,
-        fecha_fin: prenda?.ultimo_proceso_fecha_fin || fechaFinFallback,
-        encargado: encargadoActual || 'No asignado',
-        observaciones: prenda?.ultimo_proceso_observaciones || '',
-        codigo_referencia: prenda?.ultimo_proceso_codigo_referencia || null,
-        dias_duracion: prenda?.ultimo_proceso_dias_duracion || null,
-        esta_activo: estaActivo,
-      }, prenda?.readonly || false);
-      container.appendChild(card);
-    }
+    trackingTimelineController.renderNoSeguimiento(container);
   }
 
   // Manejar eliminación de proceso
@@ -1261,73 +893,24 @@ function initTrackingModalListeners() {
     const { id: procesoId, name: areaName } = orderState.getProcessToDelete();
     
     try {
-      // Eliminar proceso via OrderApiService
-      const result = await OrderApiService.deleteProceso(procesoId);
+      // Phase 9: Usar ProcessService para encapsular lógica de eliminación
+      // Esto maneja: API + reload de datos + feedback al usuario
+      const result = await processService.deleteProcess(procesoId, {
+        areaName,
+        orderId: orderState.getOrderId(),
+        prendaId: orderState.getCurrentPrenda()?.id
+      });
 
-      // Cerrar modal de confirmación
-      closeConfirmDeleteModal();
-
-      // Recargar seguimientos de la prenda
-      await loadPrendasWithTracking(orderState.getOrderId());
-
-      // Refrescar consecutivo/area/encargado/fechas
-      try {
-        if (window.location.pathname.includes('/recibos-costura') && orderState.getOrderId() && orderState.getCurrentPrenda()?.id) {
-          const data = await OrderApiService.loadConsecutivoCostura(orderState.getOrderId(), orderState.getCurrentPrenda().id);
-          orderState.setConsecutivoCosturaData(data);
-        }
-      } catch (e) {
-        // Silenciosamente ignorar si no se puede refrescar
-      }
-      
-      // Buscar la prenda actualizada en los datos recargados
-      if (orderState.hasPrendas() && orderState.getCurrentPrenda()) {
-        const prendaActualizada = orderState.getPrendas().find(p => p.id == orderState.getCurrentPrenda().id);
-        if (prendaActualizada) {
-          orderState.setCurrentPrenda(prendaActualizada);
-        }
-      }
-      
-      // Actualizar vista actual
-      if (orderState.getCurrentPrenda()?.id) {
-        renderPrendaTrackingTimeline(orderState.getCurrentPrenda());
-      } else {
-        // Si no hay currentPrendaData, intentar obtener la primera prenda del DOM
-        const prendaCards = document.querySelectorAll('.prenda-card');
-        if (prendaCards.length > 0) {
-          const firstCard = prendaCards[0];
-          const prendaId = parseInt(firstCard.dataset.prendaId);
-          
-          // Buscar en prendasData
-          let prendaParaRender = null;
-          if (orderState.hasPrendas()) {
-            prendaParaRender = orderState.getPrendas().find(p => p.id == prendaId);
-          }
-          
-          if (prendaParaRender) {
-            orderState.setCurrentPrenda(prendaParaRender);
-            renderPrendaTrackingTimeline(prendaParaRender);
-          } else {
-            // Fallback: crear objeto con el ID
-            const prendaData = {
-              id: prendaId,
-              nombre_prenda: firstCard.querySelector('.prenda-name')?.textContent,
-            };
-            renderPrendaTrackingTimeline(prendaData);
-          }
-        }
+      if (!result.success) {
+        throw result.error || new Error('Error desconocido');
       }
 
-      // Mostrar mensaje de éxito
-      showSuccess('Proceso eliminado correctamente');
+      // Limpiar estado
+      orderState.clearProcessToDelete();
       
-      // Actualizar el área en la tabla de recibos-costura si estamos en esa página
-      actualizarAreaEnTablaRecibos();
-
     } catch (error) {
-      console.error('[executeDeleteProcess] Error:', error);
-      showError('Error al eliminar proceso: ' + error.message);
-      closeConfirmDeleteModal();
+      // El feedback es manejado por ProcessService + uiFeedbackService
+      // No cerramos modal para permitir reintentos
     } finally {
       // Restaurar estado del botón
       setButtonLoading('deleteButtonContent', 'deleteButtonLoading', 'btnConfirmDelete', false);
@@ -1647,219 +1230,18 @@ function initTrackingModalListeners() {
   }
 
   // Crear tarjeta de área/proceso
+  // Contrato: data DEBE incluir metadata, duraciones y fechas_formateadas (fuente única: backend)
   function createAreaCard(area, data, readonly = false) {
-    const card = document.createElement('div');
-    const metadata = orderState.resolveAreaMetadata(area);
-    const { estadoDisplay, estaActivoDisplay } = orderState.resolveAreaStatus(data, metadata);
-
-    if (readonly) {
-      card.classList.add('tracking-readonly-mode');
-    }
-
-    const iconSvg = SvgIcons.get(area);
-
-    // ──── Helpers para cálculo de duraciones ────
-    
-    const formatBadgeDuration = (diffMs) => {
-      const ms = Math.max(0, Number(diffMs) || 0);
-      const minutes = Math.floor(ms / 60000);
-      const hours = Math.floor(ms / 3600000);
-      const days = Math.floor(ms / 86400000);
-      return days >= 1 ? `${days} ${days === 1 ? 'Día' : 'Días'}` 
-           : hours >= 1 ? `${hours}h`
-           : minutes >= 1 ? `${minutes}min`
-           : '< 1min';
-    };
-
-    const extractNumericDays = (text) => {
-      if (text === '---' || !text) return 0;
-      const match = String(text).match(/(\d+)/);
-      return match ? parseInt(match[1], 10) : 0;
-    };
-
-    // ──── Cálculos de fechas ────
-    
-    const fechaCompletadoDisplay = data.fecha_completado || null;
-    const fechaFinParaDuracion = fechaCompletadoDisplay || data.fecha_fin || null;
-    
-    const fechaLlegada = formatDate(data.fecha_inicio) || '---';
-    const fechaAsignacion = formatDate(data.fecha_de_asignacion_encargado) || '---';
-    
-    let fechaFinRaw = null;
-    if (metadata.isInsumos) {
-      fechaFinRaw = data.fecha_fin || null;
-    } else if (metadata.needsEncargado) {
-      fechaFinRaw = data.fecha_completado || null;
-    } else {
-      fechaFinRaw = data.fecha_fin || null;
-    }
-    
-    const fechaFin = formatDate(fechaFinRaw) || (data.esta_activo ? '---' : '---');
-
-    // ──── Cálculos de duraciones ────
-    
-    const calcularDuracionAsignacion = () => {
-      if (!metadata.needsEncargado) return '---';
-      const ini = toDateObject(data.fecha_inicio);
-      const asg = toDateObject(data.fecha_de_asignacion_encargado);
-      if (!ini || !asg) return '---';
-      return formatBadgeDuration(asg.getTime() - ini.getTime());
-    };
-
-    const calcularDuracionEnArea = () => {
-      const ini_asignacion = toDateObject(data.fecha_de_asignacion_encargado);
-      const ini = toDateObject(data.fecha_inicio);
-      const fin = fechaFinRaw ? toDateObject(fechaFinRaw) : new Date();
-      
-      if (metadata.needsEncargado) {
-        if (!ini_asignacion || !fin) return '---';
-        const dias = calcularDiasHabilesSync(ini_asignacion, fin);
-        return dias === 0 ? '0 días' : `${dias} día${dias !== 1 ? 's' : ''}`;
-      } else {
-        if (!ini || !fin) return '---';
-        const dias = calcularDiasHabilesSync(ini, fin);
-        return dias === 0 ? '0 días' : `${dias} día${dias !== 1 ? 's' : ''}`;
-      }
-    };
-
-    const calcularTotalDiasDisplay = () => {
-      if (!metadata.needsEncargado) {
-        const ini = toDateObject(data.fecha_inicio);
-        const fin = fechaFinRaw ? toDateObject(fechaFinRaw) : new Date();
-        if (!ini || !fin) return '---';
-        const dias = calcularDiasHabilesSync(ini, fin);
-        return dias === 0 ? '0 días' : `${dias} día${dias !== 1 ? 's' : ''}`;
-      }
-
-      if (!fechaFinRaw) {
-        const durAsig = calcularDuracionAsignacion();
-        const durArea = calcularDuracionEnArea();
-        const suma = extractNumericDays(durAsig) + extractNumericDays(durArea);
-        return suma === 0 ? '0 días' : `${suma} día${suma !== 1 ? 's' : ''}`;
-      }
-
-      const ini = toDateObject(data.fecha_inicio);
-      const asg = toDateObject(data.fecha_de_asignacion_encargado);
-      const fin = toDateObject(fechaFinRaw);
-      if (!ini || !fin) return '---';
-      const inicioCalculo = asg || ini;
-      const dias = calcularDiasHabilesSync(inicioCalculo, fin);
-      return dias === 0 ? '0 días' : `${dias} día${dias !== 1 ? 's' : ''}`;
-    };
-
-    const duracionAsignacion = calcularDuracionAsignacion();
-    const duracionEnArea = calcularDuracionEnArea();
-    const totalDiasAreaDisplay = calcularTotalDiasDisplay();
-
-    // ──── HTML de acciones ────
-    
-    const accionesHtml = readonly ? '' : `${(data.id || data.can_edit) ? `
-            <button class="tracking-edit-btn" onclick="${data.id ? `handleEditarProceso(${data.id}, '${area}', ${JSON.stringify(data).replace(/"/g, '&quot;')}, event)` : `handleCrearProcesoDesdeArea('${area}', event, '${String(data.encargado || '').replace(/'/g, "\\'")}')`}" title="Editar proceso">
-              ${SvgIcons.edit()}
-            </button>
-            ${data.id ? `
-            <button class="tracking-delete-btn" onclick="handleEliminarProceso(${data.id}, '${area}', event)" title="Eliminar proceso">
-              ${SvgIcons.delete()}
-            </button>
-            ` : ''}
-            ` : ''}`;
-
-    // ──── Construir HTML del card ────
-
-    card.className = `tracking-area-card tracking-area-card-v2 ${estaActivoDisplay ? 'pending' : 'completed'}`;
-
-    if (metadata.isInsumos) {
-      card.innerHTML = `
-        <div class="tracking-area-v2-left">
-          <div class="tracking-area-v2-icon">${iconSvg}</div>
-          <div class="tracking-area-v2-name">${area}</div>
-        </div>
-        <div class="tracking-area-v2-body">
-          <div class="tracking-area-v2-row">
-            <div class="tracking-area-v2-field">
-              <div class="tracking-area-v2-label">Fecha de llegada:</div>
-              <div class="tracking-area-v2-pill">${fechaLlegada}</div>
-            </div>
-            <div class="tracking-area-v2-field">
-              <div class="tracking-area-v2-label">Fecha de envío a producción</div>
-              <div class="tracking-area-v2-pill">${fechaFin}</div>
-            </div>
-            <div class="tracking-area-v2-field tracking-area-v2-field-right"></div>
-          </div>
-          <div class="tracking-area-v2-footer">
-            <div class="tracking-area-v2-status">
-              <span class="tracking-days-badge ${estaActivoDisplay ? '' : 'tracking-days-badge-zero'}">${estadoDisplay}</span>
-            </div>
-            <div class="tracking-area-v2-actions">${accionesHtml}</div>
-            <div class="tracking-area-v2-total-days">
-              <span class="tracking-area-v2-total-label">Total Días:</span>
-              <span class="tracking-area-v2-total-value">${totalDiasAreaDisplay}</span>
-            </div>
-          </div>
-        </div>
-      `;
-    } else {
-      card.innerHTML = `
-        <div class="tracking-area-v2-left">
-          <div class="tracking-area-v2-icon">${iconSvg}</div>
-          <div class="tracking-area-v2-name">${area}</div>
-        </div>
-        <div class="tracking-area-v2-body">
-          <div class="tracking-area-v2-row">
-            <div class="tracking-area-v2-field">
-              <div class="tracking-area-v2-label">Fecha de llegada:</div>
-              <div class="tracking-area-v2-pill">${fechaLlegada}</div>
-            </div>
-            ${!data.encargado || data.encargado.trim() === '' ? `
-            <div class="tracking-area-v2-field tracking-area-v2-field-right">
-              <div class="tracking-area-v2-label">Fecha fin</div>
-              <div class="tracking-area-v2-pill">${fechaFin}</div>
-            </div>
-            ` : `
-            <div class="tracking-area-v2-field">
-              <div class="tracking-area-v2-label">Fecha de asignación de ${String(area).toLowerCase()}:</div>
-              <div class="tracking-area-v2-pill">${fechaAsignacion}</div>
-            </div>
-            <div class="tracking-area-v2-field tracking-area-v2-field-right">
-              <div class="tracking-area-v2-label">Duración asignación de ${String(area).toLowerCase()}:</div>
-              <div class="tracking-area-v2-badge">${duracionAsignacion}</div>
-            </div>
-            `}
-          </div>
-          <div class="tracking-area-v2-row">
-            ${!data.encargado || data.encargado.trim() === '' ? '' : `
-            ${metadata.shouldHideEncargado || data.hide_encargado ? '' : `
-            <div class="tracking-area-v2-field">
-              <div class="tracking-area-v2-label">Encargado:</div>
-              <div class="tracking-area-v2-pill">${data.encargado || '---'}</div>
-            </div>
-            `}
-            <div class="tracking-area-v2-field">
-              <div class="tracking-area-v2-label">Fecha fin</div>
-              <div class="tracking-area-v2-pill">${fechaFin}</div>
-            </div>
-            <div class="tracking-area-v2-field tracking-area-v2-field-right">
-              <div class="tracking-area-v2-label">Duración en ${area}</div>
-              <div class="tracking-area-v2-badge">${duracionEnArea}</div>
-            </div>
-            `}
-          </div>
-          <div class="tracking-area-v2-footer">
-            <div class="tracking-area-v2-status">
-              <span class="tracking-days-badge ${estaActivoDisplay ? '' : 'tracking-days-badge-zero'}">${estadoDisplay}</span>
-            </div>
-            <div class="tracking-area-v2-actions">${accionesHtml}</div>
-            <div class="tracking-area-v2-total-days">
-              <span class="tracking-area-v2-total-label">Total Días:</span>
-              <span class="tracking-area-v2-total-value">${totalDiasAreaDisplay}</span>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-    
-    return card;
+    return trackingTimelineController.createAreaCard(area, data, readonly);
   }
+
+  // ============================================================
+  // DEPENDENCY INJECTION: Actualizar servicios con callbacks de render (Phase 9)
+  // ============================================================
+  dataReloadService.setRenderers({
+    renderPrendaTrackingTimeline,
+    actualizarAreaEnTablaRecibos
+  });
 
   // Mostrar vista de prendas (cerrar modal de seguimiento y volver a prendas)
   function showPrendasView() {
@@ -1925,8 +1307,9 @@ function initTrackingModalListeners() {
 
       // Validar encargado solo para áreas que lo requieren
       const areaLower = area.toLowerCase();
-      const needsEncargado = ['corte', 'costura', 'control de calidad'];
-      const areaRequiresEncargado = needsEncargado.some(reqArea => areaLower.includes(reqArea));
+      const areasConfig = orderState.getAreasConfig();
+      const areasQueRequierenEncargado = areasConfig?.areas_que_requieren_encargado || ['corte', 'costura', 'control de calidad'];
+      const areaRequiresEncargado = areasQueRequierenEncargado.some(reqArea => areaLower.includes(reqArea));
       
       if (areaRequiresEncargado && !encargado.trim()) {
         showError('Por favor ingresa el nombre del encargado');

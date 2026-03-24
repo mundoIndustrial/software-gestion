@@ -1913,6 +1913,23 @@ class RegistroOrdenQueryController extends Controller
                         'esta_activo' => $proceso->estado_proceso === 'Pendiente',
                         'dias_habiles_transcurridos' => $diasHabilesTranscurridos,
                         'proximaActualizacion' => $proximaActualizacion,
+                        // === Pre-computados para el frontend (Phase 12 - Backend First) ===
+                        'metadata' => self::resolveAreaMetadata($proceso->proceso),
+                        'duraciones' => self::calcularDuracionesArea(
+                            $proceso->proceso,
+                            $proceso->fecha_inicio,
+                            $proceso->fecha_de_asignacion_encargado,
+                            $fechaCompletadoArea,
+                            $proceso->fecha_fin,
+                            $proceso->estado_proceso
+                        ),
+                        'fechas_formateadas' => [
+                            'fecha_llegada' => $proceso->fecha_inicio ? \Carbon\Carbon::parse($proceso->fecha_inicio)->format('d/m/Y') : null,
+                            'fecha_asignacion' => $proceso->fecha_de_asignacion_encargado ? \Carbon\Carbon::parse($proceso->fecha_de_asignacion_encargado)->format('d/m/Y') : null,
+                            'fecha_fin' => $fechaCompletadoArea 
+                                ? \Carbon\Carbon::parse($fechaCompletadoArea)->format('d/m/Y') 
+                                : ($proceso->fecha_fin ? \Carbon\Carbon::parse($proceso->fecha_fin)->format('d/m/Y') : null),
+                        ],
                     ];
                 }
                 
@@ -2043,13 +2060,21 @@ class RegistroOrdenQueryController extends Controller
                     'cantidad_talla' => $cantidadTalla,
                     'de_bodega' => $prenda->de_bodega,
                     'seguimientos' => $seguimientosPorTipo,
-                    'seguimientos_por_area' => $seguimientosPorArea,
+                    'seguimientos_por_area' => self::inyectarAreaInsumos(
+                        $seguimientosPorArea,
+                        $consecutivos,
+                        $pedidoModel
+                    ),
+                    'datos_activacion_recibo' => self::calcularDatosActivacionRecibo(
+                        $consecutivos,
+                        $pedidoModel
+                    ),
                     'procesos' => $procesosArray,
-                    'tipos_recibo_procesos' => $tiposReciboProcesos, // Agregar tipos de recibo que son procesos
-                    'consecutivos' => $consecutivos->toArray(), // Agregar consecutivos para el modal
+                    'tipos_recibo_procesos' => $tiposReciboProcesos,
+                    'consecutivos' => $consecutivos->toArray(),
                     'total_procesos' => $prenda->procesos->count(),
                     'total_variantes' => $prenda->variantes->count(),
-                    'ultimo_proceso_area' => $ultimoProcesoArea, // Área del proceso más reciente
+                    'ultimo_proceso_area' => $ultimoProcesoArea,
                     'ultimo_proceso_encargado' => $ultimoProcesoEncargado,
                     'ultimo_proceso_id' => $ultimoProcesoId,
                     'ultimo_proceso_estado' => $ultimoProcesoEstado,
@@ -2060,6 +2085,9 @@ class RegistroOrdenQueryController extends Controller
                     'ultimo_proceso_dias_duracion' => $ultimoProcesoDiasDuracion,
                     'ultimo_recibo_numero' => $ultimoReciboNumero, // Número de recibo más reciente
                     'ancho_metraje' => $anchoMetrajeData,
+                    // === Pre-computados Phase 12b: lógica de negocio en backend ===
+                    'area_actual' => self::resolveAreaActualPrenda($ultimoProcesoArea, $prenda, $pedidoModel),
+                    'recibo_display' => self::resolveReciboDisplay($consecutivos, $ultimoReciboNumero),
                 ];
             }
             
@@ -2073,8 +2101,16 @@ class RegistroOrdenQueryController extends Controller
                     'id' => $pedidoModel->id,
                     'numero_pedido' => $pedidoModel->numero_pedido,
                     'cliente' => $pedidoModel->cliente,
+                    'fecha_de_creacion_de_orden' => $pedidoModel->fecha_de_creacion_de_orden ?? $pedidoModel->created_at,
+                    // === Pre-computado Phase 12b: recibo principal del pedido ===
+                    'recibo_principal' => self::resolveReciboPrincipal($prendasConSeguimiento),
                 ],
-                'prendas' => $prendasConSeguimiento
+                'prendas' => $prendasConSeguimiento,
+                // === Configuración centralizada de áreas (Phase 12b) ===
+                'areas_config' => [
+                    'areas_que_requieren_encargado' => ['corte', 'costura', 'control de calidad'],
+                    'areas_con_selector_dinamico' => ['corte', 'costura'],
+                ],
             ]);
             
         } catch (\Exception $e) {
@@ -2089,6 +2125,412 @@ class RegistroOrdenQueryController extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    // ================================================================
+    // Métodos privados: Pre-computar datos para el frontend (Phase 12)
+    // Mueve lógica de negocio que estaba en JS al backend.
+    // ================================================================
+
+    /**
+     * Resolver metadata de un área (qué campos mostrar/ocultar)
+     */
+    private static function resolveAreaMetadata(string $area): array
+    {
+        $areaLower = strtolower(trim($area));
+        $isInsumos = $areaLower === 'insumos';
+        $isCorte = str_contains($areaLower, 'corte');
+        $isCostura = str_contains($areaLower, 'costura');
+        $isControlCalidad = str_contains($areaLower, 'control') && str_contains($areaLower, 'calidad');
+        $needsEncargado = $isCorte || $isCostura || $isControlCalidad;
+
+        return [
+            'isInsumos' => $isInsumos,
+            'isCorte' => $isCorte,
+            'isCostura' => $isCostura,
+            'isControlCalidad' => $isControlCalidad,
+            'needsEncargado' => $needsEncargado,
+            'shouldHideEncargado' => $isInsumos || !$needsEncargado,
+        ];
+    }
+
+    /**
+     * Calcular todas las duraciones de un área pre-computadas
+     */
+    private static function calcularDuracionesArea(
+        string $area,
+        $fechaInicio,
+        $fechaAsignacion,
+        $fechaCompletado,
+        $fechaFin,
+        string $estado
+    ): array {
+        $metadata = self::resolveAreaMetadata($area);
+        $calculador = \App\Services\CalculadorDiasService::class;
+
+        // Fecha fin real según tipo de área
+        if ($metadata['isInsumos']) {
+            $fechaFinReal = $fechaFin;
+        } elseif ($metadata['needsEncargado']) {
+            $fechaFinReal = $fechaCompletado;
+        } else {
+            $fechaFinReal = $fechaFin;
+        }
+
+        // 1. Duración de asignación (solo para áreas con encargado)
+        $duracionAsignacion = null;
+        $duracionAsignacionDias = null;
+        if ($metadata['needsEncargado'] && $fechaInicio && $fechaAsignacion) {
+            try {
+                $ini = \Carbon\Carbon::parse($fechaInicio);
+                $asg = \Carbon\Carbon::parse($fechaAsignacion);
+                $diffMs = max(0, $asg->diffInMilliseconds($ini));
+                $duracionAsignacion = self::formatDurationHuman($diffMs);
+                $duracionAsignacionDias = $calculador::calcularDiasHabiles($fechaInicio, $fechaAsignacion);
+            } catch (\Exception $e) {
+                // silencioso
+            }
+        }
+
+        // 2. Duración en área (días hábiles)
+        $duracionEnArea = null;
+        if ($metadata['needsEncargado']) {
+            $inicioCalculo = $fechaAsignacion ?: $fechaInicio;
+            $finCalculo = $fechaFinReal ?: now();
+            if ($inicioCalculo) {
+                $duracionEnArea = $calculador::calcularDiasHabiles($inicioCalculo, $finCalculo);
+            }
+        } else {
+            if ($fechaInicio) {
+                $finCalculo = $fechaFinReal ?: now();
+                $duracionEnArea = $calculador::calcularDiasHabiles($fechaInicio, $finCalculo);
+            }
+        }
+
+        // 3. Total días
+        $totalDias = null;
+        if ($metadata['needsEncargado'] && !$fechaFinReal) {
+            // Sumar ambas duraciones
+            $totalDias = ($duracionAsignacionDias ?? 0) + ($duracionEnArea ?? 0);
+        } elseif ($fechaInicio) {
+            $inicioCalculo = ($metadata['needsEncargado'] && $fechaAsignacion) ? $fechaAsignacion : $fechaInicio;
+            $finCalculo = $fechaFinReal ?: now();
+            $totalDias = $calculador::calcularDiasHabiles($inicioCalculo, $finCalculo);
+        }
+
+        // 4. Estado display
+        $hasFechaCompletado = !$metadata['isInsumos'] && !empty($fechaCompletado);
+        $estadoDisplay = $metadata['isInsumos']
+            ? ($estado ?: 'Pendiente')
+            : ($hasFechaCompletado ? 'Completado' : 'Pendiente');
+        $estaActivoDisplay = $metadata['isInsumos']
+            ? ($estado === 'Pendiente' || $estado === 'Llegó a insumos')
+            : !$hasFechaCompletado;
+
+        return [
+            'duracion_asignacion' => $duracionAsignacion,
+            'duracion_asignacion_dias' => $duracionAsignacionDias,
+            'duracion_en_area' => $duracionEnArea !== null ? $calculador::formatearDias($duracionEnArea) : null,
+            'duracion_en_area_dias' => $duracionEnArea,
+            'total_dias' => $totalDias !== null ? $calculador::formatearDias($totalDias) : null,
+            'total_dias_numero' => $totalDias,
+            'estado_display' => $estadoDisplay,
+            'esta_activo_display' => $estaActivoDisplay,
+        ];
+    }
+
+    /**
+     * Formatear duración en milisegundos a texto legible
+     */
+    private static function formatDurationHuman(int $diffMs): string
+    {
+        $minutes = intdiv($diffMs, 60000);
+        $hours = intdiv($diffMs, 3600000);
+        $days = intdiv($diffMs, 86400000);
+
+        if ($days >= 1) return "{$days} " . ($days === 1 ? 'Día' : 'Días');
+        if ($hours >= 1) return "{$hours}h";
+        if ($minutes >= 1) return "{$minutes}min";
+        return '< 1min';
+    }
+
+    /**
+     * Inyectar área virtual "Insumos" si no existe y hay recibo activado
+     */
+    private static function inyectarAreaInsumos(array $seguimientosPorArea, $consecutivos, $pedidoModel): array
+    {
+        // Verificar si ya existe Insumos
+        $hasInsumos = false;
+        foreach (array_keys($seguimientosPorArea) as $k) {
+            if (strtolower(trim($k)) === 'insumos') {
+                $hasInsumos = true;
+                break;
+            }
+        }
+
+        // Buscar recibo COSTURA activo
+        $reciboCostura = null;
+        foreach ($consecutivos as $c) {
+            $tipo = strtoupper(trim($c->tipo_recibo ?? ''));
+            $activo = ($c->activo ?? 0) == 1;
+            if ($tipo === 'COSTURA' && $activo) {
+                $reciboCostura = $c;
+                break;
+            }
+        }
+
+        $reciboCreatedAt = $reciboCostura->created_at ?? null;
+
+        if ($hasInsumos || !$reciboCreatedAt) {
+            // Ordenar: Insumos primero si existe
+            return self::ordenarAreas($seguimientosPorArea);
+        }
+
+        // Encontrar fecha de envío a producción (primer proceso / corte)
+        $fechaEnvioProduccion = null;
+        $areaCorteKey = null;
+        foreach (array_keys($seguimientosPorArea) as $k) {
+            if (str_contains(strtolower($k), 'corte')) {
+                $areaCorteKey = $k;
+                break;
+            }
+        }
+
+        if ($areaCorteKey) {
+            $fechaEnvioProduccion = $seguimientosPorArea[$areaCorteKey]['fecha_inicio'] ?? null;
+        } else {
+            // Fallback: fecha_inicio más temprana
+            $bestDate = null;
+            foreach ($seguimientosPorArea as $data) {
+                $fi = $data['fecha_inicio'] ?? null;
+                if (!$fi) continue;
+                try {
+                    $d = \Carbon\Carbon::parse($fi);
+                    if (!$bestDate || $d->lt($bestDate)) {
+                        $bestDate = $d;
+                        $fechaEnvioProduccion = $fi;
+                    }
+                } catch (\Exception $e) {
+                    // silencioso
+                }
+            }
+        }
+
+        $yaEnviado = !empty($fechaEnvioProduccion);
+
+        // Calcular duración Insumos
+        $duracionInsumos = null;
+        $duracionInsumosTexto = null;
+        if ($fechaEnvioProduccion) {
+            try {
+                $duracionInsumos = \App\Services\CalculadorDiasService::calcularDiasHabiles($reciboCreatedAt, $fechaEnvioProduccion);
+                $duracionInsumosTexto = \App\Services\CalculadorDiasService::formatearDias($duracionInsumos);
+            } catch (\Exception $e) {
+                // silencioso
+            }
+        }
+
+        // Crear área virtual Insumos
+        $insumosArea = [
+            'id' => null,
+            'area' => 'Insumos',
+            'estado' => $yaEnviado ? 'Enviado a producción' : 'Llegó a insumos',
+            'encargado' => '-',
+            'fecha_inicio' => $reciboCreatedAt,
+            'fecha_fin' => $fechaEnvioProduccion,
+            'fecha_completado' => null,
+            'fecha_de_asignacion_encargado' => null,
+            'dias_duracion' => null,
+            'esta_activo' => !$yaEnviado,
+            'can_edit' => false,
+            'hide_encargado' => true,
+            'es_virtual' => true,
+            'metadata' => self::resolveAreaMetadata('Insumos'),
+            'duraciones' => [
+                'duracion_asignacion' => null,
+                'duracion_asignacion_dias' => null,
+                'duracion_en_area' => $duracionInsumosTexto,
+                'duracion_en_area_dias' => $duracionInsumos,
+                'total_dias' => $duracionInsumosTexto,
+                'total_dias_numero' => $duracionInsumos,
+                'estado_display' => $yaEnviado ? 'Enviado a producción' : 'Llegó a insumos',
+                'esta_activo_display' => !$yaEnviado,
+            ],
+            'fechas_formateadas' => [
+                'fecha_llegada' => $reciboCreatedAt ? \Carbon\Carbon::parse($reciboCreatedAt)->format('d/m/Y') : null,
+                'fecha_asignacion' => null,
+                'fecha_fin' => $fechaEnvioProduccion ? \Carbon\Carbon::parse($fechaEnvioProduccion)->format('d/m/Y') : null,
+            ],
+        ];
+
+        // Insertar Insumos al inicio
+        $result = ['Insumos' => $insumosArea];
+        foreach ($seguimientosPorArea as $k => $v) {
+            $result[$k] = $v;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Ordenar áreas: Insumos siempre primero
+     */
+    private static function ordenarAreas(array $seguimientosPorArea): array
+    {
+        $result = [];
+        foreach ($seguimientosPorArea as $k => $v) {
+            if (strtolower(trim($k)) === 'insumos') {
+                $result = [$k => $v] + $result;
+            } else {
+                $result[$k] = $v;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Calcular datos de activación del recibo para la sección header del timeline
+     */
+    private static function calcularDatosActivacionRecibo($consecutivos, $pedidoModel): array
+    {
+        // Buscar recibo COSTURA activo
+        $reciboCostura = null;
+        foreach ($consecutivos as $c) {
+            $tipo = strtoupper(trim($c->tipo_recibo ?? ''));
+            $activo = ($c->activo ?? 0) == 1;
+            if ($tipo === 'COSTURA' && $activo) {
+                $reciboCostura = $c;
+                break;
+            }
+        }
+
+        if (!$reciboCostura) {
+            // Fallback: cualquier recibo activo
+            foreach ($consecutivos as $c) {
+                if (($c->activo ?? 0) == 1) {
+                    $reciboCostura = $c;
+                    break;
+                }
+            }
+        }
+
+        $reciboCreatedAt = $reciboCostura->created_at ?? null;
+        $fechaCreacionOrden = $pedidoModel->fecha_de_creacion_de_orden ?? $pedidoModel->created_at ?? null;
+
+        // Calcular tiempo transcurrido
+        $tiempoTranscurrido = null;
+        $diasHabilesActivacion = null;
+        if ($fechaCreacionOrden && $reciboCreatedAt) {
+            try {
+                $ini = \Carbon\Carbon::parse($fechaCreacionOrden);
+                $fin = \Carbon\Carbon::parse($reciboCreatedAt);
+                $diffMs = max(0, $fin->diffInMilliseconds($ini));
+                $tiempoTranscurrido = self::formatDurationHuman($diffMs);
+                $diasHabilesActivacion = \App\Services\CalculadorDiasService::calcularDiasHabiles($fechaCreacionOrden, $reciboCreatedAt);
+            } catch (\Exception $e) {
+                // silencioso
+            }
+        }
+
+        return [
+            'fecha_creacion_orden' => $fechaCreacionOrden,
+            'fecha_creacion_orden_formateada' => $fechaCreacionOrden 
+                ? \Carbon\Carbon::parse($fechaCreacionOrden)->format('d/m/Y H:i') 
+                : null,
+            'fecha_activacion_recibo' => $reciboCreatedAt,
+            'fecha_activacion_recibo_formateada' => $reciboCreatedAt 
+                ? \Carbon\Carbon::parse($reciboCreatedAt)->format('d/m/Y H:i') 
+                : null,
+            'tiempo_transcurrido' => $tiempoTranscurrido,
+            'dias_habiles_activacion' => $diasHabilesActivacion,
+            'tiempo_transcurrido_completo' => $tiempoTranscurrido && $diasHabilesActivacion !== null
+                ? "{$tiempoTranscurrido} ({$diasHabilesActivacion} días hábiles)"
+                : $tiempoTranscurrido,
+        ];
+    }
+
+    /**
+     * Resolver el área actual de una prenda (regla de negocio centralizada)
+     * Prioridad: ultimo_proceso_area > prenda.area > pedido.area > '-'
+     */
+    private static function resolveAreaActualPrenda(string $ultimoProcesoArea, $prenda, $pedidoModel): string
+    {
+        if ($ultimoProcesoArea && $ultimoProcesoArea !== '-') {
+            return $ultimoProcesoArea;
+        }
+        // No hay acceso a "prenda.area" como campo directo en el modelo,
+        // pero se puede derivar del último proceso o del pedido
+        $areaPedido = $pedidoModel->area ?? null;
+        if ($areaPedido && trim($areaPedido) !== '') {
+            return trim($areaPedido);
+        }
+        return '-';
+    }
+
+    /**
+     * Resolver qué recibo mostrar para una prenda (regla de negocio centralizada)
+     * Prioridad: COSTURA activo > cualquier activo > ultimo_recibo_numero
+     */
+    private static function resolveReciboDisplay($consecutivos, string $ultimoReciboNumero): string
+    {
+        $prioridades = ['COSTURA', 'REFLECTIVO', 'ESTAMPADO', 'BORDADO', 'DTF', 'SUBLIMADO'];
+        
+        // 1. Buscar recibo activo según prioridad
+        foreach ($prioridades as $tipo) {
+            foreach ($consecutivos as $c) {
+                $tipoRecibo = strtoupper(trim($c->tipo_recibo ?? ''));
+                $activo = ($c->activo ?? 0) == 1;
+                if ($tipoRecibo === $tipo && $activo && !empty($c->consecutivo_actual)) {
+                    return "{$tipoRecibo} #{$c->consecutivo_actual}";
+                }
+            }
+        }
+
+        // 2. Cualquier recibo activo
+        foreach ($consecutivos as $c) {
+            $activo = ($c->activo ?? 0) == 1;
+            if ($activo && !empty($c->consecutivo_actual)) {
+                $tipo = strtoupper(trim($c->tipo_recibo ?? 'RECIBO'));
+                return "{$tipo} #{$c->consecutivo_actual}";
+            }
+        }
+
+        // 3. Fallback
+        if ($ultimoReciboNumero && $ultimoReciboNumero !== '-') {
+            return "COSTURA #{$ultimoReciboNumero}";
+        }
+
+        return '-';
+    }
+
+    /**
+     * Resolver el recibo principal del pedido completo
+     * Busca en todas las prendas y devuelve el recibo de mayor prioridad
+     */
+    private static function resolveReciboPrincipal(array $prendasConSeguimiento): string
+    {
+        $prioridades = ['COSTURA', 'REFLECTIVO', 'ESTAMPADO', 'BORDADO', 'DTF', 'SUBLIMADO'];
+        $mejorRecibo = null;
+        $mejorPrioridad = PHP_INT_MAX;
+
+        foreach ($prendasConSeguimiento as $prenda) {
+            $consecutivos = $prenda['consecutivos'] ?? [];
+            foreach ($consecutivos as $c) {
+                $tipo = strtoupper(trim($c['tipo_recibo'] ?? ''));
+                $activo = ($c['activo'] ?? 0) == 1;
+                if (!$activo || empty($c['consecutivo_actual'])) continue;
+
+                $idx = array_search($tipo, $prioridades);
+                $prioridadActual = $idx !== false ? $idx : count($prioridades);
+
+                if ($prioridadActual < $mejorPrioridad) {
+                    $mejorPrioridad = $prioridadActual;
+                    $mejorRecibo = "{$tipo} #{$c['consecutivo_actual']}";
+                }
+            }
+        }
+
+        return $mejorRecibo ?? '-';
     }
 
     /**

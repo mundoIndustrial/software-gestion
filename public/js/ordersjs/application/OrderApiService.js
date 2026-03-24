@@ -106,7 +106,11 @@ class OrderApiService {
       const data = await response.json();
       console.log('[OrderApiService.loadPrendasWithTracking] ✓ Prendas cargadas:', data.prendas?.length);
 
-      return data.prendas || [];
+      return {
+        prendas: data.prendas || [],
+        areasConfig: data.areas_config || {},
+        pedido: data.pedido || {}
+      };
     } catch (error) {
       console.error('[OrderApiService.loadPrendasWithTracking] ✗ Error:', error);
       throw this.#formatError('cargar prendas con seguimiento', error);

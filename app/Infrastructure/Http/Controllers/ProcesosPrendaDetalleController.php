@@ -4,6 +4,7 @@ namespace App\Infrastructure\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Application\Actions\Procesos\CrearProcesoAction;
+use App\Application\UseCases\Procesos\ActivarReciboConConsecutivoUseCase;
 use App\Domain\Procesos\Repositories\ProcesoPrendaDetalleRepository;
 use App\Domain\Procesos\Repositories\ProcesoPrendaImagenRepository;
 use App\Domain\Procesos\Repositories\TipoProcesoRepository;
@@ -16,6 +17,7 @@ use App\DTOs\CrearProcesoPrendaDTO;
 use App\Models\PedidoAuditoria;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
@@ -31,6 +33,7 @@ class ProcesosPrendaDetalleController extends Controller
         private TipoProcesoRepository $tipoProcesoRepository,
         private ActivarReciboProcesoService $activarReciboService,
         private AnularReciboProcesoService $anularReciboService,
+        private ActivarReciboConConsecutivoUseCase $activarReciboConConsecutivoUseCase,
     ) {}
 
     /**
@@ -521,6 +524,12 @@ class ProcesosPrendaDetalleController extends Controller
     /**
      * Activar/Desactivar recibo de proceso
      * POST /api/procesos/{id}/activar-recibo
+     *
+     * Orquesta la lógica completa:
+     * - Cambio de estado (PENDIENTE ↔ APROBADO)
+     * - Generación de consecutivos si aplica
+     * - Broadcasts (especialmente REFLECTIVO)
+     * - Auditoría
      */
     public function activarRecibo(Request $request, $procesoId)
     {
@@ -544,18 +553,23 @@ class ProcesosPrendaDetalleController extends Controller
                 'activar' => 'required|boolean',
             ]);
 
-            $procesoActualizado = $this->activarReciboService->ejecutar(
+            // Usar el UseCase que orquesta toda la lógica
+            $resultado = $this->activarReciboConConsecutivoUseCase->ejecutar(
                 $procesoId,
                 $request->boolean('activar'),
                 $usuario->id
             );
 
-            $activar = $request->boolean('activar');
+            // Obtener el proceso actualizado para devolver en la respuesta
+            $procesoActualizado = \DB::table('pedidos_procesos_prenda_detalles')
+                ->where('id', $procesoId)
+                ->first();
 
             return response()->json([
                 'success' => true,
-                'message' => $activar ? 'Recibo activado correctamente' : 'Recibo desactivado correctamente',
-                'data' => $procesoActualizado->toArray(),
+                'message' => $resultado['message'],
+                'data' => $procesoActualizado ? (array) $procesoActualizado : [],
+                'consecutivo' => $resultado['consecutivo'] ?? null,
             ]);
 
         } catch (\DomainException $e) {
@@ -564,7 +578,7 @@ class ProcesosPrendaDetalleController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         } catch (\Exception $e) {
-            Log::error('[ProcesosController::activarRecibo] Error', [
+            Log::error('[ProcesosPrendaDetalleController::activarRecibo] Error', [
                 'proceso_id' => $procesoId,
                 'error' => $e->getMessage(),
             ]);
