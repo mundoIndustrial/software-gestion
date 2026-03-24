@@ -34,8 +34,6 @@ class PedidoQueryController extends Controller
     /**
      * GET /api/pedidos/{id}
      * 
-     * REFACTORIZADO: Utiliza ObtenerPedidoTransformadoUseCase
-     * Las excepciones se manejan centralmente en ExceptionHandler
      */
     public function show(int $id): JsonResponse
     {
@@ -63,8 +61,6 @@ class PedidoQueryController extends Controller
     /**
      * GET /asesores/pedidos/{id}/recibos-datos
      *
-     * REFACTORIZADO: Utiliza ObtenerDetalleCompletoUseCase
-     * Las excepciones se manejan centralmente en ExceptionHandler
      */
     public function obtenerDetalleCompleto(int $id, bool $filtrarProcesosPendientes = false): JsonResponse
     {
@@ -82,8 +78,6 @@ class PedidoQueryController extends Controller
     /**
      * GET /api/pedidos/{id}/datos-edicion
      * 
-     * REFACTORIZADO: Utiliza ObtenerDatosEdicionUseCase para toda la orquestación
-     * Las excepciones se manejan centralmente en ExceptionHandler
      */
     public function obtenerDatosEdicion(int $id): JsonResponse
     {
@@ -98,8 +92,6 @@ class PedidoQueryController extends Controller
     /**
      * GET /pedidos-public/{pedidoId}/ancho-metraje-prenda/{prendaId}
      * 
-     * REFACTORIZADO: Utiliza ObtenerAnchoMetrajePrendaUseCase
-     * Las excepciones se manejan centralmente en ExceptionHandler
      */
     public function obtenerAnchoMetrajePrendaPublico(int $pedidoId, int $prendaId): JsonResponse
     {
@@ -110,8 +102,6 @@ class PedidoQueryController extends Controller
     /**
      * GET /api/areas/{area}/encargados
      * 
-     * REFACTORIZADO: Utiliza ObtenerEncargadosPorAreaUseCase
-     * Retorna lista de encargados disponibles para un área específica
      */
     public function obtenerEncargadosPorArea(string $area): JsonResponse
     {

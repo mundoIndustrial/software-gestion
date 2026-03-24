@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\ConsecutivoReciboPedido;
 use App\Models\PedidoProduccion;
+use App\Models\PrendaPedido;
+use App\Repositories\ConsecutivoReciboPedidoRepository;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -12,7 +14,6 @@ use Illuminate\Pagination\LengthAwarePaginator;
  * 
  * Servicio especializado para consultas de recibos de costura
  * Responsabilidades:
- * - Construir query base para recibos de costura
  * - Aplicar filtros dinámicos
  * - Mapear datos a estructura esperada por frontend
  * - Calcular campos derivados (días, cantidad, etc.)
@@ -20,27 +21,23 @@ use Illuminate\Pagination\LengthAwarePaginator;
 class ReciboCosturaQueryService
 {
     protected $cacheService;
+    protected $repository;
 
-    public function __construct(CacheCalculosService $cacheService)
+    public function __construct(CacheCalculosService $cacheService, ConsecutivoReciboPedidoRepository $repository)
     {
         $this->cacheService = $cacheService;
+        $this->repository = $repository;
     }
 
     /**
-     * Construir query base para recibos de costura
+     * Obtener query base para recibos de costura
+     * Delega al Repository
      * 
      * @return Builder
      */
-    public function buildBaseQuery(): Builder
+    public function getBaseQuery(): Builder
     {
-        return ConsecutivoReciboPedido::where('tipo_recibo', 'COSTURA')
-            ->where('activo', true)
-            ->with([
-                'pedido',
-                'prenda.tallas',
-                'prenda.coloresTelas'
-            ])
-            ->orderBy('created_at', 'desc');
+        return $this->repository->buildBaseQuery();
     }
 
     /**
@@ -273,49 +270,12 @@ class ReciboCosturaQueryService
      */
     public function getFilterOptions(): array
     {
-        // Crear queries frescas para cada pluck para evitar conflictos con DISTINCT + ORDER BY
         return [
-            'estados' => ConsecutivoReciboPedido::where('tipo_recibo', 'COSTURA')
-                ->where('activo', true)
-                ->distinct()
-                ->pluck('estado')
-                ->filter()
-                ->values()
-                ->toArray(),
-            
-            'areas' => ConsecutivoReciboPedido::where('tipo_recibo', 'COSTURA')
-                ->where('activo', true)
-                ->distinct()
-                ->pluck('area')
-                ->filter()
-                ->values()
-                ->toArray(),
-            
-            'numeros_recibo' => ConsecutivoReciboPedido::where('tipo_recibo', 'COSTURA')
-                ->where('activo', true)
-                ->distinct()
-                ->pluck('consecutivo_actual')
-                ->filter()
-                ->values()
-                ->toArray(),
-            
-            'clientes' => ConsecutivoReciboPedido::where('tipo_recibo', 'COSTURA')
-                ->where('activo', true)
-                ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id')
-                ->distinct()
-                ->pluck('pedidos_produccion.cliente')
-                ->filter()
-                ->values()
-                ->toArray(),
-            
-            'dias_entrega' => ConsecutivoReciboPedido::where('tipo_recibo', 'COSTURA')
-                ->where('activo', true)
-                ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id')
-                ->distinct()
-                ->pluck('pedidos_produccion.dia_de_entrega')
-                ->filter()
-                ->values()
-                ->toArray(),
+            'estados' => $this->repository->getEstados(),
+            'areas' => $this->repository->getAreas(),
+            'numeros_recibo' => $this->repository->getNumerosRecibo(),
+            'clientes' => $this->repository->getClientes(),
+            'dias_entrega' => $this->repository->getDiasEntrega(),
         ];
     }
 }

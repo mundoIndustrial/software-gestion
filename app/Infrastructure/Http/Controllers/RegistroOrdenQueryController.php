@@ -1933,40 +1933,20 @@ class RegistroOrdenQueryController extends Controller
                             $ultimoProcesoFechaFin = $procesosOrdenadosAsc[$idxUltimo + 1]->created_at;
                         }
                         
-                        // Obtener el número de recibo más reciente para esta prenda
-                        \Log::info('[getSeguimientoPorPrenda] Buscando consecutivos para prenda', [
-                            'prenda_id' => $prenda->id,
-                            'pedido_id' => $pedidoId
-                        ]);
-                        
-                        $consecutivosQuery = \App\Models\ConsecutivosRecibosPedidos::where('prenda_id', $prenda->id)
-                            ->where('pedido_produccion_id', $pedidoId)
-                            ->where('tipo_recibo', 'COSTURA')
-                            ->where('activo', 1);
-                        
-                        $consecutivosCount = $consecutivosQuery->count();
-                        \Log::info('[getSeguimientoPorPrenda] Consecutivos encontrados', [
-                            'prenda_id' => $prenda->id,
-                            'pedido_id' => $pedidoId,
-                            'total_encontrados' => $consecutivosCount
-                        ]);
-                        
-                        $ultimoRecibo = $consecutivosQuery->orderBy('created_at', 'desc')->first();
-                        
-                        if ($ultimoRecibo) {
-                            $ultimoReciboNumero = $ultimoRecibo->consecutivo_actual;
-                            \Log::info('[getSeguimientoPorPrenda] Último recibo encontrado', [
-                                'prenda_id' => $prenda->id,
-                                'consecutivo_actual' => $ultimoRecibo->consecutivo_actual,
-                                'tipo_recibo' => $ultimoRecibo->tipo_recibo
-                            ]);
-                        } else {
-                            \Log::warning('[getSeguimientoPorPrenda] No se encontró último recibo', [
-                                'prenda_id' => $prenda->id,
-                                'pedido_id' => $pedidoId
-                            ]);
-                        }
                     }
+                }
+
+                // Obtener el número de recibo más reciente para esta prenda
+                // (independiente de si tiene procesos de seguimiento en procesos_prenda)
+                $ultimoRecibo = \App\Models\ConsecutivosRecibosPedidos::where('prenda_id', $prenda->id)
+                    ->where('pedido_produccion_id', $pedidoId)
+                    ->where('tipo_recibo', 'COSTURA')
+                    ->where('activo', 1)
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+                
+                if ($ultimoRecibo) {
+                    $ultimoReciboNumero = $ultimoRecibo->consecutivo_actual;
                 }
 
                 // Construir array de cantidades por talla

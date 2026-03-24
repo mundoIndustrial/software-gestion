@@ -360,7 +360,7 @@ class ObtenerDetalleCompletoUseCase
 
             // Procesar consecutivos
             foreach ($consecutivos as $c) {
-                if (isset($recibos[$c->tipo_recibo])) {
+                if (array_key_exists($c->tipo_recibo, $recibos)) {
                     $recibos[$c->tipo_recibo] = [
                         'id' => $c->id,
                         'tipo_recibo' => $c->tipo_recibo,

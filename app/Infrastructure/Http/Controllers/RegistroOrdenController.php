@@ -2554,7 +2554,7 @@ class RegistroOrdenController extends Controller
     {
         try {
             // Construir query base
-            $query = $this->reciboCosturaQueryService->buildBaseQuery();
+            $query = $this->reciboCosturaQueryService->getBaseQuery();
 
             // Extraer y sanitizar filtros
             $filters = [

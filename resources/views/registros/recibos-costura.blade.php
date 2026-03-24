@@ -315,6 +315,27 @@
 <!-- Legacy Scripts Component (MANTENER POR COMPATIBILIDAD) -->
 <x-recibos.recibos-costura-scripts />
 
-<!-- Legacy Handlers - Funciones de filtro, notificaciones, modales -->
+<!-- Toast Notification Service - Servicio centralizado de notificaciones -->
+<script src="{{ asset('js/recibos-costura/services/ToastNotificationService.js') }}"></script>
+
+<!-- Filter Module - Sistema de filtrado de tabla -->
+<script src="{{ asset('js/recibos-costura/modules/FilterModule.js') }}"></script>
+
+<!-- Dropdown Service - Sistema de dropdowns -->
+<script src="{{ asset('js/recibos-costura/services/DropdownService.js') }}"></script>
+
+<!-- Costura Notification Bell Service - Sistema de notificaciones de campana -->
+<script src="{{ asset('js/recibos-costura/services/CosturaNotificationBellService.js') }}"></script>
+
+<!-- Realtime Recibo Listener - Sistema de escucha en tiempo real de eventos -->
+<script src="{{ asset('js/recibos-costura/services/RealtimeReciboListener.js') }}"></script>
+
+<!-- Tracking Modal Controller - Controlador de modal de seguimiento -->
+<script src="{{ asset('js/recibos-costura/controllers/TrackingModalController.js') }}"></script>
+
+<!-- Add Process Modal Controller - Controlador de modal para agregar procesos -->
+<script src="{{ asset('js/recibos-costura/controllers/AddProcessModalController.js') }}"></script>
+
+<!-- Legacy Handlers - Funciones heredadas que delegan a módulos -->
 <script src="{{ asset('js/recibos-costura/legacy-handlers.js') }}"></script>
 @endpush
