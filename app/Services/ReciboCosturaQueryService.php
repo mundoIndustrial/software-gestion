@@ -155,7 +155,7 @@ class ReciboCosturaQueryService
             'numero_pedido' => $pedido->numero_pedido ?? 'N/A',
             'estado_pedido' => $pedido->estado ?? 'N/A',
             'dia_entrega' => $pedido->dia_de_entrega ?? '-',
-            'fecha_creacion_orden' => $pedido->fecha_de_creacion_de_orden?->format('d/m/Y') ?? 'N/A',
+            'fecha_creacion_orden' => $pedido->created_at?->format('d/m/Y') ?? 'N/A',
             'tipo_recibo' => $recibo->tipo_recibo,
             'activo' => $recibo->activo,
         ];

@@ -290,7 +290,7 @@
                                 </td>
                                 <td class="py-4 px-6 text-center">
                                     <span class="text-gray-600 text-sm">
-                                        {{ $orden->fecha_de_creacion_de_orden ? \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden)->subHours(5)->format('d/m/Y') : 'N/A' }}
+                                        {{ $orden->created_at ? \Carbon\Carbon::parse($orden->created_at)->subHours(5)->format('d/m/Y') : 'N/A' }}
                                     </span>
                                 </td>
                             </tr>

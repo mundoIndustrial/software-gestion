@@ -97,10 +97,10 @@ class FacturaPedidoService
      */
     private function determinarFechaCreacion(PedidoProduccion $pedido): string
     {
-        return $pedido->fecha_de_creacion_de_orden 
-            ? (is_string($pedido->fecha_de_creacion_de_orden) 
-                ? $pedido->fecha_de_creacion_de_orden 
-                : $pedido->fecha_de_creacion_de_orden->format('d/m/Y'))
+        return $pedido->created_at 
+            ? (is_string($pedido->created_at) 
+                ? $pedido->created_at 
+                : $pedido->created_at->format('d/m/Y'))
             : ($pedido->created_at 
                 ? $pedido->created_at->format('d/m/Y')
                 : date('d/m/Y'));

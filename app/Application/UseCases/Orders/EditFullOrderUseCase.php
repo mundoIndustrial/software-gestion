@@ -46,7 +46,7 @@ class EditFullOrderUseCase
             $orden->update([
                 'estado' => $validatedData['estado'] ?? 'No iniciado',
                 'cliente' => $validatedData['cliente'],
-                'fecha_de_creacion_de_orden' => $validatedData['fecha_creacion'],
+                'created_at' => $validatedData['fecha_creacion'],
                 'forma_de_pago' => $validatedData['forma_pago'] ?? null,
             ]);
 

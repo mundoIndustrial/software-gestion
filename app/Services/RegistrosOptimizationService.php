@@ -23,7 +23,7 @@ class RegistrosOptimizationService
         $query = PedidoProduccion::query()
             ->select([
                 'id', 'numero_pedido', 'estado', 'area', 'cliente', 'descripcion', 
-                'cantidad', 'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega',
+                'cantidad', 'created_at', 'fecha_estimada_de_entrega',
                 'dia_de_entrega', 'asesor_id', 'encargado_orden', 'forma_de_pago', 
                 'novedades', 'encargados_de_corte', 'dias_corte', 'insumos_y_telas',
                 'dias_insumos', 'costura', 'dias_costura', 'control_de_calidad',
@@ -116,7 +116,7 @@ class RegistrosOptimizationService
         foreach ($ordenes as $orden) {
             $numeroPedido = $orden->numero_pedido ?? $orden['numero_pedido'];
             
-            if (!$orden->fecha_de_creacion_de_orden) {
+            if (!$orden->created_at) {
                 $resultados[$numeroPedido] = 0;
                 continue;
             }
@@ -135,7 +135,7 @@ class RegistrosOptimizationService
                     continue;
                 }
 
-                $fechaInicio = Carbon::parse($orden->fecha_de_creacion_de_orden);
+                $fechaInicio = Carbon::parse($orden->created_at);
                 $fechaFin = Carbon::parse($ultimoProceso->fecha_inicio);
 
                 $dias = self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivos);

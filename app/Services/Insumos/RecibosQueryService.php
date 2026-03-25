@@ -28,7 +28,7 @@ class RecibosQueryService
                 'pedidos_produccion.area as pedido_area',
                 'consecutivos_recibos_pedidos.estado as recibo_estado',
                 'consecutivos_recibos_pedidos.area as recibo_area',
-                'pedidos_produccion.fecha_de_creacion_de_orden',
+                'pedidos_produccion.created_at',
                 'pedidos_produccion.dia_de_entrega',
                 'pedidos_produccion.fecha_estimada_de_entrega'
             )
@@ -69,13 +69,13 @@ class RecibosQueryService
                         $column = 'pedidos_produccion.estado';
                     } elseif ($column === 'area') {
                         $column = 'pedidos_produccion.area';
-                    } elseif ($column === 'fecha_de_creacion_de_orden') {
-                        $column = 'pedidos_produccion.fecha_de_creacion_de_orden';
+                    } elseif ($column === 'created_at') {
+                        $column = 'pedidos_produccion.created_at';
                     }
 
                     if (in_array($column, ['pedidos_produccion.numero_pedido', 'pedidos_produccion.cliente'])) {
                         $query->where($column, 'LIKE', "%{$filterValue}%");
-                    } elseif ($column === 'pedidos_produccion.fecha_de_creacion_de_orden') {
+                    } elseif ($column === 'pedidos_produccion.created_at') {
                         try {
                             $fecha = Carbon::createFromFormat('d/m/Y', $filterValue);
                             $query->whereDate($column, $fecha->format('Y-m-d'));
@@ -146,8 +146,8 @@ class RecibosQueryService
     {
         return $recibos->map(function($recibo) use ($parcialCreatedAtMap, $calcularDiasCallback, $materialesMap) {
             $diasCalculados = 0;
-            if ($recibo->fecha_de_creacion_de_orden) {
-                $fechaInicio = Carbon::parse($recibo->fecha_de_creacion_de_orden);
+            if ($recibo->created_at) {
+                $fechaInicio = Carbon::parse($recibo->created_at);
                 $diasCalculados = $calcularDiasCallback($fechaInicio);
             }
 
@@ -158,7 +158,7 @@ class RecibosQueryService
             }
             $esParcial = $parcialId !== null;
 
-            $fechaInicioOrden = $recibo->fecha_de_creacion_de_orden;
+            $fechaInicioOrden = $recibo->created_at;
             if ($esParcial && $parcialId !== null && isset($parcialCreatedAtMap[$parcialId]) && $parcialCreatedAtMap[$parcialId]) {
                 $fechaInicioOrden = $parcialCreatedAtMap[$parcialId];
             }
@@ -177,7 +177,7 @@ class RecibosQueryService
                 'estado' => $recibo->recibo_estado ?? $recibo->pedido_estado,
                 'area' => $recibo->recibo_area ?? $recibo->pedido_area,
                 'pedido_estado' => $recibo->pedido_estado,
-                'fecha_de_creacion_de_orden' => $fechaInicioOrden,
+                'created_at' => $fechaInicioOrden,
                 'dia_de_entrega' => $recibo->dia_de_entrega,
                 'fecha_estimada_de_entrega' => $recibo->fecha_estimada_de_entrega,
                 'dias_calculados' => $diasCalculados,

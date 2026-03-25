@@ -52,7 +52,7 @@ class MigrateTablaOriginalCompleto extends Command
     protected $procesosMap = [
         'creacion_de_orden' => [
             'proceso' => 'Creación de Orden',
-            'fecha' => 'fecha_de_creacion_de_orden',  // ← La fecha real de inicio
+            'fecha' => 'created_at',  // ← La fecha real de inicio
             'encargado' => 'encargado_orden',          // ← El encargado asignado
             'dias' => 'dias_orden',
         ],
@@ -335,7 +335,7 @@ class MigrateTablaOriginalCompleto extends Command
                 'pedido as numero_pedido',
                 'asesora',
                 'cliente',
-                'fecha_de_creacion_de_orden',
+                'created_at',
                 'dia_de_entrega',
                 'fecha_estimada_de_entrega',
                 'estado',
@@ -363,7 +363,7 @@ class MigrateTablaOriginalCompleto extends Command
                         'cliente_id' => $clienteId,
                         'cliente' => $pedidoOrig->cliente,
                         'estado' => $this->normalizarEstado($pedidoOrig->estado),
-                        'fecha_de_creacion_de_orden' => $this->parsearFecha($pedidoOrig->fecha_de_creacion_de_orden),
+                        'created_at' => $this->parsearFecha($pedidoOrig->created_at),
                         'dia_de_entrega' => $pedidoOrig->dia_de_entrega ?? 0,
                         'fecha_estimada_de_entrega' => $this->parsearFecha($pedidoOrig->fecha_estimada_de_entrega),
                         'area' => $pedidoOrig->area ?? 'Creación Orden',

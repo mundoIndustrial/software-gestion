@@ -123,7 +123,7 @@ class OrderQueryService
         
         $ordenes = $query->select([
             'id', 'numero_pedido', 'cliente', 'estado', 'area',
-            'dia_de_entrega', 'fecha_de_creacion_de_orden',
+            'dia_de_entrega', 'created_at',
             'fecha_estimada_de_entrega', 'novedades', 'forma_de_pago',
             'asesor_id', 'created_at', 'updated_at'
         ])->with(['prendas.tallas', 'asesora'])
@@ -257,7 +257,7 @@ class OrderQueryService
                 'estado' => $orden->estado,
                 'area' => $orden->area,
                 'dia_de_entrega' => $orden->dia_de_entrega,
-                'fecha_creacion' => $orden->fecha_de_creacion_de_orden?->format('d/m/Y'),
+                'fecha_creacion' => $orden->created_at?->format('d/m/Y'),
                 'fecha_estimada' => $orden->fecha_estimada_de_entrega?->format('d/m/Y'),
                 'asesor' => $orden->asesora?->name ?? '-',
                 'forma_de_pago' => $orden->forma_de_pago,

@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'estado': 'Estado',
             'area': 'Área',
             'fecha': 'Fecha',
-            'fecha_de_creacion_de_orden': 'Fecha de Inicio'
+            'created_at': 'Fecha de Inicio'
         };
 
         // Valores predefinidos para ciertos filtros

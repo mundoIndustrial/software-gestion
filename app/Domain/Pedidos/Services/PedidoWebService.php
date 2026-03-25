@@ -179,7 +179,7 @@ class PedidoWebService
             'orden_compra'               => $datosValidados['orden_compra'] ?? $borrador->orden_compra,
             'forma_de_pago'              => $datosValidados['forma_de_pago'] ?? $borrador->forma_de_pago,
             'observaciones'              => $datosValidados['observaciones'] ?? $borrador->observaciones,
-            'fecha_de_creacion_de_orden' => now(),
+            'created_at' => now(),
         ]);
 
         Log::info('[PedidoWebService] Borrador convertido exitosamente', [
@@ -236,7 +236,7 @@ class PedidoWebService
             'estado' => $estado,
             'cantidad_total' => 0,
             'area' => $area,  // AHORA SE GUARDA EL ÁREA CORRECTAMENTE
-            'fecha_de_creacion_de_orden' => now(), // Fecha actual de creación de la orden
+            'created_at' => now(), // Fecha actual de creación de la orden
         ]);
 
         return $pedido;
@@ -280,7 +280,7 @@ class PedidoWebService
             'estado' => $estado, // Estado 'Borrador'
             'cantidad_total' => 0,
             'area' => $area,
-            'fecha_de_creacion_de_orden' => now(),
+            'created_at' => now(),
         ]);
 
         return $pedido;

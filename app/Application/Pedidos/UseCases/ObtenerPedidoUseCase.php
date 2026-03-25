@@ -209,8 +209,8 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 prendas: $prendasCompletas,
                 epps: $eppsCompletos,
                 formaDePago: $datosEnriquecidos['forma_de_pago'] ?? null,
-                fechaCreacion: $modeloEloquent->fecha_de_creacion_de_orden 
-                    ? $modeloEloquent->fecha_de_creacion_de_orden->format('d/m/Y')
+                fechaCreacion: $modeloEloquent->created_at 
+                    ? $modeloEloquent->created_at->format('d/m/Y')
                     : ($modeloEloquent->created_at ? $modeloEloquent->created_at->format('d/m/Y') : null),
                 area: $modeloEloquent->area ?? 'Sin especificar',
                 mensaje: 'Pedido obtenido exitosamente'

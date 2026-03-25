@@ -81,7 +81,7 @@ class CreacionPedidoService
                 'forma_de_pago' => $formaPago,
                 'estado' => 'Pendiente',  // ← Estado por defecto
                 'area' => 'Creación de Orden',
-                'fecha_de_creacion_de_orden' => now(),
+                'created_at' => now(),
             ]);
 
             // Procesar prendas
@@ -119,7 +119,7 @@ class CreacionPedidoService
                 'forma_de_pago' => $data['forma_de_pago'] ?? '',
                 'estado' => 'Pendiente',  // ← Estado por defecto
                 'area' => 'Creación de Orden',
-                'fecha_de_creacion_de_orden' => now(),
+                'created_at' => now(),
             ]);
 
             // Procesar prendas
@@ -151,7 +151,7 @@ class CreacionPedidoService
                 'forma_de_pago' => $data['forma_de_pago'] ?? '',
                 'estado' => 'Pendiente',  // ← Estado por defecto
                 'area' => 'Creación de Orden',
-                'fecha_de_creacion_de_orden' => now(),
+                'created_at' => now(),
             ]);
 
             // Procesar prendas reflectivas

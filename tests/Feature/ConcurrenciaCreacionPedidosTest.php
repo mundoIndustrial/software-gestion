@@ -259,7 +259,7 @@ class ConcurrenciaCreacionPedidosTest extends TestCase
             'cliente' => 'Cliente Test',
             'asesor_id' => User::first()->id,
             'estado' => 'pendiente_cartera',
-            'fecha_de_creacion_de_orden' => now(),
+            'created_at' => now(),
         ]);
     }
 

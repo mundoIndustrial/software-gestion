@@ -51,7 +51,7 @@ class CrearPedidoTestScript extends TestCase
                 'asesor_id' => $asesora->id,
                 'forma_de_pago' => 'efectivo',
                 'estado' => 'pendiente',
-                'fecha_de_creacion_de_orden' => now(),
+                'created_at' => now(),
                 'cantidad_total' => 100,
             ]);
             echo "  Pedido creado: #{$pedido->numero_pedido} (ID: {$pedido->id})\n\n";
@@ -90,7 +90,7 @@ class CrearPedidoTestScript extends TestCase
             'Forma de Pago' => $pedido->forma_de_pago,
             'Estado' => $pedido->estado,
             'Cantidad Total' => $pedido->cantidad_total,
-            'Fecha Creación' => $pedido->fecha_de_creacion_de_orden,
+            'Fecha Creación' => $pedido->created_at,
         ];
 
         foreach ($datos as $campo => $valor) {

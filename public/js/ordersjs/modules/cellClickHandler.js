@@ -131,7 +131,7 @@ const CellClickHandler = {
             9: 'novedades',
             10: 'asesor',
             11: 'forma_de_pago',
-            12: 'fecha_de_creacion_de_orden',
+            12: 'created_at',
             13: 'fecha_estimada_de_entrega',
             14: 'usuario_anulacion',
         };

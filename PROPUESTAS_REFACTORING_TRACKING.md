@@ -571,7 +571,7 @@ function updateSelectorOrderInfo(orderData) {
         break;
       case 'inicio':
         el.textContent = DateFormatter.formatDate(
-          orderData.fecha_creacion || orderData.fecha_de_creacion_de_orden,
+          orderData.fecha_creacion || orderData.created_at,
           '-'
         );
         break;

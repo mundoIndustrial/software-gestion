@@ -65,7 +65,7 @@ class SaveDiaEntregaUseCase
 
         // Calcular fecha estimada
         if ($calcularFechaEstimada && $diaDeEntrega && $diaDeEntrega > 0) {
-            $fechaInicio = $pedido->fecha_de_creacion_de_orden ?? $pedido->created_at;
+            $fechaInicio = $pedido->created_at ?? $pedido->created_at;
             
             if ($fechaInicio) {
                 $fechaEstimada = $this->calculationService->calcularFechaEstimada(

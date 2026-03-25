@@ -382,8 +382,8 @@ function showOrderDetailViewModal(orderData) {
     document.getElementById('modalEstado').textContent = estadoFormato;
     
     // Llenar fechas
-    document.getElementById('modalFechaCreacion').textContent = orderData.fecha_de_creacion_de_orden ? 
-        new Date(orderData.fecha_de_creacion_de_orden).toLocaleDateString('es-ES') : '-';
+    document.getElementById('modalFechaCreacion').textContent = orderData.created_at ? 
+        new Date(orderData.created_at).toLocaleDateString('es-ES') : '-';
     document.getElementById('modalFechaEstimada').textContent = orderData.fecha_estimada_de_entrega ? 
         new Date(orderData.fecha_estimada_de_entrega).toLocaleDateString('es-ES') : '-';
     document.getElementById('modalDiaEntrega').textContent = orderData.dia_de_entrega ? orderData.dia_de_entrega + ' días' : '-';

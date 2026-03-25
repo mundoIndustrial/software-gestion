@@ -98,7 +98,7 @@ class PedidoService
                 'asesor_id' => Auth::id(),
                 'forma_de_pago' => $cotizacion->especificaciones['forma_pago'] ?? null,
                 'estado' => EstadoPedido::PENDIENTE_SUPERVISOR->value,
-                'fecha_de_creacion_de_orden' => now(),
+                'created_at' => now(),
             ]);
 
             \Log::info('Pedido de producción creado', [

@@ -70,7 +70,7 @@ class RegistroOrdenTransformService
         $ordenArray['descripcion_prendas'] = $orden->descripcion_prendas ?? '';
 
         // Mapear nombres de campos largos a cortos para la vista
-        $ordenArray['fecha_creacion'] = $ordenArray['fecha_de_creacion_de_orden'] ?? null;
+        $ordenArray['fecha_creacion'] = $ordenArray['created_at'] ?? null;
         $ordenArray['fecha_estimada'] = $ordenArray['fecha_estimada_de_entrega'] ?? null;
         $ordenArray['cantidad'] = $ordenArray['cantidad_total'] ?? null;
         $ordenArray['encargado'] = $encargadosMap[$orden->numero_pedido] ?? '';

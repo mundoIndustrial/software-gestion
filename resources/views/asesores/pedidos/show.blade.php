@@ -71,7 +71,7 @@
             <div class="info-item">
                 <label>Fecha de Creación:</label>
                 <span class="value">
-                    {{ $pedidoData->fecha_de_creacion_de_orden ? \Carbon\Carbon::parse($pedidoData->fecha_de_creacion_de_orden)->format('d/m/Y') : '-' }}
+                    {{ $pedidoData->created_at ? \Carbon\Carbon::parse($pedidoData->created_at)->format('d/m/Y') : '-' }}
                 </span>
             </div>
             <div class="info-item">

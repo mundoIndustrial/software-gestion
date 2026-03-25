@@ -15,7 +15,7 @@ use Carbon\Carbon;
 class RegistroBodegaQueryService
 {
     protected $dateColumns = [
-        'fecha_de_creacion_de_orden', 'inventario', 'insumos_y_telas', 'corte',
+        'created_at', 'inventario', 'insumos_y_telas', 'corte',
         'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia',
         'arreglos', 'marras', 'control_de_calidad', 'entrega'
     ];
@@ -36,7 +36,7 @@ class RegistroBodegaQueryService
         $allowedColumns = [
             'pedido', 'estado', 'area', 'total_de_dias_', 'cliente',
             'descripcion', 'cantidad', 'novedades', 'forma_de_pago',
-            'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
+            'created_at', 'encargado_orden', 'dias_orden', 'inventario',
             'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',
             'dias_insumos', 'corte', 'encargados_de_corte', 'dias_corte', 'bordado',
             'codigo_de_bordado', 'dias_bordado', 'estampado', 'encargados_estampado',

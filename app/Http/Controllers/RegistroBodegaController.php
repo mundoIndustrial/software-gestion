@@ -286,7 +286,7 @@ class RegistroBodegaController extends Controller
                 'estado' => $estado,
                 'cliente' => $request->cliente,
                 'area' => $area,
-                'fecha_de_creacion_de_orden' => $request->fecha_creacion,
+                'created_at' => $request->fecha_creacion,
                 'encargado_orden' => $request->encargado,
                 'forma_de_pago' => $request->forma_pago,
                 'descripcion' => $descripcionCompleta,
@@ -331,7 +331,7 @@ class RegistroBodegaController extends Controller
         return [
             'Insumos' => 'insumos_y_telas',
             'Corte' => 'corte',
-            'Creación Orden' => 'fecha_de_creacion_de_orden',
+            'Creación Orden' => 'created_at',
             'Bordado' => 'bordado',
             'Estampado' => 'estampado',
             'Costura' => 'costura',
@@ -363,7 +363,7 @@ class RegistroBodegaController extends Controller
             // Whitelist de columnas permitidas para edición
             $allowedColumns = [
                 'estado', 'area', '_pedido', 'cliente', 'descripcion', 'cantidad',
-                'novedades', 'forma_de_pago', 'fecha_de_creacion_de_orden',
+                'novedades', 'forma_de_pago', 'created_at',
                 'encargado_orden', 'dias_orden', 'inventario', 'encargados_inventario',
                 'dias_inventario', 'insumos_y_telas', 'encargados_insumos', 'dias_insumos',
                 'corte', 'encargados_de_corte', 'dias_corte', 'bordado', 'codigo_de_bordado',
@@ -377,7 +377,7 @@ class RegistroBodegaController extends Controller
 
             // Columnas que son de tipo fecha
             $dateColumns = [
-                'fecha_de_creacion_de_orden', 'insumos_y_telas', 'corte', 'costura', 
+                'created_at', 'insumos_y_telas', 'corte', 'costura', 
                 'lavanderia', 'arreglos', 'control_de_calidad', 'entrega', 'despacho'
             ];
 
@@ -510,15 +510,15 @@ class RegistroBodegaController extends Controller
         foreach ($ordenes as $orden) {
             $ordenPedido = $orden->pedido;
 
-            // Verificar si fecha_de_creacion_de_orden existe
-            if (!$orden->fecha_de_creacion_de_orden) {
+            // Verificar si created_at existe
+            if (!$orden->created_at) {
                 $resultados[$ordenPedido] = 0;
                 continue;
             }
 
             try {
                 // Cálculo optimizado para esta orden
-                $fechaCreacion = \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden);
+                $fechaCreacion = \Carbon\Carbon::parse($orden->created_at);
 
                 if ($orden->estado === 'Entregado') {
                     // Usar la fecha de DESPACHO cuando el estado es Entregado
@@ -788,7 +788,7 @@ class RegistroBodegaController extends Controller
             $ordenData = [
                 'estado' => $request->estado ?? 'No iniciado',
                 'cliente' => $request->cliente,
-                'fecha_de_creacion_de_orden' => $request->fecha_creacion,
+                'created_at' => $request->fecha_creacion,
                 'encargado_orden' => $request->encargado,
                 'forma_de_pago' => $request->forma_pago,
                 'descripcion' => $descripcionCompleta,
@@ -1053,7 +1053,7 @@ class RegistroBodegaController extends Controller
 
             // Construir procesos desde las columnas de la tabla
             $procesosMap = [
-                'Orden' => 'fecha_de_creacion_de_orden',
+                'Orden' => 'created_at',
                 'Inventario' => 'inventario',
                 'Insumos y Telas' => 'insumos_y_telas',
                 'Corte' => 'corte',
@@ -1098,7 +1098,7 @@ class RegistroBodegaController extends Controller
             return response()->json([
                 'numero_pedido' => $orden->pedido,
                 'cliente' => $orden->cliente,
-                'fecha_inicio' => $orden->fecha_de_creacion_de_orden,
+                'fecha_inicio' => $orden->created_at,
                 'fecha_estimada_de_entrega' => $orden->entrega ?? null,
                 'procesos' => $procesos,
                 'total_dias_habiles' => $totalDiasHabiles,
@@ -1183,7 +1183,7 @@ class RegistroBodegaController extends Controller
                 $ordenesMapeadas = $ordenes->getCollection()->map(function($orden) {
                     // Calcular días hábiles usando el método del modelo
                     $diasCalculados = 0;
-                    if ($orden->fecha_de_creacion_de_orden) {
+                    if ($orden->created_at) {
                         $diasCalculados = $orden->getTotalDeDiasAttribute();
                     }
                     
@@ -1194,7 +1194,7 @@ class RegistroBodegaController extends Controller
                         'estado' => $orden->estado,
                         'area' => $orden->area,
                         'dia_de_entrega' => $orden->dia_de_entrega,
-                        'fecha_de_creacion_de_orden' => $orden->fecha_de_creacion_de_orden,
+                        'created_at' => $orden->created_at,
                         'control_de_calidad' => $orden->control_de_calidad,
                         'novedades' => $orden->novedades,
                         'total_dias_calculado' => $diasCalculados

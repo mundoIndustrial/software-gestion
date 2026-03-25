@@ -68,7 +68,7 @@ class ObtenerProcesosPorPedidoUseCase
         return [
             'numero_pedido' => $orden->numero_pedido,
             'cliente' => $orden->cliente,
-            'fecha_inicio' => $orden->fecha_de_creacion_de_orden,
+            'fecha_inicio' => $orden->created_at,
             'fecha_estimada_de_entrega' => $orden->fecha_estimada_de_entrega,
             'procesos' => $procesos->toArray(),
             'total_dias_habiles' => $totalDiasHabiles,

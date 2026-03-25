@@ -35,7 +35,7 @@ class TestProcesosAutomaticos extends Command
                 'cliente' => 'Cliente Prueba',
                 'estado' => 'Pendiente',
                 'area' => 'Creación de orden',
-                'fecha_de_creacion_de_orden' => now(),
+                'created_at' => now(),
                 'asesor' => 'Sistema',
                 'forma_de_pago' => 'Contado'
             ]);

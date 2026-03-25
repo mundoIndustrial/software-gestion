@@ -46,7 +46,7 @@
                                     ['key' => 'novedades', 'label' => 'Novedades', 'width' => '220px', 'justify' => 'flex-start'],
                                     ['key' => 'asesora', 'label' => 'Asesor', 'width' => '220px', 'justify' => 'flex-start'],
                                     ['key' => 'forma_de_pago', 'label' => 'Forma de pago', 'width' => '220px', 'justify' => 'flex-start'],
-                                    ['key' => 'fecha_de_creacion_de_orden', 'label' => 'Fecha de creación', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'created_at', 'label' => 'Fecha de creación', 'width' => '220px', 'justify' => 'flex-start'],
                                     ['key' => 'encargado_orden', 'label' => 'Encargado orden', 'width' => '220px', 'justify' => 'flex-start'],
                                     ['key' => 'dias_orden', 'label' => 'Días orden', 'width' => '220px', 'justify' => 'flex-start'],
                                     ['key' => 'inventario', 'label' => 'Inventario', 'width' => '220px', 'justify' => 'flex-start'],
@@ -178,7 +178,7 @@
                                 @php
                                     $columnasBase = [
                                         'total_de_dias_', 'pedido', 'cliente', 'descripcion', 
-                                        'cantidad', 'novedades', 'asesora', 'forma_de_pago', 'fecha_de_creacion_de_orden', 
+                                        'cantidad', 'novedades', 'asesora', 'forma_de_pago', 'created_at', 
                                         'encargado_orden', 'dias_orden', 'inventario', 'encargados_inventario', 'dias_inventario',
                                         'insumos_y_telas', 'encargados_insumos', 'dias_insumos', 'corte', 'encargados_de_corte',
                                         'dias_corte', 'bordado', 'codigo_de_bordado', 'dias_bordado', 'estampado', 
@@ -216,7 +216,7 @@
                                                 <span class="cell-text" data-pedido="{{ $orden->pedido }}" style="max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                                     @if($colName === 'total_de_dias_')
                                                         <span class="dias-value" data-dias="{{ $totalDias }}">{{ $totalDias }}</span>
-                                                    @elseif(in_array($colName, ['fecha_de_creacion_de_orden', 'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega', 'despacho']))
+                                                    @elseif(in_array($colName, ['created_at', 'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega', 'despacho']))
                                                         @php
                                                             echo !empty($orden->$colName) ? \Carbon\Carbon::parse($orden->$colName)->format('d/m/Y') : '';
                                                         @endphp

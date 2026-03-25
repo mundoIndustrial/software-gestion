@@ -262,7 +262,7 @@ class PedidoServiceTest extends TestCase
         $pedido = $this->service->aceptarCotizacion($this->cotizacion);
 
         // Afirmar
-        $this->assertEquals(now()->toDateString(), $pedido->fecha_de_creacion_de_orden);
+        $this->assertEquals(now()->toDateString(), $pedido->created_at);
     }
 
     /**

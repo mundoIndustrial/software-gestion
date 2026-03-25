@@ -815,7 +815,7 @@ class PedidosController extends Controller
                 ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
                 ->where('bodega_detalles_talla.pedido_epp_id', '!=', null)
                 ->leftJoin('pedidos_produccion', 'bodega_detalles_talla.numero_pedido', '=', 'pedidos_produccion.numero_pedido')
-                ->select('bodega_detalles_talla.*', 'pedidos_produccion.fecha_de_creacion_de_orden')
+                ->select('bodega_detalles_talla.*', 'pedidos_produccion.created_at')
                 ->orderBy('bodega_detalles_talla.fecha_entrega', 'asc');
 
             // Aplicar búsqueda si existe
@@ -856,7 +856,7 @@ class PedidosController extends Controller
                 ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
                 ->where('bodega_detalles_talla.pedido_epp_id', '!=', null)
                 ->leftJoin('pedidos_produccion', 'bodega_detalles_talla.numero_pedido', '=', 'pedidos_produccion.numero_pedido')
-                ->select('bodega_detalles_talla.*', 'pedidos_produccion.fecha_de_creacion_de_orden')
+                ->select('bodega_detalles_talla.*', 'pedidos_produccion.created_at')
                 ->orderBy('bodega_detalles_talla.fecha_entrega', 'asc');
 
             // Aplicar búsqueda si existe
@@ -899,7 +899,7 @@ class PedidosController extends Controller
             // Agregar datos
             $row = 2;
             foreach ($epp_pendientes as $item) {
-                $fechaPedido = $item->fecha_de_creacion_de_orden ? \Carbon\Carbon::parse($item->fecha_de_creacion_de_orden)->format('d/m/Y') : '—';
+                $fechaPedido = $item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('d/m/Y') : '—';
                 $fechaEntrega = $item->fecha_entrega ? \Carbon\Carbon::parse($item->fecha_entrega)->format('d/m/Y') : '—';
 
                 $sheet->setCellValue('A' . $row, $fechaPedido);

@@ -114,7 +114,7 @@ function esColumnaFecha(column) {
         return FormattingModule.esColumnaFecha(column);
     } else {
         const COLUMNAS_FECHA = [
-            'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega', 'inventario', 
+            'created_at', 'fecha_estimada_de_entrega', 'inventario', 
             'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 
             'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega', 'despacho'
         ];
@@ -405,8 +405,8 @@ if (typeof loadOrderImages === 'function') {
         //  LLENAR CAMPOS DEL MODAL
         
         // Fecha
-        if (order.fecha_de_creacion_de_orden) {
-            const fechaCreacion = new Date(order.fecha_de_creacion_de_orden);
+        if (order.created_at) {
+            const fechaCreacion = new Date(order.created_at);
             const day = fechaCreacion.getDate().toString().padStart(2, '0');
             const month = fechaCreacion.toLocaleDateString('es-ES', { month: 'short' }).toUpperCase();
             const year = fechaCreacion.getFullYear().toString().slice(-2);
@@ -627,7 +627,7 @@ function updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, 
     // Actualizar campos relacionados
     if (updatedFields) {
         for (const [updateField, updateValue] of Object.entries(updatedFields)) {
-            if (updateField === 'fecha_de_creacion_de_orden') continue;
+            if (updateField === 'created_at') continue;
             
             const updateCell = row.querySelector(`td[data-column="${updateField}"] .cell-text`);
             if (updateCell) {

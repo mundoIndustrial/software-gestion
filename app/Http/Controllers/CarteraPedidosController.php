@@ -81,17 +81,17 @@ class CarteraPedidosController extends Controller
             
             // Aplicar filtro de fechas
             if (!empty($fechaDesde)) {
-                $query->whereDate('fecha_de_creacion_de_orden', '>=', $fechaDesde);
+                $query->whereDate('created_at', '>=', $fechaDesde);
             }
             if (!empty($fechaHasta)) {
-                $query->whereDate('fecha_de_creacion_de_orden', '<=', $fechaHasta);
+                $query->whereDate('created_at', '<=', $fechaHasta);
             }
             
             // Aplicar ordenamiento
             if ($sortBy === 'cliente') {
                 $query->orderBy('cliente', $sortOrder);
             } else {
-                $query->orderBy('fecha_de_creacion_de_orden', $sortOrder);
+                $query->orderBy('created_at', $sortOrder);
             }
             
             // Obtener total
@@ -109,7 +109,7 @@ class CarteraPedidosController extends Controller
                     'cliente_nombre' => $pedido->cliente,
                     'cliente' => $pedido->cliente,
                     'estado' => $pedido->estado,
-                    'created_at' => $pedido->fecha_de_creacion_de_orden ?? $pedido->created_at
+                    'created_at' => $pedido->created_at ?? $pedido->created_at
                 ];
             });
             
@@ -689,7 +689,7 @@ class CarteraPedidosController extends Controller
             // Obtener fechas únicas con doble seguridad
             $fechas = PedidoProduccion::whereIn('estado', $estadosPendientes)
                 ->whereNotIn('estado', $estadosExcluidos)
-                ->selectRaw('DATE(fecha_de_creacion_de_orden) as fecha')
+                ->selectRaw('DATE(created_at) as fecha')
                 ->distinct()
                 ->orderBy('fecha', 'desc')
                 ->pluck('fecha')

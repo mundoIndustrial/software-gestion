@@ -749,7 +749,7 @@
 
                     <!-- Fecha Creación -->
                     <div style="color: #6b7280; font-size: 0.75rem;">
-                        {{ $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('d/m/Y') : '-' }}
+                        {{ $pedido->created_at ? $pedido->created_at->format('d/m/Y') : '-' }}
                     </div>
 
                     <!-- Fecha Estimada de Entrega -->

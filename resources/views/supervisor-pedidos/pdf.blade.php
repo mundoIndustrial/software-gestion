@@ -238,7 +238,7 @@
             </div>
             <div class="info-box">
                 <label>Fecha de Creación</label>
-                <value>{{ \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden)->format('d/m/Y') }}</value>
+                <value>{{ \Carbon\Carbon::parse($orden->created_at)->format('d/m/Y') }}</value>
             </div>
             <div class="info-box">
                 <label>Forma de Pago</label>

@@ -864,7 +864,7 @@
         const cliente = orden.cliente || orden.cliente_nombre || '—';
         const estado = orden.estado || orden.state || 'Pendiente';
         const estadoDisplay = estado.replace(/_/g, ' ');
-        const fechaCreacion = orden.fecha_de_creacion_de_orden || orden.created_at || '—';
+        const fechaCreacion = orden.created_at || orden.created_at || '—';
         const fechaEntrega = orden.fecha_estimada_de_entrega || orden.fecha_estimada || '—';
 
         // Formatear fechas

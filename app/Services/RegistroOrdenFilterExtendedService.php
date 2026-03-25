@@ -108,14 +108,14 @@ class RegistroOrdenFilterExtendedService
     public function applyFiltersToQuery(Builder $query, array $filters): Builder
     {
         $dateColumns = [
-            'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega', 'inventario',
+            'created_at', 'fecha_estimada_de_entrega', 'inventario',
             'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo',
             'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega'
         ];
 
         $allowedColumns = [
             'numero_pedido', 'estado', 'area', 'cliente', 'forma_de_pago',
-            'novedades', 'dia_de_entrega', 'fecha_de_creacion_de_orden',
+            'novedades', 'dia_de_entrega', 'created_at',
             'fecha_estimada_de_entrega', 'descripcion_prendas', 'asesora', 'asesor', 'encargado_orden'
         ];
 

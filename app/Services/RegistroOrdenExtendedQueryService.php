@@ -33,7 +33,7 @@ class RegistroOrdenExtendedQueryService
         return PedidoProduccion::query()
             ->select([
                 'numero_pedido', 'estado', 'area', 'cliente', 'forma_de_pago',
-                'novedades', 'dia_de_entrega', 'fecha_de_creacion_de_orden',
+                'novedades', 'dia_de_entrega', 'created_at',
                 'fecha_estimada_de_entrega', 'asesor_id', 'cliente_id', 'id'
             ])
             ->whereNotNull('numero_pedido') // 🆕 Excluir pedidos sin número de pedido
@@ -117,7 +117,7 @@ class RegistroOrdenExtendedQueryService
     {
         $allowedColumns = [
             'numero_pedido', 'estado', 'area', 'cliente', 'forma_de_pago',
-            'novedades', 'dia_de_entrega', 'fecha_de_creacion_de_orden',
+            'novedades', 'dia_de_entrega', 'created_at',
             'fecha_estimada_de_entrega', 'descripcion_prendas', 'asesora', 'asesor', 'encargado_orden'
         ];
 
@@ -126,7 +126,7 @@ class RegistroOrdenExtendedQueryService
         }
 
         $dateColumns = [
-            'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega', 'inventario',
+            'created_at', 'fecha_estimada_de_entrega', 'inventario',
             'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo',
             'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega'
         ];

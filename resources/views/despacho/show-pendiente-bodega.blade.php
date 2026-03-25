@@ -210,7 +210,7 @@
                                         <input
                                             type="date"
                                             class="fecha-pedido-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded bg-slate-50"
-                                            value="{{ $pedido['fecha_de_creacion_de_orden'] ? \Carbon\Carbon::parse($pedido['fecha_de_creacion_de_orden'])->format('Y-m-d') : '' }}"
+                                            value="{{ $pedido['created_at'] ? \Carbon\Carbon::parse($pedido['created_at'])->format('Y-m-d') : '' }}"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
                                         >

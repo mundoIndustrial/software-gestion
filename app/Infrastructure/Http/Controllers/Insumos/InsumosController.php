@@ -659,8 +659,8 @@ class InsumosController extends Controller
                 
                 // Calcular días hábiles usando el trait
                 $diasCalculados = 0;
-                if ($pedido && $pedido->fecha_de_creacion_de_orden) {
-                    $diasCalculados = $this->calcularDiasHabiles($pedido->fecha_de_creacion_de_orden);
+                if ($pedido && $pedido->created_at) {
+                    $diasCalculados = $this->calcularDiasHabiles($pedido->created_at);
                 }
                 
                 // Obtener el proceso más reciente para el área
@@ -683,7 +683,7 @@ class InsumosController extends Controller
                         'area' => $areaProcesoReciente,
                         'dia_de_entrega' => $pedido->dia_de_entrega,
                         'fecha_estimada_de_entrega' => $pedido->fecha_estimada_de_entrega ? $pedido->fecha_estimada_de_entrega->format('d/m/Y') : null,
-                        'fecha_creacion_orden' => $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('Y-m-d H:i:s') : null,
+                        'fecha_creacion_orden' => $pedido->created_at ? $pedido->created_at->format('Y-m-d H:i:s') : null,
                     ] : null,
                 ];
             });

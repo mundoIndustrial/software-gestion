@@ -31,7 +31,7 @@ use Carbon\Carbon;
  * @property string|null $estado
  * @property string|null $area
  * @property \Carbon\Carbon|null $fecha_ultimo_proceso
- * @property \Carbon\Carbon|null $fecha_de_creacion_de_orden
+ * @property \Carbon\Carbon|null $created_at
  * @property int|null $dia_de_entrega
  * @property \Carbon\Carbon|null $fecha_estimada_de_entrega
  * @property \Carbon\Carbon|null $aprobado_por_supervisor_en
@@ -71,7 +71,7 @@ class PedidoProduccion extends Model
         'estado',
         'area',
         'fecha_ultimo_proceso',
-        'fecha_de_creacion_de_orden',
+        'created_at',
         'dia_de_entrega',
         'fecha_estimada_de_entrega',
         'aprobado_por_supervisor_en',
@@ -89,7 +89,7 @@ class PedidoProduccion extends Model
     ];
 
     protected $casts = [
-        'fecha_de_creacion_de_orden' => 'datetime',
+        'created_at' => 'datetime',
         'fecha_estimada_de_entrega' => 'datetime',
         'estado' => 'string',
     ];
@@ -106,7 +106,7 @@ class PedidoProduccion extends Model
         // Auto-calcular fecha_estimada_de_entrega cuando se guarda la orden
         static::saving(function ($model) {
             // Si se está actualizando dia_de_entrega y fecha_estimada_de_entrega está vacía o debe recalcularse
-            if ($model->isDirty('dia_de_entrega') && $model->fecha_de_creacion_de_orden) {
+            if ($model->isDirty('dia_de_entrega') && $model->created_at) {
                 $fechaEstimada = $model->calcularFechaEstimada();
                 if ($fechaEstimada) {
                     $model->fecha_estimada_de_entrega = $fechaEstimada;
@@ -375,16 +375,16 @@ class PedidoProduccion extends Model
 
     /**
      * Calcular fecha estimada de entrega basada en día_de_entrega
-     * Suma días hábiles a partir de fecha_de_creacion_de_orden
+     * Suma días hábiles a partir de created_at
      */
     public function calcularFechaEstimada()
     {
-        if (!$this->fecha_de_creacion_de_orden || !$this->dia_de_entrega) {
+        if (!$this->created_at || !$this->dia_de_entrega) {
             return null;
         }
 
         try {
-            $fechaInicio = \Carbon\Carbon::parse($this->fecha_de_creacion_de_orden);
+            $fechaInicio = \Carbon\Carbon::parse($this->created_at);
             $diasAñadir = intval($this->dia_de_entrega);
             
             // Obtener festivos
@@ -519,7 +519,7 @@ class PedidoProduccion extends Model
      */
     public function getTotalDias()
     {
-        if (!$this->fecha_de_creacion_de_orden) {
+        if (!$this->created_at) {
             return null;
         }
 
@@ -534,7 +534,7 @@ class PedidoProduccion extends Model
         }
 
         $dias = CalculadorDiasService::calcularDiasHabiles(
-            $this->fecha_de_creacion_de_orden,
+            $this->created_at,
             $ultimaFecha
         );
 
@@ -636,12 +636,12 @@ class PedidoProduccion extends Model
      */
     public function calcularDiasHabiles()
     {
-        if (!$this->fecha_de_creacion_de_orden) {
+        if (!$this->created_at) {
             return '-';
         }
 
         $diasCalculados = 0;
-        $fechaInicio = $this->fecha_de_creacion_de_orden;
+        $fechaInicio = $this->created_at;
         $fechaFin = now();
         
         // Si el estado es "Entregado", buscar la fecha del proceso "Despacho"

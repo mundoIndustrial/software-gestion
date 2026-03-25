@@ -29,6 +29,7 @@ use App\Application\UseCases\Orders\GetFilterOptionsUseCase;
 use App\Application\UseCases\Orders\GetColumnFilterOptionsUseCase;
 use App\Application\UseCases\Orders\UpdatePedidoNumberUseCase;
 use App\Application\UseCases\Orders\UpdateDescripcionPrendasUseCase;
+use App\Application\UseCases\Orders\UpdateDescripcionPrendasRequest as UpdateDescripcionPrendasRequestDTO;
 use App\Application\UseCases\Orders\GetAreaRecienteUseCase;
 use App\Application\UseCases\Receipts\GetReceiptJsonUseCase;
 use App\Application\UseCases\Receipts\ContarRecibosEjecutandoUseCase;
@@ -223,7 +224,15 @@ class RegistroOrdenController extends Controller
     public function updateDescripcionPrendas(Request $request)
     {
         return $this->tryExec(function() use ($request) {
-            return response()->json($this->updateDescripcionPrendasUseCase->execute($request));
+            $validated = $this->validationService->validateUpdateDescripcionRequest($request);
+
+            $dto = new UpdateDescripcionPrendasRequestDTO(
+                pedido: (string) $validated['pedido'],
+                descripcion: $validated['descripcion'],
+                userId: auth()->id(),
+            );
+
+            return response()->json($this->updateDescripcionPrendasUseCase->execute($dto));
         });
     }
 

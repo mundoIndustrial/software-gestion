@@ -114,7 +114,7 @@ class EntregasCompletasController extends Controller
                     p.numero_cotizacion,
                     p.cliente,
                     p.estado as estado_pedido,
-                    p.fecha_de_creacion_de_orden,
+                    p.created_at,
                     p.fecha_estimada_de_entrega,
                     
                     -- Datos de entrega de supervisor a despacho (desde prenda_entregas)
@@ -158,7 +158,7 @@ class EntregasCompletasController extends Controller
                 LEFT JOIN users u_despacho ON dp.usuario_id = u_despacho.id
                 WHERE p.id = ?
                 GROUP BY p.id, p.numero_pedido, p.numero_cotizacion, p.cliente, p.estado, 
-                         p.fecha_de_creacion_de_orden, p.fecha_estimada_de_entrega
+                         p.created_at, p.fecha_estimada_de_entrega
             ";
             
             $entrega = DB::select($sql, [$id]);
@@ -336,7 +336,7 @@ class EntregasCompletasController extends Controller
                     p.numero_cotizacion,
                     p.cliente,
                     p.estado as estado_pedido,
-                    p.fecha_de_creacion_de_orden,
+                    p.created_at,
                     p.fecha_estimada_de_entrega,
                     
                     -- Datos de entrega de supervisor a despacho (desde prenda_entregas)
@@ -420,7 +420,7 @@ class EntregasCompletasController extends Controller
             // Agregar GROUP BY
             $sql .= "
                 GROUP BY p.id, p.numero_pedido, p.numero_cotizacion, p.cliente, p.estado, 
-                         p.fecha_de_creacion_de_orden, p.fecha_estimada_de_entrega
+                         p.created_at, p.fecha_estimada_de_entrega
             ";
             
             // Agregar cláusulas HAVING si es necesario
@@ -429,7 +429,7 @@ class EntregasCompletasController extends Controller
             }
             
             // Ordenamiento
-            $sortBy = $request->get('sort_by', 'fecha_de_creacion_de_orden');
+            $sortBy = $request->get('sort_by', 'created_at');
             $sortOrder = $request->get('sort_order', 'desc');
             $sql .= " ORDER BY $sortBy $sortOrder";
             
@@ -446,7 +446,7 @@ class EntregasCompletasController extends Controller
                     p.numero_cotizacion,
                     p.cliente,
                     p.estado as estado_pedido,
-                    p.fecha_de_creacion_de_orden,
+                    p.created_at,
                     p.fecha_estimada_de_entrega,
                     
                     -- Datos de entrega de supervisor a despacho (desde prenda_entregas)
@@ -486,7 +486,7 @@ class EntregasCompletasController extends Controller
                 $sql
             );
             
-            $countSql = str_replace("GROUP BY p.id, p.numero_pedido, p.numero_cotizacion, p.cliente, p.estado, p.fecha_de_creacion_de_orden, p.fecha_estimada_de_entrega", "", $countSql);
+            $countSql = str_replace("GROUP BY p.id, p.numero_pedido, p.numero_cotizacion, p.cliente, p.estado, p.created_at, p.fecha_estimada_de_entrega", "", $countSql);
             $countSql = str_replace("ORDER BY $sortBy $sortOrder", "", $countSql);
             
             $total = DB::select($countSql, $bindings)[0]->total;

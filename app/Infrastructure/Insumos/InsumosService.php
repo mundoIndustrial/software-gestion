@@ -96,7 +96,7 @@ class InsumosService
                 'pedidos_produccion.area as pedido_area',
                 'consecutivos_recibos_pedidos.estado as recibo_estado',
                 'consecutivos_recibos_pedidos.area as recibo_area',
-                'pedidos_produccion.fecha_de_creacion_de_orden',
+                'pedidos_produccion.created_at',
                 'pedidos_produccion.dia_de_entrega',
                 'pedidos_produccion.fecha_estimada_de_entrega'
             );
@@ -149,9 +149,9 @@ class InsumosService
         $recibosTransformados = $allRecibos->map(function($recibo) {
             // Calcular días para este recibo
             $diasCalculados = 0;
-            if ($recibo->fecha_de_creacion_de_orden) {
+            if ($recibo->created_at) {
                 try {
-                    $fechaInicio = \Carbon\Carbon::parse($recibo->fecha_de_creacion_de_orden);
+                    $fechaInicio = \Carbon\Carbon::parse($recibo->created_at);
                     $fechaFin = \Carbon\Carbon::now();
                     
                     // Obtener festivos
@@ -197,7 +197,7 @@ class InsumosService
                 'estado' => $recibo->recibo_estado ?? $recibo->pedido_estado, // Estado del recibo
                 'area' => $recibo->recibo_area ?? $recibo->pedido_area, // Área del recibo
                 'pedido_estado' => $recibo->pedido_estado, // Estado del pedido (para filtros)
-                'fecha_de_creacion_de_orden' => $recibo->fecha_de_creacion_de_orden,
+                'created_at' => $recibo->created_at,
                 'dia_de_entrega' => $recibo->dia_de_entrega,
                 'fecha_estimada_de_entrega' => $recibo->fecha_estimada_de_entrega,
                 'dias_calculados' => $diasCalculados,
@@ -1465,10 +1465,10 @@ class InsumosService
                 
                 // Calcular días para este pedido (desde fecha de creación del pedido hasta hoy)
                 $diasCalculados = 0;
-                if ($pedido && $pedido->fecha_de_creacion_de_orden) {
+                if ($pedido && $pedido->created_at) {
                     try {
-                        // Para recibos, calcular desde fecha_de_creacion_de_orden del pedido hasta hoy
-                        $fechaInicio = $pedido->fecha_de_creacion_de_orden;
+                        // Para recibos, calcular desde created_at del pedido hasta hoy
+                        $fechaInicio = $pedido->created_at;
                         $fechaFin = \Carbon\Carbon::now();
                         
                         // Obtener festivos
@@ -1506,7 +1506,7 @@ class InsumosService
                             'recibo_id' => $recibo->id,
                             'pedido_id' => $pedido->id,
                             'numero_pedido' => $pedido->numero_pedido,
-                            'fecha_creacion_pedido' => $pedido->fecha_de_creacion_de_orden->format('Y-m-d H:i:s'),
+                            'fecha_creacion_pedido' => $pedido->created_at->format('Y-m-d H:i:s'),
                             'dias_calculados' => $diasCalculados
                         ]);
                         
@@ -1540,7 +1540,7 @@ class InsumosService
                         'area' => $areaProcesoReciente,
                         'dia_de_entrega' => $pedido->dia_de_entrega,
                         'fecha_estimada_de_entrega' => $pedido->fecha_estimada_de_entrega ? $pedido->fecha_estimada_de_entrega->format('d/m/Y') : null,
-                        'fecha_creacion_orden' => $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('Y-m-d H:i:s') : null,
+                        'fecha_creacion_orden' => $pedido->created_at ? $pedido->created_at->format('Y-m-d H:i:s') : null,
                     ] : null,
                 ];
             });

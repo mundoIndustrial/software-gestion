@@ -55,8 +55,8 @@
                                     </span>
                                 </td>
                                 <td>
-                                    @if($orden->fecha_de_creacion_de_orden)
-                                        {{ \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden)->format('d/m/Y') }}
+                                    @if($orden->created_at)
+                                        {{ \Carbon\Carbon::parse($orden->created_at)->format('d/m/Y') }}
                                     @else
                                         -
                                     @endif
@@ -116,8 +116,8 @@
                                     </span>
                                 </td>
                                 <td>
-                                    @if($orden->fecha_de_creacion_de_orden)
-                                        {{ \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden)->format('d/m/Y') }}
+                                    @if($orden->created_at)
+                                        {{ \Carbon\Carbon::parse($orden->created_at)->format('d/m/Y') }}
                                     @else
                                         -
                                     @endif

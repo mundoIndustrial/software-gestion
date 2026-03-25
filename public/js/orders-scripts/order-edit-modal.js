@@ -94,7 +94,7 @@ async function loadOrderData(pedido) {
         document.getElementById('editOrderNumber').textContent = `#${ordenData.pedido}`;
         document.getElementById('edit_estado').value = ordenData.estado || 'No iniciado';
         document.getElementById('edit_cliente').value = ordenData.cliente || '';
-        document.getElementById('edit_fecha_creacion').value = ordenData.fecha_de_creacion_de_orden || '';
+        document.getElementById('edit_fecha_creacion').value = ordenData.created_at || '';
         document.getElementById('edit_encargado').value = ordenData.encargado_orden || '';
         document.getElementById('edit_asesora').value = ordenData.asesora || '';
         document.getElementById('edit_forma_pago').value = ordenData.forma_de_pago || '';

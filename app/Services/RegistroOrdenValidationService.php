@@ -135,7 +135,7 @@ class RegistroOrdenValidationService
     {
         return [
             'estado', 'area', 'dia_de_entrega', '_pedido', 'cliente', 'descripcion', 'cantidad',
-            'novedades', 'asesora', 'forma_de_pago', 'fecha_de_creacion_de_orden',
+            'novedades', 'asesora', 'forma_de_pago', 'created_at',
             'encargado_orden', 'dias_orden', 'inventario', 'encargados_inventario',
             'dias_inventario', 'insumos_y_telas', 'encargados_insumos', 'dias_insumos',
             'corte', 'encargados_de_corte', 'dias_corte', 'bordado', 'codigo_de_bordado',
@@ -154,7 +154,7 @@ class RegistroOrdenValidationService
     public function getDateColumns(): array
     {
         return [
-            'fecha_de_creacion_de_orden', 'insumos_y_telas', 'corte', 'costura',
+            'created_at', 'insumos_y_telas', 'corte', 'costura',
             'lavanderia', 'arreglos', 'control_de_calidad', 'entrega', 'despacho'
         ];
     }

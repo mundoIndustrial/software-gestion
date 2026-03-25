@@ -55,7 +55,7 @@ class RegistroOrdenCreationService
                 'estado' => $estado,
                 'area' => $area,
                 'forma_de_pago' => $data['forma_pago'] ?? null,
-                'fecha_de_creacion_de_orden' => now(), // Fecha y hora exacta de creación
+                'created_at' => now(), // Fecha y hora exacta de creación
                 'novedades' => null,
             ]);
 

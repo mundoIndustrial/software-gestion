@@ -111,7 +111,7 @@ class DateFormatter {
     // Intentar en este orden de prioridad
     const dateInput = 
       orderData.fecha_creacion ||
-      orderData.fecha_de_creacion_de_orden ||
+      orderData.created_at ||
       orderData.created_at ||
       null;
 

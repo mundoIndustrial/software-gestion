@@ -246,7 +246,7 @@ class RegistroOrdenQueryController extends Controller
                             'pedido_id' => $logoPedido->pedido_id,
                             'cliente' => $pedidoProd->cliente,
                             'asesora' => $pedidoProd->asesora?->name,
-                            'fecha' => $pedidoProd->fecha_de_creacion_de_orden
+                            'fecha' => $pedidoProd->created_at
                         ]);
                         
                         // Completar desde el pedido de producción - SIEMPRE si viene vacío
@@ -259,9 +259,9 @@ class RegistroOrdenQueryController extends Controller
                             $logoPedidoArray['asesora'] = $asesoraName;
                             \Log::info(' [PASO 1] Asesora completada desde PedidoProduccion', ['asesora' => $logoPedidoArray['asesora']]);
                         }
-                        if (empty($logoPedidoArray['fecha_de_creacion_de_orden'])) {
-                            $logoPedidoArray['fecha_de_creacion_de_orden'] = $pedidoProd->fecha_de_creacion_de_orden;
-                            \Log::info(' [PASO 1] Fecha completada desde PedidoProduccion', ['fecha' => $logoPedidoArray['fecha_de_creacion_de_orden']]);
+                        if (empty($logoPedidoArray['created_at'])) {
+                            $logoPedidoArray['created_at'] = $pedidoProd->created_at;
+                            \Log::info(' [PASO 1] Fecha completada desde PedidoProduccion', ['fecha' => $logoPedidoArray['created_at']]);
                         }
                         if (empty($logoPedidoArray['descripcion']) && $pedidoProd->descripcion_prendas) {
                             $logoPedidoArray['descripcion'] = $pedidoProd->descripcion_prendas;
@@ -290,9 +290,9 @@ class RegistroOrdenQueryController extends Controller
                             $logoPedidoArray['cliente'] = $logoCot->cotizacion->cliente ?? '-';
                             \Log::info(' [PASO 2] Cliente completado desde LogoCotizacion', ['cliente' => $logoPedidoArray['cliente']]);
                         }
-                        if (empty($logoPedidoArray['fecha_de_creacion_de_orden'])) {
-                            $logoPedidoArray['fecha_de_creacion_de_orden'] = $logoCot->cotizacion->fecha_de_creacion;
-                            \Log::info(' [PASO 2] Fecha completada desde LogoCotizacion', ['fecha' => $logoPedidoArray['fecha_de_creacion_de_orden']]);
+                        if (empty($logoPedidoArray['created_at'])) {
+                            $logoPedidoArray['created_at'] = $logoCot->cotizacion->fecha_de_creacion;
+                            \Log::info(' [PASO 2] Fecha completada desde LogoCotizacion', ['fecha' => $logoPedidoArray['created_at']]);
                         }
                         if (empty($logoPedidoArray['asesora']) || $logoPedidoArray['asesora'] === '-') {
                             $logoPedidoArray['asesora'] = $logoCot->cotizacion->asesor?->name ?? '-';
@@ -316,10 +316,10 @@ class RegistroOrdenQueryController extends Controller
             $logoPedidoArray['asesora'] = $logoPedidoArray['asesora'] ?: '-';
             $logoPedidoArray['descripcion'] = $logoPedido->descripcion ?? '';
             
-            //  IMPORTANTE: Si no hay fecha_de_creacion_de_orden, usar created_at
-            if (empty($logoPedidoArray['fecha_de_creacion_de_orden'])) {
-                $logoPedidoArray['fecha_de_creacion_de_orden'] = $logoPedido->created_at ?? now();
-                \Log::info(' [PASO 3] Fecha asignada desde created_at', ['fecha' => $logoPedidoArray['fecha_de_creacion_de_orden']]);
+            //  IMPORTANTE: Si no hay created_at, usar created_at
+            if (empty($logoPedidoArray['created_at'])) {
+                $logoPedidoArray['created_at'] = $logoPedido->created_at ?? now();
+                \Log::info(' [PASO 3] Fecha asignada desde created_at', ['fecha' => $logoPedidoArray['created_at']]);
             }
             
             $logoPedidoArray['encargado_orden'] = $logoPedido->encargado_orden ?? '-';
@@ -340,7 +340,7 @@ class RegistroOrdenQueryController extends Controller
                 'cliente' => $logoPedidoArray['cliente'],
                 'asesora' => $logoPedidoArray['asesora'],
                 'descripcion' => $logoPedidoArray['descripcion'],
-                'fecha_de_creacion_de_orden' => $logoPedidoArray['fecha_de_creacion_de_orden'],
+                'created_at' => $logoPedidoArray['created_at'],
                 'forma_de_pago' => $logoPedidoArray['forma_de_pago'],
                 'encargado_orden' => $logoPedidoArray['encargado_orden'],
             ]);
@@ -901,7 +901,7 @@ class RegistroOrdenQueryController extends Controller
             // Obtener la orden
             $orden = PedidoProduccion::findOrFail($id);
 
-            if (!$orden->fecha_de_creacion_de_orden) {
+            if (!$orden->created_at) {
                 return response()->json([
                     'success' => false,
                     'message' => 'La orden no tiene fecha de creación'
@@ -924,7 +924,7 @@ class RegistroOrdenQueryController extends Controller
             \Log::info("Fecha estimada calculada para pedido {$orden->numero_pedido}", [
                 'dias' => $validated['dia_de_entrega'],
                 'fecha_estimada' => $fechaEstimada->format('d/m/Y'),
-                'fecha_creacion' => $orden->fecha_de_creacion_de_orden->format('d/m/Y')
+                'fecha_creacion' => $orden->created_at->format('d/m/Y')
             ]);
 
             return response()->json([
@@ -932,7 +932,7 @@ class RegistroOrdenQueryController extends Controller
                 'fecha_estimada' => $fechaEstimada->format('d/m/Y'),
                 'fecha_estimada_iso' => $fechaEstimada->toIso8601String(),
                 'dias' => $validated['dia_de_entrega'],
-                'fecha_creacion' => $orden->fecha_de_creacion_de_orden->format('d/m/Y')
+                'fecha_creacion' => $orden->created_at->format('d/m/Y')
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -1357,7 +1357,7 @@ class RegistroOrdenQueryController extends Controller
                 'cliente' => $logoPedidoArray['cliente'] ?? null,
                 'asesora' => $logoPedidoArray['asesora'] ?? null,
                 'descripcion' => $logoPedidoArray['descripcion'] ?? null,
-                'fecha_de_creacion_de_orden' => $logoPedidoArray['fecha_de_creacion_de_orden'] ?? null
+                'created_at' => $logoPedidoArray['created_at'] ?? null
             ]);
 
             //  PASO 1: Completar desde PedidoProduccion si LogoPedido está incompleto
@@ -1374,8 +1374,8 @@ class RegistroOrdenQueryController extends Controller
                         if (empty($logoPedidoArray['descripcion'])) {
                             $logoPedidoArray['descripcion'] = $pedidoProduccion->descripcion;
                         }
-                        if (empty($logoPedidoArray['fecha_de_creacion_de_orden'])) {
-                            $logoPedidoArray['fecha_de_creacion_de_orden'] = $pedidoProduccion->fecha_de_creacion_de_orden;
+                        if (empty($logoPedidoArray['created_at'])) {
+                            $logoPedidoArray['created_at'] = $pedidoProduccion->created_at;
                         }
                         
                         \Log::info(' [PASO 1 API] Completados datos desde PedidoProduccion #' . $logoPedido->pedido_id);
@@ -1410,9 +1410,9 @@ class RegistroOrdenQueryController extends Controller
                 }
             }
 
-            //  PASO 3: Garantizar fecha_de_creacion_de_orden usando created_at
-            if (empty($logoPedidoArray['fecha_de_creacion_de_orden'])) {
-                $logoPedidoArray['fecha_de_creacion_de_orden'] = $logoPedido->created_at;
+            //  PASO 3: Garantizar created_at usando created_at
+            if (empty($logoPedidoArray['created_at'])) {
+                $logoPedidoArray['created_at'] = $logoPedido->created_at;
                 \Log::info(' [PASO 3 API] Usando created_at como fecha de creación');
             }
 
@@ -1421,7 +1421,7 @@ class RegistroOrdenQueryController extends Controller
                 'cliente' => $logoPedidoArray['cliente'],
                 'asesora' => $logoPedidoArray['asesora'],
                 'descripcion' => $logoPedidoArray['descripcion'],
-                'fecha_de_creacion_de_orden' => $logoPedidoArray['fecha_de_creacion_de_orden'],
+                'created_at' => $logoPedidoArray['created_at'],
                 'forma_de_pago' => $logoPedidoArray['forma_de_pago'],
                 'encargado_orden' => $logoPedidoArray['encargado_orden']
             ]);
@@ -1525,9 +1525,9 @@ class RegistroOrdenQueryController extends Controller
             $datos = $responseData['data'] ?? $responseData;
 
             try {
-                $fechaCreacionOrden = $pedidoModel->fecha_de_creacion_de_orden ?? $pedidoModel->created_at ?? null;
+                $fechaCreacionOrden = $pedidoModel->created_at ?? $pedidoModel->created_at ?? null;
                 if ($fechaCreacionOrden) {
-                    $datos['fecha_de_creacion_de_orden'] = $fechaCreacionOrden instanceof \DateTimeInterface
+                    $datos['created_at'] = $fechaCreacionOrden instanceof \DateTimeInterface
                         ? $fechaCreacionOrden->format('Y-m-d H:i:s')
                         : (string) $fechaCreacionOrden;
                 }
@@ -1634,7 +1634,7 @@ class RegistroOrdenQueryController extends Controller
             // Obtener la fecha de creación del pedido
             $fechaCreacion = \DB::table('pedidos_produccion')
                 ->where('id', $pedido)
-                ->value('fecha_de_creacion_de_orden');
+                ->value('created_at');
             
             if ($consecutivo || $fechaCreacion) {
                 \Log::info(' [getConsecutivoCostura] Datos encontrados', [
@@ -2047,7 +2047,7 @@ class RegistroOrdenQueryController extends Controller
                     'id' => $pedidoModel->id,
                     'numero_pedido' => $pedidoModel->numero_pedido,
                     'cliente' => $pedidoModel->cliente,
-                    'fecha_de_creacion_de_orden' => $pedidoModel->fecha_de_creacion_de_orden ?? $pedidoModel->created_at,
+                    'created_at' => $pedidoModel->created_at ?? $pedidoModel->created_at,
                     // === Pre-computado Phase 12b: recibo principal del pedido ===
                     'recibo_principal' => self::resolveReciboPrincipal($prendasConSeguimiento),
                 ],
@@ -2361,7 +2361,7 @@ class RegistroOrdenQueryController extends Controller
         }
 
         $reciboCreatedAt = $reciboCostura->created_at ?? null;
-        $fechaCreacionOrden = $pedidoModel->fecha_de_creacion_de_orden ?? $pedidoModel->created_at ?? null;
+        $fechaCreacionOrden = $pedidoModel->created_at ?? $pedidoModel->created_at ?? null;
 
         // Calcular tiempo transcurrido
         $tiempoTranscurrido = null;

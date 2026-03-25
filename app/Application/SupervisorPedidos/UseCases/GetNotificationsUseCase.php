@@ -68,9 +68,9 @@ class GetNotificationsUseCase
             ->join('users as u', 'pedidos_produccion.asesor_id', '=', 'u.id')
             ->select([
                 'pedidos_produccion.id', 'numero_pedido', 'cliente', 'asesor_id',
-                'fecha_de_creacion_de_orden', 'estado', 'forma_de_pago', 'u.name as asesor'
+                'created_at', 'estado', 'forma_de_pago', 'u.name as asesor'
             ])
-            ->orderBy('fecha_de_creacion_de_orden', 'desc')
+            ->orderBy('created_at', 'desc')
             ->get();
 
         return $ordenesPendientes->map(function($orden) use ($pedidosVistosIds) {
@@ -79,12 +79,12 @@ class GetNotificationsUseCase
                 'numero_pedido' => $orden->numero_pedido,
                 'cliente' => $orden->cliente,
                 'asesor' => $orden->asesor ?? 'N/A',
-                'fecha' => $orden->fecha_de_creacion_de_orden ? \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden)->format('d/m/Y H:i') : '',
+                'fecha' => $orden->created_at ? \Carbon\Carbon::parse($orden->created_at)->format('d/m/Y H:i') : '',
                 'estado' => $orden->estado,
                 'titulo' => "Orden #" . $orden->numero_pedido . " - " . $orden->cliente,
                 'mensaje' => "Cliente: {$orden->cliente} | Asesor: " . ($orden->asesor ?? 'N/A'),
                 'tipo' => 'orden_pendiente_aprobacion',
-                'timestamp' => $orden->fecha_de_creacion_de_orden ? \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden)->toIso8601String() : null,
+                'timestamp' => $orden->created_at ? \Carbon\Carbon::parse($orden->created_at)->toIso8601String() : null,
                 'visto' => in_array($orden->id, $pedidosVistosIds),
             ];
         });

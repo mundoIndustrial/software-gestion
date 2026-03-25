@@ -162,7 +162,7 @@ function renderizarTabla(pedidos) {
     const numero = pedido.numero_pedido || pedido.numero || 'N/A';
     const cliente = pedido.cliente || pedido.nombre_cliente || 'N/A';
     const estado = pedido.estado || 'Pendiente cartera';
-    const fecha = formatearFecha(pedido.fecha_de_creacion_de_orden || pedido.fecha_creacion || new Date());
+    const fecha = formatearFecha(pedido.created_at || pedido.fecha_creacion || new Date());
     
     html += `
       <div class="table-row" data-pedido-id="${pedido.id}">
@@ -285,7 +285,7 @@ function abrirModalAprobacion(pedidoId, numeroPedido) {
       </div>
       <div class="resumen-item">
         <span class="label">Fecha:</span>
-        <span class="value">${formatearFecha(pedido.fecha_de_creacion_de_orden)}</span>
+        <span class="value">${formatearFecha(pedido.created_at)}</span>
       </div>
       <div class="resumen-item">
         <span class="label">Estado Actual:</span>

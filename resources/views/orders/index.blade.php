@@ -320,7 +320,7 @@
                                 <!-- Fecha de creación -->
                                 <td class="table-cell">
                                     <div class="cell-content">
-                                        <span>{{ $orden->fecha_de_creacion_de_orden ? \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden)->format('d/m/Y') : '-' }}</span>
+                                        <span>{{ $orden->created_at ? \Carbon\Carbon::parse($orden->created_at)->format('d/m/Y') : '-' }}</span>
                                     </div>
                                 </td>
                                 

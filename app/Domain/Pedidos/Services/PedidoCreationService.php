@@ -34,7 +34,7 @@ class PedidoCreationService
             'asesor_id' => $asesora->id,
             'forma_de_pago' => $formaDePago,
             'estado' => 'pendiente',
-            'fecha_de_creacion_de_orden' => now(),
+            'created_at' => now(),
             'cantidad_total' => 0,
         ]);
     }

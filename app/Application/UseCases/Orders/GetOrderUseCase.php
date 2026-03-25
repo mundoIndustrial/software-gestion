@@ -35,7 +35,7 @@ class GetOrderUseCase
             'id' => $order->id,
             'numero_pedido' => $order->numero_pedido,
             'cliente' => $order->cliente,
-            'fecha_de_creacion_de_orden' => $order->fecha_de_creacion_de_orden,
+            'created_at' => $order->created_at,
             'descripcion_prendas' => $order->descripcion_prendas ?? '',
             'estado' => $order->estado,
             'forma_de_pago' => $order->forma_de_pago ?? '-',

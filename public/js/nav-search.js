@@ -378,7 +378,7 @@ const NavSearch = {
             <!-- Fecha de creación -->
             <td class="table-cell">
                 <div class="cell-content">
-                    <span class="fecha-creacion">${this.formatDate(orden.fecha_de_creacion_de_orden || orden.created_at)}</span>
+                    <span class="fecha-creacion">${this.formatDate(orden.created_at || orden.created_at)}</span>
                 </div>
             </td>
 

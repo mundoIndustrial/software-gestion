@@ -8,7 +8,7 @@ SELECT
     p.numero_cotizacion,
     p.cliente,
     p.estado as estado_pedido,
-    p.fecha_de_creacion_de_orden,
+    p.created_at,
     p.fecha_estimada_de_entrega,
     
     -- Datos de entrega de supervisor a despacho (desde prenda_entregas)
@@ -61,8 +61,8 @@ LEFT JOIN despacho_parciales dp ON p.id = dp.pedido_id
 LEFT JOIN users u_supervisor ON pe.usuario_id = u_supervisor.id
 LEFT JOIN users u_despacho ON dp.usuario_id = u_despacho.id
 GROUP BY p.id, p.numero_pedido, p.numero_cotizacion, p.cliente, p.estado, 
-         p.fecha_de_creacion_de_orden, p.fecha_estimada_de_entrega
-ORDER BY p.fecha_de_creacion_de_orden DESC;
+         p.created_at, p.fecha_estimada_de_entrega
+ORDER BY p.created_at DESC;
 
 -- Consulta de ejemplo para probar la vista
 -- SELECT * FROM vista_entregas_completas WHERE estado_entrega_general != 'Pendiente Ambos' LIMIT 10;

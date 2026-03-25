@@ -25,8 +25,8 @@ class TablaOriginalObserver
             $this->sincronizarClienteConHijos($orden);
         }
 
-        // Verificar si cambió 'dia_de_entrega' o 'fecha_de_creacion_de_orden'
-        if ($orden->isDirty('dia_de_entrega') || $orden->isDirty('fecha_de_creacion_de_orden')) {
+        // Verificar si cambió 'dia_de_entrega' o 'created_at'
+        if ($orden->isDirty('dia_de_entrega') || $orden->isDirty('created_at')) {
             $this->actualizarFechaEstimadaEntrega($orden);
         }
     }
@@ -168,19 +168,19 @@ class TablaOriginalObserver
 
     /**
      * Actualizar fecha estimada de entrega cuando cambia dia_de_entrega
-     * IMPORTANTE: Solo se dispara cuando cambia dia_de_entrega, NO fecha_de_creacion_de_orden
+     * IMPORTANTE: Solo se dispara cuando cambia dia_de_entrega, NO created_at
      */
     private function actualizarFechaEstimadaEntrega(TablaOriginal $orden)
     {
         try {
             Log::info("\n========== OBSERVER: INICIANDO CÁLCULO ==========", [
                 'pedido' => $orden->pedido,
-                'fecha_de_creacion_de_orden' => $orden->fecha_de_creacion_de_orden,
+                'created_at' => $orden->created_at,
                 'dia_de_entrega' => $orden->dia_de_entrega
             ]);
             
             // Si no tiene fecha de creación o días de entrega, limpiar fecha estimada
-            if (!$orden->fecha_de_creacion_de_orden || !$orden->dia_de_entrega) {
+            if (!$orden->created_at || !$orden->dia_de_entrega) {
                 DB::table('tabla_original')
                     ->where('pedido', $orden->pedido)
                     ->update(['fecha_estimada_de_entrega' => null]);
@@ -192,7 +192,7 @@ class TablaOriginalObserver
             }
 
             // Obtener festivos de Colombia
-            $fechaInicio = Carbon::parse($orden->fecha_de_creacion_de_orden);
+            $fechaInicio = Carbon::parse($orden->created_at);
             $diasRequeridos = intval($orden->dia_de_entrega);
             
             Log::info("OBSERVER: Parámetros iniciales", [
@@ -299,7 +299,7 @@ class TablaOriginalObserver
 
             Log::info("========== OBSERVER: FECHA ESTIMADA GUARDADA ==========", [
                 'pedido' => $orden->pedido,
-                'fecha_creacion' => $orden->fecha_de_creacion_de_orden,
+                'fecha_creacion' => $orden->created_at,
                 'dias_entrega' => $orden->dia_de_entrega,
                 'fecha_estimada_bd' => $fechaEstimadaString,
                 'fecha_estimada_formateada' => $fechaActual->format('d/m/Y'),
@@ -309,11 +309,11 @@ class TablaOriginalObserver
             ]);
             
             // Resumen final
-            $fechaCreacionCarbon = Carbon::parse($orden->fecha_de_creacion_de_orden);
+            $fechaCreacionCarbon = Carbon::parse($orden->created_at);
             $diasDiferencia = $fechaCreacionCarbon->diffInDays($fechaActual);
             Log::info("========== OBSERVER: RESUMEN FINAL ==========", [
                 'pedido' => $orden->pedido,
-                'fecha_creacion' => $orden->fecha_de_creacion_de_orden . ' (' . $fechaCreacionCarbon->format('l') . ')',
+                'fecha_creacion' => $orden->created_at . ' (' . $fechaCreacionCarbon->format('l') . ')',
                 'fecha_estimada' => $fechaEstimadaString . ' (' . $fechaActual->format('l') . ')',
                 'dias_calendario_totales' => $diasDiferencia,
                 'dias_hábiles_contados' => $diasContados,

@@ -99,7 +99,7 @@ class CrearPedidoService
             'asesor_id' => Auth::id(),
             'forma_de_pago' => $datos['forma_de_pago'] ?? null,
             'estado' => 'pendiente_cartera',
-            'fecha_de_creacion_de_orden' => now(),
+            'created_at' => now(),
         ]);
 
         \Log::info('[CrearPedidoService] Pedido base creado', [
@@ -159,7 +159,7 @@ class CrearPedidoService
             'asesora' => Auth::user()?->name,
             'forma_de_pago' => $datos['forma_de_pago'] ?? null,
             'encargado_orden' => Auth::user()?->name,
-            'fecha_de_creacion_de_orden' => now(),
+            'created_at' => now(),
             'estado' => 'pendiente',
             'area' => 'creacion_de_orden',
             'descripcion' => $datos['logo']['descripcion'] ?? null,

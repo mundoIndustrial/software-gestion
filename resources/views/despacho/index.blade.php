@@ -168,7 +168,7 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-center text-slate-600 text-xs">
-                                        {{ $pedido->fecha_de_creacion_de_orden?->format('d/m/Y h:i A') ?? '—' }}
+                                        {{ $pedido->created_at?->format('d/m/Y h:i A') ?? '—' }}
                                     </td>
                                     <td class="px-6 py-4 text-center text-slate-600 text-xs">
                                         {{ $pedido->fecha_entrega_prendas ?? '—' }}

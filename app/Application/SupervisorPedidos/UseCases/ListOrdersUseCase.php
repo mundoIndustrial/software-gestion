@@ -152,11 +152,11 @@ class ListOrdersUseCase
     private function applyDateFilters($query, ListOrdersRequest $request): void
     {
         if ($request->getFechaDesde()) {
-            $query->whereDate('fecha_de_creacion_de_orden', '>=', $request->getFechaDesde());
+            $query->whereDate('created_at', '>=', $request->getFechaDesde());
         }
 
         if ($request->getFechaHasta()) {
-            $query->whereDate('fecha_de_creacion_de_orden', '<=', $request->getFechaHasta());
+            $query->whereDate('created_at', '<=', $request->getFechaHasta());
         }
     }
 

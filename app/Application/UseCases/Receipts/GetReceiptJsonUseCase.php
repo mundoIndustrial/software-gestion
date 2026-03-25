@@ -37,8 +37,8 @@ class GetReceiptJsonUseCase
         $pedido = $recibo->pedido;
 
         $diasCalculados = 0;
-        if ($pedido && $pedido->fecha_de_creacion_de_orden) {
-            $diasCalculados = $this->workingDays->desdeInicio($pedido->fecha_de_creacion_de_orden);
+        if ($pedido && $pedido->created_at) {
+            $diasCalculados = $this->workingDays->desdeInicio($pedido->created_at);
         }
 
         $nombrePrenda = 'Sin prendas';
@@ -59,8 +59,8 @@ class GetReceiptJsonUseCase
             'nombre_prenda'        => $nombrePrenda,
             'cliente'              => $pedido ? $pedido->cliente : '',
             'numero_pedido'        => $pedido ? $pedido->numero_pedido : '',
-            'fecha_creacion'       => $pedido && $pedido->fecha_de_creacion_de_orden
-                                        ? $pedido->fecha_de_creacion_de_orden->format('d/m/Y')
+            'fecha_creacion'       => $pedido && $pedido->created_at
+                                        ? $pedido->created_at->format('d/m/Y')
                                         : '-',
             'created_at'           => $recibo->created_at,
         ];

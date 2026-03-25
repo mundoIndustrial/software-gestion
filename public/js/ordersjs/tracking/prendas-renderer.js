@@ -407,7 +407,7 @@ class PrendasRenderer {
       const fechasWrapper = document.createElement('div');
       fechasWrapper.className = 'tracking-info-row';
 
-      const fechaCreacionOrden = window.currentOrderData?.fecha_de_creacion_de_orden || null;
+      const fechaCreacionOrden = window.currentOrderData?.created_at || null;
 
       // Usar datos_activacion_recibo pre-calculados por el backend (más confiable)
       const datosActivacion = prenda?.datos_activacion_recibo || {};

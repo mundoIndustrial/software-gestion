@@ -363,7 +363,7 @@ class GuardarEppPedidoTest extends TestCase
             'cliente' => 'Cliente Test',
             'forma_de_pago' => 'Contado',
             'estado' => 'Pendiente',
-            'fecha_de_creacion_de_orden' => now()->toDateString(),
+            'created_at' => now()->toDateString(),
             'dia_de_entrega' => 5,
             'fecha_estimada_de_entrega' => now()->addDays(5),
             'cantidad_total' => 100

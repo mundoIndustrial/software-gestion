@@ -159,7 +159,7 @@ function mostrarTrackingModal(pedidoData) {
     // Reemplazar guiones bajos con espacios en el estado
     const estadoFormato = (pedidoData.estado || '-').replace(/_/g, ' ');
     document.getElementById('trackingOrderStatus').textContent = estadoFormato;
-    document.getElementById('trackingOrderDate').textContent = formatearFecha(pedidoData.fecha_inicio || pedidoData.fecha_de_creacion_de_orden);
+    document.getElementById('trackingOrderDate').textContent = formatearFecha(pedidoData.fecha_inicio || pedidoData.created_at);
     document.getElementById('trackingEstimatedDate').textContent = formatearFecha(pedidoData.fecha_estimada_de_entrega);
 
     // Calcular y mostrar total de días

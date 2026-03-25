@@ -209,7 +209,7 @@ class MaterialesService
             'descripcion',
             'estado',
             'area',
-            'fecha_de_creacion_de_orden'
+            'created_at'
         ];
 
         if (!in_array($column, $columnasPermitidas)) {

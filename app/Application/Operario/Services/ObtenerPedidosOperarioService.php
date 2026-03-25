@@ -86,7 +86,7 @@ class ObtenerPedidosOperarioService
         
         // Obtener TODOS los pedidos
         $todosPedidos = PedidoProduccion::with(['prendas'])
-            ->orderBy('fecha_de_creacion_de_orden', 'desc')
+            ->orderBy('created_at', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();
         
@@ -131,7 +131,7 @@ class ObtenerPedidosOperarioService
                     return strtolower(trim($proceso->encargado)) === $usuarioNormalizado;
                 });
             
-            $fechaOrden = $procesoDelUsuario?->fecha_inicio ?? $pedido->fecha_de_creacion_de_orden ?? $pedido->created_at;
+            $fechaOrden = $procesoDelUsuario?->fecha_inicio ?? $pedido->created_at ?? $pedido->created_at;
             return $fechaOrden;
         })->values();
 
@@ -302,7 +302,7 @@ class ObtenerPedidosOperarioService
                 'cantidad' => $totalPrendas,
                 'estado' => $this->obtenerEstadoActual($pedido->numero_pedido, $tipoOperario),
                 'area' => $this->obtenerAreaActual($pedido->numero_pedido, $tipoOperario),
-                'fecha_creacion' => $pedido->fecha_de_creacion_de_orden?->format('d/m/Y') ?? $pedido->created_at?->format('d/m/Y'),
+                'fecha_creacion' => $pedido->created_at?->format('d/m/Y') ?? $pedido->created_at?->format('d/m/Y'),
                 'fecha_inicio_proceso' => $fechaInicioProceso,
                 'dia_entrega' => $pedido->dia_de_entrega ?? '-',
                 'fecha_estimada' => $pedido->fecha_estimada_de_entrega?->format('d/m/Y') ?? '-',

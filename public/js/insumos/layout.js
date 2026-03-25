@@ -347,8 +347,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (pedido) pedido.textContent = orden.pedido || 'Sin c?digo';
             
             // Llenar fecha
-            if (orden.fecha_de_creacion_de_orden) {
-                const fecha = new Date(orden.fecha_de_creacion_de_orden);
+            if (orden.created_at) {
+                const fecha = new Date(orden.created_at);
                 const day = document.querySelector('.day-box');
                 const month = document.querySelector('.month-box');
                 const year = document.querySelector('.year-box');

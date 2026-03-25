@@ -34,8 +34,8 @@ class BodegaNotificacionService
                 ->whereNotNull('numero_pedido')
                 ->where('numero_pedido', '>', 0)
                 ->with(['asesora:id,name'])
-                ->select(['id', 'numero_pedido', 'cliente', 'asesor_id', 'fecha_de_creacion_de_orden', 'estado', 'forma_de_pago'])
-                ->orderBy('fecha_de_creacion_de_orden', 'desc')
+                ->select(['id', 'numero_pedido', 'cliente', 'asesor_id', 'created_at', 'estado', 'forma_de_pago'])
+                ->orderBy('created_at', 'desc')
                 ->get();
 
             $notificaciones = $ordenesPendientes->map(function($orden) use ($pedidosVistosIds) {
@@ -44,7 +44,7 @@ class BodegaNotificacionService
                     'numero_pedido' => $orden->numero_pedido,
                     'cliente' => $orden->cliente,
                     'asesor' => ($orden->asesora?->name) ?? 'N/A',
-                    'fecha' => ($orden->fecha_de_creacion_de_orden?->format('d/m/Y H:i')) ?? '',
+                    'fecha' => ($orden->created_at?->format('d/m/Y H:i')) ?? '',
                     'estado' => $orden->estado,
                     'visto' => in_array($orden->id, $pedidosVistosIds),
                 ];

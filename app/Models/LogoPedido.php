@@ -29,7 +29,7 @@ class LogoPedido extends Model
         'asesora',
         'forma_de_pago',
         'encargado_orden',
-        'fecha_de_creacion_de_orden',
+        'created_at',
         'estado',
         'area',
         'numero_cotizacion',

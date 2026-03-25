@@ -101,7 +101,7 @@ class PedidoEstadoController extends Controller
                     'estado_label' => $estadoEnum?->label() ?? 'Desconocido',
                     'estado_color' => $estadoEnum?->color() ?? 'gray',
                     'estado_icono' => $estadoEnum?->icon() ?? 'question',
-                    'fecha_creacion' => $pedido->fecha_de_creacion_de_orden?->format('Y-m-d H:i:s'),
+                    'fecha_creacion' => $pedido->created_at?->format('Y-m-d H:i:s'),
                     'aprobado_por_supervisor_en' => $pedido->aprobado_por_supervisor_en?->format('Y-m-d H:i:s'),
                     'fecha_estimada_entrega' => $pedido->fecha_estimada_de_entrega?->format('Y-m-d'),
                     'area_actual' => $pedido->getAreaActual(),

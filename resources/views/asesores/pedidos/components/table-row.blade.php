@@ -322,7 +322,7 @@
         if (get_class($pedido) === 'App\Models\LogoPedido') {
             echo $pedido->created_at ? $pedido->created_at->format('d/m/Y') : '-';
         } else {
-            echo $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('d/m/Y') : '-';
+            echo $pedido->created_at ? $pedido->created_at->format('d/m/Y') : '-';
         }
     @endphp
 </div>

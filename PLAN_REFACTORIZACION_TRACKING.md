@@ -121,7 +121,7 @@ class DateFormatter {
    */
   static getOrderStartDate(orderData) {
     return orderData.fecha_creacion 
-      || orderData.fecha_de_creacion_de_orden 
+      || orderData.created_at 
       || orderData.created_at 
       || null;
   }

@@ -104,7 +104,7 @@
                                 // Agrupar por fecha
                                 $epp_agrupado = [];
                                 foreach ($epp_pendientes as $item) {
-                                    $fecha = $item->fecha_de_creacion_de_orden ? \Carbon\Carbon::parse($item->fecha_de_creacion_de_orden)->format('Y-m-d') : 'sin-fecha';
+                                    $fecha = $item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('Y-m-d') : 'sin-fecha';
                                     if (!isset($epp_agrupado[$fecha])) {
                                         $epp_agrupado[$fecha] = [];
                                     }

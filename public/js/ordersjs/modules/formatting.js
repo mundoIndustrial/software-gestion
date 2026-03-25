@@ -5,7 +5,7 @@
  */
 
 const COLUMNAS_FECHA = [
-    'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega', 'inventario', 
+    'created_at', 'fecha_estimada_de_entrega', 'inventario', 
     'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 
     'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega', 'despacho'
 ];

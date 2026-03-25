@@ -186,7 +186,7 @@ class ObtenerPedidoTransformadoUseCase
         try {
             $pedido = PedidoProduccion::find($pedidoId);
             if ($pedido) {
-                $fechaCreacion = $pedido->fecha_de_creacion_de_orden ?? $pedido->created_at;
+                $fechaCreacion = $pedido->created_at ?? $pedido->created_at;
                 $datos['fecha_creacion'] = $fechaCreacion
                     ? (is_string($fechaCreacion) ? $fechaCreacion : $fechaCreacion->format('d/m/Y'))
                     : date('d/m/Y');

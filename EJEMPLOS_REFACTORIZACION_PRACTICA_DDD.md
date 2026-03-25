@@ -147,7 +147,7 @@ class SaveDiaEntregaUseCase
     public function execute(int $id, ?int $diaDeEntrega): array
     {
         if ($diaDeEntrega > 0) {
-            $fechaInicio = $orden->fecha_de_creacion_de_orden ?? $orden->created_at;
+            $fechaInicio = $orden->created_at ?? $orden->created_at;
             $fechaEstimada = $this->calculationService->calcularFechaEstimada(
                 Carbon::parse($fechaInicio),
                 $diaDeEntrega

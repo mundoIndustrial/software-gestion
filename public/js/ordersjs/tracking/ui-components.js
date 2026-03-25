@@ -106,7 +106,7 @@ class TrackingUIComponents {
     // Actualizar modal principal
     console.log('[updateOrderInfo] Campos de fecha disponibles:', {
       fecha_creacion: orderData.fecha_creacion,
-      fecha_de_creacion_de_orden: orderData.fecha_de_creacion_de_orden,
+      created_at: orderData.created_at,
       created_at: orderData.created_at,
       fecha_estimada_de_entrega: orderData.fecha_estimada_de_entrega
     });
@@ -163,7 +163,7 @@ class TrackingUIComponents {
     }
     if (selectorOrderStartDate) {
       // Actualizar fecha de inicio
-      let fechaInicio = orderData.fecha_creacion || orderData.fecha_de_creacion_de_orden || orderData.created_at;
+      let fechaInicio = orderData.fecha_creacion || orderData.created_at || orderData.created_at;
       
       if (fechaInicio) {
         // Formatear fecha

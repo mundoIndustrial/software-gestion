@@ -36,7 +36,7 @@ class GuardarPedidoLogoService
                 'asesora' => Auth::user()?->name,
                 'forma_de_pago' => $validated['forma_de_pago'] ?? null,
                 'encargado_orden' => Auth::user()?->name,
-                'fecha_de_creacion_de_orden' => now(),
+                'created_at' => now(),
                 'estado' => 'pendiente',
                 'area' => 'creacion_de_orden',
                 'descripcion' => $validated['logo.descripcion'] ?? null,

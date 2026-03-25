@@ -28,6 +28,22 @@ class PedidoProduccionRepository
         $this->reciboService = $reciboService;
     }
     /**
+     * Obtener pedido por número de pedido
+     */
+    public function findByNumeroPedido(string $numeroPedido): PedidoProduccion
+    {
+        return PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+    }
+
+    /**
+     * Recargar relaciones de prendas en el pedido
+     */
+    public function cargarPrendas(PedidoProduccion $orden): PedidoProduccion
+    {
+        return $orden->load('prendas');
+    }
+
+    /**
      * Obtener pedido por ID con relaciones
      */
     public function obtenerPorId(int $id): ?PedidoProduccion

@@ -16,6 +16,12 @@ use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Domain\Pedidos\Services\ImagenRelocalizadorService;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\GuardarDespachoUseCase;
+use App\Application\Shared\Contracts\AuditRepositoryInterface;
+use App\Application\Shared\Contracts\TransactionManagerInterface;
+use App\Application\Shared\Contracts\OrdenEventDispatcherInterface;
+use App\Infrastructure\Services\NewsAuditRepository;
+use App\Infrastructure\Services\EloquentTransactionManager;
+use App\Infrastructure\Services\BroadcastOrdenEventDispatcher;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -122,6 +128,14 @@ class PedidosServiceProvider extends ServiceProvider
         $this->app->singleton(ImagenRelocalizadorService::class, function ($app) {
             return new ImagenRelocalizadorService();
         });
+
+        // ========================================
+        // CONTRATOS DE INFRAESTRUCTURA (PORTS)
+        // ========================================
+
+        $this->app->bind(AuditRepositoryInterface::class, NewsAuditRepository::class);
+        $this->app->bind(TransactionManagerInterface::class, EloquentTransactionManager::class);
+        $this->app->bind(OrdenEventDispatcherInterface::class, BroadcastOrdenEventDispatcher::class);
     }
 
     /**

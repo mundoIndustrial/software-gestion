@@ -20,7 +20,7 @@ trait CalculaDiasHelper
             'desglose' => $pedido->getDesgloseDiasPorProceso(),
             'en_retraso' => $pedido->estaEnRetraso(),
             'dias_retraso' => $pedido->getDiasDeRetraso(),
-            'fecha_creacion' => $pedido->fecha_de_creacion_de_orden,
+            'fecha_creacion' => $pedido->created_at,
             'fecha_entrega_estimada' => $pedido->fecha_estimada_de_entrega,
         ];
     }
@@ -48,7 +48,7 @@ trait CalculaDiasHelper
         $respuesta = [
             'total_dias' => $pedido->getTotalDias(),
             'total_dias_numero' => $pedido->getTotalDiasNumero(),
-            'fecha_creacion' => $pedido->fecha_de_creacion_de_orden?->format('Y-m-d'),
+            'fecha_creacion' => $pedido->created_at?->format('Y-m-d'),
             'fecha_estimada' => $pedido->fecha_estimada_de_entrega?->format('Y-m-d'),
             'estado' => $pedido->estado,
             'en_retraso' => $pedido->estaEnRetraso(),

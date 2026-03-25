@@ -55,7 +55,7 @@ class GetComparisonDataUseCase
                 'cliente' => $orden->cliente,
                 'asesora' => $orden->asesora?->name ?? 'N/A',
                 'estado' => $orden->estado,
-                'fecha' => $orden->fecha_de_creacion_de_orden,
+                'fecha' => $orden->created_at,
                 'prendas' => $this->formatPrendas($orden->prendas),
             ],
             'cotizacion' => $this->formatQuotation($orden)

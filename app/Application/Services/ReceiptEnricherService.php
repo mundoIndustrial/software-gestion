@@ -35,7 +35,7 @@ class ReceiptEnricherService
             return array_merge($recibo, [
                 'pedido_info' => $pedido ? $this->extraerInfoPedido($pedido) : null,
                 'descripcion_detallada' => $this->generarDescripcion($pedido, $recibo),
-                'dias_calculados' => $pedido ? $this->diaLaboralCalculator->calcular($pedido->fecha_de_creacion_de_orden) : 0,
+                'dias_calculados' => $pedido ? $this->diaLaboralCalculator->calcular($pedido->created_at) : 0,
                 'cantidad_total' => $this->cantidadCalculator->calcular($recibo),
             ]);
         }, $recibos);
@@ -56,7 +56,7 @@ class ReceiptEnricherService
             'area' => $pedido->area,
             'dia_de_entrega' => $pedido->dia_de_entrega,
             'fecha_estimada_de_entrega' => $pedido->fecha_estimada_de_entrega?->format('d/m/Y'),
-            'fecha_creacion_orden' => $pedido->fecha_de_creacion_de_orden?->format('Y-m-d H:i:s'),
+            'fecha_creacion_orden' => $pedido->created_at?->format('Y-m-d H:i:s'),
         ];
     }
 

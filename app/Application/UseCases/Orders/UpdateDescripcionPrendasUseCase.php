@@ -2,13 +2,12 @@
 
 namespace App\Application\UseCases\Orders;
 
-use App\Models\PedidoProduccion;
-use App\Services\RegistroOrdenValidationService;
+use App\Application\Shared\Contracts\AuditRepositoryInterface;
+use App\Application\Shared\Contracts\OrdenEventDispatcherInterface;
+use App\Application\Shared\Contracts\TransactionManagerInterface;
+use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
 use App\Services\RegistroOrdenPrendaService;
 use App\Services\RegistroOrdenCacheService;
-use App\Models\News;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 /**
  * UseCase: Actualizar descripción de prendas de una orden
@@ -23,23 +22,25 @@ use Illuminate\Support\Facades\DB;
 class UpdateDescripcionPrendasUseCase
 {
     public function __construct(
-        private RegistroOrdenValidationService $validationService,
         private RegistroOrdenPrendaService $prendaService,
         private RegistroOrdenCacheService $cacheService,
+        private PedidoProduccionRepository $pedidoRepository,
+        private AuditRepositoryInterface $auditRepository,
+        private TransactionManagerInterface $transactionManager,
+        private OrdenEventDispatcherInterface $eventDispatcher,
     ) {}
 
-    public function execute(Request $request): array
+    public function execute(UpdateDescripcionPrendasRequest $request): array
     {
-        $validatedData = $this->validationService->validateUpdateDescripcionRequest($request);
+        $pedido = $request->pedido;
+        $nuevaDescripcion = $request->descripcion;
 
-        $pedido = $validatedData['pedido'];
-        $nuevaDescripcion = $validatedData['descripcion'];
+        $orden = $this->pedidoRepository->findByNumeroPedido($pedido);
 
-        $orden = PedidoProduccion::where('numero_pedido', $pedido)->firstOrFail();
+        $prendas = null;
+        $procesarRegistros = false;
 
-        DB::beginTransaction();
-
-        try {
+        $this->transactionManager->run(function () use ($pedido, $nuevaDescripcion, $request, &$prendas, &$procesarRegistros) {
             $prendas = $this->prendaService->parseDescripcionToPrendas($nuevaDescripcion);
             $procesarRegistros = $this->prendaService->isValidParsedPrendas($prendas);
 
@@ -49,23 +50,18 @@ class UpdateDescripcionPrendasUseCase
 
             $this->cacheService->invalidateDaysCache($pedido);
 
-            News::create([
-                'event_type' => 'description_updated',
-                'description' => "descripcion y prendas actualizadas para pedido {$pedido}",
-                'user_id' => auth()->id(),
-                'pedido' => $pedido,
-                'metadata' => ['prendas_count' => count($prendas)]
-            ]);
+            $this->auditRepository->registrar(
+                eventType: 'description_updated',
+                description: "descripcion y prendas actualizadas para pedido {$pedido}",
+                userId: $request->userId,
+                pedido: $pedido,
+                metadata: ['prendas_count' => count($prendas)],
+            );
+        });
 
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            throw $e;
-        }
+        $orden = $this->pedidoRepository->cargarPrendas($orden);
 
-        $orden->load('prendas');
-
-        broadcast(new \App\Events\OrdenUpdated($orden, 'updated'));
+        $this->eventDispatcher->ordenActualizada($orden, 'updated');
 
         $mensaje = $this->prendaService->getParsedPrendasMessage($prendas);
 

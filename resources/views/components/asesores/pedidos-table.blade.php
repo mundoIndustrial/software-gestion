@@ -93,7 +93,7 @@
                                 </span>
                             </td>
                             <td class="fecha-creacion">
-                                {{ $pedido->fecha_de_creacion_de_orden ? \Carbon\Carbon::parse($pedido->fecha_de_creacion_de_orden)->format('d/m/Y') : 'N/A' }}
+                                {{ $pedido->created_at ? \Carbon\Carbon::parse($pedido->created_at)->format('d/m/Y') : 'N/A' }}
                             </td>
                             <td class="fecha-estimada">
                                 {{ $pedido->fecha_estimada_entrega ? \Carbon\Carbon::parse($pedido->fecha_estimada_entrega)->format('d/m/Y') : '-' }}

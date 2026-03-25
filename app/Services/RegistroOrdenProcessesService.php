@@ -41,7 +41,7 @@ class RegistroOrdenProcessesService
         return (object) [
             'numero_pedido' => $numeroPedido,
             'cliente' => $orden->cliente ?? '',
-            'fecha_inicio' => $orden->fecha_de_creacion_de_orden ?? null,
+            'fecha_inicio' => $orden->created_at ?? null,
             'fecha_estimada_de_entrega' => $orden->fecha_estimada_entrega ?? null,
             'procesos' => $procesos,
             'total_dias_habiles' => $totalDiasHabiles,
