@@ -3,7 +3,6 @@ namespace App\Infrastructure\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\PedidoProduccion;
 use App\Services\RegistroOrdenValidationService;
 use App\Services\RegistroOrdenCreationService;
 use App\Services\RegistroOrdenUpdateService;
@@ -13,8 +12,6 @@ use App\Services\RegistroOrdenPrendaService;
 use App\Services\RegistroOrdenCacheService;
 use App\Services\RegistroOrdenEntregasService;
 use App\Services\RegistroOrdenProcessesService;
-use App\Models\News;
-use Illuminate\Support\Facades\DB;
 use App\Services\ReciboCosturaQueryService;
 use App\Application\UseCases\Orders\CreateOrderUseCase;
 use App\Application\UseCases\Orders\UpdateOrderUseCase;
@@ -31,6 +28,11 @@ use App\Application\UseCases\Orders\UpdateNovedadesUseCase;
 use App\Application\UseCases\Orders\GetFilterOptionsUseCase;
 use App\Application\UseCases\Orders\GetColumnFilterOptionsUseCase;
 use App\Application\UseCases\Orders\UpdatePedidoNumberUseCase;
+use App\Application\UseCases\Orders\UpdateDescripcionPrendasUseCase;
+use App\Application\UseCases\Orders\GetAreaRecienteUseCase;
+use App\Application\UseCases\Receipts\GetReceiptJsonUseCase;
+use App\Application\UseCases\Receipts\ContarRecibosEjecutandoUseCase;
+use App\Application\UseCases\Receipts\MarcarReciboVistoUseCase;
 use Carbon\Carbon;
 
 class RegistroOrdenController extends Controller
@@ -62,6 +64,11 @@ class RegistroOrdenController extends Controller
     protected $getFilterOptionsUseCase;
     protected $getColumnFilterOptionsUseCase;
     protected $updatePedidoNumberUseCase;
+    protected $updateDescripcionPrendasUseCase;
+    protected $getReceiptJsonUseCase;
+    protected $getAreaRecienteUseCase;
+    protected $contarRecibosEjecutandoUseCase;
+    protected $marcarReciboVistoUseCase;
 
     public function __construct(
         RegistroOrdenValidationService $validationService,
@@ -88,7 +95,12 @@ class RegistroOrdenController extends Controller
         UpdateNovedadesUseCase $updateNovedadesUseCase,
         GetFilterOptionsUseCase $getFilterOptionsUseCase,
         GetColumnFilterOptionsUseCase $getColumnFilterOptionsUseCase,
-        UpdatePedidoNumberUseCase $updatePedidoNumberUseCase
+        UpdatePedidoNumberUseCase $updatePedidoNumberUseCase,
+        UpdateDescripcionPrendasUseCase $updateDescripcionPrendasUseCase,
+        GetReceiptJsonUseCase $getReceiptJsonUseCase,
+        GetAreaRecienteUseCase $getAreaRecienteUseCase,
+        ContarRecibosEjecutandoUseCase $contarRecibosEjecutandoUseCase,
+        MarcarReciboVistoUseCase $marcarReciboVistoUseCase
     )
     {
         $this->validationService = $validationService;
@@ -116,6 +128,11 @@ class RegistroOrdenController extends Controller
         $this->getFilterOptionsUseCase = $getFilterOptionsUseCase;
         $this->getColumnFilterOptionsUseCase = $getColumnFilterOptionsUseCase;
         $this->updatePedidoNumberUseCase = $updatePedidoNumberUseCase;
+        $this->updateDescripcionPrendasUseCase = $updateDescripcionPrendasUseCase;
+        $this->getReceiptJsonUseCase = $getReceiptJsonUseCase;
+        $this->getAreaRecienteUseCase = $getAreaRecienteUseCase;
+        $this->contarRecibosEjecutandoUseCase = $contarRecibosEjecutandoUseCase;
+        $this->marcarReciboVistoUseCase = $marcarReciboVistoUseCase;
     }
 
     public function getNextPedido()
@@ -206,55 +223,7 @@ class RegistroOrdenController extends Controller
     public function updateDescripcionPrendas(Request $request)
     {
         return $this->tryExec(function() use ($request) {
-            // Validar datos
-            $validatedData = $this->validationService->validateUpdateDescripcionRequest($request);
-
-            $pedido = $validatedData['pedido'];
-            $nuevaDescripcion = $validatedData['descripcion'];
-
-            DB::beginTransaction();
-
-            // Obtener la orden
-            $orden = PedidoProduccion::where('numero_pedido', $pedido)->firstOrFail();
-
-            // Parsear descripcion
-            $prendas = $this->prendaService->parseDescripcionToPrendas($nuevaDescripcion);
-            $procesarRegistros = $this->prendaService->isValidParsedPrendas($prendas);
-
-            // Si hay prendas validas, reemplazarlas
-            if ($procesarRegistros) {
-                $this->prendaService->replacePrendas($pedido, $prendas);
-            }
-
-            // Invalidar cache
-            $this->invalidarCacheDias($pedido);
-
-            // Log evento
-            News::create([
-                'event_type' => 'description_updated',
-                'description' => "descripcion y prendas actualizadas para pedido {$pedido}",
-                'user_id' => auth()->id(),
-                'pedido' => $pedido,
-                'metadata' => ['prendas_count' => count($prendas)]
-            ]);
-
-            DB::commit();
-
-            // Recargar relaciones
-            $orden->load('prendas');
-
-            // Broadcast evento
-            broadcast(new \App\Events\OrdenUpdated($orden, 'updated'));
-
-            // Obtener mensaje de resultado
-            $mensaje = $this->prendaService->getParsedPrendasMessage($prendas);
-
-            return response()->json([
-                'success' => true,
-                'message' => $mensaje,
-                'prendas_procesadas' => count($prendas),
-                'registros_regenerados' => $procesarRegistros
-            ]);
+            return response()->json($this->updateDescripcionPrendasUseCase->execute($request));
         });
     }
 
@@ -311,128 +280,12 @@ class RegistroOrdenController extends Controller
      */
     public function addNovedad(Request $request, $numeroPedido)
     {
-        return $this->addNovedadUseCase->execute($request, $numeroPedido);
+        return $this->addNovedadUseCase->execute((int) $numeroPedido, $request->input('novedad', ''));
     }
 
     public function updateNovedades(Request $request, $numeroPedido)
     {
         return $this->updateNovedadesUseCase->execute($request, $numeroPedido);
-    }
-
-    /**
-     * Generar descripcion detallada de una prenda (formato recibo)
-     */
-    private function generarDescripcionPrenda($prenda, $indexPrenda = 1)
-    {
-        try {
-            $lineas = [];
-            $nombrePrenda = $prenda->nombre_prenda ?? $prenda->nombre ?? 'SIN NOMBRE';
-            $lineas[] = "PRENDA {$indexPrenda}: {$nombrePrenda}";
-            
-            // Obtener color y tela de la primera variante (color/tela combinacion)
-            if ($prenda->coloresTelas && $prenda->coloresTelas->count() > 0) {
-                $primerColorTela = $prenda->coloresTelas->first();
-                $tela = $primerColorTela && $primerColorTela->tela ? $primerColorTela->tela->nombre ?? $primerColorTela->tela : '-';
-                $color = $primerColorTela && $primerColorTela->color ? $primerColorTela->color->nombre ?? $primerColorTela->color : '-';
-                $ref = $primerColorTela && $primerColorTela->tela ? $primerColorTela->tela->referencia ?? '' : '';
-                
-                $lineas[] = "TELA: {$tela} / COLOR: {$color}" . ($ref ? " (REF: {$ref})" : '');
-            }
-            
-            // Manga
-            if ($prenda->variantes && $prenda->variantes->count() > 0) {
-                $primerVariante = $prenda->variantes->first();
-                if ($primerVariante && $primerVariante->manga) {
-                    $manga = strtoupper($primerVariante->manga);
-                    $lineas[] = "MANGA: {$manga}";
-                }
-            }
-            
-            // Observaciones de manga
-            if ($prenda->variantes && $prenda->variantes->count() > 0) {
-                $primerVariante = $prenda->variantes->first();
-                if ($primerVariante && $primerVariante->manga_obs) {
-                    $lineas[] = "OBS. MANGA: {$primerVariante->manga_obs}";
-                }
-            }
-            
-            // Bolsillos
-            if ($prenda->variantes && $prenda->variantes->count() > 0) {
-                $primerVariante = $prenda->variantes->first();
-                if ($primerVariante && $primerVariante->bolsillos_obs) {
-                    $lineas[] = "BOLSILLOS: {$primerVariante->bolsillos_obs}";
-                }
-            }
-            
-            // Broche/Boton
-            if ($prenda->variantes && $prenda->variantes->count() > 0) {
-                $primerVariante = $prenda->variantes->first();
-                if ($primerVariante && $primerVariante->broche) {
-                    $broche = strtoupper($primerVariante->broche);
-                    $lineas[] = "BROCHE: {$broche}";
-                    if ($primerVariante->broche_obs) {
-                        $lineas[] = "OBS. BROCHE: {$primerVariante->broche_obs}";
-                    }
-                }
-            }
-            
-            // Tallas (incluyendo tallas por color)
-            $tallasSummary = [];
-            
-            // Primero, verificar si hay tallas por color
-            $tallasPorColor = \DB::table('prenda_pedido_talla_colores')
-                ->join('prenda_pedido_tallas', 'prenda_pedido_talla_colores.prenda_pedido_talla_id', '=', 'prenda_pedido_tallas.id')
-                ->where('prenda_pedido_tallas.prenda_pedido_id', $prenda->id)
-                ->select([
-                    'prenda_pedido_tallas.talla',
-                    'prenda_pedido_talla_colores.color_nombre',
-                    'prenda_pedido_talla_colores.cantidad'
-                ])
-                ->get();
-            
-            if ($tallasPorColor->count() > 0) {
-                // Hay tallas por color, mostrar en formato TALLA:CANTIDAD-COLOR
-                foreach ($tallasPorColor as $tallaColor) {
-                    if ($tallaColor->cantidad > 0) {
-                        $colorNombre = strtoupper($tallaColor->color_nombre);
-                        $tallasSummary[] = "{$tallaColor->talla}:{$tallaColor->cantidad}-{$colorNombre}";
-                    }
-                }
-            } else {
-                // No hay tallas por color, usar tallas normales
-                if ($prenda->tallas && $prenda->tallas->count() > 0) {
-                    foreach ($prenda->tallas as $talla) {
-                        $tallaNombre = $talla->talla ?? '-';
-                        $cantidad = $talla->cantidad ?? 0;
-                        if ($cantidad > 0) {
-                            $tallasSummary[] = "{$tallaNombre}: {$cantidad}";
-                        }
-                    }
-                }
-            }
-            
-            if (!empty($tallasSummary)) {
-                $lineas[] = "TALLAS: " . implode(", ", $tallasSummary);
-            }
-            
-            $descripcionFinal = implode(" | ", $lineas);
-            
-            \Log::debug("[GENERAR-DESCRIPCION] descripcion generada", [
-                'prenda_id' => $prenda->id,
-                'prenda_nombre' => $nombrePrenda,
-                'lineas_cantidad' => count($lineas),
-                'descripcion_longitud' => strlen($descripcionFinal),
-                'descripcion_preview' => substr($descripcionFinal, 0, 150)
-            ]);
-            
-            return $descripcionFinal;
-        } catch (\Exception $e) {
-            \Log::error("[GENERAR-DESCRIPCION] Error generando descripcion", [
-                'error' => $e->getMessage(),
-                'prenda_id' => $prenda->id ?? 'unknown'
-            ]);
-            return null;
-        }
     }
 
     /**
@@ -461,70 +314,13 @@ class RegistroOrdenController extends Controller
     public function getReciboReflectivoJson($reciboId)
     {
         try {
-            $recibo = DB::table('consecutivos_recibos_pedidos')
-                ->where('id', $reciboId)
-                ->where('tipo_recibo', 'REFLECTIVO')
-                ->where('activo', 1)
-                ->first();
-            
-            if (!$recibo) {
+            $data = $this->getReceiptJsonUseCase->execute((int) $reciboId, 'REFLECTIVO');
+
+            if (!$data) {
                 return response()->json(['success' => false, 'message' => 'Recibo no encontrado'], 404);
             }
-            
-            $pedido = PedidoProduccion::find($recibo->pedido_produccion_id);
-            
-            $diasCalculados = 0;
-            if ($pedido && $pedido->fecha_de_creacion_de_orden) {
-                try {
-                    $fechaInicio = $pedido->fecha_de_creacion_de_orden;
-                    $fechaFin = \Carbon\Carbon::now();
-                    $festivosArray = \App\Models\Festivo::pluck('fecha')->toArray();
-                    $festivosSet = [];
-                    foreach ($festivosArray as $f) {
-                        try { $festivosSet[\Carbon\Carbon::parse($f)->format('Y-m-d')] = true; } catch (\Exception $e) {}
-                    }
-                    $current = $fechaInicio->copy()->addDay();
-                    $totalDays = 0;
-                    $maxIterations = 365;
-                    $iterations = 0;
-                    while ($current <= $fechaFin && $iterations < $maxIterations) {
-                        $dateString = $current->format('Y-m-d');
-                        $isWeekend = $current->dayOfWeek === 0 || $current->dayOfWeek === 6;
-                        $isFestivo = isset($festivosSet[$dateString]);
-                        if (!$isWeekend && !$isFestivo) { $totalDays++; }
-                        $current->addDay();
-                        $iterations++;
-                    }
-                    $diasCalculados = max(0, $totalDays);
-                } catch (\Exception $e) {
-                    $diasCalculados = 0;
-                }
-            }
-            
-            $nombrePrenda = 'Sin prendas';
-            if ($pedido && $pedido->prendas && $pedido->prendas->count() > 0) {
-                $primeraPrenda = $pedido->prendas->first();
-                $nombrePrenda = $primeraPrenda->nombre_prenda ?? $primeraPrenda->nombre ?? 'Prenda';
-            }
-            
-            return response()->json([
-                'success' => true,
-                'recibo' => [
-                    'id' => $recibo->id,
-                    'consecutivo_actual' => $recibo->consecutivo_actual,
-                    'pedido_produccion_id' => $recibo->pedido_produccion_id,
-                    'prenda_id' => $recibo->prenda_id,
-                    'tipo_recibo' => $recibo->tipo_recibo,
-                    'estado' => $recibo->estado ?? 'PENDIENTE_INSUMOS',
-                    'area' => $recibo->area ?? 'Insumos',
-                    'dias_calculados' => $diasCalculados,
-                    'nombre_prenda' => $nombrePrenda,
-                    'cliente' => $pedido ? $pedido->cliente : '',
-                    'numero_pedido' => $pedido ? $pedido->numero_pedido : '',
-                    'fecha_creacion' => $pedido && $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('d/m/Y') : '-',
-                    'created_at' => $recibo->created_at,
-                ],
-            ]);
+
+            return response()->json(['success' => true, 'recibo' => $data]);
         } catch (\Exception $e) {
             \Log::error('Error en getReciboReflectivoJson: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Error interno'], 500);
@@ -537,160 +333,19 @@ class RegistroOrdenController extends Controller
     public function getReciboJson($reciboId)
     {
         try {
-            $recibo = DB::table('consecutivos_recibos_pedidos')
-                ->where('id', $reciboId)
-                ->where('tipo_recibo', 'COSTURA')
-                ->where('activo', 1)
-                ->first();
-            
-            if (!$recibo) {
+            $data = $this->getReceiptJsonUseCase->execute((int) $reciboId, 'COSTURA');
+
+            if (!$data) {
                 return response()->json(['success' => false, 'message' => 'Recibo no encontrado'], 404);
             }
-            
-            $pedido = PedidoProduccion::find($recibo->pedido_produccion_id);
-            
-            // Calcular Dias
-            $diasCalculados = 0;
-            if ($pedido && $pedido->fecha_de_creacion_de_orden) {
-                try {
-                    $fechaInicio = $pedido->fecha_de_creacion_de_orden;
-                    $fechaFin = \Carbon\Carbon::now();
-                    $festivosArray = \App\Models\Festivo::pluck('fecha')->toArray();
-                    $festivosSet = [];
-                    foreach ($festivosArray as $f) {
-                        try { $festivosSet[\Carbon\Carbon::parse($f)->format('Y-m-d')] = true; } catch (\Exception $e) {}
-                    }
-                    $current = $fechaInicio->copy()->addDay();
-                    $totalDays = 0;
-                    $maxIterations = 365;
-                    $iterations = 0;
-                    while ($current <= $fechaFin && $iterations < $maxIterations) {
-                        $dateString = $current->format('Y-m-d');
-                        $isWeekend = $current->dayOfWeek === 0 || $current->dayOfWeek === 6;
-                        $isFestivo = isset($festivosSet[$dateString]);
-                        if (!$isWeekend && !$isFestivo) { $totalDays++; }
-                        $current->addDay();
-                        $iterations++;
-                    }
-                    $diasCalculados = max(0, $totalDays);
-                } catch (\Exception $e) {
-                    $diasCalculados = 0;
-                }
-            }
-            
-            // Obtener nombre primera prenda
-            $nombrePrenda = 'Sin prendas';
-            if ($pedido && $pedido->prendas && $pedido->prendas->count() > 0) {
-                $primeraPrenda = $pedido->prendas->first();
-                $nombrePrenda = $primeraPrenda->nombre_prenda ?? $primeraPrenda->nombre ?? 'Prenda';
-            }
-            
-            return response()->json([
-                'success' => true,
-                'recibo' => [
-                    'id' => $recibo->id,
-                    'consecutivo_actual' => $recibo->consecutivo_actual,
-                    'pedido_produccion_id' => $recibo->pedido_produccion_id,
-                    'prenda_id' => $recibo->prenda_id,
-                    'tipo_recibo' => $recibo->tipo_recibo,
-                    'estado' => $recibo->estado ?? 'PENDIENTE_INSUMOS',
-                    'area' => $recibo->area ?? 'Insumos',
-                    'dias_calculados' => $diasCalculados,
-                    'nombre_prenda' => $nombrePrenda,
-                    'cliente' => $pedido ? $pedido->cliente : '',
-                    'numero_pedido' => $pedido ? $pedido->numero_pedido : '',
-                    'fecha_creacion' => $pedido && $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('d/m/Y') : '-',
-                    'created_at' => $recibo->created_at,
-                ],
-            ]);
+
+            return response()->json(['success' => true, 'recibo' => $data]);
         } catch (\Exception $e) {
             \Log::error('Error en getReciboJson: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Error interno'], 500);
         }
     }
-    
-    /**
-     * Obtener el area del proceso mas reciente de una prenda
-     */
-    private function obtenerAreaProcesoMasReciente($pedidoProduccionId, $prendaId = null)
-    {
-        try {
-            \Log::info('[obtenerAreaProcesoMasReciente] Buscando proceso mas reciente', [
-                'pedido_produccion_id' => $pedidoProduccionId,
-                'prenda_id' => $prendaId
-            ]);
-            
-            // Primero obtener el numero_pedido desde la tabla pedidos_produccion
-            $pedido = \DB::table('pedidos_produccion')
-                ->where('id', $pedidoProduccionId)
-                ->first();
-            
-            if (!$pedido) {
-                \Log::warning('[obtenerAreaProcesoMasReciente] Pedido no encontrado', ['pedido_produccion_id' => $pedidoProduccionId]);
-                return 'Sin procesos';
-            }
-            
-            $numeroPedido = $pedido->numero_pedido;
-            \Log::info('[obtenerAreaProcesoMasReciente] Usando numero_pedido', [
-                'pedido_produccion_id' => $pedidoProduccionId,
-                'numero_pedido' => $numeroPedido
-            ]);
-            
-            $query = \DB::table('procesos_prenda')
-                ->where('numero_pedido', $numeroPedido)
-                ->whereNull('deleted_at');  // Excluir procesos eliminados (soft delete)
-            
-            // Si se especifica prenda_id, filtrar por esa prenda
-            if ($prendaId) {
-                // Convertir a entero para asegurar comparacion correcta
-                $prendaId = (int)$prendaId;
-                $query->where('prenda_pedido_id', $prendaId);
-                \Log::info('[obtenerAreaProcesoMasReciente] Filtrando por prenda_id', ['prenda_id' => $prendaId]);
-            } else {
-                \Log::info('[obtenerAreaProcesoMasReciente] Buscando todos los procesos del pedido');
-            }
-            
-            // Para debugging: ver todos los procesos disponibles
-            $todosLosProcesos = $query->get();
-            \Log::info('[obtenerAreaProcesoMasReciente] Todos los procesos encontrados:', [
-                'total' => $todosLosProcesos->count(),
-                'procesos' => $todosLosProcesos->toArray()
-            ]);
-            
-            // Obtener el proceso mas reciente por created_at
-            $procesoReciente = $query->orderBy('created_at', 'desc')
-                ->first();
-            
-            if ($procesoReciente) {
-                $area = $procesoReciente->proceso;
-                \Log::info('[obtenerAreaProcesoMasReciente] Proceso mas reciente encontrado', [
-                    'pedido_produccion_id' => $pedidoProduccionId,
-                    'numero_pedido' => $numeroPedido,
-                    'prenda_id' => $prendaId,
-                    'area' => $area,
-                    'proceso_id' => $procesoReciente->id,
-                    'created_at' => $procesoReciente->created_at
-                ]);
-                return $area;
-            }
-            
-            \Log::info('[obtenerAreaProcesoMasReciente] No se encontraron procesos', [
-                'pedido_produccion_id' => $pedidoProduccionId,
-                'numero_pedido' => $numeroPedido,
-                'prenda_id' => $prendaId
-            ]);
-            
-            return 'Sin procesos';
-            
-        } catch (\Exception $e) {
-            \Log::error('[obtenerAreaProcesoMasReciente] Error: ' . $e->getMessage(), [
-                'pedido_produccion_id' => $pedidoProduccionId,
-                'prenda_id' => $prendaId
-            ]);
-            return 'Error';
-        }
-    }
-    
+
     /**
      * Obtener el area mas reciente de un pedido (API)
      */
@@ -698,29 +353,17 @@ class RegistroOrdenController extends Controller
     {
         try {
             \Log::info('[getAreaReciente] Obteniendo area mas reciente para pedido', ['pedido_id' => $id]);
-            
-            $pedido = PedidoProduccion::find($id);
-            
-            if (!$pedido) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Pedido no encontrado'
-                ], 404);
+
+            $data = $this->getAreaRecienteUseCase->execute((int) $id);
+
+            if (!$data) {
+                return response()->json(['success' => false, 'error' => 'Pedido no encontrado'], 404);
             }
-            
-            return response()->json([
-                'success' => true,
-                'area' => $pedido->area ?? 'Insumos',
-                'pedido_id' => $id
-            ]);
-            
+
+            return response()->json(['success' => true] + $data);
         } catch (\Exception $e) {
             \Log::error('[getAreaReciente] Error: ' . $e->getMessage(), ['pedido_id' => $id]);
-            
-            return response()->json([
-                'success' => false,
-                'error' => 'Error al obtener area reciente: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false, 'error' => 'Error al obtener area reciente: ' . $e->getMessage()], 500);
         }
     }
 
@@ -731,58 +374,10 @@ class RegistroOrdenController extends Controller
     public function contarRecibosEjecutandoCostura()
     {
         try {
-            $userId = auth()->id();
-            
-            // Obtener recibos COSTURA en estado "En Ejecucion" con area "Corte"
-            // EXCLUYENDO los que el usuario actual ya marca como visto
-            $recibos = DB::table('consecutivos_recibos_pedidos')
-                ->where('tipo_recibo', 'COSTURA')
-                ->where('estado', 'En Ejecucion')
-                ->where('area', 'Corte')
-                ->where('activo', 1)
-                ->whereNotIn('id', function($query) use ($userId) {
-                    $query->select('consecutivo_recibo_id')
-                        ->from('recibos_usuario_vistos')
-                        ->where('user_id', $userId)
-                        ->where('tipo_recibo', 'COSTURA');
-                })
-                ->select([
-                    'id',
-                    'consecutivo_actual as numero_recibo',
-                    'pedido_produccion_id',
-                    'prenda_id',
-                    'created_at'
-                ])
-                ->get();
-
-            // Enriquecer datos con informacion del pedido
-            $recibosConInfo = $recibos->map(function ($recibo) {
-                $pedido = PedidoProduccion::find($recibo->pedido_produccion_id);
-                
-                return [
-                    'id' => $recibo->id,
-                    'numero_recibo' => $recibo->numero_recibo,
-                    'cliente' => $pedido ? $pedido->cliente : '-',
-                    'pedido_id' => $pedido ? $pedido->numero_pedido : '-',
-                    'fecha' => Carbon::parse($recibo->created_at)->format('d/m/Y H:i')
-                ];
-            });
-
-            return response()->json([
-                'success' => true,
-                'total' => $recibosConInfo->count(),
-                'recibos' => $recibosConInfo->values()->toArray()
-            ]);
-
+            return response()->json($this->contarRecibosEjecutandoUseCase->execute((int) auth()->id()));
         } catch (\Exception $e) {
             \Log::error('Error en contarRecibosEjecutandoCostura: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al contar recibos de costura',
-                'total' => 0,
-                'recibos' => []
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Error al contar recibos de costura', 'total' => 0, 'recibos' => []], 500);
         }
     }
 
@@ -793,48 +388,16 @@ class RegistroOrdenController extends Controller
     public function marcarReciboVistoCostura($reciboId)
     {
         try {
-            $userId = auth()->id();
-            
-            // Obtener el recibo
-            $recibo = DB::table('consecutivos_recibos_pedidos')
-                ->where('id', $reciboId)
-                ->where('tipo_recibo', 'COSTURA')
-                ->first();
-            
-            if (!$recibo) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Recibo no encontrado'
-                ], 404);
+            $result = $this->marcarReciboVistoUseCase->execute((int) $reciboId, (int) auth()->id(), 'COSTURA');
+
+            if (!$result) {
+                return response()->json(['success' => false, 'message' => 'Recibo no encontrado'], 404);
             }
-            
-            // Crear o ignorar si ya existe (gracias a unique constraint)
-            DB::table('recibos_usuario_vistos')->insertOrIgnore([
-                'consecutivo_recibo_id' => $reciboId,
-                'user_id' => $userId,
-                'tipo_recibo' => 'COSTURA',
-                'created_at' => Carbon::now()
-            ]);
-            
-            \Log::info('Recibo de costura marcado como visto', [
-                'recibo_id' => $reciboId,
-                'user_id' => $userId,
-                'numero_recibo' => $recibo->consecutivo_actual
-            ]);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Recibo marcado como visto',
-                'recibo_id' => $reciboId
-            ]);
-            
+
+            return response()->json($result);
         } catch (\Exception $e) {
             \Log::error('Error al marcar recibo como visto: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al marcar el recibo como visto'
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Error al marcar el recibo como visto'], 500);
         }
     }
 

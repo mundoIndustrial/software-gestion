@@ -5,6 +5,8 @@ namespace App\Repositories;
 use App\Models\ConsecutivoReciboPedido;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * ConsecutivoReciboPedidoRepository
@@ -57,6 +59,55 @@ class ConsecutivoReciboPedidoRepository
     public function findById(int $id): ?ConsecutivoReciboPedido
     {
         return $this->buildBaseQuery()->find($id);
+    }
+
+    /**
+     * Obtener un recibo activo por ID y tipo (COSTURA, REFLECTIVO, etc.)
+     * Carga la relación pedido para evitar queries adicionales.
+     *
+     * @param int $id
+     * @param string $tipoRecibo
+     * @return ConsecutivoReciboPedido|null
+     */
+    public function findByIdAndTipo(int $id, string $tipoRecibo): ?ConsecutivoReciboPedido
+    {
+        return ConsecutivoReciboPedido::query()
+            ->where('id', $id)
+            ->where('tipo_recibo', $tipoRecibo)
+            ->where('activo', 1)
+            ->with(['pedido.prendas'])
+            ->first();
+    }
+
+    /**
+     * Recibos COSTURA en estado "En Ejecucion" / área "Corte" no vistos por el usuario.
+     * Usa JOIN con pedidos_produccion para evitar N+1 queries.
+     *
+     * @param int $userId
+     * @return Collection  colección de stdClass con campos: id, consecutivo_actual, cliente, numero_pedido, created_at
+     */
+    public function findEjecutandoEnCorteNoVistosPorUsuario(int $userId): Collection
+    {
+        return DB::table('consecutivos_recibos_pedidos as crp')
+            ->join('pedidos_produccion as pp', 'pp.id', '=', 'crp.pedido_produccion_id')
+            ->where('crp.tipo_recibo', 'COSTURA')
+            ->where('crp.estado', 'En Ejecucion')
+            ->where('crp.area', 'Corte')
+            ->where('crp.activo', 1)
+            ->whereNotIn('crp.id', function ($q) use ($userId) {
+                $q->select('consecutivo_recibo_id')
+                    ->from('recibos_usuario_vistos')
+                    ->where('user_id', $userId)
+                    ->where('tipo_recibo', 'COSTURA');
+            })
+            ->select([
+                'crp.id',
+                'crp.consecutivo_actual',
+                'crp.created_at',
+                'pp.cliente',
+                'pp.numero_pedido',
+            ])
+            ->get();
     }
 
     /**

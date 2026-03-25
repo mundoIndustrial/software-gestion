@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 
 /**
  * PrendaPedidoTallaRepository
@@ -50,5 +51,25 @@ class PrendaPedidoTallaRepository
             ]);
             return 0;
         }
+    }
+
+    /**
+     * Obtener tallas con desglose por color para una prenda.
+     * Devuelve una colección vacía si la prenda no usa el flujo talla-color.
+     *
+     * @param  int  $prendaPedidoId
+     * @return Collection  de stdClass con campos: talla, color_nombre, cantidad
+     */
+    public function getTallasPorColor(int $prendaPedidoId): Collection
+    {
+        return DB::table('prenda_pedido_talla_colores as pptc')
+            ->join('prenda_pedido_tallas as ppt', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
+            ->where('ppt.prenda_pedido_id', $prendaPedidoId)
+            ->select([
+                'ppt.talla',
+                'pptc.color_nombre',
+                'pptc.cantidad',
+            ])
+            ->get();
     }
 }
