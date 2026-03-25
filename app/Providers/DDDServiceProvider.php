@@ -15,6 +15,11 @@ use App\Application\UseCases\Orders\{
     SaveDiaEntregaUseCase
 };
 use App\Application\UseCases\Receipts\GetSewingReceiptsUseCase;
+use App\Application\Services\ReceiptEnricherService;
+use App\Application\Services\CantidadCalculator;
+use App\Application\Services\DiaLaboralCalculator;
+use App\Repositories\ConsecutivoReciboPedidoRepository;
+use App\Repositories\PrendaPedidoTallaRepository;
 
 // ====== Infrastructure Layer (Services) ======
 use App\Infrastructure\QueryServices\OrderQueryService;
@@ -123,8 +128,24 @@ class DDDServiceProvider extends ServiceProvider
         });
 
         // GetSewingReceiptsUseCase
+        $this->app->bind(CantidadCalculator::class, function ($app) {
+            return new CantidadCalculator(
+                $app->make(PrendaPedidoTallaRepository::class),
+            );
+        });
+
+        $this->app->bind(ReceiptEnricherService::class, function ($app) {
+            return new ReceiptEnricherService(
+                $app->make(DiaLaboralCalculator::class),
+                $app->make(CantidadCalculator::class),
+            );
+        });
+
         $this->app->bind(GetSewingReceiptsUseCase::class, function ($app) {
-            return new GetSewingReceiptsUseCase();
+            return new GetSewingReceiptsUseCase(
+                $app->make(ConsecutivoReciboPedidoRepository::class),
+                $app->make(ReceiptEnricherService::class),
+            );
         });
     }
 
