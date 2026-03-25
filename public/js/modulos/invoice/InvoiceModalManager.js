@@ -26,8 +26,6 @@ class InvoiceModalManager {
             modal.remove();
         });
 
-        .length);
-
         // Agregar estilos si no existen
         this.agregarEstilos();
 
@@ -485,7 +483,6 @@ class InvoiceModalManager {
         if (overlay) {
             // Removing directly without animation to prevent stacking issues
             overlay.remove();
-            === null);
         }
 
         // Ocultar loading si está activo
@@ -551,7 +548,7 @@ class InvoiceModalManager {
         const imagenes = document.querySelectorAll('#modal-factura-contenido img');
         imagenes.forEach((img, index) => {
             const estilos = window.getComputedStyle(img);
-            + '...',
+            console.log({
                 overflow: estilos.overflow,
                 'object-fit': estilos.objectFit,
                 width: estilos.width,
