@@ -1,0 +1,80 @@
+-- =================================================
+-- PASO 1: Crear/Agregar la columna numero_recibo_parcial (si no existe)
+-- =================================================
+ALTER TABLE `mundo_final2`.`procesos_prenda`
+ADD COLUMN IF NOT EXISTS `numero_recibo_parcial` DECIMAL(10,2) DEFAULT 0 COMMENT 'Número de recibo parcial para distribuciones (ej: 2.10, 2.20)';
+
+-- =================================================
+-- PASO 2: Normalizar registros existentes: NULL -> 0 (padre)
+-- =================================================
+UPDATE `mundo_final2`.`procesos_prenda`
+SET `numero_recibo_parcial` = 0
+WHERE `numero_recibo_parcial` IS NULL;
+
+-- =================================================
+-- PASO 3: Eliminar el índice UNIQUE actual que impide múltiples Costura
+-- =================================================
+ALTER TABLE `mundo_final2`.`procesos_prenda`
+DROP INDEX IF EXISTS `uq_proceso_prenda_activo`;
+
+-- =================================================
+-- PASO 4: Crear el nuevo índice UNIQUE incluyendo numero_recibo y numero_recibo_parcial
+-- =================================================
+ALTER TABLE `mundo_final2`.`procesos_prenda`
+ADD UNIQUE KEY `uq_proceso_prenda_activo`
+(`numero_pedido`, `prenda_pedido_id`, `proceso`, `numero_recibo`, `numero_recibo_parcial`);
+
+-- =================================================
+-- PASO 5: Crear tabla recibo_por_partes (si no existe)
+-- =================================================
+CREATE TABLE IF NOT EXISTS `mundo_final2`.`recibo_por_partes` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `proceso_prenda_padre_id` bigint(20) unsigned NOT NULL COMMENT 'ID del proceso padre (sin encargado)',
+  `proceso_prenda_hijo_id` bigint(20) unsigned NOT NULL COMMENT 'ID del proceso hijo (con encargado)',
+  `numero_pedido` int(11) NOT NULL,
+  `prenda_pedido_id` bigint(20) unsigned NOT NULL,
+  `numero_recibo` int(11) NOT NULL,
+  `numero_recibo_parcial` decimal(10,2) NOT NULL COMMENT 'Ej: 2.10, 2.20',
+  `encargado` varchar(255) DEFAULT NULL COMMENT 'Usuario asignado al hijo',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_recibo_por_partes_padre` (`proceso_prenda_padre_id`),
+  KEY `fk_recibo_por_partes_hijo` (`proceso_prenda_hijo_id`),
+  KEY `idx_recibo_por_partes_pedido_prenda` (`numero_pedido`,`prenda_pedido_id`),
+  CONSTRAINT `fk_recibo_por_partes_padre`
+    FOREIGN KEY (`proceso_prenda_padre_id`)
+    REFERENCES `procesos_prenda` (`id`)
+    ON DELETE CASCADE,
+  CONSTRAINT `fk_recibo_por_partes_hijo`
+    FOREIGN KEY (`proceso_prenda_hijo_id`)
+    REFERENCES `procesos_prenda` (`id`)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =================================================
+-- PASO 6: Crear tabla recibos_por_partes_tallas (si no existe)
+-- =================================================
+CREATE TABLE IF NOT EXISTS `mundo_final2`.`recibos_por_partes_tallas` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `recibo_por_partes_id` bigint(20) unsigned NOT NULL,
+  `talla` varchar(50) NOT NULL,
+  `color_nombre` varchar(100) DEFAULT NULL,
+  `cantidad` int(11) NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_tallas_recibo_por_partes` (`recibo_por_partes_id`),
+  CONSTRAINT `fk_tallas_recibo_por_partes`
+    FOREIGN KEY (`recibo_por_partes_id`)
+    REFERENCES `recibo_por_partes` (`id`)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =================================================
+-- VERIFICACIÓN (opcional): Verificar que las tablas y columnas existen
+-- =================================================
+DESCRIBE `mundo_final2`.`procesos_prenda`;
+SHOW INDEX FROM `mundo_final2`.`procesos_prenda` WHERE Key_name = 'uq_proceso_prenda_activo';
+SHOW TABLES LIKE 'recibo_por_partes';
+SHOW TABLES LIKE 'recibos_por_partes_tallas';

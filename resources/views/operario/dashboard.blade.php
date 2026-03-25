@@ -373,6 +373,7 @@
                                             <button class="btn-pasar-costura {{ $mostrarComoDeshacerCostura ? 'btn-deshacer-costura' : '' }}" 
                                                     id="btn-costura-{{ $prenda['prenda_id'] }}"
                                                     data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                    data-numero-pedido="{{ $prenda['numero_pedido'] }}"
                                                     data-prenda-id="{{ $prenda['prenda_id'] }}"
                                                     data-nombre="{{ $prenda['nombre_prenda'] }}"
                                                     data-tipo-recibo="COSTURA"
@@ -400,6 +401,22 @@
                                             <span class="material-symbols-rounded">{{ $esCC ? 'undo' : 'check_circle' }}</span>
                                             {{ $esCC ? 'DESHACER' : 'PASAR A C.C' }}
                                         </button>
+
+                                        {{-- Botón "Ver Distribución" para vista-costura --}}
+                                        @php
+                                            $reciboId = $prenda['recibos'][0]['id'] ?? null;
+                                        @endphp
+                                        @if($reciboId)
+                                            <button class="btn-ver-distribucion" 
+                                                    id="btn-distribucion-{{ $prenda['prenda_id'] }}"
+                                                    data-recibo-id="{{ $reciboId }}"
+                                                    data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                    data-numero-recibo="{{ isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'] }}"
+                                                    onclick="abrirDistribucionRecibo(this)">
+                                                <span class="material-symbols-rounded">share</span>
+                                                VER DISTRIBUCIÓN
+                                            </button>
+                                        @endif
                                     @endif
                                     
                                     <button class="btn-agregar-novedad" onclick="abrirModalNovedad('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', {{ isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'] }})">
@@ -434,6 +451,7 @@
                                             <button class="btn-pasar-costura {{ $tieneEncargadoCosturaRef ? 'btn-deshacer-costura' : '' }}" 
                                                     id="btn-costura-reflectivo-{{ $prenda['prenda_id'] }}"
                                                     data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                    data-numero-pedido="{{ $prenda['numero_pedido'] }}"
                                                     data-prenda-id="{{ $prenda['prenda_id'] }}"
                                                     data-nombre="{{ $prenda['nombre_prenda'] }}"
                                                     data-tipo-recibo="REFLECTIVO"
@@ -935,28 +953,251 @@ if (auth()->user()->hasRole('administrador-costura')) {
 </div>
 
 <!-- Modal de Costura -->
-<div id="modalCostura" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
-    <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 500px; width: 90%;">
-        <h3 style="margin: 0 0 1.5rem 0; font-size: 1.25rem; font-weight: 600;">Asignar a Costura</h3>
-        
-        <div style="margin-bottom: 1rem;">
-            <p style="margin: 0 0 0.5rem 0; color: #666;">Prenda: <strong id="costuraPrendaNombre"></strong></p>
-            <p style="margin: 0 0 0.5rem 0; color: #666;">Recibo: <strong id="costuraReciboNumero"></strong></p>
-            <p style="margin: 0 0 1rem 0; color: #666;">Tipo: <strong id="costuraTipoRecibo"></strong></p>
+<div id="modalCostura" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center; padding: 0.5rem;">
+    <div id="modalCosturaContent" style="background: white; padding: 0; border-radius: 16px; max-width: 900px; width: 100%; max-height: 98vh; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); display: flex; flex-direction: column; transition: all 0.3s ease;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+            <div style="flex: 1; min-width: 0;">
+                <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; line-height: 1.2;">Asignar a Costura</h3>
+                <p style="margin: 0.25rem 0 0 0; opacity: 0.9; font-size: 0.75rem;" id="modalSubtitulo">Seleccione el tipo de asignación</p>
+            </div>
+            <button type="button" onclick="cerrarModalCostura()" style="background: rgba(255,255,255,0.2); border: none; border-radius: 8px; padding: 0.5rem; cursor: pointer; color: white; transition: background 0.2s; flex-shrink: 0;">
+                <span class="material-symbols-rounded" style="font-size: 1.25rem;">close</span>
+            </button>
         </div>
         
-        <div style="margin-bottom: 1.5rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Encargado de Costura:</label>
-            <select id="costuraEncargado" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; background: white;">
-                <option value="">Seleccione un encargado...</option>
-            </select>
+        <!-- Contenido principal -->
+        <div id="modalMainContent" style="flex: 1; overflow-y: auto; padding: 1rem;">
+            <!-- Opciones de Asignación -->
+            <div id="opcionesAsignacion" style="margin-bottom: 1.5rem;">
+                <h4 style="margin: 0 0 1rem 0; font-size: 1rem; font-weight: 600; color: #1e293b;">Tipo de Asignación</h4>
+                <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
+                    <button type="button" id="btnModuloCompleto" onclick="seleccionarOpcionAsignacion('completo')" style="padding: 1rem; border: 2px solid #e2e8f0; border-radius: 12px; background: white; cursor: pointer; transition: all 0.2s; text-align: left;">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="width: 40px; height: 40px; background: #3b82f6; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <span class="material-symbols-rounded" style="color: white; font-size: 1.25rem;">inventory_2</span>
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <h5 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: #1e293b; line-height: 1.3;">Módulo Completo</h5>
+                                <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: #64748b; line-height: 1.3;">Asignar todas las prendas a un solo módulo</p>
+                            </div>
+                        </div>
+                    </button>
+                    
+                    <button type="button" id="btnDistribuirModulos" onclick="seleccionarOpcionAsignacion('distribuir')" style="padding: 1rem; border: 2px solid #e2e8f0; border-radius: 12px; background: white; cursor: pointer; transition: all 0.2s; text-align: left;">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="width: 40px; height: 40px; background: #10b981; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <span class="material-symbols-rounded" style="color: white; font-size: 1.25rem;">share</span>
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <h5 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: #1e293b; line-height: 1.3;">Distribuir por Módulos</h5>
+                                <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: #64748b; line-height: 1.3;">Repartir prendas entre múltiples módulos</p>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Contenido dinámico según opción -->
+            <div id="contenidoAsignacion">
+                <!-- Se cargará dinámicamente -->
+            </div>
         </div>
         
-        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-            <button type="button" onclick="cerrarModalCostura()" style="padding: 0.75rem 1.5rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">Cancelar</button>
-            <button type="button" onclick="confirmarPasarACostura()" style="padding: 0.75rem 1.5rem; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer;">Asignar</button>
+        <!-- Footer -->
+        <div style="padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 0.75rem; flex-shrink: 0;">
+            <div style="display: flex; gap: 0.75rem; justify-content: flex-end; flex-wrap: wrap;">
+                <button type="button" id="btnVolver" onclick="volverAOpciones()" style="padding: 0.625rem 1rem; border: 1px solid #d1d5db; background: white; border-radius: 8px; cursor: pointer; font-weight: 500; color: #374151; transition: all 0.2s; display: none; font-size: 0.875rem;">
+                    <span class="material-symbols-rounded" style="font-size: 1rem; vertical-align: middle; margin-right: 0.5rem;">arrow_back</span>
+                    Volver
+                </button>
+                <button type="button" onclick="cerrarModalCostura()" style="padding: 0.625rem 1rem; border: 1px solid #d1d5db; background: white; border-radius: 8px; cursor: pointer; font-weight: 500; color: #374151; transition: all 0.2s; font-size: 0.875rem;">Cancelar</button>
+                <button type="button" id="btnConfirmarAsignacion" onclick="confirmarAsignacion()" style="padding: 0.625rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.2s; font-size: 0.875rem;" disabled>Confirmar</button>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- Estilos responsive para mobile -->
+<style>
+@media (max-width: 768px) {
+    #modalCostura {
+        padding: 0.5rem;
+        align-items: flex-start;
+        padding-top: 2rem;
+    }
+    
+    #modalCosturaContent {
+        max-width: 100%;
+        max-height: 95vh;
+        border-radius: 12px;
+    }
+    
+    #modalMainContent {
+        padding: 1rem;
+    }
+    
+    #opcionesAsignacion h4 {
+        font-size: 0.875rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    #opcionesAsignacion button {
+        padding: 0.75rem;
+    }
+    
+    #opcionesAsignacion button .material-symbols-rounded {
+        font-size: 1.125rem !important;
+    }
+    
+    #opcionesAsignacion button h5 {
+        font-size: 0.8rem !important;
+    }
+    
+    #opcionesAsignacion button p {
+        font-size: 0.7rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #modalCosturaContent {
+        max-height: 98vh;
+    }
+    
+    #modalMainContent {
+        padding: 0.75rem;
+    }
+    
+    #opcionesAsignacion {
+        margin-bottom: 1rem;
+    }
+    
+    #opcionesAsignacion button {
+        padding: 0.625rem;
+    }
+    
+    #opcionesAsignacion button div {
+        gap: 0.75rem;
+    }
+    
+    #opcionesAsignacion button div > div:first-child {
+        width: 36px !important;
+        height: 36px !important;
+    }
+}
+
+/* Distribución por módulos - estilos */
+.dist-talla-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+}
+
+.dist-talla-row.is-selected {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 1px #2563eb inset;
+}
+
+.dist-talla-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.dist-talla-check {
+    width: 16px;
+    height: 16px;
+    accent-color: #2563eb;
+    flex-shrink: 0;
+}
+
+.dist-talla-text {
+    min-width: 0;
+}
+
+.dist-talla-title {
+    font-weight: 700;
+    color: #111827;
+    font-size: 0.875rem;
+    line-height: 1.1;
+}
+
+.dist-talla-sub {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.15rem;
+}
+
+.dist-talla-disp {
+    color: #dc2626;
+    font-weight: 700;
+}
+
+.dist-talla-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.dist-talla-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #d1d5db;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dist-talla-input {
+    width: 64px;
+    padding: 0.25rem 0.4rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.875rem;
+    background: white;
+}
+
+.dist-talla-input:disabled {
+    background: #f3f4f6;
+    color: #9ca3af;
+}
+
+@media (max-width: 480px) {
+    .dist-talla-row {
+        padding: 0.6rem;
+        border-radius: 12px;
+    }
+
+    .dist-talla-title {
+        font-size: 0.85rem;
+    }
+
+    .dist-talla-input {
+        width: 58px;
+        font-size: 0.85rem;
+    }
+
+    /* En mobile, ocultar +/- para que no se apriete la UI (como la referencia) */
+    .dist-talla-btn {
+        display: none;
+    }
+
+    .dist-talla-right {
+        gap: 0;
+    }
+}
+</style>
 
 @endsection

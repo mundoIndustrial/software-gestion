@@ -1616,4 +1616,137 @@ class OperarioController extends Controller
         }
     }
 
+    /**
+     * API: Obtener distribución de recibos por partes
+     * GET /operario/api/recibos/{idRecibo}/distribucion
+     */
+    public function obtenerDistribucionRecibo(Request $request, $idRecibo)
+    {
+        try {
+            $usuario = Auth::user();
+
+            // Solo vista-costura puede acceder a esta ruta
+            if (!$usuario->hasRole('vista-costura')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permiso para ver esta información'
+                ], 403);
+            }
+
+            \Log::info('[DistribucionRecibo] Iniciando búsqueda', ['recibo_id' => $idRecibo, 'usuario' => $usuario->id]);
+
+            // Obtener el recibo
+            $recibo = \App\Models\ConsecutivoReciboPedido::find($idRecibo);
+            if (!$recibo) {
+                \Log::warning('[DistribucionRecibo] Recibo no encontrado', ['recibo_id' => $idRecibo]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recibo no encontrado'
+                ], 404);
+            }
+
+            \Log::info('[DistribucionRecibo] Recibo encontrado', [
+                'recibo_id' => $recibo->id,
+                'pedido_produccion_id' => $recibo->pedido_produccion_id,
+                'prenda_id' => $recibo->prenda_id,
+                'tipo_recibo' => $recibo->tipo_recibo,
+                'consecutivo_actual' => $recibo->consecutivo_actual
+            ]);
+
+            // Obtener todos los parciales de este recibo CON sus tallas
+            $parciales = \App\Models\ReciboPorPartes::where('pedido_produccion_id', $recibo->pedido_produccion_id)
+                ->where('prenda_pedido_id', $recibo->prenda_id)
+                ->where('tipo_recibo', $recibo->tipo_recibo)
+                ->where('consecutivo_original', $recibo->consecutivo_actual)
+                ->with('tallas') // Eager load de tallas
+                ->get();
+
+            \Log::info('[DistribucionRecibo] Parciales encontrados', ['total' => $parciales->count()]);
+
+            // Si no hay parciales, retornar estructura vacía
+            if ($parciales->isEmpty()) {
+                \Log::info('[DistribucionRecibo] Sin parciales para este recibo');
+                return response()->json([
+                    'success' => true,
+                    'parciales' => [],
+                    'mensaje' => 'No hay parciales creados para este recibo',
+                    'total_parciales' => 0
+                ]);
+            }
+
+            // Obtener información de procesos para cada parcial
+            $parciales_info = $parciales->map(function ($parcial) use ($recibo) {
+                try {
+                    // Obtener el número de pedido del recibo
+                    $pedidoProduccion = \App\Models\PedidoProduccion::find($recibo->pedido_produccion_id);
+                    $numero_pedido = $pedidoProduccion ? $pedidoProduccion->numero_pedido : null;
+
+                    // Buscar el proceso relacionado en procesos_prenda
+                    $proceso = null;
+                    if ($numero_pedido) {
+                        $proceso = \App\Models\ProcesoPrenda::where('numero_pedido', $numero_pedido)
+                            ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+                            ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                            ->first();
+                    }
+
+                    // Usar encargado de procesos_prenda si está disponible, sino de recibo_por_partes
+                    $encargado = $proceso->encargado ?? $parcial->encargado ?? 'SIN ASIGNAR';
+                    // Usar área (proceso) de procesos_prenda si está disponible, sino de recibo_por_partes
+                    $area = $proceso->proceso ?? $parcial->area ?? 'SIN ASIGNAR';
+
+                    return [
+                        'id' => $parcial->id,
+                        'area' => $area,
+                        'encargado' => $encargado,
+                        'tipo_recibo' => $parcial->tipo_recibo,
+                        'consecutivo_parcial' => (float) $parcial->consecutivo_parcial,
+                        'consecutivo_original' => (float) $parcial->consecutivo_original,
+                        'proceso_estado' => $proceso->estado_proceso ?? 'Pendiente',
+                        'fecha_asignacion' => $proceso->fecha_de_asignacion_encargado ?? null,
+                        'observaciones' => $proceso->observaciones ?? '',
+                        'tallas' => $parcial->tallas->map(function ($talla) {
+                            return [
+                                'id' => $talla->id,
+                                'talla' => $talla->talla,
+                                'cantidad' => $talla->cantidad,
+                                'color_nombre' => $talla->color_nombre,
+                            ];
+                        })->toArray(),
+                    ];
+                } catch (\Exception $e) {
+                    \Log::error('[DistribucionRecibo] Error mapeando parcial', [
+                        'parcial_id' => $parcial->id,
+                        'error' => $e->getMessage()
+                    ]);
+                    throw $e;
+                }
+            })->sortBy('area')->values();
+
+            \Log::info('[DistribucionRecibo] Parciales procesados exitosamente', ['total' => $parciales_info->count()]);
+
+            return response()->json([
+                'success' => true,
+                'recibo' => [
+                    'id' => $recibo->id,
+                    'consecutivo' => $recibo->consecutivo_actual,
+                    'tipo_recibo' => $recibo->tipo_recibo,
+                    'area_actual' => $recibo->area,
+                ],
+                'parciales' => $parciales_info,
+                'total_parciales' => $parciales_info->count()
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('[OperarioController] Error obteniendo distribución: ' . $e->getMessage(), [
+                'recibo_id' => $idRecibo,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener distribución: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 }

@@ -17,6 +17,7 @@ class ProcesoPrenda extends Model
         'numero_pedido',
         'prenda_pedido_id',
         'numero_recibo',
+        'numero_recibo_parcial',
         'proceso',
         'fecha_inicio',
         'fecha_fin',

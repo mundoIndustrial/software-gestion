@@ -628,7 +628,6 @@ if (typeof module !== 'undefined' && module.exports) {
     }
 
     if (window.supervisorPedidos?.isReady) {
-        console.warn('[SP Bootstrap] Ya inicializado, saltando...');
         return;
     }
 
@@ -651,6 +650,4 @@ if (typeof module !== 'undefined' && module.exports) {
         isReady: true,
         version: '2.0.0',
     });
-
-    console.log('[SP Bootstrap] Arquitectura DDD supervisor-pedidos inicializada v2.0.0');
 })();

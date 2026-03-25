@@ -8,16 +8,22 @@ import {
 } from '../novedades/novedades';
 import {
     manejarPasarACostura,
-    cerrarModalCostura,
-    confirmarPasarACostura,
-    cargarUsuariosCostura,
 } from '../costura/costura';
+import {
+    cerrarModalCostura,
+    confirmarAsignacion,
+    seleccionarOpcionAsignacion,
+    volverAOpciones,
+} from '../costura/modal-asignacion';
 import { pasarAControlCalidad } from '../controlCalidad/controlCalidad';
 import { toggleMobileActions } from '../mobile/mobileActions';
 import { completarCorte, deshacerCorte, completarCostura, deshacerCostura } from '../recibos/corteCostura';
 import { mostrarExito, mostrarError, mostrarMensaje, cerrarModalMensaje } from '../ui/messages';
 import { actualizarContadorTarjetas } from '../ui/counters';
 import { asegurarBadgeCompletado } from '../ui/badges';
+
+// Importar el modal-asignacion.js para que se cargue
+import '../costura/modal-asignacion';
 
 export function registerDashboardGlobals() {
     // Navegación
@@ -33,8 +39,9 @@ export function registerDashboardGlobals() {
     // Costura / asignación
     window.manejarPasarACostura = manejarPasarACostura;
     window.cerrarModalCostura = cerrarModalCostura;
-    window.confirmarPasarACostura = confirmarPasarACostura;
-    window.cargarUsuariosCostura = cargarUsuariosCostura;
+    window.confirmarAsignacion = confirmarAsignacion;
+    window.seleccionarOpcionAsignacion = seleccionarOpcionAsignacion;
+    window.volverAOpciones = volverAOpciones;
 
     // Control de Calidad
     window.pasarAControlCalidad = pasarAControlCalidad;

@@ -6,6 +6,7 @@ import { initGlobalModalClosers } from './ui/modalClosers';
 import { injectDashboardStyles } from './ui/injectStyles';
 import { registerDashboardGlobals } from './globals/registerGlobals';
 import { initRealtimeListeners } from './realtime/realtime';
+import './distribucion/distribucion'; // Importar funcionalidad de distribución
 
 function isOperarioDashboardPage() {
     return !!document.querySelector('.operario-dashboard');
