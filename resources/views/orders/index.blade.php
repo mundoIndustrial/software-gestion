@@ -1299,9 +1299,6 @@
 
     <!-- ROW CONDITIONAL COLORS -->
     <script src="{{ asset('js/ordersjs/row-conditional-colors.js') }}?v={{ time() }}"></script>
-    
-    <!-- WEBSOCKET TEST (para desarrollo) -->
-    <script src="{{ asset('js/ordersjs/websocket-test.js') }}?v={{ time() }}"></script>
 
     <!-- ORDER TRACKING MODULES (SOLID Architecture) -->
     <script src="{{ asset('js/order-tracking/modules/dateUtils.js') }}?v={{ time() }}"></script>

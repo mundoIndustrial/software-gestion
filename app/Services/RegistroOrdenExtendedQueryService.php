@@ -51,6 +51,11 @@ class RegistroOrdenExtendedQueryService
                             });
                     });
             })
+            // 🔥 FILTRO CRÍTICO: Solo mostrar pedidos con prendas (no solo EPP)
+            // Excluye pedidos que SOLO tengan de_bodega = true
+            ->whereHas('prendas', function (Builder $prendasQuery) {
+                $prendasQuery->where('de_bodega', false);
+            })
             ->with([
                 'asesora:id,name',
                 'prendas:id,pedido_produccion_id,nombre_prenda,descripcion',

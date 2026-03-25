@@ -1,7 +1,11 @@
 'use strict';
 
-// Utilidades para manejo de fechas y cálculo de días hábiles
-class DateUtils {
+// Protección contra redeclaraciones si el script se carga múltiples veces
+if (typeof DateUtils !== 'undefined') {
+  console.warn('[date-utils.js] DateUtils ya fue declarado, omitiendo redeclaración');
+} else {
+  // Utilidades para manejo de fechas y cálculo de días hábiles
+  class DateUtils {
   constructor() {
     this.festivosCache = new Map();
   }
@@ -374,3 +378,5 @@ window.calcularDiasHabiles = function(fechaInicio, fechaFin) {
 window.calcularDiasHabilesSync = function(fechaInicio, fechaFin) {
   return window.dateUtils.calcularDiasHabilesSync(fechaInicio, fechaFin);
 };
+
+} // Cierre del else - protección contra redeclaraciones

@@ -1,7 +1,11 @@
 'use strict';
 
-// Gestión de procesos del sistema de tracking
-class ProcessManager {
+// Protección contra redeclaraciones si el script se carga múltiples veces
+if (typeof ProcessManager !== 'undefined') {
+  console.warn('[process-manager.js] ProcessManager ya fue declarada, omitiendo redeclaración');
+} else {
+  // Gestión de procesos del sistema de tracking
+  class ProcessManager {
   constructor() {
     this.init();
   }
@@ -774,3 +778,5 @@ window.handleActualizarProceso = (procesoId) => window.processManager.handleActu
 window.limpiarFormularioProceso = () => window.processManager.limpiarFormularioProceso();
 window.resetFormButton = () => window.processManager.resetFormButton();
 window.handleAgregarProceso = () => window.processManager.handleAgregarProceso();
+
+} // Cierre del else - protección contra redeclaraciones
