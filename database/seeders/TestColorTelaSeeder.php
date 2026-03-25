@@ -12,7 +12,6 @@ use App\Models\TelaPrenda;
 use App\Models\User;
 use App\Application\Services\PedidoPrendaService;
 use App\Domain\PedidoProduccion\Services\ColorTelaService;
-use App\Domain\PedidoProduccion\Services\ImagenMapperService;
 use Illuminate\Database\Seeder;
 
 class TestColorTelaSeeder extends Seeder

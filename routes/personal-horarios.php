@@ -6,10 +6,10 @@ use Illuminate\Support\Facades\Route;
  * API Routes for Personal (Gestión de Roles)
  */
 Route::prefix('personal')->name('personal.')->middleware(['api'])->group(function () {
-    Route::get('list', [\App\Http\Controllers\Api_temp\PersonalController::class, 'list'])
+    Route::get('list', [\App\Infrastructure\Http\Controllers\Personal\PersonalController::class, 'list'])
         ->name('list');
     
-    Route::put('{id}/rol', [\App\Http\Controllers\Api_temp\PersonalController::class, 'updateRol'])
+    Route::put('{id}/rol', [\App\Infrastructure\Http\Controllers\Personal\PersonalController::class, 'updateRol'])
         ->name('update-rol');
 });
 
@@ -17,15 +17,15 @@ Route::prefix('personal')->name('personal.')->middleware(['api'])->group(functio
  * API Routes for Horarios (Gestión de Horarios por Roles)
  */
 Route::prefix('horarios')->name('horarios.')->middleware(['api'])->group(function () {
-    Route::get('list', [\App\Http\Controllers\Api_temp\HorarioController::class, 'list'])
+    Route::get('list', [\App\Infrastructure\Http\Controllers\Personal\HorarioController::class, 'list'])
         ->name('list');
     
-    Route::get('roles-disponibles', [\App\Http\Controllers\Api_temp\HorarioController::class, 'rolesDisponibles'])
+    Route::get('roles-disponibles', [\App\Infrastructure\Http\Controllers\Personal\HorarioController::class, 'rolesDisponibles'])
         ->name('roles-disponibles');
     
-    Route::put('{id}', [\App\Http\Controllers\Api_temp\HorarioController::class, 'update'])
+    Route::put('{id}', [\App\Infrastructure\Http\Controllers\Personal\HorarioController::class, 'update'])
         ->name('update');
     
-    Route::post('/', [\App\Http\Controllers\Api_temp\HorarioController::class, 'store'])
+    Route::post('/', [\App\Infrastructure\Http\Controllers\Personal\HorarioController::class, 'store'])
         ->name('store');
 });

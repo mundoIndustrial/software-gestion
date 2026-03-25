@@ -2,9 +2,9 @@
 
 namespace App\Application\Services\Pedidos;
 
-use App\Domain\Pedidos\Services\PrendaFotoService;
-use App\Domain\Pedidos\Services\TelaFotoService;
-use App\Domain\Pedidos\Services\ProcesoFotoService;
+use App\Infrastructure\Services\Pedidos\PrendaFotoService;
+use App\Infrastructure\Services\Pedidos\TelaFotoService;
+use App\Infrastructure\Services\Pedidos\ProcesoFotoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 

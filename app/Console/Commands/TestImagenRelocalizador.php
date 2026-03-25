@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Domain\Pedidos\Services\ImagenRelocalizadorService;
+use App\Infrastructure\Services\Pedidos\ImagenRelocalizadorService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 

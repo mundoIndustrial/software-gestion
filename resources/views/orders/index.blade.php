@@ -1056,12 +1056,9 @@
     <script src="{{ asset('js/ordersjs/modules/cellEditModal.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/ordersjs/modules/cellClickHandler.js') }}?v={{ time() }}"></script>
     
-    <!-- FIX: Descripción de prendas en modal (DEBE CARGAR ANTES de orders-table-v2.js) -->
-    <script src="{{ asset('js/ordersjs/descripcion-prendas-fix.js') }}?v={{ time() }}"></script>
-    
     <!-- SCRIPTS REFACTORIZADOS CON MÓDULOS -->
-    <!-- Versión V2: Usa módulos SOLID y elimina ~79% código duplicado -->
-    <script src="{{ asset('js/ordersjs/orders-table-v2.js') }}?v={{ time() }}"></script>
+    <!-- Usa módulos SOLID y elimina ~79% código duplicado -->
+    <script src="{{ asset('js/ordersjs/orders-table.js') }}?v={{ time() }}"></script>
     
     <!-- SCRIPTS COMPLEMENTARIOS (sin cambios) -->
     <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}?v={{ time() }}"></script>

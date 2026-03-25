@@ -8,7 +8,7 @@ use Tests\TestCase;
 use App\Models\User;
 use App\Models\PedidoProduccion;
 use App\Domain\Pedidos\Services\PedidoWebService;
-use App\Domain\Pedidos\Services\ImagenRelocalizadorService;
+use App\Infrastructure\Services\Pedidos\ImagenRelocalizadorService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 

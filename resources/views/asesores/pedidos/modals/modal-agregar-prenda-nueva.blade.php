@@ -839,10 +839,10 @@ document.addEventListener('paste', function(event) {
 @php $v = config('app.asset_version'); @endphp
 
 <!-- NUEVA ARQUITECTURA: Máquina de Estados y Event Bus -->
-<script defer src="{{ js_asset('js/arquitectura/WizardStateMachine.js') }}?v={{ $v }}"></script>
-<script defer src="{{ js_asset('js/arquitectura/WizardEventBus.js') }}?v={{ $v }}"></script>
-<script defer src="{{ js_asset('js/arquitectura/WizardLifecycleManager.js') }}?v={{ $v }}"></script>
-<script defer src="{{ js_asset('js/arquitectura/WizardBootstrap.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/prenda-color-wizard/WizardStateMachine.js') }}?v={{ $v }}"></script>
+        <script defer src="{{ js_asset('js/prenda-color-wizard/WizardEventBus.js') }}?v={{ $v }}"></script>
+        <script defer src="{{ js_asset('js/prenda-color-wizard/WizardLifecycleManager.js') }}?v={{ $v }}"></script>
+        <script defer src="{{ js_asset('js/prenda-color-wizard/WizardBootstrap.js') }}?v={{ $v }}"></script>
 
 <!-- MÓDULOS EXISTENTES -->
 <script defer src="{{ js_asset('js/componentes/colores-por-talla/StateManager.js') }}?v={{ $v }}"></script>

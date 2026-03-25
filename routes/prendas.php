@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\Route;
 
 // API Routes para Prendas (Reconocimiento)
 Route::middleware('auth')->prefix('api')->name('api.')->group(function () {
-    Route::get('/tipos-prenda', [App\Infrastructure\Http\Controllers\CatalogoController::class, 'tiposPrenda'])
+    Route::get('/tipos-prenda', [App\Infrastructure\Http\Controllers\Catalogos\CatalogoController::class, 'tiposPrenda'])
         ->name('tipos-prenda');
-    Route::post('/prenda/reconocer', [App\Infrastructure\Http\Controllers\CatalogoController::class, 'reconocerPrenda'])
+    Route::post('/prenda/reconocer', [App\Infrastructure\Http\Controllers\Catalogos\CatalogoController::class, 'reconocerPrenda'])
         ->name('prenda.reconocer');
 });
 

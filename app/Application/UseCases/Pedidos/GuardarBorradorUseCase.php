@@ -8,8 +8,8 @@ use App\Domain\Clientes\Services\ClienteService;
 use App\Domain\Pedidos\DTOs\PedidoNormalizadorDTO;
 use App\Domain\Pedidos\Repositories\PedidoRepository;
 use App\Domain\Pedidos\Services\PedidoWebService;
-use App\Domain\Pedidos\Services\PedidoImagenesService;
-use App\Domain\Pedidos\Services\MapeoImagenesService;
+use App\Infrastructure\Services\Pedidos\PedidoImagenesService;
+use App\Infrastructure\Services\Pedidos\MapeoImagenesService;
 
 /**
  * GuardarBorradorUseCase

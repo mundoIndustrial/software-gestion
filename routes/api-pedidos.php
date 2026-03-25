@@ -1,26 +1,13 @@
 <?php
 
-use App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController;
 use App\Infrastructure\Http\Controllers\Asesores\PrendasPedidoController;
+use App\Infrastructure\Http\Controllers\Asesores\Pedidos\CrearPedidoController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:web', 'role:asesor,admin,supervisor_pedidos'])->group(function () {
     Route::prefix('pedidos')->name('pedidos.')->group(function () {
-        // Cotizaciones: cargar items EPP
-        Route::get('/cotizaciones/{cotizacion}/epp-items', [CrearPedidoEditableController::class, 'obtenerItemsEppCotizacion'])
-            ->name('cotizaciones.epp-items');
-
-        // Gestión de ítems
-        Route::post('/items/agregar', [CrearPedidoEditableController::class, 'agregarItem'])->name('agregar-item');
-        Route::post('/items/eliminar', [CrearPedidoEditableController::class, 'eliminarItem'])->name('eliminar-item');
-        Route::get('/items', [CrearPedidoEditableController::class, 'obtenerItems'])->name('obtener-items');
-        
         // Validación y creación
-        Route::post('/validar', [CrearPedidoEditableController::class, 'validarPedido'])->name('validar');
-        Route::post('/crear', [CrearPedidoEditableController::class, 'crearPedido'])->name('crear');
-        
-        // Subir imágenes (FormData)
-        Route::post('/subir-imagenes', [CrearPedidoEditableController::class, 'subirImagenesPrenda'])->name('subir-imagenes');
+        Route::post('/crear', [CrearPedidoController::class, 'crearPedido'])->name('crear');
         
         // Renderizar componente item-card
         Route::post('/render-item-card', [PrendasPedidoController::class, 'renderItemCard'])->name('render-item-card');

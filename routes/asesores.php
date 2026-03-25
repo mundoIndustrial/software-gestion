@@ -14,7 +14,6 @@
 use App\Infrastructure\Http\Controllers\Asesores\AsesoresController;
 use App\Infrastructure\Http\Controllers\PedidoCommandController;
 use App\Infrastructure\Http\Controllers\PedidoQueryController;
-use App\Infrastructure\Http\Controllers\CatalogoController;
 use App\Infrastructure\Http\Controllers\Asesores\CotizacionesViewController;
 use App\Infrastructure\Http\Controllers\Asesores\CotizacionesFiltrosController;
 use App\Infrastructure\Http\Controllers\CotizacionController;
@@ -22,6 +21,7 @@ use App\Infrastructure\Http\Controllers\CotizacionEppController;
 use App\Infrastructure\Http\Controllers\Cotizaciones\ImagenBorradorController;
 use App\Infrastructure\Http\Controllers\Asesores\ReciboController;
 use App\Infrastructure\Http\Controllers\Asesores\ObservacionesDespachoController;
+use App\Infrastructure\Http\Controllers\Asesores\TelasColoresApiController;
 use App\Http\Controllers\PDFCotizacionController;
 use App\Http\Controllers\PDFPrendaController;
 use App\Http\Controllers\PDFCotizacionCombiadaController;
@@ -82,6 +82,12 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     Route::get('/test', function() {
         return response()->json(['message' => 'Test working']);
     });
+    
+    // ========================================
+    // TELAS Y COLORES - APIs
+    // ========================================
+    Route::get('/api/telas', [TelasColoresApiController::class, 'getTelas'])->name('api.telas');
+    Route::get('/api/colores', [TelasColoresApiController::class, 'getColores'])->name('api.colores');
     
     // Cargar datos de pedido para edición
     Route::get('/pedidos/{id}/editar-datos', [\App\Infrastructure\Http\Controllers\PedidoQueryController::class, 'obtenerDatosEdicion'])->where('id', '[0-9]+')->name('pedidos.api.editar-datos');
@@ -179,16 +185,10 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     Route::get('/inventario-telas', [AsesoresController::class, 'inventarioTelas'])->name('inventario.telas');
     
     // ========================================
-    // DATOS DE CATÁLOGOS (tipos de broche, manga, telas, colores, etc)
+    // PRENDAS - AUTOCOMPLETE
     // ========================================
-    Route::get('/api/tipos-broche-boton', [CatalogoController::class, 'obtenerTiposBrocheBoton'])->name('api.tipos-broche-boton');
-    Route::get('/api/tipos-manga', [CatalogoController::class, 'obtenerTiposManga'])->name('api.tipos-manga');
-    Route::post('/api/tipos-manga', [CatalogoController::class, 'crearObtenerTipoManga'])->name('api.tipos-manga.create');
-    Route::get('/api/telas', [CatalogoController::class, 'obtenerTelas'])->name('api.telas');
-    Route::post('/api/telas', [CatalogoController::class, 'crearObtenerTela'])->name('api.telas.create');
-    Route::get('/api/colores', [CatalogoController::class, 'obtenerColores'])->name('api.colores');
-    Route::post('/api/colores', [CatalogoController::class, 'crearObtenerColor'])->name('api.colores.create');
-    Route::get('/api/prendas/autocomplete', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'obtenerPrendasAutocomplete'])->name('api.prendas.autocomplete');
+    Route::get('/api/prendas/autocomplete', [\App\Infrastructure\Http\Controllers\Asesores\ObtenerPrendasAutocompleteController::class, 'obtenerPrendasAutocomplete'])->name('api.prendas.autocomplete');
+
 
     // ========================================
     // FOTOS
@@ -259,35 +259,20 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     // PEDIDOS (UNICA FUENTE PARA CREACION)
     // ========================================
     Route::prefix('pedidos')->name('pedidos.')->middleware('role:asesor,admin,supervisor_pedidos')->group(function () {
-
-        // Mostrar formulario para crear desde COTIZACIÓN (pre-carga cotizaciones)
-        Route::get('crear-desde-cotizacion', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'crearDesdeCotizacion'])
+        // Formularios de pedidos (GET - renderiza vistas)
+        Route::get('crear-desde-cotizacion', [\App\Infrastructure\Http\Controllers\Asesores\Pedidos\ObtenerPedidoFormDataController::class, 'crearDesdeCotizacion'])
             ->name('crear-desde-cotizacion');
-        
-        // Mostrar formulario para crear PEDIDO NUEVO (vacío)
-        Route::get('crear-nuevo', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'crearNuevo'])
+        Route::get('crear-nuevo', [\App\Infrastructure\Http\Controllers\Asesores\Pedidos\ObtenerPedidoFormDataController::class, 'crearNuevo'])
             ->name('crear-nuevo');
         
-        // Gestión de ítems (retorna JSON)
-        Route::post('items/agregar', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'agregarItem'])
-            ->name('agregar-item');
-        Route::post('items/eliminar', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'eliminarItem'])
-            ->name('eliminar-item');
-        Route::get('items', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'obtenerItems'])
-            ->name('obtener-items');
-
-        // Cotizaciones: cargar items EPP (para "Crear desde cotización")
-        Route::get('cotizaciones/{cotizacion}/epp-items', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'obtenerItemsEppCotizacion'])
-            ->name('cotizaciones.epp-items');
-        
-        // Validación y creación
-        Route::post('validar', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'validarPedido'])
-            ->name('validar');
-        Route::post('crear', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'crearPedido'])
+        // Creación de pedido (POST - API)
+        Route::post('crear', [\App\Infrastructure\Http\Controllers\Asesores\Pedidos\CrearPedidoController::class, 'crearPedido'])
             ->name('crear');
-        Route::post('borrador', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'guardarBorrador'])
+        
+        // Guardar/actualizar borradores
+        Route::post('borrador', [\App\Infrastructure\Http\Controllers\Asesores\Pedidos\CrearPedidoBorradorController::class, 'guardarBorrador'])
             ->name('guardarBorrador');
-        Route::post('{pedidoId}/actualizar', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'actualizarBorrador'])
+        Route::put('{pedidoId}/borrador', [\App\Infrastructure\Http\Controllers\Asesores\Pedidos\CrearPedidoBorradorController::class, 'actualizarBorrador'])
             ->name('actualizar')
             ->where('pedidoId', '[0-9]+');
     });

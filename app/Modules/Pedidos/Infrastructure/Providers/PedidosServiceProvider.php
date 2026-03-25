@@ -13,7 +13,7 @@ use App\Domain\Pedidos\Despacho\Services\DespachoValidadorService;
 use App\Domain\Pedidos\Despacho\Services\DesparChoParcialesPersistenceService;
 use App\Domain\Pedidos\Despacho\Repositories\DesparChoParcialesRepository;
 use App\Infrastructure\Repositories\Pedidos\Despacho\DesparChoParcialesRepositoryImpl;
-use App\Domain\Pedidos\Services\ImagenRelocalizadorService;
+use App\Infrastructure\Services\Pedidos\ImagenRelocalizadorService;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\GuardarDespachoUseCase;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;

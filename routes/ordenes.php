@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api_temp\V1\OrdenController;
+use App\Infrastructure\Http\Controllers\Ordenes\OrdenController;
 
 /**
  * API Routes for DDD-based Orden management (FASE 3 - DDD)

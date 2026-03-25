@@ -3,8 +3,6 @@
 namespace App\Infrastructure\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\ConsecutivoReciboPedido;
-use App\Models\PedidoProduccion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;

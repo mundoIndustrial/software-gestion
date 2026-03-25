@@ -31,6 +31,21 @@ use App\Application\Pedidos\UseCases\ObtenerNotificacionesUseCase;
 use App\Application\Pedidos\UseCases\MarcarNotificacionLeidaUseCase;
 use App\Application\Pedidos\UseCases\ObtenerPerfilAsesorUseCase;
 use App\Application\Pedidos\UseCases\ActualizarPerfilAsesorUseCase;
+use App\Application\Asesores\UseCases\ObtenerNotasPedidoUseCase;
+use App\Application\Asesores\UseCases\ContarPendientesAsesorUseCase;
+use App\Application\Asesores\UseCases\ObtenerPendientesAsesorUseCase;
+use App\Application\Asesores\UseCases\ObtenerDatosCotizacionEditarUseCase;
+use App\Application\Asesores\UseCases\GuardarPedidoUseCase;
+use App\Application\Services\Asesores\GuardarPedidoLogoService;
+use App\Application\Services\Asesores\ProcesarFotosTelasService;
+
+// Infrastructure Services (Image Mapping - DDD Refactored)
+use App\Infrastructure\Services\Pedidos\ImagenesService;
+use App\Infrastructure\Mappers\Imagenes\PrendaImagenesMapper;
+use App\Infrastructure\Mappers\Imagenes\TelaImagenesMapper;
+use App\Infrastructure\Mappers\Imagenes\ImagenDTOToPrendaArrayMapper;
+use App\Infrastructure\Mappers\Imagenes\ImagenDTOToTelaArrayMapper;
+use App\Application\Services\ColorTelaService;
 
 /**
  * AsesoresServiceProvider
@@ -71,6 +86,36 @@ class AsesoresServiceProvider extends ServiceProvider
 
         $this->app->singleton(PerfilService::class, function ($app) {
             return new PerfilService();
+        });
+
+        // ===== INFRASTRUCTURE SERVICES (DDD - Image Mapping) =====
+        
+        $this->app->singleton(ImagenDTOToPrendaArrayMapper::class, function ($app) {
+            return new ImagenDTOToPrendaArrayMapper();
+        });
+
+        $this->app->singleton(ImagenDTOToTelaArrayMapper::class, function ($app) {
+            return new ImagenDTOToTelaArrayMapper();
+        });
+
+        $this->app->singleton(PrendaImagenesMapper::class, function ($app) {
+            return new PrendaImagenesMapper(
+                $app->make(ImagenDTOToPrendaArrayMapper::class)
+            );
+        });
+
+        $this->app->singleton(TelaImagenesMapper::class, function ($app) {
+            return new TelaImagenesMapper(
+                $app->make(ImagenDTOToTelaArrayMapper::class),
+                $app->make(ColorTelaService::class)
+            );
+        });
+
+        $this->app->singleton(ImagenesService::class, function ($app) {
+            return new ImagenesService(
+                $app->make(PrendaImagenesMapper::class),
+                $app->make(TelaImagenesMapper::class)
+            );
         });
 
         // ===== USE CASES (DDD - NUEVA ARQUITECTURA) =====
@@ -189,6 +234,24 @@ class AsesoresServiceProvider extends ServiceProvider
         $this->app->singleton(ActualizarPerfilAsesorUseCase::class, function ($app) {
             return new ActualizarPerfilAsesorUseCase(
                 $app->make(PerfilService::class)
+            );
+        });
+
+        // Registrar servicios que GuardarPedidoUseCase necesita
+        $this->app->singleton(GuardarPedidoLogoService::class, function ($app) {
+            return new GuardarPedidoLogoService();
+        });
+
+        $this->app->singleton(ProcesarFotosTelasService::class, function ($app) {
+            return new ProcesarFotosTelasService();
+        });
+
+        // Guardar Pedido (con transacción)
+        $this->app->singleton(GuardarPedidoUseCase::class, function ($app) {
+            return new GuardarPedidoUseCase(
+                $app->make(CrearProduccionPedidoUseCase::class),
+                $app->make(GuardarPedidoLogoService::class),
+                $app->make(ProcesarFotosTelasService::class)
             );
         });
     }

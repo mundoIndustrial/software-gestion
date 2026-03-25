@@ -1,8 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\CarteraPedidosController;
-use App\Http\Controllers\CarteraSugerenciasController;
+use App\Infrastructure\Http\Controllers\Cartera\CarteraPedidosController;
+use App\Infrastructure\Http\Controllers\Cartera\CarteraSugerenciasController;
 
 // ========================================
 // RUTAS DE CARTERA - PEDIDOS (VISTAS PRINCIPALES)

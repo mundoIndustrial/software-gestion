@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\PedidoEpp;
 use App\Models\PrendaPedido;
 use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
-use App\Domain\Pedidos\Services\PedidoImagenesService;
+use App\Infrastructure\Services\Pedidos\PedidoImagenesService;
 use App\Domain\Pedidos\Services\PedidoWebService;
 use Illuminate\Http\Request;
 

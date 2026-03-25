@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\UsuarioRolController;
+use App\Infrastructure\Http\Controllers\UsuarioRolController;
 
 /**
  * API Routes for Usuarios por Rol

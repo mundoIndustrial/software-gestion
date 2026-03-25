@@ -73,7 +73,7 @@ class ModernTableV2 {
                                 this.updatePaginationInfo(data.pagination);
                                 this.updatePaginationControls(data.pagination_html, data.pagination);
                                 PaginationManager.updateUrl(new URLSearchParams(new URL(globalThis.location).search).toString());
-                                // Los dropdowns se inicializan en orders-table-v2.js
+                                // Los dropdowns se inicializan en orders-table.js
                                 if (typeof initializeDiaEntregaDropdowns === 'function') initializeDiaEntregaDropdowns();
                             }
                         })
@@ -256,7 +256,7 @@ class ModernTableV2 {
         
         TableRenderer.updateTableWithData(orders, totalDiasCalculados, areaOptions, context, userRole);
         StyleManager.setupCellTextWrapping();
-        // Dropdown handling now managed by OrdersDropdownManager in orders-table-v2.js
+        // Dropdown handling now managed by OrdersDropdownManager in orders-table.js
     }
 
     updatePaginationInfo(pagination) {
@@ -268,7 +268,7 @@ class ModernTableV2 {
     }
 
     async updateOrderStatus(dropdown) {
-        // Status updates now handled by OrdersDropdownManager in orders-table-v2.js
+        // Status updates now handled by OrdersDropdownManager in orders-table.js
 
     }
 

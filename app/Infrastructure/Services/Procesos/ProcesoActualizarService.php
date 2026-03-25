@@ -2,7 +2,7 @@
 
 namespace App\Infrastructure\Services\Procesos;
 
-use App\Domain\Pedidos\Services\ProcesoFotoService;
+use App\Infrastructure\Services\Pedidos\ProcesoFotoService;
 use App\Models\PedidosProcesosPrendaDetalle;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;

@@ -15,7 +15,7 @@ use App\Domain\Pedidos\Despacho\Repositories\DesparChoParcialesRepository;
 use App\Infrastructure\Repositories\PedidoProduccionRepository;
 use App\Infrastructure\Repositories\ConsecutivosRecibosRepository;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
-use App\Domain\Pedidos\Services\ImagenRelocalizadorService;
+use App\Infrastructure\Services\Pedidos\ImagenRelocalizadorService;
 use App\Infrastructure\Repositories\Pedidos\Despacho\DesparChoParcialesRepositoryImpl;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\GuardarDespachoUseCase;

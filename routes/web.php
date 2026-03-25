@@ -1,8 +1,8 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
+use App\Infrastructure\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\UserController;
+use App\Infrastructure\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EntregaController;
 use App\Http\Controllers\EntregasCompletasController;

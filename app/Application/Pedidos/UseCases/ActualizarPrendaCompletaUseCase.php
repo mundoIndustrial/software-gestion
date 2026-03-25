@@ -906,7 +906,7 @@ final class ActualizarPrendaCompletaUseCase
 
                         $foto->delete();
 
-                        $imagenService = new \App\Domain\Pedidos\Services\ImagenService();
+                        $imagenService = new \App\Infrastructure\Services\Pedidos\ImagenService();
                         if ($rutaOriginal) {
                             $imagenService->eliminarImagen($rutaOriginal);
                         }
@@ -2165,7 +2165,7 @@ final class ActualizarPrendaCompletaUseCase
             'estructura_completa' => $imagenesAEliminar
         ]);
 
-        $imagenService = new \App\Domain\Pedidos\Services\ImagenService();
+        $imagenService = new \App\Infrastructure\Services\Pedidos\ImagenService();
         $imagenesProcesadas = 0;
         $imagenesError = 0;
 

@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Infrastructure\Http\Controllers\RecibosParcialesController;
-use App\Http\Controllers\Api_temp\RecibosNovedadesController;
+use App\Infrastructure\Http\Controllers\RecibosNovedadesController;
 use App\Infrastructure\Http\Controllers\ReciboCosturaController;
 use App\Infrastructure\Http\Controllers\PedidoQueryController;
 use App\Infrastructure\Http\Controllers\RegistroOrdenController;

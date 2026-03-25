@@ -159,6 +159,29 @@ class AppServiceProvider extends ServiceProvider
             \App\Application\Shared\Contracts\OrdenEventDispatcherInterface::class,
             \App\Infrastructure\Services\BroadcastOrdenEventDispatcher::class
         );
+
+        // Registrar implementación de InventarioTelaRepository (DDD)
+        $this->app->bind(
+            \App\Domain\InventarioTelas\Repositories\InventarioTelaRepositoryInterface::class,
+            \App\Infrastructure\Repositories\InventarioTelas\InventarioTelaRepository::class
+        );
+
+        // Registrar implementaciones de Bodega (DDD)
+        $this->app->bind(
+            \App\Domain\BodegaNota\Repositories\BodegaNotaRepositoryInterface::class,
+            \App\Infrastructure\Repositories\Bodega\BodegaNotaRepository::class
+        );
+
+        $this->app->bind(
+            \App\Domain\BodegaDetalleTalla\Repositories\BodegaDetalleTallaRepositoryInterface::class,
+            \App\Infrastructure\Repositories\Bodega\BodegaDetalleTallaRepository::class
+        );
+
+        // Registrar implementación de CotizacionDetalleRepository (DDD)
+        $this->app->bind(
+            \App\Domain\Cotizacion\Repositories\CotizacionDetalleRepositoryInterface::class,
+            \App\Infrastructure\Repositories\Cotizacion\CotizacionDetalleRepository::class
+        );
     }
 
     /**

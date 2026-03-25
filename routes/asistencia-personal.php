@@ -42,7 +42,7 @@ Route::middleware(['auth'])->prefix('asistencia-personal')->name('asistencia-per
         ->name('reportes.detalles');
     Route::get('/reportes/{id}/ausencias', [AsistenciaPersonalController::class, 'getAbsenciasDelDia'])
         ->name('reportes.ausencias');
-    Route::post('/guardar-asistencia-detallada', [App\Http\Controllers\Api_temp\AsistenciaDetalladaController::class, 'guardarCambios'])
+    Route::post('/guardar-asistencia-detallada', [App\Infrastructure\Http\Controllers\Personal\AsistenciaDetalladaController::class, 'guardarCambios'])
         ->name('guardar-asistencia-detallada');
     Route::post('/guardar-hora-extra-agregada', [AsistenciaPersonalController::class, 'guardarHoraExtraAgregada'])
         ->name('guardar-hora-extra-agregada');
@@ -66,9 +66,9 @@ Route::middleware(['auth'])->prefix('asistencia-personal')->name('asistencia-per
         ->name('obtener-horas-extras-agregadas');
     
     // API Routes - Valor Hora Extra
-    Route::get('/valor-hora-extra/{codigoPersona}', [App\Http\Controllers\Api_temp\ValorHoraExtraController::class, 'obtener'])
+    Route::get('/valor-hora-extra/{codigoPersona}', [App\Infrastructure\Http\Controllers\Personal\ValorHoraExtraController::class, 'obtener'])
         ->name('valor-hora-extra.obtener');
-    Route::post('/valor-hora-extra/guardar', [App\Http\Controllers\Api_temp\ValorHoraExtraController::class, 'guardar'])
+    Route::post('/valor-hora-extra/guardar', [App\Infrastructure\Http\Controllers\Personal\ValorHoraExtraController::class, 'guardar'])
         ->name('valor-hora-extra.guardar');
 });
 
@@ -77,22 +77,22 @@ Route::middleware(['auth'])->prefix('asistencia-personal')->name('asistencia-per
 // ========================================
 Route::prefix('asistencias')->name('asistencias.')->middleware(['api'])->group(function () {
     // Obtener asistencias de un personal en un período
-    Route::post('obtener', [App\Http\Controllers\Api_temp\AsistenciaDetalladaController::class, 'obtenerAsistencias'])
+    Route::post('obtener', [App\Infrastructure\Http\Controllers\Personal\AsistenciaDetalladaController::class, 'obtenerAsistencias'])
         ->name('obtener');
     
     // Obtener asistencia de un día específico
-    Route::post('dia', [App\Http\Controllers\Api_temp\AsistenciaDetalladaController::class, 'obtenerAsistenciaDelDia'])
+    Route::post('dia', [App\Infrastructure\Http\Controllers\Personal\AsistenciaDetalladaController::class, 'obtenerAsistenciaDelDia'])
         ->name('dia');
     
     // Rellenar inteligentemente marcas faltantes
-    Route::post('rellenar-inteligente', [App\Http\Controllers\Api_temp\AsistenciaDetalladaController::class, 'rellenarInteligente'])
+    Route::post('rellenar-inteligente', [App\Infrastructure\Http\Controllers\Personal\AsistenciaDetalladaController::class, 'rellenarInteligente'])
         ->name('rellenar-inteligente');
     
     // Guardar cambios de asistencia
-    Route::post('guardar', [App\Http\Controllers\Api_temp\AsistenciaDetalladaController::class, 'guardarCambios'])
+    Route::post('guardar', [App\Infrastructure\Http\Controllers\Personal\AsistenciaDetalladaController::class, 'guardarCambios'])
         ->name('guardar');
     
     // Obtener resumen del mes
-    Route::post('mes', [App\Http\Controllers\Api_temp\AsistenciaDetalladaController::class, 'obtenerMes'])
+    Route::post('mes', [App\Infrastructure\Http\Controllers\Personal\AsistenciaDetalladaController::class, 'obtenerMes'])
         ->name('mes');
 });

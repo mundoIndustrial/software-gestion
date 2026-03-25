@@ -5,8 +5,7 @@ namespace App\Infrastructure\Http\Controllers\Asesores;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\AsesoresInventarioTelasController;
+use App\Infrastructure\Http\Controllers\Asesores\AsesoresInventarioTelasController;
 use App\Application\Services\Asesores\DashboardService;
 use App\Application\Services\Asesores\NotificacionesService;
 use App\Application\Services\Asesores\PerfilService;
@@ -47,6 +46,11 @@ use App\Application\Pedidos\DTOs\MarcarNotificacionLeidaDTO;
 use App\Application\Pedidos\DTOs\ObtenerPerfilAsesorDTO;
 use App\Application\Pedidos\DTOs\ActualizarPerfilAsesorDTO;
 use App\Application\Bodega\Services\BodegaPedidoService;
+use App\Application\Asesores\UseCases\ObtenerNotasPedidoUseCase;
+use App\Application\Asesores\UseCases\ContarPendientesAsesorUseCase;
+use App\Application\Asesores\UseCases\ObtenerPendientesAsesorUseCase;
+use App\Application\Asesores\UseCases\ObtenerDatosCotizacionEditarUseCase;
+use App\Application\Asesores\UseCases\GuardarPedidoUseCase;
 use Illuminate\Routing\Controller;
 
 class AsesoresController extends Controller
@@ -73,6 +77,11 @@ class AsesoresController extends Controller
     protected ObtenerPerfilAsesorUseCase $obtenerPerfilAsesorUseCase;
     protected ActualizarPerfilAsesorUseCase $actualizarPerfilAsesorUseCase;
     protected BodegaPedidoService $bodegaPedidoService;
+    protected ObtenerNotasPedidoUseCase $obtenerNotasPedidoUseCase;
+    protected ContarPendientesAsesorUseCase $contarPendientesAsesorUseCase;
+    protected ObtenerPendientesAsesorUseCase $obtenerPendientesAsesorUseCase;
+    protected ObtenerDatosCotizacionEditarUseCase $obtenerDatosCotizacionEditarUseCase;
+    protected GuardarPedidoUseCase $guardarPedidoUseCase;
 
     public function __construct(
         PedidoProduccionRepository $pedidoProduccionRepository,
@@ -96,7 +105,12 @@ class AsesoresController extends Controller
         MarcarNotificacionLeidaUseCase $marcarNotificacionLeidaUseCase,
         ObtenerPerfilAsesorUseCase $obtenerPerfilAsesorUseCase,
         ActualizarPerfilAsesorUseCase $actualizarPerfilAsesorUseCase,
-        BodegaPedidoService $bodegaPedidoService
+        BodegaPedidoService $bodegaPedidoService,
+        ObtenerNotasPedidoUseCase $obtenerNotasPedidoUseCase,
+        ContarPendientesAsesorUseCase $contarPendientesAsesorUseCase,
+        ObtenerPendientesAsesorUseCase $obtenerPendientesAsesorUseCase,
+        ObtenerDatosCotizacionEditarUseCase $obtenerDatosCotizacionEditarUseCase,
+        GuardarPedidoUseCase $guardarPedidoUseCase
     ) {
         $this->pedidoProduccionRepository = $pedidoProduccionRepository;
         $this->dashboardService = $dashboardService;
@@ -120,6 +134,11 @@ class AsesoresController extends Controller
         $this->obtenerPerfilAsesorUseCase = $obtenerPerfilAsesorUseCase;
         $this->actualizarPerfilAsesorUseCase = $actualizarPerfilAsesorUseCase;
         $this->bodegaPedidoService = $bodegaPedidoService;
+        $this->obtenerNotasPedidoUseCase = $obtenerNotasPedidoUseCase;
+        $this->contarPendientesAsesorUseCase = $contarPendientesAsesorUseCase;
+        $this->obtenerPendientesAsesorUseCase = $obtenerPendientesAsesorUseCase;
+        $this->obtenerDatosCotizacionEditarUseCase = $obtenerDatosCotizacionEditarUseCase;
+        $this->guardarPedidoUseCase = $guardarPedidoUseCase;
     }
 
     /**
@@ -250,17 +269,14 @@ class AsesoresController extends Controller
     }
 
     /**
-     * Obtener todas las notas de un pedido
+     * Obtener todas las notas de un pedido - DELEGADO A USE CASE
      */
     public function obtenerNotasPedido($id)
     {
         try {
             $pedido = PedidoProduccion::findOrFail($id);
             
-            $notas = DB::table('bodega_notas')
-                ->where('numero_pedido', $pedido->numero_pedido)
-                ->orderBy('created_at', 'desc')
-                ->get();
+            $notas = $this->obtenerNotasPedidoUseCase->ejecutar($pedido->numero_pedido);
             
             return response()->json([
                 'success' => true,
@@ -276,7 +292,7 @@ class AsesoresController extends Controller
     }
 
     /**
-     * Contar pedidos pendientes del asesor
+     * Contar pedidos pendientes del asesor - DELEGADO A USE CASE
      */
     public function contarPendientesAsesor()
     {
@@ -284,16 +300,7 @@ class AsesoresController extends Controller
             $user = Auth::user();
             $asesorNombre = $user->name ?? '';
             
-            // Contar pedidos únicos pendientes del asesor
-            $conteo = DB::table('bodega_detalles_talla')
-                ->select('numero_pedido')
-                ->whereNotNull('numero_pedido')
-                ->where('numero_pedido', '!=', '')
-                ->where('estado_bodega', 'Pendiente')
-                ->where('asesor', 'like', "%{$asesorNombre}%")
-                ->whereNull('deleted_at')
-                ->distinct()
-                ->count('numero_pedido');
+            $conteo = $this->contarPendientesAsesorUseCase->ejecutar($asesorNombre);
             
             return response()->json([
                 'success' => true,
@@ -309,7 +316,7 @@ class AsesoresController extends Controller
     }
 
     /**
-     * API para obtener pendientes del asesor logueado
+     * API para obtener pendientes del asesor logueado - DELEGADO A USE CASE
      */
     public function obtenerPendientesAsesor(Request $request)
     {
@@ -319,109 +326,26 @@ class AsesoresController extends Controller
             
             $search = $request->query('search', '');
             $tipo = $request->query('tipo', 'todos');
-            $page = $request->query('page', 1);
-            $perPage = $request->query('per_page', 20);
+            $page = (int) $request->query('page', 1);
+            $perPage = (int) $request->query('per_page', 20);
             
             \Log::info('[ASESOR] Obteniendo pendientes para asesor: ' . $asesorNombre, [
                 'search' => $search,
                 'tipo' => $tipo
             ]);
             
-            // Consultar bodega_detalles_talla filtrado por asesor y estado Pendiente
-            $query = DB::table('bodega_detalles_talla as bdt')
-                ->leftJoin('pedidos_produccion as pp', 'bdt.pedido_produccion_id', '=', 'pp.id')
-                ->select('bdt.*', 'pp.created_at as pedido_fecha_creacion')
-                ->whereNotNull('bdt.numero_pedido')
-                ->where('bdt.numero_pedido', '!=', '')
-                ->where('bdt.estado_bodega', 'Pendiente')
-                ->whereNull('bdt.deleted_at');
-            
-            // Filtrar por asesor
-            if ($asesorNombre) {
-                $query->where('bdt.asesor', 'like', "%{$asesorNombre}%");
-            }
-            
-            // Búsqueda
-            if ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('bdt.numero_pedido', 'like', "%{$search}%")
-                      ->orWhere('bdt.empresa', 'like', "%{$search}%")
-                      ->orWhere('bdt.prenda_nombre', 'like', "%{$search}%");
-                });
-            }
-            
-            // Obtener todos los datos
-            $detalles = $query->orderBy('pp.created_at', 'desc')->get();
-            
-            // Agrupar por número de pedido
-            $pedidosAgrupados = $detalles->groupBy('numero_pedido')->map(function ($items, $numeroPedido) {
-                $primerItem = $items->first();
-                $totalItems = $items->count();
-                $totalCantidad = $items->sum(function($item) {
-                    return is_numeric($item->cantidad) ? (int)$item->cantidad : 0;
-                });
-                
-                $areas = $items->pluck('area')->unique()->filter()->values()->toArray();
-                $tipoDisplay = implode(' + ', $areas);
-                
-                return [
-                    'id' => $primerItem->pedido_produccion_id ?? 0,
-                    'numero_pedido' => $numeroPedido,
-                    'cliente' => $primerItem->empresa ?? 'Sin Empresa',
-                    'asesor' => $primerItem->asesor ?? '',
-                    'estado' => $primerItem->estado_bodega ?? 'Pendiente',
-                    'fecha_creacion' => $primerItem->pedido_fecha_creacion ? \Carbon\Carbon::parse($primerItem->pedido_fecha_creacion)->format('d/m/Y') : '-',
-                    'fecha_entrega' => $primerItem->fecha_entrega ? \Carbon\Carbon::parse($primerItem->fecha_entrega)->format('d/m/Y') : '',
-                    'tipo' => $tipoDisplay,
-                    'total_items' => $totalItems,
-                    'total_pendientes' => $totalItems,
-                    'total_cantidad' => $totalCantidad,
-                    'areas' => $areas,
-                    'detalles' => $items->map(function($item) {
-                        return [
-                            'prenda' => $item->prenda_nombre,
-                            'talla' => $item->talla,
-                            'cantidad' => $item->cantidad,
-                            'pendientes' => $item->pendientes,
-                            'area' => $item->area,
-                            'estado_costura' => $item->costura_estado,
-                            'estado_epp' => $item->epp_estado,
-                            'observaciones' => $item->observaciones_bodega
-                        ];
-                    })->toArray()
-                ];
-            })->values();
-            
-            // Filtrar por tipo de área después de agrupar
-            if ($tipo === 'costura') {
-                $pedidosAgrupados = $pedidosAgrupados->filter(function($pedido) {
-                    // Solo mostrar si tiene al menos un item con area='Costura' Y costura_estado='Pendiente'
-                    return collect($pedido['detalles'])->some(function($detalle) {
-                        return $detalle['area'] === 'Costura' && $detalle['estado_costura'] === 'Pendiente';
-                    });
-                })->values();
-            } elseif ($tipo === 'epp') {
-                $pedidosAgrupados = $pedidosAgrupados->filter(function($pedido) {
-                    // Solo mostrar si tiene al menos un item con area='EPP' Y epp_estado='Pendiente'
-                    return collect($pedido['detalles'])->some(function($detalle) {
-                        return $detalle['area'] === 'EPP' && $detalle['estado_epp'] === 'Pendiente';
-                    });
-                })->values();
-            }
-            
-            // Paginación manual
-            $total = $pedidosAgrupados->count();
-            $pedidosPaginados = $pedidosAgrupados->forPage($page, $perPage);
+            $resultado = $this->obtenerPendientesAsesorUseCase->ejecutar(
+                $asesorNombre,
+                $search,
+                $tipo,
+                $page,
+                $perPage
+            );
             
             return response()->json([
                 'success' => true,
-                'data' => $pedidosPaginados->values(),
-                'meta' => [
-                    'current_page' => (int)$page,
-                    'per_page' => (int)$perPage,
-                    'total' => $total,
-                    'last_page' => ceil($total / $perPage)
-                ]
+                'data' => $resultado['data'],
+                'meta' => $resultado['meta']
             ]);
             
         } catch (\Exception $e) {
@@ -502,74 +426,39 @@ class AsesoresController extends Controller
                 abort(403, 'No tienes permiso para editar esta cotización');
             }
 
-            $eppCot = \DB::table('epp_cotizacion')->where('cotizacion_id', $cotizacion->id)->first();
-            $items = \DB::table('epp_items_cot')->where('cotizacion_id', $cotizacion->id)->orderBy('id')->get();
-            $valores = \DB::table('epp_valor_unitario')
-                ->whereIn('epp_item_id', $items->pluck('id')->all())
-                ->get()
-                ->keyBy('epp_item_id');
-            $imagenes = \DB::table('epp_img_cot')
-                ->whereIn('epp_item_id', $items->pluck('id')->all())
-                ->orderBy('id')
-                ->get()
-                ->groupBy('epp_item_id');
-
-            $itemsUi = $items->map(function ($it) use ($valores, $imagenes) {
-                $vu = $valores[$it->id] ?? null;
-                $imgs = $imagenes->get($it->id, collect());
-
-                return [
+            // DELEGADO A USE CASE: Obtener datos de EPP y prendas de la cotización
+            $datosCompletos = $this->obtenerDatosCotizacionEditarUseCase->ejecutar($cotizacion->id);
+            
+            // Procesar EPP items con URLs de imágenes
+            $itemsUi = collect($datosCompletos['items_epp'] ?? [])->map(function ($item) {
+                return array_merge($item, [
                     'tipo' => 'epp',
-                    'id' => (int)$it->id,
-                    'nombre' => $it->nombre,
-                    'nombre_epp' => $it->nombre,
-                    'cantidad' => (int)($it->cantidad ?? 1),
-                    'observaciones' => $it->observaciones,
-                    'valor_unitario' => $vu ? $vu->valor_unitario : null,
-                    'total' => ($vu && $it->cantidad) ? ((float)$vu->valor_unitario * (int)$it->cantidad) : null,
-                    'imagenes' => $imgs->map(function ($row) {
-                        if (!$row || !$row->ruta) return null;
-                        return \Storage::disk('public')->url($row->ruta);
-                    })->filter()->values()->all(),
-                ];
+                    'nombre_epp' => $item['nombre'] ?? '',
+                    'observaciones' => $item['observaciones'] ?? '',
+                    'imagenes' => collect($item['imagenes'] ?? [])->map(fn($img) => 
+                        \Storage::disk('public')->url($img['url'])
+                    )->filter()->values()->all(),
+                ]);
             })->values()->all();
             
-            // Obtener también prendas de la cotización
-            $prendas = \DB::table('prenda_items_cot')->where('cotizacion_id', $cotizacion->id)->orderBy('id')->get();
-            $valoresPrendas = \DB::table('prenda_valor_unitario')
-                ->whereIn('prenda_item_id', $prendas->pluck('id')->all())
-                ->get()
-                ->keyBy('prenda_item_id');
-            $imagenesPrendas = \DB::table('prenda_img_cot')
-                ->whereIn('prenda_item_id', $prendas->pluck('id')->all())
-                ->orderBy('id')
-                ->get()
-                ->groupBy('prenda_item_id');
-
-            $prendasUi = $prendas->map(function ($prenda) use ($valoresPrendas, $imagenesPrendas) {
-                $vu = $valoresPrendas[$prenda->id] ?? null;
-                $imgs = $imagenesPrendas->get($prenda->id, collect());
-
-                return [
+            // Procesar Prenda items con URLs de imágenes
+            $prendasUi = collect($datosCompletos['items_prendas'] ?? [])->map(function ($prenda) {
+                return array_merge($prenda, [
                     'tipo' => 'prenda',
-                    'id' => (int)$prenda->id,
-                    'nombre' => $prenda->descripcion,
-                    'nombre_epp' => $prenda->descripcion,
-                    'cantidad' => (int)($prenda->cantidad ?? 1),
-                    'observaciones' => $prenda->observaciones,
-                    'valor_unitario' => $vu ? $vu->valor_unitario : null,
-                    'total' => ($vu && $prenda->cantidad) ? ((float)$vu->valor_unitario * (int)$prenda->cantidad) : null,
-                    'imagenes' => $imgs->map(function ($row) {
-                        if (!$row || !$row->ruta) return null;
-                        return \Storage::disk('public')->url($row->ruta);
-                    })->filter()->values()->all(),
-                ];
+                    'nombre_epp' => $prenda['nombre'] ?? '',
+                    'observaciones' => $prenda['observaciones'] ?? '',
+                    'imagenes' => collect($prenda['imagenes'] ?? [])->map(fn($img) => 
+                        \Storage::disk('public')->url($img['url'])
+                    )->filter()->values()->all(),
+                ]);
             })->values()->all();
             
             // Combinar EPPs y prendas en un solo array
             $itemsUi = array_merge($itemsUi, $prendasUi);
+            
+            $eppCot = $datosCompletos['epp_cot'] ?? null;
 
-            // Obtener IVA directamente desde el campo de la cotización
+            // Obtener IVA desde el campo de la cotización
             $iva = $cotizacion->iva ?? null;
             
             // Extraer datos adicionales desde especificaciones (JSON)
@@ -615,7 +504,7 @@ class AsesoresController extends Controller
     }
 
     /**
-     * Guardar nuevo pedido - DELEGADO A SERVICIOS
+     * Guardar nuevo pedido - DELEGADO A USE CASE (con transacción)
      */
     public function store(Request $request)
     {
@@ -651,47 +540,19 @@ class AsesoresController extends Controller
             'cotizacion_id' => 'nullable|integer',
         ]);
 
-        DB::beginTransaction();
         try {
-            $tipoCotizacion = $request->input('tipo_cotizacion');
-            $cotizacionId = $request->input('cotizacion_id');
-            
-            if ($this->guardarPedidoLogoService->esLogoPedido($tipoCotizacion, $cotizacionId)) {
-                $imagenesProcesadas = $this->procesarFotosTelasService->procesarImagenesLogo($request);
-                $logoPedidoId = $this->guardarPedidoLogoService->guardar($validated, $imagenesProcesadas);
-
-                DB::commit();
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Pedido de logo guardado correctamente',
-                    'logo_pedido_id' => $logoPedidoId,
-                    'tipo' => 'logo'
-                ]);
-            }
-
-            $productosConFotos = $this->procesarFotosTelasService->procesar($request, $validated[$productosKey]);
-            
-            // Crear DTO para el Use Case
-            $dto = new CrearProduccionPedidoDTO(
-                $validated['cliente'],
-                $validated['cliente'],
-                $productosConFotos
-            );
-            
-            // Usar el nuevo Use Case DDD
-            $pedido = $this->crearProduccionPedidoUseCase->ejecutar($dto);
-
-            DB::commit();
+            // DELEGADO A USE CASE: Maneja transacción internamente
+            $resultado = $this->guardarPedidoUseCase->ejecutar($validated, $request, $productosKey);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido guardado como borrador',
-                'borrador_id' => $pedido->getId()
+                'message' => $resultado['message'],
+                'tipo' => $resultado['tipo'],
+                'logo_pedido_id' => $resultado['tipo'] === 'logo' ? $resultado['id'] : null,
+                'borrador_id' => $resultado['tipo'] === 'produccion' ? $resultado['id'] : null,
             ]);
 
         } catch (\Exception $e) {
-            DB::rollBack();
             \Log::error('Error al guardar pedido: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
