@@ -409,13 +409,20 @@ class PrendasRenderer {
 
       const fechaCreacionOrden = window.currentOrderData?.fecha_de_creacion_de_orden || null;
 
-      const consecutivosList = typeof normalizeConsecutivos === 'function' 
-        ? normalizeConsecutivos(prenda?.consecutivos)
-        : [];
-      if (consecutivosList.length > 0) {
-        const reciboCosturaActivo = consecutivosList.find(r => String(r.tipo_recibo || '').toUpperCase() === 'COSTURA' && (r.activo === 1 || r.activo === true));
-        const reciboActivo = reciboCosturaActivo || consecutivosList.find(r => (r.activo === 1 || r.activo === true)) || consecutivosList[0];
-        reciboCreatedAt = reciboActivo?.created_at || null;
+      // Usar datos_activacion_recibo pre-calculados por el backend (más confiable)
+      const datosActivacion = prenda?.datos_activacion_recibo || {};
+      reciboCreatedAt = datosActivacion.fecha_activacion_recibo || null;
+
+      // Fallback: buscar en consecutivos si datos_activacion_recibo no está disponible
+      if (!reciboCreatedAt) {
+        const consecutivosList = typeof normalizeConsecutivos === 'function' 
+          ? normalizeConsecutivos(prenda?.consecutivos)
+          : [];
+        if (consecutivosList.length > 0) {
+          const reciboCosturaActivo = consecutivosList.find(r => String(r.tipo_recibo || '').toUpperCase() === 'COSTURA' && (r.activo === 1 || r.activo === true));
+          const reciboActivo = reciboCosturaActivo || consecutivosList.find(r => (r.activo === 1 || r.activo === true)) || consecutivosList[0];
+          reciboCreatedAt = reciboActivo?.created_at || null;
+        }
       }
 
       const cardCreacionOrden = document.createElement('div');
@@ -446,23 +453,25 @@ class PrendasRenderer {
         </div>
         <div class="tracking-info-content">
           <span class="tracking-info-label">Fecha activación recibo</span>
-          <span class="tracking-info-value">${typeof formatDateTime === 'function' ? formatDateTime(reciboCreatedAt) : '-'}</span>
+          <span class="tracking-info-value">${datosActivacion.fecha_activacion_recibo_formateada || (typeof formatDateTime === 'function' ? formatDateTime(reciboCreatedAt) : '-') || '-'}</span>
         </div>
       `;
 
-      // Tiempo transcurrido: mostrar duración real (días/h/m/s). Además, mostrar días hábiles como referencia.
-      let tiempoTranscurridoText = '-';
-      const fechaCreacionDate = typeof toDateObject === 'function' ? toDateObject(fechaCreacionOrden) : null;
-      const reciboActDate = typeof toDateObject === 'function' ? toDateObject(reciboCreatedAt) : null;
-      if (fechaCreacionDate && reciboActDate) {
-        const diffMs = Math.max(0, reciboActDate.getTime() - fechaCreacionDate.getTime());
-        const human = typeof formatDurationHuman === 'function' ? formatDurationHuman(diffMs) : '';
-        const diasHabiles = typeof calcularDiasHabilesSync === 'function' 
-          ? calcularDiasHabilesSync(fechaCreacionDate, reciboActDate)
-          : 0;
-        tiempoTranscurridoText = diasHabiles > 0
-          ? `${human} (${diasHabiles} días hábiles)`
-          : human;
+      // Tiempo transcurrido: usar valor pre-calculado del backend, o calcular como fallback
+      let tiempoTranscurridoText = datosActivacion.tiempo_transcurrido_completo || '-';
+      if (tiempoTranscurridoText === '-') {
+        const fechaCreacionDate = typeof toDateObject === 'function' ? toDateObject(fechaCreacionOrden) : null;
+        const reciboActDate = typeof toDateObject === 'function' ? toDateObject(reciboCreatedAt) : null;
+        if (fechaCreacionDate && reciboActDate) {
+          const diffMs = Math.max(0, reciboActDate.getTime() - fechaCreacionDate.getTime());
+          const human = typeof formatDurationHuman === 'function' ? formatDurationHuman(diffMs) : '';
+          const diasHabiles = typeof calcularDiasHabilesSync === 'function' 
+            ? calcularDiasHabilesSync(fechaCreacionDate, reciboActDate)
+            : 0;
+          tiempoTranscurridoText = diasHabiles > 0
+            ? `${human} (${diasHabiles} días hábiles)`
+            : human;
+        }
       }
 
       const cardTiempoTrans = document.createElement('div');
