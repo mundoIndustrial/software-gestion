@@ -90,9 +90,9 @@ guardarCambiosInsumos(pedidoId, prendaId, materiales) → Promise<boolean>
 - `RepositoryError`: cache write failed
 
 **Side Effects**
-- ✅ POSTs to `/insumos/api/materiales`
-- ✅ Auto-invalidates cache for this pedido
-- ✅ No manual cache management needed
+-  POSTs to `/insumos/api/materiales`
+-  Auto-invalidates cache for this pedido
+-  No manual cache management needed
 
 **Examples**
 ```javascript

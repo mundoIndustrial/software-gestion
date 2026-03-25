@@ -83,13 +83,13 @@ class PrendaFormCollector {
 
                 // 1️⃣ Si img es directamente un File object, usarlo (imagen nueva)
                 if (img instanceof File) {
-                    console.log(`[prenda-form-collector]   ✅ DECISIÓN: Es File object directo, RETORNANDO`);
+                    console.log(`[prenda-form-collector]    DECISIÓN: Es File object directo, RETORNANDO`);
                     return img;
                 }
                 
                 // 2️⃣ Si img tiene propiedad file que es File object, usar eso (imagen cargada nuevamente)
                 if (img && img.file instanceof File) {
-                    console.log(`[prenda-form-collector]   ✅ DECISIÓN: Tiene .file que es File object, RETORNANDO`);
+                    console.log(`[prenda-form-collector]    DECISIÓN: Tiene .file que es File object, RETORNANDO`);
                     // 🔴 CRÍTICO: Guardar el File object CON el metadata, no solo el File
                     // Esto asegura que cuando se recupere la imagen, tenga toda la info
                     return {
@@ -109,7 +109,7 @@ class PrendaFormCollector {
                     
                     // Prioridad: ruta de almacenamiento permanente
                     if (img.ruta_original && img.ruta_original.startsWith('/')) {
-                        console.log(`[prenda-form-collector]   ✅ DECISIÓN: Tiene ruta_original, RETORNANDO`);
+                        console.log(`[prenda-form-collector]    DECISIÓN: Tiene ruta_original, RETORNANDO`);
                         return {
                             id: img.id,
                             prenda_foto_id: img.prenda_foto_id,
@@ -121,7 +121,7 @@ class PrendaFormCollector {
                         };
                     }
                     if (img.ruta_webp && img.ruta_webp.startsWith('/')) {
-                        console.log(`[prenda-form-collector]   ✅ DECISIÓN: Tiene ruta_webp, RETORNANDO`);
+                        console.log(`[prenda-form-collector]    DECISIÓN: Tiene ruta_webp, RETORNANDO`);
                         return {
                             id: img.id,
                             prenda_foto_id: img.prenda_foto_id,
@@ -133,7 +133,7 @@ class PrendaFormCollector {
                         };
                     }
                     if (img.url && img.url.startsWith('/')) {
-                        console.log(`[prenda-form-collector]   ✅ DECISIÓN: Tiene url, RETORNANDO`);
+                        console.log(`[prenda-form-collector]    DECISIÓN: Tiene url, RETORNANDO`);
                         return {
                             id: img.id,
                             prenda_foto_id: img.prenda_foto_id,
@@ -164,19 +164,19 @@ class PrendaFormCollector {
                     console.log(`[prenda-form-collector]   ⚠️ Objeto sin previewUrl - preservando como está`);
                     // Si tiene ID o alguna referencia a BD, marcalo como tal
                     if (img.id || img.prenda_foto_id) {
-                        console.log(`[prenda-form-collector]   ✅ DECISIÓN: Preservando con urlDesdeDB=true`);
+                        console.log(`[prenda-form-collector]    DECISIÓN: Preservando con urlDesdeDB=true`);
                         return {
                             ...img,
                             urlDesdeDB: true
                         };
                     }
                     // Si no, preservarlo tal cual
-                    console.log(`[prenda-form-collector]   ✅ DECISIÓN: Preservando tal cual`);
+                    console.log(`[prenda-form-collector]    DECISIÓN: Preservando tal cual`);
                     return img;
                 }
                 
                 // Retornar tal cual si es File o válido
-                console.log(`[prenda-form-collector]   ✅ DECISIÓN: Retornando tal cual`);
+                console.log(`[prenda-form-collector]    DECISIÓN: Retornando tal cual`);
                 return img;
             }).filter((img, filterIdx) => {
                 // 🔴 CRÍTICO: Descartar IMÁGENES VACÍAS (blob URLs revocados del storage)
@@ -210,7 +210,7 @@ class PrendaFormCollector {
                 });
                 
                 if (!esValido) {
-                    console.log(`[prenda-form-collector] ❌ Imagen ${filterIdx} DESCARTADA - sin contenido válido`);
+                    console.log(`[prenda-form-collector]  Imagen ${filterIdx} DESCARTADA - sin contenido válido`);
                 }
                 
                 return esValido;
@@ -277,7 +277,7 @@ class PrendaFormCollector {
                                             if (tallaData && Array.isArray(tallaData.imagenesFiles)) {
                                                 // Copiar array de Files directamente (no pueden serializarse vía JSON)
                                                 datosCopiados.datosExtendidos[genero][talla].imagenesFiles = [...tallaData.imagenesFiles];
-                                                console.log(`[copiarProcesos] ✅ imagenesFiles preservados para ${genero}__${talla}:`, tallaData.imagenesFiles.length, 'files');
+                                                console.log(`[copiarProcesos]  imagenesFiles preservados para ${genero}__${talla}:`, tallaData.imagenesFiles.length, 'files');
                                             }
                                         });
                                     }
@@ -286,7 +286,7 @@ class PrendaFormCollector {
                             
                             // Log de fotos generales preservadas
                             if (datosCopiados.fotosGeneralesFiles && datosCopiados.fotosGeneralesFiles.length > 0) {
-                                console.log(`[copiarProcesos] ✅ fotosGeneralesFiles preservados para ${tipoProceso}:`, datosCopiados.fotosGeneralesFiles.length, 'files');
+                                console.log(`[copiarProcesos]  fotosGeneralesFiles preservados para ${tipoProceso}:`, datosCopiados.fotosGeneralesFiles.length, 'files');
                             }
                         }
                         copia[tipoProceso] = {
@@ -331,7 +331,7 @@ class PrendaFormCollector {
             
             // 🟢 NUEVO: Si hay "SOLO CANTIDAD", agregarlo al objeto de tallas con género especial
             if (window.cantidadSoloSeleccionada && window.cantidadSoloSeleccionada > 0) {
-                console.log('[prenda-form-collector] ✅ "SOLO CANTIDAD" detectado:', window.cantidadSoloSeleccionada);
+                console.log('[prenda-form-collector]  "SOLO CANTIDAD" detectado:', window.cantidadSoloSeleccionada);
                 
                 // Inicializar el género especial si no existe
                 if (!tallasParaGuardar['GENERICO']) {
@@ -462,13 +462,13 @@ class PrendaFormCollector {
                         
                         // 1️⃣ Si img es directamente un File object, usarlo (imagen nueva a subir)
                         if (img instanceof File) {
-                            console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: FILE OBJECT`);
+                            console.log(`[prenda-form-collector]    Imagen ${imgIdx}: FILE OBJECT`);
                             return img;
                         }
                         
                         // 2️⃣ Si img tiene propiedad file que es File object, usar eso (imagen cargada nuevamente)
                         if (img && img.file instanceof File) {
-                            console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: FILE object dentro de propiedad`);
+                            console.log(`[prenda-form-collector]    Imagen ${imgIdx}: FILE object dentro de propiedad`);
                             return img.file;
                         }
                         
@@ -477,20 +477,20 @@ class PrendaFormCollector {
                         if (img && typeof img === 'object') {
                             // Buscar ruta de almacenamiento permanente en este orden de prioridad
                             if (img.ruta && img.ruta.startsWith('/')) {
-                                console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: Usando img.ruta = ${img.ruta}`);
+                                console.log(`[prenda-form-collector]    Imagen ${imgIdx}: Usando img.ruta = ${img.ruta}`);
                                 return img.ruta;  // 🎯 Prioridad 1: ruta absoluta de storage
                             }
                             if (img.ruta_original && img.ruta_original.startsWith('/')) {
-                                console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: Usando img.ruta_original = ${img.ruta_original}`);
+                                console.log(`[prenda-form-collector]    Imagen ${imgIdx}: Usando img.ruta_original = ${img.ruta_original}`);
                                 return img.ruta_original;  // 🎯 Prioridad 2: ruta original
                             }
                             if (img.ruta_webp && img.ruta_webp.startsWith('/')) {
-                                console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: Usando img.ruta_webp = ${img.ruta_webp}`);
+                                console.log(`[prenda-form-collector]    Imagen ${imgIdx}: Usando img.ruta_webp = ${img.ruta_webp}`);
                                 return img.ruta_webp;  // 🎯 Prioridad 3: ruta webp
                             }
                             // Si tiene URL de acceso, usarla si es path absoluto
                             if (img.url && img.url.startsWith('/')) {
-                                console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: Usando img.url = ${img.url}`);
+                                console.log(`[prenda-form-collector]    Imagen ${imgIdx}: Usando img.url = ${img.url}`);
                                 return img.url;
                             }
                             // Si tienen información de ID de BD, conservarla en un objeto (para merge posterior)
@@ -519,12 +519,12 @@ class PrendaFormCollector {
                         
                         // 4️⃣ Si img es un string (ruta directa), usarlo
                         if (typeof img === 'string' && img.startsWith('/')) {
-                            console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: STRING (ruta) = ${img}`);
+                            console.log(`[prenda-form-collector]    Imagen ${imgIdx}: STRING (ruta) = ${img}`);
                             return img;
                         }
                         
-                        // ❌ Ignorar blob URLs y otros valores inválidos
-                        console.log(`[prenda-form-collector]   ❌ Imagen ${imgIdx}: DESCARTADA (blob URL o inválida)`);
+                        //  Ignorar blob URLs y otros valores inválidos
+                        console.log(`[prenda-form-collector]    Imagen ${imgIdx}: DESCARTADA (blob URL o inválida)`);
                         return null;
                     }).filter(img => img !== null && img !== undefined);
                     
@@ -799,7 +799,7 @@ class PrendaFormCollector {
             return prendaData;
 
         } catch (error) {
-            console.error('[prenda-form-collector] ❌ ERROR CRÍTICO en construirPrendaDesdeFormulario:', error);
+            console.error('[prenda-form-collector]  ERROR CRÍTICO en construirPrendaDesdeFormulario:', error);
             console.error('[prenda-form-collector] Stack:', error.stack);
             return null;
         }

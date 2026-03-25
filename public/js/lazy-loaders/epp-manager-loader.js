@@ -27,7 +27,8 @@ window.EPPManagerLoader = (function() {
         
         // ========== SERVICIOS ESPECIALIZADOS ==========
         '/js/modulos/crear-pedido/epp/services/epp-modal-manager.js',
-        '/js/modulos/crear-pedido/epp/services/epp-item-manager.js',
+        '/js/modulos/crear-pedido/epp/services/epp-item-manager-tabla.js',
+        '/js/modulos/crear-pedido/epp/services/epp-item-manager-tarjeta.js',
         '/js/modulos/crear-pedido/epp/services/epp-imagen-manager.js',
         
         // ========== SERVICIOS DE NEGOCIO ==========

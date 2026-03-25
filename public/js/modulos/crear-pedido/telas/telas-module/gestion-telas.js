@@ -20,7 +20,7 @@ window.agregarTelaNueva = async function() {
     console.log('═════════════════════════════════════════════════════════════════');
     
     try {
-        console.log('[agregarTelaNueva] ✅ ENTRADA: Iniciando agregación de nueva tela');
+        console.log('[agregarTelaNueva]  ENTRADA: Iniciando agregación de nueva tela');
         
         // DIAGNÓSTICO 1: Estado INICIAL de telasCreacion
         console.log('[agregarTelaNueva] 📊 DIAGNÓSTICO 1 - Estado INICIAL:');
@@ -41,7 +41,7 @@ window.agregarTelaNueva = async function() {
         
         // Verificar que los elementos existan
         if (!colorElement || !telaElement || !referenciaElement) {
-            console.error('[agregarTelaNueva] ❌ Elementos del modal no encontrados. Verifica que el modal esté abierto.');
+            console.error('[agregarTelaNueva]  Elementos del modal no encontrados. Verifica que el modal esté abierto.');
             window.mostrarErrorTela('nueva-prenda-tela', 'Error: Modal no está activo');
             return false;
         }
@@ -59,7 +59,7 @@ window.agregarTelaNueva = async function() {
         const validacion = window.validarCamposTela(color, tela, referencia);
         
         if (!validacion.valido) {
-            console.warn('[agregarTelaNueva] ❌ Validación fallida:', validacion.errores);
+            console.warn('[agregarTelaNueva]  Validación fallida:', validacion.errores);
             
             // Mostrar errores
             validacion.errores.forEach(error => {
@@ -93,9 +93,9 @@ window.agregarTelaNueva = async function() {
             console.log('[agregarTelaNueva] 📸 Obteniendo imágenes desde storage universal...');
             try {
                 imagenesActuales = window.imagenesTelaStorage.obtenerImagenes() || [];
-                console.log('[agregarTelaNueva] ✅ Imágenes obtenidas desde storage universal:', imagenesActuales.length);
+                console.log('[agregarTelaNueva]  Imágenes obtenidas desde storage universal:', imagenesActuales.length);
             } catch (error) {
-                console.error('[agregarTelaNueva] ❌ Error obteniendo imágenes del storage universal:', error);
+                console.error('[agregarTelaNueva]  Error obteniendo imágenes del storage universal:', error);
                 imagenesActuales = window.imagenesTelaModalNueva || [];
             }
         } else {
@@ -174,11 +174,11 @@ window.agregarTelaNueva = async function() {
                 window.imagenesTelaStorage.limpiarImagenes();
                 console.log('[agregarTelaNueva] ✓ Storage universal limpiado');
             } catch (error) {
-                console.error('[agregarTelaNueva] ❌ Error limpiando storage universal:', error);
+                console.error('[agregarTelaNueva]  Error limpiando storage universal:', error);
             }
         }
         
-        console.log('[agregarTelaNueva] ✅ Imágenes temporales limpiadas completamente');
+        console.log('[agregarTelaNueva]  Imágenes temporales limpiadas completamente');
         
         // DIAGNÓSTICO 5: ANTES de actualizar tabla
         console.log('[agregarTelaNueva] 📊 DIAGNÓSTICO 5 - ANTES de actualizarTablaTelas():');
@@ -195,7 +195,7 @@ window.agregarTelaNueva = async function() {
         console.log('  window.telasCreacion:', window.telasCreacion);
         console.log('  Cantidad total:', window.telasCreacion.length);
         
-        console.log('[agregarTelaNueva] ✅ Tela agregada exitosamente con ' + imagenesActuales.length + ' imágenes');
+        console.log('[agregarTelaNueva]  Tela agregada exitosamente con ' + imagenesActuales.length + ' imágenes');
         console.log('═════════════════════════════════════════════════════════════════');
         return true;
         

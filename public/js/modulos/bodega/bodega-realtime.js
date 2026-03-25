@@ -70,10 +70,10 @@ class BodegaRealtimeRefresh {
                 // Suscribirse a todos los canales de detalles visibles
                 this.subscribeToVisibleChannels();
                 
-                if (this.debug) console.log('[BodegaRealtime] ✅ Sistema de tiempo real activo');
+                if (this.debug) console.log('[BodegaRealtime]  Sistema de tiempo real activo');
             });
         } catch (error) {
-            console.error('[BodegaRealtime] ❌ Error configurando WebSocket:', error);
+            console.error('[BodegaRealtime]  Error configurando WebSocket:', error);
         }
     }
 
@@ -121,9 +121,9 @@ class BodegaRealtimeRefresh {
                     if (this.debug) console.log('[BodegaRealtime] 📡 Detalle actualizado:', event);
                     this.handleDetalleUpdate(event, numeroPedido, talla);
                 });
-                if (this.debug) console.log(`[BodegaRealtime] ✅ Suscrito a ${channelName}/.detalle.actualizado`);
+                if (this.debug) console.log(`[BodegaRealtime]  Suscrito a ${channelName}/.detalle.actualizado`);
             } catch (error) {
-                console.error(`[BodegaRealtime] ❌ Error en evento .detalle.actualizado: ${channelName}:`, error);
+                console.error(`[BodegaRealtime]  Error en evento .detalle.actualizado: ${channelName}:`, error);
             }
 
             // Suscribirse a evento .nota.guardada
@@ -132,16 +132,16 @@ class BodegaRealtimeRefresh {
                     if (this.debug) console.log('[BodegaRealtime] 📝 Nota guardada:', event);
                     this.handleNotaGuardada(event, numeroPedido, talla);
                 });
-                if (this.debug) console.log(`[BodegaRealtime] ✅ Suscrito a ${channelName}/.nota.guardada`);
+                if (this.debug) console.log(`[BodegaRealtime]  Suscrito a ${channelName}/.nota.guardada`);
             } catch (error) {
-                console.error(`[BodegaRealtime] ❌ Error en evento .nota.guardada: ${channelName}:`, error);
+                console.error(`[BodegaRealtime]  Error en evento .nota.guardada: ${channelName}:`, error);
             }
 
             // Guardar referencia al canal para cleanup
             this.channels.set(channelName, true);
 
         } catch (error) {
-            console.error(`[BodegaRealtime] ❌ Error suscribiendo a ${channelName}:`, error);
+            console.error(`[BodegaRealtime]  Error suscribiendo a ${channelName}:`, error);
         }
     }
 

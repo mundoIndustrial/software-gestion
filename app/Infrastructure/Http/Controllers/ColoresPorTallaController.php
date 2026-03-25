@@ -4,6 +4,7 @@ namespace App\Infrastructure\Http\Controllers;
 
 use App\Domain\Pedidos\Services\ColoresPorTallaService;
 use App\Domain\Pedidos\ValueObjects\AsignacionColor;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;

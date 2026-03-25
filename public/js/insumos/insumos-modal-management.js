@@ -396,7 +396,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     observacionesInput.value = observaciones;
                 }
                 
-                showToast('✅ Observaciones guardadas exitosamente', 'success');
+                showToast(' Observaciones guardadas exitosamente', 'success');
                 window.cerrarModalObservaciones();
                 
                 console.log('[guardarObservaciones] Guardadas correctamente:', data);

@@ -48,7 +48,7 @@ window.universalImagenesStorage = {
             indice: indice
         });
         
-        console.log(`[UniversalStorage] ✅ Imagen agregada: ${tipo}[${indice}] - Total: ${this._storage[tipo][indice].length}`);
+        console.log(`[UniversalStorage]  Imagen agregada: ${tipo}[${indice}] - Total: ${this._storage[tipo][indice].length}`);
         return true;
     },
     
@@ -230,4 +230,4 @@ window.universalImagenesStorage = {
 };
 
 // Inicializar con logging
-console.log('✅ [UniversalStorage] Storage universal inicializado - Tipos: prendas, telas, procesos');
+console.log(' [UniversalStorage] Storage universal inicializado - Tipos: prendas, telas, procesos');

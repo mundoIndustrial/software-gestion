@@ -4,6 +4,7 @@ namespace App\Application\SupervisorPedidos\UseCases;
 
 use App\Application\SupervisorPedidos\DTOs\ListOrdersRequest;
 use App\Application\SupervisorPedidos\DTOs\ListOrdersResponse;
+use App\Domain\Pedidos\Services\PedidoProduccionDomainService;
 use App\Models\PedidoProduccion;
 use App\Models\SeleccionPedido;
 use Illuminate\Support\Facades\Auth;
@@ -11,6 +12,13 @@ use Illuminate\Support\Facades\Log;
 
 class ListOrdersUseCase
 {
+    private PedidoProduccionDomainService $domainService;
+
+    public function __construct(PedidoProduccionDomainService $domainService)
+    {
+        $this->domainService = $domainService;
+    }
+
     public function execute(ListOrdersRequest $request): ListOrdersResponse
     {
         try {
@@ -28,6 +36,11 @@ class ListOrdersUseCase
 
             // Ordenar y paginar
             $ordenes = $this->orderAndPaginate($query, $request);
+
+            // Pre-computar datos de negocio para cada orden (evitar lógica en vistas/modelos)
+            $ordenes->getCollection()->each(function($orden) {
+                $orden->es_solo_epp = $this->domainService->esSoloEpp($orden);
+            });
 
             // Obtener estados únicos
             $estados = PedidoProduccion::distinct()

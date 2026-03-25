@@ -89,7 +89,7 @@ class TrackingMain {
     
     const allLoaded = Object.values(modules).every(loaded => loaded);
     if (allLoaded) {
-      console.log('[TrackingMain] ✅ Todos los módulos cargados correctamente');
+      console.log('[TrackingMain]  Todos los módulos cargados correctamente');
     } else {
       console.warn('[TrackingMain] ⚠️ Algunos módulos no están cargados:', modules);
     }

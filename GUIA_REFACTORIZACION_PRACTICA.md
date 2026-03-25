@@ -693,7 +693,7 @@ export function registerDependencies(): Container {
 
 ---
 
-## ✅ CHECKLIST DE MIGRACIÓN
+##  CHECKLIST DE MIGRACIÓN
 
 - [ ] **Paso 1:** Crear estructura de carpetas
 - [ ] **Paso 2:** Implementar Value Objects (EstadoRecibo, AreaRecibocostura, etc.)

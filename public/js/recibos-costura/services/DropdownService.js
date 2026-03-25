@@ -126,7 +126,7 @@ class DropdownService {
 
         // Toggle: si ya está abierto, cerrar
         if (button.classList.contains('dropdown-opening')) {
-            console.log('[DropdownService] ✅ TOGGLE: Botón ya estaba abierto, cerrando...');
+            console.log('[DropdownService]  TOGGLE: Botón ya estaba abierto, cerrando...');
             this.closeAll();
             return;
         }
@@ -200,7 +200,7 @@ class DropdownService {
         });
 
         this.openDropdowns.clear();
-        console.log('[DropdownService] ✅ Dropdowns cerrados:', count);
+        console.log('[DropdownService]  Dropdowns cerrados:', count);
     }
 
     /**

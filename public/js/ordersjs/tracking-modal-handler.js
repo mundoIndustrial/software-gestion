@@ -31,7 +31,12 @@ import { TrackingTimelineController } from './presentation/TrackingTimelineContr
 import {
   OrderApiService,
   ProcessService,
+  ProcessDeleteService,
+  ProcessFormValidationService,
+  FormStateManager,
+  DataReloadService,
   PrendaTrackingRenderer,
+  AreaCardRenderer,
   BadgeRenderer,
   UpdateRenderer,
   createContainer,
@@ -43,36 +48,50 @@ import {
   ProcessWorkflowService,
   OrderLoaderService,
   DateFormatterFacade
-} from './application/index.js';
+} from '../application/index.js';
 
 
 const container = createContainer({
+  // Domain & Infrastructure
   orderState,
   dateFormatter: DateFormatter,
-  
   svgIcons: SvgIcons,
   modalUtils: ModalUtils,
   dateUtils,
   queryUtils: QueryUtils,
   
+  // API & Main Service
   OrderApiService,
-  
-  showSuccess,
-  showError,
-  closeConfirmDeleteModal,
-  
   ProcessService,
-
+  
+  // Form & State Management Services
+  ProcessFormValidationService,
+  FormStateManager,
+  
+  // Data Management Services
+  DataReloadService,
+  ProcessDeleteService,
+  
+  // UI Managers
   ProcessFormManager,
   ModalEventBinder,
   ButtonLoadingManager,
+  DaysSelectorManager,
   
+  // Domain Services
   AreasConfigService,
   ProcessWorkflowService,
   
+  // Renderers
   PrendaTrackingRenderer,
+  AreaCardRenderer,
   BadgeRenderer,
-  UpdateRenderer
+  UpdateRenderer,
+  
+  // UI Feedback Callbacks
+  showSuccess,
+  showError,
+  closeConfirmDeleteModal
 });
 
 const formManager = container.get('processFormManager');
@@ -135,7 +154,7 @@ function ensureDaysSelectorInitialized() {
     });
     daysSelector.initialize();
     window.trackingDaysSelector = daysSelector;
-    console.log('[ensureDaysSelectorInitialized] ✅ Selector reiniciado');
+    console.log('[ensureDaysSelectorInitialized]  Selector reiniciado');
     return;
   }
   
@@ -168,7 +187,7 @@ function updateDaysSelectorWithRetry(dias, intento = 0) {
     console.log('[updateDaysSelectorWithRetry] Selector disponible, actualizando con:', dias);
     try {
       window.trackingDaysSelector.setValue(dias);
-      console.log('[updateDaysSelectorWithRetry] ✅ Selector actualizado exitosamente');
+      console.log('[updateDaysSelectorWithRetry]  Selector actualizado exitosamente');
     } catch (error) {
       console.error('[updateDaysSelectorWithRetry] Error al actualizar:', error);
     }

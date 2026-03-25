@@ -126,7 +126,7 @@ class InsumoService {
 Las dependencias se inyectan, no se crean internamente:
 
 ```javascript
-// ❌ MAL - Acoplado
+//  MAL - Acoplado
 class InsumoService {
   async obtenerInsumos() {
     const repo = new SessionStorageInsumoRepository();
@@ -134,7 +134,7 @@ class InsumoService {
   }
 }
 
-// ✅ BIEN - Inyectado
+//  BIEN - Inyectado
 class InsumoService {
   constructor(repository) {
     this.repository = repository;
@@ -176,7 +176,7 @@ InsumoService.obtenerInsumosDelPedido()
 SessionStorageInsumoRepository.obtenerInsumos()
   
   1️⃣  Busca en sessionStorage (cache)
-      [HIT] ✅ Retorna data cached (< 1ms)
+      [HIT]  Retorna data cached (< 1ms)
       
   2️⃣  Si no está o expiró, hace HTTP GET
       ↓
@@ -242,7 +242,7 @@ Opcionalmente: recargarTabla()
 ### Validación (Application Layer)
 
 ```javascript
-// ❌ User passes invalid data
+//  User passes invalid data
 window.insumoService.obtenerInsumosDelPedido("abc"); // Not a number
 
 // InsumoService throws:
@@ -261,7 +261,7 @@ try {
 ### Business Rules (Application Layer)
 
 ```javascript
-// ❌ Business rule violation
+//  Business rule violation
 window.insumoService.guardarCambiosInsumos(123, 456, []); // Empty array
 
 // InsumoService throws:
@@ -280,7 +280,7 @@ try {
 ### Network Errors (Infrastructure Layer)
 
 ```javascript
-// ❌ Network timeout
+//  Network timeout
 // HttpClient auto-retries 3 times
 // If still fails:
 
@@ -297,7 +297,7 @@ try {
 ### Storage Errors (Infrastructure Layer)
 
 ```javascript
-// ❌ sessionStorage quota exceeded
+//  sessionStorage quota exceeded
 // SessionStorageRepository auto-cleanup (clearExpired)
 // If still fails:
 
@@ -382,8 +382,8 @@ Sin caché:
 
 Con caché (30 min):
   User 1 abre modal → HTTP GET (100ms) → Cache
-  User 2 abre modal → Cache (1ms) ✅ 100x faster
-  User 3 abre modal → Cache (1ms) ✅ 100x faster
+  User 2 abre modal → Cache (1ms)  100x faster
+  User 3 abre modal → Cache (1ms)  100x faster
   ────────────────────────────────
   Total: 102ms
 ```
@@ -462,7 +462,7 @@ Todos los módulos loguean con prefijos para fácil debuggeo:
 
 ## Decisiones de Arquitectura
 
-### ✅ Por qué Hybrid DDD
+###  Por qué Hybrid DDD
 
 **Ventajas:**
 - Separación de capas clara sin over-engineering
@@ -475,7 +475,7 @@ Todos los módulos loguean con prefijos para fácil debuggeo:
 - Servicios pueden crecer (solución: partir en sub-servicios)
 - Más archivos que código monolítico (pero más mantenible)
 
-### ✅ Por qué sessionStorage para caché
+###  Por qué sessionStorage para caché
 
 **Alternativas consideradas:**
 - LocalStorage: Persiste entre sesiones (no queremos en Insumos)
@@ -483,7 +483,7 @@ Todos los módulos loguean con prefijos para fácil debuggeo:
 - Memory (variable global): Se pierde en recarga
 - **sessionStorage**: Perfecto balance (sesión, simple API, largo plazo)
 
-### ✅ Por qué 3 reintentos
+###  Por qué 3 reintentos
 
 ```
 1st try:   Network error → Retry
@@ -495,7 +495,7 @@ Ideal para: Conexión inestable (3G, WiFi débil)
 Evita: Spam de requests en servidor caído
 ```
 
-### ✅ Por qué 10 segundos de timeout
+###  Por qué 10 segundos de timeout
 
 ```
 Rápido (< 5s):     User perceive it as instant

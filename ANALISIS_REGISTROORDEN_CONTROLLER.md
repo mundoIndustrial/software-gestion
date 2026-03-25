@@ -259,7 +259,7 @@ app/Modules/
 
 ---
 
-## ✅ PATRONES DE DISEÑO QUE DEBERÍAN IMPLEMENTARSE
+##  PATRONES DE DISEÑO QUE DEBERÍAN IMPLEMENTARSE
 
 ### 1. **QUERY OBJECT PATTERN** (para reemplazar filtros complejos)
 ```php

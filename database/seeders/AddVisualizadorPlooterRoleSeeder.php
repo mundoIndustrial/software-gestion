@@ -24,7 +24,7 @@ class AddVisualizadorPlooterRoleSeeder extends Seeder
                 'updated_at' => now(),
             ]);
 
-            $this->command->info('✅ Rol "visualizador_plooter" creado exitosamente');
+            $this->command->info(' Rol "visualizador_plooter" creado exitosamente');
         } else {
             $this->command->warn('⚠️ El rol "visualizador_plooter" ya existe');
         }

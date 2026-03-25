@@ -21,6 +21,7 @@ use App\Infrastructure\Http\Controllers\CotizacionController;
 use App\Infrastructure\Http\Controllers\CotizacionEppController;
 use App\Infrastructure\Http\Controllers\Cotizaciones\ImagenBorradorController;
 use App\Infrastructure\Http\Controllers\Asesores\ReciboController;
+use App\Infrastructure\Http\Controllers\Asesores\ObservacionesDespachoController;
 use App\Http\Controllers\PDFCotizacionController;
 use App\Http\Controllers\PDFPrendaController;
 use App\Http\Controllers\PDFCotizacionCombiadaController;
@@ -66,9 +67,10 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     Route::delete('/pedidos/{id}', [AsesoresController::class, 'destroy'])->where('id', '[0-9]+')->name('pedidos.destroy');
 
     // ========================================
-    // PEDIDOS - APIs DDD (DEPRECATED - Use modern endpoints)
+    // PEDIDOS - APIs DDD (DEPRECATED)
     // ========================================
-    Route::post('/pedidos', [PedidoCommandController::class, 'store'])->name('pedidos.api.store');
+    // NOTA: La creación de pedidos se centraliza en /asesores/pedidos-editable/*
+    // y no debe existir otro punto de entrada para crear pedidos.
     Route::post('/pedidos/confirm', [PedidoCommandController::class, 'confirm'])->name('pedidos.api.confirm');
     Route::post('/pedidos/{id}/anular', [AsesoresController::class, 'anularPedido'])->where('id', '[0-9]+')->name('pedidos.api.anular');
     Route::get('/prendas-pedido/{prendaPedidoId}/fotos', [PedidoQueryController::class, 'obtenerFotosPrendaPedido'])->where('prendaPedidoId', '[0-9]+')->name('prendas-pedido.fotos');
@@ -121,6 +123,17 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     
     // Alias para compatibilidad con rutas antiguas
     Route::get('/pedidos/{id}/recibos-datos', [ReciboController::class, 'datos'])->where('id', '[0-9]+')->name('pedidos.api.recibos-datos');
+
+    // ========================================
+    // OBSERVACIONES DE DESPACHO
+    // ========================================
+    Route::post('/pedidos/observaciones-despacho/resumen', [ObservacionesDespachoController::class, 'resumen'])->name('observaciones-despacho.resumen');
+    Route::get('/pedidos/{id}/observaciones-despacho', [ObservacionesDespachoController::class, 'obtener'])->where('id', '[0-9]+')->name('observaciones-despacho.obtener');
+    Route::post('/pedidos/{id}/observaciones-despacho', [ObservacionesDespachoController::class, 'guardar'])->where('id', '[0-9]+')->name('observaciones-despacho.guardar');
+    Route::put('/pedidos/{id}/observaciones-despacho/{observacionId}', [ObservacionesDespachoController::class, 'actualizar'])->where('id', '[0-9]+')->name('observaciones-despacho.actualizar');
+    Route::delete('/pedidos/{id}/observaciones-despacho/{observacionId}', [ObservacionesDespachoController::class, 'eliminar'])->where('id', '[0-9]+')->name('observaciones-despacho.eliminar');
+    Route::post('/pedidos/{id}/observaciones-despacho/marcar-leidas', [ObservacionesDespachoController::class, 'marcarLeidas'])->where('id', '[0-9]+')->name('observaciones-despacho.marcar-leidas');
+    Route::post('/pedidos/{id}/observaciones-despacho/marcar-bodega-vistas', [ObservacionesDespachoController::class, 'marcarBodegaVistas'])->where('id', '[0-9]+')->name('observaciones-despacho.marcar-bodega-vistas');
 
     // ========================================
     // ÓRDENES/COTIZACIONES - SISTEMA DE BORRADORES
@@ -243,14 +256,10 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     })->name('realtime.pedidos.listar');
 
     // ========================================
-    // PEDIDOS EDITABLES
+    // PEDIDOS EDITABLES (UNICA FUENTE PARA CREACION)
     // ========================================
     Route::prefix('pedidos-editable')->name('pedidos-editable.')->middleware('role:asesor,admin,supervisor_pedidos')->group(function () {
-        // Ruta fallback que redirige a crear-desde-cotizacion
-        Route::get('crear', function() {
-            return redirect()->route('asesores.pedidos-editable.crear-desde-cotizacion');
-        });
-        
+
         // Mostrar formulario para crear desde COTIZACIÓN (pre-carga cotizaciones)
         Route::get('crear-desde-cotizacion', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'crearDesdeCotizacion'])
             ->name('crear-desde-cotizacion');

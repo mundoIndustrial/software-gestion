@@ -254,7 +254,7 @@ Si guardado_webp_ms > 300ms (promedio):
 
 ---
 
-## 🛠️ Cómo Optimizar Basándose en Logs
+##  Cómo Optimizar Basándose en Logs
 
 ### Si PASO 7 (Imágenes) es lento:
 1. Verificar tamaño de archivos subidos

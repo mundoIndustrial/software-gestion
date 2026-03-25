@@ -49,11 +49,11 @@ app/
 ## 🎯 Principios Aplicados
 
 ### 1. **Single Responsibility Principle (SRP)**
-- ✅ Controller: Solo orquesta Request → UseCase → Response
-- ✅ UseCases: Orquestación de un flujo de negocio
-- ✅ Domain Services: Lógica de negocio pura
-- ✅ Query Services: Consultas complejas
-- ✅ Value Objects: Validación y encapsulación de datos
+-  Controller: Solo orquesta Request → UseCase → Response
+-  UseCases: Orquestación de un flujo de negocio
+-  Domain Services: Lógica de negocio pura
+-  Query Services: Consultas complejas
+-  Value Objects: Validación y encapsulación de datos
 
 ### 2. **Dependency Injection**
 ```php
@@ -262,7 +262,7 @@ public function test_flujo_completo_crear_actualizar_orden()
 
 ### Fase 2: Recibos (Receipts)
 ```
-- ✅ GetSewingReceiptsUseCase (iniciado)
+-  GetSewingReceiptsUseCase (iniciado)
 - ⏳ GetReflectiveReceiptsUseCase
 - ⏳ CreateReceiptDetailUseCase
 - ⏳ MarkReceiptAsViewedUseCase
@@ -311,22 +311,22 @@ Log::info('CreateOrderUseCase::execute', [
 
 ## 🎓 Decisiones Arquitectónicas
 
-### ✅ Por qué UseCases?
+###  Por qué UseCases?
 - Cada operación de negocio es un UseCase
 - Reutilizable desde múltiples controllers o consola
 - Fácil de testear en aislamiento
 
-### ✅ Por qué Value Objects?
+###  Por qué Value Objects?
 - `PedidoNumber` encapsula validaciones
 - `EntregaEstado` enum de estados con métodos
 - Previene bugs relacionados con tipos primitivos
 
-### ✅ Por qué Domain Services?
+###  Por qué Domain Services?
 - `OrderCalculationService`: Cálculos críticos reutilizables
 - `OrderFilteringService`: Reglas de filtrado complejas
 - No dependen de Eloquent
 
-### ✅ Por qué Query Services?
+###  Por qué Query Services?
 - Consultas complejas en una sola clase
 - Reutilizable desde múltiples controllers
 - Separación clara entre lectura y escritura (CQRS pattern)

@@ -60,7 +60,7 @@ class RecibosTableController {
             this._inicializarListeners();
 
             this.initialized = true;
-            console.log('✅ RecibosTableController inicializado');
+            console.log(' RecibosTableController inicializado');
         } catch (error) {
             this.state.setError(`Error al inicializar: ${error.message}`);
             console.error('Error en init:', error);

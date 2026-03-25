@@ -25,7 +25,7 @@ class EppMenuHandlerBase {
         
         this.inicializar();
         this.setupMutationObserver();
-        console.log(`[${this.constructor.name}] ✅ Constructor completado`);
+        console.log(`[${this.constructor.name}]  Constructor completado`);
     }
 
     inicializar() {
@@ -34,7 +34,7 @@ class EppMenuHandlerBase {
             console.log(`[${this.constructor.name}] 📋 Primer inicialización - configurando listeners`);
             this.attachEventListeners();
             this.inicializado = true;
-            console.log(`[${this.constructor.name}] ✅ Inicializado correctamente`);
+            console.log(`[${this.constructor.name}]  Inicializado correctamente`);
         } else {
             console.warn(`[${this.constructor.name}] ⚠️ Ya fue inicializado, evitando duplicación`);
         }

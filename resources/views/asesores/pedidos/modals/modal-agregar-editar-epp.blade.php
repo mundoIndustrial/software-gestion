@@ -1074,7 +1074,7 @@ function abrirModalAgregarEPP() {
                         nombre: file.name
                     });
                     renderizarTablaEPPAgregados();
-                    console.log('[Paste Handler EPP] ✅ Imagen pegada en zona activa:', eppId);
+                    console.log('[Paste Handler EPP]  Imagen pegada en zona activa:', eppId);
                     return;
                 }
             }
@@ -1092,7 +1092,7 @@ function abrirModalAgregarEPP() {
                         nombre: file.name
                     });
                     renderizarTablaEPPAgregados();
-                    console.log('[Paste Handler EPP] ✅ Imagen pegada en último EPP:', eppId);
+                    console.log('[Paste Handler EPP]  Imagen pegada en último EPP:', eppId);
                     return;
                 }
             }
@@ -1119,7 +1119,7 @@ function abrirModalAgregarEPP() {
                 contadorFotos.textContent = window.fotosEPP.length;
             }
         });
-        console.log('[abrirModalAgregarEPP] ✅ Modal EPP registrado en DragDropManager');
+        console.log('[abrirModalAgregarEPP]  Modal EPP registrado en DragDropManager');
     } else if (window.handlePasteEPP && typeof window.handlePasteEPP === 'function') {
         // Fallback SOLO si DragDropManager no está y handlePasteEPP está disponible
         // Asegurarse que no esté registrado ya
@@ -2024,7 +2024,7 @@ function guardarEdicionEPP() {
     console.log('💾 [guardarEdicionEPP] Es objeto válido:', window.eppEnEdicion && typeof window.eppEnEdicion === 'object');
     
     if (!window.eppEnEdicion || typeof window.eppEnEdicion !== 'object' || Object.keys(window.eppEnEdicion).length === 0) {
-        console.error('💾 [guardarEdicionEPP] ❌ No hay EPP válido en edición:', window.eppEnEdicion);
+        console.error('💾 [guardarEdicionEPP]  No hay EPP válido en edición:', window.eppEnEdicion);
         return;
     }
     console.log('💾 [guardarEdicionEPP] ✓ EPP en edición válido');
@@ -2538,10 +2538,10 @@ async function _guardarEPPsViaAPI(pedidoId, novedad = '') {
             }
 
             const resultado = await response.json();
-            console.log(`[_guardarEPPsViaAPI] ✅ EPP "${epp.nombre_completo}" guardado:`, resultado);
+            console.log(`[_guardarEPPsViaAPI]  EPP "${epp.nombre_completo}" guardado:`, resultado);
             exitosos++;
         } catch (error) {
-            console.error(`[_guardarEPPsViaAPI] ❌ Error guardando EPP "${epp.nombre_completo}":`, error);
+            console.error(`[_guardarEPPsViaAPI]  Error guardando EPP "${epp.nombre_completo}":`, error);
             errores.push({ nombre: epp.nombre_completo, error: error.message });
         }
     }

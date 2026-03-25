@@ -3,7 +3,6 @@
 namespace App\Infrastructure\Http\Controllers;
 
 use App\Application\Pedidos\Services\PrendaEditorService;
-use App\Application\Pedidos\DTOs\PrendaEditadaDTO;
 use App\Domain\Pedidos\Services\TallaProcessorService;
 use App\Domain\Pedidos\Services\VariacionProcessorService;
 use App\Domain\Pedidos\Services\ProcesoProcessorService;

@@ -143,9 +143,9 @@ echo "=== DIAGNÓSTICO DEL SISTEMA ===\n";
 // 1. Verificar conexión a BD
 try {
     $pdo = new PDO('mysql:host=localhost;dbname=nombre_db', 'usuario', 'password');
-    echo "✅ Conexión a BD: OK\n";
+    echo " Conexión a BD: OK\n";
 } catch (Exception $e) {
-    echo "❌ Conexión a BD: " . $e->getMessage() . "\n";
+    echo " Conexión a BD: " . $e->getMessage() . "\n";
 }
 
 // 2. Verificar tabla numero_secuencias
@@ -153,12 +153,12 @@ try {
     $stmt = $pdo->query("SELECT * FROM numero_secuencias WHERE tipo = 'pedido_produccion'");
     $result = $stmt->fetch();
     if ($result) {
-        echo "✅ Tabla numero_secuencias: OK (siguiente: {$result['siguiente']})\n";
+        echo " Tabla numero_secuencias: OK (siguiente: {$result['siguiente']})\n";
     } else {
-        echo "❌ Tabla numero_secuencias: No encontrado\n";
+        echo " Tabla numero_secuencias: No encontrado\n";
     }
 } catch (Exception $e) {
-    echo "❌ Tabla numero_secuencias: " . $e->getMessage() . "\n";
+    echo " Tabla numero_secuencias: " . $e->getMessage() . "\n";
 }
 
 // 3. Verificar pedido específico
@@ -167,20 +167,20 @@ try {
     $stmt->execute([1]);
     $pedido = $stmt->fetch();
     if ($pedido) {
-        echo "✅ Pedido 1: OK (estado: {$pedido['estado']}, numero_pedido: {$pedido['numero_pedido']})\n";
+        echo " Pedido 1: OK (estado: {$pedido['estado']}, numero_pedido: {$pedido['numero_pedido']})\n";
     } else {
-        echo "❌ Pedido 1: No encontrado\n";
+        echo " Pedido 1: No encontrado\n";
     }
 } catch (Exception $e) {
-    echo "❌ Pedido 1: " . $e->getMessage() . "\n";
+    echo " Pedido 1: " . $e->getMessage() . "\n";
 }
 
 // 4. Verificar permisos de escritura
 $logFile = __DIR__ . '/storage/logs/laravel.log';
 if (is_writable($logFile)) {
-    echo "✅ Logs escribibles: OK\n";
+    echo " Logs escribibles: OK\n";
 } else {
-    echo "❌ Logs escribibles: NO\n";
+    echo " Logs escribibles: NO\n";
 }
 
 echo "=== FIN DEL DIAGNÓSTICO ===\n";

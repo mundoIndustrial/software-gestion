@@ -41,7 +41,7 @@ class PrendaEditorTelas {
             if (window.ColoresPorTalla && typeof window.ColoresPorTalla.actualizarTablaResumen === 'function') {
                 window.ColoresPorTalla.actualizarTablaResumen();
             }
-            console.log('✅ [Telas] Completado (vía tabla unificada)');
+            console.log(' [Telas] Completado (vía tabla unificada)');
             return;
         }
         
@@ -70,11 +70,11 @@ class PrendaEditorTelas {
                     tablaTelas.appendChild(fila);
                 }
                 
-                console.log(`✅ [Telas] ${idx + 1}: ${tela.nombre_tela || tela.tela_nombre || tela.tela || tela.nombre || 'Sin nombre'}`);
+                console.log(` [Telas] ${idx + 1}: ${tela.nombre_tela || tela.tela_nombre || tela.tela || tela.nombre || 'Sin nombre'}`);
             });
         }
         
-        console.log('✅ [Telas] Completado');
+        console.log(' [Telas] Completado');
     }
 
     /**
@@ -157,10 +157,10 @@ class PrendaEditorTelas {
                     reader.onload = function() {
                         img.onerror = null; // Evitar bucle infinito
                         img.src = reader.result;
-                        console.log(`[Telas] ✅ Data URL cargada exitosamente para tela ${idx}`);
+                        console.log(`[Telas]  Data URL cargada exitosamente para tela ${idx}`);
                     };
                     reader.onerror = function() {
-                        console.error(`[Telas] ❌ FileReader también falló para tela ${idx}`);
+                        console.error(`[Telas]  FileReader también falló para tela ${idx}`);
                         img.style.display = 'none';
                         tdImagen.innerHTML = '<div style="font-size: 0.75rem; color: #9ca3af;">(imagen no disponible)</div>';
                     };
@@ -174,7 +174,7 @@ class PrendaEditorTelas {
             
             // Evento de carga exitosa
             img.onload = function() {
-                console.log(`[Telas] ✅ Imagen tela ${idx} cargada exitosamente`);
+                console.log(`[Telas]  Imagen tela ${idx} cargada exitosamente`);
             };
             
             // 🔴 Asignar src DESPUÉS de configurar onerror/onload
@@ -242,7 +242,7 @@ window.eliminarTela = function(index, event) {
                 }
             }
             
-            console.log('[eliminarTela] ✅ Tallas eliminadas:', tallasEliminadas);
+            console.log('[eliminarTela]  Tallas eliminadas:', tallasEliminadas);
             
             // Actualizar el total de prendas
             if (typeof actualizarTotalPrendas === 'function') {
@@ -260,7 +260,7 @@ window.eliminarTela = function(index, event) {
         
         // Eliminar del array
         telas.splice(index, 1);
-        console.log('[eliminarTela] ✅ Tela eliminada. Telas restantes:', telas.length);
+        console.log('[eliminarTela]  Tela eliminada. Telas restantes:', telas.length);
         
         // 🚨 IMPORTANTE: Limpiar asignaciones de colores asociadas
         if (window.StateManager && typeof window.StateManager.limpiarAsignaciones === 'function') {
@@ -275,7 +275,7 @@ window.eliminarTela = function(index, event) {
         PrendaEditorTelas.cargar(prenda);
         
     } catch (error) {
-        console.error('[eliminarTela] ❌ Error:', error);
+        console.error('[eliminarTela]  Error:', error);
     }
 };
 
@@ -290,7 +290,7 @@ window.agregarTelaNueva = function() {
         const referenciaElement = document.getElementById('nueva-prenda-referencia');
         
         if (!colorElement || !telaElement || !referenciaElement) {
-            console.error('[agregarTelaNueva] ❌ Elementos del modal no encontrados');
+            console.error('[agregarTelaNueva]  Elementos del modal no encontrados');
             return false;
         }
         
@@ -303,7 +303,7 @@ window.agregarTelaNueva = function() {
         
         // 🔴 NUEVO: Validar solo tela (color y referencia son opcionales)
         if (!tela) {
-            console.warn('[agregarTelaNueva] ❌ Validación fallida: tela es requerida');
+            console.warn('[agregarTelaNueva]  Validación fallida: tela es requerida');
             alert('Por favor completa la Tela');
             return false;
         }
@@ -336,7 +336,7 @@ window.agregarTelaNueva = function() {
         
         // Agregar al array
         window.telasCreacion.push(nuevaTela);
-        console.log('[agregarTelaNueva] ✅ Tela agregada. Total:', window.telasCreacion.length);
+        console.log('[agregarTelaNueva]  Tela agregada. Total:', window.telasCreacion.length);
         
         // Limpiar campos
         colorElement.value = '';
@@ -360,7 +360,7 @@ window.agregarTelaNueva = function() {
         return true;
         
     } catch (error) {
-        console.error('[agregarTelaNueva] ❌ Error:', error);
+        console.error('[agregarTelaNueva]  Error:', error);
         return false;
     }
 };
@@ -377,9 +377,9 @@ window.probarApisTelasColores = async function() {
         
         if (responseTelas.ok) {
             const dataTelas = await responseTelas.json();
-            console.log('[probarApisTelasColores] ✅ API telas funciona:', dataTelas);
+            console.log('[probarApisTelasColores]  API telas funciona:', dataTelas);
         } else {
-            console.error('[probarApisTelasColores] ❌ API telas falló:', responseTelas.status);
+            console.error('[probarApisTelasColores]  API telas falló:', responseTelas.status);
         }
         
         // Probar API de colores
@@ -389,13 +389,13 @@ window.probarApisTelasColores = async function() {
         
         if (responseColores.ok) {
             const dataColores = await responseColores.json();
-            console.log('[probarApisTelasColores] ✅ API colores funciona:', dataColores);
+            console.log('[probarApisTelasColores]  API colores funciona:', dataColores);
         } else {
-            console.error('[probarApisTelasColores] ❌ API colores falló:', responseColores.status);
+            console.error('[probarApisTelasColores]  API colores falló:', responseColores.status);
         }
         
     } catch (error) {
-        console.error('[probarApisTelasColores] ❌ Error en prueba:', error);
+        console.error('[probarApisTelasColores]  Error en prueba:', error);
     }
 };
 
@@ -431,12 +431,12 @@ window.cargarDatalistTelasColores = async function() {
                     option.setAttribute('data-referencia', tela.referencia || '');
                     datalistTelas.appendChild(option);
                 });
-                console.log('[cargarDatalistTelasColores] ✅ Telas cargadas:', telas.length);
+                console.log('[cargarDatalistTelasColores]  Telas cargadas:', telas.length);
             } else {
                 console.warn('[cargarDatalistTelasColores] ⚠️ No se encontraron telas o datalist no existe');
             }
         } else {
-            console.error('[cargarDatalistTelasColores] ❌ Error en respuesta de telas:', responseTelas.status);
+            console.error('[cargarDatalistTelasColores]  Error en respuesta de telas:', responseTelas.status);
         }
         
         // Cargar colores
@@ -466,15 +466,15 @@ window.cargarDatalistTelasColores = async function() {
                     option.setAttribute('data-codigo', color.codigo || '');
                     datalistColores.appendChild(option);
                 });
-                console.log('[cargarDatalistTelasColores] ✅ Colores cargados:', colores.length);
+                console.log('[cargarDatalistTelasColores]  Colores cargados:', colores.length);
             } else {
                 console.warn('[cargarDatalistTelasColores] ⚠️ No se encontraron colores o datalist no existe');
             }
         } else {
-            console.error('[cargarDatalistTelasColores] ❌ Error en respuesta de colores:', responseColores.status);
+            console.error('[cargarDatalistTelasColores]  Error en respuesta de colores:', responseColores.status);
         }
     } catch (error) {
-        console.error('[cargarDatalistTelasColores] ❌ Error cargando datalist:', error);
+        console.error('[cargarDatalistTelasColores]  Error cargando datalist:', error);
     }
 };
 
@@ -541,7 +541,7 @@ window.configurarDragDropTela = function() {
         }
     });
     
-    console.log('[configurarDragDropTela] ✅ Drag & drop configurado para telas');
+    console.log('[configurarDragDropTela]  Drag & drop configurado para telas');
 };
 
 // 🔴 NUEVO: Función para configurar drag & drop en previews de procesos
@@ -565,7 +565,7 @@ window.configurarDragDropProcesos = function() {
         // Esto evita la duplicación de listeners que causa doble apertura del input
         console.log(`[configurarDragDropProcesos] 🔄 Clonando preview ${i} para eliminar listeners previos`);
         const newPreview = preview.cloneNode(true);
-        console.log(`[configurarDragDropProcesos] ✅ Preview ${i} clonado, reemplazando en DOM`);
+        console.log(`[configurarDragDropProcesos]  Preview ${i} clonado, reemplazando en DOM`);
         preview.parentNode.replaceChild(newPreview, preview);
         console.log(`[configurarDragDropProcesos] 🔄 Preview ${i} reemplazado en DOM`);
         
@@ -593,7 +593,7 @@ window.configurarDragDropProcesos = function() {
                 
                 // 🔴 BANDERA ANTI-DUPLICACIÓN
                 if (!fileInput._abiendoAhora) {
-                    console.log(`[configurarDragDropProcesos] ✅ Input ${i} no está siendo abierto, procediendo`);
+                    console.log(`[configurarDragDropProcesos]  Input ${i} no está siendo abierto, procediendo`);
                     fileInput._abiendoAhora = true;
                     fileInput.click();
                     console.log(`[configurarDragDropProcesos] 🎯 Click ejecutado en input ${i}`);
@@ -606,11 +606,11 @@ window.configurarDragDropProcesos = function() {
                     console.warn(`[configurarDragDropProcesos] ⚠️ Input ${i} ya está siendo abierto, IGNORANDO`);
                 }
             } else {
-                console.error(`[configurarDragDropProcesos] ❌ Input file ${i} NO encontrado`);
+                console.error(`[configurarDragDropProcesos]  Input file ${i} NO encontrado`);
             }
         });
         
-        console.log(`[configurarDragDropProcesos] ✅ Listener CLICK agregado a preview ${i}`);
+        console.log(`[configurarDragDropProcesos]  Listener CLICK agregado a preview ${i}`);
         
         // Drag over
         newPreview.addEventListener('dragover', (e) => {
@@ -677,10 +677,10 @@ window.configurarDragDropProcesos = function() {
             }
         });
         
-        console.log(`[configurarDragDropProcesos] ✅ Todos los listeners agregados a preview ${i}`);
+        console.log(`[configurarDragDropProcesos]  Todos los listeners agregados a preview ${i}`);
     }
     
-    console.log('[configurarDragDropProcesos] ✅ FIN - Drag & drop configurado para procesos');
+    console.log('[configurarDragDropProcesos]  FIN - Drag & drop configurado para procesos');
     console.log('[configurarDragDropProcesos] 📊 Timestamp final:', new Date().toISOString());
 };
 

@@ -101,7 +101,7 @@ Si ves en el resumen:
 
 ---
 
-## 🛠️ Documentación Completa
+##  Documentación Completa
 
 ### 📖 Archivos de Documentación
 1. **LOGS_QUICK_START.md** ← Empieza aquí (5 min)

@@ -166,7 +166,7 @@ function abrirModalEditarEPP(eppData) {
         
         if (indiceEPPEnEdicion !== -1) {
             eppEncontrado = { ...window.itemsPedido[indiceEPPEnEdicion] };
-            console.log('[abrirModalEditarEPP] ✅ EPP encontrado en window.itemsPedido:', eppEncontrado);
+            console.log('[abrirModalEditarEPP]  EPP encontrado en window.itemsPedido:', eppEncontrado);
         }
     }
     
@@ -190,7 +190,7 @@ function abrirModalEditarEPP(eppData) {
         
         if (indiceEPPEnEdicion !== -1) {
             eppEncontrado = { ...eppAgregadosList[indiceEPPEnEdicion] };
-            console.log('[abrirModalEditarEPP] ✅ EPP encontrado en eppAgregadosList:', eppEncontrado);
+            console.log('[abrirModalEditarEPP]  EPP encontrado en eppAgregadosList:', eppEncontrado);
         }
     }
     
@@ -316,7 +316,7 @@ function abrirModalEditarEPP(eppData) {
                 }
                 
                 if (pegadasOk > 0) {
-                    console.log('[modalEditarEPP] ✅ Imágenes pegadas via Ctrl+V:', pegadasOk);
+                    console.log('[modalEditarEPP]  Imágenes pegadas via Ctrl+V:', pegadasOk);
                     mostrarFotosEnModalEditar();
                 }
             }
@@ -428,13 +428,13 @@ function seleccionarEPPEnEdicion(epp) {
         
         if (indiceEncontrado !== -1) {
             eppEncontrado = window.itemsPedido[indiceEncontrado];
-            console.log('[seleccionarEPPEnEdicion] ✅ EPP encontrado en window.itemsPedido:', eppEncontrado);
+            console.log('[seleccionarEPPEnEdicion]  EPP encontrado en window.itemsPedido:', eppEncontrado);
         }
     }
     
     // Si el EPP NO está en el pedido, mostrar error
     if (!eppEncontrado) {
-        console.warn('[seleccionarEPPEnEdicion] ❌ El EPP seleccionado no está agregado al pedido');
+        console.warn('[seleccionarEPPEnEdicion]  El EPP seleccionado no está agregado al pedido');
         
         // Mostrar alerta amigable
         if (window.Swal) {
@@ -563,7 +563,7 @@ function mostrarFotosEnModalEditar() {
         const errorDiv = document.createElement('div');
         errorDiv.className = 'absolute inset-0 flex items-center justify-center bg-red-50';
         errorDiv.style.display = 'none';
-        errorDiv.innerHTML = '<div style="text-center;"><div style="font-size: 2rem; margin-bottom: 0.5rem;">❌</div><div style="font-size: 0.75rem; color: #666;">Error cargando</div></div>';
+        errorDiv.innerHTML = '<div style="text-center;"><div style="font-size: 2rem; margin-bottom: 0.5rem;"></div><div style="font-size: 0.75rem; color: #666;">Error cargando</div></div>';
         
         // Evento cuando la imagen carga exitosamente
         img.onload = function() {
@@ -751,7 +751,7 @@ function guardarEdicionEnModalEditarEPP() {
             
             index = indiceEPPEnEdicion;
             targetList = window.itemsPedido;
-            console.log('[guardarEdicionEnModalEditarEPP] ✅ Usando índice guardado:', index, '- EPP verificado');
+            console.log('[guardarEdicionEnModalEditarEPP]  Usando índice guardado:', index, '- EPP verificado');
         }
     }
     
@@ -795,7 +795,7 @@ function guardarEdicionEnModalEditarEPP() {
         
         if (index !== -1) {
             targetList = eppAgregadosList;
-            console.log('[guardarEdicionEnModalEditarEPP] ✅ EPP encontrado en eppAgregadosList, índice:', index);
+            console.log('[guardarEdicionEnModalEditarEPP]  EPP encontrado en eppAgregadosList, índice:', index);
         } else {
             console.log('[guardarEdicionEnModalEditarEPP] EPP no encontrado en eppAgregadosList, buscando en window.itemsPedido...');
         }
@@ -840,7 +840,7 @@ function guardarEdicionEnModalEditarEPP() {
         
         if (index !== -1) {
             targetList = window.itemsPedido;
-            console.log('[guardarEdicionEnModalEditarEPP] ✅ EPP encontrado en window.itemsPedido, índice:', index);
+            console.log('[guardarEdicionEnModalEditarEPP]  EPP encontrado en window.itemsPedido, índice:', index);
         }
     }
     
@@ -868,7 +868,7 @@ function guardarEdicionEnModalEditarEPP() {
         
         if (index !== -1) {
             targetList = eppAgregadosList;
-            console.log('[guardarEdicionEnModalEditarEPP] ✅ EPP encontrado en eppAgregadosList, índice:', index);
+            console.log('[guardarEdicionEnModalEditarEPP]  EPP encontrado en eppAgregadosList, índice:', index);
         }
     }
     
@@ -895,7 +895,7 @@ function guardarEdicionEnModalEditarEPP() {
             targetList[index].nombre_completo = eppEnEdicionIndividual.nombre_completo;
         }
         
-        console.log('[guardarEdicionEnModalEditarEPP] ✅ EPP actualizado correctamente:', {
+        console.log('[guardarEdicionEnModalEditarEPP]  EPP actualizado correctamente:', {
             lista: targetList === window.itemsPedido ? 'window.itemsPedido' : 'eppAgregadosList',
             indice: index,
             antes: eppAntes,
@@ -941,7 +941,7 @@ function guardarEdicionEnModalEditarEPP() {
             }
             
             if (eppEnLista) {
-                console.log('[guardarEdicionEnModalEditarEPP] ✅ EPP encontrado en eppAgregadosList, sincronizando...');
+                console.log('[guardarEdicionEnModalEditarEPP]  EPP encontrado en eppAgregadosList, sincronizando...');
                 eppEnLista.cantidad = cantidad;
                 eppEnLista.observaciones = observaciones;
                 eppEnLista.imagenes = fotosEnEdicionIndividual;
@@ -950,7 +950,7 @@ function guardarEdicionEnModalEditarEPP() {
                     eppEnLista.nombre_epp = eppEnEdicionIndividual.nombre_completo;
                     eppEnLista.nombre_completo = eppEnEdicionIndividual.nombre_completo;
                 }
-                console.log('[guardarEdicionEnModalEditarEPP] ✅ eppAgregadosList sincronizado');
+                console.log('[guardarEdicionEnModalEditarEPP]  eppAgregadosList sincronizado');
                 
                 // SINCRONIZACIÓN CRÍTICA: También actualizar window.gestionItemsUI.epps (usado por el renderer)
                 if (window.gestionItemsUI && window.gestionItemsUI.epps && Array.isArray(window.gestionItemsUI.epps)) {
@@ -970,7 +970,7 @@ function guardarEdicionEnModalEditarEPP() {
                             eppEnGestión.nombre_epp = eppEnEdicionIndividual.nombre_completo;
                             eppEnGestión.nombre_completo = eppEnEdicionIndividual.nombre_completo;
                         }
-                        console.log('[guardarEdicionEnModalEditarEPP] ✅ window.gestionItemsUI.epps sincronizado');
+                        console.log('[guardarEdicionEnModalEditarEPP]  window.gestionItemsUI.epps sincronizado');
                     }
                 }
                 
@@ -1003,7 +1003,7 @@ function guardarEdicionEnModalEditarEPP() {
                     eppEnItemsPedido.nombre_epp = eppEnEdicionIndividual.nombre_completo;
                     eppEnItemsPedido.nombre_completo = eppEnEdicionIndividual.nombre_completo;
                 }
-                console.log('[guardarEdicionEnModalEditarEPP] ✅ window.itemsPedido sincronizado');
+                console.log('[guardarEdicionEnModalEditarEPP]  window.itemsPedido sincronizado');
             }
         }
         
@@ -1015,7 +1015,7 @@ function guardarEdicionEnModalEditarEPP() {
                 observaciones: observaciones,
                 imagenes: fotosEnEdicionIndividual
             });
-            console.log('[guardarEdicionEnModalEditarEPP] ✅ Tarjeta visual actualizada en DOM:', tarjetaEppIdEnEdicion);
+            console.log('[guardarEdicionEnModalEditarEPP]  Tarjeta visual actualizada en DOM:', tarjetaEppIdEnEdicion);
         } else {
             console.warn('[guardarEdicionEnModalEditarEPP] ⚠️ No hay tarjetaId para actualizar la tarjeta visual');
         }
@@ -1026,7 +1026,7 @@ function guardarEdicionEnModalEditarEPP() {
                 console.log('[guardarEdicionEnModalEditarEPP] Llamando a itemRenderer para re-renderizar tarjetas...');
                 const itemsOrdenados = window.gestionItemsUI.obtenerItemsOrdenados();
                 window.gestionItemsUI.renderer.actualizar(itemsOrdenados).then(() => {
-                    console.log('[guardarEdicionEnModalEditarEPP] ✅ Tarjetas re-renderizadas exitosamente');
+                    console.log('[guardarEdicionEnModalEditarEPP]  Tarjetas re-renderizadas exitosamente');
                     cerrarModalEditarEPP();
                 }).catch(error => {
                     console.error('[guardarEdicionEnModalEditarEPP] Error al re-renderizar:', error);
@@ -1041,7 +1041,7 @@ function guardarEdicionEnModalEditarEPP() {
             cerrarModalEditarEPP();
         }
     } else {
-        console.error('[guardarEdicionEnModalEditarEPP] ❌ No se encontró el EPP en ninguna lista', {
+        console.error('[guardarEdicionEnModalEditarEPP]  No se encontró el EPP en ninguna lista', {
             indiceCalculado: index,
             eppEnEdicion: eppEnEdicionIndividual,
             eppAgregadosListLength: eppAgregadosList.length,
@@ -1070,7 +1070,7 @@ function guardarEdicionEnModalEditarEPP() {
             });
             
             if (index !== -1) {
-                console.log('[guardarEdicionEnModalEditarEPP] ✅ EPP encontrado en reintento por nombre flexible');
+                console.log('[guardarEdicionEnModalEditarEPP]  EPP encontrado en reintento por nombre flexible');
                 targetList = window.itemsPedido;
                 
                 // Actualizar datos en la lista encontrada
@@ -1081,7 +1081,7 @@ function guardarEdicionEnModalEditarEPP() {
                     targetList[index].observaciones = observaciones;
                     targetList[index].imagenes = fotosEnEdicionIndividual;
                     
-                    console.log('[guardarEdicionEnModalEditarEPP] ✅ EPP actualizado correctamente en reintento:', {
+                    console.log('[guardarEdicionEnModalEditarEPP]  EPP actualizado correctamente en reintento:', {
                         lista: 'window.itemsPedido',
                         indice: index,
                         antes: eppAntes,
@@ -1095,7 +1095,7 @@ function guardarEdicionEnModalEditarEPP() {
                         console.log('[guardarEdicionEnModalEditarEPP] Llamando a itemRenderer para re-renderizar tarjetas (reintento)...');
                         const itemsOrdenados = window.gestionItemsUI.obtenerItemsOrdenados();
                         window.gestionItemsUI.renderer.actualizar(itemsOrdenados).then(() => {
-                            console.log('[guardarEdicionEnModalEditarEPP] ✅ Tarjetas re-renderizadas exitosamente (reintento)');
+                            console.log('[guardarEdicionEnModalEditarEPP]  Tarjetas re-renderizadas exitosamente (reintento)');
                             cerrarModalEditarEPP();
                         }).catch(error => {
                             console.error('[guardarEdicionEnModalEditarEPP] Error al re-renderizar (reintento):', error);
@@ -1227,7 +1227,7 @@ function actualizarTarjetaEPPEnDOM(tarjetaId, datos) {
             }
         }
         
-        console.log('[actualizarTarjetaEPPEnDOM] ✅ Tarjeta actualizada correctamente');
+        console.log('[actualizarTarjetaEPPEnDOM]  Tarjeta actualizada correctamente');
     } catch (error) {
         console.error('[actualizarTarjetaEPPEnDOM] Error actualizando tarjeta:', error);
     }

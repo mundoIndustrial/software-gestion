@@ -208,12 +208,12 @@ function initializeOrdenesRealtimeListeners() {
                     }
                 });
             } catch (error) {
-                console.error('[Realtime Orders] ❌ Error subscribiendo a ordenes/OrdenUpdated:', error);
+                console.error('[Realtime Orders]  Error subscribiendo a ordenes/OrdenUpdated:', error);
             }
 
         });
     } catch (error) {
-        console.error('[Realtime Orders] ❌ Error inicializando listeners:', error);
+        console.error('[Realtime Orders]  Error inicializando listeners:', error);
     }
 }
 

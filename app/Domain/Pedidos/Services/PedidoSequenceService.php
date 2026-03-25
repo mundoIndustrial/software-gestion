@@ -11,21 +11,35 @@ class PedidoSequenceService
 {
     /**
      * Generar el siguiente numero de pedido
-     * @return int
      */
     public function generarNumeroPedido(): int
     {
+        $tipo = 'pedido_produccion';
+
         $secuenciaRow = DB::table('numero_secuencias')
-            ->where('tipo', 'pedido_produccion')
+            ->where('tipo', $tipo)
             ->lockForUpdate()
             ->first();
-        
-        $numeroPedido = $secuenciaRow?->siguiente ?? 45709;
-        
-        // Incrementar secuencia para el próximo pedido
+
+        $numeroPedido = (int) ($secuenciaRow?->siguiente ?? 45709);
+
+        if (!$secuenciaRow) {
+            DB::table('numero_secuencias')->insert([
+                'tipo' => $tipo,
+                'siguiente' => $numeroPedido + 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            return $numeroPedido;
+        }
+
         DB::table('numero_secuencias')
-            ->where('tipo', 'pedido_produccion')
-            ->increment('siguiente');
+            ->where('tipo', $tipo)
+            ->update([
+                'siguiente' => $numeroPedido + 1,
+                'updated_at' => now(),
+            ]);
 
         return $numeroPedido;
     }

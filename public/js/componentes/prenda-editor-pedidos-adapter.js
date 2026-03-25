@@ -24,7 +24,7 @@
 (function() {
     'use strict';
 
-    console.log('[PedidosAdapter] ✅ Cargado');
+    console.log('[PedidosAdapter]  Cargado');
 
     // Detectar contexto: supervisor vs asesor basado en la URL actual
     function _getUrlPrefix() {
@@ -43,7 +43,7 @@
             window.prendaEditorGlobal = new PrendaEditor({
                 modalId: 'modal-agregar-prenda-nueva'
             });
-            console.log('[PedidosAdapter] ✅ prendaEditorGlobal creado');
+            console.log('[PedidosAdapter]  prendaEditorGlobal creado');
         }
     }
 
@@ -87,7 +87,7 @@
             }
             input.value = '';
         };
-        console.log('[PedidosAdapter] ✅ manejarImagenesPrenda definida (fallback)');
+        console.log('[PedidosAdapter]  manejarImagenesPrenda definida (fallback)');
     }
 
     if (typeof window.actualizarPreviewPrenda !== 'function') {
@@ -128,7 +128,7 @@
             const btn = document.getElementById('nueva-prenda-foto-btn');
             if (btn) btn.style.display = imagenes.length < 3 ? 'block' : 'none';
         };
-        console.log('[PedidosAdapter] ✅ actualizarPreviewPrenda definida (fallback)');
+        console.log('[PedidosAdapter]  actualizarPreviewPrenda definida (fallback)');
     }
 
     // ====================================================
@@ -484,7 +484,7 @@
                         
                         // 🔴 PASO 1: Usar imagenes_existentes explícitamente si está disponible (desde modal por tallas/general)
                         if (d.imagenes_existentes && Array.isArray(d.imagenes_existentes)) {
-                            console.log(`[PedidosAdapter] ✅ Usando imagenes_existentes explícitas para ${tipo}:`, d.imagenes_existentes.length, 'imágenes');
+                            console.log(`[PedidosAdapter]  Usando imagenes_existentes explícitas para ${tipo}:`, d.imagenes_existentes.length, 'imágenes');
                             d.imagenes_existentes.forEach(img => {
                                 const url = img.url || img.ruta_original || img.ruta_webp || img.ruta || img.previewUrl || '';
                                 const id = img.id || null;
@@ -555,7 +555,7 @@
                                         ruta_webp: img.ruta_webp || ''
                                     };
                                     imagenesAEliminar.push(imagenAEliminar);
-                                    console.log(`[PedidosAdapter] ✅ Objeto AGREGADO a imagenesAEliminar:`, imagenAEliminar);
+                                    console.log(`[PedidosAdapter]  Objeto AGREGADO a imagenesAEliminar:`, imagenAEliminar);
                                 } else {
                                     console.log(`[PedidosAdapter] ⚠️ IMAGEN RECHAZADA - sin ID ni ruta:`, img);
                                 }
@@ -714,7 +714,7 @@
             }
 
             const result = await response.json();
-            console.log('[PedidosAdapter] ✅ Prenda guardada:', result);
+            console.log('[PedidosAdapter]  Prenda guardada:', result);
 
             // Actualizar datos locales con la respuesta real del backend
             if (window.datosEdicionPedido?.prendas && prendaIndex !== null && prendaIndex !== undefined) {
@@ -738,7 +738,7 @@
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'success',
-                    title: '✅ Prenda actualizada',
+                    title: ' Prenda actualizada',
                     text: 'Los cambios se guardaron correctamente',
                     timer: 1800,
                     showConfirmButton: false,
@@ -886,7 +886,7 @@
                         // ===== NORMALIZAR formato BD → formato loaders =====
                         prendaCompleta = _normalizarDatosBD(prendaCompleta);
 
-                        console.log('[PedidosAdapter] ✅ Datos completos de BD (normalizados):', {
+                        console.log('[PedidosAdapter]  Datos completos de BD (normalizados):', {
                             nombre: prendaCompleta.nombre_prenda || prendaCompleta.nombre,
                             cantidad_talla: prendaCompleta.cantidad_talla ? Object.keys(prendaCompleta.cantidad_talla) : [],
                             variantes: prendaCompleta.variantes,
@@ -1453,7 +1453,7 @@
             }
 
             const result = await response.json();
-            console.log('[PedidosAdapter] ✅ Prenda eliminada:', result);
+            console.log('[PedidosAdapter]  Prenda eliminada:', result);
 
             // Actualizar datos locales
             if (window.datosEdicionPedido?.prendas && prendaIndex !== null && prendaIndex !== undefined) {
@@ -1465,7 +1465,7 @@
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'success',
-                    title: '✅ Prenda eliminada',
+                    title: ' Prenda eliminada',
                     text: 'La prenda se elimió y se registró el motivo en novedades del pedido',
                     timer: 1800,
                     showConfirmButton: false,

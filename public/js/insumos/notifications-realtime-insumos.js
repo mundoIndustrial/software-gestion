@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     });
                 } catch (error) {
-                    console.error('[Realtime Insumos] ❌ Error subscribiendo a supervisor-pedidos:', error);
+                    console.error('[Realtime Insumos]  Error subscribiendo a supervisor-pedidos:', error);
                 }
 
                 // ==========================================
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     });
                 } catch (error) {
-                    console.error('[Realtime Insumos] ❌ Error subscribiendo a ordenes/.orden.updated:', error);
+                    console.error('[Realtime Insumos]  Error subscribiendo a ordenes/.orden.updated:', error);
                 }
 
                 try {
@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     });
                 } catch (error) {
-                    console.error('[Realtime Insumos] ❌ Error subscribiendo a ordenes/orden.updated:', error);
+                    console.error('[Realtime Insumos]  Error subscribiendo a ordenes/orden.updated:', error);
                 }
 
                 try {
@@ -151,11 +151,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     });
                 } catch (error) {
-                    console.error('[Realtime Insumos] ❌ Error subscribiendo a ordenes/OrdenUpdated:', error);
+                    console.error('[Realtime Insumos]  Error subscribiendo a ordenes/OrdenUpdated:', error);
                 }
 
         } catch (error) {
-            console.error('[Realtime Insumos] ❌ Error inicializando listener:', error);
+            console.error('[Realtime Insumos]  Error inicializando listener:', error);
         }
     };
 

@@ -764,7 +764,7 @@ async function procederEnviarCotizacion(esBorrador = false) {
         // Diagnóstico útil para 4xx/5xx (especialmente 422)
         try {
             if (!response.ok) {
-                console.error('❌ Error HTTP al guardar cotización', {
+                console.error(' Error HTTP al guardar cotización', {
                     status: response.status,
                     statusText: response.statusText,
                     response: data

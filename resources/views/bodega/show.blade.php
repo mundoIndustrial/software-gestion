@@ -1129,7 +1129,7 @@ function abrirModalHomologacionBodega(eppId) {
                 <div class="space-y-6">
                     <!-- EPP Anterior -->
                     <div class="border border-red-300 bg-red-50 rounded-lg p-4">
-                        <h3 class="font-bold text-red-900 mb-3 text-lg">❌ EPP Anterior (Eliminado)</h3>
+                        <h3 class="font-bold text-red-900 mb-3 text-lg"> EPP Anterior (Eliminado)</h3>
                         <div class="grid grid-cols-2 gap-3 text-sm">
                             <div class="bg-white p-2 rounded border border-red-200">
                                 <span class="text-slate-600">ID:</span>
@@ -1158,7 +1158,7 @@ function abrirModalHomologacionBodega(eppId) {
 
                     <!-- EPP Nuevo -->
                     <div class="border border-green-300 bg-green-50 rounded-lg p-4">
-                        <h3 class="font-bold text-green-900 mb-3 text-lg">✅ EPP Nuevo (Actual)</h3>
+                        <h3 class="font-bold text-green-900 mb-3 text-lg"> EPP Nuevo (Actual)</h3>
                         <div class="grid grid-cols-2 gap-3 text-sm">
                             <div class="bg-white p-2 rounded border border-green-200">
                                 <span class="text-slate-600">ID:</span>

@@ -296,7 +296,7 @@ class InvoiceFromListOrchestrator {
         }
         
         // Verificar funciones globales
-        console.log('\n🛠️ Funciones globales:');
+        console.log('\n Funciones globales:');
         const funciones = [
             'verFacturaDelPedido',
             'verRecibosDelPedido',

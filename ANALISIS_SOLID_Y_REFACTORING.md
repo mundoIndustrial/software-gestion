@@ -9,10 +9,10 @@
 ## 📊 Estado Actual
 
 ### Fortalezas Existentes
-- ✅ **DDD Layer Separation:** Domain/Infrastructure/Application claramente delimitados
-- ✅ **9 Helper Functions** extraídas y reutilizables
-- ✅ **Centralización API:** OrderApiService con 8 métodos
-- ✅ **Modal utilities:** ModalUtils consolidado
+-  **DDD Layer Separation:** Domain/Infrastructure/Application claramente delimitados
+-  **9 Helper Functions** extraídas y reutilizables
+-  **Centralización API:** OrderApiService con 8 métodos
+-  **Modal utilities:** ModalUtils consolidado
 
 ### Debilidades Identificadas (SOLID violations)
 
@@ -655,7 +655,7 @@ class ProcessDeleteService {
 // Fácil de testear: inyectar mocks
 const mockRepository = { delete: () => Promise.resolve() };
 const service = new ProcessDeleteService(mockRepository, {}, {});
-await service.execute(123); // ✅ Funciona sin DOM, OrderApiService, etc.
+await service.execute(123); //  Funciona sin DOM, OrderApiService, etc.
 
 // Fácil de extender: agregar nuevos servicios
 // Fácil de mantener: cada cosa en su lugar

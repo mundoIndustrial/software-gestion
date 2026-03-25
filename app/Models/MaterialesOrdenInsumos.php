@@ -125,7 +125,7 @@ class MaterialesOrdenInsumos extends Model
                 // Cachear por 30 días
                 \Cache::put($cacheKey, $festivos, now()->addDays(30));
                 
-                \Log::info("✅ Festivos obtenidos de API para {$year}: " . count($festivos) . " festivos");
+                \Log::info(" Festivos obtenidos de API para {$year}: " . count($festivos) . " festivos");
                 return $festivos;
             } else {
                 \Log::warning("API respondió con status {$response->status()} para {$year}");

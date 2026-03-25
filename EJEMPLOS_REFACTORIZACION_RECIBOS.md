@@ -1,12 +1,12 @@
 # 🔧 EJEMPLOS DE REFACTORIZACIÓN - recibos-costura.blade.php
 
-> Antes (❌ Actual) vs Después (✅ Propuesto)
+> Antes ( Actual) vs Después ( Propuesto)
 
 ---
 
 ## 1. FILTRADO DE RECIBOS
 
-### ❌ ANTES - Lógica mezclada en Blade.js
+###  ANTES - Lógica mezclada en Blade.js
 
 ```javascript
 function getDynamicFilterOptions(filterType) {
@@ -55,7 +55,7 @@ window.applyFilters = function() {
 };
 ```
 
-### ✅ DESPUÉS - Con DDD
+###  DESPUÉS - Con DDD
 
 **1. Value Object para Filtro:**
 ```typescript
@@ -262,7 +262,7 @@ export class RecibosTableViewModel {
 
 ## 2. AGREGAR PROCESO
 
-### ❌ ANTES - Responsabilidades mezcladas
+###  ANTES - Responsabilidades mezcladas
 
 ```javascript
 async function handleAgregarProcesoDesdeBadge() {
@@ -324,7 +324,7 @@ async function handleAgregarProcesoDesdeBadge() {
 }
 ```
 
-### ✅ DESPUÉS - Separación de responsabilidades
+###  DESPUÉS - Separación de responsabilidades
 
 **1. Command (Caso de Uso):**
 ```typescript
@@ -633,7 +633,7 @@ export class ProcesoCosturaViewModel {
 
 ## 3. COMPARACIÓN ARQUITECTÓNICA
 
-| Aspecto | ❌ Actual | ✅ Propuesto |
+| Aspecto |  Actual |  Propuesto |
 |--------|---------|-----------|
 | **Líneas de JS en Blade** | 2000+ | < 50 |
 | **Testing** | Imposible | 95%+ cobertura |
@@ -641,7 +641,7 @@ export class ProcesoCosturaViewModel {
 | **Mantenibilidad** | Muy difícil | Fácil |
 | **Deuda técnica** | Crítica | Nula |
 | **Acoplamiento** | Alto (DOM, API, Estado) | Bajo (Inyección de dependencias) |
-| **Performance** | ❓ | ✅ Medible |
+| **Performance** | ❓ |  Medible |
 
 ---
 

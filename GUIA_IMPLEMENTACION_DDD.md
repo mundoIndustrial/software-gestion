@@ -437,7 +437,7 @@ php artisan migrate:rollback
 ## 📈 Roadmap Futuro
 
 **Mes 1:**
-- ✅ Implementar UseCases de Orders
+-  Implementar UseCases de Orders
 - ⏳ Tests completos
 - ⏳ Deploy a staging
 

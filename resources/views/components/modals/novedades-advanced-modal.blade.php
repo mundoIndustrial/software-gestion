@@ -269,7 +269,7 @@ async function cargarNovedadesAdvanced(pedidoId) {
         container.innerHTML = `
             <div class="flex justify-center items-center py-8">
                 <div class="text-center">
-                    <span class="text-red-500 text-lg">❌ Error al cargar novedades</span>
+                    <span class="text-red-500 text-lg"> Error al cargar novedades</span>
                     <p class="text-slate-400 text-sm mt-2">Por favor, intenta nuevamente</p>
                 </div>
             </div>
@@ -483,7 +483,7 @@ async function agregarNuevaNovedad(texto) {
     }
     
     // Mostrar notificación de éxito
-    showNotification('✅ Novedad agregada correctamente', 'success');
+    showNotification(' Novedad agregada correctamente', 'success');
     
     // Actualizar la tabla principal
     updateRowNovedades(currentPedidoId, data.data.novedades);
@@ -528,7 +528,7 @@ async function actualizarNovedad(novedadId, nuevoTexto) {
     }
     
     // Mostrar notificación de éxito
-    showNotification('✅ Novedad actualizada correctamente', 'success');
+    showNotification(' Novedad actualizada correctamente', 'success');
     
     // Actualizar la tabla principal
     updateRowNovedades(currentPedidoId, data.data.novedades);
@@ -571,7 +571,7 @@ async function eliminarNovedad(novedadId) {
         }
         
         // Mostrar notificación y recargar
-        showNotification('✅ Novedad eliminada correctamente', 'success');
+        showNotification(' Novedad eliminada correctamente', 'success');
         updateRowNovedades(currentPedidoId, data.data.novedades);
         renderizarNovedades();
         

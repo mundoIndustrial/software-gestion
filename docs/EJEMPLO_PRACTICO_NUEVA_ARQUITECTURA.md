@@ -384,7 +384,7 @@ describe('WizardNewArchitecture', () => {
 // ============================================================
 
 /*
-✅ ANTES DE MIGRACIÓN:
+ ANTES DE MIGRACIÓN:
 - Flag global mágico: window.evitarInicializacionWizard
 - Listeners acumulados sin limpieza clara
 - Estados implícitos (¿dónde está el estado real?)
@@ -393,7 +393,7 @@ describe('WizardNewArchitecture', () => {
 - Testing imposible sin mocks complejos
 - Debugging lento y manual
 
-✅ DESPUÉS DE MIGRACIÓN:
+ DESPUÉS DE MIGRACIÓN:
 - Máquina de estados clara y validada
 - Listeners registrados y removidos explícitamente
 - Estados en stateMachine (una fuente de verdad)

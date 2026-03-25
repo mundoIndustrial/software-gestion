@@ -111,4 +111,69 @@ class PedidoProduccionRepository
 
         return null;
     }
+
+    /**
+     * Obtener pedido por ID o número de pedido
+     * @param string|int $identificador ID numérico o número de pedido
+     */
+    public function obtenerPorIdONumero($identificador): ?PedidoProduccion
+    {
+        if (is_numeric($identificador)) {
+            $pedido = PedidoProduccion::where('id', $identificador)->first();
+            if ($pedido) {
+                return $pedido;
+            }
+        }
+
+        return PedidoProduccion::where('numero_pedido', $identificador)->first();
+    }
+
+    /**
+     * Obtener pedido por ID
+     */
+    public function obtenerPorId(int $id): ?PedidoProduccion
+    {
+        return PedidoProduccion::find($id);
+    }
+
+    /**
+     * Obtener pedido por número
+     */
+    public function obtenerPorNumero(string $numero): ?PedidoProduccion
+    {
+        return PedidoProduccion::where('numero_pedido', $numero)->first();
+    }
+
+    /**
+     * Obtener pedido sin número (el más reciente)
+     */
+    public function obtenerSinNumero(): ?PedidoProduccion
+    {
+        return PedidoProduccion::whereNull('numero_pedido')
+            ->orWhere('numero_pedido', '')
+            ->orderBy('id', 'desc')
+            ->first();
+    }
+
+    /**
+     * Obtener descripción de prendas de un pedido
+     */
+    public function obtenerDescripcionPrendas(string $numeroPedido): ?string
+    {
+        $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)
+            ->orWhere('id', $numeroPedido)
+            ->first();
+
+        return $pedido ? ($pedido->descripcion_prendas ?? '') : null;
+    }
+
+    /**
+     * Obtener festivos para cálculos
+     */
+    public function obtenerFestivos(): array
+    {
+        return DB::table('festivos')
+            ->pluck('fecha')
+            ->toArray();
+    }
 }

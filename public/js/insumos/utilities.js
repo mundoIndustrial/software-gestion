@@ -170,7 +170,7 @@ const FESTIVOS_COLOMBIA = {
             
             // Cachear por 30 días
             localStorage.setItem(cacheKey, JSON.stringify(festivos));
-            console.log(`[Festivos] ✅ Obtenidos ${festivos.length} festivos desde API`);
+            console.log(`[Festivos]  Obtenidos ${festivos.length} festivos desde API`);
             
             return festivos;
         } catch (error) {
@@ -273,7 +273,7 @@ async function inicializarFestivos() {
             FESTIVOS_COLOMBIA.obtenerConFallback(anoProximo)
         ]);
         
-        console.log('[Festivos] ✅ Sistema inicializado');
+        console.log('[Festivos]  Sistema inicializado');
     } catch (error) {
         console.warn('[Festivos] Error en inicialización (usando locales):', error.message);
     }

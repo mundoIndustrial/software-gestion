@@ -141,3 +141,5 @@ class OrderLoaderService {
     }
   }
 }
+
+export { OrderLoaderService };

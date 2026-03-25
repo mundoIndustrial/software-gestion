@@ -86,7 +86,7 @@ class DragDropManager {
     inicializar() {
         // Guard clause real: SI ya inicializado, SALIR completamente
         if (this.inicializado) {
-            UIHelperService.log('DragDropManager', '✅ Ya inicializado, ignorando llamada duplicada', 'info');
+            UIHelperService.log('DragDropManager', ' Ya inicializado, ignorando llamada duplicada', 'info');
             return this;  // ← Retorna AQUÍ, no continúa con el código abajo
         }
 
@@ -94,7 +94,7 @@ class DragDropManager {
 
         // Verificar dependencias antes de crear instancias
         if (!window.PrendaDragDropHandler || !window.TelaDragDropHandler || !window.ProcesoDragDropHandler) {
-            UIHelperService.log('DragDropManager', '❌ Dependencias no disponibles:', 'error');
+            UIHelperService.log('DragDropManager', ' Dependencias no disponibles:', 'error');
             UIHelperService.log('DragDropManager', `- PrendaDragDropHandler: ${!!window.PrendaDragDropHandler}`);
             UIHelperService.log('DragDropManager', `- TelaDragDropHandler: ${!!window.TelaDragDropHandler}`);
             UIHelperService.log('DragDropManager', `- ProcesoDragDropHandler: ${!!window.ProcesoDragDropHandler}`);
@@ -114,10 +114,10 @@ class DragDropManager {
         this._inicializarTelas();
         this._inicializarProcesos();
 
-        // ✅ MARCAR como inicializado SOLO al final
+        //  MARCAR como inicializado SOLO al final
         this.inicializado = true;
         
-        console.log('[DragDropManager] ✅ Sistema de drag & drop inicializado correctamente');
+        console.log('[DragDropManager]  Sistema de drag & drop inicializado correctamente');
         return this;
     }
 
@@ -384,10 +384,10 @@ class DragDropManager {
                 let seleccionado = modalesVisibles[0];
                 preview = seleccionado.preview;
                 modal = seleccionado.modal;
-                UIHelperService.log('DragDropManager', `✅ Modal seleccionado: ${seleccionado.tipo} (prioridad: ${seleccionado.prioridad})`);
+                UIHelperService.log('DragDropManager', ` Modal seleccionado: ${seleccionado.tipo} (prioridad: ${seleccionado.prioridad})`);
             } else {
                 // Si no hay modales visibles, mostrar advertencia y no procesar
-                UIHelperService.log('DragDropManager', `❌ No hay modales visibles. Modales evaluados:`, modalesCandidatos.map(m => `${m.tipo}:${m.visible}`));
+                UIHelperService.log('DragDropManager', ` No hay modales visibles. Modales evaluados:`, modalesCandidatos.map(m => `${m.tipo}:${m.visible}`));
                 return;
             }
             
@@ -399,7 +399,7 @@ class DragDropManager {
                 return;
             }
             
-            UIHelperService.log('DragDropManager', '✅ Procesando pegado global...');
+            UIHelperService.log('DragDropManager', ' Procesando pegado global...');
             
             // Obtener items del portapapeles
             const items = e.clipboardData.items;
@@ -439,7 +439,7 @@ class DragDropManager {
                 
                 // Verificar si es una imagen
                 if (item.kind === 'file' && item.type.startsWith('image/')) {
-                    UIHelperService.log('DragDropManager', `✅ Imagen encontrada: ${item.type}`);
+                    UIHelperService.log('DragDropManager', ` Imagen encontrada: ${item.type}`);
                     
                     // Obtener el archivo
                     const file = item.getAsFile();
@@ -580,11 +580,11 @@ class DragDropManager {
                         
                         // Usar la función de manejo correcta
                         if (typeof funcionManejo === 'function') {
-                            UIHelperService.log('DragDropManager', `✅ Llamando a manejarImagen${handlerCorrecto}...`);
+                            UIHelperService.log('DragDropManager', ` Llamando a manejarImagen${handlerCorrecto}...`);
                             funcionManejo(tempInput);
-                            UIHelperService.log('DragDropManager', `✅ Imagen procesada exitosamente en ${handlerCorrecto}`);
+                            UIHelperService.log('DragDropManager', ` Imagen procesada exitosamente en ${handlerCorrecto}`);
                         } else {
-                            UIHelperService.log('DragDropManager', `❌ manejarImagen${handlerCorrecto} no disponible`, 'error');
+                            UIHelperService.log('DragDropManager', ` manejarImagen${handlerCorrecto} no disponible`, 'error');
                         }
                         
                         // Salir después de procesar la primera imagen
@@ -603,7 +603,7 @@ class DragDropManager {
         }, true); // Usar captura para interceptar antes que otros listeners
         
         this.globalPasteListenerConfigurado = true;
-        // UIHelperService.log('DragDropManager', '✅ Listener global de paste configurado');
+        // UIHelperService.log('DragDropManager', ' Listener global de paste configurado');
     }
 
     /**
@@ -640,16 +640,16 @@ class DragDropManager {
         const dropZone = document.getElementById('nueva-prenda-tela-drop-zone');
         if (dropZone) {
             this.telaHandler.configurarDropZone(dropZone);
-            UIHelperService.log('DragDropManager', '✅ Drop zone de telas configurada');
+            UIHelperService.log('DragDropManager', ' Drop zone de telas configurada');
         }
         
         const preview = document.getElementById('nueva-prenda-tela-preview');
         if (preview && preview.style.display !== 'none') {
             this.telaHandler.configurarPreview(preview);
-            UIHelperService.log('DragDropManager', '✅ Preview de telas configurado');
+            UIHelperService.log('DragDropManager', ' Preview de telas configurado');
         }
         
-        UIHelperService.log('DragDropManager', '✅ Sistema de telas inicializado');
+        UIHelperService.log('DragDropManager', ' Sistema de telas inicializado');
     }
 
     /**
@@ -953,7 +953,7 @@ window.setupDragAndDrop = (previewElement) => {
     }
     
     if (!window.DragDropManager.prendaHandler) {
-        console.error('[setupDragAndDrop] ❌ prendaHandler no disponible');
+        console.error('[setupDragAndDrop]  prendaHandler no disponible');
         return;
     }
     
@@ -971,7 +971,7 @@ window.setupDragAndDropConImagen = (previewElement, imagenesActuales) => {
     }
     
     if (!window.DragDropManager.prendaHandler) {
-        console.error('[setupDragAndDropConImagen] ❌ prendaHandler no disponible');
+        console.error('[setupDragAndDropConImagen]  prendaHandler no disponible');
         return;
     }
     

@@ -46,14 +46,14 @@ window.renderizarTarjetasProcesos = function() {
     const procesosConDatos = Object.keys(procesos).filter(tipo => {
         const tieneData = procesos[tipo]?.datos !== null && procesos[tipo]?.datos !== undefined;
         if (tieneData) {
-            console.log(`  ✅ Tipo: ${tipo} → Tiene datos`, procesos[tipo]?.datos);
+            console.log(`   Tipo: ${tipo} → Tiene datos`, procesos[tipo]?.datos);
         } else {
-            console.log(`  ❌ Tipo: ${tipo} → Sin datos`);
+            console.log(`   Tipo: ${tipo} → Sin datos`);
         }
         return tieneData;
     });
 
-    console.log('✅ [RENDER-PROCESOS] Procesos a renderizar:', {
+    console.log(' [RENDER-PROCESOS] Procesos a renderizar:', {
         total: procesosConDatos.length,
         tipos: procesosConDatos
     });
@@ -125,12 +125,12 @@ window.renderizarTarjetasProcesos = function() {
         console.log('[RENDER-PROCESOS] 📊 Timestamp:', new Date().toISOString());
         console.log('[RENDER-PROCESOS] 🔍 Stack trace:', new Error().stack);
         configurarDragDropProcesos();
-        console.log('[RENDER-PROCESOS] ✅ Drag & drop configurado para procesos');
+        console.log('[RENDER-PROCESOS]  Drag & drop configurado para procesos');
     } else {
         console.warn('[RENDER-PROCESOS] ⚠️ configurarDragDropProcesos no disponible');
     }
     
-    console.log('✅ [RENDER-PROCESOS] Renderización completada', {
+    console.log(' [RENDER-PROCESOS] Renderización completada', {
         tarjetasRenderizadas: container.querySelectorAll('.tarjeta-proceso').length,
         displayStyle: container.style.display,
         visibilityStyle: container.style.visibility,
@@ -943,7 +943,7 @@ window.editarProcesoDesdeModal = function(tipo) {
                 }
             }, 100);
         } else {
-            console.log('[EDITAR-PROCESO-MODAL] ✅ Se omite sync desde prenda: el proceso ya tiene tallas guardadas', {
+            console.log('[EDITAR-PROCESO-MODAL]  Se omite sync desde prenda: el proceso ya tiene tallas guardadas', {
                 tipo,
                 tallasGuardadas: proceso?.datos?.tallas
             });
@@ -1131,7 +1131,7 @@ function cargarDatosProcesoEnModal(tipo, datos) {
                 <img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">
             `;
             
-            console.log('[cargarDatosProcesoEnModal] ✅ innerHTML reemplazado para imagen', indice);
+            console.log('[cargarDatosProcesoEnModal]  innerHTML reemplazado para imagen', indice);
             console.log('[cargarDatosProcesoEnModal] 🔍 DEBUG - Estado DESPUÉS de modificar preview:', {
                 innerHTML: preview?.innerHTML?.substring(0, 100) + '...',
                 border: preview?.style.border,
@@ -1150,7 +1150,7 @@ function cargarDatosProcesoEnModal(tipo, datos) {
             deleteBtn.style.cssText = 'position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; background: #ef4444; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 16px; padding: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 10;';
             deleteBtn.textContent = '×';
             preview.appendChild(deleteBtn);
-            console.log('[cargarDatosProcesoEnModal] ✅ Botón eliminar creado con data-indice:', indice);
+            console.log('[cargarDatosProcesoEnModal]  Botón eliminar creado con data-indice:', indice);
         }
         
         //  Guardar según tipo

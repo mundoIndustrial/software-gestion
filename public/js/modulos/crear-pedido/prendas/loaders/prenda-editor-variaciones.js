@@ -32,7 +32,7 @@ class PrendaEditorVariaciones {
         this._cargarBolsillos(prendaConVariantes);
         this._cargarBroche(prendaConVariantes);
         
-        console.log('✅ [Variaciones] Completado');
+        console.log(' [Variaciones] Completado');
     }
 
     /**
@@ -85,7 +85,7 @@ class PrendaEditorVariaciones {
             // Disparar change event para que otros listeners se actualicen
             checkbox.dispatchEvent(new Event('change', { bubbles: true }));
             
-            console.log('✅ [Manga] Cargado - Tipo:', manga, 'Obs:', obsValue);
+            console.log(' [Manga] Cargado - Tipo:', manga, 'Obs:', obsValue);
         } else {
             console.log('ℹ️ [Manga] Sin manga para cargar');
         }
@@ -136,7 +136,7 @@ class PrendaEditorVariaciones {
             // Disparar change event para que otros listeners se actualicen
             checkbox.dispatchEvent(new Event('change', { bubbles: true }));
             
-            console.log('✅ [Bolsillos] Cargado - Obs:', obsValue);
+            console.log(' [Bolsillos] Cargado - Obs:', obsValue);
         } else {
             console.log('ℹ️ [Bolsillos] Sin bolsillos para cargar');
         }
@@ -215,7 +215,7 @@ class PrendaEditorVariaciones {
             // Disparar change event para que otros listeners se actualicen
             checkbox.dispatchEvent(new Event('change', { bubbles: true }));
             
-            console.log('✅ [Broche] Cargado - Tipo:', broche, 'Obs:', obsValue);
+            console.log(' [Broche] Cargado - Tipo:', broche, 'Obs:', obsValue);
         } else {
             console.log('ℹ️ [Broche] Sin broche para cargar');
         }

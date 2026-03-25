@@ -466,11 +466,11 @@ function getDynamicFilterOptions(filterType) {
 function getColumnIndex(filterType) {
     const columnMap = {
         'estado': 1,           // Columna 2: Estado
-        'area': 2,            // Columna 3: Área ✅
+        'area': 2,            // Columna 3: Área 
         'total_dias': 3,       // Columna 4: Total de días
         'numero_recibo': 4,     // Columna 5: N° Recibo
         'cliente': 5,          // Columna 6: Cliente
-        'descripcion': 6,      // Columna 7: Descripción ✅
+        'descripcion': 6,      // Columna 7: Descripción 
         'cantidad': 7,         // Columna 8: Cantidad
         'novedades': 8,        // Columna 9: Novedades
         'fecha_creacion': 9,  // Columna 10: Fecha de creación
@@ -669,7 +669,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             // Actualizar el texto de la descripción
                             descripcionElemento.textContent = nombrePrenda;
-                            console.log(`[CargarNombres] ✅ Prenda actualizada para recibo ${reciboId}: ${nombrePrenda}`);
+                            console.log(`[CargarNombres]  Prenda actualizada para recibo ${reciboId}: ${nombrePrenda}`);
                         } else {
                             descripcionElemento.textContent = 'Sin prendas';
                         }
@@ -741,13 +741,13 @@ function verDetallesRecibo(reciboId) {
     
     // Si todavía no hay pedidoId, mostrar error detallado
     if (!pedidoId) {
-        console.error(`[verDetallesRecibo] ❌ No se pudo encontrar el ID del pedido para el recibo: ${reciboId}`);
+        console.error(`[verDetallesRecibo]  No se pudo encontrar el ID del pedido para el recibo: ${reciboId}`);
         console.log(`[verDetallesRecibo] 🔍 Contenido de la fila:`, fila.innerHTML);
         alert('No se encontró información del pedido asociada a este recibo. El recibo puede no estar correctamente vinculado a un pedido.');
         return;
     }
     
-    console.log(`[verDetallesRecibo] ✅ Pedido ID confirmado: ${pedidoId}`);
+    console.log(`[verDetallesRecibo]  Pedido ID confirmado: ${pedidoId}`);
     
     // Para recibos de costura, necesitamos encontrar la primera prenda del pedido
     // Hacemos una llamada al endpoint para obtener las prendas del pedido
@@ -773,7 +773,7 @@ function verDetallesRecibo(reciboId) {
             const primeraPrenda = datos.prendas[0];
             const prendaId = primeraPrenda.id;
             
-            console.log(`[verDetallesRecibo] ✅ Prenda encontrada: ${prendaId}`);
+            console.log(`[verDetallesRecibo]  Prenda encontrada: ${prendaId}`);
             
             // Abrir el recibo de costura usando el módulo
             if (window.pedidosRecibosModule) {
@@ -985,7 +985,7 @@ window.abrirModalAgregarProcesoDesdeArea = function(areaSeleccionada, pedidoId, 
             const selectArea = document.getElementById('procesoArea');
             if (selectArea) {
                 selectArea.value = areaSeleccionada;
-                console.log('[abrirModalAgregarProcesoDesdeArea] ✅ Área seleccionada automáticamente:', areaSeleccionada);
+                console.log('[abrirModalAgregarProcesoDesdeArea]  Área seleccionada automáticamente:', areaSeleccionada);
             }
             
             // Limpiar el campo de encargado y enfocarlo
@@ -1004,7 +1004,7 @@ window.abrirModalAgregarProcesoDesdeArea = function(areaSeleccionada, pedidoId, 
                 btnConfirm.addEventListener('click', verificarDatosAntesDeGuardar);
             }
             
-            console.log('[abrirModalAgregarProcesoDesdeArea] ✅ Modal abierto con datos cargados');
+            console.log('[abrirModalAgregarProcesoDesdeArea]  Modal abierto con datos cargados');
         })
         .catch(error => {
             console.error('[abrirModalAgregarProcesoDesdeArea] Error al cargar datos:', error);
@@ -1060,14 +1060,14 @@ function verificarDatosAntesDeGuardar(event) {
     }
     
     if (!window.currentOrderData || !window.currentPrendaData) {
-        console.error('[verificarDatosAntesDeGuardar] ❌ Faltan datos necesarios');
+        console.error('[verificarDatosAntesDeGuardar]  Faltan datos necesarios');
         alert('Error: No hay datos de la prenda o pedido. Por favor, recarga la página e intenta nuevamente.');
         event.preventDefault();
         event.stopPropagation();
         return false;
     }
     
-    console.log('[verificarDatosAntesDeGuardar] ✅ Datos verificados, procediendo con handleAgregarProceso');
+    console.log('[verificarDatosAntesDeGuardar]  Datos verificados, procediendo con handleAgregarProceso');
     
     // Llamar a la función específica para recibos-costura
     if (typeof handleAgregarProcesoDesdeBadge === 'function') {
@@ -1178,7 +1178,7 @@ async function handleAgregarProcesoDesdeBadge() {
 
         const result = await response.json();
 
-        // ✅ Mostrar mensaje diferente según si fue creado o actualizado
+        //  Mostrar mensaje diferente según si fue creado o actualizado
         const mensaje = result.action === 'actualizado' 
             ? 'Proceso actualizado correctamente' 
             : 'Proceso agregado correctamente';
@@ -1365,7 +1365,7 @@ async function cargarDatosParaAgregarProceso(pedidoId, prendaId, areaSeleccionad
             
             if (prendaEncontrada) {
                 window.currentPrendaData = prendaEncontrada;
-                console.log('[cargarDatosParaAgregarProceso] ✅ Prenda encontrada:', prendaEncontrada.nombre_prenda || prendaEncontrada.nombre, 'ID:', prendaEncontrada.id);
+                console.log('[cargarDatosParaAgregarProceso]  Prenda encontrada:', prendaEncontrada.nombre_prenda || prendaEncontrada.nombre, 'ID:', prendaEncontrada.id);
             } else {
                 // 🛑 SIN FALLBACK: Si no se encuentra la prenda específica, lanzar error
                 throw new Error(`Prenda con ID ${prendaId} no encontrada en pedido ${pedidoId}. No se puede asignar encargado a una prenda desconocida.`);
@@ -1374,7 +1374,7 @@ async function cargarDatosParaAgregarProceso(pedidoId, prendaId, areaSeleccionad
             throw new Error('El pedido no tiene prendas asociadas');
         }
         
-        console.log('[cargarDatosParaAgregarProceso] ✅ Datos cargados correctamente');
+        console.log('[cargarDatosParaAgregarProceso]  Datos cargados correctamente');
         console.log('[cargarDatosParaAgregarProceso] currentOrderData:', window.currentOrderData);
         console.log('[cargarDatosParaAgregarProceso] currentPrendaData:', window.currentPrendaData);
         console.log('[cargarDatosParaAgregarProceso] Verificación final:', {
@@ -1744,10 +1744,10 @@ function initializeReciboAprobadoListener() {
                     playNotificationSound();
                 });
             
-            console.log('✅ [ReciboAprobado] Listener configurado correctamente');
+            console.log(' [ReciboAprobado] Listener configurado correctamente');
             
         } catch (error) {
-            console.error('❌ [ReciboAprobado] Error al configurar el listener:', error);
+            console.error(' [ReciboAprobado] Error al configurar el listener:', error);
         }
     });
 }
@@ -1776,7 +1776,7 @@ function showRecibAprobadoNotification(data) {
     // Crear contenido con datos del recibo
     const contenido = `
         <div style="margin-bottom: 8px;">
-            ✅ <strong>Recibo Aprobado</strong>
+             <strong>Recibo Aprobado</strong>
         </div>
         <div style="font-size: 13px; opacity: 0.9;">
             <div>📋 Recibo #${data.consecutivo}</div>
@@ -1839,7 +1839,7 @@ function recargarTablaRecibosEnTiempoReal(data) {
                 const tbody = document.getElementById('tablaRecibosBody');
                 if (tbody) {
                     tbody.innerHTML = result.recibos.html;
-                    console.log('✅ [ReciboAprobado] Tabla actualizada correctamente');
+                    console.log(' [ReciboAprobado] Tabla actualizada correctamente');
                     
                     // Reinicializar event listeners en las nuevas filas
                     reinitializeTableListeners();
@@ -1847,7 +1847,7 @@ function recargarTablaRecibosEnTiempoReal(data) {
             }
         })
         .catch(error => {
-            console.error('❌ [ReciboAprobado] Error al recargar tabla:', error);
+            console.error(' [ReciboAprobado] Error al recargar tabla:', error);
             // Como fallback, recargar toda la página después de 3 segundos
             setTimeout(() => {
                 console.log('🔄 [ReciboAprobado] Recargando página como fallback...');
@@ -1856,7 +1856,7 @@ function recargarTablaRecibosEnTiempoReal(data) {
         });
         
     } catch (error) {
-        console.error('❌ [ReciboAprobado] Error en recargarTablaRecibosEnTiempoReal:', error);
+        console.error(' [ReciboAprobado] Error en recargarTablaRecibosEnTiempoReal:', error);
     }
 }
 

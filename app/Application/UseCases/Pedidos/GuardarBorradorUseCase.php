@@ -186,7 +186,7 @@ class GuardarBorradorUseCase
 
             $tiempoTotal = round((microtime(true) - $inicioTotal) * 1000, 2);
 
-            Log::info('[GuardarBorradorUseCase] ✅ BORRADOR GUARDADO EXITOSAMENTE', [
+            Log::info('[GuardarBorradorUseCase]  BORRADOR GUARDADO EXITOSAMENTE', [
                 'pedido_id' => $pedidoId,
                 'numero_pedido' => $pedido->numero_pedido ?? 'NULL (Borrador)',
                 'estado' => $pedido->estado,
@@ -195,7 +195,7 @@ class GuardarBorradorUseCase
 
             return new GuardarBorradorOutput(
                 success: true,
-                message: '✅ Borrador guardado exitosamente',
+                message: ' Borrador guardado exitosamente',
                 pedido_id: $pedidoId,
                 numero_pedido: $pedido->numero_pedido ?? null,
                 estado: $pedido->estado,
@@ -205,7 +205,7 @@ class GuardarBorradorUseCase
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
-            Log::error('[GuardarBorradorUseCase] ❌ Errores de validación', [
+            Log::error('[GuardarBorradorUseCase]  Errores de validación', [
                 'pedido_id' => $pedidoId,
                 'errores' => $e->errors(),
             ]);
@@ -217,7 +217,7 @@ class GuardarBorradorUseCase
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('[GuardarBorradorUseCase] ❌ ERROR CRÍTICO', [
+            Log::error('[GuardarBorradorUseCase]  ERROR CRÍTICO', [
                 'pedido_id' => $pedidoId,
                 'error' => $e->getMessage(),
                 'linea' => $e->getLine(),

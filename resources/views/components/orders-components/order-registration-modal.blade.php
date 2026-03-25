@@ -671,6 +671,7 @@
                 showErrorMessage: false,
                 successMessage: '',
                 errorMessage: '',
+                creationDisabled: true,
                 isBodega: false,
                 context: window.modalContext || 'orden',
                 isAddingPrenda: false,
@@ -681,10 +682,16 @@
                     this.setFechaActual();
                     this.addTallaListeners();
                     this.updateEliminarPrendaButtons();
+                    if (this.creationDisabled) {
+                        this.errorMessage = 'La creación de pedidos fue centralizada. Usa /asesores/pedidos-editable/crear-nuevo o /asesores/pedidos-editable/crear-desde-cotizacion.';
+                        this.showErrorMessage = true;
+                        return;
+                    }
                     await this.loadNextPedido();
                 },
 
                 async loadNextPedido() {
+                    if (this.creationDisabled) return;
                     try {
                         const endpoint = this.context === 'bodega' ? '/bodega/next-pedido' : '/registros/next-pedido';
                         const response = await fetch(endpoint);
@@ -823,6 +830,7 @@
                 },
 
                 async validatePedido() {
+                    if (this.creationDisabled) return false;
                     const input = document.getElementById('pedido');
                     const allowAny = document.getElementById('allowAnyPedido').checked;
                     const error = document.getElementById('pedidoError');
@@ -879,11 +887,17 @@
                     this.prendasCount = 1;
                     this.updateEliminarPrendaButtons();
                     this.setFechaActual();
-                    this.loadNextPedido();
+                    if (!this.creationDisabled) {
+                        this.loadNextPedido();
+                    }
                     this.updateIsBodega();
                 },
 
                 async handleSubmit() {
+                    if (this.creationDisabled) {
+                        window.location.href = '/asesores/pedidos-editable/crear-nuevo';
+                        return;
+                    }
                     if (!(await this.validatePedido())) return;
 
                     const form = document.getElementById('orderRegistrationForm');

@@ -74,13 +74,13 @@ La funcionalidad se integra automáticamente con el `DespachoParcialesObserver`:
 
 - **Archivo**: `tests/Feature/DeshacerEntregadoDespachoTest.php`
 - **Casos de prueba**:
-  - ✅ Deshacer marcado como entregado (prendas)
-  - ✅ Deshacer marcado como entregado (EPP)
-  - ✅ Error si no está entregado
-  - ✅ Requiere autenticación
-  - ✅ Validación de datos
-  - ✅ Manejo de errores
-  - ✅ Integración con observer
+  -  Deshacer marcado como entregado (prendas)
+  -  Deshacer marcado como entregado (EPP)
+  -  Error si no está entregado
+  -  Requiere autenticación
+  -  Validación de datos
+  -  Manejo de errores
+  -  Integración con observer
 
 ## Uso Práctico
 

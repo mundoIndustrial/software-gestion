@@ -1761,7 +1761,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
 
     // Validar que se encontraron los elementos necesarios
     if (!pendientesInput || !fechaPedidoInput || !fechaEntregaInput || !areaSelect) {
-        console.error('❌ [GUARDAR-FILA] No se encontraron todos los elementos necesarios:', {
+        console.error(' [GUARDAR-FILA] No se encontraron todos los elementos necesarios:', {
             pendientes: !!pendientesInput,
             fechaPedido: !!fechaPedidoInput,
             fechaEntrega: !!fechaEntregaInput,
@@ -1863,7 +1863,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
     })
     .then(response => response.json())
     .then(data => {
-        console.log('✅ Respuesta:', data);
+        console.log(' Respuesta:', data);
         
         // Habilitar botón
         btnGuardar.disabled = false;
@@ -1888,7 +1888,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, tallaColorId, pren
         }
     })
     .catch(error => {
-        console.error('❌ Error:', error);
+        console.error(' Error:', error);
         btnGuardar.disabled = false;
         btnGuardar.textContent = 'Guardar';
         alert('Error: ' + error.message);

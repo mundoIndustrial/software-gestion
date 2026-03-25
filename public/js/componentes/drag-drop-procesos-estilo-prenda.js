@@ -14,7 +14,7 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
     // Remover todos los listeners anteriores clonando y reemplazando
     console.log(`[setupDragAndDropProceso] 🔄 Clonando preview ${procesoIndex} para eliminar listeners`);
     const newPreview = preview.cloneNode(true);
-    console.log(`[setupDragAndDropProceso] ✅ Preview ${procesoIndex} clonado`);
+    console.log(`[setupDragAndDropProceso]  Preview ${procesoIndex} clonado`);
     preview.parentNode.replaceChild(newPreview, preview);
     console.log(`[setupDragAndDropProceso] 🔄 Preview ${procesoIndex} reemplazado en DOM`);
     
@@ -87,7 +87,7 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
             console.log(`[setupDragAndDropProceso] 📡 Llamando manejarImagenProceso desde drop ${procesoIndex}`);
             window.manejarImagenProceso(tempInput, procesoIndex);
         } else {
-            console.error(`[setupDragAndDropProceso] ❌ manejarImagenProceso no disponible`);
+            console.error(`[setupDragAndDropProceso]  manejarImagenProceso no disponible`);
         }
     }, false);
     
@@ -131,7 +131,7 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
                 return;
             }
             
-            console.log(`[setupDragAndDropProceso] ✅ Click válido en preview, procesando`);
+            console.log(`[setupDragAndDropProceso]  Click válido en preview, procesando`);
             e.preventDefault();
             e.stopPropagation();
             
@@ -155,7 +155,7 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
                 
                 // 🔴 Flag para evitar doble apertura
                 if (!inputProceso._abiendoAhora) {
-                    console.log(`[setupDragAndDropProceso] ✅ Input ${index} no está siendo abierto, procediendo`);
+                    console.log(`[setupDragAndDropProceso]  Input ${index} no está siendo abierto, procediendo`);
                     inputProceso._abiendoAhora = true;
                     inputProceso.click();
                     console.log(`[setupDragAndDropProceso] 🎯 Click ejecutado en input ${index}`);
@@ -168,16 +168,16 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
                     console.warn(`[setupDragAndDropProceso] ⚠️ Input ${index} ya está siendo abierto, IGNORANDO`);
                 }
             } else {
-                console.error(`[setupDragAndDropProceso] ❌ Input ${index} NO encontrado`);
+                console.error(`[setupDragAndDropProceso]  Input ${index} NO encontrado`);
             }
         }, false);
         
-        console.log(`[setupDragAndDropProceso] ✅ Event delegation configurado en contenedor`);
+        console.log(`[setupDragAndDropProceso]  Event delegation configurado en contenedor`);
     } else {
         console.log(`[setupDragAndDropProceso] ⚠️ Contenedor ya configurado o no encontrado`);
     }
     
-    console.log(`[setupDragAndDropProceso] ✅ FIN - Configuración completada para preview ${procesoIndex}`);
+    console.log(`[setupDragAndDropProceso]  FIN - Configuración completada para preview ${procesoIndex}`);
 };
 
 // Configurar drag & drop para toda la sección
@@ -266,7 +266,7 @@ window.setupDragAndDropSeccionCompleta = function() {
             return;
         }
         
-        // ✅ MEJORADO: Detectar usando getBoundingClientRect
+        //  MEJORADO: Detectar usando getBoundingClientRect
         // Encontrar qué preview está bajo el cursor revisando todos
         let procesoIndex = null;
         for (let i = 1; i <= 3; i++) {
@@ -329,14 +329,14 @@ for (let i = 1; i <= 3; i++) {
     const preview = document.getElementById(`proceso-foto-preview-${i}`);
     console.log(`[drag-drop-procesos-estilo-prenda] 🔍 Buscando preview ${i}:`, !!preview);
     if (preview) {
-        console.log(`[drag-drop-procesos-estilo-prenda] ✅ Preview ${i} encontrado, configurando setupDragAndDropProceso`);
+        console.log(`[drag-drop-procesos-estilo-prenda]  Preview ${i} encontrado, configurando setupDragAndDropProceso`);
         window.setupDragAndDropProceso(preview, i);
     } else {
         console.log(`[drag-drop-procesos-estilo-prenda] ⚠️ Preview ${i} NO encontrado`);
     }
 }
 
-console.log('[drag-drop-procesos-estilo-prenda] ✅ FIN - Inicialización automática completada');
+console.log('[drag-drop-procesos-estilo-prenda]  FIN - Inicialización automática completada');
 
 // También configurar la sección completa
 console.log('[drag-drop-procesos-estilo-prenda] 🔄 Configurando sección completa');

@@ -103,7 +103,7 @@ const nombresPorTallas = {
 function registrarListenerPasteEnModal() {
     // El listener ya está registrado globalmente en document (capture phase)
     // No necesitamos hacer nada aquí
-    console.log('[PASTE-LISTENER] ✅ Listener global ya activo en document');
+    console.log('[PASTE-LISTENER]  Listener global ya activo en document');
 }
 
 /**
@@ -221,7 +221,7 @@ function agregarImagenesGenerales(files) {
         fotosGeneralesTemp.push(blobUrl);
         fotosGeneralesFilesTemp.push(file);
         
-        console.log('[agregarImagenesGenerales] ✅ Imagen agregada:', fileKey, 'UID:', file.uid);
+        console.log('[agregarImagenesGenerales]  Imagen agregada:', fileKey, 'UID:', file.uid);
     });
     
     console.log('[agregarImagenesGenerales] 🎉 Total en fotosGeneralesTemp después:', fotosGeneralesTemp.length);
@@ -429,7 +429,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
                         } else {
                             tallasPrenda[tallasKey][claveParaAgregar] = (tallasPrenda[tallasKey][claveParaAgregar] || 0) + cantidad;
                         }
-                        console.log(`[por-tallas] ✅ Fila ${idx}: ${tallasKey.toUpperCase()} - ${claveParaAgregar} - ${cantidad} unidades`);
+                        console.log(`[por-tallas]  Fila ${idx}: ${tallasKey.toUpperCase()} - ${claveParaAgregar} - ${cantidad} unidades`);
                     });
                 } else {
                     // Sin colores: crear una sola tarjeta con solo TALLA
@@ -439,7 +439,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
                     } else {
                         tallasPrenda[tallasKey][dataTalla] = (tallasPrenda[tallasKey][dataTalla] || 0) + dataCantidadTotal;
                     }
-                    console.log(`[por-tallas] ✅ Fila ${idx}: ${tallasKey.toUpperCase()} - ${dataTalla} - ${dataCantidadTotal} unidades (sin color)`);
+                    console.log(`[por-tallas]  Fila ${idx}: ${tallasKey.toUpperCase()} - ${dataTalla} - ${dataCantidadTotal} unidades (sin color)`);
                 }
             }
         });
@@ -449,7 +449,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
         // Si encontró tallas en la tabla, marcar como exitoso
         if (Object.keys(tallasPrenda.dama).length > 0 || Object.keys(tallasPrenda.caballero).length > 0 || tallasPrenda.sobremedida) {
             leyóDesdeTabla = true;
-            console.log('[por-tallas] ✅ FUENTE 1 exitosa - Tallas desde tabla de resumen:', tallasPrenda);
+            console.log('[por-tallas]  FUENTE 1 exitosa - Tallas desde tabla de resumen:', tallasPrenda);
         }
     }
 
@@ -479,7 +479,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
                 tallasPrenda.sobremedida = { ...(tallasPrenda.sobremedida || {}), ...tallasRelacionales.UNISEX };
             }
             
-            console.log('[por-tallas] ✅ Tallas desde tallasRelacionales:', tallasPrenda);
+            console.log('[por-tallas]  Tallas desde tallasRelacionales:', tallasPrenda);
         }
     }
     
@@ -509,7 +509,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
                     }
                 });
                 
-                console.log('[por-tallas] ✅ Tallas desde StateManager:', tallasPrenda);
+                console.log('[por-tallas]  Tallas desde StateManager:', tallasPrenda);
             }
         }
     }
@@ -524,7 +524,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
             tallasPrenda.dama = { ...tallasFallback.dama };
             tallasPrenda.caballero = { ...tallasFallback.caballero };
             tallasPrenda.sobremedida = tallasFallback.sobremedida;
-            console.log('[por-tallas] ✅ Tallas desde obtenerTallasDeLaPrenda (fallback):', tallasPrenda);
+            console.log('[por-tallas]  Tallas desde obtenerTallasDeLaPrenda (fallback):', tallasPrenda);
         }
     }
 
@@ -558,7 +558,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
             Object.entries(tallasPrenda.dama || {}).forEach(([key, val]) => {
                 const tallaBase = key.toUpperCase();
                 if (!tallasBaseGuardadas.dama.has(tallaBase)) {
-                    console.log(`[por-tallas] ✅ Agregando talla DAMA nueva: ${key}`);
+                    console.log(`[por-tallas]  Agregando talla DAMA nueva: ${key}`);
                     damaObj[key] = val;
                 } else {
                     console.log(`[por-tallas] ⊘ Talla DAMA duplicada ignorada: ${key}`);
@@ -568,7 +568,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
             Object.entries(tallasPrenda.caballero || {}).forEach(([key, val]) => {
                 const tallaBase = key.toUpperCase();
                 if (!tallasBaseGuardadas.caballero.has(tallaBase)) {
-                    console.log(`[por-tallas] ✅ Agregando talla CABALLERO nueva: ${key}`);
+                    console.log(`[por-tallas]  Agregando talla CABALLERO nueva: ${key}`);
                     cabObj[key] = val;
                 } else {
                     console.log(`[por-tallas] ⊘ Talla CABALLERO duplicada ignorada: ${key}`);
@@ -582,7 +582,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
             
             tallasPrenda.dama = damaObj;
             tallasPrenda.caballero = cabObj;
-            console.log('[por-tallas] ✅ Tallas combinadas sin duplicados:', tallasPrenda);
+            console.log('[por-tallas]  Tallas combinadas sin duplicados:', tallasPrenda);
         }
     }
 
@@ -695,7 +695,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
         });
     }
     
-    // ✅ RESTAURAR FILES TEMPORALES: Si hay imagenesFiles (archivos que aún no se subieron al servidor),
+    //  RESTAURAR FILES TEMPORALES: Si hay imagenesFiles (archivos que aún no se subieron al servidor),
     // recrear los blobs para visualización
     if (datosGenerales?.imagenesFiles && Array.isArray(datosGenerales.imagenesFiles) && datosGenerales.imagenesFiles.length > 0) {
         console.log('[por-tallas] 📸 Restaurando Files temporales:', datosGenerales.imagenesFiles.length);
@@ -719,7 +719,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
             }
         });
         
-        console.log('[por-tallas] ✅ Files restaurados:', {
+        console.log('[por-tallas]  Files restaurados:', {
             filesTemp: fotosGeneralesFilesTemp.length,
             blobsTemp: fotosGeneralesTemp.length
         });
@@ -800,7 +800,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
                 imagenesFiles: []
             };
             
-            // ✅ RESTAURAR FILES TEMPORALES de esta talla (archivos que aún no se subieron)
+            //  RESTAURAR FILES TEMPORALES de esta talla (archivos que aún no se subieron)
             if (existente?.imagenesFiles && Array.isArray(existente.imagenesFiles) && existente.imagenesFiles.length > 0) {
                 console.log(`[por-tallas] 📸 Restaurando Files para ${key}:`, existente.imagenesFiles.length);
                 existente.imagenesFiles.forEach(file => {
@@ -867,7 +867,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
                 imagenesFiles: []
             };
             
-            // ✅ RESTAURAR FILES TEMPORALES de esta talla (archivos que aún no se subieron)
+            //  RESTAURAR FILES TEMPORALES de esta talla (archivos que aún no se subieron)
             if (existente?.imagenesFiles && Array.isArray(existente.imagenesFiles) && existente.imagenesFiles.length > 0) {
                 console.log(`[por-tallas] 📸 Restaurando Files para ${key}:`, existente.imagenesFiles.length);
                 existente.imagenesFiles.forEach(file => {
@@ -931,7 +931,7 @@ window.abrirModalProcesoPorTallas = function(tipoProceso) {
     }
 
     modal.style.display = 'flex';
-    console.log('[abrirModalProcesoPorTallas] ✅ Modal abierto, listener global de paste activo');
+    console.log('[abrirModalProcesoPorTallas]  Modal abierto, listener global de paste activo');
 };
 
 /**
@@ -1166,22 +1166,22 @@ function handlePasteGlobalPorTallas(e) {
 
     const modal = document.getElementById('modal-proceso-por-tallas');
     if (!modal || modal.style.display === 'none') {
-        console.log('[handlePasteGlobalPorTallas] ❌ Modal no visible, ignorando paste');
+        console.log('[handlePasteGlobalPorTallas]  Modal no visible, ignorando paste');
         return;
     }
 
-    // ✅ CRÍTICO: Verificar que el paste ocurrió DENTRO del modal de procesos
+    //  CRÍTICO: Verificar que el paste ocurrió DENTRO del modal de procesos
     // Si el usuario está en otro lugar de la página (ej: fotos de prenda o modal wizard), ignorar
     const targetElement = e.target;
     if (!modal.contains(targetElement)) {
-        console.log('[handlePasteGlobalPorTallas] ❌ Paste fuera del modal de procesos, ignorando');
+        console.log('[handlePasteGlobalPorTallas]  Paste fuera del modal de procesos, ignorando');
         return;
     }
     
-    // ✅ NUEVO: Si hay otro modal visible encima (como modal de edición wizard), ignorar
+    //  NUEVO: Si hay otro modal visible encima (como modal de edición wizard), ignorar
     const modalEditWizard = document.getElementById('modal-editar-asignacion-wizard');
     if (modalEditWizard && modalEditWizard.style.display !== 'none' && modalEditWizard.classList.contains('show')) {
-        console.log('[handlePasteGlobalPorTallas] ❌ Modal wizard de edición está abierto, delegando');
+        console.log('[handlePasteGlobalPorTallas]  Modal wizard de edición está abierto, delegando');
         return;
     }
 
@@ -1197,7 +1197,7 @@ function handlePasteGlobalPorTallas(e) {
 
     const items = e.clipboardData?.items;
     if (!items) {
-        console.log('[handlePasteGlobalPorTallas] ❌ No clipboard items');
+        console.log('[handlePasteGlobalPorTallas]  No clipboard items');
         return;
     }
     
@@ -1213,10 +1213,10 @@ function handlePasteGlobalPorTallas(e) {
     if (files.length === 0) return;
 
     e.preventDefault();
-    e.stopImmediatePropagation(); // ✅ CRÍTICO: stopImmediatePropagation evita que otros listeners procesen este evento
+    e.stopImmediatePropagation(); //  CRÍTICO: stopImmediatePropagation evita que otros listeners procesen este evento
 
     try {
-        // ✅ MEJORADO: Detectar automáticamente si el paste ocurrió en la galería general
+        //  MEJORADO: Detectar automáticamente si el paste ocurrió en la galería general
         const galeriaGeneral = document.getElementById('prt-galeria-general');
         const targetIsInGeneral = galeriaGeneral && galeriaGeneral.contains(e.target);
         
@@ -1261,7 +1261,7 @@ function handlePasteGlobalPorTallas(e) {
             }
         }
     } catch (error) {
-        console.error('[handlePasteGlobalPorTallas] ❌ Error:', error);
+        console.error('[handlePasteGlobalPorTallas]  Error:', error);
     }
 }
 
@@ -1553,7 +1553,7 @@ window.guardarProcesoPorTallas = function() {
         window.renderizarTarjetasProcesos();
     }
 
-    // ❌ COMENTADO: Este bloque estaba agregando PROCESOS como TELAS a window.telasCreacion
+    //  COMENTADO: Este bloque estaba agregando PROCESOS como TELAS a window.telasCreacion
     // Los procesos (estampado, DTF, sublimado) NO son telas y no deberían estar en esta lista
     // Las tallas reales ya están asignadas con sus telas correspondientes (ej: ANT BABILONIA)
     
@@ -1590,7 +1590,7 @@ window.guardarProcesoPorTallas = function() {
                         fechaCreacion: new Date().toISOString()
                     });
                     tallasSincronizadas = true;
-                    console.log(`[por-tallas] ✅ Sincronizado ${genero.toUpperCase()} - ${tallaKey.toUpperCase()} a telasCreacion`);
+                    console.log(`[por-tallas]  Sincronizado ${genero.toUpperCase()} - ${tallaKey.toUpperCase()} a telasCreacion`);
                 }
             }
         });

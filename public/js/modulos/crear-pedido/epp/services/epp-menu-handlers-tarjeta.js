@@ -19,7 +19,7 @@ class EppMenuHandlerTarjeta extends EppMenuHandlerBase {
             }
         };
         super(config);
-        console.log('[EppMenuHandlerTarjeta] ✅ Constructor completado con herencia de EppMenuHandlerBase');
+        console.log('[EppMenuHandlerTarjeta]  Constructor completado con herencia de EppMenuHandlerBase');
     }
 
     attachEventListeners() {
@@ -60,7 +60,7 @@ class EppMenuHandlerTarjeta extends EppMenuHandlerBase {
             }
         });
         
-        console.log('[EppMenuHandlerTarjeta] ✅ Event listeners configurados correctamente');
+        console.log('[EppMenuHandlerTarjeta]  Event listeners configurados correctamente');
     }
 
     editarEPP(btn) {
@@ -89,4 +89,4 @@ class EppMenuHandlerTarjeta extends EppMenuHandlerBase {
 
 console.log('[EppMenuHandlerTarjeta] 🚀 Creando instancia global...');
 window.eppMenuHandlerTarjeta = new EppMenuHandlerTarjeta();
-console.log('[EppMenuHandlerTarjeta] ✅ Instancia global creada');
+console.log('[EppMenuHandlerTarjeta]  Instancia global creada');

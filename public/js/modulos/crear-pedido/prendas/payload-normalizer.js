@@ -348,7 +348,7 @@
                                                     }));
                                                     archivosAgregados++;
                                                     colorImgIdx++;
-                                                    console.log('[PayloadNormalizer] ✅ Imagen de color agregada: ' + colorItem.nombre + ' (' + file.name + ')');
+                                                    console.log('[PayloadNormalizer]  Imagen de color agregada: ' + colorItem.nombre + ' (' + file.name + ')');
                                                 } else {
                                                     console.warn('[PayloadNormalizer] ⚠️ imgData no es File:', {
                                                         imagen_id: colorItem.imagen_id,

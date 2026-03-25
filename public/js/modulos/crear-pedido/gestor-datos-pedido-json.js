@@ -325,7 +325,7 @@ class GestorDatosPedidoJSON {
                                         }));
                                         contadores.archivos++;
                                         colorImgIdx++;
-                                        console.log('[GestorDatosPedidoJSON] ✅ Imagen agregada:', {
+                                        console.log('[GestorDatosPedidoJSON]  Imagen agregada:', {
                                             imagen_id: colorItem.imagen_id,
                                             color: colorItem.nombre,
                                             colorImgIdx: colorImgIdx - 1

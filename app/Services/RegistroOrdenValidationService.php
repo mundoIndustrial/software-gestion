@@ -21,7 +21,7 @@ class RegistroOrdenValidationService
     public function validateStoreRequest(Request $request): array
     {
         return $request->validate([
-            'pedido' => 'required|integer',
+            'pedido' => 'required|integer|unique:pedidos_produccion,numero_pedido',
             'estado' => 'nullable|in:No iniciado,En Ejecución,Entregado,Anulada',
             'cliente' => 'required|string|max:255',
             'area' => 'nullable|string',

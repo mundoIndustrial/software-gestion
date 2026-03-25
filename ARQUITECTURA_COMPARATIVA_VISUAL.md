@@ -162,12 +162,12 @@ PROMEDIO GENERAL:              ~40         ~5
 
 ```
 RegistroOrdenController
-├─ Validar entrada             ❌ Los 2638 líneas hacen TODO
-├─ Ejecutar lógica de negocio  ❌
-├─ Ejecutar cálculos           ❌
-├─ Consultar base de datos     ❌
-├─ Formatear respuesta         ❌
-├─ Broadcast eventos           ❌
+├─ Validar entrada              Los 2638 líneas hacen TODO
+├─ Ejecutar lógica de negocio  
+├─ Ejecutar cálculos           
+├─ Consultar base de datos     
+├─ Formatear respuesta         
+├─ Broadcast eventos           
 └─ ... 10+ responsabilidades más
 ```
 
@@ -309,31 +309,31 @@ DESPUÉS:
 
 ### Para el Desarrollador
 
-- ✅ Código más legible
-- ✅ Cambios localizados
-- ✅ Tests claros y aislados
-- ✅ Menos bugs por regresión
+-  Código más legible
+-  Cambios localizados
+-  Tests claros y aislados
+-  Menos bugs por regresión
 
 ### Para QA/Testers
 
-- ✅ Tests unitarios más fáciles
-- ✅ Casos de prueba más claros
-- ✅ Cambios de bajo riesgo
-- ✅ Reproducción de bugs más fácil
+-  Tests unitarios más fáciles
+-  Casos de prueba más claros
+-  Cambios de bajo riesgo
+-  Reproducción de bugs más fácil
 
 ### Para DevOps
 
-- ✅ Deploys más seguros
-- ✅ Rollback más simple
-- ✅ Monitoreo más efectivo
-- ✅ Performance más predecible
+-  Deploys más seguros
+-  Rollback más simple
+-  Monitoreo más efectivo
+-  Performance más predecible
 
 ### Para el Negocio
 
-- ✅ Velocidad de desarrollo
-- ✅ Menos bugs en producción
-- ✅ Costo de mantenimiento reducido
-- ✅ Nuevas features más rápido
+-  Velocidad de desarrollo
+-  Menos bugs en producción
+-  Costo de mantenimiento reducido
+-  Nuevas features más rápido
 
 ---
 

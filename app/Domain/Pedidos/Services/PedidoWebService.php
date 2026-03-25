@@ -103,6 +103,52 @@ class PedidoWebService
     }
 
     /**
+     * Crear pedido completo asumiendo que YA existe una transacción externa.
+     * Útil cuando el UseCase orquesta todo (DB + imágenes) y requiere una única frontera transaccional.
+     */
+    public function crearPedidoCompletoDentroTransaccion(array $datosValidados, int $asesorId): PedidoProduccion
+    {
+        $tiempoInicio = microtime(true);
+
+        // 1. Crear pedido base
+        $tiempoInicioBase = microtime(true);
+        $pedido = $this->crearPedidoBase($datosValidados, $asesorId);
+        $tiempoBase = (microtime(true) - $tiempoInicioBase) * 1000;
+
+        Log::info('[PedidoWebService] Pedido base creado', [
+            'pedido_id' => $pedido->id,
+            'numero_pedido' => $pedido->numero_pedido, // Asignado automáticamente
+            'area_guardada' => $pedido->area,
+            'estado' => $pedido->estado,
+            'tiempo_base_ms' => round($tiempoBase, 2),
+        ]);
+
+        // 2. Crear prendas con todas sus relaciones
+        if (isset($datosValidados['items']) && is_array($datosValidados['items'])) {
+            foreach ($datosValidados['items'] as $itemIndex => $itemData) {
+                $this->crearItemCompleto($pedido, $itemData, $itemIndex);
+            }
+        }
+
+        // 3. Crear EPPs si existen
+        if (isset($datosValidados['epps']) && is_array($datosValidados['epps'])) {
+            foreach ($datosValidados['epps'] as $eppIndex => $eppData) {
+                $this->crearEppCompleto($pedido, $eppData, $eppIndex);
+            }
+        }
+
+        Log::info('[PedidoWebService] Pedido completo creado', [
+            'pedido_id' => $pedido->id,
+            'cantidad_prendas' => $pedido->prendas()->count(),
+            'cantidad_epps' => $pedido->epps()->count(),
+            'area_final' => $pedido->area,
+            'tiempo_total_ms' => round((microtime(true) - $tiempoInicio) * 1000, 2),
+        ]);
+
+        return $pedido;
+    }
+
+    /**
      * Crear pedido borrador (sin número de pedido)
      * 
      * Similar a crearPedidoCompleto pero sin generar numero_pedido

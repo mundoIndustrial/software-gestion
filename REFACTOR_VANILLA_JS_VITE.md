@@ -1010,7 +1010,7 @@ class RecibosInitializer {
             // 3. Configurar listeners de eventos
             this.configurarEventos();
             
-            console.log('[Recibos] Módulo inicializado ✅');
+            console.log('[Recibos] Módulo inicializado ');
             
         } catch (error) {
             console.error('[Recibos] Error al inicializar:', error);
@@ -1056,7 +1056,7 @@ import './modules/recibos-costura/index.js';
 
 ## 📝 COMPARACIÓN ANTES vs DESPUÉS
 
-| Aspecto | ❌ Antes | ✅ Después |
+| Aspecto |  Antes |  Después |
 |---------|---------|-----------|
 | **Líneas en Blade** | 2000+ | < 10 |
 | **Archivos JS** | 1 (inline) | 25+ (modular) |
@@ -1067,7 +1067,7 @@ import './modules/recibos-costura/index.js';
 
 ---
 
-## ✅ PRÓXIMOS PASOS
+##  PRÓXIMOS PASOS
 
 1. **Crear la estructura de carpetas**
 2. **Implementar Value Objects** (EstadoRecibo, AreaRecibocostura, etc.)

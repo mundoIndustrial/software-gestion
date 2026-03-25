@@ -59,7 +59,7 @@ class PedidosRealtimeRefresh {
             return;
         }
         
-        if (this.debug) console.log('✅ [PedidosRealtime] Sistema inicializado');
+        if (this.debug) console.log(' [PedidosRealtime] Sistema inicializado');
         
         // Inyectar y configurar servicios (DDD pattern)
         this.initializeServices();
@@ -93,7 +93,7 @@ class PedidosRealtimeRefresh {
         // UIUpdateService para UI updates
         if (!this.uiUpdate && window.shared?.uiUpdate) {
             this.uiUpdate = window.shared.uiUpdate;
-            if (this.debug) console.log('✅ UIUpdateService inyectado');
+            if (this.debug) console.log(' UIUpdateService inyectado');
         }
         
         // ActivityDetectionService para detectar actividad
@@ -102,14 +102,14 @@ class PedidosRealtimeRefresh {
             // Configurar callbacks de actividad
             if (this.activityDetector && typeof this.activityDetector.setupActivityDetection === 'function') {
                 this.activityDetector.setupActivityDetection();
-                if (this.debug) console.log('✅ ActivityDetectionService inyectado y configurado');
+                if (this.debug) console.log(' ActivityDetectionService inyectado y configurado');
             }
         }
         
         // WebSocketChannelConfigurator para mapeo de canales
         if (!this.channelConfigurator && window.shared?.channelConfigurator) {
             this.channelConfigurator = window.shared.channelConfigurator;
-            if (this.debug) console.log('✅ WebSocketChannelConfigurator inyectado');
+            if (this.debug) console.log(' WebSocketChannelConfigurator inyectado');
         }
     }
 
@@ -164,7 +164,7 @@ class PedidosRealtimeRefresh {
                     });
 
                     this.usingWebSockets = true;
-                    if (this.debug) console.log('✅ WebSocket activo para supervisor-pedidos');
+                    if (this.debug) console.log(' WebSocket activo para supervisor-pedidos');
                     return;
                 }
 
@@ -218,7 +218,7 @@ class PedidosRealtimeRefresh {
                     }
 
                     this.usingWebSockets = true;
-                    if (this.debug) console.log('✅ WebSocket activo para cartera/pedidos');
+                    if (this.debug) console.log(' WebSocket activo para cartera/pedidos');
                     return;
                 }
 
@@ -243,7 +243,7 @@ class PedidosRealtimeRefresh {
                     });
 
                     this.usingWebSockets = true;
-                    if (this.debug) console.log('✅ WebSocket activo para asesores');
+                    if (this.debug) console.log(' WebSocket activo para asesores');
                 } catch (error) {
                     console.error('[PedidosRealtime] Error en suscripción privada:', error);
                     throw error;
@@ -370,7 +370,7 @@ class PedidosRealtimeRefresh {
         
         if (hayCambios) {
             this.lastChangeTime = new Date();
-            if (this.debug) console.log('✅ Cambios detectados');
+            if (this.debug) console.log(' Cambios detectados');
             
             if (typeof window.cargarPedidos === 'function') {
                 await window.cargarPedidos();
@@ -559,7 +559,7 @@ class PedidosRealtimeRefresh {
             console.log('[PedidosRealtime] 📋 Tabla reordenada por número de pedido (ascendente)');
             
         } catch (error) {
-            console.error('[PedidosRealtime] ❌ Error al reordenar tabla:', error);
+            console.error('[PedidosRealtime]  Error al reordenar tabla:', error);
             this.pedidoMovido = false;
         }
     }

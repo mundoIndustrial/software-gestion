@@ -259,7 +259,7 @@ await addBtn.executeAsync(async () => {
 | convertEncargado (ambas) | 40 | 5 | -87% |
 | handleEditarProceso | 20 | 10 | -50% |
 | Duplicado setButtonLoading | 30 (total) | 3 reutilizables | -90% |
-| **TOTAL** | **~330** | **~80** | **-75% ✅** |
+| **TOTAL** | **~330** | **~80** | **-75% ** |
 
 ---
 

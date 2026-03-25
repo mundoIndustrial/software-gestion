@@ -7,7 +7,7 @@
 
 ### 1.1 **Centralizar formateo de fechas**
 
-#### ❌ PROBLEMA ACTUAL (3 implementaciones diferentes)
+####  PROBLEMA ACTUAL (3 implementaciones diferentes)
 
 ```javascript
 // VERSIÓN 1 - updateOrderInfo() LÍNEA 540-570
@@ -77,7 +77,7 @@ const fechaLlegada = formatDate(data.fecha_inicio) || '---';
 const fechaFin = formatDate(fechaFinRaw) || (data.esta_activo ? '---' : '---');
 ```
 
-✅ **CÓDIGO MEJORADO - UNA FUNCIÓN CENTRALIZADA**
+ **CÓDIGO MEJORADO - UNA FUNCIÓN CENTRALIZADA**
 
 ```javascript
 /**
@@ -174,7 +174,7 @@ const fechaFin = DateFormatter.formatDate(fechaFinRaw, data.esta_activo ? '---' 
 
 ### 1.2 **Mover `calcularDiasHabilesSync()` al backend**
 
-#### ❌ PROBLEMA: Lógica de negocio en frontend
+####  PROBLEMA: Lógica de negocio en frontend
 
 ```javascript
 // LÍNEA 3020-3080 - Duplicado en frontend
@@ -202,7 +202,7 @@ const diasHabiles = calcularDiasHabilesSync(ini, fin);
 const diasHabiles = calcularDiasHabilesSync(fechaCreacionDate, reciboActDate);
 ```
 
-✅ **SOLUCIÓN: Crear un servicio de backend**
+ **SOLUCIÓN: Crear un servicio de backend**
 
 ```php
 // App/Application/Services/CalculadorDiasService.php
@@ -278,7 +278,7 @@ class DurationService {
 
 ### 1.3 **Crear APIClient para abstraer endpoints**
 
-#### ❌ PROBLEMA: Fetch hardcoded en múltiples lugares
+####  PROBLEMA: Fetch hardcoded en múltiples lugares
 
 ```javascript
 // LÍNEA 273 - loadOrderBasicData
@@ -323,7 +323,7 @@ const response = await fetch('/seguimiento-proceso/' + procesoId, {
 const response = await fetch(`/api/areas/${encodeURIComponent(area)}/encargados`);
 ```
 
-✅ **SOLUCIÓN: Centralizar en APIClient**
+ **SOLUCIÓN: Centralizar en APIClient**
 
 ```javascript
 /**
@@ -487,7 +487,7 @@ async function handleAgregarProceso() {
 
 ### 2.1 **Refactorizar `updateOrderInfo()` - 300+ líneas**
 
-#### ❌ PROBLEMA ACTUAL
+####  PROBLEMA ACTUAL
 
 ```javascript
 function updateOrderInfo(orderData) {
@@ -502,7 +502,7 @@ function updateOrderInfo(orderData) {
 }
 ```
 
-✅ **REFACTORING: Separar responsabilidades**
+ **REFACTORING: Separar responsabilidades**
 
 ```javascript
 /**
@@ -646,7 +646,7 @@ function applyEstimatedDateStyles(element, fecha) {
 
 ### 2.2 **Extraer búsqueda de recibo a función reutilizable**
 
-#### ❌ PROBLEMA: Mismo código en 3 lugares
+####  PROBLEMA: Mismo código en 3 lugares
 
 ```javascript
 // LÍNEA 700-720 (updateOrderInfo)
@@ -664,7 +664,7 @@ for (const prioridad of prioridadRecibos) {
 }
 ```
 
-✅ **CENTRALIZAR**
+ **CENTRALIZAR**
 
 ```javascript
 /**
@@ -716,7 +716,7 @@ const displayText = ReceiptFinder.formatReceipt(mainReceipt);
 
 ### 2.3 **Crear StateManager para variables globales**
 
-#### ❌ PROBLEMA: Múltiples variables globales
+####  PROBLEMA: Múltiples variables globales
 
 ```javascript
 window.currentOrderData = data;
@@ -728,7 +728,7 @@ window.editingProcessId = procesoId;
 window.processToDelete = { id, name };
 ```
 
-✅ **CENTRALIZAR EN STATEMANAGER**
+ **CENTRALIZAR EN STATEMANAGER**
 
 ```javascript
 /**

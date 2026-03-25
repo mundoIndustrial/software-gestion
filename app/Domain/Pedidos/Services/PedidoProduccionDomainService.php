@@ -22,10 +22,12 @@ class PedidoProduccionDomainService
     private PedidoProduccionRepository $repository;
     private PedidoProduccionCalculatorService $calculatorService;
 
-    public function __construct()
-    {
-        $this->repository = new PedidoProduccionRepository();
-        $this->calculatorService = new PedidoProduccionCalculatorService();
+    public function __construct(
+        PedidoProduccionRepository $repository,
+        PedidoProduccionCalculatorService $calculatorService
+    ) {
+        $this->repository = $repository;
+        $this->calculatorService = $calculatorService;
     }
 
     /**

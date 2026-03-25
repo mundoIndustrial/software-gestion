@@ -22,7 +22,7 @@ window.actualizarTablaTelas = function() {
     const tbody = document.getElementById('tbody-telas');
     
     if (!tbody) {
-        console.warn('[actualizarTablasTelas] ❌ tbody-telas no encontrado');
+        console.warn('[actualizarTablasTelas]  tbody-telas no encontrado');
         return;
     }
     console.log('[actualizarTablaTelas] ✓ tbody-telas encontrado');
@@ -105,7 +105,7 @@ window.actualizarTablaTelas = function() {
         tbody.appendChild(fragment);
     }
     
-    console.log('[actualizarTablaTelas] ✅ COMPLETADO - Tabla actualizada');
+    console.log('[actualizarTablaTelas]  COMPLETADO - Tabla actualizada');
     console.log('═════════════════════════════════════════════════════════════════');
 };
 

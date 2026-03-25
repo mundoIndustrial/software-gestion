@@ -868,10 +868,10 @@ window.PrendaCardService = {
                     
                     // 2. Agregar Files nuevos (tienen prioridad para renderizado)
                     if (datos.fotosGeneralesFiles && Array.isArray(datos.fotosGeneralesFiles) && datos.fotosGeneralesFiles.length > 0) {
-                        console.log(`[PrendaCardService] ✅ Agregando fotosGeneralesFiles (${datos.fotosGeneralesFiles.length}) a fotosDisplay`);
+                        console.log(`[PrendaCardService]  Agregando fotosGeneralesFiles (${datos.fotosGeneralesFiles.length}) a fotosDisplay`);
                         fotosDisplay = [...fotosDisplay, ...datos.fotosGeneralesFiles];
                     } else if (datos.imagenesFiles && Array.isArray(datos.imagenesFiles) && datos.imagenesFiles.length > 0) {
-                        console.log(`[PrendaCardService] ✅ Agregando imagenesFiles (${datos.imagenesFiles.length}) a fotosDisplay`);
+                        console.log(`[PrendaCardService]  Agregando imagenesFiles (${datos.imagenesFiles.length}) a fotosDisplay`);
                         fotosDisplay = [...fotosDisplay, ...datos.imagenesFiles];
                     }
                     
@@ -1086,10 +1086,10 @@ window.PrendaCardService = {
                 
                 // 2. Agregar Files nuevos (tienen prioridad para renderizado)
                 if (datos.fotosGeneralesFiles && Array.isArray(datos.fotosGeneralesFiles) && datos.fotosGeneralesFiles.length > 0) {
-                    console.log(`[PrendaCardService-ReadonlyProceso] ✅ Agregando fotosGeneralesFiles (${datos.fotosGeneralesFiles.length}) a fotosDisplay`);
+                    console.log(`[PrendaCardService-ReadonlyProceso]  Agregando fotosGeneralesFiles (${datos.fotosGeneralesFiles.length}) a fotosDisplay`);
                     fotosGenerales = [...fotosGenerales, ...datos.fotosGeneralesFiles];
                 } else if (datos.imagenesFiles && Array.isArray(datos.imagenesFiles) && datos.imagenesFiles.length > 0) {
-                    console.log(`[PrendaCardService-ReadonlyProceso] ✅ Agregando imagenesFiles (${datos.imagenesFiles.length}) a fotosDisplay`);
+                    console.log(`[PrendaCardService-ReadonlyProceso]  Agregando imagenesFiles (${datos.imagenesFiles.length}) a fotosDisplay`);
                     fotosGenerales = [...fotosGenerales, ...datos.imagenesFiles];
                 } else if (datos.imagenes && Array.isArray(datos.imagenes) && datos.imagenes.length > 0 && fotosGenerales.length === 0) {
                     fotosGenerales = [...datos.imagenes];

@@ -46,7 +46,7 @@ const ESTADOS_VALIDOS = {
 class EstadoRecibo {
     constructor(valor) {
         if (!Object.values(ESTADOS_VALIDOS).includes(valor)) {
-            throw new Error(`❌ Estado inválido: "${valor}". Válidos: ${Object.values(ESTADOS_VALIDOS).join(', ')}`);
+            throw new Error(` Estado inválido: "${valor}". Válidos: ${Object.values(ESTADOS_VALIDOS).join(', ')}`);
         }
         this.valor = valor;
     }
@@ -56,7 +56,7 @@ class EstadoRecibo {
             e => e === texto?.toUpperCase()
         );
         if (!estado) {
-            throw new Error(`❌ Estado no reconocido: "${texto}"`);
+            throw new Error(` Estado no reconocido: "${texto}"`);
         }
         return new EstadoRecibo(estado);
     }
@@ -105,7 +105,7 @@ const COLORES_AREA = {
 class AreaRecibocostura {
     constructor(valor) {
         if (!Object.values(AREAS_VALIDAS).includes(valor)) {
-            throw new Error(`❌ Área inválida: "${valor}". Válidas: ${Object.values(AREAS_VALIDAS).join(', ')}`);
+            throw new Error(` Área inválida: "${valor}". Válidas: ${Object.values(AREAS_VALIDAS).join(', ')}`);
         }
         this.valor = valor;
     }
@@ -115,7 +115,7 @@ class AreaRecibocostura {
             a => a === texto?.toUpperCase()
         );
         if (!area) {
-            throw new Error(`❌ Área no reconocida: "${texto}"`);
+            throw new Error(` Área no reconocida: "${texto}"`);
         }
         return new AreaRecibocostura(area);
     }
@@ -153,13 +153,13 @@ class EncargadoProceso {
         const nombreTrimmed = nombre?.trim();
         
         if (!nombreTrimmed) {
-            throw new Error('❌ Nombre de encargado no puede estar vacío');
+            throw new Error(' Nombre de encargado no puede estar vacío');
         }
         if (nombreTrimmed.length < 2) {
-            throw new Error('❌ Nombre muy corto (mínimo 2 caracteres)');
+            throw new Error(' Nombre muy corto (mínimo 2 caracteres)');
         }
         if (nombreTrimmed.length > 100) {
-            throw new Error('❌ Nombre muy largo (máximo 100 caracteres)');
+            throw new Error(' Nombre muy largo (máximo 100 caracteres)');
         }
         
         this.nombre = nombreTrimmed;
@@ -190,15 +190,15 @@ export { AreaRecibocostura, AREAS_VALIDAS, COLORES_AREA } from './AreaRecibocost
 export { EncargadoProceso } from './EncargadoProceso.js';
 ```
 
-### ✅ Fase 1 - Usos en el código actual:
+###  Fase 1 - Usos en el código actual:
 
 ```javascript
-// ANTES ❌ (en recibos-costura.blade.php)
+// ANTES  (en recibos-costura.blade.php)
 const estado = 'PENDIENTE'; // String crudo sin validación
 const area = selectArea.value; // Qué pasa si es inválido?
 selectArea.value = '';
 
-// DESPUÉS ✅ (en tu código)
+// DESPUÉS  (en tu código)
 import { EstadoRecibo, AreaRecibocostura } from './domain/value-objects/index.js';
 
 try {
@@ -333,14 +333,14 @@ const stateManager = new StateManager();
 export { StateManager, stateManager };
 ```
 
-### ✅ Fase 2 - Usos en el código:
+###  Fase 2 - Usos en el código:
 
 ```javascript
-// ANTES ❌ 
+// ANTES  
 window.currentOrderData = datos;
 window.activeFilters = {};
 
-// DESPUÉS ✅
+// DESPUÉS 
 import { stateManager } from './infrastructure/state/StateManager.js';
 
 stateManager.setRecibos(datos);
@@ -390,7 +390,7 @@ class FiltrosController {
     }
     
     init() {
-        console.log('[FiltrosController] ✅ Inicializado');
+        console.log('[FiltrosController]  Inicializado');
         
         // Escuchar cambios en filtros
         stateManager.on('filtros:cambio', (filtros) => {
@@ -411,7 +411,7 @@ class FiltrosController {
             this.notif.exito(`${recibos.length} recibos encontrados`);
             
         } catch (error) {
-            console.error('[FiltrosController] ❌ Error:', error);
+            console.error('[FiltrosController]  Error:', error);
             stateManager.setError(error.message);
             this.notif.error(error.message);
         } finally {
@@ -447,7 +447,7 @@ class ProcesoCosturaController {
     }
     
     init() {
-        console.log('[ProcesoCosturaController] ✅ Inicializado');
+        console.log('[ProcesoCosturaController]  Inicializado');
         
         // Escuchar evento de guardar desde el formulario
         window.addEventListener('agregarProceso', (e) => {
@@ -468,14 +468,14 @@ class ProcesoCosturaController {
             
             const resultado = await this.agregarProcesoUseCase.execute(datos);
             
-            this.notif.exito('✅ Proceso agregado correctamente');
+            this.notif.exito(' Proceso agregado correctamente');
             this.modalManager.close();
             
             // Emit evento para que otros módulos sepan que se agregó un proceso
             window.dispatchEvent(new CustomEvent('procesoAgregado', { detail: resultado }));
             
         } catch (error) {
-            console.error('[ProcesoCosturaController] ❌ Error:', error);
+            console.error('[ProcesoCosturaController]  Error:', error);
             stateManager.setError(error.message);
             this.notif.error(error.message);
         } finally {
@@ -650,10 +650,10 @@ class RecibosInitializer {
             const recibos = await reciboRepo.obtenerTodos();
             stateManager.setRecibos(recibos);
             
-            console.log('[RecibosInitializer] ✅ Módulo inicializado exitosamente');
+            console.log('[RecibosInitializer]  Módulo inicializado exitosamente');
             
         } catch (error) {
-            console.error('[RecibosInitializer] ❌ Error:', error);
+            console.error('[RecibosInitializer]  Error:', error);
             stateManager.setError('Error al inicializar módulo');
         }
     }
@@ -730,7 +730,7 @@ mkdir public/js/modules/recibos-costura/presentation/managers
 - [ ] Crear `domain/value-objects/AreaRecibocostura.js`
 - [ ] Crear `domain/value-objects/EncargadoProceso.js`
 - [ ] Crear `domain/value-objects/index.js`
-- [ ] ✅ Probar en console: `EstadoRecibo.desde('PENDIENTE')`
+- [ ]  Probar en console: `EstadoRecibo.desde('PENDIENTE')`
 
 ### FASE 2 (Mañana - 2-3 horas)
 - [ ] Crear `infrastructure/state/StateManager.js`
@@ -747,7 +747,7 @@ mkdir public/js/modules/recibos-costura/presentation/managers
 - [ ] Crear `initializer.js`
 - [ ] Limpiar Blade (sacar todos los scripts)
 - [ ] Probar que todo funcione
-- [ ] ✅ Done!
+- [ ]  Done!
 
 ---
 
@@ -755,8 +755,8 @@ mkdir public/js/modules/recibos-costura/presentation/managers
 
 ```javascript
 // FASE 1
-EstadoRecibo.desde('PENDIENTE') // ✅ Funciona
-EstadoRecibo.desde('INVALIDO')  // ❌ Error: Estado no reconocido
+EstadoRecibo.desde('PENDIENTE') //  Funciona
+EstadoRecibo.desde('INVALIDO')  //  Error: Estado no reconocido
 
 // FASE 2
 stateManager.getState()          // Retorna objeto con estado
@@ -777,7 +777,7 @@ modal.open()
 
 1. **Haz un archivo por entidad** - No juntes todo en 1 archivo
 2. **Exporte con `index.js`** - Facilita imports
-3. **Usa console.log estructurado** - `[Nombre] ✅/❌/📢 Mensaje`
+3. **Usa console.log estructurado** - `[Nombre] //📢 Mensaje`
 4. **Prueba cada fase antes de seguir** - No acumules errores
 5. **Mantén el Blade original** - Hasta que todo funcione
 

@@ -93,8 +93,19 @@ class CrearPedidoService
     protected function crearPedidos(array $datos): PedidoProduccion
     {
         // 1. Crear pedido base - ID generado por AUTO_INCREMENT (seguro para concurrencia)
+        // numero_pedido debe asignarse al crear (fuente de verdad única para consultas)
+        $ultimoPedido = PedidoProduccion::whereNotNull('numero_pedido')
+            ->orderByDesc('numero_pedido')
+            ->lockForUpdate()
+            ->value('numero_pedido');
+        $numeroPedido = $ultimoPedido ? ((int) $ultimoPedido + 1) : 1;
+
+        if (PedidoProduccion::where('numero_pedido', $numeroPedido)->exists()) {
+            throw new \RuntimeException("El número de pedido {$numeroPedido} ya está en uso");
+        }
+
         $pedido = PedidoProduccion::create([
-            'numero_pedido' => null, // Se asignará después por Cartera
+            'numero_pedido' => $numeroPedido,
             'cliente' => $datos['cliente'],
             'asesor_id' => Auth::id(),
             'forma_de_pago' => $datos['forma_de_pago'] ?? null,
@@ -327,4 +338,3 @@ class CrearPedidoService
         }
     }
 }
-

@@ -14,7 +14,13 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use DomainException;
+use App\Exceptions\DomainException;
+use App\Exceptions\ValidationException as AppValidationException;
+use App\Exceptions\ResourceNotFoundException;
+use App\Exceptions\UnauthorizedException;
+use App\Exceptions\AuthenticationException as AppAuthenticationException;
+use App\Exceptions\ApplicationException;
+use Illuminate\Support\Facades\Auth;
 
 class Handler extends ExceptionHandler
 {
@@ -107,11 +113,18 @@ class Handler extends ExceptionHandler
     protected function isDomainException(Throwable $e): bool
     {
         return $e instanceof DomainException ||
+               $e instanceof ValidationException ||
+               $e instanceof ResourceNotFoundException ||
+               $e instanceof UnauthorizedException ||
+               $e instanceof AppAuthenticationException ||
+               $e instanceof ApplicationException ||
                $e instanceof ModelNotFoundException ||
                $e instanceof CotizacionException ||
                $e instanceof PrendaException ||
                $e instanceof ImagenException ||
-               $e instanceof PedidoException;
+               $e instanceof PedidoException ||
+               $e instanceof RegistroOrdenException ||
+               $e instanceof AppValidationException;
     }
 
     /**
@@ -128,6 +141,9 @@ class Handler extends ExceptionHandler
 
         // Si espera JSON, responder con el array del error
         if ($request->expectsJson()) {
+            if (method_exists($e, 'getJsonResponse') && method_exists($e, 'getStatusCode')) {
+                return response()->json($e->getJsonResponse(), $e->getStatusCode());
+            }
             if (method_exists($e, 'toArray')) {
                 $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 400;
                 return response()->json($e->toArray(), $statusCode);
@@ -170,6 +186,23 @@ class Handler extends ExceptionHandler
     protected function getFriendlyMessage(Throwable $e): string
     {
         switch (true) {
+            // Excepciones personalizadas del dominio (DDD)
+            case $e instanceof AppAuthenticationException:
+                return $e->getMessage() ?: 'Debes autenticarte para continuar.';
+                
+            case $e instanceof UnauthorizedException:
+                return $e->getMessage() ?: 'No tienes permisos para realizar esta acción.';
+                
+            case $e instanceof ResourceNotFoundException:
+                return $e->getMessage() ?: 'El recurso que buscas no existe.';
+                
+            case $e instanceof AppValidationException:
+                return $e->getMessage() ?: 'Los datos proporcionados no son válidos.';
+                
+            case $e instanceof ApplicationException:
+                return $e->getMessage() ?: 'Ocurrió un error durante la operación.';
+            
+            // Excepciones del dominio heredadas
             case $e instanceof DomainException:
                 return $e->getMessage() ?: 'La operación no pudo completarse. Verifica los datos e intenta nuevamente.';
                 
@@ -317,4 +350,3 @@ class Handler extends ExceptionHandler
         ], $this->getStatusCode($e));
     }
 }
-

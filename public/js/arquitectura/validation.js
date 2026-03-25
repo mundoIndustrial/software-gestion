@@ -36,10 +36,10 @@ function validateArchitecture() {
     console.log('\n✓ MÓDULOS CARGADOS:');
     Object.entries(checks).forEach(([name, exists]) => {
         if (exists) {
-            console.log(`  ✅ ${name}`);
+            console.log(`   ${name}`);
             passed++;
         } else {
-            console.error(`  ❌ ${name} - NO ENCONTRADO`);
+            console.error(`   ${name} - NO ENCONTRADO`);
             failed++;
         }
     });
@@ -47,10 +47,10 @@ function validateArchitecture() {
     console.log(`\n📊 RESULTADO: ${passed}/${Object.keys(checks).length} módulos cargados`);
 
     if (failed === 0) {
-        console.log('✅ TODOS LOS MÓDULOS ESTÁN CARGADOS CORRECTAMENTE');
+        console.log(' TODOS LOS MÓDULOS ESTÁN CARGADOS CORRECTAMENTE');
         return true;
     } else {
-        console.error('❌ FALTAN MÓDULOS - LA ARQUITECTURA NO ESTÁ COMPLETA');
+        console.error(' FALTAN MÓDULOS - LA ARQUITECTURA NO ESTÁ COMPLETA');
         return false;
     }
 }
@@ -71,7 +71,7 @@ function validateWizardState() {
     const status = window.ColoresPorTallaV2.getWizardStatus();
     
     console.log('\n📋 INFORMACIÓN DEL WIZARD:');
-    console.log(`  Inicializado: ${status.initialized ? '✅' : '❌'}`);
+    console.log(`  Inicializado: ${status.initialized ? '' : ''}`);
     console.log(`  Estado actual: ${status.state || 'N/A'}`);
     console.log(`  Historial de estados: ${status.stateHistory?.length || 0} transiciones`);
     console.log(`  Historial de eventos: ${status.eventHistory?.length || 0} eventos`);
@@ -102,7 +102,7 @@ async function validateUserInteraction() {
     try {
         console.log('\n1️⃣  Abriendo wizard...');
         await window.ColoresPorTallaV2.toggleVistaAsignacion();
-        console.log('  ✅ Wizard abierto');
+        console.log('   Wizard abierto');
 
         const status1 = window.ColoresPorTallaV2.getWizardStatus();
         console.log(`  Estado: ${status1.state}`);
@@ -112,16 +112,16 @@ async function validateUserInteraction() {
 
         console.log('\n3️⃣  Cerrando wizard...');
         await window.ColoresPorTallaV2.toggleVistaAsignacion();
-        console.log('  ✅ Wizard cerrado');
+        console.log('   Wizard cerrado');
 
         const status2 = window.ColoresPorTallaV2.getWizardStatus();
         console.log(`  Estado: ${status2.state}`);
 
-        console.log('\n✅ INTERACCIÓN COMPLETADA EXITOSAMENTE');
+        console.log('\n INTERACCIÓN COMPLETADA EXITOSAMENTE');
         return true;
 
     } catch (error) {
-        console.error('❌ Error en interacción:', error);
+        console.error(' Error en interacción:', error);
         return false;
     }
 }
@@ -145,7 +145,7 @@ function validateMemoryCleanup() {
     console.log(`  Estado: ${status.state}`);
     
     if (status.state === 'IDLE') {
-        console.log('  ✅ Wizard está en estado IDLE (limpio)');
+        console.log('   Wizard está en estado IDLE (limpio)');
     } else {
         console.log(`  ⚠️  Wizard está en estado ${status.state} (verificar si debe limpiarse)`);
     }
@@ -183,15 +183,15 @@ function validateBackwardCompatibility() {
     methods.forEach(method => {
         const present = typeof window.ColoresPorTalla?.[method] === 'function';
         if (present) {
-            console.log(`  ✅ ${method}()`);
+            console.log(`   ${method}()`);
         } else {
-            console.error(`  ❌ ${method}() - NO DISPONIBLE`);
+            console.error(`   ${method}() - NO DISPONIBLE`);
             allPresent = false;
         }
     });
 
     if (allPresent) {
-        console.log('\n✅ TODOS LOS MÉTODOS LEGACY ESTÁN DISPONIBLES');
+        console.log('\n TODOS LOS MÉTODOS LEGACY ESTÁN DISPONIBLES');
     } else {
         console.log('\n⚠️  ALGUNOS MÉTODOS LEGACY FALTAN');
     }
@@ -207,7 +207,7 @@ async function validateAll() {
     
     const check1 = validateArchitecture();
     if (!check1) {
-        console.error('\n❌ La validación se detuvo: módulos no encontrados');
+        console.error('\n La validación se detuvo: módulos no encontrados');
         return;
     }
 
@@ -218,7 +218,7 @@ async function validateAll() {
     console.log('║  RESUMEN DE VALIDACIÓN                               ║');
     console.log('╚════════════════════════════════════════════════════════╝');
     
-    console.log('\n✅ LA ARQUITECTURA ESTÁ CORRECTAMENTE INTEGRADA');
+    console.log('\n LA ARQUITECTURA ESTÁ CORRECTAMENTE INTEGRADA');
     console.log('\n🎯 PRÓXIMOS PASOS:');
     console.log('  1. Abrir la modal de "Agregar Prenda Nueva"');
     console.log('  2. Hacer clic en "Asignar Colores"');
@@ -242,5 +242,5 @@ window.WizardValidation = {
     checkStatus: () => window.getArchitectureStatus()
 };
 
-console.log('✅ Archivo de validación cargado');
+console.log(' Archivo de validación cargado');
 console.log('📝 Ejecutar: window.WizardValidation.validateAll()');

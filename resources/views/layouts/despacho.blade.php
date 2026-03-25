@@ -143,12 +143,12 @@
             try {
                 callback();
             } catch (error) {
-                console.error('[Layout] ❌ Error ejecutando callback de Echo:', error);
+                console.error('[Layout]  Error ejecutando callback de Echo:', error);
             }
         }
     };
     
-    console.log('[Layout] ✅ Stubs de window.waitForEcho() pre-inicializados');
+    console.log('[Layout]  Stubs de window.waitForEcho() pre-inicializados');
 </script>
 
 <!-- Vite App Bundle (incluye Bootstrap.js con Echo initialization) -->

@@ -212,7 +212,7 @@ export class PedidosRecibosModule {
             const prendaData = datos.prendas.find(p => p.id == prendaId);
             
             if (!prendaData) {
-                console.error(`[PedidosRecibosModule] ❌ Prenda ${prendaId} no encontrada`);
+                console.error(`[PedidosRecibosModule]  Prenda ${prendaId} no encontrada`);
                 console.error(`[PedidosRecibosModule] 🔍 Búsqueda realizada con:`, {
                     buscarPor: 'id',
                     valorBuscado: prendaId,
@@ -226,7 +226,7 @@ export class PedidosRecibosModule {
                 throw new Error(`Prenda ${prendaId} no encontrada`);
             }
             
-            console.log(`[PedidosRecibosModule] ✅ Prenda encontrada:`, {
+            console.log(`[PedidosRecibosModule]  Prenda encontrada:`, {
                 id: prendaData.id,
                 nombre: prendaData.nombre || prendaData.nombre_prenda,
                 tieneRecibos: !!prendaData.recibos,
@@ -1027,7 +1027,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                     // Para cualquier tipo de recibo (incluyendo COSTURA), usar tallas_detalle si está disponible
                     if (Array.isArray(reciboActual.tallas_detalle) && reciboActual.tallas_detalle.length > 0) {
                         tallasProceso = reciboActual.tallas_detalle;
-                        console.log('[printReceiptModal] ✅ Usando tallas_detalle del reciboActual:', tallasProceso);
+                        console.log('[printReceiptModal]  Usando tallas_detalle del reciboActual:', tallasProceso);
                     } else if (tipoProceso.toUpperCase() === 'COSTURA') {
                         // Para COSTURA: usar variantes si no hay tallas_detalle
                         const variantes = reciboActual?.variantes || prendaData?.variantes || [];
@@ -1042,7 +1042,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                                 es_sobremedida: v.es_sobremedida || false,
                                 observaciones: v.observaciones || []
                             }));
-                            console.log('[printReceiptModal] ✅ COSTURA - Variantes convertidas a tallas_detalle:', tallasProceso);
+                            console.log('[printReceiptModal]  COSTURA - Variantes convertidas a tallas_detalle:', tallasProceso);
                         }
                     } else if (prendaData?.procesos && Array.isArray(prendaData.procesos)) {
                         // Buscar el proceso actual en prendaData.procesos por tipo
@@ -1054,7 +1054,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                         
                         if (procesoActual && Array.isArray(procesoActual.tallas_detalle) && procesoActual.tallas_detalle.length > 0) {
                             tallasProceso = procesoActual.tallas_detalle;
-                            console.log('[printReceiptModal] ✅ Usando tallas_detalle del proceso encontrado en prendaData:', tallasProceso);
+                            console.log('[printReceiptModal]  Usando tallas_detalle del proceso encontrado en prendaData:', tallasProceso);
                         } else if (procesoActual && procesoActual.tallas_detalle) {
                             console.log('[printReceiptModal] ⚠️ procesoActual.tallas_detalle existe pero no es array válido:', procesoActual.tallas_detalle);
                         }
@@ -1062,7 +1062,7 @@ window.openOrderDetailModalWithProcess = async function(pedidoId, prendaId, tipo
                         // Si no hay tallas_detalle, intentar con tallas del proceso
                         if (!tallasProceso && procesoActual?.tallas) {
                             tallasProceso = procesoActual.tallas;
-                            console.log('[printReceiptModal] ✅ Usando tallas del proceso encontrado en prendaData:', tallasProceso);
+                            console.log('[printReceiptModal]  Usando tallas del proceso encontrado en prendaData:', tallasProceso);
                         }
                     }
                 }

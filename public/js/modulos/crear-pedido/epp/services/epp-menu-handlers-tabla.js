@@ -14,7 +14,7 @@ class EppMenuHandlerTabla extends EppMenuHandlerBase {
             btnEliminarSelector: '.btn-eliminar-epp',
             submenuSelector: '.submenu-epp'
         });
-        console.log('[EppMenuHandlerTabla] ✅ Inicializado para estructura TABLA');
+        console.log('[EppMenuHandlerTabla]  Inicializado para estructura TABLA');
     }
 
     attachEventListeners() {
@@ -55,10 +55,10 @@ class EppMenuHandlerTabla extends EppMenuHandlerBase {
             }
         });
         
-        console.log('[EppMenuHandlerTabla] ✅ Event listeners configurados');
+        console.log('[EppMenuHandlerTabla]  Event listeners configurados');
     }
 }
 
 // Exportar instancia global
 window.eppMenuHandlerTabla = new EppMenuHandlerTabla();
-console.log('[EppMenuHandlerTabla] ✅ Instancia global creada');
+console.log('[EppMenuHandlerTabla]  Instancia global creada');

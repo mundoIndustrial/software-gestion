@@ -125,7 +125,7 @@ class AddProcessModalController {
 
                 if (prendaEncontrada) {
                     window.currentPrendaData = prendaEncontrada;
-                    console.log('[AddProcessModalController] ✅ Prenda encontrada:', prendaEncontrada.nombre_prenda || prendaEncontrada.nombre);
+                    console.log('[AddProcessModalController]  Prenda encontrada:', prendaEncontrada.nombre_prenda || prendaEncontrada.nombre);
                 } else {
                     throw new Error(`Prenda con ID ${prendaId} no encontrada en pedido ${pedidoId}`);
                 }
@@ -133,7 +133,7 @@ class AddProcessModalController {
                 throw new Error('El pedido no tiene prendas asociadas');
             }
 
-            console.log('[AddProcessModalController] ✅ Datos cargados correctamente');
+            console.log('[AddProcessModalController]  Datos cargados correctamente');
         } catch (error) {
             console.error('[AddProcessModalController] Error cargando datos:', error);
             throw error;
@@ -174,14 +174,14 @@ class AddProcessModalController {
         }
 
         if (!window.currentOrderData || !window.currentPrendaData) {
-            console.error('[AddProcessModalController] ❌ Faltan datos necesarios');
+            console.error('[AddProcessModalController]  Faltan datos necesarios');
             alert('Error: No hay datos de la prenda o pedido. Por favor, recarga la página e intenta nuevamente.');
             event.preventDefault();
             event.stopPropagation();
             return false;
         }
 
-        console.log('[AddProcessModalController] ✅ Datos verificados, procediendo...');
+        console.log('[AddProcessModalController]  Datos verificados, procediendo...');
         return this.save();
     }
 
@@ -398,7 +398,7 @@ class AddProcessModalController {
         const selectArea = document.getElementById('procesoArea');
         if (selectArea) {
             selectArea.value = areaSeleccionada;
-            console.log('[AddProcessModalController] ✅ Área seleccionada automáticamente:', areaSeleccionada);
+            console.log('[AddProcessModalController]  Área seleccionada automáticamente:', areaSeleccionada);
         }
 
         // Limpiar el campo de encargado y enfocarlo
@@ -415,6 +415,6 @@ class AddProcessModalController {
             btnConfirm.addEventListener('click', (e) => this.verifyAndSave(e));
         }
 
-        console.log('[AddProcessModalController] ✅ Modal abierto con datos cargados');
+        console.log('[AddProcessModalController]  Modal abierto con datos cargados');
     }
 }

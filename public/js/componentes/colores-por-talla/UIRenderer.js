@@ -760,7 +760,7 @@ window.UIRenderer = (function() {
                             window.StateManager.setAsignaciones(asignaciones);
                         }
                         self.actualizarResumenAsignaciones();
-                        console.log('[UIRenderer] ✅ Fila editada:', { tela: nTela, genero: nGenero, talla: nTalla, color: nColor, cantidad: nCantidad });
+                        console.log('[UIRenderer]  Fila editada:', { tela: nTela, genero: nGenero, talla: nTalla, color: nColor, cantidad: nCantidad });
                     });
 
                     tdAccion.querySelector('.btn-cancelar-edicion').addEventListener('click', function(ev) {

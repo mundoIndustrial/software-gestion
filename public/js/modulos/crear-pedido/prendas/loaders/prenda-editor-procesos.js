@@ -23,7 +23,7 @@ class PrendaEditorProcesos {
         }
         
         if (Array.isArray(prenda.procesos)) {
-            console.log('✅ [PROCESOS-LOADER] Es ARRAY con', prenda.procesos.length, 'elementos');
+            console.log(' [PROCESOS-LOADER] Es ARRAY con', prenda.procesos.length, 'elementos');
         }
         
         console.log('⚙️ [Procesos] Cargando:', {
@@ -189,7 +189,7 @@ class PrendaEditorProcesos {
                     if (tallasVacias && tallaCantidadVacia) {
                         datos.tallas = JSON.parse(JSON.stringify(tallasParaProceso));
                         datos._aplicarTodasTallas = true; // Flag para indicar que fue auto-asignado
-                        console.log(`[Procesos] ✅ ${key}: tallas auto-asignadas (todas las de la prenda)`, datos.tallas);
+                        console.log(`[Procesos]  ${key}: tallas auto-asignadas (todas las de la prenda)`, datos.tallas);
                     }
                 });
             }
@@ -197,7 +197,7 @@ class PrendaEditorProcesos {
         
         // 🎨 CRÍTICO: Usar el nuevo renderizador de tarjetas
         if (window.renderizarTarjetasProcesos) {
-            console.log('✅ [Procesos] Función renderizarTarjetasProcesos() disponible');
+            console.log(' [Procesos] Función renderizarTarjetasProcesos() disponible');
             console.log('[Procesos]  window.procesosSeleccionados actual:', window.procesosSeleccionados);
             
             // Ejecutar inmediatamente (sin delay)
@@ -212,7 +212,7 @@ class PrendaEditorProcesos {
             });
             
             if (exito) {
-                console.log('✅ [Procesos] Completado - Tarjetas renderizadas correctamente');
+                console.log(' [Procesos] Completado - Tarjetas renderizadas correctamente');
                 
                 // 🔴 CRÍTICO: Marcar los checkboxes de procesos correspondientes
                 this._marcarCheckboxesProcesos(window.procesosSeleccionados);
@@ -226,7 +226,7 @@ class PrendaEditorProcesos {
                 if (typeof configurarDragDropProcesos === 'function') {
                     console.log('[PROCESOS-LOADER] 🚀 Llamando a configurarDragDropProcesos desde loader');
                     configurarDragDropProcesos();
-                    console.log('[PROCESOS-LOADER] ✅ configurarDragDropProcesos ejecutado');
+                    console.log('[PROCESOS-LOADER]  configurarDragDropProcesos ejecutado');
                 } else {
                     console.warn('[PROCESOS-LOADER] ⚠️ configurarDragDropProcesos no disponible');
                 }
@@ -234,7 +234,7 @@ class PrendaEditorProcesos {
                 // Verificación final: asegurar que el contenedor es visible
                 const container = document.getElementById('contenedor-tarjetas-procesos');
                 if (container) {
-                    console.log('[Procesos] ✅ Contenedor visible:', {
+                    console.log('[Procesos]  Contenedor visible:', {
                         display: container.style.display,
                         visibility: container.style.visibility,
                         innerHTML_length: container.innerHTML.length
@@ -258,7 +258,7 @@ class PrendaEditorProcesos {
         }
         
         if (!container) {
-            console.warn('❌ [Procesos] No encontrado contenedor');
+            console.warn(' [Procesos] No encontrado contenedor');
             return;
         }
         
@@ -279,10 +279,10 @@ class PrendaEditorProcesos {
         procesosArray.forEach((proceso, idx) => {
             const tarjeta = this._crearTarjeta(proceso, idx);
             container.appendChild(tarjeta);
-            console.log(`✅ [Procesos] ${idx + 1}: ${proceso.nombre}`);
+            console.log(` [Procesos] ${idx + 1}: ${proceso.nombre}`);
         });
         
-        console.log('✅ [Procesos] Completado (modo fallback)');
+        console.log(' [Procesos] Completado (modo fallback)');
     }
 
     /**
@@ -378,7 +378,7 @@ class PrendaEditorProcesos {
                     cb._ignorarOnclick = true;
                     cb.checked = true;
                     cb._ignorarOnclick = false;
-                    console.log(`✅ [Procesos] Checkbox '${checkboxId}' marcado para proceso '${tipoProceso}'`);
+                    console.log(` [Procesos] Checkbox '${checkboxId}' marcado para proceso '${tipoProceso}'`);
                 }
             } else {
                 console.log(`ℹ️ [Procesos] No hay checkbox mapeado para proceso '${tipoProceso}' (tipo: '${tipoLower}')`);

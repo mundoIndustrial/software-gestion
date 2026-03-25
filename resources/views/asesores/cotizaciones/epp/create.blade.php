@@ -435,7 +435,7 @@ NIT 1.093.738.433-3</textarea>
 <script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-api-service.js') }}"></script>
 <script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-state-manager.js') }}"></script>
 <script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-modal-manager.js') }}"></script>
-<script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-item-manager.js') }}?v={{ time() }}"></script>
+<script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-item-manager-tabla.js') }}?v={{ time() }}"></script>
 <script defer src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}"></script>
 <script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-imagen-manager.js') }}"></script>
 <script defer src="{{ asset('js/modulos/crear-pedido/epp/services/epp-service.js') }}"></script>

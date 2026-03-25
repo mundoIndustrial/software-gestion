@@ -102,7 +102,7 @@ function abrirModalNovedadesRecibo(pedidoId, numeroRecibo) {
         console.log('[abrirModalNovedadesRecibo] 📦 Modal encontrado:', !!modal);
         
         if (!modal) {
-            console.error('[abrirModalNovedadesRecibo] ❌ No existe #novedadesEditModal');
+            console.error('[abrirModalNovedadesRecibo]  No existe #novedadesEditModal');
             return;
         }
 
@@ -168,7 +168,7 @@ async function cargarNovedadesRecibo(pedidoId, numeroRecibo) {
         console.log('[cargarNovedadesRecibo] 📊 Datos recibidos:', data);
 
         if (data.success && data.data && data.data.length > 0) {
-            console.log('[cargarNovedadesRecibo] ✅ Éxito - Novedades encontradas:', data.data.length);
+            console.log('[cargarNovedadesRecibo]  Éxito - Novedades encontradas:', data.data.length);
             
             // Construir historial con formato de notas individuales
             const novedadesHTML = data.data.map(novedad => {
@@ -285,7 +285,7 @@ async function guardarNovedad() {
         console.log('[guardarNovedad] 📦 Textarea encontrado:', !!nuevaContent);
         
         if (!pedidoId || !numeroRecibo || !nuevaContent) {
-            console.error('[guardarNovedad] ❌ Faltan datos para guardar la novedad');
+            console.error('[guardarNovedad]  Faltan datos para guardar la novedad');
             mostrarAlerta('Error', 'Faltan datos para guardar la novedad', 'error');
             return;
         }
@@ -325,8 +325,8 @@ async function guardarNovedad() {
         console.log('[guardarNovedad] 📊 Respuesta API:', result);
 
         if (result.success) {
-            console.log('[guardarNovedad] ✅ Éxito al guardar');
-            mostrarAlerta('✅ Éxito', 'Novedad agregada correctamente', 'success');
+            console.log('[guardarNovedad]  Éxito al guardar');
+            mostrarAlerta(' Éxito', 'Novedad agregada correctamente', 'success');
             
             // Limpiar textarea
             nuevaContent.value = '';
@@ -340,13 +340,13 @@ async function guardarNovedad() {
             console.log('[guardarNovedad] 🔄 Actualizando botón principal...');
             actualizarBotonNovedadesEnTabla(pedidoId, numeroRecibo);
         } else {
-            console.error('[guardarNovedad] ❌ Error en respuesta:', result.message);
-            mostrarAlerta('❌ Error', result.message || 'No se pudo guardar la novedad', 'error');
+            console.error('[guardarNovedad]  Error en respuesta:', result.message);
+            mostrarAlerta(' Error', result.message || 'No se pudo guardar la novedad', 'error');
         }
 
     } catch (error) {
         console.error('[guardarNovedad] 💥 Error:', error);
-        mostrarAlerta('❌ Error', 'Error de conexión al guardar la novedad', 'error');
+        mostrarAlerta(' Error', 'Error de conexión al guardar la novedad', 'error');
     } finally {
         // Restaurar botón
         const btnGuardar = document.querySelector('button[onclick="guardarNovedad()"]');
@@ -445,8 +445,8 @@ async function eliminarNovedad(novedadId) {
                     console.log('[eliminarNovedad] 📊 Respuesta DELETE:', result);
 
                     if (result.success) {
-                        console.log('[eliminarNovedad] ✅ Eliminación exitosa');
-                        mostrarAlerta('✅ Éxito', 'Novedad eliminada correctamente', 'success');
+                        console.log('[eliminarNovedad]  Eliminación exitosa');
+                        mostrarAlerta(' Éxito', 'Novedad eliminada correctamente', 'success');
                         cerrarModalConfirmarEliminar();
                         
                         // Recargar novedades en tiempo real
@@ -458,12 +458,12 @@ async function eliminarNovedad(novedadId) {
                         console.log('[eliminarNovedad] 🔄 Actualizando botón principal...');
                         actualizarBotonNovedadesEnTabla(ctx.pedido_id, ctx.numero_recibo);
                     } else {
-                        console.error('[eliminarNovedad] ❌ Error en respuesta:', result.message);
-                        mostrarAlerta('❌ Error', result.message || 'No se pudo eliminar la novedad', 'error');
+                        console.error('[eliminarNovedad]  Error en respuesta:', result.message);
+                        mostrarAlerta(' Error', result.message || 'No se pudo eliminar la novedad', 'error');
                     }
                 } catch (error) {
                     console.error('[eliminarNovedad] 💥 Error en DELETE:', error);
-                    mostrarAlerta('❌ Error', 'Error de conexión al eliminar la novedad', 'error');
+                    mostrarAlerta(' Error', 'Error de conexión al eliminar la novedad', 'error');
                 } finally {
                     // Restaurar botón (por si el modal no se cierra inmediatamente)
                     this.disabled = false;
@@ -472,15 +472,15 @@ async function eliminarNovedad(novedadId) {
                 }
             };
             
-            console.log('[eliminarNovedad] ✅ Evento onclick adjuntado inmediatamente');
+            console.log('[eliminarNovedad]  Evento onclick adjuntado inmediatamente');
             
         } else {
-            console.error('[eliminarNovedad] ❌ No se encontró el botón de confirmación');
+            console.error('[eliminarNovedad]  No se encontró el botón de confirmación');
         }
         
     } catch (error) {
         console.error('[eliminarNovedad] 💥 Error al crear modal:', error);
-        mostrarAlerta('❌ Error', 'Error al abrir el modal de confirmación', 'error');
+        mostrarAlerta(' Error', 'Error al abrir el modal de confirmación', 'error');
     }
 }
 
@@ -608,7 +608,7 @@ async function guardarEdicionNovedad(novedadId) {
         const result = await response.json();
         
         if (result.success) {
-            mostrarAlerta('✅ Éxito', 'Novedad actualizada correctamente', 'success');
+            mostrarAlerta(' Éxito', 'Novedad actualizada correctamente', 'success');
             cerrarModalEditarNovedad();
             
             // Recargar novedades en tiempo real
@@ -618,12 +618,12 @@ async function guardarEdicionNovedad(novedadId) {
             // Actualizar el botón en la tabla principal (si existe)
             actualizarBotonNovedadesEnTabla(ctx.pedido_id, ctx.numero_recibo);
         } else {
-            mostrarAlerta('❌ Error', result.message || 'No se pudo actualizar la novedad', 'error');
+            mostrarAlerta(' Error', result.message || 'No se pudo actualizar la novedad', 'error');
         }
         
     } catch (error) {
         console.error('[guardarEdicionNovedad] Error:', error);
-        mostrarAlerta('❌ Error', 'Error de conexión al actualizar la novedad', 'error');
+        mostrarAlerta(' Error', 'Error de conexión al actualizar la novedad', 'error');
     } finally {
         // Restaurar botón
         const btnGuardar = document.querySelector('button[onclick="guardarEdicionNovedad(' + novedadId + ')"]');
@@ -711,7 +711,7 @@ function cerrarModalConfirmarEliminar() {
     if (modal) {
         console.log('[cerrarModalConfirmarEliminar] 🗑️ Eliminando modal del DOM');
         modal.remove();
-        console.log('[cerrarModalConfirmarEliminar] ✅ Modal eliminado');
+        console.log('[cerrarModalConfirmarEliminar]  Modal eliminado');
     } else {
         console.warn('[cerrarModalConfirmarEliminar] ⚠️ No se encontró el modal para cerrar');
     }

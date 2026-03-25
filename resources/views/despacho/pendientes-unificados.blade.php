@@ -1249,7 +1249,7 @@ function connectWebSocket() {
     try {
         // Usar la instancia existente de Echo en lugar de crear una nueva
         if (!window.EchoInstance) {
-            console.error('❌ EchoInstance no está disponible');
+            console.error(' EchoInstance no está disponible');
             return;
         }
         
@@ -1262,11 +1262,11 @@ function connectWebSocket() {
         const despachoChannel = socket.channel('despacho.pedidos');
         
         if (!despachoChannel) {
-            console.error('❌ No se pudo crear el canal despacho.pedidos');
+            console.error(' No se pudo crear el canal despacho.pedidos');
             return;
         }
         
-        console.log('✅ Canal despacho.pedidos creado, configurando listener...');
+        console.log(' Canal despacho.pedidos creado, configurando listener...');
         
         despachoChannel.listen('.pedido.actualizado', (event) => {
             console.log('📦 Pedido actualizado en tiempo real (despacho):', event);
@@ -1292,12 +1292,12 @@ function connectWebSocket() {
             }
         })
         .error((error) => {
-            console.error('❌ Error en WebSocket (despacho):', error);
+            console.error(' Error en WebSocket (despacho):', error);
         });
 
-        console.log('✅ WebSocket conectado para lista de despacho');
+        console.log(' WebSocket conectado para lista de despacho');
     } catch (error) {
-        console.error('❌ Error al conectar WebSocket:', error);
+        console.error(' Error al conectar WebSocket:', error);
         if (reconnectAttempts < maxReconnectAttempts) {
             reconnectAttempts++;
             setTimeout(connectWebSocket, 2000 * reconnectAttempts);
@@ -1309,7 +1309,7 @@ function connectWebSocket() {
 function initializeWebSocket() {
     // Verificar si waitForEcho está disponible
     if (typeof window.waitForEcho === 'function') {
-        console.log('✅ waitForEcho disponible, iniciando...');
+        console.log(' waitForEcho disponible, iniciando...');
         // Usar el sistema waitForEcho para asegurar que Echo esté disponible
         window.waitForEcho(function() {
             console.log('🚀 Echo está listo, conectando WebSocket para lista de despacho...');
@@ -1329,7 +1329,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Verificar si estamos en la página correcta
     if (window.location.pathname.includes('/despacho/pendientes')) {
-        console.log('✅ Estamos en la página de despacho pendientes');
+        console.log(' Estamos en la página de despacho pendientes');
     } else {
         console.log('⚠️ No estamos en /despacho/pendientes, estamos en:', window.location.pathname);
     }

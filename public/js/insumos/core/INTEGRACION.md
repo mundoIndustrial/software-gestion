@@ -1,7 +1,7 @@
 /**
  * INTEGRACIÓN - ARQUITECTURA HYBRID DDD PARA INSUMOS
  * 
- * Estado: ✅ CORE LAYER COMPLETADO (Domain + Infrastructure + Application)
+ * Estado:  CORE LAYER COMPLETADO (Domain + Infrastructure + Application)
  * 
  * Archivos Creados:
  * - public/js/insumos/core/domain/InsumoRepository.js          [Abstract interface]
@@ -55,7 +55,7 @@
  * PASO 2: REFACTORIZAR index-blade-handlers.js
  * ========================================================================
  * 
- * PATRÓN ACTUAL (❌ NO RECOMENDADO):
+ * PATRÓN ACTUAL ( NO RECOMENDADO):
  * 
  *    window.abrirModalInsumos = function(pedido, prendaId) {
  *        fetch(`/insumos/api/materiales/${pedido}`)
@@ -63,7 +63,7 @@
  *            .then(data => llenarTablaInsumos(data.materiales));
  *    };
  * 
- * PATRÓN NUEVO (✅ CON DDD):
+ * PATRÓN NUEVO ( CON DDD):
  * 
  *    window.abrirModalInsumos = async function(pedido, prendaId) {
  *        try {
@@ -94,7 +94,7 @@
  * PASO 3: EJEMPLO COMPLETO - GUARDAR CAMBIOS
  * ========================================================================
  * 
- * PATRÓN ACTUAL (❌):
+ * PATRÓN ACTUAL ():
  * 
  *    function guardarCambiosInsumos() {
  *        const materiales = obtenerDatosTabla();
@@ -105,11 +105,11 @@
  *        .then(r => r.json())
  *        .then(data => {
  *            showToast('Guardado', 'success');
- *            cache_manager.clear();  // ❌ Acoplado a module global
+ *            cache_manager.clear();  //  Acoplado a module global
  *        });
  *    }
  * 
- * PATRÓN NUEVO (✅):
+ * PATRÓN NUEVO ():
  * 
  *    async function guardarCambiosInsumos() {
  *        try {

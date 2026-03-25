@@ -171,11 +171,11 @@ function initializeRealtimeRecibos() {
         const channelSupervisor = echo.channel('supervisor-pedidos');
         
         channelSupervisor.subscribed(() => {
-            console.log('[Recibos COSTURA] ✅ Suscripción exitosa');
+            console.log('[Recibos COSTURA]  Suscripción exitosa');
         });
 
         channelSupervisor.error((error) => {
-            console.error('[Recibos COSTURA] ❌ Error en suscripción:', error);
+            console.error('[Recibos COSTURA]  Error en suscripción:', error);
         });
 
         // Escuchar evento cuando se aprueba un pedido
@@ -185,7 +185,7 @@ function initializeRealtimeRecibos() {
                 
                 // SOLO procesar si el estado es PENDIENTE_INSUMOS
                 if (data.orden && data.orden.estado === 'PENDIENTE_INSUMOS') {
-                    console.log('[Recibos COSTURA] ✅ Recibo aprobado a PENDIENTE_INSUMOS');
+                    console.log('[Recibos COSTURA]  Recibo aprobado a PENDIENTE_INSUMOS');
                     
                     // Agregar a notificaciones
                     agregarNotificacionRecibo(data.orden);
@@ -198,7 +198,7 @@ function initializeRealtimeRecibos() {
             });
         });
 
-        console.log('[Recibos COSTURA] ✅ Sistema inicializado');
+        console.log('[Recibos COSTURA]  Sistema inicializado');
     });
 }
 
@@ -257,7 +257,7 @@ async function inicializarCampana() {
     });
     
     if (!bellBtn || !badgeElement) {
-        console.error('[Campana] ❌ Elementos de campana no encontrados en el DOM');
+        console.error('[Campana]  Elementos de campana no encontrados en el DOM');
         console.log('[Campana] IDs buscados: notificationBellBtn, notificationBadge');
         return;
     }

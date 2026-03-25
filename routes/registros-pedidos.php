@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Infrastructure\Http\Controllers\RegistroOrdenController;
 use App\Infrastructure\Http\Controllers\RegistroOrdenQueryController;
-use App\Infrastructure\Http\Controllers\RegistroBodegaController;
+use App\Http\Controllers\RegistroBodegaController;
 use App\Infrastructure\Http\Controllers\Asesores\ProcesosPedidoController;
 use App\Http\Controllers\InvoiceController;
 
@@ -54,7 +54,6 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/api/pedido/{id}/area-reciente', [RegistroOrdenController::class, 'getAreaReciente'])->name('api.pedido.area-reciente');
     Route::post('/api/registros/dias-batch', [RegistroOrdenQueryController::class, 'calcularDiasBatchAPI'])->name('api.registros.dias-batch');
     Route::post('/api/registros/{id}/calcular-fecha-estimada', [RegistroOrdenQueryController::class, 'calcularFechaEstimada'])->name('api.registros.calcular-fecha-estimada');
-    Route::get('/api/logo-pedidos/{id}', [RegistroOrdenQueryController::class, 'showLogoPedidoById'])->name('api.logo-pedidos.show');
     Route::get('/api/bodega/{numero_pedido}/dias', [RegistroBodegaController::class, 'calcularDiasAPI'])->name('api.bodega.dias');
     Route::get('/api/registros/{numero_pedido}/dias', [RegistroOrdenQueryController::class, 'calcularDiasAPI'])->name('api.registros.dias');
     Route::get('/api/tabla-original/{numeroPedido}/procesos', [RegistroOrdenController::class, 'getProcesosTablaOriginal'])->name('api.tabla-original.procesos');
@@ -91,7 +90,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     // ========================================
     // POST ROUTES (CRUD Operations)
     // ========================================
-    Route::post('/registros', [RegistroOrdenController::class, 'store'])->name('registros.store');
+    // NOTA: La creación de pedidos se centraliza en /asesores/pedidos-editable/*
     Route::post('/registros/validate-pedido', [RegistroOrdenController::class, 'validatePedido'])->name('registros.validatePedido');
     Route::post('/registros/update-pedido', [RegistroOrdenController::class, 'updatePedido'])->name('registros.updatePedido');
     Route::post('/registros/update-descripcion-prendas', [RegistroOrdenController::class, 'updateDescripcionPrendas'])->name('registros.updateDescripcionPrendas');

@@ -10,6 +10,15 @@ namespace App\Domain\Pedidos;
  */
 class PedidoConstants
 {
+    // ========== ESTADOS DE COTIZACIÓN (para crear pedido) ==========
+    // Fuente: estados persistidos en tabla `cotizaciones.estado`.
+    // Incluye compatibilidad con nombre legacy `APROBADA_POR_APROBADOR`.
+    const COTIZACIONES_PARA_PEDIDO = [
+        'APROBADA_APROBADOR',
+        'APROBADA_POR_APROBADOR',
+        'ACEPTADA',
+    ];
+
     // ========== ESTADOS DE PEDIDO ==========
     const ESTADO_PENDIENTE = 'Pendiente';
     const ESTADO_NO_INICIADO = 'No iniciado';

@@ -153,7 +153,7 @@ class PrendaEditor {
                     imagenes: tela.imagenes ? [...tela.imagenes] : []
                 }));
                 
-                console.log('[prenda-editor] ✅ telasCreacion replicado con spread operator (SIN stringify/parse):', {
+                console.log('[prenda-editor]  telasCreacion replicado con spread operator (SIN stringify/parse):', {
                     cantidad: window.telasCreacion.length,
                     primeraTela: window.telasCreacion[0]?.tela,
                     imagenesEnPrimera: window.telasCreacion[0]?.imagenes?.length || 0
@@ -293,13 +293,13 @@ class PrendaEditor {
             // Reconfigurar prendas
             if (typeof window.DragDropManager.reconfigurarPrendas === 'function') {
                 window.DragDropManager.reconfigurarPrendas();
-                console.log('[PrendaEditor] ✅ Drag & drop de prenda reconfigurado (DragDropManager)');
+                console.log('[PrendaEditor]  Drag & drop de prenda reconfigurado (DragDropManager)');
             }
             
             // Reconfigurar procesos
             if (typeof window.DragDropManager.reconfigurarProcesos === 'function') {
                 window.DragDropManager.reconfigurarProcesos();
-                console.log('[PrendaEditor] ✅ Drag & drop de procesos reconfigurado (DragDropManager)');
+                console.log('[PrendaEditor]  Drag & drop de procesos reconfigurado (DragDropManager)');
             }
         } else {
             // Opción 2: Fallback a funciones globales
@@ -307,7 +307,7 @@ class PrendaEditor {
             
             if (typeof configurarDragDropPrenda === 'function') {
                 configurarDragDropPrenda();
-                console.log('[PrendaEditor] ✅ Drag & drop de prenda configurado');
+                console.log('[PrendaEditor]  Drag & drop de prenda configurado');
             } else {
                 console.warn('[PrendaEditor] ⚠️ configurarDragDropPrenda no disponible');
             }
@@ -317,7 +317,7 @@ class PrendaEditor {
                 console.log('[PrendaEditor] 📊 Timestamp:', new Date().toISOString());
                 console.log('[PrendaEditor] 🔍 Stack trace:', new Error().stack);
                 configurarDragDropProcesos();
-                console.log('[PrendaEditor] ✅ Drag & drop de procesos configurado');
+                console.log('[PrendaEditor]  Drag & drop de procesos configurado');
             } else {
                 console.warn('[PrendaEditor] ⚠️ configurarDragDropProcesos no disponible');
             }

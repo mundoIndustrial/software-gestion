@@ -35,7 +35,7 @@ function initializeRegistrosPorOrdenRealtimeListeners() {
                 handleRegistrosUpdate(event.pedido, event.registros, event.action);
             });
             
-            console.log('[REGISTROS-REALTIME] ✅ Suscripción exitosa');
+            console.log('[REGISTROS-REALTIME]  Suscripción exitosa');
         } catch (error) {
             console.error('[REGISTROS-REALTIME] Error en suscripción:', error);
         }

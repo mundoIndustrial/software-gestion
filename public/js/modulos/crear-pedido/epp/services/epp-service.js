@@ -589,7 +589,7 @@ class EppService {
 
             } catch (error) {
                 console.error('🔎 [EppService] Error en filtrarEPP:', error);
-                container.innerHTML = `<div style="padding: 1rem; text-align: center; color: #dc2626; font-size: 0.9rem;">❌ Error al buscar EPP</div>`;
+                container.innerHTML = `<div style="padding: 1rem; text-align: center; color: #dc2626; font-size: 0.9rem;"> Error al buscar EPP</div>`;
                 container.style.display = 'block';
             }
         }, 400); //  Esperar 400ms (fue 300ms) para reducir peticiones
@@ -602,7 +602,7 @@ class EppService {
         if (epps.length === 0) {
             container.innerHTML = `
                 <div style="padding: 1rem; text-align: center; color: #6b7280; font-size: 0.9rem;">
-                    <p style="margin: 0;">❌ No se encontraron resultados para "<strong>${termino}</strong>"</p>
+                    <p style="margin: 0;"> No se encontraron resultados para "<strong>${termino}</strong>"</p>
                     <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #9ca3af;">Intenta con otras palabras</p>
                 </div>
             `;

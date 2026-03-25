@@ -54,7 +54,7 @@ if (window.realtimeCotizacionesLoaded) {
         if (echoCheckAttempts < MAX_ATTEMPTS) {
             setTimeout(checkAndInitialize, 100);
         } else {
-            console.error('[REALTIME-COT] ❌ Echo no disponible después de varios intentos');
+            console.error('[REALTIME-COT]  Echo no disponible después de varios intentos');
         }
     }
 
@@ -96,7 +96,7 @@ if (window.realtimeCotizacionesLoaded) {
             try {
                 const ws = window.shared?.websocket;
                 if (!ws) {
-                    console.error('[REALTIME-COT] ❌ WebSocket abstraction no disponible');
+                    console.error('[REALTIME-COT]  WebSocket abstraction no disponible');
                     return;
                 }
                 // Suscribirse a canal público: cotizaciones

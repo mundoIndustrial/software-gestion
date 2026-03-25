@@ -251,4 +251,16 @@ class PrendaEditorService
         
         return $errores;
     }
+    
+    /**
+     * Obtiene una prenda por su ID
+     */
+    public function obtenerPrenda(int $id): ?object
+    {
+        try {
+            return $this->prendaRepository->findById($id);
+        } catch (\Exception $e) {
+            throw new \Exception("Error obteniendo prenda: {$e->getMessage()}");
+        }
+    }
 }

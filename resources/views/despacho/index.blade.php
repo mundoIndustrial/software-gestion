@@ -335,7 +335,7 @@ function mostrarNotificacionExito(numeroPedido) {
     notificacion.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
     notificacion.innerHTML = `
         <div class="flex items-center gap-2">
-            <span>✅</span>
+            <span></span>
             <span>Pedido #${numeroPedido} marcado como entregado completamente</span>
         </div>
     `;
@@ -388,11 +388,11 @@ function connectWebSocket() {
         const despachoChannel = socket.channel('despacho.pedidos');
         
         if (!despachoChannel) {
-            console.error('❌ No se pudo crear el canal despacho.pedidos');
+            console.error(' No se pudo crear el canal despacho.pedidos');
             return;
         }
         
-        console.log('✅ Canal despacho.pedidos creado, configurando listener...');
+        console.log(' Canal despacho.pedidos creado, configurando listener...');
         
         despachoChannel.listen('.pedido.actualizado', (event) => {
             console.log('📦 Pedido actualizado en tiempo real (despacho):', event);
@@ -456,7 +456,7 @@ function connectWebSocket() {
                         // Recargar la página para mostrar el nuevo pedido pendiente
                         window.location.reload();
                     } else {
-                        console.log('✅ Pedido ya está en la lista');
+                        console.log(' Pedido ya está en la lista');
                     }
                 }
                 // Si hay cambios en bodega (items count, etc.), recargar para estar seguros
@@ -471,7 +471,7 @@ function connectWebSocket() {
                             console.log('🔄 Hay items pendientes pero el pedido no está en lista, recargando...');
                             window.location.reload();
                         } else {
-                            console.log('✅ Pedido con items pendientes ya está en lista');
+                            console.log(' Pedido con items pendientes ya está en lista');
                         }
                     }
                 }
@@ -488,21 +488,21 @@ function connectWebSocket() {
                 }
             })
             .error((error) => {
-                console.error('❌ Error en WebSocket (despacho):', error);
+                console.error(' Error en WebSocket (despacho):', error);
             });
 
-        console.log('✅ WebSocket conectado para lista de despacho');
+        console.log(' WebSocket conectado para lista de despacho');
         console.log('🔍 Verificando canal público de despacho...');
         
         // Verificar si podemos suscribirnos al canal público
         const channel = socket.channel('despacho.pedidos');
         if (channel) {
-            console.log('✅ Canal público despacho.pedidos creado correctamente');
+            console.log(' Canal público despacho.pedidos creado correctamente');
         } else {
-            console.error('❌ Error al crear canal público despacho.pedidos');
+            console.error(' Error al crear canal público despacho.pedidos');
         }
     } catch (error) {
-        console.error('❌ Error al conectar WebSocket:', error);
+        console.error(' Error al conectar WebSocket:', error);
         if (reconnectAttempts < maxReconnectAttempts) {
             reconnectAttempts++;
             setTimeout(connectWebSocket, 2000 * reconnectAttempts);
@@ -545,7 +545,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Verificar si estamos en la página correcta
     if (window.location.pathname.includes('/despacho/pendientes')) {
-        console.log('✅ Estamos en la página de despacho pendientes');
+        console.log(' Estamos en la página de despacho pendientes');
     } else {
         console.log('⚠️ No estamos en /despacho/pendientes, estamos en:', window.location.pathname);
     }

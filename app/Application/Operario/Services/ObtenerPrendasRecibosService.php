@@ -381,7 +381,7 @@ class ObtenerPrendasRecibosService
                 if ($reciboReflectivo) {
                     $recibos->push($reciboReflectivo);
                     
-                    \Log::info('✅ [REFLECTIVO APROBADO AGREGADO]', [
+                    \Log::info(' [REFLECTIVO APROBADO AGREGADO]', [
                         'numero_pedido' => $prendaAprobada->pedidoProduccion->numero_pedido,
                         'prenda_id' => $prendaAprobada->id,
                         'recibo_id' => $reciboReflectivo->id,
@@ -389,7 +389,7 @@ class ObtenerPrendasRecibosService
                         'tiene_proceso_reflectivo_aprobado' => 'SI'
                     ]);
                 } else {
-                    \Log::info('❌ [REFLECTIVO PROCESO APROBADO PERO SIN RECIBO] Prenda con proceso reflectivo aprobado pero sin recibo REFLECTIVO', [
+                    \Log::info(' [REFLECTIVO PROCESO APROBADO PERO SIN RECIBO] Prenda con proceso reflectivo aprobado pero sin recibo REFLECTIVO', [
                         'numero_pedido' => $prendaAprobada->pedidoProduccion->numero_pedido,
                         'prenda_id' => $prendaAprobada->id
                     ]);

@@ -631,7 +631,7 @@ class RecibosTableController {
             this._subscribirACambiosDeEstado();
             this.initialized = true;
             
-            console.log('✅ RecibosTableController inicializado');
+            console.log(' RecibosTableController inicializado');
         } catch (error) {
             this.state.setError(`Error al inicializar: ${error.message}`);
             console.error('Error en init:', error);
@@ -833,13 +833,13 @@ class RecibosCostruaModule {
             window.recibosCostruaModule = this;
             this.initialized = true;
             
-            console.log('✅ Módulo de recibos de costura inicializado exitosamente');
+            console.log(' Módulo de recibos de costura inicializado exitosamente');
 
             const evento = new CustomEvent('recibosCostruaModuleReady', { detail: { module: this } });
             document.dispatchEvent(evento);
 
         } catch (error) {
-            console.error('❌ Error al inicializar módulo:', error);
+            console.error(' Error al inicializar módulo:', error);
             throw error;
         }
     }
@@ -864,8 +864,8 @@ document.addEventListener('DOMContentLoaded', async () => {
  * Mantener solo para referencia en caso de fallback
  */
 function setupTableEventListeners() {
-    // ✅ Event listener delegado POR LEGACY-HANDLERS.JS - No duplicar aquí
-    console.log('✅ Event listeners configurados para tabla (delegados a legacy-handlers.js)');
+    //  Event listener delegado POR LEGACY-HANDLERS.JS - No duplicar aquí
+    console.log(' Event listeners configurados para tabla (delegados a legacy-handlers.js)');
     
     /*
     // LEGACY: Event listener delegado para botones "Ver detalles"
@@ -1052,7 +1052,7 @@ function openOrderDetailModal(datos) {
     const modalOverlay = document.getElementById('modal-overlay');
 
     if (!modalWrapper || !modalOverlay) {
-        console.error('❌ No se encontraron elementos del modal');
+        console.error(' No se encontraron elementos del modal');
         return;
     }
 
@@ -1086,7 +1086,7 @@ function openOrderDetailModal(datos) {
                 prendaSeleccionada = datosRecibo.prendas[0];
             }
 
-            console.log(`✅ Datos cargados - Pedido: ${pedidoId}, Prenda seleccionada:`, prendaSeleccionada.id);
+            console.log(` Datos cargados - Pedido: ${pedidoId}, Prenda seleccionada:`, prendaSeleccionada.id);
 
             // Guardar datos en el DOM
             modalWrapper.dataset.pedidoId = pedidoId;
@@ -1113,7 +1113,7 @@ function openOrderDetailModal(datos) {
             document.dispatchEvent(evento);
         })
         .catch(error => {
-            console.error('❌ Error al cargar datos del recibo:', error);
+            console.error(' Error al cargar datos del recibo:', error);
             alert('Error al cargar los datos del recibo: ' + error.message);
             
             // Cerrar modal si hay error
@@ -1164,5 +1164,5 @@ window.closeModalOverlay = function() {
         floatingContainer.style.display = 'none';
     }
 
-    console.log('✅ Modal cerrado completamente');
+    console.log(' Modal cerrado completamente');
 };

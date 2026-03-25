@@ -36,7 +36,7 @@ window.manejarImagenProceso = function(input, procesoIndex) {
             return;
         }
         
-        // ✅ CAMBIO: Usar URL.createObjectURL en lugar de FileReader.readAsDataURL (NO base64)
+        //  CAMBIO: Usar URL.createObjectURL en lugar de FileReader.readAsDataURL (NO base64)
         const objectUrl = URL.createObjectURL(file);
         
         // Determinar el índice del cuadro visual vs el índice de storage
@@ -118,7 +118,7 @@ window.manejarImagenProceso = function(input, procesoIndex) {
             }
         }
         
-        // ✅ CAMBIO: Guardar File object en storage (NO base64)
+        //  CAMBIO: Guardar File object en storage (NO base64)
         if (window.procesosImagenesStorage) {
             window.procesosImagenesStorage.agregarImagen(procesoIndex, {
                 file: file,
@@ -130,7 +130,7 @@ window.manejarImagenProceso = function(input, procesoIndex) {
             });
         }
         
-        // ✅ NUEVO: Sincronizar con window.imagenesProcesoActual (usado por agregarProcesoAlPedido)
+        //  NUEVO: Sincronizar con window.imagenesProcesoActual (usado por agregarProcesoAlPedido)
         if (!window.imagenesProcesoActual) {
             window.imagenesProcesoActual = [null, null, null];
         }
@@ -169,11 +169,11 @@ window.eliminarImagenProceso = function(previewIndex, procesoIndex) {
         modal.style.zIndex = '2147483648 !important';
         modal.setAttribute('style', 'z-index: 2147483648 !important; display: flex !important; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0, 0, 0, 0.7) !important; backdrop-filter: blur(4px) !important; align-items: center !important; justify-content: center !important;');
         
-        console.log('[eliminarImagenProceso] ✅ Modal de confirmación mostrado');
+        console.log('[eliminarImagenProceso]  Modal de confirmación mostrado');
         console.log('[eliminarImagenProceso] 📊 Z-index forzado:', modal.style.zIndex);
         console.log('[eliminarImagenProceso] 📊 Display:', modal.style.display);
     } else {
-        console.error('[eliminarImagenProceso] ❌ MODAL NO ENCONTRADO - ID: modal-confirmar-eliminar-imagen-proceso');
+        console.error('[eliminarImagenProceso]  MODAL NO ENCONTRADO - ID: modal-confirmar-eliminar-imagen-proceso');
         console.log('[eliminarImagenProceso] 🔍 Modales en DOM:');
         document.querySelectorAll('.modal-overlay').forEach((m, idx) => {
             console.log('  [' + idx + '] ID: ' + m.id + ', Display: ' + m.style.display);

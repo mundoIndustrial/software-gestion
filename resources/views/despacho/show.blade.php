@@ -36,12 +36,12 @@ function connectWebSocket() {
                 }
             })
             .error((error) => {
-                console.error('❌ Error en WebSocket (despacho):', error);
+                console.error(' Error en WebSocket (despacho):', error);
             });
 
-        console.log('✅ WebSocket conectado para pedido:', window.pedidoId);
+        console.log(' WebSocket conectado para pedido:', window.pedidoId);
     } catch (error) {
-        console.error('❌ Error al conectar WebSocket:', error);
+        console.error(' Error al conectar WebSocket:', error);
         if (reconnectAttempts < maxReconnectAttempts) {
             reconnectAttempts++;
             setTimeout(connectWebSocket, 2000 * reconnectAttempts);
@@ -737,7 +737,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- JavaScript para despacho -->
 <script>
-console.log('✅ Script de despacho cargado correctamente');
+console.log(' Script de despacho cargado correctamente');
 
 async function cargarPendientesBodeguero() {
     const elBodega = document.getElementById('pendientesBodegueroHistorial');
@@ -891,7 +891,7 @@ async function marcarEntregado(button) {
             // Agregar efecto visual a la fila: color azul pastel
             fila.style.backgroundColor = '#DBEAFE'; // bg-blue-100 (azul pastel)
             
-            console.log('✅ Ítem marcado como entregado:', data);
+            console.log(' Ítem marcado como entregado:', data);
         } else {
             // Error: restaurar botón
             button.textContent = 'Entregar';
@@ -1003,7 +1003,7 @@ async function confirmarDeshacerEntregado() {
             // Quitar efecto visual de la fila
             fila.style.backgroundColor = '';
             
-            console.log('✅ Marcado como entregado deshecho:', data);
+            console.log(' Marcado como entregado deshecho:', data);
         } else {
             // Error: restaurar botón a estado entregado
             button.innerHTML = '✓ Entregado <span class="ml-1 text-xs">(↶)</span>';
@@ -1071,7 +1071,7 @@ async function cargarEstadoEntregas() {
                 }
             });
             
-            console.log('✅ Estado de entregas cargado:', data.entregas.length, 'ítems entregados');
+            console.log(' Estado de entregas cargado:', data.entregas.length, 'ítems entregados');
         }
     } catch (error) {
         console.error('Error al cargar estado de entregas:', error);

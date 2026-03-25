@@ -132,7 +132,7 @@ export function initRealtimeListeners() {
             // Canales públicos
             setupPublicChannels(ws);
             
-            console.log('[Operario Dashboard] ✅ Listeners configurados');
+            console.log('[Operario Dashboard]  Listeners configurados');
         } catch (error) {
             console.error('[Operario Dashboard] Error al configurar listeners:', error);
         }
@@ -446,7 +446,7 @@ function setupPublicChannels(ws) {
 
                     setTimeout(() => {
                         tarjeta.remove();
-                        console.log('[Operario Dashboard] ✅ Tarjeta REFLECTIVO eliminada');
+                        console.log('[Operario Dashboard]  Tarjeta REFLECTIVO eliminada');
 
                         if (window.NotificacionesPush && typeof window.NotificacionesPush.add === 'function') {
                             window.NotificacionesPush.add({

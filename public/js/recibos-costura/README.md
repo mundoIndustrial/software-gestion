@@ -1,6 +1,6 @@
 # 📦 Módulo Recibos de Costura - Arquitectura DDD + Clean Code
 
-**Estado:** ✅ PHASE 1 Completado  
+**Estado:**  PHASE 1 Completado  
 **Stack:** Vanilla JavaScript ES6+ | Bootstrap 5 | Vite  
 **Arquitectura:** Clean Architecture + Domain-Driven Design (DDD)  
 
@@ -353,14 +353,14 @@ await window.recibosCostruaModule.tableController.aplicarFiltros({
 
 ## 📝 Mejores Prácticas
 
-### ✅ DO's
+###  DO's
 - Usar Value Objects para lógica de dominio
 - Suscribirse a cambios en lugar de polling
 - Mantener controllers delgados
 - Cache en API client para datos no frecuentes
 - Separar concerns: Domain → Infrastructure → Presentation
 
-### ❌ DON'Ts
+###  DON'Ts
 - No manipular DOM en el State Manager
 - No mezclar lógica de negocio con UI
 - No usar `window.*` globales

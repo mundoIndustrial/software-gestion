@@ -80,7 +80,7 @@ class CargadorPrendasCotizacion {
         // 🔴 FIX CRÍTICO: Usar telas_multiples de la prenda original guardada (tienen la referencia)
         // El backend NO devuelve telas_multiples, pero lo tenemos guardado en el cliente
         if (window.prendaOriginalDesdeSelector && window.prendaOriginalDesdeSelector.variantes) {
-            console.log('[transformarDatos] ✅ USANDO telas_multiples de prenda original guardada:');
+            console.log('[transformarDatos]  USANDO telas_multiples de prenda original guardada:');
             
             const variantesOriginales = window.prendaOriginalDesdeSelector.variantes;
             let telasMultiplesDelOriginal = [];
@@ -102,9 +102,9 @@ class CargadorPrendasCotizacion {
                     if (typeof telasTemp === 'string') {
                         try {
                             telasTemp = JSON.parse(telasTemp);
-                            console.log('[transformarDatos]  ✅ telas_multiples parseado desde STRING en prenda original');
+                            console.log('[transformarDatos]   telas_multiples parseado desde STRING en prenda original');
                         } catch(e) {
-                            console.warn('[transformarDatos]  ❌ Error parseando telas_multiples de prenda original');
+                            console.warn('[transformarDatos]   Error parseando telas_multiples de prenda original');
                             telasTemp = [];
                         }
                     }
@@ -459,9 +459,9 @@ class CargadorPrendasCotizacion {
             if (typeof telasMultiples === 'string') {
                 try { 
                     telasMultiples = JSON.parse(telasMultiples); 
-                    console.log('[transformarDatos]  ✅ telas_multiples parseado desde STRING');
+                    console.log('[transformarDatos]   telas_multiples parseado desde STRING');
                 } catch(e) { 
-                    console.warn('[transformarDatos] ❌ Error parseando telas_multiples:', e);
+                    console.warn('[transformarDatos]  Error parseando telas_multiples:', e);
                     telasMultiples = []; 
                 }
             }
@@ -505,7 +505,7 @@ class CargadorPrendasCotizacion {
                     });
                 });
                 telasDesdeVariantes = telasAgregadasTemp;
-                console.log('[transformarDatos]  ✅ Telas desde variantes (objeto plano):', telasDesdeVariantes.length);
+                console.log('[transformarDatos]   Telas desde variantes (objeto plano):', telasDesdeVariantes.length);
             } else {
                 console.log('[transformarDatos]  ⚠️ telas_multiples no es array o está vacío');
             }
@@ -540,7 +540,7 @@ class CargadorPrendasCotizacion {
                     const idx = parseInt(telaVariante.indice);
                     if (idx >= 0 && idx < telasFormato.length) {
                         indiceExistente = idx;
-                        console.log('[transformarDatos] ✅ Coincidencia por ÍNDICE:', idx);
+                        console.log('[transformarDatos]  Coincidencia por ÍNDICE:', idx);
                     }
                 }
                 
@@ -551,7 +551,7 @@ class CargadorPrendasCotizacion {
                         (telaBackend.color || '').toUpperCase() === (telaVariante.color || '').toUpperCase()
                     );
                     if (indiceExistente !== -1) {
-                        console.log('[transformarDatos] ✅ Coincidencia por NOMBRE + COLOR:', indiceExistente);
+                        console.log('[transformarDatos]  Coincidencia por NOMBRE + COLOR:', indiceExistente);
                     }
                 }
                 
@@ -561,7 +561,7 @@ class CargadorPrendasCotizacion {
                         (telaBackend.color || '').toUpperCase() === (telaVariante.color || '').toUpperCase()
                     );
                     if (indiceExistente !== -1) {
-                        console.log('[transformarDatos] ✅ Coincidencia por COLOR:', indiceExistente);
+                        console.log('[transformarDatos]  Coincidencia por COLOR:', indiceExistente);
                     }
                 }
                 
@@ -608,7 +608,7 @@ class CargadorPrendasCotizacion {
                     const idx = parseInt(telaOriginal.indice);
                     if (idx >= 0 && idx < telasFormato.length) {
                         indiceEncontrado = idx;
-                        console.log(`[transformarDatos] ✅ Enriquecimiento por ÍNDICE: ${idx}`);
+                        console.log(`[transformarDatos]  Enriquecimiento por ÍNDICE: ${idx}`);
                     }
                 }
                 
@@ -619,7 +619,7 @@ class CargadorPrendasCotizacion {
                         (telaBack.color || '').toUpperCase() === (telaOriginal.color || '').toUpperCase()
                     );
                     if (indiceEncontrado !== -1) {
-                        console.log(`[transformarDatos] ✅ Enriquecimiento por TELA+COLOR: ${indiceEncontrado}`);
+                        console.log(`[transformarDatos]  Enriquecimiento por TELA+COLOR: ${indiceEncontrado}`);
                     }
                 }
                 
@@ -629,7 +629,7 @@ class CargadorPrendasCotizacion {
                         (telaBack.color || '').toUpperCase() === (telaOriginal.color || '').toUpperCase()
                     );
                     if (indiceEncontrado !== -1) {
-                        console.log(`[transformarDatos] ✅ Enriquecimiento por COLOR: ${indiceEncontrado}`);
+                        console.log(`[transformarDatos]  Enriquecimiento por COLOR: ${indiceEncontrado}`);
                     }
                 }
                 
@@ -662,9 +662,9 @@ class CargadorPrendasCotizacion {
                         if (typeof imagenesTemp === 'string') {
                             try {
                                 imagenesTemp = JSON.parse(imagenesTemp);
-                                console.log(`[transformarDatos]  ✅ Imagenes parseadas desde STRING`);
+                                console.log(`[transformarDatos]   Imagenes parseadas desde STRING`);
                             } catch(e) {
-                                console.warn(`[transformarDatos]  ❌ Error parseando imagenes:`, e);
+                                console.warn(`[transformarDatos]   Error parseando imagenes:`, e);
                                 imagenesTemp = [];
                             }
                         }
@@ -681,7 +681,7 @@ class CargadorPrendasCotizacion {
                 }
             });
             
-            console.log('[transformarDatos] ✅ ENRIQUECIMIENTO COMPLETADO con telas_multiples originales');
+            console.log('[transformarDatos]  ENRIQUECIMIENTO COMPLETADO con telas_multiples originales');
         }
         
         console.log('[transformarDatos]  TELAS FINALES PROCESADAS:', telasFormato);

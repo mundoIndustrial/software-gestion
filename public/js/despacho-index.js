@@ -171,7 +171,7 @@
         console.log(`[DEBUG-BADGE] - Botón final a usar:`, btn);
         
         if (!btn) {
-            console.warn(`[DEBUG-BADGE] ❌ No se encontró botón para pedido ${pedidoId}`);
+            console.warn(`[DEBUG-BADGE]  No se encontró botón para pedido ${pedidoId}`);
             return;
         }
 
@@ -297,9 +297,9 @@
                 __renderBadge(pedidoId, unread);
             });
             
-            console.log(`[DEBUG] ✅ Refrescado de badges completado`);
+            console.log(`[DEBUG]  Refrescado de badges completado`);
         } catch (e) {
-            console.error('[DEBUG] ❌ Error refrescando badges de observaciones despacho:', e);
+            console.error('[DEBUG]  Error refrescando badges de observaciones despacho:', e);
         }
     }
 
@@ -1064,7 +1064,7 @@
                     await cargarPreviewObservacionesDespacho(id);
                     await new Promise(r => setTimeout(r, 25));
                 }
-                console.log(`[DEBUG] ✅ Previews cargados`);
+                console.log(`[DEBUG]  Previews cargados`);
                 
                 // Refresh badges after loading previews
                 console.log(`[DEBUG] 🔄 Refrescando badges después de cargar previews...`);
@@ -1074,11 +1074,11 @@
                 // Setup WebSocket para tiempo real
                 console.log(`[DEBUG] 📡 Configurando WebSocket...`);
                 setupObservacionesRealtime();
-                console.log(`[DEBUG] ✅ Sistema de badges completamente inicializado`);
+                console.log(`[DEBUG]  Sistema de badges completamente inicializado`);
             };
             ejecutar();
         } catch (e) {
-            console.error('[DEBUG] ❌ Error inicializando previews de observaciones despacho:', e);
+            console.error('[DEBUG]  Error inicializando previews de observaciones despacho:', e);
         }
 
         // ==================== EVENT LISTENER PARA BOTONES DE OBSERVACIONES ====================
@@ -1099,12 +1099,12 @@
                 // Marcar como visto en localStorage inmediatamente
                 console.log(`[DEBUG-BADGE] 📝 Marcando como visto en localStorage...`);
                 setBadgeSeen(pedidoId);
-                console.log(`[DEBUG-BADGE] ✅ Marcado como visto en localStorage`);
+                console.log(`[DEBUG-BADGE]  Marcado como visto en localStorage`);
                 
                 // También marcar como visto en el backend
                 console.log(`[DEBUG-BADGE] 📡 Marcando como visto en el backend...`);
                 marcarNotificacionesComoVistas(pedidoId);
-                console.log(`[DEBUG-BADGE] ✅ Solicitado marcado como visto en backend`);
+                console.log(`[DEBUG-BADGE]  Solicitado marcado como visto en backend`);
                 
                 console.log(`[DEBUG-BADGE] 🎯 Badge ${pedidoId} marcado como visto por clic del usuario`);
                 console.log(`[DEBUG-BADGE] 🔄 El badge debería desaparecer ahora`);

@@ -1582,7 +1582,7 @@ document.addEventListener('paste', function(event) {
                                     }
                                     if (typeof actualizarTotalPrendas === 'function') actualizarTotalPrendas();
                                     
-                                    console.log('✅ Asignación eliminada');
+                                    console.log(' Asignación eliminada');
                                 }
                             }
                             

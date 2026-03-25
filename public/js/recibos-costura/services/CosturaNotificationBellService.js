@@ -50,7 +50,7 @@ class CosturaNotificationBellService {
             this.loadCosturaCount();
         }, this.pollDuration);
 
-        console.log('[🔔 CosturaNotificationBellService] ✅ Inicializado con polling cada 30s');
+        console.log('[🔔 CosturaNotificationBellService]  Inicializado con polling cada 30s');
     }
 
     /**
@@ -218,7 +218,7 @@ class CosturaNotificationBellService {
             }
         });
 
-        console.log('[🔔 CosturaNotificationBellService] ✅ Event listeners configurados');
+        console.log('[🔔 CosturaNotificationBellService]  Event listeners configurados');
     }
 
     /**

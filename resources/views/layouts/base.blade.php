@@ -287,7 +287,7 @@
                 var bootstrapScript = document.createElement('script');
                 bootstrapScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js';
                 bootstrapScript.onload = function() {
-                    console.log('✅ Bootstrap 4 cargado correctamente');
+                    console.log(' Bootstrap 4 cargado correctamente');
                 };
                 document.head.appendChild(bootstrapScript);
             } else {
@@ -320,12 +320,12 @@
                 try {
                     callback();
                 } catch (error) {
-                    console.error('[Layout] ❌ Error ejecutando callback de Echo:', error);
+                    console.error('[Layout]  Error ejecutando callback de Echo:', error);
                 }
             }
         };
         
-        console.log('[Layout] ✅ Stubs de window.waitForEcho() pre-inicializados');
+        console.log('[Layout]  Stubs de window.waitForEcho() pre-inicializados');
     </script>
     
     <!-- Vite assets (funciona en desarrollo y producción) -->

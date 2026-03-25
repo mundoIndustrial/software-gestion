@@ -49,13 +49,13 @@ window.updateDaysSelectorWithRetry = function(dias, intento = 0) {
     // El elemento existe, actualizar directamente
     const label = dias === 1 ? `${dias} día` : `${dias} días`;
     valueEl.textContent = label;
-    console.log('[updateDaysSelectorWithRetry] ✅ Selector actualizado exitosamente a:', label);
+    console.log('[updateDaysSelectorWithRetry]  Selector actualizado exitosamente a:', label);
     
     // Guardar en estado global si está disponible
     if (window.trackingDaysSelector && typeof window.trackingDaysSelector.setValue === 'function') {
       try {
         window.trackingDaysSelector.setValue(dias);
-        console.log('[updateDaysSelectorWithRetry] ✅ Estado global también actualizado');
+        console.log('[updateDaysSelectorWithRetry]  Estado global también actualizado');
       } catch (error) {
         console.log('[updateDaysSelectorWithRetry] Aviso (no crítico):', error.message);
       }
@@ -72,4 +72,4 @@ window.updateDaysSelectorWithRetry = function(dias, intento = 0) {
 // Exponer función globalmente para que datos-loader pueda usarla
 window.ensureDaysSelectorInitialized = ensureDaysSelectorInitialized;
 
-console.log('[days-selector-handler.js] ✅ Funciones expuestas a window');
+console.log('[days-selector-handler.js]  Funciones expuestas a window');

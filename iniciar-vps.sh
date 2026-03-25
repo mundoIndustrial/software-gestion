@@ -30,7 +30,7 @@ nohup php artisan queue:work --tries=3 --sleep=1 --timeout=90 \
 echo "Queue Worker iniciado (PID: $!)"
 
 echo ""
-echo "✅ Servicios iniciados correctamente."
+echo " Servicios iniciados correctamente."
 echo ""
 echo "Logs disponibles en:"
 echo "  tail -f storage/logs/reverb.log"

@@ -98,7 +98,7 @@ function setupEchoListener() {
                 }
             });
             
-            console.log('[NOTIFICATIONS-REALTIME] ✅ Suscripciones configuradas');
+            console.log('[NOTIFICATIONS-REALTIME]  Suscripciones configuradas');
         } catch (error) {
             console.error('[NOTIFICATIONS-REALTIME] Error al configurar escuchador:', error);
         }

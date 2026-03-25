@@ -22,7 +22,7 @@
 (function() {
     'use strict';
 
-    console.log('[PrendaAgregarPedido] ✅ Cargado');
+    console.log('[PrendaAgregarPedido]  Cargado');
 
     // ====================================================
     // Utilidades privadas
@@ -65,7 +65,7 @@
             // Inicializar si existe
             if (window.DragDropManager && typeof window.DragDropManager.inicializar === 'function') {
                 window.DragDropManager.inicializar();
-                console.log('[PrendaAgregarPedido] ✅ DragDropManager inicializado para modal agregar');
+                console.log('[PrendaAgregarPedido]  DragDropManager inicializado para modal agregar');
             } else {
                 console.warn('[PrendaAgregarPedido] ⚠️ DragDropManager no disponible');
             }
@@ -573,7 +573,7 @@
             }
 
             const result = await response.json();
-            console.log('[PrendaAgregarPedido] ✅ Prenda agregada:', result);
+            console.log('[PrendaAgregarPedido]  Prenda agregada:', result);
 
             // Agregar a datos locales
             if (window.datosEdicionPedido && result.prenda) {
@@ -587,7 +587,7 @@
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'success',
-                    title: '✅ Prenda agregada',
+                    title: ' Prenda agregada',
                     text: 'La prenda se agregó correctamente al pedido',
                     timer: 1800,
                     showConfirmButton: false,
@@ -638,7 +638,7 @@
             }
         };
 
-        console.log('[PrendaAgregarPedido] ✅ agregarPrendaNueva interceptada');
+        console.log('[PrendaAgregarPedido]  agregarPrendaNueva interceptada');
     }
 
     // Interceptar cuando el DOM esté listo (después de que el adapter defina agregarPrendaNueva)

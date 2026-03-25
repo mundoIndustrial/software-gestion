@@ -134,7 +134,7 @@ async function _eliminarEppDelAPI(pedidoId, eppId, eppIndex, epp, motivo) {
         const data = await response.json();
 
         if (data.success) {
-            console.log('[EPPAdapter] ✅ EPP eliminado correctamente:', data);
+            console.log('[EPPAdapter]  EPP eliminado correctamente:', data);
             
             if (typeof Swal !== 'undefined') {
                 Swal.fire({

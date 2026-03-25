@@ -723,7 +723,7 @@ if (typeof ProcessManager !== 'undefined') {
         }
       }
 
-      // ✅ Mostrar mensaje diferente según si fue creado o actualizado
+      //  Mostrar mensaje diferente según si fue creado o actualizado
       const mensaje = result.action === 'actualizado' 
         ? 'Proceso actualizado correctamente' 
         : 'Proceso agregado correctamente';

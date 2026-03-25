@@ -75,7 +75,7 @@ window.ColoresPorTalla = (function() {
             
             if (!window.StateManager || !window.AsignacionManager || 
                 !window.WizardManager || !window.UIRenderer) {
-                console.error('[ColoresPorTalla] ❌ Módulos dependientes no cargados:', {
+                console.error('[ColoresPorTalla]  Módulos dependientes no cargados:', {
                     StateManager: !!window.StateManager,
                     AsignacionManager: !!window.AsignacionManager,
                     WizardManager: !!window.WizardManager,
@@ -719,7 +719,7 @@ window.ColoresPorTalla = (function() {
                 if (imgHTML) {
                     imgsHtml = imgHTML;
                     imagenEncontrada = true;
-                    console.log('[ColoresPorTalla] ✅ Imagen desde asignación:', clave);
+                    console.log('[ColoresPorTalla]  Imagen desde asignación:', clave);
                 }
             }
             
@@ -941,7 +941,7 @@ window.ColoresPorTalla = (function() {
             totalElement.textContent = totalAsignaciones;
         }
         
-        console.log('[ColoresPorTalla] ✅ Tabla unificada actualizada - wizard:', asignacionesArray.length, 'asignaciones, simples:', telasSimples.length, 'telas, total:', totalAsignaciones);
+        console.log('[ColoresPorTalla]  Tabla unificada actualizada - wizard:', asignacionesArray.length, 'asignaciones, simples:', telasSimples.length, 'telas, total:', totalAsignaciones);
     }
 
     /**
@@ -1127,7 +1127,7 @@ window.ColoresPorTalla = (function() {
                     if (previewImg) previewImg.src = imgData.blobUrl;
                     if (dropzone) dropzone.style.display = 'none';
                     if (preview) preview.style.display = 'block';
-                    console.log(`[ColoresPorTalla] ✅ Imagen pegada via DragDropManager en color idx=${targetIdx}`);
+                    console.log(`[ColoresPorTalla]  Imagen pegada via DragDropManager en color idx=${targetIdx}`);
                 }
             });
         }
@@ -1304,7 +1304,7 @@ window.ColoresPorTalla = (function() {
 
         jQuery(modal).modal('hide');
         actualizarTablaResumen();
-        console.log('[ColoresPorTalla] ✅ Asignación wizard editada:', claveOriginal, '→', nTela, nGenero, nTalla, nuevosColores);
+        console.log('[ColoresPorTalla]  Asignación wizard editada:', claveOriginal, '→', nTela, nGenero, nTalla, nuevosColores);
     }
 
     /**

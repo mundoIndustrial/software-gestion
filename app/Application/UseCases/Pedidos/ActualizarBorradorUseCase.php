@@ -133,7 +133,7 @@ class ActualizarBorradorUseCase
 
             $tiempoTotal = round((microtime(true) - $inicioTotal) * 1000, 2);
 
-            Log::info('[ActualizarBorradorUseCase] ✅ PEDIDO ACTUALIZADO EXITOSAMENTE', [
+            Log::info('[ActualizarBorradorUseCase]  PEDIDO ACTUALIZADO EXITOSAMENTE', [
                 'pedido_id' => $input->pedidoId,
                 'numero_pedido' => $pedido->numero_pedido,
                 'estado' => $pedido->estado,
@@ -142,7 +142,7 @@ class ActualizarBorradorUseCase
 
             return new ActualizarBorradorOutput(
                 success: true,
-                message: '✅ Pedido actualizado exitosamente',
+                message: ' Pedido actualizado exitosamente',
                 pedido_id: $input->pedidoId,
                 numero_pedido: $pedido->numero_pedido,
                 estado: $pedido->estado,
@@ -152,7 +152,7 @@ class ActualizarBorradorUseCase
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             DB::rollBack();
-            Log::error('[ActualizarBorradorUseCase] ❌ PEDIDO NO ENCONTRADO O NO AUTORIZADO', [
+            Log::error('[ActualizarBorradorUseCase]  PEDIDO NO ENCONTRADO O NO AUTORIZADO', [
                 'pedido_id' => $input->pedidoId,
                 'asesor_id' => $input->asesorId,
             ]);
@@ -164,7 +164,7 @@ class ActualizarBorradorUseCase
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('[ActualizarBorradorUseCase] ❌ ERROR CRÍTICO', [
+            Log::error('[ActualizarBorradorUseCase]  ERROR CRÍTICO', [
                 'pedido_id' => $input->pedidoId,
                 'error' => $e->getMessage(),
                 'linea' => $e->getLine(),

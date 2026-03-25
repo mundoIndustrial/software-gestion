@@ -992,7 +992,7 @@ class ItemAPIService {
                                             });
                                             estructura.archivosMap[formdataKey] = imgFile;
                                             
-                                            console.debug(`[extraerFiles] ✅ Prenda[${prendaIdx}].procesos[${procesoKey}].imagenes_por_talla[${tallaKey}][${imgIdx}] = ${imgFile.name}`);
+                                            console.debug(`[extraerFiles]  Prenda[${prendaIdx}].procesos[${procesoKey}].imagenes_por_talla[${tallaKey}][${imgIdx}] = ${imgFile.name}`);
                                         } else {
                                             console.debug(`[extraerFiles] ⚠️ imgFile NO es File, es:`, typeof imgFile, imgFile);
                                         }

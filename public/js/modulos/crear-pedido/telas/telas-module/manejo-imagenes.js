@@ -20,7 +20,7 @@ window.manejarImagenTela = function(input) {
     // 🔑 CRÍTICO: Inicializar el array si no existe (para Ctrl+V y drag-drop)
     if (!window.imagenesTelaModalNueva) {
         window.imagenesTelaModalNueva = [];
-        console.log('[manejarImagenTela] ✅ Array imagenesTelaModalNueva inicializado');
+        console.log('[manejarImagenTela]  Array imagenesTelaModalNueva inicializado');
     }
     
     // Si no se pasa input, buscar por ID (intentar primero el ID único del modal)
@@ -28,17 +28,17 @@ window.manejarImagenTela = function(input) {
         console.log('[manejarImagenTela] ⚠️ Input null, buscando por ID...');
         input = document.getElementById('modal-agregar-prenda-nueva-file-input') || document.getElementById('nueva-prenda-tela-img-input');
         if (!input) {
-            console.error('[manejarImagenTela] ❌ No se encontró elemento de input');
+            console.error('[manejarImagenTela]  No se encontró elemento de input');
             return;
         }
-        console.log('[manejarImagenTela] ✅ Input encontrado:', input.id);
+        console.log('[manejarImagenTela]  Input encontrado:', input.id);
     }
     
     console.log('[manejarImagenTela] input.files:', input.files);
     console.log('[manejarImagenTela] input.files.length:', input.files?.length);
     
     if (!input.files || input.files.length === 0) {
-        console.log('[manejarImagenTela] ❌ Sin archivos');
+        console.log('[manejarImagenTela]  Sin archivos');
         return;
     }
     
@@ -47,24 +47,24 @@ window.manejarImagenTela = function(input) {
     
     // Validar que sea una imagen
     if (!file.type.startsWith('image/')) {
-        console.warn('[manejarImagenTela] ❌ No es imagen');
+        console.warn('[manejarImagenTela]  No es imagen');
         return;
     }
     
     // Validar tamaño
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
-        console.warn('[manejarImagenTela] ❌ Archivo muy grande');
+        console.warn('[manejarImagenTela]  Archivo muy grande');
         return;
     }
     
     // Validar límite
     if (window.imagenesTelaModalNueva.length >= 3) {
-        console.warn('[manejarImagenTela] ❌ Limite alcanzado');
+        console.warn('[manejarImagenTela]  Limite alcanzado');
         return;
     }
     
-    console.log('[manejarImagenTela] ✅ Validaciones OK, procesando imagen...');
+    console.log('[manejarImagenTela]  Validaciones OK, procesando imagen...');
     
     try {
         // 🔴 NUEVO: Usar el storage universal de telas
@@ -73,27 +73,27 @@ window.manejarImagenTela = function(input) {
             
             window.imagenesTelaStorage.agregarImagen(file)
                 .then(() => {
-                    console.log('[manejarImagenTela] ✅ Imagen agregada al storage universal');
+                    console.log('[manejarImagenTela]  Imagen agregada al storage universal');
                     
                     // Actualizar preview
                     console.log('[manejarImagenTela] 🔄 Buscando actualizarPreviewTelaTemporal...');
                     if (typeof window.actualizarPreviewTelaTemporal === 'function') {
-                        console.log('[manejarImagenTela] ✅ Función ENCONTRADA, llamando...');
+                        console.log('[manejarImagenTela]  Función ENCONTRADA, llamando...');
                         window.actualizarPreviewTelaTemporal();
-                        console.log('[manejarImagenTela] ✅ Función COMPLETADA');
+                        console.log('[manejarImagenTela]  Función COMPLETADA');
                     } else {
-                        console.error('[manejarImagenTela] ❌ actualizarPreviewTelaTemporal NO ES FUNCIÓN');
+                        console.error('[manejarImagenTela]  actualizarPreviewTelaTemporal NO ES FUNCIÓN');
                         console.log('[manejarImagenTela] Tipo:', typeof window.actualizarPreviewTelaTemporal);
                     }
                 })
                 .catch(err => {
-                    console.error('[manejarImagenTela] ❌ Error al agregar imagen al storage:', err);
+                    console.error('[manejarImagenTela]  Error al agregar imagen al storage:', err);
                 });
         } else {
             // Fallback al sistema antiguo si el storage no está disponible
             console.warn('[manejarImagenTela] ⚠️ Storage universal no disponible, usando sistema antiguo');
             
-            // ✅ CAMBIO: Usar URL.createObjectURL en lugar de FileReader.readAsDataURL (NO base64)
+            //  CAMBIO: Usar URL.createObjectURL en lugar de FileReader.readAsDataURL (NO base64)
             const blobUrl = URL.createObjectURL(file);
             console.log('[manejarImagenTela] 📸 Blob URL generada:', blobUrl);
             
@@ -107,7 +107,7 @@ window.manejarImagenTela = function(input) {
             };
             
             window.imagenesTelaModalNueva.push(imagen);
-            console.log('[manejarImagenTela] ✅ Imagen agregada al array antiguo. Total:', window.imagenesTelaModalNueva.length);
+            console.log('[manejarImagenTela]  Imagen agregada al array antiguo. Total:', window.imagenesTelaModalNueva.length);
             
             // Actualizar preview
             if (typeof window.actualizarPreviewTelaTemporal === 'function') {
@@ -116,7 +116,7 @@ window.manejarImagenTela = function(input) {
         }
         
     } catch (error) {
-        console.error('[manejarImagenTela] ❌ Excepción:', error);
+        console.error('[manejarImagenTela]  Excepción:', error);
     }
     
     input.value = '';
@@ -359,7 +359,7 @@ window.eliminarImagenTemporal = function(index) {
         // Eliminar del storage universal
         const resultado = window.imagenesTelaStorage.eliminarImagen(index);
         if (resultado) {
-            console.log('[eliminarImagenTemporal] ✅ Imagen eliminada del storage universal');
+            console.log('[eliminarImagenTemporal]  Imagen eliminada del storage universal');
             
             // Actualizar preview
             if (typeof window.actualizarPreviewTelaTemporal === 'function') {
@@ -368,7 +368,7 @@ window.eliminarImagenTemporal = function(index) {
             
             console.log('[eliminarImagenTemporal]  Imagen eliminada, total restante:', window.imagenesTelaStorage.obtenerImagenes().length);
         } else {
-            console.error('[eliminarImagenTemporal] ❌ No se pudo eliminar la imagen del storage universal');
+            console.error('[eliminarImagenTemporal]  No se pudo eliminar la imagen del storage universal');
         }
     } else {
         // Fallback al sistema antiguo
@@ -405,7 +405,7 @@ window.actualizarPreviewTelaTemporal = function() {
     console.log('[actualizarPreviewTelaTemporal] ✓ Preview encontrado:', !!preview);
     
     if (!preview) {
-        console.error('[actualizarPreviewTelaTemporal] ❌ FALLO: Preview esNull');
+        console.error('[actualizarPreviewTelaTemporal]  FALLO: Preview esNull');
         console.log('[actualizarPreviewTelaTemporal] IDs disponibles en DOM:', Array.from(document.querySelectorAll('[id]')).map(el => el.id).slice(0, 20));
         return;
     }
@@ -433,7 +433,7 @@ window.actualizarPreviewTelaTemporal = function() {
     
     // Limpiar HTML anterior
     preview.innerHTML = '';
-    console.log('[actualizarPreviewTelaTemporal] ✅ HTML limpiado');
+    console.log('[actualizarPreviewTelaTemporal]  HTML limpiado');
     
     // Aplicar estilos
     preview.style.cssText =
@@ -453,7 +453,7 @@ window.actualizarPreviewTelaTemporal = function() {
         'box-sizing: border-box !important; ' +
         'min-height: 50px !important;';
     
-    console.log('[actualizarPreviewTelaTemporal] ✅ Estilos aplicados');
+    console.log('[actualizarPreviewTelaTemporal]  Estilos aplicados');
     console.log('[actualizarPreviewTelaTemporal] Preview display NOW:', preview.style.display);
     
     // Agregar imágenes
@@ -489,10 +489,10 @@ window.actualizarPreviewTelaTemporal = function() {
         container.appendChild(btnEliminar);
         preview.appendChild(container);
         
-        console.log(`[actualizarPreviewTelaTemporal] ✅ Elemento ${index} agregado al DOM`);
+        console.log(`[actualizarPreviewTelaTemporal]  Elemento ${index} agregado al DOM`);
     });
     
-    console.log('[actualizarPreviewTelaTemporal] ✅ COMPLETADO - Hijos en preview:', preview.children.length);
+    console.log('[actualizarPreviewTelaTemporal]  COMPLETADO - Hijos en preview:', preview.children.length);
 };
 
 
@@ -529,7 +529,7 @@ window.validarImagenTela = function(file) {
 window.limpiarImagenesTemporales = function() {
     console.log('[limpiarImagenesTemporales] 🧹 Limpiando imágenes temporales');
     
-    // ✅ Revocar blob URLs para prevenir memory leaks
+    //  Revocar blob URLs para prevenir memory leaks
     if (window.imagenesTelaModalNueva && window.imagenesTelaModalNueva.length > 0) {
         window.imagenesTelaModalNueva.forEach(img => {
             if (img.previewUrl && img.previewUrl.startsWith('blob:')) {

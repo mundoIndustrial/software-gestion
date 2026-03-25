@@ -78,7 +78,7 @@ class RecibosCostruaModule {
             window.recibosCostruaModule = this;
 
             this.initialized = true;
-            console.log('✅ Módulo de recibos de costura inicializado exitosamente');
+            console.log(' Módulo de recibos de costura inicializado exitosamente');
 
             // Disparar evento de inicialización
             const evento = new CustomEvent('recibosCostruaModuleReady', {
@@ -87,7 +87,7 @@ class RecibosCostruaModule {
             document.dispatchEvent(evento);
 
         } catch (error) {
-            console.error('❌ Error al inicializar módulo:', error);
+            console.error(' Error al inicializar módulo:', error);
             this._mostrarErrorFatal(error.message);
             throw error;
         }

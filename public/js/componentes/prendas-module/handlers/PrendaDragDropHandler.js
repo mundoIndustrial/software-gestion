@@ -346,7 +346,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
             const modalVisible = modal && modal.style.display !== 'none';
             
             // Detectar si es modo edición (hay datos de edición cargados)
-            // ✅ Usar señales robustas: prenda en edición + input oculto del pedido
+            //  Usar señales robustas: prenda en edición + input oculto del pedido
             const pedidoIdDesdeDom = parseInt(document.getElementById('editarOrdenId')?.value || '0', 10);
             const esModoEdicion = !!(
                 window.modoEdicion === true ||
@@ -381,7 +381,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
                     // Agregar ID al array si tiene ID y no está ya marcada
                     if (imagenAEliminar && imagenAEliminar.id && !window.imagenesAEliminar.includes(imagenAEliminar.id)) {
                         window.imagenesAEliminar.push(imagenAEliminar.id);
-                        console.log('[PrendaDragDropHandler] ✅ Imagen marcada para eliminación diferida:', {
+                        console.log('[PrendaDragDropHandler]  Imagen marcada para eliminación diferida:', {
                             id: imagenAEliminar.id,
                             totalMarcadas: window.imagenesAEliminar.length
                         });

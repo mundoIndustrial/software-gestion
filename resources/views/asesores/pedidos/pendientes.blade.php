@@ -466,7 +466,7 @@
             const container = document.getElementById('pedidosContainer');
             container.innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-icon">❌</div>
+                    <div class="empty-icon"></div>
                     <h3>Error al cargar pendientes</h3>
                     <p>${mensaje}</p>
                 </div>

@@ -259,7 +259,7 @@
     <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-api-service.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-state-manager.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-modal-manager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-item-manager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-item-manager-tarjeta.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-imagen-manager.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-service.js') }}?v={{ time() }}"></script>
     

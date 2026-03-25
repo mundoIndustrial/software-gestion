@@ -925,7 +925,7 @@ class GestionItemsUI {
                             console.log('[guardarPrenda]     IMG[' + idx + ']: tipo=' + typeof img + ', esFile=' + (img instanceof File) + ', previewUrl=' + (img?.previewUrl?.substring(0, 40) || 'undefined'));
                         });
                     } else {
-                        console.log('[guardarPrenda]   ❌ CRÍTICO: NO HAY IMÁGENES EN LA PRENDA FINAL!');
+                        console.log('[guardarPrenda]    CRÍTICO: NO HAY IMÁGENES EN LA PRENDA FINAL!');
                     }
                     console.log('[guardarPrenda]   🧵 telasAgregadas:', prendaFinalAntesDeReset?.telasAgregadas?.length || 0);
                     if (prendaFinalAntesDeReset?.telasAgregadas?.length > 0) {

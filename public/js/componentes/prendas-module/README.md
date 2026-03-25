@@ -13,7 +13,7 @@ public/js/componentes/prendas-module/
 ├── modal-wrappers.js                #  Gestión de modales
 ├── image-management.js              # 🖼️ Manejo de imágenes
 ├── drag-drop-handlers.js            # 🎯 Funcionalidades drag & drop
-├── ui-helpers.js                    # 🛠️ Utilidades y helpers
+├── ui-helpers.js                    #  Utilidades y helpers
 └── README.md                         # 📚 Documentación
 ```
 

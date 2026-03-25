@@ -11,9 +11,12 @@ use App\Application\Services\ColorGeneroMangaBrocheService;
 use App\Domain\Pedidos\Despacho\Services\DespachoGeneradorService;
 use App\Domain\Pedidos\Despacho\Services\DespachoValidadorService;
 use App\Domain\Pedidos\Despacho\Services\DesparChoParcialesPersistenceService;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Despacho\Repositories\DesparChoParcialesRepository;
+use App\Infrastructure\Repositories\PedidoProduccionRepository;
+use App\Infrastructure\Repositories\ConsecutivosRecibosRepository;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Domain\Pedidos\Services\ImagenRelocalizadorService;
+use App\Infrastructure\Repositories\Pedidos\Despacho\DesparChoParcialesRepositoryImpl;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\GuardarDespachoUseCase;
 use App\Application\Shared\Contracts\AuditRepositoryInterface;
@@ -22,6 +25,14 @@ use App\Application\Shared\Contracts\OrdenEventDispatcherInterface;
 use App\Infrastructure\Services\NewsAuditRepository;
 use App\Infrastructure\Services\EloquentTransactionManager;
 use App\Infrastructure\Services\BroadcastOrdenEventDispatcher;
+use App\Application\UseCases\RegistroOrden\GetSeguimientoPorPrendaUseCase;
+use App\Application\UseCases\RegistroOrden\GetDescripcionPrendasUseCase;
+use App\Application\UseCases\RegistroOrden\GetConsecutivoCosturaUseCase;
+use App\Application\UseCases\RegistroOrden\CalcularDiasUseCase;
+use App\Application\UseCases\RegistroOrden\CalcularDiasBatchUseCase;
+use App\Application\UseCases\RegistroOrden\CalcularFechaEstimadaUseCase;
+use App\Application\UseCases\RegistroOrden\GetRecibosDatosUseCase;
+use App\Application\UseCases\RegistroOrden\GetNovedadesUseCase;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -122,6 +133,58 @@ class PedidosServiceProvider extends ServiceProvider
                 $app->make(DespachoValidadorService::class),
                 $app->make(DesparChoParcialesPersistenceService::class)
             );
+        });
+
+        // ========================================
+        // USE CASES DE REGISTRO ORDEN (APPLICATION LAYER)
+        // ========================================
+
+        // Registrar GetSeguimientoPorPrendaUseCase con repositorios
+        $this->app->bind(GetSeguimientoPorPrendaUseCase::class, function ($app) {
+            return new GetSeguimientoPorPrendaUseCase(
+                $app->make(PedidoProduccionRepository::class),
+                $app->make(ConsecutivosRecibosRepository::class)
+            );
+        });
+
+        // Registrar GetDescripcionPrendasUseCase con repositorio
+        $this->app->bind(GetDescripcionPrendasUseCase::class, function ($app) {
+            return new GetDescripcionPrendasUseCase(
+                $app->make(PedidoProduccionRepository::class)
+            );
+        });
+
+        // Registrar GetConsecutivoCosturaUseCase con repositorios
+        $this->app->bind(GetConsecutivoCosturaUseCase::class, function ($app) {
+            return new GetConsecutivoCosturaUseCase(
+                $app->make(PedidoProduccionRepository::class),
+                $app->make(ConsecutivosRecibosRepository::class)
+            );
+        });
+
+        // Registrar CalcularDiasUseCase (sin depedencias)
+        $this->app->singleton(CalcularDiasUseCase::class, function ($app) {
+            return new CalcularDiasUseCase();
+        });
+
+        // Registrar CalcularDiasBatchUseCase (sin dependencias)
+        $this->app->singleton(CalcularDiasBatchUseCase::class, function ($app) {
+            return new CalcularDiasBatchUseCase();
+        });
+
+        // Registrar CalcularFechaEstimadaUseCase (sin dependencias)
+        $this->app->singleton(CalcularFechaEstimadaUseCase::class, function ($app) {
+            return new CalcularFechaEstimadaUseCase();
+        });
+
+        // Registrar GetRecibosDatosUseCase (sin dependencias - resuelve internamente)
+        $this->app->singleton(GetRecibosDatosUseCase::class, function ($app) {
+            return new GetRecibosDatosUseCase();
+        });
+
+        // Registrar GetNovedadesUseCase (sin dependencias)
+        $this->app->singleton(GetNovedadesUseCase::class, function ($app) {
+            return new GetNovedadesUseCase();
         });
 
         // Registrar ImagenRelocalizadorService como singleton

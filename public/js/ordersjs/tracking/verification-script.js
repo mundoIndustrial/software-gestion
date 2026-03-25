@@ -79,7 +79,7 @@
             moduleResults[moduleName] = {
                 loaded: isLoaded,
                 hasInstance: hasInstance,
-                status: isLoaded ? (hasInstance ? '✅ Completo' : '⚠️ Sin instancia') : '❌ No cargado'
+                status: isLoaded ? (hasInstance ? ' Completo' : '⚠️ Sin instancia') : ' No cargado'
             };
             
             if (!isLoaded) {
@@ -106,7 +106,7 @@
             
             functionResults[functionName] = {
                 available: isAvailable,
-                status: isAvailable ? '✅' : '❌'
+                status: isAvailable ? '' : ''
             };
             
             if (!isAvailable) {
@@ -153,7 +153,7 @@
         let allDependenciesOK = true;
         dependencies.forEach(dep => {
             const ok = dep.check();
-            console.log(`${ok ? '✅' : '❌'} ${dep.name}`);
+            console.log(`${ok ? '' : ''} ${dep.name}`);
             if (!ok) allDependenciesOK = false;
         });
 
@@ -181,9 +181,9 @@
                 formatDurationHuman(86400000) : 'ERROR';
             console.log('⏱️ formatDurationHuman test:', duration);
 
-            console.log('✅ Pruebas rápidas completadas');
+            console.log(' Pruebas rápidas completadas');
         } catch (error) {
-            console.error('❌ Error en pruebas rápidas:', error);
+            console.error(' Error en pruebas rápidas:', error);
         }
         
         console.groupEnd();
@@ -203,18 +203,18 @@
         
         console.log('\n' + '='.repeat(50));
         console.log(allOK ? 
-            '🎉 ✅ VERIFICACIÓN COMPLETADA CON ÉXITO' : 
-            '⚠️ ❌ HAY PROBLEMAS EN LA VERIFICACIÓN'
+            '🎉  VERIFICACIÓN COMPLETADA CON ÉXITO' : 
+            '⚠️  HAY PROBLEMAS EN LA VERIFICACIÓN'
         );
         console.log('='.repeat(50));
         
         if (allOK) {
-            console.log('✅ Todos los módulos cargaron correctamente');
-            console.log('✅ Todas las funciones globales están disponibles');
-            console.log('✅ Las dependencias están funcionando');
+            console.log(' Todos los módulos cargaron correctamente');
+            console.log(' Todas las funciones globales están disponibles');
+            console.log(' Las dependencias están funcionando');
             console.log('🚀 El sistema está listo para usarse');
         } else {
-            console.log('❌ Se encontraron problemas que deben ser resueltos');
+            console.log(' Se encontraron problemas que deben ser resueltos');
         }
 
         return allOK;

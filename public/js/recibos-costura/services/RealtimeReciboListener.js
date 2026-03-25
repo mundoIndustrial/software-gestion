@@ -59,10 +59,10 @@ class RealtimeReciboListener {
                     });
 
                 this.isInitialized = true;
-                console.log('[✅ RealtimeReciboListener] Listener configurado correctamente');
+                console.log('[ RealtimeReciboListener] Listener configurado correctamente');
 
             } catch (error) {
-                console.error('[❌ RealtimeReciboListener] Error al configurar el listener:', error);
+                console.error('[ RealtimeReciboListener] Error al configurar el listener:', error);
             }
         });
     }
@@ -106,7 +106,7 @@ class RealtimeReciboListener {
         // Crear contenido con datos del recibo
         const contenido = `
             <div style="margin-bottom: 8px;">
-                ✅ <strong>Recibo Aprobado</strong>
+                 <strong>Recibo Aprobado</strong>
             </div>
             <div style="font-size: 13px; opacity: 0.9;">
                 <div>📋 Recibo #${data.consecutivo}</div>
@@ -156,7 +156,7 @@ class RealtimeReciboListener {
                     const tbody = document.getElementById('tablaRecibosBody');
                     if (tbody) {
                         tbody.innerHTML = result.recibos.html;
-                        console.log('[✅ RealtimeReciboListener] Tabla actualizada correctamente');
+                        console.log('[ RealtimeReciboListener] Tabla actualizada correctamente');
 
                         // Reinicializar event listeners en las nuevas filas
                         this._reinitializeTableListeners();
@@ -168,7 +168,7 @@ class RealtimeReciboListener {
                 }
             })
             .catch(error => {
-                console.error('[❌ RealtimeReciboListener] Error al recargar tabla:', error);
+                console.error('[ RealtimeReciboListener] Error al recargar tabla:', error);
                 
                 // Como fallback, recargar toda la página después de 3 segundos
                 setTimeout(() => {
@@ -177,7 +177,7 @@ class RealtimeReciboListener {
                 }, 3000);
             });
         } catch (error) {
-            console.error('[❌ RealtimeReciboListener] Error en _reloadTable:', error);
+            console.error('[ RealtimeReciboListener] Error en _reloadTable:', error);
         }
     }
 

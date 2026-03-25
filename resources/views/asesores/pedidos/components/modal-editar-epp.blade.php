@@ -625,10 +625,10 @@
                             const error = await response.json();
                             console.warn(`⚠️ No se pudo eliminar imagen ${imagen.id}:`, error.message);
                         } else {
-                            console.log(`✅ Imagen ${imagen.id} eliminada correctamente`);
+                            console.log(` Imagen ${imagen.id} eliminada correctamente`);
                         }
                     } catch (error) {
-                        console.error(`❌ Error eliminando imagen ${imagen.id}:`, error);
+                        console.error(` Error eliminando imagen ${imagen.id}:`, error);
                     }
                 }
             }
@@ -684,7 +684,7 @@
                         console.warn(`⚠️ No se pudieron agregar imágenes:`, error.message);
                     } else {
                         const resultado = await response.json();
-                        console.log(`✅ Imágenes agregadas:`, resultado);
+                        console.log(` Imágenes agregadas:`, resultado);
                         
                         // Actualizar la lista de imágenes existentes con las nuevas
                         if (resultado.data && Array.isArray(resultado.data)) {
@@ -701,7 +701,7 @@
                         }
                     }
                 } catch (error) {
-                    console.error('❌ Error agregando imágenes:', error);
+                    console.error(' Error agregando imágenes:', error);
                 }
             }
             
@@ -1207,7 +1207,7 @@
             const data = await response.json();
 
             if (data.success) {
-                console.log('[EPP] ✅ EPP eliminado correctamente:', data);
+                console.log('[EPP]  EPP eliminado correctamente:', data);
                 
                 Swal.fire({
                     title: '¡EPP Eliminado!',

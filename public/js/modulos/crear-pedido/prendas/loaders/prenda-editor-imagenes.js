@@ -76,7 +76,7 @@ class PrendaEditorImagenes {
             
             // 🔴 CRÍTICO: Validar previewUrl antes de asignar
             if (!imagenesConBlobUrl[0].previewUrl || imagenesConBlobUrl[0].previewUrl === 'undefined' || imagenesConBlobUrl[0].previewUrl === undefined) {
-                console.error('[Imagenes] ❌ previewUrl inválido en carga:', imagenesConBlobUrl[0].previewUrl);
+                console.error('[Imagenes]  previewUrl inválido en carga:', imagenesConBlobUrl[0].previewUrl);
                 img.style.cssText = 'max-width: 100%; height: 200px; border-radius: 4px; background: #f3f4f6; display: flex; align-items: center; justify-content: center;';
                 img.alt = 'Imagen no disponible';
                 img.innerHTML = '<div style="text-align: center; color: #6b7280;">📷<br><small>Imagen no disponible</small></div>';
@@ -107,13 +107,13 @@ class PrendaEditorImagenes {
             
             // 🔴 NUEVO: Agregar listener de paste usando la función centralizada
             this._agregarListenerPaste(preview);
-            console.log('[PrendaEditorImagenes] ✅ Listener de paste configurado en preview (cargar)');
+            console.log('[PrendaEditorImagenes]  Listener de paste configurado en preview (cargar)');
             
-            console.log('[Imagenes] ✅ Preview renderizado idéntico a creación');
+            console.log('[Imagenes]  Preview renderizado idéntico a creación');
         } else {
             // Sin imágenes - siempre limpiar el storage para evitar fotos de otra prenda
             if (window.imagenesPrendaStorage) {
-                console.log('🖼️ [Imagenes] ✅ Prenda sin imágenes, limpiando storage');
+                console.log('🖼️ [Imagenes]  Prenda sin imágenes, limpiando storage');
                 window.imagenesPrendaStorage.establecerImagenes([]);
             }
             
@@ -158,7 +158,7 @@ class PrendaEditorImagenes {
             
             // 🔴 CRÍTICO: Validar previewUrl antes de asignar
             if (!imagenes[0].previewUrl || imagenes[0].previewUrl === 'undefined' || imagenes[0].previewUrl === undefined) {
-                console.error('[Imagenes] ❌ previewUrl inválido en actualización:', imagenes[0].previewUrl);
+                console.error('[Imagenes]  previewUrl inválido en actualización:', imagenes[0].previewUrl);
                 img.style.cssText = 'max-width: 100%; height: 200px; border-radius: 4px; background: #f3f4f6; display: flex; align-items: center; justify-content: center;';
                 img.alt = 'Imagen no disponible';
                 img.innerHTML = '<div style="text-align: center; color: #6b7280;">📷<br><small>Imagen no disponible</small></div>';
@@ -175,13 +175,13 @@ class PrendaEditorImagenes {
             preview.dataset.imagenes = JSON.stringify(imagenes);
             preview.dataset.indiceActual = '0';
             
-            console.log('[PrendaEditorImagenes] ✅ Preview actualizado - mostrando imagen 1 de ' + imagenes.length);
+            console.log('[PrendaEditorImagenes]  Preview actualizado - mostrando imagen 1 de ' + imagenes.length);
         }
         
         // Actualizar contador
         if (contador) {
             contador.textContent = imagenes.length === 1 ? '1 foto' : imagenes.length + ' fotos';
-            console.log('[PrendaEditorImagenes] ✅ Contador actualizado:', contador.textContent);
+            console.log('[PrendaEditorImagenes]  Contador actualizado:', contador.textContent);
         }
         
         // Actualizar botón
@@ -203,7 +203,7 @@ class PrendaEditorImagenes {
      */
     static _agregarListenerPaste(preview) {
         if (!preview) {
-            console.error('[PrendaEditorImagenes] ❌ Preview NO ENCONTRADO');
+            console.error('[PrendaEditorImagenes]  Preview NO ENCONTRADO');
             return;
         }
         
@@ -211,7 +211,7 @@ class PrendaEditorImagenes {
         preview.contentEditable = 'true';
         preview.style.outline = 'none';
         
-        console.log('[PrendaEditorImagenes] ✅ Preview configurado como contenteditable');
+        console.log('[PrendaEditorImagenes]  Preview configurado como contenteditable');
     }
 
     /**
@@ -351,7 +351,7 @@ class PrendaEditorImagenes {
                     // En edición: usar PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar()
                     if (typeof PrendaEditorImagenes !== 'undefined' && typeof PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar === 'function') {
                         PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar();
-                        console.log('[prenda-editor-imagenes] ✅ Preview actualizado después de eliminar (edición)');
+                        console.log('[prenda-editor-imagenes]  Preview actualizado después de eliminar (edición)');
                     } else if (typeof window.actualizarPreviewPrenda === 'function') {
                         // Fallback para creación
                         window.actualizarPreviewPrenda();

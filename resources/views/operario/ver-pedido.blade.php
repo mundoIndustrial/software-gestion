@@ -1158,7 +1158,7 @@
                 prenda.imagenes.forEach(img => {
                     if (img.ruta_webp || img.url) {
                         fotosActuales.push(img.ruta_webp || img.url);
-                        console.log('    ✅ Foto prenda agregada:', img.ruta_webp || img.url);
+                        console.log('     Foto prenda agregada:', img.ruta_webp || img.url);
                     }
                 });
             }
@@ -1173,7 +1173,7 @@
                         tela.fotos_tela.forEach(img => {
                             if (img.ruta_webp || img.url) {
                                 fotosActuales.push(img.ruta_webp || img.url);
-                                console.log('      ✅ Foto tela agregada:', img.ruta_webp || img.url);
+                                console.log('       Foto tela agregada:', img.ruta_webp || img.url);
                             }
                         });
                     } else {
@@ -1192,7 +1192,7 @@
                         proceso.imagenes.forEach(img => {
                             if (img.ruta_webp || img.url) {
                                 fotosActuales.push(img.ruta_webp || img.url);
-                                console.log('      ✅ Foto proceso agregada:', img.ruta_webp || img.url);
+                                console.log('       Foto proceso agregada:', img.ruta_webp || img.url);
                             }
                         });
                     } else {
@@ -1565,7 +1565,7 @@
             loadingOverlay.classList.remove('hidden');
             loadingOverlay.style.opacity = '1';
             loadingOverlay.style.pointerEvents = 'auto';
-            console.log('✅ Loading overlay mostrado');
+            console.log(' Loading overlay mostrado');
         }
         
         fetch(apiUrl)
@@ -1700,7 +1700,7 @@
                         const indice = data.prendas.findIndex(p => p.id === prendaIdInt);
                         if (indice !== -1) {
                             window.prendaCarouselIndex = indice;
-                            console.log('✅ [PRENDA ID] Prenda encontrada en índice:', indice);
+                            console.log(' [PRENDA ID] Prenda encontrada en índice:', indice);
                         } else {
                             console.log('⚠️ [PRENDA ID] Prenda con ID', prendaIdInt, 'no encontrada en el array');
                         }
@@ -1782,7 +1782,7 @@
                     loadingOverlay.classList.add('hidden');
                     loadingOverlay.style.opacity = '0';
                     loadingOverlay.style.pointerEvents = 'none';
-                    console.log('✅ Loading overlay ocultado (success)');
+                    console.log(' Loading overlay ocultado (success)');
                 }
 
             })
@@ -1798,7 +1798,7 @@
                     loadingOverlay.classList.add('hidden');
                     loadingOverlay.style.opacity = '0';
                     loadingOverlay.style.pointerEvents = 'none';
-                    console.log('✅ Loading overlay ocultado (error)');
+                    console.log(' Loading overlay ocultado (error)');
                 }
             });
     }, 500);

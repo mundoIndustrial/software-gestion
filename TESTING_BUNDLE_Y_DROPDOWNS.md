@@ -5,7 +5,7 @@ Verificar que el bundle.js está funcionando correctamente y que el sistema de d
 
 ---
 
-## ✅ PASO 1: Limpiar Cache y Recargar
+##  PASO 1: Limpiar Cache y Recargar
 
 ### En Terminal (PowerShell como Admin)
 ```powershell
@@ -26,10 +26,10 @@ php artisan config:clear
 2. Abre la pestaña **"Console"**
 3. **BUSCA ESTE MENSAJE**:
    ```
-   ✅ Bundle.js cargado: SÍ
+    Bundle.js cargado: SÍ
    ```
 
-### ✅ Si ves `SÍ` → Bundle está cargando
+###  Si ves `SÍ` → Bundle está cargando
 ### ⚠️ Si ves `NO` → El bundle no cargó, esto es un problema!
 
 ---
@@ -50,7 +50,7 @@ En la consola, deberías ver:
 - Al menos 1-2 filas de datos (si hay recibos en la BD)
 - Botones de acción en cada fila (botón de ojo 👁️)
 
-### ❌ Si NO hay datos
+###  Si NO hay datos
 - **Abre Network Tab** → Busca `GET /api/recibos-costura`
 - Verifica que responde 200 OK con datos
 - Si error, revisar backend logs
@@ -70,12 +70,12 @@ En la consola, deberías ver:
   ```
 
 ### 2️⃣ Valida que el Dropdown:
-- ✅ Aparece sin errores en consola
-- ✅ Se posiciona cerca del botón que clickeaste
-- ✅ Tiene las 3 opciones visibles
-- ✅ Se cierra al hacer click fuera
+-  Aparece sin errores en consola
+-  Se posiciona cerca del botón que clickeaste
+-  Tiene las 3 opciones visibles
+-  Se cierra al hacer click fuera
 
-### ❌ Si NO aparece el dropdown:
+###  Si NO aparece el dropdown:
 ```
 Revisa en Console (F12):
 - ¿Hay error de JavaScript?
@@ -83,7 +83,7 @@ Revisa en Console (F12):
 - Nota el error exacto y repórtalo
 ```
 
-### ❌ Si aparece pero con errores:
+###  Si aparece pero con errores:
 - En consola muestra errores en rojo
 - El dropdown puede aparecer parcialmente o no funcionar
 - Documenta el error exacto
@@ -101,17 +101,17 @@ Revisa en Console (F12):
   - Botón cerrar (X)
 
 ### 2️⃣ Valida que el Modal:
-- ✅ Aparece con overlay (fondo gris oscuro detrás)
-- ✅ Muestra datos del recibo que seleccionaste
-- ✅ Tiene botón de cerrar (X en la esquina)
-- ✅ Sin errores en consola
+-  Aparece con overlay (fondo gris oscuro detrás)
+-  Muestra datos del recibo que seleccionaste
+-  Tiene botón de cerrar (X en la esquina)
+-  Sin errores en consola
 
 ### 3️⃣ Cierra el Modal
 - Click en botón **X** o fuera del modal
 - **Esperado**: Modal desaparece, overlay desaparece
 - Tabla sigue siendo visible
 
-### ❌ Si NO abre el modal:
+###  Si NO abre el modal:
 ```
 En Console:
 - Error: busca "openOrderDetailModal"
@@ -129,11 +129,11 @@ En Console:
 - **Esperado**: Se abre modal de seguimiento (o página)
 
 ### 2️⃣ Validaciones:
-- ✅ Modal/página abre sin errores
-- ✅ Muestra información de seguimiento del recibo
-- ✅ Cierra correctamente
+-  Modal/página abre sin errores
+-  Muestra información de seguimiento del recibo
+-  Cierra correctamente
 
-### ❌ Si NO funciona:
+###  Si NO funciona:
 - Nota el error en consola
 - Verifica que existe modal HTML para seguimiento en blade.php
 
@@ -147,20 +147,20 @@ En Console:
 - **Esperado**: Se abre modal de novedades
 
 ### 2️⃣ Validaciones:
-- ✅ Modal abre sin errores
-- ✅ Muestra información de novedades
-- ✅ Cierra correctamente
+-  Modal abre sin errores
+-  Muestra información de novedades
+-  Cierra correctamente
 
 ---
 
 ## 📋 Checklist de Validación
 
 ### Consola (F12)
-- [ ] Mensaje: `✅ Bundle.js cargado: SÍ`
+- [ ] Mensaje: ` Bundle.js cargado: SÍ`
 - [ ] Mensaje: `[INFO] Inicializando RecibosCostruaModule...`
 - [ ] Mensaje: `[INFO] Recibos cargados: X filas`
-- [ ] ❌ NO hay errores rojo en consola
-- [ ] ❌ NO hay "Uncaught TypeError" o similar
+- [ ]  NO hay errores rojo en consola
+- [ ]  NO hay "Uncaught TypeError" o similar
 
 ### UI - Tabla
 - [ ] Tabla renderiza con datos
@@ -248,10 +248,10 @@ Cache cleared: Sí (Ctrl+Shift+R)"
 Felicidades! 🎉
 
 Esto significa:
-- ✅ Bundle.js está cargando correctamente
-- ✅ Arquitectura modular en JavaScript funciona
-- ✅ Sistema de dropdowns y modales es operacional
-- ✅ Estamos listos para:
+-  Bundle.js está cargando correctamente
+-  Arquitectura modular en JavaScript funciona
+-  Sistema de dropdowns y modales es operacional
+-  Estamos listos para:
   - Testing de filtros
   - Testing de segumiento
   - Migración de funciones en blade.php
@@ -264,10 +264,10 @@ Esto significa:
 ## 🎮 Testing Rápido (2 minutos)
 
 Si estás en prisa, solo verifica:
-1. F12 → Console → `✅ Bundle.js cargado: SÍ`
+1. F12 → Console → ` Bundle.js cargado: SÍ`
 2. Tabla muestra datos
 3. Click en botón → dropdown aparece
 4. Click "Ver Detalles" → modal abre
 
-Si los 4 pasos funcionan → ✅ TODO BIEN
-Si alguno falla → ❌ REVISAR ERRORES EN CONSOLA
+Si los 4 pasos funcionan →  TODO BIEN
+Si alguno falla →  REVISAR ERRORES EN CONSOLA

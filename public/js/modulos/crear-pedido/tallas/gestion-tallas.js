@@ -156,13 +156,13 @@ window.sincronizarTallasConModalProceso = function() {
         // 3. ACTUALIZAR EL RESUMEN EN EL MODAL DEL PROCESO
         if (typeof window.actualizarResumenTallasProceso === 'function') {
             window.actualizarResumenTallasProceso();
-            console.log('[sincronizarTallasConModalProceso] ✅ Resumen de tallas del proceso actualizado');
+            console.log('[sincronizarTallasConModalProceso]  Resumen de tallas del proceso actualizado');
         } else {
             console.warn('[sincronizarTallasConModalProceso] ⚠️ Función actualizarResumenTallasProceso no disponible');
         }
         
     } catch (error) {
-        console.error('[sincronizarTallasConModalProceso] ❌ Error durante sincronización:', error);
+        console.error('[sincronizarTallasConModalProceso]  Error durante sincronización:', error);
     }
 };
 window.tipoTallaSeleccionado = null;

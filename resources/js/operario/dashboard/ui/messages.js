@@ -1,12 +1,12 @@
 export function mostrarExito(titulo, texto = '') {
-    mostrarMensaje(titulo, texto, 'exito', '✅');
+    mostrarMensaje(titulo, texto, 'exito', '');
 }
 
 export function mostrarError(titulo, texto = '') {
-    mostrarMensaje(titulo, texto, 'error', '❌');
+    mostrarMensaje(titulo, texto, 'error', '');
 }
 
-export function mostrarMensaje(titulo, texto, tipo = 'exito', icono = '✅') {
+export function mostrarMensaje(titulo, texto, tipo = 'exito', icono = '') {
     const modal = document.getElementById('modalMensaje');
     const contenido = document.getElementById('modalMensajeContenido');
     const iconoEl = document.getElementById('modalMensajeIcono');

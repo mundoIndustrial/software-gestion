@@ -52,7 +52,7 @@ if (typeof fechaInicio === 'string') {
 
 ## 2️⃣ VIOLACIONES DE SOLID
 
-### 2.1 SINGLE RESPONSIBILITY PRINCIPLE (SRP) ❌
+### 2.1 SINGLE RESPONSIBILITY PRINCIPLE (SRP) 
 
 El archivo actúa como **"God Object"** (Objeto Todopoderoso). Responsabilidades mixtas:
 
@@ -69,7 +69,7 @@ El archivo actúa como **"God Object"** (Objeto Todopoderoso). Responsabilidades
 
 ---
 
-### 2.2 OPEN/CLOSED PRINCIPLE (OCP) ❌
+### 2.2 OPEN/CLOSED PRINCIPLE (OCP) 
 
 **Problema en `convertEncargadoToSelect()` (líneas 430-474):**
 
@@ -100,7 +100,7 @@ Para agregar una nueva área → hay que tocar el código.
 
 ---
 
-### 2.3 DEPENDENCY INVERSION PRINCIPLE (DIP) ❌
+### 2.3 DEPENDENCY INVERSION PRINCIPLE (DIP) 
 
 **Problema:** El código depende de **variables globales** en lugar de inyectar dependencias:
 
@@ -112,10 +112,10 @@ window.__trackingDiasSeleccionados  // Más globales...
 ```
 
 **Consecuencias:**
-- ❌ Imposible testear funciones
-- ❌ Side effects ocultos
-- ❌ Múltiples componentes pueden sobrescribir los mismos datos
-- ❌ Orden de inicialización crítico y frágil
+-  Imposible testear funciones
+-  Side effects ocultos
+-  Múltiples componentes pueden sobrescribir los mismos datos
+-  Orden de inicialización crítico y frágil
 
 **Ejemplo problemático (línea 553):**
 ```javascript
@@ -149,7 +149,7 @@ else if (fechaInicio && fechaInicio.date) { /* parsear .date */ }
 
 ---
 
-### 2.5 INTERFACE SEGREGATION PRINCIPLE (ISP) ❌
+### 2.5 INTERFACE SEGREGATION PRINCIPLE (ISP) 
 
 **Problema:** Las funciones esperan objetos enormes cuando solo necesitan partes pequeñas.
 
@@ -181,7 +181,7 @@ El objeto es muy grande. La función debería recibir solo lo que necesita (Valu
 
 **Problema:** Los cálculos de dominio están en JavaScript del frontend:
 
-#### ❌ Cálculo de Días Hábiles (Líneas 101-137)
+####  Cálculo de Días Hábiles (Líneas 101-137)
 ```javascript
 function actualizarContadoresDinamicos() {
   // Línea 125: calcularDiasHabilesSync(ini, new Date())
@@ -197,7 +197,7 @@ function actualizarContadoresDinamicos() {
 
 Pueden tener diferentes "hoy" y contar días diferentes. **Inconsistencia garantizada.**
 
-#### ❌ Priorización de Recibos (Líneas 649-673)
+####  Priorización de Recibos (Líneas 649-673)
 ```javascript
 // Jerarquía de negocio hardcodeada:
 const hierarchy = {
@@ -212,9 +212,9 @@ const hierarchy = {
 ```
 
 Esta es una **regla de negocio crítica** que debería:
-1. ✅ Estar en el backend (fuente única de verdad)
-2. ✅ Ser testeable
-3. ✅ Poder cambiar sin tocar jQuery
+1.  Estar en el backend (fuente única de verdad)
+2.  Ser testeable
+3.  Poder cambiar sin tocar jQuery
 
 ---
 
@@ -289,7 +289,7 @@ class Prenda {
 
 ## 4️⃣ FALLBACKS Y MALAS PRÁCTICAS
 
-### 4.1 Fallback de Identificación (ANTI-PATRÓN) ❌
+### 4.1 Fallback de Identificación (ANTI-PATRÓN) 
 
 **Problema en `saveDiaEntregaSelection()` (líneas 193-204):**
 
@@ -312,7 +312,7 @@ if (!orderId) {
 - 🔴 Confía en presentación, no en datos
 - 🔴 Imposible debuggear si falla
 
-### 4.2 Fallback de Datos Inconsistentes ❌
+### 4.2 Fallback de Datos Inconsistentes 
 
 **Problema en `createPrendasTable()` (líneas 795-805):**
 
@@ -332,7 +332,7 @@ if (!recibos) {
 - 🔴 Enmascara bugs del backend
 - 🔴 Lógica de fallback puede ser incorrecto
 
-### 4.3 Estados Globales Mutables ❌
+### 4.3 Estados Globales Mutables 
 
 **Problema en toda la aplicación:**
 
@@ -370,7 +370,7 @@ const diasHabiles = calcularDiasHabilesSync(ini, new Date());
 
 **Solución:**
 ```javascript
-// ✅ Backend calcula UNA VEZ
+//  Backend calcula UNA VEZ
 GET /api/orders/123/working-days-elapsed
 {
   "diasHabiles": 5,
@@ -401,7 +401,7 @@ const hierarchy = { 'COSTURA': 1, 'REFLECTIVO': 2, ... };
 
 **Solución:**
 ```javascript
-// ✅ Backend devuelve el recibo prioritario
+//  Backend devuelve el recibo prioritario
 GET /api/orders/123/receipts
 {
   "primaryReceipt": {
@@ -431,7 +431,7 @@ date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })
 
 **Solución:**
 ```javascript
-// ✅ Backend devuelve fecha formateada YA
+//  Backend devuelve fecha formateada YA
 GET /api/orders/123
 {
   "numero": 123,
@@ -462,10 +462,10 @@ GET /api/orders/123
 Esto requiere una refactorización de arquitectura, no parchazos.
 
 **Propuesta:** Crear una arquitectura limpia con:
-1. ✅ **Domain Layer:** Entidades (`Order`, `Prenda`, `Seguimiento`)
-2. ✅ **Use Cases:** Operaciones de negocio aisladas
-3. ✅ **Application Layer:** Coordinación entre capas
-4. ✅ **Presentation Layer:** Props inyectados, sin globales
-5. ✅ **Backend API:** Devuelve datos validados, cálculos seguros
+1.  **Domain Layer:** Entidades (`Order`, `Prenda`, `Seguimiento`)
+2.  **Use Cases:** Operaciones de negocio aisladas
+3.  **Application Layer:** Coordinación entre capas
+4.  **Presentation Layer:** Props inyectados, sin globales
+5.  **Backend API:** Devuelve datos validados, cálculos seguros
 
 ¿Quieres que continúe con la propuesta de refactorización sin fallbacks?

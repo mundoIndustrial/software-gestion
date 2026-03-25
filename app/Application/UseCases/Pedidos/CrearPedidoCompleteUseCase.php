@@ -2,29 +2,25 @@
 
 namespace App\Application\UseCases\Pedidos;
 
+use App\Application\Services\ColorTelaService;
+use App\Application\Services\ImageUploadService;
+use App\Domain\Clientes\Services\ClienteService;
+use App\Domain\Pedidos\DTOs\PedidoNormalizadorDTO;
+use App\Domain\Pedidos\Events\PedidoCreatedEvent;
+use App\Domain\Pedidos\Repositories\PedidoRepository;
+use App\Domain\Pedidos\Services\MapeoImagenesService;
+use App\Domain\Pedidos\Services\PedidoImagenesService;
+use App\Domain\Pedidos\Services\PedidoWebService;
+use App\Domain\Pedidos\Services\ProcesoImagenService;
+use App\Domain\Pedidos\Services\ResolutorImagenesService;
+use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use App\Models\Cliente;
-use App\Models\PedidoProduccion;
-use App\Models\PedidoEpp;
-use App\Models\PedidoEppImagen;
-use App\Models\News;
-use App\Domain\Pedidos\DTOs\PedidoNormalizadorDTO;
-use App\Domain\Pedidos\Services\PedidoWebService;
-use App\Domain\Pedidos\Services\PedidoImagenesService;
-use App\Domain\Clientes\Services\ClienteService;
-use App\Application\Services\ImageUploadService;
-use App\Application\Services\ColorTelaService;
-use App\Domain\Pedidos\Services\ResolutorImagenesService;
-use App\Domain\Pedidos\Services\MapeoImagenesService;
-use App\Domain\Pedidos\Services\ProcesoImagenService;
-use App\Domain\Pedidos\Repositories\PedidoRepository;
-use App\Domain\Pedidos\Events\PedidoCreatedEvent;
-use Illuminate\Support\Facades\Event;
 
 /**
- * Orquesta la creación completa de un pedido (100% transaccional).
+ * Orquesta la creación completa de un pedido (una sola frontera transaccional).
  */
 class CrearPedidoCompleteUseCase
 {
@@ -40,7 +36,6 @@ class CrearPedidoCompleteUseCase
         private ProcesoImagenService $procesoImagenService,
     ) {}
 
-    /** Ejecutar creación transaccional del pedido */
     public function ejecutar(CrearPedidoInput $input): CrearPedidoOutput
     {
         $pedidoId = null;
@@ -51,7 +46,7 @@ class CrearPedidoCompleteUseCase
                 'archivos' => count($input->request->allFiles()),
             ]);
 
-            // Validar JSON
+            // Validar JSON (sin files)
             $this->pedidoImagenesService->validarJsonSinFiles($input->datosFrontend);
 
             // Obtener/crear cliente
@@ -64,9 +59,11 @@ class CrearPedidoCompleteUseCase
                 $cliente->id
             );
 
-            DB::beginTransaction();
+            $esBorrador = false;
+            $cantidadTotalPrendas = 0;
+            $cantidadTotalEpps = 0;
 
-            // Crear pedido base
+            // Datos para el servicio de dominio
             $datosParaServicio = [
                 'cliente' => $dtoPedido->cliente,
                 'orden_compra' => $input->getOrdenCompra(),
@@ -78,55 +75,66 @@ class CrearPedidoCompleteUseCase
                 'epps' => $dtoPedido->epps,
             ];
 
-            // Si se está convirtiendo un borrador, solo actualizar número/estado (prendas e imágenes ya existen)
-            $borradorId = $input->getBorradorPedidoId();
-            $esBorrador = false;
-            \Log::info('[CrearPedidoCompleteUseCase] Borrador check', [
-                'borrador_pedido_id' => $borradorId,
-                'tiene_borrador' => !empty($borradorId),
-            ]);
-            if ($borradorId) {
-                $borrador = PedidoProduccion::where('id', $borradorId)
-                    ->where('estado', 'Borrador')
-                    ->first();
-                if ($borrador) {
-                    $pedido = $this->pedidoWebService->convertirBorradorEnPedido($borrador, $datosParaServicio, $input->usuarioId);
-                    $esBorrador = true;
+            // UNA sola frontera transaccional: pedido + prendas + epps + cálculo + imágenes (con cleanup si falla)
+            $pedido = DB::transaction(function () use (
+                $input,
+                $dtoPedido,
+                $datosParaServicio,
+                &$pedidoId,
+                &$esBorrador,
+                &$cantidadTotalPrendas,
+                &$cantidadTotalEpps
+            ) {
+                $borradorId = $input->getBorradorPedidoId();
+                Log::info('[CrearPedidoCompleteUseCase] Borrador check', [
+                    'borrador_pedido_id' => $borradorId,
+                    'tiene_borrador' => !empty($borradorId),
+                ]);
+
+                if ($borradorId) {
+                    $borrador = PedidoProduccion::where('id', $borradorId)
+                        ->where('estado', 'Borrador')
+                        ->first();
+
+                    if ($borrador) {
+                        $pedido = $this->pedidoWebService->convertirBorradorEnPedido($borrador, $datosParaServicio, $input->usuarioId);
+                        $esBorrador = true;
+                    } else {
+                        $pedido = $this->pedidoWebService->crearPedidoCompletoDentroTransaccion($datosParaServicio, $input->usuarioId);
+                    }
                 } else {
-                    $pedido = $this->pedidoWebService->crearPedidoCompleto($datosParaServicio, $input->usuarioId);
-                }
-            } else {
-                $pedido = $this->pedidoWebService->crearPedidoCompleto($datosParaServicio, $input->usuarioId);
-            }
-            $pedidoId = $pedido->id;
-
-            // Solo crear carpetas e imágenes cuando es pedido nuevo (no conversión de borrador)
-            if (!$esBorrador) {
-                $this->pedidoImagenesService->crearCarpetasPedido($pedidoId);
-                $this->mapeoImagenes->mapearYCrearFotos($dtoPedido, $pedidoId, $input->request);
-
-                $eppsData = $input->getEpps();
-                if (!empty($eppsData)) {
-                    $this->pedidoImagenesService->procesarImagenesDeEpps($input->request, $pedidoId, $eppsData);
+                    $pedido = $this->pedidoWebService->crearPedidoCompletoDentroTransaccion($datosParaServicio, $input->usuarioId);
                 }
 
-                $prendas = $input->getPrendas();
-                if (!empty($prendas)) {
-                    $this->pedidoImagenesService->procesarImagenesPorTalla($input->request, $pedidoId, $prendas);
+                $pedidoId = $pedido->id;
+
+                // Solo crear carpetas e imágenes cuando es pedido nuevo (no conversión de borrador)
+                if (!$esBorrador) {
+                    $this->pedidoImagenesService->crearCarpetasPedido($pedidoId);
+                    $this->mapeoImagenes->mapearYCrearFotos($dtoPedido, $pedidoId, $input->request);
+
+                    $eppsData = $input->getEpps();
+                    if (!empty($eppsData)) {
+                        $this->pedidoImagenesService->procesarImagenesDeEpps($input->request, $pedidoId, $eppsData);
+                    }
+
+                    $prendas = $input->getPrendas();
+                    if (!empty($prendas)) {
+                        $this->pedidoImagenesService->procesarImagenesPorTalla($input->request, $pedidoId, $prendas);
+                    }
+
+                    $this->pedidoImagenesService->procesarImagenesDeColores($input->request, $pedidoId, $prendas);
                 }
 
-                $this->pedidoImagenesService->procesarImagenesDeColores($input->request, $pedidoId, $prendas);
-            }
+                $cantidadTotalPrendas = $this->pedidoRepository->calcularCantidadTotalPrendas($pedidoId);
+                $cantidadTotalEpps = $this->pedidoRepository->calcularCantidadTotalEpps($pedidoId);
+                $cantidadTotal = $cantidadTotalPrendas + $cantidadTotalEpps;
+                $pedido->update(['cantidad_total' => $cantidadTotal]);
 
-            // Calcular cantidades y commit
-            $cantidadTotalPrendas = $this->pedidoRepository->calcularCantidadTotalPrendas($pedidoId);
-            $cantidadTotalEpps = $this->pedidoRepository->calcularCantidadTotalEpps($pedidoId);
-            $cantidadTotal = $cantidadTotalPrendas + $cantidadTotalEpps;
-            $pedido->update(['cantidad_total' => $cantidadTotal]);
+                return $pedido;
+            });
 
-            DB::commit();
-
-            // Domain Event
+            // Domain Event (post-commit)
             Event::dispatch(new PedidoCreatedEvent(
                 pedidoId: $pedidoId,
                 usuarioId: $input->usuarioId,
@@ -138,8 +146,14 @@ class CrearPedidoCompleteUseCase
                 ]
             ));
 
-            // Notificación
-            $this->pedidoRepository->crearNotificacionPedido($pedido, $cliente, $input->usuarioId, $cantidadTotalPrendas, $cantidadTotalEpps);
+            // Notificación (post-commit)
+            $this->pedidoRepository->crearNotificacionPedido(
+                $pedido,
+                $cliente,
+                $input->usuarioId,
+                $cantidadTotalPrendas,
+                $cantidadTotalEpps
+            );
 
             $tiempoTotal = round((microtime(true) - $inicioTotal) * 1000, 2);
             Log::info('[CREAR-PEDIDO] Completado', [
@@ -160,10 +174,9 @@ class CrearPedidoCompleteUseCase
             );
 
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('[CREAR-PEDIDO] Error', ['pedido_id' => $pedidoId, 'error' => $e->getMessage()]);
 
-            // Cleanup: eliminar carpeta si se creó
+            // Cleanup: eliminar carpeta si se creó (los archivos no están transaccionados)
             if ($pedidoId) {
                 try {
                     $carpetaPedido = "pedidos/{$pedidoId}";
@@ -179,3 +192,4 @@ class CrearPedidoCompleteUseCase
         }
     }
 }
+

@@ -134,7 +134,7 @@
 
                         <!-- Botón Aprobar (solo si está pendiente de aprobación Y no es solo EPP) -->
                         @if($estado === 'PENDIENTE_SUPERVISOR')
-                            @if(!$orden->esSoloEpp())
+                            @if(!$orden->es_solo_epp)
                             <button class="btn-accion btn-accion--aprobar"
                                 onclick="abrirModalAprobacion({{ $orden->id }}, '{{ str_replace('#', '', $numeroPedido) }}')"
                                 title="Aprobar Pedido">
@@ -145,7 +145,7 @@
 
                         <!-- Botón Anular (solo si está pendiente de aprobación Y no es solo EPP) -->
                         @if($estado === 'PENDIENTE_SUPERVISOR')
-                            @if(!$orden->esSoloEpp())
+                            @if(!$orden->es_solo_epp)
                             <button class="btn-accion btn-accion--anular"
                                 onclick="abrirModalAnulacion({{ $orden->id }}, '{{ $numeroPedido }}')"
                                 title="Pasar a Revisión">

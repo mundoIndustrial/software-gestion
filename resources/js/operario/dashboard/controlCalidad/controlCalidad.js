@@ -27,7 +27,7 @@ export function pasarAControlCalidad(btn) {
                     btn.dataset.area = nuevoArea;
                     btn.dataset.procesoId = '';
                     btn.innerHTML = '<span class="material-symbols-rounded">check_circle</span> PASAR A C.C';
-                    console.log('✅ Control Calidad deshecho. Área restaurada a: ' + nuevoArea);
+                    console.log(' Control Calidad deshecho. Área restaurada a: ' + nuevoArea);
                 } else {
                     btn.innerHTML = originalHTML;
                     mostrarError('Error', data.message || 'Error deshaciendo control de calidad');

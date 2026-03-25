@@ -45,7 +45,7 @@ class TestWebSocketSupervisor extends Command
         
         $this->info("📋 Pedido: {$orden->numero_pedido}");
         $this->info("🔄 Acción: created");
-        $this->info("📡 Canales: supervisor-pedidos, ordenes");
+        $this->info(" Canales: supervisor-pedidos, ordenes");
         
         Log::info('[TEST] Simulando evento OrdenUpdated', [
             'numero_pedido' => $orden->numero_pedido,
@@ -60,7 +60,7 @@ class TestWebSocketSupervisor extends Command
                 'numero_pedido' => $orden->numero_pedido
             ]);
             
-            $this->info('✅ Evento OrdenUpdated disparado correctamente');
+            $this->info(' Evento OrdenUpdated disparado correctamente');
             $this->info('📝 Revisa la consola del navegador en supervisor-pedidos');
             $this->info('🌐 Abre /websocket-test-supervisor.html para verificar recepción');
             
@@ -70,7 +70,7 @@ class TestWebSocketSupervisor extends Command
                 'trace' => $e->getTraceAsString()
             ]);
             
-            $this->error("❌ Error: " . $e->getMessage());
+            $this->error(" Error: " . $e->getMessage());
             return 1;
         }
         

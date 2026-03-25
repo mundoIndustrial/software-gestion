@@ -55,10 +55,10 @@ public function store(Request $request)
 ```
 
 **Ventajas:**
-- ✅ 3 líneas vs 30 líneas
-- ✅ Un responsabilidad clara
-- ✅ Lógica extraída al UseCase
-- ✅ Reutilizable desde consola/eventos
+-  3 líneas vs 30 líneas
+-  Un responsabilidad clara
+-  Lógica extraída al UseCase
+-  Reutilizable desde consola/eventos
 
 ---
 
@@ -162,10 +162,10 @@ class SaveDiaEntregaUseCase
 ```
 
 **Ventajas:**
-- ✅ Lógica reutilizable en múltiples places
-- ✅ Testeable de forma aislada
-- ✅ Cambios centralizados
-- ✅ Mejorada legibilidad
+-  Lógica reutilizable en múltiples places
+-  Testeable de forma aislada
+-  Cambios centralizados
+-  Mejorada legibilidad
 
 ---
 
@@ -267,10 +267,10 @@ class OrderQueryService
 ```
 
 **Ventajas:**
-- ✅ Controller < 3 líneas
-- ✅ Lógica de query centralizada
-- ✅ Fácil modificar criterios
-- ✅ Reutilizable desde múltiples controllers
+-  Controller < 3 líneas
+-  Lógica de query centralizada
+-  Fácil modificar criterios
+-  Reutilizable desde múltiples controllers
 
 ---
 
@@ -281,9 +281,9 @@ class OrderQueryService
 // Sin validación
 $estado = $request->input('estado'); // Podría ser cualquier string
 
-$orden->update(['estado' => $estado]); // ❌ Sin validación
+$orden->update(['estado' => $estado]); //  Sin validación
 
-if ($orden->estado == 'En Ejecucion') { // ❌ String magic
+if ($orden->estado == 'En Ejecucion') { //  String magic
     // ...
 }
 ```
@@ -293,27 +293,27 @@ if ($orden->estado == 'En Ejecucion') { // ❌ String magic
 // Con validación
 $estado = EntregaEstado::create($request->input('estado'));
 
-// ✅ Lanza excepción si es inválido
+//  Lanza excepción si es inválido
 $orden->update(['estado' => $estado->toString()]);
 
-if ($estado->equals(EntregaEstado::EN_EJECUCION)) { // ✅ Type-safe
+if ($estado->equals(EntregaEstado::EN_EJECUCION)) { //  Type-safe
     // ...
 }
 
-// ✅ Métodos de lógica
+//  Métodos de lógica
 if ($estado->isFinal()) {
     // Puede archivarse
 }
 
-// ✅ Obtener todos los estados válidos
+//  Obtener todos los estados válidos
 $todosEstados = EntregaEstado::todos();
 ```
 
 **Ventajas:**
-- ✅ Validación en construcción
-- ✅ Métodos de lógica en el value object
-- ✅ Type-safe (no strings mágicos)
-- ✅ Evita bugs por typos
+-  Validación en construcción
+-  Métodos de lógica en el value object
+-  Type-safe (no strings mágicos)
+-  Evita bugs por typos
 
 ---
 
@@ -367,10 +367,10 @@ if (!$filteringService->validarDiaEntrega($dia)) {
 ```
 
 **Ventajas:**
-- ✅ DRY (Don't Repeat Yourself)
-- ✅ Cambios centralizados
-- ✅ Testeable
-- ✅ Documentación clara
+-  DRY (Don't Repeat Yourself)
+-  Cambios centralizados
+-  Testeable
+-  Documentación clara
 
 ---
 

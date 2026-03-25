@@ -52,12 +52,12 @@ class TrackingModalController {
             const pedidoId = this._extractPedidoId(fila, reciboId);
             
             if (!pedidoId) {
-                console.error(`[TrackingModalController] ❌ No se pudo encontrar el ID del pedido para el recibo: ${reciboId}`);
+                console.error(`[TrackingModalController]  No se pudo encontrar el ID del pedido para el recibo: ${reciboId}`);
                 alert('No se encontró información del pedido asociada a este recibo. El recibo puede no estar correctamente vinculado a un pedido.');
                 return;
             }
 
-            console.log(`[TrackingModalController] ✅ Pedido ID confirmado: ${pedidoId}`);
+            console.log(`[TrackingModalController]  Pedido ID confirmado: ${pedidoId}`);
 
             // Para recibos de costura, necesitamos encontrar la primera prenda del pedido
             const prendas = await this._fetchPrendasData(pedidoId);
@@ -72,7 +72,7 @@ class TrackingModalController {
             const primeraPrenda = prendas[0];
             const prendaId = primeraPrenda.id;
 
-            console.log(`[TrackingModalController] ✅ Prenda encontrada: ${prendaId}`);
+            console.log(`[TrackingModalController]  Prenda encontrada: ${prendaId}`);
 
             // Abrir el recibo de costura usando el módulo
             if (window.pedidosRecibosModule) {
@@ -195,7 +195,7 @@ class TrackingModalController {
             }
         }
 
-        console.error(`[TrackingModalController] ❌ No se pudo encontrar el ID del pedido. Contenido: ${fila.innerHTML}`);
+        console.error(`[TrackingModalController]  No se pudo encontrar el ID del pedido. Contenido: ${fila.innerHTML}`);
         return null;
     }
 

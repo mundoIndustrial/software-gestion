@@ -16,4 +16,4 @@ window.Chart = Chart;
 
 Alpine.start();
 
-console.log('✅ Alpine y Chart cargados desde Vite');
+console.log(' Alpine y Chart cargados desde Vite');

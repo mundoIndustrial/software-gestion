@@ -4,6 +4,7 @@ namespace App\Application\UseCases\Orders;
 
 use App\Services\RegistroOrdenValidationService;
 use App\Services\RegistroOrdenCreationService;
+use App\Exceptions\RegistroOrdenPedidoNumberException;
 use Illuminate\Http\Request;
 
 /**
@@ -26,16 +27,9 @@ class CreateOrderUseCase
     {
         $validatedData = $this->validationService->validateStoreRequest($request);
 
-        if (!$allowAnyPedido) {
-            $nextPedido = $this->creationService->getNextPedidoNumber();
-            if ($request->pedido != $nextPedido) {
-                throw new \Exception(
-                    "Se esperaba pedido {$nextPedido}, pero se recibió {$request->pedido}"
-                );
-            }
-        }
-
-        $pedido = $this->creationService->createOrder($validatedData);
+        // Validación del consecutivo se hace dentro de la transacción (fuente de verdad)
+        $allowAny = $allowAnyPedido || (bool) ($validatedData['allow_any_pedido'] ?? false);
+        $pedido = $this->creationService->createOrder($validatedData, $allowAny);
 
         $this->creationService->logOrderCreated(
             $pedido->numero_pedido,

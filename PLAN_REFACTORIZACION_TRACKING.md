@@ -58,10 +58,10 @@ export const orderState = new OrderState();
 ```
 
 **Ventajas:**
-- ✅ Testeable
-- ✅ Control centralizado
-- ✅ Sin efectos secundarios ocultos
-- ✅ Fácil debuggear
+-  Testeable
+-  Control centralizado
+-  Sin efectos secundarios ocultos
+-  Fácil debuggear
 
 ---
 
@@ -137,10 +137,10 @@ export default DateFormatter;
 ```
 
 **Ventajas:**
-- ✅ Eliminadas 3+ líneas duplicadas de conversión
-- ✅ Un solo lugar donde debuggear formateo
-- ✅ Reutilizable en otras vistas
-- ✅ Fácil cambiar formato a futuro (ej: i18n)
+-  Eliminadas 3+ líneas duplicadas de conversión
+-  Un solo lugar donde debuggear formateo
+-  Reutilizable en otras vistas
+-  Fácil cambiar formato a futuro (ej: i18n)
 
 ---
 
@@ -206,10 +206,10 @@ export default OrderApiService;
 ```
 
 **Ventajas:**
-- ✅ Todas las APIs en UN lugar
-- ✅ Manejo centralizado de errores
-- ✅ Sin fallbacks en la API
-- ✅ Fácil agregar caché o retry logic
+-  Todas las APIs en UN lugar
+-  Manejo centralizado de errores
+-  Sin fallbacks en la API
+-  Fácil agregar caché o retry logic
 
 ---
 
@@ -320,10 +320,10 @@ export default DOMRenderer;
 ```
 
 **Ventajas:**
-- ✅ Lógica de presentación separada
-- ✅ Renders aislados, testeable
-- ✅ Elimina concatenación de HTML en funciones
-- ✅ Posibilidad de cambiar a Vue/React sin afectar lógica
+-  Lógica de presentación separada
+-  Renders aislados, testeable
+-  Elimina concatenación de HTML en funciones
+-  Posibilidad de cambiar a Vue/React sin afectar lógica
 
 ---
 
@@ -350,7 +350,7 @@ export default QueryUtils;
 
 ## 🔧 Antes vs Después: Refactorización de updateOrderInfo()
 
-### ❌ ANTES (540 líneas, duplicado, múltiples responsabilidades)
+###  ANTES (540 líneas, duplicado, múltiples responsabilidades)
 ```javascript
 function updateOrderInfo(orderData) {
   // Líneas 577-626: Formateo de fecha inicio (1ª vez)
@@ -373,7 +373,7 @@ function updateOrderInfo(orderData) {
 }
 ```
 
-### ✅ DESPUÉS (15 líneas, claro, sin duplicación)
+###  DESPUÉS (15 líneas, claro, sin duplicación)
 ```javascript
 function updateOrderInfo(orderData) {
   DOMRenderer.updateOrderDisplay(orderData);
@@ -389,7 +389,7 @@ function updateOrderInfo(orderData) {
 
 ## 🔄 Refactorización de saveDiaEntregaSelection()
 
-### ❌ ANTES (múltiples responsabilidades)
+###  ANTES (múltiples responsabilidades)
 ```javascript
 async function saveDiaEntregaSelection() {
   // Línea 193: Obtener ID (fallback)
@@ -413,7 +413,7 @@ async function saveDiaEntregaSelection() {
 }
 ```
 
-### ✅ DESPUÉS (responsabilidades claras)
+###  DESPUÉS (responsabilidades claras)
 ```javascript
 async function handleDaysSelection(selectedDays) {
   // El estado YA tiene el orden
@@ -438,10 +438,10 @@ async function handleDaysSelection(selectedDays) {
 ```
 
 **Ventajas:**
-- ✅ Sin fallbacks
-- ✅ Error se lanza, no se oculta
-- ✅ Una responsabilidad por función
-- ✅ Testeable
+-  Sin fallbacks
+-  Error se lanza, no se oculta
+-  Una responsabilidad por función
+-  Testeable
 
 ---
 
@@ -453,12 +453,12 @@ async function handleDaysSelection(selectedDays) {
 
 | Nuevo | Líneas | Responsabilidad | SOLID |
 |--------|--------|-----------------|--------|
-| `OrderState.js` | 30 | Estado centralizado | ✅ SRP, DIP |
-| `DateFormatter.js` | 50 | Formateo de fechas | ✅ SRP |
-| `OrderApiService.js` | 80 | APIs | ✅ SRP |
-| `DOMRenderer.js` | 100 | Presentación HTML | ✅ SRP |
-| `QueryUtils.js` | 15 | Helpers DOM | ✅ SRP |
-| `tracking-modal-handler.js` | **180** | Orquestación | ✅ Todos |
+| `OrderState.js` | 30 | Estado centralizado |  SRP, DIP |
+| `DateFormatter.js` | 50 | Formateo de fechas |  SRP |
+| `OrderApiService.js` | 80 | APIs |  SRP |
+| `DOMRenderer.js` | 100 | Presentación HTML |  SRP |
+| `QueryUtils.js` | 15 | Helpers DOM |  SRP |
+| `tracking-modal-handler.js` | **180** | Orquestación |  Todos |
 
 **Total:** 455 líneas bien organizadas vs 800+ líneas caóticas.
 

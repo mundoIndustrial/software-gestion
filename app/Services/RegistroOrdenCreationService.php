@@ -6,6 +6,7 @@ use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Models\ProcesoPrenda;
 use App\Models\News;
+use App\Exceptions\RegistroOrdenPedidoNumberException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -33,7 +34,7 @@ class RegistroOrdenCreationService
      * @return PedidoProduccion La orden creada
      * @throws \Exception Si falla la creación
      */
-    public function createOrder(array $data): PedidoProduccion
+    public function createOrder(array $data, bool $allowAnyPedido = false): PedidoProduccion
     {
         DB::beginTransaction();
 
@@ -42,15 +43,36 @@ class RegistroOrdenCreationService
             // Valores por defecto si no se proporcionan
             $estado = $data['estado'] ?? 'Pendiente';
             $area = $data['area'] ?? 'creacion de pedido';
+            $numeroPedido = (int) ($data['pedido'] ?? 0);
+
+            if ($numeroPedido <= 0) {
+                throw new RegistroOrdenPedidoNumberException('Número de pedido inválido', 0, $numeroPedido);
+            }
+
+            // Concurrencia: serializar creación por consecutivo
+            $ultimoPedido = PedidoProduccion::whereNotNull('numero_pedido')
+                ->orderByDesc('numero_pedido')
+                ->lockForUpdate()
+                ->value('numero_pedido');
+
+            $expectedNext = $ultimoPedido ? ((int) $ultimoPedido + 1) : 1;
+            if (!$allowAnyPedido && $numeroPedido !== $expectedNext) {
+                throw RegistroOrdenPedidoNumberException::unexpectedNumber($expectedNext, $numeroPedido);
+            }
+
+            // Guardrail: evitar duplicados por concurrencia
+            if (PedidoProduccion::where('numero_pedido', $numeroPedido)->exists()) {
+                throw RegistroOrdenPedidoNumberException::duplicateNumber($numeroPedido);
+            }
             
             \Log::info('[REGISTRO-ORDEN] Creando pedido con valores por defecto', [
-                'numero_pedido' => null, // Ahora es NULL hasta que Cartera apruebe
+                'numero_pedido' => $numeroPedido,
                 'estado_guardado' => $estado,
                 'area_guardada' => $area,
             ]);
             
             $pedido = PedidoProduccion::create([
-                'numero_pedido' => null, // Ya no se genera al crear, solo Cartera lo genera
+                'numero_pedido' => $numeroPedido,
                 'cliente' => $data['cliente'],
                 'estado' => $estado,
                 'area' => $area,

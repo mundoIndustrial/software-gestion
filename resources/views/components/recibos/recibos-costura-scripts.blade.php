@@ -316,7 +316,7 @@ function obtenerDatosPrendaRecibo(titulo, pedidoId, prendaId) {
             }
             
             const todasLasPrendas = datosRecibo.data.prendas;
-            console.log(`[obtenerDatosPrendaRecibo] ✅ Prendas encontradas: ${todasLasPrendas.length}`);
+            console.log(`[obtenerDatosPrendaRecibo]  Prendas encontradas: ${todasLasPrendas.length}`);
             
             // Filtrar para mostrar solo la prenda asociada al recibo
             const prendaFiltrada = todasLasPrendas.filter(prenda => {

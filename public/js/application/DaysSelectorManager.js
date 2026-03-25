@@ -175,3 +175,5 @@ class DaysSelectorManager {
     this.closeMenu();
   }
 }
+
+export { DaysSelectorManager };

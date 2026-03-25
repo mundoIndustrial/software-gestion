@@ -2,21 +2,21 @@
 
 ## Estado: Comenzando integración de arquitectura DDD
 
-### ✅ Cambios Realizados
+###  Cambios Realizados
 
 **1. Layout (resources/views/layouts/insumos/app.blade.php)**
-- ✅ Agregados 5 scripts de core en orden correcto
-- ✅ Mantiene @stack('scripts') para compatibilidad
+-  Agregados 5 scripts de core en orden correcto
+-  Mantiene @stack('scripts') para compatibilidad
 
 **2. Handlers (public/js/insumos/index-blade-handlers.js)**
-- ✅ Refactorizado abrirModalInsumos() → usa window.insumoService
-- ✅ Manejo de errores tipados (ValidationError, BusinessError, HttpError)
-- ✅ Cache automático y reintentos durante carga
+-  Refactorizado abrirModalInsumos() → usa window.insumoService
+-  Manejo de errores tipados (ValidationError, BusinessError, HttpError)
+-  Cache automático y reintentos durante carga
 
 **3. Form Handlers (public/js/insumos/form-handlers-insumos.js)**
-- ✅ Refactorizado guardarCambios() → usa window.insumoService
-- ✅ Validación centralizada en servicio
-- ✅ Manejo de errores mejorado
+-  Refactorizado guardarCambios() → usa window.insumoService
+-  Validación centralizada en servicio
+-  Manejo de errores mejorado
 
 ### ⏳ Pasos Siguientes (Para Validación Manual)
 
@@ -30,10 +30,10 @@
 
 // Verificar servicio está disponible
 window.insumoService
-// Response: InsumoService instance ✅
+// Response: InsumoService instance 
 
 window.coreServices
-// Response: {insumoService, insumoRepository, httpClient} ✅
+// Response: {insumoService, insumoRepository, httpClient} 
 ```
 
 #### 2. Pruebar Flujo de Carga de Insumos
@@ -162,10 +162,10 @@ Si está fuera de orden, obtendrá ReferenceError: X is not defined
 **⚠️  Async/Await**
 Las funciones refactorizadas son ahora async. Si se llaman desde HTML onclick:
 ```html
-<!-- ❌ INCORRECTO
+<!--  INCORRECTO
 <button onclick="abrirModalInsumos(123)"></button>
 
-<!-- ✅ CORRECTO (Promise se ignora silenciosamente si no se espera)
+<!--  CORRECTO (Promise se ignora silenciosamente si no se espera)
 <button onclick="abrirModalInsumos(123)"></button>
 ```
 

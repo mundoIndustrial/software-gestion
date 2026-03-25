@@ -258,5 +258,5 @@
     window.sincronizarPrendaModalAntesDeGuardarBorrador = sincronizarPrendaModalAntesDeGuardarBorrador;
     window.serializarPrendaExistenteParaBorrador = serializarPrendaExistenteParaBorrador;
 
-    console.debug('[draft-pedido-serializer-helpers] Módulo cargado ✅');
+    console.debug('[draft-pedido-serializer-helpers] Módulo cargado ');
 })();

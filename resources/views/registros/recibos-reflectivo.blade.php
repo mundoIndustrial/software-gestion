@@ -749,15 +749,15 @@ window.abrirModalAgregarProcesoDesdeArea = function(areaSeleccionada, pedidoId, 
         return;
     }
     
-    // ✅ Cargar datos ANTES de abrir el modal (esperar a que termine)
+    //  Cargar datos ANTES de abrir el modal (esperar a que termine)
     cargarDatosParaAgregarProceso(pedidoId, prendaId, areaSeleccionada)
         .then(() => {
-            // ✅ Verificar que los datos se cargaron correctamente
+            //  Verificar que los datos se cargaron correctamente
             if (!window.currentOrderData || !window.currentPrendaData) {
                 throw new Error('No se pudieron cargar los datos necesarios');
             }
             
-            // ✅ AHORA sí, abrir el modal
+            //  AHORA sí, abrir el modal
             const modal = document.getElementById('addProcesoModal');
             if (!modal) {
                 alert('Modal de agregar proceso no disponible');
@@ -782,7 +782,7 @@ window.abrirModalAgregarProcesoDesdeArea = function(areaSeleccionada, pedidoId, 
                 inputEncargado.focus();
             }
             
-            // ✅ Configurar evento del botón guardar
+            //  Configurar evento del botón guardar
             const btnConfirm = document.getElementById('btnConfirmAddProceso');
             if (btnConfirm) {
                 btnConfirm.removeEventListener('click', handleAgregarProcesoDesdeBadge);
@@ -906,7 +906,7 @@ async function handleAgregarProcesoDesdeBadge() {
 
         const result = await response.json();
         
-        // ✅ Mostrar mensaje diferente según si fue creado o actualizado
+        //  Mostrar mensaje diferente según si fue creado o actualizado
         const mensaje = result.action === 'actualizado' 
             ? 'Proceso actualizado correctamente' 
             : 'Proceso agregado correctamente';

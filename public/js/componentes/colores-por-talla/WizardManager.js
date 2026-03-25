@@ -129,29 +129,29 @@ window.WizardManager = (function() {
             if (btnSiguiente) {
                 btnSiguiente.onclick = null;
                 btnSiguiente.addEventListener('click', this._storedHandlers.siguiente, false);
-                console.log('[WizardManager] ✅ Listener directo agregado a botón Siguiente');
+                console.log('[WizardManager]  Listener directo agregado a botón Siguiente');
             } else {
-                console.error('[WizardManager] ❌ Botón Siguiente (wzd-btn-siguiente) NO ENCONTRADO');
+                console.error('[WizardManager]  Botón Siguiente (wzd-btn-siguiente) NO ENCONTRADO');
             }
             
             if (btnAtras) {
                 btnAtras.onclick = null;
                 btnAtras.addEventListener('click', this._storedHandlers.atras, false);
-                console.log('[WizardManager] ✅ Listener directo agregado a botón Atrás');
+                console.log('[WizardManager]  Listener directo agregado a botón Atrás');
             } else {
-                console.error('[WizardManager] ❌ Botón Atrás (wzd-btn-atras) NO ENCONTRADO');
+                console.error('[WizardManager]  Botón Atrás (wzd-btn-atras) NO ENCONTRADO');
             }
             
             if (btnGuardar) {
                 btnGuardar.onclick = null;
                 btnGuardar.addEventListener('click', this._storedHandlers.guardar, false);
-                console.log('[WizardManager] ✅ Listener directo agregado a botón Guardar');
+                console.log('[WizardManager]  Listener directo agregado a botón Guardar');
             }
             
             if (btnCancelar) {
                 btnCancelar.onclick = null;
                 btnCancelar.addEventListener('click', this._storedHandlers.cancelar, false);
-                console.log('[WizardManager] ✅ Listener directo agregado a botón Cancelar');
+                console.log('[WizardManager]  Listener directo agregado a botón Cancelar');
             }
         },
 
@@ -205,7 +205,7 @@ window.WizardManager = (function() {
                 btnSiguiente.style.cursor = 'pointer';
                 btnSiguiente.style.pointerEvents = 'auto';
                 btnSiguiente.title = '';
-                console.log('[WizardManager] ✅ Botón Siguiente HABILITADO explícitamente después de seleccionar género');
+                console.log('[WizardManager]  Botón Siguiente HABILITADO explícitamente después de seleccionar género');
             } else {
                 console.error('[WizardManager] Botón wzd-btn-siguiente no encontrado');
             }
@@ -243,7 +243,7 @@ window.WizardManager = (function() {
             
             // Guardar en StateManager
             StateManager.setTelaSeleccionada(telaValor);
-            console.log('[WizardManager] ✅ PASO 0: Tela validada -', telaValor);
+            console.log('[WizardManager]  PASO 0: Tela validada -', telaValor);
             return true;
         },
 
@@ -386,7 +386,7 @@ window.WizardManager = (function() {
                 return false;
             }
             
-            console.log('[WizardManager] ✅ Tallas validadas → PASO 3 (asignar colores)');
+            console.log('[WizardManager]  Tallas validadas → PASO 3 (asignar colores)');
             this.irPaso(3);
             return true;
         },
@@ -772,7 +772,7 @@ window.WizardManager = (function() {
                     btnAtras.style.alignItems = 'center';
                     btnAtras.style.justifyContent = 'center';
                     btnAtras.style.gap = '0.25rem';
-                    console.log('[WizardManager] ✅ Botón Atrás VISIBLE en paso 3');
+                    console.log('[WizardManager]  Botón Atrás VISIBLE en paso 3');
                 }
                 if (btnSiguiente) {
                     btnSiguiente.style.display = 'none';
@@ -784,7 +784,7 @@ window.WizardManager = (function() {
                     btnGuardar.style.justifyContent = 'center';
                     btnGuardar.style.gap = '0.25rem';
                     btnGuardar.disabled = false;
-                    console.log('[WizardManager] ✅ Botón Guardar VISIBLE en paso 3. Display:', btnGuardar.style.display);
+                    console.log('[WizardManager]  Botón Guardar VISIBLE en paso 3. Display:', btnGuardar.style.display);
                 }
                 
                 console.log('[WizardManager] Estado en paso 3:', {
@@ -1418,7 +1418,7 @@ window.WizardManager = (function() {
                 // (porque si hay múltiples telas, mostrarSelectoreTelasSiNecesario() ocultará paso 1)
                 console.log('[WizardManager] ⏳ Esperando que toggleVistaAsignacion maneje los pasos...');
                 
-                console.log('[WizardManager] ✅ Wizard reseteado y listo para reconfigurarse');
+                console.log('[WizardManager]  Wizard reseteado y listo para reconfigurarse');
             } catch (error) {
                 console.error('[WizardManager] Error en resetWizard():', error);
             }

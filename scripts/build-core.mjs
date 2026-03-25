@@ -86,8 +86,8 @@ async function buildBundle(bundle) {
     const minKB = (minified.length / 1024).toFixed(1);
     const savings = (100 - (minified.length / raw.length * 100)).toFixed(0);
 
-    console.log(`  ✅ ${bundle.name}.js        ${rawKB} KB`);
-    console.log(`  ✅ ${bundle.name}.min.js    ${minKB} KB (${savings}% menor)`);
+    console.log(`   ${bundle.name}.js        ${rawKB} KB`);
+    console.log(`   ${bundle.name}.min.js    ${minKB} KB (${savings}% menor)`);
 }
 
 async function buildAll() {
@@ -98,7 +98,7 @@ async function buildAll() {
         await buildBundle(bundle);
     }
 
-    console.log('\n✅ Build completado\n');
+    console.log('\n Build completado\n');
 }
 
 // =====================================================

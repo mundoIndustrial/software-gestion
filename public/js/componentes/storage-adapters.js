@@ -32,7 +32,7 @@ window.imagenesPrendaStorage = {
             window.universalImagenesStorage.agregarImagen('prendas', 'general', imagen);
         });
         
-        console.log(`[PrendaStorageAdapter] ✅ ${imagenes.length} imágenes de prendas establecidas en storage universal`);
+        console.log(`[PrendaStorageAdapter]  ${imagenes.length} imágenes de prendas establecidas en storage universal`);
     },
     
     /**
@@ -88,13 +88,13 @@ window.imagenesPrendaStorage = {
                 
                 const resultado = window.universalImagenesStorage.agregarImagen('prendas', 'general', imagenCompleta);
                 if (resultado) {
-                    console.log('[PrendaStorageAdapter] ✅ Imagen agregada exitosamente');
+                    console.log('[PrendaStorageAdapter]  Imagen agregada exitosamente');
                     resolve(resultado);
                 } else {
                     reject(new Error('No se pudo agregar la imagen'));
                 }
             } catch (error) {
-                console.error('[PrendaStorageAdapter] ❌ Error al agregar imagen:', error);
+                console.error('[PrendaStorageAdapter]  Error al agregar imagen:', error);
                 reject(error);
             }
         });
@@ -165,7 +165,7 @@ window.imagenesTelaStorage = {
             window.universalImagenesStorage.agregarImagen('telas', 'general', imagen);
         });
         
-        console.log(`[TelaStorageAdapter] ✅ ${imagenes.length} imágenes de telas establecidas en storage universal`);
+        console.log(`[TelaStorageAdapter]  ${imagenes.length} imágenes de telas establecidas en storage universal`);
     },
     
     /**
@@ -221,13 +221,13 @@ window.imagenesTelaStorage = {
                 
                 const resultado = window.universalImagenesStorage.agregarImagen('telas', 'general', imagenCompleta);
                 if (resultado) {
-                    console.log('[TelaStorageAdapter] ✅ Imagen de tela agregada exitosamente');
+                    console.log('[TelaStorageAdapter]  Imagen de tela agregada exitosamente');
                     resolve(resultado);
                 } else {
                     reject(new Error('No se pudo agregar la imagen de tela'));
                 }
             } catch (error) {
-                console.error('[TelaStorageAdapter] ❌ Error al agregar imagen de tela:', error);
+                console.error('[TelaStorageAdapter]  Error al agregar imagen de tela:', error);
                 reject(error);
             }
         });
@@ -283,4 +283,4 @@ window.imagenesTelaStorage = {
     }
 };
 
-console.log('✅ [StorageAdapters] Adaptadores de storage inicializados - prendas y telas usando storage universal');
+console.log(' [StorageAdapters] Adaptadores de storage inicializados - prendas y telas usando storage universal');

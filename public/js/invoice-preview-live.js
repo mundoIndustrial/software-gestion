@@ -42,12 +42,12 @@ class InvoicePreviewOrchestrator {
             if (!this.reintentos) this.reintentos = 0;
             this.reintentos++;
             
-            if (this.reintentos < 20) {
-                // Reintentar con un intervalo más largo
-                setTimeout(() => this.verificarModulos(), 300);
+            if (this.reintentos < 30) {
+                // Reintentar con intervalo más largo para dar tiempo a que se carguen los módulos
+                setTimeout(() => this.verificarModulos(), 500);
             } else {
-                console.error('[InvoicePreview] No se pudieron cargar los módulos después de varios intentos');
-                console.error('[InvoicePreview] Intentando inicialización manual...');
+                // Módulos no disponibles después de reintentos
+                console.warn('[InvoicePreview] ⚠️ Módulos no disponibles después de 15 segundos, usando fallback');
                 
                 // Intentar inicialización manual como último recurso
                 this.inicializarModulosManualmente();

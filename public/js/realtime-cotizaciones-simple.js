@@ -18,11 +18,11 @@ if (window.realtimeCotizacionesLoaded) {
         
         // Usar window.waitForEcho para esperar a que WebSocket esté disponible
         if (typeof window.waitForEcho === 'function') {
-            console.log('[REALTIME-COT-SIMPLE] ✅ waitForEcho disponible');
+            console.log('[REALTIME-COT-SIMPLE]  waitForEcho disponible');
             window.waitForEcho(() => {
                 const ws = window.shared?.websocket;
                 if (ws) {
-                    console.log('[REALTIME-COT-SIMPLE] ✅ WebSocket abstraction encontrada');
+                    console.log('[REALTIME-COT-SIMPLE]  WebSocket abstraction encontrada');
                     try {
                         ws.subscribe('cotizaciones', '.cotizacion.creada', (event) => {
                             console.log('[REALTIME-COT-SIMPLE] Evento recibido:', event);
@@ -32,7 +32,7 @@ if (window.realtimeCotizacionesLoaded) {
                         console.error('[REALTIME-COT-SIMPLE] Error en suscripción:', e);
                     }
                 } else {
-                    console.error('[REALTIME-COT-SIMPLE] ❌ WebSocket abstraction no disponible');
+                    console.error('[REALTIME-COT-SIMPLE]  WebSocket abstraction no disponible');
                 }
             });
         } else {

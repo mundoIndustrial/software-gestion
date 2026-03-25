@@ -5,7 +5,7 @@ use App\Infrastructure\Http\Controllers\Asesores\PrendasPedidoController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:web', 'role:asesor,admin,supervisor_pedidos'])->group(function () {
-    Route::prefix('pedidos-editable')->name('pedidos-editable.')->group(function () {
+    Route::prefix('pedidos')->name('pedidos.')->group(function () {
         // Cotizaciones: cargar items EPP
         Route::get('/cotizaciones/{cotizacion}/epp-items', [CrearPedidoEditableController::class, 'obtenerItemsEppCotizacion'])
             ->name('cotizaciones.epp-items');

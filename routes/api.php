@@ -22,7 +22,8 @@ require base_path('routes/prendas-pedidos-public.php');
  * Prendas y Pedidos - Rutas Protegidas (Escritura)
  * Creación, actualización y eliminación de prendas y pedidos
  */
-require base_path('routes/prendas-pedidos-protected.php');
+require base_path('routes/api-prendas.php');
+require base_path('routes/api-pedidos-commands.php');
 
 /**
  * Procesos Routes
@@ -43,13 +44,13 @@ require base_path('routes/epp.php');
 require base_path('routes/cotizaciones.php');
 
 /**
- * API Routes for Pedidos Editables (DDD - Gestión de Ítems)
+ * API Routes for Pedidos (DDD - Gestión de Ítems)
  * 
- * Prefix: /api/pedidos-editable
+ * Prefix: /api/pedidos
  * Auth: auth, role:asesor
  * Controller: App\Http\Controllers\Asesores\CrearPedidoEditableController
  */
-require base_path('routes/api-pedidos-editable.php');
+require base_path('routes/api-pedidos.php');
 
 /**
  * Operario API Routes

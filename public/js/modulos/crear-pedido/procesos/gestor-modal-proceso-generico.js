@@ -223,7 +223,7 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
         // En CREACIÓN (no edición): después de mostrar el modal, aplicar tallas automáticamente
         if (!esEdicion) {
             window.aplicarProcesoParaTodasTallas();
-            console.log('[abrirModalProcesoGenerico] ✅ Tallas aplicadas automáticamente al abrir modal');
+            console.log('[abrirModalProcesoGenerico]  Tallas aplicadas automáticamente al abrir modal');
         }
 
     } catch (error) {
@@ -350,7 +350,7 @@ window.manejarImagenProceso = function(input, indice) {
             };
             
             const resultado = window.universalImagenesStorage.agregarImagen('procesos', window.procesoActualIndex, imagenData);
-            console.log(`[manejarImagenProceso] ✅ Imagen guardada en storage universal de PROCESOS[${window.procesoActualIndex}] - resultado=${resultado}`);
+            console.log(`[manejarImagenProceso]  Imagen guardada en storage universal de PROCESOS[${window.procesoActualIndex}] - resultado=${resultado}`);
         } else {
             console.warn('[manejarImagenProceso] ⚠️ No se pudo guardar en storage universal - no disponible o procesoActualIndex undefined');
             console.log('[manejarImagenProceso] 🔍 Debug:', {
@@ -380,14 +380,14 @@ window.manejarImagenProceso = function(input, indice) {
             deleteBtn.style.cssText = 'position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; background: #ef4444; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 16px; padding: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 10;';
             deleteBtn.textContent = '×';
             preview.appendChild(deleteBtn);
-            console.log('[manejarImagenProceso] ✅ Botón eliminar creado con data-indice:', indice);
+            console.log('[manejarImagenProceso]  Botón eliminar creado con data-indice:', indice);
             
             // Limpiar URL cuando el elemento se elimine (prevenir memory leaks)
             preview._objectUrl = objectUrl;
         }
         
     } else {
-        console.log('[manejarImagenProceso] ❌ No hay archivos en el input');
+        console.log('[manejarImagenProceso]  No hay archivos en el input');
     }
 };
 
@@ -410,14 +410,14 @@ window._imagenAEliminarIndice = null;
             console.log('[EVENT-DELEGATION] 📌 Índice del botón:', indice);
             
             if (indice && typeof window.eliminarImagenProceso === 'function') {
-                console.log('[EVENT-DELEGATION] ✅ Llamando eliminarImagenProceso(' + indice + ')');
+                console.log('[EVENT-DELEGATION]  Llamando eliminarImagenProceso(' + indice + ')');
                 window.eliminarImagenProceso(indice);
             } else {
-                console.error('[EVENT-DELEGATION] ❌ Índice inválido o función no existe:', indice, typeof window.eliminarImagenProceso);
+                console.error('[EVENT-DELEGATION]  Índice inválido o función no existe:', indice, typeof window.eliminarImagenProceso);
             }
         }
     }, true); // true = capture phase, se ejecuta ANTES que otros handlers
-    console.log('[EVENT-DELEGATION] ✅ Event delegation global registrado para .btn-eliminar-imagen-proceso');
+    console.log('[EVENT-DELEGATION]  Event delegation global registrado para .btn-eliminar-imagen-proceso');
 })();
 
 // Mostrar modal de confirmación para eliminar imagen
@@ -430,13 +430,13 @@ window.mostrarModalConfirmarEliminarImagen = function(indice) {
     console.log('[mostrarModalConfirmarEliminarImagen] 🔍 Modal encontrado?:', !!modal);
     
     if (modal) {
-        console.log('[mostrarModalConfirmarEliminarImagen] ✅ Modal existe, mostrando...');
+        console.log('[mostrarModalConfirmarEliminarImagen]  Modal existe, mostrando...');
         modal.style.display = 'flex';
         // Forzar z-index máximo para que esté encima de todo
         modal.style.zIndex = '999999999';
-        console.log('[mostrarModalConfirmarEliminarImagen] ✅ Modal mostrado con z-index:', modal.style.zIndex);
+        console.log('[mostrarModalConfirmarEliminarImagen]  Modal mostrado con z-index:', modal.style.zIndex);
     } else {
-        console.error('[mostrarModalConfirmarEliminarImagen] ❌ MODAL NO ENCONTRADO - ID: modal-confirmar-eliminar-imagen-proceso');
+        console.error('[mostrarModalConfirmarEliminarImagen]  MODAL NO ENCONTRADO - ID: modal-confirmar-eliminar-imagen-proceso');
         console.log('[mostrarModalConfirmarEliminarImagen] 🔍 Elementos en body:', document.body.children.length);
         console.log('[mostrarModalConfirmarEliminarImagen] 🔍 Buscando modales con clase modal-overlay:');
         document.querySelectorAll('.modal-overlay').forEach((m, idx) => {
@@ -447,7 +447,7 @@ window.mostrarModalConfirmarEliminarImagen = function(indice) {
 
 // Cerrar modal de confirmación
 window.cerrarModalConfirmarEliminarImagen = function() {
-    console.log('[cerrarModalConfirmarEliminarImagen] ❌ Cerrando modal');
+    console.log('[cerrarModalConfirmarEliminarImagen]  Cerrando modal');
     window._imagenAEliminarIndice = null;
     
     const modal = document.getElementById('modal-confirmar-eliminar-imagen-proceso');
@@ -461,7 +461,7 @@ window.confirmarEliminarImagenProceso = function() {
     const indice = window._imagenAEliminarIndice;
     if (!indice) return;
     
-    console.log('[confirmarEliminarImagenProceso] ✅ Confirmando eliminación de imagen:', indice);
+    console.log('[confirmarEliminarImagenProceso]  Confirmando eliminación de imagen:', indice);
     
     // Cerrar modal
     cerrarModalConfirmarEliminarImagen();
@@ -593,12 +593,12 @@ window.eliminarImagenProceso = function(indice) {
     console.log('[eliminarImagenProceso] 🔍 Modal encontrado?:', !!modal);
     
     if (modal) {
-        console.log('[eliminarImagenProceso] ✅ Modal existe, mostrando...');
+        console.log('[eliminarImagenProceso]  Modal existe, mostrando...');
         modal.style.display = 'flex';
         modal.style.zIndex = '999999999';
-        console.log('[eliminarImagenProceso] ✅ Modal mostrado con z-index:', modal.style.zIndex);
+        console.log('[eliminarImagenProceso]  Modal mostrado con z-index:', modal.style.zIndex);
     } else {
-        console.error('[eliminarImagenProceso] ❌ MODAL NO ENCONTRADO - ID: modal-confirmar-eliminar-imagen-proceso');
+        console.error('[eliminarImagenProceso]  MODAL NO ENCONTRADO - ID: modal-confirmar-eliminar-imagen-proceso');
         // Listar todos los modales disponibles
         console.log('[eliminarImagenProceso] 🔍 Modales disponibles en el DOM:');
         document.querySelectorAll('.modal-overlay').forEach((m, idx) => {
@@ -945,9 +945,9 @@ function obtenerTallasDeLaPrenda() {
             tallasEnTabla++;
         });
 
-        // ✅ USAR TABLA SI TIENE COLORES (tabla COMPLETA)
+        //  USAR TABLA SI TIENE COLORES (tabla COMPLETA)
         if (tallasConColorEnTabla > 0) {
-            console.log('[obtenerTallasDeLaPrenda] ✅ FUENTE 1 USADA: Tabla HTML (CON COLORES - Fuente Definitiva)');
+            console.log('[obtenerTallasDeLaPrenda]  FUENTE 1 USADA: Tabla HTML (CON COLORES - Fuente Definitiva)');
             console.log('  → DAMA:', JSON.stringify(tallasDesdeTabla.dama));
             console.log('  → CABALLERO:', JSON.stringify(tallasDesdeTabla.caballero));
             if (tallasDesdeTabla.sobremedida) {
@@ -985,7 +985,7 @@ function obtenerTallasDeLaPrenda() {
 
     if (tieneColores) {
         const tallasConColor = { dama: {}, caballero: {}, sobremedida: null };
-        console.log(`[obtenerTallasDeLaPrenda] ✅ FUENTE 2 USADA: StateManager/ColoresPorTalla (tabla incompleta)`);
+        console.log(`[obtenerTallasDeLaPrenda]  FUENTE 2 USADA: StateManager/ColoresPorTalla (tabla incompleta)`);
 
         Object.values(asignaciones).forEach(asignacion => {
             const genero = normalizarGenero(asignacion?.genero);
@@ -1005,7 +1005,7 @@ function obtenerTallasDeLaPrenda() {
             });
         });
 
-        console.log('[obtenerTallasDeLaPrenda] ✅ Datos extraídos desde:', fuente);
+        console.log('[obtenerTallasDeLaPrenda]  Datos extraídos desde:', fuente);
         return tallasConColor;
     }
 
@@ -1040,7 +1040,7 @@ function obtenerTallasDeLaPrenda() {
             });
 
             if (Object.keys(tallasDesdeTabla.dama).length > 0 || Object.keys(tallasDesdeTabla.caballero).length > 0) {
-                console.log('[obtenerTallasDeLaPrenda] ✅ FUENTE 3 USADA: Tabla HTML (SIN COLORES - fallback)');
+                console.log('[obtenerTallasDeLaPrenda]  FUENTE 3 USADA: Tabla HTML (SIN COLORES - fallback)');
                 return tallasDesdeTabla;
             }
         }
@@ -1054,7 +1054,7 @@ function obtenerTallasDeLaPrenda() {
 
     if (hayTallasRelacionales) {
         const tallas = { dama: {}, caballero: {}, sobremedida: null };
-        console.log('[obtenerTallasDeLaPrenda] ✅ FUENTE 4 USADA: tallasRelacionales (legacy)');
+        console.log('[obtenerTallasDeLaPrenda]  FUENTE 4 USADA: tallasRelacionales (legacy)');
 
         if (tallasRelacionales.DAMA && Object.keys(tallasRelacionales.DAMA).length > 0) {
             tallas.dama = { ...tallasRelacionales.DAMA };
@@ -1074,7 +1074,7 @@ function obtenerTallasDeLaPrenda() {
 
     // ═══ FUENTE 5: cantidadSoloSeleccionada (Último recurso) ═══
     if (window.cantidadSoloSeleccionada) {
-        console.log('[obtenerTallasDeLaPrenda] ✅ FUENTE 5 USADA: cantidadSoloSeleccionada');
+        console.log('[obtenerTallasDeLaPrenda]  FUENTE 5 USADA: cantidadSoloSeleccionada');
         return { dama: {}, caballero: {}, sobremedida: { 'UNISEX': window.cantidadSoloSeleccionada } };
     }
 
@@ -1873,14 +1873,14 @@ window.agregarProcesoAlPedido = function() {
         if (modoActual !== 'editar') {
             console.log('[agregarProcesoAlPedido] 🔧 Modo CREACIÓN: Buscando imágenes en storage UNIVERSAL de PROCESOS...');
             
-            // ✅ CORRECCIÓN: Usar storage universal separado por tipo
+            //  CORRECCIÓN: Usar storage universal separado por tipo
             if (window.universalImagenesStorage && typeof window.universalImagenesStorage.obtenerImagenes === 'function') {
                 if (window.procesoActualIndex !== undefined && window.procesoActualIndex > 0) {
                     const imagenesEnIndice = window.universalImagenesStorage.obtenerImagenes('procesos', window.procesoActualIndex);
                     console.log(`[agregarProcesoAlPedido] 🔢 Usando ÍNDICE ESPECÍFICO: ${window.procesoActualIndex} → ${imagenesEnIndice?.length || 0} imágenes de PROCESOS`);
                     if (imagenesEnIndice && imagenesEnIndice.length > 0) {
                         imagenesDelStorage = imagenesEnIndice.filter(img => img !== null);
-                        console.log(`[agregarProcesoAlPedido] ✅ ENCONTRADAS ${imagenesDelStorage.length} imágenes de PROCESOS en índice ${window.procesoActualIndex}`);
+                        console.log(`[agregarProcesoAlPedido]  ENCONTRADAS ${imagenesDelStorage.length} imágenes de PROCESOS en índice ${window.procesoActualIndex}`);
                     }
                 } else {
                     console.warn('[agregarProcesoAlPedido]  procesoActualIndex NO definido, buscando en índices 1-3 como fallback...');
@@ -1903,7 +1903,7 @@ window.agregarProcesoAlPedido = function() {
                 const imagenesNuevas = (window.imagenesProcesoActual || []).filter(img => img !== null);
                 if (imagenesNuevas.length > 0) {
                     imagenesDelStorage = imagenesNuevas;
-                    console.log('[agregarProcesoAlPedido] ✅ Fallback: Imágenes obtenidas desde window.imagenesProcesoActual:', imagenesDelStorage.length);
+                    console.log('[agregarProcesoAlPedido]  Fallback: Imágenes obtenidas desde window.imagenesProcesoActual:', imagenesDelStorage.length);
                 }
             }
         } else {
@@ -2049,11 +2049,11 @@ window.agregarProcesoAlPedido = function() {
                     }
                     return img;
                 })
-                .filter(img => img !== null && img !== undefined) // ✅ Filtrar por si acaso
+                .filter(img => img !== null && img !== undefined) //  Filtrar por si acaso
         };
         
-        // ✅ VERIFICAR: imagenesEliminadas se asignó correctamente
-        console.log('[agregarProcesoAlPedido] ✅ OBJETO datos CONSTRUIDO:', {
+        //  VERIFICAR: imagenesEliminadas se asignó correctamente
+        console.log('[agregarProcesoAlPedido]  OBJETO datos CONSTRUIDO:', {
             tipo: datos.tipo,
             tieneImagenes: !!datos.imagenes,
             tieneImagenesEliminadas: !!datos.imagenesEliminadas,
@@ -2171,7 +2171,7 @@ window.agregarProcesoAlPedido = function() {
         
         // 🔴 CRÍTICO: Resetear storage de eliminadas después de guardar
         window.imagenesEliminadasProcesoStorage = [];
-        console.log('[agregarProcesoAlPedido] ✅ Storage de eliminadas reseteado después de guardar');
+        console.log('[agregarProcesoAlPedido]  Storage de eliminadas reseteado después de guardar');
         
         // Cerrar modal indicando que el proceso fue guardado exitosamente
         cerrarModalProcesoGenerico(true);

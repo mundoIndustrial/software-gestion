@@ -820,7 +820,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('[Bodega Realtime] Error en WebSocket:', error);
             });
             
-        console.log('[Bodega Realtime] ✅ Conectado al canal despacho.pedidos');
+        console.log('[Bodega Realtime]  Conectado al canal despacho.pedidos');
     } else {
         console.log('[Bodega Realtime] ⚠️ Echo no disponible, usando fallback de polling');
         

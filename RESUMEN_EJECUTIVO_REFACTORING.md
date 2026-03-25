@@ -6,7 +6,7 @@
 
 ---
 
-## ✅ Lo Que Se Ha Hecho
+##  Lo Que Se Ha Hecho
 
 ### 1. Estructura de Carpetas Creada
 
@@ -128,21 +128,21 @@ public function filterOrders(Request $request)
 
 | Principio | ANTES | DESPUÉS |
 |-----------|-------|---------|
-| Single Responsibility | ❌ 15+ responsabilidades | ✅ 1 responsabilidad/clase |
-| Open/Closed Principle | ❌ Difícil extender | ✅ Fácil agregar UseCases |
-| Liskov Substitution | N/A | ✅ Value Objects intercambiables |
-| Interface Segregation | ❌ Métodos no usados | ✅ Interfaces específicas |
-| Dependency Inversion | ❌ Acoplamiento fuerte | ✅ Inyección de dependencias |
+| Single Responsibility |  15+ responsabilidades |  1 responsabilidad/clase |
+| Open/Closed Principle |  Difícil extender |  Fácil agregar UseCases |
+| Liskov Substitution | N/A |  Value Objects intercambiables |
+| Interface Segregation |  Métodos no usados |  Interfaces específicas |
+| Dependency Inversion |  Acoplamiento fuerte |  Inyección de dependencias |
 
 ---
 
 ## 🚀 Próximas Fases
 
-### Fase 1: COMPLETADA ✅
-- ✅ UseCases de Órdenes (7/7)
-- ✅ Domain Services (2/2)
-- ✅ Value Objects (2/2)
-- ✅ Query Service base
+### Fase 1: COMPLETADA 
+-  UseCases de Órdenes (7/7)
+-  Domain Services (2/2)
+-  Value Objects (2/2)
+-  Query Service base
 
 ### Fase 2: En Progreso 🔄
 - ⏳ UseCases de Recibos completos
@@ -357,28 +357,28 @@ php artisan event:list
 
 ## 🏆 Principios DDD Aplicados
 
-✅ **Ubiquitous Language**
+ **Ubiquitous Language**
 - Nombres claros en el negocio
 - CreateOrderUseCase, SaveDiaEntregaUseCase, etc.
 
-✅ **Bounded Contexts**
+ **Bounded Contexts**
 - Orders (órdenes)
 - Receipts (recibos)
 - DeliveryDates (fechas de entrega)
 
-✅ **Aggregates**
+ **Aggregates**
 - PedidoProduccion es el aggregate root
 - Prendas son parte del agregado
 
-✅ **Value Objects**
+ **Value Objects**
 - PedidoNumber
 - EntregaEstado
 
-✅ **Domain Events**
+ **Domain Events**
 - OrdenUpdated (broadcast)
 - Auditoría con eventos
 
-✅ **Repositories**
+ **Repositories**
 - OrderQueryService
 - ReciboCosturaQueryService
 
@@ -410,7 +410,7 @@ php artisan event:list
 
 ---
 
-**Estado:** ✅ COMPLETADO  
+**Estado:**  COMPLETADO  
 **Calidad:** ⭐⭐⭐⭐⭐  
 **Listo para Producción:** Sí (con tests completos)
 

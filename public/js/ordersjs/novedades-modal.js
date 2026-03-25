@@ -542,7 +542,7 @@ async function saveNovedadesRecibo(pedidoId, numeroRecibo, novedadesTexto) {
         const result = await response.json();
         
         if (result.success) {
-            console.log('[saveNovedadesRecibo] ✅ Novedades guardadas:', result);
+            console.log('[saveNovedadesRecibo]  Novedades guardadas:', result);
             showNotification('Novedades guardadas correctamente', 'success');
             
             // Recargar la página para mostrar los cambios
@@ -550,12 +550,12 @@ async function saveNovedadesRecibo(pedidoId, numeroRecibo, novedadesTexto) {
                 window.location.reload();
             }, 1000);
         } else {
-            console.error('[saveNovedadesRecibo] ❌ Error:', result.message);
+            console.error('[saveNovedadesRecibo]  Error:', result.message);
             showNotification('Error al guardar novedades: ' + result.message, 'error');
         }
         
     } catch (error) {
-        console.error('[saveNovedadesRecibo] ❌ Error de red:', error);
+        console.error('[saveNovedadesRecibo]  Error de red:', error);
         showNotification('Error de conexión al guardar novedades', 'error');
     }
 }

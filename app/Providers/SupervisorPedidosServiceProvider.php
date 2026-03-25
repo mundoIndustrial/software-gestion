@@ -26,6 +26,8 @@ use App\Application\SupervisorPedidos\UseCases\GetPendingOrdersCountUseCase;
 use App\Application\SupervisorPedidos\UseCases\ToggleOrderVisibilityUseCase;
 use App\Application\SupervisorPedidos\UseCases\DownloadOrderPdfUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetOrderDetailsViewUseCase;
+use App\Application\SupervisorPedidos\UseCases\GetOrderDescriptionUseCase;
+use App\Application\SupervisorPedidos\Services\OrderDescriptionBuilder;
 use App\Application\SupervisorPedidos\UseCases\CancelSewingReceiptUseCase;
 use App\Application\SupervisorPedidos\UseCases\SaveReceiptArrivalDateUseCase;
 use App\Application\SupervisorPedidos\UseCases\ChangeOrderStatusUseCase;
@@ -43,6 +45,8 @@ use App\Application\SupervisorPedidos\UseCases\DeleteImageUseCase;
 use App\Application\SupervisorPedidos\UseCases\ToggleNewsVistoUseCase;
 use App\Application\SupervisorPedidos\UseCases\TogglePedidoVistoUseCase;
 use App\Application\SupervisorPedidos\UseCases\MarkNotificationAsReadUseCase;
+use App\Repositories\EloquentProcesoPrendaDetalleRepository;
+use App\Domain\Pedidos\Services\PedidoProduccionDomainService;
 
 class SupervisorPedidosServiceProvider extends ServiceProvider
 {
@@ -142,7 +146,9 @@ class SupervisorPedidosServiceProvider extends ServiceProvider
         $this->app->bind(
             ListOrdersUseCase::class,
             function ($app) {
-                return new ListOrdersUseCase();
+                return new ListOrdersUseCase(
+                    $app->make(PedidoProduccionDomainService::class)
+                );
             }
         );
 
@@ -185,6 +191,24 @@ class SupervisorPedidosServiceProvider extends ServiceProvider
             GetOrderDetailsViewUseCase::class,
             function ($app) {
                 return new GetOrderDetailsViewUseCase();
+            }
+        );
+
+        $this->app->bind(
+            OrderDescriptionBuilder::class,
+            function ($app) {
+                return new OrderDescriptionBuilder(
+                    $app->make(EloquentProcesoPrendaDetalleRepository::class)
+                );
+            }
+        );
+
+        $this->app->bind(
+            GetOrderDescriptionUseCase::class,
+            function ($app) {
+                return new GetOrderDescriptionUseCase(
+                    $app->make(OrderDescriptionBuilder::class)
+                );
             }
         );
 
