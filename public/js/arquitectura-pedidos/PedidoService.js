@@ -28,7 +28,7 @@ import { BackendPedidoModel } from './BackendPedidoModel.js';
 import { PedidoFormDataBuilder } from './PedidoFormDataBuilder.js';
 
 export class PedidoService {
-    constructor(endpoint = '/asesores/pedidos-editable/crear') {
+    constructor(endpoint = '/asesores/pedidos/crear') {
         this.endpoint = endpoint;
     }
 

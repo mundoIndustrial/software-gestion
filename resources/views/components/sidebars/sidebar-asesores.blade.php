@@ -106,7 +106,7 @@
             <span class="menu-section-title">Producción</span>
             <ul class="menu-list" role="navigation">
                 <li class="menu-item">
-                    <button class="menu-link submenu-toggle {{ request()->routeIs('asesores.pedidos.*', 'asesores.pedidos-editable.*') && !request()->routeIs('asesores.pedidos.create') ? 'active' : '' }}"
+                    <button class="menu-link submenu-toggle {{ request()->routeIs('asesores.pedidos.*') && !request()->routeIs('asesores.pedidos.create') ? 'active' : '' }}"
                             aria-label="Gestionar pedidos de producción">
                         <span class="material-symbols-rounded">factory</span>
                         <span class="menu-label">Pedidos</span>
@@ -122,16 +122,16 @@
                             </a>
                         </li>
                         <li class="submenu-item">
-                            <a href="{{ route('asesores.pedidos-editable.crear-desde-cotizacion') }}"
-                               class="menu-link {{ request()->routeIs('asesores.pedidos-editable.crear-desde-cotizacion') ? 'active' : '' }}"
+                            <a href="{{ route('asesores.pedidos.crear-desde-cotizacion') }}"
+                               class="menu-link {{ request()->routeIs('asesores.pedidos.crear-desde-cotizacion') ? 'active' : '' }}"
                                aria-label="Crear pedido desde cotización">
                                 <span class="material-symbols-rounded">description</span>
                                 <span class="menu-label">Desde Cotización</span>
                             </a>
                         </li>
                         <li class="submenu-item">
-                            <a href="{{ route('asesores.pedidos-editable.crear-nuevo') }}"
-                               class="menu-link {{ request()->routeIs('asesores.pedidos-editable.crear-nuevo') ? 'active' : '' }}"
+                            <a href="{{ route('asesores.pedidos.crear-nuevo') }}"
+                               class="menu-link {{ request()->routeIs('asesores.pedidos.crear-nuevo') ? 'active' : '' }}"
                                aria-label="Crear pedido nuevo">
                                 <span class="material-symbols-rounded">add_box</span>
                                 <span class="menu-label">Pedido Nuevo</span>

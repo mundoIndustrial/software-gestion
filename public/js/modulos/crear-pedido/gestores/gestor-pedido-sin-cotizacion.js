@@ -423,7 +423,7 @@ class GestorPedidoSinCotizacion {
 
 
 
-            fetch('/asesores/pedidos-editable/crear', {
+            fetch('/asesores/pedidos/crear', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

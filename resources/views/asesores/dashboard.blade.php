@@ -47,7 +47,7 @@
     <div class="quick-actions">
         <h2>Acciones Rápidas</h2>
         <div class="actions-grid">
-            <a href="/asesores/pedidos-editable/crear-nuevo" class="action-card">
+            <a href="/asesores/pedidos/crear-nuevo" class="action-card">
                 <div class="action-icon">
                     <i class="fas fa-plus-circle"></i>
                 </div>

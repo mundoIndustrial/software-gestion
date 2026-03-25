@@ -1,6 +1,6 @@
 /**
  * EppItemManagerTarjeta - Gestión exclusiva para vista de crear nuevo pedido
- * Patrón: Item Manager - Versión independiente para /asesores/pedidos-editable/crear-nuevo
+ * Patrón: Item Manager - Versión independiente para /asesores/pedidos/crear-nuevo
  */
 
 class EppItemManagerTarjeta {

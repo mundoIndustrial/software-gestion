@@ -317,7 +317,7 @@ window.enviarPrendaSinCotizacion = function() {
             // Enviar al servidor
 
             
-            const response = await fetch('/asesores/pedidos-editable/crear', {
+            const response = await fetch('/asesores/pedidos/crear', {
                 method: 'POST',
                 body: formData,
                 headers: {

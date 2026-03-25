@@ -149,7 +149,7 @@ class PrendasPedidoController
     }
 
     /**
-     * POST /api/pedidos-editable/render-item-card
+     * POST /api/pedidos/render-item-card
      * Renderizar componente item-card para agregar dinámicamente
      */
     public function renderItemCard(Request $request): JsonResponse

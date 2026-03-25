@@ -5,7 +5,7 @@
  */
 
 class PedidosEditableWebClient {
-    constructor(baseUrl = '/asesores/pedidos-editable') {
+    constructor(baseUrl = '/asesores/pedidos') {
         this.baseUrl = baseUrl;
         this.csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
     }
@@ -595,7 +595,7 @@ class PedidosEditableWebClient {
     }
 
     /**     * Subir imágenes de prenda via FormData
-     * POST /pedidos-editable/subir-imagenes
+     * POST /pedidos/subir-imagenes
      * @param {File[]} archivos - Array de archivos de imagen
      * @param {string} numeroPedido - Número del pedido (temporal o para identificar)
      * @returns {Promise<Object>} - { rutas: [...] }

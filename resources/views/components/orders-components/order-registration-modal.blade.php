@@ -683,7 +683,7 @@
                     this.addTallaListeners();
                     this.updateEliminarPrendaButtons();
                     if (this.creationDisabled) {
-                        this.errorMessage = 'La creación de pedidos fue centralizada. Usa /asesores/pedidos-editable/crear-nuevo o /asesores/pedidos-editable/crear-desde-cotizacion.';
+                        this.errorMessage = 'La creación de pedidos fue centralizada. Usa /asesores/pedidos/crear-nuevo o /asesores/pedidos/crear-desde-cotizacion.';
                         this.showErrorMessage = true;
                         return;
                     }
@@ -895,7 +895,7 @@
 
                 async handleSubmit() {
                     if (this.creationDisabled) {
-                        window.location.href = '/asesores/pedidos-editable/crear-nuevo';
+                        window.location.href = '/asesores/pedidos/crear-nuevo';
                         return;
                     }
                     if (!(await this.validatePedido())) return;

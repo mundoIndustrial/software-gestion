@@ -57,7 +57,7 @@ class ImagenesFlujoPedidoTest extends TestCase
 
         // Actuar - Simular upload
         $response = $this->actingAs($this->user)
-            ->postJson('/asesores/pedidos-editable/subir-imagenes-prenda', [
+            ->postJson('/asesores/pedidos/subir-imagenes-prenda', [
                 'imagenes' => [$file],
             ]);
 

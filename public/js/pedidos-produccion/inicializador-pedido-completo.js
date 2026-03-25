@@ -92,7 +92,7 @@ window.crearPedidoConBuilderUnificado = async function() {
         // 6. ENVIAR
         const response = await window.FormDataBuilder.send(
             formData,
-            '/asesores/pedidos-editable/crear'
+            '/asesores/pedidos/crear'
         );
         
         console.log('[Builder] Response recibida:', {
@@ -146,7 +146,7 @@ window.crearPedidoConBuilderUnificado = async function() {
             }
             
             console.log('[Builder]  Pedido creado, navegando a:', pedidoId);
-            window.location.href = `/asesores/pedidos-editable/${pedidoId}`;
+            window.location.href = `/asesores/pedidos/${pedidoId}`;
         } else {
             throw new Error(response.message || 'Error desconocido al crear pedido');
         }

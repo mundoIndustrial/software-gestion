@@ -50,7 +50,7 @@ class PrendasEditorHelper {
 
         return editor.abrirEditor({
             modo: 'editar',
-            contexto: 'pedidos-editable',
+            contexto: 'pedidos',
             prendaId,
             ...opcionesExtra
         });

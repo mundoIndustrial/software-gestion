@@ -95,7 +95,7 @@
         return window.DraftPedidoSaveService.enviarBorrador(payload.formData, {
             modoEdicion,
             pedidoId,
-            endpointCrear: window.routeGuardarBorradorUrl || '/asesores/pedidos-editable/guardar-borrador'
+            endpointCrear: window.routeGuardarBorradorUrl || '/asesores/pedidos/guardar-borrador'
         });
     }
 

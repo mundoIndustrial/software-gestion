@@ -90,7 +90,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     // ========================================
     // POST ROUTES (CRUD Operations)
     // ========================================
-    // NOTA: La creación de pedidos se centraliza en /asesores/pedidos-editable/*
+    // NOTA: La creación de pedidos se centraliza en /asesores/pedidos/*
     Route::post('/registros/validate-pedido', [RegistroOrdenController::class, 'validatePedido'])->name('registros.validatePedido');
     Route::post('/registros/update-pedido', [RegistroOrdenController::class, 'updatePedido'])->name('registros.updatePedido');
     Route::post('/registros/update-descripcion-prendas', [RegistroOrdenController::class, 'updateDescripcionPrendas'])->name('registros.updateDescripcionPrendas');

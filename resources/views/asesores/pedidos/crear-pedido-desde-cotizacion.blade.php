@@ -351,7 +351,7 @@
     
     <!-- Cargar módulos de gestión de pedidos -->
     <script src="{{ asset('js/modulos/crear-pedido/configuracion/config-pedido-editable.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/fotos/manejador-fotos-prenda-edicion.js') }}?v={{ time() }}"></script>
     
@@ -596,7 +596,7 @@
             );
 
             try {
-                const res = await fetch(`/asesores/pedidos-editable/cotizaciones/${cotId}/epp-items`, {
+                const res = await fetch(`/asesores/pedidos/cotizaciones/${cotId}/epp-items`, {
                     method: 'GET',
                     headers: { 'Accept': 'application/json' },
                 });

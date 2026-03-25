@@ -21,7 +21,7 @@ use App\Models\LogoCotizacionTecnicaPrendaFoto;
  * 
  * NOTA: Los métodos de creación fueron ELIMINADOS completamente
  * La creación de pedidos se realiza ÚNICAMENTE a través de:
- * POST /asesores/pedidos-editable/crear (CrearPedidoEditableController)
+ * POST /asesores/pedidos/crear (CrearPedidoEditableController)
  */
 class PedidosProduccionViewController
 {

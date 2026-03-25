@@ -63,7 +63,7 @@ class CrearPedidoEditableController extends Controller
         private TipoPrendaRepository $tipoPrendaRepository,
     ) {}
 
-    /** GET /asesores/pedidos-editable/crear-desde-cotizacion */
+    /** GET /asesores/pedidos/crear-desde-cotizacion */
     public function crearDesdeCotizacion(Request $request): View
     {
         $timerTotal = $this->timerService->iniciar('crearDesdeCotizacion-total');
@@ -108,7 +108,7 @@ class CrearPedidoEditableController extends Controller
         ]);
     }
 
-    /** GET /asesores/pedidos-editable/crear-nuevo */
+    /** GET /asesores/pedidos/crear-nuevo */
     public function crearNuevo(Request $request): View
     {
         $timerTotal = $this->timerService->iniciar('crearNuevo-total');
@@ -195,7 +195,7 @@ class CrearPedidoEditableController extends Controller
         }
     }
 
-    /** POST /asesores/pedidos-editable/crear - Crear pedido transaccional */
+    /** POST /asesores/pedidos/crear - Crear pedido transaccional */
     public function crearPedido(Request $request): JsonResponse
     {
         try {
@@ -259,7 +259,7 @@ class CrearPedidoEditableController extends Controller
         }
     }
 
-    /** POST /asesores/pedidos-editable/borrador - Guardar como borrador */
+    /** POST /asesores/pedidos/borrador - Guardar como borrador */
     public function guardarBorrador(Request $request): JsonResponse
     {
         try {
@@ -283,7 +283,7 @@ class CrearPedidoEditableController extends Controller
         }
     }
 
-    /** POST /asesores/pedidos-editable/{pedido}/actualizar-borrador */
+    /** POST /asesores/pedidos/{pedido}/actualizar-borrador */
     public function actualizarBorrador($pedidoId, Request $request): JsonResponse
     {
         try {

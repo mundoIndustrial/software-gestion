@@ -69,7 +69,7 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     // ========================================
     // PEDIDOS - APIs DDD (DEPRECATED)
     // ========================================
-    // NOTA: La creación de pedidos se centraliza en /asesores/pedidos-editable/*
+    // NOTA: La creación de pedidos se centraliza en /asesores/pedidos/*
     // y no debe existir otro punto de entrada para crear pedidos.
     Route::post('/pedidos/confirm', [PedidoCommandController::class, 'confirm'])->name('pedidos.api.confirm');
     Route::post('/pedidos/{id}/anular', [AsesoresController::class, 'anularPedido'])->where('id', '[0-9]+')->name('pedidos.api.anular');
@@ -256,9 +256,9 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     })->name('realtime.pedidos.listar');
 
     // ========================================
-    // PEDIDOS EDITABLES (UNICA FUENTE PARA CREACION)
+    // PEDIDOS (UNICA FUENTE PARA CREACION)
     // ========================================
-    Route::prefix('pedidos-editable')->name('pedidos-editable.')->middleware('role:asesor,admin,supervisor_pedidos')->group(function () {
+    Route::prefix('pedidos')->name('pedidos.')->middleware('role:asesor,admin,supervisor_pedidos')->group(function () {
 
         // Mostrar formulario para crear desde COTIZACIÓN (pre-carga cotizaciones)
         Route::get('crear-desde-cotizacion', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'crearDesdeCotizacion'])

@@ -11,7 +11,7 @@
 
 class ItemAPIService {
     constructor(options = {}) {
-        this.baseUrl = options.baseUrl || '/asesores/pedidos-editable';
+        this.baseUrl = options.baseUrl || '/asesores/pedidos';
         this.csrfToken = options.csrfToken || this.obtenerCSRFToken();
         
         //  Registro global de archivos File por UID

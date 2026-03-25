@@ -61,7 +61,7 @@ class SharedPrendaEditorService {
         };
 
         // Validar que es un contexto permitido (NO cotización)
-        const contextosPermitidos = ['crear-nuevo', 'pedidos-editable', 'crear-desde-cotizacion', 'otros-pedidos'];
+        const contextosPermitidos = ['crear-nuevo', 'pedidos', 'crear-desde-cotizacion', 'otros-pedidos'];
         if (config.contexto && !contextosPermitidos.includes(config.contexto)) {
             Logger.warn(`Contexto inusual: ${config.contexto}`, 'SharedPrendaEditor');
         }

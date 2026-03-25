@@ -322,7 +322,7 @@
     <script defer src="{{ js_asset('js/modulos/crear-pedido/validacion/validacion-envio-fase3.js') }}?v={{ $v }}"></script>
 
     <!-- ─── Gestores, Builders, Card Services ─── -->
-    <script defer src="{{ js_asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/configuracion/api-pedidos.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/fotos/manejador-fotos-prenda-edicion.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/fotos/galeria-imagenes-prenda.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/gestores/gestor-prenda-sin-cotizacion.js') }}?v={{ $v }}"></script>
@@ -356,7 +356,7 @@
     <script defer src="{{ js_asset('js/modulos/crear-pedido/inicializacion/item-type-handlers.js') }}?v={{ $v }}"></script>
 
 <script>
-    window.routeGuardarBorradorUrl = '{{ route("asesores.pedidos-editable.guardarBorrador") }}';
+    window.routeGuardarBorradorUrl = '{{ route("asesores.pedidos.guardarBorrador") }}';
     window.routePedidosIndexUrl = '{{ route("asesores.pedidos.index") }}';
     window.asesorActualNombre = '{{ Auth::user()->name ?? '' }}';
 

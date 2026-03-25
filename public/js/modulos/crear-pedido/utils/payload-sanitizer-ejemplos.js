@@ -183,7 +183,7 @@ async function crearPedido(pedidoFormulario) {
         }
         
         // 4. Enviar a Laravel
-        const response = await fetch('/api/pedidos-editable/crear', {
+        const response = await fetch('/api/pedidos/crear', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -225,7 +225,7 @@ async function crearPedidoConAxios(pedidoFormulario) {
         }
         
         // Enviar
-        const response = await axios.post('/api/pedidos-editable/crear', payloadLimpio);
+        const response = await axios.post('/api/pedidos/crear', payloadLimpio);
         
         console.log(' Pedido creado:', response.data);
         return response.data;
@@ -275,7 +275,7 @@ async function enviarPedido() {
         }
         
         // Enviar
-        const response = await fetch('/api/pedidos-editable/crear', {
+        const response = await fetch('/api/pedidos/crear', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payloadLimpio)

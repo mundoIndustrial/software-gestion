@@ -214,7 +214,7 @@
     <div class="empty-state">
         <span class="material-symbols-rounded empty-state-icon">draft</span>
         <p class="empty-state-text">No tienes borradores de pedidos</p>
-        <a href="{{ route('asesores.pedidos-editable.crear-nuevo') }}" class="btn-crear-nuevo">
+        <a href="{{ route('asesores.pedidos.crear-nuevo') }}" class="btn-crear-nuevo">
             <span class="material-symbols-rounded">add_box</span>
             Crear Nuevo Pedido
         </a>
@@ -278,7 +278,7 @@
 <script>
     function editarBorrador(pedidoId) {
         // Redirigir a la página de edición del borrador
-        window.location.href = `{{ route('asesores.pedidos-editable.crear-nuevo') }}?edit=${pedidoId}`;
+        window.location.href = `{{ route('asesores.pedidos.crear-nuevo') }}?edit=${pedidoId}`;
     }
 
     function eliminarBorrador(pedidoId, clienteNombre) {

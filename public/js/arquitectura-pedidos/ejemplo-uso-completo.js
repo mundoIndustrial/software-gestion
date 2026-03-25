@@ -183,7 +183,7 @@ async function demoConstruirPedidoCompleto() {
     
     console.log('\n=== PASO 9: Enviar al backend ===');
     
-    const service = new PedidoService('/asesores/pedidos-editable/crear');
+    const service = new PedidoService('/asesores/pedidos/crear');
     
     try {
         const resultado = await service.crearPedido({

@@ -500,7 +500,7 @@
      * @param {string} endpoint - URL para enviar datos
      * @returns {Promise}
      */
-    window.procesarSubmitFormulario = function(endpoint = '/asesores/pedidos-editable/crear') {
+    window.procesarSubmitFormulario = function(endpoint = '/asesores/pedidos/crear') {
         // 1. VALIDAR
         const validacion = window.validarFormularioConGestores();
 
