@@ -12,7 +12,7 @@ class ObtenerAnchoMetrajePrendaResponse
     public function __construct(
         private ?float $ancho,
         private ?float $metraje,
-        private ?float $contenidoMano,
+        private ?string $contenidoMano,
         private ?string $tipoModo,
         private array $data = []
     ) {}

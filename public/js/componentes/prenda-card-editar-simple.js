@@ -29,7 +29,7 @@ function generarHTMLDatosPrenda(prenda) {
         // Tallas Dama
         if (prenda.tallas_dama && prenda.tallas_dama.length > 0) {
             html += '<div>';
-            html += '<strong style="color: #1e40af; font-size: 11px;">👗 DAMA</strong><br>';
+            html += '<strong style="color: #1e40af; font-size: 11px;"> DAMA</strong><br>';
             prenda.tallas_dama.forEach(t => {
                 html += `<div style="font-size: 10px; color: #475569; padding: 4px 0;">• ${t.talla}: <strong>${t.cantidad}</strong> prendas</div>`;
             });

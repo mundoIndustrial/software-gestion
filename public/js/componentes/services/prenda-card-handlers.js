@@ -199,7 +199,7 @@ window.PrendaCardHandlers = {
                         
                         if (section === 'variaciones') {
                             const variantes = content.querySelectorAll('.variacion-item');
-                            console.log('[PrendaCardHandlers] 👗 Variaciones encontradas:', variantes.length);
+                            console.log('[PrendaCardHandlers]  Variaciones encontradas:', variantes.length);
                             
                             // Verificar filas de la tabla
                             const tableRows = content.querySelectorAll('table tr');

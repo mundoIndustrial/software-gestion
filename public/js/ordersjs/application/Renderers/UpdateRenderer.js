@@ -33,7 +33,7 @@ export class UpdateRenderer {
     setText('trackingOrderNumber', numeroPedido);
     setText('trackingOrderClient', cliente);
     setText('trackingOrderStatus', estadoDisplay);
-    setText('trackingEstimatedDate', this.formatDate(orderData.fecha_estimada_entrega) || '-');
+    setText('trackingEstimatedDate', this.formatDate(orderData.fecha_estimada_de_entrega) || '-');
     setText('trackingTotalDays', orderData.total_dias || '0');
 
     // Recibo principal (pre-computado y enviado por el backend)
@@ -54,6 +54,20 @@ export class UpdateRenderer {
       fechaEstimadaEl.style.color = tieneFecha ? '#1f2937' : '#9ca3af';
       fechaEstimadaEl.style.fontWeight = tieneFecha ? '600' : '400';
       if (!tieneFecha) fechaEstimadaEl.textContent = 'No definida';
+    }
+
+    // Actualizar selector de días si dia_de_entrega existe
+    if (orderData.dia_de_entrega) {
+      console.log('[UpdateRenderer] Dias de entrega encontrados:', orderData.dia_de_entrega);
+      
+      // Usar la función de reintentos si existe (definida en tracking-modal-handler)
+      if (typeof window.updateDaysSelectorWithRetry === 'function') {
+        window.updateDaysSelectorWithRetry(orderData.dia_de_entrega);
+      } else {
+        console.warn('[UpdateRenderer] updateDaysSelectorWithRetry no disponible');
+      }
+    } else {
+      console.log('[UpdateRenderer] Sin dia_de_entrega en orderData');
     }
   }
 

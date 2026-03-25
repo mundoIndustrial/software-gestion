@@ -140,4 +140,42 @@ class ConsecutivoReciboPedidoRepository
             ->values()
             ->toArray();
     }
+
+    /**
+     * Obtener recibos de costura con filtros aplicados
+     * 
+     * @param string $tipoRecibo Tipo de recibo (COSTURA, REFLECTIVO, etc.)
+     * @param array $filtros Array con filtros a aplicar
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getConFiltros(string $tipoRecibo, array $filtros = [])
+    {
+        $query = ConsecutivoReciboPedido::query()
+            ->where('tipo_recibo', $tipoRecibo)
+            ->where('activo', true)
+            ->with([
+                'pedido',
+                'prenda.tallas',
+                'prenda.coloresTelas'
+            ]);
+
+        // Aplicar filtro de estado
+        if (isset($filtros['estado']) && !empty($filtros['estado'])) {
+            $query->whereIn('estado', $filtros['estado']);
+        } elseif (empty($filtros)) {
+            // Si no hay filtros, excluir PENDIENTE_INSUMOS
+            $query->where('estado', '!=', 'PENDIENTE_INSUMOS');
+        }
+
+        // Aplicar filtro de número de recibo
+        if (isset($filtros['numero_recibo']) && !empty($filtros['numero_recibo'])) {
+            $query->where(function($q) use ($filtros) {
+                foreach ($filtros['numero_recibo'] as $numero) {
+                    $q->orWhere('consecutivo_actual', 'LIKE', '%' . $numero . '%');
+                }
+            });
+        }
+
+        return $query->orderBy('consecutivo_actual', 'desc')->get();
+    }
 }

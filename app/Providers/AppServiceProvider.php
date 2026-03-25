@@ -67,6 +67,49 @@ class AppServiceProvider extends ServiceProvider
             \App\Repositories\EloquentProcesoPrendaImagenRepository::class
         );
 
+        // Registrar repositorio de Prendas
+        $this->app->singleton(
+            \App\Repositories\PrendaPedidoTallaRepository::class,
+            function ($app) {
+                return new \App\Repositories\PrendaPedidoTallaRepository();
+            }
+        );
+
+        // Registrar repositorio de Recibos Consecutivos
+        $this->app->singleton(
+            \App\Repositories\ConsecutivoReciboPedidoRepository::class,
+            function ($app) {
+                return new \App\Repositories\ConsecutivoReciboPedidoRepository();
+            }
+        );
+
+        // Registrar servicios de aplicación para Recibos
+        $this->app->singleton(
+            \App\Application\Services\DiaLaboralCalculator::class,
+            function ($app) {
+                return new \App\Application\Services\DiaLaboralCalculator();
+            }
+        );
+
+        $this->app->singleton(
+            \App\Application\Services\CantidadCalculator::class,
+            function ($app) {
+                return new \App\Application\Services\CantidadCalculator(
+                    $app->make(\App\Repositories\PrendaPedidoTallaRepository::class)
+                );
+            }
+        );
+
+        $this->app->singleton(
+            \App\Application\Services\ReceiptEnricherService::class,
+            function ($app) {
+                return new \App\Application\Services\ReceiptEnricherService(
+                    $app->make(\App\Application\Services\DiaLaboralCalculator::class),
+                    $app->make(\App\Application\Services\CantidadCalculator::class)
+                );
+            }
+        );
+
         // Registrar implementaciones de EPP (DDD)
         $this->app->bind(
             \App\Domain\Epp\Repositories\EppRepositoryInterface::class,

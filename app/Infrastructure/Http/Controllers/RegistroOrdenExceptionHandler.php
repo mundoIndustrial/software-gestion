@@ -2,7 +2,6 @@
 
 namespace App\Infrastructure\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Exceptions\RegistroOrdenException;
 use App\Exceptions\RegistroOrdenValidationException;
 use App\Exceptions\RegistroOrdenNotFoundException;

@@ -72,6 +72,11 @@ class TrackingDataLoader {
       
       window.currentOrderData = data;
       
+      // Ensure days selector is initialized before updating order info
+      if (typeof ensureDaysSelectorInitialized === 'function') {
+        ensureDaysSelectorInitialized();
+      }
+      
       // Actualizar información del pedido en el modal
       if (typeof updateOrderInfo === 'function') {
         updateOrderInfo(data);

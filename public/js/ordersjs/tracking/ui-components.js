@@ -108,7 +108,7 @@ class TrackingUIComponents {
       fecha_creacion: orderData.fecha_creacion,
       fecha_de_creacion_de_orden: orderData.fecha_de_creacion_de_orden,
       created_at: orderData.created_at,
-      fecha_estimada_entrega: orderData.fecha_estimada_entrega
+      fecha_estimada_de_entrega: orderData.fecha_estimada_de_entrega
     });
     
     const trackingOrderNumber = document.getElementById('trackingOrderNumber');
@@ -129,7 +129,7 @@ class TrackingUIComponents {
     }
     if (trackingEstimatedDate) {
       trackingEstimatedDate.textContent = typeof formatDate === 'function' 
-        ? formatDate(orderData.fecha_estimada_entrega) || '-'
+        ? formatDate(orderData.fecha_estimada_de_entrega) || '-'
         : '-';
     }
     if (trackingTotalDaysEl) {
@@ -254,6 +254,20 @@ class TrackingUIComponents {
         selectorOrderEstimatedDate.style.color = '#9ca3af';
         selectorOrderEstimatedDate.style.fontWeight = '400';
       }
+    }
+
+    // Actualizar selector de días si dia_de_entrega existe
+    if (orderData.dia_de_entrega) {
+      console.log('[updateOrderInfo] Dias de entrega encontrados:', orderData.dia_de_entrega);
+      
+      // Usar la función de reintentos si existe
+      if (typeof window.updateDaysSelectorWithRetry === 'function') {
+        window.updateDaysSelectorWithRetry(orderData.dia_de_entrega);
+      } else {
+        console.warn('[updateOrderInfo] updateDaysSelectorWithRetry no disponible');
+      }
+    } else {
+      console.log('[updateOrderInfo] Sin dia_de_entrega en orderData');
     }
     
     // Actualizar recibo principal

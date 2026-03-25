@@ -13,8 +13,9 @@ export class UpdateRenderer {
    * @param {Object} orderData - Datos del pedido
    * @param {Object} orderState - Estado centralizado
    * @param {Object} dateFormatter - Formateador de fechas
+   * @param {Object} daysSelector - Instancia del selector de días (opcional)
    */
-  updateOrderInfo(orderData, orderState, dateFormatter) {
+  updateOrderInfo(orderData, orderState, dateFormatter, daysSelector) {
     console.log('[UpdateRenderer] Actualizando información del pedido');
 
     const numeroPedido = orderData.numero_pedido || '-';
@@ -33,8 +34,21 @@ export class UpdateRenderer {
     setText('trackingOrderNumber', numeroPedido);
     setText('trackingOrderClient', cliente);
     setText('trackingOrderStatus', estadoDisplay);
-    setText('trackingEstimatedDate', this.formatDate(orderData.fecha_estimada_entrega) || '-');
+    setText('trackingEstimatedDate', this.formatDate(orderData.fecha_estimada_de_entrega) || '-');
     setText('trackingTotalDays', orderData.total_dias || '0');
+
+    // Establecer valor inicial del selector de días desde la API
+    // Intentar obtener el selector de window si no se pasó como parámetro
+    const selector = daysSelector || window.trackingDaysSelector;
+    if (selector && orderData.dia_de_entrega) {
+      console.log('[UpdateRenderer] Estableciendo dia_de_entrega:', orderData.dia_de_entrega);
+      selector.setValue(orderData.dia_de_entrega);
+    } else {
+      console.log('[UpdateRenderer] Selector no disponible o sin dia_de_entrega', {
+        selectorPresente: !!selector,
+        diaDatos: orderData.dia_de_entrega
+      });
+    }
 
     // Recibo principal (lógica de dominio delegada a OrderState)
     setText('trackingOrderRecibo', orderState.getReciboPrincipal());

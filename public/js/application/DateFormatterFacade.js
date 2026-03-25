@@ -112,3 +112,6 @@ class DateFormatterFacade {
     }
   }
 }
+
+// Exportar la clase
+export { DateFormatterFacade };

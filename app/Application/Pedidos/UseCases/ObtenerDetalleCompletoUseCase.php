@@ -405,11 +405,21 @@ class ObtenerDetalleCompletoUseCase
 
     /**
      * Agrega datos adicionales del pedido (fecha estimada, área, día entrega)
+     * 
+     * Prioridad:
+     * 1. Datos del recibo de costura (ConsecutivoReciboPedido) - si existen
+     * 2. Datos de la tabla pedidos_produccion - fallback
      */
     private function agregarDatosAdicionalesPedido(PedidoProduccion $pedido, array &$responseData): void
     {
+        // Intentar obtener datos del recibo de costura primero (SaveDiaEntregaUseCase guarda ahí)
+        $reciboCostura = \App\Models\ConsecutivoReciboPedido::where('pedido_produccion_id', $pedido->id)
+            ->where('tipo_recibo', 'COSTURA')
+            ->first();
+
         if (!isset($responseData['fecha_estimada_de_entrega'])) {
-            $responseData['fecha_estimada_de_entrega'] = $pedido->fecha_estimada_de_entrega;
+            $responseData['fecha_estimada_de_entrega'] = $reciboCostura?->fecha_estimada_de_entrega 
+                ?? $pedido->fecha_estimada_de_entrega;
         }
 
         if (!isset($responseData['area'])) {
@@ -417,12 +427,15 @@ class ObtenerDetalleCompletoUseCase
         }
 
         if (!isset($responseData['dia_de_entrega'])) {
-            $responseData['dia_de_entrega'] = $pedido->dia_de_entrega;
+            $responseData['dia_de_entrega'] = $reciboCostura?->dia_de_entrega 
+                ?? $pedido->dia_de_entrega;
         }
 
         Log::info('[ObtenerDetalleCompletoUseCase] Datos del pedido agregados', [
             'pedido_id' => $pedido->id,
             'numero_pedido' => $pedido->numero_pedido,
+            'dia_de_entrega' => $responseData['dia_de_entrega'] ?? null,
+            'fecha_estimada_de_entrega' => $responseData['fecha_estimada_de_entrega'] ?? null,
         ]);
     }
 }

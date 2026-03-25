@@ -113,6 +113,74 @@ const trackingTimelineController = new TrackingTimelineController({
   setupBackButton
 });
 
+// Instancia del selector de días (será inicializada en setupDaysSelector)
+// Se expone globalmente para que otros módulos puedan acceder
+let daysSelector = null;
+window.trackingDaysSelector = null;
+
+/**
+ * Reinitialize the days selector when the modal opens
+ * This ensures the selector is ready when data is loaded 
+ * Call this right after the modal is shown
+ */
+function ensureDaysSelectorInitialized() {
+  console.log('[ensureDaysSelectorInitialized] Verificando selector...');
+  
+  // Try to reinitialize if not already initialized
+  if (!daysSelector || !daysSelector.initialized) {
+    console.log('[ensureDaysSelectorInitialized] Reiniciando selector...');
+    daysSelector = new DaysSelectorManager('trackingDaysSelector', {
+      orderState,
+      onSave: saveDiaEntregaSelection
+    });
+    daysSelector.initialize();
+    window.trackingDaysSelector = daysSelector;
+    console.log('[ensureDaysSelectorInitialized] ✅ Selector reiniciado');
+    return;
+  }
+  
+  // If already initialized but elements not cached, recache them
+  if (!daysSelector.isValid()) {
+    console.log('[ensureDaysSelectorInitialized] Recacheando elementos...');
+    daysSelector.cacheElements();
+  }
+}
+
+/**
+ * Actualizar selector de días con reintentos
+ * Espera a que el selector esté disponible antes de actualizar
+ * 
+ * @param {number} dias - Número de días a establecer (1-35)
+ * @param {number} intento - Intento actual (máx 5)
+ */
+function updateDaysSelectorWithRetry(dias, intento = 0) {
+  if (!dias) {
+    console.log('[updateDaysSelectorWithRetry] No hay dias_de_entrega, saltando');
+    return;
+  }
+
+  // Try to ensure selector is initialized first
+  if (!window.trackingDaysSelector) {
+    ensureDaysSelectorInitialized();
+  }
+
+  if (window.trackingDaysSelector && typeof window.trackingDaysSelector.setValue === 'function') {
+    console.log('[updateDaysSelectorWithRetry] Selector disponible, actualizando con:', dias);
+    try {
+      window.trackingDaysSelector.setValue(dias);
+      console.log('[updateDaysSelectorWithRetry] ✅ Selector actualizado exitosamente');
+    } catch (error) {
+      console.error('[updateDaysSelectorWithRetry] Error al actualizar:', error);
+    }
+  } else if (intento < 10) {
+    // Increase retries to 10 (1000ms total) to allow more time for initialization
+    console.log(`[updateDaysSelectorWithRetry] Selector no disponible, reintentando (${intento + 1}/10)...`);
+    setTimeout(() => updateDaysSelectorWithRetry(dias, intento + 1), 100);
+  } else {
+    console.warn('[updateDaysSelectorWithRetry] Selector no disponible después de 10 intentos');
+  }
+}
+
 // Inicializar listeners del modal
 function initTrackingModalListeners() {
   const binder = new ModalEventBinder('orderTrackingModal');
@@ -140,11 +208,16 @@ function initTrackingModalListeners() {
 }
 
   function setupDaysSelector() {
-    const daysSelector = new DaysSelectorManager('trackingDaysSelector', {
+    daysSelector = new DaysSelectorManager('trackingDaysSelector', {
       orderState,
       onSave: saveDiaEntregaSelection
     });
     daysSelector.initialize();
+    
+    // Exponer globalmente para que UpdateRenderer pueda acceder
+    window.trackingDaysSelector = daysSelector;
+    
+    console.log('[setupDaysSelector] DaysSelector inicializado y expuesto en window');
   }
 
   /**
@@ -321,6 +394,10 @@ function initTrackingModalListeners() {
     }
   }
 
+  // Exponer función de reintentos del selector de días para que otros módulos puedan usarla
+  window.updateDaysSelectorWithRetry = updateDaysSelectorWithRetry;
+  window.ensureDaysSelectorInitialized = ensureDaysSelectorInitialized;
+
   // Abrir selector de prendas (overlay)
   window.openOrderTracking = async function(orderId, mostrarSelector = true) {
     try {
@@ -360,7 +437,7 @@ function initTrackingModalListeners() {
 
   // Actualizar información del pedido en el modal y selector
   function updateOrderInfo(orderData) {
-    updateRenderer.updateOrderInfo(orderData, orderState, DateFormatter);
+    updateRenderer.updateOrderInfo(orderData, orderState, DateFormatter, daysSelector);
   }
 
 

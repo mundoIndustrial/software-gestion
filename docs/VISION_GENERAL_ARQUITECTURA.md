@@ -312,7 +312,7 @@ transition(nextState) {
 
 ---
 
-## 🚚 Entrega Final
+##  Entrega Final
 
 ### Archivos Listos para Producción
 - [x] 5 archivos de arquitectura (minificables)

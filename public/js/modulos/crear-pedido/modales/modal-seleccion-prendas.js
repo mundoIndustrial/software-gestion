@@ -154,7 +154,7 @@ function renderizarPrendasModal() {
                                        onchange="window.actualizarOrigenPrenda(${index}, 'confeccion')"
                                        ${prenda.prenda_bodega === 0 || prenda.prenda_bodega === false ? 'checked' : ''}
                                        style="width: 18px; height: 18px; cursor: pointer;">
-                                <span>✂️ Confección</span>
+                                <span> Confección</span>
                             </label>
                         </div>
                     </div>
@@ -468,7 +468,7 @@ function renderizarItemsCotizacionEnDOM() {
         // Información básica de la prenda
         const nombrePrenda = item.prenda?.nombre || 'Prenda sin nombre';
         const cantidad = item.prenda?.cantidad || 0;
-        const origen = item.origen === 'bodega' ? '🏪 Bodega' : '✂️ Confección';
+        const origen = item.origen === 'bodega' ? '🏪 Bodega' : ' Confección';
         const procesosTexto = item.procesos && item.procesos.length > 0 ? item.procesos.join(', ') : 'Sin procesos';
         const tipoItem = item.es_proceso ? ' Proceso' : 'Prenda Base';
         
