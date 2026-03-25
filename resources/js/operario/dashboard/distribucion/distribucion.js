@@ -99,8 +99,10 @@ function obtennerDistribucionParciales(reciboId, numeroRecibo, ordenCard, btn) {
 function mostrarDistribucionCards(datos, numeroRecibo, ordenCard, btn) {
     const parciales = datos.parciales || [];
     const totalParciales = datos.total_parciales || 0;
+    const numeroPedido = datos.recibo?.numero_pedido || numeroRecibo; // Obtener número de pedido real de la respuesta
 
     console.log('[DISTRIBUCION CARDS] Preparando cards con', totalParciales, 'parciales');
+    console.log('[DISTRIBUCION CARDS] Número de pedido real:', numeroPedido);
     console.log('[DISTRIBUCION CARDS] Datos de parciales:', parciales);
 
     if (!ordenCard) {
@@ -108,8 +110,8 @@ function mostrarDistribucionCards(datos, numeroRecibo, ordenCard, btn) {
         return;
     }
 
-    // Crear el HTML de las tarjetas
-    const cardsHTML = crearHTMLDistribucionCards(parciales, numeroRecibo, totalParciales);
+    // Crear el HTML de las tarjetas con el número de pedido correcto
+    const cardsHTML = crearHTMLDistribucionCards(parciales, numeroPedido, totalParciales);
 
     // Crear contenedor de distribución
     const distribucionSection = document.createElement('div');
@@ -197,6 +199,20 @@ function crearHTMLDistribucionCards(parciales, numeroRecibo, totalParciales) {
                         </div>
                     </div>
                     ` : ''}
+
+                    <div class="parcial-row parcial-acciones">
+                        <button class="btn-ver-recibo-parcial" 
+                                onclick="verReciboParcial(${parcial.id}, '${String(parcial.consecutivo_parcial).replace(/'/g, "\\'")}'  , '${numeroRecibo}', ${parcial.prenda_pedido_id || 'null'})">
+                            <span class="material-symbols-rounded">visibility</span>
+                            VER RECIBO
+                        </button>
+                        <button class="btn-deshacer-parcial" 
+                                onclick="deshacerParcial(${parcial.id}, this)"
+                                data-parcial-id="${parcial.id}">
+                            <span class="material-symbols-rounded">undo</span>
+                            DESHACER PARTE
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -232,7 +248,152 @@ function generarTallasHTML(tallas) {
 
     return tallasHTML;
 }
+
+/**
+ * Deshacer un parcial específico
+ */
+async function deshacerParcial(parcialId, btn) {
+    if (!confirm('¿Estás seguro de que deseas deshacer esta parte? Se eliminará de procesos_prenda y recibo_por_partes.')) {
+        return;
+    }
+
+    try {
+        console.log('[DESHACER PARCIAL] Eliminando parcial:', parcialId);
+
+        const response = await fetch(`/operario/api/parciales/${parcialId}/deshacer`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
+
+        console.log('[DESHACER PARCIAL] Response status:', response.status);
+
+        if (!response.ok) {
+            throw new Error(`HTTP Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            console.log('[DESHACER PARCIAL] Parcial eliminado exitosamente');
+            
+            // Animar y eliminar la tarjeta
+            const parcialCard = btn.closest('.parcial-card');
+            if (parcialCard) {
+                parcialCard.style.opacity = '0';
+                parcialCard.style.transform = 'scale(0.9)';
+                parcialCard.style.transition = 'all 0.3s ease';
+                
+                setTimeout(() => {
+                    parcialCard.remove();
+                    console.log('[DESHACER PARCIAL] Tarjeta removida del DOM');
+                    
+                    // Mostrar mensaje de éxito
+                    showSuccessMessage('Parte deshacha correctamente');
+                }, 300);
+            }
+        } else {
+            console.error('[DESHACER PARCIAL] Error en respuesta:', data);
+            alert('Error: ' + (data.message || 'No se pudo deshacer el parcial'));
+        }
+    } catch (error) {
+        console.error('[DESHACER PARCIAL] Error:', error);
+        alert('Error al deshacer la parte: ' + error.message);
+    }
+}
+
+function showSuccessMessage(message) {
+    const notification = document.createElement('div');
+    notification.className = 'notification notification-success';
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #10b981;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 6px;
+        z-index: 9999;
+        animation: slideInRight 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+/**
+ * Ver detalles del recibo parcial
+ * Abre la página de detalles mostrando las tallas asignadas al parcial
+ */
+async function verReciboParcial(parcialId, consecutivoParcial, numeroPedido, prendaPedidoId) {
+    try {
+        // Sanitizar y asegurar tipos correctos
+        const sanitizedParcialId = parseInt(parcialId, 10);
+        const sanitizedNumeroPedido = String(numeroPedido).trim();
+        const sanitizedConsecutivoParcial = String(consecutivoParcial).trim().replace(/[^0-9.]/g, '');
+        const sanitizedPrendaId = prendaPedidoId && prendaPedidoId !== 'null' ? parseInt(prendaPedidoId, 10) : null;
+
+        console.log('[VER RECIBO PARCIAL] Parámetros sanitizados', {
+            parcialId: sanitizedParcialId,
+            consecutivoParcial: sanitizedConsecutivoParcial,
+            numeroPedido: sanitizedNumeroPedido,
+            prendaPedidoId: sanitizedPrendaId
+        });
+
+        if (!sanitizedNumeroPedido || isNaN(sanitizedNumeroPedido)) {
+            console.error('[VER RECIBO PARCIAL] numeroPedido es inválido');
+            alert('Error: No se pudo determinar el número de pedido');
+            return;
+        }
+
+        if (!sanitizedParcialId || isNaN(sanitizedParcialId)) {
+            console.error('[VER RECIBO PARCIAL] parcialId es inválido');
+            alert('Error: ID de parcial inválido');
+            return;
+        }
+
+        // Construir URL de navegación usando window.location.origin
+        const baseUrl = window.location.origin || 'http://localhost:8000';
+        let url = baseUrl + '/operario/pedido/' + sanitizedNumeroPedido;
+        const params = new URLSearchParams();
+
+        // Parámetros de la prenda
+        if (sanitizedPrendaId) {
+            params.append('prenda_id', sanitizedPrendaId);
+        }
+
+        // Parámetros del parcial
+        params.append('tipo_recibo', 'PARCIAL');
+        params.append('parcial_id', sanitizedParcialId);
+        params.append('consecutivo_parcial', sanitizedConsecutivoParcial);
+
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+
+        console.log('[VER RECIBO PARCIAL] URL de navegación completa:', url);
+
+        // Navegar a la vista de detalles usando método seguro
+        setTimeout(() => {
+            window.location.href = url;
+        }, 100);
+
+    } catch (error) {
+        console.error('[VER RECIBO PARCIAL] Error:', error);
+        alert('Error al abrir los detalles del recibo parcial: ' + error.message);
+    }
+}
         
         // Limpiar después de la animación
 // Registrar función global
 window.abrirDistribucionRecibo = abrirDistribucionRecibo;
+window.deshacerParcial = deshacerParcial;
+window.verReciboParcial = verReciboParcial;

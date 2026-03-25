@@ -355,6 +355,8 @@
                                     
                                     @if(auth()->user()->hasRole('vista-costura'))
                                         @php
+                                            $reciboId = $prenda['recibos'][0]['id'] ?? null;
+                                            $tieneParciales = $prenda['recibos'][0]['tiene_parciales'] ?? false;
                                             $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
                                             $areaActual = $prenda['recibos'][0]['area'] ?? null;
                                             $procesoId = $prenda['recibos'][0]['proceso_id_costura'] ?? null;
@@ -365,11 +367,12 @@
                                             $esTipoReciboCostura = in_array('COSTURA', $tiposUnicos->toArray());
                                             $encargadoCostura = is_string($encargadoCostura) ? trim($encargadoCostura) : $encargadoCostura;
                                             $tieneEncargadoCostura = !empty($encargadoCostura);
-                                            $mostrarComoDeshacerCostura = $esCosturaProceso && $tieneEncargadoCostura;
+                                            // NO mostrar DESHACER COSTURA si hay parciales
+                                            $mostrarComoDeshacerCostura = ($esCosturaProceso && $tieneEncargadoCostura && !$tieneParciales);
                                         @endphp
 
-                                        {{-- Botón "Pasar a Costura" o "DESHACER COSTURA" solo para recibos tipo COSTURA --}}
-                                        @if($esTipoReciboCostura)
+                                        {{-- Botón "Pasar a Costura" o "DESHACER COSTURA" (NO si hay parciales) --}}
+                                        @if($esTipoReciboCostura && !$tieneParciales)
                                             <button class="btn-pasar-costura {{ $mostrarComoDeshacerCostura ? 'btn-deshacer-costura' : '' }}" 
                                                     id="btn-costura-{{ $prenda['prenda_id'] }}"
                                                     data-pedido-id="{{ $prenda['pedido_id'] }}"
@@ -387,7 +390,8 @@
                                             </button>
                                         @endif
 
-                                        {{-- Botón "Pasar a C.C" o "DESHACER" --}}
+                                        {{-- Botón "Pasar a C.C" o "DESHACER" (NO si hay parciales) --}}
+                                        @if(!$tieneParciales)
                                         <button class="btn-pasar-cc" 
                                                 id="btn-cc-{{ $prenda['prenda_id'] }}"
                                                 data-pedido-id="{{ $prenda['pedido_id'] }}"
@@ -401,12 +405,10 @@
                                             <span class="material-symbols-rounded">{{ $esCC ? 'undo' : 'check_circle' }}</span>
                                             {{ $esCC ? 'DESHACER' : 'PASAR A C.C' }}
                                         </button>
+                                        @endif
 
-                                        {{-- Botón "Ver Distribución" para vista-costura --}}
-                                        @php
-                                            $reciboId = $prenda['recibos'][0]['id'] ?? null;
-                                        @endphp
-                                        @if($reciboId)
+                                        {{-- Botón "Ver Distribución" para vista-costura (solo si hay parciales) --}}
+                                        @if($reciboId && $tieneParciales)
                                             <button class="btn-ver-distribucion" 
                                                     id="btn-distribucion-{{ $prenda['prenda_id'] }}"
                                                     data-recibo-id="{{ $reciboId }}"

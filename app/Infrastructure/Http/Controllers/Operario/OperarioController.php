@@ -159,12 +159,19 @@ class OperarioController extends Controller
         // Obtener parámetros de la URL
         $prendaIdRequest = request('prenda_id');
         $tipoReciboRequest = request('tipo_recibo', 'COSTURA');
+        $tipoReciboUpper = strtoupper(trim((string) $tipoReciboRequest));
+        $consecutivoParcialParam = request('consecutivo_parcial');
 
         // Obtener número de recibo COSTURA para operarios
         $numeroReciboCostura = null;
+
+        // Si es un recibo parcial, el consecutivo a mostrar es el parcial
+        if ($tipoReciboUpper === 'PARCIAL' && $consecutivoParcialParam !== null && $consecutivoParcialParam !== '') {
+            $numeroReciboCostura = (string) $consecutivoParcialParam;
+        }
         
         // Si viene prenda_id específicamente, obtener el recibo de esa prenda
-        if ($prendaIdRequest) {
+        if ($prendaIdRequest && $numeroReciboCostura === null) {
             $reciboEspecifico = \App\Models\ConsecutivoReciboPedido::where('pedido_produccion_id', $pedidoDB->id)
                 ->where('prenda_id', $prendaIdRequest)
                 ->where('tipo_recibo', $tipoReciboRequest)
@@ -560,9 +567,17 @@ class OperarioController extends Controller
     public function obtenerDatosRecibosOperario($numeroPedido)
     {
         try {
-            \Log::info('[OperarioController]  INICIO obtenerDatosRecibosOperario', [
+            $tipoRecibo = request('tipo_recibo', 'COSTURA');
+            $parcialId = request('parcial_id');
+            $consecutivoParcial = request('consecutivo_parcial');
+
+            \Log::info('[OperarioController] INICIO obtenerDatosRecibosOperario', [
                 'numero_pedido' => $numeroPedido,
-                'tipo_numeroPedido' => gettype($numeroPedido)
+                'tipo_recibo' => $tipoRecibo,
+                'parcial_id' => $parcialId,
+                'consecutivo_parcial' => $consecutivoParcial,
+                'query_params_completos' => request()->query(),
+                'url_actual' => request()->fullUrl()
             ]);
 
             $usuario = Auth::user();
@@ -577,17 +592,98 @@ class OperarioController extends Controller
             \Log::info('[OperarioController] Búsqueda de pedido', [
                 'numero_pedido' => $numeroPedido,
                 'encontrado' => !!$pedido,
-                'pedido_id' => $pedido->id ?? null
+                'pedido_id' => $pedido->id ?? null,
+                'tipo_recibo' => $tipoRecibo,
+                'parcial_id' => $parcialId
             ]);
 
             if (!$pedido) {
-                \Log::warning('[OperarioController]  Pedido no encontrado', [
+                \Log::warning('[OperarioController] Pedido no encontrado', [
                     'numero_pedido' => $numeroPedido
                 ]);
                 return response()->json([
                     'success' => false,
-                    'message' => "Pedido {$numeroPedido} no encontrado"
+                    'error' => 'not found',
+                    'message' => 'Pedido no encontrado'
                 ], 404);
+            }
+
+            // Si es una solicitud de parcial, obtener datos del parcial
+            if ($tipoRecibo === 'PARCIAL' && $parcialId) {
+                \Log::info('[OperarioController] Obteniendo datos del parcial', [
+                    'parcial_id' => $parcialId,
+                    'parcial_id_type' => gettype($parcialId),
+                    'consecutivo_parcial' => $consecutivoParcial
+                ]);
+
+                try {
+                    $parcialId = (int) $parcialId;
+                    $parcial = \App\Models\ReciboPorPartes::with(['tallas', 'pedido', 'prenda'])
+                        ->findOrFail($parcialId);
+
+                    \Log::info('[OperarioController] Parcial encontrado', [
+                        'parcial_id' => $parcial->id,
+                        'pedido_id' => $parcial->pedido_produccion_id,
+                        'prenda_id' => $parcial->prenda_pedido_id,
+                        'tallas_count' => $parcial->tallas->count()
+                    ]);
+
+                    // Usar ObtenerPedidoUseCase para obtener todos los datos
+                    $datosPedido = $this->obtenerPedidoUseCase->ejecutar($pedido->id, false);
+                    $responseData = $datosPedido->toArray();
+
+                    // Filtrar prendas: solo la del parcial
+                    if (isset($responseData['prendas']) && $parcial->prenda_pedido_id) {
+                        $responseData['prendas'] = collect($responseData['prendas'])
+                            ->filter(function($prenda) use ($parcial) {
+                                return isset($prenda['prenda_id']) && $prenda['prenda_id'] == $parcial->prenda_pedido_id;
+                            })
+                            ->map(function($prenda) use ($parcial) {
+                                // Reemplazar recibos con los del parcial
+                                $prenda['recibos'] = [[
+                                    'id' => $parcial->id,
+                                    'consecutivo_actual' => (float) $parcial->consecutivo_parcial,
+                                    'consecutivo_parcial' => (float) $parcial->consecutivo_parcial,
+                                    'consecutivo_original' => (float) $parcial->consecutivo_original,
+                                    'tipo_recibo' => $parcial->tipo_recibo,
+                                    'area' => $parcial->area,
+                                    'encargado' => $parcial->encargado,
+                                    'tallas' => $parcial->tallas->map(function($talla) {
+                                        return [
+                                            'talla' => $talla->talla,
+                                            'cantidad' => (int) $talla->cantidad,
+                                            'color' => $talla->color_nombre ?? 'N/A',
+                                        ];
+                                    })->toArray()
+                                ]];
+                                return $prenda;
+                            })
+                            ->values()
+                            ->toArray();
+                    }
+
+                    \Log::info('[OperarioController] Respuesta de parcial enviada', [
+                        'keys' => array_keys($responseData),
+                        'tiene_prendas' => isset($responseData['prendas']),
+                        'total_prendas' => count($responseData['prendas'] ?? [])
+                    ]);
+
+                    // Retornar en el formato esperado por el componente
+                    return response()->json([
+                        'success' => true,
+                        'data' => $responseData
+                    ]);
+                } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+                    \Log::error('[OperarioController] Parcial no encontrado', [
+                        'parcial_id' => $parcialId,
+                        'error' => $e->getMessage()
+                    ]);
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'not found',
+                        'message' => 'Parcial no encontrado'
+                    ], 404);
+                }
             }
 
             \Log::info('[OperarioController] Llamando ObtenerPedidoUseCase');
@@ -595,20 +691,24 @@ class OperarioController extends Controller
             // Usar ObtenerPedidoUseCase para obtener todos los datos
             $datosPedido = $this->obtenerPedidoUseCase->ejecutar($pedido->id, false);
 
-            \Log::info('[OperarioController]  Datos obtenidos del UseCase');
+            \Log::info('[OperarioController] Datos obtenidos del UseCase');
 
             // Convertir a array
             $responseData = $datosPedido->toArray();
 
-            \Log::info('[OperarioController]  Respuesta enviada', [
+            \Log::info('[OperarioController] Respuesta enviada', [
                 'keys' => array_keys($responseData),
                 'tiene_prendas' => isset($responseData['prendas']),
                 'total_prendas' => count($responseData['prendas'] ?? [])
             ]);
 
-            return response()->json($responseData);
+            // Retornar en el formato esperado por el componente
+            return response()->json([
+                'success' => true,
+                'data' => $responseData
+            ]);
         } catch (\Exception $e) {
-            \Log::error('[OperarioController]  ERROR en obtenerDatosRecibosOperario', [
+            \Log::error('[OperarioController] ERROR en obtenerDatosRecibosOperario', [
                 'numero_pedido' => $numeroPedido,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -616,8 +716,9 @@ class OperarioController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener datos del pedido: ' . $e->getMessage()
-            ], 500);
+                'error' => 'not found',
+                'message' => 'Pedido no encontrado'
+            ], 404);
         }
     }
 
@@ -859,6 +960,83 @@ class OperarioController extends Controller
                     'prenda_id_solicitada' => $prendaIdFiltroInt,
                     'prendas_encontradas' => count($prendasFiltradas)
                 ]);
+            }
+
+            // ================================
+            // SOPORTE RECIBO PARCIAL (Distribución por módulos)
+            // ================================
+            // Cuando se abre /operario/pedido/{numeroPedido}?tipo_recibo=PARCIAL&parcial_id=...&consecutivo_parcial=...
+            // la vista consume este endpoint y debe devolver solo tallas/variantes del parcial.
+            $tipoReciboUpper = strtoupper(trim((string) request('tipo_recibo', '')));
+            $parcialIdParam = request('parcial_id');
+            $consecutivoParcialParam = request('consecutivo_parcial');
+
+            if ($tipoReciboUpper === 'PARCIAL' && ($parcialIdParam || $consecutivoParcialParam)) {
+                try {
+                    $parcialQuery = \App\Models\ReciboPorPartes::query()
+                        ->where('pedido_produccion_id', $pedidoId);
+
+                    if ($parcialIdParam) {
+                        $parcialQuery->where('id', (int) $parcialIdParam);
+                    }
+                    if ($consecutivoParcialParam !== null && $consecutivoParcialParam !== '') {
+                        $parcialQuery->where('consecutivo_parcial', (string) $consecutivoParcialParam);
+                    }
+                    if ($prendaIdFiltro) {
+                        $parcialQuery->where('prenda_pedido_id', (int) $prendaIdFiltro);
+                    }
+
+                    $parcial = $parcialQuery->with('tallas')->first();
+
+                    if ($parcial && isset($responseData['prendas']) && is_array($responseData['prendas']) && count($responseData['prendas']) > 0) {
+                        $tallasParcial = $parcial->tallas ?? collect();
+                        $tallasMap = [];
+                        foreach ($tallasParcial as $t) {
+                            $key = strtoupper(trim((string) $t->talla));
+                            if ($key === '') continue;
+                            $tallasMap[$key] = (int) $t->cantidad;
+                        }
+
+                        foreach ($responseData['prendas'] as &$prenda) {
+                            $prendaIdResp = (int) ($prenda['id'] ?? $prenda['prenda_pedido_id'] ?? 0);
+                            if ($prendaIdFiltro && $prendaIdResp !== (int) $prendaIdFiltro) {
+                                continue;
+                            }
+
+                            if (!isset($prenda['variantes']) || !is_array($prenda['variantes'])) {
+                                continue;
+                            }
+
+                            // Mantener solo 1 variante por talla (la primera que coincida)
+                            $variantesNuevas = [];
+                            $tallasUsadas = [];
+                            foreach ($prenda['variantes'] as $var) {
+                                $tallaVar = strtoupper(trim((string) ($var['talla'] ?? '')));
+                                if ($tallaVar === '' || !array_key_exists($tallaVar, $tallasMap)) {
+                                    continue;
+                                }
+                                if (isset($tallasUsadas[$tallaVar])) {
+                                    continue;
+                                }
+                                $tallasUsadas[$tallaVar] = true;
+                                $var['cantidad'] = (int) $tallasMap[$tallaVar];
+                                $variantesNuevas[] = $var;
+                            }
+
+                            // Si por alguna razón no había variantes del pedido, igual devolver vacío
+                            $prenda['variantes'] = $variantesNuevas;
+                        }
+                        unset($prenda);
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('[OperarioController.getPedidoData] Error aplicando filtro de parcial', [
+                        'numero_pedido' => $numeroPedido,
+                        'pedido_id' => $pedidoId,
+                        'parcial_id' => $parcialIdParam,
+                        'consecutivo_parcial' => $consecutivoParcialParam,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
 
             // FILTRO BODEGUERO: Si es bodeguero, filtrar procesos para mostrar SOLO 'costura-bodega'
@@ -1663,6 +1841,10 @@ class OperarioController extends Controller
 
             \Log::info('[DistribucionRecibo] Parciales encontrados', ['total' => $parciales->count()]);
 
+            // Obtener el número de pedido
+            $pedidoProduccion = \App\Models\PedidoProduccion::find($recibo->pedido_produccion_id);
+            $numeroPedido = $pedidoProduccion ? $pedidoProduccion->numero_pedido : null;
+
             // Si no hay parciales, retornar estructura vacía
             if ($parciales->isEmpty()) {
                 \Log::info('[DistribucionRecibo] Sin parciales para este recibo');
@@ -1675,16 +1857,12 @@ class OperarioController extends Controller
             }
 
             // Obtener información de procesos para cada parcial
-            $parciales_info = $parciales->map(function ($parcial) use ($recibo) {
+            $parciales_info = $parciales->map(function ($parcial) use ($recibo, $numeroPedido) {
                 try {
-                    // Obtener el número de pedido del recibo
-                    $pedidoProduccion = \App\Models\PedidoProduccion::find($recibo->pedido_produccion_id);
-                    $numero_pedido = $pedidoProduccion ? $pedidoProduccion->numero_pedido : null;
-
                     // Buscar el proceso relacionado en procesos_prenda
                     $proceso = null;
-                    if ($numero_pedido) {
-                        $proceso = \App\Models\ProcesoPrenda::where('numero_pedido', $numero_pedido)
+                    if ($numeroPedido) {
+                        $proceso = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
                             ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
                             ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
                             ->first();
@@ -1705,6 +1883,9 @@ class OperarioController extends Controller
                         'proceso_estado' => $proceso->estado_proceso ?? 'Pendiente',
                         'fecha_asignacion' => $proceso->fecha_de_asignacion_encargado ?? null,
                         'observaciones' => $proceso->observaciones ?? '',
+                        'pedido_produccion_id' => $parcial->pedido_produccion_id,
+                        'prenda_pedido_id' => $parcial->prenda_pedido_id,
+                        'numero_pedido' => $numeroPedido,
                         'tallas' => $parcial->tallas->map(function ($talla) {
                             return [
                                 'id' => $talla->id,
@@ -1732,6 +1913,7 @@ class OperarioController extends Controller
                     'consecutivo' => $recibo->consecutivo_actual,
                     'tipo_recibo' => $recibo->tipo_recibo,
                     'area_actual' => $recibo->area,
+                    'numero_pedido' => $numeroPedido,
                 ],
                 'parciales' => $parciales_info,
                 'total_parciales' => $parciales_info->count()
@@ -1745,6 +1927,91 @@ class OperarioController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener distribución: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Deshacer un parcial específico (eliminarlo de todas las tablas)
+     * DELETE /operario/api/parciales/{id}/deshacer
+     */
+    public function deshacerParcial(Request $request, $id)
+    {
+        try {
+            // Validar autenticación
+            $usuario = Auth::user();
+            if (!$usuario) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario no autenticado'
+                ], 401);
+            }
+
+            // Encontrar el parcial
+            $parcial = \App\Models\ReciboPorPartes::with(['pedido', 'prenda'])->findOrFail($id);
+
+            // Iniciar transacción
+            DB::beginTransaction();
+
+            try {
+                // Obtener identificadores para borrar procesos_prenda
+                $numeroPedido = $parcial->pedido?->numero_pedido;
+                $prendaPedidoId = $parcial->prenda_pedido_id;
+                $numeroReciboParcial = $parcial->consecutivo_parcial;
+
+                \Log::info('[DeshacerParcial] Iniciando eliminación', [
+                    'parcial_id' => $id,
+                    'numero_pedido' => $numeroPedido,
+                    'prenda_pedido_id' => $prendaPedidoId,
+                    'numero_recibo_parcial' => $numeroReciboParcial
+                ]);
+
+                // 1. Eliminar tallas asociadas
+                $tallasEliminadas = \App\Models\ReciboPorPartesTalla::where('recibo_por_partes_id', $id)->delete();
+                \Log::info('[DeshacerParcial] Tallas eliminadas', ['count' => $tallasEliminadas]);
+
+                // 2. Eliminar procesos_prenda asociados
+                $procesosEliminados = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
+                    ->where('prenda_pedido_id', $prendaPedidoId)
+                    ->where('numero_recibo_parcial', $numeroReciboParcial)
+                    ->delete();
+                \Log::info('[DeshacerParcial] Procesos eliminados', ['count' => $procesosEliminados]);
+
+                // 3. Eliminar el parcial
+                $parcialEliminado = $parcial->delete();
+                \Log::info('[DeshacerParcial] Parcial eliminado', ['deleted' => $parcialEliminado]);
+
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Parcial eliminado correctamente',
+                    'deleted' => [
+                        'tallas' => $tallasEliminadas,
+                        'procesos' => $procesosEliminados,
+                        'parcial' => $parcialEliminado
+                    ]
+                ], 200);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                \Log::error('[DeshacerParcial] Error durante eliminación', [
+                    'parcial_id' => $id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                throw $e;
+            }
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Parcial no encontrado'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar parcial: ' . $e->getMessage()
             ], 500);
         }
     }

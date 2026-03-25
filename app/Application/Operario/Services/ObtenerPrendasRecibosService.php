@@ -223,6 +223,12 @@ class ObtenerPrendasRecibosService
                         $completadoCostura = $completadosCostura->has($rid);
                         $completadoControlCalidad = $completadosControlCalidad->has($rid);
 
+                        // Verificar si hay parciales para este recibo
+                        $tieneParciales = \App\Models\ReciboPorPartes::where('pedido_produccion_id', $recibo->pedido_produccion_id)
+                            ->where('tipo_recibo', $recibo->tipo_recibo)
+                            ->where('consecutivo_original', $recibo->consecutivo_actual)
+                            ->exists();
+
                         return [
                             'id' => $recibo->id,
                             'tipo_recibo' => $recibo->tipo_recibo,
@@ -238,6 +244,7 @@ class ObtenerPrendasRecibosService
                             'completado_corte' => $completadoCorte,
                             'completado_costura' => $completadoCostura,
                             'completado_control_calidad' => $completadoControlCalidad,
+                            'tiene_parciales' => $tieneParciales,
                         ];
                     })->toArray();
                     })(),
@@ -744,6 +751,10 @@ class ObtenerPrendasRecibosService
                             'completado_control_calidad' => $completadoControlCalidad,
                             'es_parcial' => $esParcial,
                             'pedido_parcial_id' => $parcialId,
+                            'tiene_parciales' => \App\Models\ReciboPorPartes::where('pedido_produccion_id', $recibo->pedido_produccion_id)
+                                ->where('tipo_recibo', $recibo->tipo_recibo)
+                                ->where('consecutivo_original', $recibo->consecutivo_actual)
+                                ->exists(),
                         ];
                     })->toArray(),
                     'total_recibos' => $recibosDelTipo->count(),

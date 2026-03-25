@@ -26,6 +26,8 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
     Route::post('/api/completar-proceso/{numeroPedido}', [OperarioController::class, 'completarProceso'])->name('api.completar-proceso');
     Route::post('/api/recibos/{idRecibo}/completar', [OperarioController::class, 'completarRecibo'])->name('api.recibos.completar');
     Route::delete('/api/recibos/{idRecibo}/deshacer', [OperarioController::class, 'deshacerRecibo'])->name('api.recibos.deshacer');
+    Route::delete('/api/parciales/{id}/deshacer', [OperarioController::class, 'deshacerParcial'])->name('api.parciales.deshacer');
+    Route::get('/api/recibos/{idRecibo}/distribucion', [OperarioController::class, 'obtenerDistribucionRecibo'])->name('api.recibos.distribucion');
     Route::get('/debug', [OperarioController::class, 'debug'])->name('debug');
     Route::get('/debug/prendas-recibos', [OperarioController::class, 'debugPrendasRecibos'])->name('debug.prendas-recibos');
 });
@@ -43,7 +45,7 @@ Route::middleware(['auth', 'control-calidad-access'])->prefix('control-calidad')
 // ========================================
 // API ROUTES FOR OPERARIO (PUBLIC - Sin autenticación)
 // ========================================
-Route::prefix('operario')->name('operario.')->middleware([])->group(function () {
+Route::prefix('operario/api')->name('operario.api.')->middleware([])->group(function () {
     Route::get('pedido/{numeroPedido}', [\App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'getPedidoData'])
         ->name('pedido-data');
 });

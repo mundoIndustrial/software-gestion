@@ -77,6 +77,10 @@ Route::middleware(['auth'])->prefix('recibos-novedades')->name('recibos-novedade
     // Eliminar una novedad
     Route::delete('{novedadId}', [RecibosNovedadesController::class, 'destroy'])
         ->name('destroy');
+
+    // Distribuir recibos    
+    Route::post('{pedidoId}/{numeroRecibo}/distribuir-por-modulos', [ReciboCosturaController::class, 'distribuirPorModulos'])
+    ->name('distribuir-por-modulos');    
 });
 
 /**

@@ -1215,6 +1215,18 @@
      * Actualiza el número del recibo en el header según la prenda y proceso actuale
      */
     function actualizarNumeroPrendaHeader() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tipoReciboParam = String(urlParams.get('tipo_recibo') || '').trim().toUpperCase();
+        const consecutivoParcialParam = String(urlParams.get('consecutivo_parcial') || '').trim();
+        if (tipoReciboParam === 'PARCIAL' && consecutivoParcialParam) {
+            const headerElement = document.getElementById('header-numero-recibo');
+            if (headerElement) {
+                headerElement.textContent = '#' + consecutivoParcialParam;
+            }
+            numeroReciboActual = consecutivoParcialParam;
+            return;
+        }
+
         const prendaIdx = window.prendaCarouselIndex || 0;
         const PRENDAS_POR_PAGINA = 1;
         const startIdx = prendaIdx * PRENDAS_POR_PAGINA;
@@ -1537,7 +1549,7 @@
         
         // USAR EL NUEVO ENDPOINT: /api/operario/pedido/{numeroPedido}
         // Retorna exactamente la misma estructura que /pedidos-public/{id}/recibos-datos
-        let apiUrl = '/api/operario/pedido/' + numeroPedido;
+        let apiUrl = '/operario/api/pedido/' + numeroPedido;
         
         // Agregar parámetros a la URL
         const params = new URLSearchParams();
@@ -1546,6 +1558,16 @@
         }
         if (prendaIdParam) {
             params.append('prenda_id', prendaIdParam);
+        }
+        
+        // Agregar TODOS los parámetros disponibles en window.location.search
+        // Esto incluye parcial_id, consecutivo_parcial, etc.
+        const allParams = new URLSearchParams(window.location.search);
+        for (const [key, value] of allParams) {
+            if (key !== 'tipo_recibo' && key !== 'prenda_id') {
+                // Evitar duplicar parámetros que ya fueron agregados
+                params.append(key, value);
+            }
         }
         
         const queryString = params.toString();

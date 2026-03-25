@@ -27,6 +27,26 @@ class SupervisorAccessControl
             return redirect('/operario/dashboard');
         }
 
+        // Bloquear administrador-costura del acceso a /dashboard
+        if ($user && $user->hasRole('administrador-costura')) {
+            return redirect('/operario/dashboard');
+        }
+
+        // Bloquear vista-costura del acceso a /dashboard
+        if ($user && $user->hasRole('vista-costura')) {
+            return redirect('/operario/dashboard');
+        }
+
+        // Bloquear cortador del acceso a /dashboard
+        if ($user && $user->hasRole('cortador')) {
+            return redirect('/operario/dashboard');
+        }
+
+        // Bloquear costurero del acceso a /dashboard
+        if ($user && $user->hasRole('costurero')) {
+            return redirect('/operario/dashboard');
+        }
+
         // Redirigir gestor de EPP a su vista exclusiva
         if ($user && $user->hasRole('gestor_epp')) {
             return redirect()->route('epp.gestion');

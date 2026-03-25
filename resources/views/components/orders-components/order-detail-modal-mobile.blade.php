@@ -388,10 +388,17 @@ window.cargarReciboDinamico = async function(pedidoId, tipoProceso) {
         console.log(' [CARGAR DINAMICO] Procesos disponibles:', window.todosProcesosDisponibles);
         
         // Hacer fetch a la API para obtener datos actualizados
-        const url = `/api/operario/pedido/${pedidoId}`;
+        const url = `/operario/api/pedido/${pedidoId}${window.location.search}`;
         console.log(' [CARGAR DINAMICO] URL API:', url);
+        console.log(' [CARGAR DINAMICO] window.location.search:', window.location.search);
         
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        });
         
         console.log(' [CARGAR DINAMICO] Respuesta HTTP:', {
             ok: response.ok,
@@ -2077,6 +2084,17 @@ window.llenarReciboCosturaMobile = function(data) {
         // ACTUALIZAR NÚMERO DE RECIBO CON EL CONSECUTIVO DEL PROCESO
         // FIX: Usar la prenda actualmente visible en el carousel, no la primera del array
         const numeroPedidoElement = document.getElementById('mobile-numero-pedido');
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tipoReciboParam = String(urlParams.get('tipo_recibo') || '').trim().toUpperCase();
+            const consecutivoParcialParam = String(urlParams.get('consecutivo_parcial') || '').trim();
+            if (numeroPedidoElement && tipoReciboParam === 'PARCIAL' && consecutivoParcialParam) {
+                numeroPedidoElement.textContent = '#' + consecutivoParcialParam;
+                return;
+            }
+        } catch (e) {
+            // noop
+        }
         if (numeroPedidoElement && todasLasPrendas && todasLasPrendas.length > 0) {
             let reciboBuscado = null;
             
