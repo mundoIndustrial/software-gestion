@@ -18,6 +18,7 @@ use App\Services\RegistroOrdenProcessService;
 use App\Services\RegistroOrdenStatsService;
 use App\Services\RegistroOrdenProcessesService;
 use App\Services\RegistroOrdenEnumService;
+use App\Application\Pedidos\Services\PedidoDescriptionService;
 use App\Models\Festivo;
 use App\Services\FestivosColombiaService;
 use App\Models\PedidoAnchoGeneral;
@@ -239,7 +240,7 @@ class RegistroOrdenQueryController extends Controller
             // PASO 1: Intentar completar desde PedidoProduccion
             if ($logoPedido->pedido_id) {
                 try {
-                    $pedidoProd = \App\Models\PedidoProduccion::with('asesora')->find($logoPedido->pedido_id);
+                    $pedidoProd = \App\Models\PedidoProduccion::with('asesora', 'prendas')->find($logoPedido->pedido_id);
                     
                     if ($pedidoProd) {
                         \Log::info(' Encontrado PedidoProduccion, completando datos', [
@@ -264,7 +265,8 @@ class RegistroOrdenQueryController extends Controller
                             \Log::info(' [PASO 1] Fecha completada desde PedidoProduccion', ['fecha' => $logoPedidoArray['created_at']]);
                         }
                         if (empty($logoPedidoArray['descripcion']) && $pedidoProd->descripcion_prendas) {
-                            $logoPedidoArray['descripcion'] = $pedidoProd->descripcion_prendas;
+                            $descriptionService = app(PedidoDescriptionService::class);
+                            $logoPedidoArray['descripcion'] = $descriptionService->generatePrendasDescription($pedidoProd);
                             \Log::info(' [PASO 1] Descripción completada desde PedidoProduccion');
                         }
                     } else {
@@ -2363,29 +2365,67 @@ class RegistroOrdenQueryController extends Controller
         $reciboCreatedAt = $reciboCostura->created_at ?? null;
         $fechaCreacionOrden = $pedidoModel->created_at ?? $pedidoModel->created_at ?? null;
 
+        // DEBUG
+        \Log::warning('[calcularDatosActivacionRecibo] Análisis de fechas:', [
+            'fecha_creacion_orden' => $fechaCreacionOrden,
+            'recibo_created_at' => $reciboCreatedAt,
+            'recibo_tipo' => $reciboCostura->tipo_recibo ?? 'N/A',
+            'recibo_activo' => $reciboCostura->activo ?? 'N/A',
+            'todosConsecutivos' => $consecutivos->map(fn($c) => [
+                'tipo' => $c->tipo_recibo,
+                'activo' => $c->activo,
+                'created_at' => $c->created_at,
+                'updated_at' => $c->updated_at
+            ])->toArray()
+        ]);
+
         // Calcular tiempo transcurrido
         $tiempoTranscurrido = null;
         $diasHabilesActivacion = null;
         if ($fechaCreacionOrden && $reciboCreatedAt) {
             try {
-                $ini = \Carbon\Carbon::parse($fechaCreacionOrden);
-                $fin = \Carbon\Carbon::parse($reciboCreatedAt);
-                $diffMs = max(0, $fin->diffInMilliseconds($ini));
+                // Parsear usando la zona horaria de la app configurada (America/Bogota)
+                $ini = \Carbon\Carbon::createFromFormat(
+                    'Y-m-d H:i:s',
+                    $fechaCreacionOrden,
+                    \config('app.timezone')
+                );
+                $fin = \Carbon\Carbon::createFromFormat(
+                    'Y-m-d H:i:s',
+                    $reciboCreatedAt,
+                    \config('app.timezone')
+                );
+                
+                // Calcular diferencia en segundos (timestamps son más confiables)
+                $diffSeconds = max(0, $fin->getTimestamp() - $ini->getTimestamp());
+                $diffMs = $diffSeconds * 1000;
+                
+                \Log::warning('[calcularDatosActivacionRecibo] Cálculo de tiempo:', [
+                    'ini_string' => $fechaCreacionOrden,
+                    'fin_string' => $reciboCreatedAt,
+                    'timezone' => \config('app.timezone'),
+                    'ini_timestamp' => $ini->getTimestamp(),
+                    'fin_timestamp' => $fin->getTimestamp(),
+                    'diffSeconds' => $diffSeconds,
+                    'diffMs' => $diffMs,
+                    'en_horas_aprox' => $diffMs / 3600000
+                ]);
+                
                 $tiempoTranscurrido = self::formatDurationHuman($diffMs);
                 $diasHabilesActivacion = \App\Services\CalculadorDiasService::calcularDiasHabiles($fechaCreacionOrden, $reciboCreatedAt);
             } catch (\Exception $e) {
-                // silencioso
+                \Log::error('[calcularDatosActivacionRecibo] Error:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             }
         }
 
         return [
             'fecha_creacion_orden' => $fechaCreacionOrden,
             'fecha_creacion_orden_formateada' => $fechaCreacionOrden 
-                ? \Carbon\Carbon::parse($fechaCreacionOrden)->format('d/m/Y H:i') 
+                ? \Carbon\Carbon::parse($fechaCreacionOrden)->format('d/m/Y H:i:s') 
                 : null,
             'fecha_activacion_recibo' => $reciboCreatedAt,
             'fecha_activacion_recibo_formateada' => $reciboCreatedAt 
-                ? \Carbon\Carbon::parse($reciboCreatedAt)->format('d/m/Y H:i') 
+                ? \Carbon\Carbon::parse($reciboCreatedAt)->format('d/m/Y H:i:s') 
                 : null,
             'tiempo_transcurrido' => $tiempoTranscurrido,
             'dias_habiles_activacion' => $diasHabilesActivacion,

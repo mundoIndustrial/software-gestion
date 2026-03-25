@@ -6,7 +6,7 @@ use App\Models\User;
 use App\Models\Talla;
 use App\Models\PedidoProduccion;
 use App\Models\Cliente;
-use App\Domain\Pedidos\Constants\PedidoConstants;
+use App\Domain\Pedidos\PedidoConstants;
 use App\Application\Services\Pedidos\Contracts\CargarDatosCompartidosServiceInterface;
 use App\Application\Services\TimerService;
 use Illuminate\Support\Facades\Log;

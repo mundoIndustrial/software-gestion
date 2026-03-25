@@ -495,7 +495,8 @@
                     @php
                         // Construir descripción con tallas POR PRENDA para el modal
                         $descripcionConTallas = '';
-                        $descripcionBase = $pedido->descripcion_prendas ?? '';
+                        $descriptionService = app(\App\Application\Pedidos\Services\PedidoDescriptionService::class);
+                        $descripcionBase = $descriptionService->generatePrendasDescription($pedido);
                         
                         // VERIFICAR SI ES COTIZACIÓN TIPO REFLECTIVO
                         $esReflectivo = false;

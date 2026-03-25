@@ -163,4 +163,98 @@ class CalculadorDiasService
 
         return $carbon;
     }
+
+    /**
+     * Calcular días hábiles totales desde creación hasta hoy (sin restar 1)
+     * Usa para cálculos absolutos, no para diferencias.
+     * 
+     * @param Carbon|string $fechaInicio
+     * @return int Número de días hábiles desde la fecha
+     */
+    public static function calcularDiasHabilesSinIncluirInicio($fechaInicio): int
+    {
+        if (!$fechaInicio) {
+            return 0;
+        }
+
+        $inicio = $fechaInicio instanceof Carbon ? $fechaInicio : Carbon::parse($fechaInicio);
+        $ahora = Carbon::now();
+
+        // Si las fechas son iguales, retornar 0
+        if ($inicio->format('Y-m-d') === $ahora->format('Y-m-d')) {
+            return 0;
+        }
+
+        $diasHabiles = 0;
+        $festivos = self::obtenerFestivos($inicio->year);
+
+        // Agregar festivos del siguiente año si es necesario
+        if ($ahora->year > $inicio->year) {
+            $festivos = array_merge($festivos, self::obtenerFestivos($ahora->year));
+        }
+
+        $actual = $inicio->copy();
+
+        while ($actual <= $ahora) {
+            // Verificar si no es sábado (6) ni domingo (0)
+            if ($actual->dayOfWeek !== 0 && $actual->dayOfWeek !== 6) {
+                // Verificar si no es festivo
+                if (!in_array($actual->toDateString(), $festivos)) {
+                    $diasHabiles++;
+                }
+            }
+            $actual->addDay();
+        }
+
+        // Restar 1 porque no se cuenta el día de inicio
+        return max(0, $diasHabiles - 1);
+    }
+
+    /**
+     * Validar si un pedido está en retraso
+     * 
+     * @param string $areaActual Área/proceso actual del pedido
+     * @param Carbon|string|null $fechaEstimada Fecha estimada de entrega
+     * @return bool true si está en retraso
+     */
+    public static function estaEnRetraso($areaActual, $fechaEstimada): bool
+    {
+        // Si no tiene fecha estimada, no está en retraso
+        if (!$fechaEstimada) {
+            return false;
+        }
+
+        // Si ya está entregado o despachado, no está en retraso
+        if (in_array($areaActual, ['Entrega', 'Despacho'])) {
+            return false;
+        }
+
+        $fechaEst = $fechaEstimada instanceof Carbon 
+            ? $fechaEstimada->toDateString()
+            : Carbon::parse($fechaEstimada)->toDateString();
+
+        return Carbon::now()->toDateString() > $fechaEst;
+    }
+
+    /**
+     * Calcular días de retraso
+     * 
+     * @param Carbon|string|null $fechaEstimada
+     * @return int Número de días de retraso (0 si no está retrasado)
+     */
+    public static function calcularDiasDeRetraso($fechaEstimada): int
+    {
+        if (!$fechaEstimada) {
+            return 0;
+        }
+
+        $fechaEst = $fechaEstimada instanceof Carbon ? $fechaEstimada : Carbon::parse($fechaEstimada);
+
+        if ($fechaEst->toDateString() >= Carbon::now()->toDateString()) {
+            return 0;
+        }
+
+        $diasRetraso = self::calcularDiasHabiles($fechaEst, Carbon::now());
+        return max(0, $diasRetraso ?? 0);
+    }
 }

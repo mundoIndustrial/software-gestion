@@ -32,7 +32,7 @@ use App\Application\Services\Pedidos\Contracts\ObtenerItemsServiceInterface;
 use App\Application\Services\Pedidos\Contracts\PrepararCrearPedidoServiceInterface;
 use App\Application\Services\Pedidos\Contracts\CargarDatosCompartidosServiceInterface;
 use App\Application\Services\TimerService;
-use App\Domain\Pedidos\Constants\PedidoConstants;
+use App\Domain\Pedidos\PedidoConstants;
 use App\Domain\Prendas\Repositories\TipoPrendaRepository;
 
 /**

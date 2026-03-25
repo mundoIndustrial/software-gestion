@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\DB;
+use App\Application\Pedidos\Services\PedidoDescriptionService;
 
 /**
  * Servicio para transformación y formateo de datos de órdenes
@@ -67,7 +68,8 @@ class RegistroOrdenTransformService
         $ordenArray['encargado_orden'] = $encargadosMap[$orden->numero_pedido] ?? '';
 
         // Agregar descripción de prendas
-        $ordenArray['descripcion_prendas'] = $orden->descripcion_prendas ?? '';
+        $descriptionService = app(PedidoDescriptionService::class);
+        $ordenArray['descripcion_prendas'] = $descriptionService->generatePrendasDescription($orden);
 
         // Mapear nombres de campos largos a cortos para la vista
         $ordenArray['fecha_creacion'] = $ordenArray['created_at'] ?? null;

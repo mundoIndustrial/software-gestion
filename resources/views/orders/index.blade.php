@@ -63,7 +63,8 @@
                             @php
                                 // Construir descripción con tallas POR PRENDA para el modal
                                 $descripcionConTallas = '';
-                                $descripcionBase = $orden->descripcion_prendas ?? '';
+                                $descriptionService = app(\App\Application\Pedidos\Services\PedidoDescriptionService::class);
+                                $descripcionBase = $descriptionService->generatePrendasDescription($orden);
                                 
                                 // VERIFICAR SI ES COTIZACIÓN TIPO REFLECTIVO
                                 $esReflectivo = false;
@@ -184,8 +185,8 @@
                                     <div class="cell-content">
                                         <select class="estado-dropdown estado-{{ str_replace(['_', ' '], '-', strtolower(trim($orden->estado ?? 'pendiente'))) }}" data-orden-id="{{ $orden->id }}">
                                             @php
-                                                $estadosDB = \App\Models\PedidoProduccion::ESTADOS;
-                                                $estadosDisplay = \App\Models\PedidoProduccion::getEstadosDisplay();
+                                                $estadosDB = \App\Domain\Pedidos\PedidoConstants::ESTADOS;
+                                                $estadosDisplay = \App\Domain\Pedidos\PedidoConstants::getEstadosDisplay();
                                                 $estadoMapped = array_combine($estadosDB, $estadosDisplay);
                                             @endphp
                                             @foreach($estadoMapped as $estado => $display)
@@ -200,7 +201,7 @@
                                     <div class="cell-content">
                                         <select class="dia-entrega-dropdown" data-orden-id="{{ $orden->numero_pedido }}">
                                             <option value="">Seleccionar</option>
-                                            @foreach(\App\Models\PedidoProduccion::DIAS_ENTREGA as $dia)
+                                            @foreach(\App\Domain\Pedidos\PedidoConstants::DIAS_ENTREGA as $dia)
                                                 <option value="{{ $dia }}" {{ $orden->dia_de_entrega == $dia ? 'selected' : '' }}>{{ $dia }} días</option>
                                             @endforeach
                                         </select>

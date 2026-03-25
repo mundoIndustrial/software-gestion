@@ -145,6 +145,20 @@ class AppServiceProvider extends ServiceProvider
                 new \Intervention\Image\Drivers\Gd\Driver()
             );
         });
+
+        // Contratos de infraestructura (ports) para UseCases
+        $this->app->bind(
+            \App\Application\Shared\Contracts\AuditRepositoryInterface::class,
+            \App\Infrastructure\Services\NewsAuditRepository::class
+        );
+        $this->app->bind(
+            \App\Application\Shared\Contracts\TransactionManagerInterface::class,
+            \App\Infrastructure\Services\EloquentTransactionManager::class
+        );
+        $this->app->bind(
+            \App\Application\Shared\Contracts\OrdenEventDispatcherInterface::class,
+            \App\Infrastructure\Services\BroadcastOrdenEventDispatcher::class
+        );
     }
 
     /**

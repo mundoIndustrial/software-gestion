@@ -3,6 +3,7 @@
 namespace App\Application\UseCases\Orders;
 
 use App\Models\PedidoProduccion;
+use App\Application\Pedidos\Services\PedidoDescriptionService;
 
 /**
  * UseCase: Obtener detalles de una orden
@@ -19,7 +20,7 @@ class GetOrderUseCase
      */
     public function execute(int $numeroPedido): array
     {
-        $order = PedidoProduccion::with('asesora')
+        $order = PedidoProduccion::with('asesora', 'prendas')
             ->where('numero_pedido', $numeroPedido)
             ->firstOrFail();
 
@@ -31,12 +32,14 @@ class GetOrderUseCase
      */
     private function formatOrderData(PedidoProduccion $order): array
     {
+        $descriptionService = app(PedidoDescriptionService::class);
+        
         $orderData = [
             'id' => $order->id,
             'numero_pedido' => $order->numero_pedido,
             'cliente' => $order->cliente,
             'created_at' => $order->created_at,
-            'descripcion_prendas' => $order->descripcion_prendas ?? '',
+            'descripcion_prendas' => $descriptionService->generatePrendasDescription($order),
             'estado' => $order->estado,
             'forma_de_pago' => $order->forma_de_pago ?? '-',
             'area' => $order->area,

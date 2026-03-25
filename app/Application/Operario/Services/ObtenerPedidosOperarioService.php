@@ -6,6 +6,7 @@ use App\Application\Operario\DTOs\ObtenerPedidosOperarioDTO;
 use App\Models\User;
 use App\Models\PedidoProduccion;
 use Illuminate\Support\Collection;
+use App\Application\Pedidos\Services\PedidoDescriptionService;
 
 /**
  * Service: ObtenerPedidosOperarioService
@@ -294,11 +295,15 @@ class ObtenerPedidosOperarioService
 
             $fechaInicioProceso = $procesoArea?->fecha_inicio?->format('d/m/Y') ?? '-';
 
+            // Generar descripción completa usando el servicio
+            $descriptionService = app(PedidoDescriptionService::class);
+            $descripcionCompleta = $descriptionService->generatePrendasDescription($pedido) ?: $descripcionPrendas ?: 'Sin descripción';
+
             return [
                 'numero_pedido' => $pedido->numero_pedido,
                 'cliente' => $pedido->cliente,
                 'descripcion' => $descripcionPrendas ?: 'Sin descripción',
-                'descripcion_prendas' => $pedido->descripcion_prendas ?? $descripcionPrendas ?: 'Sin descripción',
+                'descripcion_prendas' => $descripcionCompleta,
                 'cantidad' => $totalPrendas,
                 'estado' => $this->obtenerEstadoActual($pedido->numero_pedido, $tipoOperario),
                 'area' => $this->obtenerAreaActual($pedido->numero_pedido, $tipoOperario),

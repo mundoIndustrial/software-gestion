@@ -5,6 +5,7 @@ namespace App\Infrastructure\QueryServices;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\Paginator;
 use App\Models\PedidoProduccion;
+use App\Domain\Pedidos\PedidoConstants;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -23,8 +24,8 @@ class OrderQueryService
     public function getFilterOptions(): array
     {
         return [
-            'estados' => PedidoProduccion::ESTADOS,
-            'dias_entrega' => PedidoProduccion::DIAS_ENTREGA,
+            'estados' => PedidoConstants::ESTADOS,
+            'dias_entrega' => PedidoConstants::DIAS_ENTREGA,
             'areas' => $this->getDistinctAreas(),
             'clientes' => $this->getDistinctClientes(),
             'asesores' => $this->getDistinctAsesores(),
@@ -39,9 +40,9 @@ class OrderQueryService
     public function getColumnFilterOptions(string $column, string $search = '', int $page = 1, int $limit = 25): array
     {
         $options = match ($column) {
-            'estado' => PedidoProduccion::ESTADOS,
+            'estado' => PedidoConstants::ESTADOS,
             'area' => $this->getDistinctAreas(),
-            'dia_entrega' => PedidoProduccion::DIAS_ENTREGA,
+            'dia_entrega' => PedidoConstants::DIAS_ENTREGA,
             'pedido' => $this->searchPedidoNumbers($search),
             'cliente' => $this->searchClientes($search),
             'asesor' => $this->getDistinctAsesores(),
