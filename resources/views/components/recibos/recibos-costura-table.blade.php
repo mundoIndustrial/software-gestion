@@ -428,9 +428,28 @@
                             @endif
                         </td>
                         
-                        <!-- Fecha estimada entrega (No aplica para recibos) -->
+                        <!-- Fecha estimada entrega -->
                         <td>
-                            <span class="fecha-estimada-span text-muted">-</span>
+                            @if(isset($recibo['fecha_estimada_de_entrega']) && !empty($recibo['fecha_estimada_de_entrega']) && $recibo['fecha_estimada_de_entrega'] !== 'null')
+                                <span class="fecha-estimada-span">
+                                    @php
+                                        $fecha = $recibo['fecha_estimada_de_entrega'];
+                                        // Si ya tiene formato d/m/Y, mostrar tal cual
+                                        if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $fecha)) {
+                                            echo $fecha;
+                                        } else {
+                                            // Si no, intentar parsear y formatear
+                                            try {
+                                                echo \Carbon\Carbon::parse($fecha)->format('d/m/Y');
+                                            } catch (\Exception $e) {
+                                                echo '-';
+                                            }
+                                        }
+                                    @endphp
+                                </span>
+                            @else
+                                <span class="fecha-estimada-span text-muted">-</span>
+                            @endif
                         </td>
                         
                         <!-- Encargado orden (Proceso más reciente) -->

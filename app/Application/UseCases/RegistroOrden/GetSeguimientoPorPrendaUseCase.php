@@ -3,7 +3,7 @@
 namespace App\Application\UseCases\RegistroOrden;
 
 use App\Application\Pedidos\Services\PrendaPedidoQuantityCalculator;
-use App\Infrastructure\Repositories\PedidoProduccionRepository;
+use App\Infrastructure\Repositories\PedidoProduccionTrackingRepository;
 use App\Infrastructure\Repositories\ConsecutivosRecibosRepository;
 use App\Models\PrendaPedido;
 use App\Models\ProcesoPrenda;
@@ -18,12 +18,12 @@ use App\Services\CalculadorDiasService;
  */
 class GetSeguimientoPorPrendaUseCase
 {
-    private PedidoProduccionRepository $pedidoRepository;
+    private PedidoProduccionTrackingRepository $pedidoRepository;
     private ConsecutivosRecibosRepository $consecutivosRepository;
     private PrendaPedidoQuantityCalculator $prendaQuantityCalculator;
 
     public function __construct(
-        PedidoProduccionRepository $pedidoRepository,
+        PedidoProduccionTrackingRepository $pedidoRepository,
         ConsecutivosRecibosRepository $consecutivosRepository,
         PrendaPedidoQuantityCalculator $prendaQuantityCalculator
     ) {
@@ -258,11 +258,19 @@ class GetSeguimientoPorPrendaUseCase
         $resultado = [];
 
         foreach ($procesos as $proceso) {
+            // Obtener nombre del encargado si existe
+            $encargadoNombre = '';
+            if (!empty($proceso->encargado)) {
+                $encargado = \App\Models\User::find($proceso->encargado);
+                $encargadoNombre = $encargado ? $encargado->name : '';
+            }
+
             $resultado[$proceso->proceso] = [
                 'id' => $proceso->id,
                 'area' => $proceso->proceso,
                 'estado' => $proceso->estado_proceso,
-                'encargado' => $proceso->encargado,
+                'encargado' => $proceso->encargado, // ID
+                'encargado_nombre' => $encargadoNombre, // Nombre
                 'fecha_inicio' => $proceso->fecha_inicio,
                 'fecha_fin' => $proceso->fecha_fin,
                 'fecha_de_asignacion_encargado' => $proceso->fecha_de_asignacion_encargado,

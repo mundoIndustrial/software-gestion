@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
  * 
  * Los métodos aquí evitan que PedidoProduccion.php tenga queries explícitas.
  */
-class PedidoProduccionRepository
+class PedidoProduccionTrackingRepository
 {
     /**
      * Obtener el área/proceso actual del pedido

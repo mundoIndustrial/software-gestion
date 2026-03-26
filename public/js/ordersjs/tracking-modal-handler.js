@@ -608,13 +608,14 @@ function initTrackingModalListeners() {
     });
 
     const { id: procesoId, name: areaName } = orderState.getProcessToDelete();
+    const prendaIdToUpdate = orderState.getCurrentPrenda()?.id;
     
     try {
       await buttonMgr.executeAsync(async () => {
         const result = await processService.deleteProcess(procesoId, {
           areaName,
           orderId: orderState.getOrderId(),
-          prendaId: orderState.getCurrentPrenda()?.id
+          prendaId: prendaIdToUpdate
         });
 
         if (!result.success) {
@@ -622,6 +623,18 @@ function initTrackingModalListeners() {
         }
 
         orderState.clearProcessToDelete();
+        
+        // Re-renderizar el timeline después de eliminar exitosamente
+        // Obtener la prenda actualizada (la eliminación ya actualizó los datos en orderState)
+        const updatedPrenda = orderState.getCurrentPrenda();
+        if (updatedPrenda) {
+          console.log('[executeDeleteProcess] Re-renderizando timeline después de eliminación');
+          renderPrendaTrackingTimeline(updatedPrenda);
+        }
+        
+        // Actualizar la tabla de recibos-costura con el nuevo área
+        console.log('[executeDeleteProcess] Actualizando tabla de recibos');
+        await actualizarAreaEnTablaRecibos();
       });
     } catch (error) {
       console.error('[executeDeleteProcess] Error:', error);
@@ -638,10 +651,14 @@ function initTrackingModalListeners() {
 
       const pedidoId = orderState.getOrderId();
       const prendaId = orderState.getCurrentPrenda()?.id || null;
-      const numeroRecibo = orderState.getConsecutivoCosturaData()?.consecutivo || null;
+      // Intentar obtener numeroRecibo desde múltiples fuentes
+      const numeroRecibo = orderState.getConsecutivoCosturaData()?.consecutivo 
+                          || orderState.getCurrentPrenda()?.numero_recibo_costura
+                          || window.currentOrderData?.prendas?.find(p => p.id === prendaId)?.numero_recibo_costura
+                          || null;
 
       if (!pedidoId || !prendaId || !numeroRecibo) {
-        console.warn('[actualizarAreaEnTablaRecibos] Datos insuficientes para refrescar fila', {
+        console.log('[actualizarAreaEnTablaRecibos] Datos insuficientes para refrescar fila (esto es normal si no hay recibo de costura)', {
           pedidoId,
           prendaId,
           numeroRecibo

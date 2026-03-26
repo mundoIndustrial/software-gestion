@@ -178,6 +178,9 @@ export class TrackingTimelineController {
       || this.orderState.getConsecutivoCosturaData()?.encargado
       || null;
 
+    const encargadoNombreActual = prenda?.ultimo_proceso_encargado_nombre
+      || null;
+
     if (!tieneProcesoReal || !areaActual) {
       return;
     }
@@ -211,6 +214,7 @@ export class TrackingTimelineController {
       fecha_inicio: fechaInicioReal,
       fecha_fin: fechaFinReal,
       encargado: encargadoActual || 'No asignado',
+      encargado_nombre: encargadoNombreActual,
       observaciones: prenda?.ultimo_proceso_observaciones || '',
       codigo_referencia: prenda?.ultimo_proceso_codigo_referencia || null,
       dias_duracion: prenda?.ultimo_proceso_dias_duracion || null,
@@ -370,7 +374,7 @@ export class TrackingTimelineController {
           ${metadata.shouldHideEncargado || data.hide_encargado ? '' : `
           <div class="tracking-area-v2-field">
             <div class="tracking-area-v2-label">Encargado:</div>
-            <div class="tracking-area-v2-pill">${data.encargado || '---'}</div>
+            <div class="tracking-area-v2-pill">${data.encargado_nombre || data.encargado || '---'}</div>
           </div>
           `}
           <div class="tracking-area-v2-field">

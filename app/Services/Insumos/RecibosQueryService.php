@@ -179,7 +179,7 @@ class RecibosQueryService
                 'pedido_estado' => $recibo->pedido_estado,
                 'created_at' => $fechaInicioOrden,
                 'dia_de_entrega' => $recibo->dia_de_entrega,
-                'fecha_estimada_de_entrega' => $recibo->fecha_estimada_de_entrega,
+                'fecha_estimada_de_entrega' => !empty($recibo->fecha_estimada_de_entrega) ? \Carbon\Carbon::parse($recibo->fecha_estimada_de_entrega)->format('d/m/Y') : null,
                 'dias_calculados' => $diasCalculados,
                 'pedido_produccion_id' => $recibo->pedido_produccion_id,
                 'prenda_id' => $recibo->prenda_id,

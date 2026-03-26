@@ -4,18 +4,15 @@ namespace App\Domain\Pedidos\Repositories;
 
 use App\Domain\Pedidos\ReadModels\PedidoBorradorRef;
 use App\Domain\Pedidos\ReadModels\PedidoEppRef;
+use App\Domain\Pedidos\ReadModels\PaginatedPedidosResult;
 use App\Domain\Pedidos\ReadModels\PedidoNumeroRef;
 use App\Domain\Pedidos\ReadModels\PedidoPrendaRef;
-use App\Models\PedidoProduccion;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 interface PedidoProduccionReadRepository
 {
     public function findByNumeroPedido(string $numeroPedido): ?PedidoNumeroRef;
 
-    public function obtenerPorId(int $id): ?PedidoProduccion;
-
-    public function obtenerPedidosAsesor(array $filtros = []): LengthAwarePaginator;
+    public function obtenerPedidosAsesor(array $filtros = []): PaginatedPedidosResult;
 
     public function perteneceAlAsesor(int $pedidoId, int $asesorId): bool;
 

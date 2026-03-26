@@ -2,7 +2,7 @@
 
 namespace App\Application\UseCases\RegistroOrden;
 
-use App\Infrastructure\Repositories\PedidoProduccionRepository;
+use App\Infrastructure\Repositories\PedidoProduccionTrackingRepository;
 use App\Infrastructure\Repositories\ConsecutivosRecibosRepository;
 use App\Models\ProcesoPrenda;
 use App\Exceptions\GetConsecutivoCosturaException;
@@ -18,11 +18,11 @@ use App\Exceptions\GetConsecutivoCosturaException;
  */
 class GetConsecutivoCosturaUseCase
 {
-    private PedidoProduccionRepository $pedidoRepository;
+    private PedidoProduccionTrackingRepository $pedidoRepository;
     private ConsecutivosRecibosRepository $consecutivosRepository;
 
     public function __construct(
-        PedidoProduccionRepository $pedidoRepository,
+        PedidoProduccionTrackingRepository $pedidoRepository,
         ConsecutivosRecibosRepository $consecutivosRepository
     ) {
         $this->pedidoRepository = $pedidoRepository;

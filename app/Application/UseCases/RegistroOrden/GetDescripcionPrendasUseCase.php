@@ -2,7 +2,7 @@
 
 namespace App\Application\UseCases\RegistroOrden;
 
-use App\Infrastructure\Repositories\PedidoProduccionRepository;
+use App\Infrastructure\Repositories\PedidoProduccionTrackingRepository;
 use App\Exceptions\GetDescripcionPrendasException;
 
 /**
@@ -16,9 +16,9 @@ use App\Exceptions\GetDescripcionPrendasException;
  */
 class GetDescripcionPrendasUseCase
 {
-    private PedidoProduccionRepository $pedidoRepository;
+    private PedidoProduccionTrackingRepository $pedidoRepository;
 
-    public function __construct(PedidoProduccionRepository $pedidoRepository)
+    public function __construct(PedidoProduccionTrackingRepository $pedidoRepository)
     {
         $this->pedidoRepository = $pedidoRepository;
     }

@@ -247,12 +247,10 @@ function updateStats(costuraData = [], corteData = []) {
 
 // Configurar listeners de tiempo real
 function setupRealtimeListeners() {
-    if (!globalThis.Echo) {
-
+    if (!globalThis.Echo || typeof globalThis.Echo.channel !== 'function') {
+        console.warn('[Entregas] Echo no está disponible o no tiene método channel');
         return;
     }
-
-
 
     const channel = globalThis.Echo.channel(`entregas.${TIPO}`);
     

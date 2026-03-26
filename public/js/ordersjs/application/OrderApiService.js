@@ -355,6 +355,17 @@ class OrderApiService {
   }
 
   /**
+   * Método estático para eliminar proceso
+   * Alias de deleteProceso para compatibilidad con DI
+   * 
+   * @param {Number} procesoId - ID del proceso
+   * @returns {Promise<Object>} Respuesta del servidor
+   */
+  static async delete(procesoId) {
+    return this.deleteProceso(procesoId);
+  }
+
+  /**
    * Actualizar un proceso existente
    * Use Case: "Modificar estado/encargado/área de un proceso"
    * 

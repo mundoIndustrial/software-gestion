@@ -4,14 +4,15 @@ namespace App\Infrastructure\Pedidos\Persistence\Eloquent;
 
 use App\Application\Pedidos\Services\FacturaPedidoService;
 use App\Application\Pedidos\Services\ReciboPedidoService;
+use App\Domain\Pedidos\ReadModels\PaginatedPedidosResult;
 use App\Domain\Pedidos\ReadModels\PedidoBorradorRef;
 use App\Domain\Pedidos\ReadModels\PedidoEppRef;
+use App\Domain\Pedidos\ReadModels\PedidoProduccionListItem;
 use App\Domain\Pedidos\ReadModels\PedidoNumeroRef;
 use App\Domain\Pedidos\ReadModels\PedidoPrendaRef;
 use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use App\Infrastructure\Pedidos\Persistence\Eloquent\Concerns\GestionaTallasRelacional;
 use App\Models\PedidoProduccion;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class EloquentPedidoProduccionRepository implements PedidoProduccionReadRepository
 {
@@ -39,30 +40,11 @@ class EloquentPedidoProduccionRepository implements PedidoProduccionReadReposito
         );
     }
 
-    public function obtenerPorId(int $id): ?PedidoProduccion
+    public function obtenerPedidosAsesor(array $filtros = []): PaginatedPedidosResult
     {
-        return PedidoProduccion::with([
-            'cotizacion.cliente',
-            'cotizacion.tipoCotizacion',
-            'prendas.variantes.tipoManga',
-            'prendas.variantes.tipoBrocheBoton',
-            'prendas.fotos',
-            'prendas.fotosTelas',
-            'prendas.coloresTelas.color',
-            'prendas.coloresTelas.tela',
-            'prendas.coloresTelas.fotos',
-            'prendas.tallas',
-            'prendas.tallas.coloresAsignados',
-            'prendas.procesos',
-            'prendas.procesos.tipoProceso',
-            'prendas.procesos.imagenes',
-            'prendas.procesos.tallas',
-            'epps.imagenes',
-        ])->find($id);
-    }
+        $page = max(1, (int) ($filtros['page'] ?? 1));
+        $perPage = max(1, (int) ($filtros['per_page'] ?? 15));
 
-    public function obtenerPedidosAsesor(array $filtros = []): LengthAwarePaginator
-    {
         $query = PedidoProduccion::query()
             ->select([
                 'pedidos_produccion.*',
@@ -87,7 +69,33 @@ class EloquentPedidoProduccionRepository implements PedidoProduccionReadReposito
             $query->whereDate('created_at', '<=', $filtros['fecha_hasta']);
         }
 
-        return $query->orderBy('created_at', 'desc')->paginate(15);
+        $paginator = $query
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        $items = $paginator->getCollection()
+            ->map(fn(PedidoProduccion $pedido) => new PedidoProduccionListItem(
+                id: (int) $pedido->id,
+                numero_pedido: $pedido->numero_pedido !== null ? (int) $pedido->numero_pedido : null,
+                cliente: $pedido->cliente,
+                estado: $pedido->estado,
+                area: $pedido->area,
+                novedades: $pedido->novedades,
+                forma_pago: $pedido->forma_de_pago,
+                fecha_creacion: optional($pedido->created_at)?->format('Y-m-d H:i:s'),
+                fecha_estimada: optional($pedido->fecha_estimada_de_entrega)?->format('Y-m-d H:i:s'),
+                asesor_id: $pedido->asesor_id !== null ? (int) $pedido->asesor_id : null,
+            ))
+            ->all();
+
+        return new PaginatedPedidosResult(
+            items: $items,
+            total: $paginator->total(),
+            perPage: $paginator->perPage(),
+            currentPage: $paginator->currentPage(),
+            path: $paginator->path(),
+            query: $filtros,
+        );
     }
 
     public function perteneceAlAsesor(int $pedidoId, int $asesorId): bool

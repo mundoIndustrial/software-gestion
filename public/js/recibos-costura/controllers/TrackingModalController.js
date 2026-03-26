@@ -385,6 +385,20 @@ class TrackingModalController {
                 window.currentPrendaData.seguimientos_por_area = {};
             }
             
+            // Cargar número de recibo (consecutivo) para mostrar en el modal
+            try {
+                if (typeof OrderApiService !== 'undefined' && window.currentPrendaData.id && pedidoId) {
+                    const consecutivoData = await OrderApiService.loadConsecutivoCostura(pedidoId, window.currentPrendaData.id);
+                    if (consecutivoData && consecutivoData.consecutivo) {
+                        window.currentPrendaData.recibo_display = consecutivoData.consecutivo;
+                        console.log('[TrackingModalController] Número de recibo agregado a prenda:', consecutivoData.consecutivo);
+                    }
+                }
+            } catch (error) {
+                console.warn('[TrackingModalController] No se pudo cargar el número de recibo:', error);
+                window.currentPrendaData.recibo_display = 'Sin recibo';
+            }
+            
             if (typeof showPrendaTracking === 'function' && window.currentPrendaData) {
                 showPrendaTracking(window.currentPrendaData);
             }

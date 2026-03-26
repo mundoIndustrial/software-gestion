@@ -3,7 +3,9 @@
 namespace App\Services\Insumos;
 
 use App\Repositories\Insumos\MaterialesRepository;
+use App\Models\MaterialesOrdenInsumos;
 use App\Models\PedidoProduccion;
+use App\Models\PrendaPedido;
 use App\Domain\Insumos\Services\CalculadorDemoraService;
 use Illuminate\Support\Collection;
 
@@ -146,6 +148,227 @@ class MaterialesService
                 'critico' => 0,
             ];
         }
+    }
+
+    /**
+     * Guardar o eliminar materiales detallados por nombre para un pedido.
+     */
+    public function guardarMaterialesDetallados(string $numeroPedido, array $materiales, ?int $prendaId = null): array
+    {
+        $orden = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+
+        $materialesGuardados = 0;
+        $materialesEliminados = 0;
+
+        foreach ($materiales as $material) {
+            $isRecibido = ($material['recibido'] ?? false) === true
+                || ($material['recibido'] ?? null) === 'true'
+                || ($material['recibido'] ?? null) === 1
+                || ($material['recibido'] ?? null) === '1';
+
+            if ($isRecibido) {
+                $matchCriteria = [
+                    'numero_pedido' => $orden->numero_pedido,
+                    'nombre_material' => $material['nombre'],
+                ];
+
+                if ($prendaId) {
+                    $matchCriteria['prenda_id'] = $prendaId;
+                }
+
+                MaterialesOrdenInsumos::updateOrCreate(
+                    $matchCriteria,
+                    [
+                        'prenda_id' => $prendaId,
+                        'fecha_orden' => $material['fecha_orden'] ?? null,
+                        'fecha_pedido' => $material['fecha_pedido'] ?? null,
+                        'fecha_pago' => $material['fecha_pago'] ?? null,
+                        'fecha_llegada' => $material['fecha_llegada'] ?? null,
+                        'fecha_despacho' => $material['fecha_despacho'] ?? null,
+                        'observaciones' => $material['observaciones'] ?? null,
+                        'recibido' => true,
+                    ]
+                );
+
+                $materialesGuardados++;
+                continue;
+            }
+
+            $deleteCriteria = [
+                'numero_pedido' => $orden->numero_pedido,
+                'nombre_material' => $material['nombre'],
+            ];
+
+            if ($prendaId) {
+                $deleteCriteria['prenda_id'] = $prendaId;
+            }
+
+            $deleted = MaterialesOrdenInsumos::where($deleteCriteria)->delete();
+
+            if ($deleted > 0) {
+                $materialesEliminados++;
+            }
+        }
+
+        $mensajes = [];
+        if ($materialesGuardados > 0) {
+            $mensajes[] = "Se guardaron {$materialesGuardados} material(es)";
+        }
+        if ($materialesEliminados > 0) {
+            $mensajes[] = "Se eliminaron {$materialesEliminados} material(es)";
+        }
+
+        return [
+            'success' => true,
+            'message' => !empty($mensajes) ? implode(' y ', $mensajes) . ' correctamente' : 'Sin cambios',
+        ];
+    }
+
+    /**
+     * Eliminar un material por nombre.
+     */
+    public function eliminarMaterialPorNombre(string $numeroPedido, string $nombreMaterial, ?int $prendaId = null): array
+    {
+        $orden = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+
+        $criteria = [
+            'numero_pedido' => $orden->numero_pedido,
+            'nombre_material' => $nombreMaterial,
+        ];
+
+        if ($prendaId) {
+            $criteria['prenda_id'] = $prendaId;
+        }
+
+        $deleted = MaterialesOrdenInsumos::where($criteria)->delete();
+
+        return [
+            'success' => $deleted > 0,
+            'message' => $deleted > 0 ? 'Material eliminado correctamente' : 'Material no encontrado',
+        ];
+    }
+
+    /**
+     * Obtener materiales transformados para un pedido.
+     */
+    public function obtenerMaterialesPedido(string $numeroPedido, ?int $prendaId = null): array
+    {
+        PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+
+        $query = MaterialesOrdenInsumos::where('numero_pedido', $numeroPedido);
+        if ($prendaId) {
+            $query->where('prenda_id', $prendaId);
+        }
+
+        $materiales = $query->get();
+        $nombrePrenda = null;
+
+        if ($prendaId) {
+            $prenda = PrendaPedido::find($prendaId);
+            $nombrePrenda = $prenda ? $prenda->nombre_prenda : null;
+        }
+
+        return [
+            'success' => true,
+            'materiales' => $materiales->map(function ($material) {
+                return [
+                    'id' => $material->id,
+                    'nombre_material' => $material->nombre_material,
+                    'recibido' => $material->recibido,
+                    'prenda_id' => $material->prenda_id,
+                    'fecha_orden' => $material->fecha_orden ? $material->fecha_orden->format('Y-m-d') : null,
+                    'fecha_pedido' => $material->fecha_pedido ? $material->fecha_pedido->format('Y-m-d') : null,
+                    'fecha_pago' => $material->fecha_pago ? $material->fecha_pago->format('Y-m-d') : null,
+                    'fecha_llegada' => $material->fecha_llegada ? $material->fecha_llegada->format('Y-m-d') : null,
+                    'fecha_despacho' => $material->fecha_despacho ? $material->fecha_despacho->format('Y-m-d') : null,
+                    'dias_demora' => $material->dias_demora,
+                    'observaciones' => $material->observaciones,
+                ];
+            }),
+            'nombre_prenda' => $nombrePrenda,
+        ];
+    }
+
+    /**
+     * Registrar notificaciones como leidas para el usuario actual.
+     */
+    public function marcarTodasNotificacionesLeidas(int $userId): array
+    {
+        $ordenesPendientes = PedidoProduccion::whereNull('aprobado_por_supervisor_en')
+            ->whereNotNull('cotizacion_id')
+            ->where('estado', '!=', 'Anulada')
+            ->pluck('id')
+            ->toArray();
+
+        session(['viewed_ordenes_' . $userId => $ordenesPendientes]);
+
+        return [
+            'success' => true,
+            'message' => 'Notificaciones marcadas como leídas',
+        ];
+    }
+
+    /**
+     * Guardar observaciones de un material.
+     */
+    public function guardarObservaciones(string $numeroPedido, string $nombreMaterial, ?string $observaciones): array
+    {
+        $material = MaterialesOrdenInsumos::where('numero_pedido', $numeroPedido)
+            ->where('nombre_material', $nombreMaterial)
+            ->first();
+
+        if (!$material) {
+            return [
+                'success' => false,
+                'error' => 'Material no encontrado',
+            ];
+        }
+
+        $material->update([
+            'observaciones' => $observaciones,
+        ]);
+
+        return [
+            'success' => true,
+            'message' => 'Observaciones guardadas exitosamente',
+            'material_id' => $material->id,
+            'observaciones' => $material->observaciones,
+        ];
+    }
+
+    /**
+     * Obtener prendas simples de un pedido por numero.
+     */
+    public function obtenerPrendasPedido(string $numeroPedido): array
+    {
+        $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+
+        return [
+            'success' => true,
+            'prendas' => $pedido->prendas()
+                ->select('id', 'nombre_prenda', 'descripcion')
+                ->get(),
+        ];
+    }
+
+    /**
+     * Obtener el recibo activo mas reciente de una prenda.
+     */
+    public function obtenerReciboPrenda(string $numeroPedido, int $prendaId): array
+    {
+        $pedido = PedidoProduccion::find($numeroPedido)
+            ?? PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+
+        $recibo = \App\Models\ConsecutivoReciboPedido::where('pedido_produccion_id', $pedido->id)
+            ->where('prenda_id', $prendaId)
+            ->where('activo', 1)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        return [
+            'success' => $recibo !== null,
+            'recibo' => $recibo?->consecutivo_actual,
+        ];
     }
 
     /**

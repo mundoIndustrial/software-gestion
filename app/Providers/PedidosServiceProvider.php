@@ -13,7 +13,7 @@ use App\Application\Pedidos\Despacho\Services\DespachoEstadoService;
 use App\Application\Pedidos\Despacho\Services\DespachoValidadorService;
 use App\Domain\Pedidos\Despacho\Services\DesparChoParcialesPersistenceService;
 use App\Domain\Pedidos\Despacho\Repositories\DesparChoParcialesRepository;
-use App\Infrastructure\Repositories\PedidoProduccionRepository;
+use App\Infrastructure\Repositories\PedidoProduccionTrackingRepository;
 use App\Infrastructure\Repositories\ConsecutivosRecibosRepository;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Infrastructure\Services\Pedidos\ImagenRelocalizadorService;
@@ -148,7 +148,7 @@ class PedidosServiceProvider extends ServiceProvider
         // Registrar GetSeguimientoPorPrendaUseCase con repositorios
         $this->app->bind(GetSeguimientoPorPrendaUseCase::class, function ($app) {
             return new GetSeguimientoPorPrendaUseCase(
-                $app->make(PedidoProduccionRepository::class),
+                $app->make(PedidoProduccionTrackingRepository::class),
                 $app->make(ConsecutivosRecibosRepository::class),
                 $app->make(\App\Application\Pedidos\Services\PrendaPedidoQuantityCalculator::class)
             );
@@ -157,14 +157,14 @@ class PedidosServiceProvider extends ServiceProvider
         // Registrar GetDescripcionPrendasUseCase con repositorio
         $this->app->bind(GetDescripcionPrendasUseCase::class, function ($app) {
             return new GetDescripcionPrendasUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoProduccionTrackingRepository::class)
             );
         });
 
         // Registrar GetConsecutivoCosturaUseCase con repositorios
         $this->app->bind(GetConsecutivoCosturaUseCase::class, function ($app) {
             return new GetConsecutivoCosturaUseCase(
-                $app->make(PedidoProduccionRepository::class),
+                $app->make(PedidoProduccionTrackingRepository::class),
                 $app->make(ConsecutivosRecibosRepository::class)
             );
         });

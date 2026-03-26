@@ -5,7 +5,7 @@ namespace App\Application\SupervisorPedidos\Services;
 use App\Application\Pedidos\Services\PrendaPedidoDescriptionFormatter;
 use App\Application\Pedidos\Services\PrendaPedidoQuantityCalculator;
 use App\Application\Pedidos\Services\PedidoProduccionCalculatorService;
-use App\Infrastructure\Repositories\PedidoProduccionRepository;
+use App\Infrastructure\Repositories\PedidoProduccionTrackingRepository;
 use App\Models\PedidoProduccion;
 use App\Services\CalculadorDiasService;
 
@@ -18,7 +18,7 @@ use App\Services\CalculadorDiasService;
 class PedidoProduccionReadService
 {
     public function __construct(
-        private PedidoProduccionRepository $repository,
+        private PedidoProduccionTrackingRepository $repository,
         private PedidoProduccionCalculatorService $calculatorService,
         private PrendaPedidoDescriptionFormatter $prendaDescriptionFormatter,
         private PrendaPedidoQuantityCalculator $prendaQuantityCalculator

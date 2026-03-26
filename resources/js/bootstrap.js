@@ -129,9 +129,8 @@ function initializeEcho() {
             wsErrorMessage: 'WebSocket connection failed',
         });
         
-
-        
-        // Guardar la instancia en una variable separada, NO reemplazar el constructor
+        // Guardar la instancia en window.Echo (no como constructor)
+        window.Echo = echoInstance;
         window.EchoInstance = echoInstance;
         
 

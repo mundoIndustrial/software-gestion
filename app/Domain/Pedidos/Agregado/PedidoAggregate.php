@@ -6,7 +6,6 @@ use App\Domain\Shared\AggregateRoot;
 use App\Domain\Pedidos\ValueObjects\NumeroPedido;
 use App\Domain\Pedidos\ValueObjects\Estado;
 use App\Domain\Pedidos\Entities\PrendaPedido;
-use Illuminate\Support\Collection;
 
 /**
  * Agregado raiz: PedidoAggregate
@@ -24,7 +23,8 @@ class PedidoAggregate extends AggregateRoot
     private Estado $estado;
     private string $descripcion;
     private ?string $observaciones;
-    private Collection $prendas;
+    /** @var PrendaPedido[] */
+    private array $prendas;
     private \DateTime $fechaCreacion;
     private ?\DateTime $fechaActualizacion;
 
@@ -34,7 +34,7 @@ class PedidoAggregate extends AggregateRoot
         ?int $clienteId,
         Estado $estado,
         string $descripcion,
-        Collection $prendas,
+        array $prendas,
         \DateTime $fechaCreacion,
         ?string $observaciones = null,
         ?\DateTime $fechaActualizacion = null
@@ -70,7 +70,7 @@ class PedidoAggregate extends AggregateRoot
 
         $numeroGenerado = NumeroPedido::generar();
         $estadoInicial = Estado::inicial();
-        $prendas = collect();
+        $prendas = [];
         
         foreach ($prendasData as $prendaData) {
             $prenda = new PrendaPedido(
@@ -82,7 +82,7 @@ class PedidoAggregate extends AggregateRoot
                 tallas: $prendaData['tallas'],
                 observaciones: $prendaData['observaciones'] ?? null
             );
-            $prendas->push($prenda);
+            $prendas[] = $prenda;
         }
 
         return new self(
@@ -114,7 +114,7 @@ class PedidoAggregate extends AggregateRoot
             clienteId: $clienteId,
             estado: $estado,
             descripcion: $descripcion,
-            prendas: collect($prendas),
+            prendas: $prendas,
             fechaCreacion: $fechaCreacion,
             observaciones: $observaciones,
             fechaActualizacion: $fechaActualizacion
@@ -203,18 +203,18 @@ class PedidoAggregate extends AggregateRoot
     public function estado(): Estado { return $this->estado; }
     public function descripcion(): string { return $this->descripcion; }
     public function observaciones(): ?string { return $this->observaciones; }
-    public function prendas(): Collection { return $this->prendas; }
+    public function prendas(): array { return $this->prendas; }
     public function fechaCreacion(): \DateTime { return $this->fechaCreacion; }
     public function fechaActualizacion(): \DateTime { return $this->fechaActualizacion; }
 
     public function totalPrendas(): int
     {
-        return $this->prendas->count();
+        return count($this->prendas);
     }
 
     public function totalArticulos(): int
     {
-        return $this->prendas->sum(fn(PrendaPedido $p) => $p->cantidad());
+        return array_sum(array_map(fn(PrendaPedido $p) => $p->cantidad(), $this->prendas));
     }
 
     public function toArray(): array
@@ -233,7 +233,6 @@ class PedidoAggregate extends AggregateRoot
 
     public function prendasArray(): array
     {
-        return $this->prendas->map(fn(PrendaPedido $p) => $p->toArray())->toArray();
+        return array_map(fn(PrendaPedido $p) => $p->toArray(), $this->prendas);
     }
 }
-

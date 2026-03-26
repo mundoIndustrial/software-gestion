@@ -4,7 +4,6 @@ namespace App\Domain\Pedidos\Despacho\Services;
 
 use App\Domain\Pedidos\Despacho\Entities\DesparChoParcial;
 use App\Domain\Pedidos\Despacho\Repositories\DesparChoParcialesRepository;
-use Illuminate\Support\Collection;
 
 /**
  * DesparChoParcialesPersistenceService
@@ -59,33 +58,31 @@ class DesparChoParcialesPersistenceService
      * Crear y persistir múltiples despachos (transacción)
      * 
      * @param array $despachos Array de arrays con la información de cada despacho
-     * @return Collection<DesparChoParcial>
+     * @return DesparChoParcial[]
      */
-    public function crearYGuardarMultiples(array $despachos, ?int $usuarioId = null): Collection
+    public function crearYGuardarMultiples(array $despachos, ?int $usuarioId = null): array
     {
-        $entidades = collect($despachos)
-            ->map(function ($despacho) use ($usuarioId) {
-                return DesparChoParcial::crear(
-                    pedidoId: $despacho['pedido_id'],
-                    tipoItem: $despacho['tipo_item'],
-                    itemId: $despacho['item_id'],
-                    tallaId: $despacho['talla_id'] ?? null,
-                    observaciones: $despacho['observaciones'] ?? null,
-                    usuarioId: $usuarioId,
-                );
-            })
-            ->toArray();
+        $entidades = array_map(function ($despacho) use ($usuarioId) {
+            return DesparChoParcial::crear(
+                pedidoId: $despacho['pedido_id'],
+                tipoItem: $despacho['tipo_item'],
+                itemId: $despacho['item_id'],
+                tallaId: $despacho['talla_id'] ?? null,
+                observaciones: $despacho['observaciones'] ?? null,
+                usuarioId: $usuarioId,
+            );
+        }, $despachos);
 
         // Guardar todos en transacción
         $this->repository->guardarMultiples($entidades);
 
-        return collect($entidades);
+        return $entidades;
     }
 
     /**
      * Obtener todos los despachos de un pedido
      */
-    public function obtenerDespachosPedido(int $pedidoId): Collection
+    public function obtenerDespachosPedido(int $pedidoId): array
     {
         return $this->repository->obtenerPorPedidoId($pedidoId);
     }
@@ -93,7 +90,7 @@ class DesparChoParcialesPersistenceService
     /**
      * Obtener despachos de un ítem específico
      */
-    public function obtenerDespachoItem(string $tipoItem, int $itemId): Collection
+    public function obtenerDespachoItem(string $tipoItem, int $itemId): array
     {
         return $this->repository->obtenerPorItem($tipoItem, $itemId);
     }
@@ -101,7 +98,7 @@ class DesparChoParcialesPersistenceService
     /**
      * Obtener despachos de un pedido filtrados por tipo
      */
-    public function obtenerDespachosPorTipo(int $pedidoId, string $tipoItem): Collection
+    public function obtenerDespachosPorTipo(int $pedidoId, string $tipoItem): array
     {
         return $this->repository->obtenerPorPedidoYTipo($pedidoId, $tipoItem);
     }
@@ -120,12 +117,20 @@ class DesparChoParcialesPersistenceService
     public function obtenerResumenDespachosPedido(int $pedidoId): array
     {
         $despachos = $this->obtenerDespachosPedido($pedidoId);
+        $ultimaActualizacion = null;
+
+        foreach ($despachos as $despacho) {
+            $fecha = $despacho->updatedAt() ?? $despacho->createdAt();
+            if ($fecha !== null && ($ultimaActualizacion === null || $fecha > $ultimaActualizacion)) {
+                $ultimaActualizacion = $fecha;
+            }
+        }
 
         return [
-            'total_registros' => $despachos->count(),
-            'total_prendas' => $despachos->where('tipoItem', 'prenda')->count(),
-            'total_epp' => $despachos->where('tipoItem', 'epp')->count(),
-            'ultima_actualizacion' => $despachos->max(fn($d) => $d->updatedAt()) ?? $despachos->max(fn($d) => $d->createdAt()),
+            'total_registros' => count($despachos),
+            'total_prendas' => count(array_filter($despachos, fn(DesparChoParcial $d) => $d->tipoItem() === 'prenda')),
+            'total_epp' => count(array_filter($despachos, fn(DesparChoParcial $d) => $d->tipoItem() === 'epp')),
+            'ultima_actualizacion' => $ultimaActualizacion,
         ];
     }
 }

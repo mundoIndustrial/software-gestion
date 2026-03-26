@@ -5,6 +5,8 @@ namespace App\Application\Pedidos\UseCases;
 use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
 use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\LengthAwarePaginator as LaravelLengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class ListarProduccionPedidosUseCase
 {
@@ -20,7 +22,21 @@ class ListarProduccionPedidosUseCase
             $filtros['asesor_id'] = $dto->usuarioId;
         }
 
-        return $this->pedidoRepository->obtenerPedidosAsesor($filtros);
+        $resultado = $this->pedidoRepository->obtenerPedidosAsesor($filtros);
+
+        $paginator = new LaravelLengthAwarePaginator(
+            items: new Collection($resultado->items),
+            total: $resultado->total,
+            perPage: $resultado->perPage,
+            currentPage: $resultado->currentPage,
+            options: ['path' => $resultado->path]
+        );
+
+        if (!empty($resultado->query)) {
+            $paginator->appends($resultado->query);
+        }
+
+        return $paginator;
     }
 
     /**
