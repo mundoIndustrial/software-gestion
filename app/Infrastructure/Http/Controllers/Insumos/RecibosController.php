@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ConsecutivosRecibosPedidos;
 use App\Models\Plooter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -75,22 +76,36 @@ class RecibosController extends Controller
     public function pasarRevisar(Request $request, $reciboId)
     {
         try {
-            $request->validate([
+            $validated = $request->validate([
                 'motivo' => 'required|string|min:10|max:500',
             ]);
 
-            $recibo = ConsecutivosRecibosPedidos::findOrFail($reciboId);
-            
-            // Cambiar estado a DEVUELTO_ASESOR
-            $recibo->update([
-                'estado' => 'DEVUELTO_ASESOR',
-                'notas' => $request->input('motivo'),
-            ]);
+            $resultado = DB::transaction(function () use ($reciboId, $validated) {
+                // Bloqueo de fila para evitar condiciones de carrera.
+                $recibo = ConsecutivosRecibosPedidos::query()
+                    ->lockForUpdate()
+                    ->findOrFail($reciboId);
+
+                // Solo se modifica el RECIBO (consecutivos_recibos_pedidos).
+                // NO se altera el estado del pedido principal.
+                $recibo->update([
+                    'estado' => 'DEVUELTO_ASESOR',
+                    'notas' => $validated['motivo'],
+                ]);
+
+                Log::info('[Insumos][pasarRevisar] Recibo pasado a revisar', [
+                    'recibo_id' => (int) $recibo->id,
+                    'pedido_produccion_id' => (int) $recibo->pedido_produccion_id,
+                    'nuevo_estado_recibo' => $recibo->estado,
+                ]);
+
+                return $recibo->fresh();
+            });
 
             return response()->json([
                 'success' => true,
                 'message' => 'Recibo pasado a revisar correctamente',
-                'data' => $recibo,
+                'data' => $resultado,
             ]);
         } catch (\Exception $e) {
             Log::error('Error al pasar a revisar: ' . $e->getMessage());
@@ -102,4 +117,3 @@ class RecibosController extends Controller
         }
     }
 }
-

@@ -1,9 +1,28 @@
-/**
+﻿/**
  * Notifications & Realtime System - Insumos
  */
 
 function initNotificationsRealtimeInsumos() {
     let notificacionesInsumos = [];
+    const DISMISSED_STORAGE_KEY = 'insumos_notificaciones_dismissed_ids';
+
+    function getDismissedIds() {
+        try {
+            const raw = localStorage.getItem(DISMISSED_STORAGE_KEY);
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (_e) {
+            return [];
+        }
+    }
+
+    function addDismissedIds(ids) {
+        if (!Array.isArray(ids) || ids.length === 0) return;
+        const current = new Set(getDismissedIds().map((id) => String(id)));
+        ids.forEach((id) => current.add(String(id)));
+        localStorage.setItem(DISMISSED_STORAGE_KEY, JSON.stringify(Array.from(current)));
+    }
 
     function playNotificationSound() {
         try {
@@ -80,6 +99,7 @@ function initNotificationsRealtimeInsumos() {
                 alert('Error al marcar como visto');
                 return;
             }
+            addDismissedIds([reciboId]);
 
             itemElement.style.transition = 'all 0.3s ease';
             itemElement.style.opacity = '0';
@@ -110,6 +130,25 @@ function initNotificationsRealtimeInsumos() {
         }
     }
 
+    async function marcarReciboVistoSilencioso(reciboId) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        const response = await fetch(`/insumos/api/recibo/${reciboId}/marcar-visto`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrfToken ? csrfToken.content : '',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error HTTP ${response.status}`);
+        }
+
+        addDismissedIds([reciboId]);
+    }
+
     async function cargarConteoInicial() {
         try {
             const response = await fetch('/insumos/api/contar-costura-pendiente', {
@@ -125,23 +164,26 @@ function initNotificationsRealtimeInsumos() {
             const data = await response.json();
             const total = data.total || 0;
             const recibos = data.recibos || [];
+            const dismissed = new Set(getDismissedIds().map((id) => String(id)));
+            const recibosFiltrados = recibos.filter((r) => !dismissed.has(String(r.id)));
+            const totalFiltrado = Math.max(0, total - (recibos.length - recibosFiltrados.length));
 
             const badge = document.getElementById('insumosBadge');
             if (badge) {
-                badge.textContent = total;
-                badge.style.display = total > 0 ? 'inline-flex' : 'none';
+                badge.textContent = totalFiltrado;
+                badge.style.display = totalFiltrado > 0 ? 'inline-flex' : 'none';
             }
 
             const list = document.getElementById('insumosNotifList');
             if (!list) return;
 
-            if (recibos.length === 0) {
+            if (recibosFiltrados.length === 0) {
                 list.innerHTML = '<div class="p-4 text-center text-gray-500"><p>Sin recibos pendientes</p></div>';
                 return;
             }
 
             list.innerHTML = '';
-            recibos.forEach((recibo) => {
+            recibosFiltrados.forEach((recibo) => {
                 const item = document.createElement('div');
                 item.className = 'p-3 hover:bg-gray-50 transition border-b border-gray-100';
                 item.setAttribute('data-recibo-id', recibo.id);
@@ -171,10 +213,10 @@ function initNotificationsRealtimeInsumos() {
                 list.appendChild(item);
             });
 
-            if (total > recibos.length) {
+            if (totalFiltrado > recibosFiltrados.length) {
                 const moreItem = document.createElement('div');
                 moreItem.className = 'p-3 text-center text-gray-500 text-sm';
-                moreItem.textContent = '... y ' + (total - recibos.length) + ' recibo(s) más';
+                moreItem.textContent = '... y ' + (totalFiltrado - recibosFiltrados.length) + ' recibo(s) mas';
                 list.appendChild(moreItem);
             }
         } catch (error) {
@@ -290,15 +332,26 @@ function initNotificationsRealtimeInsumos() {
         }
 
         if (clearBtn) {
-            clearBtn.addEventListener('click', (e) => {
+            clearBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
+                const notificationsList = document.getElementById('insumosNotifList');
+                const ids = notificationsList
+                    ? Array.from(notificationsList.querySelectorAll('[data-recibo-id]'))
+                        .map((el) => el.getAttribute('data-recibo-id'))
+                        .filter(Boolean)
+                    : [];
+
+                if (ids.length > 0) {
+                    addDismissedIds(ids);
+                    await Promise.allSettled(ids.map((id) => marcarReciboVistoSilencioso(id)));
+                }
+
                 notificacionesInsumos = [];
                 const badge = document.getElementById('insumosBadge');
                 if (badge) {
                     badge.textContent = '0';
                     badge.style.display = 'none';
                 }
-                const notificationsList = document.getElementById('insumosNotifList');
                 if (notificationsList) {
                     notificationsList.innerHTML = '<div class="p-4 text-center text-gray-500"><p>Sin notificaciones</p></div>';
                 }
@@ -356,3 +409,4 @@ if (document.readyState === 'loading') {
 } else {
     initNotificationsRealtimeInsumos();
 }
+

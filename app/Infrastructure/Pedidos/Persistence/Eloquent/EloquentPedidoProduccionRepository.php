@@ -61,6 +61,10 @@ class EloquentPedidoProduccionRepository implements PedidoProduccionReadReposito
             $query->where('estado', $filtros['estado']);
         }
 
+        if (!empty($filtros['sin_numero'])) {
+            $query->whereNull('numero_pedido');
+        }
+
         if (!empty($filtros['fecha_desde'])) {
             $query->whereDate('created_at', '>=', $filtros['fecha_desde']);
         }

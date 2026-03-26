@@ -50,6 +50,9 @@ use App\Application\Asesores\UseCases\ContarPendientesAsesorUseCase;
 use App\Application\Asesores\UseCases\ObtenerPendientesAsesorUseCase;
 use App\Application\Asesores\UseCases\ObtenerDatosCotizacionEditarUseCase;
 use App\Application\Asesores\UseCases\GuardarPedidoUseCase;
+use App\Application\Asesores\UseCases\ListarBorradoresAsesorUseCase;
+use App\Application\Asesores\UseCases\EliminarBorradorAsesorUseCase;
+use App\Application\Asesores\UseCases\ResolverPedidoIdAsesorUseCase;
 use Illuminate\Routing\Controller;
 
 class AsesoresController extends Controller
@@ -81,6 +84,9 @@ class AsesoresController extends Controller
     protected ObtenerPendientesAsesorUseCase $obtenerPendientesAsesorUseCase;
     protected ObtenerDatosCotizacionEditarUseCase $obtenerDatosCotizacionEditarUseCase;
     protected GuardarPedidoUseCase $guardarPedidoUseCase;
+    protected ListarBorradoresAsesorUseCase $listarBorradoresAsesorUseCase;
+    protected EliminarBorradorAsesorUseCase $eliminarBorradorAsesorUseCase;
+    protected ResolverPedidoIdAsesorUseCase $resolverPedidoIdAsesorUseCase;
 
     public function __construct(
         PedidoProduccionReadRepository $pedidoProduccionRepository,
@@ -109,7 +115,10 @@ class AsesoresController extends Controller
         ContarPendientesAsesorUseCase $contarPendientesAsesorUseCase,
         ObtenerPendientesAsesorUseCase $obtenerPendientesAsesorUseCase,
         ObtenerDatosCotizacionEditarUseCase $obtenerDatosCotizacionEditarUseCase,
-        GuardarPedidoUseCase $guardarPedidoUseCase
+        GuardarPedidoUseCase $guardarPedidoUseCase,
+        ListarBorradoresAsesorUseCase $listarBorradoresAsesorUseCase,
+        EliminarBorradorAsesorUseCase $eliminarBorradorAsesorUseCase,
+        ResolverPedidoIdAsesorUseCase $resolverPedidoIdAsesorUseCase
     ) {
         $this->pedidoProduccionRepository = $pedidoProduccionRepository;
         $this->dashboardService = $dashboardService;
@@ -138,6 +147,9 @@ class AsesoresController extends Controller
         $this->obtenerPendientesAsesorUseCase = $obtenerPendientesAsesorUseCase;
         $this->obtenerDatosCotizacionEditarUseCase = $obtenerDatosCotizacionEditarUseCase;
         $this->guardarPedidoUseCase = $guardarPedidoUseCase;
+        $this->listarBorradoresAsesorUseCase = $listarBorradoresAsesorUseCase;
+        $this->eliminarBorradorAsesorUseCase = $eliminarBorradorAsesorUseCase;
+        $this->resolverPedidoIdAsesorUseCase = $resolverPedidoIdAsesorUseCase;
     }
 
     /**
@@ -279,9 +291,18 @@ class AsesoresController extends Controller
     public function obtenerNotasPedido($id)
     {
         try {
-            $pedido = PedidoProduccion::findOrFail($id);
-            
-            $notas = $this->obtenerNotasPedidoUseCase->ejecutar($pedido->numero_pedido);
+            $usuarioId = (int) (Auth::id() ?? 0);
+            $pedidoId = $this->resolverPedidoIdAsesorUseCase->ejecutar((string) $id, $usuarioId);
+            $pedidoRef = $this->pedidoProduccionRepository->obtenerPorIdYAsesor($pedidoId, $usuarioId);
+
+            if ($pedidoRef === null || $pedidoRef->numeroPedido === null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pedido no encontrado'
+                ], 404);
+            }
+
+            $notas = $this->obtenerNotasPedidoUseCase->ejecutar((string) $pedidoRef->numeroPedido);
             
             return response()->json([
                 'success' => true,
@@ -891,23 +912,10 @@ class AsesoresController extends Controller
         ]);
 
         try {
-            // Buscar el pedido por numero_pedido (ya que el parámetro $id es el número del pedido, no el ID de BD)
-            $pedidoModel = \App\Models\PedidoProduccion::where('numero_pedido', (int)$id)
-                ->orWhere('id', (int)$id)
-                ->first();
-            
-            if (!$pedidoModel) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pedido no encontrado',
-                ], 404);
-            }
-            
-            // Obtener el ID real del pedido
-            $pedidoId = $pedidoModel->id;
-            
-            // Obtener usuario autenticado
+            // Resolver pedido en contexto de asesor (admite numero o id)
             $usuario = auth()->user();
+            $usuarioId = (int) ($usuario?->id ?? 0);
+            $pedidoId = $this->resolverPedidoIdAsesorUseCase->ejecutar((string) $id, $usuarioId);
             $nombreUsuario = $usuario ? $usuario->name : 'Sistema';
             
             // Obtener el rol del usuario
@@ -1335,6 +1343,54 @@ class AsesoresController extends Controller
     }
 
     /**
+     * API realtime de pedidos para asesores y roles operativos autorizados.
+     */
+    public function listarRealtimePedidos(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['error' => 'No authenticated user'], 403);
+        }
+
+        $hasPermission = $user->hasRole('asesor')
+            || $user->hasRole('admin')
+            || $user->hasRole('supervisor_pedidos')
+            || $user->hasRole('despacho')
+            || $user->hasRole('insumos');
+
+        if (!$hasPermission) {
+            return response()->json([
+                'error' => 'Unauthorized',
+                'debug' => [
+                    'user_id' => $user->id,
+                    'user_roles' => $user->roles->pluck('name')->toArray(),
+                    'has_permission' => false,
+                ],
+            ], 403);
+        }
+
+        $dto = ListarProduccionPedidosDTO::fromRequest(
+            tipo: null,
+            filtros: ['per_page' => 500],
+            usuarioId: $user->id,
+            soloAsesor: (bool) $user->hasRole('asesor')
+        );
+
+        $pedidos = $this->listarProduccionPedidosUseCase->ejecutar($dto);
+
+        return response()->json([
+            'success' => true,
+            'data' => $pedidos->getCollection()->values()->all(),
+            'debug' => [
+                'user_id' => $user->id,
+                'user_roles' => $user->roles->pluck('name')->toArray(),
+                'pedidos_count' => $pedidos->count(),
+            ],
+        ]);
+    }
+
+    /**
      * Mostrar vista de borradores de pedidos
      * 
      * GET /asesores/pedidos/borradores
@@ -1342,27 +1398,24 @@ class AsesoresController extends Controller
     public function borradores(Request $request)
     {
         try {
-            // Obtener borradores del usuario actual (estado = 'Borrador')
             $user = Auth::user();
-            
-            // Obtener todos los borradores del asesor (sin número de pedido asignado)
-            $borradores = PedidoProduccion::where('estado', 'Borrador')
-                ->where('asesor_id', $user->id)
-                ->whereNull('numero_pedido')
-                ->orderBy('created_at', 'desc')
-                ->paginate(15);
-            
+            $page = (int) $request->query('page', 1);
+            $borradores = $this->listarBorradoresAsesorUseCase->ejecutar(
+                (int) $user->id,
+                max(1, $page),
+                15
+            );
+
             \Log::info('[AsesoresController.borradores] Listando borradores', [
                 'asesor_id' => $user->id,
                 'count' => $borradores->count(),
                 'total' => $borradores->total(),
             ]);
-            
+
             return view('asesores.pedidos.borradores', [
                 'borradores' => $borradores,
                 'asesor' => $user
             ]);
-
         } catch (\Exception $e) {
             \Log::error('[AsesoresController.borradores] Error', [
                 'error' => $e->getMessage(),
@@ -1371,7 +1424,6 @@ class AsesoresController extends Controller
             return redirect()->back()->with('error', 'Error al listar borradores: ' . $e->getMessage());
         }
     }
-
     /**
      * Eliminar borrador de pedido
      * 
@@ -1381,14 +1433,7 @@ class AsesoresController extends Controller
     {
         try {
             $user = Auth::user();
-
-            $borrador = PedidoProduccion::where('id', $id)
-                ->where('estado', 'Borrador')
-                ->where('asesor_id', $user->id)
-                ->whereNull('numero_pedido')
-                ->firstOrFail();
-
-            $borrador->delete();
+            $this->eliminarBorradorAsesorUseCase->ejecutar((int) $id, (int) $user->id);
 
             \Log::info('[AsesoresController.destroyBorrador] Borrador eliminado', [
                 'pedido_id' => $id,
@@ -1396,7 +1441,6 @@ class AsesoresController extends Controller
             ]);
 
             return redirect()->back()->with('success', 'Borrador eliminado exitosamente');
-
         } catch (\Exception $e) {
             \Log::error('[AsesoresController.destroyBorrador] Error', [
                 'pedido_id' => $id,

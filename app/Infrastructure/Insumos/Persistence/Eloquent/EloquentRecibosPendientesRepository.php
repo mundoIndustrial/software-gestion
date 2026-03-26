@@ -100,7 +100,7 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
     {
         try {
             ReciboVistoInsumo::firstOrCreate([
-                'recibo_id' => $reciboId,
+                'consecutivo_recibo_id' => $reciboId,
                 'user_id' => $userId,
             ]);
 
@@ -233,4 +233,3 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
         ]);
     }
 }
-

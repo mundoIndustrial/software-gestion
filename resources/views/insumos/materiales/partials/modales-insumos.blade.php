@@ -118,46 +118,67 @@
 
 {{-- Modal de Ancho y Metraje --}}
 <div id="modalAnchoMetraje" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center" style="z-index: 10001;">
-    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] flex flex-col" style="z-index: 10002;">
-        <div class="bg-gradient-to-r from-blue-900 to-blue-800 text-white p-3 flex justify-between items-center shadow-lg flex-shrink-0" style="background: linear-gradient(to right, #111827, #1e3a8a) !important;">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full mx-3 md:mx-4 max-h-[92vh] flex flex-col overflow-hidden" style="z-index: 10002;">
+        <div class="bg-gradient-to-r from-blue-900 to-blue-800 text-white px-4 py-3 md:px-5 md:py-4 flex justify-between items-center shadow-lg flex-shrink-0" style="background: linear-gradient(to right, #111827, #1e3a8a) !important;">
             <div>
-                <h2 class="text-lg font-bold flex items-center gap-2 drop-shadow text-white">
+                <h2 class="text-lg md:text-xl font-bold flex items-center gap-2 drop-shadow text-white">
                     <i class="fas fa-ruler"></i>
                     Ancho y Metraje - Recibo: <span id="anchoMetrajeRecibo" class="font-bold text-white">-</span>
                 </h2>
+                <p class="text-blue-100 text-xs md:text-sm mt-1">Registra medida de acuerdo al modo elegido.</p>
             </div>
-            <button type="button" data-insumos-action="ancho-metraje-close" class="text-white bg-blue-700 rounded-full p-2 transition hover:bg-blue-600 flex-shrink-0">
+            <button type="button" data-insumos-action="ancho-metraje-close" class="text-white bg-blue-700 rounded-full p-2 transition hover:bg-blue-600 flex-shrink-0 border border-blue-500">
                 <i class="fas fa-times text-lg"></i>
             </button>
         </div>
-        <div class="overflow-y-auto flex-1 p-6 space-y-6">
+        <div class="overflow-y-auto flex-1 p-4 md:p-6 space-y-5 bg-slate-50">
             <!-- Indicador de carga mientras se obtienen los datos -->
             <div id="anchoMetrajeLoading" class="text-center py-6">
                 <i class="fas fa-spinner fa-spin text-2xl text-blue-600"></i>
                 <p class="text-sm text-gray-500 mt-2">Cargando datos...</p>
             </div>
 
-            <!-- SELECTOR DE MODO: Normal, Por Color, Por Pieza o A Mano -->
-            <div id="modoSelector" class="bg-gray-100 p-4 rounded-lg border border-gray-300 hidden">
+            <!-- SELECTOR DE MODO: Normal, Por Color, Por Pieza o Manual -->
+            <div id="modoSelector" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hidden">
                 <p class="text-sm font-semibold text-gray-700 mb-3">¿Cómo deseas ingresar el ancho y metraje?</p>
-                <div class="flex gap-4 flex-wrap">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="modoAnchoMetraje" value="normal" class="modoRadio" checked>
-                        <span class="text-gray-800 font-medium">Normal</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
+                    <label data-modo-card class="flex items-start gap-3 cursor-pointer border border-slate-200 rounded-xl px-3 py-2.5 bg-white transition">
+                        <input type="radio" name="modoAnchoMetraje" value="normal" class="modoRadio mt-1" checked>
+                        <span class="block">
+                            <span class="text-gray-900 font-semibold text-sm flex items-center gap-2"><i class="fas fa-list"></i> Normal</span>
+                            <span class="text-xs text-gray-500">Un solo ancho y metraje</span>
+                        </span>
                     </label>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="modoAnchoMetraje" value="color" class="modoRadio">
-                        <span class="text-gray-800 font-medium">Por Color</span>
+                    <label data-modo-card class="flex items-start gap-3 cursor-pointer border border-slate-200 rounded-xl px-3 py-2.5 bg-white transition">
+                        <input type="radio" name="modoAnchoMetraje" value="color" class="modoRadio mt-1">
+                        <span class="block">
+                            <span class="text-gray-900 font-semibold text-sm flex items-center gap-2"><i class="fas fa-palette"></i> Por Color</span>
+                            <span class="text-xs text-gray-500">Metrado separado por color</span>
+                        </span>
                     </label>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="modoAnchoMetraje" value="pieza" class="modoRadio">
-                        <span class="text-gray-800 font-medium">Por Pieza</span>
+                    <label data-modo-card class="flex items-start gap-3 cursor-pointer border border-slate-200 rounded-xl px-3 py-2.5 bg-white transition">
+                        <input type="radio" name="modoAnchoMetraje" value="pieza" class="modoRadio mt-1">
+                        <span class="block">
+                            <span class="text-gray-900 font-semibold text-sm flex items-center gap-2"><i class="fas fa-cubes"></i> Por Pieza</span>
+                            <span class="text-xs text-gray-500">Control por pieza/color</span>
+                        </span>
                     </label>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="modoAnchoMetraje" value="mano" class="modoRadio">
-                        <span class="text-gray-800 font-medium">A Mano</span>
+                    <label data-modo-card class="flex items-start gap-3 cursor-pointer border border-slate-200 rounded-xl px-3 py-2.5 bg-white transition">
+                        <input type="radio" name="modoAnchoMetraje" value="mano" class="modoRadio mt-1">
+                        <span class="block">
+                            <span class="text-gray-900 font-semibold text-sm flex items-center gap-2"><i class="fas fa-pen"></i> Manual</span>
+                            <span class="text-xs text-gray-500">Texto libre</span>
+                        </span>
                     </label>
                 </div>
+            </div>
+
+            <div id="modoActivoInfo" class="bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-3 hidden shadow-sm">
+                <p class="text-sm text-indigo-900 flex items-center gap-2">
+                    <i class="fas fa-shield-alt"></i><strong>Modo activo:</strong> <span id="modoActivoLabel">Normal</span>
+                </p>
+                <p id="modoActivoAyuda" class="text-xs text-indigo-700 mt-1">Un ancho y un metraje para toda la prenda.</p>
+                <p id="modoGuardadoLabel" class="text-xs text-amber-700 mt-2 hidden"></p>
             </div>
 
             <!-- VISTA NORMAL: Un ancho/metraje por prenda -->
@@ -237,30 +258,32 @@
                 </div>
             </div>
 
-            <div class="flex gap-3 justify-end border-t border-gray-200 p-6 flex-shrink-0">
-                <button 
-                    id="btnEliminarAnchoMetraje"
-                    type="button"
-                    data-insumos-action="ancho-metraje-open-delete-confirm"
-                    class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg flex items-center gap-2 hidden"
-                >
-                    <i class="fas fa-trash-alt"></i> Eliminar
-                </button>
-                <button 
-                    type="button"
-                    data-insumos-action="ancho-metraje-save"
-                    class="px-6 py-2 text-white font-semibold rounded-lg flex items-center gap-2"
-                    style="background: linear-gradient(to right, #111827, #1e3a8a) !important; color: white !important;"
-                >
-                    <i class="fas fa-save"></i> Guardar
-                </button>
-                <button 
-                    type="button"
-                    data-insumos-action="ancho-metraje-close"
-                    class="px-6 py-2 bg-gray-400 text-white font-semibold rounded-lg flex items-center gap-2"
-                >
-                    <i class="fas fa-times"></i> Cancelar
-                </button>
+            <div class="sticky bottom-0 bg-white/95 backdrop-blur border-t border-gray-200 pt-4 pb-1 flex-shrink-0">
+                <div class="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 justify-end">
+                    <button 
+                        id="btnEliminarAnchoMetraje"
+                        type="button"
+                        data-insumos-action="ancho-metraje-open-delete-confirm"
+                        class="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg flex items-center justify-center gap-2 hidden"
+                    >
+                        <i class="fas fa-trash-alt"></i> Eliminar
+                    </button>
+                    <button 
+                        type="button"
+                        data-insumos-action="ancho-metraje-save"
+                        class="px-4 py-2.5 text-white font-semibold rounded-lg flex items-center justify-center gap-2 shadow-sm"
+                        style="background: linear-gradient(to right, #111827, #1e3a8a) !important; color: white !important;"
+                    >
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                    <button 
+                        type="button"
+                        data-insumos-action="ancho-metraje-close"
+                        class="px-4 py-2.5 bg-gray-500 text-white font-semibold rounded-lg flex items-center justify-center gap-2 hover:bg-gray-600"
+                    >
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
             </div>
         </div>
     </div>

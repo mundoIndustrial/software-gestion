@@ -9,15 +9,15 @@
  * - generarInputsPorPieza() - Generar form inputs por pieza
  * - cambiarModoAnchoMetraje() - Cambiar entre vistas (normal/color/pieza/mano)
  * - cerrarModalAnchoMetraje() - Cerrar modal
- * - abrirModalConfirmacionEliminar() - Abrir confirmación de eliminación
- * - cerrarModalConfirmacionEliminar() - Cerrar confirmación
- * - confirmarEliminarAnchoMetraje() - Confirmar eliminación
+ * - abrirModalConfirmacionEliminar() - Abrir confirmacion
+ * - cerrarModalConfirmacionEliminar() - Cerrar confirmacion
+ * - confirmarEliminarAnchoMetraje() - Confirmar eliminacion
  * - guardarAnchoMetraje() - Guardar datos de ancho y metraje
  * - actualizarReciboConAnchoMetraje() - Actualizar recibo con datos
  */
 
 /**
- * Abre el modal de Ancho y Metraje para una prenda específica
+ * Abre el modal de Ancho y Metraje para una prenda especifica
  * Detecta si es prenda combinada (múltiples colores) o normal
  * El usuario puede elegir guardar normal o por color
  */
@@ -45,7 +45,7 @@ function abrirModalAnchoMetraje(pedido, prendaId) {
             document.getElementById('anchoMetrajeRecibo').textContent = '-';
         });
     
-    // Guardar pedido y prenda en el modal para usarlos después
+    // Guardar pedido y prenda en el modal para usarlos despues
     modal.dataset.pedido = pedido;
     modal.dataset.prendaId = prendaId;
 
@@ -55,8 +55,9 @@ function abrirModalAnchoMetraje(pedido, prendaId) {
     document.getElementById('colorInputsContainer').innerHTML = '';
     document.getElementById('piezaInputsContainer').innerHTML = '';
     
-    // Resetear selector de modo a normal
+    // Resetear selector de modo a normal (fallback)
     document.querySelector('input[name="modoAnchoMetraje"][value="normal"]').checked = true;
+    actualizarEstilosModoCards();
     
     // Ocultar todo y mostrar cargando
     document.getElementById('modoSelector').classList.add('hidden');
@@ -64,6 +65,7 @@ function abrirModalAnchoMetraje(pedido, prendaId) {
     document.getElementById('colorView').classList.add('hidden');
     document.getElementById('piezaView').classList.add('hidden');
     document.getElementById('anchoMetrajeLoading').classList.remove('hidden');
+    actualizarIndicadorModo('normal', null, false);
 
     console.log('[abrirModalAnchoMetraje] Abriendo modal para pedido:', pedido, 'prenda:', prendaId);
 
@@ -92,6 +94,16 @@ function abrirModalAnchoMetraje(pedido, prendaId) {
             const tieneDatosGuardados = (datosData.ancho !== null && datosData.ancho !== undefined) 
                 || (datosData.data && datosData.data.length > 0);
             modal.tieneDatosGuardados = tieneDatosGuardados;
+            actualizarIndicadorModo('normal', tipoModoGuardado, tieneDatosGuardados);
+
+            // Si existe modo guardado, abrir directamente en ese modo
+            const modosValidos = ['normal', 'color', 'pieza', 'mano'];
+            const modoInicial = modosValidos.includes(tipoModoGuardado) ? tipoModoGuardado : 'normal';
+            const radioModoInicial = document.querySelector(`input[name="modoAnchoMetraje"][value="${modoInicial}"]`);
+            if (radioModoInicial) {
+                radioModoInicial.checked = true;
+            }
+            actualizarEstilosModoCards();
             
             console.log('[abrirModalAnchoMetraje] tipo_modo guardado:', tipoModoGuardado, 'tiene datos:', tieneDatosGuardados);
             
@@ -126,6 +138,107 @@ function abrirModalAnchoMetraje(pedido, prendaId) {
     }
 }
 
+function getModoLabel(modo) {
+    const labels = {
+        normal: 'Normal',
+        color: 'Por Color',
+        pieza: 'Por Pieza',
+        mano: 'Manual',
+    };
+    return labels[modo] || 'Sin definir';
+}
+
+function getModoAyuda(modo) {
+    const ayudas = {
+        normal: 'Un ancho y un metraje para toda la prenda.',
+        color: 'Un ancho general y metrajes separados por color.',
+        pieza: 'Un ancho general y metrajes por pieza/color.',
+        mano: 'Texto libre para casos especiales.',
+    };
+    return ayudas[modo] || '';
+}
+
+function actualizarIndicadorModo(modoActual, modoGuardado, tieneDatosGuardados) {
+    const wrapper = document.getElementById('modoActivoInfo');
+    const modoActualEl = document.getElementById('modoActivoLabel');
+    const ayudaEl = document.getElementById('modoActivoAyuda');
+    const modoGuardadoEl = document.getElementById('modoGuardadoLabel');
+
+    if (!wrapper || !modoActualEl || !ayudaEl || !modoGuardadoEl) {
+        return;
+    }
+
+    wrapper.classList.remove('hidden');
+
+    modoActualEl.textContent = getModoLabel(modoActual);
+    ayudaEl.textContent = getModoAyuda(modoActual);
+
+    if (tieneDatosGuardados && modoGuardado) {
+        modoGuardadoEl.textContent = `Guardado actualmente: ${getModoLabel(modoGuardado)}.`;
+        modoGuardadoEl.classList.remove('hidden');
+    } else {
+        modoGuardadoEl.classList.add('hidden');
+    }
+}
+
+function actualizarEstilosModoCards() {
+    const cards = document.querySelectorAll('#modoSelector label[data-modo-card]');
+    cards.forEach((card) => {
+        const radio = card.querySelector('input[type="radio"][name="modoAnchoMetraje"]');
+        if (!radio) return;
+
+        if (radio.checked) {
+            card.classList.remove('border-slate-200', 'bg-white');
+            card.classList.add('border-indigo-400', 'bg-indigo-50', 'shadow-sm');
+        } else {
+            card.classList.remove('border-indigo-400', 'bg-indigo-50', 'shadow-sm');
+            card.classList.add('border-slate-200', 'bg-white');
+        }
+    });
+}
+
+function requiereConfirmacionCambioModo(modal, modoSeleccionado) {
+    const modoGuardado = modal.tipoModoGuardado;
+    const tieneDatosGuardados = modal.tieneDatosGuardados;
+
+    if (!modoGuardado || !tieneDatosGuardados) {
+        return false;
+    }
+
+    return modoGuardado !== modoSeleccionado;
+}
+
+async function confirmarCambioModoAntesDeGuardar(modal, modoSeleccionado) {
+    if (!requiereConfirmacionCambioModo(modal, modoSeleccionado)) {
+        return true;
+    }
+
+    const modoAnterior = getModoLabel(modal.tipoModoGuardado);
+    const modoNuevo = getModoLabel(modoSeleccionado);
+    const mensaje = `Vas a reemplazar los datos de "${modoAnterior}" por "${modoNuevo}".`;
+
+    if (window.Swal && typeof window.Swal.fire === 'function') {
+        const result = await window.Swal.fire({
+            title: 'Confirmar cambio de modo',
+            text: mensaje,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Guardar y reemplazar',
+            cancelButtonText: 'Revisar',
+            reverseButtons: true,
+        });
+        return !!result.isConfirmed;
+    }
+
+    return window.confirm(`${mensaje}\n\n¿Deseas continuar?`);
+}
+
+function actualizarEstadoGuardadoModal(modal, modo) {
+    modal.tipoModoGuardado = modo;
+    modal.tieneDatosGuardados = true;
+    actualizarIndicadorModo(modo, modal.tipoModoGuardado, modal.tieneDatosGuardados);
+}
+
 /**
  * Genera inputs dinámicos para cada color (modo por color)
  * Estructura: Ancho General + Metraje por Color
@@ -136,7 +249,7 @@ function generarInputsPorColor(coloresData, datosData) {
     
     // PRIMERO: Crear input de ANCHO GENERAL
     const anchoGeneralDiv = document.createElement('div');
-    anchoGeneralDiv.className = 'bg-blue-50 border-l-4 border-blue-500 pl-4 py-3 rounded p-4';
+    anchoGeneralDiv.className = 'bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm';
     
     // Buscar ancho general: puede estar en datosData.ancho_general o dentro de data[]
     let anchoGeneralGuardado = '';
@@ -175,7 +288,7 @@ function generarInputsPorColor(coloresData, datosData) {
     
     // SEGUNDO: Crear inputs de METRAJE por color
     const metrajeDiv = document.createElement('div');
-    metrajeDiv.className = 'border-t pt-4';
+    metrajeDiv.className = 'border-t border-slate-200 pt-4';
     
     const metrajeTitle = document.createElement('h3');
     metrajeTitle.className = 'font-bold text-gray-800 mb-3 flex items-center gap-2';
@@ -210,7 +323,7 @@ function generarInputsPorColor(coloresData, datosData) {
         }
         
         const colorInputDiv = document.createElement('div');
-        colorInputDiv.className = 'mb-4 p-3 bg-orange-50 rounded border border-orange-200';
+        colorInputDiv.className = 'mb-3 p-3.5 bg-white rounded-xl border border-orange-200 shadow-sm';
         
         // Si hay tallas en el color, mostrarlas
         const tallasInfo = (colorData.tallas && colorData.tallas.length > 0) 
@@ -240,7 +353,7 @@ function generarInputsPorColor(coloresData, datosData) {
 }
 
 /**
- * Genera inputs para talla-color (idéntico a por color, solo cambia el contenedor)
+ * Genera inputs para talla-color (identico a por color, solo cambia el contenedor)
  * Estructura: Ancho General + Metraje por Color
  */
 function generarInputsPorTallaColor(coloresData, datosData) {
@@ -249,7 +362,7 @@ function generarInputsPorTallaColor(coloresData, datosData) {
     
     // PRIMERO: Crear input de ANCHO GENERAL
     const anchoGeneralDiv = document.createElement('div');
-    anchoGeneralDiv.className = 'bg-blue-50 border-l-4 border-blue-500 pl-4 py-3 rounded p-4';
+    anchoGeneralDiv.className = 'bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm';
     
     // Buscar ancho general: puede estar en datosData.ancho_general o dentro de data[]
     let anchoGeneralGuardado = '';
@@ -288,7 +401,7 @@ function generarInputsPorTallaColor(coloresData, datosData) {
     
     // SEGUNDO: Crear inputs de METRAJE por color
     const metrajeDiv = document.createElement('div');
-    metrajeDiv.className = 'border-t pt-4';
+    metrajeDiv.className = 'border-t border-slate-200 pt-4';
     
     const metrajeTitle = document.createElement('h3');
     metrajeTitle.className = 'font-bold text-gray-800 mb-3 flex items-center gap-2';
@@ -323,7 +436,7 @@ function generarInputsPorTallaColor(coloresData, datosData) {
         }
         
         const colorInputDiv = document.createElement('div');
-        colorInputDiv.className = 'mb-4 p-3 bg-orange-50 rounded border border-orange-200';
+        colorInputDiv.className = 'mb-3 p-3.5 bg-white rounded-xl border border-orange-200 shadow-sm';
         
         // Si hay tallas en el color, mostrarlas
         const tallasInfo = (colorData.tallas && colorData.tallas.length > 0) 
@@ -353,7 +466,7 @@ function generarInputsPorTallaColor(coloresData, datosData) {
 }
 
 /**
- * Genera inputs dinámicos para entrada por pieza/item
+ * Genera inputs dinamicos para entrada por pieza/item
  */
 function generarInputsPorPieza(piezasData, datosData) {
     const container = document.getElementById('piezaInputsContainer');
@@ -393,11 +506,11 @@ function generarInputsPorPieza(piezasData, datosData) {
             </h4>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Número/Item:</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Numero/Item:</label>
                     <input 
                         type="text" 
                         class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        placeholder="Número de pieza"
+                        placeholder="Numero de pieza"
                         data-pieza-numero
                         value="${piezaNumero}"
                         disabled
@@ -439,24 +552,14 @@ function cambiarModoAnchoMetraje(e) {
     // VALIDAR: Si ya hay datos guardados con otro tipo_modo, advertir al usuario
     const tipoModoGuardado = modal.tipoModoGuardado;
     const tieneDatosGuardados = modal.tieneDatosGuardados;
-    
-    if (e && e.target && tipoModoGuardado && tieneDatosGuardados && modo !== tipoModoGuardado) {
-        const nombresMode = { 'normal': 'Normal', 'color': 'Por Color', 'pieza': 'Por Pieza', 'mano': 'A Mano' };
-        const modoGuardadoNombre = nombresMode[tipoModoGuardado] || tipoModoGuardado;
-        const modoNuevoNombre = nombresMode[modo] || modo;
-        
-        // Mostrar advertencia pero permitir el cambio de modo
-        showToast(
-            `Cambiando de modo "${modoGuardadoNombre}" a "${modoNuevoNombre}". Al guardar, los datos anteriores se reemplazarán.`,
-            'warning',
-            4000
-        );
-    }
+    actualizarIndicadorModo(modo, tipoModoGuardado, tieneDatosGuardados);
+    actualizarEstilosModoCards();
     
     const normalView = document.getElementById('normalView');
     const colorView = document.getElementById('colorView');
     const piezaView = document.getElementById('piezaView');
     const manoView = document.getElementById('manoView');
+    let vistaActiva = null;
     
     // Ocultar todas las vistas
     normalView.classList.add('hidden');
@@ -469,7 +572,7 @@ function cambiarModoAnchoMetraje(e) {
     document.getElementById('colorDataWarning')?.classList.add('hidden');
     document.getElementById('piezaDataWarning')?.classList.add('hidden');
     
-    // Mostrar/ocultar botón de eliminar basado en si hay datos guardados y el modo es el mismo
+    // Mostrar/ocultar boton de eliminar basado en si hay datos guardados y el modo es el mismo
     const btnEliminar = document.getElementById('btnEliminarAnchoMetraje');
     if (btnEliminar) {
         if (tieneDatosGuardados && tipoModoGuardado === modo) {
@@ -482,8 +585,9 @@ function cambiarModoAnchoMetraje(e) {
     if (modo === 'normal') {
         // MODO NORMAL - Un valor para toda la prenda
         normalView.classList.remove('hidden');
+        vistaActiva = normalView;
         
-        // Cargar datos si están disponibles en el modal
+        // Cargar datos si estan disponibles en el modal
         if (modal.datosData && modal.datosData.success) {
             if (modal.datosData.ancho !== null && modal.datosData.ancho !== undefined) {
                 document.getElementById('anchoInput').value = modal.datosData.ancho;
@@ -504,8 +608,9 @@ function cambiarModoAnchoMetraje(e) {
         }
         
     } else if (modo === 'color') {
-        // MODO COLOR - Múltiples colores (mismo metraje para todas las tallas)
+        // MODO COLOR - multiples colores (mismo metraje para todas las tallas)
         colorView.classList.remove('hidden');
+        vistaActiva = colorView;
         
         const coloresData = modal.coloresData;
         const datosData = modal.datosData;
@@ -523,8 +628,9 @@ function cambiarModoAnchoMetraje(e) {
         }
         
     } else if (modo === 'pieza') {
-        // MODO PIEZA - Misma estructura que "Por Color" pero se guardará con tipo_modo='pieza'
+        // MODO PIEZA - Misma estructura que "Por Color" pero se guardar con tipo_modo='pieza'
         piezaView.classList.remove('hidden');
+        vistaActiva = piezaView;
         
         const coloresData = modal.coloresData;
         const datosData = modal.datosData;
@@ -543,14 +649,39 @@ function cambiarModoAnchoMetraje(e) {
     } else if (modo === 'mano') {
         // MODO A MANO - Texto libre
         manoView.classList.remove('hidden');
+        vistaActiva = manoView;
         
-        // Cargar datos si están disponibles
+        // Cargar datos si estan disponibles
         if (modal.datosData && modal.datosData.success) {
             const contenidoMano = modal.datosData.contenido_mano || '';
             document.getElementById('manoTexto').value = contenidoMano;
         } else {
             document.getElementById('manoTexto').value = '';
         }
+    }
+
+    llevarVistaModoAlInicio(vistaActiva);
+}
+
+function llevarVistaModoAlInicio(vistaActiva) {
+    if (!vistaActiva) {
+        return;
+    }
+
+    const modal = document.getElementById('modalAnchoMetraje');
+    const scrollContainer = modal?.querySelector('.overflow-y-auto');
+
+    if (scrollContainer) {
+        scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    vistaActiva.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    const primerCampo = vistaActiva.querySelector('input:not([type="radio"]), textarea, select');
+    if (primerCampo && typeof primerCampo.focus === 'function') {
+        setTimeout(() => {
+            primerCampo.focus({ preventScroll: true });
+        }, 220);
     }
 }
 
@@ -563,7 +694,7 @@ function cerrarModalAnchoMetraje() {
 }
 
 /**
- * Abre el modal de confirmación para eliminar ancho/metraje
+ * Abre el modal de confirmacion para eliminar ancho/metraje
  */
 function abrirModalConfirmacionEliminar() {
     const modalConfirmacion = document.getElementById('modalConfirmacionEliminar');
@@ -571,7 +702,7 @@ function abrirModalConfirmacionEliminar() {
 }
 
 /**
- * Cierra el modal de confirmación para eliminar ancho/metraje
+ * Cierra el modal de confirmacion para eliminar ancho/metraje
  */
 function cerrarModalConfirmacionEliminar() {
     const modalConfirmacion = document.getElementById('modalConfirmacionEliminar');
@@ -579,7 +710,7 @@ function cerrarModalConfirmacionEliminar() {
 }
 
 /**
- * Confirma y ejecuta la eliminación de ancho/metraje
+ * Confirma y ejecuta la eliminacion de ancho/metraje
  */
 function confirmarEliminarAnchoMetraje() {
     const modal = document.getElementById('modalAnchoMetraje');
@@ -587,7 +718,7 @@ function confirmarEliminarAnchoMetraje() {
     const pedido = modal.dataset.pedido;
     
     if (!prendaId) {
-        showToast('Error: No se encontró la información de la prenda', 'error');
+        showToast('Error: No se encontro la informacion de la prenda', 'error');
         return;
     }
 
@@ -608,7 +739,7 @@ function confirmarEliminarAnchoMetraje() {
             showToast('Datos eliminados correctamente', 'success');
             cerrarModalConfirmacionEliminar();
             
-            // Recargar el modal (vacío)
+            // Recargar el modal (vacio)
             setTimeout(() => {
                 cerrarModalAnchoMetraje();
                 abrirModalAnchoMetraje(pedido, prendaId);
@@ -625,7 +756,7 @@ function confirmarEliminarAnchoMetraje() {
 
 /**
  * Guarda los valores de Ancho y Metraje (normal o por color)
- * Respeta la selección del usuario en el radio button
+ * Respeta la seleccion del usuario en el radio button
  */
 function guardarAnchoMetraje() {
     const modal = document.getElementById('modalAnchoMetraje');
@@ -633,12 +764,23 @@ function guardarAnchoMetraje() {
     const pedido = modal.dataset.pedido;
     
     if (!prendaId) {
-        showToast('Error: No se encontró la información de la prenda', 'error');
+        showToast('Error: No se encontro la informacion de la prenda', 'error');
         return;
     }
     
     // Obtener modo seleccionado del radio button
     const modoSeleccionado = document.querySelector('input[name="modoAnchoMetraje"]:checked').value;
+
+    confirmarCambioModoAntesDeGuardar(modal, modoSeleccionado).then((puedeContinuar) => {
+        if (!puedeContinuar) {
+            return;
+        }
+
+        guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado);
+    });
+}
+
+function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
     
     if (modoSeleccionado === 'normal') {
         // GUARDAR MODO NORMAL
@@ -649,12 +791,12 @@ function guardarAnchoMetraje() {
         
         // Validar
         if (anchoVal && (isNaN(ancho) || ancho <= 0)) {
-            showToast('El ancho debe ser un número mayor a 0', 'warning');
+            showToast('El ancho debe ser un Numero mayor a 0', 'warning');
             return;
         }
         
         if (metrajeVal && (isNaN(metraje) || metraje <= 0)) {
-            showToast('El metraje debe ser un número mayor a 0', 'warning');
+            showToast('El metraje debe ser un Numero mayor a 0', 'warning');
             return;
         }
         
@@ -681,6 +823,7 @@ function guardarAnchoMetraje() {
             console.log('[guardarAnchoMetraje] Respuesta del servidor:', data);
             
             if (data.success) {
+                actualizarEstadoGuardadoModal(modal, modoSeleccionado);
                 showToast('Ancho y metraje guardados correctamente', 'success');
                 
                 if (window.receiptManager && window.receiptManager.datosFactura) {
@@ -701,7 +844,7 @@ function guardarAnchoMetraje() {
             showToast('Error al guardar los datos', 'error');
         });
     } else if (modoSeleccionado === 'color') {
-        // GUARDAR MODO POR COLOR - Simplificado para evitar código duplicado
+        // GUARDAR MODO POR COLOR - Simplificado para evitar codigo duplicado
         const promises = [];
         
         // Guardar ancho general si existe
@@ -764,6 +907,7 @@ function guardarAnchoMetraje() {
         Promise.all(promises)
             .then(results => {
                 if (results.every(r => r.success)) {
+                    actualizarEstadoGuardadoModal(modal, modoSeleccionado);
                     showToast('Ancho y metraje guardados correctamente', 'success');
                     setTimeout(() => {
                         cerrarModalAnchoMetraje();
@@ -777,7 +921,7 @@ function guardarAnchoMetraje() {
                 showToast('Error al guardar los datos', 'error');
             });
     } else if (modoSeleccionado === 'pieza') {
-        // GUARDAR MODO POR PIEZA - Idéntico a color pero con tipo_modo='pieza'
+        // GUARDAR MODO POR PIEZA - Identico a color pero con tipo_modo='pieza'
         const promises = [];
         
         // Guardar ancho general si existe
@@ -840,6 +984,7 @@ function guardarAnchoMetraje() {
         Promise.all(promises)
             .then(results => {
                 if (results.every(r => r.success)) {
+                    actualizarEstadoGuardadoModal(modal, modoSeleccionado);
                     showToast('Ancho y metraje guardados correctamente', 'success');
                     setTimeout(() => {
                         cerrarModalAnchoMetraje();
@@ -881,6 +1026,7 @@ function guardarAnchoMetraje() {
             console.log('[guardarAnchoMetraje] Respuesta del servidor (modo mano):', data);
             
             if (data.success) {
+                actualizarEstadoGuardadoModal(modal, modoSeleccionado);
                 showToast('Ancho y metraje guardados correctamente', 'success');
                 
                 setTimeout(() => {
@@ -930,7 +1076,7 @@ function actualizarReciboConAnchoMetraje() {
             z-index: 10;
         `;
         
-        // Insertar después del título del recibo
+        // Insertar despues del titulo del recibo
         const receiptTitle = document.getElementById('receipt-title');
         if (receiptTitle) {
             receiptTitle.parentNode.insertBefore(anchoMetrajeElement, receiptTitle.nextSibling);
@@ -947,6 +1093,18 @@ function actualizarReciboConAnchoMetraje() {
 }
 
 function exportModalAnchoMetraje() {
+    document.addEventListener('change', function (event) {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement)) {
+            return;
+        }
+        if (target.name !== 'modoAnchoMetraje') {
+            return;
+        }
+        actualizarEstilosModoCards();
+        cambiarModoAnchoMetraje({ target });
+    });
+
     window.insumosHandlers = window.insumosHandlers || {};
     window.insumosHandlers.modalAnchoMetraje = {
         abrirModalAnchoMetraje,

@@ -198,62 +198,7 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     // ========================================
     // API REALTIME - PEDIDOS
     // ========================================
-    Route::get('/realtime/pedidos', function () {
-        // Debug: Ver información del usuario y roles
-        $user = auth()->user();
-        
-        if (!$user) {
-            return response()->json(['error' => 'No authenticated user'], 403);
-        }
-        
-        // Debug: Mostrar todos los roles del usuario
-        $userRoles = $user->roles->pluck('name')->toArray();
-        
-        // Verificar si el usuario tiene permisos (verificación manual)
-        $hasPermission = $user->hasRole('asesor') || 
-                       $user->hasRole('admin') || 
-                       $user->hasRole('supervisor_pedidos') || 
-                       $user->hasRole('despacho') ||
-                       $user->hasRole('insumos');
-        
-        // Log para debug
-        \Log::info('[REALTIME-API] Verificación de permisos', [
-            'user_id' => $user->id,
-            'user_roles' => $userRoles,
-            'has_permission' => $hasPermission
-        ]);
-        
-        if (!$hasPermission) {
-            return response()->json([
-                'error' => 'Unauthorized',
-                'debug' => [
-                    'user_id' => $user->id,
-                    'user_roles' => $userRoles,
-                    'has_permission' => $hasPermission
-                ]
-            ], 403);
-        }
-        
-        // Obtener pedidos según el rol del usuario
-        $query = \App\Models\PedidoProduccion::select('id', 'numero_pedido', 'cliente', 'estado', 'area', 'novedades', 'forma_de_pago', 'created_at', 'fecha_estimada_de_entrega');
-        
-        // Si es asesor, solo mostrar sus pedidos
-        if ($user->hasRole('asesor')) {
-            $query->where('asesor_id', $user->id);
-        }
-        
-        $pedidos = $query->orderBy('created_at', 'desc')->get();
-        
-        return response()->json([
-            'success' => true,
-            'data' => $pedidos->toArray(),
-            'debug' => [
-                'user_id' => $user->id,
-                'user_roles' => $userRoles,
-                'pedidos_count' => $pedidos->count()
-            ]
-        ]);
-    })->name('realtime.pedidos.listar');
+    Route::get('/realtime/pedidos', [AsesoresController::class, 'listarRealtimePedidos'])->name('realtime.pedidos.listar');
 
     // ========================================
     // PEDIDOS (UNICA FUENTE PARA CREACION)
@@ -281,3 +226,4 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
             ->where('pedidoId', '[0-9]+');
     });
 });
+
