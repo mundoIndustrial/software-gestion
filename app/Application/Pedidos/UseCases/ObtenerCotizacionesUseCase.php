@@ -3,7 +3,7 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Models\Cotizacion;
-use App\Domain\Pedidos\Constants\PedidoConstants;
+use App\Domain\Pedidos\PedidoConstants;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 

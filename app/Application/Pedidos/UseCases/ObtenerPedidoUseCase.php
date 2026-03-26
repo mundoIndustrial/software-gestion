@@ -216,6 +216,24 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 mensaje: 'Pedido obtenido exitosamente'
             );
 
+        } catch (\Error|\RuntimeException $e) {
+            return new PedidoResponseDTO(
+                id: $datosEnriquecidos['id'] ?? null,
+                numero: $datosEnriquecidos['numero'] ?? null,
+                clienteId: $datosEnriquecidos['clienteId'] ?? null,
+                estado: $datosEnriquecidos['estado'] ?? null,
+                descripcion: $datosEnriquecidos['descripcion'] ?? null,
+                totalPrendas: $datosEnriquecidos['totalPrendas'] ?? 0,
+                totalArticulos: $datosEnriquecidos['totalArticulos'] ?? 0,
+                cliente: null,
+                asesor: null,
+                prendas: $datosEnriquecidos['prendas'] ?? [],
+                epps: $datosEnriquecidos['epps'] ?? [],
+                formaDePago: $datosEnriquecidos['forma_de_pago'] ?? null,
+                fechaCreacion: null,
+                area: null,
+                mensaje: 'Pedido obtenido exitosamente'
+            );
         } catch (\Exception $e) {
             Log::error('Error construyendo respuesta de pedido', [
                 'pedido_id' => $pedidoId,

@@ -2,6 +2,7 @@
 
 namespace App\Application\UseCases\RegistroOrden;
 
+use App\Application\Pedidos\Services\PrendaPedidoQuantityCalculator;
 use App\Infrastructure\Repositories\PedidoProduccionRepository;
 use App\Infrastructure\Repositories\ConsecutivosRecibosRepository;
 use App\Models\PrendaPedido;
@@ -19,13 +20,16 @@ class GetSeguimientoPorPrendaUseCase
 {
     private PedidoProduccionRepository $pedidoRepository;
     private ConsecutivosRecibosRepository $consecutivosRepository;
+    private PrendaPedidoQuantityCalculator $prendaQuantityCalculator;
 
     public function __construct(
         PedidoProduccionRepository $pedidoRepository,
-        ConsecutivosRecibosRepository $consecutivosRepository
+        ConsecutivosRecibosRepository $consecutivosRepository,
+        PrendaPedidoQuantityCalculator $prendaQuantityCalculator
     ) {
         $this->pedidoRepository = $pedidoRepository;
         $this->consecutivosRepository = $consecutivosRepository;
+        $this->prendaQuantityCalculator = $prendaQuantityCalculator;
     }
 
     /**
@@ -165,7 +169,7 @@ class GetSeguimientoPorPrendaUseCase
             'id' => $prenda->id,
             'nombre_prenda' => $prenda->nombre_prenda,
             'descripcion' => $prenda->descripcion,
-            'cantidad' => $prenda->cantidad_total,
+            'cantidad' => $this->prendaQuantityCalculator->calculate($prenda),
             'cantidad_talla' => $cantidadTalla,
             'de_bodega' => $prenda->de_bodega,
             'seguimientos_por_area' => $seguimientosPorArea,

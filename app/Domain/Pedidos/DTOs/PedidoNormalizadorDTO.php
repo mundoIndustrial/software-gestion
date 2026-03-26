@@ -2,7 +2,7 @@
 
 namespace App\Domain\Pedidos\DTOs;
 
-use App\Domain\Pedidos\Services\ItemTransformerService;
+use App\Application\Pedidos\Services\ItemTransformerService;
 use Illuminate\Support\Facades\Log;
 
 /**

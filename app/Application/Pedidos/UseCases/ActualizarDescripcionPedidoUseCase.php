@@ -40,6 +40,8 @@ class ActualizarDescripcionPedidoUseCase
             id: $pedido->id(),
             numero: (string)$pedido->numero(),
             clienteId: $pedido->clienteId(),
+            cliente: null,
+            asesor: null,
             estado: $pedido->estado()->valor(),
             descripcion: $pedido->descripcion(),
             totalPrendas: $pedido->totalPrendas(),
@@ -50,4 +52,3 @@ class ActualizarDescripcionPedidoUseCase
         );
     }
 }
-

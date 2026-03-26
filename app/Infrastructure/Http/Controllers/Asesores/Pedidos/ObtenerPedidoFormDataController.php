@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Application\Pedidos\UseCases\ObtenerDatosParaCrearPedidoUseCase;
 use App\Application\Pedidos\UseCases\ObtenerCotizacionesUseCase;
+use App\Application\Services\Pedidos\PrepararCrearPedidoNuevoService;
 use App\Infrastructure\Http\Presenters\CrearPedidoPresenter;
 
 /**
@@ -36,6 +37,7 @@ class ObtenerPedidoFormDataController extends Controller
     public function __construct(
         private ObtenerDatosParaCrearPedidoUseCase $obtenerDatosUseCase,
         private ObtenerCotizacionesUseCase $obtenerCotizacionesUseCase,
+        private PrepararCrearPedidoNuevoService $prepararPedidoNuevo,
         private CrearPedidoPresenter $presenter,
     ) {}
 
@@ -113,8 +115,16 @@ class ObtenerPedidoFormDataController extends Controller
             $modoEdicion = false;
 
             if ($editId) {
-                // TODO: Crear UseCase para obtener datos de edición
-                $modoEdicion = true;
+                // Usar el servicio para obtener y preparar datos de edición
+                $resultado = $this->prepararPedidoNuevo->ejecutar($editId);
+                if ($resultado) {
+                    $modoEdicion = $resultado['modo_edicion'];
+                    $datosEdicion = [
+                        'pedido_id' => $resultado['pedido_editar_id'] ?? null,
+                        'pedido' => $resultado['pedido_editar'] ?? null,
+                        'epps' => $resultado['epps_editar'] ?? [],
+                    ];
+                }
             }
 
             // 3. Formatear para Blade (Presenter)

@@ -17,6 +17,7 @@ use App\Application\Cotizacion\Handlers\Queries\ListarCotizacionesHandler;
 use App\Application\Cotizacion\Handlers\Queries\ObtenerCotizacionHandler;
 use App\Application\Cotizacion\Queries\ListarCotizacionesQuery;
 use App\Application\Cotizacion\Services\GenerarNumeroCotizacionService;
+use App\Application\Pedidos\Services\PrendaPedidoDescriptionFormatter;
 use App\Application\Services\Cotizacion\ActualizarCotizacionService;
 use App\Application\Services\Cotizacion\ActualizarImagenesCotizacionService;
 use App\Application\Services\Cotizacion\AnularCotizacionService;
@@ -191,7 +192,7 @@ final class CotizacionController extends Controller
                 return [
                     'id' => $prenda->id,
                     'nombre_producto' => $prenda->nombre_producto,
-                    'descripcion' => $prenda->generarDescripcionDetallada(),
+                    'descripcion' => app(PrendaPedidoDescriptionFormatter::class)->formatDetailed($prenda),
                     'tallas' => $prenda->tallas->pluck('talla')->toArray(),
                     'fotos' => $prenda->fotos->pluck('url')->toArray(),
                     'variantes' => $variantes

@@ -2,6 +2,7 @@
 
 namespace App\Application\SupervisorPedidos\UseCases;
 
+use App\Application\Pedidos\Services\PrendaPedidoDescriptionFormatter;
 use App\Domain\SupervisorPedidos\Repositories\OrderRepository;
 use App\Domain\SupervisorPedidos\ValueObjects\OrderId;
 use App\Application\SupervisorPedidos\DTOs\GetOrderDetailsRequest;
@@ -13,10 +14,15 @@ use Illuminate\Support\Facades\Log;
 class GetOrderDetailsUseCase
 {
     private OrderRepository $orderRepository;
+    private PrendaPedidoDescriptionFormatter $prendaDescriptionFormatter;
 
-    public function __construct(OrderRepository $orderRepository)
+    public function __construct(
+        OrderRepository $orderRepository,
+        PrendaPedidoDescriptionFormatter $prendaDescriptionFormatter
+    )
     {
         $this->orderRepository = $orderRepository;
+        $this->prendaDescriptionFormatter = $prendaDescriptionFormatter;
     }
 
     public function execute(GetOrderDetailsRequest $request): GetOrderDetailsResponse
@@ -269,7 +275,7 @@ class GetOrderDetailsUseCase
 
         $totalPrendas = $order->prendas->count();
         $descripciones = $order->prendas->map(function($prenda, $index) use ($totalPrendas) {
-            $base = $prenda->generarDescripcionDetallada($index + 1, $totalPrendas);
+            $base = $this->prendaDescriptionFormatter->formatDetailed($prenda, $index + 1);
 
             // Adjuntar observaciones por tallas de PROCESOS cuando aplique
             try {
@@ -333,4 +339,3 @@ class GetOrderDetailsUseCase
         return implode("\n" . str_repeat("─", 60) . "\n", $descripciones->toArray());
     }
 }
-

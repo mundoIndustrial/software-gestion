@@ -2,8 +2,8 @@
 
 namespace App\Infrastructure\Http\Controllers;
 
-use App\Domain\Pedidos\Services\ColoresPorTallaService;
-use App\Domain\Pedidos\ValueObjects\AsignacionColor;
+use App\Application\Pedidos\Services\ColoresPorTallaApplicationService;
+use App\Constants\ColoresPorTallaConstants;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -15,9 +15,9 @@ use Illuminate\Support\Facades\Log;
  */
 class ColoresPorTallaController extends Controller
 {
-    private ColoresPorTallaService $coloresPorTallaService;
+    private ColoresPorTallaApplicationService $coloresPorTallaService;
 
-    public function __construct(ColoresPorTallaService $coloresPorTallaService)
+    public function __construct(ColoresPorTallaApplicationService $coloresPorTallaService)
     {
         $this->coloresPorTallaService = $coloresPorTallaService;
     }
@@ -67,17 +67,17 @@ class ColoresPorTallaController extends Controller
                 'colores.*.color' => 'required|string',
                 'colores.*.cantidad' => 'required|integer|min:1'
             ], [
-                'genero.required' => 'El género es requerido',
-                'genero.in' => 'El género debe ser dama, caballero o unisex',
-                'talla.required' => 'La talla es requerida',
-                'tipo_talla.required' => 'El tipo de talla es requerido',
-                'tipo_talla.in' => 'El tipo de talla debe ser Letra o Número',
-                'tela.required' => 'La tela es requerida',
-                'colores.required' => 'Debe agregar al menos un color',
-                'colores.min' => 'Debe agregar al menos un color',
-                'colores.*.color.required' => 'El nombre del color es requerido',
-                'colores.*.cantidad.required' => 'La cantidad es requerida',
-                'colores.*.cantidad.min' => 'La cantidad debe ser mayor a 0'
+                'genero.required' => ColoresPorTallaConstants::ERROR_GENERO_REQUERIDO,
+                'genero.in' => ColoresPorTallaConstants::ERROR_GENERO_INVALIDO,
+                'talla.required' => ColoresPorTallaConstants::ERROR_TALLA_REQUERIDA,
+                'tipo_talla.required' => ColoresPorTallaConstants::ERROR_TIPO_TALLA_REQUERIDO,
+                'tipo_talla.in' => ColoresPorTallaConstants::ERROR_TIPO_TALLA_INVALIDO,
+                'tela.required' => ColoresPorTallaConstants::ERROR_TELA_REQUERIDA,
+                'colores.required' => ColoresPorTallaConstants::ERROR_AGREGAR_COLOR_MINIMO,
+                'colores.min' => ColoresPorTallaConstants::ERROR_AGREGAR_COLOR_MINIMO,
+                'colores.*.color.required' => ColoresPorTallaConstants::ERROR_COLOR_REQUERIDO,
+                'colores.*.cantidad.required' => ColoresPorTallaConstants::ERROR_CANTIDAD_REQUERIDA,
+                'colores.*.cantidad.min' => ColoresPorTallaConstants::ERROR_CANTIDAD_MINIMA
             ]);
 
             $asignacion = $this->coloresPorTallaService->guardarAsignacion($validated);
@@ -91,7 +91,7 @@ class ColoresPorTallaController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error de validación',
+                'message' => ColoresPorTallaConstants::ERROR_VALIDACION,
                 'errors' => $e->errors()
             ], 422);
             
@@ -120,6 +120,12 @@ class ColoresPorTallaController extends Controller
                 'colores' => 'required|array|min:1',
                 'colores.*.color' => 'required|string',
                 'colores.*.cantidad' => 'required|integer|min:1'
+            ], [
+                'colores.required' => ColoresPorTallaConstants::ERROR_AGREGAR_COLOR_MINIMO,
+                'colores.min' => ColoresPorTallaConstants::ERROR_AGREGAR_COLOR_MINIMO,
+                'colores.*.color.required' => ColoresPorTallaConstants::ERROR_COLOR_REQUERIDO,
+                'colores.*.cantidad.required' => ColoresPorTallaConstants::ERROR_CANTIDAD_REQUERIDA,
+                'colores.*.cantidad.min' => ColoresPorTallaConstants::ERROR_CANTIDAD_MINIMA
             ]);
 
             $asignacion = $this->coloresPorTallaService->actualizarAsignacion($id, $validated);
@@ -130,10 +136,10 @@ class ColoresPorTallaController extends Controller
                 'data' => $asignacion
             ]);
             
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error de validación',
+                'message' => ColoresPorTallaConstants::ERROR_VALIDACION,
                 'errors' => $e->errors()
             ], 422);
             
@@ -263,19 +269,19 @@ class ColoresPorTallaController extends Controller
                 'tallas.*.colores.*.color' => 'required|string',
                 'tallas.*.colores.*.cantidad' => 'required|integer|min:1'
             ], [
-                'genero.required' => 'El género es requerido',
-                'genero.in' => 'El género debe ser dama, caballero o unisex',
-                'tipo_talla.required' => 'El tipo de talla es requerido',
-                'tipo_talla.in' => 'El tipo de talla debe ser Letra o Número',
-                'tela.required' => 'La tela es requerida',
+                'genero.required' => ColoresPorTallaConstants::ERROR_GENERO_REQUERIDO,
+                'genero.in' => ColoresPorTallaConstants::ERROR_GENERO_INVALIDO,
+                'tipo_talla.required' => ColoresPorTallaConstants::ERROR_TIPO_TALLA_REQUERIDO,
+                'tipo_talla.in' => ColoresPorTallaConstants::ERROR_TIPO_TALLA_INVALIDO,
+                'tela.required' => ColoresPorTallaConstants::ERROR_TELA_REQUERIDA,
                 'tallas.required' => 'Debe seleccionar al menos una talla',
                 'tallas.min' => 'Debe seleccionar al menos una talla',
-                'tallas.*.talla.required' => 'La talla es requerida',
-                'tallas.*.colores.required' => 'Debe agregar al menos un color',
-                'tallas.*.colores.min' => 'Debe agregar al menos un color',
-                'tallas.*.colores.*.color.required' => 'El nombre del color es requerido',
-                'tallas.*.colores.*.cantidad.required' => 'La cantidad es requerida',
-                'tallas.*.colores.*.cantidad.min' => 'La cantidad debe ser mayor a 0'
+                'tallas.*.talla.required' => ColoresPorTallaConstants::ERROR_TALLA_REQUERIDA,
+                'tallas.*.colores.required' => ColoresPorTallaConstants::ERROR_AGREGAR_COLOR_MINIMO,
+                'tallas.*.colores.min' => ColoresPorTallaConstants::ERROR_AGREGAR_COLOR_MINIMO,
+                'tallas.*.colores.*.color.required' => ColoresPorTallaConstants::ERROR_COLOR_REQUERIDO,
+                'tallas.*.colores.*.cantidad.required' => ColoresPorTallaConstants::ERROR_CANTIDAD_REQUERIDA,
+                'tallas.*.colores.*.cantidad.min' => ColoresPorTallaConstants::ERROR_CANTIDAD_MINIMA
             ]);
 
             $resultado = $this->coloresPorTallaService->procesarAsignacionWizard($validated);
@@ -291,7 +297,7 @@ class ColoresPorTallaController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error de validación',
+                'message' => ColoresPorTallaConstants::ERROR_VALIDACION,
                 'errors' => $e->errors()
             ], 422);
             

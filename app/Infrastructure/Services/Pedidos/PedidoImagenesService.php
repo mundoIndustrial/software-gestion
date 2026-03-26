@@ -137,7 +137,7 @@ class PedidoImagenesService
      * @param $prenda
      * @return void
      */
-    private function procesarImagenesPrenda(Request $request, int $pedidoId, int $itemIdx, $prenda): void
+    public function procesarImagenesPrenda(Request $request, int $pedidoId, int $itemIdx, $prenda): void
     {
         $imgIdx = 0;
         while (true) {

@@ -2,11 +2,10 @@
 
 namespace App\Domain\Pedidos\Repositories;
 
-use App\Domain\Pedidos\Services\FacturaPedidoService;
-use App\Domain\Pedidos\Services\ReciboPedidoService;
+use App\Application\Pedidos\Services\FacturaPedidoService;
+use App\Application\Pedidos\Services\ReciboPedidoService;
 use App\Domain\Pedidos\Traits\GestionaTallasRelacional;
 use App\Models\PedidoProduccion;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 /**
@@ -89,14 +88,10 @@ class PedidoProduccionRepository
             ->with(['cotizacion', 'prendas'])
             ->where('estado', '!=', 'Borrador');
 
-        // Si el usuario es asesor, solo mostrar sus pedidos
-        // Otros roles pueden ver todos los pedidos
-        $user = Auth::user();
-        if ($user && $user->hasRole('asesor')) {
-            $query->where('asesor_id', Auth::id());
+        if (!empty($filtros['asesor_id'])) {
+            $query->where('asesor_id', $filtros['asesor_id']);
         }
 
-        // Aplicar filtros
         if (!empty($filtros['estado'])) {
             $query->where('estado', $filtros['estado']);
         }
@@ -227,41 +222,4 @@ class PedidoProduccionRepository
             ->first();
     }
 
-    /**
-     * REFACTOR FASE 8: Eliminar imágenes de EPP
-     * 
-     * Responsabilidad: Encapsular la lógica de eliminación de imágenes
-     * Maneja:
-     * - Eliminar archivos del storage
-     * - Eliminar registros de BD
-     * 
-     * Uso: En ActualizarBorradorUseCase
-     * 
-     * @param int $pedidoEppId
-     * @return int Cantidad de imágenes eliminadas
-     */
-    public function eliminarImagenesEpp(int $pedidoEppId): int
-    {
-        $imagenes = \App\Models\PedidoEppImagen::where('pedido_epp_id', $pedidoEppId)->get();
-        $cantidad = 0;
-
-        foreach ($imagenes as $imagen) {
-            // Eliminar archivos del storage
-            if ($imagen->ruta_original && \Illuminate\Support\Facades\Storage::disk('public')->exists($imagen->ruta_original)) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($imagen->ruta_original);
-            }
-
-            if ($imagen->ruta_web && $imagen->ruta_web !== $imagen->ruta_original && 
-                \Illuminate\Support\Facades\Storage::disk('public')->exists($imagen->ruta_web)) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($imagen->ruta_web);
-            }
-
-            // Eliminar registro
-            $imagen->delete();
-            $cantidad++;
-        }
-
-        return $cantidad;
-    }
 }
-

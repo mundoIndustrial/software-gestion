@@ -9,6 +9,7 @@ use App\Models\PedidoEpp;
 use App\Models\PedidoEppImagen;
 use App\Models\Epp;
 use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Infrastructure\Services\Pedidos\EppImageCleanupService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /**
@@ -20,7 +21,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
  * - obtenerPorIdYAsesor() - Verificación de seguridad
  * - actualizarDatosBasicos() - Actualización de campos
  * - obtenerEppConImagenes() - Obtención con relaciones
- * - eliminarImagenesEpp() - Eliminación de archivos e imágenes
+ * - EppImageCleanupService - Eliminación de archivos e imágenes
  * 
  * @package Tests\Feature\Repositories
  */
@@ -29,6 +30,7 @@ class PedidoProduccionRepositoryTest extends TestCase
     use RefreshDatabase;
 
     private PedidoProduccionRepository $repository;
+    private EppImageCleanupService $eppImageCleanupService;
     private User $asesor;
     private PedidoProduccion $pedido;
 
@@ -49,6 +51,7 @@ class PedidoProduccionRepositoryTest extends TestCase
 
         // Obtener repositorio
         $this->repository = app(PedidoProduccionRepository::class);
+        $this->eppImageCleanupService = app(EppImageCleanupService::class);
     }
 
     /**
@@ -204,7 +207,7 @@ class PedidoProduccionRepositoryTest extends TestCase
     }
 
     /**
-     * TEST 8: eliminarImagenesEpp - Eliminar imágenes
+     * TEST 8: EppImageCleanupService - Eliminar imágenes
      * 
      * Verifica que se eliminen registros de BD
      */
@@ -235,7 +238,7 @@ class PedidoProduccionRepositoryTest extends TestCase
         $this->assertEquals(3, PedidoEppImagen::where('pedido_epp_id', $pedidoEpp->id)->count());
 
         // Ejecutar
-        $cantidadEliminada = $this->repository->eliminarImagenesEpp($pedidoEpp->id);
+        $cantidadEliminada = $this->eppImageCleanupService->eliminarImagenes($pedidoEpp->id);
 
         // Validaciones
         $this->assertEquals(3, $cantidadEliminada);
@@ -243,7 +246,7 @@ class PedidoProduccionRepositoryTest extends TestCase
     }
 
     /**
-     * TEST 9: eliminarImagenesEpp - Sin imágenes
+     * TEST 9: EppImageCleanupService - Sin imágenes
      * 
      * Verifica que retorne 0 si no hay imágenes
      */
@@ -262,7 +265,7 @@ class PedidoProduccionRepositoryTest extends TestCase
         ]);
 
         // Ejecutar
-        $cantidadEliminada = $this->repository->eliminarImagenesEpp($pedidoEpp->id);
+        $cantidadEliminada = $this->eppImageCleanupService->eliminarImagenes($pedidoEpp->id);
 
         // Validaciones
         $this->assertEquals(0, $cantidadEliminada);

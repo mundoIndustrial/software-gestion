@@ -25,8 +25,8 @@ class TelasColoresApiController extends Controller
             
             try {
                 // Intentar cargar desde la BD si está disponible
-                $telas = \App\Models\CatalogoTela::where('activo', true)
-                    ->select('id', 'nombre', 'codigo')
+                $telas = \App\Models\TelaPrenda::where('activo', true)
+                    ->select('id', 'nombre', 'referencia')
                     ->orderBy('nombre')
                     ->get()
                     ->toArray();

@@ -201,7 +201,13 @@ class AsesoresController extends Controller
             }
 
             // Crear DTO para el Use Case
-            $dto = ListarProduccionPedidosDTO::fromRequest($tipo, $filtros);
+            $user = Auth::user();
+            $dto = ListarProduccionPedidosDTO::fromRequest(
+                $tipo,
+                $filtros,
+                $user?->id,
+                (bool) ($user?->hasRole('asesor'))
+            );
 
             // Usar el nuevo Use Case DDD
             $pedidos = $this->listarProduccionPedidosUseCase->ejecutar($dto);
@@ -1289,7 +1295,13 @@ class AsesoresController extends Controller
             }
 
             // Crear DTO para el Use Case
-            $dto = ListarProduccionPedidosDTO::fromRequest($tipo, $filtros);
+            $user = Auth::user();
+            $dto = ListarProduccionPedidosDTO::fromRequest(
+                $tipo,
+                $filtros,
+                $user?->id,
+                (bool) ($user?->hasRole('asesor'))
+            );
 
             // Usar el nuevo Use Case DDD
             $pedidos = $this->listarProduccionPedidosUseCase->ejecutar($dto);

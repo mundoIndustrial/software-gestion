@@ -15,6 +15,7 @@ use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
 use App\Models\PrendaCotizacionFriendly;
 use App\Models\CostoPrenda;
+use App\Application\Pedidos\Services\PrendaPedidoDescriptionFormatter;
 use App\Services\ImagenCotizacionService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
@@ -332,7 +333,7 @@ class ContadorController extends Controller
                 'logo_observaciones_prenda' => $logoObservacionesPorPrenda,
                 'prendas_cotizaciones' => $cotizacionModelo->prendas->map(function($prenda, $index) use ($logoObservacionesPorPrenda) {
                     // Generar descripción formateada usando el método del modelo
-                    $descripcionFormateada = $prenda->generarDescripcionDetallada($index + 1);
+                    $descripcionFormateada = app(PrendaPedidoDescriptionFormatter::class)->formatDetailed($prenda, $index + 1);
                     
                     return [
                         'id' => $prenda->id,

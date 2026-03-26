@@ -14,9 +14,12 @@ class ListarProduccionPedidosUseCase
 
     public function ejecutar(ListarProduccionPedidosDTO $dto): LengthAwarePaginator
     {
-        // Obtener pedidos del asesor autenticado con filtros
         $filtros = $dto->filtros ?? [];
-        
+
+        if ($dto->soloAsesor && $dto->usuarioId) {
+            $filtros['asesor_id'] = $dto->usuarioId;
+        }
+
         return $this->pedidoRepository->obtenerPedidosAsesor($filtros);
     }
 
@@ -35,5 +38,4 @@ class ListarProduccionPedidosUseCase
         ];
     }
 }
-
 

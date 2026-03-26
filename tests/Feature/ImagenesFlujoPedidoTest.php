@@ -7,7 +7,6 @@ use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 use App\Models\User;
 use App\Models\PedidoProduccion;
-use App\Domain\Pedidos\Services\PedidoWebService;
 use App\Infrastructure\Services\Pedidos\ImagenRelocalizadorService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -23,7 +22,6 @@ class ImagenesFlujoPedidoTest extends TestCase
     use RefreshDatabase;
 
     private $user;
-    private $pedidoWebService;
     private $imagenRelocalizador;
 
     protected function setUp(): void
@@ -38,7 +36,6 @@ class ImagenesFlujoPedidoTest extends TestCase
             'email' => 'asesor@test.com'
         ]);
 
-        $this->pedidoWebService = app(PedidoWebService::class);
         $this->imagenRelocalizador = app(ImagenRelocalizadorService::class);
     }
 

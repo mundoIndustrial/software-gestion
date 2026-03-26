@@ -2,10 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Domain\Pedidos\Services\PedidoWebService;
+use App\Application\Pedidos\Services\PedidoCreationCoordinator;
 use App\Models\PedidoProduccion;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -24,6 +25,10 @@ class ConcurrenciaCreacionPedidosTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        if (Config::get('database.default') !== 'mysql') {
+            $this->markTestSkipped('Este test de concurrencia requiere MySQL real.');
+        }
 
         if (!Schema::hasTable('numero_secuencias')) {
             $this->markTestSkipped('La tabla numero_secuencias no existe en el entorno de pruebas.');
@@ -131,7 +136,7 @@ class ConcurrenciaCreacionPedidosTest extends TestCase
     {
         $this->actingAs($usuario);
 
-        $service = app(PedidoWebService::class);
+        $service = app(PedidoCreationCoordinator::class);
         $pedido = $service->crearPedidoCompleto([
             'cliente' => "Cliente Test {$index}",
             'orden_compra' => null,
@@ -180,7 +185,7 @@ class ConcurrenciaCreacionPedidosTest extends TestCase
     {
         $usuario = User::first() ?? User::factory()->create();
 
-        $service = app(PedidoWebService::class);
+        $service = app(PedidoCreationCoordinator::class);
         return $service->crearPedidoCompleto([
             'cliente' => 'Cliente Test',
             'orden_compra' => null,

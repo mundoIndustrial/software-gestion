@@ -143,7 +143,8 @@ class PedidosServiceProvider extends ServiceProvider
         $this->app->bind(GetSeguimientoPorPrendaUseCase::class, function ($app) {
             return new GetSeguimientoPorPrendaUseCase(
                 $app->make(PedidoProduccionRepository::class),
-                $app->make(ConsecutivosRecibosRepository::class)
+                $app->make(ConsecutivosRecibosRepository::class),
+                $app->make(\App\Application\Pedidos\Services\PrendaPedidoQuantityCalculator::class)
             );
         });
 

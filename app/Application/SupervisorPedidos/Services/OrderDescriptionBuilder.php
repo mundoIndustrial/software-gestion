@@ -2,16 +2,22 @@
 
 namespace App\Application\SupervisorPedidos\Services;
 
+use App\Application\Pedidos\Services\PrendaPedidoDescriptionFormatter;
 use App\Models\PedidoProduccion;
 use App\Repositories\EloquentProcesoPrendaDetalleRepository;
 
 class OrderDescriptionBuilder
 {
     private EloquentProcesoPrendaDetalleRepository $procesoRepository;
+    private PrendaPedidoDescriptionFormatter $prendaDescriptionFormatter;
 
-    public function __construct(EloquentProcesoPrendaDetalleRepository $procesoRepository)
+    public function __construct(
+        EloquentProcesoPrendaDetalleRepository $procesoRepository,
+        PrendaPedidoDescriptionFormatter $prendaDescriptionFormatter
+    )
     {
         $this->procesoRepository = $procesoRepository;
+        $this->prendaDescriptionFormatter = $prendaDescriptionFormatter;
     }
 
     public function build(PedidoProduccion $order): string
@@ -27,7 +33,7 @@ class OrderDescriptionBuilder
 
     private function buildPrendaDescription($prenda, int $position, int $totalPrendas): string
     {
-        $base = $prenda->generarDescripcionDetallada($position, $totalPrendas);
+        $base = $this->prendaDescriptionFormatter->formatDetailed($prenda, $position);
         $lineasProc = $this->buildProcesosLines((int) $prenda->id);
 
         if (!empty($lineasProc)) {

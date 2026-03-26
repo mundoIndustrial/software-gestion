@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Domain\Pedidos\Services\PrendaTransformadorService;
+use App\Application\Pedidos\Services\PrendaFrontendTransformadorService;
 use App\Domain\Pedidos\Services\TallaProcessorService;
 use App\Domain\Pedidos\Services\VariacionProcessorService;
 use App\Domain\Pedidos\Services\ProcesoProcessorService;
@@ -43,8 +43,8 @@ class PrendaEditorServiceProvider extends ServiceProvider
             return new ProcesoProcessorService();
         });
         
-        $this->app->singleton(PrendaTransformadorService::class, function ($app) {
-            return new PrendaTransformadorService(
+        $this->app->singleton(PrendaFrontendTransformadorService::class, function ($app) {
+            return new PrendaFrontendTransformadorService(
                 $app->make(TallaProcessorService::class),
                 $app->make(VariacionProcessorService::class),
                 $app->make(ProcesoProcessorService::class)
@@ -54,7 +54,7 @@ class PrendaEditorServiceProvider extends ServiceProvider
         // ===== TERCERO: Application Services (que dependen de interfaces) =====
         $this->app->singleton(PrendaEditorService::class, function ($app) {
             return new PrendaEditorService(
-                $app->make(PrendaTransformadorService::class),
+                $app->make(PrendaFrontendTransformadorService::class),
                 $app->make(PrendaRepositoryInterface::class),
                 $app->make(CotizacionRepositoryInterface::class)
             );
@@ -88,7 +88,7 @@ class PrendaEditorServiceProvider extends ServiceProvider
     public function provides()
     {
         return [
-            PrendaTransformadorService::class,
+            PrendaFrontendTransformadorService::class,
             PrendaEditorService::class,
             PrendaRepositoryInterface::class,
             CotizacionRepositoryInterface::class,

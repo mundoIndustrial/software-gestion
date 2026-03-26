@@ -15,7 +15,7 @@ use App\Services\RegistroOrdenProcessService;
 use App\Services\RegistroOrdenStatsService;
 use App\Services\RegistroOrdenProcessesService;
 use App\Services\RegistroOrdenEnumService;
-use App\Domain\Services\OrderDescriptionService;
+use App\Application\Orders\Services\OrderDescriptionService;
 use Carbon\Carbon;
 
 /**

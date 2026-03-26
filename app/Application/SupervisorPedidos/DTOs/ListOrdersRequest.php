@@ -4,6 +4,8 @@ namespace App\Application\SupervisorPedidos\DTOs;
 
 class ListOrdersRequest
 {
+    private array $rawParams = [];
+    private ?int $userId = null;
     private ?string $mostrar = null;
     private ?string $aprobacion = null;
     private ?string $tipo = null;
@@ -20,6 +22,8 @@ class ListOrdersRequest
 
     public function __construct(array $params = [])
     {
+        $this->rawParams = $params;
+        $this->userId = isset($params['user_id']) ? (int) $params['user_id'] : null;
         $this->mostrar = $params['mostrar'] ?? null;
         $this->aprobacion = $params['aprobacion'] ?? null;
         $this->tipo = $params['tipo'] ?? null;
@@ -48,4 +52,22 @@ class ListOrdersRequest
     public function getFechaHasta(): ?string { return $this->fecha_hasta; }
     public function getPage(): int { return $this->page; }
     public function getPerPage(): int { return $this->perPage; }
+    public function getUserId(): ?int { return $this->userId; }
+
+    public function getAppends(): array
+    {
+        return array_filter([
+            'mostrar' => $this->rawParams['mostrar'] ?? null,
+            'aprobacion' => $this->rawParams['aprobacion'] ?? null,
+            'tipo' => $this->rawParams['tipo'] ?? null,
+            'busqueda' => $this->rawParams['busqueda'] ?? null,
+            'numero' => $this->rawParams['numero'] ?? null,
+            'cliente' => $this->rawParams['cliente'] ?? null,
+            'forma_pago' => $this->rawParams['forma_pago'] ?? null,
+            'estado' => $this->rawParams['estado'] ?? null,
+            'asesora' => $this->rawParams['asesora'] ?? null,
+            'fecha_desde' => $this->rawParams['fecha_desde'] ?? null,
+            'fecha_hasta' => $this->rawParams['fecha_hasta'] ?? null,
+        ]);
+    }
 }

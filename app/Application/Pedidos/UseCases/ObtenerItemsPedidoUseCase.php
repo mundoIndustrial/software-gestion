@@ -2,7 +2,7 @@
 
 namespace App\Application\Pedidos\UseCases;
 
-use App\Domain\Pedidos\Services\GestionItemsPedidoService;
+use App\Application\Pedidos\Services\GestionItemsPedidoService;
 
 /**
  * Use Case: Obtener Items de Pedido
@@ -29,4 +29,3 @@ class ObtenerItemsPedidoUseCase
         ];
     }
 }
-

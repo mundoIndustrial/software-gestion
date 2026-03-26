@@ -7,10 +7,12 @@ use Illuminate\Support\ServiceProvider;
 use App\Models\TablaOriginalBodega;
 use App\Models\ProcesoPrenda;
 use App\Models\PedidoProduccion;
+use App\Models\PrendaPedido;
 use App\Models\Cotizacion;
 use App\Observers\TablaOriginalBodegaObserver;
 use App\Observers\ProcesoPrendaObserver;
 use App\Observers\PedidoProduccionObserver;
+use App\Observers\PrendaPedidoObserver;
 use App\Domain\Operario\Repositories\OperarioRepository;
 use App\Infrastructure\Persistence\Eloquent\OperarioRepositoryImpl;
 use App\Domain\Operario\Repositories\ConsecutivoReciboPedidoRepository;
@@ -212,6 +214,9 @@ class AppServiceProvider extends ServiceProvider
         // Registrar Observer para PedidoProduccion
         // Crea notificaciones cuando se asigna la fecha estimada de entrega
         PedidoProduccion::observe(PedidoProduccionObserver::class);
+
+        // Registrar Observer para PrendaPedido
+        PrendaPedido::observe(PrendaPedidoObserver::class);
 
         // View Composer para el sidebar del contador
         View::composer('contador.sidebar', function ($view) {

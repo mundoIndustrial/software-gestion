@@ -116,7 +116,9 @@ class SupervisorOrdersController extends Controller
      */
     public function index(Request $request)
     {
-        $requestDTO = new ListOrdersRequest($request->query());
+        $params = $request->query();
+        $params['user_id'] = $request->user()?->id;
+        $requestDTO = new ListOrdersRequest($params);
         $response = $this->listOrdersUseCase->execute($requestDTO);
 
         extract($response->toArray());

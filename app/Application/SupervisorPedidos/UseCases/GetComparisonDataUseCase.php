@@ -2,6 +2,7 @@
 
 namespace App\Application\SupervisorPedidos\UseCases;
 
+use App\Application\Pedidos\Services\PrendaPedidoDescriptionFormatter;
 use App\Application\SupervisorPedidos\DTOs\GetComparisonDataRequest;
 use App\Application\SupervisorPedidos\DTOs\GetComparisonDataResponse;
 use App\Models\PedidoProduccion;
@@ -9,6 +10,11 @@ use Illuminate\Support\Facades\Log;
 
 class GetComparisonDataUseCase
 {
+    public function __construct(
+        private PrendaPedidoDescriptionFormatter $prendaDescriptionFormatter
+    ) {
+    }
+
     public function execute(GetComparisonDataRequest $request): GetComparisonDataResponse
     {
         try {
@@ -67,7 +73,7 @@ class GetComparisonDataUseCase
         return $prendas->map(function($prenda, $index) {
             return [
                 'nombre' => $prenda->nombre_prenda,
-                'descripcion' => $prenda->generarDescripcionDetallada($index + 1),
+                'descripcion' => $this->prendaDescriptionFormatter->formatDetailed($prenda, $index + 1),
                 'tallas' => $prenda->cantidad_talla ?? []
             ];
         })->toArray();
@@ -97,7 +103,7 @@ class GetComparisonDataUseCase
             $tallas = $prenda->tallas ? $prenda->tallas->pluck('talla')->toArray() : [];
             return [
                 'nombre' => $prenda->nombre_producto,
-                'descripcion' => $prenda->generarDescripcionDetallada($index + 1),
+                'descripcion' => $this->prendaDescriptionFormatter->formatDetailed($prenda, $index + 1),
                 'tallas' => $tallas
             ];
         })->toArray();

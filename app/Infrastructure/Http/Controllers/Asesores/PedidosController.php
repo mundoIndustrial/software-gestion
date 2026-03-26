@@ -4,6 +4,7 @@ namespace App\Infrastructure\Http\Controllers\Asesores;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Domain\Shared\CQRS\CommandBus;
 use App\Domain\Pedidos\Commands\EliminarPedidoCommand;
@@ -60,7 +61,13 @@ class PedidosController
                 'search' => $request->get('search'),
             ];
 
-            $dto = ListarProduccionPedidosDTO::fromRequest(null, $filtros);
+            $usuario = Auth::user();
+            $dto = ListarProduccionPedidosDTO::fromRequest(
+                null,
+                $filtros,
+                $usuario?->id,
+                (bool) ($usuario?->hasRole('asesor'))
+            );
             $pedidos = $this->listarPedidosUseCase->ejecutar($dto);
 
             Log::info('[PedidosController] Listado obtenido', [
@@ -133,20 +140,16 @@ class PedidosController
                 'cliente' => 'required|string|max:255',
                 'forma_pago' => 'required|string|in:contado,credito,transferencia,cheque',
                 'asesor_id' => 'required|integer|min:1',
-                'cantidad_inicial' => 'sometimes|integer|min:0|default:0',
+                'cantidad_inicial' => 'sometimes|integer|min:0',
                 'epps' => 'sometimes|array',
                 'epps.*.epp_id' => 'required_with:epps|integer|min:1',
                 'epps.*.cantidad' => 'sometimes|integer|min:1',
                 'epps.*.observaciones' => 'sometimes|nullable|string|max:1000',
             ]);
+            $validated['cantidad_inicial'] ??= 0;
 
             $dto = CrearProduccionPedidoDTO::fromRequest($validated);
             $pedido = $this->crearPedidoUseCase->ejecutar($dto);
-
-            Log::info('[PedidosController] Pedido creado', [
-                'pedido_id' => is_array($pedido) ? ($pedido['id'] ?? null) : (method_exists($pedido, 'getId') ? $pedido->getId() : null),
-                'epps_procesados' => count($validated['epps'] ?? []),
-            ]);
 
             return response()->json($pedido, 201);
 

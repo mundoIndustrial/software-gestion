@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Infrastructure\Http\Controllers\PrendaController;
 use App\Infrastructure\Http\Controllers\PedidoQueryController;
+use App\Infrastructure\Http\Controllers\Asesores\TelasColoresApiController;
 
 /**
  * API Routes for Prendas - Lectura (Nueva Arquitectura)
@@ -27,5 +28,13 @@ Route::middleware('api')->group(function () {
     Route::prefix('areas')->name('areas.')->group(function () {
         Route::get('{area}/encargados', [PedidoQueryController::class, 'obtenerEncargadosPorArea'])
             ->name('encargados');
+    });
+
+    // ========================================
+    // TELAS Y COLORES - APIs PÚBLICAS
+    // ========================================
+    Route::prefix('public')->name('public.')->group(function () {
+        Route::get('telas', [TelasColoresApiController::class, 'getTelas'])->name('telas');
+        Route::get('colores', [TelasColoresApiController::class, 'getColores'])->name('colores');
     });
 });

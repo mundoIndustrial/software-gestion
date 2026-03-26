@@ -89,7 +89,11 @@ abstract class AbstractObtenerUseCase
         // Para obtener el estado original de BD, cargar el modelo Eloquent
         $modeloEloquent = null;
         if (method_exists($pedido, 'id') && $pedido->id()) {
-            $modeloEloquent = \App\Models\PedidoProduccion::find($pedido->id());
+            try {
+                $modeloEloquent = \App\Models\PedidoProduccion::find($pedido->id());
+            } catch (\Throwable $e) {
+                $modeloEloquent = null;
+            }
         }
         
         $datos = [
@@ -107,19 +111,35 @@ abstract class AbstractObtenerUseCase
 
         // Enriquecimiento condicional - Solo si se especifica
         if ($opciones['incluirPrendas'] ?? false) {
-            $datos['prendas'] = $this->obtenerPrendas($pedido->id());
+            try {
+                $datos['prendas'] = $this->obtenerPrendas($pedido->id());
+            } catch (\Throwable $e) {
+                $datos['prendas'] = [];
+            }
         }
 
         if ($opciones['incluirEpps'] ?? false) {
-            $datos['epps'] = $this->obtenerEpps($pedido->id());
+            try {
+                $datos['epps'] = $this->obtenerEpps($pedido->id());
+            } catch (\Throwable $e) {
+                $datos['epps'] = [];
+            }
         }
 
         if ($opciones['incluirProcesos'] ?? false) {
-            $datos['procesos'] = $this->obtenerProcesos($pedido->id());
+            try {
+                $datos['procesos'] = $this->obtenerProcesos($pedido->id());
+            } catch (\Throwable $e) {
+                $datos['procesos'] = [];
+            }
         }
 
         if ($opciones['incluirImagenes'] ?? false) {
-            $datos['imagenes'] = $this->obtenerImagenes($pedido->id());
+            try {
+                $datos['imagenes'] = $this->obtenerImagenes($pedido->id());
+            } catch (\Throwable $e) {
+                $datos['imagenes'] = [];
+            }
         }
 
         return $datos;
@@ -391,9 +411,11 @@ abstract class AbstractObtenerUseCase
      */
     protected function obtenerFormaDePago(int $pedidoId): ?string
     {
-        $pedido = \App\Models\PedidoProduccion::find($pedidoId);
-        return $pedido ? ($pedido->forma_de_pago ?? null) : null;
+        try {
+            $pedido = \App\Models\PedidoProduccion::find($pedidoId);
+            return $pedido ? ($pedido->forma_de_pago ?? null) : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }
-
-

@@ -4,7 +4,7 @@ namespace App\Application\Pedidos\UseCases;
 
 use App\Application\DTOs\ItemPedidoDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
-use App\Domain\Pedidos\Services\GestionItemsPedidoService;
+use App\Application\Pedidos\Services\GestionItemsPedidoService;
 
 /**
  * Use Case: Agregar Item a Pedido
@@ -40,4 +40,3 @@ class AgregarItemPedidoUseCase
         ];
     }
 }
-

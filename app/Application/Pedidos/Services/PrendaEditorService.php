@@ -2,7 +2,7 @@
 
 namespace App\Application\Pedidos\Services;
 
-use App\Domain\Pedidos\Services\PrendaTransformadorService;
+use App\Application\Pedidos\Services\PrendaFrontendTransformadorService;
 use App\Domain\Pedidos\Repositories\PrendaRepositoryInterface;
 use App\Domain\Pedidos\Repositories\CotizacionRepositoryInterface;
 use App\Application\Pedidos\DTOs\PrendaEditadaDTO;
@@ -15,12 +15,12 @@ use App\Application\Pedidos\DTOs\PrendaEditadaDTO;
  */
 class PrendaEditorService
 {
-    private PrendaTransformadorService $transformador;
+    private PrendaFrontendTransformadorService $transformador;
     private PrendaRepositoryInterface $prendaRepository;
     private CotizacionRepositoryInterface $cotizacionRepository;
     
     public function __construct(
-        PrendaTransformadorService $transformador,
+        PrendaFrontendTransformadorService $transformador,
         PrendaRepositoryInterface $prendaRepository,
         CotizacionRepositoryInterface $cotizacionRepository
     ) {

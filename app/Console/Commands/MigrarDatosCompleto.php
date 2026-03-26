@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Application\Pedidos\Services\PrendaPedidoQuantityCalculator;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -34,6 +35,12 @@ use Carbon\Carbon;
  */
 class MigrarDatosCompleto extends Command
 {
+    public function __construct(
+        private readonly PrendaPedidoQuantityCalculator $prendaQuantityCalculator
+    ) {
+        parent::__construct();
+    }
+
     protected $signature = 'migrar:datos-completo 
                             {--dry-run : Simular sin guardar cambios}
                             {--analyze : Solo analizar datos sin migrar}
@@ -626,7 +633,7 @@ class MigrarDatosCompleto extends Command
                     DB::table('prendas_pedido')->insert([
                         'nombre_prenda' => $prenda->nombre_prenda,
                         'numero_pedido' => $pedido->numero_pedido,
-                        'cantidad' => $prenda->cantidad_total ?? 0,
+                        'cantidad' => $this->prendaQuantityCalculator->calculate($prenda),
                         'descripcion' => $prenda->descripcion,
                         'cantidad_talla' => !empty($cantidadTalla) ? json_encode($cantidadTalla) : null,
                         'created_at' => now(),

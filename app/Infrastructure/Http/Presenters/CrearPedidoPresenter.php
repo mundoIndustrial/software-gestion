@@ -232,13 +232,26 @@ class CrearPedidoPresenter
         }
 
         return collect($pedidos)->map(function ($pedido) {
-            return [
-                'id' => $pedido->id ?? null,
-                'numero' => $pedido->numero_pedido ?? $pedido->numero ?? 'N/A',
-                'cliente' => $pedido->cliente ?? 'Sin cliente',
-                'estado' => $pedido->estado ?? 'pendiente',
-                'fecha' => $pedido->created_at?->format('Y-m-d') ?? null,
-            ];
+            // Manejo tanto de arrays como de objetos
+            if (is_array($pedido)) {
+                return [
+                    'id' => $pedido['id'] ?? null,
+                    'numero' => $pedido['numero_pedido'] ?? $pedido['numero'] ?? 'N/A',
+                    'cliente' => $pedido['cliente'] ?? 'Sin cliente',
+                    'estado' => $pedido['estado'] ?? 'pendiente',
+                    'fecha' => isset($pedido['created_at']) ? 
+                        (is_string($pedido['created_at']) ? $pedido['created_at'] : $pedido['created_at']?->format('Y-m-d')) 
+                        : null,
+                ];
+            } else {
+                return [
+                    'id' => $pedido->id ?? null,
+                    'numero' => $pedido->numero_pedido ?? $pedido->numero ?? 'N/A',
+                    'cliente' => $pedido->cliente ?? 'Sin cliente',
+                    'estado' => $pedido->estado ?? 'pendiente',
+                    'fecha' => $pedido->created_at?->format('Y-m-d') ?? null,
+                ];
+            }
         })->toArray();
     }
 

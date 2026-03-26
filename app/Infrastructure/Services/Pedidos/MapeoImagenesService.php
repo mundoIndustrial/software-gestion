@@ -349,7 +349,7 @@ class MapeoImagenesService
                 $nombreProcesoDTOReal = $procesoDTO['tipo'] ?? $procesoIdx;  // Usar el tipo real del DTO
                 
                 // Buscar proceso en BD por UID guardado en datos_adicionales
-                // (El UID se guarda en PedidoWebService::crearProcesosCompletos)
+                // (El UID se guarda durante la orquestación de creación de procesos del pedido)
                 $procesoEnBD = $procesosEnPrenda
                     ->first(function ($p) use ($procesoUID) {
                         $datosAdicionales = $p->datos_adicionales ?? [];
@@ -470,4 +470,3 @@ class MapeoImagenesService
         ]);
     }
 }
-

@@ -2,7 +2,7 @@
 
 namespace App\Application\Pedidos\UseCases;
 
-use App\Domain\Pedidos\Services\GestionItemsPedidoService;
+use App\Application\Pedidos\Services\GestionItemsPedidoService;
 
 /**
  * Use Case: Eliminar Item de Pedido
@@ -40,4 +40,3 @@ class EliminarItemPedidoUseCase
         ];
     }
 }
-

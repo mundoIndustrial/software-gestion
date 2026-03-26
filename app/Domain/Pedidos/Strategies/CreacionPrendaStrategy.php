@@ -23,7 +23,7 @@ interface CreacionPrendaStrategy
      * @param array $prendaData Datos de la prenda del request
      * @param int $pedidoProduccionId ID del pedido a vincular
      * @param array $servicios Array con servicios inyectados: [
-     *     'descripcionService' => DescripcionService,
+     *     'descriptionFormatter' => servicio de descripcion,
      *     'imagenService' => ImagenService,
      * ]
      * @return PrendaPedido Prenda creada y persistida
@@ -53,4 +53,3 @@ interface CreacionPrendaStrategy
      */
     public function getNombre(): string;
 }
-

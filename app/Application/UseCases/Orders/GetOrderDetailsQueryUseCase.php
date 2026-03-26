@@ -3,7 +3,7 @@
 namespace App\Application\UseCases\Orders;
 
 use App\Application\Pedidos\Services\PedidoDescriptionService;
-use App\Domain\Services\OrderDescriptionService;
+use App\Application\Orders\Services\OrderDescriptionService;
 use App\Infrastructure\QueryServices\OrderDetailsQueryService;
 use App\Models\LogoCotizacion;
 use App\Models\PedidoProduccion;
@@ -316,4 +316,3 @@ class GetOrderDetailsQueryUseCase
         };
     }
 }
-

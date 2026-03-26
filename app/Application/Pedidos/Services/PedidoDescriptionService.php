@@ -18,6 +18,12 @@ use App\Models\PedidoProduccion;
  */
 class PedidoDescriptionService
 {
+    public function __construct(
+        private PrendaPedidoDescriptionFormatter $prendaDescriptionFormatter,
+        private PrendaPedidoQuantityCalculator $quantityCalculator
+    ) {
+    }
+
     /**
      * Generar descripción completa de todas las prendas de un pedido
      *
@@ -33,7 +39,7 @@ class PedidoDescriptionService
         // Generar descripción detallada para TODAS las prendas
         // (tenga cotización o no)
         $descripciones = $pedido->prendas->map(function($prenda, $index) {
-            return $prenda->generarDescripcionDetallada($index + 1);
+            return $this->prendaDescriptionFormatter->formatDetailed($prenda, $index + 1);
         })->toArray();
 
         $resultado = implode("\n\n", $descripciones);
@@ -61,7 +67,7 @@ class PedidoDescriptionService
 
         $total = 0;
         foreach ($pedido->prendas as $prenda) {
-            $total += $prenda->cantidad_total;
+            $total += $this->quantityCalculator->calculate($prenda);
         }
 
         return $total;
@@ -84,7 +90,7 @@ class PedidoDescriptionService
         $totalPrendas = $pedido->prendas->count();
 
         $descripciones = $prendas->map(function($prenda, $index) {
-            return $prenda->generarDescripcionDetallada($index + 1);
+            return $this->prendaDescriptionFormatter->formatDetailed($prenda, $index + 1);
         })->toArray();
 
         $resultado = implode("\n\n", $descripciones);

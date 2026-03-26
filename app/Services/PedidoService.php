@@ -380,7 +380,7 @@ class PedidoService
 
     /**
      * Método eliminado - ya no se genera numero_pedido al crear
-     * El numero_pedido ahora se genera automáticamente al crear el pedido via PedidoWebService
+     * El numero_pedido ahora se genera automáticamente en la orquestación de creación del pedido
      */
 
     /**

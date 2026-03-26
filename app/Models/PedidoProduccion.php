@@ -110,7 +110,7 @@ class PedidoProduccion extends Model
         static::saving(function ($model) {
             // Si se está actualizando dia_de_entrega y fecha_estimada_de_entrega está vacía o debe recalcularse
             if ($model->isDirty('dia_de_entrega') && $model->created_at) {
-                $service = app(\App\Domain\Pedidos\Services\PedidoProduccionCalculatorService::class);
+                $service = app(\App\Application\Pedidos\Services\PedidoProduccionCalculatorService::class);
                 $fechaEstimada = $service->calcularFechaEstimada($model->created_at, $model->dia_de_entrega);
                 if ($fechaEstimada) {
                     $model->fecha_estimada_de_entrega = $fechaEstimada;

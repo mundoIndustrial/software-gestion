@@ -4,14 +4,14 @@
  * Funciones para abrir modales de aprobación, anulación y ocultación de pedidos
  * Se carga TEMPRANO para evitar errores de "función no definida"
  *
- * Requiere: shared/bootstrap.js → window.shared (http, notify, modal)
+ * Requiere: shared/bootstrap.js → globalThis.shared (http, notify, modal)
  */
 
-if (!window.shared?.isReady) {
-    throw new Error('[modales-acciones] window.shared no está disponible. Asegúrate de cargar shared/bootstrap.js ANTES de este archivo.');
+if (!globalThis.shared?.isReady) {
+    throw new Error('[modales-acciones] globalThis.shared no está disponible. Asegúrate de cargar shared/bootstrap.js ANTES de este archivo.');
 }
 
-const { http: _http, notify: _notify, modal: _modal } = window.shared;
+const { http: _http, notify: _notify, modal: _modal } = globalThis.shared;
 
 // ===== FUNCIÓN PARA ABRIR MODAL DE ANULACIÓN =====
 function abrirModalAnulacion(ordenId, numeroOrden) {
@@ -100,7 +100,7 @@ function cerrarModalExitoOcultar() {
 }
 
 // ===== FUNCIÓN PARA ABRIR MODAL DE APROBACIÓN =====
-window.abrirModalAprobacion = function(ordenId, numeroPedido) {
+globalThis.abrirModalAprobacion = function(ordenId, numeroPedido) {
     console.log('[Aprobación] Abriendo modal para orden:', { ordenId, numeroPedido });
     
     Swal.fire({

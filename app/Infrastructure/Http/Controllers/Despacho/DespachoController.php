@@ -396,7 +396,7 @@ class DespachoController extends Controller
     {
         try {
             // Usar el mismo servicio que bodega para obtener datos completos
-            $facturaService = new \App\Domain\Pedidos\Services\FacturaPedidoService();
+            $facturaService = new \App\Application\Pedidos\Services\FacturaPedidoService();
             $datos = $facturaService->obtenerDatosFactura($pedido->id);
             
             return response()->json($datos);

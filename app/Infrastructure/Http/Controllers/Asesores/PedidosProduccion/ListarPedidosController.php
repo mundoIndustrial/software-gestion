@@ -4,6 +4,7 @@ namespace App\Infrastructure\Http\Controllers\Asesores\PedidosProduccion;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Application\Pedidos\UseCases\ListarProduccionPedidosUseCase;
@@ -55,7 +56,13 @@ class ListarPedidosController extends Controller
                 'per_page' => $request->get('per_page', 15),
             ];
 
-            $dto = ListarProduccionPedidosDTO::fromRequest(null, $filtros);
+            $usuario = Auth::user();
+            $dto = ListarProduccionPedidosDTO::fromRequest(
+                null,
+                $filtros,
+                $usuario?->id,
+                (bool) ($usuario?->hasRole('asesor'))
+            );
             $pedidos = $this->listarPedidosUseCase->ejecutar($dto);
 
             Log::info('[ListarPedidosController::index] Completado', [

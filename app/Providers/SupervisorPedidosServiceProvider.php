@@ -28,6 +28,7 @@ use App\Application\SupervisorPedidos\UseCases\DownloadOrderPdfUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetOrderDetailsViewUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetOrderDescriptionUseCase;
 use App\Application\SupervisorPedidos\Services\OrderDescriptionBuilder;
+use App\Application\Pedidos\Services\PrendaPedidoDescriptionFormatter;
 use App\Application\SupervisorPedidos\UseCases\CancelSewingReceiptUseCase;
 use App\Application\SupervisorPedidos\UseCases\SaveReceiptArrivalDateUseCase;
 use App\Application\SupervisorPedidos\UseCases\ChangeOrderStatusUseCase;
@@ -45,23 +46,34 @@ use App\Application\SupervisorPedidos\UseCases\DeleteImageUseCase;
 use App\Application\SupervisorPedidos\UseCases\ToggleNewsVistoUseCase;
 use App\Application\SupervisorPedidos\UseCases\TogglePedidoVistoUseCase;
 use App\Application\SupervisorPedidos\UseCases\MarkNotificationAsReadUseCase;
+use App\Application\SupervisorPedidos\Services\PedidoProduccionReadService;
 use App\Repositories\EloquentProcesoPrendaDetalleRepository;
-use App\Domain\Pedidos\Services\PedidoProduccionDomainService;
 
 class SupervisorPedidosServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->registerRepositories();
+        $this->registerOrderUseCases();
+        $this->registerReceiptUseCases();
+        $this->registerOtherUseCases();
+    }
+
+    private function registerRepositories(): void
+    {
         // Repositories - Bindings explícitos para evitar problemas de resolución
-        $this->app->singleton(OrderRepository::class, function ($app) {
+        $this->app->singleton(OrderRepository::class, function () {
             return new EloquentOrderRepository();
         });
 
-        $this->app->singleton(ReceiptRepository::class, function ($app) {
+        $this->app->singleton(ReceiptRepository::class, function () {
             return new EloquentReceiptRepository();
         });
+    }
 
-        // Use Cases
+    private function registerOrderUseCases(): void
+    {
+
         $this->app->bind(
             ApproveOrderUseCase::class,
             function ($app) {
@@ -81,16 +93,6 @@ class SupervisorPedidosServiceProvider extends ServiceProvider
         );
 
         $this->app->bind(
-            ActivateSewingReceiptUseCase::class,
-            function ($app) {
-                return new ActivateSewingReceiptUseCase(
-                    $app->make(OrderRepository::class),
-                    $app->make(ReceiptRepository::class)
-                );
-            }
-        );
-
-        $this->app->bind(
             ListPendingOrdersUseCase::class,
             function ($app) {
                 return new ListPendingOrdersUseCase(
@@ -103,43 +105,18 @@ class SupervisorPedidosServiceProvider extends ServiceProvider
             GetOrderDetailsUseCase::class,
             function ($app) {
                 return new GetOrderDetailsUseCase(
-                    $app->make(OrderRepository::class)
+                    $app->make(OrderRepository::class),
+                    $app->make(PrendaPedidoDescriptionFormatter::class)
                 );
-            }
-        );
-
-        $this->app->bind(
-            GetPendingSewingReceiptsUseCase::class,
-            function ($app) {
-                return new GetPendingSewingReceiptsUseCase();
-            }
-        );
-
-        $this->app->bind(
-            GetPendingEmbroideryStampingReceiptsUseCase::class,
-            function ($app) {
-                return new GetPendingEmbroideryStampingReceiptsUseCase();
-            }
-        );
-
-        $this->app->bind(
-            UpdateProfileUseCase::class,
-            function ($app) {
-                return new UpdateProfileUseCase();
             }
         );
 
         $this->app->bind(
             GetComparisonDataUseCase::class,
             function ($app) {
-                return new GetComparisonDataUseCase();
-            }
-        );
-
-        $this->app->bind(
-            GetFilterOptionsUseCase::class,
-            function ($app) {
-                return new GetFilterOptionsUseCase();
+                return new GetComparisonDataUseCase(
+                    $app->make(PrendaPedidoDescriptionFormatter::class)
+                );
             }
         );
 
@@ -147,85 +124,7 @@ class SupervisorPedidosServiceProvider extends ServiceProvider
             ListOrdersUseCase::class,
             function ($app) {
                 return new ListOrdersUseCase(
-                    $app->make(PedidoProduccionDomainService::class)
-                );
-            }
-        );
-
-        $this->app->bind(
-            UpdateOrderUseCase::class,
-            function ($app) {
-                return new UpdateOrderUseCase();
-            }
-        );
-
-        $this->app->bind(
-            GetSewingReceiptFilterOptionsUseCase::class,
-            function ($app) {
-                return new GetSewingReceiptFilterOptionsUseCase();
-            }
-        );
-
-        $this->app->bind(
-            GetPendingOrdersCountUseCase::class,
-            function ($app) {
-                return new GetPendingOrdersCountUseCase();
-            }
-        );
-
-        $this->app->bind(
-            ToggleOrderVisibilityUseCase::class,
-            function ($app) {
-                return new ToggleOrderVisibilityUseCase();
-            }
-        );
-
-        $this->app->bind(
-            DownloadOrderPdfUseCase::class,
-            function ($app) {
-                return new DownloadOrderPdfUseCase();
-            }
-        );
-
-        $this->app->bind(
-            GetOrderDetailsViewUseCase::class,
-            function ($app) {
-                return new GetOrderDetailsViewUseCase();
-            }
-        );
-
-        $this->app->bind(
-            OrderDescriptionBuilder::class,
-            function ($app) {
-                return new OrderDescriptionBuilder(
-                    $app->make(EloquentProcesoPrendaDetalleRepository::class)
-                );
-            }
-        );
-
-        $this->app->bind(
-            GetOrderDescriptionUseCase::class,
-            function ($app) {
-                return new GetOrderDescriptionUseCase(
-                    $app->make(OrderDescriptionBuilder::class)
-                );
-            }
-        );
-
-        $this->app->bind(
-            CancelSewingReceiptUseCase::class,
-            function ($app) {
-                return new CancelSewingReceiptUseCase(
-                    $app->make(ReceiptRepository::class)
-                );
-            }
-        );
-
-        $this->app->bind(
-            SaveReceiptArrivalDateUseCase::class,
-            function ($app) {
-                return new SaveReceiptArrivalDateUseCase(
-                    $app->make(ReceiptRepository::class)
+                    $app->make(PedidoProduccionReadService::class)
                 );
             }
         );
@@ -256,12 +155,55 @@ class SupervisorPedidosServiceProvider extends ServiceProvider
                 );
             }
         );
+    }
+
+    private function registerReceiptUseCases(): void
+    {
+        $this->app->bind(
+            ActivateSewingReceiptUseCase::class,
+            function ($app) {
+                return new ActivateSewingReceiptUseCase(
+                    $app->make(OrderRepository::class),
+                    $app->make(ReceiptRepository::class)
+                );
+            }
+        );
 
         $this->app->bind(
-            GetNotificationsUseCase::class,
+            GetPendingSewingReceiptsUseCase::class,
+            function () {
+                return new GetPendingSewingReceiptsUseCase();
+            }
+        );
+
+        $this->app->bind(
+            GetPendingEmbroideryStampingReceiptsUseCase::class,
+            function () {
+                return new GetPendingEmbroideryStampingReceiptsUseCase();
+            }
+        );
+
+        $this->app->bind(
+            GetPendingQualityControlReceiptsUseCase::class,
+            function () {
+                return new GetPendingQualityControlReceiptsUseCase();
+            }
+        );
+
+        $this->app->bind(
+            CancelSewingReceiptUseCase::class,
             function ($app) {
-                return new GetNotificationsUseCase(
-                    $app->make(\Illuminate\Auth\AuthManager::class)
+                return new CancelSewingReceiptUseCase(
+                    $app->make(ReceiptRepository::class)
+                );
+            }
+        );
+
+        $this->app->bind(
+            SaveReceiptArrivalDateUseCase::class,
+            function ($app) {
+                return new SaveReceiptArrivalDateUseCase(
+                    $app->make(ReceiptRepository::class)
                 );
             }
         );
@@ -292,74 +234,154 @@ class SupervisorPedidosServiceProvider extends ServiceProvider
                 );
             }
         );
+    }
+
+    private function registerOtherUseCases(): void
+    {
+        $this->app->bind(
+            UpdateProfileUseCase::class,
+            function () {
+                return new UpdateProfileUseCase();
+            }
+        );
+
+        $this->app->bind(
+            GetFilterOptionsUseCase::class,
+            function () {
+                return new GetFilterOptionsUseCase();
+            }
+        );
+
+        $this->app->bind(
+            UpdateOrderUseCase::class,
+            function () {
+                return new UpdateOrderUseCase();
+            }
+        );
+
+        $this->app->bind(
+            GetSewingReceiptFilterOptionsUseCase::class,
+            function () {
+                return new GetSewingReceiptFilterOptionsUseCase();
+            }
+        );
+
+        $this->app->bind(
+            GetPendingOrdersCountUseCase::class,
+            function () {
+                return new GetPendingOrdersCountUseCase();
+            }
+        );
+
+        $this->app->bind(
+            ToggleOrderVisibilityUseCase::class,
+            function () {
+                return new ToggleOrderVisibilityUseCase();
+            }
+        );
+
+        $this->app->bind(
+            DownloadOrderPdfUseCase::class,
+            function () {
+                return new DownloadOrderPdfUseCase();
+            }
+        );
+
+        $this->app->bind(
+            GetOrderDetailsViewUseCase::class,
+            function () {
+                return new GetOrderDetailsViewUseCase();
+            }
+        );
+
+        $this->app->bind(
+            OrderDescriptionBuilder::class,
+            function ($app) {
+                return new OrderDescriptionBuilder(
+                    $app->make(EloquentProcesoPrendaDetalleRepository::class),
+                    $app->make(PrendaPedidoDescriptionFormatter::class)
+                );
+            }
+        );
+
+        $this->app->bind(
+            GetOrderDescriptionUseCase::class,
+            function ($app) {
+                return new GetOrderDescriptionUseCase(
+                    $app->make(OrderDescriptionBuilder::class)
+                );
+            }
+        );
+
+        $this->app->bind(
+            GetNotificationsUseCase::class,
+            function ($app) {
+                return new GetNotificationsUseCase(
+                    $app->make(\Illuminate\Auth\AuthManager::class)
+                );
+            }
+        );
 
         $this->app->bind(
             SelectOrderUseCase::class,
-            function ($app) {
+            function () {
                 return new SelectOrderUseCase();
             }
         );
 
         $this->app->bind(
             DeselectOrderUseCase::class,
-            function ($app) {
+            function () {
                 return new DeselectOrderUseCase();
             }
         );
 
         $this->app->bind(
             GetOrderSelectionsUseCase::class,
-            function ($app) {
+            function () {
                 return new GetOrderSelectionsUseCase();
             }
         );
 
         $this->app->bind(
             MarkAllNotificationsAsReadUseCase::class,
-            function ($app) {
+            function () {
                 return new MarkAllNotificationsAsReadUseCase();
             }
         );
 
         $this->app->bind(
             DeleteImageUseCase::class,
-            function ($app) {
+            function () {
                 return new DeleteImageUseCase();
             }
         );
 
         $this->app->bind(
             ToggleNewsVistoUseCase::class,
-            function ($app) {
+            function () {
                 return new ToggleNewsVistoUseCase();
             }
         );
 
         $this->app->bind(
             TogglePedidoVistoUseCase::class,
-            function ($app) {
+            function () {
                 return new TogglePedidoVistoUseCase();
             }
         );
 
         $this->app->bind(
             MarkNotificationAsReadUseCase::class,
-            function ($app) {
+            function () {
                 return new MarkNotificationAsReadUseCase();
             }
         );
 
         $this->app->bind(
             GetQualityControlReceiptFilterOptionsUseCase::class,
-            function ($app) {
+            function () {
                 return new GetQualityControlReceiptFilterOptionsUseCase();
-            }
-        );
-
-        $this->app->bind(
-            GetPendingQualityControlReceiptsUseCase::class,
-            function ($app) {
-                return new GetPendingQualityControlReceiptsUseCase();
             }
         );
     }

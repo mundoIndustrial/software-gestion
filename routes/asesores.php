@@ -269,6 +269,10 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
         Route::post('crear', [\App\Infrastructure\Http\Controllers\Asesores\Pedidos\CrearPedidoController::class, 'crearPedido'])
             ->name('crear');
         
+        // Validar pedido antes de crear (POST - API)
+        Route::post('validar', [\App\Infrastructure\Http\Controllers\Asesores\Pedidos\ValidarPedidoController::class, 'validarPedido'])
+            ->name('validar');
+        
         // Guardar/actualizar borradores
         Route::post('borrador', [\App\Infrastructure\Http\Controllers\Asesores\Pedidos\CrearPedidoBorradorController::class, 'guardarBorrador'])
             ->name('guardarBorrador');

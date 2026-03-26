@@ -4,19 +4,18 @@ namespace App\Application\SupervisorPedidos\UseCases;
 
 use App\Application\SupervisorPedidos\DTOs\ListOrdersRequest;
 use App\Application\SupervisorPedidos\DTOs\ListOrdersResponse;
-use App\Domain\Pedidos\Services\PedidoProduccionDomainService;
+use App\Application\SupervisorPedidos\Services\PedidoProduccionReadService;
 use App\Models\PedidoProduccion;
 use App\Models\SeleccionPedido;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class ListOrdersUseCase
 {
-    private PedidoProduccionDomainService $domainService;
+    private PedidoProduccionReadService $readService;
 
-    public function __construct(PedidoProduccionDomainService $domainService)
+    public function __construct(PedidoProduccionReadService $readService)
     {
-        $this->domainService = $domainService;
+        $this->readService = $readService;
     }
 
     public function execute(ListOrdersRequest $request): ListOrdersResponse
@@ -39,7 +38,7 @@ class ListOrdersUseCase
 
             // Pre-computar datos de negocio para cada orden (evitar lógica en vistas/modelos)
             $ordenes->getCollection()->each(function($orden) {
-                $orden->es_solo_epp = $this->domainService->esSoloEpp($orden);
+                $orden->es_solo_epp = $this->readService->esSoloEpp($orden);
             });
 
             // Obtener estados únicos
@@ -50,7 +49,7 @@ class ListOrdersUseCase
                                        ->toArray();
 
             // Cargar pedidos seleccionados
-            $pedidosSeleccionados = $this->getSelectedOrders();
+            $pedidosSeleccionados = $this->getSelectedOrders($request->getUserId());
 
             Log::info('[ListOrdersUseCase] Retrieved ' . $ordenes->count() . ' orders with ' . count($estados) . ' states');
 
@@ -184,28 +183,16 @@ class ListOrdersUseCase
                      ->orderBy('updated_at', 'desc')
                      ->orderBy('numero_pedido', 'desc')
                      ->paginate($request->getPerPage(), ['*'], 'page', $request->getPage())
-                     ->appends(array_filter([
-                         'mostrar' => request()->input('mostrar'),
-                         'aprobacion' => request()->input('aprobacion'),
-                         'tipo' => request()->input('tipo'),
-                         'busqueda' => request()->input('busqueda'),
-                         'numero' => request()->input('numero'),
-                         'cliente' => request()->input('cliente'),
-                         'forma_pago' => request()->input('forma_pago'),
-                         'estado' => request()->input('estado'),
-                         'asesora' => request()->input('asesora'),
-                         'fecha_desde' => request()->input('fecha_desde'),
-                         'fecha_hasta' => request()->input('fecha_hasta'),
-                     ]));
+                     ->appends($request->getAppends());
     }
 
-    private function getSelectedOrders(): array
+    private function getSelectedOrders(?int $userId): array
     {
-        if (!Auth::check()) {
+        if (!$userId) {
             return [];
         }
 
-        return SeleccionPedido::where('user_id', Auth::id())
+        return SeleccionPedido::where('user_id', $userId)
             ->where('seleccionado', true)
             ->pluck('pedido_id')
             ->toArray();

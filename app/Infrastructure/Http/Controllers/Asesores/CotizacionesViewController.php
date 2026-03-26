@@ -2,6 +2,7 @@
 
 namespace App\Infrastructure\Http\Controllers\Asesores;
 
+use App\Application\Pedidos\Services\PrendaPedidoDescriptionFormatter;
 use App\Application\Cotizacion\Handlers\Queries\ListarCotizacionesHandler;
 use App\Application\Cotizacion\Queries\ListarCotizacionesQuery;
 use App\Http\Controllers\Controller;
@@ -210,7 +211,7 @@ final class CotizacionesViewController extends Controller
                 ],
                 'prendas_cotizaciones' => $cotizacionModelo->prendas->map(function($prenda, $index) {
                     // Generar descripción formateada usando el método del modelo
-                    $descripcionFormateada = $prenda->generarDescripcionDetallada($index + 1);
+                    $descripcionFormateada = app(PrendaPedidoDescriptionFormatter::class)->formatDetailed($prenda, $index + 1);
                     
                     return [
                         'id' => $prenda->id,
