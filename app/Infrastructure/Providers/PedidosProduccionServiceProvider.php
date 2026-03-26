@@ -31,7 +31,8 @@ use App\Application\Pedidos\UseCases\AgregarImagenTelaUseCase;
 
 // Repositories
 use App\Domain\Pedidos\Repositories\PedidoRepository;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
+use App\Infrastructure\Pedidos\Persistence\Eloquent\EloquentPedidoProduccionRepository;
 use App\Domain\Shared\CQRS\QueryBus;
 use App\Domain\Shared\CQRS\CommandBus;
 
@@ -61,6 +62,8 @@ class PedidosProduccionServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        $this->app->singleton(PedidoProduccionReadRepository::class, EloquentPedidoProduccionRepository::class);
+
         // ===== SERVICES =====
         
         // ColorTelaService
@@ -73,7 +76,7 @@ class PedidosProduccionServiceProvider extends ServiceProvider
         // Listar Pedidos
         $this->app->singleton(ListarProduccionPedidosUseCase::class, function ($app) {
             return new ListarProduccionPedidosUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoProduccionReadRepository::class)
             );
         });
 

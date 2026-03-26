@@ -3,7 +3,7 @@
 namespace App\Application\Pedidos\Despacho\UseCases;
 
 use App\Models\PedidoProduccion;
-use App\Domain\Pedidos\Despacho\Services\DespachoGeneradorService;
+use App\Application\Pedidos\Despacho\Services\DespachoGeneradorService;
 use App\Application\Pedidos\Despacho\DTOs\FilaDespachoDTO;
 use Illuminate\Support\Collection;
 

@@ -58,8 +58,12 @@ class AreaCards {
     const shouldHideEncargado = isInsumos || !needsEncargado;
 
     const hasFechaCompletado = !isInsumos && Boolean(typeof toDateObject === 'function' ? toDateObject(data.fecha_completado) : null);
-    const estadoDisplay = isInsumos ? (data.estado || 'Pendiente') : (hasFechaCompletado ? 'Completado' : 'Pendiente');
-    const estaActivoDisplay = isInsumos ? Boolean(data.esta_activo) : !hasFechaCompletado;
+    // ✅ Usar estado_display del backend si disponible, si no calcular
+    const estadoDisplay = (data.duraciones?.estado_display) || 
+                          (isInsumos ? (data.estado || 'Pendiente') : (hasFechaCompletado ? 'Completado' : 'Pendiente'));
+    const estaActivoDisplay = (data.duraciones?.esta_activo_display !== undefined) ? 
+                             data.duraciones.esta_activo_display : 
+                             (isInsumos ? Boolean(data.esta_activo) : !hasFechaCompletado);
 
     card.className = `tracking-area-card tracking-area-card-v2 ${estaActivoDisplay ? 'pending' : 'completed'}`;
 
@@ -162,6 +166,14 @@ class AreaCards {
       console.log('[totalDiasAreaDisplay] Iniciando cálculo - area:', area, 'needsEncargado:', needsEncargado);
       console.log('[totalDiasAreaDisplay] Datos - fecha_inicio:', data.fecha_inicio, 'fecha_asignacion_encargado:', data.fecha_de_asignacion_encargado, 'fechaFinRaw:', fechaFinRaw);
       
+      // ✅ SIMPLIFICACIÓN: Si el backend ya calculó duraciones, usarlas directamente
+      if (data.duraciones && typeof data.duraciones.total_dias_numero !== 'undefined') {
+        const totalDias = data.duraciones.total_dias_numero;
+        console.log('[totalDiasAreaDisplay] USANDO BACKEND: duraciones.total_dias_numero =', totalDias);
+        return totalDias === 0 ? '0 días' : `${totalDias} día${totalDias !== 1 ? 's' : ''}`;
+      }
+      
+      // Fallback: recalcular si no tiene duraciones (legacy)
       if (!needsEncargado) {
         console.log('[totalDiasAreaDisplay] Ejecutando caso SIN encargado');
         // Para procesos sin encargado: calcular duración total

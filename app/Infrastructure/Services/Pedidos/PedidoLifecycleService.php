@@ -99,6 +99,14 @@ class PedidoLifecycleService
         return $borrador->fresh();
     }
 
+    public function obtenerBorradorPorId(int $borradorId): ?PedidoProduccion
+    {
+        return PedidoProduccion::query()
+            ->where('id', $borradorId)
+            ->where('estado', 'Borrador')
+            ->first();
+    }
+
     private function resolverArea(array $datos): string
     {
         $area = $datos['area'] ?? $datos['estado_area'] ?? 'Creación Orden';

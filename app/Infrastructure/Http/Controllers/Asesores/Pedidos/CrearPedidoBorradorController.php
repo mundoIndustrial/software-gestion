@@ -7,10 +7,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Application\Pedidos\UseCases\GuardarBorradorUseCase;
-use App\Application\Pedidos\UseCases\ActualizarBorradorUseCase;
-use App\Application\Pedidos\DTOs\GuardarBorradorInput;
-use App\Application\Pedidos\DTOs\ActualizarBorradorInput;
+use App\Application\UseCases\Pedidos\GuardarBorradorUseCase;
+use App\Application\UseCases\Pedidos\ActualizarBorradorUseCase;
+use App\Application\UseCases\Pedidos\GuardarBorradorInput;
+use App\Application\UseCases\Pedidos\ActualizarBorradorInput;
 
 /**
  * CrearPedidoBorradorController
@@ -63,7 +63,7 @@ class CrearPedidoBorradorController extends Controller
             Log::info('[CrearPedidoBorradorController::guardarBorrador] Completado', [
                 'usuario_id' => Auth::id(),
                 'success' => $output->success,
-                'borrador_id' => $output->borrador_id ?? null,
+                'pedido_id' => $output->pedido_id ?? null,
             ]);
 
             return response()->json(
@@ -115,8 +115,8 @@ class CrearPedidoBorradorController extends Controller
             // 1. Convertir Request → DTO
             $input = ActualizarBorradorInput::fromRequest(
                 $request,
-                pedidoId: (int) $pedidoId,
-                usuarioId: Auth::id()
+                (int) $pedidoId,
+                Auth::id()
             );
 
             // 2. Ejecutar lógica de negocio

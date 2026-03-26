@@ -4,7 +4,7 @@ namespace App\Application\UseCases\Pedidos;
 
 use App\Application\Shared\Contracts\TransactionManagerInterface;
 use App\Domain\Clientes\Services\ClienteService;
-use App\Domain\Pedidos\DTOs\PedidoNormalizadorDTO;
+use App\Application\Pedidos\DTOs\PedidoNormalizadorDTO;
 use App\Domain\Pedidos\Repositories\PedidoRepository;
 use App\Application\Pedidos\Services\PedidoCreationCoordinator;
 use App\Infrastructure\Services\Pedidos\PedidoImageManager;
@@ -111,7 +111,7 @@ class GuardarBorradorUseCase
                 pedido_id: $pedidoId,
                 numero_pedido: $pedido->numero_pedido ?? null,
                 estado: $pedido->estado,
-                redirect_url: route('asesores.pedidos.show', ['pedido' => $pedidoId]),
+                redirect_url: route('asesores.pedidos.show', ['id' => $pedidoId]),
                 tiempo_ms: $tiempoTotal,
             );
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -161,7 +161,7 @@ class GuardarBorradorUseCase
         $nuevasPrendasIds = [];
 
         foreach ($nuevasPrendas as $index => $itemData) {
-            $prendaCreada = $this->pedidoWebService->agregarItemAPedido($pedido, $itemData, (int) $index);
+            $prendaCreada = $this->pedidoCreationCoordinator->agregarItemAPedido($pedido, $itemData, (int) $index);
             $nuevasPrendasIds[] = $prendaCreada->id;
         }
 

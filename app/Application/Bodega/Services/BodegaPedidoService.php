@@ -13,7 +13,7 @@ use App\Models\PedidoRevisado;
 use App\Application\Services\EntregaService;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Application\Bodega\Calculators\PedidoEstadoCalculator;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Carbon\Carbon;
@@ -26,7 +26,7 @@ class BodegaPedidoService
 {
     public function __construct(
         private ObtenerPedidoUseCase $obtenerPedidoUseCase,
-        private PedidoProduccionRepository $pedidoRepository,
+        private PedidoProduccionReadRepository $pedidoRepository,
         private BodegaRoleService $roleService,
         private BodegaRepository $bodegaRepository,
         private PedidoEstadoCalculator $estadoCalculator

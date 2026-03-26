@@ -44,7 +44,7 @@ class EspecificacionesTest extends TestCase
         $this->assertEquals('Contado', $especificaciones['forma_pago'][0]['valor']);
         $this->assertEquals('Descuento 5%', $especificaciones['forma_pago'][0]['observacion']);
 
-        // Verificar rÃ©gimen
+        // Verificar regimen
         $this->assertCount(1, $especificaciones['regimen']);
         $this->assertEquals('común', $especificaciones['regimen'][0]['valor']);
         $this->assertEquals('', $especificaciones['regimen'][0]['observacion']);

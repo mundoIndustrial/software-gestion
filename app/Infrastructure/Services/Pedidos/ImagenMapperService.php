@@ -18,10 +18,6 @@ use Illuminate\Support\Facades\Log;
  * 
  * Se mantiene por compatibilidad con código existente.
  * 
- * MIGRACIÓN:
- * ❌ OLD: $mapper->mapearImagenesPrenda($item)
- * ✅ NEW: $service->mapearImagenesPrenda($item)
- * 
  * Los nuevos mappers son más limpios y testables.
  */
 class ImagenMapperService

@@ -2,6 +2,7 @@
 
 namespace App\Application\Services\Asesores;
 
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -31,7 +32,7 @@ class ObtenerDatosRecibosService
         }
 
         // Usar el repository para obtener datos
-        $repository = resolve(\App\Domain\Pedidos\Repositories\PedidoProduccionRepository::class);
+        $repository = resolve(PedidoProduccionReadRepository::class);
         $datos = $repository->obtenerDatosRecibos($pedidoId);
 
         return $datos;
@@ -123,4 +124,3 @@ class ObtenerDatosRecibosService
         return array_merge($datos, ['resumen' => $resumen]);
     }
 }
-

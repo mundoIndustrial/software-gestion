@@ -324,7 +324,7 @@ class CotizacionesIntegrityTest extends TestCase
                 ],
                 [
                     'color' => 'Blanco',
-                    'nombre_tela' => 'PoliÃ©ster',
+                    'nombre_tela' => 'Poliester',
                     'referencia' => 'POL-002',
                     'url_imagen' => 'storage/telas/polyester.jpg',
                 ],
@@ -335,7 +335,7 @@ class CotizacionesIntegrityTest extends TestCase
         $this->assertIsArray($variante->telas_multiples);
         $this->assertCount(2, $variante->telas_multiples);
         $this->assertEquals('Azul Marino', $variante->telas_multiples[0]['color']);
-        $this->assertEquals('PoliÃ©ster', $variante->telas_multiples[1]['nombre_tela']);
+        $this->assertEquals('Poliester', $variante->telas_multiples[1]['nombre_tela']);
     }
 
     /**

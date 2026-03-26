@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
  * ProcesoImagenService
  * 
  * Responsabilidad: Guardar imagenes de procesos en la BD
- * Ahora recibe File objects o arrays con informaciÃ³n de archivo, NO base64
+ * Ahora recibe File objects o arrays con informacion de archivo, NO base64
  */
 class ProcesoImagenService
 {

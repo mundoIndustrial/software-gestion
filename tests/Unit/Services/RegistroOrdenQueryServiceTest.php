@@ -5,11 +5,11 @@ namespace Tests\Unit\Services;
 use Tests\TestCase;
 use App\Services\RegistroOrdenQueryService;
 use App\Models\PedidoProduccion;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class RegistroOrdenQueryServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected $service;
 
@@ -93,4 +93,6 @@ class RegistroOrdenQueryServiceTest extends TestCase
         $this->assertEquals(['A - No iniciado', 'M - En Ejecución', 'Z - Completado'], $values);
     }
 }
+
+
 

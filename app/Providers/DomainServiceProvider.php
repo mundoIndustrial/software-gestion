@@ -22,7 +22,8 @@ use Intervention\Image\ImageManager;
 
 // ======================================== DDD PEDIDOS
 use App\Domain\Pedidos\Repositories\PedidoRepository;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
+use App\Infrastructure\Pedidos\Persistence\Eloquent\EloquentPedidoProduccionRepository;
 use App\Infrastructure\Pedidos\Persistence\Eloquent\PedidoRepositoryImpl;
 use App\Application\Pedidos\UseCases\CrearPedidoUseCase;
 use App\Application\Pedidos\UseCases\ConfirmarPedidoUseCase;
@@ -146,6 +147,11 @@ class DomainServiceProvider extends ServiceProvider
         $this->app->bind(
             PedidoRepository::class,
             PedidoRepositoryImpl::class
+        );
+
+        $this->app->bind(
+            PedidoProduccionReadRepository::class,
+            EloquentPedidoProduccionRepository::class
         );
 
         // Registrar Use Cases como singletons

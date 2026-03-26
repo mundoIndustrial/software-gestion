@@ -3,7 +3,7 @@
 namespace App\Observers;
 
 use App\Models\DesparChoParcialesModel;
-use App\Domain\Pedidos\Despacho\Services\DespachoEstadoService;
+use App\Application\Pedidos\Despacho\Services\DespachoEstadoService;
 use Illuminate\Support\Facades\Log;
 
 /**

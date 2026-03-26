@@ -6,12 +6,12 @@ use Tests\TestCase;
 use App\Models\PedidoProduccion;
 use App\Models\DesparChoParcialesModel;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Log;
 
 class DeshacerEntregadoDespachoTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private User $usuario;
 
@@ -249,3 +249,5 @@ class DeshacerEntregadoDespachoTest extends TestCase
         $this->assertNotEquals('Entregado', $pedidoActualizado->estado);
     }
 }
+
+

@@ -8,13 +8,13 @@ use App\Models\ReciboPrenda;
 use App\Models\Asesor;
 use App\Models\Empresa;
 use App\Models\Articulo;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Carbon\Carbon;
 use Spatie\Permission\Models\Role;
 
 class PedidosControllerTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private User $bodeguero;
     private ReciboPrenda $reciboPrenda;
@@ -303,3 +303,5 @@ class PedidosControllerTest extends TestCase
         $this->assertEquals('bodega', $activity->log_name);
     }
 }
+
+

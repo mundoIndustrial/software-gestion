@@ -162,7 +162,7 @@ class TelaImagenService
             return null;
         }
 
-        // Usar el servicio para obtener o crear la combinaciÃ³n color-tela
+        // Usar el servicio para obtener o crear la combinacion color-tela
         return $this->colorTelaService->obtenerOCrearColorTela($prendaId, $colorId, $telaId);
     }
     
@@ -218,7 +218,7 @@ class TelaImagenService
             return $nuevaRuta;
             
         } catch (\Exception $e) {
-            Log::error(' [TelaImagenService] ExcepciÃ³n copiando imagen', [
+            Log::error(' [TelaImagenService] Excepcion copiando imagen', [
                 'ruta_original' => $rutaOriginal,
                 'error' => $e->getMessage(),
             ]);

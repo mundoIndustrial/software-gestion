@@ -43,7 +43,7 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
             $this->assertNotNull($numero);
             $this->assertMatchesRegularExpression('/^COT-\d{8}-\d{3}$/', $numero);
             
-            echo "\n NÃšMERO GENERADO: $numero\n";
+            echo "\n NUMERO GENERADO: $numero\n";
             
         } catch (\Throwable $e) {
             $this->fail("Error al generar numero: " . $e->getMessage());
@@ -93,7 +93,7 @@ class CotizacionNumeroConcurrenciaSimpleTest extends TestCase
         $this->assertCount(3, $numeros);
         $this->assertEquals(3, count(array_unique($numeros)), 'Los numeros no son unicos');
         
-        echo "\n NÃšMEROS GENERADOS:\n";
+        echo "\n NUMEROS GENERADOS:\n";
         foreach ($numeros as $i => $n) {
             echo "  " . ($i + 1) . ". $n\n";
         }

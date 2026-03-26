@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use Tests\TestCase;
 use App\Models\PedidoProduccion;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 
 class ProcesosRenderTest extends TestCase
 {
@@ -28,7 +28,7 @@ class ProcesosRenderTest extends TestCase
         }
 
         // Act: Obtener datos de recibos
-        $repository = new PedidoProduccionRepository();
+        $repository = app(PedidoProduccionReadRepository::class);
         $datos = $repository->obtenerDatosRecibos($pedido->id);
 
         // Assert: Verificar estructura
@@ -73,7 +73,7 @@ class ProcesosRenderTest extends TestCase
         }
 
         // Act
-        $repository = new PedidoProduccionRepository();
+        $repository = app(PedidoProduccionReadRepository::class);
         $datos = $repository->obtenerDatosFactura($pedido->id);
 
         // Assert
@@ -106,7 +106,7 @@ class ProcesosRenderTest extends TestCase
             $this->markTestSkipped('No hay procesos con imágenes para probar');
         }
 
-        $repository = new PedidoProduccionRepository();
+        $repository = app(PedidoProduccionReadRepository::class);
         $datos = $repository->obtenerDatosRecibos($pedido->id);
 
         // Buscar un proceso con imágenes
@@ -141,7 +141,7 @@ class ProcesosRenderTest extends TestCase
             $this->markTestSkipped('No hay procesos para probar');
         }
 
-        $repository = new PedidoProduccionRepository();
+        $repository = app(PedidoProduccionReadRepository::class);
         $datos = $repository->obtenerDatosRecibos($pedido->id);
 
         if (count($datos['prendas'][0]['procesos'] ?? []) > 0) {

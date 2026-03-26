@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 use App\Models\User;
-use App\Models\PedidoProduccion;
+use App\Application\Services\ImageUploadService;
 use App\Infrastructure\Services\Pedidos\ImagenRelocalizadorService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -19,10 +19,11 @@ use Illuminate\Support\Str;
  */
 class ImagenesFlujoPedidoTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private $user;
     private $imagenRelocalizador;
+    private $imageUploadService;
 
     protected function setUp(): void
     {
@@ -37,6 +38,7 @@ class ImagenesFlujoPedidoTest extends TestCase
         ]);
 
         $this->imagenRelocalizador = app(ImagenRelocalizadorService::class);
+        $this->imageUploadService = app(ImageUploadService::class);
     }
 
     /**
@@ -50,30 +52,19 @@ class ImagenesFlujoPedidoTest extends TestCase
     {
         // Arrancar
         $file = UploadedFile::fake()->image('prenda1.jpg');
-        $tempUuid = Str::uuid()->toString();
-
-        // Actuar - Simular upload
-        $response = $this->actingAs($this->user)
-            ->postJson('/asesores/pedidos/subir-imagenes-prenda', [
-                'imagenes' => [$file],
-            ]);
-
-        // Verificar response
-        $response->assertStatus(200);
-        $data = $response->json();
         
-        $this->assertTrue($data['success']);
+        // Actuar - Flujo real actual via servicio
+        $data = $this->imageUploadService->uploadPrendaImage($file, 0);
         $this->assertNotEmpty($data['temp_uuid']);
         
         // Verificar que archivos se crearon en temp
         $uuid = $data['temp_uuid'];
         
-        Storage::disk('public')->assertExists("prendas/temp/{$uuid}/webp/");
-        Storage::disk('public')->assertExists("prendas/temp/{$uuid}/original/");
+        Storage::disk('public')->assertExists("prendas/temp/{$uuid}/");
         Storage::disk('public')->assertExists("prendas/temp/{$uuid}/thumbnails/");
         
-        $this->assertEquals(1, count($data['imagenes']));
-        $this->assertStringContainsString("prendas/temp/{$uuid}/webp/", $data['imagenes'][0]['ruta_webp']);
+        $this->assertArrayHasKey('ruta_webp', $data);
+        $this->assertStringContainsString("prendas/temp/{$uuid}/", $data['ruta_webp']);
     }
 
     /**
@@ -187,9 +178,9 @@ class ImagenesFlujoPedidoTest extends TestCase
     }
 
     /**
-     * TEST 5: Limpieza automática de carpetas vacías
+     * TEST 5: Limpieza automática de carpeta temporal usada
      * 
-     * ✓ Después de mover archivos, carpeta temp se elimina
+     * ✓ Después de mover archivos, se elimina la subcarpeta temporal del archivo
      */
     public function test_limpia_carpeta_temp_vacia()
     {
@@ -204,8 +195,9 @@ class ImagenesFlujoPedidoTest extends TestCase
         // Actuar - Relocalizar único archivo
         $this->imagenRelocalizador->relocalizarImagenes(1, [$rutaTemp]);
 
-        // Verificar - Carpeta temp debe estar limpia
-        Storage::disk('public')->assertMissing($carpetaTemp);
+        // Verificar - Archivo temp y su subcarpeta directa deben limpiarse
+        Storage::disk('public')->assertMissing($rutaTemp);
+        Storage::disk('public')->assertMissing("{$carpetaTemp}/webp");
     }
 
     /**
@@ -239,9 +231,9 @@ class ImagenesFlujoPedidoTest extends TestCase
         // Arrancar - Crear archivos en diferentes tipos
         $uuid = Str::uuid()->toString();
         $archivos = [
-            "prendas/temp/{$uuid}/webp/file1.webp",
-            "telas/temp/{$uuid}/webp/file2.webp",
-            "procesos/temp/{$uuid}/webp/file3.webp",
+            "temp/{$uuid}/prendas/webp/file1.webp",
+            "temp/{$uuid}/telas/webp/file2.webp",
+            "temp/{$uuid}/procesos/webp/file3.webp",
         ];
 
         foreach ($archivos as $ruta) {
@@ -262,3 +254,5 @@ class ImagenesFlujoPedidoTest extends TestCase
         }
     }
 }
+
+

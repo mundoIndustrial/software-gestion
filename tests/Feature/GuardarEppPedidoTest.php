@@ -469,7 +469,7 @@ class GuardarEppPedidoTest extends TestCase
         $this->assertNotNull($pedidoEppRecargado, 'El EPP debe existir en la BD');
         $this->assertEquals(25, $pedidoEppRecargado->cantidad);
 
-        //  Output de Ã©xito
+        //  Output de exito
         echo "\n EPP guardado exitosamente sin refresh\n";
         echo "   - ID PedidoEpp: {$pedidoEpp->id}\n";
         echo "   - Cantidad: {$pedidoEpp->cantidad}\n";

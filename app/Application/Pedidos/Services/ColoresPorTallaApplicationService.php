@@ -2,7 +2,7 @@
 
 namespace App\Application\Pedidos\Services;
 
-use App\Domain\Pedidos\Repositories\ColoresPorTallaRepository;
+use App\Infrastructure\Repositories\Pedidos\ColoresPorTallaRepository;
 use Illuminate\Support\Facades\Log;
 
 /**

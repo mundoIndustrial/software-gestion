@@ -107,13 +107,28 @@ class TrackingModalController {
                 console.log('[TrackingModalController] Llamando a openOrderTracking para inicializar datos');
                 
                 await openOrderTracking(pedidoId, false);
-                console.log('[TrackingModalController] Datos inicializados, buscando prenda específica:', prendaIdTarget);
+                console.log('[TrackingModalController] Datos inicializados desde openOrderTracking, buscando prenda específica:', prendaIdTarget);
 
-                // Obtener prendas de los datos globales
-                const prendas = this._getPrendasFromGlobalData();
+                // Obtener prendas de los datos globales (poblados por openOrderTracking)
+                let prendas = this._getPrendasFromGlobalData();
+
+                // Si aún no hay prendas, obtenerlas de la API como fallback
+                if (!prendas || prendas.length === 0) {
+                    console.warn('[TrackingModalController] Prendas no encontradas en datos globales, obteniendo de API...');
+                    prendas = await this._fetchPrendasData(pedidoId);
+                    
+                    // Guardar en datos globales para futuros accesos
+                    if (prendas && prendas.length > 0) {
+                        if (!window.currentOrderData) {
+                            window.currentOrderData = {};
+                        }
+                        window.currentOrderData.prendas = prendas;
+                        console.log('[TrackingModalController] Prendas guardadas en window.currentOrderData desde API');
+                    }
+                }
 
                 if (!prendas || prendas.length === 0) {
-                    console.warn('[TrackingModalController] No hay prendas disponibles');
+                    console.warn('[TrackingModalController] No hay prendas disponibles', {prendas, hasPrendas: !!prendas});
                     if (typeof showPrendasSelector === 'function') {
                         showPrendasSelector();
                     } else {
@@ -279,25 +294,109 @@ class TrackingModalController {
             }
 
             // Obtener el consecutivo de costura para esta prenda específica
-            const consecutivoResponse = await fetch(urlConsecutivo);
-            if (!consecutivoResponse.ok) {
-                throw new Error(`HTTP ${consecutivoResponse.status}`);
+            try {
+                const consecutivoResponse = await fetch(urlConsecutivo);
+                if (consecutivoResponse.ok) {
+                    const data = await consecutivoResponse.json();
+                    // Guardar para que tracking-modal-handler.js pueda usar encargado/area como fallback
+                    window.currentConsecutivoCosturaData = data;
+                    this._updateTrackingModalUI(data);
+                } else {
+                    console.warn('[TrackingModalController] Consecutivo-costura no disponible (HTTP' + consecutivoResponse.status + '), continuando sin él');
+                }
+            } catch (error) {
+                console.warn('[TrackingModalController] Error al obtener consecutivo de costura:', error);
+                // Continuar sin consecutivo
             }
-            const data = await consecutivoResponse.json();
 
-            // Guardar para que tracking-modal-handler.js pueda usar encargado/area como fallback
-            window.currentConsecutivoCosturaData = data;
-            
-            this._updateTrackingModalUI(data);
+            // Enriquecer prenda con seguimientos_por_area SIEMPRE
+            if (window.currentPrendaData && !window.currentPrendaData.seguimientos_por_area) {
+                try {
+                    console.log('[TrackingModalController] Obteniendo seguimientos_por_area para prenda:', {
+                        prendaId: window.currentPrendaData.id,
+                        prendaNombre: window.currentPrendaData.nombre_prenda,
+                        prendaPedidoId: window.currentPrendaData.prenda_pedido_id
+                    });
+                    const trackingResponse = await fetch(`/registros/${pedidoId}/seguimiento-prenda`);
+                    console.log('[TrackingModalController] GET /registros/' + pedidoId + '/seguimiento-prenda - HTTP ' + trackingResponse.status);
+                    
+                    if (trackingResponse.ok) {
+                        const trackingData = await trackingResponse.json();
+                        console.log('[TrackingModalController] ✓ Respuesta seguimiento-prenda:', trackingData);
+                        
+                        // Buscar la prenda específica en la respuesta
+                        if (trackingData.prendas && Array.isArray(trackingData.prendas)) {
+                            console.log('[TrackingModalController] Prendas en respuesta:', trackingData.prendas.length);
+                            trackingData.prendas.forEach((p, idx) => {
+                                const seguimientosCount = p.seguimientos_por_area ? Object.keys(p.seguimientos_por_area).length : 0;
+                                console.log(`[TrackingModalController] Prenda ${idx}:`, {
+                                    id: p.id,
+                                    prenda_pedido_id: p.prenda_pedido_id,
+                                    nombre: p.nombre_prenda,
+                                    hasSeguimientos: !!p.seguimientos_por_area,
+                                    seguimientosCount: seguimientosCount,
+                                    seguimientosKeys: p.seguimientos_por_area ? Object.keys(p.seguimientos_por_area) : [],
+                                    seguimientosData: p.seguimientos_por_area || {}
+                                });
+                            });
+                            
+                            const prendaConTracking = trackingData.prendas.find(p => 
+                                String(p.id) === String(window.currentPrendaData.id) || 
+                                String(p.prenda_pedido_id) === String(window.currentPrendaData.id)
+                            );
+                            
+                            if (prendaConTracking) {
+                                console.log('[TrackingModalController] ✓ Prenda encontrada en respuesta:', prendaConTracking.nombre_prenda);
+                                if (prendaConTracking.seguimientos_por_area) {
+                                    console.log('[TrackingModalController] ✓ Asignando seguimientos_por_area:', Object.keys(prendaConTracking.seguimientos_por_area));
+                                    console.log('[TrackingModalController] Contenido seguimientos_por_area:', JSON.stringify(prendaConTracking.seguimientos_por_area, null, 2));
+                                    window.currentPrendaData.seguimientos_por_area = prendaConTracking.seguimientos_por_area;
+                                    console.log('[TrackingModalController] Seguimientos_por_area asignados exitosamente');
+                                } else {
+                                    console.warn('[TrackingModalController] ⚠ Prenda encontrada pero sin seguimientos_por_area (undefined/null)');
+                                }
+                            } else {
+                                console.warn('[TrackingModalController] ✗ Prenda NO encontrada en respuesta', {
+                                    idBuscado: window.currentPrendaData.id,
+                                    prendaPedidoIdBuscado: window.currentPrendaData.prenda_pedido_id,
+                                    prendaIds: trackingData.prendas.map(p => ({id: p.id, prenda_pedido_id: p.prenda_pedido_id}))
+                                });
+                            }
+                        } else {
+                            console.warn('[TrackingModalController] ✗ Respuesta sin array de prendas');
+                        }
+                    } else {
+                        console.warn('[TrackingModalController] ✗ Error HTTP en seguimiento-prenda:', trackingResponse.status);
+                    }
+                } catch (error) {
+                    console.warn('[TrackingModalController] ✗ Error al obtener seguimientos_por_area:', error);
+                }
+            } else {
+                console.log('[TrackingModalController] Prenda ya tiene seguimientos_por_area:', {
+                    hasSeguimientos: !!window.currentPrendaData?.seguimientos_por_area,
+                    isEmpty: window.currentPrendaData?.seguimientos_por_area && Object.keys(window.currentPrendaData.seguimientos_por_area).length === 0,
+                    keys: window.currentPrendaData?.seguimientos_por_area ? Object.keys(window.currentPrendaData.seguimientos_por_area) : []
+                });
+            }
 
             // Mostrar seguimiento de la prenda seleccionada
+            // Asegurar que seguimientos_por_area existe aunque sea objeto vacío
+            if (!window.currentPrendaData.seguimientos_por_area) {
+                window.currentPrendaData.seguimientos_por_area = {};
+            }
+            
             if (typeof showPrendaTracking === 'function' && window.currentPrendaData) {
                 showPrendaTracking(window.currentPrendaData);
             }
         } catch (error) {
-            console.error('[TrackingModalController] Error al obtener consecutivo de costura:', error);
+            console.error('[TrackingModalController] Error general en _openTrackingModal:', error);
             
-            // Intentar mostrar seguimiento sin consecutivo
+            // Intentar mostrar seguimiento sin consecutivo ni tracking data
+            // Asegurar estructura mínima
+            if (window.currentPrendaData && !window.currentPrendaData.seguimientos_por_area) {
+                window.currentPrendaData.seguimientos_por_area = {};
+            }
+            
             if (typeof showPrendaTracking === 'function' && window.currentPrendaData) {
                 showPrendaTracking(window.currentPrendaData);
             }

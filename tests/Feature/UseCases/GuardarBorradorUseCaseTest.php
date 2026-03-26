@@ -5,10 +5,12 @@ namespace Tests\Feature\UseCases;
 use Tests\TestCase;
 use App\Models\User;
 use App\Models\Cliente;
+use App\Models\Epp;
+use App\Models\EppCategoria;
 use App\Application\UseCases\Pedidos\GuardarBorradorUseCase;
 use App\Application\UseCases\Pedidos\GuardarBorradorInput;
 use Illuminate\Http\Request;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 /**
  * GuardarBorradorUseCaseTest
@@ -25,7 +27,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
  */
 class GuardarBorradorUseCaseTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private GuardarBorradorUseCase $useCase;
     private User $asesor;
@@ -126,7 +128,7 @@ class GuardarBorradorUseCaseTest extends TestCase
 
         // Intentar crear input
         $this->expectException(\Exception::class);
-        ActualizarBorradorInput::fromRequest($request, $this->asesor->id);
+        GuardarBorradorInput::fromRequest($request, $this->asesor->id);
     }
 
     /**
@@ -136,14 +138,33 @@ class GuardarBorradorUseCaseTest extends TestCase
      */
     public function test_guardar_borrador_con_epps()
     {
+        $categoria = EppCategoria::create([
+            'codigo' => 'CAT_TEST',
+            'nombre' => 'Categoria Test',
+            'descripcion' => 'Categoria para pruebas',
+            'activo' => true,
+        ]);
+
+        $epp1 = Epp::create([
+            'nombre_completo' => 'EPP 1',
+            'activo' => true,
+            'categoria_id' => $categoria->id,
+        ]);
+
+        $epp2 = Epp::create([
+            'nombre_completo' => 'EPP 2',
+            'activo' => true,
+            'categoria_id' => $categoria->id,
+        ]);
+
         // Preparar datos con EPPs
         $datosFrontend = [
             'cliente' => 'Cliente con EPPs',
             'forma_de_pago' => 'Crédito 30 días',
             'observaciones' => 'Test EPPs',
             'epps' => [
-                ['epp_id' => 1, 'nombre' => 'EPP 1', 'cantidad' => 5],
-                ['epp_id' => 2, 'nombre' => 'EPP 2', 'cantidad' => 10],
+                ['epp_id' => $epp1->id, 'nombre' => 'EPP 1', 'cantidad' => 5],
+                ['epp_id' => $epp2->id, 'nombre' => 'EPP 2', 'cantidad' => 10],
             ],
             'prendas' => [],
         ];

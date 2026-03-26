@@ -18,7 +18,7 @@ use App\Application\Bodega\Services\BodegaUpdateService;
 use App\Application\Bodega\Services\BodegaGuardadoService;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use App\Application\Bodega\CQRS\CQRSManager;
 use App\Application\Bodega\CQRS\Commands\EntregarPedidoCommand;
 use App\Application\Bodega\CQRS\Commands\ActualizarEstadoPedidoCommand;
@@ -43,7 +43,7 @@ class PedidosController extends Controller
     public function __construct(
         private ObtenerPedidoUseCase $obtenerPedidoUseCase,
         private ObtenerFilasDespachoUseCase $obtenerFilas,
-        private PedidoProduccionRepository $pedidoRepository,
+        private PedidoProduccionReadRepository $pedidoRepository,
         private BodegaPedidoService $bodegaPedidoService,
         private BodegaRoleService $roleService,
         private BodegaNotaService $notaService,

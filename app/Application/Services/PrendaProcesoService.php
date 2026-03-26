@@ -2,6 +2,7 @@
 
 namespace App\Application\Services;
 
+use App\Infrastructure\Services\Pedidos\ProcesoImagenService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 

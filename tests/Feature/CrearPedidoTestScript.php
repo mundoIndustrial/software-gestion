@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Models\Cliente;
 use App\Models\PedidoProduccion;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -17,7 +17,7 @@ use Tests\TestCase;
  */
 class CrearPedidoTestScript extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     public function ejecutarPrueba()
     {
@@ -138,4 +138,6 @@ class CrearPedidoTestScript extends TestCase
 // Ejecutar la prueba
 $prueba = new CrearPedidoTestScript();
 $prueba->ejecutarPrueba();
+
+
 

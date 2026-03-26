@@ -23,7 +23,7 @@ class AgregarTecnicaLogoCotizacionTest extends TestCase
         // Crear cotización de prueba
         $this->logoCotizacion = LogoCotizacion::factory()->create();
         
-        // Obtener tipo de tÃ©cnica (BORDADO)
+        // Obtener tipo de TECNICA (BORDADO)
         $this->tipoTecnica = TipoLogoCotizacion::where('codigo', 'BORDADO')->first();
     }
 

@@ -187,7 +187,7 @@ class PrendaImagenService
             return $nuevaRuta;
             
         } catch (\Exception $e) {
-            Log::error(' [PrendaImagenService] ExcepciÃ³n copiando imagen', [
+            Log::error(' [PrendaImagenService] Excepcion copiando imagen', [
                 'ruta_original' => $rutaOriginal,
                 'error' => $e->getMessage(),
             ]);

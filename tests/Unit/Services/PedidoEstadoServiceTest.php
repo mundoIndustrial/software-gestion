@@ -7,11 +7,11 @@ use App\Models\PedidoProduccion;
 use App\Models\User;
 use App\Services\PedidoEstadoService;
 use App\Enums\EstadoPedido;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class PedidoEstadoServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private PedidoEstadoService $service;
     private User $supervisor;
@@ -255,4 +255,6 @@ class PedidoEstadoServiceTest extends TestCase
         $this->service->marcarComoFinalizado($pedido);
     }
 }
+
+
 

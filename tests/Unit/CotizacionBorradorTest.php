@@ -94,7 +94,7 @@ class CotizacionBorradorTest extends TestCase
         echo "     - storage/app/public/cotizaciones/...                  \n";
         echo "     - public/storage/cotizaciones/...                      \n";
         echo "   Especificaciones guardadas como JSON                   \n";
-        echo "     - disponibilidad, forma_pago, rÃ©gimen, etc             \n";
+        echo "     - disponibilidad, forma_pago, regimen, etc             \n";
         echo "\n";
         echo "\n";
         

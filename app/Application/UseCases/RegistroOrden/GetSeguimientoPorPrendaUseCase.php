@@ -187,6 +187,13 @@ class GetSeguimientoPorPrendaUseCase
         ?int $numeroReciboCostura,
         ?int $reciboCosturaId
     ): array {
+        \Log::info('[GetSeguimientoPorPrendaUseCase::obtenerYCalcularProcesos] Buscando procesos', [
+            'numero_pedido' => $numeroPedido,
+            'prenda_pedido_id' => $prendaId,
+            'numero_recibo_costura' => $numeroReciboCostura,
+            'recibo_costura_id' => $reciboCosturaId
+        ]);
+
         $procesos = ProcesoPrenda::where('numero_pedido', $numeroPedido)
             ->whereNull('deleted_at')
             ->where(function ($q) use ($prendaId, $numeroReciboCostura) {
@@ -197,6 +204,11 @@ class GetSeguimientoPorPrendaUseCase
             })
             ->orderBy('created_at', 'asc')
             ->get();
+
+        \Log::info('[GetSeguimientoPorPrendaUseCase::obtenerYCalcularProcesos] Procesos encontrados: ' . $procesos->count(), [
+            'count' => $procesos->count(),
+            'procesos_areas' => $procesos->pluck('proceso')->unique()->toArray()
+        ]);
 
         // Obtener fechas de completado por área
         $completadosPorArea = [];
@@ -214,6 +226,9 @@ class GetSeguimientoPorPrendaUseCase
 
             $metadata = $this->resolveAreaMetadata($proceso->proceso);
             $fechaCompletado = $completadosPorArea[strtolower(trim((string) $proceso->proceso))] ?? null;
+            
+            // Agregar fecha_completado al objeto para que el frontend lo tenga disponible
+            $clone->fecha_completado = $fechaCompletado;
 
             $clone->duraciones = $this->calcularDuracionesArea(
                 $proceso->proceso,
@@ -235,6 +250,11 @@ class GetSeguimientoPorPrendaUseCase
      */
     private function agruparProcesosPorArea(array $procesos): array
     {
+        \Log::info('[agruparProcesosPorArea] Agrupando ' . count($procesos) . ' procesos', [
+            'count' => count($procesos),
+            'areas' => array_map(fn($p) => $p->proceso ?? 'unknown', $procesos)
+        ]);
+
         $resultado = [];
 
         foreach ($procesos as $proceso) {
@@ -245,9 +265,16 @@ class GetSeguimientoPorPrendaUseCase
                 'encargado' => $proceso->encargado,
                 'fecha_inicio' => $proceso->fecha_inicio,
                 'fecha_fin' => $proceso->fecha_fin,
+                'fecha_de_asignacion_encargado' => $proceso->fecha_de_asignacion_encargado,
+                'fecha_completado' => null, // se calcula desde completadosPorArea si existe
                 'duraciones' => $proceso->duraciones,
             ];
         }
+
+        \Log::info('[agruparProcesosPorArea] Resultado agrupado', [
+            'areas_keys' => array_keys($resultado),
+            'areas_count' => count($resultado)
+        ]);
 
         return $resultado;
     }
@@ -285,6 +312,13 @@ class GetSeguimientoPorPrendaUseCase
     ): array {
         $metadata = $this->resolveAreaMetadata($area);
 
+        // Calcular duración de asignación (desde inicio hasta asignación)
+        $duracionAsignacion = null;
+        if ($fechaInicio && $fechaAsignacion) {
+            $duracionAsignacion = CalculadorDiasService::calcularDiasHabiles($fechaInicio, $fechaAsignacion);
+        }
+
+        // Calcular duración en área (desde asignación o inicio hasta completado o fin)
         $duracionEnArea = null;
         if ($fechaInicio) {
             $inicioCalculo = $fechaAsignacion ?: $fechaInicio;
@@ -292,9 +326,17 @@ class GetSeguimientoPorPrendaUseCase
             $duracionEnArea = CalculadorDiasService::calcularDiasHabiles($inicioCalculo, $finCalculo);
         }
 
+        // Calcular total de días (desde inicio hasta completado/fin)
+        $totalDias = null;
+        if ($fechaInicio) {
+            $finCalculo = $fechaCompletado ?: $fechaFin ?: now();
+            $totalDias = CalculadorDiasService::calcularDiasHabiles($fechaInicio, $finCalculo);
+        }
+
         return [
+            'duracion_asignacion' => $duracionAsignacion,
             'duracion_en_area_dias' => $duracionEnArea,
-            'total_dias_numero' => $duracionEnArea,
+            'total_dias_numero' => $totalDias,
             'estado_display' => !empty($fechaCompletado) ? 'Completado' : 'Pendiente',
             'esta_activo_display' => empty($fechaCompletado),
         ];
@@ -339,6 +381,16 @@ class GetSeguimientoPorPrendaUseCase
 
         $yaEnviado = !empty($fechaEnvioProduccion);
 
+        // Calcular duraciones para Insumos
+        $duracionesInsumos = $this->calcularDuracionesArea(
+            'Insumos',
+            $reciboCostura->created_at,
+            null, // no hay fecha de asignación para insumos
+            $fechaEnvioProduccion, // fecha de completado
+            $fechaEnvioProduccion, // fecha fin
+            $yaEnviado ? 'Completado' : 'Pendiente'
+        );
+
         $insumosArea = [
             'id' => null,
             'area' => 'Insumos',
@@ -347,6 +399,7 @@ class GetSeguimientoPorPrendaUseCase
             'fecha_inicio' => $reciboCostura->created_at,
             'fecha_fin' => $fechaEnvioProduccion,
             'esta_activo' => !$yaEnviado,
+            'duraciones' => $duracionesInsumos,
         ];
 
         return ['Insumos' => $insumosArea] + $seguimientosPorArea;
@@ -390,8 +443,11 @@ class GetSeguimientoPorPrendaUseCase
     {
         foreach ($prendasConSeguimiento as $prenda) {
             foreach ($prenda['consecutivos'] as $c) {
-                if (($c['tipo_recibo'] ?? null) === 'COSTURA' && ($c['activo'] ?? 0) == 1) {
-                    return (string) ($c['consecutivo_actual'] ?? '-');
+                // Cast defensivo: pueden ser stdClass o array
+                $cArray = is_array($c) ? $c : (array) $c;
+                
+                if (($cArray['tipo_recibo'] ?? null) === 'COSTURA' && ($cArray['activo'] ?? 0) == 1) {
+                    return (string) ($cArray['consecutivo_actual'] ?? '-');
                 }
             }
         }

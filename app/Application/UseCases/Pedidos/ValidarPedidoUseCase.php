@@ -91,10 +91,11 @@ class ValidarPedidoUseCase
 
             // ====== Domain Event: Pedido Validado ======
             Event::dispatch(new PedidoValidatedEvent(
-                pedidoId: $cliente->id,
+                pedidoId: 0,
                 usuarioId: $input->userId,
                 validacionesPasadas: ['cliente', 'items'],
                 metadata: [
+                    'cliente_id' => $cliente->id,
                     'cliente_nombre' => $cliente->nombre,
                     'items_counts' => $input->getItemCounts(),
                 ]

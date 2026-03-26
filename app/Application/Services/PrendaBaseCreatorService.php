@@ -3,6 +3,7 @@
 namespace App\Application\Services;
 
 use App\Models\PrendaPedido;
+use App\Application\Services\PrendaTallaService;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -49,8 +50,7 @@ class PrendaBaseCreatorService
         // Guardar tallas en tabla relacional prenda_pedido_tallas
         if (!empty($cantidadTallaFinal)) {
             try {
-                $tallaRepository = new \App\Domain\Pedidos\Repositories\PedidoProduccionRepository();
-                $tallaRepository->guardarTallas($prenda->id, $cantidadTallaFinal);
+                app(PrendaTallaService::class)->guardarTallasPrenda($prenda->id, $cantidadTallaFinal);
                 
                 \Log::info(" [PRENDA #{$index}] Tallas guardadas en tabla relacional", [
                     'prenda_id' => $prenda->id,

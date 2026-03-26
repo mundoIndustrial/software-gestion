@@ -6,12 +6,12 @@ use App\Models\Cotizacion;
 use App\Models\TipoCotizacion;
 use App\Models\User;
 use App\Models\HistorialCotizacion;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class CotizacionesTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected $user;
 
@@ -49,7 +49,7 @@ class CotizacionesTest extends TestCase
         $datos = [
             'numero_cotizacion' => 'COT-001',
             'tipo_cotizacion' => 'M',
-            'cliente' => 'Juan PÃ©rez',
+            'cliente' => 'Juan Perez',
             'tipo' => 'borrador',
             'productos' => [
                 [
@@ -67,7 +67,7 @@ class CotizacionesTest extends TestCase
             ],
             'imagenes' => [],
             'tecnicas' => ['BORDADO'],
-            'observaciones_tecnicas' => 'Observaciones tÃ©cnicas',
+            'observaciones_tecnicas' => 'Observaciones tecnicas',
             'ubicaciones' => ['CAMISA' => 'Pecho izquierdo'],
             'observaciones_generales' => ['Observación 1', 'Observación 2']
         ];
@@ -119,7 +119,7 @@ class CotizacionesTest extends TestCase
             'user_id' => $this->user->id,
             'numero_cotizacion' => 'COT-002',
             'tipo_cotizacion_id' => TipoCotizacion::where('codigo', 'M')->first()->id,
-            'cliente' => 'Juan PÃ©rez',
+            'cliente' => 'Juan Perez',
             'asesora' => 'maria López',
             'es_borrador' => true,
             'estado' => 'enviada',
@@ -137,7 +137,7 @@ class CotizacionesTest extends TestCase
             'cotizacion_id' => $cotizacion->id,
             'numero_cotizacion' => 'COT-002-ACTUALIZADO',
             'tipo_cotizacion' => 'D',
-            'cliente' => 'Juan PÃ©rez Actualizado',
+            'cliente' => 'Juan Perez Actualizado',
             'tipo' => 'borrador',
             'productos' => [
                 [
@@ -155,7 +155,7 @@ class CotizacionesTest extends TestCase
             ],
             'imagenes' => [],
             'tecnicas' => ['DTF'],
-            'observaciones_tecnicas' => 'Nuevas observaciones tÃ©cnicas',
+            'observaciones_tecnicas' => 'Nuevas observaciones tecnicas',
             'ubicaciones' => [],
             'observaciones_generales' => []
         ];
@@ -171,7 +171,7 @@ class CotizacionesTest extends TestCase
 
         // Verificar que se actualizó el contenido
         $this->assertEquals('COT-002-ACTUALIZADO', $cotizacion->numero_cotizacion);
-        $this->assertEquals('Juan PÃ©rez Actualizado', $cotizacion->cliente);
+        $this->assertEquals('Juan PPerez Actualizado', $cotizacion->cliente);
         $this->assertEquals('D', $cotizacion->tipoCotizacion->codigo);
 
         // Verificar que fecha_inicio NO cambió
@@ -202,7 +202,7 @@ class CotizacionesTest extends TestCase
             'user_id' => $this->user->id,
             'numero_cotizacion' => 'COT-003',
             'tipo_cotizacion_id' => TipoCotizacion::where('codigo', 'M')->first()->id,
-            'cliente' => 'Juan PÃ©rez',
+            'cliente' => 'Juan Perez',
             'asesora' => 'maria López',
             'es_borrador' => true,
             'estado' => 'enviada',
@@ -263,7 +263,7 @@ class CotizacionesTest extends TestCase
             ],
             'imagenes' => [],
             'tecnicas' => ['BORDADO'],
-            'observaciones_tecnicas' => 'Obs tÃ©cnicas',
+            'observaciones_tecnicas' => 'Obs tecnicas',
             'ubicaciones' => [],
             'observaciones_generales' => []
         ];
@@ -364,4 +364,6 @@ class CotizacionesTest extends TestCase
         $this->assertEquals(3, $actualizaciones);
     }
 }
+
+
 

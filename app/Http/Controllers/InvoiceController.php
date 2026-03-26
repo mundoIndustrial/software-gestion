@@ -3,14 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\PedidoProduccion;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use Illuminate\Http\Request;
 
 class InvoiceController extends Controller
 {
-    private PedidoProduccionRepository $repository;
+    private PedidoProduccionReadRepository $repository;
 
-    public function __construct(PedidoProduccionRepository $repository)
+    public function __construct(PedidoProduccionReadRepository $repository)
     {
         $this->repository = $repository;
     }

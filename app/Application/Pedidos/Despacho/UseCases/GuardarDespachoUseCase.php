@@ -3,8 +3,8 @@
 namespace App\Application\Pedidos\Despacho\UseCases;
 
 use App\Models\PedidoProduccion;
-use App\Domain\Pedidos\Despacho\Services\DespachoValidadorService;
 use App\Domain\Pedidos\Despacho\Services\DesparChoParcialesPersistenceService;
+use App\Application\Pedidos\Despacho\Services\DespachoValidadorService;
 use App\Application\Pedidos\Despacho\DTOs\ControlEntregasDTO;
 use App\Application\Pedidos\Despacho\DTOs\DespachoParcialesDTO;
 use Illuminate\Support\Facades\DB;

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Application\Services\PrendaTallaService;
 use App\Models\Cotizacion;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
@@ -249,8 +250,7 @@ class PedidoService
             
             // Guardar tallas en la tabla relacional prenda_pedido_tallas
             if (!empty($cantidadesPorTalla)) {
-                $prendaTallaRepository = new \App\Domain\Pedidos\Repositories\PedidoProduccionRepository();
-                $prendaTallaRepository->guardarTallas($prenda->id, $cantidadesPorTalla);
+                app(PrendaTallaService::class)->guardarTallasPrenda($prenda->id, $cantidadesPorTalla);
             }
 
             \Log::info('Prenda del pedido creada', [

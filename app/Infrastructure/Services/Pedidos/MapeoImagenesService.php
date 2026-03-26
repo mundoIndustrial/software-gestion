@@ -2,7 +2,7 @@
 
 namespace App\Infrastructure\Services\Pedidos;
 
-use App\Domain\Pedidos\DTOs\PedidoNormalizadorDTO;
+use App\Application\Pedidos\DTOs\PedidoNormalizadorDTO;
 use Illuminate\Support\Facades\Log;
 
 /**

@@ -11,7 +11,8 @@ use App\Application\Services\Asesores\PerfilService;
 
 // Repositories
 use App\Domain\Pedidos\Repositories\PedidoRepository;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
+use App\Infrastructure\Pedidos\Persistence\Eloquent\EloquentPedidoProduccionRepository;
 
 // Use Cases (DDD)
 use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
@@ -73,7 +74,7 @@ class AsesoresServiceProvider extends ServiceProvider
     public function register()
     {
         // ===== REPOSITORIES =====
-        $this->app->singleton(PedidoProduccionRepository::class);
+        $this->app->singleton(PedidoProduccionReadRepository::class, EloquentPedidoProduccionRepository::class);
 
         // ===== LEGACY SERVICES (Gradualmente siendo eliminados) =====
         $this->app->singleton(DashboardService::class, function ($app) {
@@ -158,7 +159,7 @@ class AsesoresServiceProvider extends ServiceProvider
         // Listar Pedidos
         $this->app->singleton(ListarProduccionPedidosUseCase::class, function ($app) {
             return new ListarProduccionPedidosUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoProduccionReadRepository::class)
             );
         });
 
@@ -184,14 +185,14 @@ class AsesoresServiceProvider extends ServiceProvider
         // Obtener Factura
         $this->app->singleton(ObtenerFacturaUseCase::class, function ($app) {
             return new ObtenerFacturaUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoProduccionReadRepository::class)
             );
         });
 
         // Obtener Recibos
         $this->app->singleton(ObtenerRecibosUseCase::class, function ($app) {
             return new ObtenerRecibosUseCase(
-                $app->make(PedidoProduccionRepository::class)
+                $app->make(PedidoProduccionReadRepository::class)
             );
         });
 

@@ -5,7 +5,7 @@ namespace App\Application\UseCases\Orders;
 use App\Application\Shared\Contracts\AuditRepositoryInterface;
 use App\Application\Shared\Contracts\OrdenEventDispatcherInterface;
 use App\Application\Shared\Contracts\TransactionManagerInterface;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use App\Services\RegistroOrdenPrendaService;
 use App\Services\RegistroOrdenCacheService;
 
@@ -24,7 +24,7 @@ class UpdateDescripcionPrendasUseCase
     public function __construct(
         private RegistroOrdenPrendaService $prendaService,
         private RegistroOrdenCacheService $cacheService,
-        private PedidoProduccionRepository $pedidoRepository,
+        private PedidoProduccionReadRepository $pedidoRepository,
         private AuditRepositoryInterface $auditRepository,
         private TransactionManagerInterface $transactionManager,
         private OrdenEventDispatcherInterface $eventDispatcher,
@@ -36,6 +36,9 @@ class UpdateDescripcionPrendasUseCase
         $nuevaDescripcion = $request->descripcion;
 
         $orden = $this->pedidoRepository->findByNumeroPedido($pedido);
+        if (!$orden) {
+            throw new \RuntimeException("Pedido {$pedido} no encontrado");
+        }
 
         $prendas = null;
         $procesarRegistros = false;
@@ -59,9 +62,14 @@ class UpdateDescripcionPrendasUseCase
             );
         });
 
-        $orden = $this->pedidoRepository->cargarPrendas($orden);
-
-        $this->eventDispatcher->ordenActualizada($orden, 'updated');
+        $this->eventDispatcher->ordenActualizada([
+            'id' => $orden->pedidoId,
+            'numero_pedido' => $orden->numeroPedido,
+            'pedido' => $orden->numeroPedido,
+            'cliente_id' => $orden->clienteId,
+            'asesor_id' => $orden->asesorId,
+            'estado' => $orden->estado,
+        ], 'updated');
 
         $mensaje = $this->prendaService->getParsedPrendasMessage($prendas);
 

@@ -190,21 +190,100 @@ class RegistroOrdenQueryController extends Controller
      */
     public function getRecibosDatos($pedido)
     {
-        $esInsumos = request()->headers->get('referer') && str_contains(request()->headers->get('referer'), 'insumos/materiales');
-        $result = $this->getRecibosDatosUseCase->execute($pedido, $esInsumos);
-        $statusCode = $result['success'] ? 200 : 404;
-        return response()->json($result['success'] ? $result['data'] : $result, $statusCode);
+        try {
+            $esInsumos = request()->headers->get('referer') && str_contains(request()->headers->get('referer'), 'insumos/materiales');
+            $result = $this->getRecibosDatosUseCase->execute($pedido, $esInsumos);
+            
+            return response()->json([
+                'success' => true,
+                'data' => $result
+            ], 200);
+        } catch (\App\Exceptions\GetRecibosDatosException $e) {
+            return $this->handleRegistroOrdenException($e);
+        } catch (\DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'error_code' => 'DOMAIN_ERROR',
+                'message' => $e->getMessage()
+            ], 403);
+        } catch (\Exception $e) {
+            \Log::error('[RegistroOrdenQueryController::getRecibosDatos] Error inesperado', [
+                'pedido' => $pedido,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'error_code' => 'SERVER_ERROR',
+                'message' => 'Error al obtener datos del pedido'
+            ], 500);
+        }
     }
     
     /**
      * Obtener el consecutivo de costura para un pedido
+     * GET /registros/{pedido}/consecutivo-costura?prenda_id={prenda_id}
      */
     public function getConsecutivoCostura($pedido)
     {
-        $prendaId = request()->query('prenda_id');
-        $result = $this->getConsecutivoCosturaUseCase->execute($pedido, $prendaId);
-        $statusCode = $result['success'] ? 200 : 404;
-        return response()->json($result, $statusCode);
+        try {
+            $prendaId = request()->query('prenda_id');
+            
+            \Log::info('[getConsecutivoCostura] Obteniendo consecutivo', [
+                'pedido' => $pedido,
+                'prenda_id' => $prendaId
+            ]);
+            
+            $result = $this->getConsecutivoCosturaUseCase->execute($pedido, $prendaId);
+            
+            \Log::info('[getConsecutivoCostura] Resultado exitoso', [
+                'consecutivo' => $result['consecutivo'] ?? null,
+                'area' => $result['area'] ?? null
+            ]);
+            
+            // El UseCase devuelve datos directamente, no incluye 'success'
+            // Si llegó aquí sin excepciones, es éxito
+            return response()->json(array_merge(
+                ['success' => true],
+                $result
+            ), 200);
+            
+        } catch (\App\Exceptions\GetConsecutivoCosturaException $e) {
+            \Log::error('[getConsecutivoCostura] GetConsecutivoCosturaException: ' . $e->getMessage(), [
+                'pedido' => $pedido,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'error_code' => $e->getCode()
+            ], 404);
+            
+        } catch (\App\Exceptions\DomainException $e) {
+            \Log::error('[getConsecutivoCostura] DomainException: ' . $e->getMessage(), [
+                'pedido' => $pedido,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+            
+        } catch (\Exception $e) {
+            \Log::error('[getConsecutivoCostura] Exception: ' . $e->getMessage(), [
+                'pedido' => $pedido,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener datos del consecutivo de costura',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -213,17 +292,31 @@ class RegistroOrdenQueryController extends Controller
      */
     public function getSeguimientoPorPrenda($pedido)
     {
-        $result = $this->getSeguimientoPorPrendaUseCase->execute($pedido);
-        
-        if (!$result['success']) {
-            return response()->json($result, 404);
-        }
+        try {
+            $result = $this->getSeguimientoPorPrendaUseCase->execute($pedido);
+            
+            if (!$result['success']) {
+                return response()->json($result, 404);
+            }
 
-        return response()->json([
-            'pedido' => $result['pedido'],
-            'prendas' => $result['prendas'],
-            'areas_config' => $result['areas_config'],
-        ]);
+            return response()->json([
+                'pedido' => $result['pedido'],
+                'prendas' => $result['prendas'],
+                'areas_config' => $result['areas_config'],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[RegistroOrdenQueryController::getSeguimientoPorPrenda] Error inesperado', [
+                'pedido' => $pedido,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error_code' => 'SERVER_ERROR',
+                'message' => 'Error al obtener seguimiento por prenda'
+            ], 500);
+        }
     }
 
     /**

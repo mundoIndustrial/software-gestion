@@ -66,36 +66,76 @@ class ObtenerEncargadosPorAreaUseCase
     {
         // Mapeo de áreas a roles/permisos
         $areaRoleMap = [
-            'COSTURA' => ['costurero', 'supervisor_costura'],
+            'COSTURA' => ['costurero', 'supervisor_costura', 'confeccion-sobremedida', 'costura-reflectivo'],
+            'CORTE' => ['cortador', 'supervisor_corte', 'confeccion-sobremedida'],
             'ESTAMPADO' => ['estampador', 'supervisor_estampado'],
             'BORDADO' => ['bordador', 'supervisor_bordado'],
             'DTF' => ['dtf', 'supervisor_dtf'],
             'SUBLIMADO' => ['sublimador', 'supervisor_sublimado'],
             'REFLECTIVO' => ['reflectivo', 'supervisor_reflectivo'],
-            'INSUMOS' => ['insumos', 'supervisador_insumos'],
+            'INSUMOS' => ['insumos', 'supervisador_insumos', 'gestor-insumos'],
+            'CONTROL DE CALIDAD' => ['control-calidad', 'supervisor_calidad'],
+            'DESPACHO' => ['despacho', 'supervisor_despacho'],
+            'TALLER' => ['tallista', 'supervisor_taller'],
+            'ENTREGA' => ['repartidor', 'supervisor_entrega'],
+            'LAVANDERÍA' => ['lavanderia', 'supervisor_lavanderia'],
         ];
 
         // Obtener roles asociados al área
         $rolesArea = $areaRoleMap[$area] ?? [];
 
         if (empty($rolesArea)) {
+            Log::warning('[ObtenerEncargadosPorAreaUseCase] Área no configurada', ['area' => $area]);
             return [];
         }
 
-        // Obtener usuarios con esos roles
-        $usuarios = User::whereHas('roles', function ($query) use ($rolesArea) {
-            $query->whereIn('name', $rolesArea);
-        })
-        ->where('activo', true)
-        ->select(['id', 'name', 'email'])
-        ->orderBy('name')
-        ->get();
+        try {
+            // Obtener IDs de roles que pertenecen a la área
+            $roleIds = \App\Models\Role::whereIn('name', $rolesArea)
+                ->pluck('id')
+                ->toArray();
 
-        // Formatear para retornar
-        return $usuarios->map(fn($user) => [
-            'id' => $user->id,
-            'nombre' => $user->name,
-            'email' => $user->email
-        ])->toArray();
+            if (empty($roleIds)) {
+                Log::warning('[ObtenerEncargadosPorAreaUseCase] No se encontraron roles para área', [
+                    'area' => $area,
+                    'roles' => $rolesArea
+                ]);
+                return [];
+            }
+
+            // Obtener usuarios que tienen al menos uno de los roles
+            // El campo roles_ids es JSON, así que filtramos manualmente
+            $usuariosRaw = User::select(['id', 'name', 'email', 'roles_ids'])
+                ->orderBy('name')
+                ->get();
+
+            $usuarios = [];
+            foreach ($usuariosRaw as $user) {
+                $userRoleIds = $user->roles_ids ?? [];
+                
+                // Verificar si el usuario tiene al menos un rol de la área
+                foreach ($roleIds as $roleId) {
+                    if (in_array($roleId, $userRoleIds, true)) {
+                        $usuarios[] = [
+                            'id' => $user->id,
+                            'nombre' => $user->name,
+                            'email' => $user->email
+                        ];
+                        break; // Evitar duplicados
+                    }
+                }
+            }
+
+            return $usuarios;
+
+        } catch (\Exception $e) {
+            Log::error('[ObtenerEncargadosPorAreaUseCase::obtenerEncargadosPorArea] Error consultando usuarios', [
+                'area' => $area,
+                'roles' => $rolesArea,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return [];
+        }
     }
 }

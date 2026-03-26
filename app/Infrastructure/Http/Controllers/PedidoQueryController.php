@@ -64,12 +64,37 @@ class PedidoQueryController extends Controller
      */
     public function obtenerDetalleCompleto(int $id, bool $filtrarProcesosPendientes = false): JsonResponse
     {
-        $response = $this->obtenerDetalleCompletoUseCase->ejecutar($id, $filtrarProcesosPendientes);
+        try {
+            $response = $this->obtenerDetalleCompletoUseCase->ejecutar($id, $filtrarProcesosPendientes);
 
-        return response()->json([
-            'success' => true,
-            'data' => $response->toArray()
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'data' => $response->toArray()
+            ], 200);
+        } catch (\DomainException $e) {
+            \Log::warning('[PedidoQueryController::obtenerDetalleCompleto] Domain Error', [
+                'id' => $id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'error_code' => 'DOMAIN_ERROR',
+                'message' => $e->getMessage()
+            ], 403);
+        } catch (\Exception $e) {
+            \Log::error('[PedidoQueryController::obtenerDetalleCompleto] Error inesperado', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'error_code' => 'SERVER_ERROR',
+                'message' => 'Error al obtener datos del pedido'
+            ], 500);
+        }
     }
 
     /**

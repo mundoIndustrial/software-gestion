@@ -7,12 +7,12 @@ use App\Models\User;
 use App\Models\PedidoProduccion;
 use App\Models\PedidoEpp;
 use App\Models\Epp;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
-use App\Domain\Pedidos\Services\PedidoImagenesService;
+use App\Models\EppCategoria;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use App\Application\UseCases\Pedidos\ActualizarBorradorUseCase;
 use App\Application\UseCases\Pedidos\ActualizarBorradorInput;
 use Illuminate\Http\Request;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 /**
  * ActualizarBorradorUseCaseTest
@@ -29,11 +29,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
  */
 class ActualizarBorradorUseCaseTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private ActualizarBorradorUseCase $useCase;
-    private PedidoProduccionRepository $repository;
-    private PedidoImagenesService $imagenService;
+    private PedidoProduccionReadRepository $repository;
     private User $asesor;
     private PedidoProduccion $pedido;
 
@@ -47,7 +46,7 @@ class ActualizarBorradorUseCaseTest extends TestCase
         // Crear pedido de prueba
         $this->pedido = PedidoProduccion::create([
             'asesor_id' => $this->asesor->id,
-            'numero_pedido' => 'BORR-001',
+            'numero_pedido' => null,
             'cliente' => 'Cliente Test',
             'estado' => 'Borrador',
             'forma_de_pago' => 'Contado',
@@ -55,8 +54,7 @@ class ActualizarBorradorUseCaseTest extends TestCase
         ]);
 
         // Obtener servicios
-        $this->repository = app(PedidoProduccionRepository::class);
-        $this->imagenService = app(PedidoImagenesService::class);
+        $this->repository = app(PedidoProduccionReadRepository::class);
         $this->useCase = app(ActualizarBorradorUseCase::class);
     }
 
@@ -192,10 +190,18 @@ class ActualizarBorradorUseCaseTest extends TestCase
      */
     public function test_actualizar_borrador_con_epps()
     {
+        $categoria = EppCategoria::create([
+            'codigo' => 'CAT_TEST',
+            'nombre' => 'Categoria Test',
+            'descripcion' => 'Categoria para pruebas',
+            'activo' => true,
+        ]);
+
         // Crear EPP y asignarlo al pedido
         $epp = Epp::create([
             'nombre_completo' => 'EPP Test',
             'activo' => true,
+            'categoria_id' => $categoria->id,
         ]);
 
         $pedidoEpp = PedidoEpp::create([

@@ -11,11 +11,11 @@ use App\Models\VariantePrenda;
 use App\Models\ColorPrenda;
 use App\Models\TelaPrenda;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class PedidoServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private PedidoService $service;
     private User $usuario;
@@ -287,4 +287,6 @@ class PedidoServiceTest extends TestCase
         $this->assertCount(3, $pedido->prendas->pluck('procesos')->flatten());
     }
 }
+
+
 

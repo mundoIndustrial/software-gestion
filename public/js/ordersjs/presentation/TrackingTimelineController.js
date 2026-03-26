@@ -13,7 +13,7 @@ export class TrackingTimelineController {
     showError,
     closePrendasSelector,
     setupBackButton,
-    startCountersTimer,
+    startCountersTimer = () => {}, // Default no-op function
   }) {
     this.orderState = orderState;
     this.svgIcons = svgIcons;
@@ -22,7 +22,7 @@ export class TrackingTimelineController {
     this.showError = showError;
     this.closePrendasSelector = closePrendasSelector;
     this.setupBackButton = setupBackButton;
-    this.startCountersTimer = startCountersTimer;
+    this.startCountersTimer = typeof startCountersTimer === 'function' ? startCountersTimer : () => {};
   }
 
   async showPrendaTracking(prenda) {
@@ -148,6 +148,12 @@ export class TrackingTimelineController {
     container.appendChild(areasSection);
 
     Object.entries(seguimientosPorArea).forEach(([area, data]) => {
+      // Validar que data tenga la estructura esperada
+      if (!data || typeof data !== 'object') {
+        console.warn('[TrackingTimelineController] Datos inválidos para área:', area, data);
+        return;
+      }
+      
       const areaCard = this.createAreaCard(area, data, prenda?.readonly || false);
       areasSection.appendChild(areaCard);
     });
@@ -229,23 +235,62 @@ export class TrackingTimelineController {
 
   createAreaCard(area, data, readonly = false) {
     const card = document.createElement('div');
-    const { metadata, duraciones, fechas_formateadas: fechasFormateadas } = data;
+    
+    // Asegurar que data sea un objeto válido con defaul values
+    if (!data || typeof data !== 'object') {
+      console.warn('[TrackingTimelineController.createAreaCard] Datos inválidos para:', area, data);
+      data = {};
+    }
+    
+    const metadata = data.metadata || {};
+    const duraciones = data.duraciones || {};
+    const fechasFormateadas = data.fechas_formateadas || {};
 
-    const estadoDisplay = duraciones.estado_display;
-    const estaActivoDisplay = duraciones.esta_activo_display;
+    // Valores por defecto si el objeto está vacío
+    const estadoDisplay = duraciones?.estado_display || 'Pendiente';
+    const estaActivoDisplay = duraciones?.esta_activo_display ?? true;
 
     if (readonly) {
       card.classList.add('tracking-readonly-mode');
     }
 
     const iconSvg = this.svgIcons.get(area);
-    const fechaLlegada = fechasFormateadas.fecha_llegada || '---';
-    const fechaAsignacion = fechasFormateadas.fecha_asignacion || '---';
-    const fechaFin = fechasFormateadas.fecha_fin || '---';
+    
+    // ✅ USAR FECHAS DEL BACKEND si están disponibles, formatearlas si es necesario
+    const fechaLlegada = fechasFormateadas?.fecha_llegada || this.formatDate(data.fecha_inicio) || '---';
+    const fechaAsignacion = fechasFormateadas?.fecha_asignacion || this.formatDate(data.fecha_de_asignacion_encargado) || '---';
+    const fechaFin = fechasFormateadas?.fecha_fin || this.formatDate(data.fecha_fin) || this.formatDate(data.fecha_completado) || '---';
 
-    const duracionAsignacion = duraciones.duracion_asignacion || '---';
-    const duracionEnArea = duraciones.duracion_en_area || '---';
-    const totalDiasAreaDisplay = duraciones.total_dias || '---';
+    // ✅ USAR VALORES DEL BACKEND: duraciones.total_dias_numero que el backend calcula
+    const formatDuracionDias = (dias) => {
+      if (dias === null || dias === undefined) return '---';
+      dias = Number(dias);
+      if (dias === 0) return '0 días';
+      return `${dias} día${dias !== 1 ? 's' : ''}`;
+    };
+
+    const duracionAsignacion = (() => {
+      if (duraciones?.duracion_asignacion !== undefined && duraciones?.duracion_asignacion !== null) {
+        return formatDuracionDias(duraciones.duracion_asignacion);
+      }
+      return duraciones?.duracion_asignacion_display || '---';
+    })();
+
+    const duracionEnArea = (() => {
+      if (duraciones?.duracion_en_area_dias !== undefined && duraciones?.duracion_en_area_dias !== null) {
+        return formatDuracionDias(duraciones.duracion_en_area_dias);
+      }
+      return duraciones?.duracion_en_area || '---';
+    })();
+
+    const totalDiasAreaDisplay = (() => {
+      // Intentar obtener total_dias_numero (nuevo formato backend)
+      if (duraciones?.total_dias_numero !== undefined && duraciones?.total_dias_numero !== null) {
+        return formatDuracionDias(duraciones.total_dias_numero);
+      }
+      // Fallback a total_dias (formato antiguo)
+      return duraciones?.total_dias || '---';
+    })();
 
     const accionesHtml = readonly ? '' : `${(data.id || data.can_edit) ? `
             <button class="tracking-edit-btn" onclick="${data.id ? `handleEditarProceso(${data.id}, '${area}', ${JSON.stringify(data).replace(/"/g, '&quot;')}, event)` : `handleCrearProcesoDesdeArea('${area}', event, '${String(data.encargado || '').replace(/'/g, "\\'")}')`}" title="Editar proceso">

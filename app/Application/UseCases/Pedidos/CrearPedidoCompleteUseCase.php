@@ -4,14 +4,13 @@ namespace App\Application\UseCases\Pedidos;
 
 use App\Application\Shared\Contracts\TransactionManagerInterface;
 use App\Domain\Clientes\Services\ClienteService;
-use App\Domain\Pedidos\DTOs\PedidoNormalizadorDTO;
+use App\Application\Pedidos\DTOs\PedidoNormalizadorDTO;
 use App\Domain\Pedidos\Repositories\PedidoRepository;
 use App\Application\Pedidos\Services\PedidoCreationCoordinator;
 use App\Infrastructure\Services\Pedidos\PedidoImageManager;
 use App\Infrastructure\Services\Pedidos\PedidoImagenesService;
 use App\Infrastructure\Services\Pedidos\PedidoLifecycleService;
 use App\Infrastructure\Services\Pedidos\PedidoPostCommitPublisher;
-use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -81,10 +80,7 @@ class CrearPedidoCompleteUseCase
                 ]);
 
                 if ($borradorId) {
-                    $borrador = PedidoProduccion::where('id', $borradorId)
-                        ->where('estado', 'Borrador')
-                        ->first();
-
+                    $borrador = $this->pedidoLifecycleService->obtenerBorradorPorId($borradorId);
                     if ($borrador) {
                         $pedido = $this->pedidoLifecycleService->convertirBorradorEnPedido(
                             $borrador,

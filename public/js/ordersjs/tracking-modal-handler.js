@@ -424,6 +424,21 @@ function initTrackingModalListeners() {
       
       await orderLoaderService.loadCompleteOrder(orderId);
       
+      // Poblar window.currentOrderData con los datos cargados en orderState
+      const snapshot = orderState.getSnapshot();
+      const prendas = orderState.getPrendas(); // ← Obtener prendas directamente, no desde snapshot
+      
+      window.currentOrderData = {
+        id: snapshot.order?.id,
+        numero_pedido: snapshot.order?.numero_pedido,
+        cliente: snapshot.order?.cliente,
+        estado: snapshot.order?.estado,
+        prendas: prendas || []
+      };
+      
+      console.log('[openOrderTracking] window.currentOrderData poblado:', window.currentOrderData);
+      console.log('[openOrderTracking] Prendas copiadas a window.currentOrderData:', prendas.length);
+      
       if (mostrarSelector) {
         showPrendasSelector();
       }

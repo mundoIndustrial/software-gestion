@@ -6,6 +6,7 @@ use App\Application\Bodega\Services\BodegaPedidoService;
 use App\Application\Bodega\Services\BodegaRoleService;
 use App\Application\Bodega\Services\BodegaNotaService;
 use App\Application\Bodega\Services\BodegaAuditoriaService;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use Illuminate\Support\ServiceProvider;
 
 class BodegaServiceProvider extends ServiceProvider
@@ -19,7 +20,7 @@ class BodegaServiceProvider extends ServiceProvider
         $this->app->singleton(BodegaPedidoService::class, function ($app) {
             return new BodegaPedidoService(
                 $app->make(\App\Application\Pedidos\UseCases\ObtenerPedidoUseCase::class),
-                $app->make(\App\Domain\Pedidos\Repositories\PedidoProduccionRepository::class),
+                $app->make(PedidoProduccionReadRepository::class),
                 $app->make(BodegaRoleService::class),
                 $app->make(\App\Application\Bodega\Services\BodegaRepository::class),
                 $app->make(\App\Application\Bodega\Calculators\PedidoEstadoCalculator::class)

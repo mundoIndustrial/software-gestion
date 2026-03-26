@@ -8,8 +8,9 @@ use App\Application\Services\PedidoPrendaService;
 use App\Application\Services\PedidoLogoService;
 use App\Application\Services\CopiarImagenesCotizacionAPedidoService;
 use App\Application\Services\ColorGeneroMangaBrocheService;
-use App\Domain\Pedidos\Despacho\Services\DespachoGeneradorService;
-use App\Domain\Pedidos\Despacho\Services\DespachoValidadorService;
+use App\Application\Pedidos\Despacho\Services\DespachoGeneradorService;
+use App\Application\Pedidos\Despacho\Services\DespachoEstadoService;
+use App\Application\Pedidos\Despacho\Services\DespachoValidadorService;
 use App\Domain\Pedidos\Despacho\Services\DesparChoParcialesPersistenceService;
 use App\Domain\Pedidos\Despacho\Repositories\DesparChoParcialesRepository;
 use App\Infrastructure\Repositories\PedidoProduccionRepository;
@@ -104,6 +105,11 @@ class PedidosServiceProvider extends ServiceProvider
             );
         });
 
+        // Registrar DespachoEstadoService como singleton
+        $this->app->singleton(DespachoEstadoService::class, function ($app) {
+            return new DespachoEstadoService();
+        });
+
         // Registrar DespachoValidadorService como singleton
         $this->app->singleton(DespachoValidadorService::class, function ($app) {
             return new DespachoValidadorService();
@@ -178,9 +184,11 @@ class PedidosServiceProvider extends ServiceProvider
             return new CalcularFechaEstimadaUseCase();
         });
 
-        // Registrar GetRecibosDatosUseCase (sin dependencias - resuelve internamente)
+        // Registrar GetRecibosDatosUseCase (con dependencia de ObtenerDetalleCompletoUseCase)
         $this->app->singleton(GetRecibosDatosUseCase::class, function ($app) {
-            return new GetRecibosDatosUseCase();
+            return new GetRecibosDatosUseCase(
+                $app->make(ObtenerDetalleCompletoUseCase::class)
+            );
         });
 
         // Registrar GetNovedadesUseCase (sin dependencias)

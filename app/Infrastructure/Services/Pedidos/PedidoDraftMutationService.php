@@ -3,7 +3,8 @@
 namespace App\Infrastructure\Services\Pedidos;
 
 use App\Application\Pedidos\Services\PedidoCreationCoordinator;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
+use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 class PedidoDraftMutationService
 {
     public function __construct(
-        private PedidoProduccionRepository $pedidoRepository,
+        private PedidoProduccionReadRepository $pedidoRepository,
         private EppImageCleanupService $eppImageCleanupService,
         private PedidoImagenesService $pedidoImagenesService,
         private PedidoCreationCoordinator $pedidoCreationCoordinator,
@@ -33,21 +34,21 @@ class PedidoDraftMutationService
                 continue;
             }
 
-            $pedidoEpp = $this->pedidoRepository->obtenerEppConImagenes($pedidoId, $eppId);
-            if (!$pedidoEpp) {
+            $pedidoEppRef = $this->pedidoRepository->obtenerEppConImagenes($pedidoId, $eppId);
+            if (!$pedidoEppRef) {
                 continue;
             }
 
-            $cantidadEliminada = $this->eppImageCleanupService->eliminarImagenes($pedidoEpp->id);
+            $cantidadEliminada = $this->eppImageCleanupService->eliminarImagenes($pedidoEppRef->pedidoEppId);
             if ($cantidadEliminada > 0) {
                 Log::info('[PedidoDraftMutationService] Imagenes antiguas de EPP eliminadas', [
-                    'pedido_epp_id' => $pedidoEpp->id,
+                    'pedido_epp_id' => $pedidoEppRef->pedidoEppId,
                     'epp_id' => $eppId,
                     'imagenes_eliminadas' => $cantidadEliminada,
                 ]);
             }
 
-            $pedidoEpp->update([
+            $this->pedidoRepository->actualizarDatosEpp($pedidoEppRef->pedidoEppId, [
                 'cantidad' => $cantidad,
                 'observaciones' => $observaciones,
             ]);
@@ -71,15 +72,19 @@ class PedidoDraftMutationService
             return [];
         }
 
+        $pedidoModelo = $pedido instanceof PedidoProduccion
+            ? $pedido
+            : PedidoProduccion::findOrFail($pedido->pedidoId ?? 0);
+
         $nuevasPrendasIds = [];
 
         foreach ($nuevasPrendas as $index => $itemData) {
-            $prendaCreada = $this->pedidoCreationCoordinator->agregarItemAPedido($pedido, $itemData, (int) $index);
+            $prendaCreada = $this->pedidoCreationCoordinator->agregarItemAPedido($pedidoModelo, $itemData, (int) $index);
             $nuevasPrendasIds[] = $prendaCreada->id;
         }
 
         Log::info('[PedidoDraftMutationService] Nuevas prendas creadas', [
-            'pedido_id' => $pedido->id,
+            'pedido_id' => $pedidoModelo->id,
             'cantidad' => count($nuevasPrendasIds),
         ]);
 

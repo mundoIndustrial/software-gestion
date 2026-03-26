@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
  * ✅ Validación centralizada
  * ✅ Valores por defecto
  * ✅ Conversión de tipos (string → int)
- * ✅ Documentação de parámetros
+ * ✅ Documentacion de parámetros
  */
 class ObtenerPrendasInput
 {

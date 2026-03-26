@@ -6,11 +6,11 @@ use Tests\TestCase;
 use App\Models\Cotizacion;
 use App\Models\HistorialCambiosCotizacion;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class HistorialCambiosCotizacionTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     /**
      * Test: Crear historial de cambios
@@ -92,4 +92,6 @@ class HistorialCambiosCotizacionTest extends TestCase
         $this->assertInstanceOf(\Carbon\Carbon::class, $historial->created_at);
     }
 }
+
+
 

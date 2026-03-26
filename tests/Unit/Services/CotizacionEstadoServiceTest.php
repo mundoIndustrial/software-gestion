@@ -7,11 +7,11 @@ use App\Models\Cotizacion;
 use App\Models\User;
 use App\Services\CotizacionEstadoService;
 use App\Enums\EstadoCotizacion;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class CotizacionEstadoServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private CotizacionEstadoService $service;
     private User $asesor;
@@ -245,4 +245,6 @@ class CotizacionEstadoServiceTest extends TestCase
         $this->service->aprobarComoContador($cotizacion);
     }
 }
+
+
 

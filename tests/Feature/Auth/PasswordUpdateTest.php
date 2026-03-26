@@ -3,13 +3,13 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class PasswordUpdateTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     public function test_password_can_be_updated(): void
     {
@@ -49,4 +49,6 @@ class PasswordUpdateTest extends TestCase
             ->assertRedirect('/profile');
     }
 }
+
+
 

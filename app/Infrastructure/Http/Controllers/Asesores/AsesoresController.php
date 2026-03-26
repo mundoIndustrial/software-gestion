@@ -9,7 +9,7 @@ use App\Infrastructure\Http\Controllers\Asesores\AsesoresInventarioTelasControll
 use App\Application\Services\Asesores\DashboardService;
 use App\Application\Services\Asesores\NotificacionesService;
 use App\Application\Services\Asesores\PerfilService;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use App\Models\PedidoProduccion;
 use App\Application\Pedidos\UseCases\CrearProduccionPedidoUseCase;
 use App\Application\Pedidos\UseCases\ConfirmarProduccionPedidoUseCase;
@@ -22,7 +22,6 @@ use App\Application\Pedidos\UseCases\AgregarPrendaSimpleUseCase;
 use App\Application\Pedidos\UseCases\ObtenerProximoNumeroPedidoUseCase;
 use App\Application\Pedidos\UseCases\ObtenerFacturaUseCase;
 use App\Application\Pedidos\UseCases\ObtenerRecibosUseCase;
-use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\ConfirmarProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\ActualizarProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\AnularProduccionPedidoDTO;
@@ -55,7 +54,7 @@ use Illuminate\Routing\Controller;
 
 class AsesoresController extends Controller
 {
-    protected PedidoProduccionRepository $pedidoProduccionRepository;
+    protected PedidoProduccionReadRepository $pedidoProduccionRepository;
     protected DashboardService $dashboardService;
     protected NotificacionesService $notificacionesService;
     protected PerfilService $perfilService;
@@ -84,7 +83,7 @@ class AsesoresController extends Controller
     protected GuardarPedidoUseCase $guardarPedidoUseCase;
 
     public function __construct(
-        PedidoProduccionRepository $pedidoProduccionRepository,
+        PedidoProduccionReadRepository $pedidoProduccionRepository,
         DashboardService $dashboardService,
         NotificacionesService $notificacionesService,
         PerfilService $perfilService,

@@ -10,7 +10,7 @@ use App\Models\PrendaCot;
 use App\Models\PrendaVarianteCot;
 use App\Models\PrendaTallaCot;
 use App\Models\PrendaFotoCot;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -155,7 +155,7 @@ class CotizacionesConcurrencyTest extends TestCase
         // Todos los numeros deben ser unicos
         $this->assertEquals(33, count(array_unique($numerosGlobales)));
 
-        echo "\n 3 Asesores Ã— 11 Cotizaciones = 33 Total (Intercalado)\n";
+        echo "\n 3 Asesores — 11 Cotizaciones = 33 Total (Intercalado)\n";
         echo "numeros unicos: " . count(array_unique($numerosGlobales)) . "\n";
     }
 
@@ -314,7 +314,7 @@ class CotizacionesConcurrencyTest extends TestCase
 
         // Verificaciones
         $this->assertEquals(10, $prendasCount);
-        $this->assertEquals(100, $fotosCount); // 10 prendas Ã— 10 fotos
+        $this->assertEquals(100, $fotosCount); // 10 prendas — 10 fotos
 
         // Recargar y verificar integridad
         $cotRefresco = Cotizacion::with('prendas.fotos.tallas')->find($cot->id);
@@ -491,4 +491,6 @@ class CotizacionesConcurrencyTest extends TestCase
         echo "\n Soft delete funcionó correctamente\n";
     }
 }
+
+
 

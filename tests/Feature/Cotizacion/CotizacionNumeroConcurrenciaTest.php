@@ -3,7 +3,7 @@
 namespace Tests\Feature\Cotizacion;
 
 use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Models\NumeroSecuencia;
@@ -22,7 +22,7 @@ use App\Models\User;
  */
 class CotizacionNumeroConcurrenciaTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected $seeder = 'DatabaseSeeder';
 
@@ -219,4 +219,6 @@ class CotizacionNumeroConcurrenciaTest extends TestCase
         }
     }
 }
+
+
 

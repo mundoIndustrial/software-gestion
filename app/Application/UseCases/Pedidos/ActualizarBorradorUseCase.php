@@ -2,12 +2,9 @@
 
 namespace App\Application\UseCases\Pedidos;
 
-use App\Application\Pedidos\DTOs\ActualizarPrendaCompletaDTO;
-use App\Application\Pedidos\UseCases\ActualizarPrendaCompletaUseCase;
-use App\Application\Pedidos\UseCases\EliminarProcesosListaUseCase;
 use App\Application\Shared\Contracts\TransactionManagerInterface;
 use App\Application\Services\Pedidos\ProcesarImagenesPrendaService;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use App\Infrastructure\Services\Pedidos\PedidoDraftMutationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -15,12 +12,12 @@ use Illuminate\Support\Facades\Log;
 class ActualizarBorradorUseCase
 {
     public function __construct(
-        private PedidoProduccionRepository $pedidoRepository,
+        private PedidoProduccionReadRepository $pedidoRepository,
         private TransactionManagerInterface $transactionManager,
         private PedidoDraftMutationService $pedidoDraftMutationService,
-        private ActualizarPrendaCompletaUseCase $actualizarPrendaCompletaUseCase,
+        private ActualizarPrendaCompletaBridge $actualizarPrendaCompletaBridge,
         private ProcesarImagenesPrendaService $procesarImagenesPrendaService,
-        private EliminarProcesosListaUseCase $eliminarProcesosListaUseCase,
+        private EliminarProcesosListaBridge $eliminarProcesosListaBridge,
     ) {}
 
     public function ejecutar(ActualizarBorradorInput $input): ActualizarBorradorOutput
@@ -52,7 +49,7 @@ class ActualizarBorradorUseCase
             Log::info('[ActualizarBorradorUseCase] JSON validado');
 
             $this->transactionManager->run(function () use ($pedido, $input) {
-                $this->pedidoRepository->actualizarDatosBasicos($pedido, [
+                $this->pedidoRepository->actualizarDatosBasicos($pedido->pedidoId, [
                     'cliente' => trim($input->datosFrontend['cliente'] ?? ''),
                     'orden_compra' => $input->getOrdenCompra(),
                     'forma_de_pago' => $input->datosFrontend['forma_de_pago'] ?? '',
@@ -61,7 +58,7 @@ class ActualizarBorradorUseCase
 
                 Log::info('[ActualizarBorradorUseCase] Datos basicos actualizados', [
                     'pedido_id' => $input->pedidoId,
-                    'cliente' => $pedido->cliente,
+                    'cliente' => trim($input->datosFrontend['cliente'] ?? ''),
                 ]);
 
                 $this->pedidoDraftMutationService->actualizarEpps(
@@ -70,7 +67,7 @@ class ActualizarBorradorUseCase
                     $input->request
                 );
 
-                $this->actualizarPrendasExistentes($pedido->id, $input);
+                $this->actualizarPrendasExistentes($pedido->pedidoId, $input);
 
                 $nuevasPrendas = $input->datosFrontend['nuevas_prendas'] ?? [];
                 $nuevasPrendasIds = $this->pedidoDraftMutationService->crearNuevasPrendas($pedido, $nuevasPrendas);
@@ -91,7 +88,7 @@ class ActualizarBorradorUseCase
 
             Log::info('[ActualizarBorradorUseCase] PEDIDO ACTUALIZADO EXITOSAMENTE', [
                 'pedido_id' => $input->pedidoId,
-                'numero_pedido' => $pedido->numero_pedido,
+                'numero_pedido' => $pedido->numeroPedido,
                 'estado' => $pedido->estado,
                 'tiempo_total_ms' => $tiempoTotal,
             ]);
@@ -100,9 +97,9 @@ class ActualizarBorradorUseCase
                 success: true,
                 message: 'Pedido actualizado exitosamente',
                 pedido_id: $input->pedidoId,
-                numero_pedido: $pedido->numero_pedido,
+                numero_pedido: $pedido->numeroPedido,
                 estado: $pedido->estado,
-                redirect_url: route('asesores.pedidos.show', ['pedido' => $input->pedidoId]),
+                redirect_url: route('asesores.pedidos.show', ['id' => $input->pedidoId]),
                 tiempo_ms: $tiempoTotal,
             );
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
@@ -143,12 +140,9 @@ class ActualizarBorradorUseCase
                 continue;
             }
 
-            $prenda = \App\Models\PrendaPedido::query()
-                ->where('pedido_produccion_id', $pedidoId)
-                ->where('id', $prendaId)
-                ->first();
+            $prendaRef = $this->pedidoRepository->obtenerPrendaDelPedido($pedidoId, $prendaId);
 
-            if (!$prenda) {
+            if (!$prendaRef) {
                 throw new \RuntimeException("La prenda {$prendaId} no pertenece al pedido {$pedidoId}");
             }
 
@@ -156,12 +150,12 @@ class ActualizarBorradorUseCase
 
             $procesosAEliminar = $this->decodificarJsonArray($prendaPayload['procesos_a_eliminar'] ?? []);
             if (!empty($procesosAEliminar)) {
-                $this->eliminarProcesosListaUseCase->ejecutar($procesosAEliminar);
+                $this->eliminarProcesosListaBridge->ejecutar($procesosAEliminar);
             }
 
             $imagenes = $this->procesarImagenesPrendaService->procesarParaActualizar($subRequest, $pedidoId);
 
-            $dto = ActualizarPrendaCompletaDTO::fromRequest(
+            $this->actualizarPrendaCompletaBridge->ejecutarDesdePayload(
                 $prendaId,
                 $prendaPayload,
                 $imagenes['imagenes_guardadas'],
@@ -171,8 +165,6 @@ class ActualizarBorradorUseCase
                 $imagenes['fotos_color_procesadas'],
                 $imagenes['fotos_proceso_tallas_nuevo'],
             );
-
-            $this->actualizarPrendaCompletaUseCase->ejecutar($dto);
 
             Log::info('[ActualizarBorradorUseCase] Prenda existente actualizada dentro del borrador', [
                 'pedido_id' => $pedidoId,

@@ -75,7 +75,7 @@ class CotizacionServiceTest extends TestCase
             'productos' => [
                 ['nombre_producto' => 'Pantalón']
             ],
-            'tecnicas' => [], // SIN tÃ©cnicas
+            'tecnicas' => [], // SIN tecnicas
             'imagenes' => [],
             'observaciones_tecnicas' => null,
             'ubicaciones' => [],

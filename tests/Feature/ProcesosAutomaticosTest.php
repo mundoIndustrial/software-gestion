@@ -6,7 +6,7 @@ use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Models\ProcesoPrenda;
 use App\Services\RegistroOrdenCreationService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 /**
@@ -14,7 +14,7 @@ use Tests\TestCase;
  */
 class ProcesosAutomaticosTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     /**
      * Test 1: Verificar que el proceso "Creación de Orden" se crea automáticamente
@@ -268,3 +268,5 @@ class ProcesosAutomaticosTest extends TestCase
         $this->assertEquals($pedido->numero_pedido, $proceso->codigo_referencia);
     }
 }
+
+

@@ -144,7 +144,7 @@ class LogoCotizacionTecnicaControllerTest extends TestCase
     /** @test */
     public function puede_obtener_tecnicas_de_cotizacion()
     {
-        // Arrange - Agregar una tÃ©cnica primero
+        // Arrange - Agregar una TECNICA primero
         $tipoTecnica = TipoLogoCotizacion::where('codigo', 'BORDADO')->first();
         
         $payload = [
@@ -184,7 +184,7 @@ class LogoCotizacionTecnicaControllerTest extends TestCase
     /** @test */
     public function puede_eliminar_tecnica()
     {
-        // Arrange - Agregar una tÃ©cnica primero
+        // Arrange - Agregar una TECNICA primero
         $tipoTecnica = TipoLogoCotizacion::where('codigo', 'DTF')->first();
         
         $payload = [
@@ -215,7 +215,7 @@ class LogoCotizacionTecnicaControllerTest extends TestCase
     /** @test */
     public function puede_actualizar_observaciones()
     {
-        // Arrange - Agregar una tÃ©cnica primero
+        // Arrange - Agregar una TECNICA primero
         $tipoTecnica = TipoLogoCotizacion::where('codigo', 'BORDADO')->first();
         
         $payload = [

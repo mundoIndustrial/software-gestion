@@ -3,13 +3,13 @@
 namespace App\Application\Pedidos\UseCases;
 
 use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ListarProduccionPedidosUseCase
 {
     public function __construct(
-        private PedidoProduccionRepository $pedidoRepository
+        private PedidoProduccionReadRepository $pedidoRepository
     ) {}
 
     public function ejecutar(ListarProduccionPedidosDTO $dto): LengthAwarePaginator
@@ -38,4 +38,3 @@ class ListarProduccionPedidosUseCase
         ];
     }
 }
-

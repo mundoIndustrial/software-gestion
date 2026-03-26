@@ -7,7 +7,7 @@ use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Application\Pedidos\DTOs\ActualizarPrendaCompletaDTO;
 use App\Application\Pedidos\UseCases\ActualizarPrendaCompletaUseCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 /**
  * Test: Verificar que la novedad se guarda correctamente
@@ -17,7 +17,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
  */
 class ActualizarPrendaNovedadTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected function setUp(): void
     {
@@ -138,3 +138,5 @@ class ActualizarPrendaNovedadTest extends TestCase
         $this->assertStringContainsString("Primera novedad\n\nSegunda novedad", $pedidoActualizado->novedades);
     }
 }
+
+

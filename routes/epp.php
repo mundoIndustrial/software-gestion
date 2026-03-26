@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Infrastructure\Http\Controllers\Epp\EppController;
-use App\Modules\Pedidos\Infrastructure\Http\Controllers\PedidoEppController;
+use App\Infrastructure\Http\Controllers\Epp\PedidoEppController;
 
 /**
  * EPP Management Routes (Web)

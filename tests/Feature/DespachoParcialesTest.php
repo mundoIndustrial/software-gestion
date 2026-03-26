@@ -9,7 +9,7 @@ use App\Models\PedidoEpp;
 use App\Models\Epp;
 use App\Models\User;
 use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 /**
  * DespachoParcialesTest
@@ -25,7 +25,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
  */
 class DespachoParcialesTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     /**
      * Test: Guardar despachos parciales sin validaciones matemáticas
@@ -182,3 +182,5 @@ class DespachoParcialesTest extends TestCase
         $this->assertEquals($talla->genero, $despacho->genero);
     }
 }
+
+

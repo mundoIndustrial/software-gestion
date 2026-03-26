@@ -3,24 +3,27 @@
 namespace App\Application\UseCases\RegistroOrden;
 
 use App\Models\PedidoProduccion;
-use App\Infrastructure\Http\Controllers\PedidoQueryController;
+use App\Application\Pedidos\UseCases\ObtenerDetalleCompletoUseCase;
 use App\Exceptions\GetRecibosDatosException;
 
 /**
  * GetRecibosDatosUseCase
- * 
  * UseCase: Obtener datos completos de recibos para un pedido
  * Capa: Application
- * Responsabilidad: Resolver pedido y obtener datos completos enriquecidos de PedidoController
- * 
+ * Responsabilidad: Resolver pedido y obtener datos completos enriquecidos
  * Nota: Las excepciones son manejadas por el Handler que renderiza
  * respuestas JSON automáticamente. El UseCase solo lanza excepciones.
  */
 class GetRecibosDatosUseCase
 {
+    private ObtenerDetalleCompletoUseCase $obtenerDetalleCompletoUseCase;
+
+    public function __construct(ObtenerDetalleCompletoUseCase $obtenerDetalleCompletoUseCase)
+    {
+        $this->obtenerDetalleCompletoUseCase = $obtenerDetalleCompletoUseCase;
+    }
     /**
      * Ejecutar obtención de datos de recibos
-     * 
      * @param string $pedido ID o número de pedido
      * @param bool $esInsumos Indicar si viene del módulo de insumos
      * @return array Datos completos del pedido
@@ -44,11 +47,10 @@ class GetRecibosDatosUseCase
                 'es_insumos' => $esInsumos
             ]);
 
-            // Obtener datos del controlador
-            $datos = $this->_obtenerDatosDelController($pedidoId, $esInsumos);
-
-            // Enriquecer con created_at
-            $datos = $this->_enriquecerFechaCreacion($datos, $pedidoModel);
+            // Obtener datos del UseCase directamente
+            $filtrarProcesosPendientes = !$esInsumos;
+            $response = $this->obtenerDetalleCompletoUseCase->ejecutar($pedidoId, $filtrarProcesosPendientes);
+            $datos = $response->toArray();
 
             \Log::info('[GetRecibosDatosUseCase] Datos obtenidos exitosamente', [
                 'numero_pedido' => $pedidoModel->numero_pedido,
@@ -72,25 +74,6 @@ class GetRecibosDatosUseCase
 
             throw GetRecibosDatosException::errorConsulta($e);
         }
-    }
-
-    /**
-     * Obtener datos desde PedidoQueryController
-     * 
-     * @param int $pedidoId
-     * @param bool $esInsumos
-     * @return array
-     * @throws \Exception
-     */
-    private function _obtenerDatosDelController(int $pedidoId, bool $esInsumos): array
-    {
-        $pedidoController = app()->make(PedidoQueryController::class);
-        $filtrarProcesosPendientes = !$esInsumos;
-        
-        $response = $pedidoController->obtenerDetalleCompleto($pedidoId, $filtrarProcesosPendientes);
-        $responseData = $response->getData(true);
-        
-        return $responseData['data'] ?? $responseData;
     }
 
     /**
@@ -139,28 +122,5 @@ class GetRecibosDatosUseCase
         }
 
         return $pedidoModel;
-    }
-
-    /**
-     * Enriquecer datos con fecha de creación si no existe
-     * 
-     * @param array $datos
-     * @param PedidoProduccion $pedidoModel
-     * @return array
-     */
-    private function _enriquecerFechaCreacion(array $datos, PedidoProduccion $pedidoModel): array
-    {
-        try {
-            $fechaCreacionOrden = $pedidoModel->created_at;
-            if ($fechaCreacionOrden) {
-                $datos['created_at'] = $fechaCreacionOrden instanceof \DateTimeInterface
-                    ? $fechaCreacionOrden->format('Y-m-d H:i:s')
-                    : (string) $fechaCreacionOrden;
-            }
-        } catch (\Exception $e) {
-            // Silencioso - no es crítico
-        }
-
-        return $datos;
     }
 }

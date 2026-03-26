@@ -8,9 +8,10 @@ use App\Models\PedidoProduccion;
 use App\Models\PedidoEpp;
 use App\Models\PedidoEppImagen;
 use App\Models\Epp;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Models\EppCategoria;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use App\Infrastructure\Services\Pedidos\EppImageCleanupService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 /**
  * PedidoProduccionRepositoryTest
@@ -27,12 +28,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
  */
 class PedidoProduccionRepositoryTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
-    private PedidoProduccionRepository $repository;
+    private PedidoProduccionReadRepository $repository;
     private EppImageCleanupService $eppImageCleanupService;
     private User $asesor;
     private PedidoProduccion $pedido;
+    private EppCategoria $categoriaEpp;
 
     protected function setUp(): void
     {
@@ -44,13 +46,20 @@ class PedidoProduccionRepositoryTest extends TestCase
         // Crear pedido
         $this->pedido = PedidoProduccion::create([
             'asesor_id' => $this->asesor->id,
-            'numero_pedido' => 'TEST-001',
+            'numero_pedido' => 1001,
             'cliente' => 'Cliente Test',
             'estado' => 'Borrador',
         ]);
 
+        $this->categoriaEpp = EppCategoria::create([
+            'codigo' => 'CAT_REPO_TEST',
+            'nombre' => 'Categoria Repo Test',
+            'descripcion' => 'Categoria para pruebas de repositorio',
+            'activo' => true,
+        ]);
+
         // Obtener repositorio
-        $this->repository = app(PedidoProduccionRepository::class);
+        $this->repository = app(PedidoProduccionReadRepository::class);
         $this->eppImageCleanupService = app(EppImageCleanupService::class);
     }
 
@@ -69,8 +78,8 @@ class PedidoProduccionRepositoryTest extends TestCase
 
         // Validaciones
         $this->assertNotNull($resultado);
-        $this->assertEquals($this->pedido->id, $resultado->id);
-        $this->assertEquals($this->asesor->id, $resultado->asesor_id);
+        $this->assertEquals($this->pedido->id, $resultado->pedidoId);
+        $this->assertEquals($this->asesor->id, $resultado->asesorId);
     }
 
     /**
@@ -125,7 +134,7 @@ class PedidoProduccionRepositoryTest extends TestCase
         ];
 
         // Ejecutar
-        $this->repository->actualizarDatosBasicos($this->pedido, $datos);
+        $this->repository->actualizarDatosBasicos($this->pedido->id, $datos);
 
         // Verificar en BD
         $pedidoActualizado = PedidoProduccion::find($this->pedido->id);
@@ -142,7 +151,7 @@ class PedidoProduccionRepositoryTest extends TestCase
     public function test_actualizar_datos_basicos_parcial()
     {
         // Actualizar solo cliente
-        $this->repository->actualizarDatosBasicos($this->pedido, [
+        $this->repository->actualizarDatosBasicos($this->pedido->id, [
             'cliente' => 'Nuevo Cliente',
         ]);
 
@@ -163,6 +172,7 @@ class PedidoProduccionRepositoryTest extends TestCase
         $epp = Epp::create([
             'nombre_completo' => 'EPP Test',
             'activo' => true,
+            'categoria_id' => $this->categoriaEpp->id,
         ]);
 
         // Crear PedidoEpp
@@ -185,8 +195,8 @@ class PedidoProduccionRepositoryTest extends TestCase
 
         // Validaciones
         $this->assertNotNull($resultado);
-        $this->assertEquals($epp->id, $resultado->epp_id);
-        $this->assertEquals(1, $resultado->imagenes->count());
+        $this->assertEquals($epp->id, $resultado->eppId);
+        $this->assertEquals(1, $resultado->imagenesCount);
     }
 
     /**
@@ -217,6 +227,7 @@ class PedidoProduccionRepositoryTest extends TestCase
         $epp = Epp::create([
             'nombre_completo' => 'EPP Delete Test',
             'activo' => true,
+            'categoria_id' => $this->categoriaEpp->id,
         ]);
 
         $pedidoEpp = PedidoEpp::create([
@@ -256,6 +267,7 @@ class PedidoProduccionRepositoryTest extends TestCase
         $epp = Epp::create([
             'nombre_completo' => 'EPP Sin Img',
             'activo' => true,
+            'categoria_id' => $this->categoriaEpp->id,
         ]);
 
         $pedidoEpp = PedidoEpp::create([
@@ -271,3 +283,5 @@ class PedidoProduccionRepositoryTest extends TestCase
         $this->assertEquals(0, $cantidadEliminada);
     }
 }
+
+

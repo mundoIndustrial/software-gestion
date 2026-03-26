@@ -30,7 +30,7 @@ use Tests\TestCase;
  * también valida que numero_cotizacion sea secuencial y unico.
  * 
  * Total Tests: ~6 (1 por tipo + 1 de concurrencia + 1 de secuencialidad)
- * Total Cotizaciones Creadas: 77 (11Ã—4 tipos + 33 de concurrencia)
+ * Total Cotizaciones Creadas: 77 (11—4 tipos + 33 de concurrencia)
  */
 class CotizacionesCompleteTest extends TestCase
 {
@@ -117,8 +117,8 @@ class CotizacionesCompleteTest extends TestCase
             ['descripcion' => 'Algodón 100%', 'codigo' => 'ALG']
         );
         $this->telas['polyester'] = Tela::firstOrCreate(
-            ['nombre' => 'PoliÃ©ster'],
-            ['descripcion' => 'PoliÃ©ster 100%', 'codigo' => 'POL']
+            ['nombre' => 'Poliester'],
+            ['descripcion' => 'Poliester 100%', 'codigo' => 'POL']
         );
 
         // Colores
@@ -171,7 +171,7 @@ class CotizacionesCompleteTest extends TestCase
         // Verificar que los numeros son unicos
         $this->assertEquals(11, count(array_unique($numerosSecuenciales)));
 
-        echo "\n TEST MUESTRA: {$i} cotizaciones creadas con Ã©xito\n";
+        echo "\n TEST MUESTRA: {$i} cotizaciones creadas con exitio\n";
         echo "numeros: " . implode(', ', $numerosSecuenciales) . "\n";
     }
 
@@ -205,7 +205,7 @@ class CotizacionesCompleteTest extends TestCase
         $this->assertCount(11, $cotizacionesCreadas);
         $this->assertEquals(11, count(array_unique($numerosSecuenciales)));
 
-        echo "\n TEST PROTOTIPO: {$i} cotizaciones creadas con Ã©xito\n";
+        echo "\n TEST PROTOTIPO: {$i} cotizaciones creadas con exito\n";
     }
 
     /**
@@ -238,7 +238,7 @@ class CotizacionesCompleteTest extends TestCase
         $this->assertCount(11, $cotizacionesCreadas);
         $this->assertEquals(11, count(array_unique($numerosSecuenciales)));
 
-        echo "\n TEST GRANDE: {$i} cotizaciones creadas con Ã©xito\n";
+        echo "\n TEST GRANDE: {$i} cotizaciones creadas con exito\n";
     }
 
     /**
@@ -271,7 +271,7 @@ class CotizacionesCompleteTest extends TestCase
         $this->assertCount(11, $cotizacionesCreadas);
         $this->assertEquals(11, count(array_unique($numerosSecuenciales)));
 
-        echo "\n TEST BORDADO: {$i} cotizaciones creadas con Ã©xito\n";
+        echo "\n TEST BORDADO: {$i} cotizaciones creadas con exito\n";
     }
 
     /**
@@ -354,14 +354,14 @@ class CotizacionesCompleteTest extends TestCase
 
         // 4. numeros están distribuidos
         sort($numerosGlobales);
-        echo "\n TEST CONCURRENCIA: 3 Asesores Ã— 11 Cotizaciones = 33 Total\n";
+        echo "\n TEST CONCURRENCIA: 3 Asesores — 11 Cotizaciones = 33 Total\n";
         echo "Primeros numeros: " . implode(', ', array_slice($numerosGlobales, 0, 5)) . "\n";
         echo "ultimos numeros: " . implode(', ', array_slice($numerosGlobales, -5)) . "\n";
     }
 
     /**
      * ====================================================================
-     * MÃ‰TODOS HELPER PARA CREAR COTIZACIONES
+     * METODOS HELPER PARA CREAR COTIZACIONES
      * ====================================================================
      */
 
@@ -519,7 +519,7 @@ class CotizacionesCompleteTest extends TestCase
      * - Logo principal
      * - 4 Fotos de logo
      * - 3 Ubicaciones (pecho, espalda, manga)
-     * - TÃ©cnicas de bordado
+     * - tecnicas de bordado
      */
     private function crearCotizacionBordado(int $numero): Cotizacion
     {

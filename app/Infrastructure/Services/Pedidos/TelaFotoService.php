@@ -7,7 +7,7 @@ use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 
 /**
- * TelaFotoService - Servicio para procesar y guardar imÃ¡genes de telas
+ * TelaFotoService - Servicio para procesar y guardar imagenes de telas
  * 
  * Responsabilidades:
  * - Guardar imagen original de tela
@@ -29,7 +29,7 @@ class TelaFotoService
      */
     public function procesarFoto(UploadedFile $archivo, ?int $pedidoId = null, bool $soloWebp = true): array
     {
-        // ðŸ”´ CRÃTICO: En modo edicion ($soloWebp=true), SOLO guardar WebP, nunca PNG
+        //  CRITICO: En modo edicion ($soloWebp=true), SOLO guardar WebP, nunca PNG
         if ($soloWebp) {
             // Guardar directamente como WebP sin guardar original
             $rutaWebp = $this->guardarDirectoWebp($archivo, $pedidoId);

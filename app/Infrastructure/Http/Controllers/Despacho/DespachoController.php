@@ -13,10 +13,10 @@ use App\Models\ReciboPrenda;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\GuardarDespachoUseCase;
 use App\Application\Pedidos\Despacho\DTOs\ControlEntregasDTO;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use App\Application\Bodega\Services\BodegaPedidoService;
 use App\Application\Bodega\Services\BodegaNotaService;
-use App\Domain\Pedidos\Despacho\Services\DespachoEstadoService;
+use App\Application\Pedidos\Despacho\Services\DespachoEstadoService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +34,7 @@ class DespachoController extends Controller
     public function __construct(
         private ObtenerFilasDespachoUseCase $obtenerFilas,
         private GuardarDespachoUseCase $guardarDespacho,
-        private PedidoProduccionRepository $pedidoRepository,
+        private PedidoProduccionReadRepository $pedidoRepository,
         private BodegaPedidoService $bodegaPedidoService,
         private BodegaNotaService $bodegaNotaService,
         private DespachoEstadoService $despachoEstadoService,
